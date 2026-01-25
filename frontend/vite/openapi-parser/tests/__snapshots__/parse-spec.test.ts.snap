@@ -2,7 +2,7 @@
 
 exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
 {
-  "inputHash": "d8d5bd8e298b0546",
+  "inputHash": "412c5ed138b05a09",
   "output": {
     "info": {
       "description": "⚠️ ATTENTION: PRERELEASE!  
@@ -881,6 +881,27 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
+        "description": "SSE stream for membership and organization events affecting the *current user*. Use offset for catch-up, live=sse for streaming.",
+        "extensions": {
+          "xGuard": [
+            "isAuthenticated",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": false,
+        "hasParams": true,
+        "hasRequestBody": false,
+        "hash": "tag/me/GET/me/stream",
+        "id": "getUserStream",
+        "method": "get",
+        "path": "/me/stream",
+        "summary": "User event stream",
+        "tags": [
+          "me",
+        ],
+      },
+      {
+        "deprecated": false,
         "description": "Returns a list of *users*.",
         "extensions": {
           "xGuard": [
@@ -891,10 +912,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": false,
         "hasParams": true,
         "hasRequestBody": false,
-        "hash": "tag/users/GET/users",
+        "hash": "tag/users/GET/user",
         "id": "getUsers",
         "method": "get",
-        "path": "/users",
+        "path": "/user",
         "summary": "Get list of users",
         "tags": [
           "users",
@@ -913,10 +934,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": true,
         "hasParams": false,
         "hasRequestBody": true,
-        "hash": "tag/users/DELETE/users",
+        "hash": "tag/users/DELETE/user",
         "id": "deleteUsers",
         "method": "delete",
-        "path": "/users",
+        "path": "/user",
         "summary": "Delete users",
         "tags": [
           "users",
@@ -934,10 +955,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": true,
         "hasParams": true,
         "hasRequestBody": false,
-        "hash": "tag/users/GET/users/{idOrSlug}",
+        "hash": "tag/users/GET/user/{idOrSlug}",
         "id": "getUser",
         "method": "get",
-        "path": "/users/{idOrSlug}",
+        "path": "/user/{idOrSlug}",
         "summary": "Get user",
         "tags": [
           "users",
@@ -956,10 +977,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": true,
         "hasParams": true,
         "hasRequestBody": true,
-        "hash": "tag/users/PUT/users/{idOrSlug}",
+        "hash": "tag/users/PUT/user/{idOrSlug}",
         "id": "updateUser",
         "method": "put",
-        "path": "/users/{idOrSlug}",
+        "path": "/user/{idOrSlug}",
         "summary": "Update user",
         "tags": [
           "users",
@@ -977,10 +998,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": true,
         "hasParams": false,
         "hasRequestBody": true,
-        "hash": "tag/organizations/POST/organizations",
+        "hash": "tag/organizations/POST/organization",
         "id": "createOrganization",
         "method": "post",
-        "path": "/organizations",
+        "path": "/organization",
         "summary": "Create organization",
         "tags": [
           "organizations",
@@ -998,10 +1019,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": false,
         "hasParams": true,
         "hasRequestBody": false,
-        "hash": "tag/organizations/GET/organizations",
+        "hash": "tag/organizations/GET/organization",
         "id": "getOrganizations",
         "method": "get",
-        "path": "/organizations",
+        "path": "/organization",
         "summary": "Get list of organizations",
         "tags": [
           "organizations",
@@ -1019,10 +1040,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": true,
         "hasParams": false,
         "hasRequestBody": true,
-        "hash": "tag/organizations/DELETE/organizations",
+        "hash": "tag/organizations/DELETE/organization",
         "id": "deleteOrganizations",
         "method": "delete",
-        "path": "/organizations",
+        "path": "/organization",
         "summary": "Delete organizations",
         "tags": [
           "organizations",
@@ -1040,10 +1061,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": true,
         "hasParams": true,
         "hasRequestBody": false,
-        "hash": "tag/organizations/GET/organizations/{idOrSlug}",
+        "hash": "tag/organizations/GET/organization/{idOrSlug}",
         "id": "getOrganization",
         "method": "get",
-        "path": "/organizations/{idOrSlug}",
+        "path": "/organization/{idOrSlug}",
         "summary": "Get organization",
         "tags": [
           "organizations",
@@ -1061,10 +1082,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": true,
         "hasParams": true,
         "hasRequestBody": true,
-        "hash": "tag/organizations/PUT/organizations/{idOrSlug}",
+        "hash": "tag/organizations/PUT/organization/{idOrSlug}",
         "id": "updateOrganization",
         "method": "put",
-        "path": "/organizations/{idOrSlug}",
+        "path": "/organization/{idOrSlug}",
         "summary": "Update organization",
         "tags": [
           "organizations",
@@ -1072,7 +1093,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Sync page data by proxying requests to ElectricSQL's shape endpoint for \`pages\` table.",
+        "description": "Stream real-time changes for pages. No authentication required. Use offset for catch-up, live=sse for SSE streaming.",
         "extensions": {
           "xGuard": [
             "isPublicAccess",
@@ -1082,18 +1103,18 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": false,
         "hasParams": true,
         "hasRequestBody": false,
-        "hash": "tag/pages/GET/pages/sync-pages",
-        "id": "syncPages",
+        "hash": "tag/pages/GET/page/stream",
+        "id": "pagesPublicStream",
         "method": "get",
-        "path": "/pages/sync-pages",
-        "summary": "Sync pages",
+        "path": "/page/stream",
+        "summary": "Public stream of page changes",
         "tags": [
           "pages",
         ],
       },
       {
         "deprecated": false,
-        "description": "Insert one or more new *pages*.",
+        "description": "Insert one or more new *pages*. Returns created pages and any rejected items.",
         "extensions": {
           "xGuard": [
             "isAuthenticated",
@@ -1101,13 +1122,13 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           ],
           "xRateLimiter": [],
         },
-        "hasExample": true,
+        "hasExample": false,
         "hasParams": false,
         "hasRequestBody": true,
-        "hash": "tag/pages/POST/pages",
-        "id": "createPage",
+        "hash": "tag/pages/POST/page",
+        "id": "createPages",
         "method": "post",
-        "path": "/pages",
+        "path": "/page",
         "summary": "Create pages",
         "tags": [
           "pages",
@@ -1125,10 +1146,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": false,
         "hasParams": true,
         "hasRequestBody": false,
-        "hash": "tag/pages/GET/pages",
+        "hash": "tag/pages/GET/page",
         "id": "getPages",
         "method": "get",
-        "path": "/pages",
+        "path": "/page",
         "summary": "Get pages",
         "tags": [
           "pages",
@@ -1147,10 +1168,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": false,
         "hasParams": false,
         "hasRequestBody": true,
-        "hash": "tag/pages/DELETE/pages",
+        "hash": "tag/pages/DELETE/page",
         "id": "deletePages",
         "method": "delete",
-        "path": "/pages",
+        "path": "/page",
         "summary": "Delete pages",
         "tags": [
           "pages",
@@ -1168,10 +1189,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": true,
         "hasParams": true,
         "hasRequestBody": false,
-        "hash": "tag/pages/GET/pages/{id}",
+        "hash": "tag/pages/GET/page/{id}",
         "id": "getPage",
         "method": "get",
-        "path": "/pages/{id}",
+        "path": "/page/{id}",
         "summary": "Get page",
         "tags": [
           "pages",
@@ -1190,10 +1211,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": true,
         "hasParams": true,
         "hasRequestBody": true,
-        "hash": "tag/pages/PUT/pages/{id}",
+        "hash": "tag/pages/PUT/page/{id}",
         "id": "updatePage",
         "method": "put",
-        "path": "/pages/{id}",
+        "path": "/page/{id}",
         "summary": "Update page",
         "tags": [
           "pages",
@@ -1212,10 +1233,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": false,
         "hasParams": false,
         "hasRequestBody": true,
-        "hash": "tag/entities/POST/entities/check-slug",
+        "hash": "tag/entities/POST/check-slug",
         "id": "checkSlug",
         "method": "post",
-        "path": "/entities/check-slug",
+        "path": "/check-slug",
         "summary": "Check slug availability",
         "tags": [
           "entities",
@@ -1404,6 +1425,29 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
+        "description": "Returns Node.js process health metrics and OpenTelemetry runtime instrumentation data.
+      Includes memory usage, CPU time, uptime, and event loop utilization.",
+        "extensions": {
+          "xGuard": [
+            "isAuthenticated",
+            "hasSystemAccess",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": false,
+        "hasParams": false,
+        "hasRequestBody": false,
+        "hash": "tag/metrics/GET/metrics/runtime",
+        "id": "getRuntimeMetrics",
+        "method": "get",
+        "path": "/metrics/runtime",
+        "summary": "Get runtime metrics",
+        "tags": [
+          "metrics",
+        ],
+      },
+      {
+        "deprecated": false,
         "description": "Returns basic count metrics for entity types such as \`users\` and \`organizations\`.
       This endpoint is public and uses a 1 minute in memory cache for performance.",
         "extensions": {
@@ -1426,8 +1470,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Sync attachment data by proxying requests to ElectricSQL's shape endpoint for \`attachments\` table.
-      Organization parameter is required to scope the data.",
+        "description": "Returns a paginated list of *attachments* for the organization.",
         "extensions": {
           "xGuard": [
             "isAuthenticated",
@@ -1438,11 +1481,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": false,
         "hasParams": true,
         "hasRequestBody": false,
-        "hash": "tag/attachments/GET/{orgIdOrSlug}/attachments/sync-attachments",
-        "id": "syncAttachments",
+        "hash": "tag/attachments/GET/{orgIdOrSlug}/attachment",
+        "id": "getAttachments",
         "method": "get",
-        "path": "/{orgIdOrSlug}/attachments/sync-attachments",
-        "summary": "Sync attachments",
+        "path": "/{orgIdOrSlug}/attachment",
+        "summary": "Get attachments",
         "tags": [
           "attachments",
         ],
@@ -1460,10 +1503,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": false,
         "hasParams": true,
         "hasRequestBody": true,
-        "hash": "tag/attachments/POST/{orgIdOrSlug}/attachments",
+        "hash": "tag/attachments/POST/{orgIdOrSlug}/attachment",
         "id": "createAttachment",
         "method": "post",
-        "path": "/{orgIdOrSlug}/attachments",
+        "path": "/{orgIdOrSlug}/attachment",
         "summary": "Create attachments",
         "tags": [
           "attachments",
@@ -1482,10 +1525,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": true,
         "hasParams": true,
         "hasRequestBody": true,
-        "hash": "tag/attachments/DELETE/{orgIdOrSlug}/attachments",
+        "hash": "tag/attachments/DELETE/{orgIdOrSlug}/attachment",
         "id": "deleteAttachments",
         "method": "delete",
-        "path": "/{orgIdOrSlug}/attachments",
+        "path": "/{orgIdOrSlug}/attachment",
         "summary": "Delete attachments",
         "tags": [
           "attachments",
@@ -1504,10 +1547,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": true,
         "hasParams": true,
         "hasRequestBody": true,
-        "hash": "tag/attachments/PUT/{orgIdOrSlug}/attachments/{id}",
+        "hash": "tag/attachments/PUT/{orgIdOrSlug}/attachment/{id}",
         "id": "updateAttachment",
         "method": "put",
-        "path": "/{orgIdOrSlug}/attachments/{id}",
+        "path": "/{orgIdOrSlug}/attachment/{id}",
         "summary": "Update attachment",
         "tags": [
           "attachments",
@@ -1527,10 +1570,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": false,
         "hasParams": true,
         "hasRequestBody": false,
-        "hash": "tag/attachments/GET/{orgIdOrSlug}/attachments/{id}/link",
+        "hash": "tag/attachments/GET/{orgIdOrSlug}/attachment/{id}/link",
         "id": "redirectToAttachment",
         "method": "get",
-        "path": "/{orgIdOrSlug}/attachments/{id}/link",
+        "path": "/{orgIdOrSlug}/attachment/{id}/link",
         "summary": "Redirect to attachment",
         "tags": [
           "attachments",
@@ -1675,7 +1718,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "name": "base",
       },
       {
-        "count": 11,
+        "count": 13,
         "description": "Complete data schemas",
         "name": "data",
       },
@@ -2353,6 +2396,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "organizationId": "t2j8omleaz2pg8iwtnhw3666",
           "resourceType": null,
           "tableName": "pages",
+          "tx": null,
           "type": "page.updated",
           "userId": "qc8osclgd1300kpvq3dotk41",
         },
@@ -2454,6 +2498,36 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "tableName": {
               "required": true,
               "type": "string",
+            },
+            "tx": {
+              "anyOf": [
+                {
+                  "required": false,
+                  "type": "string",
+                },
+                {
+                  "required": false,
+                  "type": "number",
+                },
+                {
+                  "required": false,
+                  "type": "boolean",
+                },
+                {
+                  "required": false,
+                  "type": "null",
+                },
+                {
+                  "required": false,
+                  "type": "object",
+                },
+                {
+                  "itemType": "object",
+                  "required": false,
+                  "type": "array",
+                },
+              ],
+              "required": true,
             },
             "type": {
               "required": true,
@@ -3253,6 +3327,32 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 "null",
               ],
             },
+            "can": {
+              "properties": {
+                "create": {
+                  "required": true,
+                  "type": "boolean",
+                },
+                "delete": {
+                  "required": true,
+                  "type": "boolean",
+                },
+                "read": {
+                  "required": true,
+                  "type": "boolean",
+                },
+                "search": {
+                  "required": true,
+                  "type": "boolean",
+                },
+                "update": {
+                  "required": true,
+                  "type": "boolean",
+                },
+              },
+              "required": false,
+              "type": "object",
+            },
             "chatSupport": {
               "required": true,
               "type": "boolean",
@@ -3310,7 +3410,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "type": "object",
                 },
               },
-              "required": true,
+              "required": false,
               "type": "object",
             },
             "createdAt": {
@@ -3500,6 +3600,44 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "type": "object",
       },
       {
+        "name": "TxStreamMessage",
+        "ref": "#/components/schemas/TxStreamMessage",
+        "schema": {
+          "properties": {
+            "changedField": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "sourceId": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "transactionId": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+          },
+          "type": [
+            "object",
+            "null",
+          ],
+        },
+        "schemaTag": "data",
+        "type": [
+          "object",
+          "null",
+        ],
+      },
+      {
         "example": {
           "createdAt": "2024-08-06T10:28:33.226Z",
           "createdBy": "0f0ak5vkrrl687pmkwpa1vju",
@@ -3513,6 +3651,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "name": "Infit pauci optio demo.",
           "parentId": null,
           "status": "unpublished",
+          "tx": null,
         },
         "name": "Page",
         "ref": "#/components/schemas/Page",
@@ -3591,6 +3730,77 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": true,
               "type": "string",
             },
+            "tx": {
+              "anyOf": [
+                {
+                  "required": false,
+                  "type": "string",
+                },
+                {
+                  "required": false,
+                  "type": "number",
+                },
+                {
+                  "required": false,
+                  "type": "boolean",
+                },
+                {
+                  "required": false,
+                  "type": "null",
+                },
+                {
+                  "required": false,
+                  "type": "object",
+                },
+                {
+                  "itemType": "object",
+                  "required": false,
+                  "type": "array",
+                },
+              ],
+              "required": true,
+            },
+          },
+          "type": "object",
+        },
+        "schemaTag": "data",
+        "type": "object",
+      },
+      {
+        "name": "TxRequest",
+        "ref": "#/components/schemas/TxRequest",
+        "schema": {
+          "properties": {
+            "changedField": {
+              "description": "Which field this mutation changes (null for create/delete)",
+              "maxLength": 64,
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "expectedTransactionId": {
+              "description": "Last known transaction ID for this field (null for create or first write)",
+              "maxLength": 64,
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "sourceId": {
+              "description": "Tab/instance identifier",
+              "maxLength": 64,
+              "required": true,
+              "type": "string",
+            },
+            "transactionId": {
+              "description": "Client-generated unique ID (HLC format: timestamp.logical.nodeId)",
+              "maxLength": 64,
+              "required": true,
+              "type": "string",
+            },
           },
           "type": "object",
         },
@@ -3619,6 +3829,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "public": false,
           "size": "6046908",
           "thumbnailKey": null,
+          "tx": null,
         },
         "name": "Attachment",
         "ref": "#/components/schemas/Attachment",
@@ -3627,6 +3838,32 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "bucketName": {
               "required": true,
               "type": "string",
+            },
+            "can": {
+              "properties": {
+                "create": {
+                  "required": true,
+                  "type": "boolean",
+                },
+                "delete": {
+                  "required": true,
+                  "type": "boolean",
+                },
+                "read": {
+                  "required": true,
+                  "type": "boolean",
+                },
+                "search": {
+                  "required": true,
+                  "type": "boolean",
+                },
+                "update": {
+                  "required": true,
+                  "type": "boolean",
+                },
+              },
+              "required": false,
+              "type": "object",
             },
             "contentType": {
               "required": true,
@@ -3730,6 +3967,36 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 "string",
                 "null",
               ],
+            },
+            "tx": {
+              "anyOf": [
+                {
+                  "required": false,
+                  "type": "string",
+                },
+                {
+                  "required": false,
+                  "type": "number",
+                },
+                {
+                  "required": false,
+                  "type": "boolean",
+                },
+                {
+                  "required": false,
+                  "type": "null",
+                },
+                {
+                  "required": false,
+                  "type": "object",
+                },
+                {
+                  "itemType": "object",
+                  "required": false,
+                  "type": "array",
+                },
+              ],
+              "required": true,
             },
           },
           "type": "object",
@@ -4019,6 +4286,36 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "required": true,
                           "type": "string",
                         },
+                        "tx": {
+                          "anyOf": [
+                            {
+                              "required": false,
+                              "type": "string",
+                            },
+                            {
+                              "required": false,
+                              "type": "number",
+                            },
+                            {
+                              "required": false,
+                              "type": "boolean",
+                            },
+                            {
+                              "required": false,
+                              "type": "null",
+                            },
+                            {
+                              "required": false,
+                              "type": "object",
+                            },
+                            {
+                              "itemType": "object",
+                              "required": false,
+                              "type": "array",
+                            },
+                          ],
+                          "required": true,
+                        },
                         "type": {
                           "required": true,
                           "type": "string",
@@ -4087,7 +4384,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
       ],
       "attachments": [
         {
-          "operationId": "syncAttachments",
+          "operationId": "getAttachments",
           "request": {
             "path": {
               "properties": {
@@ -4100,27 +4397,32 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             },
             "query": {
               "properties": {
-                "cursor": {
-                  "required": false,
-                  "type": "string",
-                },
-                "handle": {
-                  "required": false,
-                  "type": "string",
-                },
-                "live": {
+                "limit": {
                   "required": false,
                   "type": "string",
                 },
                 "offset": {
-                  "required": true,
+                  "required": false,
                   "type": "string",
                 },
-                "table": {
-                  "required": true,
+                "order": {
+                  "enum": [
+                    "asc",
+                    "desc",
+                  ],
+                  "required": false,
                   "type": "string",
                 },
-                "where": {
+                "q": {
+                  "required": false,
+                  "type": "string",
+                },
+                "sort": {
+                  "enum": [
+                    "name",
+                    "createdAt",
+                    "contentType",
+                  ],
                   "required": false,
                   "type": "string",
                 },
@@ -4129,7 +4431,193 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           },
           "responses": [
             {
-              "description": "Success",
+              "contentType": "application/json",
+              "description": "Attachments",
+              "schema": {
+                "contentType": "application/json",
+                "properties": {
+                  "items": {
+                    "itemType": "object",
+                    "items": {
+                      "properties": {
+                        "bucketName": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "can": {
+                          "properties": {
+                            "create": {
+                              "required": true,
+                              "type": "boolean",
+                            },
+                            "delete": {
+                              "required": true,
+                              "type": "boolean",
+                            },
+                            "read": {
+                              "required": true,
+                              "type": "boolean",
+                            },
+                            "search": {
+                              "required": true,
+                              "type": "boolean",
+                            },
+                            "update": {
+                              "required": true,
+                              "type": "boolean",
+                            },
+                          },
+                          "required": false,
+                          "type": "object",
+                        },
+                        "contentType": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "convertedContentType": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "convertedKey": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "createdAt": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "createdBy": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "description": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "entityType": {
+                          "enum": [
+                            "attachment",
+                          ],
+                          "required": true,
+                          "type": "string",
+                        },
+                        "filename": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "groupId": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "id": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "keywords": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "modifiedAt": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "modifiedBy": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "name": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "organizationId": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "originalKey": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "public": {
+                          "required": true,
+                          "type": "boolean",
+                        },
+                        "size": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "thumbnailKey": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "tx": {
+                          "anyOf": [
+                            {
+                              "required": false,
+                              "type": "string",
+                            },
+                            {
+                              "required": false,
+                              "type": "number",
+                            },
+                            {
+                              "required": false,
+                              "type": "boolean",
+                            },
+                            {
+                              "required": false,
+                              "type": "null",
+                            },
+                            {
+                              "required": false,
+                              "type": "object",
+                            },
+                            {
+                              "itemType": "object",
+                              "required": false,
+                              "type": "array",
+                            },
+                          ],
+                          "required": true,
+                        },
+                      },
+                      "ref": "#/components/schemas/Attachment",
+                      "type": "object",
+                    },
+                    "ref": "#/components/schemas/Attachment",
+                    "required": true,
+                    "type": "array",
+                  },
+                  "total": {
+                    "required": true,
+                    "type": "number",
+                  },
+                },
+                "type": "object",
+              },
               "status": 200,
             },
             {
@@ -4174,124 +4662,130 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "request": {
             "body": {
               "contentType": "application/json",
-              "itemType": "object",
-              "items": {
-                "properties": {
-                  "bucketName": {
-                    "required": true,
-                    "type": "string",
+              "properties": {
+                "data": {
+                  "itemType": "object",
+                  "items": {
+                    "properties": {
+                      "bucketName": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "contentType": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "convertedContentType": {
+                        "required": false,
+                        "type": [
+                          "string",
+                          "null",
+                        ],
+                      },
+                      "convertedKey": {
+                        "required": false,
+                        "type": [
+                          "string",
+                          "null",
+                        ],
+                      },
+                      "createdBy": {
+                        "required": false,
+                        "type": [
+                          "string",
+                          "null",
+                        ],
+                      },
+                      "filename": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "groupId": {
+                        "required": false,
+                        "type": [
+                          "string",
+                          "null",
+                        ],
+                      },
+                      "id": {
+                        "required": false,
+                        "type": "string",
+                      },
+                      "name": {
+                        "required": false,
+                        "type": "string",
+                      },
+                      "organizationId": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "originalKey": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "public": {
+                        "required": false,
+                        "type": "boolean",
+                      },
+                      "size": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "thumbnailKey": {
+                        "required": false,
+                        "type": [
+                          "string",
+                          "null",
+                        ],
+                      },
+                    },
+                    "type": "object",
                   },
-                  "contentType": {
-                    "required": true,
-                    "type": "string",
-                  },
-                  "convertedContentType": {
-                    "required": false,
-                    "type": [
-                      "string",
-                      "null",
-                    ],
-                  },
-                  "convertedKey": {
-                    "required": false,
-                    "type": [
-                      "string",
-                      "null",
-                    ],
-                  },
-                  "createdAt": {
-                    "required": false,
-                    "type": "string",
-                  },
-                  "createdBy": {
-                    "required": false,
-                    "type": [
-                      "string",
-                      "null",
-                    ],
-                  },
-                  "description": {
-                    "required": false,
-                    "type": [
-                      "string",
-                      "null",
-                    ],
-                  },
-                  "entityType": {
-                    "enum": [
-                      "attachment",
-                    ],
-                    "required": false,
-                    "type": "string",
-                  },
-                  "filename": {
-                    "required": true,
-                    "type": "string",
-                  },
-                  "groupId": {
-                    "required": false,
-                    "type": [
-                      "string",
-                      "null",
-                    ],
-                  },
-                  "id": {
-                    "required": false,
-                    "type": "string",
-                  },
-                  "keywords": {
-                    "required": true,
-                    "type": "string",
-                  },
-                  "modifiedAt": {
-                    "required": false,
-                    "type": [
-                      "string",
-                      "null",
-                    ],
-                  },
-                  "modifiedBy": {
-                    "required": false,
-                    "type": [
-                      "string",
-                      "null",
-                    ],
-                  },
-                  "name": {
-                    "required": false,
-                    "type": "string",
-                  },
-                  "organizationId": {
-                    "required": true,
-                    "type": "string",
-                  },
-                  "originalKey": {
-                    "required": true,
-                    "type": "string",
-                  },
-                  "public": {
-                    "required": false,
-                    "type": "boolean",
-                  },
-                  "size": {
-                    "required": true,
-                    "type": "string",
-                  },
-                  "thumbnailKey": {
-                    "required": false,
-                    "type": [
-                      "string",
-                      "null",
-                    ],
-                  },
+                  "maxItems": 50,
+                  "minItems": 1,
+                  "required": true,
+                  "type": "array",
                 },
-                "required": true,
-                "type": "object",
+                "tx": {
+                  "properties": {
+                    "changedField": {
+                      "description": "Which field this mutation changes (null for create/delete)",
+                      "maxLength": 64,
+                      "required": true,
+                      "type": [
+                        "string",
+                        "null",
+                      ],
+                    },
+                    "expectedTransactionId": {
+                      "description": "Last known transaction ID for this field (null for create or first write)",
+                      "maxLength": 64,
+                      "required": true,
+                      "type": [
+                        "string",
+                        "null",
+                      ],
+                    },
+                    "sourceId": {
+                      "description": "Tab/instance identifier",
+                      "maxLength": 64,
+                      "required": true,
+                      "type": "string",
+                    },
+                    "transactionId": {
+                      "description": "Client-generated unique ID (HLC format: timestamp.logical.nodeId)",
+                      "maxLength": 64,
+                      "required": true,
+                      "type": "string",
+                    },
+                  },
+                  "ref": "#/components/schemas/TxRequest",
+                  "required": true,
+                  "type": "object",
+                },
               },
-              "maxItems": 50,
-              "minItems": 1,
               "required": true,
-              "type": "array",
+              "type": "object",
             },
             "path": {
               "properties": {
@@ -4306,126 +4800,385 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "responses": [
             {
               "contentType": "application/json",
-              "description": "Attachment",
+              "description": "Attachments already created (idempotent)",
               "schema": {
                 "contentType": "application/json",
-                "itemType": "object",
-                "items": {
-                  "properties": {
-                    "bucketName": {
-                      "required": true,
-                      "type": "string",
+                "properties": {
+                  "data": {
+                    "itemType": "object",
+                    "items": {
+                      "properties": {
+                        "bucketName": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "can": {
+                          "properties": {
+                            "create": {
+                              "required": true,
+                              "type": "boolean",
+                            },
+                            "delete": {
+                              "required": true,
+                              "type": "boolean",
+                            },
+                            "read": {
+                              "required": true,
+                              "type": "boolean",
+                            },
+                            "search": {
+                              "required": true,
+                              "type": "boolean",
+                            },
+                            "update": {
+                              "required": true,
+                              "type": "boolean",
+                            },
+                          },
+                          "required": false,
+                          "type": "object",
+                        },
+                        "contentType": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "convertedContentType": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "convertedKey": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "createdAt": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "createdBy": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "description": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "entityType": {
+                          "enum": [
+                            "attachment",
+                          ],
+                          "required": true,
+                          "type": "string",
+                        },
+                        "filename": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "groupId": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "id": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "keywords": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "modifiedAt": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "modifiedBy": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "name": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "organizationId": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "originalKey": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "public": {
+                          "required": true,
+                          "type": "boolean",
+                        },
+                        "size": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "thumbnailKey": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "tx": {
+                          "anyOf": [
+                            {
+                              "required": false,
+                              "type": "string",
+                            },
+                            {
+                              "required": false,
+                              "type": "number",
+                            },
+                            {
+                              "required": false,
+                              "type": "boolean",
+                            },
+                            {
+                              "required": false,
+                              "type": "null",
+                            },
+                            {
+                              "required": false,
+                              "type": "object",
+                            },
+                            {
+                              "itemType": "object",
+                              "required": false,
+                              "type": "array",
+                            },
+                          ],
+                          "required": true,
+                        },
+                      },
+                      "ref": "#/components/schemas/Attachment",
+                      "type": "object",
                     },
-                    "contentType": {
-                      "required": true,
-                      "type": "string",
-                    },
-                    "convertedContentType": {
-                      "required": true,
-                      "type": [
-                        "string",
-                        "null",
-                      ],
-                    },
-                    "convertedKey": {
-                      "required": true,
-                      "type": [
-                        "string",
-                        "null",
-                      ],
-                    },
-                    "createdAt": {
-                      "required": true,
-                      "type": "string",
-                    },
-                    "createdBy": {
-                      "required": true,
-                      "type": [
-                        "string",
-                        "null",
-                      ],
-                    },
-                    "description": {
-                      "required": true,
-                      "type": [
-                        "string",
-                        "null",
-                      ],
-                    },
-                    "entityType": {
-                      "enum": [
-                        "attachment",
-                      ],
-                      "required": true,
-                      "type": "string",
-                    },
-                    "filename": {
-                      "required": true,
-                      "type": "string",
-                    },
-                    "groupId": {
-                      "required": true,
-                      "type": [
-                        "string",
-                        "null",
-                      ],
-                    },
-                    "id": {
-                      "required": true,
-                      "type": "string",
-                    },
-                    "keywords": {
-                      "required": true,
-                      "type": "string",
-                    },
-                    "modifiedAt": {
-                      "required": true,
-                      "type": [
-                        "string",
-                        "null",
-                      ],
-                    },
-                    "modifiedBy": {
-                      "required": true,
-                      "type": [
-                        "string",
-                        "null",
-                      ],
-                    },
-                    "name": {
-                      "required": true,
-                      "type": "string",
-                    },
-                    "organizationId": {
-                      "required": true,
-                      "type": "string",
-                    },
-                    "originalKey": {
-                      "required": true,
-                      "type": "string",
-                    },
-                    "public": {
-                      "required": true,
-                      "type": "boolean",
-                    },
-                    "size": {
-                      "required": true,
-                      "type": "string",
-                    },
-                    "thumbnailKey": {
-                      "required": true,
-                      "type": [
-                        "string",
-                        "null",
-                      ],
-                    },
+                    "ref": "#/components/schemas/Attachment",
+                    "required": true,
+                    "type": "array",
                   },
-                  "ref": "#/components/schemas/Attachment",
-                  "required": true,
-                  "type": "object",
+                  "rejectedItems": {
+                    "description": "Identifiers of items that could not be processed",
+                    "itemType": "string",
+                    "required": true,
+                    "type": "array",
+                  },
                 },
-                "ref": "#/components/schemas/Attachment",
-                "type": "array",
+                "type": "object",
+              },
+              "status": 200,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Attachments created",
+              "schema": {
+                "contentType": "application/json",
+                "properties": {
+                  "data": {
+                    "itemType": "object",
+                    "items": {
+                      "properties": {
+                        "bucketName": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "can": {
+                          "properties": {
+                            "create": {
+                              "required": true,
+                              "type": "boolean",
+                            },
+                            "delete": {
+                              "required": true,
+                              "type": "boolean",
+                            },
+                            "read": {
+                              "required": true,
+                              "type": "boolean",
+                            },
+                            "search": {
+                              "required": true,
+                              "type": "boolean",
+                            },
+                            "update": {
+                              "required": true,
+                              "type": "boolean",
+                            },
+                          },
+                          "required": false,
+                          "type": "object",
+                        },
+                        "contentType": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "convertedContentType": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "convertedKey": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "createdAt": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "createdBy": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "description": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "entityType": {
+                          "enum": [
+                            "attachment",
+                          ],
+                          "required": true,
+                          "type": "string",
+                        },
+                        "filename": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "groupId": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "id": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "keywords": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "modifiedAt": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "modifiedBy": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "name": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "organizationId": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "originalKey": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "public": {
+                          "required": true,
+                          "type": "boolean",
+                        },
+                        "size": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "thumbnailKey": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "tx": {
+                          "anyOf": [
+                            {
+                              "required": false,
+                              "type": "string",
+                            },
+                            {
+                              "required": false,
+                              "type": "number",
+                            },
+                            {
+                              "required": false,
+                              "type": "boolean",
+                            },
+                            {
+                              "required": false,
+                              "type": "null",
+                            },
+                            {
+                              "required": false,
+                              "type": "object",
+                            },
+                            {
+                              "itemType": "object",
+                              "required": false,
+                              "type": "array",
+                            },
+                          ],
+                          "required": true,
+                        },
+                      },
+                      "ref": "#/components/schemas/Attachment",
+                      "type": "object",
+                    },
+                    "ref": "#/components/schemas/Attachment",
+                    "required": true,
+                    "type": "array",
+                  },
+                  "rejectedItems": {
+                    "description": "Identifiers of items that could not be processed",
+                    "itemType": "string",
+                    "required": true,
+                    "type": "array",
+                  },
+                },
+                "type": "object",
               },
               "status": 201,
             },
@@ -4564,13 +5317,56 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "body": {
               "contentType": "application/json",
               "properties": {
-                "name": {
-                  "required": false,
-                  "type": "string",
+                "data": {
+                  "properties": {
+                    "name": {
+                      "required": false,
+                      "type": "string",
+                    },
+                    "originalKey": {
+                      "required": false,
+                      "type": "string",
+                    },
+                  },
+                  "required": true,
+                  "type": "object",
                 },
-                "originalKey": {
-                  "required": false,
-                  "type": "string",
+                "tx": {
+                  "properties": {
+                    "changedField": {
+                      "description": "Which field this mutation changes (null for create/delete)",
+                      "maxLength": 64,
+                      "required": true,
+                      "type": [
+                        "string",
+                        "null",
+                      ],
+                    },
+                    "expectedTransactionId": {
+                      "description": "Last known transaction ID for this field (null for create or first write)",
+                      "maxLength": 64,
+                      "required": true,
+                      "type": [
+                        "string",
+                        "null",
+                      ],
+                    },
+                    "sourceId": {
+                      "description": "Tab/instance identifier",
+                      "maxLength": 64,
+                      "required": true,
+                      "type": "string",
+                    },
+                    "transactionId": {
+                      "description": "Client-generated unique ID (HLC format: timestamp.logical.nodeId)",
+                      "maxLength": 64,
+                      "required": true,
+                      "type": "string",
+                    },
+                  },
+                  "ref": "#/components/schemas/TxRequest",
+                  "required": true,
+                  "type": "object",
                 },
               },
               "required": true,
@@ -4615,6 +5411,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 "public": false,
                 "size": "6046908",
                 "thumbnailKey": null,
+                "tx": null,
               },
               "name": "Attachment",
               "ref": "#/components/schemas/Attachment",
@@ -4624,6 +5421,32 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "bucketName": {
                     "required": true,
                     "type": "string",
+                  },
+                  "can": {
+                    "properties": {
+                      "create": {
+                        "required": true,
+                        "type": "boolean",
+                      },
+                      "delete": {
+                        "required": true,
+                        "type": "boolean",
+                      },
+                      "read": {
+                        "required": true,
+                        "type": "boolean",
+                      },
+                      "search": {
+                        "required": true,
+                        "type": "boolean",
+                      },
+                      "update": {
+                        "required": true,
+                        "type": "boolean",
+                      },
+                    },
+                    "required": false,
+                    "type": "object",
                   },
                   "contentType": {
                     "required": true,
@@ -4727,6 +5550,36 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                       "string",
                       "null",
                     ],
+                  },
+                  "tx": {
+                    "anyOf": [
+                      {
+                        "required": false,
+                        "type": "string",
+                      },
+                      {
+                        "required": false,
+                        "type": "number",
+                      },
+                      {
+                        "required": false,
+                        "type": "boolean",
+                      },
+                      {
+                        "required": false,
+                        "type": "null",
+                      },
+                      {
+                        "required": false,
+                        "type": "object",
+                      },
+                      {
+                        "itemType": "object",
+                        "required": false,
+                        "type": "array",
+                      },
+                    ],
+                    "required": true,
                   },
                 },
                 "ref": "#/components/schemas/Attachment",
@@ -8162,6 +9015,89 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             },
           ],
         },
+        {
+          "operationId": "getUserStream",
+          "request": {
+            "query": {
+              "properties": {
+                "live": {
+                  "description": "Connection mode: 'sse' for streaming, 'poll' for one-time fetch",
+                  "enum": [
+                    "sse",
+                    "poll",
+                  ],
+                  "required": false,
+                  "type": "string",
+                },
+                "offset": {
+                  "description": "Starting offset: 'now' for live-only, or activity ID for catch-up",
+                  "required": false,
+                  "type": "string",
+                },
+              },
+            },
+          },
+          "responses": [
+            {
+              "contentType": "application/json",
+              "description": "SSE stream or catch-up response",
+              "schema": {
+                "contentType": "application/json",
+                "properties": {
+                  "activities": {
+                    "itemType": "object",
+                    "required": true,
+                    "type": "array",
+                  },
+                  "cursor": {
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                },
+                "type": "object",
+              },
+              "status": 200,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Bad request: problem processing request.",
+              "name": "BadRequestError",
+              "ref": "#/components/responses/BadRequestError",
+              "status": 400,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Unauthorized: authentication required.",
+              "name": "UnauthorizedError",
+              "ref": "#/components/responses/UnauthorizedError",
+              "status": 401,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Forbidden: insufficient permissions.",
+              "name": "ForbiddenError",
+              "ref": "#/components/responses/ForbiddenError",
+              "status": 403,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Not found: resource does not exist.",
+              "name": "NotFoundError",
+              "ref": "#/components/responses/NotFoundError",
+              "status": 404,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Rate limit: too many requests.",
+              "name": "TooManyRequestsError",
+              "ref": "#/components/responses/TooManyRequestsError",
+              "status": 429,
+            },
+          ],
+        },
       ],
       "memberships": [
         {
@@ -9220,6 +10156,178 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           ],
         },
         {
+          "operationId": "getRuntimeMetrics",
+          "responses": [
+            {
+              "contentType": "application/json",
+              "description": "Runtime metrics",
+              "schema": {
+                "contentType": "application/json",
+                "properties": {
+                  "otel": {
+                    "description": "OpenTelemetry metrics from RuntimeNodeInstrumentation",
+                    "itemType": "object",
+                    "items": {
+                      "properties": {
+                        "dataPoints": {
+                          "itemType": "object",
+                          "items": {
+                            "properties": {
+                              "attributes": {
+                                "required": false,
+                                "type": "object",
+                              },
+                              "endTime": {
+                                "required": false,
+                                "type": "string",
+                              },
+                              "startTime": {
+                                "required": false,
+                                "type": "string",
+                              },
+                              "value": {
+                                "anyOf": [
+                                  {
+                                    "required": false,
+                                    "type": "number",
+                                  },
+                                  {
+                                    "required": false,
+                                    "type": "object",
+                                  },
+                                ],
+                                "required": true,
+                              },
+                            },
+                            "type": "object",
+                          },
+                          "required": true,
+                          "type": "array",
+                        },
+                        "description": {
+                          "required": false,
+                          "type": "string",
+                        },
+                        "name": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "type": {
+                          "enum": [
+                            "gauge",
+                            "counter",
+                            "histogram",
+                            "sum",
+                          ],
+                          "required": true,
+                          "type": "string",
+                        },
+                        "unit": {
+                          "required": false,
+                          "type": "string",
+                        },
+                      },
+                      "type": "object",
+                    },
+                    "required": true,
+                    "type": "array",
+                  },
+                  "process": {
+                    "properties": {
+                      "cpu": {
+                        "properties": {
+                          "system": {
+                            "description": "CPU time spent in system mode (microseconds)",
+                            "required": true,
+                            "type": "number",
+                          },
+                          "user": {
+                            "description": "CPU time spent in user mode (microseconds)",
+                            "required": true,
+                            "type": "number",
+                          },
+                        },
+                        "required": true,
+                        "type": "object",
+                      },
+                      "memory": {
+                        "properties": {
+                          "external": {
+                            "description": "External memory in bytes",
+                            "required": true,
+                            "type": "number",
+                          },
+                          "heapTotal": {
+                            "description": "Total heap memory in bytes",
+                            "required": true,
+                            "type": "number",
+                          },
+                          "heapUsed": {
+                            "description": "Heap memory used in bytes",
+                            "required": true,
+                            "type": "number",
+                          },
+                          "rss": {
+                            "description": "Resident set size in bytes",
+                            "required": true,
+                            "type": "number",
+                          },
+                        },
+                        "required": true,
+                        "type": "object",
+                      },
+                      "uptime": {
+                        "description": "Process uptime in seconds",
+                        "required": true,
+                        "type": "number",
+                      },
+                    },
+                    "required": true,
+                    "type": "object",
+                  },
+                },
+                "type": "object",
+              },
+              "status": 200,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Bad request: problem processing request.",
+              "name": "BadRequestError",
+              "ref": "#/components/responses/BadRequestError",
+              "status": 400,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Unauthorized: authentication required.",
+              "name": "UnauthorizedError",
+              "ref": "#/components/responses/UnauthorizedError",
+              "status": 401,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Forbidden: insufficient permissions.",
+              "name": "ForbiddenError",
+              "ref": "#/components/responses/ForbiddenError",
+              "status": 403,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Not found: resource does not exist.",
+              "name": "NotFoundError",
+              "ref": "#/components/responses/NotFoundError",
+              "status": 404,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Rate limit: too many requests.",
+              "name": "TooManyRequestsError",
+              "ref": "#/components/responses/TooManyRequestsError",
+              "status": 429,
+            },
+          ],
+        },
+        {
           "operationId": "getPublicCounts",
           "responses": [
             {
@@ -9397,6 +10505,32 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                       "null",
                     ],
                   },
+                  "can": {
+                    "properties": {
+                      "create": {
+                        "required": true,
+                        "type": "boolean",
+                      },
+                      "delete": {
+                        "required": true,
+                        "type": "boolean",
+                      },
+                      "read": {
+                        "required": true,
+                        "type": "boolean",
+                      },
+                      "search": {
+                        "required": true,
+                        "type": "boolean",
+                      },
+                      "update": {
+                        "required": true,
+                        "type": "boolean",
+                      },
+                    },
+                    "required": false,
+                    "type": "object",
+                  },
                   "chatSupport": {
                     "required": true,
                     "type": "boolean",
@@ -9454,7 +10588,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                         "type": "object",
                       },
                     },
-                    "required": true,
+                    "required": false,
                     "type": "object",
                   },
                   "createdAt": {
@@ -9683,6 +10817,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "required": false,
                   "type": "string",
                 },
+                "include": {
+                  "required": false,
+                  "type": "string",
+                },
                 "limit": {
                   "required": false,
                   "type": "string",
@@ -9759,6 +10897,32 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                             "null",
                           ],
                         },
+                        "can": {
+                          "properties": {
+                            "create": {
+                              "required": true,
+                              "type": "boolean",
+                            },
+                            "delete": {
+                              "required": true,
+                              "type": "boolean",
+                            },
+                            "read": {
+                              "required": true,
+                              "type": "boolean",
+                            },
+                            "search": {
+                              "required": true,
+                              "type": "boolean",
+                            },
+                            "update": {
+                              "required": true,
+                              "type": "boolean",
+                            },
+                          },
+                          "required": false,
+                          "type": "object",
+                        },
                         "chatSupport": {
                           "required": true,
                           "type": "boolean",
@@ -9816,7 +10980,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                               "type": "object",
                             },
                           },
-                          "required": true,
+                          "required": false,
                           "type": "object",
                         },
                         "createdAt": {
@@ -10236,6 +11400,32 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                       "null",
                     ],
                   },
+                  "can": {
+                    "properties": {
+                      "create": {
+                        "required": true,
+                        "type": "boolean",
+                      },
+                      "delete": {
+                        "required": true,
+                        "type": "boolean",
+                      },
+                      "read": {
+                        "required": true,
+                        "type": "boolean",
+                      },
+                      "search": {
+                        "required": true,
+                        "type": "boolean",
+                      },
+                      "update": {
+                        "required": true,
+                        "type": "boolean",
+                      },
+                    },
+                    "required": false,
+                    "type": "object",
+                  },
                   "chatSupport": {
                     "required": true,
                     "type": "boolean",
@@ -10293,7 +11483,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                         "type": "object",
                       },
                     },
-                    "required": true,
+                    "required": false,
                     "type": "object",
                   },
                   "createdAt": {
@@ -10753,6 +11943,32 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                       "null",
                     ],
                   },
+                  "can": {
+                    "properties": {
+                      "create": {
+                        "required": true,
+                        "type": "boolean",
+                      },
+                      "delete": {
+                        "required": true,
+                        "type": "boolean",
+                      },
+                      "read": {
+                        "required": true,
+                        "type": "boolean",
+                      },
+                      "search": {
+                        "required": true,
+                        "type": "boolean",
+                      },
+                      "update": {
+                        "required": true,
+                        "type": "boolean",
+                      },
+                    },
+                    "required": false,
+                    "type": "object",
+                  },
                   "chatSupport": {
                     "required": true,
                     "type": "boolean",
@@ -10810,7 +12026,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                         "type": "object",
                       },
                     },
-                    "required": true,
+                    "required": false,
                     "type": "object",
                   },
                   "createdAt": {
@@ -11039,31 +12255,20 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
       ],
       "pages": [
         {
-          "operationId": "syncPages",
+          "operationId": "pagesPublicStream",
           "request": {
             "query": {
               "properties": {
-                "cursor": {
-                  "required": false,
-                  "type": "string",
-                },
-                "handle": {
-                  "required": false,
-                  "type": "string",
-                },
                 "live": {
+                  "description": "Set to "sse" for live updates (SSE stream)",
+                  "enum": [
+                    "sse",
+                  ],
                   "required": false,
                   "type": "string",
                 },
                 "offset": {
-                  "required": true,
-                  "type": "string",
-                },
-                "table": {
-                  "required": true,
-                  "type": "string",
-                },
-                "where": {
+                  "description": "Cursor offset: "-1" for all history, "now" for live-only, or activity ID",
                   "required": false,
                   "type": "string",
                 },
@@ -11072,7 +12277,104 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           },
           "responses": [
             {
-              "description": "Success",
+              "contentType": "application/json",
+              "description": "Catch-up activities or SSE stream started",
+              "schema": {
+                "contentType": "application/json",
+                "properties": {
+                  "activities": {
+                    "itemType": "object",
+                    "items": {
+                      "properties": {
+                        "action": {
+                          "enum": [
+                            "create",
+                            "update",
+                            "delete",
+                          ],
+                          "required": true,
+                          "type": "string",
+                        },
+                        "activityId": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "changedKeys": {
+                          "itemType": "string",
+                          "required": true,
+                          "type": [
+                            "array",
+                            "null",
+                          ],
+                        },
+                        "createdAt": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "data": {
+                          "required": false,
+                          "type": "object",
+                        },
+                        "entityId": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "entityType": {
+                          "enum": [
+                            "attachment",
+                            "page",
+                          ],
+                          "required": true,
+                          "type": "string",
+                        },
+                        "tx": {
+                          "properties": {
+                            "changedField": {
+                              "required": true,
+                              "type": [
+                                "string",
+                                "null",
+                              ],
+                            },
+                            "sourceId": {
+                              "required": true,
+                              "type": [
+                                "string",
+                                "null",
+                              ],
+                            },
+                            "transactionId": {
+                              "required": true,
+                              "type": [
+                                "string",
+                                "null",
+                              ],
+                            },
+                          },
+                          "ref": "#/components/schemas/TxStreamMessage",
+                          "required": true,
+                          "type": [
+                            "object",
+                            "null",
+                          ],
+                        },
+                      },
+                      "type": "object",
+                    },
+                    "required": true,
+                    "type": "array",
+                  },
+                  "cursor": {
+                    "description": "Last activity ID (use as offset for next request)",
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                },
+                "type": "object",
+              },
               "status": 200,
             },
             {
@@ -11113,14 +12415,63 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           ],
         },
         {
-          "operationId": "createPage",
+          "operationId": "createPages",
           "request": {
             "body": {
               "contentType": "application/json",
               "properties": {
-                "name": {
-                  "required": false,
-                  "type": "string",
+                "data": {
+                  "itemType": "object",
+                  "items": {
+                    "properties": {
+                      "name": {
+                        "required": false,
+                        "type": "string",
+                      },
+                    },
+                    "type": "object",
+                  },
+                  "maxItems": 50,
+                  "minItems": 1,
+                  "required": true,
+                  "type": "array",
+                },
+                "tx": {
+                  "properties": {
+                    "changedField": {
+                      "description": "Which field this mutation changes (null for create/delete)",
+                      "maxLength": 64,
+                      "required": true,
+                      "type": [
+                        "string",
+                        "null",
+                      ],
+                    },
+                    "expectedTransactionId": {
+                      "description": "Last known transaction ID for this field (null for create or first write)",
+                      "maxLength": 64,
+                      "required": true,
+                      "type": [
+                        "string",
+                        "null",
+                      ],
+                    },
+                    "sourceId": {
+                      "description": "Tab/instance identifier",
+                      "maxLength": 64,
+                      "required": true,
+                      "type": "string",
+                    },
+                    "transactionId": {
+                      "description": "Client-generated unique ID (HLC format: timestamp.logical.nodeId)",
+                      "maxLength": 64,
+                      "required": true,
+                      "type": "string",
+                    },
+                  },
+                  "ref": "#/components/schemas/TxRequest",
+                  "required": true,
+                  "type": "object",
                 },
               },
               "required": true,
@@ -11130,101 +12481,264 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "responses": [
             {
               "contentType": "application/json",
-              "description": "Page",
-              "example": {
-                "createdAt": "2024-08-06T10:28:33.226Z",
-                "createdBy": "0f0ak5vkrrl687pmkwpa1vju",
-                "description": "[{"content":[{"type":"text","text":"Adhaero torrens adfectus incidunt voluptates cornu tempus eaque universe volubilis. Cubo sponte utpote crux pecco. Cunctatio dolorum vallum ut adimpleo summa valde strenuus attonbitus eligendi.\\nVel cado vitae cibus dolores decet surgo. Accusamus praesentium cibus subito. Vox nemo ipsa video tremo molestias charisma clam ipsa suscipit.","styles":{}}],"children":[]}]",
-                "displayOrder": 32.69,
-                "entityType": "page",
-                "id": "co96vrmic3wbowmxzbqa1e9f",
-                "keywords": "solvo atrox tendo",
-                "modifiedAt": "2024-08-06T10:28:33.226Z",
-                "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju",
-                "name": "Infit pauci optio demo.",
-                "parentId": null,
-                "status": "unpublished",
-              },
-              "name": "Page",
-              "ref": "#/components/schemas/Page",
+              "description": "Pages already created (idempotent)",
               "schema": {
                 "contentType": "application/json",
                 "properties": {
-                  "createdAt": {
+                  "data": {
+                    "itemType": "object",
+                    "items": {
+                      "properties": {
+                        "createdAt": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "createdBy": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "description": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "displayOrder": {
+                          "maximum": 140737488355327,
+                          "minimum": -140737488355328,
+                          "required": true,
+                          "type": "number",
+                        },
+                        "entityType": {
+                          "enum": [
+                            "page",
+                          ],
+                          "required": true,
+                          "type": "string",
+                        },
+                        "id": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "keywords": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "modifiedAt": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "modifiedBy": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "name": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "parentId": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "status": {
+                          "enum": [
+                            "unpublished",
+                            "published",
+                            "archived",
+                          ],
+                          "required": true,
+                          "type": "string",
+                        },
+                        "tx": {
+                          "anyOf": [
+                            {
+                              "required": false,
+                              "type": "string",
+                            },
+                            {
+                              "required": false,
+                              "type": "number",
+                            },
+                            {
+                              "required": false,
+                              "type": "boolean",
+                            },
+                            {
+                              "required": false,
+                              "type": "null",
+                            },
+                            {
+                              "required": false,
+                              "type": "object",
+                            },
+                            {
+                              "itemType": "object",
+                              "required": false,
+                              "type": "array",
+                            },
+                          ],
+                          "required": true,
+                        },
+                      },
+                      "ref": "#/components/schemas/Page",
+                      "type": "object",
+                    },
+                    "ref": "#/components/schemas/Page",
                     "required": true,
-                    "type": "string",
+                    "type": "array",
                   },
-                  "createdBy": {
+                  "rejectedItems": {
+                    "description": "Identifiers of items that could not be processed",
+                    "itemType": "string",
                     "required": true,
-                    "type": [
-                      "string",
-                      "null",
-                    ],
-                  },
-                  "description": {
-                    "required": true,
-                    "type": [
-                      "string",
-                      "null",
-                    ],
-                  },
-                  "displayOrder": {
-                    "maximum": 140737488355327,
-                    "minimum": -140737488355328,
-                    "required": true,
-                    "type": "number",
-                  },
-                  "entityType": {
-                    "enum": [
-                      "page",
-                    ],
-                    "required": true,
-                    "type": "string",
-                  },
-                  "id": {
-                    "required": true,
-                    "type": "string",
-                  },
-                  "keywords": {
-                    "required": true,
-                    "type": "string",
-                  },
-                  "modifiedAt": {
-                    "required": true,
-                    "type": [
-                      "string",
-                      "null",
-                    ],
-                  },
-                  "modifiedBy": {
-                    "required": true,
-                    "type": [
-                      "string",
-                      "null",
-                    ],
-                  },
-                  "name": {
-                    "required": true,
-                    "type": "string",
-                  },
-                  "parentId": {
-                    "required": true,
-                    "type": [
-                      "string",
-                      "null",
-                    ],
-                  },
-                  "status": {
-                    "enum": [
-                      "unpublished",
-                      "published",
-                      "archived",
-                    ],
-                    "required": true,
-                    "type": "string",
+                    "type": "array",
                   },
                 },
-                "ref": "#/components/schemas/Page",
+                "type": "object",
+              },
+              "status": 200,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Pages created",
+              "schema": {
+                "contentType": "application/json",
+                "properties": {
+                  "data": {
+                    "itemType": "object",
+                    "items": {
+                      "properties": {
+                        "createdAt": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "createdBy": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "description": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "displayOrder": {
+                          "maximum": 140737488355327,
+                          "minimum": -140737488355328,
+                          "required": true,
+                          "type": "number",
+                        },
+                        "entityType": {
+                          "enum": [
+                            "page",
+                          ],
+                          "required": true,
+                          "type": "string",
+                        },
+                        "id": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "keywords": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "modifiedAt": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "modifiedBy": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "name": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "parentId": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "status": {
+                          "enum": [
+                            "unpublished",
+                            "published",
+                            "archived",
+                          ],
+                          "required": true,
+                          "type": "string",
+                        },
+                        "tx": {
+                          "anyOf": [
+                            {
+                              "required": false,
+                              "type": "string",
+                            },
+                            {
+                              "required": false,
+                              "type": "number",
+                            },
+                            {
+                              "required": false,
+                              "type": "boolean",
+                            },
+                            {
+                              "required": false,
+                              "type": "null",
+                            },
+                            {
+                              "required": false,
+                              "type": "object",
+                            },
+                            {
+                              "itemType": "object",
+                              "required": false,
+                              "type": "array",
+                            },
+                          ],
+                          "required": true,
+                        },
+                      },
+                      "ref": "#/components/schemas/Page",
+                      "type": "object",
+                    },
+                    "ref": "#/components/schemas/Page",
+                    "required": true,
+                    "type": "array",
+                  },
+                  "rejectedItems": {
+                    "description": "Identifiers of items that could not be processed",
+                    "itemType": "string",
+                    "required": true,
+                    "type": "array",
+                  },
+                },
                 "type": "object",
               },
               "status": 201,
@@ -11387,6 +12901,36 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "required": true,
                           "type": "string",
                         },
+                        "tx": {
+                          "anyOf": [
+                            {
+                              "required": false,
+                              "type": "string",
+                            },
+                            {
+                              "required": false,
+                              "type": "number",
+                            },
+                            {
+                              "required": false,
+                              "type": "boolean",
+                            },
+                            {
+                              "required": false,
+                              "type": "null",
+                            },
+                            {
+                              "required": false,
+                              "type": "object",
+                            },
+                            {
+                              "itemType": "object",
+                              "required": false,
+                              "type": "array",
+                            },
+                          ],
+                          "required": true,
+                        },
                       },
                       "ref": "#/components/schemas/Page",
                       "type": "object",
@@ -11530,6 +13074,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 "name": "Infit pauci optio demo.",
                 "parentId": null,
                 "status": "unpublished",
+                "tx": null,
               },
               "name": "Page",
               "ref": "#/components/schemas/Page",
@@ -11608,6 +13153,36 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     ],
                     "required": true,
                     "type": "string",
+                  },
+                  "tx": {
+                    "anyOf": [
+                      {
+                        "required": false,
+                        "type": "string",
+                      },
+                      {
+                        "required": false,
+                        "type": "number",
+                      },
+                      {
+                        "required": false,
+                        "type": "boolean",
+                      },
+                      {
+                        "required": false,
+                        "type": "null",
+                      },
+                      {
+                        "required": false,
+                        "type": "object",
+                      },
+                      {
+                        "itemType": "object",
+                        "required": false,
+                        "type": "array",
+                      },
+                    ],
+                    "required": true,
                   },
                 },
                 "ref": "#/components/schemas/Page",
@@ -11658,42 +13233,85 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "body": {
               "contentType": "application/json",
               "properties": {
-                "description": {
-                  "required": false,
-                  "type": [
-                    "string",
-                    "null",
-                  ],
+                "data": {
+                  "properties": {
+                    "description": {
+                      "required": false,
+                      "type": [
+                        "string",
+                        "null",
+                      ],
+                    },
+                    "displayOrder": {
+                      "maximum": 140737488355327,
+                      "minimum": -140737488355328,
+                      "required": false,
+                      "type": "number",
+                    },
+                    "keywords": {
+                      "required": false,
+                      "type": "string",
+                    },
+                    "name": {
+                      "required": false,
+                      "type": "string",
+                    },
+                    "parentId": {
+                      "required": false,
+                      "type": [
+                        "string",
+                        "null",
+                      ],
+                    },
+                    "status": {
+                      "enum": [
+                        "unpublished",
+                        "published",
+                        "archived",
+                      ],
+                      "required": false,
+                      "type": "string",
+                    },
+                  },
+                  "required": true,
+                  "type": "object",
                 },
-                "displayOrder": {
-                  "maximum": 140737488355327,
-                  "minimum": -140737488355328,
-                  "required": false,
-                  "type": "number",
-                },
-                "keywords": {
-                  "required": false,
-                  "type": "string",
-                },
-                "name": {
-                  "required": false,
-                  "type": "string",
-                },
-                "parentId": {
-                  "required": false,
-                  "type": [
-                    "string",
-                    "null",
-                  ],
-                },
-                "status": {
-                  "enum": [
-                    "unpublished",
-                    "published",
-                    "archived",
-                  ],
-                  "required": false,
-                  "type": "string",
+                "tx": {
+                  "properties": {
+                    "changedField": {
+                      "description": "Which field this mutation changes (null for create/delete)",
+                      "maxLength": 64,
+                      "required": true,
+                      "type": [
+                        "string",
+                        "null",
+                      ],
+                    },
+                    "expectedTransactionId": {
+                      "description": "Last known transaction ID for this field (null for create or first write)",
+                      "maxLength": 64,
+                      "required": true,
+                      "type": [
+                        "string",
+                        "null",
+                      ],
+                    },
+                    "sourceId": {
+                      "description": "Tab/instance identifier",
+                      "maxLength": 64,
+                      "required": true,
+                      "type": "string",
+                    },
+                    "transactionId": {
+                      "description": "Client-generated unique ID (HLC format: timestamp.logical.nodeId)",
+                      "maxLength": 64,
+                      "required": true,
+                      "type": "string",
+                    },
+                  },
+                  "ref": "#/components/schemas/TxRequest",
+                  "required": true,
+                  "type": "object",
                 },
               },
               "required": true,
@@ -11725,6 +13343,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 "name": "Infit pauci optio demo.",
                 "parentId": null,
                 "status": "unpublished",
+                "tx": null,
               },
               "name": "Page",
               "ref": "#/components/schemas/Page",
@@ -11803,6 +13422,36 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     ],
                     "required": true,
                     "type": "string",
+                  },
+                  "tx": {
+                    "anyOf": [
+                      {
+                        "required": false,
+                        "type": "string",
+                      },
+                      {
+                        "required": false,
+                        "type": "number",
+                      },
+                      {
+                        "required": false,
+                        "type": "boolean",
+                      },
+                      {
+                        "required": false,
+                        "type": "null",
+                      },
+                      {
+                        "required": false,
+                        "type": "object",
+                      },
+                      {
+                        "itemType": "object",
+                        "required": false,
+                        "type": "array",
+                      },
+                    ],
+                    "required": true,
                   },
                 },
                 "ref": "#/components/schemas/Page",
@@ -13351,7 +15000,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
     },
     "tags": [
       {
-        "count": 10,
+        "count": 11,
         "description": "Endpoints related to the *current user*, meaning the user associated with the active session making
         the request. These routes are distinct from general \`users\` endpoints: while \`users\` may operate on
         any user in the system, \`me\` endpoints are scoped exclusively to the *current user* and follow a
@@ -13421,7 +15070,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "name": "pages",
       },
       {
-        "count": 2,
+        "count": 3,
         "description": "Endpoints for retrieving system level statistics and basic observability data. Includes internal
         metrics as well as simple, high level counts for entities such as \`users\` and \`organizations\`.",
         "name": "metrics",

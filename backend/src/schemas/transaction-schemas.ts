@@ -56,17 +56,3 @@ export const createTxMutationSchema = <T extends z.ZodTypeAny>(dataSchema: T) =>
     data: dataSchema,
     tx: txRequestSchema,
   });
-
-/**
- * Factory to create a tx-wrapped response schema.
- * Use for product entity mutation responses.
- *
- * @example
- * const pageResponseSchema = createTxResponseSchema(pageSchema);
- * // Result: { data: PageSchema, tx: TxResponseSchema }
- */
-export const createTxResponseSchema = <T extends z.ZodTypeAny>(dataSchema: T) =>
-  z.object({
-    data: dataSchema,
-    tx: txResponseSchema,
-  });

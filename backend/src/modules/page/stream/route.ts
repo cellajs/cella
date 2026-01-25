@@ -1,12 +1,12 @@
 import { createStreamDispatcher } from '#/sync/stream';
-import { shouldReceivePublicPageEvent } from './should-receive';
-import { type PublicPageSubscriber, publicPageIndexKey } from './types';
+import { canReceivePublicPageEvent } from './can-receive';
+import { type PublicPageSubscriber, publicPageChannel } from './types';
 
 /**
  * Dispatch page events to public page subscribers.
  */
 export const dispatchToPublicPageSubscribers = createStreamDispatcher<PublicPageSubscriber>({
-  getIndexKey: (event) => (event.entityType === 'page' ? publicPageIndexKey : null),
-  shouldReceive: shouldReceivePublicPageEvent,
+  getChannel: (event) => (event.entityType === 'page' ? publicPageChannel : null),
+  shouldReceive: canReceivePublicPageEvent,
   logContext: 'public page',
 });

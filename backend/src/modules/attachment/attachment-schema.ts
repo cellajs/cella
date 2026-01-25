@@ -1,7 +1,6 @@
-import { z } from '@hono/zod-openapi';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { attachmentsTable } from '#/db/schema/attachments';
-import { createTxMutationSchema, createTxResponseSchema, entityCanSchema, paginationQuerySchema } from '#/schemas';
+import { batchResponseSchema, createTxMutationSchema, entityCanSchema, paginationQuerySchema } from '#/schemas';
 import { mockAttachmentResponse } from '../../../mocks/mock-attachment';
 
 const attachmentInsertSchema = createInsertSchema(attachmentsTable);
@@ -37,11 +36,12 @@ export const attachmentUpdateBodySchema = attachmentInsertSchema
   })
   .partial();
 
-// Tx-wrapped schemas for product entity mutations (batch create uses array)
+// Tx-wrapped schemas for product entity mutations (request only)
 export const attachmentCreateTxBodySchema = createTxMutationSchema(attachmentCreateManySchema);
 export const attachmentUpdateTxBodySchema = createTxMutationSchema(attachmentUpdateBodySchema);
-export const attachmentTxResponseSchema = createTxResponseSchema(z.array(attachmentSchema));
-export const attachmentUpdateTxResponseSchema = createTxResponseSchema(attachmentSchema);
+
+// Response schemas: batch operations use { data, rejectedItemIds }, single returns entity directly
+export const attachmentCreateResponseSchema = batchResponseSchema(attachmentSchema);
 
 const attachmentSortKeys = attachmentSelectSchema.keyof().extract(['name', 'createdAt', 'contentType']);
 

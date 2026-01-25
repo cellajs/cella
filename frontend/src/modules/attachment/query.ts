@@ -2,8 +2,8 @@ import { infiniteQueryOptions, type QueryClient, useMutation, useQueryClient } f
 import { appConfig } from 'config';
 import {
   type Attachment,
-  type CreateAttachmentData,
-  createAttachment,
+  type CreateAttachmentsData,
+  createAttachments,
   deleteAttachments,
   type GetAttachmentsData,
   getAttachments,
@@ -28,7 +28,7 @@ import {
 } from '~/query/offline';
 
 // Use generated types from api.gen for mutation input shapes
-type CreateAttachmentInput = CreateAttachmentData['body']['data'];
+type CreateAttachmentInput = CreateAttachmentsData['body']['data'];
 type UpdateAttachmentInput = UpdateAttachmentData['body']['data'];
 
 /** All updatable fields extracted from generated zod schema - used for conflict detection. */
@@ -111,7 +111,7 @@ export const useAttachmentCreateMutation = (orgIdOrSlug: string) => {
     // Execute API call with transaction metadata for conflict tracking
     mutationFn: async (data: CreateAttachmentInput) => {
       const tx = createTxForCreate();
-      const result = await createAttachment({ path: { orgIdOrSlug }, body: { data, tx } });
+      const result = await createAttachments({ path: { orgIdOrSlug }, body: { data, tx } });
       return result;
     },
 
@@ -157,9 +157,9 @@ export const useAttachmentCreateMutation = (orgIdOrSlug: string) => {
       }
       mutateCache.create(result.data);
 
-      // Store server timestamps for future conflict detection (use first attachment id)
-      if (result.data.length > 0) {
-        updateFieldTransactions('attachment', result.data[0].id, result.tx);
+      // Store server timestamps for future conflict detection (tx is embedded in each entity)
+      for (const attachment of result.data) {
+        updateFieldTransactions('attachment', attachment.id, attachment.tx);
       }
     },
 
@@ -220,12 +220,12 @@ export const useAttachmentUpdateMutation = (orgIdOrSlug: string) => {
     },
 
     // Runs on API success - apply authoritative server data
-    onSuccess: (result) => {
+    onSuccess: (updatedAttachment) => {
       // Replace optimistic data with server response (source of truth)
-      mutateCache.update([result.data]);
+      mutateCache.update([updatedAttachment]);
 
-      // Store server timestamps for future conflict detection
-      updateFieldTransactions('attachment', result.data.id, result.tx);
+      // Store server timestamps for future conflict detection (tx is embedded in entity)
+      updateFieldTransactions('attachment', updatedAttachment.id, updatedAttachment.tx);
     },
 
     // Runs after success OR error - refresh queries
@@ -295,7 +295,7 @@ addMutationRegistrar((queryClient: QueryClient) => {
   queryClient.setMutationDefaults(keys.create, {
     mutationFn: async ({ orgIdOrSlug, data }: { orgIdOrSlug: string; data: CreateAttachmentInput }) => {
       const tx = createTxForCreate();
-      return createAttachment({ path: { orgIdOrSlug }, body: { data, tx } });
+      return createAttachments({ path: { orgIdOrSlug }, body: { data, tx } });
     },
   });
 

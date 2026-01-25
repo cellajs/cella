@@ -1128,7 +1128,7 @@
           "success": {
             "type": "boolean"
           },
-          "rejectedItems": {
+          "rejectedItemIds": {
             "type": "array",
             "items": {
               "type": "string"
@@ -1137,11 +1137,11 @@
         },
         "required": [
           "success",
-          "rejectedItems"
+          "rejectedItemIds"
         ],
         "example": {
           "success": true,
-          "rejectedItems": []
+          "rejectedItemIds": []
         }
       },
       "UploadToken": {
@@ -1670,18 +1670,6 @@
           "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju",
           "tx": null
         }
-      },
-      "TxResponse": {
-        "type": "object",
-        "properties": {
-          "transactionId": {
-            "type": "string",
-            "description": "Echoes the request transactionId"
-          }
-        },
-        "required": [
-          "transactionId"
-        ]
       },
       "TxRequest": {
         "type": "object",
@@ -4656,6 +4644,99 @@
         }
       }
     },
+    "/me/stream": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getUserStream",
+        "tags": [
+          "me"
+        ],
+        "summary": "User event stream",
+        "description": "SSE stream for membership and organization events affecting the *current user*. Use offset for catch-up, live=sse for streaming.",
+        "x-guard": [
+          "isAuthenticated"
+        ],
+        "x-rate-limiter": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Starting offset: 'now' for live-only, or activity ID for catch-up",
+              "example": "now"
+            },
+            "required": false,
+            "description": "Starting offset: 'now' for live-only, or activity ID for catch-up",
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "sse",
+                "poll"
+              ],
+              "description": "Connection mode: 'sse' for streaming, 'poll' for one-time fetch",
+              "example": "sse"
+            },
+            "required": false,
+            "description": "Connection mode: 'sse' for streaming, 'poll' for one-time fetch",
+            "name": "live",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "SSE stream or catch-up response",
+            "content": {
+              "text/event-stream": {
+                "schema": {}
+              },
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "activities": {
+                      "type": "array",
+                      "items": {}
+                    },
+                    "cursor": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "activities",
+                    "cursor"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
     "/user": {
       "get": {
         "security": [
@@ -5093,12 +5174,12 @@
             "cookieAuth": []
           }
         ],
-        "operationId": "createOrganization",
+        "operationId": "createOrganizations",
         "tags": [
           "organizations"
         ],
-        "summary": "Create organization",
-        "description": "Creates a new *organization*.",
+        "summary": "Create organizations",
+        "description": "Creates one or more new *organizations*.",
         "x-guard": [
           "isAuthenticated"
         ],
@@ -5131,80 +5212,99 @@
         },
         "responses": {
           "201": {
-            "description": "Organization was created",
+            "description": "Organizations were created",
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/Organization"
-                    },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "membership": {
-                          "$ref": "#/components/schemas/MembershipBase"
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "allOf": [
+                          {
+                            "$ref": "#/components/schemas/Organization"
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "membership": {
+                                "$ref": "#/components/schemas/MembershipBase"
+                              }
+                            }
+                          }
+                        ],
+                        "example": {
+                          "id": "hmo9fwr239kqavr3yur671kl",
+                          "entityType": "organization",
+                          "name": "McClure, Dicki and Waters",
+                          "slug": "mcclure-dicki-and-waters",
+                          "description": "Open-source static website",
+                          "shortName": "McClure,",
+                          "country": "Guatemala",
+                          "timezone": "Africa/Dar_es_Salaam",
+                          "defaultLanguage": "en",
+                          "languages": [
+                            "en"
+                          ],
+                          "notificationEmail": "notifications@mcclure-dicki-and-waters.example",
+                          "emailDomains": [],
+                          "color": "#daf7e3",
+                          "thumbnailUrl": null,
+                          "logoUrl": "https://picsum.photos/seed/CGEa4RRQS/2665/3362",
+                          "bannerUrl": null,
+                          "websiteUrl": "https://mcclure-dicki-and-waters.example",
+                          "welcomeText": "Welcome to McClure, Dicki and Waters!",
+                          "authStrategies": [
+                            "password"
+                          ],
+                          "chatSupport": true,
+                          "createdAt": "2024-12-25T15:29:47.111Z",
+                          "createdBy": null,
+                          "modifiedAt": "2024-12-25T15:29:47.111Z",
+                          "modifiedBy": null,
+                          "restrictions": {
+                            "user": 1000,
+                            "attachment": 100,
+                            "page": 0
+                          },
+                          "membership": {
+                            "id": "kaba9fpc90mgtzmtjipw2v8s",
+                            "contextType": "organization",
+                            "userId": "w4hg4036vxzq0rzt4pucveps",
+                            "organizationId": "hmo9fwr239kqavr3yur671kl",
+                            "role": "admin",
+                            "order": 38,
+                            "muted": false,
+                            "archived": false
+                          },
+                          "counts": {
+                            "membership": {
+                              "member": 30,
+                              "admin": 63,
+                              "pending": 13,
+                              "total": 93
+                            },
+                            "entities": {
+                              "attachment": 178,
+                              "page": 257
+                            }
+                          }
                         }
                       }
-                    }
-                  ],
-                  "example": {
-                    "id": "hmo9fwr239kqavr3yur671kl",
-                    "entityType": "organization",
-                    "name": "McClure, Dicki and Waters",
-                    "slug": "mcclure-dicki-and-waters",
-                    "description": "Open-source static website",
-                    "shortName": "McClure,",
-                    "country": "Guatemala",
-                    "timezone": "Africa/Dar_es_Salaam",
-                    "defaultLanguage": "en",
-                    "languages": [
-                      "en"
-                    ],
-                    "notificationEmail": "notifications@mcclure-dicki-and-waters.example",
-                    "emailDomains": [],
-                    "color": "#daf7e3",
-                    "thumbnailUrl": null,
-                    "logoUrl": "https://picsum.photos/seed/CGEa4RRQS/2665/3362",
-                    "bannerUrl": null,
-                    "websiteUrl": "https://mcclure-dicki-and-waters.example",
-                    "welcomeText": "Welcome to McClure, Dicki and Waters!",
-                    "authStrategies": [
-                      "password"
-                    ],
-                    "chatSupport": true,
-                    "createdAt": "2024-12-25T15:29:47.111Z",
-                    "createdBy": null,
-                    "modifiedAt": "2024-12-25T15:29:47.111Z",
-                    "modifiedBy": null,
-                    "restrictions": {
-                      "user": 1000,
-                      "attachment": 100,
-                      "page": 0
                     },
-                    "membership": {
-                      "id": "kaba9fpc90mgtzmtjipw2v8s",
-                      "contextType": "organization",
-                      "userId": "w4hg4036vxzq0rzt4pucveps",
-                      "organizationId": "hmo9fwr239kqavr3yur671kl",
-                      "role": "admin",
-                      "order": 38,
-                      "muted": false,
-                      "archived": false
-                    },
-                    "counts": {
-                      "membership": {
-                        "member": 30,
-                        "admin": 63,
-                        "pending": 13,
-                        "total": 93
+                    "rejectedItemIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
                       },
-                      "entities": {
-                        "attachment": 178,
-                        "page": 257
-                      }
+                      "description": "Identifiers of items that could not be processed"
                     }
-                  }
+                  },
+                  "required": [
+                    "data",
+                    "rejectedItemIds"
+                  ]
                 }
               }
             }
@@ -5828,12 +5928,12 @@
             "cookieAuth": []
           }
         ],
-        "operationId": "createPage",
+        "operationId": "createPages",
         "tags": [
           "pages"
         ],
         "summary": "Create pages",
-        "description": "Insert one or more new *pages*.",
+        "description": "Insert one or more new *pages*. Returns created pages and any rejected items.",
         "x-guard": [
           "isAuthenticated",
           "isSystemAdmin"
@@ -5847,12 +5947,17 @@
                 "type": "object",
                 "properties": {
                   "data": {
-                    "type": "object",
-                    "properties": {
-                      "name": {
-                        "type": "string"
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        }
                       }
-                    }
+                    },
+                    "minItems": 1,
+                    "maxItems": 50
                   },
                   "tx": {
                     "$ref": "#/components/schemas/TxRequest"
@@ -5867,23 +5972,59 @@
           }
         },
         "responses": {
-          "201": {
-            "description": "Page",
+          "200": {
+            "description": "Pages already created (idempotent)",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
                     "data": {
-                      "$ref": "#/components/schemas/Page"
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Page"
+                      }
                     },
-                    "tx": {
-                      "$ref": "#/components/schemas/TxResponse"
+                    "rejectedItemIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Identifiers of items that could not be processed"
                     }
                   },
                   "required": [
                     "data",
-                    "tx"
+                    "rejectedItemIds"
+                  ]
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Pages created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Page"
+                      }
+                    },
+                    "rejectedItemIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Identifiers of items that could not be processed"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "rejectedItemIds"
                   ]
                 }
               }
@@ -6215,19 +6356,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "$ref": "#/components/schemas/Page"
-                    },
-                    "tx": {
-                      "$ref": "#/components/schemas/TxResponse"
-                    }
-                  },
-                  "required": [
-                    "data",
-                    "tx"
-                  ]
+                  "$ref": "#/components/schemas/Page"
                 }
               }
             }
@@ -6315,165 +6444,6 @@
         }
       }
     },
-    "/organizations/{orgIdOrSlug}/sync/stream": {
-      "get": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "syncStream",
-        "tags": [
-          "entities"
-        ],
-        "summary": "Live stream of entity changes",
-        "description": "Stream real-time changes for product entities in an organization. Use offset for catch-up, live=sse for SSE streaming.",
-        "x-guard": [
-          "isAuthenticated",
-          "hasOrgAccess"
-        ],
-        "x-rate-limiter": [],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "description": "Organization ID or slug"
-            },
-            "required": true,
-            "description": "Organization ID or slug",
-            "name": "orgIdOrSlug",
-            "in": "path"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "description": "Cursor offset: \"-1\" for all history, \"now\" for live-only, or activity ID"
-            },
-            "required": false,
-            "description": "Cursor offset: \"-1\" for all history, \"now\" for live-only, or activity ID",
-            "name": "offset",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": [
-                "sse"
-              ],
-              "description": "Set to \"sse\" for live updates (SSE stream)"
-            },
-            "required": false,
-            "description": "Set to \"sse\" for live updates (SSE stream)",
-            "name": "live",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "description": "Comma-separated entity types to filter (e.g., \"page,attachment\")"
-            },
-            "required": false,
-            "description": "Comma-separated entity types to filter (e.g., \"page,attachment\")",
-            "name": "entityTypes",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Catch-up activities or SSE stream started",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "activities": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "data": {},
-                          "entityType": {
-                            "type": "string",
-                            "enum": [
-                              "attachment",
-                              "page"
-                            ]
-                          },
-                          "entityId": {
-                            "type": "string"
-                          },
-                          "action": {
-                            "type": "string",
-                            "enum": [
-                              "create",
-                              "update",
-                              "delete"
-                            ]
-                          },
-                          "activityId": {
-                            "type": "string"
-                          },
-                          "changedKeys": {
-                            "type": [
-                              "array",
-                              "null"
-                            ],
-                            "items": {
-                              "type": "string"
-                            }
-                          },
-                          "createdAt": {
-                            "type": "string"
-                          },
-                          "tx": {
-                            "$ref": "#/components/schemas/TxStreamMessage"
-                          }
-                        },
-                        "required": [
-                          "entityType",
-                          "entityId",
-                          "action",
-                          "activityId",
-                          "changedKeys",
-                          "createdAt",
-                          "tx"
-                        ]
-                      }
-                    },
-                    "cursor": {
-                      "type": [
-                        "string",
-                        "null"
-                      ],
-                      "description": "Last activity ID (use as offset for next request)"
-                    }
-                  },
-                  "required": [
-                    "activities",
-                    "cursor"
-                  ]
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      }
-    },
     "/system/invite": {
       "post": {
         "security": [
@@ -6540,7 +6510,7 @@
                   ],
                   "example": {
                     "success": true,
-                    "rejectedItems": []
+                    "rejectedItemIds": []
                   }
                 }
               }
@@ -7537,7 +7507,7 @@
             "cookieAuth": []
           }
         ],
-        "operationId": "createAttachment",
+        "operationId": "createAttachments",
         "tags": [
           "attachments"
         ],
@@ -7668,13 +7638,17 @@
                         "$ref": "#/components/schemas/Attachment"
                       }
                     },
-                    "tx": {
-                      "$ref": "#/components/schemas/TxResponse"
+                    "rejectedItemIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Identifiers of items that could not be processed"
                     }
                   },
                   "required": [
                     "data",
-                    "tx"
+                    "rejectedItemIds"
                   ]
                 }
               }
@@ -7693,13 +7667,17 @@
                         "$ref": "#/components/schemas/Attachment"
                       }
                     },
-                    "tx": {
-                      "$ref": "#/components/schemas/TxResponse"
+                    "rejectedItemIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Identifiers of items that could not be processed"
                     }
                   },
                   "required": [
                     "data",
-                    "tx"
+                    "rejectedItemIds"
                   ]
                 }
               }
@@ -7877,19 +7855,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "$ref": "#/components/schemas/Attachment"
-                    },
-                    "tx": {
-                      "$ref": "#/components/schemas/TxResponse"
-                    }
-                  },
-                  "required": [
-                    "data",
-                    "tx"
-                  ]
+                  "$ref": "#/components/schemas/Attachment"
                 }
               }
             }
@@ -8068,7 +8034,7 @@
                   ],
                   "example": {
                     "success": true,
-                    "rejectedItems": []
+                    "rejectedItemIds": []
                   }
                 }
               }

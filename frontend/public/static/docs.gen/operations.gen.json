@@ -629,6 +629,23 @@
     }
   },
   {
+    "id": "getUserStream",
+    "hash": "tag/me/GET/me/stream",
+    "method": "get",
+    "path": "/me/stream",
+    "tags": ["me"],
+    "summary": "User event stream",
+    "description": "SSE stream for membership and organization events affecting the *current user*. Use offset for catch-up, live=sse for streaming.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["isAuthenticated"],
+      "xRateLimiter": []
+    }
+  },
+  {
     "id": "getUsers",
     "hash": "tag/users/GET/user",
     "method": "get",
@@ -697,17 +714,17 @@
     }
   },
   {
-    "id": "createOrganization",
+    "id": "createOrganizations",
     "hash": "tag/organizations/POST/organization",
     "method": "post",
     "path": "/organization",
     "tags": ["organizations"],
-    "summary": "Create organization",
-    "description": "Creates a new *organization*.",
+    "summary": "Create organizations",
+    "description": "Creates one or more new *organizations*.",
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
-    "hasExample": true,
+    "hasExample": false,
     "extensions": {
       "xGuard": ["isAuthenticated"],
       "xRateLimiter": []
@@ -799,13 +816,13 @@
     }
   },
   {
-    "id": "createPage",
+    "id": "createPages",
     "hash": "tag/pages/POST/page",
     "method": "post",
     "path": "/page",
     "tags": ["pages"],
     "summary": "Create pages",
-    "description": "Insert one or more new *pages*.",
+    "description": "Insert one or more new *pages*. Returns created pages and any rejected items.",
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
@@ -877,7 +894,7 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": true,
-    "hasExample": false,
+    "hasExample": true,
     "extensions": {
       "xGuard": ["isAuthenticated", "isSystemAdmin"],
       "xRateLimiter": []
@@ -897,23 +914,6 @@
     "hasExample": false,
     "extensions": {
       "xGuard": ["isAuthenticated"],
-      "xRateLimiter": []
-    }
-  },
-  {
-    "id": "syncStream",
-    "hash": "tag/entities/GET/organizations/{orgIdOrSlug}/sync/stream",
-    "method": "get",
-    "path": "/organizations/{orgIdOrSlug}/sync/stream",
-    "tags": ["entities"],
-    "summary": "Live stream of entity changes",
-    "description": "Stream real-time changes for product entities in an organization. Use offset for catch-up, live=sse for SSE streaming.",
-    "deprecated": false,
-    "hasParams": true,
-    "hasRequestBody": false,
-    "hasExample": false,
-    "extensions": {
-      "xGuard": ["isAuthenticated", "hasOrgAccess"],
       "xRateLimiter": []
     }
   },
@@ -1105,7 +1105,7 @@
     }
   },
   {
-    "id": "createAttachment",
+    "id": "createAttachments",
     "hash": "tag/attachments/POST/{orgIdOrSlug}/attachment",
     "method": "post",
     "path": "/{orgIdOrSlug}/attachment",
@@ -1149,7 +1149,7 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": true,
-    "hasExample": false,
+    "hasExample": true,
     "extensions": {
       "xGuard": ["isAuthenticated", "hasOrgAccess"],
       "xRateLimiter": []

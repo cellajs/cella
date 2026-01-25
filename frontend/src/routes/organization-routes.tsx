@@ -11,7 +11,6 @@ import {
   organizationQueryOptions,
 } from '~/modules/organization/query';
 import { queryClient } from '~/query/query-client';
-import { handleStreamMessage, useLiveStream } from '~/query/realtime';
 import { AppLayoutRoute } from '~/routes/base-routes';
 import { useToastStore } from '~/store/toast';
 import appTitle from '~/utils/app-title';
@@ -54,17 +53,7 @@ export const OrganizationLayoutRoute = createRoute({
     return { organization };
   },
   loader: ({ context: { organization } }) => organization,
-  component: () => {
-    const organization = useLoaderData({ from: '/appLayout/$idOrSlug' });
-
-    // Connect to org-scoped live stream for realtime updates
-    useLiveStream({
-      orgId: organization.id,
-      onMessage: handleStreamMessage,
-    });
-
-    return <Outlet />;
-  },
+  component: () => <Outlet />,
 });
 
 /**

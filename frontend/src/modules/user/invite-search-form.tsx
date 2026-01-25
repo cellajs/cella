@@ -30,14 +30,14 @@ function InviteSearchForm({ entity, dialog: isDialog }: Props) {
     invite(
       { ...values, entity },
       {
-        onSuccess: ({ invitesSentCount, rejectedItems }, { emails }) => {
+        onSuccess: ({ invitesSentCount, rejectedItemIds }, { emails }) => {
           form.reset(undefined, { keepDirtyValues: true });
           if (invitesSentCount > 0) {
             const resource = t(`common:${invitesSentCount === 1 ? 'user' : 'users'}`).toLowerCase();
             toaster(t('common:success.resource_count_invited', { count: invitesSentCount, resource }), 'success');
           }
-          if (rejectedItems.length)
-            toaster(t('common:still_not_accepted', { count: rejectedItems.length, total: emails.length }), 'info');
+          if (rejectedItemIds.length)
+            toaster(t('common:still_not_accepted', { count: rejectedItemIds.length, total: emails.length }), 'info');
 
           if (isDialog) useDialoger.getState().remove();
         },

@@ -6,7 +6,6 @@ import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 import { type Env, getContextMemberships, getContextUser, getContextUserSystemRole } from '#/lib/context';
 import { AppError } from '#/lib/error';
-import { sendSSEByUserIds } from '#/lib/sse';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { getEntityCounts, getEntityCountsSelect } from '#/modules/entities/helpers/get-entity-counts';
 import { getEntityTypesScopedByContextEntityType } from '#/modules/entities/helpers/get-related-entities';
@@ -26,9 +25,9 @@ const app = new OpenAPIHono<Env>({ defaultHook });
 
 const organizationRouteHandlers = app
   /**
-   * Create organization
+   * Create one or more organizations
    */
-  .openapi(organizationRoutes.createOrganization, async (ctx) => {
+  .openapi(organizationRoutes.createOrganizations, async (ctx) => {
     const { name, slug } = ctx.req.valid('json');
     const user = getContextUser();
     const memberships = getContextMemberships();
@@ -80,7 +79,7 @@ const organizationRouteHandlers = app
       counts: { membership: memberCounts, entities: entitiesCounts },
     };
 
-    return ctx.json(data, 201);
+    return ctx.json({ data: [data], rejectedItemIds: [] }, 201);
   })
   /**
    * Get list of organizations
@@ -219,22 +218,7 @@ const organizationRouteHandlers = app
       .where(eq(organizationsTable.id, organization.id))
       .returning();
 
-    // notify members (unchanged)
-    const organizationMemberships = await db
-      .select(membershipBaseSelect)
-      .from(membershipsTable)
-      .where(
-        and(
-          eq(membershipsTable.contextType, 'organization'),
-          eq(membershipsTable.organizationId, organization.id),
-          eq(membershipsTable.archived, false),
-        ),
-      );
-
-    // Send event to all members about the updated organization
-    for (const m of organizationMemberships)
-      sendSSEByUserIds([m.userId], 'entity_updated', { ...updatedOrganization, membership: m });
-
+    // Event emitted via CDC -> activities table -> eventBus ('organization.updated')
     logEvent('info', 'Organization updated', { organizationId: updatedOrganization.id });
 
     const counts = await getEntityCounts(organization.entityType, organization.id);
@@ -255,7 +239,7 @@ const organizationRouteHandlers = app
     if (!toDeleteIds.length) throw new AppError(400, 'invalid_request', 'error', { entityType: 'organization' });
 
     // Split ids into allowed and disallowed
-    const { allowedIds, disallowedIds: rejectedItems } = await splitByAllowance(
+    const { allowedIds, disallowedIds: rejectedItemIds } = await splitByAllowance(
       'delete',
       'organization',
       toDeleteIds,
@@ -263,32 +247,13 @@ const organizationRouteHandlers = app
     );
     if (!allowedIds.length) throw new AppError(403, 'forbidden', 'warn', { entityType: 'organization' });
 
-    // Get ids of members for organizations
-    const memberIds = await db
-      .select({ id: membershipsTable.userId })
-      .from(membershipsTable)
-      .where(
-        and(
-          eq(membershipsTable.contextType, 'organization'),
-          inArray(membershipsTable.organizationId, allowedIds),
-          eq(membershipsTable.archived, false),
-        ),
-      );
-
     // Delete the organizations
     await db.delete(organizationsTable).where(inArray(organizationsTable.id, allowedIds));
 
-    // Send events to all members of all organizations that were deleted
-    for (const organizationId of allowedIds) {
-      if (!memberIds.length) continue;
-
-      const userIds = memberIds.map((m) => m.id);
-      sendSSEByUserIds(userIds, 'entity_deleted', { entityId: organizationId, entityType: 'organization' });
-    }
-
+    // Event emitted via CDC -> activities table -> eventBus ('organization.deleted')
     logEvent('info', 'Organizations deleted', allowedIds);
 
-    return ctx.json({ success: true, rejectedItems }, 200);
+    return ctx.json({ success: true, rejectedItemIds }, 200);
   });
 
 export default organizationRouteHandlers;

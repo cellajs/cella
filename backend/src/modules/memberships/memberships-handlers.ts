@@ -22,7 +22,6 @@ import { resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/error';
 
 import { mailer } from '#/lib/mailer';
-import { sendSSEByUserIds } from '#/lib/sse';
 import { getBaseMembershipEntityId, insertMemberships } from '#/modules/memberships/helpers';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import membershipRoutes from '#/modules/memberships/memberships-routes';
@@ -80,7 +79,7 @@ const membershipsRouteHandlers = app
     const organization = getContextOrganization();
 
     // Step 0: Scenario buckets
-    const rejectedItems: string[] = []; // Scenario 1: already active members
+    const rejectedItemIds: string[] = []; // Scenario 1: already active members
     const reminderEmails: string[] = []; // Scenario 1b: pending members (no token email)
     const existingUsersToActivate: Array<{ userId: string; email: string }> = []; // Scenario 2: existing users to activate memberships
     const existingUsersToDirectAdd: Array<{ userId: string; email: string }> = []; // Scenario 2b: existing users with active org membership to directly add
@@ -159,7 +158,7 @@ const membershipsRouteHandlers = app
 
       // Scenario 1: already has active membership → skip
       if (hasActiveMembership) {
-        rejectedItems.push(email);
+        rejectedItemIds.push(email);
         continue;
       }
 
@@ -362,7 +361,7 @@ const membershipsRouteHandlers = app
       [targetEntityIdField]: entityId,
     });
 
-    return ctx.json({ success: invitesSentCount > 0, rejectedItems, invitesSentCount }, 200);
+    return ctx.json({ success: invitesSentCount > 0, rejectedItemIds, invitesSentCount }, 200);
   })
 
   /**
@@ -387,14 +386,14 @@ const membershipsRouteHandlers = app
       .where(and(inArray(membershipsTable.userId, membershipIds), eq(membershipsTable[entityIdColumnKey], entity.id)));
 
     // Check if membership exist
-    const rejectedItems: string[] = [];
+    const rejectedItemIds: string[] = [];
 
     for (const id of membershipIds) {
-      if (!targets.some((target) => target.userId === id)) rejectedItems.push(id);
+      if (!targets.some((target) => target.userId === id)) rejectedItemIds.push(id);
     }
 
     // If the user doesn't have permission to delete any of the memberships, return an error
-    if (targets.length === 0) return ctx.json({ success: false, rejectedItems }, 200);
+    if (targets.length === 0) return ctx.json({ success: false, rejectedItemIds }, 200);
 
     // Delete the memberships
     await db.delete(membershipsTable).where(
@@ -404,13 +403,14 @@ const membershipsRouteHandlers = app
       ),
     );
 
-    // Send event to users that had their membership deleted
-    const memberIds = targets.map((el) => el.userId);
-    sendSSEByUserIds(memberIds, 'membership_deleted', { entityId: entity.id, entityType: entity.entityType });
+    // Event emitted via CDC -> activities table -> eventBus ('membership.deleted')
+    logEvent(
+      'info',
+      'Deleted memberships',
+      targets.map((t) => t.userId),
+    );
 
-    logEvent('info', 'Deleted memberships', memberIds);
-
-    return ctx.json({ success: true, rejectedItems }, 200);
+    return ctx.json({ success: true, rejectedItemIds }, 200);
   })
   /**
    * Update user membership
@@ -483,14 +483,7 @@ const membershipsRouteHandlers = app
       .where(and(eq(membershipsTable.id, membershipId)))
       .returning();
 
-    // Send event only if update is for a different user
-    if (updatedMembership.userId !== user.id) {
-      sendSSEByUserIds([updatedMembership.userId], 'membership_updated', {
-        ...membershipContext,
-        membership: updatedMembership,
-      });
-    }
-
+    // Event emitted via CDC -> activities table -> eventBus ('membership.updated')
     logEvent('info', 'Membership updated', { userId: updatedMembership.userId, membershipId: updatedMembership.id });
 
     return ctx.json(updatedMembership, 200);

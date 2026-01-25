@@ -30,6 +30,5 @@ export {
   createTxForUpdate,
   initFieldTransactionFromEntity,
   type TxMetadata,
-  type TxResponse,
   updateFieldTransactions,
 } from './tx-utils';

@@ -9,15 +9,15 @@ import type {
   CheckSlugData,
   CheckSlugErrors,
   CheckSlugResponses,
-  CreateAttachmentData,
-  CreateAttachmentErrors,
-  CreateAttachmentResponses,
-  CreateOrganizationData,
-  CreateOrganizationErrors,
-  CreateOrganizationResponses,
-  CreatePageData,
-  CreatePageErrors,
-  CreatePageResponses,
+  CreateAttachmentsData,
+  CreateAttachmentsErrors,
+  CreateAttachmentsResponses,
+  CreateOrganizationsData,
+  CreateOrganizationsErrors,
+  CreateOrganizationsResponses,
+  CreatePagesData,
+  CreatePagesErrors,
+  CreatePagesResponses,
   CreatePasskeyData,
   CreatePasskeyErrors,
   CreatePasskeyResponses,
@@ -126,6 +126,9 @@ import type {
   GetUserData,
   GetUserErrors,
   GetUserResponses,
+  GetUserStreamData,
+  GetUserStreamErrors,
+  GetUserStreamResponses,
   GetUsersData,
   GetUsersErrors,
   GetUsersResponses,
@@ -191,9 +194,6 @@ import type {
   StopImpersonationData,
   StopImpersonationErrors,
   StopImpersonationResponses,
-  SyncStreamData,
-  SyncStreamErrors,
-  SyncStreamResponses,
   SystemInviteData,
   SystemInviteErrors,
   SystemInviteResponses,
@@ -1169,6 +1169,34 @@ export const unsubscribeMe = <ThrowOnError extends boolean = true>(options: Opti
   });
 
 /**
+ * User event stream
+ *
+ * SSE stream for membership and organization events affecting the *current user*. Use offset for catch-up, live=sse for streaming.
+ *
+ * **GET /me/stream** ·· [getUserStream](https://api.cellajs.com/docs#tag/me/get/me/stream) ·· _me_
+ *
+ * @param {getUserStreamData} options
+ * @param {string=} options.query.offset - `string` (optional)
+ * @param {enum=} options.query.live - `enum` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const getUserStream = <ThrowOnError extends boolean = true>(
+  options?: Options<GetUserStreamData, ThrowOnError>,
+) =>
+  (options?.client ?? client).get<GetUserStreamResponses, GetUserStreamErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/me/stream',
+    ...options,
+  });
+
+/**
  * Delete users
  *
  * Deletes one or more *users* from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.
@@ -1357,21 +1385,21 @@ export const getOrganizations = <ThrowOnError extends boolean = true>(
   });
 
 /**
- * Create organization
+ * Create organizations
  *
- * Creates a new *organization*.
+ * Creates one or more new *organizations*.
  *
- * **POST /organization** ·· [createOrganization](https://api.cellajs.com/docs#tag/organizations/post/organization) ·· _organizations_
+ * **POST /organization** ·· [createOrganizations](https://api.cellajs.com/docs#tag/organizations/post/organization) ·· _organizations_
  *
- * @param {createOrganizationData} options
+ * @param {createOrganizationsData} options
  * @param {string=} options.body.name - `string` (optional)
  * @param {string=} options.body.slug - `string` (optional)
  * @returns Possible status codes: 201, 400, 401, 403, 404, 429
  */
-export const createOrganization = <ThrowOnError extends boolean = true>(
-  options: Options<CreateOrganizationData, ThrowOnError>,
+export const createOrganizations = <ThrowOnError extends boolean = true>(
+  options: Options<CreateOrganizationsData, ThrowOnError>,
 ) =>
-  (options.client ?? client).post<CreateOrganizationResponses, CreateOrganizationErrors, ThrowOnError, 'data'>({
+  (options.client ?? client).post<CreateOrganizationsResponses, CreateOrganizationsErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -1538,17 +1566,17 @@ export const getPages = <ThrowOnError extends boolean = true>(options?: Options<
 /**
  * Create pages
  *
- * Insert one or more new *pages*.
+ * Insert one or more new *pages*. Returns created pages and any rejected items.
  *
- * **POST /page** ·· [createPage](https://api.cellajs.com/docs#tag/pages/post/page) ·· _pages_
+ * **POST /page** ·· [createPages](https://api.cellajs.com/docs#tag/pages/post/page) ·· _pages_
  *
- * @param {createPageData} options
- * @param {object=} options.body.data - `object` (optional)
+ * @param {createPagesData} options
+ * @param {any[]=} options.body.data - `any[]` (optional)
  * @param {any=} options.body.tx - `any` (optional)
- * @returns Possible status codes: 201, 400, 401, 403, 404, 429
+ * @returns Possible status codes: 200, 201, 400, 401, 403, 404, 429
  */
-export const createPage = <ThrowOnError extends boolean = true>(options: Options<CreatePageData, ThrowOnError>) =>
-  (options.client ?? client).post<CreatePageResponses, CreatePageErrors, ThrowOnError, 'data'>({
+export const createPages = <ThrowOnError extends boolean = true>(options: Options<CreatePagesData, ThrowOnError>) =>
+  (options.client ?? client).post<CreatePagesResponses, CreatePagesErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -1643,34 +1671,6 @@ export const checkSlug = <ThrowOnError extends boolean = true>(options: Options<
       'Content-Type': 'application/json',
       ...options.headers,
     },
-  });
-
-/**
- * Live stream of entity changes
- *
- * Stream real-time changes for product entities in an organization. Use offset for catch-up, live=sse for SSE streaming.
- *
- * **GET /organizations/{orgIdOrSlug}/sync/stream** ·· [syncStream](https://api.cellajs.com/docs#tag/entities/get/organizations/{orgIdOrSlug}/sync/stream) ·· _entities_
- *
- * @param {syncStreamData} options
- * @param {string} options.path.orgidorslug - `string`
- * @param {string=} options.query.offset - `string` (optional)
- * @param {enum=} options.query.live - `enum` (optional)
- * @param {string=} options.query.entitytypes - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const syncStream = <ThrowOnError extends boolean = true>(options: Options<SyncStreamData, ThrowOnError>) =>
-  (options.client ?? client).get<SyncStreamResponses, SyncStreamErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/organizations/{orgIdOrSlug}/sync/stream',
-    ...options,
   });
 
 /**
@@ -2006,18 +2006,18 @@ export const getAttachments = <ThrowOnError extends boolean = true>(
  *
  * Registers one or more new *attachments* after client side upload. Includes metadata like name, type, and linked entity.
  *
- * **POST /{orgIdOrSlug}/attachment** ·· [createAttachment](https://api.cellajs.com/docs#tag/attachments/post/{orgIdOrSlug}/attachment) ·· _attachments_
+ * **POST /{orgIdOrSlug}/attachment** ·· [createAttachments](https://api.cellajs.com/docs#tag/attachments/post/{orgIdOrSlug}/attachment) ·· _attachments_
  *
- * @param {createAttachmentData} options
+ * @param {createAttachmentsData} options
  * @param {string} options.path.orgidorslug - `string`
  * @param {any[]=} options.body.data - `any[]` (optional)
  * @param {any=} options.body.tx - `any` (optional)
  * @returns Possible status codes: 200, 201, 400, 401, 403, 404, 429
  */
-export const createAttachment = <ThrowOnError extends boolean = true>(
-  options: Options<CreateAttachmentData, ThrowOnError>,
+export const createAttachments = <ThrowOnError extends boolean = true>(
+  options: Options<CreateAttachmentsData, ThrowOnError>,
 ) =>
-  (options.client ?? client).post<CreateAttachmentResponses, CreateAttachmentErrors, ThrowOnError, 'data'>({
+  (options.client ?? client).post<CreateAttachmentsResponses, CreateAttachmentsErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {

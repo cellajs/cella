@@ -121,88 +121,171 @@
     }
   },
   {
-    "operationId": "createPage",
+    "operationId": "createPages",
     "responses": [
       {
-        "status": 201,
-        "description": "Page",
+        "status": 200,
+        "description": "Pages already created (idempotent)",
         "contentType": "application/json",
         "schema": {
           "type": "object",
           "properties": {
             "data": {
-              "type": "object",
+              "type": "array",
               "required": true,
-              "properties": {
-                "createdAt": { "type": "string", "required": true },
-                "id": { "type": "string", "required": true },
-                "entityType": {
-                  "type": "string",
-                  "required": true,
-                  "enum": ["page"]
+              "itemType": "object",
+              "ref": "#/components/schemas/Page",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "createdAt": { "type": "string", "required": true },
+                  "id": { "type": "string", "required": true },
+                  "entityType": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["page"]
+                  },
+                  "name": { "type": "string", "required": true },
+                  "description": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "modifiedAt": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "keywords": { "type": "string", "required": true },
+                  "createdBy": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "modifiedBy": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "tx": {
+                    "required": true,
+                    "anyOf": [
+                      { "type": "string", "required": false },
+                      { "type": "number", "required": false },
+                      { "type": "boolean", "required": false },
+                      { "type": "null", "required": false },
+                      { "type": "object", "required": false },
+                      {
+                        "type": "array",
+                        "required": false,
+                        "itemType": "object"
+                      }
+                    ]
+                  },
+                  "status": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["unpublished", "published", "archived"]
+                  },
+                  "parentId": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "displayOrder": {
+                    "type": "number",
+                    "required": true,
+                    "minimum": -140737488355328,
+                    "maximum": 140737488355327
+                  }
                 },
-                "name": { "type": "string", "required": true },
-                "description": {
-                  "type": ["string", "null"],
-                  "required": true
-                },
-                "modifiedAt": {
-                  "type": ["string", "null"],
-                  "required": true
-                },
-                "keywords": { "type": "string", "required": true },
-                "createdBy": {
-                  "type": ["string", "null"],
-                  "required": true
-                },
-                "modifiedBy": {
-                  "type": ["string", "null"],
-                  "required": true
-                },
-                "tx": {
-                  "required": true,
-                  "anyOf": [
-                    { "type": "string", "required": false },
-                    { "type": "number", "required": false },
-                    { "type": "boolean", "required": false },
-                    { "type": "null", "required": false },
-                    { "type": "object", "required": false },
-                    {
-                      "type": "array",
-                      "required": false,
-                      "itemType": "object"
-                    }
-                  ]
-                },
-                "status": {
-                  "type": "string",
-                  "required": true,
-                  "enum": ["unpublished", "published", "archived"]
-                },
-                "parentId": {
-                  "type": ["string", "null"],
-                  "required": true
-                },
-                "displayOrder": {
-                  "type": "number",
-                  "required": true,
-                  "minimum": -140737488355328,
-                  "maximum": 140737488355327
-                }
-              },
-              "ref": "#/components/schemas/Page"
+                "ref": "#/components/schemas/Page"
+              }
             },
-            "tx": {
-              "type": "object",
+            "rejectedItemIds": {
+              "type": "array",
               "required": true,
-              "properties": {
-                "transactionId": {
-                  "type": "string",
-                  "required": true,
-                  "description": "Echoes the request transactionId"
-                }
-              },
-              "ref": "#/components/schemas/TxResponse"
+              "description": "Identifiers of items that could not be processed",
+              "itemType": "string"
+            }
+          },
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 201,
+        "description": "Pages created",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "data": {
+              "type": "array",
+              "required": true,
+              "itemType": "object",
+              "ref": "#/components/schemas/Page",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "createdAt": { "type": "string", "required": true },
+                  "id": { "type": "string", "required": true },
+                  "entityType": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["page"]
+                  },
+                  "name": { "type": "string", "required": true },
+                  "description": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "modifiedAt": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "keywords": { "type": "string", "required": true },
+                  "createdBy": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "modifiedBy": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "tx": {
+                    "required": true,
+                    "anyOf": [
+                      { "type": "string", "required": false },
+                      { "type": "number", "required": false },
+                      { "type": "boolean", "required": false },
+                      { "type": "null", "required": false },
+                      { "type": "object", "required": false },
+                      {
+                        "type": "array",
+                        "required": false,
+                        "itemType": "object"
+                      }
+                    ]
+                  },
+                  "status": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["unpublished", "published", "archived"]
+                  },
+                  "parentId": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "displayOrder": {
+                    "type": "number",
+                    "required": true,
+                    "minimum": -140737488355328,
+                    "maximum": 140737488355327
+                  }
+                },
+                "ref": "#/components/schemas/Page"
+              }
+            },
+            "rejectedItemIds": {
+              "type": "array",
+              "required": true,
+              "description": "Identifiers of items that could not be processed",
+              "itemType": "string"
             }
           },
           "contentType": "application/json"
@@ -249,10 +332,16 @@
         "type": "object",
         "properties": {
           "data": {
-            "type": "object",
+            "type": "array",
             "required": true,
-            "properties": {
-              "name": { "type": "string", "required": false }
+            "minItems": 1,
+            "maxItems": 50,
+            "itemType": "object",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": { "type": "string", "required": false }
+              }
             }
           },
           "tx": {
@@ -624,86 +713,85 @@
       {
         "status": 200,
         "description": "Page updated",
+        "name": "Page",
+        "ref": "#/components/schemas/Page",
         "contentType": "application/json",
         "schema": {
           "type": "object",
           "properties": {
-            "data": {
-              "type": "object",
+            "createdAt": { "type": "string", "required": true },
+            "id": { "type": "string", "required": true },
+            "entityType": {
+              "type": "string",
               "required": true,
-              "properties": {
-                "createdAt": { "type": "string", "required": true },
-                "id": { "type": "string", "required": true },
-                "entityType": {
-                  "type": "string",
-                  "required": true,
-                  "enum": ["page"]
-                },
-                "name": { "type": "string", "required": true },
-                "description": {
-                  "type": ["string", "null"],
-                  "required": true
-                },
-                "modifiedAt": {
-                  "type": ["string", "null"],
-                  "required": true
-                },
-                "keywords": { "type": "string", "required": true },
-                "createdBy": {
-                  "type": ["string", "null"],
-                  "required": true
-                },
-                "modifiedBy": {
-                  "type": ["string", "null"],
-                  "required": true
-                },
-                "tx": {
-                  "required": true,
-                  "anyOf": [
-                    { "type": "string", "required": false },
-                    { "type": "number", "required": false },
-                    { "type": "boolean", "required": false },
-                    { "type": "null", "required": false },
-                    { "type": "object", "required": false },
-                    {
-                      "type": "array",
-                      "required": false,
-                      "itemType": "object"
-                    }
-                  ]
-                },
-                "status": {
-                  "type": "string",
-                  "required": true,
-                  "enum": ["unpublished", "published", "archived"]
-                },
-                "parentId": {
-                  "type": ["string", "null"],
-                  "required": true
-                },
-                "displayOrder": {
-                  "type": "number",
-                  "required": true,
-                  "minimum": -140737488355328,
-                  "maximum": 140737488355327
-                }
-              },
-              "ref": "#/components/schemas/Page"
+              "enum": ["page"]
+            },
+            "name": { "type": "string", "required": true },
+            "description": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "modifiedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "keywords": { "type": "string", "required": true },
+            "createdBy": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "modifiedBy": {
+              "type": ["string", "null"],
+              "required": true
             },
             "tx": {
-              "type": "object",
               "required": true,
-              "properties": {
-                "transactionId": {
-                  "type": "string",
-                  "required": true,
-                  "description": "Echoes the request transactionId"
+              "anyOf": [
+                { "type": "string", "required": false },
+                { "type": "number", "required": false },
+                { "type": "boolean", "required": false },
+                { "type": "null", "required": false },
+                { "type": "object", "required": false },
+                {
+                  "type": "array",
+                  "required": false,
+                  "itemType": "object"
                 }
-              },
-              "ref": "#/components/schemas/TxResponse"
+              ]
+            },
+            "status": {
+              "type": "string",
+              "required": true,
+              "enum": ["unpublished", "published", "archived"]
+            },
+            "parentId": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "displayOrder": {
+              "type": "number",
+              "required": true,
+              "minimum": -140737488355328,
+              "maximum": 140737488355327
             }
           },
+          "ref": "#/components/schemas/Page",
           "contentType": "application/json"
+        },
+        "example": {
+          "id": "co96vrmic3wbowmxzbqa1e9f",
+          "entityType": "page",
+          "name": "Infit pauci optio demo.",
+          "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Adhaero torrens adfectus incidunt voluptates cornu tempus eaque universe volubilis. Cubo sponte utpote crux pecco. Cunctatio dolorum vallum ut adimpleo summa valde strenuus attonbitus eligendi.\\nVel cado vitae cibus dolores decet surgo. Accusamus praesentium cibus subito. Vox nemo ipsa video tremo molestias charisma clam ipsa suscipit.\",\"styles\":{}}],\"children\":[]}]",
+          "keywords": "solvo atrox tendo",
+          "status": "unpublished",
+          "parentId": null,
+          "displayOrder": 32.69,
+          "createdAt": "2024-08-06T10:28:33.226Z",
+          "createdBy": "0f0ak5vkrrl687pmkwpa1vju",
+          "modifiedAt": "2024-08-06T10:28:33.226Z",
+          "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju",
+          "tx": null
         }
       },
       {

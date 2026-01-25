@@ -20,7 +20,7 @@ import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
-import { dispatchToPublicPageSubscribers, type PublicPageSubscriber, publicPageIndexKey } from './stream';
+import { dispatchToPublicPageSubscribers, type PublicPageSubscriber, publicPageChannel } from './stream';
 
 // Register ActivityBus listeners for public page stream
 eventBus.on('page.created', dispatchToPublicPageSubscribers);
@@ -117,7 +117,7 @@ const pageRouteHandlers = app
       // Register subscriber
       const subscriber: PublicPageSubscriber = {
         id: generateNanoid(),
-        indexKey: publicPageIndexKey,
+        channel: publicPageChannel,
         stream,
         cursor,
       };
@@ -136,26 +136,27 @@ const pageRouteHandlers = app
     });
   })
   /**
-   * Create page
+   * Create one or more pages
    */
-  .openapi(pagesRoutes.createPage, async (ctx) => {
-    const { data: pageData, tx } = ctx.req.valid('json');
+  .openapi(pagesRoutes.createPages, async (ctx) => {
+    const { data: newPages, tx } = ctx.req.valid('json');
 
-    // Idempotency check - return existing entity if transaction already processed
+    // Idempotency check - return existing entities if transaction already processed
     if (await isTransactionProcessed(tx.transactionId)) {
       const ref = await getEntityByTransaction(tx.transactionId);
       if (ref) {
-        const [existing] = await db.select().from(pagesTable).where(eq(pagesTable.id, ref.entityId));
-        if (existing) {
-          const { tx: _tx, ...pageWithoutTx } = existing;
-          return ctx.json({ data: pageWithoutTx, tx: { transactionId: tx.transactionId } }, 200);
+        // For batch create, the first page ID is stored - fetch all from that batch
+        const existing = await db.select().from(pagesTable).where(eq(pagesTable.id, ref.entityId));
+        if (existing.length > 0) {
+          return ctx.json({ data: existing, rejectedItems: [] }, 200);
         }
       }
     }
 
     const user = getContextUser();
 
-    const newPage = {
+    // Prepare pages with tx metadata for CDC
+    const pagesToInsert = newPages.map((pageData) => ({
       ...pageData,
       id: nanoid(),
       entityType: 'page' as const,
@@ -172,15 +173,14 @@ const pageRouteHandlers = app
         sourceId: tx.sourceId,
         changedField: null, // null for create
       },
-    };
+    }));
 
-    const [pageRecord] = await db.insert(pagesTable).values(newPage).returning();
+    const createdPages = await db.insert(pagesTable).values(pagesToInsert).returning();
 
-    logEvent('info', `A new ${pageRecord.status} page was created`);
+    logEvent('info', `${createdPages.length} pages have been created`);
 
-    // Return without tx column (transient)
-    const { tx: _tx, ...pageWithoutTx } = pageRecord;
-    return ctx.json({ data: pageWithoutTx, tx: { transactionId: tx.transactionId } }, 201);
+    // Return with tx on each item (for client-side tracking)
+    return ctx.json({ data: createdPages, rejectedItems: [] }, 201);
   })
   /**
    * Get Pages
@@ -296,11 +296,12 @@ const pageRouteHandlers = app
         ...pageData,
         modifiedAt: getIsoDate(),
         modifiedBy: user.id,
-        // Sync: write transient tx metadata for CDC Worker
+        // Sync: write transient tx metadata for CDC Worker + client tracking
         tx: {
           transactionId: tx.transactionId,
           sourceId: tx.sourceId,
           changedField: tx.changedField,
+          expectedTransactionId: tx.expectedTransactionId,
         },
       })
       .where(eq(pagesTable.id, id))
@@ -308,9 +309,8 @@ const pageRouteHandlers = app
 
     logEvent('info', 'Page updated', { pageId: page.id });
 
-    // Return without tx column (transient)
-    const { tx: _tx, ...pageWithoutTx } = page;
-    return ctx.json({ data: pageWithoutTx, tx: { transactionId: tx.transactionId } }, 200);
+    // Return entity directly (tx embedded for client tracking)
+    return ctx.json(page, 200);
   })
   /**
    * Delete pages by ids

@@ -11,5 +11,5 @@ import type { SuccessWithRejectedItemsResponse } from '#/schemas';
  */
 export const mockSuccessWithRejectedItems = (): SuccessWithRejectedItemsResponse => ({
   success: true,
-  rejectedItems: [],
+  rejectedItemIds: [],
 });

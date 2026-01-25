@@ -9,6 +9,8 @@ export interface BaseStreamSubscriber {
   id: string;
   /** SSE stream for sending messages */
   stream: SSEStreamingApi;
-  /** Optional index key for fast lookup (e.g., 'org:abc', 'public:page') */
-  indexKey?: string;
+  /** Primary channel for event routing (e.g., 'org:abc', 'user:123') */
+  channel?: string;
+  /** Internal: all channels this subscriber is registered on (set by manager) */
+  _channels?: string[];
 }

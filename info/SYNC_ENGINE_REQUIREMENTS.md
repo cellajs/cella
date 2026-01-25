@@ -2,8 +2,7 @@
 
 This document defines the requirements for building the Hybrid Sync Engine. It combines **design decisions** (the "why") with **testable contracts** (the "what").
 
-> **Related documents:**
-> [HYBRID_SYNC_ENGINE_PLAN.md](./HYBRID_SYNC_ENGINE_PLAN.md) - Implementation plan, code examples, and TODO list
+> **Related documents: [HYBRID_SYNC_ENGINE_PLAN.md](./HYBRID_SYNC_ENGINE_PLAN.md) - Implementation plan
 
 ---
 

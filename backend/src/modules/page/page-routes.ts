@@ -3,10 +3,10 @@ import { createXRoute } from '#/docs/x-routes';
 import { isAuthenticated, isPublicAccess, isSystemAdmin } from '#/middlewares/guard';
 import { createStreamMessageSchema, errorResponseRefs, idsBodySchema, paginationSchema } from '#/schemas';
 import {
+  pageCreateResponseSchema,
   pageCreateTxBodySchema,
   pageListQuerySchema,
   pageSchema,
-  pageTxResponseSchema,
   pageUpdateTxBodySchema,
 } from './page-schema';
 
@@ -53,16 +53,16 @@ const pagesRoutes = {
     },
   }),
   /**
-   * Create a page
+   * Create one or more pages
    */
-  createPage: createXRoute({
-    operationId: 'createPage',
+  createPages: createXRoute({
+    operationId: 'createPages',
     method: 'post',
     path: '/',
     xGuard: [isAuthenticated, isSystemAdmin],
     tags: ['pages'],
     summary: 'Create pages',
-    description: 'Insert one or more new *pages*.',
+    description: 'Insert one or more new *pages*. Returns created pages and any rejected items.',
     request: {
       body: {
         required: true,
@@ -70,11 +70,19 @@ const pagesRoutes = {
       },
     },
     responses: {
-      201: {
-        description: 'Page',
+      200: {
+        description: 'Pages already created (idempotent)',
         content: {
           'application/json': {
-            schema: pageTxResponseSchema,
+            schema: pageCreateResponseSchema,
+          },
+        },
+      },
+      201: {
+        description: 'Pages created',
+        content: {
+          'application/json': {
+            schema: pageCreateResponseSchema,
           },
         },
       },
@@ -152,7 +160,7 @@ const pagesRoutes = {
     responses: {
       200: {
         description: 'Page updated',
-        content: { 'application/json': { schema: pageTxResponseSchema } },
+        content: { 'application/json': { schema: pageSchema } },
       },
       ...errorResponseRefs,
     },

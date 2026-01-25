@@ -1,6 +1,6 @@
 import { appConfig } from 'config';
 import { t } from 'i18next';
-import { createAttachment } from '~/api.gen';
+import { createAttachments } from '~/api.gen';
 import { parseUploadedAttachments } from '~/modules/attachment/helpers';
 import { attachmentQueryKeys } from '~/modules/attachment/query';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
@@ -18,7 +18,7 @@ export const useAttachmentsUploadDialog = (organizationSlug: string) => {
 
       // Create attachments via API with transaction metadata
       const tx = createTxForCreate();
-      await createAttachment({ path: { orgIdOrSlug: organizationSlug }, body: { data: attachments, tx } });
+      await createAttachments({ path: { orgIdOrSlug: organizationSlug }, body: { data: attachments, tx } });
 
       // Invalidate the cache to refresh the table
       queryClient.invalidateQueries({ queryKey: attachmentQueryKeys.list.base });

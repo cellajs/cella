@@ -8,8 +8,8 @@ import { streamSubscriberManager } from './subscriber-manager';
  * Configuration for creating a stream dispatcher.
  */
 export interface DispatcherConfig<T extends CursoredSubscriber> {
-  /** Get index key from event (return null to skip dispatch) */
-  getIndexKey: (event: ActivityEventWithEntity) => string | null;
+  /** Get channel from event (return null to skip dispatch) */
+  getChannel: (event: ActivityEventWithEntity) => string | null;
   /** Filter function to check if subscriber should receive event */
   shouldReceive: (subscriber: T, event: ActivityEventWithEntity) => boolean;
   /** Context name for logging (e.g., 'org event', 'public page') */
@@ -18,31 +18,31 @@ export interface DispatcherConfig<T extends CursoredSubscriber> {
 
 /**
  * Create a dispatcher function for a specific stream type.
- * Handles subscriber lookup, filtering, and error handling.
+ * Handles subscriber lookup by channel, filtering, and error handling.
  *
  * @example
  * const dispatchToOrgSubscribers = createStreamDispatcher<OrgStreamSubscriber>({
- *   getIndexKey: (event) => event.organizationId ? orgIndexKey(event.organizationId) : null,
- *   shouldReceive: shouldReceiveOrgEvent,
+ *   getChannel: (event) => event.organizationId ? orgChannel(event.organizationId) : null,
+ *   shouldReceive: canReceiveOrgEvent,
  *   logContext: 'org event',
  * });
  */
 export function createStreamDispatcher<T extends CursoredSubscriber>(
   config: DispatcherConfig<T>,
 ): (event: ActivityEventWithEntity) => Promise<void> {
-  const { getIndexKey, shouldReceive, logContext } = config;
+  const { getChannel, shouldReceive, logContext } = config;
 
   return async (event: ActivityEventWithEntity): Promise<void> => {
-    const indexKey = getIndexKey(event);
-    if (!indexKey) return;
+    const channel = getChannel(event);
+    if (!channel) return;
 
-    const subscribers = streamSubscriberManager.getByIndex<T>(indexKey);
+    const subscribers = streamSubscriberManager.getByChannel<T>(channel);
 
     logEvent('debug', `Dispatching ${logContext}`, {
       activityId: event.id,
       action: event.action,
       entityId: event.entityId,
-      indexKey,
+      channel,
       subscriberCount: subscribers.length,
       hasEntityData: !!event.entity,
     });

@@ -5,7 +5,7 @@ import { type UseFormProps, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import type { Organization } from '~/api.gen';
-import { zCreateOrganizationData } from '~/api.gen/zod.gen';
+import { zCreateOrganizationsData } from '~/api.gen/zod.gen';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { CallbackArgs } from '~/modules/common/data-table/types';
 import InputFormField from '~/modules/common/form-fields/input';
@@ -23,7 +23,7 @@ interface Props {
   callback?: (args: CallbackArgs<Organization>) => void;
 }
 
-const formSchema = zCreateOrganizationData.shape.body;
+const formSchema = zCreateOrganizationsData.shape.body;
 type FormValues = z.infer<typeof formSchema>;
 
 function CreateOrganizationForm({ labelDirection = 'top', children, callback }: Props) {

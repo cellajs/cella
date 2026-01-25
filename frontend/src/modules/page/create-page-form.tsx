@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 import { type UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
-import { zCreatePageData } from '~/api.gen/zod.gen';
+import { zCreatePagesData } from '~/api.gen/zod.gen';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import InputFormField from '~/modules/common/form-fields/input';
 import { usePageCreateMutation } from '~/modules/page/query';
@@ -15,7 +15,8 @@ interface Props {
 }
 
 // Form only collects the data portion - tx is added by mutation
-const formSchema = zCreatePageData.shape.body.shape.data;
+// zCreatePagesData.shape.body.shape.data is an array schema, use .element for single item
+const formSchema = zCreatePagesData.shape.body.shape.data.element;
 type FormValues = z.infer<typeof formSchema>;
 
 export const CreatePageForm = ({ callback }: Props) => {

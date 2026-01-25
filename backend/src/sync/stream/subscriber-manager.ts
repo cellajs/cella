@@ -1,45 +1,57 @@
 import type { BaseStreamSubscriber } from './types';
 
 /**
- * Subscriber manager with optional indexing.
- * Stores subscribers and provides O(1) lookup by index key.
- * All routing/filtering logic lives in handlers.
+ * Subscriber manager with multi-channel routing.
+ * Stores subscribers and provides O(1) lookup by channel.
+ * Subscribers can register on multiple channels to receive events from different sources.
  */
 class StreamSubscriberManager {
   private subscribers = new Map<string, BaseStreamSubscriber>();
-  private byIndex = new Map<string, Set<string>>();
+  private byChannel = new Map<string, Set<string>>();
 
   /**
-   * Register a subscriber.
-   * If indexKey is provided, subscriber is indexed for fast lookup.
+   * Register a subscriber on one or more channels.
+   * Primary channel is on subscriber.channel, additional channels for multi-org routing.
+   *
+   * @example
+   * // User stream subscribes to user channel + all org channels
+   * const orgChannels = [...orgIds].map(id => `org:${id}`);
+   * manager.register(subscriber, orgChannels);
    */
-  register<T extends BaseStreamSubscriber>(subscriber: T): void {
+  register<T extends BaseStreamSubscriber>(subscriber: T, additionalChannels: string[] = []): void {
     this.subscribers.set(subscriber.id, subscriber);
 
-    if (subscriber.indexKey) {
-      let set = this.byIndex.get(subscriber.indexKey);
+    const allChannels = [subscriber.channel, ...additionalChannels].filter(Boolean) as string[];
+    for (const channel of allChannels) {
+      let set = this.byChannel.get(channel);
       if (!set) {
         set = new Set();
-        this.byIndex.set(subscriber.indexKey, set);
+        this.byChannel.set(channel, set);
       }
       set.add(subscriber.id);
     }
+
+    // Store all channels for cleanup on unregister
+    subscriber._channels = allChannels;
   }
 
   /**
    * Unregister a subscriber by ID.
+   * Removes from all channels it was registered on.
    */
   unregister(id: string): void {
     const subscriber = this.subscribers.get(id);
     if (!subscriber) return;
 
-    // Remove from index
-    if (subscriber.indexKey) {
-      const set = this.byIndex.get(subscriber.indexKey);
+    // Remove from ALL channels
+    const allChannels = subscriber._channels ?? [subscriber.channel].filter(Boolean);
+    for (const channel of allChannels) {
+      if (!channel) continue;
+      const set = this.byChannel.get(channel);
       if (set) {
         set.delete(id);
         if (set.size === 0) {
-          this.byIndex.delete(subscriber.indexKey);
+          this.byChannel.delete(channel);
         }
       }
     }
@@ -48,10 +60,10 @@ class StreamSubscriberManager {
   }
 
   /**
-   * Get subscribers by index key - O(1) lookup.
+   * Get subscribers on a channel - O(1) lookup.
    */
-  getByIndex<T extends BaseStreamSubscriber>(key: string): T[] {
-    const ids = this.byIndex.get(key);
+  getByChannel<T extends BaseStreamSubscriber>(channel: string): T[] {
+    const ids = this.byChannel.get(channel);
     if (!ids) return [];
     return Array.from(ids)
       .map((id) => this.subscribers.get(id) as T)

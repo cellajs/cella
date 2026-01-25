@@ -16,11 +16,8 @@ export interface TxMetadata {
   expectedTransactionId: string | null;
 }
 
-/** Transaction response from API */
-export interface TxResponse {
-  transactionId: string;
-  changedField?: string | null;
-}
+/** Represents a JSONB type from the database that may contain tx metadata. */
+type JsonbTx = string | number | boolean | null | { [key: string]: unknown } | unknown[];
 
 /**
  * Create transaction metadata for a create mutation.
@@ -76,22 +73,16 @@ export function createTxForDelete(): TxMetadata {
 
 /**
  * Update field transaction store after successful mutation.
- * Call this in onSuccess to track the new transaction ID.
+ * Accepts entity.tx directly (the JSONB column value from product entities).
  *
  * @param entityType - Entity type
  * @param entityId - Entity ID
- * @param tx - Transaction response from server
+ * @param tx - Transaction data from entity.tx column
  */
-export function updateFieldTransactions(entityType: string, entityId: string, tx: TxResponse | undefined): void {
-  if (!tx?.transactionId) return;
-
-  // Track the transaction ID for the changed field (or '_all' for creates/deletes)
-  const field = tx.changedField ?? '_all';
-  setFieldTransactionId(entityType, entityId, field, tx.transactionId);
+export function updateFieldTransactions(entityType: string, entityId: string, tx: JsonbTx | undefined): void {
+  // Reuse the same logic as init - both accept entity.tx JSONB format
+  initFieldTransactionFromEntity(entityType, entityId, tx);
 }
-
-/** Represents a JSONB type from the database that may contain tx metadata. */
-type JsonbTx = string | number | boolean | null | { [key: string]: unknown } | unknown[];
 
 /**
  * Initialize field transaction tracking from entity data.

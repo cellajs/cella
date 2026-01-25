@@ -166,7 +166,7 @@
     }
   },
   {
-    "operationId": "createAttachment",
+    "operationId": "createAttachments",
     "responses": [
       {
         "status": 200,
@@ -261,17 +261,11 @@
                 "ref": "#/components/schemas/Attachment"
               }
             },
-            "tx": {
-              "type": "object",
+            "rejectedItemIds": {
+              "type": "array",
               "required": true,
-              "properties": {
-                "transactionId": {
-                  "type": "string",
-                  "required": true,
-                  "description": "Echoes the request transactionId"
-                }
-              },
-              "ref": "#/components/schemas/TxResponse"
+              "description": "Identifiers of items that could not be processed",
+              "itemType": "string"
             }
           },
           "contentType": "application/json"
@@ -370,17 +364,11 @@
                 "ref": "#/components/schemas/Attachment"
               }
             },
-            "tx": {
-              "type": "object",
+            "rejectedItemIds": {
+              "type": "array",
               "required": true,
-              "properties": {
-                "transactionId": {
-                  "type": "string",
-                  "required": true,
-                  "description": "Echoes the request transactionId"
-                }
-              },
-              "ref": "#/components/schemas/TxResponse"
+              "description": "Identifiers of items that could not be processed",
+              "itemType": "string"
             }
           },
           "contentType": "application/json"
@@ -526,7 +514,7 @@
           "type": "object",
           "properties": {
             "success": { "type": "boolean", "required": true },
-            "rejectedItems": {
+            "rejectedItemIds": {
               "type": "array",
               "required": true,
               "itemType": "string"
@@ -537,7 +525,7 @@
         },
         "example": {
           "success": true,
-          "rejectedItems": []
+          "rejectedItemIds": []
         }
       },
       {
@@ -608,105 +596,112 @@
       {
         "status": 200,
         "description": "Attachment was updated",
+        "name": "Attachment",
+        "ref": "#/components/schemas/Attachment",
         "contentType": "application/json",
         "schema": {
           "type": "object",
           "properties": {
-            "data": {
-              "type": "object",
+            "createdAt": { "type": "string", "required": true },
+            "id": { "type": "string", "required": true },
+            "entityType": {
+              "type": "string",
               "required": true,
-              "properties": {
-                "createdAt": { "type": "string", "required": true },
-                "id": { "type": "string", "required": true },
-                "entityType": {
-                  "type": "string",
-                  "required": true,
-                  "enum": ["attachment"]
-                },
-                "name": { "type": "string", "required": true },
-                "description": {
-                  "type": ["string", "null"],
-                  "required": true
-                },
-                "modifiedAt": {
-                  "type": ["string", "null"],
-                  "required": true
-                },
-                "keywords": { "type": "string", "required": true },
-                "createdBy": {
-                  "type": ["string", "null"],
-                  "required": true
-                },
-                "modifiedBy": {
-                  "type": ["string", "null"],
-                  "required": true
-                },
-                "tx": {
-                  "required": true,
-                  "anyOf": [
-                    { "type": "string", "required": false },
-                    { "type": "number", "required": false },
-                    { "type": "boolean", "required": false },
-                    { "type": "null", "required": false },
-                    { "type": "object", "required": false },
-                    {
-                      "type": "array",
-                      "required": false,
-                      "itemType": "object"
-                    }
-                  ]
-                },
-                "public": { "type": "boolean", "required": true },
-                "bucketName": { "type": "string", "required": true },
-                "groupId": {
-                  "type": ["string", "null"],
-                  "required": true
-                },
-                "filename": { "type": "string", "required": true },
-                "contentType": { "type": "string", "required": true },
-                "convertedContentType": {
-                  "type": ["string", "null"],
-                  "required": true
-                },
-                "size": { "type": "string", "required": true },
-                "originalKey": { "type": "string", "required": true },
-                "convertedKey": {
-                  "type": ["string", "null"],
-                  "required": true
-                },
-                "thumbnailKey": {
-                  "type": ["string", "null"],
-                  "required": true
-                },
-                "organizationId": { "type": "string", "required": true },
-                "can": {
-                  "type": "object",
-                  "required": false,
-                  "properties": {
-                    "create": { "type": "boolean", "required": true },
-                    "read": { "type": "boolean", "required": true },
-                    "update": { "type": "boolean", "required": true },
-                    "delete": { "type": "boolean", "required": true },
-                    "search": { "type": "boolean", "required": true }
-                  }
-                }
-              },
-              "ref": "#/components/schemas/Attachment"
+              "enum": ["attachment"]
+            },
+            "name": { "type": "string", "required": true },
+            "description": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "modifiedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "keywords": { "type": "string", "required": true },
+            "createdBy": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "modifiedBy": {
+              "type": ["string", "null"],
+              "required": true
             },
             "tx": {
-              "type": "object",
               "required": true,
-              "properties": {
-                "transactionId": {
-                  "type": "string",
-                  "required": true,
-                  "description": "Echoes the request transactionId"
+              "anyOf": [
+                { "type": "string", "required": false },
+                { "type": "number", "required": false },
+                { "type": "boolean", "required": false },
+                { "type": "null", "required": false },
+                { "type": "object", "required": false },
+                {
+                  "type": "array",
+                  "required": false,
+                  "itemType": "object"
                 }
-              },
-              "ref": "#/components/schemas/TxResponse"
+              ]
+            },
+            "public": { "type": "boolean", "required": true },
+            "bucketName": { "type": "string", "required": true },
+            "groupId": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "filename": { "type": "string", "required": true },
+            "contentType": { "type": "string", "required": true },
+            "convertedContentType": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "size": { "type": "string", "required": true },
+            "originalKey": { "type": "string", "required": true },
+            "convertedKey": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "thumbnailKey": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "organizationId": { "type": "string", "required": true },
+            "can": {
+              "type": "object",
+              "required": false,
+              "properties": {
+                "create": { "type": "boolean", "required": true },
+                "read": { "type": "boolean", "required": true },
+                "update": { "type": "boolean", "required": true },
+                "delete": { "type": "boolean", "required": true },
+                "search": { "type": "boolean", "required": true }
+              }
             }
           },
+          "ref": "#/components/schemas/Attachment",
           "contentType": "application/json"
+        },
+        "example": {
+          "id": "og9ynkm3vp2mdgi3oeicogxv",
+          "entityType": "attachment",
+          "name": "yet_rightfully_lest.ogx",
+          "description": null,
+          "keywords": "pectus subvenio depromo",
+          "public": false,
+          "bucketName": "attachments",
+          "groupId": null,
+          "filename": "yet_rightfully_lest.ogx",
+          "contentType": "video/mp2t",
+          "convertedContentType": null,
+          "size": "6046908",
+          "originalKey": "uploads/ofr579y6bqnt152wowxrfkyy/yet_rightfully_lest.ogx",
+          "convertedKey": null,
+          "thumbnailKey": null,
+          "createdAt": "2024-10-12T17:43:05.360Z",
+          "createdBy": "0uwim8y2tppz7th9tol75wjz",
+          "modifiedAt": "2024-10-12T17:43:05.360Z",
+          "modifiedBy": "0uwim8y2tppz7th9tol75wjz",
+          "tx": null,
+          "organizationId": "8dwkbmpkeuemouu8t58r8fuj"
         }
       },
       {

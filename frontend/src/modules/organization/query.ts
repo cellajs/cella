@@ -1,8 +1,8 @@
 import { infiniteQueryOptions, queryOptions, useMutation, useQueryClient } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import {
-  type CreateOrganizationData,
-  createOrganization,
+  type CreateOrganizationsData,
+  createOrganizations,
   deleteOrganizations,
   type GetOrganizationsData,
   getOrganization,
@@ -99,9 +99,13 @@ export const useOrganizationCreateMutation = () => {
   const queryClient = useQueryClient();
   const mutateCache = useMutateQueryData(keys.list.base);
 
-  return useMutation<OrganizationWithMembership, ApiError, CreateOrganizationData['body']>({
+  return useMutation<OrganizationWithMembership, ApiError, CreateOrganizationsData['body']>({
     mutationKey: keys.create,
-    mutationFn: (body) => createOrganization({ body }),
+    mutationFn: async (body) => {
+      const result = await createOrganizations({ body });
+      // Return the first created organization (currently only single creation supported)
+      return result.data[0] as OrganizationWithMembership;
+    },
     onSuccess: (createdOrganization) => {
       mutateCache.create([createdOrganization]);
     },

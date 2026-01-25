@@ -1,7 +1,7 @@
 import { appConfig } from 'config';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { StreamMessage } from '../realtime';
+import type { UserStreamMessage } from '../realtime';
 
 /**
  * Key for field transaction lookup: entityType:entityId:field
@@ -29,7 +29,7 @@ interface FieldTransactionActions {
   setFieldTransactionId: (entityType: string, entityId: string, field: string, transactionId: string) => void;
 
   /** Update field transaction from a stream message */
-  updateFromStreamMessage: (message: StreamMessage) => void;
+  updateFromStreamMessage: (message: UserStreamMessage) => void;
 
   /** Clear transactions for a specific entity (e.g., on delete) */
   clearEntity: (entityType: string, entityId: string) => void;

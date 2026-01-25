@@ -3,12 +3,11 @@ import { createXRoute } from '#/docs/x-routes';
 import { hasOrgAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
+  attachmentCreateResponseSchema,
   attachmentCreateTxBodySchema,
   attachmentListQuerySchema,
   attachmentSchema,
-  attachmentTxResponseSchema,
   attachmentUpdateTxBodySchema,
-  attachmentUpdateTxResponseSchema,
 } from '#/modules/attachment/attachment-schema';
 import {
   errorResponseRefs,
@@ -48,7 +47,7 @@ const attachmentRoutes = {
    * Create one or more attachments
    */
   createAttachments: createXRoute({
-    operationId: 'createAttachment',
+    operationId: 'createAttachments',
     method: 'post',
     path: '/',
     xGuard: [isAuthenticated, hasOrgAccess],
@@ -66,11 +65,11 @@ const attachmentRoutes = {
     responses: {
       200: {
         description: 'Attachments already created (idempotent)',
-        content: { 'application/json': { schema: attachmentTxResponseSchema } },
+        content: { 'application/json': { schema: attachmentCreateResponseSchema } },
       },
       201: {
         description: 'Attachments created',
-        content: { 'application/json': { schema: attachmentTxResponseSchema } },
+        content: { 'application/json': { schema: attachmentCreateResponseSchema } },
       },
       ...errorResponseRefs,
     },
@@ -96,7 +95,7 @@ const attachmentRoutes = {
     responses: {
       200: {
         description: 'Attachment was updated',
-        content: { 'application/json': { schema: attachmentUpdateTxResponseSchema } },
+        content: { 'application/json': { schema: attachmentSchema } },
       },
       ...errorResponseRefs,
     },

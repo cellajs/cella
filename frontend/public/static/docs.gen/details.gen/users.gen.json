@@ -214,7 +214,7 @@
           "type": "object",
           "properties": {
             "success": { "type": "boolean", "required": true },
-            "rejectedItems": {
+            "rejectedItemIds": {
               "type": "array",
               "required": true,
               "itemType": "string"
@@ -225,7 +225,7 @@
         },
         "example": {
           "success": true,
-          "rejectedItems": []
+          "rejectedItemIds": []
         }
       },
       {

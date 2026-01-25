@@ -6,17 +6,16 @@ import { DownAlert } from '~/modules/common/down-alert';
 import { Dropdowner } from '~/modules/common/dropdowner/provider';
 import ErrorNotice, { type ErrorNoticeError } from '~/modules/common/error-notice';
 import { Sheeter } from '~/modules/common/sheeter/provider';
-import SSE from '~/modules/common/sse';
-import { SSEProvider } from '~/modules/common/sse/provider';
 import { Uploader } from '~/modules/common/uploader/uploader';
+import UserStream from '~/modules/common/user-stream';
 import AppNav from '~/modules/navigation/app-nav';
 import { SidebarWrapper } from '~/modules/ui/sidebar';
 
 /**
  * Main application layout component.
- * - Wraps the app in error boundaries and SSE provider.
+ * - Wraps the app in error boundaries.
  * - Renders navigation, content area, dialogs, sheets, and other global components.
- * - dialoger, dropdowner and sheeter need to be inside SSE provider to receive SSE events.
+ * - Uses UserStream for real-time membership/organization updates via CDC events.
  */
 function AppLayout() {
   return (
@@ -26,19 +25,17 @@ function AppLayout() {
           <ErrorNotice error={error as ErrorNoticeError} level="root" resetErrorBoundary={resetErrorBoundary} />
         )}
       >
-        <SSEProvider>
-          <SidebarWrapper>
-            <AppNav />
-            <AppContent />
-          </SidebarWrapper>
-          <SSE />
-          <Uploader />
-          <Dialoger />
-          <AppSheets />
-          <Sheeter />
-          <DownAlert />
-          <Dropdowner />
-        </SSEProvider>
+        <SidebarWrapper>
+          <AppNav />
+          <AppContent />
+        </SidebarWrapper>
+        <UserStream />
+        <Uploader />
+        <Dialoger />
+        <AppSheets />
+        <Sheeter />
+        <DownAlert />
+        <Dropdowner />
       </ErrorBoundary>
     </div>
   );

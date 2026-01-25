@@ -240,5 +240,45 @@ const meRoutes = {
       ...errorResponseRefs,
     },
   }),
+  /**
+   * User event stream
+   */
+  stream: createXRoute({
+    operationId: 'getUserStream',
+    method: 'get',
+    path: '/stream',
+    xGuard: isAuthenticated,
+    tags: ['me'],
+    summary: 'User event stream',
+    description:
+      'SSE stream for membership and organization events affecting the *current user*. Use offset for catch-up, live=sse for streaming.',
+    request: {
+      query: z.object({
+        offset: z.string().optional().openapi({
+          description: "Starting offset: 'now' for live-only, or activity ID for catch-up",
+          example: 'now',
+        }),
+        live: z.enum(['sse', 'poll']).optional().openapi({
+          description: "Connection mode: 'sse' for streaming, 'poll' for one-time fetch",
+          example: 'sse',
+        }),
+      }),
+    },
+    responses: {
+      200: {
+        description: 'SSE stream or catch-up response',
+        content: {
+          'text/event-stream': { schema: z.any() },
+          'application/json': {
+            schema: z.object({
+              activities: z.array(z.any()),
+              cursor: z.string().nullable(),
+            }),
+          },
+        },
+      },
+      ...errorResponseRefs,
+    },
+  }),
 };
 export default meRoutes;

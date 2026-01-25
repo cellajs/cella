@@ -2,9 +2,11 @@
  * Multi-tab coordination for sync engine.
  * Uses Web Locks API for leader election and BroadcastChannel for cross-tab messaging.
  * Only the leader tab maintains the SSE connection; follower tabs receive updates via broadcast.
+ *
+ * This prevents redundant IDB writes when the React Query cache is persisted across tabs.
  */
 import { create } from 'zustand';
-import type { StreamMessage } from './stream-types';
+import type { UserStreamMessage } from './user-stream-types';
 
 // Tab coordination channel name
 const CHANNEL_NAME = 'cella-sync';
@@ -14,7 +16,7 @@ const LEADER_LOCK_NAME = 'cella-sync-leader';
 
 /** Message types for BroadcastChannel communication */
 type BroadcastMessage =
-  | { type: 'stream-message'; message: StreamMessage; orgId: string }
+  | { type: 'stream-message'; message: UserStreamMessage; orgId: string }
   | { type: 'leader-ping'; tabId: string }
   | { type: 'cursor-update'; orgId: string; cursor: string }
   | { type: 'sync-request'; orgId: string };
@@ -48,7 +50,7 @@ export const useTabCoordinatorStore = create<TabCoordinatorState>((set) => ({
 // Module-level state for channel and lock
 let broadcastChannel: BroadcastChannel | null = null;
 let lockController: AbortController | null = null;
-let messageHandlers: Set<(message: StreamMessage, orgId: string) => void> = new Set();
+let messageHandlers: Set<(message: UserStreamMessage, orgId: string) => void> = new Set();
 let cursorHandlers: Set<(orgId: string, cursor: string) => void> = new Set();
 
 /**
@@ -182,7 +184,7 @@ export const broadcastMessage = (message: BroadcastMessage): void => {
  * Broadcast a stream message to follower tabs.
  * Called by the leader when receiving SSE messages.
  */
-export const broadcastStreamMessage = (message: StreamMessage, orgId: string): void => {
+export const broadcastStreamMessage = (message: UserStreamMessage, orgId: string): void => {
   broadcastMessage({ type: 'stream-message', message, orgId });
 };
 
@@ -205,7 +207,7 @@ export const requestSync = (orgId: string): void => {
  * Register a handler for stream messages.
  * Used by followers to receive updates from the leader.
  */
-export const onStreamMessage = (handler: (message: StreamMessage, orgId: string) => void): (() => void) => {
+export const onStreamMessage = (handler: (message: UserStreamMessage, orgId: string) => void): (() => void) => {
   messageHandlers.add(handler);
   return () => {
     messageHandlers.delete(handler);

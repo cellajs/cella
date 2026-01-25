@@ -7,8 +7,8 @@ import {
 } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import {
-  type CreatePageData,
-  createPage,
+  type CreatePagesData,
+  createPages,
   deletePages,
   type GetPagesData,
   getPage,
@@ -36,7 +36,8 @@ import {
 } from '~/query/offline';
 
 // Use generated types from api.gen for mutation input shapes
-type CreatePageInput = CreatePageData['body']['data'];
+// CreatePagesData uses array schema, extract element type for single item input
+type CreatePageInput = CreatePagesData['body']['data'][number];
 type UpdatePageInput = UpdatePageData['body']['data'];
 
 /** All updatable fields extracted from generated zod schema - used for conflict detection. */
@@ -137,10 +138,12 @@ export const usePageCreateMutation = () => {
     mutationKey: keys.create,
 
     // Execute API call with transaction metadata for conflict tracking
+    // API accepts array - wrap single item, extract first from response
     mutationFn: async (data: CreatePageInput) => {
       const tx = createTxForCreate();
-      const result = await createPage({ body: { data, tx } });
-      return result;
+      const result = await createPages({ body: { data: [data], tx } });
+      // Return created page (has tx embedded)
+      return result.data[0];
     },
 
     // Runs BEFORE mutationFn - prepare optimistic state
@@ -167,15 +170,15 @@ export const usePageCreateMutation = () => {
     },
 
     // Runs on API success - finalize with real data
-    onSuccess: (result, _variables, context) => {
+    onSuccess: (createdPage, _variables, context) => {
       // Remove temp entity and insert real one with server-assigned ID
       if (context?.optimisticPage) {
         mutateCache.remove([context.optimisticPage]);
       }
-      mutateCache.create([result.data]);
+      mutateCache.create([createdPage]);
 
-      // Store server timestamps for future conflict detection
-      updateFieldTransactions('page', result.data.id, result.tx);
+      // Store server timestamps for future conflict detection (tx is embedded in entity)
+      updateFieldTransactions('page', createdPage.id, createdPage.tx);
     },
 
     // Runs after success OR error - ensure cache stays fresh
@@ -235,12 +238,12 @@ export const usePageUpdateMutation = () => {
     },
 
     // Runs on API success - apply authoritative server data
-    onSuccess: (result) => {
+    onSuccess: (updatedPage) => {
       // Replace optimistic data with server response (source of truth)
-      mutateCache.update([result.data]);
+      mutateCache.update([updatedPage]);
 
-      // Store server timestamps for future conflict detection
-      updateFieldTransactions('page', result.data.id, result.tx);
+      // Store server timestamps for future conflict detection (tx is embedded in entity)
+      updateFieldTransactions('page', updatedPage.id, updatedPage.tx);
     },
 
     // Runs after success OR error - refresh detail view
@@ -306,11 +309,12 @@ export const usePageDeleteMutation = () => {
  * Called during app initialization before persisted cache restoration.
  */
 addMutationRegistrar((queryClient: QueryClient) => {
-  // Create mutation
+  // Create mutation - API accepts array, unwrap single result
   queryClient.setMutationDefaults(keys.create, {
     mutationFn: async (data: CreatePageInput) => {
       const tx = createTxForCreate();
-      return createPage({ body: { data, tx } });
+      const result = await createPages({ body: { data: [data], tx } });
+      return result.data[0]; // Return entity with tx embedded
     },
   });
 

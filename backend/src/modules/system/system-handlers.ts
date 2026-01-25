@@ -99,18 +99,18 @@ const systemRouteHandlers = app
 
     // 3) Decide recipients vs rejected based on scenarios
     const recipientEmails: string[] = [];
-    const rejectedItems: string[] = [];
+    const rejectedItemIds: string[] = [];
 
     for (const email of normalizedEmails) {
       if (existingEmails.has(email)) {
         // Already a user
-        rejectedItems.push(email);
+        rejectedItemIds.push(email);
         continue;
       }
 
       if (activeTokenByEmail.has(email)) {
         // Already has an active pending invite
-        rejectedItems.push(email);
+        rejectedItemIds.push(email);
         continue;
       }
 
@@ -119,7 +119,7 @@ const systemRouteHandlers = app
     }
 
     if (recipientEmails.length === 0) {
-      return ctx.json({ success: false, rejectedItems, invitesSentCount: 0 }, 200);
+      return ctx.json({ success: false, rejectedItemIds, invitesSentCount: 0 }, 200);
     }
 
     // Generate token and store hashed
@@ -160,7 +160,7 @@ const systemRouteHandlers = app
 
     logEvent('info', 'Users invited on system level', { count: recipients.length });
 
-    return ctx.json({ success: true, rejectedItems, invitesSentCount: recipients.length }, 200);
+    return ctx.json({ success: true, rejectedItemIds, invitesSentCount: recipients.length }, 200);
   })
   /**
    * Get presigned URL

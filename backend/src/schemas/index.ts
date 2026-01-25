@@ -46,19 +46,17 @@ export { createStreamMessageSchema, type StreamMessage, streamMessageSchema } fr
 
 // Success response schemas
 export {
+  batchResponseSchema,
   paginationSchema,
   type SuccessWithRejectedItemsResponse,
   successWithRejectedItemsSchema,
 } from './success-response-schemas';
 
-// Transaction schemas
+// Transaction schemas (request wrapper only - responses return entities directly)
 export {
   createTxMutationSchema,
-  createTxResponseSchema,
   type TxRequest,
-  type TxResponse,
   type TxStreamMessage,
   txRequestSchema,
-  txResponseSchema,
   txStreamMessageSchema,
 } from './transaction-schemas';

@@ -2,7 +2,7 @@
   {
     "name": "me",
     "description": "Endpoints related to the *current user*, meaning the user associated with the active session making\n        the request. These routes are distinct from general `users` endpoints: while `users` may operate on\n        any user in the system, `me` endpoints are scoped exclusively to the *current user* and follow a\n        different authorization flow.",
-    "count": 10
+    "count": 11
   },
   {
     "name": "users",
@@ -27,7 +27,7 @@
   {
     "name": "entities",
     "description": "Endpoints that operate across multiple *entity types*, such as `users` and `organizations`.\n        *Entities* are identifiable domain objects that may be contextual, hierarchical (with parent/child\n        relations), or actor-like. These endpoints offer shared logic across modules, including slug validation\n        and entity visibility.",
-    "count": 2
+    "count": 1
   },
   {
     "name": "system",

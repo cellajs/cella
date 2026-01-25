@@ -14,16 +14,31 @@ export const paginationSchema = <O, I>(schema: z.ZodType<O, I>) =>
 
 /**
  * Schema for a successful response with disallowed IDs.
+ * Use for delete operations where you don't need the entities back.
  */
 export const successWithRejectedItemsSchema = z
   .object({
     success: z.boolean(),
-    rejectedItems: z.array(z.string()),
+    rejectedItemIds: z.array(z.string()),
   })
   .openapi('SuccessWithRejectedItems', { example: mockSuccessWithRejectedItems() });
 
 /** SuccessWithRejectedItems response type */
 export interface SuccessWithRejectedItemsResponse {
   success: boolean;
-  rejectedItems: string[];
+  rejectedItemIds: string[];
 }
+
+/**
+ * Factory to create a batch response schema with data items and rejected items.
+ * Use for batch create operations where you need the created entities back.
+ *
+ * @example
+ * const pagesResponseSchema = batchResponseSchema(pageSchema);
+ * // Result: { data: Page[], rejectedItems: string[] }
+ */
+export const batchResponseSchema = <T extends z.ZodTypeAny>(itemSchema: T) =>
+  z.object({
+    data: z.array(itemSchema),
+    rejectedItemIds: z.array(z.string()).describe('Identifiers of items that could not be processed'),
+  });

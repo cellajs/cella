@@ -680,7 +680,12 @@ The mutation handling differs based on connectivity:
 4. LIST response arrives (older snapshot!)
 5. User sees data regress to older state
 
-**Solution**: Queue stream messages during hydration. See `useLiveStream` hook in which uses `isHydrating` ref and `queuedMessages` to defer message processing until initial queries complete.
+**Solution**: Queue stream messages during hydration using `useHydrateBarrier` hook from [hydrate-barrier.ts](../frontend/src/query/realtime/hydrate-barrier.ts). The `useLiveStream` hook accepts an `isHydrated` option that controls when queued messages are flushed.
+
+**Key files:**
+- `hydrate-barrier.ts` - Composable barrier utility and React hook
+- `use-live-stream.ts` - Integrates barrier via `isHydrated` option
+- `organization-routes.tsx` - Passes hydration state based on `useIsFetching` for realtime entity types
 
 ### Stream offset store (offline)
 

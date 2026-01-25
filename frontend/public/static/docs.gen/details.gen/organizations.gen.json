@@ -1,219 +1,185 @@
 [
   {
-    "operationId": "createOrganization",
+    "operationId": "createOrganizations",
     "responses": [
       {
         "status": 201,
-        "description": "Organization was created",
+        "description": "Organizations were created",
         "contentType": "application/json",
         "schema": {
           "type": "object",
           "properties": {
-            "createdAt": { "type": "string", "required": true },
-            "id": { "type": "string", "required": true },
-            "entityType": {
-              "type": "string",
-              "required": true,
-              "enum": ["organization"]
-            },
-            "name": { "type": "string", "required": true },
-            "description": {
-              "type": ["string", "null"],
-              "required": true
-            },
-            "modifiedAt": {
-              "type": ["string", "null"],
-              "required": true
-            },
-            "slug": { "type": "string", "required": true },
-            "thumbnailUrl": {
-              "type": ["string", "null"],
-              "required": true
-            },
-            "bannerUrl": {
-              "type": ["string", "null"],
-              "required": true
-            },
-            "createdBy": {
-              "type": ["string", "null"],
-              "required": true
-            },
-            "modifiedBy": {
-              "type": ["string", "null"],
-              "required": true
-            },
-            "shortName": {
-              "type": ["string", "null"],
-              "required": true
-            },
-            "country": {
-              "type": ["string", "null"],
-              "required": true
-            },
-            "timezone": {
-              "type": ["string", "null"],
-              "required": true
-            },
-            "defaultLanguage": {
-              "type": "string",
-              "required": true,
-              "enum": ["en", "nl"]
-            },
-            "languages": {
+            "data": {
               "type": "array",
               "required": true,
-              "minItems": 1,
-              "itemType": "string",
-              "enum": ["en", "nl"]
+              "itemType": "object",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "createdAt": { "type": "string", "required": true },
+                  "id": { "type": "string", "required": true },
+                  "entityType": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["organization"]
+                  },
+                  "name": { "type": "string", "required": true },
+                  "description": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "modifiedAt": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "slug": { "type": "string", "required": true },
+                  "thumbnailUrl": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "bannerUrl": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "createdBy": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "modifiedBy": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "shortName": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "country": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "timezone": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "defaultLanguage": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["en", "nl"]
+                  },
+                  "languages": {
+                    "type": "array",
+                    "required": true,
+                    "minItems": 1,
+                    "itemType": "string",
+                    "enum": ["en", "nl"]
+                  },
+                  "notificationEmail": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "emailDomains": {
+                    "type": "array",
+                    "required": true,
+                    "itemType": "string"
+                  },
+                  "color": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "logoUrl": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "websiteUrl": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "welcomeText": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "authStrategies": {
+                    "type": "array",
+                    "required": true,
+                    "itemType": "string",
+                    "enum": ["github", "google", "microsoft", "password", "passkey", "totp", "email"]
+                  },
+                  "chatSupport": { "type": "boolean", "required": true },
+                  "membership": {
+                    "type": "object",
+                    "required": true,
+                    "properties": {
+                      "id": { "type": "string", "required": true },
+                      "contextType": {
+                        "type": "string",
+                        "required": true,
+                        "enum": ["organization"]
+                      },
+                      "userId": { "type": "string", "required": true },
+                      "role": {
+                        "type": "string",
+                        "required": true,
+                        "enum": ["member", "admin"]
+                      },
+                      "archived": { "type": "boolean", "required": true },
+                      "muted": { "type": "boolean", "required": true },
+                      "order": {
+                        "type": "number",
+                        "required": true,
+                        "minimum": -140737488355328,
+                        "maximum": 140737488355327
+                      },
+                      "organizationId": { "type": "string", "required": true }
+                    },
+                    "ref": "#/components/schemas/MembershipBase"
+                  },
+                  "counts": {
+                    "type": "object",
+                    "required": false,
+                    "properties": {
+                      "membership": {
+                        "type": "object",
+                        "required": true,
+                        "properties": {
+                          "member": { "type": "number", "required": true },
+                          "admin": { "type": "number", "required": true },
+                          "pending": { "type": "number", "required": true },
+                          "total": { "type": "number", "required": true }
+                        }
+                      },
+                      "entities": {
+                        "type": "object",
+                        "required": true,
+                        "properties": {
+                          "attachment": { "type": "number", "required": true },
+                          "page": { "type": "number", "required": true }
+                        }
+                      }
+                    }
+                  },
+                  "can": {
+                    "type": "object",
+                    "required": false,
+                    "properties": {
+                      "create": { "type": "boolean", "required": true },
+                      "read": { "type": "boolean", "required": true },
+                      "update": { "type": "boolean", "required": true },
+                      "delete": { "type": "boolean", "required": true },
+                      "search": { "type": "boolean", "required": true }
+                    }
+                  }
+                },
+                "extendsRef": "#/components/schemas/Organization"
+              }
             },
-            "notificationEmail": {
-              "type": ["string", "null"],
-              "required": true
-            },
-            "emailDomains": {
+            "rejectedItemIds": {
               "type": "array",
               "required": true,
+              "description": "Identifiers of items that could not be processed",
               "itemType": "string"
-            },
-            "color": {
-              "type": ["string", "null"],
-              "required": true
-            },
-            "logoUrl": {
-              "type": ["string", "null"],
-              "required": true
-            },
-            "websiteUrl": {
-              "type": ["string", "null"],
-              "required": true
-            },
-            "welcomeText": {
-              "type": ["string", "null"],
-              "required": true
-            },
-            "authStrategies": {
-              "type": "array",
-              "required": true,
-              "itemType": "string",
-              "enum": ["github", "google", "microsoft", "password", "passkey", "totp", "email"]
-            },
-            "chatSupport": { "type": "boolean", "required": true },
-            "membership": {
-              "type": "object",
-              "required": true,
-              "properties": {
-                "id": { "type": "string", "required": true },
-                "contextType": {
-                  "type": "string",
-                  "required": true,
-                  "enum": ["organization"]
-                },
-                "userId": { "type": "string", "required": true },
-                "role": {
-                  "type": "string",
-                  "required": true,
-                  "enum": ["member", "admin"]
-                },
-                "archived": { "type": "boolean", "required": true },
-                "muted": { "type": "boolean", "required": true },
-                "order": {
-                  "type": "number",
-                  "required": true,
-                  "minimum": -140737488355328,
-                  "maximum": 140737488355327
-                },
-                "organizationId": { "type": "string", "required": true }
-              },
-              "ref": "#/components/schemas/MembershipBase"
-            },
-            "counts": {
-              "type": "object",
-              "required": false,
-              "properties": {
-                "membership": {
-                  "type": "object",
-                  "required": true,
-                  "properties": {
-                    "member": { "type": "number", "required": true },
-                    "admin": { "type": "number", "required": true },
-                    "pending": { "type": "number", "required": true },
-                    "total": { "type": "number", "required": true }
-                  }
-                },
-                "entities": {
-                  "type": "object",
-                  "required": true,
-                  "properties": {
-                    "attachment": { "type": "number", "required": true },
-                    "page": { "type": "number", "required": true }
-                  }
-                }
-              }
-            },
-            "can": {
-              "type": "object",
-              "required": false,
-              "properties": {
-                "create": { "type": "boolean", "required": true },
-                "read": { "type": "boolean", "required": true },
-                "update": { "type": "boolean", "required": true },
-                "delete": { "type": "boolean", "required": true },
-                "search": { "type": "boolean", "required": true }
-              }
             }
           },
-          "extendsRef": "#/components/schemas/Organization",
           "contentType": "application/json"
-        },
-        "example": {
-          "id": "hmo9fwr239kqavr3yur671kl",
-          "entityType": "organization",
-          "name": "McClure, Dicki and Waters",
-          "slug": "mcclure-dicki-and-waters",
-          "description": "Open-source static website",
-          "shortName": "McClure,",
-          "country": "Guatemala",
-          "timezone": "Africa/Dar_es_Salaam",
-          "defaultLanguage": "en",
-          "languages": ["en"],
-          "notificationEmail": "notifications@mcclure-dicki-and-waters.example",
-          "emailDomains": [],
-          "color": "#daf7e3",
-          "thumbnailUrl": null,
-          "logoUrl": "https://picsum.photos/seed/CGEa4RRQS/2665/3362",
-          "bannerUrl": null,
-          "websiteUrl": "https://mcclure-dicki-and-waters.example",
-          "welcomeText": "Welcome to McClure, Dicki and Waters!",
-          "authStrategies": ["password"],
-          "chatSupport": true,
-          "createdAt": "2024-12-25T15:29:47.111Z",
-          "createdBy": null,
-          "modifiedAt": "2024-12-25T15:29:47.111Z",
-          "modifiedBy": null,
-          "restrictions": {
-            "user": 1000,
-            "attachment": 100,
-            "page": 0
-          },
-          "membership": {
-            "id": "kaba9fpc90mgtzmtjipw2v8s",
-            "contextType": "organization",
-            "userId": "w4hg4036vxzq0rzt4pucveps",
-            "organizationId": "hmo9fwr239kqavr3yur671kl",
-            "role": "admin",
-            "order": 38,
-            "muted": false,
-            "archived": false
-          },
-          "counts": {
-            "membership": {
-              "member": 30,
-              "admin": 63,
-              "pending": 13,
-              "total": 93
-            },
-            "entities": { "attachment": 178, "page": 257 }
-          }
         }
       },
       {
@@ -540,7 +506,7 @@
           "type": "object",
           "properties": {
             "success": { "type": "boolean", "required": true },
-            "rejectedItems": {
+            "rejectedItemIds": {
               "type": "array",
               "required": true,
               "itemType": "string"
@@ -551,7 +517,7 @@
         },
         "example": {
           "success": true,
-          "rejectedItems": []
+          "rejectedItemIds": []
         }
       },
       {

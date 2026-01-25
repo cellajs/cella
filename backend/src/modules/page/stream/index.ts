@@ -1,3 +1,3 @@
+export { canReceivePublicPageEvent } from './can-receive';
 export { dispatchToPublicPageSubscribers } from './route';
-export { shouldReceivePublicPageEvent } from './should-receive';
-export { type PublicPageSubscriber, publicPageIndexKey } from './types';
+export { type PublicPageSubscriber, publicPageChannel } from './types';

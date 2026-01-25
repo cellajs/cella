@@ -8,9 +8,9 @@ import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { tagsQueryOptions } from '~/modules/docs/query';
 import { DocsSidebar } from '~/modules/docs/sidebar/docs-sidebar';
 import FloatingNav, { type FloatingNavItem } from '~/modules/navigation/floating-nav';
-import { usePageLiveStream } from '~/modules/page/use-page-live-stream';
 import { ResizableGroup, ResizablePanel, ResizableSeparator } from '~/modules/ui/resizable';
 import { ScrollArea } from '~/modules/ui/scroll-area';
+import { usePageLiveStream } from '~/query/realtime/use-page-live-stream';
 import { useUIStore } from '~/store/ui';
 
 const DOCS_SIDEBAR_SHEET_ID = 'docs-sidebar';

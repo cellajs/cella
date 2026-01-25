@@ -864,7 +864,7 @@
           "type": "object",
           "properties": {
             "success": { "type": "boolean", "required": true },
-            "rejectedItems": {
+            "rejectedItemIds": {
               "type": "array",
               "required": true,
               "itemType": "string"
@@ -875,7 +875,7 @@
         },
         "example": {
           "success": true,
-          "rejectedItems": []
+          "rejectedItemIds": []
         }
       },
       {
@@ -1132,6 +1132,83 @@
       "query": {
         "properties": {
           "token": { "type": "string", "required": true }
+        }
+      }
+    }
+  },
+  {
+    "operationId": "getUserStream",
+    "responses": [
+      {
+        "status": 200,
+        "description": "SSE stream or catch-up response",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "activities": {
+              "type": "array",
+              "required": true,
+              "itemType": "object"
+            },
+            "cursor": {
+              "type": ["string", "null"],
+              "required": true
+            }
+          },
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "query": {
+        "properties": {
+          "offset": {
+            "type": "string",
+            "required": false,
+            "description": "Starting offset: 'now' for live-only, or activity ID for catch-up"
+          },
+          "live": {
+            "type": "string",
+            "required": false,
+            "description": "Connection mode: 'sse' for streaming, 'poll' for one-time fetch",
+            "enum": ["sse", "poll"]
+          }
         }
       }
     }

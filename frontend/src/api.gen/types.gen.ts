@@ -202,7 +202,7 @@ export type InactiveMembership = {
 
 export type SuccessWithRejectedItems = {
   success: boolean;
-  rejectedItems: Array<string>;
+  rejectedItemIds: Array<string>;
 };
 
 export type UploadToken = {
@@ -299,13 +299,6 @@ export type Page = {
   status: 'unpublished' | 'published' | 'archived';
   parentId: string | null;
   displayOrder: number;
-};
-
-export type TxResponse = {
-  /**
-   * Echoes the request transactionId
-   */
-  transactionId: string;
 };
 
 export type TxRequest = {
@@ -1983,6 +1976,59 @@ export type UnsubscribeMeErrors = {
 
 export type UnsubscribeMeError = UnsubscribeMeErrors[keyof UnsubscribeMeErrors];
 
+export type GetUserStreamData = {
+  body?: never;
+  path?: never;
+  query?: {
+    /**
+     * Starting offset: 'now' for live-only, or activity ID for catch-up
+     */
+    offset?: string;
+    /**
+     * Connection mode: 'sse' for streaming, 'poll' for one-time fetch
+     */
+    live?: 'sse' | 'poll';
+  };
+  url: '/me/stream';
+};
+
+export type GetUserStreamErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetUserStreamError = GetUserStreamErrors[keyof GetUserStreamErrors];
+
+export type GetUserStreamResponses = {
+  /**
+   * SSE stream or catch-up response
+   */
+  200: {
+    activities: Array<unknown>;
+    cursor: string | null;
+  };
+};
+
+export type GetUserStreamResponse = GetUserStreamResponses[keyof GetUserStreamResponses];
+
 export type DeleteUsersData = {
   body: {
     ids: Array<string>;
@@ -2281,7 +2327,7 @@ export type GetOrganizationsResponses = {
 
 export type GetOrganizationsResponse = GetOrganizationsResponses[keyof GetOrganizationsResponses];
 
-export type CreateOrganizationData = {
+export type CreateOrganizationsData = {
   body: {
     name: string;
     slug: string;
@@ -2291,7 +2337,7 @@ export type CreateOrganizationData = {
   url: '/organization';
 };
 
-export type CreateOrganizationErrors = {
+export type CreateOrganizationsErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -2314,18 +2360,26 @@ export type CreateOrganizationErrors = {
   429: TooManyRequestsError;
 };
 
-export type CreateOrganizationError = CreateOrganizationErrors[keyof CreateOrganizationErrors];
+export type CreateOrganizationsError = CreateOrganizationsErrors[keyof CreateOrganizationsErrors];
 
-export type CreateOrganizationResponses = {
+export type CreateOrganizationsResponses = {
   /**
-   * Organization was created
+   * Organizations were created
    */
-  201: Organization & {
-    membership?: MembershipBase;
+  201: {
+    data: Array<
+      Organization & {
+        membership?: MembershipBase;
+      }
+    >;
+    /**
+     * Identifiers of items that could not be processed
+     */
+    rejectedItemIds: Array<string>;
   };
 };
 
-export type CreateOrganizationResponse = CreateOrganizationResponses[keyof CreateOrganizationResponses];
+export type CreateOrganizationsResponse = CreateOrganizationsResponses[keyof CreateOrganizationsResponses];
 
 export type GetOrganizationData = {
   body?: never;
@@ -2595,11 +2649,11 @@ export type GetPagesResponses = {
 
 export type GetPagesResponse = GetPagesResponses[keyof GetPagesResponses];
 
-export type CreatePageData = {
+export type CreatePagesData = {
   body: {
-    data: {
+    data: Array<{
       name?: string;
-    };
+    }>;
     tx: TxRequest;
   };
   path?: never;
@@ -2607,7 +2661,7 @@ export type CreatePageData = {
   url: '/page';
 };
 
-export type CreatePageErrors = {
+export type CreatePagesErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -2630,19 +2684,32 @@ export type CreatePageErrors = {
   429: TooManyRequestsError;
 };
 
-export type CreatePageError = CreatePageErrors[keyof CreatePageErrors];
+export type CreatePagesError = CreatePagesErrors[keyof CreatePagesErrors];
 
-export type CreatePageResponses = {
+export type CreatePagesResponses = {
   /**
-   * Page
+   * Pages already created (idempotent)
+   */
+  200: {
+    data: Array<Page>;
+    /**
+     * Identifiers of items that could not be processed
+     */
+    rejectedItemIds: Array<string>;
+  };
+  /**
+   * Pages created
    */
   201: {
-    data: Page;
-    tx: TxResponse;
+    data: Array<Page>;
+    /**
+     * Identifiers of items that could not be processed
+     */
+    rejectedItemIds: Array<string>;
   };
 };
 
-export type CreatePageResponse = CreatePageResponses[keyof CreatePageResponses];
+export type CreatePagesResponse = CreatePagesResponses[keyof CreatePagesResponses];
 
 export type GetPageData = {
   body?: never;
@@ -2735,10 +2802,7 @@ export type UpdatePageResponses = {
   /**
    * Page updated
    */
-  200: {
-    data: Page;
-    tx: TxResponse;
-  };
+  200: Page;
 };
 
 export type UpdatePageResponse = UpdatePageResponses[keyof UpdatePageResponses];
@@ -2786,80 +2850,6 @@ export type CheckSlugResponses = {
 };
 
 export type CheckSlugResponse = CheckSlugResponses[keyof CheckSlugResponses];
-
-export type SyncStreamData = {
-  body?: never;
-  path: {
-    /**
-     * Organization ID or slug
-     */
-    orgIdOrSlug: string;
-  };
-  query?: {
-    /**
-     * Cursor offset: "-1" for all history, "now" for live-only, or activity ID
-     */
-    offset?: string;
-    /**
-     * Set to "sse" for live updates (SSE stream)
-     */
-    live?: 'sse';
-    /**
-     * Comma-separated entity types to filter (e.g., "page,attachment")
-     */
-    entityTypes?: string;
-  };
-  url: '/organizations/{orgIdOrSlug}/sync/stream';
-};
-
-export type SyncStreamErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type SyncStreamError = SyncStreamErrors[keyof SyncStreamErrors];
-
-export type SyncStreamResponses = {
-  /**
-   * Catch-up activities or SSE stream started
-   */
-  200: {
-    activities: Array<{
-      data?: unknown;
-      entityType: 'attachment' | 'page';
-      entityId: string;
-      action: 'create' | 'update' | 'delete';
-      activityId: string;
-      changedKeys: Array<string> | null;
-      createdAt: string;
-      tx: TxStreamMessage;
-    }>;
-    /**
-     * Last activity ID (use as offset for next request)
-     */
-    cursor: string | null;
-  };
-};
-
-export type SyncStreamResponse = SyncStreamResponses[keyof SyncStreamResponses];
 
 export type SystemInviteData = {
   body: {
@@ -3481,7 +3471,7 @@ export type GetAttachmentsResponses = {
 
 export type GetAttachmentsResponse = GetAttachmentsResponses[keyof GetAttachmentsResponses];
 
-export type CreateAttachmentData = {
+export type CreateAttachmentsData = {
   body: {
     data: Array<{
       id?: string;
@@ -3511,7 +3501,7 @@ export type CreateAttachmentData = {
   url: '/{orgIdOrSlug}/attachment';
 };
 
-export type CreateAttachmentErrors = {
+export type CreateAttachmentsErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -3534,26 +3524,32 @@ export type CreateAttachmentErrors = {
   429: TooManyRequestsError;
 };
 
-export type CreateAttachmentError = CreateAttachmentErrors[keyof CreateAttachmentErrors];
+export type CreateAttachmentsError = CreateAttachmentsErrors[keyof CreateAttachmentsErrors];
 
-export type CreateAttachmentResponses = {
+export type CreateAttachmentsResponses = {
   /**
    * Attachments already created (idempotent)
    */
   200: {
     data: Array<Attachment>;
-    tx: TxResponse;
+    /**
+     * Identifiers of items that could not be processed
+     */
+    rejectedItemIds: Array<string>;
   };
   /**
    * Attachments created
    */
   201: {
     data: Array<Attachment>;
-    tx: TxResponse;
+    /**
+     * Identifiers of items that could not be processed
+     */
+    rejectedItemIds: Array<string>;
   };
 };
 
-export type CreateAttachmentResponse = CreateAttachmentResponses[keyof CreateAttachmentResponses];
+export type CreateAttachmentsResponse = CreateAttachmentsResponses[keyof CreateAttachmentsResponses];
 
 export type UpdateAttachmentData = {
   body: {
@@ -3603,10 +3599,7 @@ export type UpdateAttachmentResponses = {
   /**
    * Attachment was updated
    */
-  200: {
-    data: Attachment;
-    tx: TxResponse;
-  };
+  200: Attachment;
 };
 
 export type UpdateAttachmentResponse = UpdateAttachmentResponses[keyof UpdateAttachmentResponses];

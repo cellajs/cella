@@ -77,8 +77,7 @@ const attachmentRouteHandlers = app
         // For batch create, the first attachment ID is stored - fetch all from that batch
         const existing = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, ref.entityId));
         if (existing.length > 0) {
-          const attachmentsWithoutTx = existing.map(({ tx: _tx, ...rest }) => rest);
-          return ctx.json({ data: attachmentsWithoutTx, tx: { transactionId: tx.transactionId } }, 200);
+          return ctx.json({ data: existing, rejectedItemIds: [] }, 200);
         }
       }
     }
@@ -123,9 +122,8 @@ const attachmentRouteHandlers = app
 
     logEvent('info', `${createdAttachments.length} attachments have been created`);
 
-    // Return without tx column (transient)
-    const attachmentsWithoutTx = createdAttachments.map(({ tx: _tx, ...rest }) => rest);
-    return ctx.json({ data: attachmentsWithoutTx, tx: { transactionId: tx.transactionId } }, 201);
+    // Return entities with tx embedded (for client tracking)
+    return ctx.json({ data: createdAttachments, rejectedItemIds: [] }, 201);
   })
   /**
    * Update an attachment by id
@@ -165,11 +163,12 @@ const attachmentRouteHandlers = app
         ...updatedFields,
         modifiedAt: getIsoDate(),
         modifiedBy: user.id,
-        // Sync: write transient tx metadata for CDC Worker
+        // Sync: write transient tx metadata for CDC Worker + client tracking
         tx: {
           transactionId: tx.transactionId,
           sourceId: tx.sourceId,
           changedField: tx.changedField,
+          expectedTransactionId: tx.expectedTransactionId,
         },
       })
       .where(eq(attachmentsTable.id, id))
@@ -177,9 +176,8 @@ const attachmentRouteHandlers = app
 
     logEvent('info', 'Attachment updated', { attachmentId: updatedAttachment.id });
 
-    // Return without tx column (transient)
-    const { tx: _tx, ...attachmentWithoutTx } = updatedAttachment;
-    return ctx.json({ data: { ...attachmentWithoutTx, can }, tx: { transactionId: tx.transactionId } }, 200);
+    // Return entity directly with can permissions (tx embedded for client tracking)
+    return ctx.json({ ...updatedAttachment, can }, 200);
   })
   /**
    * Delete attachments by ids
@@ -193,7 +191,7 @@ const attachmentRouteHandlers = app
     const toDeleteIds = Array.isArray(ids) ? ids : [ids];
     if (!toDeleteIds.length) throw new AppError(400, 'invalid_request', 'warn', { entityType: 'attachment' });
 
-    const { allowedIds, disallowedIds: rejectedItems } = await splitByAllowance(
+    const { allowedIds, disallowedIds: rejectedItemIds } = await splitByAllowance(
       'delete',
       'attachment',
       toDeleteIds,
@@ -207,7 +205,7 @@ const attachmentRouteHandlers = app
 
     logEvent('info', 'Attachments deleted', allowedIds);
 
-    return ctx.json({ success: true, rejectedItems }, 200);
+    return ctx.json({ success: true, rejectedItemIds }, 200);
   })
   /**
    * Redirect to attachment

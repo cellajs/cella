@@ -7,6 +7,6 @@ import type { CursoredSubscriber } from '#/sync/stream';
 export interface PublicPageSubscriber extends CursoredSubscriber {}
 
 /**
- * Index key for public page subscribers.
+ * Channel key for public page subscribers.
  */
-export const publicPageIndexKey = 'public:page';
+export const publicPageChannel = 'public:page';

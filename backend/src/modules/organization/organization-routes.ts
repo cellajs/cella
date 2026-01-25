@@ -8,6 +8,7 @@ import {
   organizationWithMembershipSchema,
 } from '#/modules/organization/organization-schema';
 import {
+  batchResponseSchema,
   entityParamSchema,
   errorResponseRefs,
   idsBodySchema,
@@ -17,16 +18,16 @@ import {
 
 const organizationRoutes = {
   /**
-   * Create an organization
+   * Create one or more organizations
    */
-  createOrganization: createXRoute({
-    operationId: 'createOrganization',
+  createOrganizations: createXRoute({
+    operationId: 'createOrganizations',
     method: 'post',
     path: '/',
     xGuard: isAuthenticated,
     tags: ['organizations'],
-    summary: 'Create organization',
-    description: 'Creates a new *organization*.',
+    summary: 'Create organizations',
+    description: 'Creates one or more new *organizations*.',
     request: {
       body: {
         required: true,
@@ -35,8 +36,8 @@ const organizationRoutes = {
     },
     responses: {
       201: {
-        description: 'Organization was created',
-        content: { 'application/json': { schema: organizationWithMembershipSchema } },
+        description: 'Organizations were created',
+        content: { 'application/json': { schema: batchResponseSchema(organizationWithMembershipSchema) } },
       },
       ...errorResponseRefs,
     },
