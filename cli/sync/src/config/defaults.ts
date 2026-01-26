@@ -1,8 +1,14 @@
 import { resolve } from 'node:path';
 import type { OverridesConfig, PackageJsonSyncKey } from './types';
 
-/** Resolve to monorepo root (cli/sync is 2 levels deep) */
-export const monorepoRoot = resolve(import.meta.dirname, '../../../..');
+/**
+ * Resolve to monorepo root (cli/sync is 2 levels deep).
+ * Can be overridden via CELLA_FORK_PATH env var for testing/debugging
+ * the sync CLI against a different fork.
+ */
+export const monorepoRoot = process.env.CELLA_FORK_PATH
+  ? resolve(process.env.CELLA_FORK_PATH)
+  : resolve(import.meta.dirname, '../../../..');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Default Values

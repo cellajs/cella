@@ -2,7 +2,8 @@
  * Configuration management for the Cella sync CLI.
  * Uses a flat structure for clarity and consistency.
  */
-import customConfig from '#root/cella.config';
+import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import {
   forkBranchDefault,
   forkSyncBranchDefault,
@@ -16,33 +17,69 @@ import {
   verboseDefault,
 } from './defaults';
 import { SERVICES_RUNNING_FROM_LOCAL_FORK, SYNC_SERVICES, type SyncService } from './sync-services';
-import type { OverridesConfig, PackageJsonSyncKey, RepoConfig, SyncState } from './types';
+import type { CellaSyncConfig, OverridesConfig, PackageJsonSyncKey, RepoConfig, SyncState } from './types';
+
+/**
+ * Load cella.config.ts from the target fork path.
+ * Uses dynamic import to support CELLA_FORK_PATH override.
+ */
+async function loadForkConfig(): Promise<CellaSyncConfig> {
+  const configPath = join(monorepoRoot, 'cella.config.ts');
+  const configUrl = pathToFileURL(configPath).href;
+  try {
+    const module = await import(/* @vite-ignore */ configUrl);
+    return module.default ?? {};
+  } catch (error) {
+    // If config doesn't exist, return empty config (use defaults)
+    console.warn(`Warning: Could not load ${configPath}, using defaults`);
+    return {};
+  }
+}
+
+// Load config synchronously for initial state (will be updated by initConfig)
+let customConfig: CellaSyncConfig = {};
+
+/** Initialize config by loading from fork path. Must be called before using config. */
+export async function initConfig(): Promise<void> {
+  customConfig = await loadForkConfig();
+
+  // Update state with loaded config
+  state.verbose = customConfig.verbose ?? verboseDefault;
+  state.maxSquashPreviews = customConfig.maxSquashPreviews ?? maxSquashPreviewsDefault;
+  state.packageJsonSync = customConfig.packageJsonSync ?? packageJsonSyncDefault;
+  state.forkBranch = customConfig.forkBranch ?? forkBranchDefault;
+  state.forkSyncBranch = customConfig.forkSyncBranch ?? forkSyncBranchDefault;
+  state.upstreamUrl = customConfig.upstreamUrl ?? upstreamUrlDefault;
+  state.upstreamBranch = customConfig.upstreamBranch ?? upstreamBranchDefault;
+  state.upstreamRemoteName = customConfig.upstreamRemoteName ?? upstreamRemoteNameDefault;
+  state.overrides = { ...overridesDefaultConfig, ...customConfig.overrides };
+}
 
 /** Internal state holding the configuration values */
 const state: SyncState = {
   syncService: SYNC_SERVICES.SYNC,
   debug: false,
-  verbose: customConfig.verbose ?? verboseDefault,
+  verbose: verboseDefault,
   skipPackages: false,
   logFile: false,
-  maxSquashPreviews: customConfig.maxSquashPreviews ?? maxSquashPreviewsDefault,
-  packageJsonSync: customConfig.packageJsonSync ?? packageJsonSyncDefault,
+  maxSquashPreviews: maxSquashPreviewsDefault,
+  packageJsonSync: packageJsonSyncDefault,
   pulledCommitCount: 0,
   pulledCommitMessages: [],
 
   // Fork settings
   forkLocalPath: monorepoRoot,
-  forkBranch: customConfig.forkBranch ?? forkBranchDefault,
-  forkSyncBranch: customConfig.forkSyncBranch ?? forkSyncBranchDefault,
+  forkBranch: forkBranchDefault,
+  forkSyncBranch: forkSyncBranchDefault,
   forkLocation: 'local',
 
   // Upstream settings
-  upstreamUrl: customConfig.upstreamUrl ?? upstreamUrlDefault,
-  upstreamBranch: customConfig.upstreamBranch ?? upstreamBranchDefault,
-  upstreamRemoteName: customConfig.upstreamRemoteName ?? upstreamRemoteNameDefault,
+  upstreamUrl: upstreamUrlDefault,
+  upstreamBranch: upstreamBranchDefault,
+  upstreamRemoteName: upstreamRemoteNameDefault,
   upstreamLocation: 'remote',
 
-  overrides: { ...overridesDefaultConfig, ...customConfig.overrides },
+  overrides: { ...overridesDefaultConfig },
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

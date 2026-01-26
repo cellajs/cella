@@ -72,6 +72,17 @@ pnpm sync [options]
 | `--fork-branch <name>` | Override your app's branch |
 | `--fork-sync-branch <name>` | Override sync branch |
 
+### Environment variables
+
+| Variable | Description |
+|----------|-------------|
+| `CELLA_FORK_PATH` | Path to alternate fork. Useful for testing/debugging sync CLI against a different fork |
+
+**Example: Run cella's sync CLI against a different fork:**
+```bash
+CELLA_FORK_PATH=/path/to/my-fork pnpm --filter @cellajs/sync sync
+```
+
 ## Configuration
 
 Configure sync behavior in `cella.config.ts` at your monorepo root. A sensible default is already included after you created your app. To deviate files or folders from template:

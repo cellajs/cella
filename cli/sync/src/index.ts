@@ -1,6 +1,6 @@
 import pc from 'picocolors';
 
-import { config } from '#/config';
+import { config, initConfig } from '#/config';
 import { runAnalyze } from '#/modules/analyze';
 import { validateConfig } from '#/modules/cli/handlers';
 import { runPackages } from '#/modules/package';
@@ -16,6 +16,7 @@ import { getCurrentBranch } from '#/utils/git/helpers';
  * Orchestrates the full execution flow of the Cella sync CLI.
  *
  * Pipeline phases:
+ * 0. Init - Load cella.config.ts from fork path
  * 1. CLI - Prompt for configuration
  * 2. Setup - Preflight checks, branch preparation
  * 3. Analyze - Diff upstream vs fork, determine strategies
@@ -30,6 +31,10 @@ import { getCurrentBranch } from '#/utils/git/helpers';
  * @returns A Promise that resolves when the entire pipeline has executed.
  */
 async function main(): Promise<void> {
+  // Initialize config from fork's cella.config.ts
+  // Supports CELLA_FORK_PATH env var for testing against alternate forks
+  await initConfig();
+
   // Store original branch to restore at end
   const originalBranch = await getCurrentBranch(process.cwd());
 
