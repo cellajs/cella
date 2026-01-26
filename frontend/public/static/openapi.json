@@ -312,8 +312,8 @@
           "role": {
             "type": "string",
             "enum": [
-              "member",
-              "admin"
+              "admin",
+              "member"
             ]
           },
           "archived": {
@@ -617,6 +617,14 @@
                 "items": {}
               }
             ]
+          },
+          "seq": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": -2147483648,
+            "maximum": 2147483647
           }
         },
         "required": [
@@ -631,7 +639,8 @@
           "organizationId",
           "createdAt",
           "changedKeys",
-          "tx"
+          "tx",
+          "seq"
         ],
         "example": {
           "id": "s933zhzgm8axl572xlcja86p",
@@ -649,7 +658,8 @@
             "description",
             "name"
           ],
-          "tx": null
+          "tx": null,
+          "seq": 431
         }
       },
       "Me": {
@@ -1075,8 +1085,8 @@
           "role": {
             "type": "string",
             "enum": [
-              "member",
-              "admin"
+              "admin",
+              "member"
             ]
           },
           "rejectedAt": {
@@ -1114,7 +1124,7 @@
           "email": "belle.bashirian10@hotmail.com",
           "userId": "ne0c1n1xatbgsj5m94fa2zfj",
           "tokenId": "0w94eh4h0qgupj2wo2oz6c0e",
-          "role": "member",
+          "role": "admin",
           "rejectedAt": null,
           "createdAt": "2024-02-08T11:19:07.168Z",
           "createdBy": "9v2n0dfrh6s450ooxn5tb992",
@@ -1366,10 +1376,10 @@
               "membership": {
                 "type": "object",
                 "properties": {
-                  "member": {
+                  "admin": {
                     "type": "number"
                   },
-                  "admin": {
+                  "member": {
                     "type": "number"
                   },
                   "pending": {
@@ -1380,8 +1390,8 @@
                   }
                 },
                 "required": [
-                  "member",
                   "admin",
+                  "member",
                   "pending",
                   "total"
                 ]
@@ -1501,15 +1511,15 @@
             "contextType": "organization",
             "userId": "w4hg4036vxzq0rzt4pucveps",
             "organizationId": "hmo9fwr239kqavr3yur671kl",
-            "role": "admin",
+            "role": "member",
             "order": 38,
             "muted": false,
             "archived": false
           },
           "counts": {
             "membership": {
-              "member": 30,
-              "admin": 63,
+              "admin": 30,
+              "member": 63,
               "pending": 13,
               "total": 93
             },
@@ -1526,29 +1536,27 @@
           "null"
         ],
         "properties": {
-          "transactionId": {
-            "type": [
-              "string",
-              "null"
-            ]
+          "id": {
+            "type": "string"
           },
           "sourceId": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": "string"
           },
-          "changedField": {
-            "type": [
-              "string",
-              "null"
-            ]
+          "version": {
+            "type": "integer"
+          },
+          "fieldVersions": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer"
+            }
           }
         },
         "required": [
-          "transactionId",
+          "id",
           "sourceId",
-          "changedField"
+          "version",
+          "fieldVersions"
         ]
       },
       "Page": {
@@ -1674,38 +1682,26 @@
       "TxRequest": {
         "type": "object",
         "properties": {
-          "transactionId": {
+          "id": {
             "type": "string",
-            "maxLength": 64,
-            "description": "Client-generated unique ID (HLC format: timestamp.logical.nodeId)"
+            "maxLength": 32,
+            "description": "Unique mutation ID (nanoid)"
           },
           "sourceId": {
             "type": "string",
             "maxLength": 64,
-            "description": "Tab/instance identifier"
+            "description": "Tab/instance identifier for echo prevention"
           },
-          "changedField": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "maxLength": 64,
-            "description": "Which field this mutation changes (null for create/delete)"
-          },
-          "expectedTransactionId": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "maxLength": 64,
-            "description": "Last known transaction ID for this field (null for create or first write)"
+          "baseVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Entity version when read (for conflict detection)"
           }
         },
         "required": [
-          "transactionId",
+          "id",
           "sourceId",
-          "changedField",
-          "expectedTransactionId"
+          "baseVersion"
         ]
       },
       "Attachment": {
@@ -1918,8 +1914,8 @@
           "role": {
             "type": "string",
             "enum": [
-              "member",
-              "admin"
+              "admin",
+              "member"
             ]
           },
           "createdBy": {
@@ -1975,7 +1971,7 @@
           "contextType": "organization",
           "userId": "xg7596t8jiy8d0v8irrljzhy",
           "organizationId": "7ul53b62aw5h7k6x44nbu2r5",
-          "role": "member",
+          "role": "admin",
           "order": 49,
           "muted": false,
           "archived": false,
@@ -5273,15 +5269,15 @@
                             "contextType": "organization",
                             "userId": "w4hg4036vxzq0rzt4pucveps",
                             "organizationId": "hmo9fwr239kqavr3yur671kl",
-                            "role": "admin",
+                            "role": "member",
                             "order": 38,
                             "muted": false,
                             "archived": false
                           },
                           "counts": {
                             "membership": {
-                              "member": 30,
-                              "admin": 63,
+                              "admin": 30,
+                              "member": 63,
                               "pending": 13,
                               "total": 93
                             },
@@ -5406,8 +5402,8 @@
             "schema": {
               "type": "string",
               "enum": [
-                "member",
-                "admin"
+                "admin",
+                "member"
               ]
             },
             "required": false,
@@ -6702,8 +6698,8 @@
                     "items": {
                       "type": "string",
                       "enum": [
-                        "member",
-                        "admin"
+                        "admin",
+                        "member"
                       ]
                     },
                     "minItems": 1
@@ -7997,8 +7993,8 @@
                   "role": {
                     "type": "string",
                     "enum": [
-                      "member",
-                      "admin"
+                      "admin",
+                      "member"
                     ]
                   }
                 },
@@ -8206,8 +8202,8 @@
                   "role": {
                     "type": "string",
                     "enum": [
-                      "member",
-                      "admin"
+                      "admin",
+                      "member"
                     ]
                   },
                   "muted": {
@@ -8439,8 +8435,8 @@
             "schema": {
               "type": "string",
               "enum": [
-                "member",
-                "admin"
+                "admin",
+                "member"
               ]
             },
             "required": false,
@@ -8746,8 +8742,8 @@
                               "null"
                             ],
                             "enum": [
-                              "member",
                               "admin",
+                              "member",
                               null
                             ]
                           },

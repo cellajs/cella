@@ -101,7 +101,7 @@
           "role": {
             "type": "string",
             "required": true,
-            "enum": ["member", "admin"]
+            "enum": ["admin", "member"]
           }
         },
         "required": true,
@@ -235,7 +235,7 @@
             "role": {
               "type": "string",
               "required": true,
-              "enum": ["member", "admin"]
+              "enum": ["admin", "member"]
             },
             "createdBy": { "type": "string", "required": true },
             "modifiedAt": {
@@ -265,7 +265,7 @@
           "contextType": "organization",
           "userId": "xg7596t8jiy8d0v8irrljzhy",
           "organizationId": "7ul53b62aw5h7k6x44nbu2r5",
-          "role": "member",
+          "role": "admin",
           "order": 49,
           "muted": false,
           "archived": false,
@@ -329,7 +329,7 @@
           "role": {
             "type": "string",
             "required": false,
-            "enum": ["member", "admin"]
+            "enum": ["admin", "member"]
           },
           "muted": { "type": "boolean", "required": false },
           "archived": { "type": "boolean", "required": false },
@@ -530,7 +530,7 @@
                       "role": {
                         "type": "string",
                         "required": true,
-                        "enum": ["member", "admin"]
+                        "enum": ["admin", "member"]
                       },
                       "archived": { "type": "boolean", "required": true },
                       "muted": { "type": "boolean", "required": true },
@@ -626,7 +626,7 @@
           "role": {
             "type": "string",
             "required": false,
-            "enum": ["member", "admin"]
+            "enum": ["admin", "member"]
           }
         }
       }
@@ -662,7 +662,7 @@
                   "role": {
                     "type": ["string", "null"],
                     "required": true,
-                    "enum": ["member", "admin", null]
+                    "enum": ["admin", "member", null]
                   },
                   "createdAt": { "type": "string", "required": true },
                   "createdBy": {

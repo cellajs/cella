@@ -1,11 +1,11 @@
-import { appConfig } from 'config';
+import { allEntityRoles, appConfig } from 'config';
 import { boolean, doublePrecision, index, pgTable, varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from '#/db/schema/users';
 import { generateContextEntityIdColumns } from '#/db/utils/generate-context-entity-columns';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
 
-const roleEnum = appConfig.roles.entityRoles;
+const roleEnum = allEntityRoles;
 
 const { organizationId, ...otherEntityIdColumns } = generateContextEntityIdColumns();
 

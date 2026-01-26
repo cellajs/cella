@@ -1,76 +1,48 @@
-import type { ContextEntityType, EntityRole, EntityType, ProductEntityType } from 'config';
-import type { ContextConfig, HierarchyConfig, ProductConfig } from './types';
+import {
+  appConfig,
+  type ContextEntityType,
+  type EntityType,
+  getContextRoles as getContextRolesFromConfig,
+  getEntityAncestors,
+  isContextEntity as isContextEntityFromConfig,
+  isProductEntity as isProductEntityFromConfig,
+  type ProductEntityType,
+} from 'config';
 
 /** Cache for ancestor context lookups (hierarchy is immutable after setup). */
 const ancestorCache = new Map<string, ContextEntityType[]>();
 
-/**
- * Creates a context entity configuration.
- *
- * @param roles - Roles available for this context (e.g., ['admin', 'member']).
- * @param parents - Parent context entities (for hierarchical permission inheritance).
- * @returns Context entity configuration.
- */
-export const createContext = (roles: readonly EntityRole[], parents?: readonly ContextEntityType[]): ContextConfig => ({
-  type: 'context',
-  roles,
-  parents,
-});
+// Note: createContext, createProduct, and createHierarchy have been removed.
+// Entity hierarchy is now defined in appConfig.entityConfig.
 
 /**
- * Creates a product entity configuration.
+ * Gets all ancestor context types for a given entity.
+ * Uses appConfig.entityConfig as the source of truth.
+ * Results are cached since config is immutable.
  *
- * @param parents - Parent context entities that this product belongs to.
- * @returns Product entity configuration.
- */
-export const createProduct = (parents: readonly ContextEntityType[]): ProductConfig => ({
-  type: 'product',
-  parents,
-});
-
-/**
- * Creates a type-safe hierarchy configuration from entity configs.
- * This is a simple identity function that provides type checking.
- *
- * @param config - The hierarchy configuration object.
- * @returns The same configuration with proper typing.
- */
-export const createHierarchy = <T extends HierarchyConfig>(config: T): T => config;
-
-/**
- * Gets all ancestor context types for a given entity in the hierarchy.
- * Traverses the parent chain to collect all contexts that can grant permissions.
- * Results are cached since hierarchy is immutable after setup.
- *
- * @param hierarchy - The hierarchy configuration.
- * @param entityType - The entity type to get ancestors for (context or product).
+ * @param entityType - The entity type to get ancestors for.
  * @returns Array of ancestor context types (includes direct parents and their ancestors).
  */
-export const getAncestorContexts = (
-  hierarchy: HierarchyConfig,
-  entityType: ContextEntityType | ProductEntityType,
-): ContextEntityType[] => {
+export const getAncestorContexts = (entityType: string): ContextEntityType[] => {
   const cached = ancestorCache.get(entityType);
   if (cached) return cached;
 
-  const config = hierarchy[entityType];
-  if (!config) {
-    ancestorCache.set(entityType, []);
-    return [];
-  }
-
-  const parents = config.parents ?? [];
-  const ancestors = new Set<ContextEntityType>(parents);
+  const directAncestors = getEntityAncestors(entityType);
+  const allAncestors = new Set<string>(directAncestors);
 
   // Recursively collect ancestors of parents
-  for (const parent of parents) {
-    const parentAncestors = getAncestorContexts(hierarchy, parent);
-    for (const ancestor of parentAncestors) {
-      ancestors.add(ancestor);
+  for (const ancestor of directAncestors) {
+    const parentAncestors = getAncestorContexts(ancestor);
+    for (const a of parentAncestors) {
+      allAncestors.add(a);
     }
   }
 
-  const result = Array.from(ancestors);
+  // Filter to only context entities
+  const result = [...allAncestors].filter((a): a is ContextEntityType =>
+    appConfig.contextEntityTypes.includes(a as ContextEntityType),
+  );
+
   ancestorCache.set(entityType, result);
   return result;
 };
@@ -78,42 +50,29 @@ export const getAncestorContexts = (
 /**
  * Gets the roles defined for a context entity type.
  *
- * @param hierarchy - The hierarchy configuration.
  * @param contextType - The context entity type.
  * @returns Array of role names, or empty array if not a context.
  */
-export const getContextRoles = (hierarchy: HierarchyConfig, contextType: ContextEntityType): readonly EntityRole[] => {
-  const config = hierarchy[contextType];
-  if (!config || config.type !== 'context') return [];
-  return config.roles;
+export const getContextRoles = (contextType: ContextEntityType): readonly string[] => {
+  return getContextRolesFromConfig(contextType);
 };
 
 /**
- * Checks if an entity type is a context entity in the hierarchy.
+ * Checks if an entity type is a context entity.
  *
- * @param hierarchy - The hierarchy configuration.
  * @param entityType - The entity type to check.
  * @returns True if the entity is a context entity.
  */
-export const isContextEntity = (
-  hierarchy: HierarchyConfig,
-  entityType: EntityType,
-): entityType is ContextEntityType => {
-  const config = hierarchy[entityType as ContextEntityType | ProductEntityType];
-  return config?.type === 'context';
+export const isContextEntity = (entityType: EntityType): entityType is ContextEntityType => {
+  return isContextEntityFromConfig(entityType);
 };
 
 /**
- * Checks if an entity type is a product entity in the hierarchy.
+ * Checks if an entity type is a product entity.
  *
- * @param hierarchy - The hierarchy configuration.
  * @param entityType - The entity type to check.
  * @returns True if the entity is a product entity.
  */
-export const isProductEntity = (
-  hierarchy: HierarchyConfig,
-  entityType: EntityType,
-): entityType is ProductEntityType => {
-  const config = hierarchy[entityType as ContextEntityType | ProductEntityType];
-  return config?.type === 'product';
+export const isProductEntity = (entityType: EntityType): entityType is ProductEntityType => {
+  return isProductEntityFromConfig(entityType);
 };

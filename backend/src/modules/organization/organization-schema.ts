@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { appConfig, type EntityType } from 'config';
+import { allEntityRoles, appConfig, type EntityType } from 'config';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { organizationsTable } from '#/db/schema/organizations';
 import { authStrategiesEnum } from '#/db/schema/sessions';
@@ -31,8 +31,8 @@ const entityCountSchema = z.object(
 );
 
 export const membershipCountSchema = z.object({
-  ...(Object.fromEntries(appConfig.roles.entityRoles.map((role) => [role, z.number()])) as Record<
-    (typeof appConfig.roles.entityRoles)[number],
+  ...(Object.fromEntries(allEntityRoles.map((role) => [role, z.number()])) as Record<
+    (typeof allEntityRoles)[number],
     z.ZodNumber
   >),
   pending: z.number(),
@@ -97,7 +97,7 @@ export const organizationUpdateBodySchema = createInsertSchema(organizationsTabl
 export const organizationListQuerySchema = paginationQuerySchema.extend({
   sort: z.enum(['id', 'name', 'createdAt']).default('createdAt').optional(),
   userId: z.string().optional(),
-  role: z.enum(appConfig.roles.entityRoles).optional(),
+  role: z.enum(allEntityRoles as [string, ...string[]]).optional(),
   excludeArchived: z
     .enum(['true', 'false'])
     .optional()

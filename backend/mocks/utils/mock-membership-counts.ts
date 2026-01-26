@@ -1,8 +1,8 @@
 import { faker } from '@faker-js/faker';
-import { appConfig } from 'config';
+import { allEntityRoles } from 'config';
 import { withFakerSeed } from './faker-seed';
 
-type EntityRole = (typeof appConfig.roles.entityRoles)[number];
+type EntityRole = (typeof allEntityRoles)[number];
 
 /**
  * Membership count structure for organizations.
@@ -25,9 +25,9 @@ export const generateMockMembershipCounts = (key: string): MockMembershipCounts 
     const roleCounts = {} as Record<EntityRole, number>;
     let total = 0;
 
-    for (const role of appConfig.roles.entityRoles) {
+    for (const role of allEntityRoles) {
       // First role gets at least 1 (typically admin), others can be 0
-      const isFirstRole = role === appConfig.roles.entityRoles[0];
+      const isFirstRole = role === allEntityRoles[0];
       const count = faker.number.int({ min: isFirstRole ? 1 : 0, max: isFirstRole ? 50 : 200 });
       roleCounts[role] = count;
       total += count;

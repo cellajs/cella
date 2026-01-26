@@ -1,14 +1,15 @@
-import type { Config } from './types';
+import type { Config, EntityKind } from './types';
 import _default from './default';
 import development from './development';
 import production from './production';
 import staging from './staging';
 import test from './test';
 import tunnel from './tunnel';
-import { mergeDeep } from './utils';
+import { hasKey, mergeDeep } from './utils';
 
 // Re-export types for external use
-export type { GenerateScript, GenerateScriptType } from './types';
+export type { EntityConfigEntry, EntityKind, GenerateScript, GenerateScriptType } from './types';
+export { hasKey } from './utils';
 
 /**
  * All entities in this app
@@ -81,12 +82,96 @@ export type TokenType = (typeof appConfig.tokenTypes)[number]
 /**
  * System roles available in the app
  */
-export type SystemRole = (typeof appConfig.roles.systemRoles)[number];
+export type SystemRole = (typeof appConfig.systemRoles)[number];
+
+/******************************************************************************
+ * ENTITY CONFIG HELPERS
+ ******************************************************************************/
 
 /**
- * Entity roles available in the app (e.g., 'member', 'admin')
+ * Compute all unique entity roles from entityConfig (union of all context entity roles).
+ * Used for DB enum and validation.
  */
-export type EntityRole = (typeof appConfig.roles.entityRoles)[number];
+function computeAllEntityRoles(): [string, ...string[]] {
+  const roles = new Set<string>();
+  for (const key of Object.keys(_default.entityConfig)) {
+    const entry = _default.entityConfig[key as keyof typeof _default.entityConfig];
+    if (entry.kind === 'context') {
+      for (const role of entry.roles) {
+        roles.add(role);
+      }
+    }
+  }
+  const arr = [...roles];
+  if (arr.length === 0) throw new Error('No entity roles defined in entityConfig');
+  return arr as [string, ...string[]];
+}
+
+/**
+ * All entity roles across all context entities (for DB enum).
+ */
+export const allEntityRoles = computeAllEntityRoles();
+
+/**
+ * Entity roles type - union of all roles from entityConfig.
+ * Extracts role union from context entities that have a roles array.
+ */
+export type EntityRole = {
+  [K in keyof typeof _default.entityConfig]: (typeof _default.entityConfig)[K] extends { roles: readonly (infer R)[] }
+    ? R
+    : never;
+}[keyof typeof _default.entityConfig];
+
+/**
+ * Check if a role is valid for a specific context type.
+ */
+export function isValidRoleForContext(role: string, contextType: string): boolean {
+  return getContextRoles(contextType).includes(role);
+}
+
+/**
+ * Get the kind of an entity ('user', 'context', or 'product').
+ */
+export function getEntityKind(entityType: string): EntityKind | undefined {
+  if (!hasKey(appConfig.entityConfig, entityType)) return undefined;
+  return appConfig.entityConfig[entityType].kind;
+}
+
+/**
+ * Get ancestors for an entity (ordered most-specific first).
+ * For context entities, returns parent chain. For products, returns ancestors array.
+ */
+export function getEntityAncestors(entityType: string): readonly string[] {
+  if (!hasKey(appConfig.entityConfig, entityType)) return [];
+  const entry = appConfig.entityConfig[entityType];
+  if (entry.kind === 'product') return entry.ancestors;
+  if (entry.kind === 'context' && entry.parent) return [entry.parent];
+  return [];
+}
+
+/**
+ * Get roles for a context entity.
+ */
+export function getContextRoles(contextType: string): readonly string[] {
+  if (!hasKey(appConfig.entityConfig, contextType)) return [];
+  const entry = appConfig.entityConfig[contextType];
+  if (entry.kind === 'context') return entry.roles;
+  return [];
+}
+
+/**
+ * Check if entity type is a context entity.
+ */
+export function isContextEntity(entityType: string): boolean {
+  return getEntityKind(entityType) === 'context';
+}
+
+/**
+ * Check if entity type is a product entity.
+ */
+export function isProductEntity(entityType: string): boolean {
+  return getEntityKind(entityType) === 'product';
+}
 
 /**
  * Entity ID column keys mapping (e.g., { organization: 'organizationId' })
@@ -102,6 +187,10 @@ export type EntityIdColumnKey<T extends EntityType> = EntityIdColumnKeys[T];
  * Entity actions that can be performed (CRUD + search)
  */
 export type EntityActionType = (typeof appConfig.entityActions)[number];
+
+/******************************************************************************
+ * CONFIG MERGING
+ ******************************************************************************/
 
 const configModes = {
   development,

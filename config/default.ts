@@ -76,13 +76,38 @@ export const config = {
 
                   The documentation is generated from source code using \`zod\` schemas, converted into OpenAPI via \`zod-openapi\` and served through the \`hono\` framework.`,
 
+
+   /******************************************************************************
+   * SYSTEM ROLES
+   ******************************************************************************/
+ 
+  /** Base role is `user`, but this is not stored its just the default. 
+   * Special system roles can be defined here and will be stored in the DB.
+   */   
+  systemRoles: ['admin'] as const,
+
+
   /******************************************************************************
    * ENTITY DATA MODEL
    ******************************************************************************/
-  entityTypes: ['user', 'organization', 'attachment', 'page'] as const,
 
-  contextEntityTypes: ['organization'] as const, // Entities with memberships
-  productEntityTypes: ['attachment', 'page'] as const, // Content entities
+  /**
+   * Entity hierarchy configuration - single source of truth for entity relationships.
+   * - 'user': The user entity (unique, doesn't fit context/product model)
+   * - 'context': Entities with memberships, defines parent chain
+   * - 'product': Content entities, defines ancestor chain for scoping
+   */
+  entityConfig: {
+    user: { kind: 'user' },
+    organization: { kind: 'context', parent: null, roles: ['admin', 'member'] },
+    attachment: { kind: 'product', ancestors: ['organization'] },
+    page: { kind: 'product', ancestors: [] },
+  } as const,
+
+  // Hardcoded arrays for type safety (must match entityConfig)
+  entityTypes: ['user', 'organization', 'attachment', 'page'] as const,
+  contextEntityTypes: ['organization'] as const,
+  productEntityTypes: ['attachment', 'page'] as const,
   
   offlineEntityTypes: [] as const, // Entities that support offline transactions
   realtimeEntityTypes: ['attachment', 'page'] as const, // Entities with realtime & offline transactions
@@ -126,14 +151,6 @@ export const config = {
   jsonBodyLimit: 1 * 1024 * 1024, // 1mb
   fileUploadLimit: 20 * 1024 * 1024, // 20mb
   defaultBodyLimit: 1 * 1024 * 1024, // 1mb
-
-  /******************************************************************************
-   * ROLES & PERMISSIONS
-   ******************************************************************************/
-  roles: {
-    systemRoles: ['admin'] as const,
-    entityRoles: ['member', 'admin'] as const,
-  },
 
   /******************************************************************************
    * STORAGE & UPLOADS (S3)

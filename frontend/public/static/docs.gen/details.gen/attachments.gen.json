@@ -468,29 +468,23 @@
             "type": "object",
             "required": true,
             "properties": {
-              "transactionId": {
+              "id": {
                 "type": "string",
                 "required": true,
-                "description": "Client-generated unique ID (HLC format: timestamp.logical.nodeId)",
-                "maxLength": 64
+                "description": "Unique mutation ID (nanoid)",
+                "maxLength": 32
               },
               "sourceId": {
                 "type": "string",
                 "required": true,
-                "description": "Tab/instance identifier",
+                "description": "Tab/instance identifier for echo prevention",
                 "maxLength": 64
               },
-              "changedField": {
-                "type": ["string", "null"],
+              "baseVersion": {
+                "type": "integer",
                 "required": true,
-                "description": "Which field this mutation changes (null for create/delete)",
-                "maxLength": 64
-              },
-              "expectedTransactionId": {
-                "type": ["string", "null"],
-                "required": true,
-                "description": "Last known transaction ID for this field (null for create or first write)",
-                "maxLength": 64
+                "description": "Entity version when read (for conflict detection)",
+                "minimum": 0
               }
             },
             "ref": "#/components/schemas/TxRequest"
@@ -766,29 +760,23 @@
             "type": "object",
             "required": true,
             "properties": {
-              "transactionId": {
+              "id": {
                 "type": "string",
                 "required": true,
-                "description": "Client-generated unique ID (HLC format: timestamp.logical.nodeId)",
-                "maxLength": 64
+                "description": "Unique mutation ID (nanoid)",
+                "maxLength": 32
               },
               "sourceId": {
                 "type": "string",
                 "required": true,
-                "description": "Tab/instance identifier",
+                "description": "Tab/instance identifier for echo prevention",
                 "maxLength": 64
               },
-              "changedField": {
-                "type": ["string", "null"],
+              "baseVersion": {
+                "type": "integer",
                 "required": true,
-                "description": "Which field this mutation changes (null for create/delete)",
-                "maxLength": 64
-              },
-              "expectedTransactionId": {
-                "type": ["string", "null"],
-                "required": true,
-                "description": "Last known transaction ID for this field (null for create or first write)",
-                "maxLength": 64
+                "description": "Entity version when read (for conflict detection)",
+                "minimum": 0
               }
             },
             "ref": "#/components/schemas/TxRequest"

@@ -2,7 +2,7 @@ import type { EntityActionType } from 'config';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { checkAllPermissions, type SubjectForPermission } from './permission-manager';
 import type { PermissionCheckOptions } from './permission-manager/types';
-import { accessPolicies, hierarchy } from './permissions-config';
+import { accessPolicies } from './permissions-config';
 
 /**
  * Permission result containing membership and action permissions.
@@ -55,7 +55,7 @@ export const isPermissionAllowed = (
   entity: PermissionEntity,
   options?: PermissionCheckOptions,
 ): PermissionResult => {
-  const { can, membership } = checkAllPermissions(hierarchy, accessPolicies, memberships, entity, options);
+  const { can, membership } = checkAllPermissions(accessPolicies, memberships, entity, options);
 
   return {
     allowed: can[action],

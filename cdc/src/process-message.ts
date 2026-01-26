@@ -1,15 +1,18 @@
 import type { Pgoutput } from 'pg-logical-replication';
 import type { InsertActivityModel } from '#/db/schema/activities';
 import { handleDelete, handleInsert, handleUpdate } from './handlers';
+import type { TableRegistryEntry } from './types';
 import { getTableEntry } from './utils';
 
 /**
  * Result of processing a CDC message.
- * Includes both the activity to insert and the entity data for WebSocket delivery.
+ * Includes the activity to insert, entity data for WebSocket delivery,
+ * and the table entry for seq scope calculation.
  */
 export interface ProcessMessageResult {
   activity: InsertActivityModel;
   entityData: Record<string, unknown>;
+  entry: TableRegistryEntry;
 }
 
 /**

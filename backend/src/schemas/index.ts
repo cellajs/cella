@@ -42,7 +42,13 @@ export { errorResponseRefs, errorResponses, registerAllErrorResponses } from './
 export { mapEntitiesToSchema } from './map-entities-to-schema';
 
 // Stream schemas
-export { createStreamMessageSchema, type StreamMessage, streamMessageSchema } from './stream-schemas';
+export {
+  createStreamMessageSchema,
+  type StreamMessage,
+  type StreamNotification,
+  streamMessageSchema,
+  streamNotificationSchema,
+} from './stream-schemas';
 
 // Success response schemas
 export {

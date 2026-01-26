@@ -62,7 +62,7 @@ export const userUpdateBodySchema = createInsertSchema(usersTable, {
 export const userListQuerySchema = paginationQuerySchema
   .extend({
     sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt']).default('createdAt').optional(),
-    role: z.enum(appConfig.roles.systemRoles).optional(),
+    role: z.enum(appConfig.systemRoles).optional(),
     targetEntityType: contextEntityTypeSchema.optional(),
     targetEntityId: z.string().optional(),
   })

@@ -794,7 +794,7 @@
                       "role": {
                         "type": "string",
                         "required": true,
-                        "enum": ["member", "admin"]
+                        "enum": ["admin", "member"]
                       },
                       "rejectedAt": {
                         "type": ["string", "null"],

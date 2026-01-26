@@ -36,7 +36,7 @@ export type MembershipBase = {
   id: string;
   contextType: 'organization';
   userId: string;
-  role: 'member' | 'admin';
+  role: 'admin' | 'member';
   archived: boolean;
   muted: boolean;
   order: number;
@@ -122,6 +122,7 @@ export type Activity = {
         [key: string]: unknown;
       }
     | Array<unknown>;
+  seq: number | null;
 };
 
 export type Me = {
@@ -193,7 +194,7 @@ export type InactiveMembership = {
   email: string;
   userId: string | null;
   tokenId: string | null;
-  role: 'member' | 'admin';
+  role: 'admin' | 'member';
   rejectedAt: string | null;
   createdBy: string;
   organizationId: string;
@@ -252,8 +253,8 @@ export type Organization = {
   membership: MembershipBase | null;
   counts?: {
     membership: {
-      member: number;
       admin: number;
+      member: number;
       pending: number;
       total: number;
     };
@@ -272,9 +273,12 @@ export type Organization = {
 };
 
 export type TxStreamMessage = {
-  transactionId: string | null;
-  sourceId: string | null;
-  changedField: string | null;
+  id: string;
+  sourceId: string;
+  version: number;
+  fieldVersions: {
+    [key: string]: number;
+  };
 } | null;
 
 export type Page = {
@@ -303,21 +307,17 @@ export type Page = {
 
 export type TxRequest = {
   /**
-   * Client-generated unique ID (HLC format: timestamp.logical.nodeId)
+   * Unique mutation ID (nanoid)
    */
-  transactionId: string;
+  id: string;
   /**
-   * Tab/instance identifier
+   * Tab/instance identifier for echo prevention
    */
   sourceId: string;
   /**
-   * Which field this mutation changes (null for create/delete)
+   * Entity version when read (for conflict detection)
    */
-  changedField: string | null;
-  /**
-   * Last known transaction ID for this field (null for create or first write)
-   */
-  expectedTransactionId: string | null;
+  baseVersion: number;
 };
 
 export type Attachment = {
@@ -364,7 +364,7 @@ export type Membership = {
   id: string;
   contextType: 'organization';
   userId: string;
-  role: 'member' | 'admin';
+  role: 'admin' | 'member';
   createdBy: string;
   modifiedAt: string | null;
   modifiedBy: string | null;
@@ -2283,7 +2283,7 @@ export type GetOrganizationsData = {
     offset?: string;
     limit?: string;
     userId?: string;
-    role?: 'member' | 'admin';
+    role?: 'admin' | 'member';
     excludeArchived?: 'true' | 'false';
     include?: string;
   };
@@ -2984,7 +2984,7 @@ export type PaddleWebhookResponse = PaddleWebhookResponses[keyof PaddleWebhookRe
 export type SendNewsletterData = {
   body: {
     organizationIds: Array<string>;
-    roles: Array<'member' | 'admin'>;
+    roles: Array<'admin' | 'member'>;
     subject: string;
     content: string;
   };
@@ -3702,7 +3702,7 @@ export type DeleteMembershipsResponse = DeleteMembershipsResponses[keyof DeleteM
 export type MembershipInviteData = {
   body: {
     emails: Array<string>;
-    role: 'member' | 'admin';
+    role: 'admin' | 'member';
   };
   path: {
     /**
@@ -3758,7 +3758,7 @@ export type MembershipInviteResponse = MembershipInviteResponses[keyof Membershi
 
 export type UpdateMembershipData = {
   body?: {
-    role?: 'member' | 'admin';
+    role?: 'admin' | 'member';
     muted?: boolean;
     archived?: boolean;
     order?: number;
@@ -3876,7 +3876,7 @@ export type GetMembersData = {
      */
     idOrSlug: string;
     entityType: 'organization';
-    role?: 'member' | 'admin';
+    role?: 'admin' | 'member';
   };
   url: '/{orgIdOrSlug}/memberships/members';
 };
@@ -3995,7 +3995,7 @@ export type GetPendingMembershipsResponses = {
       id: string;
       email: string;
       thumbnailUrl: string | null;
-      role: 'member' | 'admin' | null;
+      role: 'admin' | 'member' | null;
       createdAt: string;
       createdBy: string | null;
     }>;

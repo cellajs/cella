@@ -14,6 +14,38 @@ export type BaseConfigType = {
 export type BaseAuthStrategies = 'password' | 'passkey' | 'oauth' | 'totp'
 export type BaseOAuthProviders = 'github' | 'google' | 'microsoft'
 
+/******************************************************************************
+ * ENTITY CONFIG TYPES
+ ******************************************************************************/
+
+/** Entity kinds in the system */
+export type EntityKind = 'user' | 'context' | 'product';
+
+/** Configuration for user entity (unique, doesn't fit context/product model) */
+export interface UserEntityConfig {
+  kind: 'user';
+}
+
+/** Configuration for context entities (have memberships) */
+export interface ContextEntityConfig {
+  kind: 'context';
+  parent: string | null;
+  roles: readonly string[];
+}
+
+/** Configuration for product entities (content, no memberships) */
+export interface ProductEntityConfig {
+  kind: 'product';
+  ancestors: readonly string[];
+}
+
+/** Union of all entity config entry types */
+export type EntityConfigEntry = UserEntityConfig | ContextEntityConfig | ProductEntityConfig;
+
+/******************************************************************************
+ * GENERATION SCRIPTS
+ ******************************************************************************/
+
 /**
  * Type of generation script.
  * - 'drizzle': Schema-to-SQL generation (drizzle-kit generate)

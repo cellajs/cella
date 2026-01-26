@@ -94,7 +94,7 @@
         "role": {
           "type": "string",
           "required": true,
-          "enum": ["member", "admin"]
+          "enum": ["admin", "member"]
         },
         "archived": { "type": "boolean", "required": true },
         "muted": { "type": "boolean", "required": true },
@@ -402,6 +402,12 @@
               "itemType": "object"
             }
           ]
+        },
+        "seq": {
+          "type": ["integer", "null"],
+          "required": true,
+          "minimum": -2147483648,
+          "maximum": 2147483647
         }
       }
     },
@@ -418,7 +424,8 @@
       "organizationId": "t2j8omleaz2pg8iwtnhw3666",
       "createdAt": "2024-10-11T19:21:02.239Z",
       "changedKeys": ["email", "description", "name"],
-      "tx": null
+      "tx": null,
+      "seq": 431
     }
   },
   {
@@ -784,7 +791,7 @@
         "role": {
           "type": "string",
           "required": true,
-          "enum": ["member", "admin"]
+          "enum": ["admin", "member"]
         },
         "rejectedAt": {
           "type": ["string", "null"],
@@ -802,7 +809,7 @@
       "email": "belle.bashirian10@hotmail.com",
       "userId": "ne0c1n1xatbgsj5m94fa2zfj",
       "tokenId": "0w94eh4h0qgupj2wo2oz6c0e",
-      "role": "member",
+      "role": "admin",
       "rejectedAt": null,
       "createdAt": "2024-02-08T11:19:07.168Z",
       "createdBy": "9v2n0dfrh6s450ooxn5tb992",
@@ -982,7 +989,7 @@
                 "role": {
                   "type": "string",
                   "required": true,
-                  "enum": ["member", "admin"]
+                  "enum": ["admin", "member"]
                 },
                 "archived": { "type": "boolean", "required": true },
                 "muted": { "type": "boolean", "required": true },
@@ -1007,8 +1014,8 @@
               "type": "object",
               "required": true,
               "properties": {
-                "member": { "type": "number", "required": true },
                 "admin": { "type": "number", "required": true },
+                "member": { "type": "number", "required": true },
                 "pending": { "type": "number", "required": true },
                 "total": { "type": "number", "required": true }
               }
@@ -1072,15 +1079,15 @@
         "contextType": "organization",
         "userId": "w4hg4036vxzq0rzt4pucveps",
         "organizationId": "hmo9fwr239kqavr3yur671kl",
-        "role": "admin",
+        "role": "member",
         "order": 38,
         "muted": false,
         "archived": false
       },
       "counts": {
         "membership": {
-          "member": 30,
-          "admin": 63,
+          "admin": 30,
+          "member": 63,
           "pending": 13,
           "total": 93
         },
@@ -1095,18 +1102,10 @@
     "schema": {
       "type": ["object", "null"],
       "properties": {
-        "transactionId": {
-          "type": ["string", "null"],
-          "required": true
-        },
-        "sourceId": {
-          "type": ["string", "null"],
-          "required": true
-        },
-        "changedField": {
-          "type": ["string", "null"],
-          "required": true
-        }
+        "id": { "type": "string", "required": true },
+        "sourceId": { "type": "string", "required": true },
+        "version": { "type": "integer", "required": true },
+        "fieldVersions": { "type": "object", "required": true }
       }
     },
     "schemaTag": "data"
@@ -1199,29 +1198,23 @@
     "schema": {
       "type": "object",
       "properties": {
-        "transactionId": {
+        "id": {
           "type": "string",
           "required": true,
-          "description": "Client-generated unique ID (HLC format: timestamp.logical.nodeId)",
-          "maxLength": 64
+          "description": "Unique mutation ID (nanoid)",
+          "maxLength": 32
         },
         "sourceId": {
           "type": "string",
           "required": true,
-          "description": "Tab/instance identifier",
+          "description": "Tab/instance identifier for echo prevention",
           "maxLength": 64
         },
-        "changedField": {
-          "type": ["string", "null"],
+        "baseVersion": {
+          "type": "integer",
           "required": true,
-          "description": "Which field this mutation changes (null for create/delete)",
-          "maxLength": 64
-        },
-        "expectedTransactionId": {
-          "type": ["string", "null"],
-          "required": true,
-          "description": "Last known transaction ID for this field (null for create or first write)",
-          "maxLength": 64
+          "description": "Entity version when read (for conflict detection)",
+          "minimum": 0
         }
       }
     },
@@ -1353,7 +1346,7 @@
         "role": {
           "type": "string",
           "required": true,
-          "enum": ["member", "admin"]
+          "enum": ["admin", "member"]
         },
         "createdBy": { "type": "string", "required": true },
         "modifiedAt": {
@@ -1382,7 +1375,7 @@
       "contextType": "organization",
       "userId": "xg7596t8jiy8d0v8irrljzhy",
       "organizationId": "7ul53b62aw5h7k6x44nbu2r5",
-      "role": "member",
+      "role": "admin",
       "order": 49,
       "muted": false,
       "archived": false,

@@ -17,7 +17,7 @@ import {
   type UpdatePageData,
   updatePage,
 } from '~/api.gen';
-import { zPage, zUpdatePageData } from '~/api.gen/zod.gen';
+import { zPage } from '~/api.gen/zod.gen';
 import {
   baseInfiniteQueryOptions,
   createEntityKeys,
@@ -27,21 +27,12 @@ import {
   useMutateQueryData,
 } from '~/query/basic';
 import { addMutationRegistrar } from '~/query/mutation-registry';
-import {
-  createTxForCreate,
-  createTxForUpdate,
-  initFieldTransactionFromEntity,
-  squashPendingMutation,
-  updateFieldTransactions,
-} from '~/query/offline';
+import { createTxForCreate, createTxForUpdate, squashPendingMutation } from '~/query/offline';
 
 // Use generated types from api.gen for mutation input shapes
 // CreatePagesData uses array schema, extract element type for single item input
 type CreatePageInput = CreatePagesData['body']['data'][number];
 type UpdatePageInput = UpdatePageData['body']['data'];
-
-/** All updatable fields extracted from generated zod schema - used for conflict detection. */
-const pageTrackedFields = zUpdatePageData.shape.body.shape.data.keyof().options;
 
 export const pagesLimit = appConfig.requestLimits.pages;
 
@@ -76,8 +67,6 @@ export const pageQueryOptions = (id: string) =>
     queryKey: keys.detail.byId(id),
     queryFn: async () => {
       const result = await getPage({ path: { id } });
-      // Initialize transaction tracking for the fetched page
-      initFieldTransactionFromEntity('page', result.id, result.tx);
       return result;
     },
     initialData: () => findPageInListCache(id),
@@ -108,13 +97,6 @@ export const pagesQueryOptions = (params: PagesListParams = {}) => {
         query: { ...baseQuery, offset },
         signal,
       });
-
-      // Initialize transaction tracking for each fetched page
-      if (result.items) {
-        for (const pageItem of result.items) {
-          initFieldTransactionFromEntity('page', pageItem.id, pageItem.tx);
-        }
-      }
 
       return result;
     },
@@ -176,9 +158,6 @@ export const usePageCreateMutation = () => {
         mutateCache.remove([context.optimisticPage]);
       }
       mutateCache.create([createdPage]);
-
-      // Store server timestamps for future conflict detection (tx is embedded in entity)
-      updateFieldTransactions('page', createdPage.id, createdPage.tx);
     },
 
     // Runs after success OR error - ensure cache stays fresh
@@ -191,7 +170,7 @@ export const usePageCreateMutation = () => {
 
 /**
  * Custom hook to update an existing page with optimistic updates.
- * Implements squashing: cancels pending same-field mutations.
+ * Implements squashing: cancels pending same-entity mutations.
  */
 export const usePageUpdateMutation = () => {
   const queryClient = useQueryClient();
@@ -200,18 +179,19 @@ export const usePageUpdateMutation = () => {
   return useMutation({
     mutationKey: keys.update,
 
-    // Execute API call with field-level transaction metadata
+    // Execute API call with version-based transaction metadata
     mutationFn: async ({ id, data }: { id: string; data: UpdatePageInput }) => {
-      // Build tx with HLC timestamp + field tracking for server-side conflict detection
-      const tx = createTxForUpdate('page', id, data, pageTrackedFields);
+      // Get cached entity for baseVersion conflict detection
+      const cachedEntity = findPageInListCache(id);
+      const tx = createTxForUpdate(cachedEntity);
       const result = await updatePage({ path: { id }, body: { data, tx } });
       return result;
     },
 
     // Runs BEFORE mutationFn - squash duplicates and prepare optimistic state
     onMutate: async ({ id, data }) => {
-      // Cancel in-flight mutations updating the same fields (prevents redundant requests)
-      await squashPendingMutation(queryClient, keys.update, id, data, pageTrackedFields);
+      // Cancel in-flight mutations updating the same entity (prevents redundant requests)
+      await squashPendingMutation(queryClient, keys.update, id, data);
 
       // Cancel queries to prevent race conditions
       await queryClient.cancelQueries({ queryKey: keys.list.base });
@@ -241,9 +221,6 @@ export const usePageUpdateMutation = () => {
     onSuccess: (updatedPage) => {
       // Replace optimistic data with server response (source of truth)
       mutateCache.update([updatedPage]);
-
-      // Store server timestamps for future conflict detection (tx is embedded in entity)
-      updateFieldTransactions('page', updatedPage.id, updatedPage.tx);
     },
 
     // Runs after success OR error - refresh detail view
@@ -321,7 +298,9 @@ addMutationRegistrar((queryClient: QueryClient) => {
   // Update mutation
   queryClient.setMutationDefaults(keys.update, {
     mutationFn: async ({ id, data }: { id: string; data: UpdatePageInput }) => {
-      const tx = createTxForUpdate('page', id, data, pageTrackedFields);
+      // Get cached entity for baseVersion (may be undefined if not in cache)
+      const cachedEntity = findPageInListCache(id);
+      const tx = createTxForUpdate(cachedEntity);
       return updatePage({ path: { id }, body: { data, tx } });
     },
   });

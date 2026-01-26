@@ -10,7 +10,7 @@ import { AppError } from '#/lib/error';
 import attachmentRoutes from '#/modules/attachment/attachment-routes';
 import { getValidProductEntity } from '#/permissions/get-product-entity';
 import { splitByAllowance } from '#/permissions/split-by-allowance';
-import { checkFieldConflict, getEntityByTransaction, isTransactionProcessed } from '#/sync';
+import { getEntityByTransaction, isTransactionProcessed } from '#/sync';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
@@ -71,8 +71,8 @@ const attachmentRouteHandlers = app
     const { data: newAttachments, tx } = ctx.req.valid('json');
 
     // Idempotency check - return existing entities if transaction already processed
-    if (await isTransactionProcessed(tx.transactionId)) {
-      const ref = await getEntityByTransaction(tx.transactionId);
+    if (await isTransactionProcessed(tx.id)) {
+      const ref = await getEntityByTransaction(tx.id);
       if (ref) {
         // For batch create, the first attachment ID is stored - fetch all from that batch
         const existing = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, ref.entityId));
@@ -112,9 +112,10 @@ const attachmentRouteHandlers = app
       description: '', // Required by baseEntityColumns
       // Sync: write transient tx metadata for CDC Worker
       tx: {
-        transactionId: tx.transactionId,
+        id: tx.id,
         sourceId: tx.sourceId,
-        changedField: null, // null for create
+        version: 1,
+        fieldVersions: {},
       },
     }));
 
@@ -132,30 +133,30 @@ const attachmentRouteHandlers = app
     const { id } = ctx.req.valid('param');
     const { data: updatedFields, tx } = ctx.req.valid('json');
 
-    const { can } = await getValidProductEntity(id, 'attachment', 'update');
+    const { entity, can } = await getValidProductEntity(id, 'attachment', 'update');
 
     const user = getContextUser();
 
-    // Conflict detection for field-level updates
-    if (tx.changedField && tx.expectedTransactionId !== undefined) {
-      const { hasConflict, serverTransactionId } = await checkFieldConflict({
-        entityType: 'attachment',
-        entityId: id,
-        changedField: tx.changedField,
-        expectedTransactionId: tx.expectedTransactionId,
-      });
+    // Derive changed field from payload for conflict detection
+    const trackedFields = ['name', 'filename', 'contentType'] as const;
+    const changedField = trackedFields.find((f) => f in updatedFields) ?? null;
 
-      if (hasConflict) {
+    // Field-level conflict detection using version comparison
+    if (changedField) {
+      const fieldLastModified = entity.tx?.fieldVersions?.[changedField] ?? 0;
+      if (fieldLastModified > tx.baseVersion) {
         throw new AppError(409, 'field_conflict', 'warn', {
           entityType: 'attachment',
           meta: {
-            field: tx.changedField,
-            expectedTransactionId: tx.expectedTransactionId,
-            serverTransactionId,
+            field: changedField,
+            clientVersion: tx.baseVersion,
+            serverVersion: fieldLastModified,
           },
         });
       }
     }
+
+    const newVersion = (entity.tx?.version ?? 0) + 1;
 
     const [updatedAttachment] = await db
       .update(attachmentsTable)
@@ -165,10 +166,13 @@ const attachmentRouteHandlers = app
         modifiedBy: user.id,
         // Sync: write transient tx metadata for CDC Worker + client tracking
         tx: {
-          transactionId: tx.transactionId,
+          id: tx.id,
           sourceId: tx.sourceId,
-          changedField: tx.changedField,
-          expectedTransactionId: tx.expectedTransactionId,
+          version: newVersion,
+          fieldVersions: {
+            ...entity.tx?.fieldVersions,
+            ...(changedField ? { [changedField]: newVersion } : {}),
+          },
         },
       })
       .where(eq(attachmentsTable.id, id))

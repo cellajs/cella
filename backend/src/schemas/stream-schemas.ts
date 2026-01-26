@@ -4,11 +4,27 @@ import { activityActions } from '#/sync/activity-bus';
 import { txStreamMessageSchema } from './transaction-schemas';
 
 /**
- * Factory to create a stream message schema.
- * Use for SSE stream message payloads.
+ * Stream notification schema for notification-based sync.
+ * Lightweight payload - client fetches entity data via API.
+ */
+export const streamNotificationSchema = z.object({
+  action: z.enum(activityActions),
+  entityType: z.enum(appConfig.realtimeEntityTypes),
+  entityId: z.string(),
+  organizationId: z.string().nullable(),
+  seq: z.number().int(),
+  tx: txStreamMessageSchema,
+});
+
+export type StreamNotification = z.infer<typeof streamNotificationSchema>;
+
+/**
+ * Factory to create a stream message schema (legacy, for backward compatibility).
+ * Use for SSE stream message payloads that include full entity data.
  *
  * @example
  * const pageStreamMessageSchema = createStreamMessageSchema(pageSchema);
+ * @deprecated Use streamNotificationSchema for notification-based sync
  */
 export const createStreamMessageSchema = <T extends z.ZodTypeAny>(dataSchema: T) =>
   z.object({
@@ -25,6 +41,7 @@ export const createStreamMessageSchema = <T extends z.ZodTypeAny>(dataSchema: T)
 /**
  * Base stream message schema (entity data as unknown).
  * Use when specific entity type is not known at compile time.
+ * @deprecated Use streamNotificationSchema for notification-based sync
  */
 export const streamMessageSchema = createStreamMessageSchema(z.unknown()).openapi('StreamMessage');
 

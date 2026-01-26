@@ -2,7 +2,7 @@
 
 exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
 {
-  "inputHash": "412c5ed138b05a09",
+  "inputHash": "1b5f2fa28c6af0f9",
   "output": {
     "info": {
       "description": "⚠️ ATTENTION: PRERELEASE!  
@@ -988,21 +988,21 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Creates a new *organization*.",
+        "description": "Creates one or more new *organizations*.",
         "extensions": {
           "xGuard": [
             "isAuthenticated",
           ],
           "xRateLimiter": [],
         },
-        "hasExample": true,
+        "hasExample": false,
         "hasParams": false,
         "hasRequestBody": true,
         "hash": "tag/organizations/POST/organization",
-        "id": "createOrganization",
+        "id": "createOrganizations",
         "method": "post",
         "path": "/organization",
-        "summary": "Create organization",
+        "summary": "Create organizations",
         "tags": [
           "organizations",
         ],
@@ -1504,7 +1504,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasParams": true,
         "hasRequestBody": true,
         "hash": "tag/attachments/POST/{orgIdOrSlug}/attachment",
-        "id": "createAttachment",
+        "id": "createAttachments",
         "method": "post",
         "path": "/{orgIdOrSlug}/attachment",
         "summary": "Create attachments",
@@ -1895,8 +1895,8 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             },
             "role": {
               "enum": [
-                "member",
                 "admin",
+                "member",
               ],
               "required": true,
               "type": "string",
@@ -2395,6 +2395,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "id": "s933zhzgm8axl572xlcja86p",
           "organizationId": "t2j8omleaz2pg8iwtnhw3666",
           "resourceType": null,
+          "seq": 431,
           "tableName": "pages",
           "tx": null,
           "type": "page.updated",
@@ -2492,6 +2493,15 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": true,
               "type": [
                 "string",
+                "null",
+              ],
+            },
+            "seq": {
+              "maximum": 2147483647,
+              "minimum": -2147483648,
+              "required": true,
+              "type": [
+                "integer",
                 "null",
               ],
             },
@@ -3086,7 +3096,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "id": "ukxfca4ddim4bvuklzn5bszg",
           "organizationId": "9angnio9zojjlzk3croh621f",
           "rejectedAt": null,
-          "role": "member",
+          "role": "admin",
           "tokenId": "0w94eh4h0qgupj2wo2oz6c0e",
           "uniqueKey": "ne0c1n1xatbgsj5m94fa2zfj-9angnio9zojjlzk3croh621f",
           "userId": "ne0c1n1xatbgsj5m94fa2zfj",
@@ -3131,8 +3141,8 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             },
             "role": {
               "enum": [
-                "member",
                 "admin",
+                "member",
               ],
               "required": true,
               "type": "string",
@@ -3163,14 +3173,14 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
       },
       {
         "example": {
-          "rejectedItems": [],
+          "rejectedItemIds": [],
           "success": true,
         },
         "name": "SuccessWithRejectedItems",
         "ref": "#/components/schemas/SuccessWithRejectedItems",
         "schema": {
           "properties": {
-            "rejectedItems": {
+            "rejectedItemIds": {
               "itemType": "string",
               "required": true,
               "type": "array",
@@ -3259,8 +3269,8 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "page": 257,
             },
             "membership": {
-              "admin": 63,
-              "member": 30,
+              "admin": 30,
+              "member": 63,
               "pending": 13,
               "total": 93,
             },
@@ -3283,7 +3293,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "muted": false,
             "order": 38,
             "organizationId": "hmo9fwr239kqavr3yur671kl",
-            "role": "admin",
+            "role": "member",
             "userId": "w4hg4036vxzq0rzt4pucveps",
           },
           "modifiedAt": "2024-12-25T15:29:47.111Z",
@@ -3507,8 +3517,8 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     },
                     "role": {
                       "enum": [
-                        "member",
                         "admin",
+                        "member",
                       ],
                       "required": true,
                       "type": "string",
@@ -3604,26 +3614,21 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "ref": "#/components/schemas/TxStreamMessage",
         "schema": {
           "properties": {
-            "changedField": {
+            "fieldVersions": {
               "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
+              "type": "object",
+            },
+            "id": {
+              "required": true,
+              "type": "string",
             },
             "sourceId": {
               "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
+              "type": "string",
             },
-            "transactionId": {
+            "version": {
               "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
+              "type": "integer",
             },
           },
           "type": [
@@ -3771,32 +3776,20 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "ref": "#/components/schemas/TxRequest",
         "schema": {
           "properties": {
-            "changedField": {
-              "description": "Which field this mutation changes (null for create/delete)",
-              "maxLength": 64,
+            "baseVersion": {
+              "description": "Entity version when read (for conflict detection)",
+              "minimum": 0,
               "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
+              "type": "integer",
             },
-            "expectedTransactionId": {
-              "description": "Last known transaction ID for this field (null for create or first write)",
-              "maxLength": 64,
-              "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
-            },
-            "sourceId": {
-              "description": "Tab/instance identifier",
-              "maxLength": 64,
+            "id": {
+              "description": "Unique mutation ID (nanoid)",
+              "maxLength": 32,
               "required": true,
               "type": "string",
             },
-            "transactionId": {
-              "description": "Client-generated unique ID (HLC format: timestamp.logical.nodeId)",
+            "sourceId": {
+              "description": "Tab/instance identifier for echo prevention",
               "maxLength": 64,
               "required": true,
               "type": "string",
@@ -4016,7 +4009,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "muted": false,
           "order": 49,
           "organizationId": "7ul53b62aw5h7k6x44nbu2r5",
-          "role": "member",
+          "role": "admin",
           "uniqueKey": "xg7596t8jiy8d0v8irrljzhy-7ul53b62aw5h7k6x44nbu2r5",
           "userId": "xg7596t8jiy8d0v8irrljzhy",
         },
@@ -4077,8 +4070,8 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             },
             "role": {
               "enum": [
-                "member",
                 "admin",
+                "member",
               ],
               "required": true,
               "type": "string",
@@ -4279,6 +4272,15 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "required": true,
                           "type": [
                             "string",
+                            "null",
+                          ],
+                        },
+                        "seq": {
+                          "maximum": 2147483647,
+                          "minimum": -2147483648,
+                          "required": true,
+                          "type": [
+                            "integer",
                             "null",
                           ],
                         },
@@ -4658,7 +4660,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           ],
         },
         {
-          "operationId": "createAttachment",
+          "operationId": "createAttachments",
           "request": {
             "body": {
               "contentType": "application/json",
@@ -4748,32 +4750,20 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 },
                 "tx": {
                   "properties": {
-                    "changedField": {
-                      "description": "Which field this mutation changes (null for create/delete)",
-                      "maxLength": 64,
+                    "baseVersion": {
+                      "description": "Entity version when read (for conflict detection)",
+                      "minimum": 0,
                       "required": true,
-                      "type": [
-                        "string",
-                        "null",
-                      ],
+                      "type": "integer",
                     },
-                    "expectedTransactionId": {
-                      "description": "Last known transaction ID for this field (null for create or first write)",
-                      "maxLength": 64,
-                      "required": true,
-                      "type": [
-                        "string",
-                        "null",
-                      ],
-                    },
-                    "sourceId": {
-                      "description": "Tab/instance identifier",
-                      "maxLength": 64,
+                    "id": {
+                      "description": "Unique mutation ID (nanoid)",
+                      "maxLength": 32,
                       "required": true,
                       "type": "string",
                     },
-                    "transactionId": {
-                      "description": "Client-generated unique ID (HLC format: timestamp.logical.nodeId)",
+                    "sourceId": {
+                      "description": "Tab/instance identifier for echo prevention",
                       "maxLength": 64,
                       "required": true,
                       "type": "string",
@@ -4979,7 +4969,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "required": true,
                     "type": "array",
                   },
-                  "rejectedItems": {
+                  "rejectedItemIds": {
                     "description": "Identifiers of items that could not be processed",
                     "itemType": "string",
                     "required": true,
@@ -5171,7 +5161,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "required": true,
                     "type": "array",
                   },
-                  "rejectedItems": {
+                  "rejectedItemIds": {
                     "description": "Identifiers of items that could not be processed",
                     "itemType": "string",
                     "required": true,
@@ -5251,7 +5241,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "contentType": "application/json",
               "description": "Success",
               "example": {
-                "rejectedItems": [],
+                "rejectedItemIds": [],
                 "success": true,
               },
               "name": "SuccessWithRejectedItems",
@@ -5259,7 +5249,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "schema": {
                 "contentType": "application/json",
                 "properties": {
-                  "rejectedItems": {
+                  "rejectedItemIds": {
                     "itemType": "string",
                     "required": true,
                     "type": "array",
@@ -5333,32 +5323,20 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 },
                 "tx": {
                   "properties": {
-                    "changedField": {
-                      "description": "Which field this mutation changes (null for create/delete)",
-                      "maxLength": 64,
+                    "baseVersion": {
+                      "description": "Entity version when read (for conflict detection)",
+                      "minimum": 0,
                       "required": true,
-                      "type": [
-                        "string",
-                        "null",
-                      ],
+                      "type": "integer",
                     },
-                    "expectedTransactionId": {
-                      "description": "Last known transaction ID for this field (null for create or first write)",
-                      "maxLength": 64,
-                      "required": true,
-                      "type": [
-                        "string",
-                        "null",
-                      ],
-                    },
-                    "sourceId": {
-                      "description": "Tab/instance identifier",
-                      "maxLength": 64,
+                    "id": {
+                      "description": "Unique mutation ID (nanoid)",
+                      "maxLength": 32,
                       "required": true,
                       "type": "string",
                     },
-                    "transactionId": {
-                      "description": "Client-generated unique ID (HLC format: timestamp.logical.nodeId)",
+                    "sourceId": {
+                      "description": "Tab/instance identifier for echo prevention",
                       "maxLength": 64,
                       "required": true,
                       "type": "string",
@@ -8601,8 +8579,8 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                             },
                             "role": {
                               "enum": [
-                                "member",
                                 "admin",
+                                "member",
                               ],
                               "required": true,
                               "type": "string",
@@ -8705,7 +8683,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "contentType": "application/json",
               "description": "Success",
               "example": {
-                "rejectedItems": [],
+                "rejectedItemIds": [],
                 "success": true,
               },
               "name": "SuccessWithRejectedItems",
@@ -8713,7 +8691,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "schema": {
                 "contentType": "application/json",
                 "properties": {
-                  "rejectedItems": {
+                  "rejectedItemIds": {
                     "itemType": "string",
                     "required": true,
                     "type": "array",
@@ -9118,8 +9096,8 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 },
                 "role": {
                   "enum": [
-                    "member",
                     "admin",
+                    "member",
                   ],
                   "required": true,
                   "type": "string",
@@ -9159,7 +9137,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "contentType": "application/json",
               "description": "Number of sent invitations",
               "example": {
-                "rejectedItems": [],
+                "rejectedItemIds": [],
                 "success": true,
               },
               "schema": {
@@ -9170,7 +9148,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "required": true,
                     "type": "number",
                   },
-                  "rejectedItems": {
+                  "rejectedItemIds": {
                     "itemType": "string",
                     "required": true,
                     "type": "array",
@@ -9269,7 +9247,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "contentType": "application/json",
               "description": "Success",
               "example": {
-                "rejectedItems": [],
+                "rejectedItemIds": [],
                 "success": true,
               },
               "name": "SuccessWithRejectedItems",
@@ -9277,7 +9255,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "schema": {
                 "contentType": "application/json",
                 "properties": {
-                  "rejectedItems": {
+                  "rejectedItemIds": {
                     "itemType": "string",
                     "required": true,
                     "type": "array",
@@ -9349,8 +9327,8 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 },
                 "role": {
                   "enum": [
-                    "member",
                     "admin",
+                    "member",
                   ],
                   "required": false,
                   "type": "string",
@@ -9388,7 +9366,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 "muted": false,
                 "order": 49,
                 "organizationId": "7ul53b62aw5h7k6x44nbu2r5",
-                "role": "member",
+                "role": "admin",
                 "uniqueKey": "xg7596t8jiy8d0v8irrljzhy-7ul53b62aw5h7k6x44nbu2r5",
                 "userId": "xg7596t8jiy8d0v8irrljzhy",
               },
@@ -9450,8 +9428,8 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   },
                   "role": {
                     "enum": [
-                      "member",
                       "admin",
+                      "member",
                     ],
                     "required": true,
                     "type": "string",
@@ -9683,8 +9661,8 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 },
                 "role": {
                   "enum": [
-                    "member",
                     "admin",
+                    "member",
                   ],
                   "required": false,
                   "type": "string",
@@ -9831,8 +9809,8 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                             },
                             "role": {
                               "enum": [
-                                "member",
                                 "admin",
+                                "member",
                               ],
                               "required": true,
                               "type": "string",
@@ -10020,8 +9998,8 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                         },
                         "role": {
                           "enum": [
-                            "member",
                             "admin",
+                            "member",
                             null,
                           ],
                           "required": true,
@@ -10397,7 +10375,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
       ],
       "organizations": [
         {
-          "operationId": "createOrganization",
+          "operationId": "createOrganizations",
           "request": {
             "body": {
               "contentType": "application/json",
@@ -10422,345 +10400,304 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "responses": [
             {
               "contentType": "application/json",
-              "description": "Organization was created",
-              "example": {
-                "authStrategies": [
-                  "password",
-                ],
-                "bannerUrl": null,
-                "chatSupport": true,
-                "color": "#daf7e3",
-                "country": "Guatemala",
-                "counts": {
-                  "entities": {
-                    "attachment": 178,
-                    "page": 257,
-                  },
-                  "membership": {
-                    "admin": 63,
-                    "member": 30,
-                    "pending": 13,
-                    "total": 93,
-                  },
-                },
-                "createdAt": "2024-12-25T15:29:47.111Z",
-                "createdBy": null,
-                "defaultLanguage": "en",
-                "description": "Open-source static website",
-                "emailDomains": [],
-                "entityType": "organization",
-                "id": "hmo9fwr239kqavr3yur671kl",
-                "languages": [
-                  "en",
-                ],
-                "logoUrl": "https://picsum.photos/seed/CGEa4RRQS/2665/3362",
-                "membership": {
-                  "archived": false,
-                  "contextType": "organization",
-                  "id": "kaba9fpc90mgtzmtjipw2v8s",
-                  "muted": false,
-                  "order": 38,
-                  "organizationId": "hmo9fwr239kqavr3yur671kl",
-                  "role": "admin",
-                  "userId": "w4hg4036vxzq0rzt4pucveps",
-                },
-                "modifiedAt": "2024-12-25T15:29:47.111Z",
-                "modifiedBy": null,
-                "name": "McClure, Dicki and Waters",
-                "notificationEmail": "notifications@mcclure-dicki-and-waters.example",
-                "restrictions": {
-                  "attachment": 100,
-                  "page": 0,
-                  "user": 1000,
-                },
-                "shortName": "McClure,",
-                "slug": "mcclure-dicki-and-waters",
-                "thumbnailUrl": null,
-                "timezone": "Africa/Dar_es_Salaam",
-                "websiteUrl": "https://mcclure-dicki-and-waters.example",
-                "welcomeText": "Welcome to McClure, Dicki and Waters!",
-              },
+              "description": "Organizations were created",
               "schema": {
                 "contentType": "application/json",
-                "extendsRef": "#/components/schemas/Organization",
                 "properties": {
-                  "authStrategies": {
-                    "enum": [
-                      "github",
-                      "google",
-                      "microsoft",
-                      "password",
-                      "passkey",
-                      "totp",
-                      "email",
-                    ],
-                    "itemType": "string",
-                    "required": true,
-                    "type": "array",
-                  },
-                  "bannerUrl": {
-                    "required": true,
-                    "type": [
-                      "string",
-                      "null",
-                    ],
-                  },
-                  "can": {
-                    "properties": {
-                      "create": {
-                        "required": true,
-                        "type": "boolean",
-                      },
-                      "delete": {
-                        "required": true,
-                        "type": "boolean",
-                      },
-                      "read": {
-                        "required": true,
-                        "type": "boolean",
-                      },
-                      "search": {
-                        "required": true,
-                        "type": "boolean",
-                      },
-                      "update": {
-                        "required": true,
-                        "type": "boolean",
-                      },
-                    },
-                    "required": false,
-                    "type": "object",
-                  },
-                  "chatSupport": {
-                    "required": true,
-                    "type": "boolean",
-                  },
-                  "color": {
-                    "required": true,
-                    "type": [
-                      "string",
-                      "null",
-                    ],
-                  },
-                  "country": {
-                    "required": true,
-                    "type": [
-                      "string",
-                      "null",
-                    ],
-                  },
-                  "counts": {
-                    "properties": {
-                      "entities": {
-                        "properties": {
-                          "attachment": {
-                            "required": true,
-                            "type": "number",
-                          },
-                          "page": {
-                            "required": true,
-                            "type": "number",
-                          },
+                  "data": {
+                    "itemType": "object",
+                    "items": {
+                      "extendsRef": "#/components/schemas/Organization",
+                      "properties": {
+                        "authStrategies": {
+                          "enum": [
+                            "github",
+                            "google",
+                            "microsoft",
+                            "password",
+                            "passkey",
+                            "totp",
+                            "email",
+                          ],
+                          "itemType": "string",
+                          "required": true,
+                          "type": "array",
                         },
-                        "required": true,
-                        "type": "object",
-                      },
-                      "membership": {
-                        "properties": {
-                          "admin": {
-                            "required": true,
-                            "type": "number",
-                          },
-                          "member": {
-                            "required": true,
-                            "type": "number",
-                          },
-                          "pending": {
-                            "required": true,
-                            "type": "number",
-                          },
-                          "total": {
-                            "required": true,
-                            "type": "number",
-                          },
+                        "bannerUrl": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
                         },
-                        "required": true,
-                        "type": "object",
+                        "can": {
+                          "properties": {
+                            "create": {
+                              "required": true,
+                              "type": "boolean",
+                            },
+                            "delete": {
+                              "required": true,
+                              "type": "boolean",
+                            },
+                            "read": {
+                              "required": true,
+                              "type": "boolean",
+                            },
+                            "search": {
+                              "required": true,
+                              "type": "boolean",
+                            },
+                            "update": {
+                              "required": true,
+                              "type": "boolean",
+                            },
+                          },
+                          "required": false,
+                          "type": "object",
+                        },
+                        "chatSupport": {
+                          "required": true,
+                          "type": "boolean",
+                        },
+                        "color": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "country": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "counts": {
+                          "properties": {
+                            "entities": {
+                              "properties": {
+                                "attachment": {
+                                  "required": true,
+                                  "type": "number",
+                                },
+                                "page": {
+                                  "required": true,
+                                  "type": "number",
+                                },
+                              },
+                              "required": true,
+                              "type": "object",
+                            },
+                            "membership": {
+                              "properties": {
+                                "admin": {
+                                  "required": true,
+                                  "type": "number",
+                                },
+                                "member": {
+                                  "required": true,
+                                  "type": "number",
+                                },
+                                "pending": {
+                                  "required": true,
+                                  "type": "number",
+                                },
+                                "total": {
+                                  "required": true,
+                                  "type": "number",
+                                },
+                              },
+                              "required": true,
+                              "type": "object",
+                            },
+                          },
+                          "required": false,
+                          "type": "object",
+                        },
+                        "createdAt": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "createdBy": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "defaultLanguage": {
+                          "enum": [
+                            "en",
+                            "nl",
+                          ],
+                          "required": true,
+                          "type": "string",
+                        },
+                        "description": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "emailDomains": {
+                          "itemType": "string",
+                          "required": true,
+                          "type": "array",
+                        },
+                        "entityType": {
+                          "enum": [
+                            "organization",
+                          ],
+                          "required": true,
+                          "type": "string",
+                        },
+                        "id": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "languages": {
+                          "enum": [
+                            "en",
+                            "nl",
+                          ],
+                          "itemType": "string",
+                          "minItems": 1,
+                          "required": true,
+                          "type": "array",
+                        },
+                        "logoUrl": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "membership": {
+                          "properties": {
+                            "archived": {
+                              "required": true,
+                              "type": "boolean",
+                            },
+                            "contextType": {
+                              "enum": [
+                                "organization",
+                              ],
+                              "required": true,
+                              "type": "string",
+                            },
+                            "id": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "muted": {
+                              "required": true,
+                              "type": "boolean",
+                            },
+                            "order": {
+                              "maximum": 140737488355327,
+                              "minimum": -140737488355328,
+                              "required": true,
+                              "type": "number",
+                            },
+                            "organizationId": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "role": {
+                              "enum": [
+                                "admin",
+                                "member",
+                              ],
+                              "required": true,
+                              "type": "string",
+                            },
+                            "userId": {
+                              "required": true,
+                              "type": "string",
+                            },
+                          },
+                          "ref": "#/components/schemas/MembershipBase",
+                          "required": true,
+                          "type": "object",
+                        },
+                        "modifiedAt": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "modifiedBy": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "name": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "notificationEmail": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "shortName": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "slug": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "thumbnailUrl": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "timezone": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "websiteUrl": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "welcomeText": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
                       },
+                      "type": "object",
                     },
-                    "required": false,
-                    "type": "object",
-                  },
-                  "createdAt": {
-                    "required": true,
-                    "type": "string",
-                  },
-                  "createdBy": {
-                    "required": true,
-                    "type": [
-                      "string",
-                      "null",
-                    ],
-                  },
-                  "defaultLanguage": {
-                    "enum": [
-                      "en",
-                      "nl",
-                    ],
-                    "required": true,
-                    "type": "string",
-                  },
-                  "description": {
-                    "required": true,
-                    "type": [
-                      "string",
-                      "null",
-                    ],
-                  },
-                  "emailDomains": {
-                    "itemType": "string",
                     "required": true,
                     "type": "array",
                   },
-                  "entityType": {
-                    "enum": [
-                      "organization",
-                    ],
-                    "required": true,
-                    "type": "string",
-                  },
-                  "id": {
-                    "required": true,
-                    "type": "string",
-                  },
-                  "languages": {
-                    "enum": [
-                      "en",
-                      "nl",
-                    ],
+                  "rejectedItemIds": {
+                    "description": "Identifiers of items that could not be processed",
                     "itemType": "string",
-                    "minItems": 1,
                     "required": true,
                     "type": "array",
-                  },
-                  "logoUrl": {
-                    "required": true,
-                    "type": [
-                      "string",
-                      "null",
-                    ],
-                  },
-                  "membership": {
-                    "properties": {
-                      "archived": {
-                        "required": true,
-                        "type": "boolean",
-                      },
-                      "contextType": {
-                        "enum": [
-                          "organization",
-                        ],
-                        "required": true,
-                        "type": "string",
-                      },
-                      "id": {
-                        "required": true,
-                        "type": "string",
-                      },
-                      "muted": {
-                        "required": true,
-                        "type": "boolean",
-                      },
-                      "order": {
-                        "maximum": 140737488355327,
-                        "minimum": -140737488355328,
-                        "required": true,
-                        "type": "number",
-                      },
-                      "organizationId": {
-                        "required": true,
-                        "type": "string",
-                      },
-                      "role": {
-                        "enum": [
-                          "member",
-                          "admin",
-                        ],
-                        "required": true,
-                        "type": "string",
-                      },
-                      "userId": {
-                        "required": true,
-                        "type": "string",
-                      },
-                    },
-                    "ref": "#/components/schemas/MembershipBase",
-                    "required": true,
-                    "type": "object",
-                  },
-                  "modifiedAt": {
-                    "required": true,
-                    "type": [
-                      "string",
-                      "null",
-                    ],
-                  },
-                  "modifiedBy": {
-                    "required": true,
-                    "type": [
-                      "string",
-                      "null",
-                    ],
-                  },
-                  "name": {
-                    "required": true,
-                    "type": "string",
-                  },
-                  "notificationEmail": {
-                    "required": true,
-                    "type": [
-                      "string",
-                      "null",
-                    ],
-                  },
-                  "shortName": {
-                    "required": true,
-                    "type": [
-                      "string",
-                      "null",
-                    ],
-                  },
-                  "slug": {
-                    "required": true,
-                    "type": "string",
-                  },
-                  "thumbnailUrl": {
-                    "required": true,
-                    "type": [
-                      "string",
-                      "null",
-                    ],
-                  },
-                  "timezone": {
-                    "required": true,
-                    "type": [
-                      "string",
-                      "null",
-                    ],
-                  },
-                  "websiteUrl": {
-                    "required": true,
-                    "type": [
-                      "string",
-                      "null",
-                    ],
-                  },
-                  "welcomeText": {
-                    "required": true,
-                    "type": [
-                      "string",
-                      "null",
-                    ],
                   },
                 },
                 "type": "object",
@@ -10843,8 +10780,8 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 },
                 "role": {
                   "enum": [
-                    "member",
                     "admin",
+                    "member",
                   ],
                   "required": false,
                   "type": "string",
@@ -11077,8 +11014,8 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                                 },
                                 "role": {
                                   "enum": [
-                                    "member",
                                     "admin",
+                                    "member",
                                   ],
                                   "required": true,
                                   "type": "string",
@@ -11240,7 +11177,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "contentType": "application/json",
               "description": "Success",
               "example": {
-                "rejectedItems": [],
+                "rejectedItemIds": [],
                 "success": true,
               },
               "name": "SuccessWithRejectedItems",
@@ -11248,7 +11185,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "schema": {
                 "contentType": "application/json",
                 "properties": {
-                  "rejectedItems": {
+                  "rejectedItemIds": {
                     "itemType": "string",
                     "required": true,
                     "type": "array",
@@ -11331,8 +11268,8 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "page": 257,
                   },
                   "membership": {
-                    "admin": 63,
-                    "member": 30,
+                    "admin": 30,
+                    "member": 63,
                     "pending": 13,
                     "total": 93,
                   },
@@ -11355,7 +11292,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "muted": false,
                   "order": 38,
                   "organizationId": "hmo9fwr239kqavr3yur671kl",
-                  "role": "admin",
+                  "role": "member",
                   "userId": "w4hg4036vxzq0rzt4pucveps",
                 },
                 "modifiedAt": "2024-12-25T15:29:47.111Z",
@@ -11580,8 +11517,8 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           },
                           "role": {
                             "enum": [
-                              "member",
                               "admin",
+                              "member",
                             ],
                             "required": true,
                             "type": "string",
@@ -11874,8 +11811,8 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "page": 257,
                   },
                   "membership": {
-                    "admin": 63,
-                    "member": 30,
+                    "admin": 30,
+                    "member": 63,
                     "pending": 13,
                     "total": 93,
                   },
@@ -11898,7 +11835,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "muted": false,
                   "order": 38,
                   "organizationId": "hmo9fwr239kqavr3yur671kl",
-                  "role": "admin",
+                  "role": "member",
                   "userId": "w4hg4036vxzq0rzt4pucveps",
                 },
                 "modifiedAt": "2024-12-25T15:29:47.111Z",
@@ -12123,8 +12060,8 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           },
                           "role": {
                             "enum": [
-                              "member",
                               "admin",
+                              "member",
                             ],
                             "required": true,
                             "type": "string",
@@ -12329,26 +12266,21 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                         },
                         "tx": {
                           "properties": {
-                            "changedField": {
+                            "fieldVersions": {
                               "required": true,
-                              "type": [
-                                "string",
-                                "null",
-                              ],
+                              "type": "object",
+                            },
+                            "id": {
+                              "required": true,
+                              "type": "string",
                             },
                             "sourceId": {
                               "required": true,
-                              "type": [
-                                "string",
-                                "null",
-                              ],
+                              "type": "string",
                             },
-                            "transactionId": {
+                            "version": {
                               "required": true,
-                              "type": [
-                                "string",
-                                "null",
-                              ],
+                              "type": "integer",
                             },
                           },
                           "ref": "#/components/schemas/TxStreamMessage",
@@ -12438,32 +12370,20 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 },
                 "tx": {
                   "properties": {
-                    "changedField": {
-                      "description": "Which field this mutation changes (null for create/delete)",
-                      "maxLength": 64,
+                    "baseVersion": {
+                      "description": "Entity version when read (for conflict detection)",
+                      "minimum": 0,
                       "required": true,
-                      "type": [
-                        "string",
-                        "null",
-                      ],
+                      "type": "integer",
                     },
-                    "expectedTransactionId": {
-                      "description": "Last known transaction ID for this field (null for create or first write)",
-                      "maxLength": 64,
-                      "required": true,
-                      "type": [
-                        "string",
-                        "null",
-                      ],
-                    },
-                    "sourceId": {
-                      "description": "Tab/instance identifier",
-                      "maxLength": 64,
+                    "id": {
+                      "description": "Unique mutation ID (nanoid)",
+                      "maxLength": 32,
                       "required": true,
                       "type": "string",
                     },
-                    "transactionId": {
-                      "description": "Client-generated unique ID (HLC format: timestamp.logical.nodeId)",
+                    "sourceId": {
+                      "description": "Tab/instance identifier for echo prevention",
                       "maxLength": 64,
                       "required": true,
                       "type": "string",
@@ -12600,7 +12520,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "required": true,
                     "type": "array",
                   },
-                  "rejectedItems": {
+                  "rejectedItemIds": {
                     "description": "Identifiers of items that could not be processed",
                     "itemType": "string",
                     "required": true,
@@ -12732,7 +12652,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "required": true,
                     "type": "array",
                   },
-                  "rejectedItems": {
+                  "rejectedItemIds": {
                     "description": "Identifiers of items that could not be processed",
                     "itemType": "string",
                     "required": true,
@@ -13278,32 +13198,20 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 },
                 "tx": {
                   "properties": {
-                    "changedField": {
-                      "description": "Which field this mutation changes (null for create/delete)",
-                      "maxLength": 64,
+                    "baseVersion": {
+                      "description": "Entity version when read (for conflict detection)",
+                      "minimum": 0,
                       "required": true,
-                      "type": [
-                        "string",
-                        "null",
-                      ],
+                      "type": "integer",
                     },
-                    "expectedTransactionId": {
-                      "description": "Last known transaction ID for this field (null for create or first write)",
-                      "maxLength": 64,
-                      "required": true,
-                      "type": [
-                        "string",
-                        "null",
-                      ],
-                    },
-                    "sourceId": {
-                      "description": "Tab/instance identifier",
-                      "maxLength": 64,
+                    "id": {
+                      "description": "Unique mutation ID (nanoid)",
+                      "maxLength": 32,
                       "required": true,
                       "type": "string",
                     },
-                    "transactionId": {
-                      "description": "Client-generated unique ID (HLC format: timestamp.logical.nodeId)",
+                    "sourceId": {
+                      "description": "Tab/instance identifier for echo prevention",
                       "maxLength": 64,
                       "required": true,
                       "type": "string",
@@ -13830,7 +13738,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "contentType": "application/json",
               "description": "Invitations are sent",
               "example": {
-                "rejectedItems": [],
+                "rejectedItemIds": [],
                 "success": true,
               },
               "schema": {
@@ -13841,7 +13749,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "required": true,
                     "type": "number",
                   },
-                  "rejectedItems": {
+                  "rejectedItemIds": {
                     "itemType": "string",
                     "required": true,
                     "type": "array",
@@ -14032,8 +13940,8 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 },
                 "roles": {
                   "enum": [
-                    "member",
                     "admin",
+                    "member",
                   ],
                   "itemType": "string",
                   "minItems": 1,
@@ -14298,8 +14206,8 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                               },
                               "role": {
                                 "enum": [
-                                  "member",
                                   "admin",
+                                  "member",
                                 ],
                                 "required": true,
                                 "type": "string",
@@ -14445,7 +14353,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "contentType": "application/json",
               "description": "Success",
               "example": {
-                "rejectedItems": [],
+                "rejectedItemIds": [],
                 "success": true,
               },
               "name": "SuccessWithRejectedItems",
@@ -14453,7 +14361,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "schema": {
                 "contentType": "application/json",
                 "properties": {
-                  "rejectedItems": {
+                  "rejectedItemIds": {
                     "itemType": "string",
                     "required": true,
                     "type": "array",

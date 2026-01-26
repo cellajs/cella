@@ -18,44 +18,16 @@ export type PermissionValue = 0 | 1;
  */
 export type EntityActionPermissions = Record<EntityActionType, PermissionValue>;
 
-/**
- * Configuration for a context entity defining its roles and optional parent contexts.
- */
-export interface ContextConfig {
-  type: 'context';
-  roles: readonly EntityRole[];
-  parents?: readonly ContextEntityType[];
-}
-
-/**
- * Configuration for a product entity defining its parent contexts.
- */
-export interface ProductConfig {
-  type: 'product';
-  parents: readonly ContextEntityType[];
-}
-
-/**
- * Entity configuration - either a context or product entity.
- */
-export type EntityConfig = ContextConfig | ProductConfig;
-
-/**
- * Full hierarchy configuration mapping entity types to their configurations.
- * All context entity types must be configured, product entity types are optional.
- */
-export type HierarchyConfig = {
-  [K in ContextEntityType]: ContextConfig;
-} & {
-  [K in ProductEntityType]?: ProductConfig;
-};
+// Note: ContextConfig, ProductConfig, EntityConfig, and HierarchyConfig have been
+// removed. Entity hierarchy is now defined in appConfig.entityConfig and accessed
+// via config helper functions (getEntityAncestors, getContextRoles, etc.)
 
 /**
  * Access policy entry for a specific context and role combination.
  */
 export interface AccessPolicyEntry {
   contextType: ContextEntityType;
-  role: EntityRole;
+  role: string;
   permissions: EntityActionPermissions;
 }
 
@@ -85,8 +57,8 @@ export type ContextEntityIdColumns = {
 export type MembershipForPermission = {
   /** The context entity type (e.g., 'organization') */
   contextType: ContextEntityType;
-  /** The user's role in this context */
-  role: EntityRole;
+  /** The user's role in this context (string to match DB type) */
+  role: string;
 } & ContextEntityIdColumns;
 
 /**
@@ -111,7 +83,7 @@ export interface ActionAttribution {
   grantedBy: Array<{
     contextType: ContextEntityType;
     contextId: string;
-    role: EntityRole;
+    role: string;
   }>;
 }
 

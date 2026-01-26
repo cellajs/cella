@@ -52,6 +52,7 @@ describe('EventBus Integration', () => {
         changedKeys: ['email', 'name'],
         createdAt: new Date().toISOString(),
         tx: null,
+        seq: null,
       };
 
       await eventBus.emit('user.created', mockEvent);
@@ -78,6 +79,7 @@ describe('EventBus Integration', () => {
         changedKeys: ['name'],
         createdAt: new Date().toISOString(),
         tx: null,
+        seq: null,
       };
 
       await eventBus.emit('organization.updated', mockEvent);

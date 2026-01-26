@@ -1,5 +1,6 @@
+import { appConfig, type RealtimeEntityType } from 'config';
 import type { ActivityEventWithEntity } from '#/sync/activity-bus';
-import { buildStreamMessage } from './build-message';
+import { buildStreamMessage, buildStreamNotification } from './build-message';
 import { writeChange } from './helpers';
 import type { BaseStreamSubscriber } from './types';
 
@@ -12,13 +13,19 @@ export interface CursoredSubscriber extends BaseStreamSubscriber {
 
 /**
  * Send event to a subscriber and update cursor.
- * Generic helper for all stream types.
+ * Uses notification-based format for realtime entities (lightweight, seq-based).
+ * Falls back to full message for other entity types.
  */
 export async function sendToSubscriber<T extends CursoredSubscriber>(
   subscriber: T,
   event: ActivityEventWithEntity,
 ): Promise<void> {
-  const message = buildStreamMessage(event);
+  // Use lightweight notification for realtime entities with tx data
+  const isRealtimeEntity = appConfig.realtimeEntityTypes.includes(event.entityType as RealtimeEntityType);
+  const hasTx = event.tx != null;
+
+  const message = isRealtimeEntity && hasTx ? buildStreamNotification(event) : buildStreamMessage(event);
+
   await writeChange(subscriber.stream, event.id, message);
   subscriber.cursor = event.id;
 }

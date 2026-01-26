@@ -17,14 +17,17 @@ export function extractTxData(row: RowData): TxColumnData | null {
 
   const txObj = tx as Record<string, unknown>;
 
-  // Validate required fields
-  if (typeof txObj.transactionId !== 'string' || typeof txObj.sourceId !== 'string') {
+  // Validate required fields for new schema
+  if (typeof txObj.id !== 'string' || typeof txObj.sourceId !== 'string' || typeof txObj.version !== 'number') {
     return null;
   }
 
   return {
-    transactionId: txObj.transactionId,
+    id: txObj.id,
     sourceId: txObj.sourceId,
-    changedField: typeof txObj.changedField === 'string' ? txObj.changedField : null,
+    version: txObj.version,
+    fieldVersions: (typeof txObj.fieldVersions === 'object' && txObj.fieldVersions !== null)
+      ? txObj.fieldVersions as Record<string, number>
+      : {},
   };
 }

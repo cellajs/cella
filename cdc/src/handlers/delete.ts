@@ -40,5 +40,5 @@ export function handleDelete(entry: TableRegistryEntry, message: Pgoutput.Messag
     tx,
   };
 
-  return { activity, entityData: row };
+  return { activity, entityData: row, entry };
 }

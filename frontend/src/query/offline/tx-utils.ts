@@ -2,105 +2,79 @@
  * Transaction metadata utilities for offline mutations.
  *
  * Creates tx metadata for the { data, tx } wrapper pattern used by synced entities.
- * Handles HLC timestamps, source IDs, and conflict detection setup.
+ * Uses nanoid for unique mutation IDs and version-based conflict detection.
  */
 
-import { getExpectedTransactionId, setFieldTransactionId } from './field-transaction-store';
-import { createTransactionId, sourceId } from './hlc';
+import { nanoid } from 'nanoid';
 
-/** Transaction metadata sent to API in { data, tx } wrapper */
+/**
+ * Unique identifier for this browser tab/instance.
+ * Generated once per page load, used for:
+ * - Mutation source tracking (`tx.sourceId`)
+ * - "Is this mine?" checks on stream messages
+ */
+export const sourceId = `src_${nanoid()}`;
+
+/** Transaction metadata sent to API in { data, tx } wrapper - matches TxRequest from api.gen */
 export interface TxMetadata {
-  transactionId: string;
+  /** Unique mutation ID (nanoid) */
+  id: string;
+  /** Tab/instance identifier for echo prevention */
   sourceId: string;
-  changedField: string | null;
-  expectedTransactionId: string | null;
+  /** Entity version when read (for conflict detection) */
+  baseVersion: number;
 }
 
 /** Represents a JSONB type from the database that may contain tx metadata. */
 type JsonbTx = string | number | boolean | null | { [key: string]: unknown } | unknown[];
 
+/** Entity with optional tx column for version extraction */
+type EntityWithTx = { tx?: JsonbTx };
+
+/**
+ * Extract version from JSONB tx column.
+ * Handles the generic JSONB type from API responses.
+ */
+function extractVersion(tx: JsonbTx | undefined): number {
+  if (!tx || typeof tx !== 'object' || Array.isArray(tx)) return 0;
+  const version = tx.version;
+  return typeof version === 'number' ? version : 0;
+}
+
 /**
  * Create transaction metadata for a create mutation.
- * Creates don't need conflict detection (no existing entity).
+ * Creates start at version 0 (no existing entity).
  */
 export function createTxForCreate(): TxMetadata {
   return {
-    transactionId: createTransactionId(),
+    id: nanoid(),
     sourceId,
-    changedField: null,
-    expectedTransactionId: null,
+    baseVersion: 0,
   };
 }
 
 /**
  * Create transaction metadata for an update mutation.
- * Includes expected transaction ID for conflict detection.
+ * Extracts version from cached entity for conflict detection.
  *
- * @param entityType - Entity type (e.g., 'page')
- * @param entityId - Entity ID being updated
- * @param data - Update payload
- * @param trackedFields - Fields to track for conflict detection
+ * @param cachedEntity - Entity from cache with optional tx.version
  */
-export function createTxForUpdate(
-  entityType: string,
-  entityId: string,
-  data: object,
-  trackedFields: readonly string[],
-): TxMetadata {
-  // Detect which tracked field is being changed
-  const changedField = trackedFields.find((field) => field in data) ?? null;
-
+export function createTxForUpdate(cachedEntity?: EntityWithTx | null): TxMetadata {
   return {
-    transactionId: createTransactionId(),
+    id: nanoid(),
     sourceId,
-    changedField,
-    expectedTransactionId: changedField ? getExpectedTransactionId(entityType, entityId, changedField) : null,
+    baseVersion: extractVersion(cachedEntity?.tx),
   };
 }
 
 /**
  * Create transaction metadata for a delete mutation.
- * Deletes don't need field-level conflict detection.
+ * Deletes use version 0 (no conflict detection needed).
  */
 export function createTxForDelete(): TxMetadata {
   return {
-    transactionId: createTransactionId(),
+    id: nanoid(),
     sourceId,
-    changedField: null,
-    expectedTransactionId: null,
+    baseVersion: 0,
   };
-}
-
-/**
- * Update field transaction store after successful mutation.
- * Accepts entity.tx directly (the JSONB column value from product entities).
- *
- * @param entityType - Entity type
- * @param entityId - Entity ID
- * @param tx - Transaction data from entity.tx column
- */
-export function updateFieldTransactions(entityType: string, entityId: string, tx: JsonbTx | undefined): void {
-  // Reuse the same logic as init - both accept entity.tx JSONB format
-  initFieldTransactionFromEntity(entityType, entityId, tx);
-}
-
-/**
- * Initialize field transaction tracking from entity data.
- * Call this when fetching entities that include tx metadata.
- *
- * @param entityType - Entity type
- * @param entityId - Entity ID
- * @param tx - Transaction metadata from entity (may be null or generic JSONB type)
- */
-export function initFieldTransactionFromEntity(entityType: string, entityId: string, tx: JsonbTx | undefined): void {
-  // Narrow JSONB type to expected tx object shape
-  if (!tx || typeof tx !== 'object' || Array.isArray(tx)) return;
-
-  const transactionId = typeof tx.transactionId === 'string' ? tx.transactionId : null;
-  if (!transactionId) return;
-
-  // Track the transaction ID for the changed field (or '_all' if not specified)
-  const changedField = typeof tx.changedField === 'string' ? tx.changedField : null;
-  const field = changedField ?? '_all';
-  setFieldTransactionId(entityType, entityId, field, transactionId);
 }

@@ -77,6 +77,12 @@
                         "itemType": "object"
                       }
                     ]
+                  },
+                  "seq": {
+                    "type": ["integer", "null"],
+                    "required": true,
+                    "minimum": -2147483648,
+                    "maximum": 2147483647
                   }
                 },
                 "ref": "#/components/schemas/Activity"

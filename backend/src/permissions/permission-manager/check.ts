@@ -5,7 +5,6 @@ import type {
   AccessPolicies,
   ActionAttribution,
   EntityActionPermissions,
-  HierarchyConfig,
   MembershipForPermission,
   PermissionCheckOptions,
   PermissionDecision,
@@ -62,18 +61,15 @@ const getSubjectContextId = (subject: SubjectForPermission, contextType: Context
 
 /**
  * Returns context types to check for permissions:
- * - Product entities: `getAncestorContexts(hierarchy, entityType)` (e.g., task → [project, organization])
+ * - Product entities: `getAncestorContexts(entityType)` (e.g., task → [project, organization])
  * - Context entities: `[entityType, ...getAncestorContexts()]` (e.g., project → [project, organization])
  * The first element is the "primaryContextType" used for membership capture.
  */
-const getRelevantContexts = (
-  hierarchy: HierarchyConfig,
-  entityType: ContextEntityType | ProductEntityType,
-): ContextEntityType[] => {
-  if (isProductEntity(hierarchy, entityType)) {
-    return getAncestorContexts(hierarchy, entityType);
+const getRelevantContexts = (entityType: ContextEntityType | ProductEntityType): ContextEntityType[] => {
+  if (isProductEntity(entityType)) {
+    return getAncestorContexts(entityType);
   }
-  return [entityType, ...getAncestorContexts(hierarchy, entityType)];
+  return [entityType, ...getAncestorContexts(entityType)];
 };
 
 /**
@@ -136,7 +132,6 @@ const formatPermissionDecision = <T extends MembershipForPermission>(decision: P
  * 5. Derive `can` from actions, capture first membership
  */
 export const checkAllPermissions = <T extends MembershipForPermission>(
-  hierarchy: HierarchyConfig,
   policies: AccessPolicies,
   memberships: T[],
   subject: SubjectForPermission,
@@ -146,7 +141,7 @@ export const checkAllPermissions = <T extends MembershipForPermission>(
 
   // Get context types to check: for product entities this is their ancestors,
   // for context entities this is [self, ...ancestors]
-  const relevantContexts = getRelevantContexts(hierarchy, subject.entityType);
+  const relevantContexts = getRelevantContexts(subject.entityType);
   const primaryContext = relevantContexts[0];
 
   // Index memberships by "${contextType}:${contextId}" for O(1) lookup
@@ -205,7 +200,7 @@ export const checkAllPermissions = <T extends MembershipForPermission>(
   // Walk through each context level (entity's own context first, then ancestors)
   for (const contextType of relevantContexts) {
     // Skip contexts that have no roles defined (shouldn't happen in valid config)
-    if (getContextRoles(hierarchy, contextType).length === 0) continue;
+    if (getContextRoles(contextType).length === 0) continue;
 
     // Get the context ID from the subject for this context type
     const subjectContextId = getSubjectContextId(subject, contextType);

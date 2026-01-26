@@ -15,7 +15,7 @@ export const sessionSchema = createSelectSchema(sessionsTable).omit({ token: tru
 export const meSchema = z
   .object({
     user: userSchema,
-    systemRole: z.enum([...appConfig.roles.systemRoles, 'user']).openapi({ description: 'Explain system role here' }),
+    systemRole: z.enum([...appConfig.systemRoles, 'user']).openapi({ description: 'Explain system role here' }),
   })
   .openapi('Me', { example: mockMeResponse() });
 

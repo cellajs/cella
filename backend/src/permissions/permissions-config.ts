@@ -1,16 +1,8 @@
 import { appConfig } from 'config';
-import { configureAccessPolicies, createContext, createHierarchy, createProduct } from './permission-manager';
+import { configureAccessPolicies } from './permission-manager';
 
-/**
- * Define hierarchical structure for context entities with roles, and for product entities without roles.
- *
- * Adding a new entity here is the first step to configure its access policies.
- */
-export const hierarchy = createHierarchy({
-  organization: createContext(appConfig.roles.entityRoles),
-  attachment: createProduct(['organization']),
-  page: createProduct([]),
-});
+// Note: Entity hierarchy is now defined in appConfig.entityConfig.
+// No need to define hierarchy here - it's derived automatically.
 
 /**
  * Configure access policies for each entity type.
@@ -22,13 +14,13 @@ export const hierarchy = createHierarchy({
  *
  * ## Adding New Entities Checklist
  *
- * 1. Add entity to `hierarchy` with `createContext()` or `createProduct()`
- * 2. Add entity type to appConfig
+ * 1. Add entity to appConfig.entityConfig with kind, parent/ancestors, and roles (for context)
+ * 2. Add entity type to appConfig.entityTypes array
  * 3. Define access policies in the switch statement below
  * 4. Create DB schema in `backend/src/db/schema/`
  * 5. Run `pnpm generate` to create migrations
  */
-export const accessPolicies = configureAccessPolicies(hierarchy, appConfig.entityTypes, ({ subject, contexts }) => {
+export const accessPolicies = configureAccessPolicies(appConfig.entityTypes, ({ subject, contexts }) => {
   switch (subject.name) {
     case 'organization':
       contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1, search: 1 });

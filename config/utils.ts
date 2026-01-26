@@ -21,3 +21,11 @@ export function mergeDeep<T extends {}, U extends DeepPartial<T>>(target: T, ...
 
   return mergeDeep(target, ...sources);
 }
+
+/**
+ * Type guard for checking if an object has a key.
+ * Enables type-safe property access without assertions.
+ */
+export function hasKey<T extends object>(obj: T, key: string): key is keyof T & string {
+  return Object.hasOwn(obj, key);
+}

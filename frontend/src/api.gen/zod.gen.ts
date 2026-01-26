@@ -34,7 +34,7 @@ export const zMembershipBase = z.object({
   id: z.string(),
   contextType: z.enum(['organization']),
   userId: z.string(),
-  role: z.enum(['member', 'admin']),
+  role: z.enum(['admin', 'member']),
   archived: z.boolean(),
   muted: z.boolean(),
   order: z.number().gte(-140737488355328).lte(140737488355327),
@@ -121,6 +121,7 @@ export const zActivity = z.object({
     z.array(z.unknown()),
   ]),
   tx: z.union([z.string(), z.number(), z.boolean(), z.null(), z.record(z.string(), z.unknown()), z.array(z.unknown())]),
+  seq: z.union([z.int().gte(-2147483648).lte(2147483647), z.null()]),
 });
 
 export const zUser = z.object({
@@ -193,7 +194,7 @@ export const zInactiveMembership = z.object({
   email: z.string(),
   userId: z.union([z.string(), z.null()]),
   tokenId: z.union([z.string(), z.null()]),
-  role: z.enum(['member', 'admin']),
+  role: z.enum(['admin', 'member']),
   rejectedAt: z.union([z.string(), z.null()]),
   createdBy: z.string(),
   organizationId: z.string(),
@@ -247,8 +248,8 @@ export const zOrganization = z.object({
   counts: z.optional(
     z.object({
       membership: z.object({
-        member: z.number(),
         admin: z.number(),
+        member: z.number(),
         pending: z.number(),
         total: z.number(),
       }),
@@ -271,9 +272,10 @@ export const zOrganization = z.object({
 
 export const zTxStreamMessage = z.union([
   z.object({
-    transactionId: z.union([z.string(), z.null()]),
-    sourceId: z.union([z.string(), z.null()]),
-    changedField: z.union([z.string(), z.null()]),
+    id: z.string(),
+    sourceId: z.string(),
+    version: z.int(),
+    fieldVersions: z.record(z.string(), z.int()),
   }),
   z.null(),
 ]);
@@ -295,10 +297,9 @@ export const zPage = z.object({
 });
 
 export const zTxRequest = z.object({
-  transactionId: z.string().max(64),
+  id: z.string().max(32),
   sourceId: z.string().max(64),
-  changedField: z.union([z.string().max(64), z.null()]),
-  expectedTransactionId: z.union([z.string().max(64), z.null()]),
+  baseVersion: z.int().gte(0),
 });
 
 export const zAttachment = z.object({
@@ -339,7 +340,7 @@ export const zMembership = z.object({
   id: z.string(),
   contextType: z.enum(['organization']),
   userId: z.string(),
-  role: z.enum(['member', 'admin']),
+  role: z.enum(['admin', 'member']),
   createdBy: z.string(),
   modifiedAt: z.union([z.string(), z.null()]),
   modifiedBy: z.union([z.string(), z.null()]),
@@ -1007,7 +1008,7 @@ export const zGetOrganizationsData = z.object({
       offset: z.optional(z.string()),
       limit: z.optional(z.string()),
       userId: z.optional(z.string()),
-      role: z.optional(z.enum(['member', 'admin'])),
+      role: z.optional(z.enum(['admin', 'member'])),
       excludeArchived: z.optional(z.enum(['true', 'false'])),
       include: z.optional(z.string()),
     }),
@@ -1280,7 +1281,7 @@ export const zPaddleWebhookResponse = z.void();
 export const zSendNewsletterData = z.object({
   body: z.object({
     organizationIds: z.array(z.string()),
-    roles: z.array(z.enum(['member', 'admin'])).min(1),
+    roles: z.array(z.enum(['admin', 'member'])).min(1),
     subject: z.string(),
     content: z.string(),
   }),
@@ -1566,7 +1567,7 @@ export const zDeleteMembershipsResponse = zSuccessWithRejectedItems;
 export const zMembershipInviteData = z.object({
   body: z.object({
     emails: z.array(z.email().min(4).max(100)).min(1).max(50),
-    role: z.enum(['member', 'admin']),
+    role: z.enum(['admin', 'member']),
   }),
   path: z.object({
     orgIdOrSlug: z.string(),
@@ -1589,7 +1590,7 @@ export const zMembershipInviteResponse = zSuccessWithRejectedItems.and(
 export const zUpdateMembershipData = z.object({
   body: z.optional(
     z.object({
-      role: z.optional(z.enum(['member', 'admin'])),
+      role: z.optional(z.enum(['admin', 'member'])),
       muted: z.optional(z.boolean()),
       archived: z.optional(z.boolean()),
       order: z.optional(z.number()),
@@ -1635,7 +1636,7 @@ export const zGetMembersData = z.object({
     limit: z.optional(z.string()),
     idOrSlug: z.string(),
     entityType: z.enum(['organization']),
-    role: z.optional(z.enum(['member', 'admin'])),
+    role: z.optional(z.enum(['admin', 'member'])),
   }),
 });
 
@@ -1694,7 +1695,7 @@ export const zGetPendingMembershipsResponse = z.object({
       id: z.string(),
       email: z.email(),
       thumbnailUrl: z.union([z.string(), z.null()]),
-      role: z.nullable(z.enum(['member', 'admin'])),
+      role: z.nullable(z.enum(['admin', 'member'])),
       createdAt: z.string(),
       createdBy: z.union([z.string(), z.null()]),
     }),

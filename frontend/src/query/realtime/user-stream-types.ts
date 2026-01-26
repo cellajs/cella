@@ -21,20 +21,29 @@ export type ProductEntityData = Page | Attachment;
 /** Transaction metadata in stream messages. */
 export type StreamTx = NonNullable<TxStreamMessage>;
 
-/** Single message from user stream (membership, organization, and product entity events). */
+/**
+ * Single message from user stream (membership, organization, and product entity events).
+ * Supports both legacy data-push format and new notification format.
+ */
 export interface UserStreamMessage {
-  activityId: string;
+  /** Activity ID (legacy format only) */
+  activityId?: string;
   action: 'create' | 'update' | 'delete';
   entityType: string;
-  resourceType: string | null;
+  /** Resource type for membership events (legacy format) */
+  resourceType?: string | null;
   entityId: string;
   organizationId: string | null;
-  createdAt: string;
-  data: ContextEntityDataWithMembership | ProductEntityData | null;
+  /** Timestamp (legacy format only) */
+  createdAt?: string;
+  /** Full entity data (legacy format, may be null in notification format) */
+  data?: ContextEntityDataWithMembership | ProductEntityData | null;
   /** Transaction metadata for conflict detection. */
   tx?: StreamTx | null;
-  /** Fields that were changed (for partial updates). */
+  /** Fields that were changed (legacy format). */
   changedKeys?: string[] | null;
+  /** Per-org sequence number for gap detection (notification format). */
+  seq?: number;
 }
 
 /** Offset event from SSE (signals end of catch-up). */

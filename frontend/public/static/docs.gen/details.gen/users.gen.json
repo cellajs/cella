@@ -105,7 +105,7 @@
                         "role": {
                           "type": "string",
                           "required": true,
-                          "enum": ["member", "admin"]
+                          "enum": ["admin", "member"]
                         },
                         "archived": { "type": "boolean", "required": true },
                         "muted": { "type": "boolean", "required": true },

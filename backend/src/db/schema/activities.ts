@@ -1,6 +1,6 @@
 import { appConfig } from 'config';
 import { sql } from 'drizzle-orm';
-import { foreignKey, index, jsonb, pgTable, varchar } from 'drizzle-orm/pg-core';
+import { foreignKey, index, integer, jsonb, pgTable, varchar } from 'drizzle-orm/pg-core';
 import type { TxColumnData } from '#/db/utils/product-entity-columns';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { activityActions } from '#/sync/activity-bus';
@@ -32,6 +32,10 @@ export const activitiesTable = pgTable(
     changedKeys: jsonb().$type<string[]>(), // Array of keys that changed (for updates)
     // Sync: transaction metadata from product entity tx column (null for context entities)
     tx: jsonb().$type<TxColumnData>(),
+    // Sync: per-ancestor sequence number for list-level gap detection.
+    // Scope is determined dynamically by CDC based on entity's context hierarchy
+    // (e.g., per-project for tasks, per-org for attachments).
+    seq: integer(),
   },
   (table) => [
     index('activities_created_at_index').on(table.createdAt.desc()),
@@ -40,9 +44,10 @@ export const activitiesTable = pgTable(
     index('activities_entity_id_index').on(table.entityId),
     index('activities_table_name_index').on(table.tableName),
     index('activities_organization_id_index').on(table.organizationId),
-    // Sync: expression indexes for tx queries
-    index('activities_tx_id_index').on(sql`(tx->>'transactionId')`),
-    index('activities_tx_field_index').on(table.entityType, table.entityId, sql`(tx->>'changedField')`),
+    // Sync: index for org-scoped seq queries. Forks with additional context entities
+    // (e.g., project) should add indexes like: (project_id, seq DESC)
+    index('activities_org_seq_index').on(table.organizationId, table.seq.desc()),
+    index('activities_tx_id_index').on(sql`(tx->>'id')`),
     foreignKey({
       columns: [table.userId],
       foreignColumns: [usersTable.id],

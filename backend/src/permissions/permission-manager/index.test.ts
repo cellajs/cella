@@ -2,102 +2,63 @@ import { appConfig } from 'config';
 import { describe, expect, it } from 'vitest';
 import { configureAccessPolicies } from './access-policies';
 import { checkAllPermissions } from './check';
-import {
-  createContext,
-  createHierarchy,
-  createProduct,
-  getAncestorContexts,
-  getContextRoles,
-  isContextEntity,
-  isProductEntity,
-} from './hierarchy';
-import type { HierarchyConfig, MembershipForPermission, SubjectForPermission } from './types';
+import { getAncestorContexts, getContextRoles, isContextEntity, isProductEntity } from './hierarchy';
+import type { MembershipForPermission, SubjectForPermission } from './types';
 
 /**
- * Standard hierarchy matching Cella's default config.
- * organization is the only context entity, attachment and page are product entities.
+ * These tests use appConfig.entityConfig which defines:
+ * - organization: context entity with roles ['admin', 'member']
+ * - attachment: product entity with ancestors ['organization']
+ * - page: product entity with ancestors ['organization']
  */
-const hierarchy = createHierarchy({
-  organization: createContext(appConfig.roles.entityRoles),
-  attachment: createProduct(['organization']),
-  page: createProduct(['organization']),
-} as HierarchyConfig);
 
-describe('hierarchy', () => {
-  describe('createContext', () => {
-    it('creates context config without parents', () => {
-      const config = createContext(['admin', 'member']);
-      expect(config).toEqual({
-        type: 'context',
-        roles: ['admin', 'member'],
-        parents: undefined,
-      });
-    });
-
-    it('creates context config with parents', () => {
-      const config = createContext(['admin', 'member'], ['organization']);
-      expect(config).toEqual({
-        type: 'context',
-        roles: ['admin', 'member'],
-        parents: ['organization'],
-      });
-    });
-  });
-
-  describe('createProduct', () => {
-    it('creates product config with parents', () => {
-      const config = createProduct(['organization']);
-      expect(config).toEqual({
-        type: 'product',
-        parents: ['organization'],
-      });
-    });
-  });
-
+describe('hierarchy (from appConfig.entityConfig)', () => {
   describe('getAncestorContexts', () => {
     it('returns empty array for root context', () => {
-      const ancestors = getAncestorContexts(hierarchy, 'organization');
+      const ancestors = getAncestorContexts('organization');
       expect(ancestors).toEqual([]);
     });
 
     it('returns direct parent for product entity', () => {
-      const ancestors = getAncestorContexts(hierarchy, 'attachment');
+      const ancestors = getAncestorContexts('attachment');
       expect(ancestors).toContain('organization');
     });
 
-    it('returns direct parent for page entity', () => {
-      const ancestors = getAncestorContexts(hierarchy, 'page');
-      expect(ancestors).toContain('organization');
+    it('returns empty array for page entity (no organization scope)', () => {
+      // Note: page entities in cella have no organization scope (ancestors: [])
+      const ancestors = getAncestorContexts('page');
+      expect(ancestors).toEqual([]);
     });
   });
 
   describe('getContextRoles', () => {
     it('returns roles for context entity', () => {
-      const roles = getContextRoles(hierarchy, 'organization');
-      expect(roles).toEqual(appConfig.roles.entityRoles);
+      const roles = getContextRoles('organization');
+      // entityConfig has roles: ['admin', 'member'] for organization
+      expect(roles).toEqual(['admin', 'member']);
     });
   });
 
   describe('isContextEntity / isProductEntity', () => {
     it('correctly identifies context entities', () => {
-      expect(isContextEntity(hierarchy, 'organization')).toBe(true);
-      expect(isContextEntity(hierarchy, 'attachment')).toBe(false);
-      expect(isContextEntity(hierarchy, 'page')).toBe(false);
-      expect(isContextEntity(hierarchy, 'user')).toBe(false);
+      expect(isContextEntity('organization')).toBe(true);
+      expect(isContextEntity('attachment')).toBe(false);
+      expect(isContextEntity('page')).toBe(false);
+      expect(isContextEntity('user')).toBe(false);
     });
 
     it('correctly identifies product entities', () => {
-      expect(isProductEntity(hierarchy, 'attachment')).toBe(true);
-      expect(isProductEntity(hierarchy, 'page')).toBe(true);
-      expect(isProductEntity(hierarchy, 'organization')).toBe(false);
-      expect(isProductEntity(hierarchy, 'user')).toBe(false);
+      expect(isProductEntity('attachment')).toBe(true);
+      expect(isProductEntity('page')).toBe(true);
+      expect(isProductEntity('organization')).toBe(false);
+      expect(isProductEntity('user')).toBe(false);
     });
   });
 });
 
 describe('configureAccessPolicies', () => {
   it('configures policies for all entity types', () => {
-    const policies = configureAccessPolicies(hierarchy, appConfig.entityTypes, ({ subject, contexts }) => {
+    const policies = configureAccessPolicies(appConfig.entityTypes, ({ subject, contexts }) => {
       switch (subject.name) {
         case 'organization':
           contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1, search: 1 });
@@ -117,7 +78,7 @@ describe('configureAccessPolicies', () => {
   });
 
   it('creates empty policies when no config is set', () => {
-    const policies = configureAccessPolicies(hierarchy, appConfig.entityTypes, () => {
+    const policies = configureAccessPolicies(appConfig.entityTypes, () => {
       // No configuration
     });
 
@@ -126,7 +87,7 @@ describe('configureAccessPolicies', () => {
 });
 
 describe('checkPermission', () => {
-  const policies = configureAccessPolicies(hierarchy, appConfig.entityTypes, ({ subject, contexts }) => {
+  const policies = configureAccessPolicies(appConfig.entityTypes, ({ subject, contexts }) => {
     switch (subject.name) {
       case 'organization':
         contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1, search: 1 });
@@ -148,7 +109,7 @@ describe('checkPermission', () => {
       { contextType: 'organization', organizationId: 'org1', role: 'admin' },
     ];
     const subject: SubjectForPermission = { entityType: 'organization', id: 'org1', organizationId: 'org1' };
-    const { can } = checkAllPermissions(hierarchy, policies, memberships, subject);
+    const { can } = checkAllPermissions(policies, memberships, subject);
 
     expect(can.create).toBe(true);
     expect(can.read).toBe(true);
@@ -161,7 +122,7 @@ describe('checkPermission', () => {
       { contextType: 'organization', organizationId: 'org1', role: 'member' },
     ];
     const subject: SubjectForPermission = { entityType: 'organization', id: 'org1', organizationId: 'org1' };
-    const { can } = checkAllPermissions(hierarchy, policies, memberships, subject);
+    const { can } = checkAllPermissions(policies, memberships, subject);
 
     expect(can.create).toBe(false);
     expect(can.read).toBe(true);
@@ -174,24 +135,11 @@ describe('checkPermission', () => {
       { contextType: 'organization', organizationId: 'org1', role: 'member' },
     ];
     const subject: SubjectForPermission = { entityType: 'attachment', id: 'att1', organizationId: 'org1' };
-    const { can } = checkAllPermissions(hierarchy, policies, memberships, subject);
+    const { can } = checkAllPermissions(policies, memberships, subject);
 
     expect(can.create).toBe(true);
     expect(can.read).toBe(true);
     expect(can.update).toBe(false);
-    expect(can.delete).toBe(false);
-  });
-
-  it('grants more permissions for member on page than attachment', () => {
-    const memberships: MembershipForPermission[] = [
-      { contextType: 'organization', organizationId: 'org1', role: 'member' },
-    ];
-    const pageSubject: SubjectForPermission = { entityType: 'page', id: 'page1', organizationId: 'org1' };
-    const { can } = checkAllPermissions(hierarchy, policies, memberships, pageSubject);
-
-    expect(can.create).toBe(true);
-    expect(can.read).toBe(true);
-    expect(can.update).toBe(true);
     expect(can.delete).toBe(false);
   });
 
@@ -200,7 +148,7 @@ describe('checkPermission', () => {
       { contextType: 'organization', organizationId: 'org2', role: 'member' },
     ];
     const subject: SubjectForPermission = { entityType: 'attachment', id: 'att1', organizationId: 'org1' };
-    const { can } = checkAllPermissions(hierarchy, policies, memberships, subject);
+    const { can } = checkAllPermissions(policies, memberships, subject);
 
     expect(can.create).toBe(false);
     expect(can.read).toBe(false);
@@ -210,15 +158,11 @@ describe('checkPermission', () => {
 });
 
 describe('permission inheritance from organization context', () => {
-  const policies = configureAccessPolicies(hierarchy, appConfig.entityTypes, ({ subject, contexts }) => {
+  const policies = configureAccessPolicies(appConfig.entityTypes, ({ subject, contexts }) => {
     switch (subject.name) {
       case 'attachment':
         contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1, search: 1 });
         contexts.organization.member({ create: 1, read: 1, update: 0, delete: 0, search: 1 });
-        break;
-      case 'page':
-        contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1, search: 1 });
-        contexts.organization.member({ create: 1, read: 1, update: 1, delete: 0, search: 1 });
         break;
     }
   });
@@ -228,7 +172,7 @@ describe('permission inheritance from organization context', () => {
       { contextType: 'organization', organizationId: 'org1', role: 'admin' },
     ];
     const subject: SubjectForPermission = { entityType: 'attachment', id: 'att1', organizationId: 'org1' };
-    const { can } = checkAllPermissions(hierarchy, policies, memberships, subject);
+    const { can } = checkAllPermissions(policies, memberships, subject);
 
     expect(can.delete).toBe(true);
   });
@@ -238,28 +182,14 @@ describe('permission inheritance from organization context', () => {
       { contextType: 'organization', organizationId: 'org1', role: 'member' },
     ];
     const subject: SubjectForPermission = { entityType: 'attachment', id: 'att1', organizationId: 'org1' };
-    const { can } = checkAllPermissions(hierarchy, policies, memberships, subject);
+    const { can } = checkAllPermissions(policies, memberships, subject);
 
     expect(can.delete).toBe(false);
-  });
-
-  it('member can update pages but not attachments', () => {
-    const memberships: MembershipForPermission[] = [
-      { contextType: 'organization', organizationId: 'org1', role: 'member' },
-    ];
-
-    const attachmentSubject: SubjectForPermission = { entityType: 'attachment', id: 'att1', organizationId: 'org1' };
-    const pageSubject: SubjectForPermission = { entityType: 'page', id: 'page1', organizationId: 'org1' };
-    const attachmentResult = checkAllPermissions(hierarchy, policies, memberships, attachmentSubject);
-    const pageResult = checkAllPermissions(hierarchy, policies, memberships, pageSubject);
-
-    expect(attachmentResult.can.update).toBe(false);
-    expect(pageResult.can.update).toBe(true);
   });
 });
 
 describe('PermissionDecision action attribution', () => {
-  const policies = configureAccessPolicies(hierarchy, appConfig.entityTypes, ({ subject, contexts }) => {
+  const policies = configureAccessPolicies(appConfig.entityTypes, ({ subject, contexts }) => {
     switch (subject.name) {
       case 'attachment':
         contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1, search: 1 });
@@ -273,7 +203,7 @@ describe('PermissionDecision action attribution', () => {
       { contextType: 'organization', organizationId: 'org1', role: 'member' },
     ];
     const subject: SubjectForPermission = { entityType: 'attachment', id: 'att1', organizationId: 'org1' };
-    const decision = checkAllPermissions(hierarchy, policies, memberships, subject);
+    const decision = checkAllPermissions(policies, memberships, subject);
 
     // Check actions structure exists
     expect(decision.actions).toBeDefined();
@@ -299,7 +229,7 @@ describe('PermissionDecision action attribution', () => {
       { contextType: 'organization', organizationId: 'org1', role: 'member' },
     ];
     const subject: SubjectForPermission = { entityType: 'attachment', id: 'att1', organizationId: 'org1' };
-    const decision = checkAllPermissions(hierarchy, policies, memberships, subject);
+    const decision = checkAllPermissions(policies, memberships, subject);
 
     expect(decision.subject.entityType).toBe('attachment');
     expect(decision.subject.id).toBe('att1');
@@ -311,7 +241,7 @@ describe('PermissionDecision action attribution', () => {
       { contextType: 'organization', organizationId: 'org1', role: 'member' },
     ];
     const subject: SubjectForPermission = { entityType: 'attachment', id: 'att1', organizationId: 'org1' };
-    const decision = checkAllPermissions(hierarchy, policies, memberships, subject);
+    const decision = checkAllPermissions(policies, memberships, subject);
 
     expect(decision.relevantContexts).toEqual(['organization']);
     expect(decision.primaryContext).toBe('organization');
@@ -323,7 +253,7 @@ describe('PermissionDecision action attribution', () => {
       { contextType: 'organization', organizationId: 'org1', role: 'member' },
     ];
     const subject: SubjectForPermission = { entityType: 'attachment', id: 'att1', organizationId: 'org1' };
-    const decision = checkAllPermissions(hierarchy, policies, memberships, subject);
+    const decision = checkAllPermissions(policies, memberships, subject);
 
     // Both admin and member grant read permission
     expect(decision.actions.read.enabled).toBe(true);

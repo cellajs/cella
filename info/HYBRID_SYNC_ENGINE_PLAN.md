@@ -49,7 +49,7 @@ Cella's existing infrastructure provides 70% of what's needed:
 - **Extend on OpenAPI** - All features work through the existing OpenAPI infrastructure.
 - **React Query base** - Build on top of, not around, TanStack Query.
 - **Progressive enhancement** - REST for context entities; synced entities add optimistic updates → offline → realtime.
-- **Minimal UI surface area** - Forms and UI components should remain unaware of sync mechanics. Sync concerns (tx metadata, changedField detection, mutation splitting) are handled in the mutation layer (`query.ts`), not in forms.
+- **Minimal UI surface area** - Forms and UI components should remain unaware of sync mechanics. Sync concerns (tx metadata, version tracking, mutation handling) are handled in the mutation layer (`query.ts`), not in forms.
 
 ### Architecture
 - **Leverage CDC Worker** - Use pg `activitiesTable` as durable activity log (no separate transaction storage).
@@ -59,12 +59,12 @@ Cella's existing infrastructure provides 70% of what's needed:
 - **Two paths for entity data** - Live updates get entity data from CDC Worker via WebSocket; catch-up queries JOIN activities with entity tables.
 
 ### Sync mechanics
-- **Client-generated IDs** - Synced entities use client-generated transaction IDs for determinism.
+- **Client-generated IDs** - Synced entities use client-generated mutation IDs (nanoid) for tracking.
 - **Upstream-first sync** - Pull before push will prevent most conflicts for online clients.
-- **Hybrid logical clocks (HLC)** - Transaction IDs use HLC for causality-preserving, sortable timestamps.
+- **Version-based conflict detection** - Integer version counters per entity and per field enable gap detection and conflict resolution.
 - **Offline mutation queue** - Persist pending mutations to IndexedDB, replay on reconnect.
-- **Persisted stream offset** - Store last received `activityId` in IndexedDB per org, so closing browser doesn't lose position.
-- **Field-level tracking** - One mutation = one transaction = one field change. The `data` object uses standard entity update shape; `tx.changedField` declares which single field is tracked for conflicts (see DEC-18).
+- **Seq-based gap detection** - Per-org sequence numbers detect missed changes at the list level.
+- **Field-level versioning** - `tx.fieldVersions` tracks individual field versions for concurrent edit detection.
 - **Merge strategy** - LWW (server wins) as default, resolution UI for fields needing user input.
 - **Single-writer multi-tab** - One leader tab owns SSE connection and broadcasts to followers.
 
@@ -72,11 +72,10 @@ Cella's existing infrastructure provides 70% of what's needed:
 
 The mutation layer (`query.ts`) encapsulates all sync logic so forms remain simple:
 
-1. **changedField detection** - Compare incoming data against cached entity to detect which field(s) changed
-2. **Mutation splitting** - If multiple fields changed, split into separate mutations (one per field) for proper conflict tracking
-3. **tx metadata generation** - Generate `transactionId`, `sourceId`, `expectedTransactionId`, `changedField`
-4. **Conflict detection prep** - Look up last known transaction ID per field for `expectedTransactionId`
-5. **Optimistic updates** - Apply changes to cache immediately, rollback on error
+1. **Version extraction** - Read `tx.version` from cached entity for conflict detection
+2. **tx metadata generation** - Generate `id` (nanoid), `sourceId`, `baseVersion`
+3. **Optimistic updates** - Apply changes to cache immediately, rollback on error
+4. **Squashing** - Cancel redundant in-flight mutations for the same entity
 
 **Form contract**: Forms call `updateMutation.mutate({ id, data })` - no sync knowledge required.
 
@@ -397,57 +396,70 @@ interface StreamMessage<T = unknown> {
 - Tab coordinator integration (leader election)
 - SSE connection with catch-up and live modes
 
-### Transaction ID format (hybrid logical clock)
+### Transaction ID format (nanoid)
 
-Cella uses **Hybrid Logical Clocks (HLC)** for transaction IDs. HLC combines physical timestamps with logical counters to provide:
+Cella uses **nanoid** for mutation IDs. This provides:
 
-- **Causality preservation**: If event A causes B, then HLC(A) < HLC(B)
-- **Lexicographic sortability**: String comparison matches temporal order
-- **Clock skew tolerance**: Logical counter handles same-millisecond events
-- **Human readability**: Timestamps are visible for debugging
+- **Uniqueness**: 21-character URL-safe string with ~126 bits of entropy
+- **Simplicity**: No clock synchronization needed
+- **Echo prevention**: Compare `tx.sourceId` to detect own mutations
 
-**Format**: `{wallTime}.{logical}.{nodeId}` (~32 chars)
+**Version-based conflict detection**: Instead of comparing transaction IDs, Cella uses integer `version` counters:
+- Entity-level: `tx.version` increments on every mutation
+- Field-level: `tx.fieldVersions[field]` tracks per-field versions
 
-**Implementation**: See `frontend/src/query/offline/hlc.ts`
+**Implementation**: See `frontend/src/query/offline/tx-utils.ts`
 
 ### Entity transient `tx` column
 
 Synced entity tables have a single transient JSONB column for transaction metadata.
 
-**Implementation**: See `backend/src/db/schema/pages.ts` and the `txColumn` helper in `backend/src/db/sql-helpers.ts`
+**Implementation**: See `backend/src/db/schema/pages.ts` and the `txColumn` helper in `backend/src/db/utils/tx-columns.ts`
+
+**Schema**:
+```typescript
+interface TxColumnData {
+  id: string;              // nanoid mutation ID
+  sourceId: string;        // Tab/instance ID for echo prevention
+  version: number;         // Entity version (incremented on every mutation)
+  fieldVersions: Record<string, number>;  // Per-field versions
+}
+```
 
 **Why "transient"?**
 - Written by handler during mutation
 - Read by CDC Worker to populate activitiesTable
 - Overwritten on next mutation (no history preserved on entity)
 - Entity table is NOT the source of truth for sync state
-- activitiesTable has complete field-level audit trail
 
-**Why not permanent columns like `lastTransactionId`?**
-- Entity-level tracking causes false conflicts (two users editing different fields)
-- Field-level requires history: "what was the last transaction for THIS field?"
-- That history lives in activitiesTable, queried via `checkFieldConflict()`
+**Version-based conflict detection**:
+- `tx.version` provides entity-level version for gap detection
+- `tx.fieldVersions` enables field-level conflict detection
+- Client sends `baseVersion` (version when entity was read)
+- Server compares `fieldVersions[changedField]` with client's `baseVersion`
 
 ### Transaction wrapper schema
 
 | Operation | Request | Response | Notes |
 |-----------|---------|----------|-------|
 | GET | Flat params | `Entity[]` / `Entity` | No tx - resolve conflicts client-side |
-| POST/PATCH/DELETE | `{ data, tx }` | `{ data, tx }` | Server tracks transaction + source + changedField |
-| Stream message | N/A | `{ data, tx }` | Includes sourceId, changedField for "is this mine?" |
+| POST/PATCH/DELETE | `{ data, tx }` | `Entity` with `tx` | Server tracks version + sourceId |
+| Stream notification | N/A | `{ action, entityType, entityId, seq, tx }` | Includes sourceId for echo prevention |
 
-**Transaction metadata schemas**: See `backend/src/modules/sync/schema.ts` for `txSchema` and `backend/src/schemas/common.ts` for base schemas.
+**Transaction metadata schemas**: See `backend/src/schemas/transaction-schemas.ts`
 
 ### Source identifier & transaction factory
 
-**Implementation**: See `frontend/src/query/offline/hlc.ts` which consolidates:
-- `sourceId` - Unique identifier for this browser tab
-- `createTransactionId()` - HLC-based transaction ID generation
+**Implementation**: See `frontend/src/query/offline/tx-utils.ts` which provides:
+- `sourceId` - Unique identifier for this browser tab (generated once per page load)
+- `createTxForCreate()` - Create tx for new entities (baseVersion: 0)
+- `createTxForUpdate(cachedEntity)` - Create tx with baseVersion from cached entity
+- `createTxForDelete()` - Create tx for delete mutations
 
 | Purpose | How sourceId serves it |
 |---------|------------------------|
-| Mutation source | Sent in `tx.sourceId`, stored in `lastSourceId` column |
-| "Is this mine?" | Compare stream message's `sourceId` to your own |
+| Mutation source | Sent in `tx.sourceId`, stored in entity |
+| Echo prevention | Compare stream notification's `sourceId` to your own |
 | Leader election | Unique per tab, elect one leader via Web Locks |
 
 **Why not userId?** We have `userId` for audit ("who"). `sourceId` is for sync ("which instance+browserTab").
@@ -687,35 +699,35 @@ The mutation handling differs based on connectivity:
 - `use-live-stream.ts` - Integrates barrier via `isHydrated` option
 - `organization-routes.tsx` - Passes hydration state based on `useIsFetching` for realtime entity types
 
-### Stream offset store (offline)
+### Seq-based gap detection
 
-The stream offset must be persisted to survive tab closure. Without this, users who close their browser and return later would start from `'now'` and miss all changes made while away.
+Gap detection uses per-org sequence numbers (`seq`) on activities table instead of persisted offsets.
 
-**Implementation**: See [offset-store.ts](../frontend/src/query/realtime/offset-store.ts) for the Zustand + Dexie implementation.
+**Implementation**: See [user-stream-handler.ts](../frontend/src/query/realtime/user-stream-handler.ts) for the in-memory seqStore.
 
 **Key features:**
-- Stores last received `activityId` per organization
-- Persisted to IndexedDB via Dexie
-- Survives browser closure
-- Used when reconnecting to resume stream from last known offset
+- Tracks last seen `seq` per organization in memory
+- Gaps detected when `notification.seq > lastSeenSeq + 1`
+- Missed changes trigger list invalidation
+- No persistence needed - React Query handles staleness on reconnect
 
-### Field-level mutation outbox (offline)
+### Entity-level mutation outbox (offline)
 
 **Scenario**: User offline, edits page 3 times:
 ```
-Time 1: Update title → Mutation A queued (field: 'title', txId: A)
-Time 2: Update content → Mutation B queued (field: 'content', txId: B)
-Time 3: Update title again → Mutation C queued (field: 'title', txId: C)
+Time 1: Update title → Mutation A queued
+Time 2: Update content → Mutation B queued
+Time 3: Update title again → Mutation C queued
 ```
 
-**Field-Level Solution**: Queue per-field, squash same-field changes.
+**Entity-Level Solution**: Queue per-entity, squash same-entity changes.
 
-**Implementation**: Uses React Query's mutation cache with `squashPendingMutation()` from [squash-utils.ts](../frontend/src/query/offline/squash-utils.ts) and field transaction tracking via [field-transaction-store.ts](../frontend/src/query/offline/field-transaction-store.ts).
+**Implementation**: Uses React Query's mutation cache with `squashPendingMutation()` from [squash-utils.ts](../frontend/src/query/offline/squash-utils.ts).
 
 **Key behaviors:**
-- Outbox keyed by `entityType:entityId:field`
-- Same-field mutations squash (keep latest value, latest transactionId)
-- `expectedTransactionId` preserved for conflict detection
+- Outbox keyed by `entityType:entityId`
+- Same-entity mutations squash (cancel pending, keep latest)
+- Version-based conflict detection via `tx.baseVersion`
 - On reconnect: pull upstream first, check for conflicts, then flush
 
 **Result from scenario above**:

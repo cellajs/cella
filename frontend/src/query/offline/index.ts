@@ -1,34 +1,12 @@
 /**
  * Offline sync utilities.
  *
- * Provides transaction metadata and conflict detection for OfflineEntityType:
- * - HLC timestamps for ordering
- * - Transaction metadata creation
- * - Field-level conflict detection (persisted to localStorage)
+ * Provides transaction metadata and conflict detection for synced entities:
+ * - Transaction metadata creation with nanoid IDs
+ * - Version-based conflict detection
  * - Mutation squashing and coalescing
  */
 
 export { detectChangedFields } from './detect-changed-fields';
-export {
-  clearAllFieldTransactions,
-  clearEntityTransactions,
-  getExpectedTransactionId,
-  setFieldTransactionId,
-  useFieldTransactionStore,
-} from './field-transaction-store';
-export {
-  compareTransactionIds,
-  createTransactionId,
-  parseTransactionId,
-  receiveTransactionId,
-  sourceId,
-} from './hlc';
 export { coalescePendingCreate, hasPendingDelete, squashPendingMutation } from './squash-utils';
-export {
-  createTxForCreate,
-  createTxForDelete,
-  createTxForUpdate,
-  initFieldTransactionFromEntity,
-  type TxMetadata,
-  updateFieldTransactions,
-} from './tx-utils';
+export { createTxForCreate, createTxForDelete, createTxForUpdate, sourceId, type TxMetadata } from './tx-utils';

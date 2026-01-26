@@ -4,7 +4,7 @@ import { usersTable } from '#/db/schema/users';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
 
-const roleEnum = appConfig.roles.systemRoles;
+const roleEnum = appConfig.systemRoles;
 
 /**
  * System roles table to assign global roles to users that have special permissions.

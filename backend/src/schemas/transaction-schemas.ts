@@ -6,14 +6,9 @@ import { z } from '@hono/zod-openapi';
  */
 export const txRequestSchema = z
   .object({
-    transactionId: z.string().max(64).describe('Client-generated unique ID (HLC format: timestamp.logical.nodeId)'),
-    sourceId: z.string().max(64).describe('Tab/instance identifier'),
-    changedField: z.string().max(64).nullable().describe('Which field this mutation changes (null for create/delete)'),
-    expectedTransactionId: z
-      .string()
-      .max(64)
-      .nullable()
-      .describe('Last known transaction ID for this field (null for create or first write)'),
+    id: z.string().max(32).describe('Unique mutation ID (nanoid)'),
+    sourceId: z.string().max(64).describe('Tab/instance identifier for echo prevention'),
+    baseVersion: z.number().int().min(0).describe('Entity version when read (for conflict detection)'),
   })
   .openapi('TxRequest');
 
@@ -21,23 +16,27 @@ export type TxRequest = z.infer<typeof txRequestSchema>;
 
 /**
  * Transaction metadata returned in mutation responses.
+ * Reflects the new entity state after mutation.
  */
 export const txResponseSchema = z
   .object({
-    transactionId: z.string().describe('Echoes the request transactionId'),
+    id: z.string().describe('Echoes the request mutation ID'),
+    version: z.number().int().describe('New entity version after mutation'),
   })
   .openapi('TxResponse');
 
 export type TxResponse = z.infer<typeof txResponseSchema>;
 
 /**
- * Transaction metadata in stream messages.
+ * Transaction metadata in stream notifications.
+ * Derived from TxColumnData on entity.
  */
 export const txStreamMessageSchema = z
   .object({
-    transactionId: z.string().nullable(),
-    sourceId: z.string().nullable(),
-    changedField: z.string().nullable(),
+    id: z.string(),
+    sourceId: z.string(),
+    version: z.number().int(),
+    fieldVersions: z.record(z.string(), z.number().int()),
   })
   .openapi('TxStreamMessage');
 

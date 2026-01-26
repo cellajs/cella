@@ -42,5 +42,5 @@ export function handleUpdate(entry: TableRegistryEntry, message: Pgoutput.Messag
     tx,
   };
 
-  return { activity, entityData: newRow };
+  return { activity, entityData: newRow, entry };
 }

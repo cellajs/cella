@@ -11,7 +11,7 @@ import { resolveEntity } from '#/lib/entity.ts';
 import { AppError } from '#/lib/error';
 import pagesRoutes from '#/modules/page/page-routes';
 import { getValidProductEntity } from '#/permissions/get-product-entity';
-import { checkFieldConflict, getEntityByTransaction, isTransactionProcessed } from '#/sync';
+import { getEntityByTransaction, isTransactionProcessed } from '#/sync';
 import { eventBus } from '#/sync/activity-bus';
 import { keepAlive, streamSubscriberManager, writeChange, writeOffset } from '#/sync/stream';
 import { defaultHook } from '#/utils/default-hook';
@@ -142,8 +142,8 @@ const pageRouteHandlers = app
     const { data: newPages, tx } = ctx.req.valid('json');
 
     // Idempotency check - return existing entities if transaction already processed
-    if (await isTransactionProcessed(tx.transactionId)) {
-      const ref = await getEntityByTransaction(tx.transactionId);
+    if (await isTransactionProcessed(tx.id)) {
+      const ref = await getEntityByTransaction(tx.id);
       if (ref) {
         // For batch create, the first page ID is stored - fetch all from that batch
         const existing = await db.select().from(pagesTable).where(eq(pagesTable.id, ref.entityId));
@@ -169,9 +169,10 @@ const pageRouteHandlers = app
       modifiedBy: null,
       // Sync: write transient tx metadata for CDC Worker
       tx: {
-        transactionId: tx.transactionId,
+        id: tx.id,
         sourceId: tx.sourceId,
-        changedField: null, // null for create
+        version: 1,
+        fieldVersions: {},
       },
     }));
 
@@ -264,31 +265,31 @@ const pageRouteHandlers = app
   .openapi(pagesRoutes.updatePage, async (ctx) => {
     const { id } = ctx.req.valid('param');
 
-    await getValidProductEntity(id, 'page', 'update');
+    const { entity } = await getValidProductEntity(id, 'page', 'update');
 
     const { data: pageData, tx } = ctx.req.valid('json');
     const user = getContextUser();
 
-    // Conflict detection for field-level updates
-    if (tx.changedField && tx.expectedTransactionId !== undefined) {
-      const { hasConflict, serverTransactionId } = await checkFieldConflict({
-        entityType: 'page',
-        entityId: id,
-        changedField: tx.changedField,
-        expectedTransactionId: tx.expectedTransactionId,
-      });
+    // Derive changed field from payload for conflict detection
+    const trackedFields = ['name', 'content', 'status'] as const;
+    const changedField = trackedFields.find((f) => f in pageData) ?? null;
 
-      if (hasConflict) {
+    // Field-level conflict detection using version comparison
+    if (changedField) {
+      const fieldLastModified = entity.tx?.fieldVersions?.[changedField] ?? 0;
+      if (fieldLastModified > tx.baseVersion) {
         throw new AppError(409, 'field_conflict', 'warn', {
           entityType: 'page',
           meta: {
-            field: tx.changedField,
-            expectedTransactionId: tx.expectedTransactionId,
-            serverTransactionId,
+            field: changedField,
+            clientVersion: tx.baseVersion,
+            serverVersion: fieldLastModified,
           },
         });
       }
     }
+
+    const newVersion = (entity.tx?.version ?? 0) + 1;
 
     const [page] = await db
       .update(pagesTable)
@@ -298,10 +299,13 @@ const pageRouteHandlers = app
         modifiedBy: user.id,
         // Sync: write transient tx metadata for CDC Worker + client tracking
         tx: {
-          transactionId: tx.transactionId,
+          id: tx.id,
           sourceId: tx.sourceId,
-          changedField: tx.changedField,
-          expectedTransactionId: tx.expectedTransactionId,
+          version: newVersion,
+          fieldVersions: {
+            ...entity.tx?.fieldVersions,
+            ...(changedField ? { [changedField]: newVersion } : {}),
+          },
         },
       })
       .where(eq(pagesTable.id, id))

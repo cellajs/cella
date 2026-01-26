@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { appConfig } from 'config';
+import { allEntityRoles } from 'config';
 import type { InactiveMembershipModel } from '#/db/schema/inactive-memberships';
 import type { InsertMembershipModel, MembershipModel } from '#/db/schema/memberships';
 import type { OrganizationModel } from '#/db/schema/organizations';
@@ -32,7 +32,7 @@ export const mockOrganizationMembership = (organization: OrganizationModel, user
     userId: user.id,
     organizationId: organization.id,
     contextType: 'organization',
-    role: faker.helpers.arrayElement(appConfig.roles.entityRoles),
+    role: faker.helpers.arrayElement(allEntityRoles),
     order: getMembershipOrderOffset(organization.id) * 10,
     createdAt: pastIsoDate(),
     createdBy: user.id,
@@ -51,7 +51,7 @@ export const mockMembershipBase = (key = 'membership-base:default'): MembershipB
     contextType: 'organization' as const,
     userId: mockNanoid(),
     ...generateMockContextEntityIdColumns(),
-    role: faker.helpers.arrayElement(appConfig.roles.entityRoles),
+    role: faker.helpers.arrayElement(allEntityRoles),
     order: faker.number.int({ min: 1, max: 100 }),
     muted: false,
     archived: false,
@@ -74,7 +74,7 @@ export const mockMembership = (key = 'membership:default'): MembershipModel =>
       contextType: 'organization' as const,
       userId,
       ...contextEntityColumns,
-      role: faker.helpers.arrayElement(appConfig.roles.entityRoles),
+      role: faker.helpers.arrayElement(allEntityRoles),
       order: faker.number.int({ min: 1, max: 100 }),
       muted: false,
       archived: false,
@@ -108,7 +108,7 @@ export const mockInactiveMembership = (key = 'inactive-membership:default'): Ina
       email: faker.internet.email().toLowerCase(),
       userId,
       tokenId,
-      role: faker.helpers.arrayElement(appConfig.roles.entityRoles),
+      role: faker.helpers.arrayElement(allEntityRoles),
       rejectedAt: null,
       createdAt,
       createdBy: mockNanoid(),

@@ -7,6 +7,7 @@ import { appConfig } from 'config';
 import { CDC_PUBLICATION_NAME, CDC_SLOT_NAME } from './constants';
 import { env } from './env';
 import { processMessage } from './process-message';
+import { getSeqScope } from './utils';
 import { wsClient, type WsState } from './websocket-client';
 
 /** Replication state for health monitoring */
@@ -185,8 +186,21 @@ export async function startCdcWorker() {
       const processResult = processMessage(message as Parameters<typeof processMessage>[0]);
 
       if (processResult) {
-        // Insert activity into database
-        await db.insert(activitiesTable).values(processResult.activity);
+        // Determine seq scope dynamically based on entity hierarchy
+        // Auto-detects most specific context FK (e.g., projectId before organizationId)
+        const seqScope = getSeqScope(processResult.entry, processResult.entityData);
+
+        // Insert activity with atomic seq generation
+        // seq is scoped to the detected ancestor (e.g., per-project, per-org)
+        await db.insert(activitiesTable).values({
+          ...processResult.activity,
+          // Atomic subquery: get next seq for this scope
+          seq: sql`(
+            SELECT COALESCE(MAX(seq), 0) + 1 
+            FROM activities 
+            WHERE ${sql.raw(seqScope.scopeColumn)} = ${seqScope.scopeValue}
+          )`,
+        });
 
         logEvent('info', 'Activity created from CDC', {
           type: processResult.activity.type,

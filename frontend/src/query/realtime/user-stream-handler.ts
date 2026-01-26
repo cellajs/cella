@@ -8,9 +8,22 @@ import { memberQueryKeys } from '~/modules/memberships/query';
 import { getMenuData } from '~/modules/navigation/menu-sheet/helpers';
 import { organizationQueryKeys } from '~/modules/organization/query';
 import { pageQueryKeys } from '~/modules/page/query';
-import { updateFieldTransactions } from '~/query/offline';
+import { sourceId } from '~/query/offline';
 import { queryClient } from '~/query/query-client';
 import type { ProductEntityData, UserStreamMessage } from './user-stream-types';
+
+/**
+ * Per-scope sequence tracking for gap detection.
+ * Key: scopeKey (orgId or 'global:entityType'), Value: last seen seq
+ */
+const seqStore = new Map<string, number>();
+
+/**
+ * Build a scope key for seq tracking.
+ */
+function getScopeKey(orgId: string | null, entityType: string): string {
+  return orgId ?? `global:${entityType}`;
+}
 
 /**
  * Map context entity types to their query keys.
@@ -37,13 +50,14 @@ const productEntityKeysMap: Record<
 /**
  * Handles incoming user stream messages and updates the React Query cache accordingly.
  * Routes messages to membership, organization, or product entity handlers.
+ * Supports both notification-push (new) and data-push (legacy) message formats.
  *
  * @param message - The user stream message from SSE
  */
 export function handleUserStreamMessage(message: UserStreamMessage): void {
-  const { entityId, action, data, resourceType, entityType, tx } = message;
+  const { entityId, action, data, resourceType, entityType, tx, organizationId, seq } = message;
 
-  // Membership events
+  // Membership events (legacy format with resourceType)
   if (resourceType === 'membership') {
     handleMembershipEvent(action, data);
     return;
@@ -57,7 +71,15 @@ export function handleUserStreamMessage(message: UserStreamMessage): void {
 
   // Product entity events (page, attachment, etc.)
   if (entityType in productEntityKeysMap) {
-    handleProductEntityEvent(entityType as RealtimeEntityType, entityId, action, data as ProductEntityData | null, tx);
+    handleProductEntityEvent(
+      entityType as RealtimeEntityType,
+      entityId,
+      action,
+      data as ProductEntityData | null | undefined,
+      tx,
+      organizationId,
+      seq,
+    );
   }
 }
 
@@ -151,44 +173,62 @@ function handleOrganizationEvent(
 
 /**
  * Handle product entity events (page, attachment, etc).
- * Updates React Query cache and field transaction store for conflict detection.
+ * Supports both notification-push (no data, seq-based gap detection) and
+ * legacy data-push (full entity in data field) formats.
  */
 function handleProductEntityEvent(
   entityType: RealtimeEntityType,
   entityId: string,
   action: UserStreamMessage['action'],
-  data: ProductEntityData | null,
-  tx?: UserStreamMessage['tx'],
+  data: ProductEntityData | null | undefined,
+  tx: UserStreamMessage['tx'],
+  organizationId: string | null,
+  seq?: number,
 ): void {
-  // Update field transaction store for conflict detection
-  // Prefer tx from entity data (embedded), fall back to message-level tx for backwards compatibility
-  if (data && 'tx' in data && data.tx) {
-    updateFieldTransactions(entityType, entityId, data.tx);
-  } else if (tx?.transactionId) {
-    updateFieldTransactions(entityType, entityId, tx);
-  }
-
   const keys = productEntityKeysMap[entityType];
   if (!keys) {
     console.debug('[handleProductEntityEvent] Unknown entity type:', entityType);
     return;
   }
 
+  // Echo prevention: skip if this is our own mutation
+  if (tx?.sourceId === sourceId) {
+    console.debug('[handleProductEntityEvent] Echo prevention - skipping own mutation:', tx.id);
+    return;
+  }
+
+  // Seq-based gap detection (notification format)
+  if (seq != null) {
+    const scopeKey = getScopeKey(organizationId, entityType);
+    const lastSeenSeq = seqStore.get(scopeKey) ?? 0;
+
+    if (seq > lastSeenSeq + 1) {
+      // Missed changes - invalidate list for this scope
+      console.warn(`[handleProductEntityEvent] Missed ${seq - lastSeenSeq - 1} changes in ${scopeKey}`);
+      queryClient.invalidateQueries({
+        queryKey: keys.list.base,
+        refetchType: 'active',
+      });
+    }
+    seqStore.set(scopeKey, seq);
+  }
+
   switch (action) {
     case 'create':
       // Invalidate list queries to refetch with new entity
       queryClient.invalidateQueries({ queryKey: keys.list.base });
-      // Set detail query data if we have the full entity
+      // Set detail query data if we have the full entity (legacy format)
       if (data) {
         queryClient.setQueryData(keys.detail.byId(entityId), data as Attachment | Page);
       }
       break;
 
     case 'update':
-      // Update in cache if we have entity data, otherwise invalidate to refetch
+      // Update in cache if we have entity data (legacy format), otherwise invalidate to refetch
       if (data) {
         queryClient.setQueryData(keys.detail.byId(entityId), data as Attachment | Page);
       } else {
+        // Notification format - invalidate to trigger refetch
         queryClient.invalidateQueries({ queryKey: keys.detail.byId(entityId) });
       }
       // Invalidate list to refetch

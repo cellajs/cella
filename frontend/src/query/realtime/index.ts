@@ -4,19 +4,11 @@
  * Provides SSE streaming and multi-tab coordination for RealtimeEntityType:
  * - Live stream connection (SSE)
  * - Multi-tab leader election
- * - Stream offset persistence
  * - Sync state coordination
  */
 
 export type { HydrateBarrier, UseHydrateBarrierOptions, UseHydrateBarrierReturn } from './hydrate-barrier';
 export { createHydrateBarrier, useHydrateBarrier } from './hydrate-barrier';
-export {
-  clearAllOffsets,
-  clearStoredOffset,
-  getStoredOffset,
-  updateStoredOffset,
-  useOffsetStore,
-} from './offset-store';
 export {
   broadcastCursorUpdate,
   broadcastStreamMessage,

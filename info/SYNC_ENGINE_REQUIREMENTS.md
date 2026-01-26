@@ -48,11 +48,11 @@ This section defines precise vocabulary for concepts that could otherwise be con
 | **Activity** | A record in `activitiesTable` representing an entity change | `{ type: 'page.updated', entityId: '...' }` |
 | **Activity log** | The `activitiesTable` as durable storage of all entity changes (not "event log") | Queryable via catch-up, source of truth for history |
 | **WebSocket message** | The JSON sent via WebSocket from CDC Worker to API server | `{ activity, entity }` with full entity data |
-| **Activity notification** | The typed object ActivityBus emits after receiving WebSocket message | `ActivityEvent` interface in `event-bus.ts` |
+| **Activity notification** | The typed object ActivityBus emits after receiving WebSocket message | `ActivityEvent` interface in `activity-bus.ts` |
 | **Live stream** | The org-scoped SSE connection for realtime entities | `/organizations/:slug/live` endpoint |
-| **Stream message** | The SSE payload delivered via live stream (type `'change'` or `'offset'`) | `{ data, tx }` wrapper sent over SSE |
-| **Live update** | A realtime entity change pushed via live stream (not "live event") | Entity data from CDC Worker WebSocket → stream message |
-| **Transaction** | A client-initiated mutation identified by `transactionId` | Tracks lifecycle: pending → sent → confirmed |
+| **Stream notification** | The SSE payload for realtime entities (notification-push format) | `{ action, entityType, entityId, seq, tx }` |
+| **Live update** | A realtime entity change pushed via live stream | Entity data fetched via API after receiving notification |
+| **Mutation** | A client-initiated change identified by `tx.id` | Tracks lifecycle: pending → sent → confirmed |
 
 ### Entity type taxonomy
 
@@ -111,9 +111,11 @@ const isRealtimeEntityType = (t: string): t is RealtimeEntityType =>
 
 | Term | Definition | Format/Example |
 |------|------------|----------------|
-| **Transaction ID** | Client-generated ID for a mutation, used for idempotency and tracking | HLC format: `{wallTime}.{logical}.{nodeId}` (32 chars) |
-| **HLC (Hybrid Logical Clock)** | Timestamp format preserving causality across clients | Sortable, unique, causality-preserving |
-| **Stream offset** | The `activityId` marking client's position in the activity stream | Persisted to IndexedDB; used for catch-up on reconnect |
+| **Mutation ID** | Client-generated ID for a mutation, used for idempotency and tracking | nanoid: 21-character URL-safe string |
+| **Version** | Integer counter incremented on every entity mutation | `tx.version: 7` means entity has been modified 7 times |
+| **Field Version** | Per-field version tracking for conflict detection | `tx.fieldVersions.name: 3` means `name` was last changed at version 3 |
+| **Seq** | Per-org sequence number for gap detection at list level | Incremented atomically per organization |
+| **Stream offset** | The `activityId` marking client's position in the activity stream | Used for catch-up on reconnect |
 | **Cursor** | Server-side tracker of where each subscriber is in the stream | Prevents duplicate delivery; advanced on each send |
 | **Source ID** | Identifies which tab/instance made a mutation | Prevents echo (don't re-apply your own change from stream) |
 
@@ -151,20 +153,19 @@ This section captures key architectural decisions, invariants, and constraints t
 
 | ID | Constraint | Limit | Why |
 |----|------------|-------|-----|
-| CON-1 | Transaction ID length | 32 chars | HLC format + storage efficiency |
-| CON-2 | Source ID length | 64 chars | UUID + prefix headroom |
+| CON-1 | Mutation ID length | 21 chars | nanoid default + storage efficiency |
+| CON-2 | Source ID length | 64 chars | prefix + nanoid headroom |
 | CON-3 | Catch-up query batch | 100 activities | Prevent memory/latency spikes |
 | CON-4 | IndexedDB transaction store | 1000 entries max | Client storage limits |
 
 ### Key Decisions
 
-#### DEC-1: Use Hybrid Logical Clock for transaction IDs
-- **Decision**: Format `{wallTime}.{logical}.{nodeId}` (~32 chars)
+#### DEC-1: Use nanoid for mutation IDs
+- **Decision**: 21-character nanoid for mutation IDs
 - **Alternatives rejected**:
-  - `nanoid`: Not sortable, no causality
-  - `UUID v7`: No logical counter for same-ms events
-  - `timestamp-nanoid`: Custom format, not standardized
-- **Trade-off**: Slightly longer IDs, but get causality + sortability + human-readable timestamps
+  - `HLC`: Complex, requires clock synchronization, not needed for version-based conflict detection
+  - `UUID v7`: Longer (36 chars), no benefit over nanoid
+- **Trade-off**: No causality ordering, but version-based conflict detection doesn't need it
 
 #### DEC-2: Field-level (not entity-level) conflict tracking
 - **Decision**: One mutation changes one field, conflicts are per-field
@@ -196,11 +197,16 @@ This section captures key architectural decisions, invariants, and constraints t
 - **Trade-off**: Requires CDC Worker and API Server to be network-reachable; but enables unlimited payload size and 50k+ msg/sec throughput
 
 #### DEC-5: Transient tx column as JSONB object
-- **Decision**: Single `tx` JSONB column containing `{ transactionId, sourceId, changedField }`
+- **Decision**: Single `tx` JSONB column containing `{ id, sourceId, version, fieldVersions }`
+- **Schema**:
+  - `id`: nanoid mutation ID
+  - `sourceId`: Tab/instance ID for echo prevention
+  - `version`: Integer version incremented on every mutation
+  - `fieldVersions`: Record of field name to version when that field was last modified
 - **Alternatives rejected**:
   - Separate sync metadata table: Extra join, complexity
   - Store in activity only: Handler can't pass to CDC Worker via replication
-  - Three separate columns: More schema clutter, less extensible
+  - HLC-based transactionId: More complex, not needed for version-based conflict detection
 - **Trade-off**: One extra column per realtime entity; slightly more verbose query syntax but extensible and matches API shape
 
 #### DEC-6: Upstream-first pattern
@@ -473,10 +479,10 @@ This section captures key architectural decisions, invariants, and constraints t
 - **How it works**:
   - React Query mutations are persisted to IndexedDB via `@tanstack/react-query-persist-client` + Dexie
   - Pending mutations survive page refresh (mutations with `gcTime: Infinity` are restored)
-  - `squashPendingMutation()` cancels in-flight same-field mutations from the mutation cache
+  - `squashPendingMutation()` cancels in-flight same-entity mutations from the mutation cache
   - `coalescePendingCreate()` merges update data into pending create mutations
   - `hasPendingDelete()` checks for pending deletes before applying updates
-  - Field transaction store (`useFieldTransactionStore`) tracks expected transaction IDs in memory
+  - Version-based conflict detection via `tx.baseVersion` and `tx.fieldVersions`
 - **Location**: `frontend/src/query/offline/squash-utils.ts`, `frontend/src/query/persister.ts`
 - **Why this design**:
   - Leverages existing React Query infrastructure (no parallel state management)
@@ -490,9 +496,7 @@ This section captures key architectural decisions, invariants, and constraints t
   - ✅ Automatic retry: React Query handles retry with exponential backoff
   - ⚠️ Less explicit: Outbox behavior is implicit in mutation cache, not dedicated storage
   - ⚠️ Squashing via cancellation: Instead of true squashing (replace entry), we cancel and re-queue
-  - ⚠️ Memory-based field tracking: `fieldTransactionStore` is in-memory (not persisted)
 - **Future consideration**: If offline-first becomes more critical, evaluate:
-  - Persisting field transaction store to IndexedDB
   - More explicit outbox UI (show pending mutations count, retry controls)
   - Conflict resolution UI integration with React Query mutation state
 
@@ -684,18 +688,14 @@ Sync engine code is organized into dedicated folders within the existing structu
 
 | Path | Purpose |
 |------|---------|
-| `query/offline/` | Offline sync utilities (HLC, transactions, squashing) |
-| `query/offline/hlc.ts` | HLC timestamp generation, sourceId |
-| `query/offline/tx-utils.ts` | Transaction metadata creation (`createTxForCreate`, `createTxForUpdate`) |
-| `query/offline/field-transaction-store.ts` | Field-level transaction tracking for conflict detection |
+| `query/offline/` | Offline sync utilities (transactions, squashing) |
+| `query/offline/tx-utils.ts` | Transaction metadata creation (`createTxForCreate`, `createTxForUpdate`), sourceId |
 | `query/offline/squash-utils.ts` | Mutation squashing and create+edit coalescing |
 | `query/offline/detect-changed-fields.ts` | Utility to detect which fields changed |
 | `query/realtime/` | Realtime sync utilities (SSE, multi-tab) |
-| `query/realtime/use-live-stream.ts` | SSE subscription hook |
-| `query/realtime/offset-store.ts` | Stream offset persistence |
-| `query/realtime/sync-coordinator.ts` | Upstream-first sync coordination |
+| `query/realtime/user-stream-handler.ts` | Stream message handling, echo prevention, gap detection |
+| `query/realtime/user-stream-types.ts` | Stream message type definitions |
 | `query/realtime/tab-coordinator.ts` | Multi-tab leader election and broadcast |
-| `query/realtime/stream-types.ts` | Stream message type definitions |
 | `query/persister.ts` | React Query IndexedDB persistence (Dexie) |
 
 ### Backend (`backend/src/`)

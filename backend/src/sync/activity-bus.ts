@@ -70,6 +70,7 @@ export interface ActivityEvent
     | 'userId'
     | 'organizationId'
     | 'changedKeys'
+    | 'seq'
   > {
   createdAt: string; // ISO string from JSON serialization
   tx: TxColumnData | null; // Transaction metadata for sync (null for context entities)

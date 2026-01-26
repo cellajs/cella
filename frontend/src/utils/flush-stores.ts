@@ -1,7 +1,5 @@
 import type { MeUser } from '~/modules/me/types';
-import { clearAllFieldTransactions } from '~/query/offline';
 import { queryClient } from '~/query/query-client';
-import { clearAllOffsets } from '~/query/realtime';
 import { useAlertStore } from '~/store/alert';
 import { useDraftStore } from '~/store/draft';
 import { useUIStore } from '~/store/ui';
@@ -18,10 +16,6 @@ export const flushStores = (removeAccount?: boolean) => {
   useUserStore.setState({ user: null as unknown as MeUser });
   useDraftStore.getState().clearForms();
   useUIStore.getState().setImpersonating(false);
-
-  // Clear sync-related stores
-  clearAllFieldTransactions();
-  clearAllOffsets();
 
   if (!removeAccount) return;
   // Clear below on remove account

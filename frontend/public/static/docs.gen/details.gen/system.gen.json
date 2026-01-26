@@ -252,7 +252,7 @@
             "required": true,
             "minItems": 1,
             "itemType": "string",
-            "enum": ["member", "admin"]
+            "enum": ["admin", "member"]
           },
           "subject": { "type": "string", "required": true },
           "content": { "type": "string", "required": true }

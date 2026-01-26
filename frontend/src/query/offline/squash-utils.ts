@@ -2,34 +2,29 @@
  * Mutation squashing and coalescing utilities.
  *
  * These utilities optimize the mutation queue by:
- * - Squashing: Canceling pending same-field mutations when a new one arrives
+ * - Squashing: Canceling pending same-entity mutations when a new one arrives
  * - Coalescing: Merging updates into pending creates
  */
 
 import type { QueryClient } from '@tanstack/react-query';
 
 /**
- * Squash pending mutations for the same entity field.
- * Removes any pending mutation for the same field from the cache.
+ * Squash pending mutations for the same entity.
+ * Cancels any pending mutation for the same entity from the cache.
  *
  * Call this in onMutate before optimistic updates.
  *
  * @param queryClient - React Query client
  * @param mutationKey - Mutation key to match (e.g., ['page', 'update'])
  * @param entityId - Entity being mutated
- * @param data - New mutation data (to detect field)
- * @param trackedFields - Fields to check
+ * @param _data - New mutation data (unused, kept for API compatibility)
  */
 export async function squashPendingMutation(
   queryClient: QueryClient,
   mutationKey: readonly unknown[],
   entityId: string,
-  data: object,
-  trackedFields: readonly string[],
+  _data?: object,
 ): Promise<void> {
-  const changedField = trackedFields.find((field) => field in data);
-  if (!changedField) return;
-
   const mutationCache = queryClient.getMutationCache();
   const mutations = mutationCache.findAll({ mutationKey });
 
@@ -37,16 +32,13 @@ export async function squashPendingMutation(
     // Skip completed or failed mutations
     if (mutation.state.status !== 'pending') continue;
 
-    // Check if this mutation is for the same entity and field
-    const variables = mutation.state.variables as { id?: string; data?: object } | undefined;
+    // Check if this mutation is for the same entity
+    const variables = mutation.state.variables as { id?: string } | undefined;
     if (variables?.id !== entityId) continue;
 
-    const mutationField = trackedFields.find((field) => field in (variables.data ?? {}));
-    if (mutationField === changedField) {
-      // Same field - remove this mutation from cache (squash)
-      // The new mutation will supersede the old one
-      mutationCache.remove(mutation);
-    }
+    // Same entity - remove this mutation from cache (squash)
+    // The new mutation will supersede the old one
+    mutationCache.remove(mutation);
   }
 }
 

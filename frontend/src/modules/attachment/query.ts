@@ -10,7 +10,6 @@ import {
   type UpdateAttachmentData,
   updateAttachment,
 } from '~/api.gen';
-import { zUpdateAttachmentData } from '~/api.gen/zod.gen';
 import {
   baseInfiniteQueryOptions,
   createEntityKeys,
@@ -19,20 +18,11 @@ import {
   useMutateQueryData,
 } from '~/query/basic';
 import { addMutationRegistrar } from '~/query/mutation-registry';
-import {
-  createTxForCreate,
-  createTxForUpdate,
-  initFieldTransactionFromEntity,
-  squashPendingMutation,
-  updateFieldTransactions,
-} from '~/query/offline';
+import { createTxForCreate, createTxForUpdate, squashPendingMutation } from '~/query/offline';
 
 // Use generated types from api.gen for mutation input shapes
 type CreateAttachmentInput = CreateAttachmentsData['body']['data'];
 type UpdateAttachmentInput = UpdateAttachmentData['body']['data'];
-
-/** All updatable fields extracted from generated zod schema - used for conflict detection. */
-const attachmentTrackedFields = zUpdateAttachmentData.shape.body.shape.data.keyof().options;
 
 export const attachmentsLimit = appConfig.requestLimits.attachments;
 
@@ -76,13 +66,6 @@ export const attachmentsQueryOptions = (params: AttachmentsListParams) => {
         query: { ...baseQuery, offset },
         signal,
       });
-
-      // Initialize transaction tracking for each fetched attachment
-      if (result.items) {
-        for (const attachment of result.items) {
-          initFieldTransactionFromEntity('attachment', attachment.id, attachment.tx);
-        }
-      }
 
       return result;
     },
@@ -156,11 +139,6 @@ export const useAttachmentCreateMutation = (orgIdOrSlug: string) => {
         mutateCache.remove(context.optimisticAttachments);
       }
       mutateCache.create(result.data);
-
-      // Store server timestamps for future conflict detection (tx is embedded in each entity)
-      for (const attachment of result.data) {
-        updateFieldTransactions('attachment', attachment.id, attachment.tx);
-      }
     },
 
     // Runs after success OR error - ensure cache stays fresh
@@ -182,18 +160,19 @@ export const useAttachmentUpdateMutation = (orgIdOrSlug: string) => {
   return useMutation({
     mutationKey: keys.update,
 
-    // Execute API call with field-level transaction metadata
+    // Execute API call with version-based transaction metadata
     mutationFn: async ({ id, data }: { id: string; data: UpdateAttachmentInput }) => {
-      // Build tx with HLC timestamp + field tracking for server-side conflict detection
-      const tx = createTxForUpdate('attachment', id, data, attachmentTrackedFields);
+      // Get cached entity for baseVersion conflict detection
+      const cachedEntity = findAttachmentInListCache(id);
+      const tx = createTxForUpdate(cachedEntity);
       const result = await updateAttachment({ path: { orgIdOrSlug, id }, body: { data, tx } });
       return result;
     },
 
     // Runs BEFORE mutationFn - squash duplicates and prepare optimistic state
     onMutate: async ({ id, data }) => {
-      // Cancel in-flight mutations updating the same fields (prevents redundant requests)
-      await squashPendingMutation(queryClient, keys.update, id, data, attachmentTrackedFields);
+      // Cancel in-flight mutations updating the same entity (prevents redundant requests)
+      await squashPendingMutation(queryClient, keys.update, id, data);
 
       // Cancel queries to prevent race conditions
       await queryClient.cancelQueries({ queryKey: keys.list.base });
@@ -223,9 +202,6 @@ export const useAttachmentUpdateMutation = (orgIdOrSlug: string) => {
     onSuccess: (updatedAttachment) => {
       // Replace optimistic data with server response (source of truth)
       mutateCache.update([updatedAttachment]);
-
-      // Store server timestamps for future conflict detection (tx is embedded in entity)
-      updateFieldTransactions('attachment', updatedAttachment.id, updatedAttachment.tx);
     },
 
     // Runs after success OR error - refresh queries
@@ -302,7 +278,9 @@ addMutationRegistrar((queryClient: QueryClient) => {
   // Update mutation - variables include orgIdOrSlug for persistence
   queryClient.setMutationDefaults(keys.update, {
     mutationFn: async ({ orgIdOrSlug, id, data }: { orgIdOrSlug: string; id: string; data: UpdateAttachmentInput }) => {
-      const tx = createTxForUpdate('attachment', id, data, attachmentTrackedFields);
+      // Get cached entity for baseVersion (may be undefined if not in cache)
+      const cachedEntity = findAttachmentInListCache(id);
+      const tx = createTxForUpdate(cachedEntity);
       return updateAttachment({ path: { orgIdOrSlug, id }, body: { data, tx } });
     },
   });

@@ -4,16 +4,8 @@ export { configureAccessPolicies, getPolicyPermissions, getSubjectPolicies } fro
 // Permission check functions
 export { type AllPermissionsResult, checkAllPermissions } from './check';
 
-// Hierarchy functions
-export {
-  createContext,
-  createHierarchy,
-  createProduct,
-  getAncestorContexts,
-  getContextRoles,
-  isContextEntity,
-  isProductEntity,
-} from './hierarchy';
+// Hierarchy functions (now backed by appConfig.entityConfig)
+export { getAncestorContexts, getContextRoles, isContextEntity, isProductEntity } from './hierarchy';
 
 // Types
 export type {
@@ -22,15 +14,11 @@ export type {
   AccessPolicyConfiguration,
   AccessPolicyEntry,
   ActionAttribution,
-  ContextConfig,
   ContextEntityIdColumns,
   ContextPolicyBuilder,
   EntityActionPermissions,
-  EntityConfig,
-  HierarchyConfig,
   MembershipForPermission,
   PermissionValue,
-  ProductConfig,
   SubjectAccessPolicies,
   SubjectForPermission,
 } from './types';

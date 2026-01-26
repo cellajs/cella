@@ -25,9 +25,10 @@ const cdcMessageSchema = z.object({
     changedKeys: z.array(z.string()).nullable(),
     tx: z
       .object({
-        transactionId: z.string(),
+        id: z.string(),
         sourceId: z.string(),
-        changedField: z.string().nullable(),
+        version: z.number(),
+        fieldVersions: z.record(z.string(), z.number()),
       })
       .nullable(),
     createdAt: z.string(),

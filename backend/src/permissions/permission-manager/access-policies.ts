@@ -1,4 +1,5 @@
-import type { ContextEntityType, EntityRole, EntityType, ProductEntityType } from 'config';
+import { appConfig, type ContextEntityType, type EntityRole, type EntityType, type ProductEntityType } from 'config';
+import { getContextRoles } from './hierarchy';
 import type {
   AccessPolicies,
   AccessPolicyCallback,
@@ -6,7 +7,6 @@ import type {
   AccessPolicyEntry,
   ContextPolicyBuilder,
   EntityActionPermissions,
-  HierarchyConfig,
   SubjectAccessPolicies,
 } from './types';
 
@@ -21,14 +21,14 @@ import type {
  */
 const createContextPolicyBuilder = (
   contextType: ContextEntityType,
-  roles: readonly EntityRole[],
+  roles: readonly string[],
   entries: AccessPolicyEntry[],
 ): ContextPolicyBuilder => {
   const builder = {} as ContextPolicyBuilder;
 
   for (const role of roles) {
-    builder[role] = (permissions: EntityActionPermissions) => {
-      entries.push({ contextType, role, permissions });
+    builder[role as EntityRole] = (permissions: EntityActionPermissions) => {
+      entries.push({ contextType, role: role as EntityRole, permissions });
     };
   }
 
@@ -36,26 +36,18 @@ const createContextPolicyBuilder = (
 };
 
 /**
- * Creates a contexts object with builders for all context types in the hierarchy.
+ * Creates a contexts object with builders for all context types.
+ * Uses appConfig.entityConfig as the source of truth for roles.
  *
- * @param hierarchy - The hierarchy configuration.
  * @param entries - Array to collect policy entries.
  * @returns Object with context builders keyed by context type.
  */
-const createContextBuilders = (
-  hierarchy: HierarchyConfig,
-  entries: AccessPolicyEntry[],
-): Record<ContextEntityType, ContextPolicyBuilder> => {
+const createContextBuilders = (entries: AccessPolicyEntry[]): Record<ContextEntityType, ContextPolicyBuilder> => {
   const contexts = {} as Record<ContextEntityType, ContextPolicyBuilder>;
 
-  for (const [entityType, config] of Object.entries(hierarchy)) {
-    if (config.type === 'context') {
-      contexts[entityType as ContextEntityType] = createContextPolicyBuilder(
-        entityType as ContextEntityType,
-        config.roles,
-        entries,
-      );
-    }
+  for (const contextType of appConfig.contextEntityTypes) {
+    const roles = getContextRoles(contextType);
+    contexts[contextType] = createContextPolicyBuilder(contextType, roles, entries);
   }
 
   return contexts;
@@ -64,30 +56,25 @@ const createContextBuilders = (
 /**
  * Configures access policies for all entity types using a callback pattern.
  * The callback receives subject info and context builders for fluent configuration.
+ * Uses appConfig.entityConfig as the source of truth for hierarchy.
  *
- * @param hierarchy - The hierarchy configuration.
  * @param entityTypes - All entity types to configure policies for.
  * @param callback - Configuration callback that sets up policies per subject.
  * @returns Access policies mapping subjects to their policy entries.
  *
  * @example
  * ```ts
- * const policies = configureAccessPolicies(hierarchy, entityTypes, ({ subject, contexts }) => {
+ * const policies = configureAccessPolicies(entityTypes, ({ subject, contexts }) => {
  *   switch (subject.name) {
  *     case 'organization':
- *       contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
- *       contexts.organization.member({ create: 0, read: 1, update: 0, delete: 0 });
- *       break;
- *     case 'attachment':
- *       contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
- *       contexts.organization.member({ create: 1, read: 1, update: 0, delete: 1 });
+ *       contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1, search: 1 });
+ *       contexts.organization.member({ create: 0, read: 1, update: 0, delete: 0, search: 1 });
  *       break;
  *   }
  * });
  * ```
  */
 export const configureAccessPolicies = (
-  hierarchy: HierarchyConfig,
   entityTypes: readonly EntityType[],
   callback: AccessPolicyCallback,
 ): AccessPolicies => {
@@ -100,7 +87,7 @@ export const configureAccessPolicies = (
 
   for (const entityType of permissionableTypes) {
     const entries: AccessPolicyEntry[] = [];
-    const contexts = createContextBuilders(hierarchy, entries);
+    const contexts = createContextBuilders(entries);
 
     const config: AccessPolicyConfiguration = {
       subject: { name: entityType },

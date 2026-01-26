@@ -5,14 +5,14 @@ import { jsonb } from 'drizzle-orm/pg-core';
  * Written by handler, read by CDC Worker, overwritten on next mutation.
  */
 export interface TxColumnData {
-  /** Client-generated transaction ID (HLC format) */
-  transactionId: string;
-  /** Tab/instance identifier */
+  /** Unique mutation ID (nanoid) */
+  id: string;
+  /** Tab/instance identifier for echo prevention */
   sourceId: string;
-  /** Which field this mutation changes (null for create/delete) */
-  changedField: string | null;
-  /** Last known transaction ID for this field (for conflict detection) */
-  expectedTransactionId?: string | null;
+  /** Entity version - incremented on every mutation */
+  version: number;
+  /** Per-field versions for conflict detection */
+  fieldVersions: Record<string, number>;
 }
 
 /**
