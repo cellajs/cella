@@ -1,32 +1,24 @@
 import { eq } from 'drizzle-orm';
 import { testClient } from 'hono/testing';
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { db } from '#/db/db';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 import { mockOrganization } from '../../mocks/mock-organization';
 import { defaultHeaders } from '../fixtures';
 import { createOrganizationAdminUser, createPasswordUser, parseResponse } from '../helpers';
-import { clearDatabase, mockFetchRequest, mockRateLimiter, setTestConfig } from '../test-utils';
+import { clearDatabase, mockFetchRequest, mockRateLimiter, mockVerificationEmails, setTestConfig } from '../test-utils';
 
 setTestConfig({
   enabledAuthStrategies: ['password'],
   registrationEnabled: true,
 });
 
+// Mock verification email functions to prevent background database operations
+mockVerificationEmails();
+
 beforeAll(async () => {
   mockFetchRequest();
-
-  // Mock email sending functions
-  vi.mock('#/modules/memberships/handlers', async () => {
-    const actual = await vi.importActual('#/modules/memberships/handlers');
-    return {
-      ...actual,
-      MemberInviteEmail: vi.fn().mockResolvedValue(undefined),
-      MemberInviteWithTokenEmail: vi.fn().mockResolvedValue(undefined),
-    };
-  });
-
   mockRateLimiter();
 });
 

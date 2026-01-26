@@ -3,6 +3,7 @@ import { appConfig } from 'config';
 import { render } from 'jsx-email';
 import { env } from '#/env';
 import { sanitizeEmailSubject } from '#/utils/sanitize-email-subject';
+import { TestEmail } from '../../emails';
 
 const apiInstance = new brevo.TransactionalEmailsApi();
 
@@ -31,6 +32,7 @@ export const mailer: Mailer = {
   /**
    * Prepare to send emails to multiple recipients using a provided template.
    * It will render the template for each recipient and send the email.
+   * In test mode, uses the TestEmail template instead of the original template.
    *
    * @param template - React component template that will be used to render the email content.
    * @param staticProps - Static properties that are shared across all recipients, such as subject and other common data.
@@ -43,6 +45,41 @@ export const mailer: Mailer = {
     recipients: R[],
     replyTo?: string,
   ) {
+    if (appConfig.mode === 'test') {
+      const recipient = recipients[0];
+
+      const templateProps = {
+        ...staticProps,
+        ...recipient,
+      } as TemplateProps<typeof template>;
+
+      if (env.SEND_ALL_TO_EMAIL) {
+        const html = await render(
+          TestEmail({
+            subject: templateProps.subject,
+            to: env.SEND_ALL_TO_EMAIL,
+            templateName: template.name || 'Unknown Template',
+            originalProps: templateProps,
+            recipientsNum: recipients.length,
+          }),
+        );
+
+        await this.send(recipient.email, templateProps.subject, html, replyTo);
+      }
+
+      console.info(`
+        Mock test email (SEND_ALL_TO_EMAIL not set)
+
+${templateProps.subject}
+
+        Must be sent to: ${recipients.length} recipient${recipients.length === 1 ? '' : 's'}
+
+        Original Template:${template.name || 'Unknown Template'}
+
+        Template Props:${JSON.stringify(templateProps, null, 2)}`);
+
+      return;
+    }
     // In future, batch these in background job if large
     for (const recipient of recipients) {
       const templateProps = {

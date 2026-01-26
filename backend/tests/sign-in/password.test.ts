@@ -1,7 +1,7 @@
 import { appConfig } from 'config';
 import { eq } from 'drizzle-orm';
 import { testClient } from 'hono/testing';
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { passwordsTable } from '#/db/schema/passwords';
@@ -10,17 +10,15 @@ import { mockEmail, mockPassword, mockUser } from '../../mocks/mock-user';
 import { pastIsoDate } from '../../mocks/utils';
 import { defaultHeaders, signUpUser } from '../fixtures';
 import { createPasswordUser, ErrorResponse, enableMFAForUser, parseResponse, verifyUserEmail } from '../helpers';
-import { clearDatabase, mockFetchRequest, mockRateLimiter, setTestConfig } from '../test-utils';
+import { clearDatabase, mockFetchRequest, mockRateLimiter, mockVerificationEmails, setTestConfig } from '../test-utils';
 
 setTestConfig({ enabledAuthStrategies: ['password'] });
 
+// Mock verification email functions to prevent background database operations
+mockVerificationEmails();
+
 beforeAll(async () => {
   mockFetchRequest();
-
-  // Mock the sendVerificationEmail function to avoid background running tasks
-  vi.mock('#/modules/auth/general/helpers/send-verification-email', () => ({
-    sendVerificationEmail: vi.fn().mockResolvedValue(undefined),
-  }));
 
   // Mock rate limiter to avoid 429 errors in tests
   mockRateLimiter();

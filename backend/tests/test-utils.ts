@@ -5,6 +5,7 @@
  * - Mock global behaviors like `fetch`
  * - Clean up the database (e.g., clear users and emails tables)
  * - Dynamically enable/disable config flags (e.g., auth strategies)
+ * - Mock email sending to prevent actual emails during tests
  *
  * Database migrations are handled by global-setup.ts before tests run.
  * These functions are intended to be used in test files to keep setup DRY and consistent.
@@ -28,6 +29,21 @@ type ConfigOverride = {
   enabledOAuthProviders?: string[];
   registrationEnabled?: boolean;
 };
+
+
+/**
+ * Mock verification email functions to prevent background database operations.
+ * Use this in tests that trigger sign-up or email verification flows.
+ *
+ * IMPORTANT: Call this function at module level (not inside beforeAll)
+ * because vi.mock is hoisted.
+ */
+export function mockVerificationEmails() {
+  vi.mock('#/modules/auth/general/helpers/send-verification-email', () => ({
+    sendVerificationEmail: vi.fn().mockResolvedValue(undefined),
+    deleteVerificationTokens: vi.fn().mockResolvedValue(undefined),
+  }));
+}
 
 /**
  * Mock the global fetch request to avoid actual network calls during tests.

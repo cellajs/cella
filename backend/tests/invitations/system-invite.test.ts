@@ -1,29 +1,22 @@
 import { eq } from 'drizzle-orm';
 import { testClient } from 'hono/testing';
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { db } from '#/db/db';
 import { tokensTable } from '#/db/schema/tokens';
 import { defaultHeaders } from '../fixtures';
 import { createPasswordUser, createSystemAdminUser, parseResponse } from '../helpers';
-import { clearDatabase, mockFetchRequest, mockRateLimiter, setTestConfig } from '../test-utils';
+import { clearDatabase, mockFetchRequest, mockRateLimiter, mockVerificationEmails, setTestConfig } from '../test-utils';
 
 setTestConfig({
   enabledAuthStrategies: ['password'],
   registrationEnabled: true,
 });
 
+// Mock verification email functions to prevent background database operations
+mockVerificationEmails();
+
 beforeAll(async () => {
   mockFetchRequest();
-
-  // Mock email sending
-  vi.mock('#/modules/system/handlers', async () => {
-    const actual = await vi.importActual('#/modules/system/handlers');
-    return {
-      ...actual,
-      SystemInviteEmail: vi.fn().mockResolvedValue(undefined),
-    };
-  });
-
   mockRateLimiter();
 });
 

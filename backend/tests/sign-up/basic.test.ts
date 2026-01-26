@@ -1,25 +1,22 @@
 import { eq } from 'drizzle-orm';
 import { testClient } from 'hono/testing';
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { db } from '#/db/db';
 import { usersTable } from '#/db/schema/users';
 import { defaultHeaders, signUpUser } from '../fixtures';
 import { createPasswordUser } from '../helpers';
-import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
+import { clearDatabase, mockFetchRequest, mockVerificationEmails, setTestConfig } from '../test-utils';
 
 setTestConfig({
   enabledAuthStrategies: ['password'],
   registrationEnabled: true,
 });
 
+// Mock verification email functions to prevent background database operations
+mockVerificationEmails();
+
 beforeAll(async () => {
   mockFetchRequest();
-
-  // Tmp solution: Mock the sendVerificationEmail function to avoid background running tasks...
-  // Later we should only mock the email sending part, not the whole function.
-  vi.mock('#/modules/auth/general/helpers/send-verification-email', () => ({
-    sendVerificationEmail: vi.fn().mockResolvedValue(undefined),
-  }));
 });
 
 afterEach(async () => {

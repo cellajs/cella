@@ -10,17 +10,15 @@ import { encodeLowerCased } from '#/utils/oslo';
 import { pastIsoDate } from '../../mocks/utils';
 import { defaultHeaders, signUpUser } from '../fixtures';
 import { createPasswordUser, enableMFAForUser, parseResponse, verifyUserEmail } from '../helpers';
-import { clearDatabase, mockFetchRequest, mockRateLimiter, setTestConfig } from '../test-utils';
+import { clearDatabase, mockFetchRequest, mockRateLimiter, mockVerificationEmails, setTestConfig } from '../test-utils';
 
 setTestConfig({ enabledAuthStrategies: ['password', 'totp'] });
 
+// Mock verification email functions to prevent background database operations
+mockVerificationEmails();
+
 beforeAll(async () => {
   mockFetchRequest();
-
-  // Mock sendVerificationEmail function to avoid background running tasks
-  vi.mock('#/modules/auth/general/helpers/send-verification-email', () => ({
-    sendVerificationEmail: vi.fn().mockResolvedValue(undefined),
-  }));
 
   // Mock rate limiter to avoid 429 errors in tests
   mockRateLimiter();

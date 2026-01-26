@@ -9,3 +9,4 @@ export { OAuthVerificationEmail } from './templates/oauth-verification';
 export { RequestResponseEmail } from './templates/request-was-sent';
 export { RequestInfoEmail } from './templates/request-was-sent-admin';
 export { SystemInviteEmail } from './templates/system-invite';
+export { TestEmail } from './templates/test-email';
