@@ -17,8 +17,9 @@ export interface ProcessMessageResult {
 
 /**
  * Process a pgoutput message and return activity + entity data if applicable.
+ * Async to support enrichment queries for membership events.
  */
-export function processMessage(message: Pgoutput.Message): ProcessMessageResult | null {
+export async function processMessage(message: Pgoutput.Message): Promise<ProcessMessageResult | null> {
   // Only process insert, update, delete messages with a relation
   if (message.tag !== 'insert' && message.tag !== 'update' && message.tag !== 'delete') {
     return null;
@@ -30,11 +31,11 @@ export function processMessage(message: Pgoutput.Message): ProcessMessageResult 
 
   switch (message.tag) {
     case 'insert':
-      return handleInsert(entry, message);
+      return await handleInsert(entry, message);
     case 'update':
-      return handleUpdate(entry, message);
+      return await handleUpdate(entry, message);
     case 'delete':
-      return handleDelete(entry, message);
+      return await handleDelete(entry, message);
   }
 }
 

@@ -44,3 +44,29 @@ export const runtimeMetricsSchema = z.object({
   }),
   otel: z.array(otelMetricSchema).describe('OpenTelemetry metrics from RuntimeNodeInstrumentation'),
 });
+
+/** Schema for cache tier stats. */
+const cacheTierStatsSchema = z.object({
+  hits: z.number().describe('Number of cache hits'),
+  misses: z.number().describe('Number of cache misses'),
+  hitRate: z.number().describe('Hit rate percentage (0-100)'),
+  invalidations: z.number().describe('Number of cache invalidations'),
+  coalescedRequests: z.number().describe('Number of coalesced requests (avoided duplicate fetches)'),
+  totalRequests: z.number().describe('Total requests (hits + misses)'),
+  uptimeSeconds: z.number().describe('Seconds since metrics were last reset'),
+  size: z.number().describe('Current number of cached entries'),
+  capacity: z.number().describe('Maximum cache capacity'),
+  utilization: z.number().describe('Cache utilization (0-1)'),
+});
+
+/** Schema for entity cache stats response. */
+export const cacheStatsSchema = z.object({
+  public: cacheTierStatsSchema.describe('Public cache statistics (no auth required)'),
+  token: cacheTierStatsSchema.describe('Token cache statistics (membership required)'),
+  combined: z.object({
+    totalHits: z.number(),
+    totalMisses: z.number(),
+    overallHitRate: z.number(),
+    totalInvalidations: z.number(),
+  }),
+});

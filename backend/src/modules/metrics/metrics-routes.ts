@@ -1,7 +1,12 @@
 import { createXRoute } from '#/docs/x-routes';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
-import { metricListSchema, publicCountsSchema, runtimeMetricsSchema } from '#/modules/metrics/metrics-schema';
+import {
+  cacheStatsSchema,
+  metricListSchema,
+  publicCountsSchema,
+  runtimeMetricsSchema,
+} from '#/modules/metrics/metrics-schema';
 import { errorResponseRefs } from '#/schemas';
 
 const metricRouteConfig = {
@@ -62,6 +67,26 @@ const metricRouteConfig = {
       200: {
         description: 'Public counts',
         content: { 'application/json': { schema: publicCountsSchema } },
+      },
+      ...errorResponseRefs,
+    },
+  }),
+  /**
+   * Get entity cache statistics
+   */
+  getCacheStats: createXRoute({
+    operationId: 'getCacheStats',
+    method: 'get',
+    path: '/cache',
+    xGuard: [isAuthenticated, hasSystemAccess],
+    tags: ['metrics'],
+    summary: 'Get entity cache statistics',
+    description: `Returns entity cache statistics including hit rates, sizes, and invalidations.
+      Useful for monitoring cache performance and tuning.`,
+    responses: {
+      200: {
+        description: 'Cache statistics',
+        content: { 'application/json': { schema: cacheStatsSchema } },
       },
       ...errorResponseRefs,
     },

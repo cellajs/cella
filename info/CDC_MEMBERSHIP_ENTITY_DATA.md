@@ -52,36 +52,42 @@ const membershipsToInsert = memberships.map((m) => ({
 - Snapshot can become stale if entity is updated (acceptable for membership events)
 - Larger row size
 
-### Option 2: JOIN Query in CDC Worker
+### Option 2: JOIN Query in CDC Worker (Implemented)
 
-CDC Worker performs database query to fetch related entity data.
+CDC Worker performs database query to fetch related entity data with LRU caching.
 
 ```typescript
 // In handleInsert for membership
-export async function handleMembershipInsert(
+export async function handleInsert(
   entry: TableRegistryEntry,
   message: Pgoutput.MessageInsert
-): ProcessMessageResult {
+): Promise<ProcessMessageResult> {
   const row = convertRowKeys(extractRowData(message.new));
   
-  // Fetch entity data based on membership context
-  const entityData = await fetchEntityForMembership(row);
+  // Enrich membership data with user and entity info
+  let enrichedData = row;
+  if (entry.kind === 'resource' && entry.type === 'membership') {
+    const enrichment = await enrichMembershipData(row);
+    enrichedData = { ...row, ...enrichment };
+  }
   
-  return {
-    activity: buildActivity(row),
-    entityData: { ...row, entity: entityData },
-  };
+  return { activity, entityData: enrichedData, entry };
 }
 ```
+
+**Implementation details:**
+- Enrichment module: `cdc/src/enrichment/`
+- LRU cache: 500 entries, 30s TTL for both users and entities
+- Parallel queries: User and entity fetched concurrently
 
 **Pros:**
 - Always fresh entity data
 - No schema changes required
+- Minimal latency impact with caching
 
 **Cons:**
-- Adds database query per membership event
+- Adds database query per membership event (mitigated by cache)
 - CDC Worker needs database access (already available)
-- Potential latency increase
 
 ### Option 3: Entity Columns on Membership Table
 

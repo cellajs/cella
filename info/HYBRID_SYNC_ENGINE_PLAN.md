@@ -1,216 +1,274 @@
-# Cella hybrid sync engine plan
+# Cella hybrid sync engine
 
-> **IMPORTANT**: This document describes the sync engine design. The actual implementation lives in the codebase. When updating this document also consider updating: [SYNC_ENGINE_REQUIREMENTS.md](./SYNC_ENGINE_REQUIREMENTS.md) for design decisions, invariants, testable requirements.
+> **Architecture context**: Cella has a dynamic entity model—a 'fork' can have different and extended entity compositions. See [ARCHITECTURE.md](./ARCHITECTURE.md).
 
-> **Existing archicture**:
-It is important to know Cella's base architecture and especially to realize the dynamic nature of the entity model:  Cella as a template has a composition of entities but a 'fork' of can have a different and extended entity composition: [ARCHITECTURE.md](./ARCHITECTURE.md)
+## Overview
 
-**Terminology**:
-The sync engine uses precise vocabulary to avoid confusion. See [SYNC_ENGINE_REQUIREMENTS.md#terminology](./SYNC_ENGINE_REQUIREMENTS.md#terminology) for the authoritative glossary covering:
-
-## Summary
-
-This document outlines a plan to build a **hybrid sync engine** that extends existing **OpenAPI + React Query** infrastructure with sync and offline capabilities. This engine is - *currently* - designed to be a integral part of cella and its entity model. The approach is "hybrid" because the default is standard REST/OpenAPI endpoints while entity modules *can* be 'upgraded' with transaction tracking, offline support, and live stream for realtime sync. 
+The **hybrid sync engine** extends Cella's **OpenAPI + React Query** infrastructure with sync and offline capabilities. It is "hybrid" because standard REST/OpenAPI endpoints remain the default, while entity modules *can* be 'upgraded' with transaction tracking, offline support, and realtime streaming.
 
 | Mode | Entity type | Features | Example |
-|--------|--------|----------|---------|
-| basic | **entityType** | all REST CRUD entities, server-generated IDs, can also be split by context or product | `organization` |
-| offline | **OfflineEntityType** | + `{ data, tx }` wrapper, client IDs, transaction tracking, offline queue, conflict detection | (currently empty) |
-| realtime | **RealtimeEntityType** | + Live stream (SSE), live cache updates, multi-tab leader election | `page`, `attachment` |
-
-> This plan focuses on upgrading synced entities (`OfflineEntityType` + `RealtimeEntityType`) with sync primitives using a minimal surface area so that an 'upgrade' doesnt mean a complete rewrite of the code for that entity.
+|------|-------------|----------|---------|
+| basic | `EntityType` | Standard REST CRUD, server-generated IDs | `organization` |
+| offline | `OfflineEntityType` | + `{ data, tx }` wrapper, transaction tracking, offline queue, conflict detection | (currently empty) |
+| realtime | `RealtimeEntityType` | + Live stream (SSE), live cache updates, multi-tab leader election | `page`, `attachment` |
 
 ---
 
-## Problem statement
+## Terminology
 
-External sync solutions don't work well in en OpenAPI focused codbase. They bypass REST endpoints, authorization, caching and change capture patterns, forcing all-or-nothing adoption. Running them alongside OpenAPI and React Query creates huge over lap and therefore poor DX.
+| Term | Definition |
+|------|------------|
+| **Activity** | A record in `activitiesTable` representing an entity change |
+| **Activity log** | The `activitiesTable` as durable storage of all entity changes |
+| **Live stream** | Org-scoped SSE connection for realtime entity updates |
+| **Stream message** | The SSE payload containing entity data and transaction metadata |
+| **Mutation** | A client-initiated change identified by `tx.id` |
+| **Upstream-first** | Pull latest server state before pushing mutations |
+| **LWW** | Last Write Wins—conflict resolution where server value wins |
+| **Squashing** | Merging multiple mutations to the same field into one |
+| **Leader tab** | The one browser tab that owns the SSE connection |
+| **Source ID** | Identifies which tab/instance made a mutation (for echo prevention) |
+| **Version** | Integer counter incremented on every entity mutation |
+| **Seq** | Per-org sequence number for gap detection |
+| **baseVersion** | The entity version when client last read it, sent with mutations for conflict detection |
+
+---
+
+## Why a built-in sync engine?
+
+External sync solutions bypass REST endpoints, authorization, and caching patterns, forcing all-or-nothing adoption. Running them alongside OpenAPI and React Query creates overlap and poor DX.
 
 | Concern | External services | Built-in approach |
 |---------|-------------------|-------------------|
-| **OpenAPI contract** | Bypassed - sync happens outside REST | Extends existing endpoints with `{ data, tx }` wrapper |
-| **Authorization** | Requires re-implementing permission logic | Reuses `isPermissionAllowed()` and existing guards |
-| **Schema ownership** | Sync layer often dictates schema patterns | Drizzle/zod schemas remain authoritative |
-| **Audit trail** | Not covered in general | Activities already recorded through a Change Data Capture (CDC worker) |
-| **Opt-in complexity** | All-or-nothing adoption | Progressive: REST → Tracked → Offline → Realtime |
-| **React Query base layer** | New reactive layer | Builds on existing TanStack Query cache |
+| **OpenAPI contract** | Bypassed | Extends existing endpoints with `{ data, tx }` wrapper |
+| **Authorization** | Requires re-implementing | Reuses `isPermissionAllowed()` and existing guards |
+| **Schema ownership** | Sync layer dictates patterns | Drizzle/Zod schemas remain authoritative |
+| **Audit trail** | Not covered | Activities recorded via CDC Worker |
+| **Opt-in complexity** | All-or-nothing | Progressive: REST → Tracked → Offline → Realtime |
+| **React Query** | New reactive layer | Builds on existing TanStack Query cache |
 
-Cella's existing infrastructure provides 70% of what's needed:
+**Infrastructure the sync engine uses:**
+- `activitiesTable` — Durable change log
+- CDC Worker — Captures entity changes via logical replication  
+- React Query — Optimistic updates, cache management, persistence
+- Permission system — `isPermissionAllowed()` for entity-level ACLs
+- OpenAPI + Zod — Type-safe request/response contracts
+- **LRU Entity Cache** — Server-side caching for scalable fan-out (see section below)
 
-- ✅ `activitiesTable` - act as durable change log
-- ✅ CDC worker - Already captures entity changes via logical replication  
-- ✅ React Query - Optimistic updates, cache management, persistence
-- ✅ Permission system - `isPermissionAllowed()` for entity-level ACLs
-- ✅ OpenAPI + Zod - Type-safe request/response contracts
+---
+
+## LRU entity cache
+
+The LRU cache is **essential for the sync engine to scale**. Without it:
+- 100 subscribers watching an entity = 100 DB queries on every update
+- Popular public pages become a DDoS vector against our own database
+- Horizontal scaling is blocked (each server instance duplicates load)
+
+This cache enables:
+- **O(1) fan-out** — One DB query serves all subscribers
+- **Thundering herd protection** — Request coalescing prevents duplicate fetches
+- **Token-gated security** — Membership-required data cached with short-lived tokens
+
+### Two-tier design
+
+| Tier | Key format | TTL | Use case |
+|------|-----------|-----|----------|
+| **Public** | `public:{entityType}:{entityId}:{version}` | 5 min | Public pages, org profiles |
+| **Token-gated** | `token:{prefix}:{entityType}:{entityId}:{version}` | 10 min | Attachments, contacts requiring membership |
+
+### Token flow (token-gated tier)
+
+```
+1. User subscribes to SSE stream
+   └── Server verifies membership → generates 10-min HMAC-signed token
+   └── Token sent via SSE: { event: 'access-token', token, expiresAt }
+
+2. CDC detects entity change
+   └── Cache invalidated → next request re-fetches and caches enriched data
+
+3. Subscribers fetch full data using token
+   └── GET /entities/{id}?accessToken=abc123&version=5
+   └── Cache hit if same token + version
+
+4. Token refresh every 9 min via SSE (before 10-min expiry)
+```
+
+### Request coalescing (singleflight)
+
+N concurrent cache misses for the same entity → 1 DB query → N responses:
+
+```typescript
+const inFlight = new Map<string, Promise<unknown>>();
+
+export async function coalesce<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
+  const existing = inFlight.get(key);
+  if (existing) return existing as Promise<T>;
+  
+  const promise = fetcher().finally(() => inFlight.delete(key));
+  inFlight.set(key, promise);
+  return promise;
+}
+```
+
+### Cache invalidation via CDC
+
+CDC events invalidate cache; next request re-fetches with enriched data:
+
+```typescript
+activityBus.onAny((event) => {
+  if (event.entityType && (event.action === 'update' || event.action === 'delete')) {
+    entityCache.invalidateEntity(event.entityType, event.entityId);
+  }
+});
+```
+
+**On delete:** Just invalidate. No tombstone needed — let DB return 404 if client missed SSE.
+
+### Endpoint-first caching
+
+Cache enriched API responses (with signed URLs, relations), not raw CDC rows:
+
+```
+Client request → Cache miss → Full handler (enrichment) → Cache response → Return
+Subsequent requests → Cache hit → Return cached enriched data
+```
+
+### Race condition handling
+
+| Race condition | Mitigation |
+|----------------|------------|
+| Thundering herd | Request coalescing (singleflight) |
+| Invalidation during fetch | Version in key prevents serving wrong version |
+| Token expiry mid-request | Different key, wasted entry naturally expires |
+| Concurrent updates | Each CDC event invalidates, final state correct |
+| Read-your-writes | Cache miss falls through to DB |
+
+### Implementation files
+
+```
+backend/src/lib/
+├── lru-cache.ts              # Generic LRU cache with TTL
+├── lru-cache.test.ts         # 13 unit tests
+├── entity-cache.ts           # Two-tier cache (public + token)
+├── access-token.ts           # HMAC token gen/verify
+├── access-token.test.ts      # 11 unit tests
+├── request-coalescing.ts     # Singleflight pattern
+├── request-coalescing.test.ts # 7 unit tests
+└── cache-metrics.ts          # Hit rate tracking
+
+backend/src/middlewares/
+└── entity-cache.ts           # Hono middleware
+
+backend/src/sync/
+└── cache-invalidation.ts     # CDC → cache hook (registered at startup)
+
+backend/src/modules/metrics/
+└── metrics-handlers.ts       # GET /metrics/cache endpoint
+```
+
+### Configuration
+
+| Setting | Value | Notes |
+|---------|-------|-------|
+| Public cache max size | 1000 entries | ~5-10MB RAM |
+| Token cache max size | 5000 entries | ~25-50MB RAM |
+| Public TTL | 5 min | Balance freshness vs. load |
+| Token TTL | 10 min | Matches token expiry |
+| Token secret | `env.ARGON_SECRET` | HMAC-SHA256 signing |
+
+---
+
+## Design principles
+
+### Invariants (must always be true)
+
+1. **Optimistic updates happen BEFORE checking online status** - User sees instant feedback regardless of sync state
+2. **Transaction IDs are immutable once generated** - Same ID used for retries enables idempotency
+3. **CDC Worker is the source of truth for activity history** - Entity tables have transient `tx` that gets overwritten
+4. **One mutation = one field change** - `tx.changedField` declares which single field is tracked for conflicts
+5. **Only leader tab opens SSE connection** - Prevents duplicate connections and race conditions
+6. **No type assertions in API/stream/frontend code** - Type safety catches sync bugs at compile time
+
+### Constraints
+
+| Constraint | Limit | Why |
+|------------|-------|-----|
+| Mutation ID length | 21 chars | nanoid default |
+| Source ID length | 64 chars | prefix + nanoid headroom |
+| Catch-up query batch | 100 activities | Prevent memory/latency spikes |
+| IndexedDB transaction store | 1000 entries max | Client storage limits |
+
+---
 
 ## Core concepts
 
-### Design philosophy
-- **Extend on OpenAPI** - All features work through the existing OpenAPI infrastructure.
-- **React Query base** - Build on top of, not around, TanStack Query.
-- **Progressive enhancement** - REST for context entities; synced entities add optimistic updates → offline → realtime.
-- **Minimal UI surface area** - Forms and UI components should remain unaware of sync mechanics. Sync concerns (tx metadata, version tracking, mutation handling) are handled in the mutation layer (`query.ts`), not in forms.
+### Philosophy
+- **Extend OpenAPI** - All features work through existing OpenAPI infrastructure
+- **React Query base** - Build on top of, not around, TanStack Query
+- **Progressive enhancement** - REST for context entities; synced entities add optimistic updates → offline → realtime
+- **Minimal UI surface area** - Forms remain unaware of sync mechanics; sync concerns handled in the mutation layer
 
-### Architecture
-- **Leverage CDC Worker** - Use pg `activitiesTable` as durable activity log (no separate transaction storage).
-- **Live stream** - SSE streaming backed by CDC Worker + WebSocket for realtime sync (`RealtimeEntityType` only).
-- **Separation of concerns** - LIST endpoints handle queries/filtering; live stream is dumb, just provides new data.
-- **React Query as merge point** - Both initial load and live stream updates feed into the same cache.
-- **Two paths for entity data** - Live updates get entity data from CDC Worker via WebSocket; catch-up queries JOIN activities with entity tables.
+### Architecture overview
+- **Leverage CDC Worker** - Use `activitiesTable` as durable activity log
+- **Live stream** - SSE streaming backed by CDC Worker + WebSocket for realtime sync
+- **Separation of concerns** - LIST endpoints handle queries/filtering; live stream provides new data
+- **React Query as merge point** - Both initial load and live stream updates feed into the same cache
+- **Two paths for entity data** - Live updates get entity data from CDC Worker via WebSocket; catch-up queries JOIN activities with entity tables
 
 ### Sync mechanics
-- **Client-generated IDs** - Synced entities use client-generated mutation IDs (nanoid) for tracking.
-- **Upstream-first sync** - Pull before push will prevent most conflicts for online clients.
-- **Version-based conflict detection** - Integer version counters per entity and per field enable gap detection and conflict resolution.
-- **Offline mutation queue** - Persist pending mutations to IndexedDB, replay on reconnect.
-- **Seq-based gap detection** - Per-org sequence numbers detect missed changes at the list level.
-- **Field-level versioning** - `tx.fieldVersions` tracks individual field versions for concurrent edit detection.
-- **Merge strategy** - LWW (server wins) as default, resolution UI for fields needing user input.
-- **Single-writer multi-tab** - One leader tab owns SSE connection and broadcasts to followers.
+- **Client-generated IDs** - Synced entities use nanoid mutation IDs for tracking
+- **Upstream-first sync** - Pull before push prevents most conflicts
+- **Version-based conflict detection** - Integer version counters per entity and per field
+- **Offline mutation queue** - Persist pending mutations to IndexedDB, replay on reconnect
+- **Field-level versioning** - `tx.fieldVersions` tracks individual field versions
+- **Merge strategy** - LWW (server wins) as default, resolution UI for fields needing user input
+- **Single-writer multi-tab** - One leader tab owns SSE connection and broadcasts to followers
 
-### Mutation layer responsibilities
+### Mutation layer
 
 The mutation layer (`query.ts`) encapsulates all sync logic so forms remain simple:
-
-1. **Version extraction** - Read `tx.version` from cached entity for conflict detection
-2. **tx metadata generation** - Generate `id` (nanoid), `sourceId`, `baseVersion`
-3. **Optimistic updates** - Apply changes to cache immediately, rollback on error
-4. **Squashing** - Cancel redundant in-flight mutations for the same entity
+1. Read `tx.version` from cached entity for conflict detection
+2. Generate tx metadata: `id` (nanoid), `sourceId`, `baseVersion`
+3. Apply optimistic updates immediately, rollback on error
+4. Cancel redundant in-flight mutations for the same entity
 
 **Form contract**: Forms call `updateMutation.mutate({ id, data })` - no sync knowledge required.
 
-See `frontend/src/modules/page/query.ts` for implementation.
+---
 
-### Type safety
+## Key decisions
 
-Having backend, frontend, CDC, config in one repo puts us in an excellent position to provide end-to-end type safety across the entire 'sync engine flow'. 
+### Transaction ID format
+Uses **nanoid** (21-character URL-safe string) for mutation IDs. Simple, no clock synchronization needed. Version-based conflict detection doesn't require causality ordering.
 
-- **Prevent type assertions** - Avoid `as`, `as unknown as`, and `!` assertions. They break the compile-time safety that catches sync bugs.
-- **Use generics over casts** - For dynamic entity types, use discriminated unions and generic functions.
+### Field-level conflict tracking
+One mutation changes one field, conflicts are per-field. Two users editing different fields = no conflict. Trade-off: multiple API calls for multi-field edits, but dramatically reduces conflicts.
 
-### OpenAPI as stream contract
+### CDC Worker sends entity data via WebSocket
+CDC Worker maintains a persistent WebSocket to API server, sending full entity data from replication rows with no payload limit. Enables instant delivery with 50k+ msg/sec throughput.
 
-The stream implementation should derive as much as possible from generated OpenAPI types to minimize hardcoding. Current state and proposals:
+### Transient tx column
+Synced entity tables have a single `tx` JSONB column containing `{ id, sourceId, version, fieldVersions }`. Written by handler, read by CDC Worker, overwritten on next mutation. Entity table is NOT the source of truth for sync state.
 
-**Current hardcoded elements in `use-live-stream.ts`:**
-- URL path: `/organizations/${orgId}/sync/stream`
-- Query param names: `live`, `offset`, `entityTypes`
-- SSE event names: `message`, `offset`
-- Entity type values for filtering
+### activitiesTable as activity log
+Extends existing activities table with tx column rather than creating a separate sync table. Reuses existing infrastructure.
 
-**Proposal A: Derive types only (current approach)**
-- Types derived from `SyncStreamResponses` (done in `stream-types.ts`)
-- URL/params still hardcoded but TypeScript catches schema drift
-- Minimal runtime overhead, maximum simplicity
-- **Trade-off**: URL changes require manual updates
+### React Query as cache layer
+Feed stream messages into React Query cache, not a parallel state. Consistent with rest of Cella.
 
-**Proposal B: Use generated zod for runtime validation**
-```typescript
-import { zSyncStreamResponse } from '~/api.gen/zod.gen';
+### Organization-level stream granularity
+One SSE stream per org, delivering all realtime entity types for that org. Client filters by entity type; simpler server and permission boundary by tenant.
 
-// Parse SSE data with runtime validation
-const handleMessage = (event: MessageEvent) => {
-  const result = zSyncStreamResponse.shape.activities.element.safeParse(
-    JSON.parse(event.data)
-  );
-  if (!result.success) {
-    console.warn('Stream message validation failed:', result.error);
-    return;
-  }
-  onMessage?.(result.data);
-};
-```
-- **Benefit**: Runtime validation catches schema mismatches
-- **Trade-off**: Performance overhead for each message
+### Transaction wrapper required for synced entities
+Synced entity mutation endpoints require `{ data, tx }` wrapper—no "legacy mode". All mutations are tracked with no gaps.
 
-**Proposal C: Extract URL pattern from types**
-```typescript
-import type { SyncStreamData } from '~/api.gen';
+### Offline mutation coalescing
+When a user creates an entity offline and edits it before reconnecting, create and edits are coalesced into a single create request with final values. Reduces network traffic dramatically.
 
-// URL template from generated types (requires string manipulation)
-type StreamUrl = SyncStreamData['url']; // '/organizations/{orgIdOrSlug}/sync/stream'
+### React Query mutation cache as outbox
+Uses React Query's mutation cache with IndexedDB persistence rather than a custom outbox. Leverages existing infrastructure with built-in retry and garbage collection.
 
-// Build URL from template
-const buildStreamUrl = (orgId: string): string => {
-  const template: StreamUrl = '/organizations/{orgIdOrSlug}/sync/stream';
-  return `${API_BASE}${template.replace('{orgIdOrSlug}', orgId)}`;
-};
-
-// Query params typed from schema
-type StreamQuery = NonNullable<SyncStreamData['query']>;
-const params: StreamQuery = { live: 'sse', offset, entityTypes: types.join(',') };
-```
-- **Benefit**: URL pattern and params match OpenAPI exactly
-- **Trade-off**: More boilerplate, template string manipulation
-
-**Proposal D: Generate SSE client helper**
-Add to `openapi-ts.config.ts` a custom plugin that generates an SSE helper:
-```typescript
-// api.gen/sse.gen.ts (generated)
-export const syncStreamSSE = (params: SyncStreamData) => {
-  const url = buildUrl('/organizations/{orgIdOrSlug}/sync/stream', params);
-  return new EventSource(url, { withCredentials: true });
-};
-```
-- **Benefit**: Fully generated, type-safe SSE creation
-- **Trade-off**: Requires custom openapi-ts plugin
-
-**Recommended approach**: Start with **Proposal A** (types only) + elements of **Proposal C** (typed query params). Add **Proposal B** (zod validation) only in debug mode. Defer **Proposal D** until SSE patterns stabilize.
-
-#### Type strictness by layer
-
-Different layers have different typing constraints. The strategy is: **lenient at ingestion boundaries, strict at API/stream/frontend**.
-
-| Layer | Strictness | Why | Typing approach |
-|-------|-----------|-----|-----------------|
-| **CDC Worker** | Lenient | Receives `Record<string, unknown>` from pg-logical-replication. Row data is inherently untyped. | Use runtime validation, `unknown` types, and type guards. Assertions acceptable for well-tested extraction utilities. |
-| **ActivityBus** | Moderate | Receives from WebSocket (CDC Worker). Data crosses JSON boundary. | Validate payload shape with Zod, emit typed `ActivityEvent`. |
-| **API Handlers** | Strict | OpenAPI schemas provide compile-time contracts. | Use generated types, no assertions. Type guards for string→enum. |
-| **Stream Handlers** | Strict | SSE messages have defined schemas. | Use `RealtimeEntityType`, `ActivityAction` from config. |
-| **Frontend** | Strict | Generated SDK types from `api.gen/`. | Derive types from generated schemas, no custom duplicates. |
-
-#### Config-based entity type usage
-
-The config exports typed arrays and type guards for entity classification. See `config/default.ts` for exports and `config/types.ts` for derived types.
-
-**Usage by layer:**
-
-| Layer | Uses | Example |
-|-------|------|---------|
-| **CDC Worker** | `EntityType` (all entities) | `extractActivityContext()` returns `entityType: EntityType \| null` |
-| **Stream Handlers** | `RealtimeEntityType` | Filter activities to only stream realtime entities |
-| **API Handlers** | `RealtimeEntityType` or `OfflineEntityType` | Accept `{ data, tx }` wrapper for synced entities |
-| **Frontend** | `RealtimeEntityType` | `useLiveStream()` hook subscribes to realtime entities |
-
-**Type guard pattern**: See `backend/src/modules/sync/stream-handlers.ts` for `isRealtimeEntityType` usage.
-
-## Flow charts
-
-#### Current: OpenApi + React query to build on top of
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     React Components                        │
-│              useQuery / useInfiniteQuery                    │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│              TanStack Query                                 │
-│            - Query caching: same schema for list & detail   │
-│            - Optimistic mutations via onMutate              │
-│            - Persisted to IndexedDB via Dexie               |
-│            - Custom prefetch script for `offlineAccess`     |
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                REST API (Hono + OpenAPI + zod)              │
-│              (Standard request/response cycle)              │
-└─────────────────────────────────────────────────────────────┘
-```
-
-#### New: Hybrid sync engine
+## Architecture
 
 > **SERVER:** CDC Worker → WebSocket → API → SSE fan-out
 
@@ -304,79 +362,50 @@ Client filters and dedupes. Stream delivers org changes - only filtered by permi
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
-## Technical specifications
-
-### Leveraging existing Change Data Capture Worker
-
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│ Frontend: Create page                                                │
-│ const transactionId = createTransactionId(); // HLC format per DEC-1 │
-│ api.createPage({ body: { data, tx } })                               │
-└──────────────────────────────────┬───────────────────────────────────┘
-                                   │
-                                   ▼
-┌──────────────────────────────────────────────────────────────────────┐
-│ Backend handler                                                      │
-│ const { data, tx } = ctx.req.valid('json');                          │
-│ INSERT INTO pages (..., tx = { transactionId, sourceId, ... })       │
-└──────────────────────────────────┬───────────────────────────────────┘
-                                   │
-                                   ▼
-┌──────────────────────────────────────────────────────────────────────┐
-│ PostgreSQL logical replication → CDC Worker                          │
-│ Extracts tx metadata from row.tx JSONB column                        │
-└──────────────────────────────────┬───────────────────────────────────┘
-                                   │
-                                   ▼
-┌──────────────────────────────────────────────────────────────────────┐
-│ activitiesTable (doesn't store entity content data )                 │
-│ { type: 'page.created', entityId: 'abc',  tx }                       │
-└──────────────────────────────────┬───────────────────────────────────┘
-                                   │
-                                   ▼
-┌──────────────────────────────────────────────────────────────────────┐
-│ Stream Endpoint delivers message with full entity data               │
-│ SSE: { action: 'create', entity: {...}, transactionId: 'xyz123' }    │
-└──────────────────────────────────┬───────────────────────────────────┘
-                                   │
-                                   ▼
-┌──────────────────────────────────────────────────────────────────────┐
-│ Frontend: Reconcile pending transactions                             │
-│ if (message.transactionId === pendingTx.id) { confirm(); }           │
-└──────────────────────────────────────────────────────────────────────┘
-```
-
-### Implementation references
+## Implementation references
 
 The sync engine is implemented across these key files:
 
+**Backend:**
 | Component | Location |
 |-----------|----------|
-| **Activities schema** | `backend/src/db/schema/activities.ts` |
-| **CDC WebSocket client** | `cdc/src/lib/api-websocket.ts` |
-| **Activity sender** | `cdc/src/handlers/` |
-| **Stream subscriber manager** | `backend/src/sync/stream-subscribers.ts` |
-| **Stream endpoint** | `backend/src/modules/sync/stream-handlers.ts` |
-| **Activity Bus** | `backend/src/sync/activity-bus.ts` |
-| **Conflict detection** | `backend/src/sync/conflict-detection.ts` |
-| **Idempotency** | `backend/src/sync/idempotency.ts` |
+| Activities schema | `backend/src/db/schema/activities.ts` |
+| Stream endpoint | `backend/src/modules/sync/stream-handlers.ts` |
+| Stream subscriber manager | `backend/src/sync/stream-subscribers.ts` |
+| Activity Bus | `backend/src/sync/activity-bus.ts` |
+| Conflict detection | `backend/src/sync/conflict-detection.ts` |
+| Idempotency | `backend/src/sync/idempotency.ts` |
+| Transaction schemas | `backend/src/schemas/transaction-schemas.ts` |
+| LRU cache | `backend/src/lib/lru-cache.ts` |
+| Entity cache service | `backend/src/lib/entity-cache.ts` |
+| Request coalescing | `backend/src/lib/request-coalescing.ts` |
+| Access tokens | `backend/src/lib/access-token.ts` |
+| Cache invalidation | `backend/src/sync/cache-invalidation.ts` |
 
-### Realtime sync via live stream
+**CDC Worker:**
+| Component | Location |
+|-----------|----------|
+| WebSocket client | `cdc/src/lib/api-websocket.ts` |
+| Activity handlers | `cdc/src/handlers/` |
+| Context extraction | `cdc/src/utils/extract-activity-context.ts` |
 
-The stream architecture follows this pattern:
-1. Client connects to SSE endpoint with offset
-2. Server sends catch-up activities since offset
-3. Server registers subscriber for push notifications
-4. CDC Worker → WebSocket → ActivityBus → Stream fan-out
+**Frontend:**
+| Component | Location |
+|-----------|----------|
+| Live stream hook | `frontend/src/query/realtime/use-live-stream.ts` |
+| Stream types | `frontend/src/query/realtime/stream-types.ts` |
+| Tab coordinator | `frontend/src/query/realtime/tab-coordinator.ts` |
+| Stream handler | `frontend/src/query/realtime/user-stream-handler.ts` |
+| Hydrate barrier | `frontend/src/query/realtime/hydrate-barrier.ts` |
+| Transaction utils | `frontend/src/query/offline/tx-utils.ts` |
+| Squash utils | `frontend/src/query/offline/squash-utils.ts` |
+| Query persister | `frontend/src/query/persister.ts` |
 
-**Key files:**
-- Stream endpoint: `backend/src/modules/sync/stream-handlers.ts`
-- Stream subscriber manager: `backend/src/sync/stream-subscribers.ts`
-- Activity fetcher: `backend/src/sync/activity-fetcher.ts`
-- Frontend hook: `frontend/src/query/realtime/use-live-stream.ts`
+---
 
-**Stream message payload** (see `frontend/src/query/realtime/stream-types.ts`):
+## Technical details
+
+### Stream message format
 
 ```typescript
 interface StreamMessage<T = unknown> {
@@ -391,32 +420,18 @@ interface StreamMessage<T = unknown> {
 }
 ```
 
-**Frontend live stream**: See `frontend/src/query/realtime/use-live-stream.ts` for the complete implementation including:
-- Persisted offset (survives tab closure)
-- Tab coordinator integration (leader election)
-- SSE connection with catch-up and live modes
+### Transaction wrapper schema
 
-### Transaction ID format (nanoid)
+| Operation | Request | Response | Notes |
+|-----------|---------|----------|-------|
+| GET | Flat params | `Entity[]` / `Entity` | No tx - resolve conflicts client-side |
+| POST/PATCH/DELETE | `{ data, tx }` | `Entity` with `tx` | Server tracks version + sourceId |
+| Stream notification | N/A | `{ action, entityType, entityId, seq, tx }` | Includes sourceId for echo prevention |
 
-Cella uses **nanoid** for mutation IDs. This provides:
+### Transient tx column
 
-- **Uniqueness**: 21-character URL-safe string with ~126 bits of entropy
-- **Simplicity**: No clock synchronization needed
-- **Echo prevention**: Compare `tx.sourceId` to detect own mutations
+Synced entity tables have a single transient JSONB column for transaction metadata:
 
-**Version-based conflict detection**: Instead of comparing transaction IDs, Cella uses integer `version` counters:
-- Entity-level: `tx.version` increments on every mutation
-- Field-level: `tx.fieldVersions[field]` tracks per-field versions
-
-**Implementation**: See `frontend/src/query/offline/tx-utils.ts`
-
-### Entity transient `tx` column
-
-Synced entity tables have a single transient JSONB column for transaction metadata.
-
-**Implementation**: See `backend/src/db/schema/pages.ts` and the `txColumn` helper in `backend/src/db/utils/tx-columns.ts`
-
-**Schema**:
 ```typescript
 interface TxColumnData {
   id: string;              // nanoid mutation ID
@@ -426,73 +441,39 @@ interface TxColumnData {
 }
 ```
 
-**Why "transient"?**
-- Written by handler during mutation
-- Read by CDC Worker to populate activitiesTable
-- Overwritten on next mutation (no history preserved on entity)
-- Entity table is NOT the source of truth for sync state
+**Why "transient"?** Written by handler during mutation, read by CDC Worker to populate activitiesTable, then overwritten on next mutation. The entity table is NOT the source of truth for sync state—`activitiesTable` is.
 
-**Version-based conflict detection**:
-- `tx.version` provides entity-level version for gap detection
-- `tx.fieldVersions` enables field-level conflict detection
-- Client sends `baseVersion` (version when entity was read)
-- Server compares `fieldVersions[changedField]` with client's `baseVersion`
+### Source ID
 
-### Transaction wrapper schema
+- Unique identifier for a browser tab (generated via nanoid on page load)
+- Used for mutation source tracking and echo prevention
+- Different from `userId` (audit: "who") — `sourceId` is for sync ("which tab")
 
-| Operation | Request | Response | Notes |
-|-----------|---------|----------|-------|
-| GET | Flat params | `Entity[]` / `Entity` | No tx - resolve conflicts client-side |
-| POST/PATCH/DELETE | `{ data, tx }` | `Entity` with `tx` | Server tracks version + sourceId |
-| Stream notification | N/A | `{ action, entityType, entityId, seq, tx }` | Includes sourceId for echo prevention |
+---
 
-**Transaction metadata schemas**: See `backend/src/schemas/transaction-schemas.ts`
+## Conflict handling
 
-### Source identifier & transaction factory
-
-**Implementation**: See `frontend/src/query/offline/tx-utils.ts` which provides:
-- `sourceId` - Unique identifier for this browser tab (generated once per page load)
-- `createTxForCreate()` - Create tx for new entities (baseVersion: 0)
-- `createTxForUpdate(cachedEntity)` - Create tx with baseVersion from cached entity
-- `createTxForDelete()` - Create tx for delete mutations
-
-| Purpose | How sourceId serves it |
-|---------|------------------------|
-| Mutation source | Sent in `tx.sourceId`, stored in entity |
-| Echo prevention | Compare stream notification's `sourceId` to your own |
-| Leader election | Unique per tab, elect one leader via Web Locks |
-
-**Why not userId?** We have `userId` for audit ("who"). `sourceId` is for sync ("which instance+browserTab").
-
-### Conflict reduction strategy (three layers)
+### Three-layer conflict reduction
 
 #### 1. Upstream-first
+"Pull before push" - client must be caught up before sending mutations.
 
-> "Pull before push" - client must be caught up before sending mutations.
+**When online:** Stream keeps client continuously up-to-date. Conflicts are rare—only truly concurrent edits to the same field can conflict.
 
-**When online (stream connected)**:
-- Stream keeps client continuously up-to-date
-- Mutations sent immediately after optimistic update
-- Conflicts are rare: only truly concurrent edits (same field, same moment) can conflict
+**When offline:** Mutations queue locally. On reconnect, catch-up first, THEN flush outbox. Client detects conflicts before pushing, enabling side-by-side comparison and per-field resolution.
 
-**When offline (queued mutations)**:
-- Mutations queue locally in IndexedDB outbox
-- User continues working, sees optimistic updates
-- On reconnect: catch-up first, THEN flush outbox
-- Conflict likelihood grows with offline duration (more server changes accumulated)
-- **Client advantage**: Conflicts detected client-side before pushing, enabling:
-  - Side-by-side comparison (your value vs server value)
-  - Per-field resolution (keep mine, keep theirs, merge)
-  - Batch review of multiple conflicts
-  - No 409 errors - user resolves proactively
+#### 2. Field-level tracking
+Conflicts are scoped to individual fields via `tx.changedField`. Two users editing different fields = no conflict.
 
-**How it works in Cella:**
+#### 3. Merge strategy
+LWW (server wins) as default, resolution UI when user input is needed.
+
+### Conflict flow
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
 │                        Upstream-First Mutation Flow                      │
 ├──────────────────────────────────────────────────────────────────────────┤
-│                                                                          │
 │  1. User triggers mutation                                               │
 │     │                                                                    │
 │     ▼                                                                    │
@@ -503,72 +484,30 @@ interface TxColumnData {
 │     │                                                                    │
 │     ├── YES ──► 4. Send mutation with sync metadata                      │
 │     │               │                                                    │
-│     │               ▼                                                    │
-│     │           5. Server validates (conflict check, idempotency)        │
-│     │               │                                                    │
 │     │               ├── OK ──► Confirm via stream message                │
-│     │               │                                                    │
-│     │               └── CONFLICT ──► Show resolution UI, maybe rollback  │
+│     │               └── CONFLICT ──► Show resolution UI                  │
 │     │                                                                    │
-│     └── NO (offline or behind) ──► 4. Queue mutation locally             │
-│                                        │                                 │
-│                                        ▼                                 │
-│                                    5. On catch-up: flush queue           │
-│                                        │                                 │
-│                                        ▼                                 │
-│                                    6. If conflict detected: resolve      │
-│                                                                          │
+│     └── NO ──► 4. Queue mutation locally                                 │
+│                    │                                                     │
+│                    ▼                                                     │
+│                5. On catch-up: flush queue, resolve any conflicts        │
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
+### Idempotency
 
-#### 2. Field-level tracking
- 
-Conflicts are scoped to individual fields via `tx.changedField`. Two users editing different fields = no conflict. The `data` object in requests can still be complete or partial entity data—only `changedField` determines conflict scope.
+Replaying the same mutation (same `transactionId`) produces the same result without side effects. Critical for:
+- **Network retries**: Request succeeds but response is lost
+- **Offline queue replay**: Some mutations may have reached server before disconnect
+- **Crash recovery**: Pending transactions replay from IndexedDB
 
-#### 3. **Merge - For same-field conflicts: LWW (server wins) → resolution UI (user decides)
-
-When offline, conflict likelihood grows with duration, but  client should enable graceful resolution before pushing.
-
-**Entity row structure** - Synced entity tables have a single transient `tx` JSONB column for transaction metadata. 
-
-Conflict detection and resolution spans backend and frontend:
-1. **Backend** - Validates `expectedTransactionId` against activitiesTable (see `backend/src/sync/conflict-detection.ts`)
-2. **Frontend (online)** - Handles 409 conflict responses
-3. **Frontend (offline)** - Detects conflicts client-side when pulling upstream changes
-
-**Conflict resolution UI**: Not yet implemented. See [SYNC_ENGINE_TODOS.md](./SYNC_ENGINE_TODOS.md).
-
-### Idempotency via activitiesTable
-
-Idempotency ensures that replaying the same mutation (same `transactionId`) produces the same result without side effects. This is critical for offline-first sync because:
-
-- **Network retries**: A request may succeed server-side but the response gets lost. Client retries → server must recognize the duplicate.
-- **Offline queue replay**: When reconnecting, queued mutations are flushed. If some already reached the server before disconnect, they must not create duplicates.
-- **Crash recovery**: Browser crash mid-mutation → on restart, pending transactions replay from IndexedDB.
-
-**Implementation**: See `backend/src/sync/idempotency.ts` for `isTransactionProcessed()` and `getEntityByTransaction()`.
+See `backend/src/sync/idempotency.ts` for implementation.
 
 ---
 
-### Frontend mutation pattern with transactions
+## Mutation patterns
 
-The mutation pattern for synced entities follows these steps:
-1. Generate transaction ID in `onMutate`
-2. Apply optimistic update
-3. Send API request with `{ data, tx }` wrapper
-4. Confirm via stream message or rollback on error
-
-**Implementation**: See `frontend/src/modules/page/query.ts` for `usePageCreateMutation` and `usePageUpdateMutation`.
-
-**Key differences from basic (non-synced) mutations:**
-- Generates `transactionId` in `onMutate` using HLC format (per DEC-1)
-- Includes `{ data, tx }` wrapper in API body (per DEC-19)
-- Tracks transaction lifecycle: `pending` → `sent` → `confirmed` (via live stream)
-- Uses client-generated entity ID for optimistic display
-- Existing optimistic update patterns (`mutateCache.create/remove`) remain unchanged
-
-### Transaction lifecycle states
+### Transaction lifecycle
 
 ```
 ┌──────────┐    onMutate     ┌──────────┐    API success    ┌──────────┐
@@ -582,128 +521,68 @@ The mutation pattern for synced entities follows these steps:
                              └──────────┘                   └───────────┘
 ```
 
-### Mutation blocking pattern (jitter prevention)
+**Key differences from basic mutations:**
+- Generates `transactionId` in `onMutate` using nanoid
+- Includes `{ data, tx }` wrapper in API body
+- Tracks lifecycle: `pending` → `sent` → `confirmed` via live stream
+- Uses client-generated entity ID for optimistic display
 
-**Problem**: Rapid consecutive mutations to the same entity cause "jittery" UI:
-1. User updates page (mutation A sending...)
-2. User updates same page again (mutation B)
-3. Optimistic update B applied
-4. Mutation A response arrives → may conflict with optimistic B
+See `frontend/src/modules/page/query.ts` for implementation.
 
-**Two solutions depending on use case:**
+### Jitter prevention
 
-#### Option A: Cancel in-flight (for rapid edits)
+**Problem**: Rapid consecutive mutations cause jittery UI when responses arrive out of order.
 
-Best for: Title editing, content fields, any rapid-fire user input.
+**Solution**: Cancel in-flight requests using `squashPendingMutation()` from [squash-utils.ts](../frontend/src/query/offline/squash-utils.ts). For discrete actions (toggles, save buttons), use React Query's `isPending` state.
 
-**Implementation**: See `frontend/src/query/offline/squash-utils.ts` for `squashPendingMutation()`.
+| Scenario | Solution |
+|----------|----------|
+| Typing in title/content | Cancel in-flight |
+| Toggle switch, save button | Use `isPending` |
+| Drag-and-drop reorder | Cancel in-flight |
 
-**Key behaviors:**
-- Sends request IMMEDIATELY (no latency for user)
-- If request is in-flight and user edits again → in-flight request cancelled
-- AbortController propagates to fetch, stopping network request
-- Cancelled transactions marked as such (not 'failed')
-- Server only processes the latest request
-
-#### Option B: Entity-level mutex (for discrete actions)
-
-Best for: Toggle switches, explicit save buttons, non-typing interactions.
-
-React Query's `isPending` state provides this implicitly. A dedicated `withMutationLock()` pattern is available if needed but not currently implemented.
-
-#### When to use which?
-
-| Scenario | Use | Why |
-|----------|-----|-----|
-| Typing in title/content field | Cancel in-flight | Cancels stale requests, immediate feedback |
-| Toggle published/draft | Mutex | Discrete action, wait for completion |
-| Explicit "Save" button | Mutex | User expects save to complete |
-| Drag-and-drop reorder | Cancel in-flight | Rapid movements, only final position matters |
-| Checkbox toggle | Mutex | Binary state, order matters |
-
-### Online vs offline mutation flow
-
-The mutation handling differs based on connectivity:
+### Online vs offline flow
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                    Online vs Offline Mutation Flow                           │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│  ┌─────────────┐                                                            │
-│  │ User edits  │                                                            │
-│  │ field       │                                                            │
-│  └──────┬──────┘                                                            │
-│         │                                                                    │
-│         ▼                                                                    │
-│  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │ 1. Apply optimistic update IMMEDIATELY (always, per INV-1)          │    │
-│  └──────────────────────────────┬──────────────────────────────────────┘    │
-│                                 │                                            │
-│                    ┌────────────┴────────────┐                              │
-│                    │ Online?                 │                              │
-│                    └────────────┬────────────┘                              │
-│                    YES          │          NO                               │
-│         ┌───────────────────────┴────────────────────────────┐              │
-│         │                                                    │              │
-│         ▼                                                    ▼              │
-│  ┌─────────────────────────┐                  ┌─────────────────────────┐   │
-│  │ 2a. Debounce (300ms)    │                  │ 2b. Add to outbox       │   │
-│  │     Cancel in-flight    │                  │     Squash same-field   │   │
-│  │     Send latest only    │                  │     (key: entity:field) │   │
-│  └──────────┬──────────────┘                  └──────────┬──────────────┘   │
-│             │                                            │                  │
-│             ▼                                            │                  │
-│  ┌─────────────────────────┐                  ┌──────────┴──────────────┐   │
-│  │ 3a. Request in-flight   │                  │ Wait for reconnection   │   │
-│  │     (can be cancelled)  │                  └──────────┬──────────────┘   │
-│  └──────────┬──────────────┘                             │                  │
-│             │                                            ▼                  │
-│             ▼                                 ┌─────────────────────────┐   │
-│  ┌─────────────────────────┐                  │ 3b. Catch-up stream     │   │
-│  │ 4a. Confirmed via       │                  │     Check for conflicts │   │
-│  │     stream or response  │                  └──────────┬──────────────┘   │
-│  └─────────────────────────┘                             │                  │
-│                                                          ▼                  │
-│                                               ┌─────────────────────────┐   │
-│                                               │ 4b. Flush outbox        │   │
-│                                               │     (one request/field) │   │
-│                                               └─────────────────────────┘   │
-│                                                                              │
-└─────────────────────────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────────────────────┐
+│                    Online vs Offline Mutation Flow                        │
+├───────────────────────────────────────────────────────────────────────────┤
+│  User edits field                                                         │
+│     │                                                                     │
+│     ▼                                                                     │
+│  1. Apply optimistic update IMMEDIATELY                                   │
+│     │                                                                     │
+│     ├── ONLINE ──► Debounce, cancel in-flight, send latest only           │
+│     │                  │                                                  │
+│     │                  └── Confirmed via stream or response               │
+│     │                                                                     │
+│     └── OFFLINE ──► Add to outbox (squash same-field)                     │
+│                        │                                                  │
+│                        └── On reconnect: catch-up, check conflicts, flush │
+└───────────────────────────────────────────────────────────────────────────┘
 ```
-
-**Key stability guarantees:**
 
 | Scenario | Behavior | Result |
 |----------|----------|--------|
-| User types 20 chars in 2 seconds (online) | 1 debounced request sent | No server flood |
-| User types while request in-flight (online) | In-flight cancelled, new debounce starts | Latest value wins |
-| User edits same field 5x while offline | Outbox squashes to 1 entry | 1 request on reconnect |
-| User edits 3 different fields while offline | 3 separate outbox entries | 3 requests on reconnect |
-| Network drops mid-request | Request fails, mutation stays in outbox | Retried on reconnect |
+| User types rapidly (online) | Debounced, only final sent | No server flood |
+| User edits same field 5x (offline) | Squashed to 1 entry | 1 request on reconnect |
+| User edits 3 different fields (offline) | 3 separate entries | 3 requests on reconnect |
 
-### Hydrate barrier (race prevention)
+---
 
-**Problem**: Stream messages arriving before initial LIST query completes can cause data regression:
-1. User opens app, LIST query starts fetching
-2. Stream connects with `offset=now`
-3. Stream message arrives (newer data)
-4. LIST response arrives (older snapshot!)
-5. User sees data regress to older state
+## Offline sync
 
-**Solution**: Queue stream messages during hydration using `useHydrateBarrier` hook from [hydrate-barrier.ts](../frontend/src/query/realtime/hydrate-barrier.ts). The `useLiveStream` hook accepts an `isHydrated` option that controls when queued messages are flushed.
+### Hydrate barrier
 
-**Key files:**
-- `hydrate-barrier.ts` - Composable barrier utility and React hook
-- `use-live-stream.ts` - Integrates barrier via `isHydrated` option
-- `organization-routes.tsx` - Passes hydration state based on `useIsFetching` for realtime entity types
+**Problem**: Stream messages arriving before initial LIST completes can cause data regression.
 
-### Seq-based gap detection
+**Solution**: Queue stream messages during hydration using `useHydrateBarrier` hook. The `useLiveStream` hook accepts an `isHydrated` option that controls when queued messages are flushed.
 
-Gap detection uses per-org sequence numbers (`seq`) on activities table instead of persisted offsets.
+### Gap detection
 
-**Implementation**: See [user-stream-handler.ts](../frontend/src/query/realtime/user-stream-handler.ts) for the in-memory seqStore.
+Uses per-org sequence numbers (`seq`) on activities table. When `notification.seq > lastSeenSeq + 1`, a gap is detected and list invalidation is triggered.
+
+See [user-stream-handler.ts](../frontend/src/query/realtime/user-stream-handler.ts) for implementation.
 
 **Key features:**
 - Tracks last seen `seq` per organization in memory
@@ -711,197 +590,77 @@ Gap detection uses per-org sequence numbers (`seq`) on activities table instead 
 - Missed changes trigger list invalidation
 - No persistence needed - React Query handles staleness on reconnect
 
-### Entity-level mutation outbox (offline)
+### Mutation outbox
 
-**Scenario**: User offline, edits page 3 times:
-```
-Time 1: Update title → Mutation A queued
-Time 2: Update content → Mutation B queued
-Time 3: Update title again → Mutation C queued
-```
+Uses React Query's mutation cache with `squashPendingMutation()` from [squash-utils.ts](../frontend/src/query/offline/squash-utils.ts).
 
-**Entity-Level Solution**: Queue per-entity, squash same-entity changes.
-
-**Implementation**: Uses React Query's mutation cache with `squashPendingMutation()` from [squash-utils.ts](../frontend/src/query/offline/squash-utils.ts).
-
-**Key behaviors:**
-- Outbox keyed by `entityType:entityId`
+**Squashing behavior:**
 - Same-entity mutations squash (cancel pending, keep latest)
 - Version-based conflict detection via `tx.baseVersion`
 - On reconnect: pull upstream first, check for conflicts, then flush
 
-**Result from scenario above**:
-```
-After squashing:
-- { field: 'title', value: 'Third Title', txId: C, expectedTxId: originalTitleTx }
-- { field: 'content', value: '...', txId: B, expectedTxId: originalContentTx }
-```
+### Create + edit coalescing
 
-**Benefits**:
-- Two requests max (one per field), not three
-- Field-level conflict detection
-- Clear conflict resolution per field
-- No intermediate states on server
+When a user creates an entity offline and edits it before reconnecting, mutations are coalesced into a single create request.
 
-**Upstream-First Flow**:
-1. Come online → Pull stream messages (upstream-first)
-2. For each message: check if queued mutation conflicts
-3. Mark conflicted mutations, show resolution UI
-4. Flush remaining pending mutations
+| Scenario | Result |
+|----------|--------|
+| Create → edit title → edit content → online | 1 create request with final values |
+| Create → delete → online | 0 requests (both cancelled) |
+| Create (online) → offline → edit → online | 1 update request per field |
 
-### Offline mutation coalescing (create + edit scenarios)
+---
 
-When a user creates an entity offline and then edits it before reconnecting, the mutations are **coalesced** into a single create request. This is distinct from field-level squashing (same field edited multiple times).
+## Multi-tab coordination
 
-**Key difference from update squashing:**
-- **Update squashing** (OFFLINE-005): Same field updated 3x → 1 update request with final value
-- **Create coalescing** (DEC-23): Create + edit title + edit content → 1 create request with final values
-
-**Why coalesce creates?**
-The entity doesn't exist on server yet, so:
-- Field-level conflict detection is meaningless (no prior transaction to compare against)
-- Multiple update requests would fail (entity not found)
-- Intermediate states on server add no value
-
-**Outbox key strategy:**
-```typescript
-// Different keying for different operations
-const getOutboxKey = (mutation: MutationEntry): string => {
-  if (mutation.type === 'create' || mutation.type === 'delete') {
-    // Entity-level: one entry per entity for create/delete
-    return `${mutation.entityType}:${mutation.entityId}`;
-  }
-  // Field-level: one entry per field for updates
-  return `${mutation.entityType}:${mutation.entityId}:${mutation.field}`;
-};
-```
-
-**Scenario walkthroughs:**
-
-**Scenario A: Create + multiple edits while offline**
-```
-Time 1: User creates page offline    → Outbox: { type: 'create', data: { title: 'New', content: '' } }
-Time 2: User edits title             → Outbox: { type: 'create', data: { title: 'Updated', content: '' } }  ← merged
-Time 3: User edits content           → Outbox: { type: 'create', data: { title: 'Updated', content: '...' } }  ← merged
-Time 4: User comes online            → 1 API call: POST /pages with final values
-```
-
-**Scenario B: Create + delete while offline**
-```
-Time 1: User creates page offline    → Outbox: { type: 'create', ... }
-Time 2: User deletes the page        → Outbox: empty  ← both cancelled
-Time 3: User comes online            → 0 API calls (nothing happened from server's perspective)
-```
-
-**Scenario C: Create online, edit offline**
-```
-Time 1: User creates page online     → Server has page (confirmed)
-Time 2: User goes offline
-Time 3: User edits title             → Outbox: { type: 'update', field: 'title', ... }
-Time 4: User edits content           → Outbox: { type: 'update', field: 'content', ... }  ← separate entry
-Time 5: User comes online            → 2 API calls: field-level updates (standard behavior)
-```
-
-**Implementation in FieldMutationOutbox:**
-
-The create + edit coalescing logic is implemented in the mutation layer. Key behaviors:
-- If a pending create exists for same entity, merge updates into the create payload
-- If a pending create exists and user deletes, cancel both (entity never reached server)
-- Otherwise, use standard field-level squashing for updates
-
-See [squash-utils.ts](../frontend/src/query/offline/squash-utils.ts) for implementation.
-
-### Multi-tab coordination
-
-**Architecture**: Single-writer, multi-reader (from TanStack DB persistence plan)
-
-**Leader Election Approach**: Web Locks API with visibility-aware fallback. Web Locks is simpler than SharedWorker and sufficient for our needs, with background throttling handled via heartbeat and visibility state checks.
+**Architecture**: Single-writer, multi-reader using Web Locks API for leader election.
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│                              Browser                                         │
-├──────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
 │  Tab 1 (Leader)                    Tab 2 (Follower)    Tab 3 (Follower)     │
 │  ┌─────────────────┐               ┌─────────────┐     ┌─────────────┐      │
-│  │ SSE Connection  │               │             │     │             │      │
-│  │ to /stream      │               │  No SSE     │     │  No SSE     │      │
-│  └────────┬────────┘               │             │     │             │      │
-│           │                        └──────▲──────┘     └──────▲──────┘      │
+│  │ SSE Connection  │               │  No SSE     │     │  No SSE     │      │
+│  └────────┬────────┘               └──────▲──────┘     └──────▲──────┘      │
 │           │                               │                   │             │
 │           ▼                               │                   │             │
 │  ┌─────────────────┐                      │                   │             │
 │  │ BroadcastChannel│──────────────────────┴───────────────────┘             │
-│  │ "cella-sync"    │     (broadcasts stream messages to all tabs)          │
 │  └─────────────────┘                                                        │
-│                                                                              │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
-**Implementation**: See [tab-coordinator.ts](../frontend/src/query/realtime/tab-coordinator.ts) for the full implementation using Web Locks API and BroadcastChannel.
-
 **Key features:**
-- Web Locks API for leader election (`navigator.locks.request`)
-- BroadcastChannel for sharing stream messages with all tabs
 - Only leader tab opens SSE connection
-- Other tabs receive messages via broadcast
+- BroadcastChannel shares messages with all tabs
+- Foreground tabs preferred for leadership
 - Automatic leader failover when leader tab closes
+- Heartbeat every 5s, contested if no heartbeat for 10s
 
-**Handling background throttling**:
-- Use `document.visibilityState` to prefer foreground tabs as leader
-- Leader sends heartbeat every 5s via BroadcastChannel
-- If no heartbeat for 10s, other tabs can contest leadership
-
+See [tab-coordinator.ts](../frontend/src/query/realtime/tab-coordinator.ts) for implementation.
 
 ---
 
+## References
 
-## Comparison matrix
+- [TanStack DB Persistence Plan](https://github.com/TanStack/db/issues/865#issuecomment-3699913289) - Multi-tab coordination patterns
+- [Hono SSE Streaming](https://hono.dev/docs/helpers/streaming#stream-sse) - SSE helper docs
+- [Web Locks API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Locks_API) - Browser leader election
+
+**Influences:**
+- [ElectricSQL](https://electric-sql.com/) - Shape-based sync, PostgreSQL logical replication
+- [LiveStore](https://livestore.io/) - SQLite-based sync with event sourcing
+- [TinyBase](https://tinybase.org/) - Reactive data store with CRDT support
+
+---
+
+## Appendix: Comparison with alternatives
 
 | Feature | Linear | TinyBase | LiveStore | Electric | Cella Hybrid |
 |---------|--------|----------|-----------|----------|--------------|
 | Architecture | Local-first (SQLite) | Local-first (CRDT) | Event sourcing | Shape-based sync | Server-first + cache |
-| Installation | Proprietary | npm package | npm package | npm + sidecar | Cella template |
-| Data Model | Relational (SQLite) | Key-value + Tables | Event Sourcing | Shapes | CRUD + Transactions |
-| Local Storage | SQLite WASM (wa-sqlite) | IndexedDB / OPFS / SQLite | SQLite WASM | TanStack DB | IndexedDB (Dexie + RQ) |
-| Source of Truth | Local SQLite | Client (CRDT) | Client eventlog | Server: replication | Server: replication |
-| Sync Protocol | Custom sync log | CRDT (MergeableStore) | Push/Pull events | HTTP shapes | Live stream SSE |
-| Offline Reads | ✅ Full SQL queries | ✅ Full | ✅ Full | ⚠️ Cached shapes | ⚠️ Cached data |
+| Source of Truth | Local SQLite | Client (CRDT) | Client eventlog | Server | Server |
 | Offline Writes | ✅ Full | ✅ Native CRDT | ✅ Eventlog | ❌ | ✅ Mutation outbox |
-| Merge Location | Client + Server | Client only (CRDT) | Client only | Client only | Client + Server |
-| Optimistic Updates | ✅ Instant (local-first) | ✅ Reactive listeners | ✅ Automatic | ⚠️ Patterns | ✅ Transaction-tracked |
-| Conflict Resolution | Per-model resolvers | CRDT auto-merge | Rebase, upstream-first | LWW | LWW → UI |
-| Upstream-First | ✅ Yes | ❌ CRDT-based | ✅ Yes | ❌ | ✅ Yes |
-| Transaction Tracking | ✅ Full | ⚠️ Checkpoints (local) | ✅ Full eventlog | ❌ | ✅ Per-operation |
-| Audit Trail | ✅ Sync log | ❌ | ✅ Eventlog | ❌ | ✅ activitiesTable |
-| Realtime Updates | ✅ WebSocket | ✅ WebSocket/Broadcast | ✅ | ✅ Shapes | ✅ SSE + WebSocket |
-| Multi-Tab Sync | ✅ SharedWorker | ✅ BroadcastChannel | ✅ | ✅ | ✅ Leader election |
+| Conflict Resolution | Per-model resolvers | CRDT auto-merge | Rebase | LWW | LWW → UI |
+| OpenAPI Compatible | ❌ | ❌ | ❌ | ❌ | ✅ Extends REST |
 | Bundle Size | Large (SQLite WASM) | 5.4-12.1kB | ~50kB | ~30kB | ~5kB (hooks only) |
-| React Integration | Custom hooks | ✅ ui-react module | ✅ | ✅ TanStack | ✅ TanStack Query |
-| OpenAPI Compatible | ❌ Bypasses REST | ❌ | ❌ | ❌ | ✅ Extends REST |
 | Progressive Adoption | ❌ All-or-nothing | ⚠️ | ⚠️ | ⚠️ | ✅ REST → Sync |
-| Devtools | ✅ Custom | ✅ Inspector | ⚠️ | ⚠️ | ✅ React Query Devtools |
-| Undo/Redo | ✅ | ✅ Checkpoints | ✅ Eventlog | ❌ | ⚠️ Via activities |
-| Broader scope use | N/A (own infra) | N/A | N/A | ❌ | ✅ ActivityBus can support API internals |
-
----
-
-
-## References
-- [TanStack DB Persistence Plan](https://github.com/TanStack/db/issues/865#issuecomment-3699913289) - Multi-tab coordination, hydrate barrier, leader election patterns
-- [Hono SSE Streaming](https://hono.dev/docs/helpers/streaming#stream-sse) - SSE helper docs
-- [LiveStore Syncing](https://docs.livestore.dev/reference/syncing/) - Push/pull sync patterns (research reference)
-- [Web Locks API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Locks_API) - Browser leader election
-
----
-
-## Acknowledgements
-
-This sync engine design draws from established patterns in distributed systems and local-first software. Key influences:
-- [ElectricSQL](https://electric-sql.com/) - Shape-based sync, PostgreSQL logical replication
-- [LiveStore](https://livestore.io/) - SQLite-based sync with reactive queries, event sourcing
-- [TinyBase](https://tinybase.org/) - Reactive data store with sync, CRDT support, and persistence
-- [Last-Write-Wins (LWW)](https://en.wikipedia.org/wiki/Eventual_consistency) - Simple resolution for opaque values
-- [Hybrid Logical Clocks (HLC)](https://cse.buffalo.edu/tech-reports/2014-04.pdf) - Kulkarni et al., causality-preserving timestamps
-
----

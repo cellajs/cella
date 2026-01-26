@@ -394,7 +394,6 @@ systemRoles: ['admin'] as const,
 - `backend/src/sync/cdc-websocket.ts`
 - `cdc/src/` (entire folder)
 - `frontend/src/query/realtime/tab-coordinator.ts`
-- `info/SYNC_ENGINE_REQUIREMENTS.md`
 - `info/HYBRID_SYNC_ENGINE_PLAN.md`
 
 ### Files ignored by raak (no sync)

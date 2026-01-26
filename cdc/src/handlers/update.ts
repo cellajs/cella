@@ -2,14 +2,19 @@ import type { Pgoutput } from 'pg-logical-replication';
 import type { InsertActivityModel } from '#/db/schema/activities';
 import { nanoid } from '#/utils/nanoid';
 import { getTableName } from 'drizzle-orm';
+import { enrichMembershipData } from '../enrichment';
 import type { ProcessMessageResult } from '../process-message';
 import type { TableRegistryEntry } from '../types';
 import { actionToVerb, convertRowKeys, extractActivityContext, extractRowData, extractTxData, getChangedKeys } from '../utils';
 
 /**
  * Handle an UPDATE message and create an activity with entity data.
+ * For membership updates, enriches with user and entity info.
  */
-export function handleUpdate(entry: TableRegistryEntry, message: Pgoutput.MessageUpdate): ProcessMessageResult | null {
+export async function handleUpdate(
+  entry: TableRegistryEntry,
+  message: Pgoutput.MessageUpdate,
+): Promise<ProcessMessageResult | null> {
   const oldRow = convertRowKeys(extractRowData(message.old));
   const newRow = convertRowKeys(extractRowData(message.new));
 
@@ -28,6 +33,13 @@ export function handleUpdate(entry: TableRegistryEntry, message: Pgoutput.Messag
   // Extract tx data from product entities (null for context entities)
   const tx = extractTxData(newRow);
 
+  // Enrich membership data with user and entity info
+  let enrichedData: Record<string, unknown> = newRow;
+  if (entry.kind === 'resource' && entry.type === 'membership') {
+    const enrichment = await enrichMembershipData(newRow);
+    enrichedData = { ...newRow, ...enrichment };
+  }
+
   const activity: InsertActivityModel = {
     id: nanoid(),
     userId: ctx.userId,
@@ -42,5 +54,5 @@ export function handleUpdate(entry: TableRegistryEntry, message: Pgoutput.Messag
     tx,
   };
 
-  return { activity, entityData: newRow, entry };
+  return { activity, entityData: enrichedData, entry };
 }

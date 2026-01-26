@@ -79,8 +79,8 @@ pnpm sync           # Sync changes from upstream cella to fork (useful for forks
 
 When understanding Cella's architecture or implementing features, prioritize sources in this order:
 1. **Code** - The source code is the ultimate source of truth
-2. **Invariants & design decisions** - See `info/SYNC_ENGINE_REQUIREMENTS.md` for the "why" behind architectural choices
-3. **Requirements** - Testable contracts in `info/SYNC_ENGINE_REQUIREMENTS.md`
+2. **Invariants & design decisions** - See `info/HYBRID_SYNC_ENGINE_PLAN.md` for the "why" behind architectural choices
+3. **Requirements** - Testable contracts in `info/HYBRID_SYNC_ENGINE_PLAN.md`
 4. **Architecture docs** - `info/ARCHITECTURE.md`, `info/AGENTS.md`
 
 **Avoid relying on README files** - They often become stale. Prefer reading actual code and design decision documentation.

@@ -183,7 +183,8 @@ export async function startCdcWorker() {
       });
 
       // Process the message and create an activity if applicable
-      const processResult = processMessage(message as Parameters<typeof processMessage>[0]);
+      // Async to support enrichment queries for membership events
+      const processResult = await processMessage(message as Parameters<typeof processMessage>[0]);
 
       if (processResult) {
         // Determine seq scope dynamically based on entity hierarchy

@@ -2,14 +2,19 @@ import type { Pgoutput } from 'pg-logical-replication';
 import type { InsertActivityModel } from '#/db/schema/activities';
 import { nanoid } from '#/utils/nanoid';
 import { getTableName } from 'drizzle-orm';
+import { enrichMembershipData } from '../enrichment';
 import type { ProcessMessageResult } from '../process-message';
 import type { TableRegistryEntry } from '../types';
 import { actionToVerb, convertRowKeys, extractActivityContext, extractRowData, extractTxData } from '../utils';
 
 /**
  * Handle a DELETE message and create an activity with entity data.
+ * For membership deletes, enriches with user and entity info (entities still exist).
  */
-export function handleDelete(entry: TableRegistryEntry, message: Pgoutput.MessageDelete): ProcessMessageResult {
+export async function handleDelete(
+  entry: TableRegistryEntry,
+  message: Pgoutput.MessageDelete,
+): Promise<ProcessMessageResult> {
   // For DELETE, we only have old row data (if REPLICA IDENTITY is set)
   const row = convertRowKeys(extractRowData(message.old));
   const ctx = extractActivityContext(entry, row);
@@ -26,6 +31,14 @@ export function handleDelete(entry: TableRegistryEntry, message: Pgoutput.Messag
   // Extract tx data from product entities (null for context entities)
   const tx = extractTxData(row);
 
+  // Enrich membership data with user and entity info
+  // Note: For deletes, the user and entity still exist - only the membership is deleted
+  let enrichedData: Record<string, unknown> = row;
+  if (entry.kind === 'resource' && entry.type === 'membership') {
+    const enrichment = await enrichMembershipData(row);
+    enrichedData = { ...row, ...enrichment };
+  }
+
   const activity: InsertActivityModel = {
     id: nanoid(),
     userId,
@@ -40,5 +53,5 @@ export function handleDelete(entry: TableRegistryEntry, message: Pgoutput.Messag
     tx,
   };
 
-  return { activity, entityData: row, entry };
+  return { activity, entityData: enrichedData, entry };
 }

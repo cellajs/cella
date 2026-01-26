@@ -4,12 +4,14 @@ import { count } from 'drizzle-orm';
 import { register } from 'prom-client';
 import type { z } from 'zod';
 import { db } from '#/db/db';
+import { getCombinedCacheMetrics } from '#/lib/cache-metrics';
 import type { Env } from '#/lib/context';
+import { entityCache } from '#/lib/entity-cache';
 import { metricsConfig } from '#/middlewares/observability/config';
 import { calculateRequestsPerMinute } from '#/modules/metrics/helpers/calculate-requests-per-minute';
 import { parsePromMetrics } from '#/modules/metrics/helpers/parse-prom-metrics';
 import metricRoutes from '#/modules/metrics/metrics-routes';
-import type { publicCountsSchema, runtimeMetricsSchema } from '#/modules/metrics/metrics-schema';
+import type { cacheStatsSchema, publicCountsSchema, runtimeMetricsSchema } from '#/modules/metrics/metrics-schema';
 import { entityTables } from '#/table-config';
 import { metricExporter } from '#/tracing';
 import { defaultHook } from '#/utils/default-hook';
@@ -19,6 +21,7 @@ const app = new OpenAPIHono<Env>({ defaultHook });
 
 type CountsType = z.infer<typeof publicCountsSchema>;
 type RuntimeMetricsType = z.infer<typeof runtimeMetricsSchema>;
+type CacheStatsType = z.infer<typeof cacheStatsSchema>;
 
 // Store public counts in memory with a 1-minute cache
 const publicCountsCache = new Map<string, { data: CountsType; expiresAt: number }>();
@@ -162,6 +165,31 @@ const metricsRouteHandlers = app
     publicCountsCache.set(cacheKey, { data, expiresAt });
 
     return ctx.json(data, 200);
+  })
+  /**
+   * Get entity cache statistics
+   */
+  .openapi(metricRoutes.getCacheStats, async (ctx) => {
+    const metrics = getCombinedCacheMetrics();
+    const cacheStats = entityCache.stats();
+
+    const response: CacheStatsType = {
+      public: {
+        ...metrics.public,
+        size: cacheStats.public.size,
+        capacity: cacheStats.public.capacity,
+        utilization: cacheStats.public.utilization,
+      },
+      token: {
+        ...metrics.token,
+        size: cacheStats.token.size,
+        capacity: cacheStats.token.capacity,
+        utilization: cacheStats.token.utilization,
+      },
+      combined: metrics.combined,
+    };
+
+    return ctx.json(response, 200);
   });
 
 export default metricsRouteHandlers;
