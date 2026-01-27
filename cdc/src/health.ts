@@ -1,6 +1,7 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { logEvent } from '#/utils/logger';
 import { env } from './env';
+import { getCdcMetrics } from './tracing';
 import { getCdcHealthState, type CdcHealthState } from './worker';
 
 /**
@@ -53,13 +54,15 @@ function getHealthStatus(state: CdcHealthState): HealthStatus {
 function handleHealthRequest(_req: IncomingMessage, res: ServerResponse): void {
   const cdcState = getCdcHealthState();
   const status = getHealthStatus(cdcState);
+  const metrics = getCdcMetrics();
 
-  const response: HealthResponse = {
+  const response: HealthResponse & { metrics: typeof metrics } = {
     status,
     wsState: cdcState.wsState,
     replicationState: cdcState.replicationState,
     lastLsn: cdcState.lastLsn,
     lastMessageAt: cdcState.lastMessageAt?.toISOString() ?? null,
+    metrics,
   };
 
   const httpStatus = status === 'unhealthy' ? 503 : 200;
@@ -69,12 +72,24 @@ function handleHealthRequest(_req: IncomingMessage, res: ServerResponse): void {
 }
 
 /**
+ * Handle metrics request (detailed tracing data).
+ */
+function handleMetricsRequest(_req: IncomingMessage, res: ServerResponse): void {
+  const metrics = getCdcMetrics();
+
+  res.writeHead(200, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify(metrics));
+}
+
+/**
  * Start the health HTTP server.
  */
 export function startHealthServer(): void {
   const server = createServer((req, res) => {
     if (req.url === '/health' && req.method === 'GET') {
       handleHealthRequest(req, res);
+    } else if (req.url === '/metrics' && req.method === 'GET') {
+      handleMetricsRequest(req, res);
     } else {
       res.writeHead(404);
       res.end('Not Found');

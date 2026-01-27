@@ -1,6 +1,7 @@
 import type { ContextEntityType, RealtimeEntityType } from 'config';
 import type { Attachment, Page } from '~/api.gen';
 import router from '~/lib/router';
+import { syncSpanNames, withSpanSync } from '~/lib/tracing';
 import { attachmentQueryKeys } from '~/modules/attachment/query';
 import type { ContextEntityData } from '~/modules/entities/types';
 import { getAndSetMe } from '~/modules/me/helpers';
@@ -10,6 +11,7 @@ import { organizationQueryKeys } from '~/modules/organization/query';
 import { pageQueryKeys } from '~/modules/page/query';
 import { sourceId } from '~/query/offline';
 import { queryClient } from '~/query/query-client';
+import { getSyncPriority } from './sync-priority';
 import type { ProductEntityData, UserStreamMessage } from './user-stream-types';
 
 /**
@@ -27,6 +29,7 @@ function getScopeKey(orgId: string | null, entityType: string): string {
 
 /**
  * Map context entity types to their query keys.
+ * TODO can we do this dynamically, perhaps using the registry pattern?
  */
 const contextEntityKeysMap = {
   organization: organizationQueryKeys,
@@ -51,36 +54,36 @@ const productEntityKeysMap: Record<
  * Handles incoming user stream messages and updates the React Query cache accordingly.
  * Routes messages to membership, organization, or product entity handlers.
  * Supports both notification-push (new) and data-push (legacy) message formats.
- *
- * @param message - The user stream message from SSE
  */
 export function handleUserStreamMessage(message: UserStreamMessage): void {
-  const { entityId, action, data, resourceType, entityType, tx, organizationId, seq } = message;
+  const { entityId, action, data, resourceType, entityType, tx, organizationId, seq, _trace } = message;
 
-  // Membership events (legacy format with resourceType)
-  if (resourceType === 'membership') {
-    handleMembershipEvent(action, data);
-    return;
-  }
+  withSpanSync(syncSpanNames.messageProcess, { entityType, action, entityId, _trace }, () => {
+    // Membership events (legacy format with resourceType)
+    if (resourceType === 'membership') {
+      handleMembershipEvent(action, data);
+      return;
+    }
 
-  // Organization events
-  if (entityType === 'organization') {
-    handleOrganizationEvent(action, entityId, data as ContextEntityData | null);
-    return;
-  }
+    // Organization events
+    if (entityType === 'organization') {
+      handleOrganizationEvent(action, entityId, data as ContextEntityData | null);
+      return;
+    }
 
-  // Product entity events (page, attachment, etc.)
-  if (entityType in productEntityKeysMap) {
-    handleProductEntityEvent(
-      entityType as RealtimeEntityType,
-      entityId,
-      action,
-      data as ProductEntityData | null | undefined,
-      tx,
-      organizationId,
-      seq,
-    );
-  }
+    // Product entity events (page, attachment, etc.)
+    if (entityType in productEntityKeysMap) {
+      handleProductEntityEvent(
+        entityType as RealtimeEntityType,
+        entityId,
+        action,
+        data as ProductEntityData | null | undefined,
+        tx,
+        organizationId,
+        seq,
+      );
+    }
+  });
 }
 
 /**
@@ -213,10 +216,26 @@ function handleProductEntityEvent(
     seqStore.set(scopeKey, seq);
   }
 
+  // Determine fetch priority based on entityConfig ancestors and current route
+  const priority = getSyncPriority({ entityType, entityId, organizationId });
+
+  // Map priority to refetchType:
+  // - high: immediate refetch of active queries
+  // - medium: debounced refetch (batch updates)
+  // - low: invalidate only, refetch on next access
+  const refetchType = priority === 'low' ? 'none' : 'active';
+
+  // For medium priority, debounce the invalidation
+  if (priority === 'medium') {
+    debouncedInvalidateList(entityType, keys);
+  }
+
   switch (action) {
     case 'create':
-      // Invalidate list queries to refetch with new entity
-      queryClient.invalidateQueries({ queryKey: keys.list.base });
+      // Invalidate list queries - refetch behavior based on priority
+      if (priority !== 'medium') {
+        queryClient.invalidateQueries({ queryKey: keys.list.base, refetchType });
+      }
       // Set detail query data if we have the full entity (legacy format)
       if (data) {
         queryClient.setQueryData(keys.detail.byId(entityId), data as Attachment | Page);
@@ -228,18 +247,41 @@ function handleProductEntityEvent(
       if (data) {
         queryClient.setQueryData(keys.detail.byId(entityId), data as Attachment | Page);
       } else {
-        // Notification format - invalidate to trigger refetch
-        queryClient.invalidateQueries({ queryKey: keys.detail.byId(entityId) });
+        // Notification format - invalidate to trigger refetch based on priority
+        queryClient.invalidateQueries({ queryKey: keys.detail.byId(entityId), refetchType });
       }
-      // Invalidate list to refetch
-      queryClient.invalidateQueries({ queryKey: keys.list.base });
+      // Invalidate list - refetch behavior based on priority
+      if (priority !== 'medium') {
+        queryClient.invalidateQueries({ queryKey: keys.list.base, refetchType });
+      }
       break;
 
     case 'delete':
-      // Remove from detail cache
+      // Remove from detail cache (always immediate)
       queryClient.removeQueries({ queryKey: keys.detail.byId(entityId) });
-      // Invalidate list
-      queryClient.invalidateQueries({ queryKey: keys.list.base });
+      // Invalidate list - refetch behavior based on priority
+      if (priority !== 'medium') {
+        queryClient.invalidateQueries({ queryKey: keys.list.base, refetchType });
+      }
       break;
   }
+
+  console.debug(`[handleProductEntityEvent] ${entityType}:${action} priority=${priority}`);
+}
+
+/** Debounce timers for medium priority list invalidations */
+const debounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
+
+/** Debounce list invalidations for medium priority to batch rapid updates */
+function debouncedInvalidateList(entityType: string, keys: { list: { base: readonly string[] } }): void {
+  const existing = debounceTimers.get(entityType);
+  if (existing) clearTimeout(existing);
+
+  debounceTimers.set(
+    entityType,
+    setTimeout(() => {
+      queryClient.invalidateQueries({ queryKey: keys.list.base, refetchType: 'active' });
+      debounceTimers.delete(entityType);
+    }, 500),
+  );
 }

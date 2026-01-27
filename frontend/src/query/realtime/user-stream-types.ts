@@ -12,6 +12,18 @@ export type StreamState = 'disconnected' | 'connecting' | 'catching-up' | 'live'
 export type UserStreamState = StreamState;
 
 // ================================
+// Trace context for end-to-end correlation
+// ================================
+
+/** Trace context propagated from CDC Worker through backend. */
+export interface StreamTraceContext {
+  traceId: string;
+  spanId: string;
+  cdcTimestamp: number;
+  lsn?: string;
+}
+
+// ================================
 // User stream specific types
 // ================================
 
@@ -42,8 +54,10 @@ export interface UserStreamMessage {
   tx?: StreamTx | null;
   /** Fields that were changed (legacy format). */
   changedKeys?: string[] | null;
-  /** Per-org sequence number for gap detection (notification format). */
+  /** Scoped sequence number for gap detection (notification format). */
   seq?: number;
+  /** Trace context for end-to-end correlation. */
+  _trace?: StreamTraceContext;
 }
 
 /** Offset event from SSE (signals end of catch-up). */

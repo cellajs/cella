@@ -75,6 +75,9 @@ import type {
   GetAttachmentsData,
   GetAttachmentsErrors,
   GetAttachmentsResponses,
+  GetCacheStatsData,
+  GetCacheStatsErrors,
+  GetCacheStatsResponses,
   GetMeData,
   GetMeErrors,
   GetMembersData,
@@ -117,6 +120,9 @@ import type {
   GetRuntimeMetricsData,
   GetRuntimeMetricsErrors,
   GetRuntimeMetricsResponses,
+  GetSyncMetricsData,
+  GetSyncMetricsErrors,
+  GetSyncMetricsResponses,
   GetTokenDataData,
   GetTokenDataErrors,
   GetTokenDataResponses,
@@ -1934,6 +1940,60 @@ export const getPublicCounts = <ThrowOnError extends boolean = true>(
   (options?.client ?? client).get<GetPublicCountsResponses, GetPublicCountsErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/metrics/public',
+    ...options,
+  });
+
+/**
+ * Get entity cache statistics
+ *
+ * Returns entity cache statistics including hit rates, sizes, and invalidations.
+ * Useful for monitoring cache performance and tuning.
+ *
+ * **GET /metrics/cache** ·· [getCacheStats](https://api.cellajs.com/docs#tag/metrics/get/metrics/cache) ·· _metrics_
+ *
+ * @param {getCacheStatsData} options
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const getCacheStats = <ThrowOnError extends boolean = true>(
+  options?: Options<GetCacheStatsData, ThrowOnError>,
+) =>
+  (options?.client ?? client).get<GetCacheStatsResponses, GetCacheStatsErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/metrics/cache',
+    ...options,
+  });
+
+/**
+ * Get sync flow metrics
+ *
+ * Returns metrics for the sync flow: CDC Worker → ActivityBus → SSE streams.
+ * Includes event counts, connection stats, and tracing span data.
+ *
+ * **GET /metrics/sync** ·· [getSyncMetrics](https://api.cellajs.com/docs#tag/metrics/get/metrics/sync) ·· _metrics_
+ *
+ * @param {getSyncMetricsData} options
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const getSyncMetrics = <ThrowOnError extends boolean = true>(
+  options?: Options<GetSyncMetricsData, ThrowOnError>,
+) =>
+  (options?.client ?? client).get<GetSyncMetricsResponses, GetSyncMetricsErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/metrics/sync',
     ...options,
   });
 

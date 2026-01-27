@@ -1,4 +1,4 @@
-import type { Config, EntityKind } from './types';
+import type { Config, EntityKind, ProductEntityConfig } from './types';
 import _default from './default';
 import development from './development';
 import production from './production';
@@ -8,7 +8,7 @@ import tunnel from './tunnel';
 import { hasKey, mergeDeep } from './utils';
 
 // Re-export types for external use
-export type { EntityConfigEntry, EntityKind, GenerateScript, GenerateScriptType } from './types';
+export type { EntityConfigEntry, EntityKind, GenerateScript, GenerateScriptType, ProductEntityConfig } from './types';
 export { hasKey } from './utils';
 
 /**
@@ -171,6 +171,18 @@ export function isContextEntity(entityType: string): boolean {
  */
 export function isProductEntity(entityType: string): boolean {
   return getEntityKind(entityType) === 'product';
+}
+
+/**
+ * Get product entity config with proper typing.
+ * Returns undefined if not a product entity.
+ */
+export function getProductEntityConfig(
+  entityType: string,
+): ProductEntityConfig | undefined {
+  if (!hasKey(appConfig.entityConfig, entityType)) return undefined;
+  const entry = appConfig.entityConfig[entityType];
+  return entry.kind === 'product' ? entry : undefined;
 }
 
 /**

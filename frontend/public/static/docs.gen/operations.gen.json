@@ -1088,6 +1088,40 @@
     }
   },
   {
+    "id": "getCacheStats",
+    "hash": "tag/metrics/GET/metrics/cache",
+    "method": "get",
+    "path": "/metrics/cache",
+    "tags": ["metrics"],
+    "summary": "Get entity cache statistics",
+    "description": "Returns entity cache statistics including hit rates, sizes, and invalidations.\n      Useful for monitoring cache performance and tuning.",
+    "deprecated": false,
+    "hasParams": false,
+    "hasRequestBody": false,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["isAuthenticated", "hasSystemAccess"],
+      "xRateLimiter": []
+    }
+  },
+  {
+    "id": "getSyncMetrics",
+    "hash": "tag/metrics/GET/metrics/sync",
+    "method": "get",
+    "path": "/metrics/sync",
+    "tags": ["metrics"],
+    "summary": "Get sync flow metrics",
+    "description": "Returns metrics for the sync flow: CDC Worker → ActivityBus → SSE streams.\n      Includes event counts, connection stats, and tracing span data.",
+    "deprecated": false,
+    "hasParams": false,
+    "hasRequestBody": false,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["isAuthenticated", "hasSystemAccess"],
+      "xRateLimiter": []
+    }
+  },
+  {
     "id": "getAttachments",
     "hash": "tag/attachments/GET/{orgIdOrSlug}/attachment",
     "method": "get",

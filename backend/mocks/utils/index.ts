@@ -10,3 +10,4 @@ export { mockMany } from './mock-many';
 export { generateMockMembershipCounts, type MockMembershipCounts } from './mock-membership-counts';
 export { mockNanoid } from './mock-nanoid';
 export { pastIsoDate } from './mock-past-iso-date';
+export { mockTx } from './mock-tx';

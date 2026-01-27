@@ -1,11 +1,18 @@
 import { EventEmitter } from 'node:events';
 import { appConfig } from 'config';
 import pg from 'pg';
-import type { ActivityModel } from '#/db/schema/activities';
-import type { TxColumnData } from '#/db/utils/product-entity-columns';
+import type { TxColumnData } from '#/db/utils/tx-columns';
 import { env } from '#/env';
 import { resourceTypes } from '#/table-config';
 import { logEvent } from '#/utils/logger';
+import {
+  eventAttrs,
+  recordEventReceived,
+  recordPgNotifyFallback,
+  type SyncTraceContext,
+  startSyncSpan,
+  syncSpanNames,
+} from './sync-metrics';
 
 /**
  * PostgreSQL channel name for activity events.
@@ -54,24 +61,28 @@ const validEventTypes = new Set<ActivityEventType>(
 );
 
 /**
- * Base activity event payload.
- * Strongly typed based on ActivityModel from the database schema.
+ * Type predicate to check if a string is a valid ActivityEventType.
  */
-export interface ActivityEvent
-  extends Pick<
-    ActivityModel,
-    | 'id'
-    | 'type'
-    | 'action'
-    | 'tableName'
-    | 'entityType'
-    | 'resourceType'
-    | 'entityId'
-    | 'userId'
-    | 'organizationId'
-    | 'changedKeys'
-    | 'seq'
-  > {
+export function isValidEventType(type: string): type is ActivityEventType {
+  return validEventTypes.has(type as ActivityEventType);
+}
+
+/**
+ * Base activity event payload.
+ * Extends ActivityModel fields with tighter typing for known values.
+ */
+export interface ActivityEvent {
+  id: string;
+  type: string; // e.g., 'user.created', 'organization.updated'
+  action: ActivityAction; // Tightly typed as 'create' | 'update' | 'delete'
+  tableName: string;
+  entityType: (typeof appConfig.entityTypes)[number] | null;
+  resourceType: (typeof resourceTypes)[number] | null;
+  entityId: string | null;
+  userId: string | null;
+  organizationId: string | null;
+  changedKeys: string[] | null;
+  seq: number | null;
   createdAt: string; // ISO string from JSON serialization
   tx: TxColumnData | null; // Transaction metadata for sync (null for context entities)
 }
@@ -83,6 +94,8 @@ export interface ActivityEvent
 export interface ActivityEventWithEntity extends ActivityEvent {
   /** Full entity data from CDC Worker replication row. Undefined for pg_notify fallback. */
   entity?: Record<string, unknown>;
+  /** Trace context for end-to-end correlation. */
+  _trace?: SyncTraceContext;
 }
 
 /**
@@ -191,13 +204,22 @@ class ActivityBus {
    * @param event - The activity event with entity data
    */
   emitFromCdc(event: ActivityEventWithEntity): void {
-    if (!validEventTypes.has(event.type as ActivityEventType)) {
+    if (!isValidEventType(event.type)) {
       logEvent('warn', 'Unknown activity event type from CDC', { type: event.type });
       return;
     }
 
+    // Start span for tracing
+    const span = startSyncSpan(syncSpanNames.activityBusReceive, eventAttrs(event), event._trace?.traceId);
+
+    // Record metric
+    recordEventReceived(event.entityType || 'unknown');
+
     this.emitter.emit(event.type, event);
     logEvent('debug', 'ActivityBus emitted CDC event', { type: event.type, entityId: event.entityId });
+
+    span.setStatus('ok');
+    span.end();
   }
 
   /**
@@ -249,15 +271,23 @@ class ActivityBus {
           const event = JSON.parse(msg.payload) as ActivityEvent;
 
           // Validate event type against known types
-          if (!validEventTypes.has(event.type as ActivityEventType)) {
+          if (!isValidEventType(event.type)) {
             logEvent('warn', 'Unknown activity event type', { type: event.type });
             return;
           }
 
           // pg_notify fallback: no entity data available
+          const span = startSyncSpan(syncSpanNames.activityBusPgNotify, eventAttrs(event));
+
+          recordPgNotifyFallback();
+          recordEventReceived(event.entityType || 'unknown');
+
           const eventWithEntity: ActivityEventWithEntity = { ...event, entity: undefined };
           this.emitter.emit(event.type, eventWithEntity);
           logEvent('debug', 'ActivityBus received pg_notify', { type: event.type, entityId: event.entityId });
+
+          span.setStatus('ok');
+          span.end();
         } catch (err) {
           logEvent('error', 'Failed to parse activity event', { error: err, payload: msg.payload });
         }

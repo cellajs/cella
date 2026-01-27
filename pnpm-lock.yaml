@@ -59,6 +59,9 @@ importers:
       '@aws-sdk/s3-request-presigner':
         specifier: ^3.974.0
         version: 3.974.0
+      '@cella/tracing':
+        specifier: workspace:*
+        version: link:../packages/tracing
       '@dotenv-run/core':
         specifier: ^1.3.8
         version: 1.3.8
@@ -294,6 +297,9 @@ importers:
 
   cdc:
     dependencies:
+      '@cella/tracing':
+        specifier: workspace:*
+        version: link:../packages/tracing
       config:
         specifier: workspace:*
         version: link:../config
@@ -303,6 +309,9 @@ importers:
       drizzle-orm:
         specifier: ^0.45.1
         version: 0.45.1(@electric-sql/pglite@0.3.15)(@libsql/client-wasm@0.14.0)(@opentelemetry/api@1.9.0)(@types/pg@8.16.0)(gel@2.2.0)(pg@8.17.2)(postgres@3.4.8)
+      nanoid:
+        specifier: ^5.1.5
+        version: 5.1.6
       pg-logical-replication:
         specifier: ^2.3.0
         version: 2.3.0
@@ -313,6 +322,9 @@ importers:
         specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
+      '@types/node':
+        specifier: ^24.10.9
+        version: 24.10.9
       '@types/ws':
         specifier: ^8.18.1
         version: 8.18.1
@@ -428,9 +440,9 @@ importers:
       '@cella/data-grid':
         specifier: workspace:*
         version: link:../packages/data-grid
-      '@electric-sql/client':
-        specifier: ^1.4.1
-        version: 1.4.1
+      '@cella/tracing':
+        specifier: workspace:*
+        version: link:../packages/tracing
       '@floating-ui/dom':
         specifier: ^1.7.4
         version: 1.7.4
@@ -620,9 +632,6 @@ importers:
       dexie:
         specifier: ^4.2.1
         version: 4.2.1
-      dexie-react-hooks:
-        specifier: ^4.2.0
-        version: 4.2.0(@types/react@19.2.9)(dexie@4.2.1)(react@19.2.3)
       embla-carousel-autoplay:
         specifier: ^8.6.0
         version: 8.6.0(embla-carousel@8.6.0)
@@ -858,9 +867,6 @@ importers:
       storybook:
         specifier: ^10.2.0
         version: 10.2.0(@testing-library/dom@10.4.1)(prettier@3.8.1)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
-      ts-morph:
-        specifier: ^27.0.2
-        version: 27.0.2
       tsx:
         specifier: ^4.21.0
         version: 4.21.0
@@ -927,6 +933,16 @@ importers:
       vitest:
         specifier: ^3.2.4
         version: 3.2.4(@types/debug@4.1.12)(@types/node@25.0.10)(jiti@2.6.1)(jsdom@26.1.0(canvas@3.2.0))(lightningcss@1.30.2)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
+
+  packages/tracing:
+    dependencies:
+      nanoid:
+        specifier: ^5.1.5
+        version: 5.1.6
+    devDependencies:
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
 
   studio:
     devDependencies:
@@ -1889,9 +1905,6 @@ packages:
   '@drizzle-team/brocli@0.10.2':
     resolution: {integrity: sha512-z33Il7l5dKjUgGULTqBsQBQwckHh5AbIuxhdsIxDDiZAzBOrZO6q9ogcWC65kU382AfynTfgNumVcNIjuIua6w==}
 
-  '@electric-sql/client@1.4.1':
-    resolution: {integrity: sha512-gY/I2qOPj5he0tRX4CWVZ7fSU16ihqs5oHyySSFOdxC0mBoTecMm+tjF6FFJq/VySJblFJlCOA7OjdAG2WtCXA==}
-
   '@electric-sql/pglite@0.3.15':
     resolution: {integrity: sha512-Cj++n1Mekf9ETfdc16TlDi+cDDQF0W7EcbyRHYOAeZdsAe8M/FJg18itDTSwyHfar2WIezawM9o0EKaRGVKygQ==}
 
@@ -2844,9 +2857,6 @@ packages:
     peerDependencies:
       '@types/react': '>=16'
       react: '>=16'
-
-  '@microsoft/fetch-event-source@2.0.1':
-    resolution: {integrity: sha512-W6CLUJ2eBMw3Rec70qrsEW0jOm/3twwJv21mrmj2yORiaVmVYGS4sSS5yUwvQc1ZlDLYGPnClVWmUUMagKNsfA==}
 
   '@msgpack/msgpack@2.8.0':
     resolution: {integrity: sha512-h9u4u/jiIRKbq25PM+zymTyW6bhTzELvOoUd+AvYriWOAKpLGnIamaET3pnHYoI5iYphAHBI4ayx0MehR+VVPQ==}
@@ -5933,9 +5943,6 @@ packages:
   '@transloadit/utils@4.1.9':
     resolution: {integrity: sha512-UeVhS0QrFihRRWSyZKAub7umxr9dp/ejlmQP1s0iSzxwDARAr9WKGpeKRq+cRTJJbkTBXqRoiwJWDzoBRxUXHw==}
 
-  '@ts-morph/common@0.28.1':
-    resolution: {integrity: sha512-W74iWf7ILp1ZKNYXY5qbddNaml7e9Sedv5lvU1V8lftlitkc9Pq1A+jlH23ltDgWYeZFFEqGCD1Ies9hqu3O+g==}
-
   '@tsconfig/node10@1.0.12':
     resolution: {integrity: sha512-UCYBaeFvM11aU2y3YPZ//O5Rhj+xKyzy7mvcIoAjASbigy8mHMryP5cK7dgjlz2hWxh1g5pLw084E0a/wlUSFQ==}
 
@@ -6994,9 +7001,6 @@ packages:
       react: ^18 || ^19 || ^19.0.0-rc
       react-dom: ^18 || ^19 || ^19.0.0-rc
 
-  code-block-writer@13.0.3:
-    resolution: {integrity: sha512-Oofo0pq3IKnsFtuHqSF7TqBfr71aeyZDVJ0HpmqB7FBM2qEigL0iPONSCZSO9pE9dZTAxANe5XHG9Uy0YMv8cg==}
-
   collapse-white-space@2.1.0:
     resolution: {integrity: sha512-loKTxY1zCOuG4j9f6EPnuyyYkf58RnhhWTvRoZEokgB+WbdXehfjFviyOVYkqzEWz1Q5kRiZdBYS5SwxbQYwzw==}
 
@@ -7345,13 +7349,6 @@ packages:
 
   devlop@1.1.0:
     resolution: {integrity: sha512-RWmIqhcFf1lRYBvNmr7qTNuyCt/7/ns2jbpp1+PalgE/rDQcBT0fioSMUpJ93irlUhC5hrg4cYqe6U+0ImW0rA==}
-
-  dexie-react-hooks@4.2.0:
-    resolution: {integrity: sha512-u7KqTX9JpBQK8+tEyA9X0yMGXlSCsbm5AU64N6gjvGk/IutYDpLBInMYEAEC83s3qhIvryFS+W+sqLZUBEvePQ==}
-    peerDependencies:
-      '@types/react': '>=16'
-      dexie: '>=4.2.0-alpha.1 <5.0.0'
-      react: '>=16'
 
   dexie@4.2.1:
     resolution: {integrity: sha512-Ckej0NS6jxQ4Po3OrSQBFddayRhTCic2DoCAG5zacOfOVB9P2Q5Xc5uL/nVa7ZVs+HdMnvUPzLFCB/JwpB6Csg==}
@@ -9558,9 +9555,6 @@ packages:
   pascal-case@3.1.2:
     resolution: {integrity: sha512-uWlGT3YSnK9x3BQJaOdcZwrnV6hPpd8jFH1/ucpiLRPh/2zCVJKS19E4GvYHvaCcACn3foXZ0cLB9Wrx1KGe5g==}
 
-  path-browserify@1.0.1:
-    resolution: {integrity: sha512-b7uo2UCUOYZcnF/3ID0lulOJi/bafxa1xPe7ZPsammBSpjSWQkjNxlt635YGS2MiR9GjvuXCtz2emr3jbsz98g==}
-
   path-exists@4.0.0:
     resolution: {integrity: sha512-ak9Qy5Q7jYb2Wwcey5Fpvg2KoAc/ZIhLSLOSBmRmygPsGwkVVt0fZa0qrtMz+m6tJTAHfZQ8FnmB4MG4LWy7/w==}
     engines: {node: '>=8'}
@@ -11068,9 +11062,6 @@ packages:
 
   ts-interface-checker@0.1.13:
     resolution: {integrity: sha512-Y/arvbn+rrz3JCKl9C4kVNfTfSm2/mEp5FSz5EsZSANGPSlQrpRI5M4PKF+mJnE52jOO90PnPSc3Ur3bTQw0gA==}
-
-  ts-morph@27.0.2:
-    resolution: {integrity: sha512-fhUhgeljcrdZ+9DZND1De1029PrE+cMkIP7ooqkLRTrRLTqcki2AstsyJm0vRNbTbVCNJ0idGlbBrfqc7/nA8w==}
 
   ts-node@10.9.2:
     resolution: {integrity: sha512-f0FFpIdcHgn8zcPSbf1dRevwt047YMnaiJM3u2w2RewrB+fob/zePZcrOyQoLMMO7aBIddLcQIEK5dYjkLnGrQ==}
@@ -13469,12 +13460,6 @@ snapshots:
 
   '@drizzle-team/brocli@0.10.2': {}
 
-  '@electric-sql/client@1.4.1':
-    dependencies:
-      '@microsoft/fetch-event-source': 2.0.1
-    optionalDependencies:
-      '@rollup/rollup-darwin-arm64': 4.56.0
-
   '@electric-sql/pglite@0.3.15': {}
 
   '@emnapi/core@1.8.1':
@@ -14242,8 +14227,6 @@ snapshots:
       '@types/mdx': 2.0.13
       '@types/react': 19.2.9
       react: 19.2.3
-
-  '@microsoft/fetch-event-source@2.0.1': {}
 
   '@msgpack/msgpack@2.8.0': {}
 
@@ -17483,12 +17466,6 @@ snapshots:
 
   '@transloadit/utils@4.1.9': {}
 
-  '@ts-morph/common@0.28.1':
-    dependencies:
-      minimatch: 10.1.1
-      path-browserify: 1.0.1
-      tinyglobby: 0.2.15
-
   '@tsconfig/node10@1.0.12':
     optional: true
 
@@ -17542,7 +17519,7 @@ snapshots:
 
   '@types/cross-spawn@6.0.6':
     dependencies:
-      '@types/node': 25.0.10
+      '@types/node': 24.10.9
 
   '@types/css-font-loading-module@0.0.7': {}
 
@@ -17622,7 +17599,7 @@ snapshots:
 
   '@types/mute-stream@0.0.4':
     dependencies:
-      '@types/node': 22.19.7
+      '@types/node': 24.10.9
 
   '@types/mysql@2.15.27':
     dependencies:
@@ -18813,8 +18790,6 @@ snapshots:
       - '@types/react'
       - '@types/react-dom'
 
-  code-block-writer@13.0.3: {}
-
   collapse-white-space@2.1.0: {}
 
   color-convert@2.0.1:
@@ -19124,12 +19099,6 @@ snapshots:
   devlop@1.1.0:
     dependencies:
       dequal: 2.0.3
-
-  dexie-react-hooks@4.2.0(@types/react@19.2.9)(dexie@4.2.1)(react@19.2.3):
-    dependencies:
-      '@types/react': 19.2.9
-      dexie: 4.2.1
-      react: 19.2.3
 
   dexie@4.2.1: {}
 
@@ -21777,8 +21746,6 @@ snapshots:
       no-case: 3.0.4
       tslib: 2.8.1
 
-  path-browserify@1.0.1: {}
-
   path-exists@4.0.0: {}
 
   path-exists@5.0.0: {}
@@ -23547,11 +23514,6 @@ snapshots:
   ts-dedent@2.2.0: {}
 
   ts-interface-checker@0.1.13: {}
-
-  ts-morph@27.0.2:
-    dependencies:
-      '@ts-morph/common': 0.28.1
-      code-block-writer: 13.0.3
 
   ts-node@10.9.2(@swc/core@1.7.26)(@types/node@24.10.9)(typescript@5.9.3):
     dependencies:

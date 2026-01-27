@@ -1,4 +1,4 @@
-import type { TxColumnData } from '#/db/utils/product-entity-columns';
+import type { TxColumnData } from '#/db/utils/tx-columns';
 import type { RowData } from './convert-row-keys';
 
 /**

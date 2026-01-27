@@ -11,6 +11,12 @@ import attachmentRoutes from '#/modules/attachment/attachment-routes';
 import { getValidProductEntity } from '#/permissions/get-product-entity';
 import { splitByAllowance } from '#/permissions/split-by-allowance';
 import { getEntityByTransaction, isTransactionProcessed } from '#/sync';
+import {
+  buildFieldVersions,
+  checkFieldConflicts,
+  getChangedTrackedFields,
+  throwIfConflicts,
+} from '#/sync/field-versions';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
@@ -137,24 +143,13 @@ const attachmentRouteHandlers = app
 
     const user = getContextUser();
 
-    // Derive changed field from payload for conflict detection
+    // Get all tracked fields that are being updated
     const trackedFields = ['name', 'filename', 'contentType'] as const;
-    const changedField = trackedFields.find((f) => f in updatedFields) ?? null;
+    const changedFields = getChangedTrackedFields(updatedFields, trackedFields);
 
-    // Field-level conflict detection using version comparison
-    if (changedField) {
-      const fieldLastModified = entity.tx?.fieldVersions?.[changedField] ?? 0;
-      if (fieldLastModified > tx.baseVersion) {
-        throw new AppError(409, 'field_conflict', 'warn', {
-          entityType: 'attachment',
-          meta: {
-            field: changedField,
-            clientVersion: tx.baseVersion,
-            serverVersion: fieldLastModified,
-          },
-        });
-      }
-    }
+    // Field-level conflict detection - check ALL changed fields
+    const { conflicts } = checkFieldConflicts(changedFields, entity.tx, tx.baseVersion);
+    throwIfConflicts('attachment', conflicts);
 
     const newVersion = (entity.tx?.version ?? 0) + 1;
 
@@ -169,10 +164,7 @@ const attachmentRouteHandlers = app
           id: tx.id,
           sourceId: tx.sourceId,
           version: newVersion,
-          fieldVersions: {
-            ...entity.tx?.fieldVersions,
-            ...(changedField ? { [changedField]: newVersion } : {}),
-          },
+          fieldVersions: buildFieldVersions(entity.tx?.fieldVersions, changedFields, newVersion),
         },
       })
       .where(eq(attachmentsTable.id, id))

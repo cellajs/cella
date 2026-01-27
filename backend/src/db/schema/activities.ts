@@ -1,8 +1,8 @@
 import { appConfig } from 'config';
 import { sql } from 'drizzle-orm';
 import { foreignKey, index, integer, jsonb, pgTable, varchar } from 'drizzle-orm/pg-core';
-import type { TxColumnData } from '#/db/utils/product-entity-columns';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
+import type { TxColumnData } from '#/db/utils/tx-columns';
 import { activityActions } from '#/sync/activity-bus';
 import { resourceTypes } from '#/table-config';
 import { nanoid } from '#/utils/nanoid';

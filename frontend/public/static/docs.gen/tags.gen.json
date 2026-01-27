@@ -52,7 +52,7 @@
   {
     "name": "metrics",
     "description": "Endpoints for retrieving system level statistics and basic observability data. Includes internal\n        metrics as well as simple, high level counts for entities such as `users` and `organizations`.",
-    "count": 3
+    "count": 5
   },
   {
     "name": "activities",

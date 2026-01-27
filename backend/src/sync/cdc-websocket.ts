@@ -2,23 +2,26 @@ import type { IncomingMessage } from 'node:http';
 import type { Duplex } from 'node:stream';
 import type { ServerType } from '@hono/node-server';
 import { z } from '@hono/zod-openapi';
+import { appConfig } from 'config';
 import { type WebSocket, WebSocketServer } from 'ws';
 import { env } from '#/env';
+import { resourceTypes } from '#/table-config';
 import { logEvent } from '#/utils/logger';
-import { type ActivityEventWithEntity, activityBus } from './activity-bus';
+import { type ActivityEventWithEntity, activityActions, activityBus } from './activity-bus';
 
 /**
  * Zod schema for CDC WebSocket message payload.
  * Validates the { activity, entity } structure sent by CDC Worker.
+ * Uses typed enums to match ActivityEvent interface.
  */
 const cdcMessageSchema = z.object({
   activity: z.object({
     id: z.string(),
     type: z.string(),
-    action: z.enum(['create', 'update', 'delete']),
+    action: z.enum(activityActions),
     tableName: z.string(),
-    entityType: z.string().nullable(),
-    resourceType: z.string().nullable(),
+    entityType: z.enum(appConfig.entityTypes).nullable(),
+    resourceType: z.enum(resourceTypes).nullable(),
     entityId: z.string(),
     userId: z.string().nullable(),
     organizationId: z.string().nullable(),
@@ -32,11 +35,18 @@ const cdcMessageSchema = z.object({
       })
       .nullable(),
     createdAt: z.string(),
+    seq: z.number().nullable().optional(),
   }),
   entity: z.record(z.string(), z.unknown()),
+  _trace: z
+    .object({
+      traceId: z.string(),
+      spanId: z.string(),
+      cdcTimestamp: z.number(),
+      lsn: z.string().optional(),
+    })
+    .optional(),
 });
-
-type CdcMessage = z.infer<typeof cdcMessageSchema>;
 
 /** Idle timeout in ms - close connection if no message received within this time */
 const IDLE_TIMEOUT_MS = 90_000;
@@ -147,18 +157,18 @@ class CdcWebSocketServer {
         return;
       }
 
-      const message: CdcMessage = result.data;
+      const message = result.data;
       this._messagesReceived++;
       this._lastMessageAt = new Date();
 
       // Transform to ActivityEventWithEntity and emit
-      // Type assertion needed because entityType/resourceType are string in Zod schema
-      // but typed as specific union in ActivityEvent. CDC Worker is trusted source.
-      const activityEvent = {
+      // Zod schema uses typed enums so no assertion needed
+      const activityEvent: ActivityEventWithEntity = {
         ...message.activity,
-        createdAt: message.activity.createdAt,
+        seq: message.activity.seq ?? null,
         entity: message.entity,
-      } as ActivityEventWithEntity;
+        _trace: message._trace,
+      };
 
       activityBus.emitFromCdc(activityEvent);
 

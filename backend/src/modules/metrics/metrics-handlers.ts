@@ -11,7 +11,13 @@ import { metricsConfig } from '#/middlewares/observability/config';
 import { calculateRequestsPerMinute } from '#/modules/metrics/helpers/calculate-requests-per-minute';
 import { parsePromMetrics } from '#/modules/metrics/helpers/parse-prom-metrics';
 import metricRoutes from '#/modules/metrics/metrics-routes';
-import type { cacheStatsSchema, publicCountsSchema, runtimeMetricsSchema } from '#/modules/metrics/metrics-schema';
+import type {
+  cacheStatsSchema,
+  publicCountsSchema,
+  runtimeMetricsSchema,
+  syncMetricsSchema,
+} from '#/modules/metrics/metrics-schema';
+import { getSyncMetrics } from '#/sync/sync-metrics';
 import { entityTables } from '#/table-config';
 import { metricExporter } from '#/tracing';
 import { defaultHook } from '#/utils/default-hook';
@@ -22,6 +28,7 @@ const app = new OpenAPIHono<Env>({ defaultHook });
 type CountsType = z.infer<typeof publicCountsSchema>;
 type RuntimeMetricsType = z.infer<typeof runtimeMetricsSchema>;
 type CacheStatsType = z.infer<typeof cacheStatsSchema>;
+type SyncMetricsType = z.infer<typeof syncMetricsSchema>;
 
 // Store public counts in memory with a 1-minute cache
 const publicCountsCache = new Map<string, { data: CountsType; expiresAt: number }>();
@@ -187,6 +194,25 @@ const metricsRouteHandlers = app
         utilization: cacheStats.token.utilization,
       },
       combined: metrics.combined,
+    };
+
+    return ctx.json(response, 200);
+  })
+  /**
+   * Get sync flow metrics
+   */
+  .openapi(metricRoutes.getSyncMetrics, async (ctx) => {
+    const syncMetrics = getSyncMetrics();
+
+    const response: SyncMetricsType = {
+      eventsReceived: syncMetrics.eventsReceived,
+      eventsEmitted: syncMetrics.eventsEmitted,
+      activeConnections: syncMetrics.activeConnections,
+      pgNotifyFallbacks: syncMetrics.pgNotifyFallbacks,
+      recentSpanCount: syncMetrics.recentSpanCount,
+      spansByName: syncMetrics.spansByName,
+      avgDurationByName: syncMetrics.avgDurationByName,
+      errorCount: syncMetrics.errorCount,
     };
 
     return ctx.json(response, 200);

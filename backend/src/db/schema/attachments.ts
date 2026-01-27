@@ -1,6 +1,7 @@
 import { boolean, index, pgTable, varchar } from 'drizzle-orm/pg-core';
 import { generateContextEntityIdColumns } from '#/db/utils/generate-context-entity-columns';
 import { productEntityColumns } from '#/db/utils/product-entity-columns';
+import { txColumns } from '#/db/utils/tx-columns';
 
 const { organizationId, ...otherEntityIdColumns } = generateContextEntityIdColumns('relatable');
 
@@ -11,6 +12,8 @@ export const attachmentsTable = pgTable(
   'attachments',
   {
     ...productEntityColumns('attachment'),
+    // Sync: transient transaction metadata
+    ...txColumns,
     // Specific columns
     public: boolean().notNull().default(false),
     bucketName: varchar().notNull(),

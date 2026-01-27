@@ -646,7 +646,12 @@
           "createdBy": "0f0ak5vkrrl687pmkwpa1vju",
           "modifiedAt": "2024-08-06T10:28:33.226Z",
           "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju",
-          "tx": null
+          "tx": {
+            "id": "4tufkeho7gg1xwx21e333ngq",
+            "sourceId": "src_ujcbpukfple60p8h3tnk9zpo",
+            "version": 1,
+            "fieldVersions": {}
+          }
         }
       },
       {
@@ -777,7 +782,12 @@
           "createdBy": "0f0ak5vkrrl687pmkwpa1vju",
           "modifiedAt": "2024-08-06T10:28:33.226Z",
           "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju",
-          "tx": null
+          "tx": {
+            "id": "4tufkeho7gg1xwx21e333ngq",
+            "sourceId": "src_ujcbpukfple60p8h3tnk9zpo",
+            "version": 1,
+            "fieldVersions": {}
+          }
         }
       },
       {

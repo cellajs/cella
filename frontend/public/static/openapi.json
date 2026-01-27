@@ -1676,7 +1676,12 @@
           "createdBy": "0f0ak5vkrrl687pmkwpa1vju",
           "modifiedAt": "2024-08-06T10:28:33.226Z",
           "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju",
-          "tx": null
+          "tx": {
+            "id": "4tufkeho7gg1xwx21e333ngq",
+            "sourceId": "src_ujcbpukfple60p8h3tnk9zpo",
+            "version": 1,
+            "fieldVersions": {}
+          }
         }
       },
       "TxRequest": {
@@ -1889,8 +1894,13 @@
           "createdBy": "0uwim8y2tppz7th9tol75wjz",
           "modifiedAt": "2024-10-12T17:43:05.360Z",
           "modifiedBy": "0uwim8y2tppz7th9tol75wjz",
-          "tx": null,
-          "organizationId": "8dwkbmpkeuemouu8t58r8fuj"
+          "tx": {
+            "id": "8dwkbmpkeuemouu8t58r8fuj",
+            "sourceId": "src_3tlenhqurk6hu54pnfytf99m",
+            "version": 1,
+            "fieldVersions": {}
+          },
+          "organizationId": "pmuhw07eswx7d6csd6xo4nqw"
         }
       },
       "Membership": {
@@ -7350,6 +7360,296 @@
                     "organization",
                     "attachment",
                     "page"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/metrics/cache": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getCacheStats",
+        "tags": [
+          "metrics"
+        ],
+        "summary": "Get entity cache statistics",
+        "description": "Returns entity cache statistics including hit rates, sizes, and invalidations.\n      Useful for monitoring cache performance and tuning.",
+        "x-guard": [
+          "isAuthenticated",
+          "hasSystemAccess"
+        ],
+        "x-rate-limiter": [],
+        "responses": {
+          "200": {
+            "description": "Cache statistics",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "public": {
+                      "type": "object",
+                      "properties": {
+                        "hits": {
+                          "type": "number",
+                          "description": "Number of cache hits"
+                        },
+                        "misses": {
+                          "type": "number",
+                          "description": "Number of cache misses"
+                        },
+                        "hitRate": {
+                          "type": "number",
+                          "description": "Hit rate percentage (0-100)"
+                        },
+                        "invalidations": {
+                          "type": "number",
+                          "description": "Number of cache invalidations"
+                        },
+                        "coalescedRequests": {
+                          "type": "number",
+                          "description": "Number of coalesced requests (avoided duplicate fetches)"
+                        },
+                        "totalRequests": {
+                          "type": "number",
+                          "description": "Total requests (hits + misses)"
+                        },
+                        "uptimeSeconds": {
+                          "type": "number",
+                          "description": "Seconds since metrics were last reset"
+                        },
+                        "size": {
+                          "type": "number",
+                          "description": "Current number of cached entries"
+                        },
+                        "capacity": {
+                          "type": "number",
+                          "description": "Maximum cache capacity"
+                        },
+                        "utilization": {
+                          "type": "number",
+                          "description": "Cache utilization (0-1)"
+                        }
+                      },
+                      "required": [
+                        "hits",
+                        "misses",
+                        "hitRate",
+                        "invalidations",
+                        "coalescedRequests",
+                        "totalRequests",
+                        "uptimeSeconds",
+                        "size",
+                        "capacity",
+                        "utilization"
+                      ],
+                      "description": "Public cache statistics (no auth required)"
+                    },
+                    "token": {
+                      "type": "object",
+                      "properties": {
+                        "hits": {
+                          "type": "number",
+                          "description": "Number of cache hits"
+                        },
+                        "misses": {
+                          "type": "number",
+                          "description": "Number of cache misses"
+                        },
+                        "hitRate": {
+                          "type": "number",
+                          "description": "Hit rate percentage (0-100)"
+                        },
+                        "invalidations": {
+                          "type": "number",
+                          "description": "Number of cache invalidations"
+                        },
+                        "coalescedRequests": {
+                          "type": "number",
+                          "description": "Number of coalesced requests (avoided duplicate fetches)"
+                        },
+                        "totalRequests": {
+                          "type": "number",
+                          "description": "Total requests (hits + misses)"
+                        },
+                        "uptimeSeconds": {
+                          "type": "number",
+                          "description": "Seconds since metrics were last reset"
+                        },
+                        "size": {
+                          "type": "number",
+                          "description": "Current number of cached entries"
+                        },
+                        "capacity": {
+                          "type": "number",
+                          "description": "Maximum cache capacity"
+                        },
+                        "utilization": {
+                          "type": "number",
+                          "description": "Cache utilization (0-1)"
+                        }
+                      },
+                      "required": [
+                        "hits",
+                        "misses",
+                        "hitRate",
+                        "invalidations",
+                        "coalescedRequests",
+                        "totalRequests",
+                        "uptimeSeconds",
+                        "size",
+                        "capacity",
+                        "utilization"
+                      ],
+                      "description": "Token cache statistics (membership required)"
+                    },
+                    "combined": {
+                      "type": "object",
+                      "properties": {
+                        "totalHits": {
+                          "type": "number"
+                        },
+                        "totalMisses": {
+                          "type": "number"
+                        },
+                        "overallHitRate": {
+                          "type": "number"
+                        },
+                        "totalInvalidations": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "totalHits",
+                        "totalMisses",
+                        "overallHitRate",
+                        "totalInvalidations"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "public",
+                    "token",
+                    "combined"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/metrics/sync": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getSyncMetrics",
+        "tags": [
+          "metrics"
+        ],
+        "summary": "Get sync flow metrics",
+        "description": "Returns metrics for the sync flow: CDC Worker → ActivityBus → SSE streams.\n      Includes event counts, connection stats, and tracing span data.",
+        "x-guard": [
+          "isAuthenticated",
+          "hasSystemAccess"
+        ],
+        "x-rate-limiter": [],
+        "responses": {
+          "200": {
+            "description": "Sync metrics",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "eventsReceived": {
+                      "type": "number",
+                      "description": "Total CDC events received from worker"
+                    },
+                    "eventsEmitted": {
+                      "type": "number",
+                      "description": "Total events emitted to SSE streams"
+                    },
+                    "activeConnections": {
+                      "type": "number",
+                      "description": "Current number of active SSE connections"
+                    },
+                    "pgNotifyFallbacks": {
+                      "type": "number",
+                      "description": "Times pg_notify was used as fallback"
+                    },
+                    "recentSpanCount": {
+                      "type": "number",
+                      "description": "Number of recent spans in memory"
+                    },
+                    "spansByName": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "number"
+                      },
+                      "description": "Span counts by name"
+                    },
+                    "avgDurationByName": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "number"
+                      },
+                      "description": "Average duration by span name (ms)"
+                    },
+                    "errorCount": {
+                      "type": "number",
+                      "description": "Number of spans with error status"
+                    }
+                  },
+                  "required": [
+                    "eventsReceived",
+                    "eventsEmitted",
+                    "activeConnections",
+                    "pgNotifyFallbacks",
+                    "recentSpanCount",
+                    "spansByName",
+                    "avgDurationByName",
+                    "errorCount"
                   ]
                 }
               }

@@ -3368,6 +3368,222 @@ export type GetPublicCountsResponses = {
 
 export type GetPublicCountsResponse = GetPublicCountsResponses[keyof GetPublicCountsResponses];
 
+export type GetCacheStatsData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/metrics/cache';
+};
+
+export type GetCacheStatsErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetCacheStatsError = GetCacheStatsErrors[keyof GetCacheStatsErrors];
+
+export type GetCacheStatsResponses = {
+  /**
+   * Cache statistics
+   */
+  200: {
+    /**
+     * Public cache statistics (no auth required)
+     */
+    public: {
+      /**
+       * Number of cache hits
+       */
+      hits: number;
+      /**
+       * Number of cache misses
+       */
+      misses: number;
+      /**
+       * Hit rate percentage (0-100)
+       */
+      hitRate: number;
+      /**
+       * Number of cache invalidations
+       */
+      invalidations: number;
+      /**
+       * Number of coalesced requests (avoided duplicate fetches)
+       */
+      coalescedRequests: number;
+      /**
+       * Total requests (hits + misses)
+       */
+      totalRequests: number;
+      /**
+       * Seconds since metrics were last reset
+       */
+      uptimeSeconds: number;
+      /**
+       * Current number of cached entries
+       */
+      size: number;
+      /**
+       * Maximum cache capacity
+       */
+      capacity: number;
+      /**
+       * Cache utilization (0-1)
+       */
+      utilization: number;
+    };
+    /**
+     * Token cache statistics (membership required)
+     */
+    token: {
+      /**
+       * Number of cache hits
+       */
+      hits: number;
+      /**
+       * Number of cache misses
+       */
+      misses: number;
+      /**
+       * Hit rate percentage (0-100)
+       */
+      hitRate: number;
+      /**
+       * Number of cache invalidations
+       */
+      invalidations: number;
+      /**
+       * Number of coalesced requests (avoided duplicate fetches)
+       */
+      coalescedRequests: number;
+      /**
+       * Total requests (hits + misses)
+       */
+      totalRequests: number;
+      /**
+       * Seconds since metrics were last reset
+       */
+      uptimeSeconds: number;
+      /**
+       * Current number of cached entries
+       */
+      size: number;
+      /**
+       * Maximum cache capacity
+       */
+      capacity: number;
+      /**
+       * Cache utilization (0-1)
+       */
+      utilization: number;
+    };
+    combined: {
+      totalHits: number;
+      totalMisses: number;
+      overallHitRate: number;
+      totalInvalidations: number;
+    };
+  };
+};
+
+export type GetCacheStatsResponse = GetCacheStatsResponses[keyof GetCacheStatsResponses];
+
+export type GetSyncMetricsData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/metrics/sync';
+};
+
+export type GetSyncMetricsErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetSyncMetricsError = GetSyncMetricsErrors[keyof GetSyncMetricsErrors];
+
+export type GetSyncMetricsResponses = {
+  /**
+   * Sync metrics
+   */
+  200: {
+    /**
+     * Total CDC events received from worker
+     */
+    eventsReceived: number;
+    /**
+     * Total events emitted to SSE streams
+     */
+    eventsEmitted: number;
+    /**
+     * Current number of active SSE connections
+     */
+    activeConnections: number;
+    /**
+     * Times pg_notify was used as fallback
+     */
+    pgNotifyFallbacks: number;
+    /**
+     * Number of recent spans in memory
+     */
+    recentSpanCount: number;
+    /**
+     * Span counts by name
+     */
+    spansByName: {
+      [key: string]: number;
+    };
+    /**
+     * Average duration by span name (ms)
+     */
+    avgDurationByName: {
+      [key: string]: number;
+    };
+    /**
+     * Number of spans with error status
+     */
+    errorCount: number;
+  };
+};
+
+export type GetSyncMetricsResponse = GetSyncMetricsResponses[keyof GetSyncMetricsResponses];
+
 export type DeleteAttachmentsData = {
   body: {
     ids: Array<string>;

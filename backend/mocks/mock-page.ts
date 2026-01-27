@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import type { PageModel } from '#/db/schema/pages';
-import { mockNanoid, withFakerSeed } from './utils';
+import { mockNanoid, mockTx, withFakerSeed } from './utils';
 
 /**
  * Generates a mock page with all fields populated.
@@ -31,7 +31,7 @@ export const mockPage = (key = 'page:default'): PageModel =>
       createdBy: userId,
       modifiedAt: createdAt,
       modifiedBy: userId,
-      tx: null,
+      tx: mockTx(),
     };
   });
 

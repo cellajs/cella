@@ -15,6 +15,7 @@ import { AppLayoutRoute } from '~/routes/base-routes';
 import { useToastStore } from '~/store/toast';
 import appTitle from '~/utils/app-title';
 import { noDirectAccess } from '~/utils/no-direct-access';
+import { rewriteUrlToSlug } from '~/utils/rewrite-url-to-slug';
 
 //Lazy-loaded components
 const OrganizationPage = lazy(() => import('~/modules/organization/organization-page'));
@@ -31,7 +32,8 @@ export const OrganizationLayoutRoute = createRoute({
   path: '/$idOrSlug',
   staticData: { isAuth: true },
   getParentRoute: () => AppLayoutRoute,
-  beforeLoad: async ({ params: { idOrSlug } }) => {
+  beforeLoad: async ({ params }) => {
+    const { idOrSlug } = params;
     const isOnline = onlineManager.isOnline();
 
     const bootstrap = organizationQueryOptions(idOrSlug);
@@ -49,6 +51,9 @@ export const OrganizationLayoutRoute = createRoute({
     // Canonical cache entry (always ID), remove slug entry
     queryClient.setQueryData(organizationQueryKeys.detail.byId(organization.id), organization);
     queryClient.removeQueries({ queryKey: bootstrap.queryKey, exact: true });
+
+    // Rewrite URL to use slug if user navigated with ID
+    rewriteUrlToSlug(params, { idOrSlug: organization.slug }, OrganizationLayoutRoute.to);
 
     return { organization };
   },

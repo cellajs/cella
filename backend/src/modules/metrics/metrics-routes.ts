@@ -6,6 +6,7 @@ import {
   metricListSchema,
   publicCountsSchema,
   runtimeMetricsSchema,
+  syncMetricsSchema,
 } from '#/modules/metrics/metrics-schema';
 import { errorResponseRefs } from '#/schemas';
 
@@ -87,6 +88,26 @@ const metricRouteConfig = {
       200: {
         description: 'Cache statistics',
         content: { 'application/json': { schema: cacheStatsSchema } },
+      },
+      ...errorResponseRefs,
+    },
+  }),
+  /**
+   * Get sync metrics (CDC, ActivityBus, SSE)
+   */
+  getSyncMetrics: createXRoute({
+    operationId: 'getSyncMetrics',
+    method: 'get',
+    path: '/sync',
+    xGuard: [isAuthenticated, hasSystemAccess],
+    tags: ['metrics'],
+    summary: 'Get sync flow metrics',
+    description: `Returns metrics for the sync flow: CDC Worker → ActivityBus → SSE streams.
+      Includes event counts, connection stats, and tracing span data.`,
+    responses: {
+      200: {
+        description: 'Sync metrics',
+        content: { 'application/json': { schema: syncMetricsSchema } },
       },
       ...errorResponseRefs,
     },

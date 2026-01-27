@@ -70,3 +70,15 @@ export const cacheStatsSchema = z.object({
     totalInvalidations: z.number(),
   }),
 });
+
+/** Schema for sync metrics response. */
+export const syncMetricsSchema = z.object({
+  eventsReceived: z.number().describe('Total CDC events received from worker'),
+  eventsEmitted: z.number().describe('Total events emitted to SSE streams'),
+  activeConnections: z.number().describe('Current number of active SSE connections'),
+  pgNotifyFallbacks: z.number().describe('Times pg_notify was used as fallback'),
+  recentSpanCount: z.number().describe('Number of recent spans in memory'),
+  spansByName: z.record(z.string(), z.number()).describe('Span counts by name'),
+  avgDurationByName: z.record(z.string(), z.number()).describe('Average duration by span name (ms)'),
+  errorCount: z.number().describe('Number of spans with error status'),
+});

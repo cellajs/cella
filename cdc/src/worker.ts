@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { LogicalReplicationService, PgoutputPlugin } from 'pg-logical-replication';
+import { LogicalReplicationService, type Pgoutput, PgoutputPlugin } from 'pg-logical-replication';
 import { db } from '#/db/db';
 import { activitiesTable, type InsertActivityModel } from '#/db/schema/activities';
 import { logEvent } from '#/utils/logger';
@@ -7,6 +7,7 @@ import { appConfig } from 'config';
 import { CDC_PUBLICATION_NAME, CDC_SLOT_NAME } from './constants';
 import { env } from './env';
 import { processMessage } from './process-message';
+import { activityAttrs, cdcAttrs, cdcSpanNames, recordCdcMetric, withSpan, type TraceContext } from './tracing';
 import { getSeqScope } from './utils';
 import { wsClient, type WsState } from './websocket-client';
 
@@ -63,8 +64,13 @@ async function ensureReplicationSlot(): Promise<void> {
 
 /**
  * Send activity + entity data to API server via WebSocket.
+ * Returns trace context for correlation.
  */
-function sendActivityToApi(activity: InsertActivityModel, entityData: Record<string, unknown>): void {
+function sendActivityToApi(
+  activity: InsertActivityModel,
+  entityData: Record<string, unknown>,
+  traceContext: TraceContext,
+): void {
   const payload = {
     activity: {
       id: activity.id,
@@ -81,9 +87,16 @@ function sendActivityToApi(activity: InsertActivityModel, entityData: Record<str
       createdAt: new Date().toISOString(),
     },
     entity: entityData,
+    // Include trace context for end-to-end correlation
+    _trace: traceContext,
   };
 
-  wsClient.send(payload);
+  const success = wsClient.send(payload);
+  if (success) {
+    recordCdcMetric('wsSendSuccess');
+  } else {
+    recordCdcMetric('wsSendFailed');
+  }
 }
 
 /**
@@ -171,36 +184,37 @@ export async function startCdcWorker() {
 
   // Handle incoming replication messages
   service.on('data', async (lsn: string, message: unknown) => {
-    try {
-      lastLsn = lsn;
+    // Type the message - pg-logical-replication types it as unknown but it's always Pgoutput.Message
+    const msg = message as Pgoutput.Message;
+    const tag = msg.tag;
+    const tableName = 'relation' in msg ? msg.relation?.name : undefined;
 
-      // Debug: log the raw message type
-      const msg = message as { tag?: string; relation?: { name?: string } };
-      logEvent('debug', 'CDC message received', {
-        lsn,
-        tag: msg.tag,
-        table: msg.relation?.name,
-      });
+    await withSpan(cdcSpanNames.processWal, cdcAttrs({ lsn, tag, table: tableName }), async (traceCtx) => {
+      lastLsn = lsn;
+      recordCdcMetric('messagesProcessed');
+      recordCdcMetric('lastProcessedAt');
+
+      logEvent('debug', 'CDC message received', { lsn, tag, table: tableName });
 
       // Process the message and create an activity if applicable
-      // Async to support enrichment queries for membership events
-      const processResult = await processMessage(message as Parameters<typeof processMessage>[0]);
+      const processResult = await processMessage(msg);
 
       if (processResult) {
-        // Determine seq scope dynamically based on entity hierarchy
-        // Auto-detects most specific context FK (e.g., projectId before organizationId)
-        const seqScope = getSeqScope(processResult.entry, processResult.entityData);
+        await withSpan(cdcSpanNames.createActivity, activityAttrs(processResult.activity), async () => {
+          // Determine seq scope dynamically based on entity hierarchy
+          const seqScope = getSeqScope(processResult.entry, processResult.entityData);
 
-        // Insert activity with atomic seq generation
-        // seq is scoped to the detected ancestor (e.g., per-project, per-org)
-        await db.insert(activitiesTable).values({
-          ...processResult.activity,
-          // Atomic subquery: get next seq for this scope
-          seq: sql`(
-            SELECT COALESCE(MAX(seq), 0) + 1 
-            FROM activities 
-            WHERE ${sql.raw(seqScope.scopeColumn)} = ${seqScope.scopeValue}
-          )`,
+          // Insert activity with atomic seq generation
+          await db.insert(activitiesTable).values({
+            ...processResult.activity,
+            seq: sql`(
+              SELECT COALESCE(MAX(seq), 0) + 1 
+              FROM activities 
+              WHERE ${sql.raw(seqScope.scopeColumn)} = ${seqScope.scopeValue}
+            )`,
+          });
+
+          recordCdcMetric('activitiesCreated');
         });
 
         logEvent('info', 'Activity created from CDC', {
@@ -209,8 +223,8 @@ export async function startCdcWorker() {
           lsn,
         });
 
-        // Send to API server via WebSocket (includes entity data)
-        sendActivityToApi(processResult.activity, processResult.entityData);
+        // Send to API server via WebSocket
+        sendActivityToApi(processResult.activity, processResult.entityData, traceCtx);
       }
 
       // Only acknowledge LSN if WebSocket is connected (backpressure)
@@ -219,11 +233,10 @@ export async function startCdcWorker() {
       } else {
         logEvent('debug', 'Holding LSN acknowledgment - WebSocket disconnected', { lsn });
       }
-    } catch (error) {
+    }).catch((error) => {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      const errorStack = error instanceof Error ? error.stack : undefined;
-      logEvent('error', 'Error processing CDC message', { error: errorMessage, stack: errorStack, lsn });
-    }
+      logEvent('error', 'Error processing CDC message', { error: errorMessage, stack: error instanceof Error ? error.stack : undefined, lsn });
+    });
   });
 
   // Handle errors

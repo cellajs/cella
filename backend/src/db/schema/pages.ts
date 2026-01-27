@@ -1,5 +1,6 @@
 import { type AnyPgColumn, doublePrecision, pgTable, unique, varchar } from 'drizzle-orm/pg-core';
 import { productEntityColumns } from '#/db/utils/product-entity-columns';
+import { txColumns } from '#/db/utils/tx-columns';
 
 const pageStatusEnum = ['unpublished', 'published', 'archived'] as const;
 
@@ -10,6 +11,8 @@ export const pagesTable = pgTable(
   'pages',
   {
     ...productEntityColumns('page'),
+    // Sync: transient transaction metadata (overwritten on each mutation)
+    ...txColumns,
     // Specific columns
     status: varchar({ enum: pageStatusEnum }).notNull().default('unpublished'),
     parentId: varchar().references((): AnyPgColumn => pagesTable.id, {

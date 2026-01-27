@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { startSyncSpan, syncSpanNames } from '~/lib/tracing';
 import { isLeader } from './tab-coordinator';
 import type { StreamState } from './user-stream-types';
 
@@ -104,12 +105,21 @@ export function useSSEConnection(options: UseSSEConnectionOptions): UseSSEConnec
 
     updateState('connecting');
 
+    // Start tracing span for connection
+    const connectSpan = startSyncSpan(syncSpanNames.sseConnect, {
+      'sse.url': sseUrl.toString(),
+      'sse.is_leader': true,
+    });
+
     const eventSource = new EventSource(sseUrl.toString(), {
       withCredentials,
     });
 
     eventSource.onopen = () => {
       updateState('catching-up');
+      connectSpan.setAttribute('sse.state', 'catching-up');
+      connectSpan.setStatus({ code: 1 });
+      connectSpan.end();
       console.debug(`[${debugLabel}] Leader connected, catching up...`);
     };
 
@@ -133,8 +143,15 @@ export function useSSEConnection(options: UseSSEConnectionOptions): UseSSEConnec
       eventSource.close();
       eventSourceRef.current = null;
 
+      // Record reconnect in trace
+      const reconnectSpan = startSyncSpan(syncSpanNames.sseReconnect, {
+        'sse.reconnect_delay_ms': reconnectDelay,
+      });
+
       // Reconnect after delay
       reconnectTimeoutRef.current = setTimeout(() => {
+        reconnectSpan.setStatus({ code: 1 });
+        reconnectSpan.end();
         connect();
       }, reconnectDelay);
     };

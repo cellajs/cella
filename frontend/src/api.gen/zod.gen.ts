@@ -1437,6 +1437,68 @@ export const zGetPublicCountsResponse = z.object({
   page: z.number(),
 });
 
+export const zGetCacheStatsData = z.object({
+  body: z.optional(z.never()),
+  path: z.optional(z.never()),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Cache statistics
+ */
+export const zGetCacheStatsResponse = z.object({
+  public: z.object({
+    hits: z.number(),
+    misses: z.number(),
+    hitRate: z.number(),
+    invalidations: z.number(),
+    coalescedRequests: z.number(),
+    totalRequests: z.number(),
+    uptimeSeconds: z.number(),
+    size: z.number(),
+    capacity: z.number(),
+    utilization: z.number(),
+  }),
+  token: z.object({
+    hits: z.number(),
+    misses: z.number(),
+    hitRate: z.number(),
+    invalidations: z.number(),
+    coalescedRequests: z.number(),
+    totalRequests: z.number(),
+    uptimeSeconds: z.number(),
+    size: z.number(),
+    capacity: z.number(),
+    utilization: z.number(),
+  }),
+  combined: z.object({
+    totalHits: z.number(),
+    totalMisses: z.number(),
+    overallHitRate: z.number(),
+    totalInvalidations: z.number(),
+  }),
+});
+
+export const zGetSyncMetricsData = z.object({
+  body: z.optional(z.never()),
+  path: z.optional(z.never()),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Sync metrics
+ */
+export const zGetSyncMetricsResponse = z.object({
+  eventsReceived: z.number(),
+  eventsEmitted: z.number(),
+  activeConnections: z.number(),
+  pgNotifyFallbacks: z.number(),
+  recentSpanCount: z.number(),
+  spansByName: z.record(z.string(), z.number()),
+  avgDurationByName: z.record(z.string(), z.number()),
+  errorCount: z.number(),
+});
+
 export const zDeleteAttachmentsData = z.object({
   body: z.object({
     ids: z.array(z.string()).min(1).max(50),

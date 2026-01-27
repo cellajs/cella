@@ -694,8 +694,13 @@
           "createdBy": "0uwim8y2tppz7th9tol75wjz",
           "modifiedAt": "2024-10-12T17:43:05.360Z",
           "modifiedBy": "0uwim8y2tppz7th9tol75wjz",
-          "tx": null,
-          "organizationId": "8dwkbmpkeuemouu8t58r8fuj"
+          "tx": {
+            "id": "8dwkbmpkeuemouu8t58r8fuj",
+            "sourceId": "src_3tlenhqurk6hu54pnfytf99m",
+            "version": 1,
+            "fieldVersions": {}
+          },
+          "organizationId": "pmuhw07eswx7d6csd6xo4nqw"
         }
       },
       {

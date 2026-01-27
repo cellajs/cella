@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import type { AttachmentModel } from '#/db/schema/attachments';
-import { generateMockContextEntityIdColumns, mockNanoid, withFakerSeed } from './utils';
+import { generateMockContextEntityIdColumns, mockNanoid, mockTx, withFakerSeed } from './utils';
 
 /**
  * Generates a mock attachment with all fields populated.
@@ -34,7 +34,7 @@ export const mockAttachment = (key = 'attachment:default'): AttachmentModel =>
       createdBy: userId,
       modifiedAt: createdAt,
       modifiedBy: userId,
-      tx: null,
+      tx: mockTx(),
       ...generateMockContextEntityIdColumns('relatable'),
     };
   });
