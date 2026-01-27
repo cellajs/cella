@@ -4,7 +4,7 @@
  */
 
 import type { EntityType } from 'config';
-import type { TxColumnData } from '#/db/utils/tx-columns';
+import type { TxBase } from '#/db/utils/tx-columns';
 import { AppError } from '#/lib/error';
 
 interface FieldConflict {
@@ -30,7 +30,7 @@ interface ConflictCheckResult {
  */
 export function checkFieldConflicts(
   changedFields: string[],
-  entityTx: TxColumnData | null | undefined,
+  entityTx: TxBase | null | undefined,
   baseVersion: number,
 ): ConflictCheckResult {
   const conflicts: ConflictCheckResult['conflicts'] = [];

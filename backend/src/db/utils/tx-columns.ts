@@ -1,27 +1,25 @@
+import { z } from '@hono/zod-openapi';
 import { jsonb } from 'drizzle-orm/pg-core';
 import { nanoid } from '#/utils/nanoid';
 
 /**
- * Transaction metadata for sync tracking and conflict detection.
- * Written by handler, read by CDC Worker, overwritten on next mutation.
+ * Zod schema for TxBase.
  */
-export interface TxColumnData {
-  /** Unique mutation ID (nanoid) */
-  id: string;
-  /** Tab/instance identifier for echo prevention */
-  sourceId: string;
-  /** Entity version - incremented on every mutation */
-  version: number;
-  /** Per-field versions for conflict detection */
-  fieldVersions: Record<string, number>;
-}
+export const txBaseSchema = z.object({
+  id: z.string(),
+  sourceId: z.string(),
+  version: z.number(),
+  fieldVersions: z.record(z.string(), z.number()),
+});
+
+export type TxBase = z.infer<typeof txBaseSchema>;
 
 /**
  * Create transaction metadata for server-side entity creation.
  * Use this for system-generated entities (seeds, imports, background jobs)
  * that bypass the normal client mutation flow.
  */
-export function createServerTx(): TxColumnData {
+export function createServerTx(): TxBase {
   return {
     id: nanoid(),
     sourceId: 'server',
@@ -36,5 +34,5 @@ export function createServerTx(): TxColumnData {
  * Required (notNull) because all offline/realtime entity mutations MUST include tx metadata.
  */
 export const txColumns = {
-  tx: jsonb().$type<TxColumnData>().notNull(),
+  tx: jsonb().$type<TxBase>().notNull(),
 };

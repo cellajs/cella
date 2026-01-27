@@ -2,7 +2,7 @@ import { appConfig } from 'config';
 import { sql } from 'drizzle-orm';
 import { foreignKey, index, integer, jsonb, pgTable, varchar } from 'drizzle-orm/pg-core';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
-import type { TxColumnData } from '#/db/utils/tx-columns';
+import type { TxBase } from '#/db/utils/tx-columns';
 import { activityActions } from '#/sync/activity-bus';
 import { resourceTypes } from '#/table-config';
 import { nanoid } from '#/utils/nanoid';
@@ -31,7 +31,7 @@ export const activitiesTable = pgTable(
     createdAt: timestampColumns.createdAt,
     changedKeys: jsonb().$type<string[]>(), // Array of keys that changed (for updates)
     // Sync: transaction metadata from product entity tx column (null for context entities)
-    tx: jsonb().$type<TxColumnData>(),
+    tx: jsonb().$type<TxBase>(),
     // Sync: per-ancestor sequence number for list-level gap detection.
     // Scope is determined dynamically by CDC based on entity's context hierarchy
     // (e.g., per-project for tasks, per-org for attachments).

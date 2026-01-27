@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { startSyncSpan, syncSpanNames } from '~/lib/tracing';
+import type { StreamState } from './app-stream-types';
 import { isLeader } from './tab-coordinator';
-import type { StreamState } from './user-stream-types';
 
 /** SSE event handlers configuration. */
 export interface SSEEventHandlers {

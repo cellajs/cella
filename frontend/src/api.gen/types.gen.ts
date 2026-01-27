@@ -43,6 +43,43 @@ export type MembershipBase = {
   organizationId: string;
 };
 
+export type TxBase = {
+  id: string;
+  sourceId: string;
+  version: number;
+  fieldVersions: {
+    [key: string]: number;
+  };
+};
+
+export type StreamNotification = {
+  action: 'create' | 'update' | 'delete';
+  entityType: 'attachment' | 'page';
+  entityId: string;
+  organizationId: string | null;
+  seq: number;
+  tx: TxStreamMessage;
+  cacheToken?: string;
+};
+
+export type TxStreamMessage = {
+  id: string;
+  sourceId: string;
+  version: number;
+  fieldVersions: {
+    [key: string]: number;
+  };
+};
+
+export type PublicStreamActivity = {
+  activityId: string;
+  action: 'create' | 'update' | 'delete';
+  entityType: 'attachment' | 'page';
+  entityId: string;
+  changedKeys: Array<string> | null;
+  createdAt: string;
+};
+
 /**
  * Error returned when the request is malformed or contains invalid data.
  */
@@ -113,15 +150,14 @@ export type Activity = {
         [key: string]: unknown;
       }
     | Array<unknown>;
-  tx:
-    | string
-    | number
-    | boolean
-    | null
-    | {
-        [key: string]: unknown;
-      }
-    | Array<unknown>;
+  tx: {
+    id: string;
+    sourceId: string;
+    version: number;
+    fieldVersions: {
+      [key: string]: number;
+    };
+  } | null;
   seq: number | null;
 };
 
@@ -272,15 +308,6 @@ export type Organization = {
   };
 };
 
-export type TxStreamMessage = {
-  id: string;
-  sourceId: string;
-  version: number;
-  fieldVersions: {
-    [key: string]: number;
-  };
-} | null;
-
 export type Page = {
   createdAt: string;
   id: string;
@@ -291,15 +318,14 @@ export type Page = {
   keywords: string;
   createdBy: string | null;
   modifiedBy: string | null;
-  tx:
-    | string
-    | number
-    | boolean
-    | null
-    | {
-        [key: string]: unknown;
-      }
-    | Array<unknown>;
+  tx: {
+    id: string;
+    sourceId: string;
+    version: number;
+    fieldVersions: {
+      [key: string]: number;
+    };
+  };
   status: 'unpublished' | 'published' | 'archived';
   parentId: string | null;
   displayOrder: number;
@@ -330,15 +356,14 @@ export type Attachment = {
   keywords: string;
   createdBy: string | null;
   modifiedBy: string | null;
-  tx:
-    | string
-    | number
-    | boolean
-    | null
-    | {
-        [key: string]: unknown;
-      }
-    | Array<unknown>;
+  tx: {
+    id: string;
+    sourceId: string;
+    version: number;
+    fieldVersions: {
+      [key: string]: number;
+    };
+  };
   public: boolean;
   bucketName: string;
   groupId: string | null;
@@ -384,13 +409,13 @@ export type GetActivitiesData = {
     order?: 'asc' | 'desc';
     offset?: string;
     limit?: string;
-    userId?: string;
-    entityType?: 'user' | 'organization' | 'attachment' | 'page';
-    resourceType?: 'request' | 'membership';
-    action?: 'create' | 'update' | 'delete';
+    userId?: string | null;
+    entityType?: 'user' | 'organization' | 'attachment' | 'page' | null;
+    resourceType?: 'request' | 'membership' | null;
+    action?: 'create' | 'update' | 'delete' | null;
     tableName?: string;
     type?: string;
-    entityId?: string;
+    entityId?: string | null;
   };
   url: '/activities';
 };
@@ -2537,16 +2562,7 @@ export type PagesPublicStreamResponses = {
    * Catch-up activities or SSE stream started
    */
   200: {
-    activities: Array<{
-      data?: unknown;
-      entityType: 'attachment' | 'page';
-      entityId: string;
-      action: 'create' | 'update' | 'delete';
-      activityId: string;
-      changedKeys: Array<string> | null;
-      createdAt: string;
-      tx: TxStreamMessage;
-    }>;
+    activities: Array<PublicStreamActivity>;
     /**
      * Last activity ID (use as offset for next request)
      */
@@ -2650,12 +2666,10 @@ export type GetPagesResponses = {
 export type GetPagesResponse = GetPagesResponses[keyof GetPagesResponses];
 
 export type CreatePagesData = {
-  body: {
-    data: Array<{
-      name?: string;
-    }>;
+  body: Array<{
+    name?: string;
     tx: TxRequest;
-  };
+  }>;
   path?: never;
   query?: never;
   url: '/page';
@@ -2756,14 +2770,12 @@ export type GetPageResponse = GetPageResponses[keyof GetPageResponses];
 
 export type UpdatePageData = {
   body: {
-    data: {
-      name?: string;
-      description?: string | null;
-      keywords?: string;
-      displayOrder?: number;
-      status?: 'unpublished' | 'published' | 'archived';
-      parentId?: string | null;
-    };
+    name?: string;
+    description?: string | null;
+    keywords?: string;
+    displayOrder?: number;
+    status?: 'unpublished' | 'published' | 'archived';
+    parentId?: string | null;
     tx: TxRequest;
   };
   path: {
@@ -3688,25 +3700,23 @@ export type GetAttachmentsResponses = {
 export type GetAttachmentsResponse = GetAttachmentsResponses[keyof GetAttachmentsResponses];
 
 export type CreateAttachmentsData = {
-  body: {
-    data: Array<{
-      id?: string;
-      name?: string;
-      filename: string;
-      contentType: string;
-      size: string;
-      organizationId: string;
-      createdBy?: string | null;
-      originalKey: string;
-      bucketName: string;
-      public?: boolean;
-      groupId?: string | null;
-      convertedContentType?: string | null;
-      convertedKey?: string | null;
-      thumbnailKey?: string | null;
-    }>;
+  body: Array<{
+    id?: string;
+    name?: string;
+    filename: string;
+    contentType: string;
+    size: string;
+    organizationId: string;
+    createdBy?: string | null;
+    originalKey: string;
+    bucketName: string;
+    public?: boolean;
+    groupId?: string | null;
+    convertedContentType?: string | null;
+    convertedKey?: string | null;
+    thumbnailKey?: string | null;
     tx: TxRequest;
-  };
+  }>;
   path: {
     /**
      * Entity ID or slug. ID is always preferred.
@@ -3769,10 +3779,8 @@ export type CreateAttachmentsResponse = CreateAttachmentsResponses[keyof CreateA
 
 export type UpdateAttachmentData = {
   body: {
-    data: {
-      name?: string;
-      originalKey?: string;
-    };
+    name?: string;
+    originalKey?: string;
     tx: TxRequest;
   };
   path: {

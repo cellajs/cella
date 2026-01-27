@@ -2,17 +2,17 @@ import type { ContextEntityType, RealtimeEntityType } from 'config';
 import type { Attachment, Page } from '~/api.gen';
 import router from '~/lib/router';
 import { syncSpanNames, withSpanSync } from '~/lib/tracing';
-import { attachmentQueryKeys } from '~/modules/attachment/query';
 import type { ContextEntityData } from '~/modules/entities/types';
 import { getAndSetMe } from '~/modules/me/helpers';
 import { memberQueryKeys } from '~/modules/memberships/query';
 import { getMenuData } from '~/modules/navigation/menu-sheet/helpers';
 import { organizationQueryKeys } from '~/modules/organization/query';
-import { pageQueryKeys } from '~/modules/page/query';
+import { type EntityQueryKeys, getEntityQueryKeys } from '~/query/basic';
 import { sourceId } from '~/query/offline';
 import { queryClient } from '~/query/query-client';
+import type { AppStreamMessage, ProductEntityData } from './app-stream-types';
+import { removeCacheToken, storeCacheToken } from './cache-token-store';
 import { getSyncPriority } from './sync-priority';
-import type { ProductEntityData, UserStreamMessage } from './user-stream-types';
 
 /**
  * Per-scope sequence tracking for gap detection.
@@ -29,7 +29,7 @@ function getScopeKey(orgId: string | null, entityType: string): string {
 
 /**
  * Map context entity types to their query keys.
- * TODO can we do this dynamically, perhaps using the registry pattern?
+ * Note: membership uses a custom structure and can't use the registry pattern.
  */
 const contextEntityKeysMap = {
   organization: organizationQueryKeys,
@@ -37,28 +37,21 @@ const contextEntityKeysMap = {
 } as const;
 
 /**
- * Map product entity types to their query keys.
+ * Handles incoming app stream notifications and updates the React Query cache accordingly.
+ * Routes notifications to membership, organization, or product entity handlers.
+ * Supports both notification-push (new) and data-push (legacy) notification formats.
+ *
+ * If a cacheToken is present, stores it for use in subsequent fetch requests.
  */
-const productEntityKeysMap: Record<
-  RealtimeEntityType,
-  {
-    list: { base: readonly string[] };
-    detail: { byId: (id: string) => readonly string[] };
-  }
-> = {
-  attachment: attachmentQueryKeys,
-  page: pageQueryKeys,
-};
-
-/**
- * Handles incoming user stream messages and updates the React Query cache accordingly.
- * Routes messages to membership, organization, or product entity handlers.
- * Supports both notification-push (new) and data-push (legacy) message formats.
- */
-export function handleUserStreamMessage(message: UserStreamMessage): void {
-  const { entityId, action, data, resourceType, entityType, tx, organizationId, seq, _trace } = message;
+export function handleAppStreamMessage(message: AppStreamMessage): void {
+  const { entityId, action, data, resourceType, entityType, tx, organizationId, seq, cacheToken, _trace } = message;
 
   withSpanSync(syncSpanNames.messageProcess, { entityType, action, entityId, _trace }, () => {
+    // Store cache token if present (for product entities)
+    if (cacheToken && tx?.version) {
+      storeCacheToken(entityType, entityId, cacheToken, tx.version);
+    }
+
     // Membership events (legacy format with resourceType)
     if (resourceType === 'membership') {
       handleMembershipEvent(action, data);
@@ -71,8 +64,9 @@ export function handleUserStreamMessage(message: UserStreamMessage): void {
       return;
     }
 
-    // Product entity events (page, attachment, etc.)
-    if (entityType in productEntityKeysMap) {
+    // Product entity events - use registry for dynamic lookup
+    const keys = getEntityQueryKeys(entityType);
+    if (keys) {
       handleProductEntityEvent(
         entityType as RealtimeEntityType,
         entityId,
@@ -81,6 +75,7 @@ export function handleUserStreamMessage(message: UserStreamMessage): void {
         tx,
         organizationId,
         seq,
+        keys,
       );
     }
   });
@@ -89,7 +84,7 @@ export function handleUserStreamMessage(message: UserStreamMessage): void {
 /**
  * Handle membership events (created, updated, deleted).
  */
-function handleMembershipEvent(action: UserStreamMessage['action'], data: UserStreamMessage['data']): void {
+function handleMembershipEvent(action: AppStreamMessage['action'], data: AppStreamMessage['data']): void {
   const entityType = (data as { entityType?: ContextEntityType } | null)?.entityType;
   const keys = entityType ? contextEntityKeysMap[entityType] : null;
 
@@ -129,7 +124,7 @@ function handleMembershipEvent(action: UserStreamMessage['action'], data: UserSt
  * Handle organization events (created, updated, deleted).
  */
 function handleOrganizationEvent(
-  action: UserStreamMessage['action'],
+  action: AppStreamMessage['action'],
   entityId: string,
   data: ContextEntityData | null,
 ): void {
@@ -182,18 +177,13 @@ function handleOrganizationEvent(
 function handleProductEntityEvent(
   entityType: RealtimeEntityType,
   entityId: string,
-  action: UserStreamMessage['action'],
+  action: AppStreamMessage['action'],
   data: ProductEntityData | null | undefined,
-  tx: UserStreamMessage['tx'],
+  tx: AppStreamMessage['tx'],
   organizationId: string | null,
-  seq?: number,
+  seq: number | undefined,
+  keys: EntityQueryKeys,
 ): void {
-  const keys = productEntityKeysMap[entityType];
-  if (!keys) {
-    console.debug('[handleProductEntityEvent] Unknown entity type:', entityType);
-    return;
-  }
-
   // Echo prevention: skip if this is our own mutation
   if (tx?.sourceId === sourceId) {
     console.debug('[handleProductEntityEvent] Echo prevention - skipping own mutation:', tx.id);
@@ -259,6 +249,8 @@ function handleProductEntityEvent(
     case 'delete':
       // Remove from detail cache (always immediate)
       queryClient.removeQueries({ queryKey: keys.detail.byId(entityId) });
+      // Remove cache token for deleted entity
+      removeCacheToken(entityType, entityId);
       // Invalidate list - refetch behavior based on priority
       if (priority !== 'medium') {
         queryClient.invalidateQueries({ queryKey: keys.list.base, refetchType });
@@ -273,7 +265,7 @@ function handleProductEntityEvent(
 const debounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
 /** Debounce list invalidations for medium priority to batch rapid updates */
-function debouncedInvalidateList(entityType: string, keys: { list: { base: readonly string[] } }): void {
+function debouncedInvalidateList(entityType: string, keys: EntityQueryKeys): void {
   const existing = debounceTimers.get(entityType);
   if (existing) clearTimeout(existing);
 

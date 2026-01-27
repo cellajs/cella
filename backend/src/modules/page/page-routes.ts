@@ -1,10 +1,10 @@
 import z from 'zod';
 import { createXRoute } from '#/docs/x-routes';
 import { isAuthenticated, isPublicAccess, isSystemAdmin } from '#/middlewares/guard';
-import { createStreamMessageSchema, errorResponseRefs, idsBodySchema, paginationSchema } from '#/schemas';
+import { errorResponseRefs, idsBodySchema, paginationSchema, publicStreamActivitySchema } from '#/schemas';
 import {
+  pageCreateManyTxBodySchema,
   pageCreateResponseSchema,
-  pageCreateTxBodySchema,
   pageListQuerySchema,
   pageSchema,
   pageUpdateTxBodySchema,
@@ -22,7 +22,7 @@ const publicStreamQuerySchema = z.object({
  * Catch-up response for public pages stream.
  */
 const publicStreamResponseSchema = z.object({
-  activities: z.array(createStreamMessageSchema(z.unknown())),
+  activities: z.array(publicStreamActivitySchema),
   cursor: z.string().nullable().describe('Last activity ID (use as offset for next request)'),
 });
 
@@ -66,7 +66,7 @@ const pagesRoutes = {
     request: {
       body: {
         required: true,
-        content: { 'application/json': { schema: pageCreateTxBodySchema } },
+        content: { 'application/json': { schema: pageCreateManyTxBodySchema } },
       },
     },
     responses: {

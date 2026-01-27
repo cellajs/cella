@@ -1,4 +1,4 @@
-import type { TxColumnData } from '#/db/utils/tx-columns';
+import type { TxBase } from '#/db/utils/tx-columns';
 import type { RowData } from './convert-row-keys';
 
 /**
@@ -6,7 +6,7 @@ import type { RowData } from './convert-row-keys';
  * Product entities have a tx JSONB column, context entities do not.
  * Returns null if tx is not present or is not a valid object.
  */
-export function extractTxData(row: RowData): TxColumnData | null {
+export function extractTxData(row: RowData): TxBase | null {
   const tx = row.tx;
 
   // Not present or null

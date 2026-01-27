@@ -22,7 +22,7 @@ const tokenTtl = 10 * 60 * 1000;
 /** Get the secret for signing tokens */
 function getSecret(): string {
   // Use ARGON_SECRET as base for token signing
-  return env.ARGON_SECRET || 'dev-entity-cache-secret-change-in-production';
+  return env.ARGON_SECRET;
 }
 
 /**

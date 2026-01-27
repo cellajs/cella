@@ -59,7 +59,7 @@ export const PublicLayoutRoute = createRoute({
     if (cause !== 'enter' || location.pathname === '/sign-out') return;
 
     try {
-      console.debug('Fetch me & menu in while entering public page ', location.pathname);
+      console.debug('[PublicLayout] Fetching me while entering public page:', location.pathname);
 
       // Fetch and set user
       await queryClient.ensureQueryData({ ...meQueryOptions(), revalidateIfStale: true });
@@ -88,7 +88,7 @@ export const AppLayoutRoute = createRoute({
     if (cause !== 'enter') return;
 
     try {
-      console.debug('Fetching me before entering app:', location.pathname);
+      console.debug('[AppLayout] Fetching me before entering app:', location.pathname);
 
       // Try to use stored user, it will still revalidate below
       const storedUser = useUserStore.getState().user;
@@ -124,7 +124,7 @@ export const AppLayoutRoute = createRoute({
     if (cause !== 'enter') return;
 
     try {
-      console.debug('Fetching menu while loading app:', location.pathname);
+      console.debug('[AppLayout] Fetching menu while loading app:', location.pathname);
 
       // Revalidate user if not already awaited above
       if (!context?.user) await queryClient.ensureQueryData({ ...meQueryOptions(), revalidateIfStale: true });

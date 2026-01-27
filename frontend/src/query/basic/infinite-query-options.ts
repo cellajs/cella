@@ -29,137 +29,76 @@ export const baseInfiniteQueryOptions = {
   }) as GetNextPageParamFunction<PageParams, QueryData<unknown>>,
 };
 
-type Primitive = string | number | boolean | bigint | symbol | null | undefined;
-
-// Flatten all primitive keys recursively
-type FlattenPrimitiveKeys<T> = {
-  [K in keyof T]: T[K] extends Primitive ? K : T[K] extends object ? FlattenPrimitiveKeys<T[K]> : never;
-}[keyof T];
-
-// Nested primitives excluding keys that exist at the top-level
-type NestedPrimitiveKeys<T> = Exclude<
-  {
-    [K in keyof T]: T[K] extends object
-      ? FlattenPrimitiveKeys<T[K]> // get nested primitive keys
-      : never;
-  }[keyof T],
-  keyof T // remove top-level keys
->;
-
-type SortFunction<T> = (item: T) => Primitive;
-
 interface FilterOptions<T> {
   q: string;
-  sort: FlattenPrimitiveKeys<T>; // top-level + nested
+  sort: keyof T | (string & {});
   order: 'asc' | 'desc';
   searchIn: (keyof T)[];
   limit?: number;
-  staleTime?: number;
-  sortOptions?: Partial<Record<NestedPrimitiveKeys<T>, SortFunction<T>>>;
+  sortOptions?: Record<string, (item: T) => unknown>;
   additionalFilter?: (item: T) => boolean;
 }
 
+/** Filter and sort items based on filter options. */
+const filterAndSortItems = <T>(items: T[], opts: FilterOptions<T>): T[] => {
+  const { q, sort, order, searchIn, additionalFilter, sortOptions } = opts;
+  const search = q.trim().toLowerCase();
+
+  return items
+    .filter((item) => {
+      if (
+        search &&
+        !searchIn.some((k) =>
+          String(item[k] ?? '')
+            .toLowerCase()
+            .includes(search),
+        )
+      )
+        return false;
+      return additionalFilter ? additionalFilter(item) : true;
+    })
+    .toSorted((a, b) => {
+      const getter = sortOptions?.[sort as string];
+      const aVal = getter ? getter(a) : (a as Record<string, unknown>)[sort as string];
+      const bVal = getter ? getter(b) : (b as Record<string, unknown>)[sort as string];
+      if (aVal == null && bVal == null) return 0;
+      if (aVal == null) return 1;
+      if (bVal == null) return -1;
+      const cmp =
+        typeof aVal === 'string' && typeof bVal === 'string'
+          ? aVal.localeCompare(bVal, undefined, { sensitivity: 'base' })
+          : aVal < bVal
+            ? -1
+            : aVal > bVal
+              ? 1
+              : 0;
+      return order === 'asc' ? cmp : -cmp;
+    });
+};
+
 /**
- *  A reusable options preset for `useInfiniteQuery` that:
- *  - Uses cached data if all items are already fetched.
- *  - Skips unnecessary refetches unless data is stale or incomplete.
- *  - Provides initial filtered/sorted data for instant UI display (only when query is disabled).
+ * A composable options preset for `infiniteQueryOptions` that enables client-side
+ * filtering/sorting from a cached base query using React Query's native patterns.
  *
- *  Use this when you want no redundant network calls for filtering/sorting/search if the full dataset is already cached.
+ * Uses `initialData` + `initialDataUpdatedAt` for instant display of filtered cache,
+ * while respecting `staleTime` for automatic background refetches when needed.
  */
-// TODO make it work not on baseQueryKey, but on any sort that have full load
 export const infiniteQueryUseCachedIfCompleteOptions = <T>(baseQueryKey: QueryKey, filterOptions: FilterOptions<T>) => {
-  const isEnabled = () => {
-    const state = queryClient.getQueryState<InfiniteQueryData<unknown>>(baseQueryKey);
-    const queryStaleTime = filterOptions.staleTime ?? baseInfiniteQueryOptions.staleTime;
-
-    // If no cache, error, or stale
-    if (!state || state.error || !state.data || Date.now() - state.dataUpdatedAt > queryStaleTime) {
-      return true;
-    }
-
-    const pages = state.data.pages;
-    const totalCount = pages[pages.length - 1].total ?? 0;
-    const fetchedCount = pages.reduce((acc, page) => acc + page.items.length, 0);
-
-    // If not all items fetched
-    return fetchedCount < totalCount;
-  };
+  const { limit } = filterOptions;
 
   return {
-    /**
-     * Controls whether the query should be executed.
-     * It fetches only if:
-     * - There is no cached data
-     * - Cached data is stale
-     * - The cache contains only partial items
-     */
-    enabled: isEnabled,
-    /**
-     * Provides initial data instantly from the cache.
-     * Data is filtered and sorted locally according to `filterOptions`.
-     * Avoids showing stale/unfiltered data during refetch.
-     */
+    /** Pre-fill with filtered/sorted data from base cache for instant UI. */
     initialData: () => {
-      // Only hydrate if query is disabled
-      if (isEnabled()) return;
-
       const cache = queryClient.getQueryData<InfiniteQueryData<T>>(baseQueryKey);
-      if (!cache) return;
-
-      const { q, sort, order, limit, sortOptions, searchIn, additionalFilter } = filterOptions;
+      if (!cache) return undefined;
 
       const cachedItems = cache.pages.flatMap((p) => p.items);
-      const normalizedSearch = q.trim().toLowerCase();
-
-      // Filter items
-      const filteredItems = cachedItems
-        .filter((item) => {
-          const matchesSearch =
-            !normalizedSearch ||
-            searchIn.some((key) => {
-              const value = item[key];
-              if (value == null) return false;
-              return String(value).toLowerCase().includes(normalizedSearch);
-            });
-
-          const additionalMatch = additionalFilter ? additionalFilter(item) : true;
-
-          return matchesSearch && additionalMatch;
-        })
-        // Sort items
-        .sort((a, b) => {
-          let aVal: Primitive;
-          let bVal: Primitive;
-
-          if (sort in (sortOptions ?? {})) {
-            // Use sort function for nested keys
-            const fn = sortOptions![sort as NestedPrimitiveKeys<T>];
-            aVal = fn ? fn(a) : undefined;
-            bVal = fn ? fn(b) : undefined;
-          } else {
-            const aRaw = a[sort as keyof T];
-            const bRaw = b[sort as keyof T];
-            aVal = aRaw !== null && aRaw !== undefined && typeof aRaw === 'object' ? null : (aRaw as Primitive);
-            bVal = bRaw !== null && bRaw !== undefined && typeof bRaw === 'object' ? null : (bRaw as Primitive);
-          }
-
-          if (aVal == null && bVal == null) return 0;
-          if (aVal == null) return 1;
-          if (bVal == null) return -1;
-
-          if (typeof aVal === 'number' && typeof bVal === 'number') {
-            return order === 'asc' ? aVal - bVal : bVal - aVal;
-          }
-
-          return order === 'asc'
-            ? String(aVal).localeCompare(String(bVal), undefined, { sensitivity: 'base' })
-            : String(bVal).localeCompare(String(aVal), undefined, { sensitivity: 'base' });
-        });
-
+      const filteredItems = filterAndSortItems(cachedItems, filterOptions);
       const totalChange = filteredItems.length - cachedItems.length;
 
       return formatUpdatedCacheData(cache, filteredItems, limit, totalChange) as InfiniteQueryData<T>;
     },
+    /** Pass through base cache timestamp so staleTime is respected correctly. */
+    initialDataUpdatedAt: () => queryClient.getQueryState(baseQueryKey)?.dataUpdatedAt,
   };
 };

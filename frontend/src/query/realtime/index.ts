@@ -7,36 +7,44 @@
  * - Sync state coordination
  */
 
+export { default as AppStream, useAppStream } from './app-stream';
+export { handleAppStreamMessage } from './app-stream-handler';
+export type {
+  AppStreamMessage,
+  AppStreamOffsetEvent,
+  BaseStreamOptions,
+  BaseStreamReturn,
+  StreamState,
+  UseAppStreamOptions,
+  UseAppStreamReturn,
+  UsePublicStreamOptions,
+  UsePublicStreamReturn,
+} from './app-stream-types';
+// Cache token utilities for LRU entity cache
+export {
+  clearCacheTokens,
+  getCacheToken,
+  getCacheTokenEntry,
+  getCacheTokenStats,
+  removeCacheToken,
+  storeCacheToken,
+} from './cache-token-store';
 export type { HydrateBarrier, UseHydrateBarrierOptions, UseHydrateBarrierReturn } from './hydrate-barrier';
 export { createHydrateBarrier, useHydrateBarrier } from './hydrate-barrier';
+export { default as PublicStream, usePublicStream } from './public-stream';
+export { handlePublicStreamMessage, type PublicStreamMessage } from './public-stream-handler';
 export {
-  broadcastCursorUpdate,
-  broadcastStreamMessage,
+  broadcastNotification,
   cleanupTabCoordinator,
   initTabCoordinator,
   isLeader,
-  onCursorUpdate,
-  onStreamMessage,
-  requestSync,
+  onNotification,
   useTabCoordinator,
   useTabCoordinatorStore,
 } from './tab-coordinator';
 export type { UseLeaderReconnectOptions } from './use-leader-reconnect';
 export { useLeaderReconnect } from './use-leader-reconnect';
-export type { UsePageLiveStreamOptions, UsePageLiveStreamReturn } from './use-page-live-stream';
-export { usePageLiveStream } from './use-page-live-stream';
 export type { SSEEventHandlers, UseSSEConnectionOptions, UseSSEConnectionReturn } from './use-sse-connection';
 export { useSSEConnection } from './use-sse-connection';
-export { useUserStream } from './use-user-stream';
 export type { UseVisibilityReconnectOptions } from './use-visibility-reconnect';
 export { useVisibilityReconnect } from './use-visibility-reconnect';
-export { handleUserStreamMessage } from './user-stream-handler';
-export type {
-  StreamState,
-  UserStreamMessage,
-  UserStreamOffsetEvent,
-  /** @deprecated Use StreamState instead */
-  UserStreamState,
-  UseUserStreamOptions,
-  UseUserStreamReturn,
-} from './user-stream-types';

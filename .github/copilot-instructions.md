@@ -2,6 +2,9 @@
 
 Cella is a TypeScript monorepo template for building collaborative web apps with sync & offline capabilities.
 
+## Important information
+Cella is a minimal implementation of the template itself. It is designed to be forked and extended to build custom applications. The entity model is dynamic and configurable per app, with `user` and `organization` as built-in entities. The architecture focuses on a hybrid sync engine to enable offline-first experiences with real-time updates. Raak is an example app built with the Cella template, showcasing its capabilities. It should be used as a reference to build  implementations so please check it out in the raak folder if it is included in a VSCode workspace.
+
 ## Architecture Overview
 
 **Flat-root monorepo** with pnpm workspaces:
@@ -10,7 +13,7 @@ Cella is a TypeScript monorepo template for building collaborative web apps with
 - `config/` - Shared environment configs (development, production, staging)
 - `locales/` - i18n translations (en, nl)
 - `info/` - Documentation
-- `cdc/` - CDC (Change Data Capture) service (optional)
+- `cdc/` - CDC (Change Data Capture) worker (optional)
 
 Both backend and frontend use **modular structure** in `src/modules/` (e.g., `auth`, `users`, `organizations`, `attachments`). Keep new features in their own modules.
 
@@ -74,14 +77,6 @@ pnpm sync           # Sync changes from upstream cella to fork (useful for forks
 - **Test files**: `*.test.ts` adjacent to source or in `tests/`
 - **Commit format**: Conventional Commits (`feat:`, `fix:`, `chore:`, `refactor:`)
 - **PRs**: Include description, linked issues, screenshots for UI changes
-
-## Learning priority
-
-When understanding Cella's architecture or implementing features, prioritize sources in this order:
-1. **Code** - The source code is the ultimate source of truth
-2. **Invariants & design decisions** - See `info/HYBRID_SYNC_ENGINE_PLAN.md` for the "why" behind architectural choices
-3. **Requirements** - Testable contracts in `info/HYBRID_SYNC_ENGINE_PLAN.md`
-4. **Architecture docs** - `info/ARCHITECTURE.md`, `info/AGENTS.md`
 
 **Avoid relying on README files** - They often become stale. Prefer reading actual code and design decision documentation.
 

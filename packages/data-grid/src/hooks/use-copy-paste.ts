@@ -128,7 +128,7 @@ export function useCopyPaste<R, SR>({
     try {
       await navigator.clipboard.writeText(textValue);
     } catch (error) {
-      console.debug('Failed to copy to clipboard:', error);
+      console.debug('[useCopyPaste] Failed to copy to clipboard:', error);
     }
   }, [getSelectedCell, onCopy]);
 
@@ -148,7 +148,7 @@ export function useCopyPaste<R, SR>({
         onRowChange(rowIdx, newRow);
       }
     } catch (error) {
-      console.debug('Failed to paste from clipboard:', error);
+      console.debug('[useCopyPaste] Failed to paste from clipboard:', error);
     }
   }, [getSelectedCell, onPaste, onRowChange]);
 

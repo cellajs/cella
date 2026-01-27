@@ -2,40 +2,23 @@ import type { IncomingMessage } from 'node:http';
 import type { Duplex } from 'node:stream';
 import type { ServerType } from '@hono/node-server';
 import { z } from '@hono/zod-openapi';
-import { appConfig } from 'config';
 import { type WebSocket, WebSocketServer } from 'ws';
 import { env } from '#/env';
-import { resourceTypes } from '#/table-config';
+import { activityActionSchema, activitySchema } from '#/modules/activities/activities-schema';
 import { logEvent } from '#/utils/logger';
-import { type ActivityEventWithEntity, activityActions, activityBus } from './activity-bus';
+import { type ActivityEventWithEntity, activityBus, isValidEventType } from './activity-bus';
 
 /**
  * Zod schema for CDC WebSocket message payload.
- * Validates the { activity, entity } structure sent by CDC Worker.
- * Uses typed enums to match ActivityEvent interface.
+ * Validates the { activity, entity, _trace } structure sent by CDC Worker.
+ * Reuses activitySchema with stricter typing for fields that must be present in CDC context.
  */
 const cdcMessageSchema = z.object({
   activity: z.object({
-    id: z.string(),
-    type: z.string(),
-    action: z.enum(activityActions),
-    tableName: z.string(),
-    entityType: z.enum(appConfig.entityTypes).nullable(),
-    resourceType: z.enum(resourceTypes).nullable(),
+    ...activitySchema.shape,
+    // Override nullable fields that are always present in CDC messages
+    action: activityActionSchema,
     entityId: z.string(),
-    userId: z.string().nullable(),
-    organizationId: z.string().nullable(),
-    changedKeys: z.array(z.string()).nullable(),
-    tx: z
-      .object({
-        id: z.string(),
-        sourceId: z.string(),
-        version: z.number(),
-        fieldVersions: z.record(z.string(), z.number()),
-      })
-      .nullable(),
-    createdAt: z.string(),
-    seq: z.number().nullable().optional(),
   }),
   entity: z.record(z.string(), z.unknown()),
   _trace: z
@@ -161,10 +144,18 @@ class CdcWebSocketServer {
       this._messagesReceived++;
       this._lastMessageAt = new Date();
 
+      // Validate event type is a known ActivityEventType
+      const { type } = message.activity;
+      if (!isValidEventType(type)) {
+        this._parseErrors++;
+        logEvent('warn', 'Unknown CDC event type', { type });
+        return;
+      }
+
       // Transform to ActivityEventWithEntity and emit
-      // Zod schema uses typed enums so no assertion needed
       const activityEvent: ActivityEventWithEntity = {
         ...message.activity,
+        type,
         seq: message.activity.seq ?? null,
         entity: message.entity,
         _trace: message._trace,

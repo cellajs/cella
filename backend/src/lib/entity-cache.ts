@@ -8,8 +8,8 @@
 
 import { verifyAccessToken } from './access-token';
 import { publicCacheMetrics, tokenCacheMetrics } from './cache-metrics';
-import { LRUCache } from './lru-cache';
 import { coalesce, isInFlight } from './request-coalescing';
+import { EntityTTLCache } from './ttl-cache';
 
 /** Cache configuration */
 const cacheConfig = {
@@ -21,30 +21,32 @@ const cacheConfig = {
   tokenMaxSize: 5000,
   /** TTL for token cache: 10 minutes (matches token expiry) */
   tokenTtl: 10 * 60 * 1000,
-  /** Prune interval: every 1 minute */
-  pruneInterval: 60 * 1000,
 };
 
 /** Entity data type */
 type EntityData = Record<string, unknown>;
 
 /** Public cache: no auth required */
-const publicCache = new LRUCache<EntityData>({
+const publicCache = new EntityTTLCache<EntityData>({
   maxSize: cacheConfig.publicMaxSize,
   defaultTtl: cacheConfig.publicTtl,
+  onDispose: (key, _value, reason) => {
+    if (reason === 'stale' || reason === 'evict') {
+      console.debug('[cache:public] DISPOSE', { key, reason });
+    }
+  },
 });
 
 /** Token cache: requires access token */
-const tokenCache = new LRUCache<EntityData>({
+const tokenCache = new EntityTTLCache<EntityData>({
   maxSize: cacheConfig.tokenMaxSize,
   defaultTtl: cacheConfig.tokenTtl,
+  onDispose: (key, _value, reason) => {
+    if (reason === 'stale' || reason === 'evict') {
+      console.debug('[cache:token] DISPOSE', { key, reason });
+    }
+  },
 });
-
-// Periodic pruning of expired entries
-setInterval(() => {
-  publicCache.prune();
-  tokenCache.prune();
-}, cacheConfig.pruneInterval);
 
 /** Build public cache key */
 function publicKey(entityType: string, entityId: string, version: number): string {

@@ -1,9 +1,9 @@
 import { EventEmitter } from 'node:events';
-import { appConfig } from 'config';
+import { appConfig, type EntityType } from 'config';
 import pg from 'pg';
-import type { TxColumnData } from '#/db/utils/tx-columns';
+import type { TxBase } from '#/db/utils/tx-columns';
 import { env } from '#/env';
-import { resourceTypes } from '#/table-config';
+import { type ResourceType, resourceTypes } from '#/table-config';
 import { logEvent } from '#/utils/logger';
 import {
   eventAttrs,
@@ -71,20 +71,21 @@ export function isValidEventType(type: string): type is ActivityEventType {
  * Base activity event payload.
  * Extends ActivityModel fields with tighter typing for known values.
  */
+// TODO also here we can extract type from ActivityModel perhaps
 export interface ActivityEvent {
   id: string;
-  type: string; // e.g., 'user.created', 'organization.updated'
+  type: ActivityEventType; // e.g., 'user.created', 'organization.updated'
   action: ActivityAction; // Tightly typed as 'create' | 'update' | 'delete'
   tableName: string;
-  entityType: (typeof appConfig.entityTypes)[number] | null;
-  resourceType: (typeof resourceTypes)[number] | null;
+  entityType: EntityType | null;
+  resourceType: ResourceType | null;
   entityId: string | null;
   userId: string | null;
   organizationId: string | null;
   changedKeys: string[] | null;
   seq: number | null;
   createdAt: string; // ISO string from JSON serialization
-  tx: TxColumnData | null; // Transaction metadata for sync (null for context entities)
+  tx: TxBase | null; // Transaction metadata for sync (null for basic entities)
 }
 
 /**

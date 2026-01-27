@@ -64,19 +64,14 @@
                     ]
                   },
                   "tx": {
+                    "type": ["object", "null"],
                     "required": true,
-                    "anyOf": [
-                      { "type": "string", "required": false },
-                      { "type": "number", "required": false },
-                      { "type": "boolean", "required": false },
-                      { "type": "null", "required": false },
-                      { "type": "object", "required": false },
-                      {
-                        "type": "array",
-                        "required": false,
-                        "itemType": "object"
-                      }
-                    ]
+                    "properties": {
+                      "id": { "type": "string", "required": true },
+                      "sourceId": { "type": "string", "required": true },
+                      "version": { "type": "number", "required": true },
+                      "fieldVersions": { "type": "object", "required": true }
+                    }
                   },
                   "seq": {
                     "type": ["integer", "null"],
@@ -145,25 +140,31 @@
           },
           "offset": { "type": "string", "required": false },
           "limit": { "type": "string", "required": false },
-          "userId": { "type": "string", "required": false },
+          "userId": {
+            "type": ["string", "null"],
+            "required": false
+          },
           "entityType": {
-            "type": "string",
+            "type": ["string", "null"],
             "required": false,
-            "enum": ["user", "organization", "attachment", "page"]
+            "enum": ["user", "organization", "attachment", "page", null]
           },
           "resourceType": {
-            "type": "string",
+            "type": ["string", "null"],
             "required": false,
-            "enum": ["request", "membership"]
+            "enum": ["request", "membership", null]
           },
           "action": {
-            "type": "string",
+            "type": ["string", "null"],
             "required": false,
-            "enum": ["create", "update", "delete"]
+            "enum": ["create", "update", "delete", null]
           },
           "tableName": { "type": "string", "required": false },
           "type": { "type": "string", "required": false },
-          "entityId": { "type": "string", "required": false }
+          "entityId": {
+            "type": ["string", "null"],
+            "required": false
+          }
         }
       }
     }

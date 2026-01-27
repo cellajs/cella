@@ -62,8 +62,8 @@
     "deps:outdated": "pnpm --filter @cellajs/sync deps:outdated"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.3.11",
-    "@evilmartians/lefthook": "^2.0.15",
+    "@biomejs/biome": "^2.3.13",
+    "@evilmartians/lefthook": "^2.0.16",
     "@typescript/native-preview": "7.0.0-dev.20260113.1",
     "cross-env": "^10.1.0",
     "knip": "^5.82.1",

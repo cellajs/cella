@@ -6,8 +6,10 @@ import { db } from '#/db/db';
 import { activitiesTable } from '#/db/schema/activities';
 import { PageModel, pagesTable } from '#/db/schema/pages';
 import { usersTable } from '#/db/schema/users';
+import { verifyCacheToken } from '#/lib/cache-token';
 import { type Env, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity.ts';
+import { entityCache } from '#/lib/entity-cache';
 import { AppError } from '#/lib/error';
 import pagesRoutes from '#/modules/page/page-routes';
 import { getValidProductEntity } from '#/permissions/get-product-entity';
@@ -57,8 +59,6 @@ async function fetchPublicPageActivities(cursor: string | null, limit = 100) {
     entityId: activity.entityId!,
     changedKeys: activity.changedKeys ?? null,
     createdAt: activity.createdAt,
-    tx: null,
-    data: null,
   }));
 }
 
@@ -145,11 +145,12 @@ const pageRouteHandlers = app
    * Create one or more pages
    */
   .openapi(pagesRoutes.createPages, async (ctx) => {
-    const { data: newPages, tx } = ctx.req.valid('json');
+    const newPages = ctx.req.valid('json');
 
-    // Idempotency check - return existing entities if transaction already processed
-    if (await isTransactionProcessed(tx.id)) {
-      const ref = await getEntityByTransaction(tx.id);
+    // Idempotency check - use first item's tx.id
+    const firstTx = newPages[0].tx;
+    if (await isTransactionProcessed(firstTx.id)) {
+      const ref = await getEntityByTransaction(firstTx.id);
       if (ref) {
         // For batch create, the first page ID is stored - fetch all from that batch
         const existing = await db.select().from(pagesTable).where(eq(pagesTable.id, ref.entityId));
@@ -162,7 +163,7 @@ const pageRouteHandlers = app
     const user = getContextUser();
 
     // Prepare pages with tx metadata for CDC
-    const pagesToInsert = newPages.map((pageData) => ({
+    const pagesToInsert = newPages.map(({ tx, ...pageData }) => ({
       ...pageData,
       id: nanoid(),
       entityType: 'page' as const,
@@ -256,12 +257,38 @@ const pageRouteHandlers = app
   })
   /**
    * Get page by id
+   * Supports LRU cache via X-Cache-Token header from SSE stream notifications.
    */
   .openapi(pagesRoutes.getPage, async (ctx) => {
     const { id } = ctx.req.valid('param');
 
+    // Check for cache token from SSE notification
+    const cacheToken = ctx.req.header('X-Cache-Token');
+    if (cacheToken) {
+      const payload = verifyCacheToken(cacheToken);
+      if (payload && payload.entityType === 'page' && payload.entityId === id) {
+        // Try cache first
+        const cached = entityCache.get('page', id, payload.version, cacheToken);
+        if (cached) {
+          ctx.header('X-Cache', 'HIT');
+          return ctx.json(cached as PageModel, 200);
+        }
+      }
+    }
+
+    // Cache miss or no token - fetch from DB
     const page = await resolveEntity('page', id);
     if (!page) throw new AppError(404, 'not_found', 'warn', { entityType: 'page' });
+
+    // Cache the result if we have a valid token
+    if (cacheToken) {
+      const payload = verifyCacheToken(cacheToken);
+      if (payload && payload.entityType === 'page' && payload.entityId === id) {
+        // Pages are public, use public cache
+        entityCache.setPublic('page', id, payload.version, page);
+        ctx.header('X-Cache', 'MISS');
+      }
+    }
 
     return ctx.json(page, 200);
   })
@@ -273,7 +300,7 @@ const pageRouteHandlers = app
 
     const { entity } = await getValidProductEntity(id, 'page', 'update');
 
-    const { data: pageData, tx } = ctx.req.valid('json');
+    const { tx, ...pageData } = ctx.req.valid('json');
     const user = getContextUser();
 
     // Get all tracked fields that are being updated

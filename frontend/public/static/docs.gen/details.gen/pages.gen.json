@@ -13,40 +13,30 @@
               "type": "array",
               "required": true,
               "itemType": "object",
+              "ref": "#/components/schemas/PublicStreamActivity",
               "items": {
                 "type": "object",
                 "properties": {
-                  "data": { "type": "object", "required": false },
+                  "activityId": { "type": "string", "required": true },
+                  "action": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["create", "update", "delete"]
+                  },
                   "entityType": {
                     "type": "string",
                     "required": true,
                     "enum": ["attachment", "page"]
                   },
                   "entityId": { "type": "string", "required": true },
-                  "action": {
-                    "type": "string",
-                    "required": true,
-                    "enum": ["create", "update", "delete"]
-                  },
-                  "activityId": { "type": "string", "required": true },
                   "changedKeys": {
                     "type": ["array", "null"],
                     "required": true,
                     "itemType": "string"
                   },
-                  "createdAt": { "type": "string", "required": true },
-                  "tx": {
-                    "type": ["object", "null"],
-                    "required": true,
-                    "properties": {
-                      "id": { "type": "string", "required": true },
-                      "sourceId": { "type": "string", "required": true },
-                      "version": { "type": "integer", "required": true },
-                      "fieldVersions": { "type": "object", "required": true }
-                    },
-                    "ref": "#/components/schemas/TxStreamMessage"
-                  }
-                }
+                  "createdAt": { "type": "string", "required": true }
+                },
+                "ref": "#/components/schemas/PublicStreamActivity"
               }
             },
             "cursor": {
@@ -156,19 +146,14 @@
                     "required": true
                   },
                   "tx": {
+                    "type": "object",
                     "required": true,
-                    "anyOf": [
-                      { "type": "string", "required": false },
-                      { "type": "number", "required": false },
-                      { "type": "boolean", "required": false },
-                      { "type": "null", "required": false },
-                      { "type": "object", "required": false },
-                      {
-                        "type": "array",
-                        "required": false,
-                        "itemType": "object"
-                      }
-                    ]
+                    "properties": {
+                      "id": { "type": "string", "required": true },
+                      "sourceId": { "type": "string", "required": true },
+                      "version": { "type": "number", "required": true },
+                      "fieldVersions": { "type": "object", "required": true }
+                    }
                   },
                   "status": {
                     "type": "string",
@@ -240,19 +225,14 @@
                     "required": true
                   },
                   "tx": {
+                    "type": "object",
                     "required": true,
-                    "anyOf": [
-                      { "type": "string", "required": false },
-                      { "type": "number", "required": false },
-                      { "type": "boolean", "required": false },
-                      { "type": "null", "required": false },
-                      { "type": "object", "required": false },
-                      {
-                        "type": "array",
-                        "required": false,
-                        "itemType": "object"
-                      }
-                    ]
+                    "properties": {
+                      "id": { "type": "string", "required": true },
+                      "sourceId": { "type": "string", "required": true },
+                      "version": { "type": "number", "required": true },
+                      "fieldVersions": { "type": "object", "required": true }
+                    }
                   },
                   "status": {
                     "type": "string",
@@ -321,47 +301,42 @@
     ],
     "request": {
       "body": {
-        "type": "object",
-        "properties": {
-          "data": {
-            "type": "array",
-            "required": true,
-            "minItems": 1,
-            "maxItems": 50,
-            "itemType": "object",
-            "items": {
+        "type": "array",
+        "itemType": "object",
+        "items": {
+          "type": "object",
+          "required": true,
+          "properties": {
+            "name": { "type": "string", "required": false },
+            "tx": {
               "type": "object",
+              "required": true,
               "properties": {
-                "name": { "type": "string", "required": false }
-              }
+                "id": {
+                  "type": "string",
+                  "required": true,
+                  "description": "Unique mutation ID (nanoid)",
+                  "maxLength": 32
+                },
+                "sourceId": {
+                  "type": "string",
+                  "required": true,
+                  "description": "Tab/instance identifier for echo prevention",
+                  "maxLength": 64
+                },
+                "baseVersion": {
+                  "type": "integer",
+                  "required": true,
+                  "description": "Entity version when read (for conflict detection)",
+                  "minimum": 0
+                }
+              },
+              "ref": "#/components/schemas/TxRequest"
             }
-          },
-          "tx": {
-            "type": "object",
-            "required": true,
-            "properties": {
-              "id": {
-                "type": "string",
-                "required": true,
-                "description": "Unique mutation ID (nanoid)",
-                "maxLength": 32
-              },
-              "sourceId": {
-                "type": "string",
-                "required": true,
-                "description": "Tab/instance identifier for echo prevention",
-                "maxLength": 64
-              },
-              "baseVersion": {
-                "type": "integer",
-                "required": true,
-                "description": "Entity version when read (for conflict detection)",
-                "minimum": 0
-              }
-            },
-            "ref": "#/components/schemas/TxRequest"
           }
         },
+        "minItems": 1,
+        "maxItems": 50,
         "required": true,
         "contentType": "application/json"
       }
@@ -411,19 +386,14 @@
                     "required": true
                   },
                   "tx": {
+                    "type": "object",
                     "required": true,
-                    "anyOf": [
-                      { "type": "string", "required": false },
-                      { "type": "number", "required": false },
-                      { "type": "boolean", "required": false },
-                      { "type": "null", "required": false },
-                      { "type": "object", "required": false },
-                      {
-                        "type": "array",
-                        "required": false,
-                        "itemType": "object"
-                      }
-                    ]
+                    "properties": {
+                      "id": { "type": "string", "required": true },
+                      "sourceId": { "type": "string", "required": true },
+                      "version": { "type": "number", "required": true },
+                      "fieldVersions": { "type": "object", "required": true }
+                    }
                   },
                   "status": {
                     "type": "string",
@@ -600,19 +570,14 @@
               "required": true
             },
             "tx": {
+              "type": "object",
               "required": true,
-              "anyOf": [
-                { "type": "string", "required": false },
-                { "type": "number", "required": false },
-                { "type": "boolean", "required": false },
-                { "type": "null", "required": false },
-                { "type": "object", "required": false },
-                {
-                  "type": "array",
-                  "required": false,
-                  "itemType": "object"
-                }
-              ]
+              "properties": {
+                "id": { "type": "string", "required": true },
+                "sourceId": { "type": "string", "required": true },
+                "version": { "type": "number", "required": true },
+                "fieldVersions": { "type": "object", "required": true }
+              }
             },
             "status": {
               "type": "string",
@@ -736,19 +701,14 @@
               "required": true
             },
             "tx": {
+              "type": "object",
               "required": true,
-              "anyOf": [
-                { "type": "string", "required": false },
-                { "type": "number", "required": false },
-                { "type": "boolean", "required": false },
-                { "type": "null", "required": false },
-                { "type": "object", "required": false },
-                {
-                  "type": "array",
-                  "required": false,
-                  "itemType": "object"
-                }
-              ]
+              "properties": {
+                "id": { "type": "string", "required": true },
+                "sourceId": { "type": "string", "required": true },
+                "version": { "type": "number", "required": true },
+                "fieldVersions": { "type": "object", "required": true }
+              }
             },
             "status": {
               "type": "string",
@@ -835,32 +795,26 @@
       "body": {
         "type": "object",
         "properties": {
-          "data": {
-            "type": "object",
-            "required": true,
-            "properties": {
-              "name": { "type": "string", "required": false },
-              "description": {
-                "type": ["string", "null"],
-                "required": false
-              },
-              "keywords": { "type": "string", "required": false },
-              "displayOrder": {
-                "type": "number",
-                "required": false,
-                "minimum": -140737488355328,
-                "maximum": 140737488355327
-              },
-              "status": {
-                "type": "string",
-                "required": false,
-                "enum": ["unpublished", "published", "archived"]
-              },
-              "parentId": {
-                "type": ["string", "null"],
-                "required": false
-              }
-            }
+          "name": { "type": "string", "required": false },
+          "description": {
+            "type": ["string", "null"],
+            "required": false
+          },
+          "keywords": { "type": "string", "required": false },
+          "displayOrder": {
+            "type": "number",
+            "required": false,
+            "minimum": -140737488355328,
+            "maximum": 140737488355327
+          },
+          "status": {
+            "type": "string",
+            "required": false,
+            "enum": ["unpublished", "published", "archived"]
+          },
+          "parentId": {
+            "type": ["string", "null"],
+            "required": false
           },
           "tx": {
             "type": "object",

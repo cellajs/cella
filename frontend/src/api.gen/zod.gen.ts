@@ -41,6 +41,39 @@ export const zMembershipBase = z.object({
   organizationId: z.string(),
 });
 
+export const zTxBase = z.object({
+  id: z.string(),
+  sourceId: z.string(),
+  version: z.number(),
+  fieldVersions: z.record(z.string(), z.number()),
+});
+
+export const zTxStreamMessage = z.object({
+  id: z.string(),
+  sourceId: z.string(),
+  version: z.int(),
+  fieldVersions: z.record(z.string(), z.int()),
+});
+
+export const zStreamNotification = z.object({
+  action: z.enum(['create', 'update', 'delete']),
+  entityType: z.enum(['attachment', 'page']),
+  entityId: z.string(),
+  organizationId: z.union([z.string(), z.null()]),
+  seq: z.int(),
+  tx: zTxStreamMessage,
+  cacheToken: z.optional(z.string()),
+});
+
+export const zPublicStreamActivity = z.object({
+  activityId: z.string(),
+  action: z.enum(['create', 'update', 'delete']),
+  entityType: z.enum(['attachment', 'page']),
+  entityId: z.string(),
+  changedKeys: z.union([z.array(z.string()), z.null()]),
+  createdAt: z.string(),
+});
+
 export const zApiError = z.object({
   name: z.string(),
   message: z.string(),
@@ -120,7 +153,15 @@ export const zActivity = z.object({
     z.record(z.string(), z.unknown()),
     z.array(z.unknown()),
   ]),
-  tx: z.union([z.string(), z.number(), z.boolean(), z.null(), z.record(z.string(), z.unknown()), z.array(z.unknown())]),
+  tx: z.union([
+    z.object({
+      id: z.string(),
+      sourceId: z.string(),
+      version: z.number(),
+      fieldVersions: z.record(z.string(), z.number()),
+    }),
+    z.null(),
+  ]),
   seq: z.union([z.int().gte(-2147483648).lte(2147483647), z.null()]),
 });
 
@@ -270,16 +311,6 @@ export const zOrganization = z.object({
   ),
 });
 
-export const zTxStreamMessage = z.union([
-  z.object({
-    id: z.string(),
-    sourceId: z.string(),
-    version: z.int(),
-    fieldVersions: z.record(z.string(), z.int()),
-  }),
-  z.null(),
-]);
-
 export const zPage = z.object({
   createdAt: z.string(),
   id: z.string(),
@@ -290,7 +321,12 @@ export const zPage = z.object({
   keywords: z.string(),
   createdBy: z.union([z.string(), z.null()]),
   modifiedBy: z.union([z.string(), z.null()]),
-  tx: z.union([z.string(), z.number(), z.boolean(), z.null(), z.record(z.string(), z.unknown()), z.array(z.unknown())]),
+  tx: z.object({
+    id: z.string(),
+    sourceId: z.string(),
+    version: z.number(),
+    fieldVersions: z.record(z.string(), z.number()),
+  }),
   status: z.enum(['unpublished', 'published', 'archived']),
   parentId: z.union([z.string(), z.null()]),
   displayOrder: z.number().gte(-140737488355328).lte(140737488355327),
@@ -312,7 +348,12 @@ export const zAttachment = z.object({
   keywords: z.string(),
   createdBy: z.union([z.string(), z.null()]),
   modifiedBy: z.union([z.string(), z.null()]),
-  tx: z.union([z.string(), z.number(), z.boolean(), z.null(), z.record(z.string(), z.unknown()), z.array(z.unknown())]),
+  tx: z.object({
+    id: z.string(),
+    sourceId: z.string(),
+    version: z.number(),
+    fieldVersions: z.record(z.string(), z.number()),
+  }),
   public: z.boolean(),
   bucketName: z.string(),
   groupId: z.union([z.string(), z.null()]),
@@ -361,13 +402,13 @@ export const zGetActivitiesData = z.object({
       order: z.optional(z.enum(['asc', 'desc'])),
       offset: z.optional(z.string()),
       limit: z.optional(z.string()),
-      userId: z.optional(z.string()),
-      entityType: z.optional(z.enum(['user', 'organization', 'attachment', 'page'])),
-      resourceType: z.optional(z.enum(['request', 'membership'])),
-      action: z.optional(z.enum(['create', 'update', 'delete'])),
+      userId: z.optional(z.union([z.string(), z.null()])),
+      entityType: z.optional(z.nullable(z.enum(['user', 'organization', 'attachment', 'page']))),
+      resourceType: z.optional(z.nullable(z.enum(['request', 'membership']))),
+      action: z.optional(z.nullable(z.enum(['create', 'update', 'delete']))),
       tableName: z.optional(z.string()),
       type: z.optional(z.string()),
-      entityId: z.optional(z.string()),
+      entityId: z.optional(z.union([z.string(), z.null()])),
     }),
   ),
 });
@@ -1109,18 +1150,7 @@ export const zPagesPublicStreamData = z.object({
  * Catch-up activities or SSE stream started
  */
 export const zPagesPublicStreamResponse = z.object({
-  activities: z.array(
-    z.object({
-      data: z.optional(z.unknown()),
-      entityType: z.enum(['attachment', 'page']),
-      entityId: z.string(),
-      action: z.enum(['create', 'update', 'delete']),
-      activityId: z.string(),
-      changedKeys: z.union([z.array(z.string()), z.null()]),
-      createdAt: z.string(),
-      tx: zTxStreamMessage,
-    }),
-  ),
+  activities: z.array(zPublicStreamActivity),
   cursor: z.union([z.string(), z.null()]),
 });
 
@@ -1160,17 +1190,15 @@ export const zGetPagesResponse = z.object({
 });
 
 export const zCreatePagesData = z.object({
-  body: z.object({
-    data: z
-      .array(
-        z.object({
-          name: z.optional(z.string()),
-        }),
-      )
-      .min(1)
-      .max(50),
-    tx: zTxRequest,
-  }),
+  body: z
+    .array(
+      z.object({
+        name: z.optional(z.string()),
+        tx: zTxRequest,
+      }),
+    )
+    .min(1)
+    .max(50),
   path: z.optional(z.never()),
   query: z.optional(z.never()),
 });
@@ -1201,14 +1229,12 @@ export const zGetPageResponse = zPage;
 
 export const zUpdatePageData = z.object({
   body: z.object({
-    data: z.object({
-      name: z.optional(z.string()),
-      description: z.optional(z.union([z.string(), z.null()])),
-      keywords: z.optional(z.string()),
-      displayOrder: z.optional(z.number().gte(-140737488355328).lte(140737488355327)),
-      status: z.optional(z.enum(['unpublished', 'published', 'archived'])),
-      parentId: z.optional(z.union([z.string(), z.null()])),
-    }),
+    name: z.optional(z.string()),
+    description: z.optional(z.union([z.string(), z.null()])),
+    keywords: z.optional(z.string()),
+    displayOrder: z.optional(z.number().gte(-140737488355328).lte(140737488355327)),
+    status: z.optional(z.enum(['unpublished', 'published', 'archived'])),
+    parentId: z.optional(z.union([z.string(), z.null()])),
     tx: zTxRequest,
   }),
   path: z.object({
@@ -1539,30 +1565,28 @@ export const zGetAttachmentsResponse = z.object({
 });
 
 export const zCreateAttachmentsData = z.object({
-  body: z.object({
-    data: z
-      .array(
-        z.object({
-          id: z.optional(z.string()),
-          name: z.optional(z.string()),
-          filename: z.string(),
-          contentType: z.string(),
-          size: z.string(),
-          organizationId: z.string(),
-          createdBy: z.optional(z.union([z.string(), z.null()])),
-          originalKey: z.string(),
-          bucketName: z.string(),
-          public: z.optional(z.boolean()),
-          groupId: z.optional(z.union([z.string(), z.null()])),
-          convertedContentType: z.optional(z.union([z.string(), z.null()])),
-          convertedKey: z.optional(z.union([z.string(), z.null()])),
-          thumbnailKey: z.optional(z.union([z.string(), z.null()])),
-        }),
-      )
-      .min(1)
-      .max(50),
-    tx: zTxRequest,
-  }),
+  body: z
+    .array(
+      z.object({
+        id: z.optional(z.string()),
+        name: z.optional(z.string()),
+        filename: z.string(),
+        contentType: z.string(),
+        size: z.string(),
+        organizationId: z.string(),
+        createdBy: z.optional(z.union([z.string(), z.null()])),
+        originalKey: z.string(),
+        bucketName: z.string(),
+        public: z.optional(z.boolean()),
+        groupId: z.optional(z.union([z.string(), z.null()])),
+        convertedContentType: z.optional(z.union([z.string(), z.null()])),
+        convertedKey: z.optional(z.union([z.string(), z.null()])),
+        thumbnailKey: z.optional(z.union([z.string(), z.null()])),
+        tx: zTxRequest,
+      }),
+    )
+    .min(1)
+    .max(50),
   path: z.object({
     orgIdOrSlug: z.string(),
   }),
@@ -1582,10 +1606,8 @@ export const zCreateAttachmentsResponse = z.union([
 
 export const zUpdateAttachmentData = z.object({
   body: z.object({
-    data: z.object({
-      name: z.optional(z.string()),
-      originalKey: z.optional(z.string()),
-    }),
+    name: z.optional(z.string()),
+    originalKey: z.optional(z.string()),
     tx: zTxRequest,
   }),
   path: z.object({

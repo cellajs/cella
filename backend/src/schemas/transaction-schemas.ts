@@ -29,7 +29,7 @@ export type TxResponse = z.infer<typeof txResponseSchema>;
 
 /**
  * Transaction metadata in stream notifications.
- * Derived from TxColumnData on entity.
+ * Derived from TxBase on entity.
  */
 export const txStreamMessageSchema = z
   .object({
@@ -41,17 +41,3 @@ export const txStreamMessageSchema = z
   .openapi('TxStreamMessage');
 
 export type TxStreamMessage = z.infer<typeof txStreamMessageSchema>;
-
-/**
- * Factory to create a tx-wrapped mutation request schema.
- * Use for product entity POST/PATCH/DELETE routes.
- *
- * @example
- * const createPageBodySchema = createTxMutationSchema(createPageSchema);
- * // Result: { data: CreatePageSchema, tx: TxRequestSchema }
- */
-export const createTxMutationSchema = <T extends z.ZodTypeAny>(dataSchema: T) =>
-  z.object({
-    data: dataSchema,
-    tx: txRequestSchema,
-  });

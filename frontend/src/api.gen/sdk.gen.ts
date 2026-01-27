@@ -258,13 +258,13 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
  * @param {enum=} options.query.order - `enum` (optional)
  * @param {string=} options.query.offset - `string` (optional)
  * @param {string=} options.query.limit - `string` (optional)
- * @param {string=} options.query.userid - `string` (optional)
+ * @param {string | null=} options.query.userid - `string | null` (optional)
  * @param {enum=} options.query.entitytype - `enum` (optional)
  * @param {enum=} options.query.resourcetype - `enum` (optional)
  * @param {enum=} options.query.action - `enum` (optional)
  * @param {string=} options.query.tablename - `string` (optional)
  * @param {string=} options.query.type - `string` (optional)
- * @param {string=} options.query.entityid - `string` (optional)
+ * @param {string | null=} options.query.entityid - `string | null` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getActivities = <ThrowOnError extends boolean = true>(
@@ -1577,8 +1577,6 @@ export const getPages = <ThrowOnError extends boolean = true>(options?: Options<
  * **POST /page** ·· [createPages](https://api.cellajs.com/docs#tag/pages/post/page) ·· _pages_
  *
  * @param {createPagesData} options
- * @param {any[]=} options.body.data - `any[]` (optional)
- * @param {any=} options.body.tx - `any` (optional)
  * @returns Possible status codes: 200, 201, 400, 401, 403, 404, 429
  */
 export const createPages = <ThrowOnError extends boolean = true>(options: Options<CreatePagesData, ThrowOnError>) =>
@@ -1626,7 +1624,12 @@ export const getPage = <ThrowOnError extends boolean = true>(options: Options<Ge
  *
  * @param {updatePageData} options
  * @param {string} options.path.id - `string`
- * @param {object=} options.body.data - `object` (optional)
+ * @param {string=} options.body.name - `string` (optional)
+ * @param {string | null=} options.body.description - `string | null` (optional)
+ * @param {string=} options.body.keywords - `string` (optional)
+ * @param {number=} options.body.displayOrder - `number` (optional)
+ * @param {enum=} options.body.status - `enum` (optional)
+ * @param {string | null=} options.body.parentId - `string | null` (optional)
  * @param {any=} options.body.tx - `any` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
@@ -2070,8 +2073,6 @@ export const getAttachments = <ThrowOnError extends boolean = true>(
  *
  * @param {createAttachmentsData} options
  * @param {string} options.path.orgidorslug - `string`
- * @param {any[]=} options.body.data - `any[]` (optional)
- * @param {any=} options.body.tx - `any` (optional)
  * @returns Possible status codes: 200, 201, 400, 401, 403, 404, 429
  */
 export const createAttachments = <ThrowOnError extends boolean = true>(
@@ -2104,7 +2105,8 @@ export const createAttachments = <ThrowOnError extends boolean = true>(
  * @param {updateAttachmentData} options
  * @param {string} options.path.id - `string`
  * @param {string} options.path.orgidorslug - `string`
- * @param {object=} options.body.data - `object` (optional)
+ * @param {string=} options.body.name - `string` (optional)
+ * @param {string=} options.body.originalKey - `string` (optional)
  * @param {any=} options.body.tx - `any` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */

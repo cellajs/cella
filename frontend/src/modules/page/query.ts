@@ -24,10 +24,12 @@ import {
   createOptimisticEntity,
   findInListCache,
   invalidateIfLastMutation,
+  registerEntityQueryKeys,
   useMutateQueryData,
 } from '~/query/basic';
 import { addMutationRegistrar } from '~/query/mutation-registry';
 import { createTxForCreate, createTxForUpdate, squashPendingMutation } from '~/query/offline';
+import { getCacheToken } from '~/query/realtime/cache-token-store';
 
 // Use generated types from api.gen for mutation input shapes
 // CreatePagesData uses array schema, extract element type for single item input
@@ -45,6 +47,9 @@ type PageFilters = Omit<GetPagesData['query'], 'limit' | 'offset'>;
 // Use factory for consistent query keys across detail and list queries
 const keys = createEntityKeys<PageFilters>('page');
 
+// Register query keys for dynamic lookup in stream handlers
+registerEntityQueryKeys('page', keys);
+
 export const pageQueryKeys = keys;
 
 /** Base mutation key for all page mutations - used for over-invalidation prevention. */
@@ -61,12 +66,25 @@ export const findPageInListCache = (id: string) => findInListCache<Page>(keys.li
  * Query options for a single page by id.
  * Uses initialData from the pages list cache to provide
  * instant loading while revalidating in the background.
+ *
+ * If a cache token is available from SSE stream notification, it's passed
+ * in the X-Cache-Token header to enable server-side entity caching.
  */
 export const pageQueryOptions = (id: string) =>
   queryOptions({
     queryKey: keys.detail.byId(id),
     queryFn: async () => {
-      const result = await getPage({ path: { id } });
+      // Check for cache token from SSE stream
+      const cacheToken = getCacheToken('page', id);
+      const headers: Record<string, string> = {};
+      if (cacheToken) {
+        headers['X-Cache-Token'] = cacheToken;
+      }
+
+      const result = await getPage({
+        path: { id },
+        headers: Object.keys(headers).length > 0 ? headers : undefined,
+      });
       return result;
     },
     initialData: () => findPageInListCache(id),

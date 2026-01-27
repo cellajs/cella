@@ -1,19 +1,26 @@
+import { z } from '@hono/zod-openapi';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { pagesTable } from '#/db/schema/pages';
-import { batchResponseSchema, createTxMutationSchema, paginationQuerySchema } from '#/schemas';
+import { txBaseSchema } from '#/db/utils/tx-columns';
+import { batchResponseSchema, paginationQuerySchema, txRequestSchema } from '#/schemas';
 import { mockPageResponse } from '../../../mocks/mock-page';
 
 const pageInsertSchema = createInsertSchema(pagesTable);
 const pageSelectSchema = createSelectSchema(pagesTable);
 
-export const pageSchema = pageSelectSchema.openapi('Page', { example: mockPageResponse() });
+export const pageSchema = z
+  .object({ ...pageSelectSchema.shape, tx: txBaseSchema })
+  .openapi('Page', { example: mockPageResponse() });
 
 export const pageCreateBodySchema = pageInsertSchema.pick({
   name: true,
 });
 
-/** Array schema for batch creates (1-50 pages per request) */
-const pageCreateManySchema = pageCreateBodySchema.array().min(1).max(50);
+/** Create body with tx for single page creation */
+export const pageCreateTxBodySchema = pageCreateBodySchema.extend({ tx: txRequestSchema });
+
+/** Array schema for batch creates (1-50 pages per request), each with own tx */
+export const pageCreateManyTxBodySchema = pageCreateTxBodySchema.array().min(1).max(50);
 
 export const pageUpdateBodySchema = pageInsertSchema
   .pick({
@@ -26,9 +33,8 @@ export const pageUpdateBodySchema = pageInsertSchema
   })
   .partial();
 
-// Tx-wrapped schemas for product entity mutations (request only)
-export const pageCreateTxBodySchema = createTxMutationSchema(pageCreateManySchema);
-export const pageUpdateTxBodySchema = createTxMutationSchema(pageUpdateBodySchema);
+/** Update body with tx embedded */
+export const pageUpdateTxBodySchema = pageUpdateBodySchema.extend({ tx: txRequestSchema });
 
 // Response schemas: batch operations use { data, rejectedItems }, single returns entity directly
 export const pageCreateResponseSchema = batchResponseSchema(pageSchema);

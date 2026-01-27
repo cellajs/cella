@@ -342,6 +342,150 @@
           "organizationId"
         ]
       },
+      "TxBase": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "sourceId": {
+            "type": "string"
+          },
+          "version": {
+            "type": "number"
+          },
+          "fieldVersions": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "sourceId",
+          "version",
+          "fieldVersions"
+        ]
+      },
+      "StreamNotification": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update",
+              "delete"
+            ]
+          },
+          "entityType": {
+            "type": "string",
+            "enum": [
+              "attachment",
+              "page"
+            ]
+          },
+          "entityId": {
+            "type": "string"
+          },
+          "organizationId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "seq": {
+            "type": "integer"
+          },
+          "tx": {
+            "$ref": "#/components/schemas/TxStreamMessage"
+          },
+          "cacheToken": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "action",
+          "entityType",
+          "entityId",
+          "organizationId",
+          "seq",
+          "tx"
+        ]
+      },
+      "TxStreamMessage": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "sourceId": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer"
+          },
+          "fieldVersions": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "sourceId",
+          "version",
+          "fieldVersions"
+        ]
+      },
+      "PublicStreamActivity": {
+        "type": "object",
+        "properties": {
+          "activityId": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update",
+              "delete"
+            ]
+          },
+          "entityType": {
+            "type": "string",
+            "enum": [
+              "attachment",
+              "page"
+            ]
+          },
+          "entityId": {
+            "type": "string"
+          },
+          "changedKeys": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "activityId",
+          "action",
+          "entityType",
+          "entityId",
+          "changedKeys",
+          "createdAt"
+        ]
+      },
       "BadRequestError": {
         "allOf": [
           {
@@ -595,27 +739,32 @@
             ]
           },
           "tx": {
-            "anyOf": [
-              {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "id": {
                 "type": "string"
               },
-              {
+              "sourceId": {
+                "type": "string"
+              },
+              "version": {
                 "type": "number"
               },
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              },
-              {
+              "fieldVersions": {
                 "type": "object",
-                "additionalProperties": {}
-              },
-              {
-                "type": "array",
-                "items": {}
+                "additionalProperties": {
+                  "type": "number"
+                }
               }
+            },
+            "required": [
+              "id",
+              "sourceId",
+              "version",
+              "fieldVersions"
             ]
           },
           "seq": {
@@ -1530,35 +1679,6 @@
           }
         }
       },
-      "TxStreamMessage": {
-        "type": [
-          "object",
-          "null"
-        ],
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "sourceId": {
-            "type": "string"
-          },
-          "version": {
-            "type": "integer"
-          },
-          "fieldVersions": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "integer"
-            }
-          }
-        },
-        "required": [
-          "id",
-          "sourceId",
-          "version",
-          "fieldVersions"
-        ]
-      },
       "Page": {
         "type": "object",
         "properties": {
@@ -1605,27 +1725,29 @@
             ]
           },
           "tx": {
-            "anyOf": [
-              {
+            "type": "object",
+            "properties": {
+              "id": {
                 "type": "string"
               },
-              {
+              "sourceId": {
+                "type": "string"
+              },
+              "version": {
                 "type": "number"
               },
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              },
-              {
+              "fieldVersions": {
                 "type": "object",
-                "additionalProperties": {}
-              },
-              {
-                "type": "array",
-                "items": {}
+                "additionalProperties": {
+                  "type": "number"
+                }
               }
+            },
+            "required": [
+              "id",
+              "sourceId",
+              "version",
+              "fieldVersions"
             ]
           },
           "status": {
@@ -1755,27 +1877,29 @@
             ]
           },
           "tx": {
-            "anyOf": [
-              {
+            "type": "object",
+            "properties": {
+              "id": {
                 "type": "string"
               },
-              {
+              "sourceId": {
+                "type": "string"
+              },
+              "version": {
                 "type": "number"
               },
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              },
-              {
+              "fieldVersions": {
                 "type": "object",
-                "additionalProperties": {}
-              },
-              {
-                "type": "array",
-                "items": {}
+                "additionalProperties": {
+                  "type": "number"
+                }
               }
+            },
+            "required": [
+              "id",
+              "sourceId",
+              "version",
+              "fieldVersions"
             ]
           },
           "public": {
@@ -2068,7 +2192,10 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": [
+                "string",
+                "null"
+              ]
             },
             "required": false,
             "name": "userId",
@@ -2076,12 +2203,16 @@
           },
           {
             "schema": {
-              "type": "string",
+              "type": [
+                "string",
+                "null"
+              ],
               "enum": [
                 "user",
                 "organization",
                 "attachment",
-                "page"
+                "page",
+                null
               ]
             },
             "required": false,
@@ -2090,10 +2221,14 @@
           },
           {
             "schema": {
-              "type": "string",
+              "type": [
+                "string",
+                "null"
+              ],
               "enum": [
                 "request",
-                "membership"
+                "membership",
+                null
               ]
             },
             "required": false,
@@ -2102,11 +2237,15 @@
           },
           {
             "schema": {
-              "type": "string",
+              "type": [
+                "string",
+                "null"
+              ],
               "enum": [
                 "create",
                 "update",
-                "delete"
+                "delete",
+                null
               ]
             },
             "required": false,
@@ -2131,7 +2270,10 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": [
+                "string",
+                "null"
+              ]
             },
             "required": false,
             "name": "entityId",
@@ -5842,55 +5984,7 @@
                     "activities": {
                       "type": "array",
                       "items": {
-                        "type": "object",
-                        "properties": {
-                          "data": {},
-                          "entityType": {
-                            "type": "string",
-                            "enum": [
-                              "attachment",
-                              "page"
-                            ]
-                          },
-                          "entityId": {
-                            "type": "string"
-                          },
-                          "action": {
-                            "type": "string",
-                            "enum": [
-                              "create",
-                              "update",
-                              "delete"
-                            ]
-                          },
-                          "activityId": {
-                            "type": "string"
-                          },
-                          "changedKeys": {
-                            "type": [
-                              "array",
-                              "null"
-                            ],
-                            "items": {
-                              "type": "string"
-                            }
-                          },
-                          "createdAt": {
-                            "type": "string"
-                          },
-                          "tx": {
-                            "$ref": "#/components/schemas/TxStreamMessage"
-                          }
-                        },
-                        "required": [
-                          "entityType",
-                          "entityId",
-                          "action",
-                          "activityId",
-                          "changedKeys",
-                          "createdAt",
-                          "tx"
-                        ]
+                        "$ref": "#/components/schemas/PublicStreamActivity"
                       }
                     },
                     "cursor": {
@@ -5950,29 +6044,23 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "data": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "name": {
-                          "type": "string"
-                        }
-                      }
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
                     },
-                    "minItems": 1,
-                    "maxItems": 50
+                    "tx": {
+                      "$ref": "#/components/schemas/TxRequest"
+                    }
                   },
-                  "tx": {
-                    "$ref": "#/components/schemas/TxRequest"
-                  }
+                  "required": [
+                    "tx"
+                  ]
                 },
-                "required": [
-                  "data",
-                  "tx"
-                ]
+                "minItems": 1,
+                "maxItems": 50
               }
             }
           }
@@ -6308,48 +6396,42 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "data": {
-                    "type": "object",
-                    "properties": {
-                      "name": {
-                        "type": "string"
-                      },
-                      "description": {
-                        "type": [
-                          "string",
-                          "null"
-                        ]
-                      },
-                      "keywords": {
-                        "type": "string"
-                      },
-                      "displayOrder": {
-                        "type": "number",
-                        "minimum": -140737488355328,
-                        "maximum": 140737488355327
-                      },
-                      "status": {
-                        "type": "string",
-                        "enum": [
-                          "unpublished",
-                          "published",
-                          "archived"
-                        ]
-                      },
-                      "parentId": {
-                        "type": [
-                          "string",
-                          "null"
-                        ]
-                      }
-                    }
+                  "name": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "keywords": {
+                    "type": "string"
+                  },
+                  "displayOrder": {
+                    "type": "number",
+                    "minimum": -140737488355328,
+                    "maximum": 140737488355327
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "unpublished",
+                      "published",
+                      "archived"
+                    ]
+                  },
+                  "parentId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
                   },
                   "tx": {
                     "$ref": "#/components/schemas/TxRequest"
                   }
                 },
                 "required": [
-                  "data",
                   "tx"
                 ]
               }
@@ -7831,91 +7913,83 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "data": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string"
-                        },
-                        "name": {
-                          "type": "string"
-                        },
-                        "filename": {
-                          "type": "string"
-                        },
-                        "contentType": {
-                          "type": "string"
-                        },
-                        "size": {
-                          "type": "string"
-                        },
-                        "organizationId": {
-                          "type": "string"
-                        },
-                        "createdBy": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "originalKey": {
-                          "type": "string"
-                        },
-                        "bucketName": {
-                          "type": "string"
-                        },
-                        "public": {
-                          "type": "boolean"
-                        },
-                        "groupId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "convertedContentType": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "convertedKey": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "thumbnailKey": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        }
-                      },
-                      "required": [
-                        "filename",
-                        "contentType",
-                        "size",
-                        "organizationId",
-                        "originalKey",
-                        "bucketName"
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "filename": {
+                      "type": "string"
+                    },
+                    "contentType": {
+                      "type": "string"
+                    },
+                    "size": {
+                      "type": "string"
+                    },
+                    "organizationId": {
+                      "type": "string"
+                    },
+                    "createdBy": {
+                      "type": [
+                        "string",
+                        "null"
                       ]
                     },
-                    "minItems": 1,
-                    "maxItems": 50
+                    "originalKey": {
+                      "type": "string"
+                    },
+                    "bucketName": {
+                      "type": "string"
+                    },
+                    "public": {
+                      "type": "boolean"
+                    },
+                    "groupId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "convertedContentType": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "convertedKey": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "thumbnailKey": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "tx": {
+                      "$ref": "#/components/schemas/TxRequest"
+                    }
                   },
-                  "tx": {
-                    "$ref": "#/components/schemas/TxRequest"
-                  }
+                  "required": [
+                    "filename",
+                    "contentType",
+                    "size",
+                    "organizationId",
+                    "originalKey",
+                    "bucketName",
+                    "tx"
+                  ]
                 },
-                "required": [
-                  "data",
-                  "tx"
-                ]
+                "minItems": 1,
+                "maxItems": 50
               }
             }
           }
@@ -8122,23 +8196,17 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "data": {
-                    "type": "object",
-                    "properties": {
-                      "name": {
-                        "type": "string"
-                      },
-                      "originalKey": {
-                        "type": "string"
-                      }
-                    }
+                  "name": {
+                    "type": "string"
+                  },
+                  "originalKey": {
+                    "type": "string"
                   },
                   "tx": {
                     "$ref": "#/components/schemas/TxRequest"
                   }
                 },
                 "required": [
-                  "data",
                   "tx"
                 ]
               }

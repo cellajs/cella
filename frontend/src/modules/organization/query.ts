@@ -18,12 +18,16 @@ import {
   createEntityKeys,
   findInListCache,
   invalidateIfLastMutation,
+  registerEntityQueryKeys,
   useMutateQueryData,
 } from '~/query/basic';
 
 type OrganizationFilters = Omit<GetOrganizationsData['query'], 'limit' | 'offset'>;
 
 const keys = createEntityKeys<OrganizationFilters>('organization');
+
+// Register query keys for dynamic lookup in stream handlers
+registerEntityQueryKeys('organization', keys);
 
 /**
  * Organization query keys.

@@ -17,7 +17,7 @@ export const RouterWrapper = () => {
   }
 
   const handleRefresh = () => {
-    console.debug('Refreshing router ...');
+    console.debug('[RouterWrapper] Refreshing router');
     queryClient.invalidateQueries();
     router.invalidate();
   };

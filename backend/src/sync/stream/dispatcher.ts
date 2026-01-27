@@ -1,7 +1,7 @@
 import type { ActivityEventWithEntity } from '#/sync/activity-bus';
 import { logEvent } from '#/utils/logger';
 import type { CursoredSubscriber } from './send-to-subscriber';
-import { sendToSubscriber } from './send-to-subscriber';
+import { sendNotificationToSubscriber } from './send-to-subscriber';
 import { streamSubscriberManager } from './subscriber-manager';
 
 /**
@@ -50,7 +50,7 @@ export function createStreamDispatcher<T extends CursoredSubscriber>(
     for (const subscriber of subscribers) {
       if (shouldReceive(subscriber, event)) {
         try {
-          await sendToSubscriber(subscriber, event);
+          await sendNotificationToSubscriber(subscriber, event);
         } catch (error) {
           logEvent('error', `Failed to dispatch ${logContext}`, {
             subscriberId: subscriber.id,

@@ -30,7 +30,7 @@ const OrganizationSettings = lazy(() => import('~/modules/organization/organizat
  */
 export const OrganizationLayoutRoute = createRoute({
   path: '/$idOrSlug',
-  staticData: { isAuth: true },
+  staticData: { isAuth: true, entityType: 'organization' },
   getParentRoute: () => AppLayoutRoute,
   beforeLoad: async ({ params }) => {
     const { idOrSlug } = params;

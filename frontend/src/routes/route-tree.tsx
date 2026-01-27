@@ -1,3 +1,4 @@
+import type { ContextEntityType } from 'config';
 import type { NavItemId } from '~/modules/navigation/types';
 import {
   AuthErrorRoute,
@@ -97,6 +98,7 @@ export const routeTree = RootRoute.addChildren([
 
 declare module '@tanstack/react-router' {
   interface StaticDataRouteOption {
+    entityType?: ContextEntityType;
     floatingNavButtons?: Array<NavItemId>;
   }
 }

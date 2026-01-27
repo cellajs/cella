@@ -58,7 +58,7 @@ function canReceiveProductEntityEvent(subscriber: UserStreamSubscriber, event: A
   });
 
   if (!allowed) {
-    logEvent('debug', 'User stream message filtered by permission', {
+    logEvent('debug', 'User stream notification filtered by permission', {
       userId: subscriber.userId,
       entityType: event.entityType,
       entityId: event.entityId,

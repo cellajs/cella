@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef } from 'react';
 
 /**
  * A hydrate barrier that queues items during hydration phase.
- * Used to prevent race conditions between stream messages and initial queries.
+ * Used to prevent race conditions between stream notifications and initial queries.
  */
 export interface HydrateBarrier<T> {
   /** Queue an item if still hydrating. Returns true if queued, false if processed immediately. */
@@ -21,17 +21,17 @@ export interface HydrateBarrier<T> {
  *
  * @example
  * ```ts
- * const barrier = createHydrateBarrier<StreamMessage>();
+ * const barrier = createHydrateBarrier<StreamNotification>();
  *
- * // During hydration, messages are queued
- * barrier.enqueue(message1); // returns true (queued)
- * barrier.enqueue(message2); // returns true (queued)
+ * // During hydration, notifications are queued
+ * barrier.enqueue(notification1); // returns true (queued)
+ * barrier.enqueue(notification2); // returns true (queued)
  *
  * // When hydration completes, flush the queue
- * const queued = barrier.complete(); // returns [message1, message2]
+ * const queued = barrier.complete(); // returns [notification1, notification2]
  *
- * // After completion, messages pass through
- * barrier.enqueue(message3); // returns false (not queued, process immediately)
+ * // After completion, notifications pass through
+ * barrier.enqueue(notification3); // returns false (not queued, process immediately)
  * ```
  */
 export function createHydrateBarrier<T>(): HydrateBarrier<T> {

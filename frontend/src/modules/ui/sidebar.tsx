@@ -18,7 +18,7 @@ import { cn } from '~/utils/cn';
  * @link https://ui.shadcn.com/docs/components/sidebar
  */
 
-const SIDEBAR_WIDTH = '12rem';
+const SIDEBAR_WIDTH = '4rem';
 const SIDEBAR_WIDTH_ICON = '4rem';
 const SIDEBAR_KEYBOARD_SHORTCUT = 'b';
 

@@ -30,10 +30,11 @@ export class DexieAttachmentStorage {
         id: nanoid(8),
         files,
         organizationId,
+        groupId: null, // TODO: pass groupId when uploading to a specific group
         tokenQuery,
         syncStatus: 'idle' as SyncStatus,
-        createdAt: now,
-        updatedAt: now,
+        queuedAt: now,
+        localUpdatedAt: now,
         syncAttempts: 0,
         maxRetries: 3,
       };
@@ -90,7 +91,7 @@ export class DexieAttachmentStorage {
       // Update all files in batch
       await attachmentsDb.attachmentFiles.where('organizationId').equals(organizationId).modify({
         syncStatus,
-        updatedAt: now,
+        localUpdatedAt: now,
       });
     } catch (error) {
       Sentry.captureException(error);
@@ -184,7 +185,7 @@ export class DexieAttachmentStorage {
           syncAttempts: newAttemptCount,
           lastSyncAttempt: new Date(),
           nextRetryAt,
-          updatedAt: new Date(),
+          localUpdatedAt: new Date(),
         });
     } catch (error) {
       Sentry.captureException(error);
@@ -205,7 +206,7 @@ export class DexieAttachmentStorage {
           syncStatus: 'idle',
           syncAttempts: 0,
           nextRetryAt: undefined,
-          updatedAt: new Date(),
+          localUpdatedAt: new Date(),
         });
     } catch (error) {
       Sentry.captureException(error);

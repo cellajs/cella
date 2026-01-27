@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { EntityTTLCache } from '#/lib/lru-cache';
+import { EntityTTLCache } from '#/lib/ttl-cache';
 
 describe('EntityTTLCache', () => {
   let cache: EntityTTLCache<string>;

@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import type { OpenAPIHono } from '@hono/zod-openapi';
 import { Scalar } from '@scalar/hono-api-reference';
 import { appConfig } from 'config';
+import { txBaseSchema } from '#/db/utils/tx-columns';
 import { buildExtensionRegistry } from '#/docs/openapi-extensions';
 import { openapiTags, registerAppSchema } from '#/docs/tags-config';
 import { getExtensionValueDescriptions } from '#/docs/x-middleware';
@@ -10,6 +11,7 @@ import { contextEntityBaseSchema } from '#/modules/entities/entities-schema-base
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
 import { userBaseSchema } from '#/modules/user/user-schema-base';
 import { errorResponses, registerAllErrorResponses } from '#/schemas';
+import { publicStreamActivitySchema, streamNotificationSchema } from '#/schemas/stream-schemas';
 import { checkMark } from '#/utils/console';
 
 /**
@@ -52,6 +54,11 @@ const docs = async (app: OpenAPIHono<Env>, skipScalar = false) => {
   registry.register('UserBase', userBaseSchema);
   registry.register('ContextEntityBase', contextEntityBaseSchema);
   registry.register('MembershipBase', membershipBaseSchema);
+  registry.register('TxBase', txBaseSchema);
+
+  // Register stream schemas (SSE payloads, not in REST responses but useful for client typing)
+  registry.register('StreamNotification', streamNotificationSchema);
+  registry.register('PublicStreamActivity', publicStreamActivitySchema);
 
   // Register error responses
   registerAllErrorResponses(registry, errorResponses);

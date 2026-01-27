@@ -698,7 +698,6 @@ class MeasurementsReporter implements Reporter {
     
     console.info(JSON.stringify(results, null, 2))
     
-    // TODO: post to dashboard, compare against baseline, fail on regression
   }
 
   private median(values: number[]): number {

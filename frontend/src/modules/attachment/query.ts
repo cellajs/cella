@@ -15,6 +15,7 @@ import {
   createEntityKeys,
   findInListCache,
   invalidateIfLastMutation,
+  registerEntityQueryKeys,
   useMutateQueryData,
 } from '~/query/basic';
 import { addMutationRegistrar } from '~/query/mutation-registry';
@@ -31,6 +32,9 @@ type AttachmentFilters = Omit<GetAttachmentsData['query'], 'limit' | 'offset'> &
 };
 
 const keys = createEntityKeys<AttachmentFilters>('attachment');
+
+// Register query keys for dynamic lookup in stream handlers
+registerEntityQueryKeys('attachment', keys);
 
 /**
  * Attachment query keys.

@@ -1,4 +1,4 @@
-import { isRealtimeEntity } from 'config';
+import { appConfig, type RealtimeEntityType } from 'config';
 import { generateCacheToken } from '#/lib/cache-token';
 import type { StreamNotification } from '#/schemas';
 import type { ActivityEventWithEntity } from '#/sync/activity-bus';
@@ -25,13 +25,10 @@ export function buildStreamNotification(
   event: ActivityEventWithEntity,
   options: BuildNotificationOptions = {},
 ): StreamNotification {
-  const { entityType } = event;
-
   // Only realtime entity types should reach this path
-  if (!isRealtimeEntity(entityType)) {
-    throw new Error(`${entityType} is not a realtime entity type`);
+  if (!appConfig.realtimeEntityTypes.includes(event.entityType as RealtimeEntityType)) {
+    throw new Error(`${event.entityType} is not a realtime entity type`);
   }
-
   if (!event.tx) {
     throw new Error(`Activity ${event.id} missing tx - realtime entities must have tx`);
   }
@@ -42,15 +39,15 @@ export function buildStreamNotification(
     cacheToken = generateCacheToken(
       options.userId,
       options.organizationIds,
-      entityType,
+      event.entityType as RealtimeEntityType,
       event.entityId!,
       event.tx.version,
     );
   }
 
   return {
-    action: event.action,
-    entityType,
+    action: event.action as 'create' | 'update' | 'delete',
+    entityType: event.entityType as RealtimeEntityType,
     entityId: event.entityId!,
     organizationId: event.organizationId ?? null,
     seq: event.seq ?? 0,

@@ -43,19 +43,14 @@
                     "required": true
                   },
                   "tx": {
+                    "type": "object",
                     "required": true,
-                    "anyOf": [
-                      { "type": "string", "required": false },
-                      { "type": "number", "required": false },
-                      { "type": "boolean", "required": false },
-                      { "type": "null", "required": false },
-                      { "type": "object", "required": false },
-                      {
-                        "type": "array",
-                        "required": false,
-                        "itemType": "object"
-                      }
-                    ]
+                    "properties": {
+                      "id": { "type": "string", "required": true },
+                      "sourceId": { "type": "string", "required": true },
+                      "version": { "type": "number", "required": true },
+                      "fieldVersions": { "type": "object", "required": true }
+                    }
                   },
                   "public": { "type": "boolean", "required": true },
                   "bucketName": { "type": "string", "required": true },
@@ -209,19 +204,14 @@
                     "required": true
                   },
                   "tx": {
+                    "type": "object",
                     "required": true,
-                    "anyOf": [
-                      { "type": "string", "required": false },
-                      { "type": "number", "required": false },
-                      { "type": "boolean", "required": false },
-                      { "type": "null", "required": false },
-                      { "type": "object", "required": false },
-                      {
-                        "type": "array",
-                        "required": false,
-                        "itemType": "object"
-                      }
-                    ]
+                    "properties": {
+                      "id": { "type": "string", "required": true },
+                      "sourceId": { "type": "string", "required": true },
+                      "version": { "type": "number", "required": true },
+                      "fieldVersions": { "type": "object", "required": true }
+                    }
                   },
                   "public": { "type": "boolean", "required": true },
                   "bucketName": { "type": "string", "required": true },
@@ -312,19 +302,14 @@
                     "required": true
                   },
                   "tx": {
+                    "type": "object",
                     "required": true,
-                    "anyOf": [
-                      { "type": "string", "required": false },
-                      { "type": "number", "required": false },
-                      { "type": "boolean", "required": false },
-                      { "type": "null", "required": false },
-                      { "type": "object", "required": false },
-                      {
-                        "type": "array",
-                        "required": false,
-                        "itemType": "object"
-                      }
-                    ]
+                    "properties": {
+                      "id": { "type": "string", "required": true },
+                      "sourceId": { "type": "string", "required": true },
+                      "version": { "type": "number", "required": true },
+                      "fieldVersions": { "type": "object", "required": true }
+                    }
                   },
                   "public": { "type": "boolean", "required": true },
                   "bucketName": { "type": "string", "required": true },
@@ -421,75 +406,70 @@
         }
       },
       "body": {
-        "type": "object",
-        "properties": {
-          "data": {
-            "type": "array",
-            "required": true,
-            "minItems": 1,
-            "maxItems": 50,
-            "itemType": "object",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": { "type": "string", "required": false },
-                "name": { "type": "string", "required": false },
-                "filename": { "type": "string", "required": true },
-                "contentType": { "type": "string", "required": true },
-                "size": { "type": "string", "required": true },
-                "organizationId": { "type": "string", "required": true },
-                "createdBy": {
-                  "type": ["string", "null"],
-                  "required": false
-                },
-                "originalKey": { "type": "string", "required": true },
-                "bucketName": { "type": "string", "required": true },
-                "public": { "type": "boolean", "required": false },
-                "groupId": {
-                  "type": ["string", "null"],
-                  "required": false
-                },
-                "convertedContentType": {
-                  "type": ["string", "null"],
-                  "required": false
-                },
-                "convertedKey": {
-                  "type": ["string", "null"],
-                  "required": false
-                },
-                "thumbnailKey": {
-                  "type": ["string", "null"],
-                  "required": false
-                }
-              }
-            }
-          },
-          "tx": {
-            "type": "object",
-            "required": true,
-            "properties": {
-              "id": {
-                "type": "string",
-                "required": true,
-                "description": "Unique mutation ID (nanoid)",
-                "maxLength": 32
-              },
-              "sourceId": {
-                "type": "string",
-                "required": true,
-                "description": "Tab/instance identifier for echo prevention",
-                "maxLength": 64
-              },
-              "baseVersion": {
-                "type": "integer",
-                "required": true,
-                "description": "Entity version when read (for conflict detection)",
-                "minimum": 0
-              }
+        "type": "array",
+        "itemType": "object",
+        "items": {
+          "type": "object",
+          "required": true,
+          "properties": {
+            "id": { "type": "string", "required": false },
+            "name": { "type": "string", "required": false },
+            "filename": { "type": "string", "required": true },
+            "contentType": { "type": "string", "required": true },
+            "size": { "type": "string", "required": true },
+            "organizationId": { "type": "string", "required": true },
+            "createdBy": {
+              "type": ["string", "null"],
+              "required": false
             },
-            "ref": "#/components/schemas/TxRequest"
+            "originalKey": { "type": "string", "required": true },
+            "bucketName": { "type": "string", "required": true },
+            "public": { "type": "boolean", "required": false },
+            "groupId": {
+              "type": ["string", "null"],
+              "required": false
+            },
+            "convertedContentType": {
+              "type": ["string", "null"],
+              "required": false
+            },
+            "convertedKey": {
+              "type": ["string", "null"],
+              "required": false
+            },
+            "thumbnailKey": {
+              "type": ["string", "null"],
+              "required": false
+            },
+            "tx": {
+              "type": "object",
+              "required": true,
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "required": true,
+                  "description": "Unique mutation ID (nanoid)",
+                  "maxLength": 32
+                },
+                "sourceId": {
+                  "type": "string",
+                  "required": true,
+                  "description": "Tab/instance identifier for echo prevention",
+                  "maxLength": 64
+                },
+                "baseVersion": {
+                  "type": "integer",
+                  "required": true,
+                  "description": "Entity version when read (for conflict detection)",
+                  "minimum": 0
+                }
+              },
+              "ref": "#/components/schemas/TxRequest"
+            }
           }
         },
+        "minItems": 1,
+        "maxItems": 50,
         "required": true,
         "contentType": "application/json"
       }
@@ -622,19 +602,14 @@
               "required": true
             },
             "tx": {
+              "type": "object",
               "required": true,
-              "anyOf": [
-                { "type": "string", "required": false },
-                { "type": "number", "required": false },
-                { "type": "boolean", "required": false },
-                { "type": "null", "required": false },
-                { "type": "object", "required": false },
-                {
-                  "type": "array",
-                  "required": false,
-                  "itemType": "object"
-                }
-              ]
+              "properties": {
+                "id": { "type": "string", "required": true },
+                "sourceId": { "type": "string", "required": true },
+                "version": { "type": "number", "required": true },
+                "fieldVersions": { "type": "object", "required": true }
+              }
             },
             "public": { "type": "boolean", "required": true },
             "bucketName": { "type": "string", "required": true },
@@ -753,14 +728,8 @@
       "body": {
         "type": "object",
         "properties": {
-          "data": {
-            "type": "object",
-            "required": true,
-            "properties": {
-              "name": { "type": "string", "required": false },
-              "originalKey": { "type": "string", "required": false }
-            }
-          },
+          "name": { "type": "string", "required": false },
+          "originalKey": { "type": "string", "required": false },
           "tx": {
             "type": "object",
             "required": true,

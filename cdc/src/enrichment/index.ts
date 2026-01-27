@@ -4,5 +4,5 @@
  */
 
 export { enrichMembershipData } from './membership';
-export { entityCache, LruCache, userCache } from './cache';
+export { entityCache, userCache } from './cache';
 export type { EnrichedMembershipData, EntityInfo, UserInfo } from './types';

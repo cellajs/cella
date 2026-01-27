@@ -125,8 +125,3 @@ export class EntityTTLCache<T> {
     this.cache.cancelTimer();
   }
 }
-
-/**
- * @deprecated Use EntityTTLCache instead. Kept for backward compatibility.
- */
-export { EntityTTLCache as LRUCache };

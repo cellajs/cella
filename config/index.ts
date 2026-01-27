@@ -174,6 +174,13 @@ export function isProductEntity(entityType: string): boolean {
 }
 
 /**
+ * Check if entity type is a realtime entity (supports SSE notifications).
+ */
+export function isRealtimeEntity(entityType: string | null | undefined): entityType is RealtimeEntityType {
+  return !!entityType && appConfig.realtimeEntityTypes.includes(entityType as RealtimeEntityType);
+}
+
+/**
  * Get product entity config with proper typing.
  * Returns undefined if not a product entity.
  */

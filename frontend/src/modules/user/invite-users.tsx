@@ -88,19 +88,19 @@ function InviteUsers({ entity, dialog: isDialog, mode: baseMode, children }: Inv
             <ToggleGroup
               type="multiple"
               onValueChange={updateMode}
-              className="max-sm:flex-col w-full sm:h-40 py-3 gap-2 sm:gap-3"
+              className="max-sm:flex-col sm:h-40 py-3 gap-2 sm:gap-3 items-stretch w-full"
             >
               <ToggleGroupItem
                 size="tile"
                 variant="tile"
                 value="email"
                 aria-label="Add by email"
-                className="py-6 sm:py-10"
+                className="py-6 sm:py-10 w-auto grow"
               >
                 <AtSignIcon size={48} strokeWidth={1} />
-                <div className="flex flex-col pl-3">
+                <div className="flex flex-col pl-3 truncate">
                   <p>{t('common:invite_by_email')}</p>
-                  <div className="flex items-center flex-row mt-1 opacity-50 transition-opacity group-hover:opacity-100">
+                  <div className="flex items-center flex-row mt-1 opacity-50 transition-opacity group-hover:opacity-100 truncate">
                     <strong>{t('common:continue')}</strong>
                     <AnimatedArrow />
                   </div>
@@ -111,12 +111,12 @@ function InviteUsers({ entity, dialog: isDialog, mode: baseMode, children }: Inv
                 variant="tile"
                 value="search"
                 aria-label="Search users"
-                className="py-6 sm:py-10"
+                className="py-6 sm:py-10 w-auto grow"
               >
                 <SearchIcon size={48} strokeWidth={1} />
-                <div className="flex flex-col pl-3">
+                <div className="flex flex-col pl-3 truncate">
                   <div>{t('common:invite_by_name')}</div>
-                  <div className="flex items-center flex-row mt-1 opacity-50 transition-opacity group-hover:opacity-100">
+                  <div className="flex items-center flex-row mt-1 opacity-50 transition-opacity group-hover:opacity-100 truncate">
                     <strong>{t('common:continue')}</strong>
                     <AnimatedArrow />
                   </div>

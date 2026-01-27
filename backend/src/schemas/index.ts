@@ -43,10 +43,9 @@ export { mapEntitiesToSchema } from './map-entities-to-schema';
 
 // Stream schemas
 export {
-  createStreamMessageSchema,
-  type StreamMessage,
+  type PublicStreamActivity,
+  publicStreamActivitySchema,
   type StreamNotification,
-  streamMessageSchema,
   streamNotificationSchema,
 } from './stream-schemas';
 
@@ -60,7 +59,6 @@ export {
 
 // Transaction schemas (request wrapper only - responses return entities directly)
 export {
-  createTxMutationSchema,
   type TxRequest,
   type TxStreamMessage,
   txRequestSchema,

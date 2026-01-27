@@ -74,11 +74,12 @@ const attachmentRouteHandlers = app
    * Create one or more attachments
    */
   .openapi(attachmentRoutes.createAttachments, async (ctx) => {
-    const { data: newAttachments, tx } = ctx.req.valid('json');
+    const newAttachments = ctx.req.valid('json');
 
-    // Idempotency check - return existing entities if transaction already processed
-    if (await isTransactionProcessed(tx.id)) {
-      const ref = await getEntityByTransaction(tx.id);
+    // Idempotency check - use first item's tx.id
+    const firstTx = newAttachments[0].tx;
+    if (await isTransactionProcessed(firstTx.id)) {
+      const ref = await getEntityByTransaction(firstTx.id);
       if (ref) {
         // For batch create, the first attachment ID is stored - fetch all from that batch
         const existing = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, ref.entityId));
@@ -107,7 +108,7 @@ const attachmentRouteHandlers = app
     }
 
     // Prepare attachments with tx metadata for CDC
-    const attachmentsToInsert = newAttachments.map((att) => ({
+    const attachmentsToInsert = newAttachments.map(({ tx, ...att }) => ({
       ...att,
       entityType: 'attachment' as const,
       createdAt: getIsoDate(),
@@ -137,7 +138,7 @@ const attachmentRouteHandlers = app
    */
   .openapi(attachmentRoutes.updateAttachment, async (ctx) => {
     const { id } = ctx.req.valid('param');
-    const { data: updatedFields, tx } = ctx.req.valid('json');
+    const { tx, ...updatedFields } = ctx.req.valid('json');
 
     const { entity, can } = await getValidProductEntity(id, 'attachment', 'update');
 

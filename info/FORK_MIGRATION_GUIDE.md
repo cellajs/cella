@@ -343,12 +343,12 @@ systemRoles: ['admin'] as const,
 #### 3. Backend stream infrastructure (High Priority)
 
 **What changed**: New files in `backend/src/sync/stream/`:
-- `build-message.ts` - Creates stream messages
+- `build-notification.ts` - Creates stream notifications
 - `dispatcher.ts` - Routes CDC events to SSE subscribers
 - `send-to-subscriber.ts` - Writes to SSE connections
 
 **Raak has**: Partial implementation in `backend/src/sync/stream/` but missing:
-- `build-message.ts`
+- `build-notification.ts`
 - `dispatcher.ts`
 - `send-to-subscriber.ts`
 
@@ -375,7 +375,7 @@ systemRoles: ['admin'] as const,
 #### 5. Entity stream routes (Medium Priority)
 
 **What changed**: Each realtime entity now has its own stream folder:
-- `backend/src/modules/page/stream/` - route, can-receive, build-message, etc.
+- `backend/src/modules/page/stream/` - route, can-receive, types, etc.
 - `backend/src/modules/attachment/stream/` (if realtime)
 
 **Raak impact**: If raak wants realtime `task`/`label`:

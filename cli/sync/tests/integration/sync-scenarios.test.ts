@@ -109,8 +109,6 @@ describe('sync integration', () => {
       expect(fileExists(env.upstreamPath, 'new-feature.ts')).toBe(true);
       expect(fileExists(env.forkPath, 'new-feature.ts')).toBe(false);
     });
-
-    // TODO: Test that sync adds the file to fork
   });
 
   describe('diverged histories', () => {
@@ -149,8 +147,6 @@ describe('sync integration', () => {
       expect(upstreamContent).toContain('upstream');
       expect(forkContent).toContain('fork');
     });
-
-    // TODO: Test that sync detects conflict and requires manual resolution
   });
 
   describe('fixture cache management', () => {

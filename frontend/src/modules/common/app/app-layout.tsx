@@ -7,15 +7,15 @@ import { Dropdowner } from '~/modules/common/dropdowner/provider';
 import ErrorNotice, { type ErrorNoticeError } from '~/modules/common/error-notice';
 import { Sheeter } from '~/modules/common/sheeter/provider';
 import { Uploader } from '~/modules/common/uploader/uploader';
-import UserStream from '~/modules/common/user-stream';
 import AppNav from '~/modules/navigation/app-nav';
 import { SidebarWrapper } from '~/modules/ui/sidebar';
+import { AppStream } from '~/query/realtime';
 
 /**
  * Main application layout component.
  * - Wraps the app in error boundaries.
  * - Renders navigation, content area, dialogs, sheets, and other global components.
- * - Uses UserStream for real-time membership/organization updates via CDC events.
+ * - Uses AppStream for real-time membership/organization updates via CDC events.
  */
 function AppLayout() {
   return (
@@ -29,7 +29,7 @@ function AppLayout() {
           <AppNav />
           <AppContent />
         </SidebarWrapper>
-        <UserStream />
+        <AppStream />
         <Uploader />
         <Dialoger />
         <AppSheets />

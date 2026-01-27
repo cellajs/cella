@@ -15,7 +15,7 @@ function ReloadPrompt() {
     updateServiceWorker,
   } = useRegisterSW({
     onRegisteredSW(swUrl, r) {
-      console.debug(`Service Worker at: ${swUrl}`);
+      console.debug(`[ServiceWorker] Registered at: ${swUrl}`);
       // @ts-expect-error just ignore
       if (reloadSW === 'true') {
         r &&
@@ -24,7 +24,7 @@ function ReloadPrompt() {
             r.update();
           }, 20000 /* 20s for testing purposes */);
       } else {
-        console.debug('SW Registered');
+        console.debug('[ServiceWorker] Registered');
       }
     },
     onRegisterError(error) {

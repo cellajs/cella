@@ -9,21 +9,14 @@ interface SyncNotification {
   organizationId: string | null;
 }
 
-/**
- * Extract context entity IDs from current route params.
- * Uses common param naming conventions to identify which context the user is viewing.
- */
+/** Extract context entity IDs from router's loaderData (already resolved by route loaders). */
 function getRouteContext(): Record<string, string> {
   const context: Record<string, string> = {};
 
   for (const match of router.state.matches) {
-    const params = match.params as Record<string, string>;
-
-    // Common param patterns → entity type mapping
-    // /$idOrSlug (first segment) → organization
-    // /$orgIdOrSlug/... → organization
-    if (params.orgIdOrSlug) context.organization = params.orgIdOrSlug;
-    if (params.idOrSlug && !context.organization) context.organization = params.idOrSlug;
+    const entityType = (match.staticData as { entityType?: string } | undefined)?.entityType;
+    const id = (match.loaderData as { id?: string } | null)?.id;
+    if (entityType && id) context[entityType] = id;
   }
 
   return context;
@@ -56,41 +49,14 @@ export function getSyncPriority(notification: SyncNotification): SyncPriority {
     return Object.keys(routeContext).length > 0 ? 'medium' : 'low';
   }
 
-  // Check org scope first - most entities are org-scoped
   const routeOrg = routeContext.organization;
 
-  // No org in route (e.g., /home, /about) → low priority
+  // Not in an org route → low priority
   if (!routeOrg) return 'low';
 
   // Different org → low priority
   if (organizationId && routeOrg !== organizationId) return 'low';
 
-  // User is in matching org - check if any ancestor matches route context
-  for (const ancestor of ancestors) {
-    if (routeContext[ancestor]) {
-      return 'high';
-    }
-  }
-
-  // Same org but not viewing relevant context → medium
-  return 'medium';
-}
-
-/**
- * Quick check if user is in a context where this entity type is relevant.
- * Useful for deciding whether to process a notification at all.
- */
-export function isEntityTypeRelevant(entityType: RealtimeEntityType): boolean {
-  const productConfig = getProductEntityConfig(entityType);
-  if (!productConfig) return false;
-
-  const { ancestors } = productConfig;
-
-  // Global entities (no ancestors) are always relevant
-  if (ancestors.length === 0) return true;
-
-  const routeContext = getRouteContext();
-
-  // Relevant if user is in any ancestor context
-  return ancestors.some((ancestor) => routeContext[ancestor]);
+  // User is in matching org - high if viewing an ancestor context, else medium
+  return ancestors.some((a) => routeContext[a]) ? 'high' : 'medium';
 }

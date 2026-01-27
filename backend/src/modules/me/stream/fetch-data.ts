@@ -99,10 +99,10 @@ export async function enrichEventData(event: ActivityEventWithEntity): Promise<R
 }
 
 /**
- * User stream message format.
+ * App stream notification format.
  * Aligned with frontend expectations.
  */
-export interface UserStreamMessage {
+export interface AppStreamNotification {
   activityId: string;
   action: 'create' | 'update' | 'delete';
   entityType: string | null;
@@ -114,12 +114,12 @@ export interface UserStreamMessage {
 }
 
 /**
- * Build a user stream message from an activity event.
+ * Build an app stream notification from an activity event.
  */
-export function buildUserStreamMessage(
+export function buildAppNotification(
   event: ActivityEventWithEntity,
   enrichedData: Record<string, unknown> | null,
-): UserStreamMessage {
+): AppStreamNotification {
   return {
     activityId: event.id,
     action: event.action as 'create' | 'update' | 'delete',
@@ -141,7 +141,7 @@ export async function fetchUserCatchUpActivities(
   orgIds: Set<string>,
   cursor: string | null,
   limit = 50,
-): Promise<UserStreamMessage[]> {
+): Promise<AppStreamNotification[]> {
   if (orgIds.size === 0) return [];
 
   const orgIdArray = Array.from(orgIds);
@@ -169,7 +169,7 @@ export async function fetchUserCatchUpActivities(
 
   // Filter to only include activities where user is the membership subject
   // (We can't do this in SQL without joining memberships table)
-  const messages: UserStreamMessage[] = [];
+  const notifications: AppStreamNotification[] = [];
 
   for (const activity of activities) {
     const createdAt = String(activity.createdAt);
@@ -179,7 +179,7 @@ export async function fetchUserCatchUpActivities(
     if (activity.resourceType === 'membership') {
       // For catch-up, include all membership events in user's orgs
       // The frontend will filter based on actual data
-      messages.push({
+      notifications.push({
         activityId: activity.id,
         action: activity.action as 'create' | 'update' | 'delete',
         entityType: activity.entityType,
@@ -190,7 +190,7 @@ export async function fetchUserCatchUpActivities(
         data: null, // Catch-up data will be fetched fresh by frontend
       });
     } else if (activity.entityType === 'organization') {
-      messages.push({
+      notifications.push({
         activityId: activity.id,
         action: activity.action as 'create' | 'update' | 'delete',
         entityType: activity.entityType,
@@ -203,7 +203,7 @@ export async function fetchUserCatchUpActivities(
     }
   }
 
-  return messages;
+  return notifications;
 }
 
 /**

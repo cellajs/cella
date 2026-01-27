@@ -3,7 +3,7 @@ import type { ActivityEventWithEntity } from '#/sync/activity-bus';
 import { streamSubscriberManager, writeChange } from '#/sync/stream';
 import { logEvent } from '#/utils/logger';
 import { canReceiveUserEvent } from './can-receive';
-import { buildUserStreamMessage, enrichEventData } from './fetch-data';
+import { buildAppNotification, enrichEventData } from './fetch-data';
 import { orgChannel, type UserStreamSubscriber, userChannel } from './types';
 
 /**
@@ -14,8 +14,17 @@ async function sendToUserSubscriber(subscriber: UserStreamSubscriber, event: Act
   // Enrich event data with full entity details from DB
   const enrichedData = await enrichEventData(event);
 
-  const message = buildUserStreamMessage(event, enrichedData);
-  await writeChange(subscriber.stream, event.id, message);
+  const notification = buildAppNotification(event, enrichedData);
+
+  logEvent('debug', 'SSE notification sent to user subscriber', {
+    subscriberId: subscriber.id,
+    userId: subscriber.userId,
+    activityId: event.id,
+    entityType: event.entityType,
+    action: event.action,
+  });
+
+  await writeChange(subscriber.stream, event.id, notification);
   subscriber.cursor = event.id;
 }
 

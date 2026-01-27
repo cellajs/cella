@@ -110,6 +110,104 @@
     "schemaTag": "base"
   },
   {
+    "name": "TxBase",
+    "ref": "#/components/schemas/TxBase",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "required": true },
+        "sourceId": { "type": "string", "required": true },
+        "version": { "type": "number", "required": true },
+        "fieldVersions": { "type": "object", "required": true }
+      }
+    },
+    "schemaTag": "base"
+  },
+  {
+    "name": "StreamNotification",
+    "ref": "#/components/schemas/StreamNotification",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "type": "string",
+          "required": true,
+          "enum": ["create", "update", "delete"]
+        },
+        "entityType": {
+          "type": "string",
+          "required": true,
+          "enum": ["attachment", "page"]
+        },
+        "entityId": { "type": "string", "required": true },
+        "organizationId": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "seq": { "type": "integer", "required": true },
+        "tx": {
+          "type": "object",
+          "required": true,
+          "properties": {
+            "id": { "type": "string", "required": true },
+            "sourceId": { "type": "string", "required": true },
+            "version": { "type": "integer", "required": true },
+            "fieldVersions": { "type": "object", "required": true }
+          },
+          "ref": "#/components/schemas/TxStreamMessage"
+        },
+        "cacheToken": { "type": "string", "required": false }
+      }
+    },
+    "schemaTag": "data"
+  },
+  {
+    "name": "TxStreamMessage",
+    "ref": "#/components/schemas/TxStreamMessage",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "required": true },
+        "sourceId": { "type": "string", "required": true },
+        "version": { "type": "integer", "required": true },
+        "fieldVersions": { "type": "object", "required": true }
+      }
+    },
+    "schemaTag": "data"
+  },
+  {
+    "name": "PublicStreamActivity",
+    "ref": "#/components/schemas/PublicStreamActivity",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "activityId": { "type": "string", "required": true },
+        "action": {
+          "type": "string",
+          "required": true,
+          "enum": ["create", "update", "delete"]
+        },
+        "entityType": {
+          "type": "string",
+          "required": true,
+          "enum": ["attachment", "page"]
+        },
+        "entityId": { "type": "string", "required": true },
+        "changedKeys": {
+          "type": ["array", "null"],
+          "required": true,
+          "itemType": "string"
+        },
+        "createdAt": { "type": "string", "required": true }
+      }
+    },
+    "schemaTag": "data"
+  },
+  {
     "name": "BadRequestError",
     "ref": "#/components/schemas/BadRequestError",
     "type": "object",
@@ -389,19 +487,14 @@
           ]
         },
         "tx": {
+          "type": ["object", "null"],
           "required": true,
-          "anyOf": [
-            { "type": "string", "required": false },
-            { "type": "number", "required": false },
-            { "type": "boolean", "required": false },
-            { "type": "null", "required": false },
-            { "type": "object", "required": false },
-            {
-              "type": "array",
-              "required": false,
-              "itemType": "object"
-            }
-          ]
+          "properties": {
+            "id": { "type": "string", "required": true },
+            "sourceId": { "type": "string", "required": true },
+            "version": { "type": "number", "required": true },
+            "fieldVersions": { "type": "object", "required": true }
+          }
         },
         "seq": {
           "type": ["integer", "null"],
@@ -1096,21 +1189,6 @@
     }
   },
   {
-    "name": "TxStreamMessage",
-    "ref": "#/components/schemas/TxStreamMessage",
-    "type": ["object", "null"],
-    "schema": {
-      "type": ["object", "null"],
-      "properties": {
-        "id": { "type": "string", "required": true },
-        "sourceId": { "type": "string", "required": true },
-        "version": { "type": "integer", "required": true },
-        "fieldVersions": { "type": "object", "required": true }
-      }
-    },
-    "schemaTag": "data"
-  },
-  {
     "name": "Page",
     "ref": "#/components/schemas/Page",
     "type": "object",
@@ -1143,19 +1221,14 @@
           "required": true
         },
         "tx": {
+          "type": "object",
           "required": true,
-          "anyOf": [
-            { "type": "string", "required": false },
-            { "type": "number", "required": false },
-            { "type": "boolean", "required": false },
-            { "type": "null", "required": false },
-            { "type": "object", "required": false },
-            {
-              "type": "array",
-              "required": false,
-              "itemType": "object"
-            }
-          ]
+          "properties": {
+            "id": { "type": "string", "required": true },
+            "sourceId": { "type": "string", "required": true },
+            "version": { "type": "number", "required": true },
+            "fieldVersions": { "type": "object", "required": true }
+          }
         },
         "status": {
           "type": "string",
@@ -1258,19 +1331,14 @@
           "required": true
         },
         "tx": {
+          "type": "object",
           "required": true,
-          "anyOf": [
-            { "type": "string", "required": false },
-            { "type": "number", "required": false },
-            { "type": "boolean", "required": false },
-            { "type": "null", "required": false },
-            { "type": "object", "required": false },
-            {
-              "type": "array",
-              "required": false,
-              "itemType": "object"
-            }
-          ]
+          "properties": {
+            "id": { "type": "string", "required": true },
+            "sourceId": { "type": "string", "required": true },
+            "version": { "type": "number", "required": true },
+            "fieldVersions": { "type": "object", "required": true }
+          }
         },
         "public": { "type": "boolean", "required": true },
         "bucketName": { "type": "string", "required": true },

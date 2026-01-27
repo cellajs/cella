@@ -1,6 +1,7 @@
 import { appConfig, type RealtimeEntityType } from 'config';
 import type { ActivityEventWithEntity } from '#/sync/activity-bus';
-import { buildStreamMessage, buildStreamNotification } from './build-message';
+import { logEvent } from '#/utils/logger';
+import { type BuildNotificationOptions, buildStreamNotification } from './build-notification';
 import { writeChange } from './helpers';
 import type { BaseStreamSubscriber } from './types';
 
@@ -12,20 +13,53 @@ export interface CursoredSubscriber extends BaseStreamSubscriber {
 }
 
 /**
- * Send event to a subscriber and update cursor.
- * Uses notification-based format for realtime entities (lightweight, seq-based).
- * Falls back to full message for other entity types.
+ * Subscriber with user context for cache token generation.
  */
-export async function sendToSubscriber<T extends CursoredSubscriber>(
+export interface UserContextSubscriber extends CursoredSubscriber {
+  userId: string;
+  orgIds: Set<string>;
+}
+
+/**
+ * Check if subscriber has user context for cache tokens.
+ */
+function hasUserContext(subscriber: CursoredSubscriber): subscriber is UserContextSubscriber {
+  return 'userId' in subscriber && 'orgIds' in subscriber;
+}
+
+/**
+ * Send notification to a subscriber and update cursor.
+ * Uses lightweight notification format for realtime entities.
+ *
+ * If subscriber has user context (userId, orgIds), includes a cacheToken in the
+ * notification that allows clients to access the LRU entity cache.
+ */
+export async function sendNotificationToSubscriber<T extends CursoredSubscriber>(
   subscriber: T,
   event: ActivityEventWithEntity,
 ): Promise<void> {
-  // Use lightweight notification for realtime entities with tx data
+  // Validate this is a realtime entity with tx data
   const isRealtimeEntity = appConfig.realtimeEntityTypes.includes(event.entityType as RealtimeEntityType);
-  const hasTx = event.tx != null;
+  if (!isRealtimeEntity) {
+    throw new Error(`sendNotificationToSubscriber only supports realtime entities, got: ${event.entityType}`);
+  }
+  if (!event.tx) {
+    throw new Error(`Activity ${event.id} missing tx - realtime entities must have tx`);
+  }
 
-  const message = isRealtimeEntity && hasTx ? buildStreamNotification(event) : buildStreamMessage(event);
+  // Build notification with optional cache token
+  const options: BuildNotificationOptions = hasUserContext(subscriber)
+    ? { userId: subscriber.userId, organizationIds: Array.from(subscriber.orgIds) }
+    : {};
+  const notification = buildStreamNotification(event, options);
 
-  await writeChange(subscriber.stream, event.id, message);
+  logEvent('debug', 'SSE notification sent to subscriber', {
+    subscriberId: subscriber.id,
+    activityId: event.id,
+    entityType: event.entityType,
+    action: event.action,
+  });
+
+  await writeChange(subscriber.stream, event.id, notification);
   subscriber.cursor = event.id;
 }

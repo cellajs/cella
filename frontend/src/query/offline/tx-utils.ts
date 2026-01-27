@@ -11,7 +11,7 @@ import { nanoid } from 'nanoid';
  * Unique identifier for this browser tab/instance.
  * Generated once per page load, used for:
  * - Mutation source tracking (`tx.sourceId`)
- * - "Is this mine?" checks on stream messages
+ * - "Is this mine?" checks on stream notifications
  */
 export const sourceId = `src_${nanoid()}`;
 

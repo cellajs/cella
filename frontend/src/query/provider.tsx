@@ -1,7 +1,6 @@
-import { QueryClientProvider as BaseQueryClientProvider } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { appConfig } from 'config';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { UserMenuItem } from '~/modules/me/types';
 import { getMenuData } from '~/modules/navigation/menu-sheet/helpers/get-menu-data';
 import { entityToPrefetchQueries } from '~/offline-config';
@@ -13,6 +12,8 @@ import '~/modules/attachment/query';
 import '~/modules/page/query';
 import { persister } from '~/query/persister';
 import { queryClient } from '~/query/query-client';
+import { initTabCoordinator, useTabCoordinatorStore } from '~/query/realtime/tab-coordinator';
+import { sessionPersister } from '~/query/session-persister';
 import { useUIStore } from '~/store/ui';
 import { useUserStore } from '~/store/user';
 
@@ -20,6 +21,10 @@ import { useUserStore } from '~/store/user';
 // This registers mutationFn for each entity type so that paused mutations
 // can resume after page reload (mutationFn cannot be serialized to IndexedDB).
 initializeMutationDefaults(queryClient);
+
+// Initialize tab coordinator early so we know leader status before persistence decisions.
+// This is async but fast (uses Web Locks ifAvailable: true for quick determination).
+initTabCoordinator();
 
 /** Configuration for offline-capable queries. */
 export const offlineQueryConfig = {
@@ -38,42 +43,49 @@ export const offlineQueryConfig = {
 export const waitFor = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
- * QueryClientProvider wrapper that handles two modes of operation:
+ * QueryClientProvider wrapper that handles cache persistence and offline capabilities.
  *
- * 1. **Standard Mode** (offlineAccess = false):
- *    - Uses the base TanStack Query provider
- *    - No cache persistence or prefetching
+ * ## Persistence modes
+ *
+ * Both modes use PersistQueryClientProvider, but with different storage backends:
+ *
+ * 1. **Session Mode** (offlineAccess = false):
+ *    - Uses sessionStorage persister (survives refresh, cleared on tab close)
+ *    - No prefetching
  *
  * 2. **Offline Mode** (offlineAccess = true):
- *    - Uses PersistQueryClientProvider to persist cache to IndexedDB
+ *    - Uses IndexedDB persister (survives browser restart)
  *    - Automatically prefetches content for offline availability
  *
- * ## Offline Prefetch Strategy
+ * ## Mutation persistence (leader-only)
+ *
+ * To prevent cross-tab conflicts when persisting mutations:
+ * - **Leader tab**: Persists mutations to storage (survives refresh)
+ * - **Follower tabs**: Mutations stay in-memory only
+ *
+ * The tab coordinator uses Web Locks API to elect a single leader across tabs.
+ * If the leader tab closes, a follower is promoted and takes over persistence.
+ *
+ * ## Offline prefetch strategy (offlineAccess = true only)
  *
  * The prefetch logic operates in phases:
  *
- * 1. **Menu structure**: Already cached from entity list queries (organizations, etc.)
- *    via `getContextEntityTypeToListQueries()`. The menu is built from these entity
- *    lists using `buildMenu()`.
- *
- * 2. **Menu content**: This provider prefetches the *content within* each menu item:
- *    - For each menu item entity (e.g., organization), fetch related data like
- *      members, attachments, etc. as defined in `entityToPrefetchQueries()`
- *    - Recursively processes submenus to prefetch their content as well
- *    - Skips archived items to reduce unnecessary data transfer
- *    - Rate-limited with delays to avoid overloading the server
- *
- * The separation ensures efficient caching: menu entities themselves are already
- * available from the entity list queries used to build the menu, while this provider
- * focuses on prefetching the detailed content users will need when navigating.
+ * 1. **Menu structure**: Already cached from entity list queries
+ * 2. **Menu content**: Prefetches content within each menu item
  */
 export function QueryClientProvider({ children }: { children: React.ReactNode }) {
   const { user } = useUserStore();
   const { offlineAccess, toggleOfflineAccess } = useUIStore();
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const isLeader = useTabCoordinatorStore((state) => state.isLeader);
 
   // Disable offline access if PWA is not enabled in the config
   if (!appConfig.has.pwa && offlineAccess) toggleOfflineAccess();
+
+  // Select persister based on offline access mode
+  // - offlineAccess: IndexedDB (survives browser restart)
+  // - session: sessionStorage (survives refresh, cleared on tab close)
+  const activePersister = useMemo(() => (offlineAccess ? persister : sessionPersister), [offlineAccess]);
 
   // Track online/offline status
   useEffect(() => {
@@ -143,15 +155,27 @@ export function QueryClientProvider({ children }: { children: React.ReactNode })
     };
   }, [offlineAccess, user]);
 
-  if (!offlineAccess) return <BaseQueryClientProvider client={queryClient}>{children}</BaseQueryClientProvider>;
-
   return (
     <PersistQueryClientProvider
       client={queryClient}
-      persistOptions={{ persister }}
+      persistOptions={{
+        persister: activePersister,
+        dehydrateOptions: {
+          // Only leader tab persists mutations to storage.
+          // This prevents cross-tab conflicts when multiple tabs queue mutations.
+          // Follower tabs keep mutations in-memory (work while tab is open).
+          shouldDehydrateMutation: () => isLeader,
+        },
+      }}
       onSuccess={() => {
-        // After successful cache restoration, resume paused mutations and invalidate queries
-        queryClient.resumePausedMutations().then(() => queryClient.invalidateQueries());
+        // After successful cache restoration, resume any paused mutations and revalidate.
+        queryClient.resumePausedMutations().then(() => {
+          // Only invalidate queries if we're in offline mode (IDB persister)
+          // Session mode doesn't need aggressive revalidation
+          if (offlineAccess) {
+            queryClient.invalidateQueries();
+          }
+        });
       }}
     >
       {children}

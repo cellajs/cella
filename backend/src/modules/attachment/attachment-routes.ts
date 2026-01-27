@@ -3,8 +3,8 @@ import { createXRoute } from '#/docs/x-routes';
 import { hasOrgAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
+  attachmentCreateManyTxBodySchema,
   attachmentCreateResponseSchema,
-  attachmentCreateTxBodySchema,
   attachmentListQuerySchema,
   attachmentSchema,
   attachmentUpdateTxBodySchema,
@@ -59,7 +59,7 @@ const attachmentRoutes = {
       params: inOrgParamSchema,
       body: {
         required: true,
-        content: { 'application/json': { schema: attachmentCreateTxBodySchema } },
+        content: { 'application/json': { schema: attachmentCreateManyTxBodySchema } },
       },
     },
     responses: {

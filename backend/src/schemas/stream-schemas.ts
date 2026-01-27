@@ -6,43 +6,39 @@ import { txStreamMessageSchema } from './transaction-schemas';
 /**
  * Stream notification schema for notification-based sync.
  * Lightweight payload - client fetches entity data via API.
+ *
+ * cacheToken: HMAC-signed token that grants access to the LRU entity cache.
+ * The first client to fetch with this token populates the cache; subsequent
+ * clients get a cache hit without hitting the database.
  */
-export const streamNotificationSchema = z.object({
-  action: z.enum(activityActions),
-  entityType: z.enum(appConfig.realtimeEntityTypes),
-  entityId: z.string(),
-  organizationId: z.string().nullable(),
-  seq: z.number().int(),
-  tx: txStreamMessageSchema,
-});
+export const streamNotificationSchema = z
+  .object({
+    action: z.enum(activityActions),
+    entityType: z.enum(appConfig.realtimeEntityTypes),
+    entityId: z.string(),
+    organizationId: z.string().nullable(),
+    seq: z.number().int(),
+    tx: txStreamMessageSchema,
+    /** HMAC-signed token for LRU cache access. Clients should pass this in X-Cache-Token header. */
+    cacheToken: z.string().optional(),
+  })
+  .openapi('StreamNotification');
 
 export type StreamNotification = z.infer<typeof streamNotificationSchema>;
 
 /**
- * Factory to create a stream message schema (legacy, for backward compatibility).
- * Use for SSE stream message payloads that include full entity data.
- *
- * @example
- * const pageStreamMessageSchema = createStreamMessageSchema(pageSchema);
- * @deprecated Use streamNotificationSchema for notification-based sync
+ * Schema for public stream activity items.
+ * Used for catch-up responses in public SSE streams.
  */
-export const createStreamMessageSchema = <T extends z.ZodTypeAny>(dataSchema: T) =>
-  z.object({
-    data: dataSchema.nullable(),
+export const publicStreamActivitySchema = z
+  .object({
+    activityId: z.string(),
+    action: z.enum(activityActions),
     entityType: z.enum(appConfig.realtimeEntityTypes),
     entityId: z.string(),
-    action: z.enum(activityActions),
-    activityId: z.string(),
     changedKeys: z.array(z.string()).nullable(),
     createdAt: z.string(),
-    tx: txStreamMessageSchema.nullable(),
-  });
+  })
+  .openapi('PublicStreamActivity');
 
-/**
- * Base stream message schema (entity data as unknown).
- * Use when specific entity type is not known at compile time.
- * @deprecated Use streamNotificationSchema for notification-based sync
- */
-export const streamMessageSchema = createStreamMessageSchema(z.unknown()).openapi('StreamMessage');
-
-export type StreamMessage = z.infer<typeof streamMessageSchema>;
+export type PublicStreamActivity = z.infer<typeof publicStreamActivitySchema>;

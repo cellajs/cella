@@ -15,7 +15,8 @@
     "config": "workspace:*",
     "dotenv": "^16.6.1",
     "drizzle-orm": "^0.45.1",
-    "nanoid": "^5.1.5",
+    "lru-cache": "^11.2.5",
+    "nanoid": "^5.1.6",
     "pg-logical-replication": "^2.3.0",
     "ws": "^8.19.0",
     "zod": "^3.25.76"
