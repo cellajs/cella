@@ -211,15 +211,22 @@ async function resolveMergeConflicts(repoPath: string, forkBranchRef: string, an
       continue;
     }
 
-    // Handle files NOT in the analysis map (fork-only files that conflict with upstream)
-    // This can happen when fork has files (like drizzle migrations) that upstream doesn't have,
-    // but upstream has different files in the same directory causing merge conflicts.
+    // Handle files NOT in the analysis map (files that conflict but weren't analyzed)
+    // This can happen when:
+    // 1. Fork has files (like drizzle migrations) that upstream doesn't have
+    // 2. Upstream has files in ignored paths that fork doesn't have
     if (!file) {
       const overrideStatus = getOverrideStatus(filePath);
       if (overrideStatus === 'ignored' || overrideStatus === 'pinned') {
-        // Fork-only file in ignored/pinned path - restore from fork's development branch
-        // We use `git checkout <ref> -- <file>` because `git restore` doesn't work on unmerged files
-        await gitCheckoutFileFromRef(repoPath, filePath, forkBranchRef);
+        // Check if file exists in fork's branch
+        try {
+          await gitCheckoutFileFromRef(repoPath, filePath, forkBranchRef);
+        } catch {
+          // File doesn't exist in fork - this is an upstream-only file in an ignored path
+          // Remove it from the merge (don't add upstream's version)
+          await gitRemoveFilePathFromCache(repoPath, filePath);
+          await gitCleanUntrackedFile(repoPath, filePath);
+        }
         continue;
       }
     }
