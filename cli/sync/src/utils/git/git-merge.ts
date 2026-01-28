@@ -5,7 +5,7 @@
 import { confirm } from '@inquirer/prompts';
 import { config } from '#/config';
 import { pauseSpinner, resumeSpinner } from '#/utils/progress';
-import { gitAddAll, gitCheckout, gitCommit, gitMerge, isMergeInProgress } from './command';
+import { gitAddAll, gitCheckout, gitCommit, gitDiffCheckConflictMarkers, gitMerge, isMergeInProgress } from './command';
 import { getUnmergedFiles, resolveConflictAsTheirs } from './files';
 import { getCommitCount, getLastCommitMessages, hasAnythingToCommit } from './helpers';
 
@@ -59,7 +59,28 @@ async function startMerge(mergeIntoPath: string, mergeFromBranch: string, { allo
 async function waitForManualConflictResolution(mergeIntoPath: string) {
   let conflicts = await getUnmergedFiles(mergeIntoPath);
 
-  if (conflicts.length === 0) return;
+  if (conflicts.length === 0) {
+    // Even if git reports no unmerged files, check for leftover conflict markers
+    // This catches cases where user staged files without resolving markers
+    const filesWithMarkers = await gitDiffCheckConflictMarkers(mergeIntoPath);
+    if (filesWithMarkers.length > 0) {
+      pauseSpinner();
+      console.error(`\n⚠️  The following files contain unresolved conflict markers:`);
+      for (const file of filesWithMarkers) {
+        console.error(`   • ${file}`);
+      }
+      const continueAnyway = await confirm({
+        message: 'These files have conflict markers (<<<<<<<, =======, >>>>>>>). Fix them and press "y" to retry, or "n" to abort.',
+        default: false,
+      });
+      if (!continueAnyway) {
+        throw new Error('merge process aborted: unresolved conflict markers detected');
+      }
+      resumeSpinner();
+      return waitForManualConflictResolution(mergeIntoPath);
+    }
+    return;
+  }
 
   pauseSpinner();
 
