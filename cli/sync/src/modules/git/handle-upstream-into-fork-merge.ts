@@ -11,7 +11,13 @@ import {
   gitRestoreFileFromRef,
   gitRestoreStagedFile,
 } from '#/utils/git/command';
-import { getCachedFiles, getStagedDeletions, getUnmergedFiles, resolveConflictAsOurs, resolveConflictAsTheirs } from '#/utils/git/files';
+import {
+  getCachedFiles,
+  getStagedDeletions,
+  getUnmergedFiles,
+  resolveConflictAsOurs,
+  resolveConflictAsTheirs,
+} from '#/utils/git/files';
 import { handleMerge } from '#/utils/git/git-merge';
 import { pauseSpinner, resumeSpinner } from '#/utils/progress';
 
