@@ -11,7 +11,7 @@ import {
   gitRestoreFileFromRef,
   gitRestoreStagedFile,
 } from '#/utils/git/command';
-import { getCachedFiles, getStagedDeletions, getUnmergedFiles, resolveConflictAsOurs } from '#/utils/git/files';
+import { getCachedFiles, getStagedDeletions, getUnmergedFiles, resolveConflictAsOurs, resolveConflictAsTheirs } from '#/utils/git/files';
 import { handleMerge } from '#/utils/git/git-merge';
 import { pauseSpinner, resumeSpinner } from '#/utils/progress';
 
@@ -176,6 +176,11 @@ async function resolveMergeConflicts(repoPath: string, analyzedFiles: FileAnalys
 
     if (file?.mergeStrategy?.strategy === 'keep-fork') {
       await resolveConflictAsOurs(repoPath, filePath);
+      continue;
+    }
+
+    if (file?.mergeStrategy?.strategy === 'keep-upstream') {
+      await resolveConflictAsTheirs(repoPath, filePath);
       continue;
     }
 
