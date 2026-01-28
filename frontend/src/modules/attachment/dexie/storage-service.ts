@@ -15,11 +15,11 @@ import { appConfig } from 'config';
 import type { Attachment } from '~/api.gen';
 import {
   type AttachmentBlob,
+  attachmentsDb,
   type BlobSource,
   type DownloadQueueEntry,
   type QueueStatus,
   type SyncStatus,
-  attachmentsDb,
 } from '~/modules/attachment/dexie/attachments-db';
 import type { CustomUppyFile } from '~/modules/common/uploader/types';
 
@@ -169,7 +169,10 @@ class AttachmentStorageService {
    */
   async getPendingUploads(organizationId: string): Promise<AttachmentBlob[]> {
     try {
-      return await attachmentsDb.blobs.where('[organizationId+syncStatus]').equals([organizationId, 'pending']).toArray();
+      return await attachmentsDb.blobs
+        .where('[organizationId+syncStatus]')
+        .equals([organizationId, 'pending'])
+        .toArray();
     } catch (error) {
       Sentry.captureException(error);
       console.error('Failed to get pending uploads:', error);
@@ -185,7 +188,10 @@ class AttachmentStorageService {
       const now = new Date();
 
       // Get pending uploads
-      const pending = await attachmentsDb.blobs.where('[organizationId+syncStatus]').equals([organizationId, 'pending']).toArray();
+      const pending = await attachmentsDb.blobs
+        .where('[organizationId+syncStatus]')
+        .equals([organizationId, 'pending'])
+        .toArray();
 
       // Get failed uploads ready for retry
       const config = appConfig.localBlobStorage;
@@ -194,7 +200,12 @@ class AttachmentStorageService {
       const retryReady = await attachmentsDb.blobs
         .where('[organizationId+syncStatus]')
         .equals([organizationId, 'failed'])
-        .filter((blob) => blob.source === 'upload' && blob.syncAttempts < maxRetries && (!blob.nextRetryAt || blob.nextRetryAt <= now))
+        .filter(
+          (blob) =>
+            blob.source === 'upload' &&
+            blob.syncAttempts < maxRetries &&
+            (!blob.nextRetryAt || blob.nextRetryAt <= now),
+        )
         .toArray();
 
       return [...pending, ...retryReady];
@@ -297,9 +308,13 @@ class AttachmentStorageService {
 
     try {
       // Filter out already queued or cached
-      const existingBlobIds = new Set(await attachmentsDb.blobs.where('organizationId').equals(organizationId).primaryKeys());
+      const existingBlobIds = new Set(
+        await attachmentsDb.blobs.where('organizationId').equals(organizationId).primaryKeys(),
+      );
 
-      const existingQueueIds = new Set(await attachmentsDb.downloadQueue.where('organizationId').equals(organizationId).primaryKeys());
+      const existingQueueIds = new Set(
+        await attachmentsDb.downloadQueue.where('organizationId').equals(organizationId).primaryKeys(),
+      );
 
       const entries: DownloadQueueEntry[] = [];
 
@@ -466,7 +481,9 @@ class AttachmentStorageService {
 
     // Check allowed content types (if specified)
     if (config.allowedContentTypes?.length && attachment.contentType) {
-      const allowed = config.allowedContentTypes.some((pattern) => this.matchesMimePattern(attachment.contentType!, pattern));
+      const allowed = config.allowedContentTypes.some((pattern) =>
+        this.matchesMimePattern(attachment.contentType!, pattern),
+      );
       if (!allowed) {
         return `Content type not allowed: ${attachment.contentType}`;
       }

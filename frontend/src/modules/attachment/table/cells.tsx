@@ -35,20 +35,15 @@ export const ThumbnailCell = ({ row, tabIndex }: ThumbnailCellProps) => {
   const key = thumbnailKey || originalKey;
 
   // The computed URL for preview and link
-  const { data: url } = useQuery({
+  const { data: presignedUrl } = useQuery({
     queryKey: ['presigned-url', key, isPublic],
     queryFn: () => getPresignedUrl({ query: { key, isPublic } }),
     enabled: !isLocalAttachment(key),
   });
 
-  // For files that are NOT blob URLs → just render preview, no link wrap
-  if (isLocalAttachment(key)) {
-    return (
-      <div className={wrapClass}>
-        <AttachmentPreview name={filename} url={key} contentType={contentType} />
-      </div>
-    );
-  }
+  // For local attachments, use the key directly (it's already a blob URL)
+  // For remote attachments, use the presigned URL
+  const url = isLocalAttachment(key) ? key : presignedUrl;
 
   // Remote URLs: wrap in a Link with custom behavior
   return (

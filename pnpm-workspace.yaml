@@ -6,4 +6,5 @@ packages:
   - 'frontend'
   - 'locales'
   - 'packages/*'
+  - 'proxy'
   - 'studio'

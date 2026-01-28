@@ -1,5 +1,5 @@
-import { logEvent } from '#/utils/logger';
-import { startHealthServer } from './health';
+import { stopHealthServer, startHealthServer } from './health';
+import { logEvent } from './pino';
 import { startCdcWorker, stopCdcWorker } from './worker';
 
 /**
@@ -23,12 +23,14 @@ if (devMode !== 'full' && process.env.NODE_ENV !== 'production') {
 process.on('SIGINT', async () => {
   logEvent('info', 'Received SIGINT, shutting down CDC worker...');
   await stopCdcWorker();
+  await stopHealthServer();
   process.exit(0);
 });
 
 process.on('SIGTERM', async () => {
   logEvent('info', 'Received SIGTERM, shutting down CDC worker...');
   await stopCdcWorker();
+  await stopHealthServer();
   process.exit(0);
 });
 

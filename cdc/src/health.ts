@@ -1,6 +1,9 @@
-import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
-import { logEvent } from '#/utils/logger';
+import { serve, type ServerType } from '@hono/node-server';
+import { Hono } from 'hono';
+import { secureHeaders } from 'hono/secure-headers';
 import { env } from './env';
+import { cdcErrorHandler } from './lib/error';
+import { logEvent } from './pino';
 import { getCdcMetrics } from './tracing';
 import { getCdcHealthState, type CdcHealthState } from './worker';
 
@@ -48,10 +51,14 @@ function getHealthStatus(state: CdcHealthState): HealthStatus {
   return 'degraded';
 }
 
-/**
- * Handle health check request.
- */
-function handleHealthRequest(_req: IncomingMessage, res: ServerResponse): void {
+// Create Hono app for health endpoints
+const app = new Hono();
+
+// Minimal security middleware
+app.use('*', secureHeaders());
+
+// Health check endpoint
+app.get('/health', (c) => {
   const cdcState = getCdcHealthState();
   const status = getHealthStatus(cdcState);
   const metrics = getCdcMetrics();
@@ -66,37 +73,45 @@ function handleHealthRequest(_req: IncomingMessage, res: ServerResponse): void {
   };
 
   const httpStatus = status === 'unhealthy' ? 503 : 200;
+  return c.json(response, httpStatus as 200);
+});
 
-  res.writeHead(httpStatus, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify(response));
-}
-
-/**
- * Handle metrics request (detailed tracing data).
- */
-function handleMetricsRequest(_req: IncomingMessage, res: ServerResponse): void {
+// Metrics endpoint
+app.get('/metrics', (c) => {
   const metrics = getCdcMetrics();
+  return c.json(metrics);
+});
 
-  res.writeHead(200, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify(metrics));
+// Not found handler
+app.notFound((c) => c.json({ error: 'not_found' }, 404));
+
+// Error handler
+app.onError(cdcErrorHandler);
+
+// Server instance for graceful shutdown
+let server: ServerType | null = null;
+
+/**
+ * Start the CDC health HTTP server using Hono.
+ * Returns the server instance for graceful shutdown.
+ */
+export function startHealthServer(): ServerType {
+  const port = env.CDC_HEALTH_PORT;
+
+  server = serve({ fetch: app.fetch, port, hostname: '0.0.0.0' }, () => {
+    logEvent('info', 'CDC health server listening', { port });
+  });
+
+  return server;
 }
 
 /**
- * Start the health HTTP server.
+ * Stop the CDC health server gracefully.
  */
-export function startHealthServer(): void {
-  const server = createServer((req, res) => {
-    if (req.url === '/health' && req.method === 'GET') {
-      handleHealthRequest(req, res);
-    } else if (req.url === '/metrics' && req.method === 'GET') {
-      handleMetricsRequest(req, res);
-    } else {
-      res.writeHead(404);
-      res.end('Not Found');
-    }
-  });
-
-  server.listen(env.CDC_HEALTH_PORT, '0.0.0.0', () => {
-    logEvent('info', 'CDC health server listening', { port: env.CDC_HEALTH_PORT });
-  });
+export async function stopHealthServer(): Promise<void> {
+  if (server) {
+    server.close();
+    logEvent('info', 'CDC health server stopped');
+    server = null;
+  }
 }

@@ -9,7 +9,7 @@
  */
 import { onlineManager } from '@tanstack/react-query';
 import { getUploadToken } from '~/api.gen';
-import { attachmentsDb, type AttachmentBlob } from '~/modules/attachment/dexie/attachments-db';
+import { type AttachmentBlob, attachmentsDb } from '~/modules/attachment/dexie/attachments-db';
 import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
 
 class UploadSyncWorker {

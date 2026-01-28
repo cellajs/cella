@@ -110,7 +110,8 @@ export class AttachmentsDatabase extends Dexie {
     super(`${appConfig.slug}-attachments`);
 
     this.version(1).stores({
-      blobs: '&id, organizationId, source, syncStatus, contentType, [organizationId+source], [organizationId+syncStatus]',
+      blobs:
+        '&id, organizationId, source, syncStatus, contentType, [organizationId+source], [organizationId+syncStatus]',
       downloadQueue: '&id, organizationId, status, priority, [organizationId+status]',
     });
   }

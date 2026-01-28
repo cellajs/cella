@@ -1,6 +1,6 @@
 import WebSocket from 'ws';
 import { env } from './env';
-import { logEvent } from '#/utils/logger';
+import { logEvent } from './pino';
 
 /** WebSocket ready states */
 const WS_OPEN = 1;

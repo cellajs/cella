@@ -5,8 +5,9 @@
  * Uses the download queue in Dexie and respects config filters (size, content type).
  *
  * Integration with react-query:
- * - Attachments are fetched via normal queries
+ * - Attachments are fetched via normal queries and cached
  * - This service queues them for blob download in background
+ * - Uses findInListCache to lookup attachment metadata from react-query cache
  * - Blobs are stored in IndexedDB for offline access
  */
 import { onlineManager } from '@tanstack/react-query';
@@ -15,11 +16,17 @@ import type { Attachment } from '~/api.gen';
 import { getPresignedUrl } from '~/api.gen/sdk.gen';
 import { attachmentsDb } from '~/modules/attachment/dexie/attachments-db';
 import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
+import { attachmentQueryKeys } from '~/modules/attachment/query';
+import { findInListCache } from '~/query/basic';
+import { flattenInfiniteData } from '~/query/basic/flatten';
+import { queryClient } from '~/query/query-client';
 
 class AttachmentDownloadService {
   private processing = false;
   private intervalId: ReturnType<typeof setInterval> | null = null;
   private onlineHandler: (() => void) | null = null;
+  private cacheUnsubscribe: (() => void) | null = null;
+  private mutationUnsubscribe: (() => void) | null = null;
 
   /**
    * Get config for local blob storage.
@@ -40,6 +47,42 @@ class AttachmentDownloadService {
     this.onlineHandler = () => this.processQueue();
     window.addEventListener('online', this.onlineHandler);
 
+    // Subscribe to query cache to detect new attachments
+    this.cacheUnsubscribe = queryClient.getQueryCache().subscribe((event) => {
+      // Only react to successful data updates for attachment list queries
+      if (event.type !== 'updated') return;
+      if (event.action.type !== 'success') return;
+
+      const queryKey = event.query.queryKey;
+      if (!Array.isArray(queryKey) || queryKey[0] !== 'attachment' || queryKey[1] !== 'list') return;
+
+      // Extract attachments from the query data
+      const attachments = flattenInfiniteData<Attachment>(event.query.state.data);
+      if (attachments.length > 0) {
+        this.queueForDownload(attachments);
+      }
+    });
+
+    // Subscribe to mutation cache to clean up blobs when attachments are deleted
+    this.mutationUnsubscribe = queryClient.getMutationCache().subscribe((event) => {
+      // Only react to successful mutations
+      if (event.type !== 'updated') return;
+      if (event.mutation.state.status !== 'success') return;
+
+      const mutationKey = event.mutation.options.mutationKey;
+      if (!Array.isArray(mutationKey) || mutationKey[0] !== 'attachment' || mutationKey[1] !== 'delete') return;
+
+      // Get the deleted attachments from mutation variables
+      const deletedAttachments = event.mutation.state.variables as Attachment[] | undefined;
+      if (!deletedAttachments?.length) return;
+
+      // Remove blobs from local storage
+      const ids = deletedAttachments.map((a) => a.id);
+      attachmentStorage.deleteBlobs(ids).catch((err) => {
+        console.error('[DownloadService] Failed to delete local blobs:', err);
+      });
+    });
+
     // Process queue every 30 seconds
     this.intervalId = setInterval(() => this.processQueue(), 30000);
 
@@ -57,6 +100,14 @@ class AttachmentDownloadService {
     if (this.onlineHandler) {
       window.removeEventListener('online', this.onlineHandler);
       this.onlineHandler = null;
+    }
+    if (this.cacheUnsubscribe) {
+      this.cacheUnsubscribe();
+      this.cacheUnsubscribe = null;
+    }
+    if (this.mutationUnsubscribe) {
+      this.mutationUnsubscribe();
+      this.mutationUnsubscribe = null;
     }
     console.debug('[DownloadService] Stopped');
   }
@@ -133,27 +184,59 @@ class AttachmentDownloadService {
   }
 
   /**
-   * Download a single attachment.
+   * Download a single attachment by looking up metadata from react-query cache.
    */
-  private async downloadAttachment(attachmentId: string, _organizationId: string): Promise<void> {
+  private async downloadAttachment(attachmentId: string, organizationId: string): Promise<void> {
     try {
       // Mark as downloading
       await attachmentStorage.updateDownloadStatus(attachmentId, 'downloading');
 
-      // Get attachment metadata from queue (we need the key to fetch)
-      // Note: The queue entry doesn't have the key, so we need to get it from somewhere
-      // For now, we'll need to query the attachment data
+      // Lookup attachment in react-query cache
+      const attachment = findInListCache<Attachment>(attachmentQueryKeys.list.base, attachmentId);
 
-      // This is a limitation: we need the attachment's originalKey to download
-      // The queue only stores the ID. We should either:
-      // 1. Store more metadata in the queue
-      // 2. Look up from react-query cache
-      // 3. Make an API call to get attachment details
+      if (!attachment) {
+        console.debug(`[DownloadService] Attachment ${attachmentId} not found in cache, skipping`);
+        await attachmentStorage.updateDownloadStatus(attachmentId, 'skipped', 'Not found in cache');
+        return;
+      }
 
-      // For MVP: Mark as skipped if we can't get the URL
-      // In production: Would integrate with react-query cache
-      console.debug(`[DownloadService] Would download attachment ${attachmentId} (implementation pending)`);
-      await attachmentStorage.updateDownloadStatus(attachmentId, 'skipped', 'Download implementation pending');
+      if (!attachment.originalKey) {
+        await attachmentStorage.updateDownloadStatus(attachmentId, 'skipped', 'No originalKey');
+        return;
+      }
+
+      // Get presigned URL
+      const url = await getPresignedUrl({
+        query: {
+          key: attachment.originalKey,
+          isPublic: attachment.public,
+        },
+      });
+
+      // Download with timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+      const response = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const blob = await response.blob();
+
+      // Store in IndexedDB
+      await attachmentStorage.storeDownloadBlob(
+        attachment.id,
+        organizationId,
+        blob,
+        attachment.contentType || blob.type,
+      );
+
+      // Mark as completed in queue
+      await attachmentStorage.updateDownloadStatus(attachmentId, 'completed');
+      console.debug(`[DownloadService] Downloaded attachment ${attachmentId}`);
     } catch (error) {
       console.error(`[DownloadService] Failed to download ${attachmentId}:`, error);
       await attachmentStorage.updateDownloadStatus(attachmentId, 'failed');

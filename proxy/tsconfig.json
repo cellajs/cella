@@ -1,0 +1,15 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "lib": ["es2022"],
+    "rootDir": "../",
+    "sourceMap": true,
+    "inlineSources": true,
+    "sourceRoot": "/",
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*", "../config/*"],
+  "exclude": ["**/node_modules", "**/dist", "**/.*/"]
+}

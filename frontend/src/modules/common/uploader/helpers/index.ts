@@ -53,44 +53,50 @@ export const createBaseTransloaditUppy = async (
       offlineUploaded: !hasCloudUpload,
     },
     onBeforeFileAdded,
-    onBeforeUpload: async (files) => {
-      // Clean up file names
+    onBeforeUpload: (files) => {
+      // Clean up file names synchronously
       for (const file of Object.values(files)) {
         const cleanName = cleanFileName(file.name || 'file');
         file.name = cleanName;
         file.meta.name = cleanName;
       }
-
-      // Determine sync status based on cloud availability
-      // - 'pending': Cloud available, queue for sync
-      // - 'local-only': No cloud configured, permanent local storage
-      const isOnline = onlineManager.isOnline();
-      const syncStatus = hasCloudUpload ? 'pending' : 'local-only';
-
-      // If cloud upload not available, store locally and emit completion
-      if (!hasCloudUpload) {
-        const assembly = await prepareFilesForOffline(files, tokenQuery, syncStatus);
-        uppy.emit('transloadit:complete', assembly);
-        return false; // Don't proceed with upload
-      }
-
-      // If offline but cloud is configured, store locally for later sync
-      if (!isOnline) {
-        const assembly = await prepareFilesForOffline(files, tokenQuery, 'pending');
-        uppy.emit('transloadit:complete', assembly);
-        return false; // Don't proceed with upload
-      }
-
-      // Online with cloud - store locally first (as pending), then upload
-      const organizationId = tokenQuery.organizationId;
-      if (organizationId) {
-        for (const file of Object.values(files)) {
-          await attachmentStorage.storeUploadBlob(file, organizationId, 'pending');
-        }
-      }
-
-      return true; // Proceed with Transloadit upload
+      return files;
     },
+  });
+
+  // Handle async operations before upload starts
+  uppy.on('upload', async (_uploadId, uploadFiles) => {
+    const filesMap = Object.fromEntries(uploadFiles.map((f) => [f.id, f]));
+
+    // Determine sync status based on cloud availability
+    // - 'pending': Cloud available, queue for sync
+    // - 'local-only': No cloud configured, permanent local storage
+    const isOnline = onlineManager.isOnline();
+    const syncStatus = hasCloudUpload ? 'pending' : 'local-only';
+
+    // If cloud upload not available, store locally and emit completion
+    if (!hasCloudUpload) {
+      const assembly = await prepareFilesForOffline(filesMap, tokenQuery, syncStatus);
+      uppy.cancelAll();
+      uppy.emit('transloadit:complete', assembly);
+      return;
+    }
+
+    // If offline but cloud is configured, store locally for later sync
+    if (!isOnline) {
+      const assembly = await prepareFilesForOffline(filesMap, tokenQuery, 'pending');
+      uppy.cancelAll();
+      uppy.emit('transloadit:complete', assembly);
+      return;
+    }
+
+    // Online with cloud - store locally first (as pending), then upload
+    const organizationId = tokenQuery.organizationId;
+    if (organizationId) {
+      for (const file of uploadFiles) {
+        await attachmentStorage.storeUploadBlob(file, organizationId, 'pending');
+      }
+    }
   });
 
   // Only add Transloadit plugin if cloud upload is available
@@ -107,13 +113,15 @@ export const createBaseTransloaditUppy = async (
     // On successful cloud upload, mark local blobs as synced
     uppy.on('transloadit:complete', async (assembly) => {
       // Skip offline assemblies (already marked correctly)
-      if (assembly.assembly_id.startsWith('offline_')) return;
+      if (assembly.assembly_id?.startsWith('offline_')) return;
 
       if (assembly.ok === 'ASSEMBLY_COMPLETED') {
         for (const upload of assembly.uploads || []) {
           const fileId = upload.original_id || upload.id;
-          if (fileId) {
-            await attachmentStorage.markSynced(fileId);
+          // Handle both string and string[] types
+          const fileIdStr = Array.isArray(fileId) ? fileId[0] : fileId;
+          if (fileIdStr) {
+            await attachmentStorage.markSynced(fileIdStr);
           }
         }
       }
@@ -124,8 +132,10 @@ export const createBaseTransloaditUppy = async (
       const errorMessage = error?.message || 'Upload failed';
       for (const upload of assembly.uploads || []) {
         const fileId = upload.original_id || upload.id;
-        if (fileId) {
-          await attachmentStorage.markFailed(fileId, errorMessage);
+        // Handle both string and string[] types
+        const fileIdStr = Array.isArray(fileId) ? fileId[0] : fileId;
+        if (fileIdStr) {
+          await attachmentStorage.markFailed(fileIdStr, errorMessage);
         }
       }
     });

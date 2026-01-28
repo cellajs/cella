@@ -15,7 +15,7 @@ import {
   type SpanData,
   type TraceContext,
 } from '@cella/tracing';
-import { logEvent } from '#/utils/logger';
+import { logEvent } from './pino';
 
 // Re-export span names and attribute helpers from shared package
 export { activityAttrs, cdcAttrs, cdcSpanNames };
