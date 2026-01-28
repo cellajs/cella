@@ -461,6 +461,25 @@ export function gitCheckoutOursFilePath(repoPath: string, filePath: string): Pro
 export function gitCheckoutTheirsFilePath(repoPath: string, filePath: string): Promise<string> {
   return runGitCommand(['checkout', '--theirs', filePath], repoPath);
 }
+
+/**
+ * Checks out a file from a specific ref (branch/tag/commit).
+ * This works even for unmerged files during a merge conflict.
+ * Equivalent to: `git checkout <ref> -- <file>`
+ *
+ * @param repoPath - The file system path to the git repository
+ * @param filePath - The path to the file to checkout
+ * @param ref - The branch, tag, or commit to checkout from
+ *
+ * @returns The stdout from the git checkout command
+ *
+ * @example
+ * await gitCheckoutFileFromRef('/repo', 'src/config.ts', 'development');
+ */
+export function gitCheckoutFileFromRef(repoPath: string, filePath: string, ref: string): Promise<string> {
+  return runGitCommand(['checkout', ref, '--', filePath], repoPath);
+}
+
 /**
  * Removes a file from the Git index (staging area) but keeps it in the working directory.
  *

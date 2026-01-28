@@ -6,6 +6,7 @@ import { FileAnalysis } from '#/types';
 import {
   gitAdd,
   gitAddAll,
+  gitCheckoutFileFromRef,
   gitCleanAllUntrackedFiles,
   gitCleanUntrackedFile,
   gitLsFiles,
@@ -217,9 +218,8 @@ async function resolveMergeConflicts(repoPath: string, forkBranchRef: string, an
       const overrideStatus = getOverrideStatus(filePath);
       if (overrideStatus === 'ignored' || overrideStatus === 'pinned') {
         // Fork-only file in ignored/pinned path - restore from fork's development branch
-        // We can't use `git checkout --ours` here because the file doesn't exist on sync-branch
-        await gitRestoreFileFromRef(repoPath, filePath, forkBranchRef);
-        await gitAdd(repoPath, filePath);
+        // We use `git checkout <ref> -- <file>` because `git restore` doesn't work on unmerged files
+        await gitCheckoutFileFromRef(repoPath, filePath, forkBranchRef);
         continue;
       }
     }
