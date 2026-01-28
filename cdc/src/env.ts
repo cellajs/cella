@@ -21,6 +21,12 @@ const envSchema = z.object({
   DEV_MODE: z.enum(['basic', 'core', 'full']).default('core'),
   NODE_ENV: z.enum(['development', 'production', 'staging', 'test']).default('development'),
 
+  // Debug mode (from backend)
+  DEBUG: z
+    .string()
+    .transform((v) => v === 'true')
+    .default('false'),
+
   // Health server port
   CDC_HEALTH_PORT: z.coerce.number().default(4001),
 });

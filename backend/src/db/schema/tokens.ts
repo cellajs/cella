@@ -43,5 +43,9 @@ export const tokensTable = pgTable(
   ],
 );
 
-export type TokenModel = typeof tokensTable.$inferSelect;
+/** Includes sensitive token field - use only in auth internals */
+export type UnsafeTokenModel = typeof tokensTable.$inferSelect;
 export type InsertTokenModel = typeof tokensTable.$inferInsert;
+
+/** Safe token type with sensitive field omitted */
+export type TokenModel = Omit<UnsafeTokenModel, 'token'>;
