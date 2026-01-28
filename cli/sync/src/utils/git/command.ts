@@ -205,6 +205,22 @@ export async function gitLsTreeRecursive(repoPath: string, branchName: string): 
 }
 
 /**
+ * Lists all tracked files in the current working tree.
+ *
+ * @param repoPath - The file system path to the git repository
+ *
+ * @returns Array of tracked file paths
+ *
+ * @example
+ * const files = await gitLsFiles('/path/to/repo');
+ * console.info(files); // ['src/index.ts', 'package.json', ...]
+ */
+export async function gitLsFiles(repoPath: string): Promise<string[]> {
+  const output = await runGitCommand(['ls-files'], repoPath);
+  return output ? output.split('\n').filter(Boolean) : [];
+}
+
+/**
  * Gets the last commit SHA for all files in a single git log command.
  * Outputs format: commit SHA followed by list of files changed in that commit.
  * We parse this to build a map of filePath → lastCommitSha.

@@ -7,6 +7,7 @@ import {
   gitAddAll,
   gitCleanAllUntrackedFiles,
   gitCleanUntrackedFile,
+  gitLsFiles,
   gitRemoveFilePathFromCache,
   gitRestoreFileFromRef,
   gitRestoreStagedFile,
@@ -52,6 +53,9 @@ export async function handleUpstreamIntoForkMerge(
 
       // Resolve any remaining conflicts
       await resolveMergeConflicts(forkConfig.workingDirectory, analyzedFiles);
+
+      // Remove ignored files that may have been synced previously (won't appear in cached diff)
+      await removeIgnoredFilesFromTree(forkConfig.workingDirectory);
 
       // Cleanup all untracked files
       await gitCleanAllUntrackedFiles(forkConfig.workingDirectory);
@@ -228,5 +232,32 @@ async function resolveMergeConflicts(repoPath: string, analyzedFiles: FileAnalys
     resumeSpinner();
 
     return resolveMergeConflicts(repoPath, analyzedFiles);
+  }
+}
+
+/**
+ * Removes ignored files from the working tree that may have been added in previous syncs.
+ *
+ * This handles a specific edge case: if ignored files were accidentally synced previously,
+ * they won't appear in `git diff --cached` (since they're unchanged), but they still exist
+ * on sync-branch. This function scans all tracked files and removes any that match ignored patterns.
+ *
+ * @param repoPath - Path to the repository
+ */
+async function removeIgnoredFilesFromTree(repoPath: string): Promise<void> {
+  const trackedFiles = await gitLsFiles(repoPath);
+
+  for (const filePath of trackedFiles) {
+    const overrideStatus = getOverrideStatus(filePath);
+
+    if (overrideStatus === 'ignored') {
+      // Remove from index and clean from disk
+      try {
+        await gitRemoveFilePathFromCache(repoPath, filePath);
+        await gitCleanUntrackedFile(repoPath, filePath);
+      } catch {
+        // File may not exist or already be removed, ignore errors
+      }
+    }
   }
 }
