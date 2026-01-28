@@ -187,6 +187,24 @@ async function resolveMergeConflicts(repoPath: string, forkBranchRef: string, an
   for (const filePath of conflicts) {
     const file = analysisMap.get(filePath);
 
+    // FIRST: Check override status directly for ALL conflicted files
+    // This ensures ignored/pinned files are always handled, even if analysis is incomplete
+    const overrideStatus = getOverrideStatus(filePath);
+
+    if (overrideStatus === 'ignored' || overrideStatus === 'pinned') {
+      // Check if file exists in fork's branch
+      try {
+        await gitCheckoutFileFromRef(repoPath, filePath, forkBranchRef);
+        await gitAdd(repoPath, filePath); // Stage to resolve the conflict
+      } catch {
+        // File doesn't exist in fork - this is an upstream-only file in an ignored path
+        // Remove it from the merge (don't add upstream's version)
+        await gitRemoveFilePathFromCache(repoPath, filePath);
+        await gitCleanUntrackedFile(repoPath, filePath);
+      }
+      continue;
+    }
+
     // Handle files that are in the analysis map with known strategies
     if (file?.mergeStrategy?.strategy === 'keep-fork') {
       await resolveConflictAsOurs(repoPath, filePath);
@@ -209,26 +227,6 @@ async function resolveMergeConflicts(repoPath: string, forkBranchRef: string, an
         await gitCleanUntrackedFile(repoPath, filePath);
       }
       continue;
-    }
-
-    // Handle files NOT in the analysis map (files that conflict but weren't analyzed)
-    // This can happen when:
-    // 1. Fork has files (like drizzle migrations) that upstream doesn't have
-    // 2. Upstream has files in ignored paths that fork doesn't have
-    if (!file) {
-      const overrideStatus = getOverrideStatus(filePath);
-      if (overrideStatus === 'ignored' || overrideStatus === 'pinned') {
-        // Check if file exists in fork's branch
-        try {
-          await gitCheckoutFileFromRef(repoPath, filePath, forkBranchRef);
-        } catch {
-          // File doesn't exist in fork - this is an upstream-only file in an ignored path
-          // Remove it from the merge (don't add upstream's version)
-          await gitRemoveFilePathFromCache(repoPath, filePath);
-          await gitCleanUntrackedFile(repoPath, filePath);
-        }
-        continue;
-      }
     }
   }
 

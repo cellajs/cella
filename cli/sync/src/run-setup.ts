@@ -1,9 +1,12 @@
 import { config } from '#/config';
+import { getOverrideStatus } from '#/modules/overrides';
 import { addAsRemote } from '#/modules/setup/add-as-remote';
 import { checkCleanState } from '#/modules/setup/check-clean-state';
 import { checkConfig } from '#/modules/setup/check-config';
 import { checkRepository } from '#/modules/setup/check-repository';
 import { fetchLatestChanges } from '#/modules/setup/fetch-latest-changes';
+import { gitAdd, gitCheckoutFileFromRef, gitCleanUntrackedFile, gitRemoveFilePathFromCache } from '#/utils/git/command';
+import { getUnmergedFiles } from '#/utils/git/files';
 import { handleMerge } from '#/utils/git/git-merge';
 import { createBranchIfMissing } from '#/utils/git/git-refs';
 import { getCommitCount, getLastCommitMessages } from '#/utils/git/helpers';
@@ -135,7 +138,24 @@ export async function runSetup() {
     // This ensures sync-branch has fork's content before analyzing and applying upstream changes.
     // This should be conflict-free since sync-branch is an ancestor of development
     // (or identical if no new commits on development since last sync).
-    await handleMerge(config.workingDirectory, config.forkSyncBranchRef, config.forkBranchRef, null);
+    // However, if sync-branch has previously synced ignored files (api.gen, etc.), conflicts may occur.
+    await handleMerge(config.workingDirectory, config.forkSyncBranchRef, config.forkBranchRef, async () => {
+      // Resolve conflicts for ignored/pinned files by keeping development (fork) version
+      const conflicts = await getUnmergedFiles(config.workingDirectory);
+      for (const filePath of conflicts) {
+        const overrideStatus = getOverrideStatus(filePath);
+        if (overrideStatus === 'ignored' || overrideStatus === 'pinned') {
+          try {
+            await gitCheckoutFileFromRef(config.workingDirectory, filePath, config.forkBranchRef);
+            await gitAdd(config.workingDirectory, filePath);
+          } catch {
+            // File doesn't exist in fork - remove it
+            await gitRemoveFilePathFromCache(config.workingDirectory, filePath);
+            await gitCleanUntrackedFile(config.workingDirectory, filePath);
+          }
+        }
+      }
+    });
 
     // NOTE: We intentionally do NOT merge upstream here.
     // The upstream merge happens in runSync() AFTER analyze, so that:
