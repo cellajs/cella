@@ -58,6 +58,7 @@
     "test:full": "pnpm docker:test && pnpm --filter backend test:full && pnpm --filter frontend test && pnpm --filter @cellajs/sync test",
     "test:update": "pnpm --filter backend exec vitest run -u && pnpm --filter frontend exec vitest run -u",
     "sync": "pnpm --filter @cellajs/sync sync",
+    "sync-v2": "pnpm --filter @cellajs/sync sync-v2",
     "deps:update": "pnpm -r update",
     "deps:outdated": "pnpm --filter @cellajs/sync deps:outdated"
   },

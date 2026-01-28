@@ -327,6 +327,11 @@ const meRouteHandlers = app
       .filter((part): part is string => typeof part === 'string')
       .join('/');
 
+    // If Transloadit not configured, return response indicating local-only mode
+    if (!env.TRANSLOADIT_KEY || !env.TRANSLOADIT_SECRET) {
+      return ctx.json({ sub, public: isPublic, s3: !!env.S3_ACCESS_KEY_ID, params: null, signature: null }, 200);
+    }
+
     try {
       const params = getParams(templateId, isPublic, sub);
       const paramsString = JSON.stringify(params);

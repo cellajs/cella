@@ -3,7 +3,8 @@ import { onlineManager } from '@tanstack/react-query';
 import { Uppy } from '@uppy/core';
 import Transloadit from '@uppy/transloadit';
 import { appConfig } from 'config';
-import { getUploadToken } from '~/api.gen';
+import { getUploadToken, type UploadToken } from '~/api.gen';
+import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
 import { prepareFilesForOffline } from '~/modules/common/uploader/helpers/prepare-for-offline';
 import type { CustomUppy, CustomUppyFile, CustomUppyOpt } from '~/modules/common/uploader/types';
 import type { UploadTokenQuery } from '~/modules/me/types';
@@ -11,30 +12,48 @@ import { cleanFileName } from '~/utils/clean-file-name';
 import { nanoid } from '~/utils/nanoid';
 
 /**
- * Creates and initializes a new Uppy instance with provided options and configuration.
+ * Creates and initializes a new Uppy instance with local-first upload support.
  *
- * @param uppyOptions - Configuration options for Uppy (restrictions, plugins, etc.).
- * @param token - JWT token containing Transloadit upload parameters and signature.
- * @param isPublic - Flag indicating whether the uploaded files should be publicly accessible.
- * @param withTransloadit - Optional flag to control whether to integrate Transloadit plugin. Defaults to true.
- * @returns A new Uppy instance configured with the specified options, and Transloadit if enabled.
+ * Flow:
+ * 1. Get upload token from backend
+ * 2. If Transloadit configured (params/signature present): use cloud upload
+ * 3. If Transloadit not configured (params=null): store locally in IndexedDB
+ * 4. If offline: queue for later upload (pending status)
+ *
+ * The local blob is always stored first, then synced to cloud when available.
  */
 export const createBaseTransloaditUppy = async (
   uppyOptions: CustomUppyOpt,
   tokenQuery: UploadTokenQuery,
 ): Promise<CustomUppy> => {
+  // Get upload token early to determine cloud availability
+  let cloudToken: UploadToken | null = null;
+  let hasCloudUpload = false;
+
+  try {
+    if (onlineManager.isOnline()) {
+      cloudToken = await getUploadToken({ query: tokenQuery });
+      // Cloud upload only available if Transloadit is configured
+      hasCloudUpload = !!(cloudToken?.params && cloudToken?.signature);
+    }
+  } catch (err) {
+    // Offline or failed to get token - will use local storage
+    if (!(err instanceof Error && err.message.includes('Failed to fetch'))) {
+      Sentry.captureException(err);
+    }
+    cloudToken = null;
+    hasCloudUpload = false;
+  }
+
   const uppy = new Uppy({
     ...uppyOptions,
     meta: {
       public: tokenQuery.public,
       bucketName: tokenQuery.public ? appConfig.s3PublicBucket : appConfig.s3PrivateBucket,
-      offlineUploaded: !onlineManager.isOnline(),
+      offlineUploaded: !hasCloudUpload,
     },
     onBeforeFileAdded,
-    onBeforeUpload: (files) => {
-      // Determine if we can upload based on online status and s3 configuration
-      const canUpload = onlineManager.isOnline() && appConfig.has.uploadEnabled;
-
+    onBeforeUpload: async (files) => {
       // Clean up file names
       for (const file of Object.values(files)) {
         const cleanName = cleanFileName(file.name || 'file');
@@ -42,31 +61,77 @@ export const createBaseTransloaditUppy = async (
         file.meta.name = cleanName;
       }
 
-      if (canUpload) return true;
-      // If not online, prepare the files for offline storage and emit transloadit:complete event
-      prepareFilesForOffline(files, tokenQuery).then((assembly) => uppy.emit('transloadit:complete', assembly));
-      return appConfig.has.uploadEnabled; // Prevent upload if s3 is unavailable
+      // Determine sync status based on cloud availability
+      // - 'pending': Cloud available, queue for sync
+      // - 'local-only': No cloud configured, permanent local storage
+      const isOnline = onlineManager.isOnline();
+      const syncStatus = hasCloudUpload ? 'pending' : 'local-only';
+
+      // If cloud upload not available, store locally and emit completion
+      if (!hasCloudUpload) {
+        const assembly = await prepareFilesForOffline(files, tokenQuery, syncStatus);
+        uppy.emit('transloadit:complete', assembly);
+        return false; // Don't proceed with upload
+      }
+
+      // If offline but cloud is configured, store locally for later sync
+      if (!isOnline) {
+        const assembly = await prepareFilesForOffline(files, tokenQuery, 'pending');
+        uppy.emit('transloadit:complete', assembly);
+        return false; // Don't proceed with upload
+      }
+
+      // Online with cloud - store locally first (as pending), then upload
+      const organizationId = tokenQuery.organizationId;
+      if (organizationId) {
+        for (const file of Object.values(files)) {
+          await attachmentStorage.storeUploadBlob(file, organizationId, 'pending');
+        }
+      }
+
+      return true; // Proceed with Transloadit upload
     },
   });
 
-  try {
-    const token = await getUploadToken({ query: tokenQuery });
-    if (!token) throw new Error('Failed to get upload token');
-
-    const { params, signature } = token;
-
+  // Only add Transloadit plugin if cloud upload is available
+  if (hasCloudUpload && cloudToken?.params && cloudToken?.signature) {
     uppy.use(Transloadit, {
-      waitForEncoding: true, // Wait for server-side encoding to finish before completing the upload
-      alwaysRunAssembly: true, // Always create a Transloadit Assembly even if no files changed
-      assemblyOptions: { params, signature }, // Transloadit template params & signature to authenticate request
+      waitForEncoding: true,
+      alwaysRunAssembly: true,
+      assemblyOptions: {
+        params: cloudToken.params,
+        signature: cloudToken.signature,
+      },
     });
 
-    return uppy;
-  } catch (err) {
-    if (err instanceof Error && err.message.includes('Failed to fetch') && !onlineManager.isOnline()) return uppy;
-    Sentry.captureException(err);
-    throw new Error('Failed to get upload token');
+    // On successful cloud upload, mark local blobs as synced
+    uppy.on('transloadit:complete', async (assembly) => {
+      // Skip offline assemblies (already marked correctly)
+      if (assembly.assembly_id.startsWith('offline_')) return;
+
+      if (assembly.ok === 'ASSEMBLY_COMPLETED') {
+        for (const upload of assembly.uploads || []) {
+          const fileId = upload.original_id || upload.id;
+          if (fileId) {
+            await attachmentStorage.markSynced(fileId);
+          }
+        }
+      }
+    });
+
+    // On upload error, mark as failed for retry
+    uppy.on('transloadit:assembly-error', async (assembly, error) => {
+      const errorMessage = error?.message || 'Upload failed';
+      for (const upload of assembly.uploads || []) {
+        const fileId = upload.original_id || upload.id;
+        if (fileId) {
+          await attachmentStorage.markFailed(fileId, errorMessage);
+        }
+      }
+    });
   }
+
+  return uppy;
 };
 
 const onBeforeFileAdded = (file: CustomUppyFile) => {

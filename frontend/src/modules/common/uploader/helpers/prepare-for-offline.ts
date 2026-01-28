@@ -1,5 +1,6 @@
-import { AssemblyResponse } from '@uppy/transloadit';
+import type { AssemblyResponse } from '@uppy/transloadit';
 import { uploadTemplates } from 'config/templates';
+import type { SyncStatus } from '~/modules/attachment/dexie/attachments-db';
 import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
 import type { CustomUppyFile } from '~/modules/common/uploader/types';
 import type { UploadTokenQuery } from '~/modules/me/types';
@@ -7,22 +8,28 @@ import type { UploadTokenQuery } from '~/modules/me/types';
 type PrepareFilesForOffline = (
   files: Record<string, CustomUppyFile>,
   tokenQuery: UploadTokenQuery,
+  syncStatus?: SyncStatus,
 ) => Promise<AssemblyResponse>;
 
 /**
- * Prepares files for offline storage and returns successfully uploaded files.
- *
- * @param files - Fle object containing metadata and upload details.
- * @returns An array of files that were successfully prepared for offline storage.
+ * Prepares files for offline/local storage and returns an assembly response.
+ * Stores blobs in Dexie for later sync (when online) or permanent local storage.
  */
-export const prepareFilesForOffline: PrepareFilesForOffline = async (files, tokenQuery) => {
-  console.warn('Files will be stored offline in indexedDB.');
+export const prepareFilesForOffline: PrepareFilesForOffline = async (files, tokenQuery, syncStatus = 'pending') => {
+  console.warn('Files will be stored locally in IndexedDB.');
 
   const template = uploadTemplates.attachment;
   const templateKey = template.use[0];
+  const organizationId = tokenQuery.organizationId;
 
-  // Save files to local storage
-  await attachmentStorage.addFiles(files, tokenQuery);
+  if (!organizationId) {
+    throw new Error('organizationId required for local storage');
+  }
+
+  // Store each file blob locally
+  for (const file of Object.values(files)) {
+    await attachmentStorage.storeUploadBlob(file, organizationId, syncStatus);
+  }
 
   // Prepare files for a manual 'complete' event (successfully uploaded files)
   const localFiles = Object.values(files).map((el) => {

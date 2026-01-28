@@ -14,8 +14,9 @@
     "baseUrl": ".",
     "paths": {
       "#/*": ["./src/*"],
+      "#v2/*": ["./src-v2/*"],
       "#root/*": ["../../*"]
     }
   },
-  "include": ["src", "tests", "index.ts"]
+  "include": ["src", "src-v2", "tests", "index.ts", "index-v2.ts"]
 }

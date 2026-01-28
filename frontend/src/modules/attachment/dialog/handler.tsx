@@ -18,12 +18,14 @@ function AttachmentDialogHandlerBase() {
     if (getDialog('attachment-dialog')) return;
 
     const loadAndCreateDialog = async () => {
-      const cachedAttachments = await attachmentStorage.getCachedImages(attachmentDialogId, groupId);
+      // Try to get local blob URL first
+      const blobUrl = await attachmentStorage.createBlobUrl(attachmentDialogId);
 
-      const validAttachments = cachedAttachments.map((cache) => ({
-        id: cache.id,
-        url: URL.createObjectURL(cache.file),
-      }));
+      // If we have a local blob, use it; otherwise this attachment may not be cached
+      // The AttachmentRender will handle cloud URL resolution via useAttachmentUrl hook
+      const validAttachments = blobUrl
+        ? [{ id: attachmentDialogId, url: blobUrl }]
+        : [{ id: attachmentDialogId, url: '' }]; // Empty URL, will be resolved by hook
 
       const dialogTrigger = getTriggerRef(attachmentDialogId);
       const triggerRef = dialogTrigger || fallbackContentRef;
@@ -38,6 +40,8 @@ function AttachmentDialogHandlerBase() {
           headerClassName: 'absolute p-4 w-full backdrop-blur-xs bg-background/50',
           showCloseButton: false,
           onClose: (isCleanup) => {
+            // Cleanup blob URL when dialog closes
+            if (blobUrl) URL.revokeObjectURL(blobUrl);
             if (!isCleanup && dialogTrigger) return history.back();
             clearAttachmentDialogSearchParams();
           },

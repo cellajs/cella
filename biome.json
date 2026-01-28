@@ -9,6 +9,7 @@
       "frontend/storybook/**",
       "frontend/vite/**",
       "cli/sync/src/**",
+      "cli/sync/src-v2/**",
       "cli/sync/tests/**",
       "cli/create-cella/src/**",
       "cli/create-cella/tests/**",
