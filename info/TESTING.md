@@ -1,5 +1,7 @@
 # Testing Guide
 
+<!-- Sync test marker: 2026-01-28-test-1 -->
+
 This document describes the test modes available in Cella and how to use them.
 
 ## Test Modes

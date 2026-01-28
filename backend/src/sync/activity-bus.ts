@@ -1,5 +1,5 @@
 import { EventEmitter } from 'node:events';
-import { appConfig, type RealtimeEntityType } from 'config';
+import { appConfig, type EntityType } from 'config';
 import type { ActivityModel } from '#/db/schema/activities';
 import { type ResourceType, resourceTypes } from '#/table-config';
 import { logEvent } from '#/utils/logger';
@@ -59,7 +59,7 @@ export function isValidEventType(type: string): type is ActivityEventType {
 export type ActivityEvent = Omit<ActivityModel, 'type' | 'action' | 'entityType' | 'resourceType' | 'createdAt'> & {
   type: ActivityEventType;
   action: ActivityAction;
-  entityType: RealtimeEntityType | null;
+  entityType: EntityType | null;
   resourceType: ResourceType | null;
   createdAt: string; // ISO string from JSON serialization
 };

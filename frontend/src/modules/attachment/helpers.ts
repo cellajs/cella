@@ -4,6 +4,15 @@ import type { UploadedUppyFile } from '~/modules/common/uploader/types';
 import { useUserStore } from '~/store/user';
 import { nanoid } from '~/utils/nanoid';
 
+// Placeholder tx for optimistic updates (replaced by real tx from server)
+//TODO review this, shouldnt client set some of this and we might as well do it directly?
+const placeholderTx = {
+  id: '',
+  sourceId: '',
+  version: 0,
+  fieldVersions: {},
+};
+
 const baseAttachmentValues = {
   entityType: 'attachment' as const,
   convertedContentType: null,
@@ -12,7 +21,7 @@ const baseAttachmentValues = {
   modifiedAt: null,
   modifiedBy: null,
   keywords: '',
-  tx: null, // Sync metadata (not used in optimistic updates)
+  tx: placeholderTx,
 };
 
 export const parseUploadedAttachments = (

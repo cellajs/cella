@@ -4,6 +4,8 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+packageExtensionsChecksum: sha256-Ms/3TDHibfGa7jKDiXqNw2FJ1eYeoeaTmatkjoT8D/k=
+
 pnpmfileChecksum: sha256-dBI2aCJNqRTLLvdX9+VlZAaViGpZJwX0eMN322hCxEw=
 
 importers:
@@ -325,8 +327,8 @@ importers:
         specifier: ^8.19.0
         version: 8.19.0
       zod:
-        specifier: ^3.25.76
-        version: 3.25.76
+        specifier: ^4.3.6
+        version: 4.3.6
     devDependencies:
       '@types/node':
         specifier: ^24.10.9
@@ -432,17 +434,17 @@ importers:
         specifier: ^1.1.0
         version: 1.1.0
       '@blocknote/code-block':
-        specifier: ^0.46.1
-        version: 0.46.1(@blocknote/core@0.46.1(@hocuspocus/provider@2.15.2(y-protocols@1.0.7(yjs@13.6.29))(yjs@13.6.29))(@types/hast@3.0.4)(highlight.js@11.11.1)(lowlight@3.3.0))
+        specifier: ^0.46.2
+        version: 0.46.2(@blocknote/core@0.46.2(@hocuspocus/provider@2.15.2(y-protocols@1.0.7(yjs@13.6.29))(yjs@13.6.29))(@types/hast@3.0.4)(highlight.js@11.11.1)(lowlight@3.3.0))
       '@blocknote/core':
-        specifier: ^0.46.1
-        version: 0.46.1(@hocuspocus/provider@2.15.2(y-protocols@1.0.7(yjs@13.6.29))(yjs@13.6.29))(@types/hast@3.0.4)(highlight.js@11.11.1)(lowlight@3.3.0)
+        specifier: ^0.46.2
+        version: 0.46.2(@hocuspocus/provider@2.15.2(y-protocols@1.0.7(yjs@13.6.29))(yjs@13.6.29))(@types/hast@3.0.4)(highlight.js@11.11.1)(lowlight@3.3.0)
       '@blocknote/react':
-        specifier: ^0.46.1
-        version: 0.46.1(@floating-ui/dom@1.7.5)(@hocuspocus/provider@2.15.2(y-protocols@1.0.7(yjs@13.6.29))(yjs@13.6.29))(@types/hast@3.0.4)(@types/react-dom@19.2.3(@types/react@19.2.10))(@types/react@19.2.10)(highlight.js@11.11.1)(lowlight@3.3.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+        specifier: ^0.46.2
+        version: 0.46.2(@floating-ui/dom@1.7.5)(@hocuspocus/provider@2.15.2(y-protocols@1.0.7(yjs@13.6.29))(yjs@13.6.29))(@types/hast@3.0.4)(@types/react-dom@19.2.3(@types/react@19.2.10))(@types/react@19.2.10)(highlight.js@11.11.1)(lowlight@3.3.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@blocknote/shadcn':
-        specifier: ^0.46.1
-        version: 0.46.1(@floating-ui/dom@1.7.5)(@hocuspocus/provider@2.15.2(y-protocols@1.0.7(yjs@13.6.29))(yjs@13.6.29))(@types/hast@3.0.4)(@types/react-dom@19.2.3(@types/react@19.2.10))(@types/react@19.2.10)(highlight.js@11.11.1)(lowlight@3.3.0)(postcss@8.5.6)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(tailwindcss@4.1.18)
+        specifier: ^0.46.2
+        version: 0.46.2(@floating-ui/dom@1.7.5)(@hocuspocus/provider@2.15.2(y-protocols@1.0.7(yjs@13.6.29))(yjs@13.6.29))(@types/hast@3.0.4)(@types/react-dom@19.2.3(@types/react@19.2.10))(@types/react@19.2.10)(highlight.js@11.11.1)(lowlight@3.3.0)(postcss@8.5.6)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(tailwindcss@4.1.18)
       '@cella/data-grid':
         specifier: workspace:*
         version: link:../packages/data-grid
@@ -460,7 +462,7 @@ importers:
         version: 2.1.1
       '@hookform/resolvers':
         specifier: ^5.2.2
-        version: 5.2.2(react-hook-form@7.71.1(react@19.2.4))
+        version: 5.2.2(react-hook-form@7.71.1(react@19.2.4))(zod@4.3.6)
       '@oslojs/encoding':
         specifier: ^1.1.0
         version: 1.1.0
@@ -1819,27 +1821,27 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@blocknote/code-block@0.46.1':
-    resolution: {integrity: sha512-K8tQAxGGPOvTfSq8gZoGjnxcRNsZISF3OLpyHObOBHvNO5lU1m2ajsMJc2X5nZl1bKpu0tZUl1icCL+UGiu8fQ==}
+  '@blocknote/code-block@0.46.2':
+    resolution: {integrity: sha512-/jLxECkbJjIx4K0zR0uVVz5AKt/08YGEseYuDun6ACHvW7027YRQIqHThXfMwZuRujijraoPHI3gbLXCaaRRRQ==}
     peerDependencies:
-      '@blocknote/core': ^0.46.1
+      '@blocknote/core': ^0.46.2
 
-  '@blocknote/core@0.46.1':
-    resolution: {integrity: sha512-gV7dkQJPa2PjN7Lb4bgPJb9tQk9kqK7DmEr8+A+Y3Mm9pb98QcUqm9rxantMfUEuQAzfZvb8SLkNf+fbNPqbeQ==}
+  '@blocknote/core@0.46.2':
+    resolution: {integrity: sha512-p+QFwrTQfQC08f7JoFg9uuwbAUkGhRakCXhHhY63Wd8ARS0ktHfc9eUnJderXQTEtWfHjACjZOyt2FifX6Lalw==}
     peerDependencies:
       '@hocuspocus/provider': ^2.15.2 || ^3.0.0
     peerDependenciesMeta:
       '@hocuspocus/provider':
         optional: true
 
-  '@blocknote/react@0.46.1':
-    resolution: {integrity: sha512-LIVxdzfIkwNJwkHNpB6zXKbPnNHUNHP9ohl+S9X6Htvz6nqudtj9xZKtgXsjNqTAvTYnbLshrgHaWS2wQ0DFVg==}
+  '@blocknote/react@0.46.2':
+    resolution: {integrity: sha512-2cl7MkOSa6Wxun5LFTT0BCeYq3Qw9DCw6VZ9qdtflrnsefds0cDx/SHMVEQygYwF5MhlDmSbIt61hkQ4j2QWSw==}
     peerDependencies:
       react: ^18.0 || ^19.0 || >= 19.0.0-rc
       react-dom: ^18.0 || ^19.0 || >= 19.0.0-rc
 
-  '@blocknote/shadcn@0.46.1':
-    resolution: {integrity: sha512-pk7mpSs67T9DVyIujLQ9Xj2y/sRwsGBV5D8kTN16jHdDW2yAKUBXLdl2ghKhiSX/rhhK/OorisGIQdNZ2L4O5Q==}
+  '@blocknote/shadcn@0.46.2':
+    resolution: {integrity: sha512-rCmML5M814D/dcLrm5/6REQeEJKPNyygls4n751F0jBLpk8IuWsQYvGqnU6iPW2Cz+9IchA2ivg4Vltna83J1Q==}
     peerDependencies:
       react: ^18.0 || ^19.0 || >= 19.0.0-rc
       react-dom: ^18.0 || ^19.0 || >= 19.0.0-rc
@@ -2693,6 +2695,7 @@ packages:
     resolution: {integrity: sha512-A/IxlMLShx3KjV/HeTcTfaMxdwy690+L/ZADoeaTltLx+CVuzkeVIPuybK3jrRfw7YZnmdKsVVHAlEPIAEUNlA==}
     peerDependencies:
       react-hook-form: ^7.55.0
+      zod: '*'
 
   '@humanwhocodes/config-array@0.13.0':
     resolution: {integrity: sha512-DZLEEqFWQFiyK6h5YIeynKx7JlvCYWL0cImfSRXZ9l4Sg2efkFGTuFf6vzXjK1cq6IYkU+Eg/JizXw+TD2vRNw==}
@@ -13252,9 +13255,9 @@ snapshots:
   '@biomejs/cli-win32-x64@2.3.13':
     optional: true
 
-  '@blocknote/code-block@0.46.1(@blocknote/core@0.46.1(@hocuspocus/provider@2.15.2(y-protocols@1.0.7(yjs@13.6.29))(yjs@13.6.29))(@types/hast@3.0.4)(highlight.js@11.11.1)(lowlight@3.3.0))':
+  '@blocknote/code-block@0.46.2(@blocknote/core@0.46.2(@hocuspocus/provider@2.15.2(y-protocols@1.0.7(yjs@13.6.29))(yjs@13.6.29))(@types/hast@3.0.4)(highlight.js@11.11.1)(lowlight@3.3.0))':
     dependencies:
-      '@blocknote/core': 0.46.1(@hocuspocus/provider@2.15.2(y-protocols@1.0.7(yjs@13.6.29))(yjs@13.6.29))(@types/hast@3.0.4)(highlight.js@11.11.1)(lowlight@3.3.0)
+      '@blocknote/core': 0.46.2(@hocuspocus/provider@2.15.2(y-protocols@1.0.7(yjs@13.6.29))(yjs@13.6.29))(@types/hast@3.0.4)(highlight.js@11.11.1)(lowlight@3.3.0)
       '@shikijs/core': 3.21.0
       '@shikijs/engine-javascript': 3.21.0
       '@shikijs/langs': 3.21.0
@@ -13262,7 +13265,7 @@ snapshots:
       '@shikijs/themes': 3.21.0
       '@shikijs/types': 3.21.0
 
-  '@blocknote/core@0.46.1(@hocuspocus/provider@2.15.2(y-protocols@1.0.7(yjs@13.6.29))(yjs@13.6.29))(@types/hast@3.0.4)(highlight.js@11.11.1)(lowlight@3.3.0)':
+  '@blocknote/core@0.46.2(@hocuspocus/provider@2.15.2(y-protocols@1.0.7(yjs@13.6.29))(yjs@13.6.29))(@types/hast@3.0.4)(highlight.js@11.11.1)(lowlight@3.3.0)':
     dependencies:
       '@emoji-mart/data': 1.2.1
       '@handlewithcare/prosemirror-inputrules': 0.1.4(prosemirror-model@1.25.4)(prosemirror-state@1.4.4)(prosemirror-view@1.41.5)
@@ -13314,9 +13317,9 @@ snapshots:
       - sugar-high
       - supports-color
 
-  '@blocknote/react@0.46.1(@floating-ui/dom@1.7.5)(@hocuspocus/provider@2.15.2(y-protocols@1.0.7(yjs@13.6.29))(yjs@13.6.29))(@types/hast@3.0.4)(@types/react-dom@19.2.3(@types/react@19.2.10))(@types/react@19.2.10)(highlight.js@11.11.1)(lowlight@3.3.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
+  '@blocknote/react@0.46.2(@floating-ui/dom@1.7.5)(@hocuspocus/provider@2.15.2(y-protocols@1.0.7(yjs@13.6.29))(yjs@13.6.29))(@types/hast@3.0.4)(@types/react-dom@19.2.3(@types/react@19.2.10))(@types/react@19.2.10)(highlight.js@11.11.1)(lowlight@3.3.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
     dependencies:
-      '@blocknote/core': 0.46.1(@hocuspocus/provider@2.15.2(y-protocols@1.0.7(yjs@13.6.29))(yjs@13.6.29))(@types/hast@3.0.4)(highlight.js@11.11.1)(lowlight@3.3.0)
+      '@blocknote/core': 0.46.2(@hocuspocus/provider@2.15.2(y-protocols@1.0.7(yjs@13.6.29))(yjs@13.6.29))(@types/hast@3.0.4)(highlight.js@11.11.1)(lowlight@3.3.0)
       '@emoji-mart/data': 1.2.1
       '@floating-ui/react': 0.27.17(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@floating-ui/utils': 0.2.10
@@ -13344,10 +13347,10 @@ snapshots:
       - sugar-high
       - supports-color
 
-  '@blocknote/shadcn@0.46.1(@floating-ui/dom@1.7.5)(@hocuspocus/provider@2.15.2(y-protocols@1.0.7(yjs@13.6.29))(yjs@13.6.29))(@types/hast@3.0.4)(@types/react-dom@19.2.3(@types/react@19.2.10))(@types/react@19.2.10)(highlight.js@11.11.1)(lowlight@3.3.0)(postcss@8.5.6)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(tailwindcss@4.1.18)':
+  '@blocknote/shadcn@0.46.2(@floating-ui/dom@1.7.5)(@hocuspocus/provider@2.15.2(y-protocols@1.0.7(yjs@13.6.29))(yjs@13.6.29))(@types/hast@3.0.4)(@types/react-dom@19.2.3(@types/react@19.2.10))(@types/react@19.2.10)(highlight.js@11.11.1)(lowlight@3.3.0)(postcss@8.5.6)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(tailwindcss@4.1.18)':
     dependencies:
-      '@blocknote/core': 0.46.1(@hocuspocus/provider@2.15.2(y-protocols@1.0.7(yjs@13.6.29))(yjs@13.6.29))(@types/hast@3.0.4)(highlight.js@11.11.1)(lowlight@3.3.0)
-      '@blocknote/react': 0.46.1(@floating-ui/dom@1.7.5)(@hocuspocus/provider@2.15.2(y-protocols@1.0.7(yjs@13.6.29))(yjs@13.6.29))(@types/hast@3.0.4)(@types/react-dom@19.2.3(@types/react@19.2.10))(@types/react@19.2.10)(highlight.js@11.11.1)(lowlight@3.3.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@blocknote/core': 0.46.2(@hocuspocus/provider@2.15.2(y-protocols@1.0.7(yjs@13.6.29))(yjs@13.6.29))(@types/hast@3.0.4)(highlight.js@11.11.1)(lowlight@3.3.0)
+      '@blocknote/react': 0.46.2(@floating-ui/dom@1.7.5)(@hocuspocus/provider@2.15.2(y-protocols@1.0.7(yjs@13.6.29))(yjs@13.6.29))(@types/hast@3.0.4)(@types/react-dom@19.2.3(@types/react@19.2.10))(@types/react@19.2.10)(highlight.js@11.11.1)(lowlight@3.3.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@radix-ui/react-avatar': 1.1.11(@types/react-dom@19.2.3(@types/react@19.2.10))(@types/react@19.2.10)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@radix-ui/react-dropdown-menu': 2.1.16(@types/react-dom@19.2.3(@types/react@19.2.10))(@types/react@19.2.10)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@radix-ui/react-label': 2.1.8(@types/react-dom@19.2.3(@types/react@19.2.10))(@types/react@19.2.10)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -13961,10 +13964,11 @@ snapshots:
       hono: 4.11.7
       zod: 4.3.6
 
-  '@hookform/resolvers@5.2.2(react-hook-form@7.71.1(react@19.2.4))':
+  '@hookform/resolvers@5.2.2(react-hook-form@7.71.1(react@19.2.4))(zod@4.3.6)':
     dependencies:
       '@standard-schema/utils': 0.3.0
       react-hook-form: 7.71.1(react@19.2.4)
+      zod: 4.3.6
 
   '@humanwhocodes/config-array@0.13.0':
     dependencies:

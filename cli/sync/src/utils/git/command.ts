@@ -157,6 +157,41 @@ export async function gitDiffUnmerged(repoPath: string): Promise<string> {
 }
 
 /**
+ * Checks for conflict markers in staged files using `git diff --cached --check`.
+ * Git's --check flag detects conflict markers (<<<<<<<, =======, >>>>>>>).
+ *
+ * @param repoPath - The file system path to the git repository
+ *
+ * @returns An array of file paths containing conflict markers, empty if none found
+ *
+ * @example
+ * const filesWithConflicts = await gitDiffCheckConflictMarkers('/path/to/repo');
+ * if (filesWithConflicts.length > 0) {
+ *   console.error('Files with unresolved conflict markers:', filesWithConflicts);
+ * }
+ */
+export async function gitDiffCheckConflictMarkers(repoPath: string): Promise<string[]> {
+  try {
+    // git diff --cached --check exits with code 2 if it finds conflict markers
+    await runGitCommand(['diff', '--cached', '--check'], repoPath);
+    return [];
+  } catch (err) {
+    // Parse the error output to extract file paths with conflict markers
+    const errorOutput = err instanceof Error ? err.message : String(err);
+    const conflictFiles = new Set<string>();
+
+    // Match lines like "file.json:50: leftover conflict marker"
+    const regex = /^([^:]+):\d+: (?:leftover conflict marker|conflict marker size)/gm;
+    let match: RegExpExecArray | null = null;
+    while ((match = regex.exec(errorOutput)) !== null) {
+      conflictFiles.add(match[1]);
+    }
+
+    return Array.from(conflictFiles);
+  }
+}
+
+/**
  * Gets a list of files staged for commit in the given repository.
  * Returns raw stdout from git (one file path per line).
  *
@@ -426,6 +461,25 @@ export function gitCheckoutOursFilePath(repoPath: string, filePath: string): Pro
 export function gitCheckoutTheirsFilePath(repoPath: string, filePath: string): Promise<string> {
   return runGitCommand(['checkout', '--theirs', filePath], repoPath);
 }
+
+/**
+ * Checks out a file from a specific ref (branch/tag/commit).
+ * This works even for unmerged files during a merge conflict.
+ * Equivalent to: `git checkout <ref> -- <file>`
+ *
+ * @param repoPath - The file system path to the git repository
+ * @param filePath - The path to the file to checkout
+ * @param ref - The branch, tag, or commit to checkout from
+ *
+ * @returns The stdout from the git checkout command
+ *
+ * @example
+ * await gitCheckoutFileFromRef('/repo', 'src/config.ts', 'development');
+ */
+export function gitCheckoutFileFromRef(repoPath: string, filePath: string, ref: string): Promise<string> {
+  return runGitCommand(['checkout', ref, '--', filePath], repoPath);
+}
+
 /**
  * Removes a file from the Git index (staging area) but keeps it in the working directory.
  *

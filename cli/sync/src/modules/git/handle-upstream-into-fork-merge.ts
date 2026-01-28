@@ -4,7 +4,9 @@ import { RepoConfig } from '#/config';
 import { getOverrideStatus } from '#/modules/overrides';
 import { FileAnalysis } from '#/types';
 import {
+  gitAdd,
   gitAddAll,
+  gitCheckoutFileFromRef,
   gitCleanAllUntrackedFiles,
   gitCleanUntrackedFile,
   gitLsFiles,
@@ -52,7 +54,7 @@ export async function handleUpstreamIntoForkMerge(
       await cleanupNonConflictedFiles(forkConfig.workingDirectory, analyzedFiles);
 
       // Resolve any remaining conflicts
-      await resolveMergeConflicts(forkConfig.workingDirectory, analyzedFiles);
+      await resolveMergeConflicts(forkConfig.workingDirectory, forkConfig.branchRef, analyzedFiles);
 
       // Remove ignored files that may have been synced previously (won't appear in cached diff)
       await removeIgnoredFilesFromTree(forkConfig.workingDirectory);
@@ -167,13 +169,14 @@ async function cleanupNonConflictedFiles(repoPath: string, analyzedFiles: FileAn
  * Resolves merge conflicts based on the provided analyzed files and their strategies.
  * If conflicts remain after automatic resolution, prompts the user to resolve them manually.
  *
- * @param forkConfig - RepoConfig of the forked repo
+ * @param repoPath - Path to the repository
+ * @param forkBranchRef - Reference to the fork's development branch (for restoring fork-only files)
  * @param analyzedFiles - List of analyzed files
  *
  * @throws Error if the user chooses to abort the merge process.
  * @returns void
  */
-async function resolveMergeConflicts(repoPath: string, analyzedFiles: FileAnalysis[]) {
+async function resolveMergeConflicts(repoPath: string, forkBranchRef: string, analyzedFiles: FileAnalysis[]) {
   let conflicts = await getUnmergedFiles(repoPath);
 
   if (conflicts.length === 0) return;
@@ -184,6 +187,7 @@ async function resolveMergeConflicts(repoPath: string, analyzedFiles: FileAnalys
   for (const filePath of conflicts) {
     const file = analysisMap.get(filePath);
 
+    // Handle files that are in the analysis map with known strategies
     if (file?.mergeStrategy?.strategy === 'keep-fork') {
       await resolveConflictAsOurs(repoPath, filePath);
       continue;
@@ -205,6 +209,26 @@ async function resolveMergeConflicts(repoPath: string, analyzedFiles: FileAnalys
         await gitCleanUntrackedFile(repoPath, filePath);
       }
       continue;
+    }
+
+    // Handle files NOT in the analysis map (files that conflict but weren't analyzed)
+    // This can happen when:
+    // 1. Fork has files (like drizzle migrations) that upstream doesn't have
+    // 2. Upstream has files in ignored paths that fork doesn't have
+    if (!file) {
+      const overrideStatus = getOverrideStatus(filePath);
+      if (overrideStatus === 'ignored' || overrideStatus === 'pinned') {
+        // Check if file exists in fork's branch
+        try {
+          await gitCheckoutFileFromRef(repoPath, filePath, forkBranchRef);
+        } catch {
+          // File doesn't exist in fork - this is an upstream-only file in an ignored path
+          // Remove it from the merge (don't add upstream's version)
+          await gitRemoveFilePathFromCache(repoPath, filePath);
+          await gitCleanUntrackedFile(repoPath, filePath);
+        }
+        continue;
+      }
     }
   }
 
@@ -231,7 +255,7 @@ async function resolveMergeConflicts(repoPath: string, analyzedFiles: FileAnalys
 
     resumeSpinner();
 
-    return resolveMergeConflicts(repoPath, analyzedFiles);
+    return resolveMergeConflicts(repoPath, forkBranchRef, analyzedFiles);
   }
 }
 

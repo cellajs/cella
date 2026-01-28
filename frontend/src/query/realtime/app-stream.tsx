@@ -67,7 +67,11 @@ export function useAppStream(options: UseAppStreamOptions = {}): UseAppStreamRet
   // Process a notification (used by both leader and followers)
   const processNotification = useCallback((notification: AppStreamNotification, eventId?: string) => {
     if (barrierRef.current.enqueue({ notification, eventId })) {
-      console.debug(`[${debugLabel}] Queued notification during hydration:`, notification.entityType, notification.action);
+      console.debug(
+        `[${debugLabel}] Queued notification during hydration:`,
+        notification.entityType,
+        notification.action,
+      );
       return;
     }
     if (eventId) setCursor(eventId);

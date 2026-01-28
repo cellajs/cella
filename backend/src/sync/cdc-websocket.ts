@@ -19,6 +19,8 @@ const cdcMessageSchema = z.object({
     // Override nullable fields that are always present in CDC messages
     action: activityActionSchema,
     entityId: z.string(),
+    // seq is computed atomically in the database, not available when CDC sends the message
+    seq: z.number().optional(),
   }),
   entity: z.record(z.string(), z.unknown()),
   _trace: z
@@ -136,7 +138,16 @@ class CdcWebSocketServer {
 
       if (!result.success) {
         this._parseErrors++;
-        logEvent('warn', 'Invalid CDC message schema', { errors: result.error.issues });
+        // Extract what we can from the raw message for debugging
+        const preview = {
+          type: parsed?.activity?.type,
+          entityId: parsed?.activity?.entityId,
+          action: parsed?.activity?.action,
+        };
+        logEvent('error', 'CDC message schema validation failed - message dropped', {
+          errors: result.error.issues,
+          preview,
+        });
         return;
       }
 
@@ -148,7 +159,10 @@ class CdcWebSocketServer {
       const { type } = message.activity;
       if (!isValidEventType(type)) {
         this._parseErrors++;
-        logEvent('warn', 'Unknown CDC event type', { type });
+        logEvent('error', 'Unknown CDC event type - message dropped', {
+          type,
+          entityId: message.activity.entityId,
+        });
         return;
       }
 

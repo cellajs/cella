@@ -32,9 +32,11 @@ import { createTxForCreate, createTxForUpdate, squashPendingMutation } from '~/q
 import { getCacheToken } from '~/query/realtime/cache-token-store';
 
 // Use generated types from api.gen for mutation input shapes
-// CreatePagesData uses array schema, extract element type for single item input
-type CreatePageInput = CreatePagesData['body']['data'][number];
-type UpdatePageInput = UpdatePageData['body']['data'];
+// Body is array of items with tx embedded, extract element type without tx
+type CreatePageItem = CreatePagesData['body'][number];
+type CreatePageInput = Omit<CreatePageItem, 'tx'>;
+type UpdatePageItem = UpdatePageData['body'];
+type UpdatePageInput = Omit<UpdatePageItem, 'tx'>;
 
 export const pagesLimit = appConfig.requestLimits.pages;
 
@@ -141,7 +143,8 @@ export const usePageCreateMutation = () => {
     // API accepts array - wrap single item, extract first from response
     mutationFn: async (data: CreatePageInput) => {
       const tx = createTxForCreate();
-      const result = await createPages({ body: { data: [data], tx } });
+      // Body is array with tx embedded in each item
+      const result = await createPages({ body: [{ ...data, tx }] });
       // Return created page (has tx embedded)
       return result.data[0];
     },
@@ -202,7 +205,8 @@ export const usePageUpdateMutation = () => {
       // Get cached entity for baseVersion conflict detection
       const cachedEntity = findPageInListCache(id);
       const tx = createTxForUpdate(cachedEntity);
-      const result = await updatePage({ path: { id }, body: { data, tx } });
+      // Body has tx embedded directly
+      const result = await updatePage({ path: { id }, body: { ...data, tx } });
       return result;
     },
 
@@ -308,7 +312,8 @@ addMutationRegistrar((queryClient: QueryClient) => {
   queryClient.setMutationDefaults(keys.create, {
     mutationFn: async (data: CreatePageInput) => {
       const tx = createTxForCreate();
-      const result = await createPages({ body: { data: [data], tx } });
+      // Body is array with tx embedded in each item
+      const result = await createPages({ body: [{ ...data, tx }] });
       return result.data[0]; // Return entity with tx embedded
     },
   });
@@ -319,7 +324,8 @@ addMutationRegistrar((queryClient: QueryClient) => {
       // Get cached entity for baseVersion (may be undefined if not in cache)
       const cachedEntity = findPageInListCache(id);
       const tx = createTxForUpdate(cachedEntity);
-      return updatePage({ path: { id }, body: { data, tx } });
+      // Body has tx embedded directly
+      return updatePage({ path: { id }, body: { ...data, tx } });
     },
   });
 

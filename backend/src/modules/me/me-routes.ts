@@ -17,8 +17,8 @@ import {
   idsBodySchema,
   locationSchema,
   paginationSchema,
-  successWithRejectedItemsSchema,
   streamNotificationSchema,
+  successWithRejectedItemsSchema,
 } from '#/schemas';
 
 const meRoutes = {

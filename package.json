@@ -80,5 +80,14 @@
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "@transloadit/utils": "^4.1.8"
+  },
+  "pnpm": {
+    "packageExtensions": {
+      "@hookform/resolvers@5.2.2": {
+        "peerDependencies": {
+          "zod": "*"
+        }
+      }
+    }
   }
 }
