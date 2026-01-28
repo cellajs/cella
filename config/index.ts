@@ -11,6 +11,19 @@ import { hasKey, mergeDeep } from './utils';
 export type { EntityConfigEntry, EntityKind, GenerateScript, GenerateScriptType, ProductEntityConfig } from './types';
 export { hasKey } from './utils';
 
+/******************************************************************************
+ * HELPER TYPES FOR ENTITY CONFIG
+ ******************************************************************************/
+
+/**
+ * Extract all ancestor entity types from entityConfig.
+ * Collects all unique values from product entity `ancestors` arrays.
+ */
+type EntityConfigAncestors<T extends Record<string, { kind: string; ancestors?: readonly string[] }>> = {
+  [K in keyof T]: T[K] extends { kind: 'product'; ancestors: readonly (infer A)[] } ? A : never;
+}[keyof T] &
+  string;
+
 /**
  * All entities in this app
  */
@@ -27,10 +40,11 @@ export type ContextEntityType = (typeof appConfig.contextEntityTypes)[number];
 export type ProductEntityType = (typeof appConfig.productEntityTypes)[number];
 
 /**
- * Relatable context entities (context entities that appear in ancestors arrays).
+ * Relatable context entities - derived from ancestors arrays in entityConfig.
+ * These are context entities that appear in product entity ancestor chains.
  * Used for activities table columns and CDC context extraction.
  */
-export type RelatableContextEntityType = (typeof appConfig.relatableContextEntityTypes)[number];
+export type RelatableContextEntityType = EntityConfigAncestors<typeof appConfig.entityConfig>;
 
 /**
  * Offline entities that support offline transactions
@@ -227,9 +241,31 @@ const configModes = {
 
 export type ConfigMode = Config['mode']
 
+/**
+ * Derive relatable context entity types from entityConfig at runtime.
+ * Collects all unique ancestor values from product entities.
+ */
+function deriveRelatableContextEntityTypes<
+  T extends Record<string, { kind: string; ancestors?: readonly string[] }>,
+>(entityConfig: T): EntityConfigAncestors<T>[] {
+  const ancestors = new Set<string>();
+
+  for (const config of Object.values(entityConfig)) {
+    if (config.kind === 'product' && 'ancestors' in config && Array.isArray(config.ancestors)) {
+      for (const ancestor of config.ancestors) {
+        ancestors.add(ancestor);
+      }
+    }
+  }
+
+  return [...ancestors] as EntityConfigAncestors<T>[];
+}
 
 const mode = (process.env.NODE_ENV || 'development') as Config['mode'];
 export const appConfig = mergeDeep(_default, configModes[mode]);
 
-/** Relatable context entity types array for iteration. */
-export const relatableContextEntityTypes = appConfig.relatableContextEntityTypes;
+/**
+ * Relatable context entity types - derived from ancestors arrays in entityConfig.
+ * Computed at runtime by collecting all unique ancestor values from product entities.
+ */
+export const relatableContextEntityTypes = deriveRelatableContextEntityTypes(appConfig.entityConfig);

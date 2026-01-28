@@ -1,8 +1,11 @@
-import { appConfig, type RelatableContextEntityType, relatableContextEntityTypes } from 'config';
+import { appConfig, type RelatableContextEntityType } from 'config';
 import { desc } from 'drizzle-orm';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import { foreignKey, index, varchar } from 'drizzle-orm/pg-core';
 import { relatableContextEntityTables } from '#/relatable-config';
+
+/** Relatable context entity types derived from relatableContextEntityTables. */
+const relatableContextEntityTypes = Object.keys(relatableContextEntityTables) as RelatableContextEntityType[];
 
 /**
  * Type representing the column names for relatable context entity IDs.
@@ -12,7 +15,7 @@ type RelatableContextEntityIdColumnNames = (typeof appConfig.entityIdColumnKeys)
 /**
  * Generate context entity ID columns for the activities table.
  * Creates varchar columns for each relatable context entity type (organizationId, projectId, etc.).
- * Only includes entities from relatableContextEntityTypes (part of the parent tree).
+ * Only includes entities from relatableContextEntityTables (part of the parent tree).
  * Foreign keys and indexes are generated separately.
  */
 export const generateActivityContextColumns = () => {
