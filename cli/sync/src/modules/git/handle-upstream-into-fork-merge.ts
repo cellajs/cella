@@ -184,6 +184,7 @@ async function resolveMergeConflicts(repoPath: string, analyzedFiles: FileAnalys
   for (const filePath of conflicts) {
     const file = analysisMap.get(filePath);
 
+    // Handle files that are in the analysis map with known strategies
     if (file?.mergeStrategy?.strategy === 'keep-fork') {
       await resolveConflictAsOurs(repoPath, filePath);
       continue;
@@ -205,6 +206,18 @@ async function resolveMergeConflicts(repoPath: string, analyzedFiles: FileAnalys
         await gitCleanUntrackedFile(repoPath, filePath);
       }
       continue;
+    }
+
+    // Handle files NOT in the analysis map (fork-only files that conflict with upstream)
+    // This can happen when fork has files (like drizzle migrations) that upstream doesn't have,
+    // but upstream has different files in the same directory causing merge conflicts.
+    if (!file) {
+      const overrideStatus = getOverrideStatus(filePath);
+      if (overrideStatus === 'ignored' || overrideStatus === 'pinned') {
+        // Fork-only file in ignored/pinned path - keep fork's version
+        await resolveConflictAsOurs(repoPath, filePath);
+        continue;
+      }
     }
   }
 
