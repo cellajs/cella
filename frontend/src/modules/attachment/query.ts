@@ -22,8 +22,11 @@ import { addMutationRegistrar } from '~/query/mutation-registry';
 import { createTxForCreate, createTxForUpdate, squashPendingMutation } from '~/query/offline';
 
 // Use generated types from api.gen for mutation input shapes
-type CreateAttachmentInput = CreateAttachmentsData['body']['data'];
-type UpdateAttachmentInput = UpdateAttachmentData['body']['data'];
+// Body is array of items with tx embedded, so extract element type without tx
+type CreateAttachmentItem = CreateAttachmentsData['body'][number];
+type CreateAttachmentInput = Omit<CreateAttachmentItem, 'tx'>[];
+type UpdateAttachmentItem = UpdateAttachmentData['body'];
+type UpdateAttachmentInput = Omit<UpdateAttachmentItem, 'tx'>;
 
 export const attachmentsLimit = appConfig.requestLimits.attachments;
 
@@ -98,7 +101,9 @@ export const useAttachmentCreateMutation = (orgIdOrSlug: string) => {
     // Execute API call with transaction metadata for conflict tracking
     mutationFn: async (data: CreateAttachmentInput) => {
       const tx = createTxForCreate();
-      const result = await createAttachments({ path: { orgIdOrSlug }, body: { data, tx } });
+      // Body is array with tx embedded in each item
+      const body = data.map((item) => ({ ...item, tx }));
+      const result = await createAttachments({ path: { orgIdOrSlug }, body });
       return result;
     },
 
@@ -107,6 +112,10 @@ export const useAttachmentCreateMutation = (orgIdOrSlug: string) => {
       // Cancel in-flight queries to prevent race conditions with stale data
       await queryClient.cancelQueries({ queryKey: keys.list.base });
 
+      // Placeholder tx for optimistic updates (replaced by real tx from server)
+      const placeholderTx = { id: '', sourceId: '', version: 0, fieldVersions: {} };
+
+      // TODO use createOptimisticEntity?
       // Build optimistic attachments (they already have IDs from Transloadit)
       const optimisticAttachments = newAttachments.map((att) => ({
         ...att,
@@ -118,7 +127,7 @@ export const useAttachmentCreateMutation = (orgIdOrSlug: string) => {
         keywords: '',
         url: '',
         thumbnailUrl: null,
-        tx: null,
+        tx: placeholderTx,
       })) as Attachment[];
 
       // Insert optimistic entities into list cache for instant UI update
@@ -169,7 +178,8 @@ export const useAttachmentUpdateMutation = (orgIdOrSlug: string) => {
       // Get cached entity for baseVersion conflict detection
       const cachedEntity = findAttachmentInListCache(id);
       const tx = createTxForUpdate(cachedEntity);
-      const result = await updateAttachment({ path: { orgIdOrSlug, id }, body: { data, tx } });
+      // Body has tx embedded directly
+      const result = await updateAttachment({ path: { orgIdOrSlug, id }, body: { ...data, tx } });
       return result;
     },
 
@@ -275,7 +285,9 @@ addMutationRegistrar((queryClient: QueryClient) => {
   queryClient.setMutationDefaults(keys.create, {
     mutationFn: async ({ orgIdOrSlug, data }: { orgIdOrSlug: string; data: CreateAttachmentInput }) => {
       const tx = createTxForCreate();
-      return createAttachments({ path: { orgIdOrSlug }, body: { data, tx } });
+      // Body is array with tx embedded in each item
+      const body = data.map((item) => ({ ...item, tx }));
+      return createAttachments({ path: { orgIdOrSlug }, body });
     },
   });
 
@@ -285,7 +297,8 @@ addMutationRegistrar((queryClient: QueryClient) => {
       // Get cached entity for baseVersion (may be undefined if not in cache)
       const cachedEntity = findAttachmentInListCache(id);
       const tx = createTxForUpdate(cachedEntity);
-      return updateAttachment({ path: { orgIdOrSlug, id }, body: { data, tx } });
+      // Body has tx embedded directly
+      return updateAttachment({ path: { orgIdOrSlug, id }, body: { ...data, tx } });
     },
   });
 

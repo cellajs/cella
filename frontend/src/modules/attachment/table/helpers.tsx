@@ -16,9 +16,10 @@ export const useAttachmentsUploadDialog = (organizationSlug: string) => {
     const onComplete = async (result: UploadedUppyFile<'attachment'>) => {
       const attachments = parseUploadedAttachments(result, organizationSlug);
 
-      // Create attachments via API with transaction metadata
+      // Create attachments via API with transaction metadata (tx embedded in each item)
       const tx = createTxForCreate();
-      await createAttachments({ path: { orgIdOrSlug: organizationSlug }, body: { data: attachments, tx } });
+      const body = attachments.map((att) => ({ ...att, tx }));
+      await createAttachments({ path: { orgIdOrSlug: organizationSlug }, body });
 
       // Invalidate the cache to refresh the table
       queryClient.invalidateQueries({ queryKey: attachmentQueryKeys.list.base });

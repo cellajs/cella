@@ -1,5 +1,5 @@
-import { and, desc, eq, gt, inArray, or } from 'drizzle-orm';
 import { type ContextEntityType, isRealtimeEntity } from 'config';
+import { and, desc, eq, gt, inArray, or } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { activitiesTable } from '#/db/schema/activities';
 import { generateCacheToken } from '#/lib/cache-token';
@@ -44,7 +44,7 @@ export function buildStreamNotification(
 
   return {
     action: event.action,
-    entityType: event.entityType,
+    entityType: isRealtime ? entityType : null,
     resourceType: event.resourceType,
     entityId: event.entityId!,
     organizationId: event.organizationId,
@@ -112,7 +112,7 @@ export async function fetchUserCatchUpActivities(
   for (const activity of activities) {
     const notification: StreamNotification = {
       action: activity.action,
-      entityType: activity.entityType,
+      entityType: isRealtimeEntity(activity.entityType) ? activity.entityType : null,
       resourceType: activity.resourceType,
       entityId: activity.entityId!,
       organizationId: activity.organizationId,

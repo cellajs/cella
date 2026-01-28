@@ -1,7 +1,12 @@
 import { appConfig } from 'config';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLatestRef } from '~/hooks/use-latest-ref';
-import type { AppStreamNotification, AppStreamOffsetEvent, UsePublicStreamOptions, UsePublicStreamReturn } from './app-stream-types';
+import type {
+  AppStreamNotification,
+  AppStreamOffsetEvent,
+  UsePublicStreamOptions,
+  UsePublicStreamReturn,
+} from './app-stream-types';
 import { createHydrateBarrier } from './hydrate-barrier';
 import { handlePublicStreamMessage, type PublicStreamMessage } from './public-stream-handler';
 import {

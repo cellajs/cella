@@ -19,7 +19,7 @@
     "nanoid": "^5.1.6",
     "pg-logical-replication": "^2.3.0",
     "ws": "^8.19.0",
-    "zod": "^3.25.76"
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/node": "^24.10.9",

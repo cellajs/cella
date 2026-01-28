@@ -24,11 +24,11 @@ import { makeContextEntityBaseSelect } from '#/modules/entities/helpers/select';
 import { getAuthInfo, getUserSessions } from '#/modules/me/helpers/get-user-info';
 import meRoutes from '#/modules/me/me-routes';
 import {
+  type AppStreamSubscriber,
   dispatchToUserSubscribers,
   fetchUserCatchUpActivities,
   getLatestUserActivityId,
   orgChannel,
-  type AppStreamSubscriber,
 } from '#/modules/me/stream';
 import { userSelect } from '#/modules/user/helpers/select';
 import { type ActivityEventWithEntity, activityBus } from '#/sync/activity-bus';

@@ -4,7 +4,7 @@ import { streamSubscriberManager, writeChange } from '#/sync/stream';
 import { logEvent } from '#/utils/logger';
 import { canReceiveUserEvent } from './can-receive';
 import { buildStreamNotification } from './fetch-data';
-import { orgChannel, type AppStreamSubscriber } from './types';
+import { type AppStreamSubscriber, orgChannel } from './types';
 
 /**
  * Dispatch an activity event to the user subscriber.

@@ -70,7 +70,8 @@ async function waitForManualConflictResolution(mergeIntoPath: string) {
         console.error(`   • ${file}`);
       }
       const continueAnyway = await confirm({
-        message: 'These files have conflict markers (<<<<<<<, =======, >>>>>>>). Fix them and press "y" to retry, or "n" to abort.',
+        message:
+          'These files have conflict markers (<<<<<<<, =======, >>>>>>>). Fix them and press "y" to retry, or "n" to abort.',
         default: false,
       });
       if (!continueAnyway) {
