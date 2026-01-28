@@ -29,7 +29,7 @@ export interface UserEntityConfig {
 /** Configuration for context entities (have memberships) */
 export interface ContextEntityConfig {
   kind: 'context';
-  parent: string | null;
+  ancestors: readonly string[];
   roles: readonly string[];
 }
 

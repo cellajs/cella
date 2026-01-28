@@ -158,14 +158,14 @@ export function getEntityKind(entityType: string): EntityKind | undefined {
 }
 
 /**
- * Get ancestors for an entity (ordered most-specific first).
- * For context entities, returns parent chain. For products, returns ancestors array.
+ * Get direct ancestors for an entity.
+ * Returns the ancestors array for both context and product entities.
+ * The full ancestor chain is resolved recursively by getAncestorContexts().
  */
 export function getEntityAncestors(entityType: string): readonly string[] {
   if (!hasKey(appConfig.entityConfig, entityType)) return [];
   const entry = appConfig.entityConfig[entityType];
-  if (entry.kind === 'product') return entry.ancestors;
-  if (entry.kind === 'context' && entry.parent) return [entry.parent];
+  if (entry.kind === 'context' || entry.kind === 'product') return entry.ancestors;
   return [];
 }
 

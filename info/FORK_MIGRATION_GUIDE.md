@@ -83,9 +83,9 @@ These define app identity, features, entities, and settings. Migration typically
 ```typescript
 // Upstream added entityConfig (replaces flat arrays)
 entityConfig: {
-  organization: { kind: 'context', parent: null, roles: ['admin', 'member'] },
+  organization: { kind: 'context', ancestors: [], roles: ['admin', 'member'] },
   // Fork must add its custom entities here
-  task: { kind: 'product', ancestors: ['workspace', 'project'] },
+  task: { kind: 'product', ancestors: ['project'] },
 }
 ```
 
@@ -307,7 +307,7 @@ Major sync engine refactor: Cella moved from a mixed Electric/SSE approach to a 
 ```typescript
 entityConfig: {
   user: { kind: 'user' },
-  organization: { kind: 'context', parent: null, roles: ['admin', 'member'] },
+  organization: { kind: 'context', ancestors: [], roles: ['admin', 'member'] },
   attachment: { kind: 'product', ancestors: ['organization'] },
   page: { kind: 'product', ancestors: [] },
 } as const,
@@ -317,10 +317,10 @@ entityConfig: {
 ```typescript
 entityConfig: {
   user: { kind: 'user' },
-  organization: { kind: 'context', parent: null, roles: ['admin', 'member'] },
-  workspace: { kind: 'context', parent: 'organization', roles: ['admin', 'member', 'guest'] },
-  project: { kind: 'context', parent: 'workspace', roles: ['admin', 'member', 'guest'] },
-  task: { kind: 'product', ancestors: ['workspace', 'project'] },
+  organization: { kind: 'context', ancestors: [], roles: ['admin', 'member'] },
+  workspace: { kind: 'context', ancestors: ['organization'], roles: ['admin', 'member', 'guest'] },
+  project: { kind: 'context', ancestors: ['workspace'], roles: ['admin', 'member', 'guest'] },
+  task: { kind: 'product', ancestors: ['project'] },
   label: { kind: 'product', ancestors: ['workspace'] },
   attachment: { kind: 'product', ancestors: ['organization'] },
   page: { kind: 'product', ancestors: [] },

@@ -20,7 +20,7 @@ The entity hierarchy is defined in `appConfig.entityConfig`:
 ```typescript
 entityConfig: {
   user: { kind: 'user' },
-  organization: { kind: 'context', parent: null, roles: ['admin', 'member'] },
+  organization: { kind: 'context', ancestors: [], roles: ['admin', 'member'] },
   attachment: { kind: 'product', ancestors: ['organization'] },
   page: { kind: 'product', ancestors: [] },
 } as const
