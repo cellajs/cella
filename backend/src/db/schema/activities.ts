@@ -1,12 +1,16 @@
 import { appConfig } from 'config';
 import { sql } from 'drizzle-orm';
 import { foreignKey, index, integer, jsonb, pgTable, varchar } from 'drizzle-orm/pg-core';
+import {
+  generateActivityContextColumns,
+  generateActivityContextForeignKeys,
+  generateActivityContextIndexes,
+} from '#/db/utils/generate-activity-context-columns';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import type { TxBase } from '#/db/utils/tx-columns';
 import { activityActions } from '#/sync/activity-bus';
 import { resourceTypes } from '#/table-config';
 import { nanoid } from '#/utils/nanoid';
-import { organizationsTable } from './organizations';
 import { usersTable } from './users';
 
 /**
@@ -27,7 +31,8 @@ export const activitiesTable = pgTable(
     tableName: varchar().notNull(), // Source table name (e.g., 'users', 'organizations')
     type: varchar().notNull(), // Composite type (e.g., 'user.created', 'organization.updated')
     entityId: varchar(), // ID of the entity if applicable
-    organizationId: varchar(), // Organization context (derived from entity's organizationId or self for organizations)
+    // Context entity ID columns (organizationId, projectId, etc.) - dynamically generated
+    ...generateActivityContextColumns(),
     createdAt: timestampColumns.createdAt,
     changedKeys: jsonb().$type<string[]>(), // Array of keys that changed (for updates)
     // Sync: transaction metadata from product entity tx column (null for context entities)
@@ -43,19 +48,14 @@ export const activitiesTable = pgTable(
     index('activities_user_id_index').on(table.userId),
     index('activities_entity_id_index').on(table.entityId),
     index('activities_table_name_index').on(table.tableName),
-    index('activities_organization_id_index').on(table.organizationId),
-    // Sync: index for org-scoped seq queries. Forks with additional context entities
-    // (e.g., project) should add indexes like: (project_id, seq DESC)
-    index('activities_org_seq_index').on(table.organizationId, table.seq.desc()),
     index('activities_tx_id_index').on(sql`(tx->>'id')`),
     foreignKey({
       columns: [table.userId],
       foreignColumns: [usersTable.id],
     }).onDelete('set null'),
-    foreignKey({
-      columns: [table.organizationId],
-      foreignColumns: [organizationsTable.id],
-    }).onDelete('cascade'),
+    // Dynamic context entity indexes and foreign keys
+    ...generateActivityContextIndexes(table),
+    ...generateActivityContextForeignKeys(table),
   ],
 );
 

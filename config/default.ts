@@ -108,7 +108,10 @@ export const config = {
   entityTypes: ['user', 'organization', 'attachment', 'page'] as const,
   contextEntityTypes: ['organization'] as const,
   productEntityTypes: ['attachment', 'page'] as const,
-  
+  // Context entities that can be related to (appear in ancestors arrays).
+  // Used for activities table columns and CDC context extraction.
+  relatableContextEntityTypes: ['organization'] as const,
+
   offlineEntityTypes: [] as const, // Entities that support offline transactions
   realtimeEntityTypes: ['attachment', 'page'] as const, // Entities with realtime & offline transactions
 

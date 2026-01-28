@@ -1,6 +1,7 @@
 export { actionToVerb } from './action-to-verb';
 export { convertRowKeys, type RowData } from './convert-row-keys';
 export { extractActivityContext, type ActivityContext } from './extract-activity-context';
+export { extractContextEntityIds, type ContextEntityIds } from './extract-context-entity-ids';
 export { extractRowData } from './extract-row-data';
 export { extractTxData } from './extract-tx-data';
 export { getChangedKeys } from './get-changed-keys';

@@ -27,6 +27,12 @@ export type ContextEntityType = (typeof appConfig.contextEntityTypes)[number];
 export type ProductEntityType = (typeof appConfig.productEntityTypes)[number];
 
 /**
+ * Relatable context entities (context entities that appear in ancestors arrays).
+ * Used for activities table columns and CDC context extraction.
+ */
+export type RelatableContextEntityType = (typeof appConfig.relatableContextEntityTypes)[number];
+
+/**
  * Offline entities that support offline transactions
  */
 export type OfflineEntityType = (typeof appConfig.offlineEntityTypes)[number];
@@ -224,3 +230,6 @@ export type ConfigMode = Config['mode']
 
 const mode = (process.env.NODE_ENV || 'development') as Config['mode'];
 export const appConfig = mergeDeep(_default, configModes[mode]);
+
+/** Relatable context entity types array for iteration. */
+export const relatableContextEntityTypes = appConfig.relatableContextEntityTypes;

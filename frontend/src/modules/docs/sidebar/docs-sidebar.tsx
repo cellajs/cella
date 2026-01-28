@@ -240,6 +240,7 @@ export function DocsSidebar({ tags }: DocsSidebarProps) {
           {systemRole && (
             <Link
               to="/docs/pages"
+              onClick={closeSheet}
               className={cn(buttonVariants({ variant: 'ghost', size: 'xs' }), 'h-7 w-8 p-0')}
               aria-label="Manage pages"
             >
