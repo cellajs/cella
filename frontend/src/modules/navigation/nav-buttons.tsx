@@ -71,7 +71,7 @@ export function NavButton({ navItem, isActive, isCollapsed, onClick }: NavButton
           'h-14 ring-inset pl-3.5 focus-visible:ring-offset-0 group transition-[width] duration-200 linear',
           'data-[active=true]:bg-background/50 hover:bg-background/30',
           'text-primary-foreground data-[theme=none]:text-inherit',
-          isCollapsed ? 'w-14' : 'w-full',
+          isCollapsed ? 'w-16' : 'w-full',
         )}
       >
         <AppNavIcon navItem={navItem} />

@@ -175,6 +175,19 @@ export const config = {
     },
   },
 
+  // Local blob storage restrictions (IndexedDB/Dexie)
+  // Controls which attachments are cached locally for offline access
+  localBlobStorage: {
+    enabled: true, // Enable local blob caching
+    maxFileSize: 10 * 1024 * 1024, // 10MB - files larger than this are not cached locally
+    maxTotalSize: 100 * 1024 * 1024, // 100MB - total cache size, LRU eviction when exceeded
+    allowedContentTypes: [] as string[], // Empty = all types allowed
+    excludedContentTypes: ['video/*'] as string[], // Excluded types (takes precedence over allowed)
+    downloadConcurrency: 2, // Max concurrent background downloads
+    uploadRetryAttempts: 3, // Max retry attempts for failed uploads
+    uploadRetryDelays: [60000, 300000, 900000] as const, // Retry delays in ms (1min, 5min, 15min)
+  },
+
   /******************************************************************************
    * THIRD-PARTY SERVICES
    ******************************************************************************/
