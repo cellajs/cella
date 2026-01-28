@@ -403,7 +403,7 @@ const membershipsRouteHandlers = app
       ),
     );
 
-    // Event emitted via CDC -> activities table -> eventBus ('membership.deleted')
+    // Event emitted via CDC -> activities table -> activityBus ('membership.deleted')
     logEvent(
       'info',
       'Deleted memberships',
@@ -483,7 +483,7 @@ const membershipsRouteHandlers = app
       .where(and(eq(membershipsTable.id, membershipId)))
       .returning();
 
-    // Event emitted via CDC -> activities table -> eventBus ('membership.updated')
+    // Event emitted via CDC -> activities table -> activityBus ('membership.updated')
     logEvent('info', 'Membership updated', { userId: updatedMembership.userId, membershipId: updatedMembership.id });
 
     return ctx.json(updatedMembership, 200);
@@ -527,7 +527,7 @@ const membershipsRouteHandlers = app
 
       await db.delete(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
 
-      // Event emitted via CDC -> activities table -> eventBus ('membership.created')
+      // Event emitted via CDC -> activities table -> activityBus ('membership.created')
       logEvent('info', 'Accepted membership', { ids: activatedMemberships.map((m) => m.id) });
     }
 

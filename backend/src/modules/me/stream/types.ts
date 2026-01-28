@@ -4,9 +4,9 @@ import type { CursoredSubscriber } from '#/sync/stream';
 
 /**
  * User-scoped stream subscriber.
- * Receives membership events AND product entity events for all user's orgs.
+ * Receives all events (memberships, product entities, org) via org channels.
  */
-export interface UserStreamSubscriber extends CursoredSubscriber {
+export interface AppStreamSubscriber extends CursoredSubscriber {
   /** User ID */
   userId: string;
   /** Set of org IDs user belongs to (for filtering org events) */
@@ -18,15 +18,8 @@ export interface UserStreamSubscriber extends CursoredSubscriber {
 }
 
 /**
- * Channel key for user-specific events (memberships).
- */
-export function userChannel(userId: string): string {
-  return `user:${userId}`;
-}
-
-/**
- * Channel key for org-specific events (product entities).
- * Re-exported here for convenience when registering user subscribers on org channels.
+ * Channel key for org-scoped events.
+ * All events (memberships, product entities, org updates) flow through org channels.
  */
 export function orgChannel(orgId: string): string {
   return `org:${orgId}`;

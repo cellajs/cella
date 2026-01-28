@@ -2,7 +2,7 @@ import { appConfig, type RealtimeEntityType } from 'config';
 import { isPermissionAllowed } from '#/permissions';
 import type { ActivityEventWithEntity } from '#/sync/activity-bus';
 import { logEvent } from '#/utils/logger';
-import type { UserStreamSubscriber } from './types';
+import type { AppStreamSubscriber } from './types';
 
 /**
  * Check if user subscriber should receive an event.
@@ -16,7 +16,7 @@ import type { UserStreamSubscriber } from './types';
  * For product entity events (page, attachment):
  * - User has read permission via their memberships
  */
-export function canReceiveUserEvent(subscriber: UserStreamSubscriber, event: ActivityEventWithEntity): boolean {
+export function canReceiveUserEvent(subscriber: AppStreamSubscriber, event: ActivityEventWithEntity): boolean {
   // For membership events, check if user is the subject
   if (event.resourceType === 'membership') {
     const membershipUserId = event.entity?.userId as string | undefined;
@@ -40,7 +40,7 @@ export function canReceiveUserEvent(subscriber: UserStreamSubscriber, event: Act
  * Check if user subscriber can receive a product entity event.
  * Reuses permission logic from org stream.
  */
-function canReceiveProductEntityEvent(subscriber: UserStreamSubscriber, event: ActivityEventWithEntity): boolean {
+function canReceiveProductEntityEvent(subscriber: AppStreamSubscriber, event: ActivityEventWithEntity): boolean {
   // Must have entity ID and organization ID
   if (!event.entityId || !event.organizationId) return false;
 

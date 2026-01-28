@@ -892,7 +892,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasParams": true,
         "hasRequestBody": false,
         "hash": "tag/me/GET/me/stream",
-        "id": "getUserStream",
+        "id": "getAppStream",
         "method": "get",
         "path": "/me/stream",
         "summary": "User event stream",
@@ -8994,7 +8994,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           ],
         },
         {
-          "operationId": "getUserStream",
+          "operationId": "getAppStream",
           "request": {
             "query": {
               "properties": {

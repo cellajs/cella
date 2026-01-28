@@ -137,18 +137,31 @@
           "enum": ["create", "update", "delete"]
         },
         "entityType": {
-          "type": "string",
+          "type": ["string", "null"],
           "required": true,
-          "enum": ["attachment", "page"]
+          "enum": ["attachment", "page", null]
+        },
+        "resourceType": {
+          "type": ["string", "null"],
+          "required": true,
+          "enum": ["request", "membership", null]
         },
         "entityId": { "type": "string", "required": true },
         "organizationId": {
           "type": ["string", "null"],
           "required": true
         },
-        "seq": { "type": "integer", "required": true },
+        "contextType": {
+          "type": ["string", "null"],
+          "required": true,
+          "enum": ["organization", null]
+        },
+        "seq": {
+          "type": ["integer", "null"],
+          "required": true
+        },
         "tx": {
-          "type": "object",
+          "type": ["object", "null"],
           "required": true,
           "properties": {
             "id": { "type": "string", "required": true },
@@ -158,7 +171,10 @@
           },
           "ref": "#/components/schemas/TxStreamMessage"
         },
-        "cacheToken": { "type": "string", "required": false }
+        "cacheToken": {
+          "type": ["string", "null"],
+          "required": true
+        }
       }
     },
     "schemaTag": "data"
@@ -166,9 +182,9 @@
   {
     "name": "TxStreamMessage",
     "ref": "#/components/schemas/TxStreamMessage",
-    "type": "object",
+    "type": ["object", "null"],
     "schema": {
-      "type": "object",
+      "type": ["object", "null"],
       "properties": {
         "id": { "type": "string", "required": true },
         "sourceId": { "type": "string", "required": true },
@@ -456,9 +472,9 @@
           "enum": ["request", "membership", null]
         },
         "action": {
-          "type": ["string", "null"],
+          "type": "string",
           "required": true,
-          "enum": ["create", "update", "delete", null]
+          "enum": ["create", "update", "delete"]
         },
         "tableName": { "type": "string", "required": true },
         "type": { "type": "string", "required": true },

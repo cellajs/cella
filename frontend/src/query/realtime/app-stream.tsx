@@ -1,9 +1,9 @@
 import { appConfig } from 'config';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLatestRef } from '~/hooks/use-latest-ref';
-import { handleAppStreamMessage } from './app-stream-handler';
+import { handleAppStreamNotification } from './app-stream-handler';
 import type {
-  AppStreamMessage,
+  AppStreamNotification,
   AppStreamOffsetEvent,
   UseAppStreamOptions,
   UseAppStreamReturn,
@@ -36,7 +36,7 @@ export function useAppStream(options: UseAppStreamOptions = {}): UseAppStreamRet
   const {
     enabled = true,
     initialOffset = 'now',
-    onMessage,
+    onNotification: onNotificationCallback,
     onCatchUpComplete,
     onStateChange,
     isHydrated = true,
@@ -47,46 +47,46 @@ export function useAppStream(options: UseAppStreamOptions = {}): UseAppStreamRet
   const broadcastCleanupRef = useRef<(() => void) | null>(null);
 
   // Store callbacks in refs to avoid recreating handlers on every render
-  const onMessageRef = useLatestRef(onMessage);
+  const onNotificationRef = useLatestRef(onNotificationCallback);
   const onCatchUpCompleteRef = useLatestRef(onCatchUpComplete);
 
   // Hydrate barrier: queue notifications until initial queries complete
-  const barrierRef = useRef(createHydrateBarrier<{ message: AppStreamMessage; eventId?: string }>());
+  const barrierRef = useRef(createHydrateBarrier<{ notification: AppStreamNotification; eventId?: string }>());
 
   // Flush queued notifications when hydration completes
   useEffect(() => {
     if (isHydrated) {
       const queued = barrierRef.current.complete();
-      for (const { message, eventId } of queued) {
+      for (const { notification, eventId } of queued) {
         if (eventId) setCursor(eventId);
-        onMessageRef.current?.(message);
+        onNotificationRef.current?.(notification);
       }
     }
   }, [isHydrated]);
 
   // Process a notification (used by both leader and followers)
-  const processMessage = useCallback((message: AppStreamMessage, eventId?: string) => {
-    if (barrierRef.current.enqueue({ message, eventId })) {
-      console.debug(`[${debugLabel}] Queued notification during hydration:`, message.entityType, message.action);
+  const processNotification = useCallback((notification: AppStreamNotification, eventId?: string) => {
+    if (barrierRef.current.enqueue({ notification, eventId })) {
+      console.debug(`[${debugLabel}] Queued notification during hydration:`, notification.entityType, notification.action);
       return;
     }
     if (eventId) setCursor(eventId);
-    onMessageRef.current?.(message);
+    onNotificationRef.current?.(notification);
   }, []);
 
   // Handle incoming SSE notifications (leader only)
-  const handleMessage = useCallback(
+  const handleSSENotification = useCallback(
     (event: MessageEvent) => {
       try {
-        const message = JSON.parse(event.data) as AppStreamMessage;
+        const notification = JSON.parse(event.data) as AppStreamNotification;
         const eventId = event.lastEventId || undefined;
-        broadcastNotification(message, 'user');
-        processMessage(message, eventId);
+        broadcastNotification(notification, 'user');
+        processNotification(notification, eventId);
       } catch (error) {
         console.debug(`[${debugLabel}] Failed to parse notification:`, error);
       }
     },
-    [processMessage],
+    [processNotification],
   );
 
   // Handle offset event (end of catch-up)
@@ -101,7 +101,7 @@ export function useAppStream(options: UseAppStreamOptions = {}): UseAppStreamRet
   }, []);
 
   // Store handlers in refs for SSE connection
-  const handleMessageRef = useLatestRef(handleMessage);
+  const handleSSENotificationRef = useLatestRef(handleSSENotification);
   const handleOffsetRef = useLatestRef(handleOffset);
 
   // SSE connection management
@@ -111,7 +111,7 @@ export function useAppStream(options: UseAppStreamOptions = {}): UseAppStreamRet
     withCredentials: true,
     initialOffset,
     handlers: {
-      change: (e) => handleMessageRef.current(e),
+      change: (e) => handleSSENotificationRef.current(e),
       offset: (e) => handleOffsetRef.current(e),
     },
     onStateChange,
@@ -129,7 +129,7 @@ export function useAppStream(options: UseAppStreamOptions = {}): UseAppStreamRet
 
       // Listen for broadcast notifications from leader (follower tabs)
       broadcastCleanupRef.current = onNotification((notification) => {
-        if (!isLeader()) processMessage(notification);
+        if (!isLeader()) processNotification(notification);
       });
 
       connect();
@@ -141,7 +141,7 @@ export function useAppStream(options: UseAppStreamOptions = {}): UseAppStreamRet
       broadcastCleanupRef.current?.();
       broadcastCleanupRef.current = null;
     };
-  }, [enabled, connect, disconnect, processMessage]);
+  }, [enabled, connect, disconnect, processNotification]);
 
   // Reconnect when becoming leader
   useLeaderReconnect({ enabled, isLeaderTab, reconnect, debugLabel });
@@ -159,7 +159,7 @@ export function useAppStream(options: UseAppStreamOptions = {}): UseAppStreamRet
  */
 export default function AppStream() {
   useAppStream({
-    onMessage: handleAppStreamMessage,
+    onNotification: handleAppStreamNotification,
     onStateChange: (state) => {
       if (state === 'live') console.debug(`[${debugLabel}] Connected and live`);
       if (state === 'error') console.debug(`[${debugLabel}] Connection error, will retry...`);

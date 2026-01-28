@@ -1,7 +1,7 @@
 import { appConfig, type RealtimeEntityType } from 'config';
 import type { ActivityEventWithEntity } from '#/sync/activity-bus';
 import { logEvent } from '#/utils/logger';
-import { type BuildNotificationOptions, buildStreamNotification } from './build-notification';
+import { type BuildNotificationOptions, buildStreamNotification } from './build-message';
 import { writeChange } from './helpers';
 import type { BaseStreamSubscriber } from './types';
 

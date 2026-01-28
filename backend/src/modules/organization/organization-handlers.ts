@@ -218,7 +218,7 @@ const organizationRouteHandlers = app
       .where(eq(organizationsTable.id, organization.id))
       .returning();
 
-    // Event emitted via CDC -> activities table -> eventBus ('organization.updated')
+    // Event emitted via CDC -> activities table -> activityBus ('organization.updated')
     logEvent('info', 'Organization updated', { organizationId: updatedOrganization.id });
 
     const counts = await getEntityCounts(organization.entityType, organization.id);
@@ -250,7 +250,7 @@ const organizationRouteHandlers = app
     // Delete the organizations
     await db.delete(organizationsTable).where(inArray(organizationsTable.id, allowedIds));
 
-    // Event emitted via CDC -> activities table -> eventBus ('organization.deleted')
+    // Event emitted via CDC -> activities table -> activityBus ('organization.deleted')
     logEvent('info', 'Organizations deleted', allowedIds);
 
     return ctx.json({ success: true, rejectedItemIds }, 200);

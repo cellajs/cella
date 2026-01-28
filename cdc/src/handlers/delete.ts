@@ -28,7 +28,7 @@ export async function handleDelete(
   // which no longer exists. Set to null to avoid foreign key violation.
   const userId = tableName === 'users' ? null : ctx.userId;
 
-  // Extract tx data from product entities (null for context entities)
+  // Extract tx data from realtime entities
   const tx = extractTxData(row);
 
   // Enrich membership data with user and entity info

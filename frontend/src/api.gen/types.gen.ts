@@ -54,12 +54,14 @@ export type TxBase = {
 
 export type StreamNotification = {
   action: 'create' | 'update' | 'delete';
-  entityType: 'attachment' | 'page';
+  entityType: 'attachment' | 'page' | null;
+  resourceType: 'request' | 'membership' | null;
   entityId: string;
   organizationId: string | null;
-  seq: number;
+  contextType: 'organization' | null;
+  seq: number | null;
   tx: TxStreamMessage;
-  cacheToken?: string;
+  cacheToken: string | null;
 };
 
 export type TxStreamMessage = {
@@ -69,7 +71,7 @@ export type TxStreamMessage = {
   fieldVersions: {
     [key: string]: number;
   };
-};
+} | null;
 
 export type PublicStreamActivity = {
   activityId: string;
@@ -135,7 +137,7 @@ export type Activity = {
   userId: string | null;
   entityType: 'user' | 'organization' | 'attachment' | 'page' | null;
   resourceType: 'request' | 'membership' | null;
-  action: 'create' | 'update' | 'delete' | null;
+  action: 'create' | 'update' | 'delete';
   tableName: string;
   type: string;
   entityId: string | null;
@@ -403,7 +405,7 @@ export type Membership = {
 export type GetActivitiesData = {
   body?: never;
   path?: never;
-  query?: {
+  query: {
     q?: string;
     sort?: 'createdAt' | 'type' | 'tableName';
     order?: 'asc' | 'desc';
@@ -412,7 +414,7 @@ export type GetActivitiesData = {
     userId?: string | null;
     entityType?: 'user' | 'organization' | 'attachment' | 'page' | null;
     resourceType?: 'request' | 'membership' | null;
-    action?: 'create' | 'update' | 'delete' | null;
+    action: 'create' | 'update' | 'delete';
     tableName?: string;
     type?: string;
     entityId?: string | null;
@@ -2001,12 +2003,12 @@ export type UnsubscribeMeErrors = {
 
 export type UnsubscribeMeError = UnsubscribeMeErrors[keyof UnsubscribeMeErrors];
 
-export type GetUserStreamData = {
+export type GetAppStreamData = {
   body?: never;
   path?: never;
   query?: {
     /**
-     * Starting offset: 'now' for live-only, or activity ID for catch-up
+     * Starting offset: 'now' for live-only, or activity ID to receive missed notifications
      */
     offset?: string;
     /**
@@ -2017,7 +2019,7 @@ export type GetUserStreamData = {
   url: '/me/stream';
 };
 
-export type GetUserStreamErrors = {
+export type GetAppStreamErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -2040,19 +2042,19 @@ export type GetUserStreamErrors = {
   429: TooManyRequestsError;
 };
 
-export type GetUserStreamError = GetUserStreamErrors[keyof GetUserStreamErrors];
+export type GetAppStreamError = GetAppStreamErrors[keyof GetAppStreamErrors];
 
-export type GetUserStreamResponses = {
+export type GetAppStreamResponses = {
   /**
-   * SSE stream or catch-up response
+   * SSE stream or notification response
    */
   200: {
-    activities: Array<unknown>;
+    activities: Array<StreamNotification>;
     cursor: string | null;
   };
 };
 
-export type GetUserStreamResponse = GetUserStreamResponses[keyof GetUserStreamResponses];
+export type GetAppStreamResponse = GetAppStreamResponses[keyof GetAppStreamResponses];
 
 export type DeleteUsersData = {
   body: {

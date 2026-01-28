@@ -1137,11 +1137,11 @@
     }
   },
   {
-    "operationId": "getUserStream",
+    "operationId": "getAppStream",
     "responses": [
       {
         "status": 200,
-        "description": "SSE stream or catch-up response",
+        "description": "SSE stream or notification response",
         "contentType": "application/json",
         "schema": {
           "type": "object",
@@ -1149,7 +1149,58 @@
             "activities": {
               "type": "array",
               "required": true,
-              "itemType": "object"
+              "itemType": "object",
+              "ref": "#/components/schemas/StreamNotification",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "action": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["create", "update", "delete"]
+                  },
+                  "entityType": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "enum": ["attachment", "page", null]
+                  },
+                  "resourceType": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "enum": ["request", "membership", null]
+                  },
+                  "entityId": { "type": "string", "required": true },
+                  "organizationId": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "contextType": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "enum": ["organization", null]
+                  },
+                  "seq": {
+                    "type": ["integer", "null"],
+                    "required": true
+                  },
+                  "tx": {
+                    "type": ["object", "null"],
+                    "required": true,
+                    "properties": {
+                      "id": { "type": "string", "required": true },
+                      "sourceId": { "type": "string", "required": true },
+                      "version": { "type": "integer", "required": true },
+                      "fieldVersions": { "type": "object", "required": true }
+                    },
+                    "ref": "#/components/schemas/TxStreamMessage"
+                  },
+                  "cacheToken": {
+                    "type": ["string", "null"],
+                    "required": true
+                  }
+                },
+                "ref": "#/components/schemas/StreamNotification"
+              }
             },
             "cursor": {
               "type": ["string", "null"],
@@ -1201,7 +1252,7 @@
           "offset": {
             "type": "string",
             "required": false,
-            "description": "Starting offset: 'now' for live-only, or activity ID for catch-up"
+            "description": "Starting offset: 'now' for live-only, or activity ID to receive missed notifications"
           },
           "live": {
             "type": "string",

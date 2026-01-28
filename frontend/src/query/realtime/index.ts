@@ -8,9 +8,9 @@
  */
 
 export { default as AppStream, useAppStream } from './app-stream';
-export { handleAppStreamMessage } from './app-stream-handler';
+export { handleAppStreamNotification } from './app-stream-handler';
 export type {
-  AppStreamMessage,
+  AppStreamNotification,
   AppStreamOffsetEvent,
   BaseStreamOptions,
   BaseStreamReturn,

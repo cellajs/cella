@@ -72,6 +72,9 @@ import type {
   GetActivitiesData,
   GetActivitiesErrors,
   GetActivitiesResponses,
+  GetAppStreamData,
+  GetAppStreamErrors,
+  GetAppStreamResponses,
   GetAttachmentsData,
   GetAttachmentsErrors,
   GetAttachmentsResponses,
@@ -132,9 +135,6 @@ import type {
   GetUserData,
   GetUserErrors,
   GetUserResponses,
-  GetUserStreamData,
-  GetUserStreamErrors,
-  GetUserStreamResponses,
   GetUsersData,
   GetUsersErrors,
   GetUsersResponses,
@@ -261,16 +261,14 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
  * @param {string | null=} options.query.userid - `string | null` (optional)
  * @param {enum=} options.query.entitytype - `enum` (optional)
  * @param {enum=} options.query.resourcetype - `enum` (optional)
- * @param {enum=} options.query.action - `enum` (optional)
+ * @param {enum} options.query.action - `enum`
  * @param {string=} options.query.tablename - `string` (optional)
  * @param {string=} options.query.type - `string` (optional)
  * @param {string | null=} options.query.entityid - `string | null` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const getActivities = <ThrowOnError extends boolean = true>(
-  options?: Options<GetActivitiesData, ThrowOnError>,
-) =>
-  (options?.client ?? client).get<GetActivitiesResponses, GetActivitiesErrors, ThrowOnError, 'data'>({
+export const getActivities = <ThrowOnError extends boolean = true>(options: Options<GetActivitiesData, ThrowOnError>) =>
+  (options.client ?? client).get<GetActivitiesResponses, GetActivitiesErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -1175,21 +1173,19 @@ export const unsubscribeMe = <ThrowOnError extends boolean = true>(options: Opti
   });
 
 /**
- * User event stream
+ * App event stream
  *
- * SSE stream for membership and organization events affecting the *current user*. Use offset for catch-up, live=sse for streaming.
+ * SSE stream for membership and entity notifications affecting the *current user*. Sends lightweight notifications - client fetches entity data via API.
  *
- * **GET /me/stream** ·· [getUserStream](https://api.cellajs.com/docs#tag/me/get/me/stream) ·· _me_
+ * **GET /me/stream** ·· [getAppStream](https://api.cellajs.com/docs#tag/me/get/me/stream) ·· _me_
  *
- * @param {getUserStreamData} options
+ * @param {getAppStreamData} options
  * @param {string=} options.query.offset - `string` (optional)
  * @param {enum=} options.query.live - `enum` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const getUserStream = <ThrowOnError extends boolean = true>(
-  options?: Options<GetUserStreamData, ThrowOnError>,
-) =>
-  (options?.client ?? client).get<GetUserStreamResponses, GetUserStreamErrors, ThrowOnError, 'data'>({
+export const getAppStream = <ThrowOnError extends boolean = true>(options?: Options<GetAppStreamData, ThrowOnError>) =>
+  (options?.client ?? client).get<GetAppStreamResponses, GetAppStreamErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {

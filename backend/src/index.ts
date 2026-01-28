@@ -10,7 +10,6 @@ import type { PgliteDatabase } from 'drizzle-orm/pglite';
 import { migrate as pgliteMigrate } from 'drizzle-orm/pglite/migrator';
 import pc from 'picocolors';
 import app from '#/routes';
-import { activityBus } from '#/sync/activity-bus';
 import { registerCacheInvalidation } from '#/sync/cache-invalidation';
 import { cdcWebSocketServer } from '#/sync/cdc-websocket';
 import { ascii } from '#/utils/ascii';
@@ -47,9 +46,6 @@ const main = async () => {
   } else {
     await pgMigrate(db, migrateConfig);
   }
-
-  // Start ActivityBus (listens to CDC activities via pg NOTIFY as fallback)
-  await activityBus.start();
 
   // Register entity cache invalidation hook
   registerCacheInvalidation();

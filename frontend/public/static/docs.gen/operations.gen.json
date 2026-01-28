@@ -629,13 +629,13 @@
     }
   },
   {
-    "id": "getUserStream",
+    "id": "getAppStream",
     "hash": "tag/me/GET/me/stream",
     "method": "get",
     "path": "/me/stream",
     "tags": ["me"],
-    "summary": "User event stream",
-    "description": "SSE stream for membership and organization events affecting the *current user*. Use offset for catch-up, live=sse for streaming.",
+    "summary": "App event stream",
+    "description": "SSE stream for membership and entity notifications affecting the *current user*. Sends lightweight notifications - client fetches entity data via API.",
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,

@@ -1,24 +1,9 @@
 import { EventEmitter } from 'node:events';
-import { appConfig, type EntityType } from 'config';
-import pg from 'pg';
-import type { TxBase } from '#/db/utils/tx-columns';
-import { env } from '#/env';
+import { appConfig, type RealtimeEntityType } from 'config';
+import type { ActivityModel } from '#/db/schema/activities';
 import { type ResourceType, resourceTypes } from '#/table-config';
 import { logEvent } from '#/utils/logger';
-import {
-  eventAttrs,
-  recordEventReceived,
-  recordPgNotifyFallback,
-  type SyncTraceContext,
-  startSyncSpan,
-  syncSpanNames,
-} from './sync-metrics';
-
-/**
- * PostgreSQL channel name for activity events.
- * Used as fallback when CDC Worker is not running (e.g., basic/core mode).
- */
-const CHANNEL = 'cella_activities';
+import { eventAttrs, recordEventReceived, type SyncTraceContext, startSyncSpan, syncSpanNames } from './sync-metrics';
 
 /**
  * Activity actions aligned with HTTP methods (excluding 'read').
@@ -68,32 +53,22 @@ export function isValidEventType(type: string): type is ActivityEventType {
 }
 
 /**
- * Base activity event payload.
- * Extends ActivityModel fields with tighter typing for known values.
+ * Activity event payload derived from ActivityModel with tighter typing.
+ * The `type` and `action` fields are narrowed to known values.
  */
-// TODO also here we can extract type from ActivityModel perhaps
-export interface ActivityEvent {
-  id: string;
-  type: ActivityEventType; // e.g., 'user.created', 'organization.updated'
-  action: ActivityAction; // Tightly typed as 'create' | 'update' | 'delete'
-  tableName: string;
-  entityType: EntityType | null;
+export type ActivityEvent = Omit<ActivityModel, 'type' | 'action' | 'entityType' | 'resourceType' | 'createdAt'> & {
+  type: ActivityEventType;
+  action: ActivityAction;
+  entityType: RealtimeEntityType | null;
   resourceType: ResourceType | null;
-  entityId: string | null;
-  userId: string | null;
-  organizationId: string | null;
-  changedKeys: string[] | null;
-  seq: number | null;
   createdAt: string; // ISO string from JSON serialization
-  tx: TxBase | null; // Transaction metadata for sync (null for basic entities)
-}
+};
 
 /**
- * Activity event with optional entity data.
- * Entity data is included when received from CDC Worker via WebSocket.
+ * Activity event with entity data from CDC Worker.
  */
 export interface ActivityEventWithEntity extends ActivityEvent {
-  /** Full entity data from CDC Worker replication row. Undefined for pg_notify fallback. */
+  /** Full entity data from CDC Worker replication row. */
   entity?: Record<string, unknown>;
   /** Trace context for end-to-end correlation. */
   _trace?: SyncTraceContext;
@@ -105,23 +80,15 @@ export interface ActivityEventWithEntity extends ActivityEvent {
 type EventHandler = (event: ActivityEventWithEntity) => void | Promise<void>;
 
 /**
- * Options for emitting events.
- */
-interface EmitOptions {
-  /** If true, also send via PostgreSQL NOTIFY (useful for testing cross-process) */
-  notify?: boolean;
-}
-
-/**
- * ActivityBus receives activity notifications from CDC Worker via WebSocket
+ * ActivityBus receives activity events from CDC Worker via WebSocket
  * and distributes them to internal handlers and live stream subscribers.
  *
- * In production/full mode: Receives from CDC Worker WebSocket (includes entity data)
- * In basic/core mode: Falls back to PostgreSQL NOTIFY (no entity data)
+ * Requires CDC Worker to be running (DEV_MODE=full or production).
+ * In basic/core mode, realtime features are not available.
  *
  * @example
  * ```typescript
- * import { activityBus } from '#/lib/activity-bus';
+ * import { activityBus } from '#/sync/activity-bus';
  *
  * // Subscribe to membership creation events
  * activityBus.on('membership.created', async (event) => {
@@ -130,15 +97,10 @@ interface EmitOptions {
  *     console.info('Entity data:', event.entity);
  *   }
  * });
- *
- * // Start listening (called once at server startup)
- * await activityBus.start();
  * ```
  */
 class ActivityBus {
   private emitter = new EventEmitter();
-  private client: pg.Client | null = null;
-  private isStarted = false;
 
   constructor() {
     // Increase max listeners to avoid warnings with many subscribers
@@ -201,10 +163,10 @@ class ActivityBus {
 
   /**
    * Emit an activity event received from CDC Worker via WebSocket.
-   * This is the primary path in production/full mode.
+   * Called by the CDC WebSocket handler when events arrive.
    * @param event - The activity event with entity data
    */
-  emitFromCdc(event: ActivityEventWithEntity): void {
+  emit(event: ActivityEventWithEntity): void {
     if (!isValidEventType(event.type)) {
       logEvent('warn', 'Unknown activity event type from CDC', { type: event.type });
       return;
@@ -217,134 +179,12 @@ class ActivityBus {
     recordEventReceived(event.entityType || 'unknown');
 
     this.emitter.emit(event.type, event);
-    logEvent('debug', 'ActivityBus emitted CDC event', { type: event.type, entityId: event.entityId });
+    logEvent('debug', 'ActivityBus emitted event', { type: event.type, entityId: event.entityId });
 
     span.setStatus('ok');
     span.end();
-  }
-
-  /**
-   * Emit an event locally and optionally via PostgreSQL NOTIFY.
-   * Useful for testing and manual event triggering.
-   * @param eventType - The event type to emit
-   * @param event - The activity event payload
-   * @param options - Emit options (e.g., notify: true to also send via NOTIFY)
-   */
-  async emit(eventType: ActivityEventType, event: ActivityEventWithEntity, options: EmitOptions = {}): Promise<void> {
-    // Emit locally
-    this.emitter.emit(eventType, event);
-
-    // Optionally send via PostgreSQL NOTIFY (for cross-process testing)
-    if (options.notify && this.client) {
-      const payload = JSON.stringify(event);
-      await this.client.query(`NOTIFY ${CHANNEL}, '${payload.replace(/'/g, "''")}'`);
-    }
-  }
-
-  /**
-   * Start listening for PostgreSQL NOTIFY events as fallback.
-   * In full/production mode, events come from CDC Worker via WebSocket.
-   * In basic/core mode, events come from pg_notify trigger.
-   * Should be called once at server startup.
-   */
-  async start(): Promise<void> {
-    if (this.isStarted) {
-      logEvent('warn', 'ActivityBus already started');
-      return;
-    }
-
-    // Skip pg LISTEN if using PGlite in basic mode (no LISTEN/NOTIFY support)
-    if (env.DEV_MODE === 'basic') {
-      logEvent('info', 'ActivityBus started (no pg LISTEN in basic mode)');
-      this.isStarted = true;
-      return;
-    }
-
-    try {
-      this.client = new pg.Client({ connectionString: env.DATABASE_URL });
-      await this.client.connect();
-      await this.client.query(`LISTEN ${CHANNEL}`);
-
-      this.client.on('notification', (msg) => {
-        if (msg.channel !== CHANNEL || !msg.payload) return;
-
-        try {
-          const event = JSON.parse(msg.payload) as ActivityEvent;
-
-          // Validate event type against known types
-          if (!isValidEventType(event.type)) {
-            logEvent('warn', 'Unknown activity event type', { type: event.type });
-            return;
-          }
-
-          // pg_notify fallback: no entity data available
-          const span = startSyncSpan(syncSpanNames.activityBusPgNotify, eventAttrs(event));
-
-          recordPgNotifyFallback();
-          recordEventReceived(event.entityType || 'unknown');
-
-          const eventWithEntity: ActivityEventWithEntity = { ...event, entity: undefined };
-          this.emitter.emit(event.type, eventWithEntity);
-          logEvent('debug', 'ActivityBus received pg_notify', { type: event.type, entityId: event.entityId });
-
-          span.setStatus('ok');
-          span.end();
-        } catch (err) {
-          logEvent('error', 'Failed to parse activity event', { error: err, payload: msg.payload });
-        }
-      });
-
-      this.client.on('error', (err) => {
-        logEvent('error', 'ActivityBus connection error', { error: err });
-        this.reconnect();
-      });
-
-      this.isStarted = true;
-      logEvent('info', 'ActivityBus started', { channel: CHANNEL });
-    } catch (err) {
-      logEvent('error', 'Failed to start ActivityBus', { error: err });
-      throw err;
-    }
-  }
-
-  /**
-   * Stop listening and close the connection.
-   */
-  async stop(): Promise<void> {
-    if (this.client) {
-      await this.client.end();
-      this.client = null;
-    }
-    this.isStarted = false;
-    logEvent('info', 'ActivityBus stopped');
-  }
-
-  /**
-   * Attempt to reconnect after a connection error.
-   */
-  private async reconnect(): Promise<void> {
-    logEvent('info', 'ActivityBus reconnecting...');
-    this.isStarted = false;
-    if (this.client) {
-      try {
-        await this.client.end();
-      } catch {
-        // Ignore errors during cleanup
-      }
-      this.client = null;
-    }
-
-    // Exponential backoff retry
-    setTimeout(() => {
-      this.start().catch((err) => {
-        logEvent('error', 'ActivityBus reconnection failed', { error: err });
-      });
-    }, 5000);
   }
 }
 
 /** Singleton ActivityBus instance */
 export const activityBus = new ActivityBus();
-
-// Re-export for backward compatibility with existing code using eventBus
-export { activityBus as eventBus };

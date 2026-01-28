@@ -23,7 +23,7 @@ export const activitiesTable = pgTable(
     userId: varchar(), // User who performed the action (nullable for system actions)
     entityType: varchar({ enum: appConfig.entityTypes }), // Entity type if applicable
     resourceType: varchar({ enum: resourceTypes }), // Resource type if not an entity
-    action: varchar({ enum: activityActions }), // create, update, delete
+    action: varchar({ enum: activityActions }).notNull(), // create, update, delete
     tableName: varchar().notNull(), // Source table name (e.g., 'users', 'organizations')
     type: varchar().notNull(), // Composite type (e.g., 'user.created', 'organization.updated')
     entityId: varchar(), // ID of the entity if applicable

@@ -30,7 +30,7 @@ export async function handleUpdate(
   const entityOrResourceType = ctx.entityType ?? ctx.resourceType;
   const type = `${entityOrResourceType}.${actionToVerb(action)}`;
 
-  // Extract tx data from product entities (null for context entities)
+  // Extract tx data from realtime entities
   const tx = extractTxData(newRow);
 
   // Enrich membership data with user and entity info

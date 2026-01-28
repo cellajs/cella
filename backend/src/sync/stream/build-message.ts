@@ -37,7 +37,7 @@ export function buildStreamNotification(
   }
 
   // Generate cache token if user context is available
-  let cacheToken: string | undefined;
+  let cacheToken: string | null = null;
   if (options.userId && options.organizationIds) {
     cacheToken = generateCacheToken(
       options.userId,
@@ -51,8 +51,10 @@ export function buildStreamNotification(
   return {
     action: event.action,
     entityType,
+    resourceType: null,
     entityId: event.entityId!,
     organizationId: event.organizationId ?? null,
+    contextType: null,
     seq: event.seq ?? 0,
     tx: {
       id: event.tx.id,

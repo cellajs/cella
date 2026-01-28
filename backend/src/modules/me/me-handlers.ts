@@ -28,11 +28,10 @@ import {
   fetchUserCatchUpActivities,
   getLatestUserActivityId,
   orgChannel,
-  type UserStreamSubscriber,
-  userChannel,
+  type AppStreamSubscriber,
 } from '#/modules/me/stream';
 import { userSelect } from '#/modules/user/helpers/select';
-import { type ActivityEventWithEntity, eventBus } from '#/sync/activity-bus';
+import { type ActivityEventWithEntity, activityBus } from '#/sync/activity-bus';
 import { keepAlive, streamSubscriberManager, writeChange, writeOffset } from '#/sync/stream';
 import { entityTables } from '#/table-config';
 import { defaultHook } from '#/utils/default-hook';
@@ -50,7 +49,7 @@ const app = new OpenAPIHono<Env>({ defaultHook });
 const membershipEvents = ['membership.created', 'membership.updated', 'membership.deleted'] as const;
 
 for (const eventType of membershipEvents) {
-  eventBus.on(eventType, async (event: ActivityEventWithEntity) => {
+  activityBus.on(eventType, async (event: ActivityEventWithEntity) => {
     try {
       await dispatchToUserSubscribers(event);
     } catch (error) {
@@ -70,7 +69,7 @@ const productEntityEvents = [
 ] as const;
 
 for (const eventType of productEntityEvents) {
-  eventBus.on(eventType, async (event: ActivityEventWithEntity) => {
+  activityBus.on(eventType, async (event: ActivityEventWithEntity) => {
     try {
       await dispatchToUserSubscribers(event);
     } catch (error) {
@@ -83,7 +82,7 @@ for (const eventType of productEntityEvents) {
 const organizationEvents = ['organization.updated', 'organization.deleted'] as const;
 
 for (const eventType of organizationEvents) {
-  eventBus.on(eventType, async (event: ActivityEventWithEntity) => {
+  activityBus.on(eventType, async (event: ActivityEventWithEntity) => {
     try {
       await dispatchToUserSubscribers(event);
     } catch (error) {
@@ -371,7 +370,7 @@ const meRouteHandlers = app
     return ctx.redirect(redirectUrl, 302);
   })
   /**
-   * User event stream (membership, organization, and product entity updates)
+   *  App stream (membership an realtime entity updates)
    */
   .openapi(meRoutes.stream, async (ctx) => {
     const { offset, live } = ctx.req.valid('query');
@@ -390,11 +389,11 @@ const meRouteHandlers = app
 
     // Non-streaming catch-up request
     if (live !== 'sse') {
-      const activities = await fetchUserCatchUpActivities(user.id, orgIds, cursor);
-      const lastActivity = activities.at(-1);
+      const catchUpActivities = await fetchUserCatchUpActivities(user.id, orgIds, cursor);
+      const lastActivity = catchUpActivities.at(-1);
 
       return ctx.json({
-        activities,
+        activities: catchUpActivities.map((a) => a.notification),
         cursor: lastActivity?.activityId ?? cursor,
       });
     }
@@ -405,18 +404,20 @@ const meRouteHandlers = app
 
       // Send catch-up activities
       const catchUpActivities = await fetchUserCatchUpActivities(user.id, orgIds, cursor);
-      for (const activity of catchUpActivities) {
-        await writeChange(stream, activity.activityId, activity);
-        cursor = activity.activityId;
+      for (const { activityId, notification } of catchUpActivities) {
+        await writeChange(stream, activityId, notification);
+        cursor = activityId;
       }
 
       // Send offset marker (catch-up complete)
       await writeOffset(stream, cursor);
 
       // Build subscriber with memberships for permission checks
-      const subscriber: UserStreamSubscriber = {
+      // Primary channel is first org channel (or empty if no orgs)
+      const orgChannels = [...orgIds].map((id) => orgChannel(id));
+      const subscriber: AppStreamSubscriber = {
         id: nanoid(),
-        channel: userChannel(user.id),
+        channel: orgChannels[0] ?? '',
         stream,
         userId: user.id,
         orgIds,
@@ -425,11 +426,10 @@ const meRouteHandlers = app
         cursor,
       };
 
-      // Register on user channel (for membership events) + all org channels (for product entities)
+      // Register on all org channels - all events (including memberships) route through org channels
       // NOTE: If user is added to new org while connected, they won't receive events for that
       // org until reconnect. Frontend should reconnect stream when membership.created is received.
-      const orgChannels = [...orgIds].map((id) => orgChannel(id));
-      streamSubscriberManager.register(subscriber, orgChannels);
+      streamSubscriberManager.register(subscriber, orgChannels.slice(1));
       logEvent('info', 'User stream subscriber registered', {
         subscriberId: subscriber.id,
         userId: user.id,

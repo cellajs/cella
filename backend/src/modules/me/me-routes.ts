@@ -18,6 +18,7 @@ import {
   locationSchema,
   paginationSchema,
   successWithRejectedItemsSchema,
+  streamNotificationSchema,
 } from '#/schemas';
 
 const meRoutes = {
@@ -241,21 +242,21 @@ const meRoutes = {
     },
   }),
   /**
-   * User event stream
+   * App event stream
    */
   stream: createXRoute({
-    operationId: 'getUserStream',
+    operationId: 'getAppStream',
     method: 'get',
     path: '/stream',
     xGuard: isAuthenticated,
     tags: ['me'],
-    summary: 'User event stream',
+    summary: 'App event stream',
     description:
-      'SSE stream for membership and organization events affecting the *current user*. Use offset for catch-up, live=sse for streaming.',
+      'SSE stream for membership and entity notifications affecting the *current user*. Sends lightweight notifications - client fetches entity data via API.',
     request: {
       query: z.object({
         offset: z.string().optional().openapi({
-          description: "Starting offset: 'now' for live-only, or activity ID for catch-up",
+          description: "Starting offset: 'now' for live-only, or activity ID to receive missed notifications",
           example: 'now',
         }),
         live: z.enum(['sse', 'poll']).optional().openapi({
@@ -266,12 +267,12 @@ const meRoutes = {
     },
     responses: {
       200: {
-        description: 'SSE stream or catch-up response',
+        description: 'SSE stream or notification response',
         content: {
           'text/event-stream': { schema: z.any() },
           'application/json': {
             schema: z.object({
-              activities: z.array(z.any()),
+              activities: z.array(streamNotificationSchema),
               cursor: z.string().nullable(),
             }),
           },

@@ -1,26 +1,39 @@
 import { z } from '@hono/zod-openapi';
 import { appConfig } from 'config';
 import { activityActions } from '#/sync/activity-bus';
+import { resourceTypes } from '#/table-config';
 import { txStreamMessageSchema } from './transaction-schemas';
 
 /**
- * Stream notification schema for notification-based sync.
- * Lightweight payload - client fetches entity data via API.
+ * Stream notification schema for SSE streams.
+ * Lightweight payload - client fetches entity data via API if needed.
+ * No entity data is included to keep payloads small and consistent.
  *
- * cacheToken: HMAC-signed token that grants access to the LRU entity cache.
- * The first client to fetch with this token populates the cache; subsequent
- * clients get a cache hit without hitting the database.
+ * For product entities (page, attachment):
+ * - Includes tx, seq, cacheToken for sync engine
+ * - Client uses cacheToken to fetch entity via LRU cache
+ *
+ * For context entities (membership, organization):
+ * - tx/seq/cacheToken are null/omitted
+ * - Client invalidates queries to refetch
  */
 export const streamNotificationSchema = z
   .object({
     action: z.enum(activityActions),
-    entityType: z.enum(appConfig.realtimeEntityTypes),
+    /** Entity type for realtime entity events */
+    entityType: z.enum(appConfig.realtimeEntityTypes).nullable(),
+    /** Resource type for non-entity events (membership) */
+    resourceType: z.enum(resourceTypes).nullable(),
     entityId: z.string(),
     organizationId: z.string().nullable(),
-    seq: z.number().int(),
-    tx: txStreamMessageSchema,
-    /** HMAC-signed token for LRU cache access. Clients should pass this in X-Cache-Token header. */
-    cacheToken: z.string().optional(),
+    /** Context entity type for membership events (organization, project, etc.) */
+    contextType: z.enum(appConfig.contextEntityTypes).nullable(),
+    /** Sequence number for gap detection (entities only) */
+    seq: z.number().int().nullable(),
+    /** Transaction metadata for conflict detection (entities only) */
+    tx: txStreamMessageSchema.nullable(),
+    /** HMAC-signed token for LRU cache access (entities only) */
+    cacheToken: z.string().nullable(),
   })
   .openapi('StreamNotification');
 

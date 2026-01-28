@@ -17,27 +17,22 @@ import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 import { usersTable } from '#/db/schema/users';
 import type { ActivityEvent } from '#/sync/activity-bus';
-import { eventBus } from '#/sync/activity-bus';
+import { activityBus } from '#/sync/activity-bus';
 import { nanoid } from '#/utils/nanoid';
 import { mockOrganization } from '../../mocks/mock-organization';
 import { mockUser } from '../../mocks/mock-user';
-import { clearDatabase, ensureCdcSetup, startEventBus, stopEventBus, waitForEvent } from './test-utils';
+import { clearDatabase, ensureCdcSetup, waitForEvent } from './test-utils';
 
 describe('EventBus Integration', () => {
   beforeAll(async () => {
     // Migrations are handled by global-setup.ts
     await clearDatabase();
-    await startEventBus();
-  });
-
-  afterAll(async () => {
-    await stopEventBus();
   });
 
   describe('EventBus basics', () => {
     it('should receive locally emitted events', async () => {
       const handler = vi.fn();
-      eventBus.on('user.created', handler);
+      activityBus.on('user.created', handler);
 
       const mockEvent: ActivityEvent = {
         id: nanoid(),
@@ -55,16 +50,16 @@ describe('EventBus Integration', () => {
         seq: null,
       };
 
-      await eventBus.emit('user.created', mockEvent);
+      activityBus.emit(mockEvent);
 
       expect(handler).toHaveBeenCalledWith(mockEvent);
 
-      eventBus.off('user.created', handler);
+      activityBus.off('user.created', handler);
     });
 
     it('should support one-time event handlers', async () => {
       const handler = vi.fn();
-      eventBus.once('organization.updated', handler);
+      activityBus.once('organization.updated', handler);
 
       const mockEvent: ActivityEvent = {
         id: nanoid(),
@@ -82,8 +77,8 @@ describe('EventBus Integration', () => {
         seq: null,
       };
 
-      await eventBus.emit('organization.updated', mockEvent);
-      await eventBus.emit('organization.updated', mockEvent);
+      activityBus.emit(mockEvent);
+      activityBus.emit(mockEvent);
 
       // Should only be called once
       expect(handler).toHaveBeenCalledTimes(1);
@@ -112,7 +107,6 @@ describe.skipIf(!process.env.CDC_WORKER_RUNNING)('Full CDC Flow', () => {
 
   beforeAll(async () => {
     await clearDatabase();
-    await startEventBus();
 
     // Create test organization
     const orgData = mockOrganization();
@@ -129,11 +123,10 @@ describe.skipIf(!process.env.CDC_WORKER_RUNNING)('Full CDC Flow', () => {
 
   afterAll(async () => {
     await clearDatabase();
-    await stopEventBus();
   });
 
   it('should emit membership.created when membership is inserted', async () => {
-    const eventPromise = waitForEvent<ActivityEvent>('membership.created', 15000);
+    const eventPromise = waitForEvent('membership.created', 15000);
 
     // Insert membership (CDC will pick this up and create activity)
     const membershipId = nanoid();
@@ -148,7 +141,7 @@ describe.skipIf(!process.env.CDC_WORKER_RUNNING)('Full CDC Flow', () => {
       uniqueKey: `${testUser.id}-${testOrg.id}`,
     });
 
-    // Wait for: INSERT → CDC → activities INSERT → trigger → NOTIFY → eventBus
+    // Wait for: INSERT → CDC → activities INSERT → trigger → NOTIFY → activityBus
     const event = await eventPromise;
 
     expect(event.type).toBe('membership.created');

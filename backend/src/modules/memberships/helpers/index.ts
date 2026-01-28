@@ -192,7 +192,7 @@ export const insertMemberships = async <T extends BaseEntityModel>(
     const entityType = row.contextType;
     const entityIdColumnKey = appConfig.entityIdColumnKeys[entityType];
     const entityId = row[entityIdColumnKey];
-    // Event emitted via CDC -> activities table -> eventBus ('membership.created')
+    // Event emitted via CDC -> activities table -> activityBus ('membership.created')
     logEvent('info', `User added to ${entityType}`, { userId: row.userId, [entityIdColumnKey]: entityId });
   }
 

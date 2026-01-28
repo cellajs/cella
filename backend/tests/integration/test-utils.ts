@@ -23,7 +23,7 @@ import { organizationsTable } from '#/db/schema/organizations';
 import { sessionsTable } from '#/db/schema/sessions';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
-import { eventBus } from '#/sync/activity-bus';
+import { activityBus } from '#/sync/activity-bus';
 
 /**
  * Run database migrations for integration tests.
@@ -48,35 +48,25 @@ export async function clearDatabase() {
   await db.delete(organizationsTable);
 }
 
-/**
- * Start the EventBus listener.
- * Must be called once before tests that expect to receive events.
- */
-export async function startEventBus() {
-  await eventBus.start();
-}
-
-/**
- * Stop the EventBus and clean up connections.
- */
-export async function stopEventBus() {
-  await eventBus.stop();
-}
+import type { ActivityEventWithEntity } from '#/sync/activity-bus';
 
 /**
  * Helper to wait for an event with timeout.
  * @param eventType - The event type to wait for
  * @param timeoutMs - Maximum time to wait (default 10s)
  */
-export function waitForEvent<T>(eventType: Parameters<typeof eventBus.once>[0], timeoutMs = 10000): Promise<T> {
+export function waitForEvent(
+  eventType: Parameters<typeof activityBus.once>[0],
+  timeoutMs = 10000,
+): Promise<ActivityEventWithEntity> {
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
       reject(new Error(`Timeout waiting for event: ${eventType}`));
     }, timeoutMs);
 
-    eventBus.once(eventType, (event) => {
+    activityBus.once(eventType, (event) => {
       clearTimeout(timeout);
-      resolve(event as T);
+      resolve(event);
     });
   });
 }

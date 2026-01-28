@@ -48,21 +48,26 @@ export const zTxBase = z.object({
   fieldVersions: z.record(z.string(), z.number()),
 });
 
-export const zTxStreamMessage = z.object({
-  id: z.string(),
-  sourceId: z.string(),
-  version: z.int(),
-  fieldVersions: z.record(z.string(), z.int()),
-});
+export const zTxStreamMessage = z.union([
+  z.object({
+    id: z.string(),
+    sourceId: z.string(),
+    version: z.int(),
+    fieldVersions: z.record(z.string(), z.int()),
+  }),
+  z.null(),
+]);
 
 export const zStreamNotification = z.object({
   action: z.enum(['create', 'update', 'delete']),
-  entityType: z.enum(['attachment', 'page']),
+  entityType: z.nullable(z.enum(['attachment', 'page'])),
+  resourceType: z.nullable(z.enum(['request', 'membership'])),
   entityId: z.string(),
   organizationId: z.union([z.string(), z.null()]),
-  seq: z.int(),
+  contextType: z.nullable(z.enum(['organization'])),
+  seq: z.union([z.int(), z.null()]),
   tx: zTxStreamMessage,
-  cacheToken: z.optional(z.string()),
+  cacheToken: z.union([z.string(), z.null()]),
 });
 
 export const zPublicStreamActivity = z.object({
@@ -139,7 +144,7 @@ export const zActivity = z.object({
   userId: z.union([z.string(), z.null()]),
   entityType: z.nullable(z.enum(['user', 'organization', 'attachment', 'page'])),
   resourceType: z.nullable(z.enum(['request', 'membership'])),
-  action: z.nullable(z.enum(['create', 'update', 'delete'])),
+  action: z.enum(['create', 'update', 'delete']),
   tableName: z.string(),
   type: z.string(),
   entityId: z.union([z.string(), z.null()]),
@@ -395,22 +400,20 @@ export const zMembership = z.object({
 export const zGetActivitiesData = z.object({
   body: z.optional(z.never()),
   path: z.optional(z.never()),
-  query: z.optional(
-    z.object({
-      q: z.optional(z.string()),
-      sort: z.optional(z.enum(['createdAt', 'type', 'tableName'])),
-      order: z.optional(z.enum(['asc', 'desc'])),
-      offset: z.optional(z.string()),
-      limit: z.optional(z.string()),
-      userId: z.optional(z.union([z.string(), z.null()])),
-      entityType: z.optional(z.nullable(z.enum(['user', 'organization', 'attachment', 'page']))),
-      resourceType: z.optional(z.nullable(z.enum(['request', 'membership']))),
-      action: z.optional(z.nullable(z.enum(['create', 'update', 'delete']))),
-      tableName: z.optional(z.string()),
-      type: z.optional(z.string()),
-      entityId: z.optional(z.union([z.string(), z.null()])),
-    }),
-  ),
+  query: z.object({
+    q: z.optional(z.string()),
+    sort: z.optional(z.enum(['createdAt', 'type', 'tableName'])),
+    order: z.optional(z.enum(['asc', 'desc'])),
+    offset: z.optional(z.string()),
+    limit: z.optional(z.string()),
+    userId: z.optional(z.union([z.string(), z.null()])),
+    entityType: z.optional(z.nullable(z.enum(['user', 'organization', 'attachment', 'page']))),
+    resourceType: z.optional(z.nullable(z.enum(['request', 'membership']))),
+    action: z.enum(['create', 'update', 'delete']),
+    tableName: z.optional(z.string()),
+    type: z.optional(z.string()),
+    entityId: z.optional(z.union([z.string(), z.null()])),
+  }),
 });
 
 /**
@@ -925,7 +928,7 @@ export const zUnsubscribeMeData = z.object({
   }),
 });
 
-export const zGetUserStreamData = z.object({
+export const zGetAppStreamData = z.object({
   body: z.optional(z.never()),
   path: z.optional(z.never()),
   query: z.optional(
@@ -937,10 +940,10 @@ export const zGetUserStreamData = z.object({
 });
 
 /**
- * SSE stream or catch-up response
+ * SSE stream or notification response
  */
-export const zGetUserStreamResponse = z.object({
-  activities: z.array(z.unknown()),
+export const zGetAppStreamResponse = z.object({
+  activities: z.array(zStreamNotification),
   cursor: z.union([z.string(), z.null()]),
 });
 

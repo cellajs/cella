@@ -161,7 +161,7 @@ class CdcWebSocketServer {
         _trace: message._trace,
       };
 
-      activityBus.emitFromCdc(activityEvent);
+      activityBus.emit(activityEvent);
 
       logEvent('debug', 'CDC message processed', {
         type: message.activity.type,

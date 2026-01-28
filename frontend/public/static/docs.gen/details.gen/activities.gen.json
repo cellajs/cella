@@ -33,9 +33,9 @@
                     "enum": ["request", "membership", null]
                   },
                   "action": {
-                    "type": ["string", "null"],
+                    "type": "string",
                     "required": true,
-                    "enum": ["create", "update", "delete", null]
+                    "enum": ["create", "update", "delete"]
                   },
                   "tableName": { "type": "string", "required": true },
                   "type": { "type": "string", "required": true },
@@ -155,9 +155,9 @@
             "enum": ["request", "membership", null]
           },
           "action": {
-            "type": ["string", "null"],
-            "required": false,
-            "enum": ["create", "update", "delete", null]
+            "type": "string",
+            "required": true,
+            "enum": ["create", "update", "delete"]
           },
           "tableName": { "type": "string", "required": false },
           "type": { "type": "string", "required": false },

@@ -14,7 +14,7 @@ import { AppError } from '#/lib/error';
 import pagesRoutes from '#/modules/page/page-routes';
 import { getValidProductEntity } from '#/permissions/get-product-entity';
 import { getEntityByTransaction, isTransactionProcessed } from '#/sync';
-import { eventBus } from '#/sync/activity-bus';
+import { activityBus } from '#/sync/activity-bus';
 import {
   buildFieldVersions,
   checkFieldConflicts,
@@ -31,9 +31,9 @@ import { prepareStringForILikeFilter } from '#/utils/sql';
 import { dispatchToPublicPageSubscribers, type PublicPageSubscriber, publicPageChannel } from './stream';
 
 // Register ActivityBus listeners for public page stream
-eventBus.on('page.created', dispatchToPublicPageSubscribers);
-eventBus.on('page.updated', dispatchToPublicPageSubscribers);
-eventBus.on('page.deleted', dispatchToPublicPageSubscribers);
+activityBus.on('page.created', dispatchToPublicPageSubscribers);
+activityBus.on('page.updated', dispatchToPublicPageSubscribers);
+activityBus.on('page.deleted', dispatchToPublicPageSubscribers);
 
 /**
  * Fetch catch-up activities for public pages stream.
@@ -54,7 +54,7 @@ async function fetchPublicPageActivities(cursor: string | null, limit = 100) {
 
   return activities.map((activity) => ({
     activityId: activity.id,
-    action: activity.action as 'create' | 'update' | 'delete',
+    action: activity.action,
     entityType: 'page' as const,
     entityId: activity.entityId!,
     changedKeys: activity.changedKeys ?? null,

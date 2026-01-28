@@ -12,7 +12,7 @@
  * - Keep mutations in-memory only (not persisted)
  */
 import { create } from 'zustand';
-import type { AppStreamMessage } from './app-stream-types';
+import type { AppStreamNotification } from './app-stream-types';
 
 // Tab coordination channel name
 const CHANNEL_NAME = 'cella-sync';
@@ -21,7 +21,7 @@ const CHANNEL_NAME = 'cella-sync';
 const LEADER_LOCK_NAME = 'cella-sync-leader';
 
 /** Message types for BroadcastChannel communication */
-type BroadcastMessage = { type: 'stream-message'; message: AppStreamMessage; orgId: string };
+type BroadcastMessage = { type: 'stream-notification'; notification: AppStreamNotification; orgId: string };
 
 /** Tab coordinator state */
 interface TabCoordinatorState {
@@ -46,7 +46,7 @@ export const useTabCoordinatorStore = create<TabCoordinatorState>((set) => ({
 // Module-level state for channel and lock
 let broadcastChannel: BroadcastChannel | null = null;
 let lockController: AbortController | null = null;
-let notificationHandlers: Set<(notification: AppStreamMessage, orgId: string) => void> = new Set();
+let notificationHandlers: Set<(notification: AppStreamNotification, orgId: string) => void> = new Set();
 let initPromise: Promise<void> | null = null;
 
 /**
@@ -191,10 +191,10 @@ const handleBroadcastMessage = (event: MessageEvent<BroadcastMessage>): void => 
   const store = useTabCoordinatorStore.getState();
   const message = event.data;
 
-  if (message.type === 'stream-message' && !store.isLeader) {
+  if (message.type === 'stream-notification' && !store.isLeader) {
     // Only process if we're a follower (leader already processed via SSE)
     for (const handler of notificationHandlers) {
-      handler(message.message, message.orgId);
+      handler(message.notification, message.orgId);
     }
   }
 };
@@ -203,9 +203,9 @@ const handleBroadcastMessage = (event: MessageEvent<BroadcastMessage>): void => 
  * Broadcast a stream notification to follower tabs.
  * Called by the leader when receiving SSE notifications.
  */
-export const broadcastNotification = (notification: AppStreamMessage, orgId: string): void => {
+export const broadcastNotification = (notification: AppStreamNotification, orgId: string): void => {
   if (broadcastChannel) {
-    broadcastChannel.postMessage({ type: 'stream-message', message: notification, orgId } satisfies BroadcastMessage);
+    broadcastChannel.postMessage({ type: 'stream-notification', notification, orgId } satisfies BroadcastMessage);
   }
 };
 
@@ -213,7 +213,7 @@ export const broadcastNotification = (notification: AppStreamMessage, orgId: str
  * Register a handler for stream notifications.
  * Used by followers to receive updates from the leader.
  */
-export const onNotification = (handler: (notification: AppStreamMessage, orgId: string) => void): (() => void) => {
+export const onNotification = (handler: (notification: AppStreamNotification, orgId: string) => void): (() => void) => {
   notificationHandlers.add(handler);
   return () => {
     notificationHandlers.delete(handler);

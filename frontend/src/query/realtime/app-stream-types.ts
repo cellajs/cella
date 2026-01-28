@@ -1,4 +1,4 @@
-import type { Attachment, Page, TxBase } from '~/api.gen';
+import type { Attachment, Page, StreamNotification, TxStreamMessage } from '~/api.gen';
 
 // ================================
 // Shared stream types
@@ -58,38 +58,17 @@ export interface StreamTraceContext {
 export type ProductEntityData = Page | Attachment;
 
 /** Transaction metadata in stream notifications. */
-export type StreamTx = NonNullable<TxBase>;
+export type StreamTx = NonNullable<TxStreamMessage>;
 
 /**
- * Single notification from app stream (membership, organization, and product entity events).
- * Supports both legacy data-push format and new notification format.
+ * Single notification from app stream.
+ * Uses the generated StreamNotification type with optional trace context.
+ * No entity data is included - client fetches data via API if needed.
  */
-export interface AppStreamMessage {
-  /** Activity ID (legacy format only) */
-  activityId?: string;
-  action: 'create' | 'update' | 'delete';
-  entityType: string;
-  /** Resource type for membership events (legacy format) */
-  resourceType?: string | null;
-  entityId: string;
-  organizationId: string | null;
-  /** Timestamp (legacy format only) */
-  createdAt?: string;
-  /** Transaction metadata for conflict detection. */
-  tx?: StreamTx | null;
-  /** Fields that were changed (legacy format). */
-  changedKeys?: string[] | null;
-  /** Scoped sequence number for gap detection (notification format). */
-  seq?: number;
-  /**
-   * Cache token for LRU entity cache access (notification format).
-   * Pass this in X-Cache-Token header when fetching the entity.
-   * The first client to fetch populates the cache; subsequent clients get cache hits.
-   */
-  cacheToken?: string;
-  /** Trace context for end-to-end correlation. */
+export type AppStreamNotification = StreamNotification & {
+  /** Trace context for end-to-end correlation (debug mode only). */
   _trace?: StreamTraceContext;
-}
+};
 
 /** Offset event from SSE (signals end of catch-up). */
 export interface AppStreamOffsetEvent {
@@ -99,7 +78,7 @@ export interface AppStreamOffsetEvent {
 /** Options for useAppStream hook. */
 export interface UseAppStreamOptions extends BaseStreamOptions {
   /** Callback when a stream notification is received. */
-  onMessage?: (message: AppStreamMessage) => void;
+  onNotification?: (notification: AppStreamNotification) => void;
 }
 
 /** Return value from useAppStream hook. */

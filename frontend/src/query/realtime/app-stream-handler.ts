@@ -1,16 +1,14 @@
 import type { ContextEntityType, RealtimeEntityType } from 'config';
-import type { Attachment, Page } from '~/api.gen';
-import router from '~/lib/router';
 import { syncSpanNames, withSpanSync } from '~/lib/tracing';
-import type { ContextEntityData } from '~/modules/entities/types';
 import { getAndSetMe } from '~/modules/me/helpers';
 import { memberQueryKeys } from '~/modules/memberships/query';
 import { getMenuData } from '~/modules/navigation/menu-sheet/helpers';
-import { organizationQueryKeys } from '~/modules/organization/query';
+import { getContextEntityTypeToListQueries } from '~/offline-config';
 import { type EntityQueryKeys, getEntityQueryKeys } from '~/query/basic';
 import { sourceId } from '~/query/offline';
 import { queryClient } from '~/query/query-client';
-import type { AppStreamMessage, ProductEntityData } from './app-stream-types';
+import { useUserStore } from '~/store/user';
+import type { AppStreamNotification } from './app-stream-types';
 import { removeCacheToken, storeCacheToken } from './cache-token-store';
 import { getSyncPriority } from './sync-priority';
 
@@ -28,176 +26,151 @@ function getScopeKey(orgId: string | null, entityType: string): string {
 }
 
 /**
- * Map context entity types to their query keys.
- * Note: membership uses a custom structure and can't use the registry pattern.
- */
-const contextEntityKeysMap = {
-  organization: organizationQueryKeys,
-  membership: memberQueryKeys,
-} as const;
-
-/**
  * Handles incoming app stream notifications and updates the React Query cache accordingly.
  * Routes notifications to membership, organization, or product entity handlers.
- * Supports both notification-push (new) and data-push (legacy) notification formats.
  *
- * If a cacheToken is present, stores it for use in subsequent fetch requests.
+ * Notification-only format: no entity data is included. Handlers invalidate queries
+ * to trigger refetch, or use cacheToken for efficient fetches.
  */
-export function handleAppStreamMessage(message: AppStreamMessage): void {
-  const { entityId, action, data, resourceType, entityType, tx, organizationId, seq, cacheToken, _trace } = message;
+export function handleAppStreamNotification(notification: AppStreamNotification): void {
+  const { entityId, action, resourceType, entityType, tx, organizationId, contextType, seq, cacheToken, _trace } =
+    notification;
 
   withSpanSync(syncSpanNames.messageProcess, { entityType, action, entityId, _trace }, () => {
     // Store cache token if present (for product entities)
     if (cacheToken && tx?.version) {
-      storeCacheToken(entityType, entityId, cacheToken, tx.version);
+      storeCacheToken(entityType ?? '', entityId, cacheToken, tx.version);
     }
 
-    // Membership events (legacy format with resourceType)
+    // Membership events (resourceType = 'membership')
     if (resourceType === 'membership') {
-      handleMembershipEvent(action, data);
+      handleMembershipNotification(action, entityId, organizationId, contextType);
       return;
     }
 
-    // Organization events
-    if (entityType === 'organization') {
-      handleOrganizationEvent(action, entityId, data as ContextEntityData | null);
-      return;
-    }
-
-    // Product entity events - use registry for dynamic lookup
-    const keys = getEntityQueryKeys(entityType);
-    if (keys) {
-      handleProductEntityEvent(
-        entityType as RealtimeEntityType,
-        entityId,
-        action,
-        data as ProductEntityData | null | undefined,
-        tx,
-        organizationId,
-        seq,
-        keys,
-      );
+    // Realtime entity events - use registry for dynamic lookup
+    if (entityType) {
+      const keys = getEntityQueryKeys(entityType);
+      if (keys) {
+        handleEntityNotification(entityType as RealtimeEntityType, entityId, action, tx, organizationId, seq, keys);
+      }
     }
   });
 }
 
 /**
- * Handle membership events (created, updated, deleted).
+ * Mark all context entity detail queries as stale.
+ * Used as fallback when contextType is unknown - lighter than invalidating lists.
+ * List data is refreshed via getMenuData() which is called after membership changes.
  */
-function handleMembershipEvent(action: AppStreamMessage['action'], data: AppStreamMessage['data']): void {
-  const entityType = (data as { entityType?: ContextEntityType } | null)?.entityType;
-  const keys = entityType ? contextEntityKeysMap[entityType] : null;
+function invalidateContextEntityDetails(): void {
+  const registry = getContextEntityTypeToListQueries();
+  for (const contextType of Object.keys(registry)) {
+    // Invalidate detail queries with refetchType: 'none' (mark stale, don't refetch)
+    queryClient.invalidateQueries({
+      predicate: (query) => query.queryKey[0] === contextType && query.queryKey[1] === 'detail',
+      refetchType: 'none',
+    });
+  }
+}
+
+/**
+ * Handle membership events (created, updated, deleted).
+ * Uses contextType for targeted query invalidation instead of broad invalidation.
+ *
+ * Strategy:
+ * - create: Invalidate the specific context entity list (e.g., organizations), then refresh menu
+ * - update: Invalidate member queries for the org, refresh user data for role changes
+ * - delete: Invalidate the specific context entity list, then refresh menu
+ */
+function handleMembershipNotification(
+  action: AppStreamNotification['action'],
+  _entityId: string,
+  organizationId: string | null,
+  contextType: ContextEntityType | null,
+): void {
+  const userId = useUserStore.getState().user.id;
+
+  // Get query factory for the specific context entity type
+  const queryFactory = contextType ? getContextEntityTypeToListQueries()[contextType] : null;
 
   switch (action) {
-    case 'create':
-      // Membership created: user now belongs to a new entity → invalidate its list
-      if (keys) {
-        queryClient.invalidateQueries({ queryKey: keys.list.base, refetchType: 'active' });
+    case 'create': {
+      // Membership created: user now belongs to a new entity
+      // Invalidate only the specific context entity list if we know the type
+      if (queryFactory) {
+        const queryKey = queryFactory({ userId }).queryKey;
+        queryClient.invalidateQueries({ queryKey, refetchType: 'active' });
+      } else {
+        // Fallback: mark detail queries stale, list is refreshed via getMenuData()
+        invalidateContextEntityDetails();
       }
-      // Also refresh menu to show new entity
+      // Refresh menu to show new entity
       getMenuData();
       break;
+    }
 
-    case 'update':
-      // Membership updated: update the single entity cache (e.g. role changed) and invalidate its list
-      if (keys && data) {
-        queryClient.setQueryData(keys.detail.byId(data.id), data);
-        queryClient.invalidateQueries({ queryKey: keys.list.base, refetchType: 'active' });
+    case 'update': {
+      // Membership updated: invalidate member queries for the specific org
+      if (organizationId) {
+        // Invalidate member lists that include this organization
+        queryClient.invalidateQueries({
+          queryKey: memberQueryKeys.list.base,
+          predicate: (query) => query.queryKey.some((k) => typeof k === 'object' && k !== null && 'orgIdOrSlug' in k),
+          refetchType: 'active',
+        });
       }
-      // Refresh user data in case role changed
+      // Refresh user data in case role changed (affects permissions)
       getAndSetMe();
       break;
+    }
 
-    case 'delete':
-      // Membership deleted: user no longer belongs to the entity → remove single cache and invalidate list
-      if (keys && data) {
-        queryClient.removeQueries({ queryKey: keys.detail.byId(data.id), exact: true });
-        queryClient.invalidateQueries({ queryKey: keys.list.base, refetchType: 'active' });
+    case 'delete': {
+      // Membership deleted: user no longer belongs to the entity
+      if (queryFactory) {
+        const queryKey = queryFactory({ userId }).queryKey;
+        queryClient.invalidateQueries({ queryKey, refetchType: 'active' });
+      } else {
+        // Fallback: mark detail queries stale, list is refreshed via getMenuData()
+        invalidateContextEntityDetails();
       }
       // Refresh menu to remove entity
       getMenuData();
       break;
+    }
   }
+
+  console.debug(`[handleMembershipNotification] ${action} contextType=${contextType} orgId=${organizationId}`);
 }
 
 /**
- * Handle organization events (created, updated, deleted).
+ * Handle realtime entity events (page, attachment, etc).
+ * Uses notification-based sync: no entity data included.
+ * Invalidates queries to trigger refetch, using cacheToken for efficient fetches.
  */
-function handleOrganizationEvent(
-  action: AppStreamMessage['action'],
-  entityId: string,
-  data: ContextEntityData | null,
-): void {
-  const keys = organizationQueryKeys;
-
-  switch (action) {
-    case 'create':
-      // Entity created: a new entity was created → invalidate its list
-      queryClient.invalidateQueries({ queryKey: keys.list.base, refetchType: 'active' });
-      break;
-
-    case 'update':
-      // Entity updated: update the single cache and invalidate list
-      if (data) {
-        // Get current cached data to check for slug change
-        const cachedData = queryClient.getQueryData<ContextEntityData>(keys.detail.byId(entityId));
-        const oldSlug = cachedData?.slug;
-        const newSlug = data.slug;
-
-        // Update cache
-        queryClient.setQueryData(keys.detail.byId(entityId), data);
-        queryClient.invalidateQueries({ queryKey: keys.list.base, refetchType: 'active' });
-
-        // If slug changed, update URL if user is on the entity page
-        if (oldSlug && newSlug && oldSlug !== newSlug) {
-          const { pathname, search, hash } = router.state.location;
-
-          const slugSegmentRegex = new RegExp(`(/)${oldSlug}(/|$)`);
-          if (slugSegmentRegex.test(pathname)) {
-            const newPath = pathname.replace(slugSegmentRegex, `$1${newSlug}$2`);
-            router.navigate({ to: newPath, replace: true, search, hash });
-          }
-        }
-      }
-      break;
-
-    case 'delete':
-      // Entity deleted: remove its caches
-      queryClient.removeQueries({ queryKey: keys.detail.byId(entityId), exact: true });
-      queryClient.invalidateQueries({ queryKey: keys.list.base, refetchType: 'active' });
-      break;
-  }
-}
-
-/**
- * Handle product entity events (page, attachment, etc).
- * Supports both notification-push (no data, seq-based gap detection) and
- * legacy data-push (full entity in data field) formats.
- */
-function handleProductEntityEvent(
+function handleEntityNotification(
   entityType: RealtimeEntityType,
   entityId: string,
-  action: AppStreamMessage['action'],
-  data: ProductEntityData | null | undefined,
-  tx: AppStreamMessage['tx'],
+  action: AppStreamNotification['action'],
+  tx: AppStreamNotification['tx'],
   organizationId: string | null,
-  seq: number | undefined,
+  seq: number | null,
   keys: EntityQueryKeys,
 ): void {
   // Echo prevention: skip if this is our own mutation
   if (tx?.sourceId === sourceId) {
-    console.debug('[handleProductEntityEvent] Echo prevention - skipping own mutation:', tx.id);
+    console.debug('[handleEntityNotification] Echo prevention - skipping own mutation:', tx.id);
     return;
   }
 
-  // Seq-based gap detection (notification format)
+  // Seq-based gap detection
   if (seq != null) {
     const scopeKey = getScopeKey(organizationId, entityType);
     const lastSeenSeq = seqStore.get(scopeKey) ?? 0;
 
     if (seq > lastSeenSeq + 1) {
       // Missed changes - invalidate list for this scope
-      console.warn(`[handleProductEntityEvent] Missed ${seq - lastSeenSeq - 1} changes in ${scopeKey}`);
+      console.warn(`[handleEntityNotification] Missed ${seq - lastSeenSeq - 1} changes in ${scopeKey}`);
       queryClient.invalidateQueries({
         queryKey: keys.list.base,
         refetchType: 'active',
@@ -226,21 +199,11 @@ function handleProductEntityEvent(
       if (priority !== 'medium') {
         queryClient.invalidateQueries({ queryKey: keys.list.base, refetchType });
       }
-      // Set detail query data if we have the full entity (legacy format)
-      if (data) {
-        queryClient.setQueryData(keys.detail.byId(entityId), data as Attachment | Page);
-      }
       break;
 
     case 'update':
-      // Update in cache if we have entity data (legacy format), otherwise invalidate to refetch
-      if (data) {
-        queryClient.setQueryData(keys.detail.byId(entityId), data as Attachment | Page);
-      } else {
-        // Notification format - invalidate to trigger refetch based on priority
-        queryClient.invalidateQueries({ queryKey: keys.detail.byId(entityId), refetchType });
-      }
-      // Invalidate list - refetch behavior based on priority
+      // Invalidate detail and list to trigger refetch based on priority
+      queryClient.invalidateQueries({ queryKey: keys.detail.byId(entityId), refetchType });
       if (priority !== 'medium') {
         queryClient.invalidateQueries({ queryKey: keys.list.base, refetchType });
       }
@@ -258,7 +221,7 @@ function handleProductEntityEvent(
       break;
   }
 
-  console.debug(`[handleProductEntityEvent] ${entityType}:${action} priority=${priority}`);
+  console.debug(`[handleEntityNotification] ${entityType}:${action} priority=${priority}`);
 }
 
 /** Debounce timers for medium priority list invalidations */

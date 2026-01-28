@@ -380,10 +380,25 @@
             ]
           },
           "entityType": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "enum": [
               "attachment",
-              "page"
+              "page",
+              null
+            ]
+          },
+          "resourceType": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "request",
+              "membership",
+              null
             ]
           },
           "entityId": {
@@ -395,27 +410,49 @@
               "null"
             ]
           },
+          "contextType": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "organization",
+              null
+            ]
+          },
           "seq": {
-            "type": "integer"
+            "type": [
+              "integer",
+              "null"
+            ]
           },
           "tx": {
             "$ref": "#/components/schemas/TxStreamMessage"
           },
           "cacheToken": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "required": [
           "action",
           "entityType",
+          "resourceType",
           "entityId",
           "organizationId",
+          "contextType",
           "seq",
-          "tx"
+          "tx",
+          "cacheToken"
         ]
       },
       "TxStreamMessage": {
-        "type": "object",
+        "type": [
+          "object",
+          "null"
+        ],
         "properties": {
           "id": {
             "type": "string"
@@ -682,15 +719,11 @@
             ]
           },
           "action": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": "string",
             "enum": [
               "create",
               "update",
-              "delete",
-              null
+              "delete"
             ]
           },
           "tableName": {
@@ -2237,18 +2270,14 @@
           },
           {
             "schema": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": "string",
               "enum": [
                 "create",
                 "update",
-                "delete",
-                null
+                "delete"
               ]
             },
-            "required": false,
+            "required": true,
             "name": "action",
             "in": "query"
           },
@@ -4799,12 +4828,12 @@
             "cookieAuth": []
           }
         ],
-        "operationId": "getUserStream",
+        "operationId": "getAppStream",
         "tags": [
           "me"
         ],
-        "summary": "User event stream",
-        "description": "SSE stream for membership and organization events affecting the *current user*. Use offset for catch-up, live=sse for streaming.",
+        "summary": "App event stream",
+        "description": "SSE stream for membership and entity notifications affecting the *current user*. Sends lightweight notifications - client fetches entity data via API.",
         "x-guard": [
           "isAuthenticated"
         ],
@@ -4813,11 +4842,11 @@
           {
             "schema": {
               "type": "string",
-              "description": "Starting offset: 'now' for live-only, or activity ID for catch-up",
+              "description": "Starting offset: 'now' for live-only, or activity ID to receive missed notifications",
               "example": "now"
             },
             "required": false,
-            "description": "Starting offset: 'now' for live-only, or activity ID for catch-up",
+            "description": "Starting offset: 'now' for live-only, or activity ID to receive missed notifications",
             "name": "offset",
             "in": "query"
           },
@@ -4839,7 +4868,7 @@
         ],
         "responses": {
           "200": {
-            "description": "SSE stream or catch-up response",
+            "description": "SSE stream or notification response",
             "content": {
               "text/event-stream": {
                 "schema": {}
@@ -4850,7 +4879,9 @@
                   "properties": {
                     "activities": {
                       "type": "array",
-                      "items": {}
+                      "items": {
+                        "$ref": "#/components/schemas/StreamNotification"
+                      }
                     },
                     "cursor": {
                       "type": [

@@ -330,7 +330,7 @@ const fieldVersions = buildFieldVersions(entity.tx?.fieldVersions, changedFields
 Uses `tx.sourceId` to prevent applying own mutations received from stream.
 
 ```typescript
-// In handleProductEntityEvent():
+// In handleEntityNotification():
 if (tx?.sourceId === sourceId) {
   return; // Skip own mutation
 }

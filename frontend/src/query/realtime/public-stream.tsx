@@ -1,7 +1,7 @@
 import { appConfig } from 'config';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLatestRef } from '~/hooks/use-latest-ref';
-import type { AppStreamOffsetEvent, UsePublicStreamOptions, UsePublicStreamReturn } from './app-stream-types';
+import type { AppStreamNotification, AppStreamOffsetEvent, UsePublicStreamOptions, UsePublicStreamReturn } from './app-stream-types';
 import { createHydrateBarrier } from './hydrate-barrier';
 import { handlePublicStreamMessage, type PublicStreamMessage } from './public-stream-handler';
 import {
@@ -68,7 +68,8 @@ export function usePublicStream(options: UsePublicStreamOptions = {}): UsePublic
       try {
         const message = JSON.parse(event.data) as PublicStreamMessage;
         const eventId = event.lastEventId || undefined;
-        broadcastNotification(message as Parameters<typeof broadcastNotification>[0], 'page');
+        // Cast to AppStreamNotification for broadcast (compatible core fields)
+        broadcastNotification(message as unknown as AppStreamNotification, 'page');
         processMessage(message, eventId);
       } catch (error) {
         console.debug(`[${debugLabel}] Failed to parse message:`, error);
@@ -116,8 +117,9 @@ export function usePublicStream(options: UsePublicStreamOptions = {}): UsePublic
       if (cleanup) return;
 
       // Listen for broadcast notifications from leader (follower tabs)
+      // Cast from AppStreamNotification to PublicStreamMessage (compatible core fields)
       broadcastCleanupRef.current = onNotification((notification) => {
-        if (!isLeader()) processMessage(notification as PublicStreamMessage);
+        if (!isLeader()) processMessage(notification as unknown as PublicStreamMessage);
       });
 
       connect();
