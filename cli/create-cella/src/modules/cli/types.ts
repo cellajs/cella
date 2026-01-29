@@ -1,11 +1,5 @@
 /** CLI options parsed from command line arguments */
 export interface CLIOptions {
-  skipNewBranch: boolean;
-  skipClean: boolean;
-  skipGit: boolean;
-  skipInstall: boolean;
-  skipGenerate: boolean;
-  newBranchName?: string;
   template?: string;
 }
 
@@ -24,12 +18,10 @@ export interface CreateOptions {
   projectName: string;
   targetFolder: string;
   newBranchName?: string | null;
-  skipInstall: boolean;
-  skipGit: boolean;
-  skipClean: boolean;
-  skipGenerate: boolean;
   packageManager: string;
   templateUrl?: string;
+  /** Suppress all output (for testing) */
+  silent?: boolean;
 }
 
 /** Options for adding a remote to the repository */

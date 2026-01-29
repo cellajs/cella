@@ -1,29 +1,36 @@
 import { existsSync } from 'node:fs';
-import { mkdir } from 'node:fs/promises';
-import { join, relative } from 'node:path';
+import { cp, mkdir } from 'node:fs/promises';
+import { join, relative, resolve } from 'node:path';
 import { downloadTemplate } from 'giget';
 import { addRemote } from '#/add-remote';
 import { TEMPLATE_URL } from '#/constants';
-import { type CreateOptions, showSkipWarning, showSuccess } from '#/modules/cli';
+import { type CreateOptions, showSuccess } from '#/modules/cli';
 import { cleanTemplate } from '#/utils/clean-template';
 import { gitAddAll, gitBranch, gitCheckout, gitCommit, gitInit } from '#/utils/git';
 import { createProgress } from '#/utils/progress';
 import { generate, install } from '#/utils/run-package-manager-command';
 
+/** Check if a path is a local directory */
+function isLocalPath(path: string): boolean {
+  return path.startsWith('/') || path.startsWith('./') || path.startsWith('../');
+}
+
 export async function create({
   projectName,
   targetFolder,
   newBranchName,
-  skipInstall,
-  skipGit,
-  skipClean,
-  skipGenerate,
   packageManager,
+  templateUrl,
+  silent = false,
 }: CreateOptions): Promise<void> {
   // Save the original working directory
   const originalCwd = process.cwd();
 
-  const progress = createProgress('creating project');
+  // Use custom template or default
+  const template = templateUrl || TEMPLATE_URL;
+  const isLocalTemplate = templateUrl && isLocalPath(templateUrl);
+
+  const progress = createProgress('creating project', silent);
 
   try {
     // Create the target folder
@@ -31,48 +38,57 @@ export async function create({
     await mkdir(targetFolder, { recursive: true });
     process.chdir(targetFolder);
 
-    // Download the template
-    progress.step('downloading cella template');
-    await downloadTemplate(TEMPLATE_URL, {
-      cwd: process.cwd(),
-      dir: targetFolder,
-      force: true,
-      provider: 'github',
-    });
+    // Download or copy the template
+    if (isLocalTemplate) {
+      progress.step('copying local template');
+      const sourcePath = resolve(originalCwd, templateUrl);
+
+      // Check if target is inside source (would cause EINVAL)
+      if (targetFolder.startsWith(sourcePath)) {
+        throw new Error(
+          `Cannot create project inside the template directory.\n` +
+            `  Run from outside: cd ~ && pnpm create @cellajs/cella ${projectName} --template ${templateUrl}`,
+        );
+      }
+
+      await cp(sourcePath, targetFolder, {
+        recursive: true,
+        filter: (src) => !src.includes('node_modules') && !src.includes('.git'),
+      });
+    } else {
+      progress.step('downloading cella template');
+      await downloadTemplate(template, {
+        cwd: process.cwd(),
+        dir: targetFolder,
+        force: true,
+        provider: 'github',
+      });
+    }
 
     // Clean the template
-    if (!skipClean) {
-      progress.step('cleaning template');
-      await cleanTemplate({ targetFolder });
-    }
+    progress.step('cleaning template');
+    await cleanTemplate({ targetFolder });
 
     // Install dependencies
-    if (!skipInstall) {
-      progress.step('installing dependencies');
-      await install(packageManager);
-    }
+    progress.step('installing dependencies');
+    await install(packageManager);
 
     // Generate SQL files
-    if (!skipGenerate) {
-      progress.step('generating migrations');
-      await generate(packageManager);
-    }
+    progress.step('generating migrations');
+    await generate(packageManager);
 
     // Initialize git repository
-    if (!skipGit) {
-      const gitFolderPath = join(targetFolder, '.git');
+    const gitFolderPath = join(targetFolder, '.git');
+    if (!existsSync(gitFolderPath)) {
+      progress.step('initializing git');
+      await gitInit(targetFolder);
+      await gitAddAll(targetFolder);
+      await gitCommit(targetFolder, 'Initial commit');
 
-      if (!existsSync(gitFolderPath)) {
-        progress.step('initializing git');
-        await gitInit(targetFolder);
-        await gitAddAll(targetFolder);
-        await gitCommit(targetFolder, 'Initial commit');
-
-        if (newBranchName) {
-          progress.step(`creating branch '${newBranchName}'`);
-          await gitBranch(targetFolder, newBranchName);
-          await gitCheckout(targetFolder, newBranchName);
-        }
+      if (newBranchName) {
+        progress.step(`creating branch '${newBranchName}'`);
+        await gitBranch(targetFolder, newBranchName);
+        await gitCheckout(targetFolder, newBranchName);
       }
     }
 
@@ -86,12 +102,6 @@ export async function create({
     progress.fail(error instanceof Error ? error.message : String(error));
     process.exit(1);
   }
-
-  // Show skipped steps as warnings
-  if (skipClean) showSkipWarning('--skip-clean', 'template not cleaned');
-  if (skipInstall) showSkipWarning('--skip-install', 'dependencies not installed');
-  if (skipGenerate) showSkipWarning('--skip-generate', 'migrations not generated');
-  if (skipGit) showSkipWarning('--skip-git', 'git not initialized');
 
   // Check if the working directory needs to be changed
   const needsCd = originalCwd !== targetFolder;

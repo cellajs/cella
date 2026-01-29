@@ -24,15 +24,6 @@ Running without arguments starts interactive mode, prompting for:
 pnpm create @cellajs/cella [directory] [options]
 ```
 
-| Flag | Description |
-|------|-------------|
-| `--skip-install` | Skip `pnpm install` |
-| `--skip-git` | Skip git initialization |
-| `--skip-generate` | Skip database migration generation |
-| `--skip-clean` | Keep template files (README, etc.) |
-| `--skip-new-branch` | Skip creating working branch |
-| `--new-branch-name <name>` | Create working branch (e.g., `development`) |
-
 ## What It Does
 
 1. Downloads latest Cella template via [giget](https://github.com/unjs/giget)

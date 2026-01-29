@@ -60,10 +60,3 @@ export function showSuccess(
   console.info(`enjoy building ${pc.green(projectName)} with cella!`);
   console.info();
 }
-
-/**
- * Displays a warning message for skipped steps.
- */
-export function showSkipWarning(flag: string, message: string): void {
-  console.info(`${pc.yellow('⚠')} ${flag} → ${message}`);
-}

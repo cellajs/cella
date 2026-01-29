@@ -6,7 +6,11 @@
  */
 
 import pc from 'picocolors';
+import { Writable } from 'node:stream';
 import yoctoSpinner, { type Spinner } from 'yocto-spinner';
+
+/** Null stream that discards all output */
+const nullStream = new Writable({ write: (_chunk, _encoding, callback) => callback() });
 
 /** Global reference to the currently active spinner */
 let activeSpinner: Spinner | null = null;
@@ -49,19 +53,28 @@ export interface ProgressTracker {
  * progress.step('installing dependencies');
  * progress.done('project created');
  */
-export function createProgress(title: string): ProgressTracker {
+export function createProgress(title: string, silent = false): ProgressTracker {
   const completedSteps: string[] = [];
-  const spinner = yoctoSpinner({ text: title });
+
+  const spinner = yoctoSpinner({
+    text: title,
+    stream: silent ? nullStream : process.stderr,
+  });
 
   activeSpinner = spinner;
   spinner.start();
+
+  // Helper to log (respects silent mode)
+  const log = (msg: string) => {
+    if (!silent) console.info(msg);
+  };
 
   return {
     step: (message: string) => {
       // Complete previous step with green check if there was one
       if (completedSteps.length > 0) {
         spinner.stop();
-        console.info(`${pc.green('✓')} ${completedSteps[completedSteps.length - 1]}`);
+        log(`${pc.green('✓')} ${completedSteps[completedSteps.length - 1]}`);
       }
       completedSteps.push(message);
       spinner.text = message;
@@ -72,21 +85,21 @@ export function createProgress(title: string): ProgressTracker {
       // Complete the last step with green check
       if (completedSteps.length > 0) {
         spinner.stop();
-        console.info(`${pc.green('✓')} ${completedSteps[completedSteps.length - 1]}`);
+        log(`${pc.green('✓')} ${completedSteps[completedSteps.length - 1]}`);
       } else {
         spinner.stop();
       }
       activeSpinner = null;
       if (message) {
-        console.info();
-        console.info(`${pc.green('✓')} ${message}`);
+        log('');
+        log(`${pc.green('✓')} ${message}`);
       }
     },
 
     fail: (message: string) => {
       spinner.stop();
       activeSpinner = null;
-      console.info(`${pc.red('✗')} ${pc.red(message)}`);
+      log(`${pc.red('✗')} ${pc.red(message)}`);
     },
 
     wrap: async <T>(fn: () => Promise<T>): Promise<T> => {
@@ -97,11 +110,11 @@ export function createProgress(title: string): ProgressTracker {
         // Stop spinner and show tree-style breakdown on failure
         spinner.stop();
         activeSpinner = null;
-        console.info(pc.cyan(`\n${title}`));
+        log(pc.cyan(`\n${title}`));
         for (const step of completedSteps) {
-          console.info(pc.gray(`  ├─ ${step}`));
+          log(pc.gray(`  ├─ ${step}`));
         }
-        console.info(pc.red(`  └─ ✗ ${errorMessage}`));
+        log(pc.red(`  └─ ✗ ${errorMessage}`));
         throw error;
       }
     },

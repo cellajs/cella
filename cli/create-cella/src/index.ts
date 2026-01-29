@@ -18,12 +18,6 @@ async function main(): Promise<void> {
   // Display CLI welcome banner
   showWelcome(templateVersion);
 
-  // Skip creating a new branch if --skipNewBranch flag is provided or git is skipped
-  if (cli.options.skipNewBranch || cli.options.skipGit) {
-    cli.createNewBranch = false;
-    cli.newBranchName = null;
-  }
-
   // Shared theme to clear prompts after answering
   const promptTheme = { prefix: '', style: { answer: (text: string) => text } };
   const promptContext = { clearPromptOnDone: true };
@@ -102,10 +96,6 @@ async function main(): Promise<void> {
     projectName,
     targetFolder,
     newBranchName: cli.newBranchName,
-    skipInstall: cli.options.skipInstall,
-    skipGit: cli.options.skipGit,
-    skipClean: cli.options.skipClean,
-    skipGenerate: cli.options.skipGenerate,
     packageManager: cli.packageManager,
     templateUrl: cli.options.template,
   };

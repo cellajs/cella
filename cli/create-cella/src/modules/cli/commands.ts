@@ -20,28 +20,7 @@ export const command = new Command(NAME)
   .argument('[directory]', 'the directory name for the new project')
   .usage('[directory] [options]')
   .helpOption('-h, --help', 'display this help message')
-  .option('--skip-new-branch', 'skip creating a new branch during initialization', false)
-  .option('--skip-install', 'skip the installation of packages', false)
-  .option('--skip-generate', 'skip generating SQL files', false)
-  .option('--skip-clean', 'skip cleaning the `cella` template', false)
-  .option('--skip-git', 'skip initializing a git repository', false)
   .option('--template <path>', 'use a custom template (local path or github:user/repo)')
-  .option('--new-branch-name <name>', 'specify a new branch name to create and use', (name: string) => {
-    if (typeof name === 'string') {
-      name = name.trim();
-    }
-
-    if (name) {
-      const validation = validateProjectName(basename(resolve(name)));
-
-      if (!validation.valid) {
-        throw new InvalidArgumentError(`Invalid branch name: ${validation.problems?.[0] ?? 'unknown error'}`);
-      }
-
-      createNewBranch = true;
-      newBranchName = name;
-    }
-  })
   .action((name: string) => {
     if (typeof name === 'string') {
       name = name.trim();

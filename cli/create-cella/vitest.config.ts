@@ -11,6 +11,7 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: ['src/**/*.test.ts', 'tests/**/*.test.ts'],
-    testTimeout: 30000,
+    testTimeout: 120000, // 2 minutes for E2E tests
+    onConsoleLog: () => false, // Suppress console output during tests
   },
 });
