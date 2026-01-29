@@ -13,9 +13,9 @@ import { printWarnings, validateOverrides } from './utils/overrides';
 
 /** Service descriptions for inquirer prompt */
 const serviceDescriptions: Record<SyncService, string> = {
-  analyze: 'dry run, show what would change',
-  sync: 'merge upstream changes into fork',
-  packages: 'sync package dependencies only',
+  analyze: 'dry run to see what would change',
+  sync: 'merge upstream changes',
+  packages: 'sync package.json keys with upstream',
 };
 
 /**
@@ -71,6 +71,7 @@ export async function parseCli(userConfig: CellaSyncConfig, forkPath: string): P
 
     if (selected === 'exit') {
       console.info(pc.dim('Exiting...'));
+      console.info();
       process.exit(0);
     }
 

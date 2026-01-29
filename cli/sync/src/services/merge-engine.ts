@@ -374,7 +374,7 @@ export async function runMergeEngine(
     onProgress?.('Setting up upstream remote...');
     const remoteName = config.settings.upstreamRemoteName || 'cella-upstream';
     await ensureRemote(forkPath, remoteName, config.settings.upstreamUrl);
-    onStep?.('Remote configured', `${remoteName} → ${config.settings.upstreamUrl}`);
+    onStep?.('Remote configured', `${upstreamRef} → ${config.settings.upstreamUrl}`);
 
     // Fetch upstream
     onProgress?.(`Fetching upstream (${remoteName})...`);
@@ -416,9 +416,10 @@ export async function runMergeEngine(
 
       const summary = calculateSummary(analyzedFiles);
       const synced = summary.behind + summary.diverged;
+      const mergeType = config.settings.mergeStrategy === 'squash' ? 'Squash merge' : 'Merge';
 
       if (remainingConflicts.length > 0) {
-        onStep?.('Merge in progress', `${remainingConflicts.length} conflicts to resolve in IDE`);
+        onStep?.(`${mergeType} in progress`, `${remainingConflicts.length} conflicts to resolve in IDE`);
       } else if (synced > 0) {
         onStep?.('Synced', `${synced} files from upstream`);
       } else {

@@ -13,7 +13,7 @@ import packageJson from '../../package.json' with { type: 'json' };
 import type { AnalysisSummary, AnalyzedFile, MergeResult } from '../config/types';
 
 /** CLI name */
-export const NAME = 'cella sync';
+export const NAME = 'cella cli';
 
 /** Version from package.json */
 export const VERSION = packageJson.version;
@@ -35,10 +35,11 @@ const completedSteps: CompletedStep[] = [];
  * Get the header line for CLI output.
  */
 export function getHeader(): string {
-  const left = `▸ ${NAME} v${VERSION}`;
   const right = 'cellajs.com';
-  const padding = Math.max(1, 60 - left.length - right.length);
-  return pc.cyan(`${left}${' '.repeat(padding)}${right}`);
+  // Account for ANSI codes when calculating padding
+  const visibleLeft = `⧈ ${NAME} v${VERSION}`;
+  const padding = Math.max(1, 60 - visibleLeft.length - right.length);
+  return pc.cyan(`⧈ ${NAME}`) + ` ${pc.dim(`v${VERSION}`)}` + pc.cyan(`${' '.repeat(padding)}${right}`);
 }
 
 /**
@@ -213,7 +214,7 @@ export function printSyncFiles(
   if (syncFiles.length === 0) return;
 
   console.info();
-  console.info(pc.cyan(`Sync from upstream (${syncFiles.length} files)`));
+  console.info(pc.cyan('↓ behind on upstream') + pc.dim(` · ${syncFiles.length} files`));
   console.info(DIVIDER);
   console.info();
 
@@ -237,7 +238,7 @@ export function printDriftedWarning(files: AnalyzedFile[], forkGitHubUrl?: strin
   if (driftedFiles.length === 0) return;
 
   console.info();
-  console.info(`${pc.yellow('⚠')} drifted from upstream (${driftedFiles.length} files)`);
+  console.info(`${pc.yellow('⚠ drifted from upstream')} ${pc.dim(`· ${driftedFiles.length} files`)}`);
   console.info(DIVIDER);
   console.info();
 
@@ -261,7 +262,7 @@ export function printDivergedPreview(divergedFiles: string[]): void {
   if (divergedFiles.length === 0) return;
 
   console.info();
-  console.info(`${pc.cyan('⇅')} Diverged files (${divergedFiles.length}) - will be merged`);
+  console.info(`${pc.magenta('⇅ diverged')} ${pc.dim(`· ${divergedFiles.length} files`)}`);
   console.info(DIVIDER);
   console.info();
 

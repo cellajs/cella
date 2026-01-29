@@ -51,7 +51,11 @@ function getForkPath(): string {
 /**
  * Pre-flight checks before running sync.
  */
-async function preflight(forkPath: string, forkBranch: string): Promise<void> {
+async function preflight(
+  forkPath: string,
+  forkBranch: string,
+  options: { skipCleanCheck?: boolean } = {},
+): Promise<void> {
   // Check we're in a git repository
   if (!existsSync(join(forkPath, '.git'))) {
     throw new Error(`Not a git repository: ${forkPath}`);
@@ -63,10 +67,12 @@ async function preflight(forkPath: string, forkBranch: string): Promise<void> {
     throw new Error(`Must be on branch '${forkBranch}' to sync. Currently on '${currentBranch}'.`);
   }
 
-  // Check for uncommitted changes
-  const clean = await isClean(forkPath);
-  if (!clean) {
-    throw new Error('Working directory has uncommitted changes. Please commit or stash before syncing.');
+  // Check for uncommitted changes (skip for analyze/dry-run mode)
+  if (!options.skipCleanCheck) {
+    const clean = await isClean(forkPath);
+    if (!clean) {
+      throw new Error('Working directory has uncommitted changes. Please commit or stash before syncing.');
+    }
   }
 }
 
@@ -89,7 +95,8 @@ async function main(): Promise<void> {
 
     // Run preflight checks (except for packages which doesn't need clean working dir)
     if (config.service !== 'packages') {
-      await preflight(forkPath, userConfig.settings.forkBranch);
+      const skipCleanCheck = config.service === 'analyze';
+      await preflight(forkPath, userConfig.settings.forkBranch, { skipCleanCheck });
     }
 
     // Route to service

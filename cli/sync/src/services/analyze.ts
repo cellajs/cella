@@ -49,7 +49,7 @@ export async function runAnalyze(config: RuntimeConfig): Promise<MergeResult> {
   printDivergedPreview(result.conflicts); // In analyze mode, these are diverged files to preview
 
   // Print summary at the end
-  printSummary(result.summary, 'dry run summary');
+  printSummary(result.summary, 'analysis summary');
 
   // Write log file if requested
   if (config.logFile) {

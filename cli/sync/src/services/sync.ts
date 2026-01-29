@@ -47,7 +47,7 @@ export async function runSync(config: RuntimeConfig): Promise<MergeResult> {
   }
 
   // Print summary only (no file lists for sync)
-  printSummary(result.summary, 'sync summary');
+  printSummary(result.summary, 'merge summary');
 
   // Write log file if requested
   if (config.logFile) {
