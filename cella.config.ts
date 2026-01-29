@@ -5,6 +5,7 @@ import { defineConfig } from './cli/sync/config';
  */
 export default defineConfig({
   settings: {
+    mergeStrategy: 'squash',
     upstreamUrl: 'git@github.com:cellajs/cella.git',
     upstreamBranch: 'development',
     upstreamRemoteName: 'cella-upstream',
@@ -12,7 +13,7 @@ export default defineConfig({
     packageJsonSync: ['dependencies', 'devDependencies', 'scripts'],
   },
 
-  // File overrides
+  // Merge overrides
   overrides: {
     // Files and directories to be fully ignored during sync
     ignored: [
@@ -29,7 +30,7 @@ export default defineConfig({
       "backend/drizzle/**",
       "backend/scripts/seeds/data/**",
     ],
-    // Files and directories pinned to fork; prefer fork version during merge conflicts
+    // Files pinned to fork; prefer fork version during merge conflicts
     pinned: [
       "lefthook.yaml",
       "package.json",

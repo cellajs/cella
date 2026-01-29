@@ -106,7 +106,8 @@ async function applyDirectMerge(
 ): Promise<{ resolved: number; remainingConflicts: string[]; analyzedFiles: AnalyzedFile[] }> {
   // Start real merge in fork
   onProgress?.('Starting merge in fork...');
-  await merge(forkPath, upstreamRef, { noCommit: true, noEdit: true });
+  const squash = config.settings.mergeStrategy === 'squash';
+  await merge(forkPath, upstreamRef, { noCommit: true, noEdit: true, squash });
 
   // Analyze files post-merge
   onProgress?.('Analyzing files...');
@@ -386,7 +387,6 @@ export async function runMergeEngine(
 
     // Get merge base for analysis (need it before showing commit count)
     const mergeBase = await getMergeBase(forkPath, 'HEAD', upstreamRef);
-    const mergeBaseCommit = await getCommitInfo(forkPath, mergeBase);
 
     // Get upstream commit info and count commits since merge-base
     const upstreamCommit = await getCommitInfo(forkPath, upstreamRef);
@@ -406,7 +406,7 @@ export async function runMergeEngine(
     // For analyze mode, we use a worktree to preview changes
     if (apply) {
       // SYNC MODE: Do merge, analysis, and resolution directly in fork
-      const { resolved, remainingConflicts, analyzedFiles } = await applyDirectMerge(
+      const { resolved: _resolved, remainingConflicts, analyzedFiles } = await applyDirectMerge(
         forkPath,
         upstreamRef,
         mergeBase,
@@ -445,7 +445,8 @@ export async function runMergeEngine(
 
       // Perform merge in worktree
       onProgress?.('Performing merge in worktree...');
-      await merge(worktreePath, upstreamRef, { noCommit: true, noEdit: true });
+      const squash = config.settings.mergeStrategy === 'squash';
+      await merge(worktreePath, upstreamRef, { noCommit: true, noEdit: true, squash });
       onStep?.('Merge complete', 'Upstream merged into worktree');
 
       // Analyze all files

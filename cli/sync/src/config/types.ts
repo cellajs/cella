@@ -19,6 +19,9 @@ export type PackageJsonSyncKey =
   | 'packageManager'
   | 'overrides';
 
+/** Merge strategy for syncing upstream changes */
+export type MergeStrategy = 'merge' | 'squash';
+
 /**
  * Sync settings - all configurable options for the sync CLI.
  * Hover over each property for documentation.
@@ -38,6 +41,13 @@ export interface SyncSettings {
 
   /** Which package.json keys to sync (default: ['dependencies', 'devDependencies']) */
   packageJsonSync?: PackageJsonSyncKey[];
+
+  /**
+   * Merge strategy for syncing upstream changes.
+   * - 'merge' (default): Creates merge commit with full ancestry. IDE 3-way merge for conflicts.
+   * - 'squash': Stages all changes as one commit. Cleaner history but no 3-way merge support.
+   */
+  mergeStrategy?: MergeStrategy;
 }
 
 /**

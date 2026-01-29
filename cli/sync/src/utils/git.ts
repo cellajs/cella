@@ -228,9 +228,10 @@ export async function listWorktrees(cwd: string): Promise<string[]> {
 export async function merge(
   cwd: string,
   ref: string,
-  options: { noCommit?: boolean; noEdit?: boolean } = {},
+  options: { noCommit?: boolean; noEdit?: boolean; squash?: boolean } = {},
 ): Promise<{ success: boolean; conflicts: string[] }> {
   const args = ['merge', ref];
+  if (options.squash) args.push('--squash');
   if (options.noCommit) args.push('--no-commit');
   if (options.noEdit) args.push('--no-edit');
 

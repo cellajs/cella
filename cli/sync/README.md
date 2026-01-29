@@ -133,13 +133,49 @@ During analysis and sync, files are displayed with status indicators:
 | Symbol | Label | Meaning | Action |
 |:------:|-------|---------|--------|
 | ✓ | `identical` | Fork matches upstream | No action needed |
-| ↑ | `ahead` | Fork has newer commits (pinned) | Protected, keeping fork |
-| ! | `drifted` | Fork ahead, not protected | At risk, consider pinning |
-| ↓ | `behind` | Upstream has newer commits | Will sync from upstream |
-| ⇅ | `diverged` | Both sides have changes | Will merge from upstream |
-| ⊡ | `locked` | Both sides changed, pinned | Protected, keeping fork |
-| ⚠ | `unrelated` | No shared commit history | Manual resolution needed |
+| ↑ | `ahead` | Fork changed (pinned/ignored) | Protected, keeping fork |
+| ! | `drifted` | Fork changed, not protected | At risk, consider pinning |
+| ↓ | `behind` | Upstream has changes | Will sync from upstream |
+| ⇅ | `diverged` | Both sides changed | Will merge from upstream |
+| ⨀ | `pinned` | Both changed, fork wins | Protected, keeping fork |
 
+## Package.json Sync
+
+The `packageJsonSync` setting controls which package.json sections are synced from upstream:
+
+```typescript
+packageJsonSync: ['dependencies', 'devDependencies', 'scripts']
+```
+
+**Supported keys:** `dependencies`, `devDependencies`, `peerDependencies`, `optionalDependencies`, `scripts`, `engines`, `packageManager`, `overrides`
+
+**Behavior:**
+- **Adds** new keys from upstream
+- **Updates** existing keys to match upstream versions
+- Does **NOT remove** keys that only exist in your fork
+
+This allows your fork to have extra dependencies or scripts without them being removed on each sync.
+
+## Merge Strategy
+
+The `mergeStrategy` setting controls how upstream changes are merged:
+
+```typescript
+mergeStrategy: 'merge' // default
+```
+
+| Strategy | Behavior | IDE Support |
+|----------|----------|-------------|
+| `merge` | Creates merge commit with full ancestry | Full 3-way merge for conflicts |
+| `squash` | Stages all changes as one commit | No 3-way merge (manual resolution) |
+
+**Use `merge` (default)** for:
+- IDE 3-way merge support (VS Code, WebStorm)
+- Tracking sync history via merge commits
+
+**Use `squash`** for:
+- Cleaner commit history (one commit per sync)
+- When you prefer manual conflict resolution
 
 ## Development
 
