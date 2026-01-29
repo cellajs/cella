@@ -70,8 +70,8 @@ export async function parseCli(userConfig: CellaSyncConfig, forkPath: string): P
   }
 
   // Build runtime config
-  const remoteName = userConfig.upstreamRemoteName || 'cella-upstream';
-  const upstreamRef = `${remoteName}/${userConfig.upstreamBranch}`;
+  const remoteName = userConfig.settings.upstreamRemoteName || 'cella-upstream';
+  const upstreamRef = `${remoteName}/${userConfig.settings.upstreamBranch}`;
 
   return {
     ...userConfig,

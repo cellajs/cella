@@ -1,6 +1,6 @@
 import type { AddressInfo } from 'node:net';
 import pc from 'picocolors';
-import { env } from '../src/env';
+import { env } from '../env';
 
 /**
  * Starts an tunnel to expose the local development server to the internet.

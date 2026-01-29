@@ -17,7 +17,7 @@ import { env } from './env';
 
 // import { sdk } from './tracing';
 
-const startTunnel = appConfig.mode === 'tunnel' ? (await import('../scripts/start-tunnel')).default : () => null;
+const startTunnel = appConfig.mode === 'tunnel' ? (await import('#/lib/start-tunnel')).default : () => null;
 
 const isPGliteDatabase = (_db: unknown): _db is PgliteDatabase => env.DEV_MODE === 'basic';
 

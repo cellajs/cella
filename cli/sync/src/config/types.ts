@@ -1,4 +1,8 @@
-import type { SyncService } from './sync-services';
+/**
+ * Sync CLI v2 - Configuration Types
+ *
+ * Simplified configuration for worktree-based merge approach.
+ */
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PUBLIC API - for cella.config.ts
@@ -16,10 +20,10 @@ export type PackageJsonSyncKey =
   | 'overrides';
 
 /**
- * User-configurable sync options for cella.config.ts.
- * Flat structure for simplicity and clarity.
+ * Sync settings - all configurable options for the sync CLI.
+ * Hover over each property for documentation.
  */
-export interface CellaSyncConfig {
+export interface SyncSettings {
   /** Upstream repository URL (e.g., 'git@github.com:cellajs/cella.git') */
   upstreamUrl: string;
 
@@ -32,39 +36,42 @@ export interface CellaSyncConfig {
   /** Your fork's working branch (e.g., 'development') */
   forkBranch: string;
 
-  /** Branch for sync operations, maintains full upstream history (default: 'sync-branch') */
-  forkSyncBranch?: string;
-
-  /** Show all file details (default: false, shows only files needing attention) */
-  verbose?: boolean;
-
-  /** Max commits to show in squash commit preview (default: 30) */
-  maxSquashPreviews?: number;
-
   /** Which package.json keys to sync (default: ['dependencies', 'devDependencies']) */
   packageJsonSync?: PackageJsonSyncKey[];
+}
+
+/**
+ * User-configurable sync options for cella.config.ts.
+ * Simplified for v2 - no sync branch or squash options.
+ */
+export interface CellaSyncConfig {
+  /** Core sync settings */
+  settings: SyncSettings;
 
   /**
    * File overrides for controlling sync behavior per file/pattern.
-   * Supports glob patterns (e.g., 'frontend/public/static/*').
    */
   overrides?: {
     /**
-     * Files pinned to fork — full fork control for existing, modified, or deleted files.
-     * If fork deleted a pinned file, the deletion is respected (file won't be re-added).
-     * Example: config files, routes, branding assets.
-     */
-    pinned?: string[];
-
-    /**
      * Files ignored entirely during sync — never synced (existing or new).
-     * Use for app-specific files that should never sync with upstream.
-     * Example: your app's docs, custom modules, local configs.
+     * Supports glob patterns (e.g., 'frontend/public/static/*').
+     * Fork-only territory: upstream cannot add, modify, or delete these.
      */
     ignored?: string[];
+
+    /**
+     * Files pinned to fork — fork wins on conflicts.
+     * Exact paths only (no wildcards - use ignored for patterns).
+     * Non-conflicting upstream changes merge normally.
+     * If fork deleted a pinned file, deletion is respected.
+     */
+    pinned?: string[];
   };
 }
 
+/**
+ * Helper function for defining cella.config.ts with type checking.
+ */
 export function defineConfig(config: CellaSyncConfig): CellaSyncConfig {
   return config;
 }
@@ -73,55 +80,78 @@ export function defineConfig(config: CellaSyncConfig): CellaSyncConfig {
 // INTERNAL TYPES - for sync modules
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Repository config object passed to generic functions */
-export interface RepoConfig {
-  localPath: string;
-  remoteUrl: string;
-  branch: string;
-  remoteName: string;
-  syncBranch: string;
-  location: 'local' | 'remote';
-  type: 'fork' | 'upstream';
-  isRemote: boolean;
-  branchRef: string;
-  syncBranchRef: string;
-  repoReference: string;
-  workingDirectory: string;
-}
+/** Sync services available in the CLI */
+export type SyncService = 'analyze' | 'sync' | 'packages';
 
-/** Overrides config with defaults applied */
-export interface OverridesConfig {
-  pinned: string[];
-  ignored: string[];
-}
+/** Runtime configuration with all resolved values */
+export interface RuntimeConfig extends CellaSyncConfig {
+  /** Resolved fork repository path */
+  forkPath: string;
 
-/** Full internal sync state with flat structure */
-export interface SyncState {
-  syncService: SyncService;
-  debug: boolean;
-  verbose: boolean;
-  skipPackages: boolean;
+  /** Full upstream remote ref (e.g., 'cella-upstream/development') */
+  upstreamRef: string;
+
+  /** Selected sync service */
+  service: SyncService;
+
+  /** Write full file list to log file */
   logFile: boolean;
-  maxSquashPreviews: number;
-  packageJsonSync: PackageJsonSyncKey[];
 
-  /** Number of commits pulled from upstream in this sync session */
-  pulledCommitCount: number;
+  /** Show verbose output */
+  verbose: boolean;
+}
 
-  /** Commit messages from upstream pulled in this sync session */
-  pulledCommitMessages: string[];
+/** File status after analysis */
+export type FileStatus =
+  | 'identical' // No changes needed
+  | 'ahead' // Fork is ahead, protected (pinned/ignored)
+  | 'drifted' // Fork is ahead, NOT protected (at risk)
+  | 'behind' // Upstream has changes to sync
+  | 'diverged' // Both changed, will merge
+  | 'pinned' // Fork wins on conflict
+  | 'ignored' // Excluded from sync entirely
+  | 'deleted'; // Fork deleted, will stay deleted
 
-  // Fork settings
-  forkLocalPath: string;
-  forkBranch: string;
-  forkSyncBranch: string;
-  forkLocation: 'local' | 'remote';
+/** Analyzed file with status and metadata */
+export interface AnalyzedFile {
+  path: string;
+  status: FileStatus;
+  /** True if file is in ignored list */
+  isIgnored: boolean;
+  /** True if file is in pinned list */
+  isPinned: boolean;
+  /** True if file exists in fork */
+  existsInFork: boolean;
+  /** True if file exists in upstream */
+  existsInUpstream: boolean;
+  /** True if file has merge conflict */
+  hasConflict?: boolean;
+}
 
-  // Upstream settings
-  upstreamUrl: string;
-  upstreamBranch: string;
-  upstreamRemoteName: string;
-  upstreamLocation: 'local' | 'remote';
+/** Summary counts by status */
+export interface AnalysisSummary {
+  identical: number;
+  ahead: number;
+  drifted: number;
+  behind: number;
+  diverged: number;
+  pinned: number;
+  ignored: number;
+  deleted: number;
+  total: number;
+}
 
-  overrides: OverridesConfig;
+/** Merge result from merge-engine */
+export interface MergeResult {
+  success: boolean;
+  files: AnalyzedFile[];
+  summary: AnalysisSummary;
+  worktreePath: string;
+  conflicts: string[];
+  /** Upstream commit info */
+  upstreamCommit?: {
+    hash: string;
+    message: string;
+    date: string;
+  };
 }

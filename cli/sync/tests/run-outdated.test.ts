@@ -10,7 +10,7 @@ import {
   loadCache,
   type NpmRegistryData,
   terminalLink,
-} from '../src/run-outdated';
+} from '../run-outdated';
 
 describe('run-outdated', () => {
   describe('isMajorVersionChange', () => {

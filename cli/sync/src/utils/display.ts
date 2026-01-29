@@ -24,6 +24,13 @@ export const DIVIDER = '─'.repeat(60);
 /** Active spinner reference */
 let activeSpinner: Spinner | null = null;
 
+/** Track completed steps for persistent display */
+interface CompletedStep {
+  label: string;
+  detail?: string;
+}
+const completedSteps: CompletedStep[] = [];
+
 /**
  * Get the header line for CLI output.
  */
@@ -44,6 +51,25 @@ export function printHeader(): void {
 }
 
 /**
+ * Reset completed steps (call at start of each service).
+ */
+export function resetSteps(): void {
+  completedSteps.length = 0;
+}
+
+/**
+ * Print a completed step with checkmark.
+ * Optionally include a detail line in grey.
+ */
+export function printStep(label: string, detail?: string): void {
+  console.info(`${pc.green('✓')} ${label}`);
+  if (detail) {
+    console.info(`  ${pc.dim(detail)}`);
+  }
+  completedSteps.push({ label, detail });
+}
+
+/**
  * Create a progress spinner.
  */
 export function createSpinner(text: string): Spinner {
@@ -53,13 +79,15 @@ export function createSpinner(text: string): Spinner {
 }
 
 /**
- * Stop the active spinner with success.
+ * Stop the active spinner with success and print step.
  */
-export function spinnerSuccess(message?: string): void {
+export function spinnerSuccess(message?: string, detail?: string): void {
   if (activeSpinner) {
     activeSpinner.stop();
     activeSpinner = null;
-    if (message) console.info(`${pc.green('✓')} ${message}`);
+  }
+  if (message) {
+    printStep(message, detail);
   }
 }
 

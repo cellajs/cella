@@ -43,8 +43,11 @@ import {
 } from '../utils/git';
 import { findIgnoredFiles, isIgnored, isPinned } from '../utils/overrides';
 
-/** Progress callback type */
-export type ProgressCallback = (message: string) => void;
+/** Progress callback type - receives message and optional detail for sub-line */
+export type ProgressCallback = (message: string, detail?: string) => void;
+
+/** Step completion callback - marks a step as done with optional detail */
+export type StepCallback = (label: string, detail?: string) => void;
 
 /**
  * Apply worktree merge result to the fork repository.
@@ -298,11 +301,12 @@ export async function runMergeEngine(
   options: {
     apply: boolean;
     onProgress?: ProgressCallback;
+    onStep?: StepCallback;
   },
 ): Promise<MergeResult> {
   const { forkPath, upstreamRef } = config;
   const worktreePath = getWorktreePath(forkPath);
-  const { apply, onProgress } = options;
+  const { apply, onProgress, onStep } = options;
 
   // Check for leftover worktree
   if (await detectLeftoverWorktree(forkPath)) {
@@ -316,8 +320,9 @@ export async function runMergeEngine(
   try {
     // Setup upstream remote
     onProgress?.('Setting up upstream remote...');
-    const remoteName = config.upstreamRemoteName || 'cella-upstream';
-    await ensureRemote(forkPath, remoteName, config.upstreamUrl);
+    const remoteName = config.settings.upstreamRemoteName || 'cella-upstream';
+    await ensureRemote(forkPath, remoteName, config.settings.upstreamUrl);
+    onStep?.('Remote configured', `${remoteName} → ${config.settings.upstreamUrl}`);
 
     // Fetch upstream
     onProgress?.(`Fetching upstream (${remoteName})...`);
@@ -325,7 +330,7 @@ export async function runMergeEngine(
 
     // Get upstream commit info
     const upstreamCommit = await getCommitInfo(forkPath, upstreamRef);
-    onProgress?.(`  Latest: ${upstreamCommit.hash} "${upstreamCommit.message}" (${upstreamCommit.date})`);
+    onStep?.('Fetched upstream', `${upstreamCommit.hash.slice(0, 7)} "${upstreamCommit.message}"`);
 
     // Get merge base for analysis
     const mergeBase = await getMergeBase(forkPath, 'HEAD', upstreamRef);
@@ -333,6 +338,7 @@ export async function runMergeEngine(
     // Create worktree in temp directory (invisible to VSCode)
     onProgress?.(`Creating worktree in temp directory...`);
     await createWorktree(forkPath, worktreePath, 'HEAD');
+    onStep?.('Worktree created', worktreePath);
 
     // Perform merge in worktree
     onProgress?.('Performing merge...');
@@ -344,6 +350,7 @@ export async function runMergeEngine(
       onProgress?.('Resolving conflicts...');
       conflicts = await resolveConflicts(worktreePath, config, onProgress);
     }
+    onStep?.('Merge complete', conflicts.length > 0 ? `${conflicts.length} unresolved conflicts` : 'No conflicts');
 
     // Remove all ignored files from worktree (after merge)
     onProgress?.('Removing ignored files from merge result...');
@@ -352,6 +359,7 @@ export async function runMergeEngine(
     // Analyze all files
     onProgress?.('Analyzing files...');
     const analyzedFiles = await analyzeFiles(worktreePath, forkPath, upstreamRef, mergeBase, config, onProgress);
+    onStep?.('Analysis complete', `${analyzedFiles.length} files analyzed`);
 
     // Mark files with conflicts
     for (const file of analyzedFiles) {
@@ -363,15 +371,19 @@ export async function runMergeEngine(
     const summary = calculateSummary(analyzedFiles);
 
     // Apply or discard
-    if (apply && conflicts.length === 0) {
+    if (apply) {
       onProgress?.('Applying changes to repository...');
       await addAll(worktreePath);
       await applyWorktreeToFork(worktreePath, forkPath, analyzedFiles);
+      const changedCount = summary.behind + summary.diverged;
+      onStep?.('Changes applied', `${changedCount} files updated`);
       onProgress?.('Cleaning up worktree...');
       await cleanupWorktree(forkPath, worktreePath);
+      onStep?.('Worktree cleaned up');
     } else {
       onProgress?.('Cleaning up worktree (dry run)...');
       await cleanupWorktree(forkPath, worktreePath);
+      onStep?.('Worktree cleaned up', 'Dry run, no changes applied');
     }
 
     return {

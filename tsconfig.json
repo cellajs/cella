@@ -20,8 +20,6 @@
     "noFallthroughCasesInSwitch": true,
 
     /* Type checking */
-    "incremental": true,
-    "composite": true,
-    "tsBuildInfoFile": "./tsconfig.tsbuildinfo"
+    "incremental": true
   }
 }

@@ -134,7 +134,7 @@ export function validateOverrides(
         warnings.push({
           type: 'pinned-not-found',
           pattern,
-          message: `pinned path not found in fork: "${pattern}"`,
+          message: `pinned not found: ${pattern}`,
         });
       }
     }

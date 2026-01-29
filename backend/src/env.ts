@@ -37,9 +37,6 @@ export const env = createEnv({
 
     REMOTE_SYSTEM_ACCESS_IP: z.string(),
 
-    NOVU_API_KEY: z.string().optional(),
-    NOVU_SLACK_WEBHOOK: z.string().optional(),
-
     SEND_ALL_TO_EMAIL: z.string().optional(),
     BREVO_API_KEY: z.string().optional(),
 

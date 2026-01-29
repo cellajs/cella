@@ -10,10 +10,9 @@ import type { MergeResult, RuntimeConfig } from '../config/types';
 import {
   createSpinner,
   printConflicts,
-  printDriftedWarning,
   printSummary,
   printSyncComplete,
-  printSyncFiles,
+  resetSteps,
   spinnerFail,
   spinnerSuccess,
   spinnerText,
@@ -27,6 +26,7 @@ import { runMergeEngine } from './merge-engine';
  * Creates worktree, performs merge, applies via rsync, discards worktree.
  */
 export async function runSync(config: RuntimeConfig): Promise<MergeResult> {
+  resetSteps();
   createSpinner('Starting sync...');
 
   const result = await runMergeEngine(config, {
@@ -34,33 +34,34 @@ export async function runSync(config: RuntimeConfig): Promise<MergeResult> {
     onProgress: (message) => {
       spinnerText(message);
     },
+    onStep: (label, detail) => {
+      spinnerSuccess(label, detail);
+      createSpinner('...');
+    },
   });
 
   if (result.success) {
-    spinnerSuccess('Sync complete');
+    spinnerSuccess();
   } else {
     spinnerFail('Sync completed with conflicts');
   }
 
-  // Print results
+  // Print summary only (no file lists for sync)
   printSummary(result.summary);
-  printSyncFiles(result.files);
-  printDriftedWarning(result.files);
 
   // Handle conflicts
   if (result.conflicts.length > 0) {
     printConflicts(result.conflicts);
     console.info();
-    console.info(pc.yellow('Sync was not applied due to unresolved conflicts.'));
-    console.info(pc.dim('Resolve conflicts by adding files to pinned or ignored, then re-run.'));
-    return result;
+    console.info(pc.yellow('Conflicts need manual resolution.'));
+    console.info(pc.dim('Add files to pinned or ignored, then re-run.'));
   }
 
   // Write log file if requested
   if (config.logFile) {
     const logPath = writeLogFile(config.forkPath, result.files);
     console.info();
-    console.info(`Full file list written to: ${logPath}`);
+    console.info(pc.dim(`Full file list written to: ${logPath}`));
   }
 
   printSyncComplete(result);

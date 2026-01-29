@@ -1,111 +1,133 @@
-import pc from 'picocolors';
+#!/usr/bin/env tsx
+/**
+ * Sync CLI v2 - Main entry point
+ *
+ * Worktree-based merge approach that isolates all merge operations
+ * from the main repository until the final atomic rsync copy.
+ */
 
-import { config, initConfig } from '#/config';
-import { runAnalyze } from '#/modules/analyze';
-import { validateConfig } from '#/modules/cli/handlers';
-import { runPackages } from '#/modules/package';
-import { runSquash } from '#/modules/squash';
-import { runSync } from '#/modules/sync';
-import { runValidate } from '#/modules/validate';
-import { runCli } from '#/run-cli';
-import { runSetup } from '#/run-setup';
-import { gitCheckout } from '#/utils/git/command';
-import { getCurrentBranch } from '#/utils/git/helpers';
+import { existsSync } from 'node:fs';
+import { join, resolve } from 'node:path';
+import pc from 'picocolors';
+import { parseCli } from './cli';
+import type { CellaSyncConfig } from './config/types';
+import { runAnalyze } from './services/analyze';
+import { runPackages } from './services/packages';
+import { runSync } from './services/sync';
+import { runValidate } from './services/validate';
+import { registerSignalHandlers } from './utils/cleanup';
+import { DIVIDER } from './utils/display';
+import { getCurrentBranch, isClean } from './utils/git';
 
 /**
- * Orchestrates the full execution flow of the Cella sync CLI.
- *
- * Pipeline phases:
- * 0. Init - Load cella.config.ts from fork path
- * 1. CLI - Prompt for configuration
- * 2. Setup - Preflight checks, branch preparation
- * 3. Analyze - Diff upstream vs fork, determine strategies
- * 4. Sync - Merge upstream → sync-branch (resolve conflicts)
- * 5. Packages - Sync package.json dependencies (on sync-branch)
- * 6. Validate - Run pnpm install && pnpm check (on sync-branch)
- * 7. Squash - Squash sync-branch → development (after validation)
- *
- * Development branch is only touched in the final squash phase,
- * ensuring it always receives validated, working code.
- *
- * @returns A Promise that resolves when the entire pipeline has executed.
+ * Load cella.config.ts from the fork path.
  */
-async function main(): Promise<void> {
-  // Initialize config from fork's cella.config.ts
-  // Supports CELLA_FORK_PATH env var for testing against alternate forks
-  await initConfig();
+async function loadConfig(forkPath: string): Promise<CellaSyncConfig> {
+  const configPath = join(forkPath, 'cella.config.ts');
 
-  // Store original branch to restore at end
-  const originalBranch = await getCurrentBranch(process.cwd());
+  if (!existsSync(configPath)) {
+    throw new Error(`Config file not found: ${configPath}`);
+  }
 
-  // Determine target branch to restore to (initialized after config is loaded)
-  let targetBranch = originalBranch;
+  // Dynamic import of the config
+  const configModule = await import(configPath);
+  return configModule.default;
+}
 
-  try {
-    // Prompt configuration
-    await runCli();
+/**
+ * Determine the fork path.
+ *
+ * Priority:
+ * 1. CELLA_FORK_PATH environment variable
+ * 2. Resolved from import.meta.dirname (src-v2 is 3 levels deep from monorepo root)
+ */
+function getForkPath(): string {
+  const envPath = process.env.CELLA_FORK_PATH;
+  if (envPath) {
+    return resolve(envPath);
+  }
+  // Resolve from file location: src-v2/index.ts -> cli/sync -> cli -> monorepo root
+  return resolve(import.meta.dirname, '../../..');
+}
 
-    // Update target branch now that config is loaded:
-    // - If started on sync-branch: restore to forkBranchRef (working branch)
-    // - Otherwise: restore to original branch
-    // This ensures we never leave the user on sync-branch
-    targetBranch = originalBranch === config.forkSyncBranchRef ? config.forkBranchRef : originalBranch;
+/**
+ * Pre-flight checks before running sync.
+ */
+async function preflight(forkPath: string, forkBranch: string): Promise<void> {
+  // Check we're in a git repository
+  if (!existsSync(join(forkPath, '.git'))) {
+    throw new Error(`Not a git repository: ${forkPath}`);
+  }
 
-    // If only validating config, run strict validation and exit
-    if (config.syncService === 'validate') {
-      await validateConfig(true);
-      return;
-    }
+  // Check we're on the correct branch
+  const currentBranch = await getCurrentBranch(forkPath);
+  if (currentBranch !== forkBranch) {
+    throw new Error(`Must be on branch '${forkBranch}' to sync. Currently on '${currentBranch}'.`);
+  }
 
-    // Validate overrides config (check file patterns exist)
-    await validateConfig();
-
-    // Validate environment and repository state
-    await runSetup();
-
-    // Perform analysis (file diffs, metadata, merge strategies, etc.)
-    const analyzedFiles = await runAnalyze();
-
-    // Apply sync pipeline (sync service only)
-    if (config.syncService === 'sync') {
-      // Phase 4: Merge upstream → sync-branch (with conflict resolution)
-      await runSync(analyzedFiles);
-
-      // Phase 5: Sync package.json dependencies (on sync-branch)
-      if (!config.skipPackages) {
-        await runPackages(analyzedFiles);
-        console.info();
-      }
-
-      // Phase 6: Validate (pnpm install && pnpm check) and stage all changes
-      await runValidate();
-
-      // Phase 7: Squash validated sync-branch → development
-      const commitMessage = await runSquash();
-
-      // Show final instructions for staged changes
-      if (commitMessage) {
-        console.info();
-        console.info(`${pc.green('✓')} changes staged, not committed`);
-        console.info();
-        console.info(pc.dim('suggested commit message:'));
-        console.info(pc.white(commitMessage));
-      }
-    }
-  } finally {
-    // Restore to target branch (if different from current)
-    // For sync service: always end on forkBranchRef so user can commit staged changes
-    // For other services: restore to original branch
-    const currentBranch = await getCurrentBranch(process.cwd());
-    if (currentBranch !== targetBranch) {
-      await gitCheckout(process.cwd(), targetBranch);
-      console.info();
-      console.info(`${pc.green('✓')} restored to '${targetBranch}' branch`);
-    }
+  // Check for uncommitted changes
+  const clean = await isClean(forkPath);
+  if (!clean) {
+    throw new Error('Working directory has uncommitted changes. Please commit or stash before syncing.');
   }
 }
 
-// Bootstrap execution and report any unhandled errors
-main().catch(() => {
-  process.exit(1);
-});
+/**
+ * Main entry point.
+ */
+async function main(): Promise<void> {
+  // Register signal handlers for cleanup
+  registerSignalHandlers();
+
+  try {
+    // Determine fork path
+    const forkPath = getForkPath();
+
+    // Load config
+    const userConfig = await loadConfig(forkPath);
+
+    // Parse CLI and get runtime config
+    const config = await parseCli(userConfig, forkPath);
+
+    // Run preflight checks (except for packages which doesn't need clean working dir)
+    if (config.service !== 'packages') {
+      await preflight(forkPath, userConfig.settings.forkBranch);
+    }
+
+    // Route to service
+    switch (config.service) {
+      case 'analyze':
+        await runAnalyze(config);
+        break;
+
+      case 'sync': {
+        const result = await runSync(config);
+
+        // Run validation after successful sync
+        if (result.success && result.conflicts.length === 0) {
+          console.info();
+          console.info(DIVIDER);
+          console.info();
+          const valid = await runValidate(config);
+          if (!valid) {
+            console.info();
+            console.info(pc.yellow('Validation failed. Please fix issues before committing.'));
+          }
+        }
+        break;
+      }
+
+      case 'packages':
+        await runPackages(config);
+        break;
+    }
+
+    console.info();
+  } catch (error) {
+    console.error();
+    console.error(`${pc.red('✗')} ${error instanceof Error ? error.message : error}`);
+    process.exit(1);
+  }
+}
+
+main();

@@ -24,8 +24,7 @@
   },
   "scripts": {
     "sync": "tsx index.ts",
-    "sync-v2": "tsx index-v2.ts",
-    "deps:outdated": "tsx src/run-outdated.ts",
+    "deps:outdated": "tsx run-outdated.ts",
     "validate": "tsx index.ts --sync-service validate",
     "check": "pnpm ts && pnpm biome check --write .",
     "ts": "tsc --noEmit",

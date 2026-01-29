@@ -170,7 +170,7 @@ async function syncPackageJson(
 export async function runPackages(config: RuntimeConfig): Promise<void> {
   createSpinner('Syncing package.json files...');
 
-  const keysToSync = config.packageJsonSync || ['dependencies', 'devDependencies'];
+  const keysToSync = config.settings.packageJsonSync || ['dependencies', 'devDependencies'];
   const results: { location: string; changes: string[] }[] = [];
 
   for (const location of packageLocations) {

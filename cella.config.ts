@@ -4,19 +4,13 @@ import { defineConfig } from './cli/sync/config';
  * Cella sync config: run with `pnpm sync`.
  */
 export default defineConfig({
-  // Upstream settings
-  upstreamUrl: 'git@github.com:cellajs/cella.git',
-  upstreamBranch: 'development',
-  upstreamRemoteName: 'cella-upstream',  
-  
-  // Fork settings
-  forkBranch: 'development',
-  forkSyncBranch: 'sync-branch',        
-
-  // Options
-  maxSquashPreviews: 10,
-  packageJsonSync: ['dependencies', 'devDependencies', 'scripts'],
-  verbose: true,
+  settings: {
+    upstreamUrl: 'git@github.com:cellajs/cella.git',
+    upstreamBranch: 'development',
+    upstreamRemoteName: 'cella-upstream',
+    forkBranch: 'development',
+    packageJsonSync: ['dependencies', 'devDependencies', 'scripts'],
+  },
 
   // File overrides
   overrides: {

@@ -42,7 +42,7 @@ export interface EnhancedPackageInfo {
 }
 
 // Cache file location (in cli/sync directory)
-export const CACHE_FILE = path.join(import.meta.dirname, '..', '.outdated.cache.json');
+export const CACHE_FILE = path.join(import.meta.dirname, '.outdated.cache.json');
 export const CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days in ms
 
 /**
