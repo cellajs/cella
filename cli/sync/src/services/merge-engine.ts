@@ -105,12 +105,12 @@ async function applyDirectMerge(
   onProgress?: ProgressCallback,
 ): Promise<{ resolved: number; remainingConflicts: string[]; analyzedFiles: AnalyzedFile[] }> {
   // Start real merge in fork
-  onProgress?.('Starting merge in fork...');
+  onProgress?.('starting merge in fork...');
   const squash = config.settings.mergeStrategy === 'squash';
   await merge(forkPath, upstreamRef, { noCommit: true, noEdit: true, squash });
 
   // Analyze files post-merge
-  onProgress?.('Analyzing files...');
+  onProgress?.('analyzing files...');
   const analyzedFiles = await analyzeFiles(forkPath, forkPath, upstreamRef, mergeBaseRef, config, onProgress);
 
   // Apply resolutions directly in fork
@@ -216,7 +216,7 @@ async function analyzeFiles(
   config: RuntimeConfig,
   onProgress?: ProgressCallback,
 ): Promise<AnalyzedFile[]> {
-  onProgress?.('Collecting file hashes (batch)...');
+  onProgress?.('collecting file hashes (batch)...');
 
   // Batch get all file hashes at each ref (one git call per ref)
   const [forkHashes, upstreamHashes, baseHashes] = await Promise.all([
@@ -237,7 +237,7 @@ async function analyzeFiles(
   const changedFiles = new Set([...upstreamChanges.keys(), ...forkChanges.keys()]);
 
   onProgress?.(
-    `Analyzing ${changedFiles.size} changed files (${allFiles.size - changedFiles.size} identical skipped)...`,
+    `analyzing ${changedFiles.size} changed files (${allFiles.size - changedFiles.size} identical skipped)...`,
   );
 
   const analyzedFiles: AnalyzedFile[] = [];
@@ -265,7 +265,7 @@ async function analyzeFiles(
 
     processed++;
     if (processed % 100 === 0) {
-      onProgress?.(`Analyzing ${processed}/${changedFiles.size} changed files...`);
+      onProgress?.(`analyzing ${processed}/${changedFiles.size} changed files...`);
     }
 
     const forkHash = forkHashes.get(filePath) ?? null;
@@ -362,7 +362,7 @@ export async function runMergeEngine(
 
   // Check for leftover worktree
   if (await detectLeftoverWorktree(forkPath)) {
-    onProgress?.('Cleaning up leftover worktree from previous run...');
+    onProgress?.('cleaning up leftover worktree from previous run...');
     await cleanupLeftoverWorktrees(forkPath);
   }
 
@@ -371,13 +371,13 @@ export async function runMergeEngine(
 
   try {
     // Setup upstream remote
-    onProgress?.('Setting up upstream remote...');
+    onProgress?.('setting up upstream remote...');
     const remoteName = config.settings.upstreamRemoteName || 'cella-upstream';
     await ensureRemote(forkPath, remoteName, config.settings.upstreamUrl);
-    onStep?.('Remote configured', `${upstreamRef} → ${config.settings.upstreamUrl}`);
+    onStep?.('remote configured', `${upstreamRef} → ${config.settings.upstreamUrl}`);
 
     // Fetch upstream
-    onProgress?.(`Fetching upstream (${remoteName})...`);
+    onProgress?.(`fetching upstream (${remoteName})...`);
     await fetch(forkPath, remoteName);
 
     // Get GitHub base URLs for commit links
@@ -400,7 +400,7 @@ export async function runMergeEngine(
     commitInfo += `\n  ${shortHash} "${upstreamCommit.message}" (${upstreamCommit.date})`;
     if (githubUrl) commitInfo += `\n  ${githubUrl}`;
 
-    onStep?.('Fetched upstream', commitInfo);
+    onStep?.('fetched upstream', commitInfo);
 
     // For sync mode, we'll do the merge directly in fork
     // For analyze mode, we use a worktree to preview changes
@@ -416,14 +416,14 @@ export async function runMergeEngine(
 
       const summary = calculateSummary(analyzedFiles);
       const synced = summary.behind + summary.diverged;
-      const mergeType = config.settings.mergeStrategy === 'squash' ? 'Squash merge' : 'Merge';
+      const mergeType = config.settings.mergeStrategy === 'squash' ? 'squash merge' : 'merge';
 
       if (remainingConflicts.length > 0) {
         onStep?.(`${mergeType} in progress`, `${remainingConflicts.length} conflicts to resolve in IDE`);
       } else if (synced > 0) {
-        onStep?.('Synced', `${synced} files from upstream`);
+        onStep?.('synced', `${synced} files from upstream`);
       } else {
-        onStep?.('Up to date', 'No upstream changes to sync');
+        onStep?.('up to date', 'no upstream changes to sync');
       }
 
       return {
@@ -440,18 +440,18 @@ export async function runMergeEngine(
       // ANALYZE MODE: Use worktree to preview changes without affecting fork
 
       // Create worktree in temp directory (invisible to VSCode)
-      onProgress?.(`Creating worktree in temp directory...`);
+      onProgress?.(`creating worktree in temp directory...`);
       await createWorktree(forkPath, worktreePath, 'HEAD');
-      onStep?.('Worktree created', worktreePath);
+      onStep?.('worktree created', worktreePath);
 
       // Perform merge in worktree
-      onProgress?.('Performing merge in worktree...');
+      onProgress?.('performing merge in worktree...');
       const squash = config.settings.mergeStrategy === 'squash';
       await merge(worktreePath, upstreamRef, { noCommit: true, noEdit: true, squash });
-      onStep?.('Merge complete', 'Upstream merged into worktree');
+      onStep?.('merge complete', 'upstream merged into worktree');
 
       // Analyze all files
-      onProgress?.('Analyzing files...');
+      onProgress?.('analyzing files...');
       const analyzedFiles = await analyzeFiles(
         worktreePath,
         forkPath,
@@ -494,12 +494,12 @@ export async function runMergeEngine(
         }
       }
 
-      onStep?.('Analysis complete', `${analyzedFiles.length} files analyzed`);
+      onStep?.('analysis complete', `${analyzedFiles.length} files analyzed`);
 
       const summary = calculateSummary(analyzedFiles);
 
       // Cleanup worktree
-      onProgress?.('Cleaning up worktree...');
+      onProgress?.('cleaning up worktree...');
       await cleanupWorktree(forkPath, worktreePath);
 
       // For analyze mode, count diverged files as potential conflicts
@@ -507,7 +507,7 @@ export async function runMergeEngine(
         .filter((f) => f.status === 'diverged')
         .map((f) => f.path);
 
-      onStep?.('Analysis complete', 'Dry run, no changes applied');
+      onStep?.('analysis complete', 'dry run, no changes applied');
 
       return {
         success: true,

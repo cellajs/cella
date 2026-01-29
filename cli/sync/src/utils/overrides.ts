@@ -125,7 +125,7 @@ export function validateOverrides(
       warnings.push({
         type: 'pinned-glob',
         pattern,
-        message: `pinned path contains glob pattern (use ignored instead): "${pattern}"`,
+        message: `pin contains glob pattern (use ignored): ${pattern}`,
       });
     } else {
       // Check if path exists in fork
@@ -134,7 +134,7 @@ export function validateOverrides(
         warnings.push({
           type: 'pinned-not-found',
           pattern,
-          message: `pinned not found: ${pattern}`,
+          message: `pin not found: ${pattern}`,
         });
       }
     }
@@ -148,7 +148,7 @@ export function validateOverrides(
       warnings.push({
         type: 'single-level-glob',
         pattern,
-        message: `pattern uses "/*" (single level) - use "/**" for recursive: "${pattern}"`,
+        message: `pattern uses "/*" (single level) - use "/**" for recursive: ${pattern}`,
       });
     }
 
@@ -160,7 +160,7 @@ export function validateOverrides(
         warnings.push({
           type: 'ignored-no-match',
           pattern,
-          message: `ignored pattern matches no files: "${pattern}"`,
+          message: `no ignored match found: ${pattern}`,
         });
       }
     }

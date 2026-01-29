@@ -43,7 +43,7 @@ export async function runSync(config: RuntimeConfig): Promise<MergeResult> {
   if (result.success) {
     spinnerSuccess();
   } else {
-    spinnerFail('Sync completed with conflicts');
+    spinnerFail('sync completed with conflicts');
   }
 
   // Print summary only (no file lists for sync)
@@ -53,7 +53,7 @@ export async function runSync(config: RuntimeConfig): Promise<MergeResult> {
   if (config.logFile) {
     const logPath = writeLogFile(config.forkPath, result.files);
     console.info();
-    console.info(pc.dim(`Full file list written to: ${logPath}`));
+    console.info(pc.dim(`full file list written to: ${logPath}`));
   }
 
   printSyncComplete(result);

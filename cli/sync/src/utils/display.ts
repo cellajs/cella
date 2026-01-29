@@ -291,7 +291,6 @@ export function printConflicts(conflicts: string[]): void {
   }
 
   console.info();
-  console.info(pc.dim('  These conflicts must be resolved manually in your IDE.'));
 }
 
 /**
@@ -301,10 +300,10 @@ export function writeLogFile(forkPath: string, files: AnalyzedFile[]): string {
   const logPath = join(forkPath, 'cella-sync.log');
 
   const lines: string[] = [
-    `Cella Sync Analysis - ${new Date().toISOString()}`,
+    `cella sync analysis - ${new Date().toISOString()}`,
     DIVIDER,
     '',
-    `Complete file list (${files.length} files)`,
+    `complete file list (${files.length} files)`,
     DIVIDER,
     '',
   ];
@@ -344,7 +343,7 @@ export function printSyncComplete(result: MergeResult): void {
   const conflicts = result.conflicts.length;
 
   console.info();
-  console.info(`${pc.green('✓')} Sync complete`);
+  console.info(`${pc.green('✓')} sync complete`);
   console.info();
   console.info(`  ${updated} files updated, ${merged} merged, ${conflicts} conflicts`);
   console.info();
