@@ -1,6 +1,15 @@
 import pc from 'picocolors';
 
-import { DIVIDER, getHeaderLine } from '#/constants';
+import { DESCRIPTION, DIVIDER, getHeaderLine } from '#/constants';
+
+/** ASCII art logo for the CLI welcome screen. */
+function showAscii(): void {
+  console.info(pc.cyan('                      _ _            '));
+  console.info(pc.cyan('▒▓█████▓▒     ___ ___| | | __ _      '));
+  console.info(pc.cyan('▒▓█   █▓▒    / __/ _ \\ | |/ _` |    '));
+  console.info(pc.cyan('▒▓█   █▓▒   | (_|  __/ | | (_| |     '));
+  console.info(pc.cyan('▒▓█████▓▒    \\___\\___|_|_|\\__,_|  '));
+}
 
 /**
  * Displays the compact CLI welcome header.
@@ -8,7 +17,11 @@ import { DIVIDER, getHeaderLine } from '#/constants';
  */
 export function showWelcome(templateVersion: string): void {
   console.info();
-  console.info(pc.cyan(getHeaderLine(templateVersion)));
+  showAscii();
+  console.info();
+  console.info(pc.dim(DESCRIPTION));
+  console.info();
+  console.info(getHeaderLine(templateVersion));
   console.info(DIVIDER);
 }
 
@@ -28,17 +41,23 @@ export function showSuccess(
   // Navigation instruction
   if (needsCd) {
     console.info(`${pc.green('→')} cd ${pc.cyan(relativePath)}`);
+    console.info();
   }
 
   // Quick start options
-  console.info(`${pc.green('→')} ${pc.cyan(`${packageManager} quick`)}  ${pc.gray('(pglite, no docker)')}`);
-  console.info(`${pc.green('→')} ${pc.cyan(`${packageManager} dev`)}    ${pc.gray('(postgresql + docker)')}`);
+  console.info(`${pc.green('→')} ${pc.cyan(`${packageManager} quick`)}       ${pc.gray('(pglite, no docker)')}`);
+  console.info();
+  console.info(pc.gray('or, for full setup:'));
+  console.info();
+  console.info(
+    `${pc.green('→')} ${pc.cyan(`${packageManager} docker`)} ${pc.dim('&&')} ${pc.cyan(`${packageManager} seed`)} ${pc.dim('&&')} ${pc.cyan(`${packageManager} dev`)}`,
+  );
   console.info();
 
   // Credentials
-  console.info(pc.gray(`sign in: admin-test@cellajs.com / 12345678`));
+  console.info(`sign in: ${pc.gray('admin-test@cellajs.com / 12345678')}`);
   console.info();
-  console.info(`Enjoy building ${pc.green(projectName)} with cella! 🎉`);
+  console.info(`enjoy building ${pc.green(projectName)} with cella!`);
   console.info();
 }
 

@@ -58,14 +58,27 @@ export function createProgress(title: string): ProgressTracker {
 
   return {
     step: (message: string) => {
-      spinner.text = message;
+      // Complete previous step with green check if there was one
+      if (completedSteps.length > 0) {
+        spinner.stop();
+        console.info(`${pc.green('✓')} ${completedSteps[completedSteps.length - 1]}`);
+      }
       completedSteps.push(message);
+      spinner.text = message;
+      spinner.start();
     },
 
     done: (message: string) => {
-      spinner.stop();
+      // Complete the last step with green check
+      if (completedSteps.length > 0) {
+        spinner.stop();
+        console.info(`${pc.green('✓')} ${completedSteps[completedSteps.length - 1]}`);
+      } else {
+        spinner.stop();
+      }
       activeSpinner = null;
       if (message) {
+        console.info();
         console.info(`${pc.green('✓')} ${message}`);
       }
     },

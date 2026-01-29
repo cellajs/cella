@@ -1,5 +1,5 @@
 // Name of this CLI tool
-export const NAME = 'create-cella';
+export const NAME = 'create cella';
 
 // Thin line divider for console output (60 chars wide)
 export const DIVIDER = '─'.repeat(60);
@@ -12,6 +12,7 @@ export const CELLA_REMOTE_URL = 'git@github.com:cellajs/cella.git';
 
 // Import package.json dynamically for version and website information
 import packageJson from '../package.json' with { type: 'json' };
+import pc from 'picocolors';
 
 // Export details from package.json
 export const DESCRIPTION: string = packageJson.description;
@@ -20,11 +21,12 @@ export const AUTHOR: string = packageJson.author;
 export const WEBSITE: string = packageJson.homepage;
 export const GITHUB: string = packageJson.repository.url;
 
-/** Compact header line: "⚡ create-cella v0.1.7" right-aligned with website */
 export function getHeaderLine(templateVersion?: string): string {
-  const left = `⚡ ${NAME} v${VERSION}`;
-  const right = templateVersion ? `cella v${templateVersion}` : packageJson.homepage.replace('https://', '');
-  const padding = Math.max(1, 60 - left.length - right.length);
+  const leftText = `⧈ ${NAME} · v${VERSION} · cella v${templateVersion}`;
+  const rightText = packageJson.homepage.replace('https://', '');
+  const left = `${pc.cyan(`⧈ ${NAME}`)} ${pc.dim(`· v${VERSION} · cella v${templateVersion}`)}`;
+  const right = pc.cyan(rightText);
+  const padding = Math.max(1, 60 - leftText.length - rightText.length);
   return `${left}${' '.repeat(padding)}${right}`;
 }
 

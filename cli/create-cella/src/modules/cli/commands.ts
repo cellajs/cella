@@ -25,6 +25,7 @@ export const command = new Command(NAME)
   .option('--skip-generate', 'skip generating SQL files', false)
   .option('--skip-clean', 'skip cleaning the `cella` template', false)
   .option('--skip-git', 'skip initializing a git repository', false)
+  .option('--template <path>', 'use a custom template (local path or github:user/repo)')
   .option('--new-branch-name <name>', 'specify a new branch name to create and use', (name: string) => {
     if (typeof name === 'string') {
       name = name.trim();

@@ -6,6 +6,7 @@ export interface CLIOptions {
   skipInstall: boolean;
   skipGenerate: boolean;
   newBranchName?: string;
+  template?: string;
 }
 
 /** CLI configuration state */
@@ -28,6 +29,7 @@ export interface CreateOptions {
   skipClean: boolean;
   skipGenerate: boolean;
   packageManager: string;
+  templateUrl?: string;
 }
 
 /** Options for adding a remote to the repository */

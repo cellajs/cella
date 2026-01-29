@@ -39,7 +39,7 @@ export function getHeader(): string {
   // Account for ANSI codes when calculating padding
   const visibleLeft = `⧈ ${NAME} v${VERSION}`;
   const padding = Math.max(1, 60 - visibleLeft.length - right.length);
-  return pc.cyan(`⧈ ${NAME}`) + ` ${pc.dim(`v${VERSION}`)}` + pc.cyan(`${' '.repeat(padding)}${right}`);
+  return pc.cyan(`⧈ ${NAME}`) + `${pc.dim(` · v${VERSION}`)}` + pc.cyan(`${' '.repeat(padding)}${right}`);
 }
 
 /**
@@ -204,11 +204,7 @@ export function printSummary(summary: AnalysisSummary, title = 'summary'): void 
 /**
  * Print files that will sync from upstream.
  */
-export function printSyncFiles(
-  files: AnalyzedFile[],
-  upstreamGitHubUrl?: string,
-  forkGitHubUrl?: string,
-): void {
+export function printSyncFiles(files: AnalyzedFile[], upstreamGitHubUrl?: string, forkGitHubUrl?: string): void {
   const syncFiles = files.filter((f) => f.status === 'behind' || f.status === 'diverged');
 
   if (syncFiles.length === 0) return;

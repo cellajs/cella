@@ -24,36 +24,52 @@ async function main(): Promise<void> {
     cli.newBranchName = null;
   }
 
+  // Shared theme to clear prompts after answering
+  const promptTheme = { prefix: '', style: { answer: (text: string) => text } };
+  const promptContext = { clearPromptOnDone: true };
+
   // Prompt for project name if not provided
   if (!cli.directory) {
-    cli.directory = await input({
-      message: 'Enter your project name',
-      default: 'my-cella-app',
-      validate: (name) => {
-        const validation = validateProjectName(basename(resolve(name)));
-        return validation.valid ? true : `Invalid project name: ${validation.problems?.[0] ?? 'unknown error'}`;
+    cli.directory = await input(
+      {
+        message: 'Enter your project name',
+        default: 'my-cella-app',
+        theme: promptTheme,
+        validate: (name) => {
+          const validation = validateProjectName(basename(resolve(name)));
+          return validation.valid ? true : `Invalid project name: ${validation.problems?.[0] ?? 'unknown error'}`;
+        },
       },
-    });
+      promptContext,
+    );
   }
 
   // Prompt to create a new branch besides the main branch (if not skipped)
   if (cli.createNewBranch === null) {
-    cli.createNewBranch = await confirm({
-      message: 'Would you like to create a new branch (besides "main")?',
-      default: true,
-    });
+    cli.createNewBranch = await confirm(
+      {
+        message: 'Create a working branch (besides "main")?',
+        default: true,
+        theme: promptTheme,
+      },
+      promptContext,
+    );
   }
 
   // Prompt for new branch name, only if user opted to create a new branch
   if (!cli.newBranchName && cli.createNewBranch) {
-    cli.newBranchName = await input({
-      message: 'Enter the new branch name',
-      default: 'development',
-      validate: (name) => {
-        const validation = validateProjectName(basename(resolve(name)));
-        return validation.valid ? true : `Invalid branch name: ${validation.problems?.[0] ?? 'unknown error'}`;
+    cli.newBranchName = await input(
+      {
+        message: 'Enter working branch name',
+        default: 'development',
+        theme: promptTheme,
+        validate: (name) => {
+          const validation = validateProjectName(basename(resolve(name)));
+          return validation.valid ? true : `Invalid branch name: ${validation.problems?.[0] ?? 'unknown error'}`;
+        },
       },
-    });
+      promptContext,
+    );
   }
 
   const targetFolder = resolve(cli.directory);
@@ -64,13 +80,17 @@ async function main(): Promise<void> {
     const dirName = cli.directory === '.' ? 'Current directory' : `Target directory "${targetFolder}"`;
     const message = `${dirName} is not empty. Please choose how you would like to proceed:`;
 
-    const action = await select({
-      message,
-      choices: [
-        { name: 'Cancel and exit', value: 'cancel' },
-        { name: 'Ignore existing files and continue', value: 'ignore' },
-      ],
-    });
+    const action = await select(
+      {
+        message,
+        theme: promptTheme,
+        choices: [
+          { name: 'Cancel and exit', value: 'cancel' },
+          { name: 'Ignore existing files and continue', value: 'ignore' },
+        ],
+      },
+      promptContext,
+    );
 
     if (action === 'cancel') {
       process.exit(1);
@@ -87,6 +107,7 @@ async function main(): Promise<void> {
     skipClean: cli.options.skipClean,
     skipGenerate: cli.options.skipGenerate,
     packageManager: cli.packageManager,
+    templateUrl: cli.options.template,
   };
 
   await create(createOptions);

@@ -30,43 +30,18 @@ pnpm create @cellajs/cella [directory] [options]
 | `--skip-git` | Skip git initialization |
 | `--skip-generate` | Skip database migration generation |
 | `--skip-clean` | Keep template files (README, etc.) |
-| `--skip-new-branch` | Skip creating a new branch |
-| `--new-branch-name <name>` | Create additional branch (e.g., `development`) |
+| `--skip-new-branch` | Skip creating working branch |
+| `--new-branch-name <name>` | Create working branch (e.g., `development`) |
 
 ## What It Does
 
 1. Downloads latest Cella template via [giget](https://github.com/unjs/giget)
 2. Cleans template files (removes cella-specific docs, configs)
 3. Installs dependencies with `pnpm install`
-4. Generates initial database migrations (Drizzle SQL files)
+4. Generates initial database migrations
 5. Initializes git repository with initial commit
-6. Creates optional development branch
+6. Creates optional working branch
 7. Adds Cella as upstream remote for future syncs
-
-## After Setup
-
-Once your project is created:
-
-```bash
-cd my-app
-pnpm quick          # Quick start with PGlite (no Docker)
-# or
-pnpm docker && pnpm dev && pnpm seed   # Full setup with PostgreSQL
-```
-
-Sign in with:
-- Email: `admin-test@cellajs.com`
-- Password: `12345678`
-
-## Keeping in Sync
-
-Your project is configured with Cella as an upstream remote. To pull future updates:
-
-```bash
-pnpm sync
-```
-
-See [@cellajs/sync](../sync/README.md) for details on the sync process.
 
 ## Development
 
