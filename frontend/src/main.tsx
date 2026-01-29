@@ -9,6 +9,8 @@ import './styling/tailwind.css';
 import '~/lib/dayjs';
 import '~/lib/i18n';
 
+// whut check conflict
+
 import { appConfig, type ConfigMode } from 'config';
 import { initSentry } from '~/lib/sentry';
 import { RouterWrapper } from '~/modules/common/router-wrapper';
