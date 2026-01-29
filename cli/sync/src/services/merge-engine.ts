@@ -1,20 +1,21 @@
 /**
  * Merge Engine for sync CLI v2.
  *
- * Core worktree-based merge approach:
- * 1. Create worktree in temp directory (invisible to VSCode)
- * 2. Merge upstream in worktree
- * 3. Resolve conflicts (pinned = ours, ignored = delete)
- * 4. For analyze: show results, cleanup
- * 5. For sync: copy changes back to main repo for staging
+ * Two modes:
+ * - Analyze (dry run): Uses worktree to preview changes without affecting fork
+ * - Sync: Performs real merge directly in fork for full IDE support
+ *
+ * Sync mode approach:
+ * 1. Start real merge in fork (git merge --no-commit)
+ * 2. Apply resolutions directly (pinned→ours, ignored→rm, diverged→git's merge)
+ * 3. Leave fork in merge state - conflicts have markers for IDE 3-way merge
+ *
+ * Key principle: Fork stays in real merge state for IDE conflict resolution.
  */
 
-import { existsSync } from 'node:fs';
-import { join } from 'node:path';
 import type {
   AnalysisSummary,
   AnalyzedFile,
-  CellaSyncConfig,
   FileStatus,
   MergeResult,
   RuntimeConfig,
@@ -27,21 +28,25 @@ import {
   registerWorktree,
 } from '../utils/cleanup';
 import {
-  addAll,
+  checkoutFromRef,
+  countCommitsBetween,
   createWorktree,
   ensureRemote,
   fetch,
+  fileExistsAtRef,
+  fileExistsInWorktree,
   getCommitInfo,
   getConflictedFiles,
+  getFileChangeInfo,
   getFileChanges,
   getFileHashesAtRef,
   getMergeBase,
-  listFilesAtRef,
+  getRemoteUrl,
+  gitRm,
   merge,
-  removeFile,
-  resolveOurs,
+  restoreToHead,
 } from '../utils/git';
-import { findIgnoredFiles, isIgnored, isPinned } from '../utils/overrides';
+import { isIgnored, isPinned } from '../utils/overrides';
 
 /** Progress callback type - receives message and optional detail for sub-line */
 export type ProgressCallback = (message: string, detail?: string) => void;
@@ -50,39 +55,148 @@ export type ProgressCallback = (message: string, detail?: string) => void;
 export type StepCallback = (label: string, detail?: string) => void;
 
 /**
- * Apply worktree merge result to the fork repository.
- *
- * Copies changed files from worktree to fork, leaving them staged for commit.
- * Deletes files that were removed in the merge.
+ * Convert a git remote URL to a GitHub base URL.
+ * Supports both SSH (git@github.com:org/repo.git) and HTTPS formats.
  */
-async function applyWorktreeToFork(
-  worktreePath: string,
+function getGitHubBaseUrl(remoteUrl: string): string | null {
+  // SSH format: git@github.com:cellajs/cella.git
+  const sshMatch = remoteUrl.match(/git@github\.com:([^/]+)\/([^.]+)(?:\.git)?$/);
+  if (sshMatch) {
+    return `https://github.com/${sshMatch[1]}/${sshMatch[2]}`;
+  }
+
+  // HTTPS format: https://github.com/cellajs/cella.git
+  const httpsMatch = remoteUrl.match(/https:\/\/github\.com\/([^/]+)\/([^/.]+)(?:\.git)?$/);
+  if (httpsMatch) {
+    return `https://github.com/${httpsMatch[1]}/${httpsMatch[2]}`;
+  }
+
+  return null;
+}
+
+/**
+ * Convert a git remote URL to a GitHub commit URL.
+ * Supports both SSH (git@github.com:org/repo.git) and HTTPS formats.
+ */
+function getGitHubCommitUrl(remoteUrl: string, commitHash: string): string | null {
+  const baseUrl = getGitHubBaseUrl(remoteUrl);
+  return baseUrl ? `${baseUrl}/commit/${commitHash}` : null;
+}
+
+/**
+ * Apply sync directly in the fork with a real merge.
+ *
+ * Strategy:
+ * 1. Start real merge in fork (git merge --no-commit)
+ * 2. Apply resolutions directly (pinned→ours, ignored→rm, diverged→git's merge)
+ * 3. Leave fork in merge state for IDE 3-way conflict resolution
+ */
+/**
+ * Apply merge directly to fork (no worktree).
+ *
+ * Performs merge in fork, analyzes files, and resolves them.
+ * Fork is left in merge state with MERGE_HEAD for IDE 3-way merge.
+ */
+async function applyDirectMerge(
   forkPath: string,
-  analyzedFiles: AnalyzedFile[],
-): Promise<void> {
-  const { copyFileSync, mkdirSync, rmSync } = await import('node:fs');
-  const { dirname } = await import('node:path');
+  upstreamRef: string,
+  mergeBaseRef: string,
+  config: RuntimeConfig,
+  onProgress?: ProgressCallback,
+): Promise<{ resolved: number; remainingConflicts: string[]; analyzedFiles: AnalyzedFile[] }> {
+  // Start real merge in fork
+  onProgress?.('Starting merge in fork...');
+  await merge(forkPath, upstreamRef, { noCommit: true, noEdit: true });
 
-  // Only process files that actually changed
-  const filesToSync = analyzedFiles.filter(
-    (f) => f.status !== 'identical' && f.status !== 'ahead' && f.status !== 'ignored',
-  );
+  // Analyze files post-merge
+  onProgress?.('Analyzing files...');
+  const analyzedFiles = await analyzeFiles(forkPath, forkPath, upstreamRef, mergeBaseRef, config, onProgress);
 
-  for (const file of filesToSync) {
-    const sourcePath = join(worktreePath, file.path);
-    const destPath = join(forkPath, file.path);
+  // Apply resolutions directly in fork
+  let resolved = 0;
 
-    if (file.status === 'deleted' || !existsSync(sourcePath)) {
-      // File was deleted in merge - delete from fork if exists
-      if (existsSync(destPath)) {
-        rmSync(destPath, { force: true });
+  for (const file of analyzedFiles) {
+    const { path: filePath, status, isPinned: pinned, isIgnored: ignored, existsInFork } = file;
+
+    if (status === 'identical' || status === 'ahead') {
+      continue;
+    }
+
+    if (ignored) {
+      if (existsInFork) {
+        onProgress?.(`→ ${filePath}: keeping fork (ignored)`);
+        await restoreToHead(forkPath, filePath);
+      } else {
+        onProgress?.(`→ ${filePath}: removing (ignored, new from upstream)`);
+        await gitRm(forkPath, filePath);
       }
-    } else {
-      // Copy file from worktree to fork
-      mkdirSync(dirname(destPath), { recursive: true });
-      copyFileSync(sourcePath, destPath);
+      resolved++;
+      continue;
+    }
+
+    if (pinned) {
+      onProgress?.(`→ ${filePath}: keeping fork (pinned)`);
+      await restoreToHead(forkPath, filePath);
+      resolved++;
+      continue;
+    }
+
+    if (status === 'diverged') {
+      // Let git's merge result stand - trust the merge
+      onProgress?.(`→ ${filePath}: using git merge result (diverged)`);
+      resolved++;
+      continue;
+    }
+
+    if (status === 'behind') {
+      // File only in upstream or upstream has newer version
+      // Explicitly checkout from upstream to ensure it's added (handles previously deleted files)
+      if (!existsInFork) {
+        onProgress?.(`→ ${filePath}: adding from upstream (new file)`);
+        await checkoutFromRef(forkPath, upstreamRef, filePath);
+      }
+      // If file exists in fork, merge already applied upstream changes
+      resolved++;
+      continue;
+    }
+
+    if (status === 'deleted') {
+      if (await fileExistsInWorktree(forkPath, filePath)) {
+        await gitRm(forkPath, filePath);
+      }
+      resolved++;
+      continue;
     }
   }
+
+  // Handle remaining git conflicts (only auto-resolve ignored/pinned)
+  const gitConflicts = await getConflictedFiles(forkPath);
+  for (const filePath of gitConflicts) {
+    const fileIsIgnored = isIgnored(filePath, config);
+    const fileIsPinned = isPinned(filePath, config);
+
+    if (fileIsIgnored) {
+      const existsInFork = await fileExistsAtRef(forkPath, 'HEAD', filePath);
+      if (existsInFork) {
+        onProgress?.(`→ ${filePath}: keeping fork (ignored conflict)`);
+        await restoreToHead(forkPath, filePath);
+      } else {
+        onProgress?.(`→ ${filePath}: removing (ignored conflict)`);
+        await gitRm(forkPath, filePath);
+      }
+      resolved++;
+    } else if (fileIsPinned) {
+      onProgress?.(`→ ${filePath}: keeping fork (pinned conflict)`);
+      await restoreToHead(forkPath, filePath);
+      resolved++;
+    }
+    // Non-ignored, non-pinned conflicts are left for user in IDE
+  }
+
+  // Get remaining conflicts (these have markers for IDE)
+  const remainingConflicts = await getConflictedFiles(forkPath);
+
+  return { resolved, remainingConflicts, analyzedFiles };
 }
 
 /**
@@ -98,7 +212,7 @@ async function analyzeFiles(
   forkPath: string,
   upstreamRef: string,
   mergeBaseRef: string,
-  config: CellaSyncConfig,
+  config: RuntimeConfig,
   onProgress?: ProgressCallback,
 ): Promise<AnalyzedFile[]> {
   onProgress?.('Collecting file hashes (batch)...');
@@ -228,73 +342,10 @@ function calculateSummary(files: AnalyzedFile[]): AnalysisSummary {
 }
 
 /**
- * Handle post-merge conflict resolution.
- */
-async function resolveConflicts(
-  worktreePath: string,
-  config: CellaSyncConfig,
-  onProgress?: ProgressCallback,
-): Promise<string[]> {
-  const conflicts = await getConflictedFiles(worktreePath);
-  const unresolvedConflicts: string[] = [];
-
-  for (const filePath of conflicts) {
-    const fileIsIgnored = isIgnored(filePath, config);
-    const fileIsPinned = isPinned(filePath, config);
-
-    if (fileIsIgnored) {
-      // Ignored files: use ours (fork version) or remove if fork didn't have it
-      onProgress?.(`→ ${filePath}: removing (ignored)`);
-      await removeFile(worktreePath, filePath);
-    } else if (fileIsPinned) {
-      // Pinned files: use ours (fork version)
-      onProgress?.(`→ ${filePath}: keeping fork (pinned)`);
-      await resolveOurs(worktreePath, filePath);
-    } else {
-      // Not protected: leave conflict for manual resolution
-      unresolvedConflicts.push(filePath);
-    }
-  }
-
-  return unresolvedConflicts;
-}
-
-/**
- * Remove all ignored files from the worktree.
- *
- * After merge, scan the worktree and delete any files matching ignored patterns.
- * This ensures ignored files from upstream don't pollute the fork.
- */
-async function removeIgnoredFilesFromWorktree(
-  worktreePath: string,
-  config: CellaSyncConfig,
-  onProgress?: ProgressCallback,
-): Promise<string[]> {
-  const removed: string[] = [];
-
-  // Get all files currently in the worktree
-  const worktreeFiles = await listFilesAtRef(worktreePath, 'HEAD');
-
-  // Find all ignored files
-  const ignoredFiles = findIgnoredFiles(worktreeFiles, config);
-
-  for (const filePath of ignoredFiles) {
-    const fullPath = join(worktreePath, filePath);
-    if (existsSync(fullPath)) {
-      onProgress?.(`→ ${filePath}: removing (ignored)`);
-      await removeFile(worktreePath, filePath);
-      removed.push(filePath);
-    }
-  }
-
-  return removed;
-}
-
-/**
  * Main merge engine entry point.
  *
- * Creates worktree, performs merge, resolves conflicts,
- * and optionally applies result to main repo.
+ * Creates worktree, performs merge, resolves all files,
+ * and applies result via patch.
  */
 export async function runMergeEngine(
   config: RuntimeConfig,
@@ -328,72 +379,145 @@ export async function runMergeEngine(
     onProgress?.(`Fetching upstream (${remoteName})...`);
     await fetch(forkPath, remoteName);
 
-    // Get upstream commit info
-    const upstreamCommit = await getCommitInfo(forkPath, upstreamRef);
-    onStep?.('Fetched upstream', `${upstreamCommit.hash.slice(0, 7)} "${upstreamCommit.message}"`);
+    // Get GitHub base URLs for commit links
+    const upstreamGitHubUrl = getGitHubBaseUrl(config.settings.upstreamUrl);
+    const forkOriginUrl = await getRemoteUrl(forkPath, 'origin');
+    const forkGitHubUrl = forkOriginUrl ? getGitHubBaseUrl(forkOriginUrl) : null;
 
-    // Get merge base for analysis
+    // Get merge base for analysis (need it before showing commit count)
     const mergeBase = await getMergeBase(forkPath, 'HEAD', upstreamRef);
+    const mergeBaseCommit = await getCommitInfo(forkPath, mergeBase);
 
-    // Create worktree in temp directory (invisible to VSCode)
-    onProgress?.(`Creating worktree in temp directory...`);
-    await createWorktree(forkPath, worktreePath, 'HEAD');
-    onStep?.('Worktree created', worktreePath);
+    // Get upstream commit info and count commits since merge-base
+    const upstreamCommit = await getCommitInfo(forkPath, upstreamRef);
+    const commitCount = await countCommitsBetween(forkPath, mergeBase, upstreamRef);
+    const shortHash = upstreamCommit.hash.slice(0, 7);
+    const githubUrl = getGitHubCommitUrl(config.settings.upstreamUrl, upstreamCommit.hash);
+    const commitLabel = commitCount === 1 ? '1 new commit' : `${commitCount} new commits`;
 
-    // Perform merge in worktree
-    onProgress?.('Performing merge...');
-    const mergeResult = await merge(worktreePath, upstreamRef, { noCommit: true, noEdit: true });
+    // Build multi-line info for fetched upstream
+    let commitInfo = `${commitLabel} since last merge`;
+    commitInfo += `\n  ${shortHash} "${upstreamCommit.message}" (${upstreamCommit.date})`;
+    if (githubUrl) commitInfo += `\n  ${githubUrl}`;
 
-    // Handle conflicts
-    let conflicts: string[] = [];
-    if (!mergeResult.success) {
-      onProgress?.('Resolving conflicts...');
-      conflicts = await resolveConflicts(worktreePath, config, onProgress);
-    }
-    onStep?.('Merge complete', conflicts.length > 0 ? `${conflicts.length} unresolved conflicts` : 'No conflicts');
+    onStep?.('Fetched upstream', commitInfo);
 
-    // Remove all ignored files from worktree (after merge)
-    onProgress?.('Removing ignored files from merge result...');
-    await removeIgnoredFilesFromWorktree(worktreePath, config, onProgress);
-
-    // Analyze all files
-    onProgress?.('Analyzing files...');
-    const analyzedFiles = await analyzeFiles(worktreePath, forkPath, upstreamRef, mergeBase, config, onProgress);
-    onStep?.('Analysis complete', `${analyzedFiles.length} files analyzed`);
-
-    // Mark files with conflicts
-    for (const file of analyzedFiles) {
-      if (conflicts.includes(file.path)) {
-        file.hasConflict = true;
-      }
-    }
-
-    const summary = calculateSummary(analyzedFiles);
-
-    // Apply or discard
+    // For sync mode, we'll do the merge directly in fork
+    // For analyze mode, we use a worktree to preview changes
     if (apply) {
-      onProgress?.('Applying changes to repository...');
-      await addAll(worktreePath);
-      await applyWorktreeToFork(worktreePath, forkPath, analyzedFiles);
-      const changedCount = summary.behind + summary.diverged;
-      onStep?.('Changes applied', `${changedCount} files updated`);
+      // SYNC MODE: Do merge, analysis, and resolution directly in fork
+      const { resolved, remainingConflicts, analyzedFiles } = await applyDirectMerge(
+        forkPath,
+        upstreamRef,
+        mergeBase,
+        config,
+        onProgress,
+      );
+
+      const summary = calculateSummary(analyzedFiles);
+      const synced = summary.behind + summary.diverged;
+
+      if (remainingConflicts.length > 0) {
+        onStep?.('Merge in progress', `${remainingConflicts.length} conflicts to resolve in IDE`);
+      } else if (synced > 0) {
+        onStep?.('Synced', `${synced} files from upstream`);
+      } else {
+        onStep?.('Up to date', 'No upstream changes to sync');
+      }
+
+      return {
+        success: remainingConflicts.length === 0,
+        files: analyzedFiles,
+        summary,
+        worktreePath: forkPath, // No worktree used
+        conflicts: remainingConflicts,
+        upstreamGitHubUrl: upstreamGitHubUrl ?? undefined,
+        forkGitHubUrl: forkGitHubUrl ?? undefined,
+        upstreamCommit,
+      };
+    } else {
+      // ANALYZE MODE: Use worktree to preview changes without affecting fork
+
+      // Create worktree in temp directory (invisible to VSCode)
+      onProgress?.(`Creating worktree in temp directory...`);
+      await createWorktree(forkPath, worktreePath, 'HEAD');
+      onStep?.('Worktree created', worktreePath);
+
+      // Perform merge in worktree
+      onProgress?.('Performing merge in worktree...');
+      await merge(worktreePath, upstreamRef, { noCommit: true, noEdit: true });
+      onStep?.('Merge complete', 'Upstream merged into worktree');
+
+      // Analyze all files
+      onProgress?.('Analyzing files...');
+      const analyzedFiles = await analyzeFiles(
+        worktreePath,
+        forkPath,
+        upstreamRef,
+        mergeBase,
+        config,
+        onProgress,
+      );
+
+      // Enrich files with change dates and commit hashes (cached lookup for non-identical files)
+      const forkInfo = await getFileChangeInfo(forkPath, mergeBase, 'HEAD');
+      const upstreamInfo = await getFileChangeInfo(forkPath, mergeBase, upstreamRef);
+      for (const file of analyzedFiles) {
+        if (file.status !== 'identical') {
+          // Use fork info for ahead/drifted, upstream info for behind, most recent for diverged
+          if (file.status === 'ahead' || file.status === 'drifted') {
+            const info = forkInfo.get(file.path);
+            if (info) {
+              file.changedAt = info.date;
+              file.changedCommit = info.hash;
+            }
+          } else if (file.status === 'behind') {
+            const info = upstreamInfo.get(file.path);
+            if (info) {
+              file.changedAt = info.date;
+              file.changedCommit = info.hash;
+            }
+          } else if (file.status === 'diverged' || file.status === 'pinned') {
+            // Show the fork info (fork-side change for diverged/pinned)
+            const forkFileInfo = forkInfo.get(file.path);
+            const upstreamFileInfo = upstreamInfo.get(file.path);
+            if (forkFileInfo) {
+              file.changedAt = forkFileInfo.date;
+              file.changedCommit = forkFileInfo.hash;
+            } else if (upstreamFileInfo) {
+              file.changedAt = upstreamFileInfo.date;
+              file.changedCommit = upstreamFileInfo.hash;
+            }
+          }
+        }
+      }
+
+      onStep?.('Analysis complete', `${analyzedFiles.length} files analyzed`);
+
+      const summary = calculateSummary(analyzedFiles);
+
+      // Cleanup worktree
       onProgress?.('Cleaning up worktree...');
       await cleanupWorktree(forkPath, worktreePath);
-      onStep?.('Worktree cleaned up');
-    } else {
-      onProgress?.('Cleaning up worktree (dry run)...');
-      await cleanupWorktree(forkPath, worktreePath);
-      onStep?.('Worktree cleaned up', 'Dry run, no changes applied');
-    }
 
-    return {
-      success: conflicts.length === 0,
-      files: analyzedFiles,
-      summary,
-      worktreePath,
-      conflicts,
-      upstreamCommit,
-    };
+      // For analyze mode, count diverged files as potential conflicts
+      const potentialConflicts = analyzedFiles
+        .filter((f) => f.status === 'diverged')
+        .map((f) => f.path);
+
+      onStep?.('Analysis complete', 'Dry run, no changes applied');
+
+      return {
+        success: true,
+        files: analyzedFiles,
+        summary,
+        worktreePath,
+        conflicts: potentialConflicts,
+        upstreamGitHubUrl: upstreamGitHubUrl ?? undefined,
+        forkGitHubUrl: forkGitHubUrl ?? undefined,
+        upstreamCommit,
+      };
+    }
   } catch (error) {
     // Clean up on error
     await cleanupWorktree(forkPath, worktreePath);

@@ -35,10 +35,10 @@ const completedSteps: CompletedStep[] = [];
  * Get the header line for CLI output.
  */
 export function getHeader(): string {
-  const left = `⚡ ${NAME} v${VERSION}`;
+  const left = `▸ ${NAME} v${VERSION}`;
   const right = 'cellajs.com';
   const padding = Math.max(1, 60 - left.length - right.length);
-  return `${left}${' '.repeat(padding)}${right}`;
+  return pc.cyan(`${left}${' '.repeat(padding)}${right}`);
 }
 
 /**
@@ -48,6 +48,7 @@ export function printHeader(): void {
   console.info();
   console.info(getHeader());
   console.info(DIVIDER);
+  console.info();
 }
 
 /**
@@ -59,12 +60,13 @@ export function resetSteps(): void {
 
 /**
  * Print a completed step with checkmark.
- * Optionally include a detail line in grey.
+ * Optionally include a detail line in grey, followed by a blank line.
  */
 export function printStep(label: string, detail?: string): void {
   console.info(`${pc.green('✓')} ${label}`);
   if (detail) {
     console.info(`  ${pc.dim(detail)}`);
+    console.info(); // blank line after detail block
   }
   completedSteps.push({ label, detail });
 }
@@ -111,17 +113,25 @@ export function spinnerText(text: string): void {
   }
 }
 
+/**
+ * Create a clickable hyperlink for terminals that support OSC 8.
+ * Falls back to just the label if no URL provided.
+ */
+function hyperlink(label: string, url?: string): string {
+  if (!url) return label;
+  // OSC 8 hyperlink format: \x1b]8;;URL\x07LABEL\x1b]8;;\x07
+  return `\x1b]8;;${url}\x07${label}\x1b]8;;\x07`;
+}
+
 /** Status icons */
 const statusIcons: Record<string, string> = {
   identical: pc.gray('✓'),
   ahead: pc.blue('↑'),
-  drifted: pc.yellow('⚡'),
+  drifted: pc.yellow('!'),
   behind: pc.cyan('↓'),
   diverged: pc.magenta('⇅'),
-  pinned: pc.green('📌'),
-  ignored: pc.gray('⊙'),
-  deleted: pc.red('✗'),
-  locked: pc.green('⊡'),
+  pinned: pc.green('⨀'),
+  ignored: pc.gray('⨂'),
 };
 
 /** Status labels for summary */
@@ -136,16 +146,28 @@ const statusLabels: Record<string, string> = {
   deleted: 'deleted',
 };
 
+/** Status colors for summary counts */
+const statusColors: Record<string, (text: string) => string> = {
+  identical: pc.gray,
+  ahead: pc.blue,
+  drifted: pc.yellow,
+  behind: pc.cyan,
+  diverged: pc.magenta,
+  pinned: pc.green,
+  ignored: pc.gray,
+  deleted: pc.red,
+};
+
 /**
  * Print the analysis summary.
  */
-export function printSummary(summary: AnalysisSummary): void {
+export function printSummary(summary: AnalysisSummary, title = 'summary'): void {
   console.info();
-  console.info('Summary');
+  console.info(pc.cyan(title));
   console.info(DIVIDER);
   console.info();
 
-  // Format counts with padding
+  // Format counts with padding (exclude ignored from max calculation)
   const maxCount = Math.max(
     summary.identical,
     summary.ahead,
@@ -153,71 +175,107 @@ export function printSummary(summary: AnalysisSummary): void {
     summary.behind,
     summary.diverged,
     summary.pinned,
-    summary.ignored,
-    summary.deleted,
   );
   const countWidth = String(maxCount).length + 1;
 
-  const lines: [string, number, string][] = [
-    [statusIcons.identical, summary.identical, `${statusLabels.identical}      no action needed`],
-    [statusIcons.ahead, summary.ahead, `${statusLabels.ahead}          fork is ahead (protected)`],
-    [statusIcons.drifted, summary.drifted, `${statusLabels.drifted}        fork is ahead (NOT protected)`],
-    [statusIcons.behind, summary.behind, `${statusLabels.behind}         will sync from upstream`],
-    [statusIcons.diverged, summary.diverged, `${statusLabels.diverged}       will merge from upstream`],
-    [statusIcons.pinned, summary.pinned, `${statusLabels.pinned}         both changed, keeping fork (pinned)`],
-  ];
+  // Helper to print a status line
+  const printLine = (status: string, icon: string, count: number, label: string) => {
+    const colorFn = statusColors[status];
+    const countStr = colorFn(String(count).padStart(countWidth));
+    console.info(`  ${icon} ${countStr}  ${label}`);
+  };
 
-  for (const [icon, count, label] of lines) {
-    if (count > 0 || label.includes('identical')) {
-      const countStr = String(count).padStart(countWidth);
-      console.info(`  ${icon} ${countStr}  ${label}`);
-    }
-  }
+  // Grouped layout with blank lines between groups
+  printLine('identical', statusIcons.identical, summary.identical, `identical      ${pc.dim('no changes')}`);
+
+  console.info();
+  printLine('ahead', statusIcons.ahead, summary.ahead, `ahead          ${pc.dim('fork changed (protected)')}`);
+  printLine('drifted', statusIcons.drifted, summary.drifted, `drifted        ${pc.dim('fork changed (at risk)')}`);
+
+  console.info();
+  printLine('diverged', statusIcons.diverged, summary.diverged, `diverged       ${pc.dim('both changed, will merge')}`);
+  printLine('pinned', statusIcons.pinned, summary.pinned, `pinned         ${pc.dim('both changed, fork wins')}`);
+
+  console.info();
+  printLine('behind', statusIcons.behind, summary.behind, `behind         ${pc.dim('upstream changed, will sync')}`);
 }
 
 /**
  * Print files that will sync from upstream.
  */
-export function printSyncFiles(files: AnalyzedFile[]): void {
+export function printSyncFiles(
+  files: AnalyzedFile[],
+  upstreamGitHubUrl?: string,
+  forkGitHubUrl?: string,
+): void {
   const syncFiles = files.filter((f) => f.status === 'behind' || f.status === 'diverged');
 
   if (syncFiles.length === 0) return;
 
   console.info();
-  console.info(`Sync from upstream (${syncFiles.length} files)`);
+  console.info(pc.cyan(`Sync from upstream (${syncFiles.length} files)`));
   console.info(DIVIDER);
   console.info();
 
   for (const file of syncFiles) {
     const icon = statusIcons[file.status];
-    console.info(`  ${icon} ${file.path}`);
+    // behind = upstream changed, use upstream URL; diverged = both changed, use fork URL
+    const baseUrl = file.status === 'behind' ? upstreamGitHubUrl : forkGitHubUrl;
+    const commitUrl = file.changedCommit && baseUrl ? `${baseUrl}/commit/${file.changedCommit}` : undefined;
+    const commitLabel = file.changedCommit ? hyperlink(file.changedCommit, commitUrl) : '';
+    const dateInfo = file.changedAt ? pc.dim(` \u2260 ${file.changedAt} ${commitLabel}`) : '';
+    console.info(`  ${icon} ${file.path}${dateInfo}`);
   }
 }
 
 /**
  * Print drifted files warning.
  */
-export function printDriftedWarning(files: AnalyzedFile[]): void {
+export function printDriftedWarning(files: AnalyzedFile[], forkGitHubUrl?: string): void {
   const driftedFiles = files.filter((f) => f.status === 'drifted');
 
   if (driftedFiles.length === 0) return;
 
   console.info();
-  console.info(`${pc.yellow('⚠')} Drifted from upstream (${driftedFiles.length} files)`);
+  console.info(`${pc.yellow('⚠')} drifted from upstream (${driftedFiles.length} files)`);
   console.info(DIVIDER);
   console.info();
 
   for (const file of driftedFiles) {
-    console.info(`  ${statusIcons.drifted} ${file.path}`);
+    // Drifted = fork changed, use fork URL
+    const commitUrl = file.changedCommit && forkGitHubUrl ? `${forkGitHubUrl}/commit/${file.changedCommit}` : undefined;
+    const commitLabel = file.changedCommit ? hyperlink(file.changedCommit, commitUrl) : '';
+    const dateInfo = file.changedAt ? pc.dim(` \u2260 ${file.changedAt} ${commitLabel}`) : '';
+    console.info(`  ${statusIcons.drifted} ${file.path}${dateInfo}`);
   }
 
   console.info();
   console.info(pc.dim('  These files have fork changes but are NOT pinned or ignored.'));
-  console.info(pc.dim('  Consider adding to pinned before running sync.'));
 }
 
 /**
- * Print conflict warning.
+ * Print diverged files preview for analyze mode.
+ * These will be merged by git - some may auto-merge, others may conflict.
+ */
+export function printDivergedPreview(divergedFiles: string[]): void {
+  if (divergedFiles.length === 0) return;
+
+  console.info();
+  console.info(`${pc.cyan('⇅')} Diverged files (${divergedFiles.length}) - will be merged`);
+  console.info(DIVIDER);
+  console.info();
+
+  for (const file of divergedFiles) {
+    console.info(`  ${pc.cyan('!')} ${file}`);
+  }
+
+  console.info();
+  console.info(pc.dim('  Both fork and upstream changed. Git will merge; conflicts require manual resolution.'));
+}
+
+/**
+ * Print actual unresolved conflicts after sync.
+ * These require manual intervention to resolve.
  */
 export function printConflicts(conflicts: string[]): void {
   if (conflicts.length === 0) return;
@@ -232,8 +290,7 @@ export function printConflicts(conflicts: string[]): void {
   }
 
   console.info();
-  console.info(pc.dim('  These conflicts must be resolved manually.'));
-  console.info(pc.dim('  Add them to pinned or ignored to auto-resolve in future syncs.'));
+  console.info(pc.dim('  These conflicts must be resolved manually in your IDE.'));
 }
 
 /**
@@ -275,7 +332,6 @@ export function writeLogFile(forkPath: string, files: AnalyzedFile[]): string {
  */
 export function printAnalyzeComplete(): void {
   console.info();
-  console.info(pc.dim("This was a dry run. Run 'pnpm sync --service sync' to apply."));
 }
 
 /**
@@ -284,12 +340,11 @@ export function printAnalyzeComplete(): void {
 export function printSyncComplete(result: MergeResult): void {
   const updated = result.summary.behind + result.summary.diverged;
   const merged = result.summary.diverged;
-  const removed = result.files.filter((f) => f.status === 'ignored' && f.existsInUpstream && !f.existsInFork).length;
+  const conflicts = result.conflicts.length;
 
   console.info();
   console.info(`${pc.green('✓')} Sync complete`);
   console.info();
-  console.info(`  ${updated} files updated, ${merged} merged, ${removed} removed`);
+  console.info(`  ${updated} files updated, ${merged} merged, ${conflicts} conflicts`);
   console.info();
-  console.info(pc.dim("Run 'pnpm install' to update dependencies."));
 }

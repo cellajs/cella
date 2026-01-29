@@ -10,7 +10,7 @@ import type { MergeResult, RuntimeConfig } from '../config/types';
 import {
   createSpinner,
   printAnalyzeComplete,
-  printConflicts,
+  printDivergedPreview,
   printDriftedWarning,
   printSummary,
   printSyncFiles,
@@ -43,11 +43,13 @@ export async function runAnalyze(config: RuntimeConfig): Promise<MergeResult> {
 
   spinnerSuccess();
 
-  // Print results (analyze shows file lists for review)
-  printSummary(result.summary);
-  printSyncFiles(result.files);
-  printDriftedWarning(result.files);
-  printConflicts(result.conflicts);
+  // Print file lists first (analyze shows file lists for review)
+  printSyncFiles(result.files, result.upstreamGitHubUrl, result.forkGitHubUrl);
+  printDriftedWarning(result.files, result.forkGitHubUrl);
+  printDivergedPreview(result.conflicts); // In analyze mode, these are diverged files to preview
+
+  // Print summary at the end
+  printSummary(result.summary, 'dry run summary');
 
   // Write log file if requested
   if (config.logFile) {

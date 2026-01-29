@@ -126,6 +126,10 @@ export interface AnalyzedFile {
   existsInUpstream: boolean;
   /** True if file has merge conflict */
   hasConflict?: boolean;
+  /** Relative date when file was last changed (since merge-base) */
+  changedAt?: string;
+  /** Short commit hash of the last change */
+  changedCommit?: string;
 }
 
 /** Summary counts by status */
@@ -148,6 +152,10 @@ export interface MergeResult {
   summary: AnalysisSummary;
   worktreePath: string;
   conflicts: string[];
+  /** Upstream GitHub URL base for commit links */
+  upstreamGitHubUrl?: string;
+  /** Fork GitHub URL base for commit links */
+  forkGitHubUrl?: string;
   /** Upstream commit info */
   upstreamCommit?: {
     hash: string;

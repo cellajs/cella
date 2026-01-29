@@ -58,14 +58,23 @@ export async function parseCli(userConfig: CellaSyncConfig, forkPath: string): P
 
   // If no service provided, prompt for it
   if (!service) {
-    service = await select<SyncService>({
+    const selected = await select<SyncService | 'exit'>({
       message: 'Choose a service:',
       choices: [
         { value: 'analyze' as SyncService, name: `analyze    ${pc.dim(serviceDescriptions.analyze)}` },
         { value: 'sync' as SyncService, name: `sync       ${pc.dim(serviceDescriptions.sync)}` },
         { value: 'packages' as SyncService, name: `packages   ${pc.dim(serviceDescriptions.packages)}` },
+        { type: 'separator', separator: '─'.repeat(40) },
+        { value: 'exit', name: pc.red(`exit       ${pc.dim('quit without doing anything')}`) },
       ],
     });
+
+    if (selected === 'exit') {
+      console.info(pc.dim('Exiting...'));
+      process.exit(0);
+    }
+
+    service = selected;
     console.info();
   }
 

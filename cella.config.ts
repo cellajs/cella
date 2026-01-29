@@ -16,21 +16,21 @@ export default defineConfig({
   overrides: {
     // Files and directories to be fully ignored during sync
     ignored: [
+      "README.md",
       "info/QUICKSTART.md",
-      "cli/create-cella/*",
-      "frontend/public/static/docs.gen/*",
-      "frontend/src/api.gen/*",
-      "frontend/public/static/icons/*",
-      "frontend/public/static/images/*",
-      "frontend/public/static/logo/*",
-      "frontend/public/static/screenshots/*",
-      "frontend/src/modules/common/bg-animation/*",
-      "backend/drizzle/*",
-      "backend/scripts/seeds/data/*",
+      "cli/create-cella/**",
+      "frontend/public/static/docs.gen/**",
+      "frontend/src/api.gen/**",
+      "frontend/public/static/icons/**",
+      "frontend/public/static/images/**",
+      "frontend/public/static/logo/**",
+      "frontend/public/static/screenshots/**",
+      "frontend/src/modules/common/bg-animation/**",
+      "backend/drizzle/**",
+      "backend/scripts/seeds/data/**",
     ],
     // Files and directories pinned to fork; prefer fork version during merge conflicts
     pinned: [
-      "README.md",
       "lefthook.yaml",
       "package.json",
       "pnpm-lock.yaml",

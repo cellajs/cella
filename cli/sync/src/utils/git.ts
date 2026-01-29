@@ -67,6 +67,18 @@ export async function remoteExists(cwd: string, remoteName: string): Promise<boo
 }
 
 /**
+ * Get the URL of a remote.
+ */
+export async function getRemoteUrl(cwd: string, remoteName: string): Promise<string | null> {
+  try {
+    const url = await git(['remote', 'get-url', remoteName], cwd, { ignoreErrors: true });
+    return url.trim() || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Add a remote if it doesn't exist.
  */
 export async function ensureRemote(cwd: string, remoteName: string, url: string): Promise<void> {
@@ -95,7 +107,71 @@ export async function getCommitInfo(
   const format = '%H%n%s%n%ar'; // hash, subject, relative date
   const output = await git(['log', '-1', '--format=' + format, ref], cwd);
   const [hash, message, date] = output.split('\n');
-  return { hash: hash.slice(0, 7), message, date };
+  return { hash, message, date };
+}
+
+/**
+ * Count the number of commits between two refs.
+ * Returns the number of commits in `toRef` that are not in `fromRef`.
+ */
+export async function countCommitsBetween(cwd: string, fromRef: string, toRef: string): Promise<number> {
+  const output = await git(['rev-list', '--count', `${fromRef}..${toRef}`], cwd);
+  return Number.parseInt(output.trim(), 10) || 0;
+}
+
+/**
+ * File change info with date and commit hash.
+ */
+export interface FileChangeInfo {
+  date: string;
+  hash: string;
+}
+
+/**
+ * Get the relative date and commit hash of the last change for all files in a range.
+ * Returns a map of filePath -> { date, hash }.
+ * Uses a single git command to get all info efficiently.
+ */
+export async function getFileChangeInfo(
+  cwd: string,
+  fromRef: string,
+  toRef: string,
+): Promise<Map<string, FileChangeInfo>> {
+  const info = new Map<string, FileChangeInfo>();
+
+  try {
+    // Get all commits in range with their files, dates, and hashes
+    // Format: hash, relative date, then list of files changed
+    const output = await git(
+      ['log', '--name-only', '--format=%h %ar', `${fromRef}..${toRef}`],
+      cwd,
+      { ignoreErrors: true },
+    );
+
+    if (!output.trim()) return info;
+
+    const lines = output.split('\n');
+    let currentHash = '';
+    let currentDate = '';
+
+    for (const line of lines) {
+      if (!line) continue;
+
+      // Check if this is a hash+date line (starts with short hash)
+      const match = line.match(/^([a-f0-9]{7,})\s+(.+)$/);
+      if (match) {
+        currentHash = match[1];
+        currentDate = match[2];
+      } else if (currentHash && currentDate && !info.has(line)) {
+        // This is a file path - only set if not already set (we want most recent)
+        info.set(line, { date: currentDate, hash: currentHash });
+      }
+    }
+  } catch {
+    // Ignore errors, return empty map
+  }
+
+  return info;
 }
 
 /**
@@ -249,6 +325,14 @@ export async function fileExistsAtRef(cwd: string, ref: string, filePath: string
 }
 
 /**
+ * Checkout a file from a specific ref.
+ * Used to restore files from upstream that don't exist in fork.
+ */
+export async function checkoutFromRef(cwd: string, ref: string, filePath: string): Promise<void> {
+  await git(['checkout', ref, '--', filePath], cwd);
+}
+
+/**
  * Get the hash of a file at a ref.
  */
 export async function getFileHashAtRef(cwd: string, ref: string, filePath: string): Promise<string | null> {
@@ -354,4 +438,76 @@ export async function getFileHashesAtRef(cwd: string, ref: string): Promise<Map<
   }
 
   return hashes;
+}
+
+/**
+ * Restore a file to HEAD version (our version during merge).
+ * Updates both index and worktree to match HEAD.
+ */
+export async function restoreToHead(cwd: string, filePath: string): Promise<void> {
+  await git(['restore', '--source=HEAD', '--staged', '--worktree', '--', filePath], cwd);
+}
+
+/**
+ * Restore a file to MERGE_HEAD version (their/upstream version during merge).
+ * Updates both index and worktree to match MERGE_HEAD.
+ */
+export async function restoreToMergeHead(cwd: string, filePath: string): Promise<void> {
+  await git(['restore', '--source=MERGE_HEAD', '--staged', '--worktree', '--', filePath], cwd);
+}
+
+/**
+ * Remove a file from index with tracked delete (git rm).
+ * Records a deletion in the merge result.
+ */
+export async function gitRm(cwd: string, filePath: string): Promise<void> {
+  await git(['rm', '-f', '--', filePath], cwd, { ignoreErrors: true });
+}
+
+/**
+ * Export staged changes as a binary patch file.
+ * Returns the path to the temporary patch file.
+ */
+export async function exportStagedPatch(cwd: string): Promise<string | null> {
+  const { writeFileSync, mkdtempSync } = await import('node:fs');
+  const { join } = await import('node:path');
+  const { tmpdir } = await import('node:os');
+
+  // Create temp file for patch
+  const tempDir = mkdtempSync(join(tmpdir(), 'cella-patch-'));
+  const patchPath = join(tempDir, 'changes.patch');
+
+  // Export patch directly to file to preserve binary content
+  const { execFile } = await import('node:child_process');
+  const { promisify } = await import('node:util');
+  const execFileAsync = promisify(execFile);
+
+  const { stdout } = await execFileAsync('git', ['diff', '--cached', '--binary'], {
+    cwd,
+    maxBuffer: 100 * 1024 * 1024, // 100MB
+    encoding: 'buffer', // Get raw buffer to preserve binary data
+  });
+
+  if (!stdout || stdout.length === 0) {
+    return null;
+  }
+
+  writeFileSync(patchPath, stdout);
+  return patchPath;
+}
+
+/**
+ * Apply a patch file to the index and worktree.
+ */
+export async function applyPatch(cwd: string, patchPath: string): Promise<void> {
+  await git(['apply', '--index', patchPath], cwd);
+}
+
+/**
+ * Check if a file exists in the worktree filesystem.
+ */
+export async function fileExistsInWorktree(cwd: string, filePath: string): Promise<boolean> {
+  const { existsSync } = await import('node:fs');
+  const { join } = await import('node:path');
+  return existsSync(join(cwd, filePath));
 }

@@ -14,9 +14,7 @@ import type { CellaSyncConfig } from './config/types';
 import { runAnalyze } from './services/analyze';
 import { runPackages } from './services/packages';
 import { runSync } from './services/sync';
-import { runValidate } from './services/validate';
 import { registerSignalHandlers } from './utils/cleanup';
-import { DIVIDER } from './utils/display';
 import { getCurrentBranch, isClean } from './utils/git';
 
 /**
@@ -39,15 +37,15 @@ async function loadConfig(forkPath: string): Promise<CellaSyncConfig> {
  *
  * Priority:
  * 1. CELLA_FORK_PATH environment variable
- * 2. Resolved from import.meta.dirname (src-v2 is 3 levels deep from monorepo root)
+ * 2. Current working directory (where the CLI is run from)
  */
 function getForkPath(): string {
   const envPath = process.env.CELLA_FORK_PATH;
   if (envPath) {
     return resolve(envPath);
   }
-  // Resolve from file location: src-v2/index.ts -> cli/sync -> cli -> monorepo root
-  return resolve(import.meta.dirname, '../../..');
+  // Use current working directory - the fork where CLI is invoked
+  return process.cwd();
 }
 
 /**
@@ -100,22 +98,9 @@ async function main(): Promise<void> {
         await runAnalyze(config);
         break;
 
-      case 'sync': {
-        const result = await runSync(config);
-
-        // Run validation after successful sync
-        if (result.success && result.conflicts.length === 0) {
-          console.info();
-          console.info(DIVIDER);
-          console.info();
-          const valid = await runValidate(config);
-          if (!valid) {
-            console.info();
-            console.info(pc.yellow('Validation failed. Please fix issues before committing.'));
-          }
-        }
+      case 'sync':
+        await runSync(config);
         break;
-      }
 
       case 'packages':
         await runPackages(config);

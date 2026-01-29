@@ -9,7 +9,6 @@ import pc from 'picocolors';
 import type { MergeResult, RuntimeConfig } from '../config/types';
 import {
   createSpinner,
-  printConflicts,
   printSummary,
   printSyncComplete,
   resetSteps,
@@ -24,6 +23,7 @@ import { runMergeEngine } from './merge-engine';
  * Run the sync service (full sync).
  *
  * Creates worktree, performs merge, applies via rsync, discards worktree.
+ * Conflicted files are left unstaged for IDE resolution.
  */
 export async function runSync(config: RuntimeConfig): Promise<MergeResult> {
   resetSteps();
@@ -47,15 +47,7 @@ export async function runSync(config: RuntimeConfig): Promise<MergeResult> {
   }
 
   // Print summary only (no file lists for sync)
-  printSummary(result.summary);
-
-  // Handle conflicts
-  if (result.conflicts.length > 0) {
-    printConflicts(result.conflicts);
-    console.info();
-    console.info(pc.yellow('Conflicts need manual resolution.'));
-    console.info(pc.dim('Add files to pinned or ignored, then re-run.'));
-  }
+  printSummary(result.summary, 'sync summary');
 
   // Write log file if requested
   if (config.logFile) {
@@ -65,6 +57,11 @@ export async function runSync(config: RuntimeConfig): Promise<MergeResult> {
   }
 
   printSyncComplete(result);
+
+  // Note about conflicts to resolve
+  if (result.conflicts.length > 0) {
+    console.info(pc.yellow(`${result.conflicts.length} files have merge conflicts to resolve.`));
+  }
 
   return result;
 }

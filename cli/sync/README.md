@@ -134,13 +134,11 @@ During analysis and sync, files are displayed with status indicators:
 |:------:|-------|---------|--------|
 | ✓ | `identical` | Fork matches upstream | No action needed |
 | ↑ | `ahead` | Fork has newer commits (pinned) | Protected, keeping fork |
-| ␡ | `deleted` | Fork deleted file (pinned) | Kept deleted |
-| ⚡ | `drifted` | Fork ahead, not protected | At risk, consider pinning |
+| ! | `drifted` | Fork ahead, not protected | At risk, consider pinning |
 | ↓ | `behind` | Upstream has newer commits | Will sync from upstream |
 | ⇅ | `diverged` | Both sides have changes | Will merge from upstream |
 | ⊡ | `locked` | Both sides changed, pinned | Protected, keeping fork |
 | ⚠ | `unrelated` | No shared commit history | Manual resolution needed |
-| ? | `unknown` | Could not determine status | Manual check needed |
 
 
 ## Development
