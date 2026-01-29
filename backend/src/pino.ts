@@ -48,8 +48,6 @@ export const requestLogger = pino(
 export const eventLogger = pino(
   {
     level: env.PINO_LOG_LEVEL,
-    customLevels: appConfig.severityLevels,
-    useOnlyCustomLevels: true,
     formatters: {
       level: (label) => ({ level: label.toUpperCase() }),
     },

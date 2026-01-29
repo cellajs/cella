@@ -39,14 +39,15 @@ async function loadConfig(forkPath: string): Promise<CellaSyncConfig> {
  *
  * Priority:
  * 1. CELLA_FORK_PATH environment variable
- * 2. Current working directory
+ * 2. Resolved from import.meta.dirname (src-v2 is 3 levels deep from monorepo root)
  */
 function getForkPath(): string {
   const envPath = process.env.CELLA_FORK_PATH;
   if (envPath) {
     return resolve(envPath);
   }
-  return process.cwd();
+  // Resolve from file location: src-v2/index.ts -> cli/sync -> cli -> monorepo root
+  return resolve(import.meta.dirname, '../../..');
 }
 
 /**

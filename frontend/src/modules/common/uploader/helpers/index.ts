@@ -49,7 +49,7 @@ export const createBaseTransloaditUppy = async (
     ...uppyOptions,
     meta: {
       public: tokenQuery.public,
-      bucketName: tokenQuery.public ? appConfig.s3PublicBucket : appConfig.s3PrivateBucket,
+      bucketName: tokenQuery.public ? appConfig.s3.publicBucket : appConfig.s3.privateBucket,
       offlineUploaded: !hasCloudUpload,
     },
     onBeforeFileAdded,

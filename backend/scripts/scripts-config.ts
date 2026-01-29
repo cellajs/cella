@@ -1,0 +1,25 @@
+import type { GenerateScript } from 'config';
+
+/** Scripts run during `pnpm generate` for migrations */
+export const generateScripts: GenerateScript[] = [
+  {
+    name: 'Drizzle migrations',
+    command: 'drizzle-kit generate --config drizzle.config.ts',
+    type: 'drizzle',
+  },
+  {
+    name: 'CDC setup migration',
+    command: 'tsx scripts/migrations/cdc-migration.ts',
+    type: 'migration',
+    migrationTag: 'cdc_setup',
+  },
+  {
+    name: 'Partman setup migration',
+    command: 'tsx scripts/migrations/partman-migration.ts',
+    type: 'migration',
+    migrationTag: 'partman_setup',
+  },
+];
+
+/** Seed scripts run during `pnpm seed` */
+export const seedScripts = ['pnpm run seed:user', 'pnpm run seed:organizations', 'pnpm run seed:data'];

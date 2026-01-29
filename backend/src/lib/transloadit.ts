@@ -32,8 +32,8 @@ export const getParams = (templateId: UploadTemplateId, isPublic: boolean, sub: 
         // Use is also based on template data
         use: template.use,
         robot: '/s3/store',
-        credentials: isPublic ? appConfig.s3PublicBucket : appConfig.s3PrivateBucket,
-        host: appConfig.s3Host,
+        credentials: isPublic ? appConfig.s3.publicBucket : appConfig.s3.privateBucket,
+        host: appConfig.s3.host,
         no_vhost: true,
         url_prefix: '',
         acl: isPublic ? 'public-read' : 'private',

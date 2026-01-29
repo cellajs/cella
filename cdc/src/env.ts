@@ -25,7 +25,7 @@ const envSchema = z.object({
   DEBUG: z
     .string()
     .transform((v) => v === 'true')
-    .default('false'),
+    .default(false),
 
   // Health server port
   CDC_HEALTH_PORT: z.coerce.number().default(4001),

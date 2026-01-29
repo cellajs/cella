@@ -4,8 +4,8 @@ import { appConfig } from 'config';
 import { env } from '#/env';
 
 const s3Client = new S3Client({
-  region: appConfig.s3Region,
-  endpoint: `https://${appConfig.s3Host}`,
+  region: appConfig.s3.region,
+  endpoint: `https://${appConfig.s3.host}`,
   credentials: {
     accessKeyId: env.S3_ACCESS_KEY_ID,
     secretAccessKey: env.S3_ACCESS_KEY_SECRET,

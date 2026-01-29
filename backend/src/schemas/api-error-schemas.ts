@@ -1,6 +1,16 @@
 import { z } from '@hono/zod-openapi';
-import { appConfig, type Severity } from 'config';
+import type { Severity } from 'config';
 import { entityTypeSchema } from './common-schemas';
+
+/** Severity levels array for zod enum */
+export const severityLevels = [
+  'fatal',
+  'error',
+  'warn',
+  'info',
+  'debug',
+  'trace',
+] as const satisfies readonly Severity[];
 
 /**
  * HTTP error status code (4xx or 5xx).
@@ -22,7 +32,7 @@ export const apiErrorSchema = z
     message: z.string(), // Error message
     type: z.string(), // Error type identifier
     status: errorStatusCodeSchema, // HTTP status code (single schema, no union duplication)
-    severity: z.enum(Object.keys(appConfig.severityLevels) as [Severity, ...Severity[]]), // Severity level
+    severity: z.enum(severityLevels), // Severity level
     entityType: entityTypeSchema.optional(), // Optional related entity type
     logId: z.string().optional(), // Optional log identifier
     path: z.string().optional(), // Optional request path

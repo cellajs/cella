@@ -5,7 +5,7 @@ import { appConfig } from 'config';
  */
 export const isCDNUrl = (url?: string) => {
   if (!url) return false;
-  if (url.startsWith(appConfig.publicCDNUrl)) return true;
-  if (url.startsWith(appConfig.privateCDNUrl)) return true;
+  if (appConfig.s3.publicCDNUrl && url.startsWith(appConfig.s3.publicCDNUrl)) return true;
+  if (appConfig.s3.privateCDNUrl && url.startsWith(appConfig.s3.privateCDNUrl)) return true;
   return false;
 };

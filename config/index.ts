@@ -1,4 +1,4 @@
-import type { Config, EntityKind, ProductEntityConfig } from './types';
+import type { Config, EntityKind, ProductEntityConfig, RequiredConfig } from './types';
 import _default from './default';
 import development from './development';
 import production from './production';
@@ -8,7 +8,18 @@ import tunnel from './tunnel';
 import { hasKey, mergeDeep } from './utils';
 
 // Re-export types for external use
-export type { EntityConfigEntry, EntityKind, GenerateScript, GenerateScriptType, ProductEntityConfig } from './types';
+export type {
+  EntityConfigEntry,
+  EntityConfigMap,
+  EntityKind,
+  GenerateScript,
+  GenerateScriptType,
+  ProductEntityConfig,
+  RequestLimitsConfig,
+  RequiredConfig,
+  S3Config,
+  SystemRolesConfig,
+} from './types';
 export { hasKey } from './utils';
 
 /******************************************************************************
@@ -89,10 +100,8 @@ export type UserFlags = typeof appConfig.defaultUserFlags
  */
 export type Theme = keyof typeof appConfig.theme.colors | 'none';
 
-/**
- * Severity levels to be used in error handling
- */
-export type Severity = keyof typeof appConfig.severityLevels
+/** Pino log severity levels */
+export type Severity = 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
 
 /**
  * All token types used in the app
@@ -262,7 +271,17 @@ function deriveRelatableContextEntityTypes<
 }
 
 const mode = (process.env.NODE_ENV || 'development') as Config['mode'];
+
+/**
+ * Merged app configuration - combines default config with environment-specific overrides.
+ */
 export const appConfig = mergeDeep(_default, configModes[mode]);
+
+// Compile-time validation that appConfig satisfies RequiredConfig.
+// This ensures forks get TypeScript errors when critical config is missing.
+// Using a separate const preserves the full inferred type of appConfig.
+const _configCheck: RequiredConfig = appConfig;
+void _configCheck; // Prevent unused variable warning
 
 /**
  * Relatable context entity types - derived from ancestors arrays in entityConfig.

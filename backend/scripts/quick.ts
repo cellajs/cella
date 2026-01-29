@@ -1,5 +1,4 @@
 import { execSync } from 'node:child_process';
-import { appConfig } from 'config';
 import { sql } from 'drizzle-orm';
 import { migrate } from 'drizzle-orm/pglite/migrator';
 import { db, migrateConfig } from '#/db/db';
@@ -17,7 +16,9 @@ if (res.rows.length > 0) {
   process.exit(0);
 }
 
-for (const cmd of appConfig.seedScripts) {
+import { seedScripts } from './scripts-config';
+
+for (const cmd of seedScripts) {
   try {
     execSync(cmd, { stdio: 'inherit' });
   } catch (error) {

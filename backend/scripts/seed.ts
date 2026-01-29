@@ -1,5 +1,4 @@
 import { execSync } from 'node:child_process';
-import { appConfig } from 'config';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { db, migrateConfig } from '#/db/db';
 import { env } from '#/env';
@@ -14,10 +13,12 @@ if (env.DEV_MODE === 'basic') {
 // Migrate db
 await migrate(db, migrateConfig);
 
+import { seedScripts } from './scripts-config';
+
 /**
- * Run seed scripts array from config
+ * Run seed scripts array from scripts-config
  */
-for (const cmd of appConfig.seedScripts) {
+for (const cmd of seedScripts) {
   try {
     // Execute the command
     execSync(cmd, { stdio: 'inherit' });

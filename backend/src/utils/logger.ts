@@ -38,9 +38,11 @@ export const logError = (msg: string, error: Error | unknown, meta?: object): vo
 };
 
 export const getNodeLoggerLevel = (severity: Severity): 'error' | 'warn' | 'info' | 'debug' => {
-  const severityValue = appConfig.severityLevels[severity];
-  if (severityValue >= appConfig.severityLevels.error) return 'error';
-  if (severityValue >= appConfig.severityLevels.warn) return 'warn';
-  if (severityValue >= appConfig.severityLevels.info) return 'info';
+  // Pino standard levels: fatal=60, error=50, warn=40, info=30, debug=20, trace=10
+  const levelValues = { fatal: 60, error: 50, warn: 40, info: 30, debug: 20, trace: 10 };
+  const severityValue = levelValues[severity];
+  if (severityValue >= 50) return 'error';
+  if (severityValue >= 40) return 'warn';
+  if (severityValue >= 30) return 'info';
   return 'debug';
 };

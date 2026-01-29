@@ -30,7 +30,7 @@ function AvatarFormField({ form, label, name, entity, type }: Props) {
   const url = form.getValues(name);
 
   const handleUpdateURL = (key: string | null) => {
-    const urlWithPublicCDN = key ? `${appConfig.publicCDNUrl}/${key}` : null;
+    const urlWithPublicCDN = key ? `${appConfig.s3.publicCDNUrl}/${key}` : null;
     form.setValue(name, urlWithPublicCDN, { shouldDirty: true });
   };
 

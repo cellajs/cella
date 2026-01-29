@@ -186,7 +186,7 @@ const systemRouteHandlers = app
 
     const { bucketName, public: isPublic } = attachment ?? {
       public: queryPublic,
-      bucketName: queryPublic ? appConfig.s3PublicBucket : appConfig.s3PrivateBucket,
+      bucketName: queryPublic ? appConfig.s3.publicBucket : appConfig.s3.privateBucket,
     };
 
     if (!isPublic) {

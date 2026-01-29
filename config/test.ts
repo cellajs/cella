@@ -1,4 +1,5 @@
-import type { Config } from './types';
+import type { DeepPartial } from './types';
+import type _default from './default';
 
 /**
  * Ensure that this file does not include or use any sensitive information.
@@ -16,7 +17,9 @@ export default {
   backendUrl: 'http://localhost:4000',
   backendAuthUrl: 'http://localhost:4000/auth',
 
-  s3BucketPrefix: 'cella-test',
+  s3: {
+    bucketPrefix: 'cella-test',
+  },
 
   // Hide chat widget in test
   gleapToken: undefined,
@@ -27,4 +30,4 @@ export default {
     donate: '',
   },
 
-} satisfies Config;
+} satisfies DeepPartial<typeof _default>;

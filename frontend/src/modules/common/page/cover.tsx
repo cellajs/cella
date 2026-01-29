@@ -25,7 +25,7 @@ function PageCoverBase({ id, canUpdate, organizationId, url, coverUpdateCallback
   const [coverUrl, setCoverUrl] = useState(url);
 
   const handleUpdateURL = (bannerKey: string) => {
-    const bannerUrl = `${appConfig.publicCDNUrl}/${bannerKey}`;
+    const bannerUrl = `${appConfig.s3.publicCDNUrl}/${bannerKey}`;
     setCoverUrl(bannerUrl);
     coverUpdateCallback(bannerUrl);
   };

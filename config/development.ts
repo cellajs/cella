@@ -1,4 +1,5 @@
-import type { Config } from './types';
+import type { DeepPartial } from './types';
+import type _default from './default';
 
 export default {
   mode: 'development',
@@ -11,7 +12,9 @@ export default {
   backendUrl: 'http://localhost:4000',
   backendAuthUrl: 'http://localhost:4000/auth',
 
-  s3BucketPrefix: 'cella-development',
+  s3: {
+    bucketPrefix: 'cella-development',
+  },
 
   // Hide chat widget in development
   gleapToken: undefined,
@@ -21,4 +24,4 @@ export default {
   paddlePriceIds: {
     donate: 'pri_01hq8da4mn9s0z0da7chh0ntb9',
   },
-} satisfies Config;
+} satisfies DeepPartial<typeof _default>;

@@ -18,7 +18,7 @@ export const replaceSignedSrcs = async (content: string): Promise<string> => {
       try {
         const signed = await getSignedUrlFromKey(src, {
           isPublic: true,
-          bucketName: appConfig.s3PublicBucket,
+          bucketName: appConfig.s3.publicBucket,
         });
         replacements.set(src, signed);
       } catch {

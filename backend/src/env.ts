@@ -1,8 +1,9 @@
 import { env as dotenv } from '@dotenv-run/core';
 import { createEnv } from '@t3-oss/env-core';
-import { appConfig, type Severity } from 'config';
+import { appConfig } from 'config';
 import { z } from 'zod';
 import { additionalEnvSchema } from '#/custom-env';
+import { severityLevels } from '#/schemas/api-error-schemas';
 
 dotenv({
   root: '../..',
@@ -84,7 +85,7 @@ export const env = createEnv({
       ),
 
     PINO_LOG_LEVEL: z
-      .enum([...(Object.keys(appConfig.severityLevels) as [Severity, ...Severity[]]), 'silent'])
+      .enum([...severityLevels, 'silent'])
       .default(appConfig.mode === 'test' ? 'silent' : appConfig.mode === 'production' ? 'info' : 'debug'),
 
     ...additionalEnvSchema.shape,

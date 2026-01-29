@@ -1,65 +1,98 @@
-import type { BaseAuthStrategies, BaseConfigType, BaseOAuthProviders, GenerateScript } from "./types";
+import type { BaseAuthStrategies, BaseOAuthProviders, ConfigMode, EntityConfigMap, S3Config } from './types';
 
 export const config = {
 
   /******************************************************************************
    * APP IDENTITY
    ******************************************************************************/
+  /** App display name shown in UI and emails */
   name: 'Cella',
+  /** URL-safe identifier used in paths and storage */
   slug: 'cella',
+  /** Primary domain for the app */
   domain: 'cellajs.com',
+  /** App description for SEO and meta tags */
   description: 'Cella is a TypeScript template to build collaborative web apps with sync engine. MIT licensed.',
+  /** SEO keywords for search engines */
   keywords:
     'starter kit, fullstack, monorepo, typescript, hono, honojs, drizzle, shadcn, react, postgres, pwa, offline, instant§ updates, realtime data, sync engine',
 
   /******************************************************************************
    * URLS & ENDPOINTS
    ******************************************************************************/
+  /** Frontend SPA base URL */
   frontendUrl: 'https://cellajs.com',
+  /** Backend API base URL */
   backendUrl: 'https://api.cellajs.com',
+  /** OAuth callback base URL */
   backendAuthUrl: 'https://api.cellajs.com/auth',
 
+  /** About page URL */
   aboutUrl: 'https://cellajs.com/about',
+  /** Status page URL for uptime monitoring */
   statusUrl: 'https://status.cellajs.com',
+  /** Canonical production URL */
   productionUrl: 'https://cellajs.com',
 
+  /** Default redirect path after login */
   defaultRedirectPath: '/home',
+  /** Redirect path for first-time users */
   welcomeRedirectPath: '/welcome',
 
   /******************************************************************************
    * EMAIL
    ******************************************************************************/
+  /** Email address for user support inquiries */
   supportEmail: 'support@cellajs.com',
+  /** From address for system notifications */
   notificationsEmail: 'notifications@cellajs.com',
 
   /******************************************************************************
    * MODE & FLAGS
    ******************************************************************************/
-  mode: 'development' satisfies BaseConfigType['mode'],
+  /** Runtime mode - overridden per environment file */
+  mode: 'development' as ConfigMode,
+  /** Enable debug logging and dev tools */
   debug: false,
+  /** Enable maintenance mode (blocks all requests) */
   maintenance: false,
-  cookieVersion: 'v1', // Reset version when changing cookie structure
+  /** Cookie version - increment when changing cookie structure to invalidate old cookies */
+  cookieVersion: 'v1',
 
   /******************************************************************************
    * FEATURE FLAGS
    ******************************************************************************/
+  /**
+   * Feature toggles for app capabilities.
+   * Use to enable/disable major features without code changes.
+   */
   has: {
-    pwa: true, // Progressive Web App support for preloading static assets and offline support
-    registrationEnabled: true, // Allow users to sign up. If false, the app is by invitation only
-    waitlist: true, // Suggest a waitlist for unknown emails when sign up is disabled
-    uploadEnabled: true, // s3 fully configured, if false, files will be stored in local browser (indexedDB)
+    /** Progressive Web App support for preloading static assets and offline support */
+    pwa: true,
+    /** Allow users to sign up. If false, the app is by invitation only */
+    registrationEnabled: true,
+    /** Suggest a waitlist for unknown emails when sign up is disabled */
+    waitlist: true,
+    /** S3 fully configured - if false, files will be stored in local browser (IndexedDB) */
+    uploadEnabled: true,
   },
 
   /******************************************************************************
    * AUTHENTICATION
    ******************************************************************************/
-  // Currently available: 'password', 'passkey', 'oauth' and 'totp'.
-  // Totp can only be used as a fallback strategy for mfa, with 'passkey' as the primary.
+  /**
+   * Enabled authentication strategies.
+   * TOTP can only be used as MFA fallback with passkey as primary.
+   */
   enabledAuthStrategies: ['password', 'passkey', 'oauth', 'totp'] satisfies BaseAuthStrategies[],
 
-  // Currently supported: 'github', 'google', 'microsoft'.
+  /** Enabled OAuth providers - currently supports: github, google, microsoft */
   enabledOAuthProviders: ['github'] satisfies BaseOAuthProviders[],
+
+  /** Token types used for verification flows */
   tokenTypes: ['email-verification', 'oauth-verification', 'password-reset', 'invitation', 'confirm-mfa'] as const,
+
+  /** TOTP configuration for MFA */
   totpConfig: {
     intervalInSeconds: 30,
     gracePeriodInSeconds: 60,
@@ -69,21 +102,22 @@ export const config = {
   /******************************************************************************
    * API CONFIGURATION
    ******************************************************************************/
+  /** API version prefix for endpoints */
   apiVersion: 'v1',
+  /** API documentation description shown in Scalar */
   apiDescription: `⚠️ ATTENTION: PRERELEASE!  
                   This API is organized into modules based on logical domains (e.g. \`auth\`, \`organizations\`, \`memberships\`).
                   Each module includes a set of endpoints that expose functionality related to a specific resource or cross resource logic.
 
                   The documentation is generated from source code using \`zod\` schemas, converted into OpenAPI via \`zod-openapi\` and served through the \`hono\` framework.`,
 
-
-   /******************************************************************************
+  /******************************************************************************
    * SYSTEM ROLES
    ******************************************************************************/
- 
-  /** Base role is `user`, but this is not stored its just the default. 
-   * Special system roles can be defined here and will be stored in the DB.
-   */   
+  /**
+   * System-wide roles stored in DB. Base role 'user' is implicit default.
+   * Must include 'admin' for system administration access.
+   */
   systemRoles: ['admin'] as const,
 
 
@@ -91,10 +125,22 @@ export const config = {
    * ENTITY DATA MODEL
    ******************************************************************************/
 
+  /** All entity types in the app - must match entityConfig keys */
+  entityTypes: ['user', 'organization', 'attachment', 'page'] as const,
+  /** Context entities with memberships - must match entityConfig context kinds */
+  contextEntityTypes: ['organization'] as const,
+  /** Product/content entities - must match entityConfig product kinds */
+  productEntityTypes: ['attachment', 'page'] as const,
+
+  /** Entities that support offline transactions */
+  offlineEntityTypes: [] as const,
+  /** Entities with realtime sync and offline transactions */
+  realtimeEntityTypes: ['attachment', 'page'] as const,
+
   /**
    * Entity hierarchy configuration - single source of truth for entity relationships.
    * - 'user': The user entity (unique, doesn't fit context/product model)
-   * - 'context': Entities with memberships, defines parent chain
+   * - 'context': Entities with memberships, defines ancestor chain and roles
    * - 'product': Content entities, defines ancestor chain for scoping
    */
   entityConfig: {
@@ -102,16 +148,10 @@ export const config = {
     organization: { kind: 'context', ancestors: [], roles: ['admin', 'member'] },
     attachment: { kind: 'product', ancestors: ['organization'] },
     page: { kind: 'product', ancestors: [] },
-  } as const,
+  } as const satisfies EntityConfigMap,
 
-  // Hardcoded arrays for type safety (must match entityConfig)
-  entityTypes: ['user', 'organization', 'attachment', 'page'] as const,
-  contextEntityTypes: ['organization'] as const,
-  productEntityTypes: ['attachment', 'page'] as const,
 
-  offlineEntityTypes: [] as const, // Entities that support offline transactions
-  realtimeEntityTypes: ['attachment', 'page'] as const, // Entities with realtime & offline transactions
-
+  /** Maps entity types to their ID column names - must match entityTypes */
   entityIdColumnKeys: {
     user: 'userId',
     organization: 'organizationId',
@@ -119,16 +159,21 @@ export const config = {
     page: 'pageId',
   } as const,
 
+  /** Available CRUD actions for permission checks */
   entityActions: ['create', 'read', 'update', 'delete', 'search'] as const,
 
-  // Define user menu structure of context entities with optionally nested subentities
-  // ⚠️ IMPORTANT: If you define a `subentityType`, the corresponding table must include `${entity}Id` foreign key.
+  /**
+   * User menu structure of context entities with optional nested subentities.
+   * If subentityType is set, the table must include `${entity}Id` foreign key.
+   */
   menuStructure: [
     {
       entityType: 'organization',
       subentityType: null,
     } as const,
   ],
+
+  /** Default restrictions for organizations (max entities per org) */
   defaultOrganizationRestrictions: {
     user: 1000,
     attachment: 100,
@@ -137,7 +182,10 @@ export const config = {
   /******************************************************************************
    * REQUEST LIMITS
    ******************************************************************************/
-  // BE common-schemas enforce max 1000 via `limitRefine`. Adjust if needed.
+  /**
+   * Default page sizes for list endpoints. Backend enforces max 1000.
+   * Must include 'default' key as fallback.
+   */
   requestLimits: {
     default: 40,
     users: 100,
@@ -148,35 +196,58 @@ export const config = {
     pages: 40,
     pendingMemberships: 20,
   },
-  jsonBodyLimit: 1 * 1024 * 1024, // 1mb
-  fileUploadLimit: 20 * 1024 * 1024, // 20mb
-  defaultBodyLimit: 1 * 1024 * 1024, // 1mb
+
+  /** Max JSON body size in bytes */
+  jsonBodyLimit: 1 * 1024 * 1024,
+  /** Max file upload size in bytes */
+  fileUploadLimit: 20 * 1024 * 1024,
+  /** Default body size limit in bytes */
+  defaultBodyLimit: 1 * 1024 * 1024,
 
   /******************************************************************************
    * STORAGE & UPLOADS (S3)
    ******************************************************************************/
-  s3BucketPrefix: 'cella' satisfies BaseConfigType['s3BucketPrefix'] as BaseConfigType['s3BucketPrefix'],
-  s3PublicBucket: 'imado-dev',
-  s3PrivateBucket: 'imado-dev-priv',
-  s3Region: 'nl-ams',
-  s3Host: 's3.nl-ams.scw.cloud',
-  privateCDNUrl: 'https://imado-dev-priv.s3.nl-ams.scw.cloud',
-  publicCDNUrl: 'https://imado-dev.s3.nl-ams.scw.cloud',
+  /**
+   * S3-compatible storage configuration.
+   * Required for file uploads when has.uploadEnabled is true.
+   */
+  s3: {
+    /** Prefix to namespace files when sharing a bucket across apps or envs */
+    bucketPrefix: 'cella',
+    /** Public bucket name for publicly accessible files */
+    publicBucket: 'imado-dev',
+    /** Private bucket name for authenticated-only files */
+    privateBucket: 'imado-dev-priv',
+    /** S3 region identifier */
+    region: 'nl-ams',
+    /** S3 host endpoint */
+    host: 's3.nl-ams.scw.cloud',
+    /** CDN URL for private bucket (signed URLs) */
+    privateCDNUrl: 'https://imado-dev-priv.s3.nl-ams.scw.cloud',
+    /** CDN URL for public bucket */
+    publicCDNUrl: 'https://imado-dev.s3.nl-ams.scw.cloud',
+  } satisfies S3Config,
+
+  /** Upload template IDs for Transloadit processing pipelines */
   uploadTemplateIds: ['avatar', 'cover', 'attachment'] as const,
+
+  /** Uppy upload widget default restrictions */
   uppy: {
     defaultRestrictions: {
-      maxFileSize: 10 * 1024 * 1024, // 10MB
+      maxFileSize: 10 * 1024 * 1024,
       maxNumberOfFiles: 1,
       allowedFileTypes: ['.jpg', '.jpeg', '.png'],
-      maxTotalFileSize: 100 * 1024 * 1024, // 100MB
+      maxTotalFileSize: 100 * 1024 * 1024,
       minFileSize: null,
       minNumberOfFiles: null,
       requiredMetaFields: [],
     },
   },
 
-  // Local blob storage restrictions (IndexedDB/Dexie)
-  // Controls which attachments are cached locally for offline access
+  /**
+   * Local blob storage restrictions (IndexedDB/Dexie).
+   * Controls which attachments are cached locally for offline access.
+   */
   localBlobStorage: {
     enabled: true, // Enable local blob caching
     maxFileSize: 10 * 1024 * 1024, // 10MB - files larger than this are not cached locally
@@ -191,25 +262,29 @@ export const config = {
   /******************************************************************************
    * THIRD-PARTY SERVICES
    ******************************************************************************/
-  // Paddle (Payments)
+  /** Paddle client token for payments */
   paddleToken: 'test_85052d6574ab68d36b341e0afc8',
+  /** Paddle price IDs for subscription products */
   paddlePriceIds: {
     donate: 'pri_01hq8da4mn9s0z0da7chh0ntb9',
   },
-  // Sentry (Error tracking)
+  /** Sentry DSN for error tracking */
   sentryDsn: 'https://0f6c6e4d1e825242d9d5b0b73faa97fa@o4506897995399168.ingest.us.sentry.io/4506898171559936',
+  /** Upload source maps to Sentry on build */
   sentSentrySourceMaps: true,
-  // Gleap (Customer support)
+  /** Gleap token for customer support widget */
   gleapToken: '1ZoAxCRA83h5pj7qtRSvuz7rNNN9iXDd',
-  // Google Maps
+  /** Google Maps API key */
   googleMapsKey: 'AIzaSyDMjCpQusdoPWLeD7jxkqAxVgJ8s5xJ3Co',
-  // Matrix (Chat)
+  /** Matrix homeserver URL for chat integration */
   matrixURL: 'https://matrix-client.matrix.org',
 
   /******************************************************************************
    * THEMING & UI
    ******************************************************************************/
+  /** Primary theme color for PWA manifest and browser chrome */
   themeColor: '#26262b',
+  /** Theme configuration for UI components */
   theme: {
     colors: {
       rose: '#e11d48',
@@ -224,6 +299,7 @@ export const config = {
       '2xl': '1400px',
     },
   } as const,
+  /** Placeholder background colors for avatars without images */
   placeholderColors: [
     'bg-blue-300',
     'bg-lime-300',
@@ -236,13 +312,17 @@ export const config = {
     'bg-pink-300',
     'bg-red-300',
   ],
+  /** CSS animation class for nav logo */
   navLogoAnimation: 'animate-spin-slow',
 
   /******************************************************************************
    * LOCALIZATION
    ******************************************************************************/
+  /** Default language code */
   defaultLanguage: 'en' as const,
+  /** Available language codes - first is fallback */
   languages: ['en', 'nl'] as const,
+  /** Common reference data */
   common: {
     countries: ['fr', 'de', 'nl', 'ua', 'us', 'gb'],
     timezones: [],
@@ -251,6 +331,7 @@ export const config = {
   /******************************************************************************
    * COMPANY DETAILS
    ******************************************************************************/
+  /** Company/organization details for footer, legal pages, and contact info */
   company: {
     name: 'CellaJS',
     shortName: 'Cella',
@@ -279,45 +360,10 @@ export const config = {
   /******************************************************************************
    * USER DEFAULTS
    ******************************************************************************/
+  /** Default user flags applied to new users */
   defaultUserFlags: {
     finishedOnboarding: false,
   },
-
-  /******************************************************************************
-   * LOGGING & ERRORS
-   ******************************************************************************/
-  severityLevels: {
-    fatal: 60,
-    error: 50,
-    warn: 40,
-    info: 30,
-    debug: 20,
-    trace: 10,
-  } as const,
-
-  /******************************************************************************
-   * DEV & SEEDING
-   ******************************************************************************/
-  generateScripts: [
-    {
-      name: 'Drizzle migrations',
-      command: 'drizzle-kit generate --config drizzle.config.ts',
-      type: 'drizzle',
-    },
-    {
-      name: 'CDC setup migration',
-      command: 'tsx scripts/migrations/cdc-migration.ts',
-      type: 'migration',
-      migrationTag: 'cdc_setup',
-    },
-    {
-      name: 'Partman setup migration',
-      command: 'tsx scripts/migrations/partman-migration.ts',
-      type: 'migration',
-      migrationTag: 'partman_setup',
-    },
-  ] satisfies GenerateScript[],
-  seedScripts: ['pnpm run seed:user', 'pnpm run seed:organizations', 'pnpm run seed:data'],
 };
 
 export default config;

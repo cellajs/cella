@@ -1,4 +1,5 @@
-import type { Config } from './types';
+import type { DeepPartial } from './types';
+import type _default from './default';
 
 export default {
   mode: 'staging',
@@ -14,11 +15,13 @@ export default {
   // Hide chat widget in staging
   gleapToken: undefined,
 
-  s3BucketPrefix: 'cella-staging',
+  s3: {
+    bucketPrefix: 'cella-staging',
+  },
 
   // Payment with Paddle
   paddleToken: 'test_85052d6574ab68d36b341e0afc8',
   paddlePriceIds: {
     donate: 'pri_01hq8da4mn9s0z0da7chh0ntb9',
   },
-} satisfies Config;
+} satisfies DeepPartial<typeof _default>;
