@@ -18,16 +18,12 @@ export type PermissionValue = 0 | 1;
  */
 export type EntityActionPermissions = Record<EntityActionType, PermissionValue>;
 
-// Note: ContextConfig, ProductConfig, EntityConfig, and HierarchyConfig have been
-// removed. Entity hierarchy is now defined in appConfig.entityConfig and accessed
-// via config helper functions (getEntityAncestors, getContextRoles, etc.)
-
 /**
  * Access policy entry for a specific context and role combination.
  */
 export interface AccessPolicyEntry {
   contextType: ContextEntityType;
-  role: string;
+  role: EntityRole;
   permissions: EntityActionPermissions;
 }
 
@@ -98,9 +94,9 @@ export interface PermissionDecision<T extends MembershipForPermission> {
     id: string;
     contextIds: Partial<Record<ContextEntityType, string>>;
   };
-  /** Context types checked in order (most specific to root) */
-  relevantContexts: ContextEntityType[];
-  /** The primary context where membership is captured */
+  /** Context types checked in order (most specific to root). First element is primaryContext. */
+  orderedContexts: ContextEntityType[];
+  /** The primary context where membership is captured (always orderedContexts[0]) */
   primaryContext: ContextEntityType;
   /** Per-action attribution table showing grants for each action */
   actions: Record<EntityActionType, ActionAttribution>;

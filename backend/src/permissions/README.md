@@ -43,7 +43,7 @@ Permission values: `1` = allowed, `0` = denied.
 
 ## Permission Check Flow
 
-`checkAllPermissions(policies, memberships, subject)` returns a `PermissionDecision`:
+`getAllDecisions(policies, memberships, subject)` returns a `PermissionDecision`:
 
 1. **Resolve contexts**: Product entities check ancestor contexts; context entities check self + ancestors
 2. **Find memberships**: Match user's memberships to the subject's context IDs

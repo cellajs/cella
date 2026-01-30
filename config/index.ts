@@ -1,39 +1,40 @@
-import type { Config, EntityKind, ProductEntityConfig, RequiredConfig } from './types';
-import _default from './default';
+import type { Config, RequiredConfig } from './types';
+import _default, { hierarchy, roles } from './default';
 import development from './development';
 import production from './production';
 import staging from './staging';
 import test from './test';
 import tunnel from './tunnel';
-import { hasKey, mergeDeep } from './utils';
+import { mergeDeep } from './utils';
 
-// Re-export types for external use
+// Re-export hierarchy builder types for external use
 export type {
-  EntityConfigEntry,
-  EntityConfigMap,
+  ContextEntityView,
+  EntityHierarchy,
   EntityKind,
+  EntityView,
+  ProductEntityView,
+  RoleFromRegistry,
+  UserEntityView,
+} from './entity-hierarchy';
+export { createEntityHierarchy, createRoleRegistry } from './entity-hierarchy';
+
+// Re-export other types
+export type {
   GenerateScript,
   GenerateScriptType,
-  ProductEntityConfig,
   RequestLimitsConfig,
   RequiredConfig,
   S3Config,
-  SystemRolesConfig,
 } from './types';
 export { hasKey } from './utils';
 
-/******************************************************************************
- * HELPER TYPES FOR ENTITY CONFIG
- ******************************************************************************/
+// Re-export role registry and hierarchy from default
+export { hierarchy, roles } from './default';
 
-/**
- * Extract all ancestor entity types from entityConfig.
- * Collects all unique values from product entity `ancestors` arrays.
- */
-type EntityConfigAncestors<T extends Record<string, { kind: string; ancestors?: readonly string[] }>> = {
-  [K in keyof T]: T[K] extends { kind: 'product'; ancestors: readonly (infer A)[] } ? A : never;
-}[keyof T] &
-  string;
+/******************************************************************************
+ * HELPER TYPES FOR ENTITY HIERARCHY
+ ******************************************************************************/
 
 /**
  * All entities in this app
@@ -51,11 +52,10 @@ export type ContextEntityType = (typeof appConfig.contextEntityTypes)[number];
 export type ProductEntityType = (typeof appConfig.productEntityTypes)[number];
 
 /**
- * Relatable context entities - derived from ancestors arrays in entityConfig.
- * These are context entities that appear in product entity ancestor chains.
+ * Relatable context entities - context entities that appear as parents of product entities.
  * Used for activities table columns and CDC context extraction.
  */
-export type RelatableContextEntityType = EntityConfigAncestors<typeof appConfig.entityConfig>;
+export type RelatableContextEntityType = (typeof hierarchy.relatableContextTypes)[number];
 
 /**
  * Offline entities that support offline transactions
@@ -114,112 +114,28 @@ export type TokenType = (typeof appConfig.tokenTypes)[number]
 export type SystemRole = (typeof appConfig.systemRoles)[number];
 
 /******************************************************************************
- * ENTITY CONFIG HELPERS
+ * ENTITY HIERARCHY HELPERS (delegating to hierarchy instance)
  ******************************************************************************/
 
 /**
- * Compute all unique entity roles from entityConfig (union of all context entity roles).
- * Used for DB enum and validation.
+ * All entity roles from the role registry (for DB enum).
+ * Returns a tuple with at least one element.
  */
-function computeAllEntityRoles(): [string, ...string[]] {
-  const roles = new Set<string>();
-  for (const key of Object.keys(_default.entityConfig)) {
-    const entry = _default.entityConfig[key as keyof typeof _default.entityConfig];
-    if (entry.kind === 'context') {
-      for (const role of entry.roles) {
-        roles.add(role);
-      }
-    }
-  }
-  const arr = [...roles];
-  if (arr.length === 0) throw new Error('No entity roles defined in entityConfig');
-  return arr as [string, ...string[]];
-}
+export const allEntityRoles = [...roles.all] as [string, ...string[]];
 
 /**
- * All entity roles across all context entities (for DB enum).
+ * Entity roles type - union of all roles from the role registry.
  */
-export const allEntityRoles = computeAllEntityRoles();
+export type EntityRole = (typeof roles.all)[number];
+
+// Re-export entity type guards
+export { getContextRoles, isContextEntity, isProductEntity, isRealtimeEntity } from './entity-guards';
 
 /**
- * Entity roles type - union of all roles from entityConfig.
- * Extracts role union from context entities that have a roles array.
+ * Expected shape for entityIdColumnKeys - must have all entity types as keys.
+ * Uses the `${EntityType}Id` naming convention.
  */
-export type EntityRole = {
-  [K in keyof typeof _default.entityConfig]: (typeof _default.entityConfig)[K] extends { roles: readonly (infer R)[] }
-    ? R
-    : never;
-}[keyof typeof _default.entityConfig];
-
-/**
- * Check if a role is valid for a specific context type.
- */
-export function isValidRoleForContext(role: string, contextType: string): boolean {
-  return getContextRoles(contextType).includes(role);
-}
-
-/**
- * Get the kind of an entity ('user', 'context', or 'product').
- */
-export function getEntityKind(entityType: string): EntityKind | undefined {
-  if (!hasKey(appConfig.entityConfig, entityType)) return undefined;
-  return appConfig.entityConfig[entityType].kind;
-}
-
-/**
- * Get direct ancestors for an entity.
- * Returns the ancestors array for both context and product entities.
- * The full ancestor chain is resolved recursively by getAncestorContexts().
- */
-export function getEntityAncestors(entityType: string): readonly string[] {
-  if (!hasKey(appConfig.entityConfig, entityType)) return [];
-  const entry = appConfig.entityConfig[entityType];
-  if (entry.kind === 'context' || entry.kind === 'product') return entry.ancestors;
-  return [];
-}
-
-/**
- * Get roles for a context entity.
- */
-export function getContextRoles(contextType: string): readonly string[] {
-  if (!hasKey(appConfig.entityConfig, contextType)) return [];
-  const entry = appConfig.entityConfig[contextType];
-  if (entry.kind === 'context') return entry.roles;
-  return [];
-}
-
-/**
- * Check if entity type is a context entity.
- */
-export function isContextEntity(entityType: string): boolean {
-  return getEntityKind(entityType) === 'context';
-}
-
-/**
- * Check if entity type is a product entity.
- */
-export function isProductEntity(entityType: string): boolean {
-  return getEntityKind(entityType) === 'product';
-}
-
-/**
- * Check if entity type is a realtime entity (supports SSE notifications).
- */
-export function isRealtimeEntity(entityType: string | null | undefined): entityType is RealtimeEntityType {
-  return !!entityType && appConfig.realtimeEntityTypes.includes(entityType as RealtimeEntityType);
-}
-
-/**
- * Get product entity config with proper typing.
- * Returns undefined if not a product entity.
- */
-export function getProductEntityConfig(
-  entityType: string,
-): ProductEntityConfig | undefined {
-  if (!hasKey(appConfig.entityConfig, entityType)) return undefined;
-  const entry = appConfig.entityConfig[entityType];
-  return entry.kind === 'product' ? entry : undefined;
-}
+export type EntityIdColumnKeysShape = { readonly [K in EntityType]: `${K}Id` };
 
 /**
  * Entity ID column keys mapping (e.g., { organization: 'organizationId' })
@@ -238,42 +154,16 @@ export type EntityActionType = (typeof appConfig.entityActions)[number];
 
 /******************************************************************************
  * CONFIG MERGING
- ******************************************************************************/
+ *****************************************************************************/
 
-const configModes = {
-  development,
-  tunnel,
-  staging,
-  production,
-  test,
-} satisfies Record<Config['mode'], unknown>
+const configModes = { development, tunnel, staging, production, test } satisfies Record<Config['mode'], unknown>;
 
 export type ConfigMode = Config['mode']
-
-/**
- * Derive relatable context entity types from entityConfig at runtime.
- * Collects all unique ancestor values from product entities.
- */
-function deriveRelatableContextEntityTypes<
-  T extends Record<string, { kind: string; ancestors?: readonly string[] }>,
->(entityConfig: T): EntityConfigAncestors<T>[] {
-  const ancestors = new Set<string>();
-
-  for (const config of Object.values(entityConfig)) {
-    if (config.kind === 'product' && 'ancestors' in config && Array.isArray(config.ancestors)) {
-      for (const ancestor of config.ancestors) {
-        ancestors.add(ancestor);
-      }
-    }
-  }
-
-  return [...ancestors] as EntityConfigAncestors<T>[];
-}
 
 const mode = (process.env.NODE_ENV || 'development') as Config['mode'];
 
 /**
- * Merged app configuration - combines default config with environment-specific overrides.
+ * Merged app configuration which combines default config with environment-specific overrides.
  */
 export const appConfig = mergeDeep(_default, configModes[mode]);
 
@@ -283,8 +173,38 @@ export const appConfig = mergeDeep(_default, configModes[mode]);
 const _configCheck: RequiredConfig = appConfig;
 void _configCheck; // Prevent unused variable warning
 
+/******************************************************************************
+ * COMPILE-TIME VALIDATION
+ * Ensures appConfig arrays match the hierarchy builder.
+ ******************************************************************************/
+
+// Validate entityIdColumnKeys has all entity types as keys with correct naming
+type ExpectedIdColumnKeys = { readonly [K in EntityType]: `${K}Id` };
+const _entityIdKeysCheck: ExpectedIdColumnKeys = appConfig.entityIdColumnKeys;
+void _entityIdKeysCheck;
+
+// Validate entityTypes matches hierarchy.allTypes (bi-directional type check)
+type HierarchyEntityType = typeof hierarchy.allTypes[number];
+const _entityTypesMatch1: EntityType extends HierarchyEntityType ? true : false = true;
+const _entityTypesMatch2: HierarchyEntityType extends EntityType ? true : false = true;
+void _entityTypesMatch1;
+void _entityTypesMatch2;
+
+// Validate contextEntityTypes matches hierarchy.contextTypes
+type HierarchyContextType = typeof hierarchy.contextTypes[number];
+const _contextTypesMatch1: ContextEntityType extends HierarchyContextType ? true : false = true;
+const _contextTypesMatch2: HierarchyContextType extends ContextEntityType ? true : false = true;
+void _contextTypesMatch1;
+void _contextTypesMatch2;
+
+// Validate productEntityTypes matches hierarchy.productTypes
+type HierarchyProductType = typeof hierarchy.productTypes[number];
+const _productTypesMatch1: ProductEntityType extends HierarchyProductType ? true : false = true;
+const _productTypesMatch2: HierarchyProductType extends ProductEntityType ? true : false = true;
+void _productTypesMatch1;
+void _productTypesMatch2;
+
 /**
- * Relatable context entity types - derived from ancestors arrays in entityConfig.
- * Computed at runtime by collecting all unique ancestor values from product entities.
+ * Relatable context entity types - context entities that are parents of product entities.
  */
-export const relatableContextEntityTypes = deriveRelatableContextEntityTypes(appConfig.entityConfig);
+export const relatableContextEntityTypes = hierarchy.relatableContextTypes;

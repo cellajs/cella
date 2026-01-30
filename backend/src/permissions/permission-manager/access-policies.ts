@@ -1,5 +1,11 @@
-import { appConfig, type ContextEntityType, type EntityRole, type EntityType, type ProductEntityType } from 'config';
-import { getContextRoles } from './hierarchy';
+import {
+  appConfig,
+  type ContextEntityType,
+  type EntityRole,
+  type EntityType,
+  getContextRoles,
+  type ProductEntityType,
+} from 'config';
 import type {
   AccessPolicies,
   AccessPolicyCallback,

@@ -1,62 +1,52 @@
-import { useParams, useSearch } from '@tanstack/react-router';
-import { memo, useEffect } from 'react';
+import { memo } from 'react';
+import { useUrlSheet } from '~/hooks/use-url-sheet';
 import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
 import AttachmentDialog from '~/modules/attachment/dialog';
-import { clearAttachmentDialogSearchParams } from '~/modules/attachment/dialog/lib';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { fallbackContentRef } from '~/utils/fallback-content-ref';
 
+// Store blob URLs to pass to renderContent (since onBeforeCreate runs before render)
+const blobUrlCache = new Map<string, string>();
+
+/**
+ * Handles opening/closing the attachment dialog based on URL search params.
+ * Listens to `attachmentDialogId` in search params and manages the dialog lifecycle.
+ */
 function AttachmentDialogHandlerBase() {
-  const { attachmentDialogId, groupId } = useSearch({ strict: false });
-  const { orgIdOrSlug: baseOrgIdOrSlug, idOrSlug } = useParams({ strict: false });
-  const orgIdOrSlug = baseOrgIdOrSlug || idOrSlug;
-
-  const { remove: removeDialog, create: createDialog, get: getDialog, getTriggerRef } = useDialoger();
-
-  useEffect(() => {
-    if (!attachmentDialogId || !orgIdOrSlug) return;
-    if (getDialog('attachment-dialog')) return;
-
-    const loadAndCreateDialog = async () => {
+  useUrlSheet({
+    searchParamKey: 'attachmentDialogId',
+    additionalSearchParamKeys: ['groupId'],
+    type: 'dialog',
+    instanceId: 'attachment-dialog',
+    requireOrgContext: true,
+    onBeforeCreate: async (id) => {
       // Try to get local blob URL first
-      const blobUrl = await attachmentStorage.createBlobUrl(attachmentDialogId);
-
+      const blobUrl = await attachmentStorage.createBlobUrl(id);
+      if (blobUrl) {
+        blobUrlCache.set(id, blobUrl);
+      }
+      return {
+        cleanup: () => {
+          if (blobUrl) {
+            URL.revokeObjectURL(blobUrl);
+            blobUrlCache.delete(id);
+          }
+        },
+      };
+    },
+    renderContent: (id) => {
+      const blobUrl = blobUrlCache.get(id);
       // If we have a local blob, use it; otherwise this attachment may not be cached
       // The AttachmentRender will handle cloud URL resolution via useAttachmentUrl hook
-      const validAttachments = blobUrl
-        ? [{ id: attachmentDialogId, url: blobUrl }]
-        : [{ id: attachmentDialogId, url: '' }]; // Empty URL, will be resolved by hook
+      const validAttachments = blobUrl ? [{ id, url: blobUrl }] : [{ id, url: '' }];
 
-      const dialogTrigger = getTriggerRef(attachmentDialogId);
-      const triggerRef = dialogTrigger || fallbackContentRef;
-
-      createDialog(
-        <AttachmentDialog key={attachmentDialogId} attachmentId={attachmentDialogId} attachments={validAttachments} />,
-        {
-          id: 'attachment-dialog',
-          triggerRef,
-          drawerOnMobile: false,
-          className: 'min-w-full h-screen border-0 p-0 rounded-none flex flex-col mt-0',
-          headerClassName: 'absolute p-4 w-full backdrop-blur-xs bg-background/50',
-          showCloseButton: false,
-          onClose: (isCleanup) => {
-            // Cleanup blob URL when dialog closes
-            if (blobUrl) URL.revokeObjectURL(blobUrl);
-            if (!isCleanup && dialogTrigger) return history.back();
-            clearAttachmentDialogSearchParams();
-          },
-        },
-      );
-    };
-
-    loadAndCreateDialog();
-  }, [attachmentDialogId, orgIdOrSlug, groupId]);
-
-  // Separate cleanup when `attachmentDialogId` disappears
-  useEffect(() => {
-    if (attachmentDialogId) return;
-    removeDialog(attachmentDialogId, { isCleanup: true });
-  }, [attachmentDialogId]);
+      return <AttachmentDialog key={id} attachmentId={id} attachments={validAttachments} />;
+    },
+    options: {
+      drawerOnMobile: false,
+      className: 'min-w-full h-screen border-0 p-0 rounded-none flex flex-col mt-0',
+      headerClassName: 'absolute p-4 w-full backdrop-blur-xs bg-background/50',
+      showCloseButton: false,
+    },
+  });
 
   return null;
 }

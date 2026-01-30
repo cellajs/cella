@@ -1,10 +1,89 @@
-import type { BaseAuthStrategies, BaseOAuthProviders, ConfigMode, EntityConfigMap, S3Config } from './types';
+import type { BaseAuthStrategies, BaseOAuthProviders, ConfigMode, S3Config } from './types';
+import { createEntityHierarchy, createRoleRegistry } from './entity-hierarchy';
+
+/******************************************************************************
+ * ROLE REGISTRY
+ ******************************************************************************/
+
+/**
+ * Single source of truth for all entity roles used in memberships and permissions.
+ */
+export const roles = createRoleRegistry(['admin', 'member'] as const);
+
+/******************************************************************************
+ * ENTITY HIERARCHY
+ ******************************************************************************/
+
+/**
+ * Entity relationships with single-parent inheritance.
+ * Parents are defined before children. Order determines ancestor chain.
+ */
+export const hierarchy = createEntityHierarchy(roles)
+  .user()
+  .context('organization', { parent: null, roles: roles.all })
+  .product('attachment', { parent: 'organization' })
+  .product('page', { parent: null })
+  .build();
 
 export const config = {
 
   /******************************************************************************
+   * ENTITY DATA MODEL
+   ******************************************************************************/
+
+  /** All entity types in the app - must match hierarchy.allTypes. Explicit tuple for Drizzle compatibility. */
+  entityTypes: ['user', 'organization', 'attachment', 'page'] as const,
+
+  /** Context entities with memberships - must match hierarchy.contextTypes. Explicit tuple for Drizzle compatibility. */
+  contextEntityTypes: ['organization'] as const,
+  
+  /** Product/content entities - must match hierarchy.productTypes. Explicit tuple for Drizzle compatibility. */
+  productEntityTypes: ['attachment', 'page'] as const,
+
+  /** Entities that support offline transactions */
+  offlineEntityTypes: [] as const,
+  /** Entities with realtime sync and offline transactions */
+  realtimeEntityTypes: ['attachment', 'page'] as const,
+
+  /** Maps entity types to their ID column names - must match entityTypes */
+  entityIdColumnKeys: {
+    user: 'userId',
+    organization: 'organizationId',
+    attachment: 'attachmentId',
+    page: 'pageId',
+  } as const,
+
+  /** Available CRUD actions for permission checks */
+  entityActions: ['create', 'read', 'update', 'delete', 'search'] as const,
+
+  /**
+   * User menu structure of context entities with optional nested subentities.
+   * If subentityType is set, the table must include `${entity}Id` foreign key.
+   */
+  menuStructure: [
+    { entityType: 'organization',subentityType: null} as const,
+  ],
+
+  /** Default restrictions for organizations (max entities per org) */
+  defaultOrganizationRestrictions: {
+    user: 1000,
+    attachment: 100,
+  } as const,
+
+  /******************************************************************************
+   * SYSTEM ROLES
+   ******************************************************************************/
+  
+  /**
+   * System-wide roles stored in DB. Base role 'user' is implicit default.
+   * Must include 'admin' for system administration access.
+   */
+  systemRoles: ['admin'] as const,
+
+  /******************************************************************************
    * APP IDENTITY
    ******************************************************************************/
+
   /** App display name shown in UI and emails */
   name: 'Cella',
   /** URL-safe identifier used in paths and storage */
@@ -20,6 +99,7 @@ export const config = {
   /******************************************************************************
    * URLS & ENDPOINTS
    ******************************************************************************/
+
   /** Frontend SPA base URL */
   frontendUrl: 'https://cellajs.com',
   /** Backend API base URL */
@@ -42,6 +122,7 @@ export const config = {
   /******************************************************************************
    * EMAIL
    ******************************************************************************/
+
   /** Email address for user support inquiries */
   supportEmail: 'support@cellajs.com',
   /** From address for system notifications */
@@ -50,6 +131,7 @@ export const config = {
   /******************************************************************************
    * MODE & FLAGS
    ******************************************************************************/
+  
   /** Runtime mode - overridden per environment file */
   mode: 'development' as ConfigMode,
   /** Enable debug logging and dev tools */
@@ -62,6 +144,7 @@ export const config = {
   /******************************************************************************
    * FEATURE FLAGS
    ******************************************************************************/
+
   /**
    * Feature toggles for app capabilities.
    * Use to enable/disable major features without code changes.
@@ -80,6 +163,7 @@ export const config = {
   /******************************************************************************
    * AUTHENTICATION
    ******************************************************************************/
+
   /**
    * Enabled authentication strategies.
    * TOTP can only be used as MFA fallback with passkey as primary.
@@ -102,6 +186,7 @@ export const config = {
   /******************************************************************************
    * API CONFIGURATION
    ******************************************************************************/
+
   /** API version prefix for endpoints */
   apiVersion: 'v1',
   /** API documentation description shown in Scalar */
@@ -111,77 +196,11 @@ export const config = {
 
                   The documentation is generated from source code using \`zod\` schemas, converted into OpenAPI via \`zod-openapi\` and served through the \`hono\` framework.`,
 
-  /******************************************************************************
-   * SYSTEM ROLES
-   ******************************************************************************/
-  /**
-   * System-wide roles stored in DB. Base role 'user' is implicit default.
-   * Must include 'admin' for system administration access.
-   */
-  systemRoles: ['admin'] as const,
-
-
-  /******************************************************************************
-   * ENTITY DATA MODEL
-   ******************************************************************************/
-
-  /** All entity types in the app - must match entityConfig keys */
-  entityTypes: ['user', 'organization', 'attachment', 'page'] as const,
-  /** Context entities with memberships - must match entityConfig context kinds */
-  contextEntityTypes: ['organization'] as const,
-  /** Product/content entities - must match entityConfig product kinds */
-  productEntityTypes: ['attachment', 'page'] as const,
-
-  /** Entities that support offline transactions */
-  offlineEntityTypes: [] as const,
-  /** Entities with realtime sync and offline transactions */
-  realtimeEntityTypes: ['attachment', 'page'] as const,
-
-  /**
-   * Entity hierarchy configuration - single source of truth for entity relationships.
-   * - 'user': The user entity (unique, doesn't fit context/product model)
-   * - 'context': Entities with memberships, defines ancestor chain and roles
-   * - 'product': Content entities, defines ancestor chain for scoping
-   */
-  entityConfig: {
-    user: { kind: 'user' },
-    organization: { kind: 'context', ancestors: [], roles: ['admin', 'member'] },
-    attachment: { kind: 'product', ancestors: ['organization'] },
-    page: { kind: 'product', ancestors: [] },
-  } as const satisfies EntityConfigMap,
-
-
-  /** Maps entity types to their ID column names - must match entityTypes */
-  entityIdColumnKeys: {
-    user: 'userId',
-    organization: 'organizationId',
-    attachment: 'attachmentId',
-    page: 'pageId',
-  } as const,
-
-  /** Available CRUD actions for permission checks */
-  entityActions: ['create', 'read', 'update', 'delete', 'search'] as const,
-
-  /**
-   * User menu structure of context entities with optional nested subentities.
-   * If subentityType is set, the table must include `${entity}Id` foreign key.
-   */
-  menuStructure: [
-    {
-      entityType: 'organization',
-      subentityType: null,
-    } as const,
-  ],
-
-  /** Default restrictions for organizations (max entities per org) */
-  defaultOrganizationRestrictions: {
-    user: 1000,
-    attachment: 100,
-  } as const,
 
   /******************************************************************************
    * REQUEST LIMITS
    ******************************************************************************/
+
   /**
    * Default page sizes for list endpoints. Backend enforces max 1000.
    * Must include 'default' key as fallback.
@@ -207,10 +226,8 @@ export const config = {
   /******************************************************************************
    * STORAGE & UPLOADS (S3)
    ******************************************************************************/
-  /**
-   * S3-compatible storage configuration.
-   * Required for file uploads when has.uploadEnabled is true.
-   */
+
+  /** S3-compatible storage configuration */
   s3: {
     /** Prefix to namespace files when sharing a bucket across apps or envs */
     bucketPrefix: 'cella',
@@ -262,6 +279,7 @@ export const config = {
   /******************************************************************************
    * THIRD-PARTY SERVICES
    ******************************************************************************/
+
   /** Paddle client token for payments */
   paddleToken: 'test_85052d6574ab68d36b341e0afc8',
   /** Paddle price IDs for subscription products */
@@ -282,6 +300,7 @@ export const config = {
   /******************************************************************************
    * THEMING & UI
    ******************************************************************************/
+
   /** Primary theme color for PWA manifest and browser chrome */
   themeColor: '#26262b',
   /** Theme configuration for UI components */
@@ -318,6 +337,7 @@ export const config = {
   /******************************************************************************
    * LOCALIZATION
    ******************************************************************************/
+
   /** Default language code */
   defaultLanguage: 'en' as const,
   /** Available language codes - first is fallback */
@@ -331,6 +351,7 @@ export const config = {
   /******************************************************************************
    * COMPANY DETAILS
    ******************************************************************************/
+
   /** Company/organization details for footer, legal pages, and contact info */
   company: {
     name: 'CellaJS',
@@ -360,6 +381,7 @@ export const config = {
   /******************************************************************************
    * USER DEFAULTS
    ******************************************************************************/
+
   /** Default user flags applied to new users */
   defaultUserFlags: {
     finishedOnboarding: false,

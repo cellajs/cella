@@ -1,6 +1,9 @@
 {
   "name": "config",
   "type": "module",
+  "scripts": {
+    "test": "vitest run"
+  },
   "exports": {
     ".": "./index.ts",
     "./templates": "./templates.ts"

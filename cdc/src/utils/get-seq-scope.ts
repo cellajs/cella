@@ -1,4 +1,4 @@
-import { appConfig, getEntityAncestors, hasKey } from 'config';
+import { appConfig, hasKey, hierarchy } from 'config';
 import type { TableRegistryEntry } from '../types';
 
 export interface SeqScope {
@@ -9,9 +9,9 @@ export interface SeqScope {
 }
 
 /**
- * Determine the sequence scope for an activity based on entityConfig hierarchy.
+ * Determine the sequence scope for an activity based on entity hierarchy.
  *
- * Uses getEntityAncestors() from config to get the ordered ancestor chain
+ * Uses hierarchy.getOrderedAncestors() to get the ordered ancestor chain
  * (most specific first), then finds the first ancestor with a FK value in the row.
  *
  * Examples:
@@ -20,8 +20,8 @@ export interface SeqScope {
  * - page without org → scope by entityType
  */
 export function getSeqScope(entry: TableRegistryEntry, row: Record<string, unknown>): SeqScope {
-  // Get ancestors from entityConfig (already ordered most-specific first)
-  const ancestors = getEntityAncestors(entry.type);
+  // Get ancestors from hierarchy (already ordered most-specific first)
+  const ancestors = hierarchy.getOrderedAncestors(entry.type);
 
   for (const ancestor of ancestors) {
     if (!hasKey(appConfig.entityIdColumnKeys, ancestor)) continue;

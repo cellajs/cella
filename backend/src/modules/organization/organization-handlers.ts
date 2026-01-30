@@ -69,14 +69,20 @@ const organizationRouteHandlers = app
     // Get default linked entities
     const validEntities = getEntityTypesScopedByContextEntityType(createdOrganization.entityType);
     const entitiesCountsArray = validEntities.map((entityType) => [entityType, 0]);
+
+    // TODO can we do this cleaner?
     const entitiesCounts = Object.fromEntries(entitiesCountsArray) as Record<(typeof validEntities)[number], number>;
     // Default member counts
     const memberCounts = { pending: 0, admin: 1, member: 0, total: 1 };
+
+    // Creator is admin, grant all permissions
+    const can = { create: true, read: true, update: true, delete: true, search: true };
 
     const data = {
       ...createdOrganization,
       membership: createdMembership,
       counts: { membership: memberCounts, entities: entitiesCounts },
+      can,
     };
 
     return ctx.json({ data: [data], rejectedItemIds: [] }, 201);
@@ -163,10 +169,13 @@ const organizationRouteHandlers = app
       .limit(limit)
       .offset(offset);
 
-    // Enrich organizations with can object
+    // Enrich organizations with can object using batch permission check
+    const { results } = isPermissionAllowed(getContextMemberships(), 'read', organizations, {
+      systemRole: userSystemRole,
+    });
     const organizationsWithCan = organizations.map((org) => {
-      const { can } = isPermissionAllowed(getContextMemberships(), 'read', org, { systemRole: userSystemRole });
-      return { ...org, can };
+      const permResult = results.get(org.id);
+      return { ...org, can: permResult?.can };
     });
 
     return ctx.json({ items: organizationsWithCan, total }, 200);

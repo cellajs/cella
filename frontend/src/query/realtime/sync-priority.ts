@@ -1,4 +1,4 @@
-import { getProductEntityConfig, type RealtimeEntityType } from 'config';
+import { hierarchy, type RealtimeEntityType } from 'config';
 import router from '~/lib/router';
 
 export type SyncPriority = 'high' | 'medium' | 'low';
@@ -23,11 +23,11 @@ function getRouteContext(): Record<string, string> {
 }
 
 /**
- * Determine sync priority based on entityConfig.ancestors and current route context.
+ * Determine sync priority based on hierarchy.getOrderedAncestors() and current route context.
  *
- * Uses the ancestor chain from entityConfig to understand entity scoping:
- * - `attachment: { ancestors: ['organization'] }` → scoped to org
- * - `page: { ancestors: [] }` → global, no org scope
+ * Uses the ancestor chain from hierarchy to understand entity scoping:
+ * - attachment with parent 'organization' → scoped to org
+ * - page with parent null → global, no org scope
  *
  * Priority levels:
  * - high: User is viewing a context that scopes this entity
@@ -36,12 +36,11 @@ function getRouteContext(): Record<string, string> {
  */
 export function getSyncPriority(notification: SyncNotification): SyncPriority {
   const { entityType, organizationId } = notification;
-  const productConfig = getProductEntityConfig(entityType);
 
   // Only product entities have sync priority logic
-  if (!productConfig) return 'low';
+  if (!hierarchy.isProduct(entityType)) return 'low';
 
-  const { ancestors } = productConfig;
+  const ancestors = hierarchy.getOrderedAncestors(entityType);
   const routeContext = getRouteContext();
 
   // Global entity (no ancestors, like 'page') → medium if user is in app

@@ -1,7 +1,11 @@
 import type { EntityActionType } from 'config';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
-import { checkAllPermissions, type SubjectForPermission } from './permission-manager';
-import type { PermissionCheckOptions } from './permission-manager/types';
+import {
+  getAllDecisions,
+  type PermissionCheckOptions,
+  type PermissionDecision,
+  type SubjectForPermission,
+} from './permission-manager';
 import { accessPolicies } from './permissions-config';
 
 /**
@@ -17,13 +21,21 @@ export interface PermissionResult {
 }
 
 /**
- * Entity with at minimum an entityType. Context entities need id, product entities need context IDs.
+ * Batch permission result containing results for multiple entities.
  */
-type PermissionEntity = SubjectForPermission & { id?: string };
+export interface BatchPermissionResult {
+  /** Map from entity ID to simplified permission result */
+  results: Map<string, PermissionResult>;
+  /** Map from entity ID to full permission decision (for debugging/auditing) */
+  decisions: Map<string, PermissionDecision<MembershipBaseModel>>;
+}
 
 /**
- * Checks if a permission is allowed for the given memberships and action on a context or product entity.
- * Returns the membership object and a `can` object with all action permissions.
+ * Checks if a permission is allowed for the given memberships and action.
+ * Accepts a single entity or array of entities.
+ *
+ * For single entity: returns PermissionResult.
+ * For array of entities: returns BatchPermissionResult with results and decisions maps.
  *
  * ## Requirements
  *
@@ -31,35 +43,45 @@ type PermissionEntity = SubjectForPermission & { id?: string };
  *    `membership[entityIdColumnKeys[entityType]]` === `entity.id` OR `entity[entityIdColumnKey]`
  *    - For context entities (e.g., organization): use `entity.id`
  *    - For product entities (e.g., attachment): use `entity[organizationId]` etc.
- *    - There should be exactly one match or zero (null is acceptable)
  *
  * 2. **Permission logic**: Permission is allowed if the entity OR an ancestor matches:
  *    - We traverse the entity hierarchy (entity itself → parent contexts)
  *    - For each level, check if a membership grants the requested action
- *    - Match via: `membership[entityIdColumnKeys[contextType]]` === `entity.id` (if entity is context) OR `entity[contextIdKey]`
  *
- * 3. **Single pass**: The `can` object and `membership` are built in the core permission
- *    checking logic (check.ts) as we iterate over the permissions config.
- *
- * 4. **System admin**: If options.systemRole is 'admin', all permissions are granted.
- *
- * @param memberships - User's memberships.
- * @param action - The entity action to check.
- * @param entity - The entity being accessed with entityType and id (for context) or context IDs (for product).
- * @param options - Optional permission check options (e.g., systemRole).
- * @returns Permission result with allowed state, membership, and can object.
+ * 3. **System admin**: If options.systemRole is 'admin', all permissions are granted.
  */
-export const isPermissionAllowed = (
+export function isPermissionAllowed(
   memberships: MembershipBaseModel[],
   action: EntityActionType,
-  entity: PermissionEntity,
+  entity: SubjectForPermission,
   options?: PermissionCheckOptions,
-): PermissionResult => {
-  const { can, membership } = checkAllPermissions(accessPolicies, memberships, entity, options);
+): PermissionResult;
+export function isPermissionAllowed(
+  memberships: MembershipBaseModel[],
+  action: EntityActionType,
+  entities: SubjectForPermission[],
+  options?: PermissionCheckOptions,
+): BatchPermissionResult;
+export function isPermissionAllowed(
+  memberships: MembershipBaseModel[],
+  action: EntityActionType,
+  entityOrEntities: SubjectForPermission | SubjectForPermission[],
+  options?: PermissionCheckOptions,
+): PermissionResult | BatchPermissionResult {
+  const isSingle = !Array.isArray(entityOrEntities);
 
-  return {
-    allowed: can[action],
-    membership,
-    can,
-  };
-};
+  if (isSingle) {
+    const { can, membership } = getAllDecisions(accessPolicies, memberships, entityOrEntities, options);
+    return { allowed: can[action], membership, can };
+  }
+
+  const decisions = getAllDecisions(accessPolicies, memberships, entityOrEntities, options);
+  const results = new Map<string, PermissionResult>();
+
+  for (const [id, decision] of decisions) {
+    const can = decision.can;
+    results.set(id, { allowed: can[action], membership: decision.membership, can });
+  }
+
+  return { results, decisions };
+}

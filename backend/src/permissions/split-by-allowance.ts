@@ -28,15 +28,20 @@ export const splitByAllowance = async (
   // Resolve entities
   const entities = await resolveEntities(entityType, ids);
 
-  // Logic to split ids based on permission (system admin bypass is handled inside isPermissionAllowed)
+  // Check permissions for all entities in a single batch operation
+  const { results } = isPermissionAllowed(memberships, action, entities, { systemRole: userSystemRole });
+
+  // Partition into allowed and disallowed
   const allowedIds: string[] = [];
   const disallowedIds: string[] = [];
 
   for (const entity of entities) {
-    const { allowed } = isPermissionAllowed(memberships, action, entity, { systemRole: userSystemRole });
-
-    if (!allowed) disallowedIds.push(entity.id);
-    else allowedIds.push(entity.id);
+    const result = results.get(entity.id);
+    if (result?.allowed) {
+      allowedIds.push(entity.id);
+    } else {
+      disallowedIds.push(entity.id);
+    }
   }
 
   return { allowedIds, disallowedIds };

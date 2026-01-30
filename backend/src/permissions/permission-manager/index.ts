@@ -1,11 +1,17 @@
+// Action record helpers
+
 // Access policy functions
 export { configureAccessPolicies, getPolicyPermissions, getSubjectPolicies } from './access-policies';
+export { allActionsAllowed, allActionsDenied, createActionRecord } from './action-helpers';
 
 // Permission check functions
-export { type AllPermissionsResult, checkAllPermissions } from './check';
+export {
+  getAllDecisions,
+  PermissionError,
+} from './check';
 
-// Hierarchy functions (now backed by appConfig.entityConfig)
-export { getAncestorContexts, getContextRoles, isContextEntity, isProductEntity } from './hierarchy';
+// Hierarchy functions
+export { getAncestorContexts } from './hierarchy';
 
 // Types
 export type {
@@ -18,6 +24,8 @@ export type {
   ContextPolicyBuilder,
   EntityActionPermissions,
   MembershipForPermission,
+  PermissionCheckOptions,
+  PermissionDecision,
   PermissionValue,
   SubjectAccessPolicies,
   SubjectForPermission,

@@ -36,13 +36,13 @@ export const Sheeter = () => {
 
       // Safe to remove sheets that opt-in to close on route change
       if (!sheetOpen || sheetOpen !== 'menu' || !navState.keepMenuOpen) {
-        return useSheeter.getState().removeOnRouteChange();
+        return useSheeter.getState().removeOnRouteChange({ isCleanup: true });
       }
 
       // Remove sheets except the nav sheet (if it should close on route change)
       const removeSheetIds = sheetsToClose.filter((sheet) => sheet.id !== 'nav-sheet').map((sheet) => sheet.id);
       for (const sheetId of removeSheetIds) {
-        useSheeter.getState().remove(sheetId);
+        useSheeter.getState().remove(sheetId, { isCleanup: true });
       }
     });
 

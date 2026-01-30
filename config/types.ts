@@ -9,40 +9,8 @@ export type DeepPartial<T> = T extends object
 /** Environment mode - set per environment config file */
 export type ConfigMode = 'development' | 'production' | 'tunnel' | 'test' | 'staging';
 
-export type BaseConfigType = {
-  mode: ConfigMode;
-}
-
 export type BaseAuthStrategies = 'password' | 'passkey' | 'oauth' | 'totp'
 export type BaseOAuthProviders = 'github' | 'google' | 'microsoft'
-
-/******************************************************************************
- * ENTITY CONFIG TYPES
- ******************************************************************************/
-
-/** Entity kinds in the system */
-export type EntityKind = 'user' | 'context' | 'product';
-
-/** Configuration for user entity (unique, doesn't fit context/product model) */
-export interface UserEntityConfig {
-  kind: 'user';
-}
-
-/** Configuration for context entities (have memberships) */
-export interface ContextEntityConfig {
-  kind: 'context';
-  ancestors: readonly string[];
-  roles: readonly string[];
-}
-
-/** Configuration for product entities (content, no memberships) */
-export interface ProductEntityConfig {
-  kind: 'product';
-  ancestors: readonly string[];
-}
-
-/** Union of all entity config entry types */
-export type EntityConfigEntry = UserEntityConfig | ContextEntityConfig | ProductEntityConfig;
 
 /******************************************************************************
  * REQUIRED CONFIG TYPES
@@ -69,28 +37,12 @@ export interface S3Config {
 }
 
 /**
- * System roles config - tuple requiring 'admin' as first element.
- * Additional roles can be added after 'admin'.
- */
-export type SystemRolesConfig = readonly ['admin', ...string[]];
-
-/**
  * Request limits config - must include 'default' key.
  * Other keys are entity-specific limits.
  */
 export interface RequestLimitsConfig {
   default: number;
   [key: string]: number;
-}
-
-/**
- * Entity config map - must include 'user' and 'organization'.
- * Additional entities can be added.
- */
-export interface EntityConfigMap {
-  user: UserEntityConfig;
-  organization: ContextEntityConfig;
-  [key: string]: EntityConfigEntry;
 }
 
 /**
@@ -102,17 +54,15 @@ export interface RequiredConfig {
   mode: ConfigMode;
   /** S3 storage configuration */
   s3: S3Config;
-  /** System-wide roles (must include 'admin') */
-  systemRoles: SystemRolesConfig;
-  /** Entity hierarchy configuration */
-  entityConfig: EntityConfigMap;
+  /** System-wide roles */
+  systemRoles: readonly string[];
   /** Request page size limits */
   requestLimits: RequestLimitsConfig;
-  /** All entity types - must match entityConfig keys */
+  /** All entity types - derived from hierarchy */
   entityTypes: readonly string[];
-  /** Context entities with memberships */
+  /** Context entities with memberships - derived from hierarchy */
   contextEntityTypes: readonly string[];
-  /** Product/content entities */
+  /** Product/content entities - derived from hierarchy */
   productEntityTypes: readonly string[];
   /** Upload template IDs for Transloadit */
   uploadTemplateIds: readonly string[];

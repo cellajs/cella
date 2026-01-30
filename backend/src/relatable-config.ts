@@ -15,7 +15,7 @@ export const allContextEntityTables = {
  * Only context entities listed here will have FK columns generated for product entities.
  * Omit entities (e.g., workspace) that shouldn't be part of the parent tree.
  *
- * ⚠️ IMPORTANT: Keep in sync with `ancestors` arrays in entityConfig (config/default.ts).
+ * ⚠️ TODO IMPORTANT: Keep in sync with `ancestors` arrays in entityConfig (config/default.ts).
  * The keys here should match entities that appear in any product entity's ancestors.
  */
 export const relatableContextEntityTables = {
