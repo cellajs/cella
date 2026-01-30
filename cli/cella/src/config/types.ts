@@ -48,6 +48,20 @@ export interface SyncSettings {
    * - 'squash': Stages all changes as one commit. Cleaner history but no 3-way merge support.
    */
   mergeStrategy?: MergeStrategy;
+
+  /**
+   * How to link files in CLI output.
+   * - 'commit' (default): Link to the commit that changed the file on GitHub.
+   * - 'file': Link to the file in the repo at the upstream branch on GitHub.
+   * - 'local': Open the file in VS Code from a local upstream clone (requires upstreamLocalPath).
+   */
+  fileLinkMode?: 'commit' | 'file' | 'local';
+
+  /**
+   * Path to a local clone of the upstream repo for 'local' linkStyle.
+   * Example: '../cella' or '/Users/you/Sites/cella'
+   */
+  upstreamLocalPath?: string;
 }
 
 /**
@@ -140,6 +154,10 @@ export interface AnalyzedFile {
   changedAt?: string;
   /** Short commit hash of the last change */
   changedCommit?: string;
+  /** For diverged files: relative date of upstream change */
+  upstreamChangedAt?: string;
+  /** For diverged files: short commit hash of the upstream change */
+  upstreamCommit?: string;
 }
 
 /** Summary counts by status */
@@ -158,6 +176,8 @@ export interface AnalysisSummary {
 /** Merge result from merge-engine */
 export interface MergeResult {
   success: boolean;
+  /** Upstream branch name for file links */
+  upstreamBranch?: string;
   files: AnalyzedFile[];
   summary: AnalysisSummary;
   worktreePath: string;

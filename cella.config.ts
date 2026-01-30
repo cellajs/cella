@@ -1,19 +1,20 @@
 import { defineConfig } from './cli/cella/config';
 
 /**
- * Cella CLI config: run with `pnpm cella`.
+ * Cella sync config: run with `pnpm sync`.
  */
 export default defineConfig({
   settings: {
-    mergeStrategy: 'squash',
     upstreamUrl: 'git@github.com:cellajs/cella.git',
     upstreamBranch: 'development',
     upstreamRemoteName: 'cella-upstream',
     forkBranch: 'development',
     packageJsonSync: ['dependencies', 'devDependencies', 'scripts'],
+    mergeStrategy: 'squash',
+    fileLinkMode: 'file'
   },
 
-  // Merge overrides
+  // File overrides
   overrides: {
     // Files and directories to be fully ignored during sync
     ignored: [
@@ -30,7 +31,7 @@ export default defineConfig({
       "backend/drizzle/**",
       "backend/scripts/seeds/data/**",
     ],
-    // Files pinned to fork; prefer fork version during merge conflicts
+    // Files and directories pinned to fork; prefer fork version during merge conflicts
     pinned: [
       "lefthook.yaml",
       "package.json",

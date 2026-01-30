@@ -5,7 +5,7 @@
  */
 
 import { writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import ora, { type Ora } from 'ora';
 import pc from 'picocolors';
 // Import package.json for version
@@ -17,6 +17,20 @@ export const NAME = 'cella cli';
 
 /** Version from package.json */
 export const VERSION = packageJson.version;
+
+/** Options for generating links in CLI output */
+export interface LinkOptions {
+  /** Base GitHub URL for upstream (e.g., 'https://github.com/cellajs/cella') */
+  upstreamGitHubUrl?: string;
+  /** Upstream branch name for file links */
+  upstreamBranch?: string;
+  /** File link mode: 'commit' links to commit, 'file' links to file in repo, 'local' opens in VS Code */
+  fileLinkMode?: 'commit' | 'file' | 'local';
+  /** Path to local upstream clone for 'local' fileLinkMode (resolved relative to forkPath) */
+  upstreamLocalPath?: string;
+  /** Fork repository path for resolving relative upstreamLocalPath */
+  forkPath?: string;
+}
 
 /** Line divider */
 export const DIVIDER = '─'.repeat(60);
@@ -126,6 +140,44 @@ function hyperlink(label: string, url?: string): string {
   return `\x1b]8;;${url}\x07${label}\x1b]8;;\x07`;
 }
 
+/**
+ * Generate a link for a file based on link style.
+ * Returns { label, url } for use with hyperlink().
+ */
+function getFileLink(
+  filePath: string,
+  commitHash: string | undefined,
+  options: LinkOptions,
+): { label: string; url?: string } {
+  const { upstreamGitHubUrl, upstreamBranch, fileLinkMode = 'commit', upstreamLocalPath, forkPath } = options;
+
+  if (fileLinkMode === 'local' && upstreamLocalPath && forkPath) {
+    // Open file in VS Code: vscode://file/absolute/path/to/file
+    // Resolve upstreamLocalPath relative to forkPath
+    const absolutePath = resolve(forkPath, upstreamLocalPath, filePath);
+    const url = `vscode://file${absolutePath}`;
+    return { label: filePath.split('/').pop() || filePath, url };
+  }
+
+  if (!upstreamGitHubUrl) {
+    return { label: commitHash?.slice(0, 9) || '' };
+  }
+
+  if (fileLinkMode === 'file' && upstreamBranch) {
+    // Link to file in repo: https://github.com/org/repo/blob/branch/path/to/file
+    const url = `${upstreamGitHubUrl}/blob/${upstreamBranch}/${filePath}`;
+    return { label: filePath.split('/').pop() || filePath, url };
+  }
+
+  // Default: link to commit
+  if (commitHash) {
+    const url = `${upstreamGitHubUrl}/commit/${commitHash}`;
+    return { label: commitHash.slice(0, 9), url };
+  }
+
+  return { label: '' };
+}
+
 /** Status icons */
 const statusIcons: Record<string, string> = {
   identical: pc.gray('✓'),
@@ -206,8 +258,8 @@ export function printSummary(summary: AnalysisSummary, title = 'summary'): void 
 /**
  * Print files that will sync from upstream.
  */
-export function printSyncFiles(files: AnalyzedFile[], upstreamGitHubUrl?: string, forkGitHubUrl?: string): void {
-  const syncFiles = files.filter((f) => f.status === 'behind' || f.status === 'diverged');
+export function printSyncFiles(files: AnalyzedFile[], linkOptions: LinkOptions): void {
+  const syncFiles = files.filter((f) => f.status === 'behind');
 
   if (syncFiles.length === 0) return;
 
@@ -218,11 +270,9 @@ export function printSyncFiles(files: AnalyzedFile[], upstreamGitHubUrl?: string
 
   for (const file of syncFiles) {
     const icon = statusIcons[file.status];
-    // behind = upstream changed, use upstream URL; diverged = both changed, use fork URL
-    const baseUrl = file.status === 'behind' ? upstreamGitHubUrl : forkGitHubUrl;
-    const commitUrl = file.changedCommit && baseUrl ? `${baseUrl}/commit/${file.changedCommit}` : undefined;
-    const commitLabel = file.changedCommit ? hyperlink(file.changedCommit, commitUrl) : '';
-    const dateInfo = file.changedAt ? pc.dim(` \u2260 ${file.changedAt} ${commitLabel}`) : '';
+    const link = getFileLink(file.path, file.changedCommit, linkOptions);
+    const linkLabel = link.label ? hyperlink(link.label, link.url) : '';
+    const dateInfo = file.changedAt ? pc.dim(` ≠ ${file.changedAt} ${linkLabel}`) : '';
     console.info(`  ${icon} ${file.path}${dateInfo}`);
   }
 }
@@ -230,7 +280,7 @@ export function printSyncFiles(files: AnalyzedFile[], upstreamGitHubUrl?: string
 /**
  * Print drifted files warning.
  */
-export function printDriftedWarning(files: AnalyzedFile[], forkGitHubUrl?: string): void {
+export function printDriftedWarning(files: AnalyzedFile[], linkOptions: LinkOptions): void {
   const driftedFiles = files.filter((f) => f.status === 'drifted');
 
   if (driftedFiles.length === 0) return;
@@ -241,10 +291,9 @@ export function printDriftedWarning(files: AnalyzedFile[], forkGitHubUrl?: strin
   console.info();
 
   for (const file of driftedFiles) {
-    // Drifted = fork changed, use fork URL
-    const commitUrl = file.changedCommit && forkGitHubUrl ? `${forkGitHubUrl}/commit/${file.changedCommit}` : undefined;
-    const commitLabel = file.changedCommit ? hyperlink(file.changedCommit, commitUrl) : '';
-    const dateInfo = file.changedAt ? pc.dim(` \u2260 ${file.changedAt} ${commitLabel}`) : '';
+    const link = getFileLink(file.path, file.changedCommit, linkOptions);
+    const linkLabel = link.label ? hyperlink(link.label, link.url) : '';
+    const dateInfo = file.changedAt ? pc.dim(` ≠ ${file.changedAt} ${linkLabel}`) : '';
     console.info(`  ${statusIcons.drifted} ${file.path}${dateInfo}`);
   }
 
@@ -256,7 +305,9 @@ export function printDriftedWarning(files: AnalyzedFile[], forkGitHubUrl?: strin
  * Print diverged files preview for analyze mode.
  * These will be merged by git - some may auto-merge, others may conflict.
  */
-export function printDivergedPreview(divergedFiles: string[]): void {
+export function printDivergedPreview(files: AnalyzedFile[], linkOptions: LinkOptions): void {
+  const divergedFiles = files.filter((f) => f.status === 'diverged');
+
   if (divergedFiles.length === 0) return;
 
   console.info();
@@ -265,11 +316,14 @@ export function printDivergedPreview(divergedFiles: string[]): void {
   console.info();
 
   for (const file of divergedFiles) {
-    console.info(`  ${pc.cyan('!')} ${file}`);
+    const link = getFileLink(file.path, file.upstreamCommit, linkOptions);
+    const linkLabel = link.label ? hyperlink(link.label, link.url) : '';
+    const dateInfo = file.upstreamChangedAt ? pc.dim(` ≠ ${file.upstreamChangedAt} ${linkLabel}`) : '';
+    console.info(`  ${statusIcons.diverged} ${file.path}${dateInfo}`);
   }
 
   console.info();
-  console.info(pc.dim('  Both fork and upstream changed. Git will merge; conflicts require manual resolution.'));
+  console.info(pc.dim('  Both fork and upstream changed.'));
 }
 
 /**

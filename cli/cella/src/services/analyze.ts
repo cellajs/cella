@@ -8,6 +8,7 @@
 import pc from 'picocolors';
 import type { MergeResult, RuntimeConfig } from '../config/types';
 import {
+  type LinkOptions,
   createSpinner,
   printAnalyzeComplete,
   printDivergedPreview,
@@ -43,10 +44,19 @@ export async function runAnalyze(config: RuntimeConfig): Promise<MergeResult> {
 
   spinnerSuccess();
 
+  // Build link options from result and config
+  const linkOptions = {
+    upstreamGitHubUrl: result.upstreamGitHubUrl,
+    upstreamBranch: result.upstreamBranch,
+    fileLinkMode: config.settings.fileLinkMode,
+    upstreamLocalPath: config.settings.upstreamLocalPath,
+    forkPath: config.forkPath,
+  };
+
   // Print file lists first (analyze shows file lists for review)
-  printSyncFiles(result.files, result.upstreamGitHubUrl, result.forkGitHubUrl);
-  printDriftedWarning(result.files, result.forkGitHubUrl);
-  printDivergedPreview(result.conflicts); // In analyze mode, these are diverged files to preview
+  printSyncFiles(result.files, linkOptions);
+  printDriftedWarning(result.files, linkOptions);
+  printDivergedPreview(result.files, linkOptions);
 
   // Print summary at the end
   printSummary(result.summary, 'analysis summary');

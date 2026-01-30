@@ -1,4 +1,4 @@
-import { appConfig, type EntityActionType } from 'config';
+import { appConfig, type EntityActionType, recordFromKeys } from 'config';
 
 /******************************************************************************
  * ACTION RECORD HELPERS
@@ -14,7 +14,7 @@ import { appConfig, type EntityActionType } from 'config';
  * const permissions = createActionRecord(action => policy[action] === 1);
  */
 export function createActionRecord<T>(valueFn: (action: EntityActionType) => T): Record<EntityActionType, T> {
-  return Object.fromEntries(appConfig.entityActions.map((a) => [a, valueFn(a)])) as Record<EntityActionType, T>;
+  return recordFromKeys(appConfig.entityActions, valueFn);
 }
 
 /**

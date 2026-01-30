@@ -434,6 +434,7 @@ export async function runMergeEngine(
         summary,
         worktreePath: forkPath, // No worktree used
         conflicts: remainingConflicts,
+        upstreamBranch: config.settings.upstreamBranch,
         upstreamGitHubUrl: upstreamGitHubUrl ?? undefined,
         forkGitHubUrl: forkGitHubUrl ?? undefined,
         upstreamCommit,
@@ -475,15 +476,16 @@ export async function runMergeEngine(
               file.changedCommit = info.hash;
             }
           } else if (file.status === 'diverged' || file.status === 'pinned') {
-            // Show the fork info (fork-side change for diverged/pinned)
+            // For diverged/pinned: store both fork and upstream info
             const forkFileInfo = forkInfo.get(file.path);
             const upstreamFileInfo = upstreamInfo.get(file.path);
             if (forkFileInfo) {
               file.changedAt = forkFileInfo.date;
               file.changedCommit = forkFileInfo.hash;
-            } else if (upstreamFileInfo) {
-              file.changedAt = upstreamFileInfo.date;
-              file.changedCommit = upstreamFileInfo.hash;
+            }
+            if (upstreamFileInfo) {
+              file.upstreamChangedAt = upstreamFileInfo.date;
+              file.upstreamCommit = upstreamFileInfo.hash;
             }
           }
         }
@@ -508,6 +510,7 @@ export async function runMergeEngine(
         summary,
         worktreePath,
         conflicts: potentialConflicts,
+        upstreamBranch: config.settings.upstreamBranch,
         upstreamGitHubUrl: upstreamGitHubUrl ?? undefined,
         forkGitHubUrl: forkGitHubUrl ?? undefined,
         upstreamCommit,

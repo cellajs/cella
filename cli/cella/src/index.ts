@@ -38,14 +38,23 @@ async function loadConfig(forkPath: string): Promise<CellaCliConfig> {
  * Priority:
  * 1. CELLA_FORK_PATH environment variable
  * 2. Current working directory (where the CLI is run from)
+ *
+ * Note: When run via pnpm filter, cwd may be cli/cella - we detect and navigate up.
  */
 function getForkPath(): string {
   const envPath = process.env.CELLA_FORK_PATH;
   if (envPath) {
     return resolve(envPath);
   }
-  // Use current working directory - the fork where CLI is invoked
-  return process.cwd();
+
+  let cwd = process.cwd();
+
+  // If running from within cli/cella (e.g., via pnpm --filter), go up to find the fork root
+  if (cwd.endsWith('/cli/cella') || cwd.endsWith('\\cli\\cella')) {
+    cwd = resolve(cwd, '../..');
+  }
+
+  return cwd;
 }
 
 /**

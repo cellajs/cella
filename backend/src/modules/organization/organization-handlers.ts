@@ -1,5 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { appConfig } from 'config';
+import { allEntityRoles, appConfig, recordFromKeys } from 'config';
 import { and, count, eq, getTableColumns, ilike, inArray, type SQL } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -40,11 +40,7 @@ const organizationRouteHandlers = app
 
     // Check if slug is available
     const slugAvailable = await checkSlugAvailable(slug);
-    if (!slugAvailable)
-      throw new AppError(409, 'slug_exists', 'warn', {
-        entityType: 'organization',
-        meta: { slug },
-      });
+    if (!slugAvailable) throw new AppError(409, 'slug_exists', 'warn', { entityType: 'organization', meta: { slug } });
 
     const [createdOrganization] = await db
       .insert(organizationsTable)
@@ -66,17 +62,14 @@ const organizationRouteHandlers = app
       { userId: user.id, createdBy: user.id, role: 'admin', entity: createdOrganization },
     ]);
 
-    // Get default linked entities
+    // Build counts
     const validEntities = getEntityTypesScopedByContextEntityType(createdOrganization.entityType);
-    const entitiesCountsArray = validEntities.map((entityType) => [entityType, 0]);
-
-    // TODO can we do this cleaner?
-    const entitiesCounts = Object.fromEntries(entitiesCountsArray) as Record<(typeof validEntities)[number], number>;
-    // Default member counts
-    const memberCounts = { pending: 0, admin: 1, member: 0, total: 1 };
+    const entitiesCounts = recordFromKeys(validEntities, () => 0);
+    const entityRoleCounts = recordFromKeys(allEntityRoles, (role) => (role === 'admin' ? 1 : 0));
+    const memberCounts = { ...entityRoleCounts, pending: 0, total: 1 };
 
     // Creator is admin, grant all permissions
-    const can = { create: true, read: true, update: true, delete: true, search: true };
+    const can = recordFromKeys(appConfig.entityActions, () => true);
 
     const data = {
       ...createdOrganization,

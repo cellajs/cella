@@ -27,7 +27,7 @@ export type {
   RequiredConfig,
   S3Config,
 } from './types';
-export { hasKey } from './utils';
+export { hasKey, recordFromKeys, identityRecord } from './utils';
 
 // Re-export role registry and hierarchy from default
 export { hierarchy, roles } from './default';
