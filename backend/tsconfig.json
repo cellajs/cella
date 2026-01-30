@@ -4,7 +4,6 @@
     "noEmit": true,
     
     "allowImportingTsExtensions": true,
-    "lib": ["es2022"],
 
     "rootDir": "../",
     "sourceMap": true,

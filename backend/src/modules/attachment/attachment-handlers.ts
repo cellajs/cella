@@ -9,7 +9,7 @@ import { type Env, getContextMemberships, getContextOrganization, getContextUser
 import { AppError } from '#/lib/error';
 import attachmentRoutes from '#/modules/attachment/attachment-routes';
 import { getValidProductEntity } from '#/permissions/get-product-entity';
-import { splitByAllowance } from '#/permissions/split-by-allowance';
+import { splitByPermission } from '#/permissions/split-by-permission';
 import { getEntityByTransaction, isTransactionProcessed } from '#/sync';
 import {
   buildFieldVersions,
@@ -47,16 +47,11 @@ const attachmentRouteHandlers = app
       );
     }
 
-    const orderColumn = getOrderColumn(
-      {
-        name: attachmentsTable.name,
-        createdAt: attachmentsTable.createdAt,
-        contentType: attachmentsTable.contentType,
-      },
-      sort,
-      attachmentsTable.createdAt,
-      order,
-    );
+    const orderColumn = getOrderColumn(sort, attachmentsTable.createdAt, order, {
+      name: attachmentsTable.name,
+      createdAt: attachmentsTable.createdAt,
+      contentType: attachmentsTable.contentType,
+    });
 
     const attachmentsQuery = db
       .select(getTableColumns(attachmentsTable))
@@ -188,7 +183,7 @@ const attachmentRouteHandlers = app
     const toDeleteIds = Array.isArray(ids) ? ids : [ids];
     if (!toDeleteIds.length) throw new AppError(400, 'invalid_request', 'warn', { entityType: 'attachment' });
 
-    const { allowedIds, disallowedIds: rejectedItemIds } = await splitByAllowance(
+    const { allowedIds, disallowedIds: rejectedItemIds } = await splitByPermission(
       'delete',
       'attachment',
       toDeleteIds,

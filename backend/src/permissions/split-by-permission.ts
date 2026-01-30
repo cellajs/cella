@@ -2,7 +2,7 @@ import type { ContextEntityType, EntityActionType, ProductEntityType } from 'con
 import { getContextUserSystemRole } from '#/lib/context';
 import { resolveEntities } from '#/lib/entity';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
-import { isPermissionAllowed } from '#/permissions';
+import { checkPermission } from '#/permissions';
 
 /**
  * Splits entity IDs into allowed and disallowed based on the user's permissions.
@@ -17,7 +17,7 @@ import { isPermissionAllowed } from '#/permissions';
  * @param memberships - The user's memberships.
  * @returns An object with `allowedIds` and `disallowedIds` arrays.
  */
-export const splitByAllowance = async (
+export const splitByPermission = async (
   action: EntityActionType,
   entityType: ContextEntityType | ProductEntityType,
   ids: string[],
@@ -29,7 +29,7 @@ export const splitByAllowance = async (
   const entities = await resolveEntities(entityType, ids);
 
   // Check permissions for all entities in a single batch operation
-  const { results } = isPermissionAllowed(memberships, action, entities, { systemRole: userSystemRole });
+  const { results } = checkPermission(memberships, action, entities, { systemRole: userSystemRole });
 
   // Partition into allowed and disallowed
   const allowedIds: string[] = [];

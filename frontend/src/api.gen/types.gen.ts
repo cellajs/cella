@@ -2355,10 +2355,11 @@ export type GetOrganizationsResponses = {
 export type GetOrganizationsResponse = GetOrganizationsResponses[keyof GetOrganizationsResponses];
 
 export type CreateOrganizationsData = {
-  body: {
+  body: Array<{
+    id: string;
     name: string;
     slug: string;
-  };
+  }>;
   path?: never;
   query?: never;
   url: '/organization';
@@ -2403,6 +2404,12 @@ export type CreateOrganizationsResponses = {
      * Identifiers of items that could not be processed
      */
     rejectedItemIds: Array<string>;
+    /**
+     * Map of rejected item ID to reason code
+     */
+    rejectionReasons?: {
+      [key: string]: string;
+    };
   };
 };
 
@@ -2712,6 +2719,12 @@ export type CreatePagesResponses = {
      * Identifiers of items that could not be processed
      */
     rejectedItemIds: Array<string>;
+    /**
+     * Map of rejected item ID to reason code
+     */
+    rejectionReasons?: {
+      [key: string]: string;
+    };
   };
   /**
    * Pages created
@@ -2722,6 +2735,12 @@ export type CreatePagesResponses = {
      * Identifiers of items that could not be processed
      */
     rejectedItemIds: Array<string>;
+    /**
+     * Map of rejected item ID to reason code
+     */
+    rejectionReasons?: {
+      [key: string]: string;
+    };
   };
 };
 
@@ -3764,6 +3783,12 @@ export type CreateAttachmentsResponses = {
      * Identifiers of items that could not be processed
      */
     rejectedItemIds: Array<string>;
+    /**
+     * Map of rejected item ID to reason code
+     */
+    rejectionReasons?: {
+      [key: string]: string;
+    };
   };
   /**
    * Attachments created
@@ -3774,6 +3799,12 @@ export type CreateAttachmentsResponses = {
      * Identifiers of items that could not be processed
      */
     rejectedItemIds: Array<string>;
+    /**
+     * Map of rejected item ID to reason code
+     */
+    rejectionReasons?: {
+      [key: string]: string;
+    };
   };
 };
 

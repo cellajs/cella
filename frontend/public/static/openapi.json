@@ -5368,23 +5368,33 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "name": {
-                    "type": "string",
-                    "minLength": 2,
-                    "maxLength": 100
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^temp-"
+                    },
+                    "name": {
+                      "type": "string",
+                      "minLength": 2,
+                      "maxLength": 100
+                    },
+                    "slug": {
+                      "type": "string",
+                      "minLength": 2,
+                      "maxLength": 100
+                    }
                   },
-                  "slug": {
-                    "type": "string",
-                    "minLength": 2,
-                    "maxLength": 100
-                  }
+                  "required": [
+                    "id",
+                    "name",
+                    "slug"
+                  ]
                 },
-                "required": [
-                  "name",
-                  "slug"
-                ]
+                "minItems": 1,
+                "maxItems": 10
               }
             }
           }
@@ -5478,6 +5488,13 @@
                         "type": "string"
                       },
                       "description": "Identifiers of items that could not be processed"
+                    },
+                    "rejectionReasons": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "description": "Map of rejected item ID to reason code"
                     }
                   },
                   "required": [
@@ -6116,6 +6133,13 @@
                         "type": "string"
                       },
                       "description": "Identifiers of items that could not be processed"
+                    },
+                    "rejectionReasons": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "description": "Map of rejected item ID to reason code"
                     }
                   },
                   "required": [
@@ -6145,6 +6169,13 @@
                         "type": "string"
                       },
                       "description": "Identifiers of items that could not be processed"
+                    },
+                    "rejectionReasons": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "description": "Map of rejected item ID to reason code"
                     }
                   },
                   "required": [
@@ -8045,6 +8076,13 @@
                         "type": "string"
                       },
                       "description": "Identifiers of items that could not be processed"
+                    },
+                    "rejectionReasons": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "description": "Map of rejected item ID to reason code"
                     }
                   },
                   "required": [
@@ -8074,6 +8112,13 @@
                         "type": "string"
                       },
                       "description": "Identifiers of items that could not be processed"
+                    },
+                    "rejectionReasons": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "description": "Map of rejected item ID to reason code"
                     }
                   },
                   "required": [

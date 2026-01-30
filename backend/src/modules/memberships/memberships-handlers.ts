@@ -573,19 +573,14 @@ const membershipsRouteHandlers = app
 
     if (role) membersFilters.push(eq(membershipsTable.role, role));
 
-    const orderColumn = getOrderColumn(
-      {
-        id: usersTable.id,
-        name: usersTable.name,
-        email: usersTable.email,
-        createdAt: usersTable.createdAt,
-        lastSeenAt: sql`(SELECT ${lastSeenTable.lastSeenAt} FROM ${lastSeenTable} WHERE ${lastSeenTable.userId} = ${usersTable.id})`,
-        role: membershipsTable.role,
-      },
-      sort,
-      usersTable.id,
-      order,
-    );
+    const orderColumn = getOrderColumn(sort, usersTable.id, order, {
+      id: usersTable.id,
+      name: usersTable.name,
+      email: usersTable.email,
+      createdAt: usersTable.createdAt,
+      lastSeenAt: sql`(SELECT ${lastSeenTable.lastSeenAt} FROM ${lastSeenTable} WHERE ${lastSeenTable.userId} = ${usersTable.id})`,
+      role: membershipsTable.role,
+    });
 
     const membersQuery = db
       .select({
@@ -613,7 +608,7 @@ const membershipsRouteHandlers = app
     const entityIdColumnKey = appConfig.entityIdColumnKeys[entity.entityType];
 
     const table = inactiveMembershipsTable;
-    const orderColumn = getOrderColumn({ createdAt: table.createdAt }, sort, table.createdAt, order);
+    const orderColumn = getOrderColumn(sort, table.createdAt, order, { createdAt: table.createdAt });
 
     const pendingMembershipsQuery = db
       .select({

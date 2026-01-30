@@ -42,6 +42,9 @@ export const entityCanSchema = z.object({
 /** Schema for an entity ID (string) */
 export const idSchema = z.string();
 
+/** Schema for a temporary ID (must start with 'temp-') used for optimistic creates */
+export const validTempIdSchema = z.string().regex(/^temp-/, { message: 'ID must start with "temp-"' });
+
 /** Schema for a slug (string) */
 export const slugSchema = z.string();
 

@@ -179,6 +179,11 @@
               "required": true,
               "description": "Identifiers of items that could not be processed",
               "itemType": "string"
+            },
+            "rejectionReasons": {
+              "type": "object",
+              "required": false,
+              "description": "Map of rejected item ID to reason code"
             }
           },
           "contentType": "application/json"
@@ -258,6 +263,11 @@
               "required": true,
               "description": "Identifiers of items that could not be processed",
               "itemType": "string"
+            },
+            "rejectionReasons": {
+              "type": "object",
+              "required": false,
+              "description": "Map of rejected item ID to reason code"
             }
           },
           "contentType": "application/json"

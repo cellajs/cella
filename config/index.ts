@@ -1,5 +1,5 @@
 import type { Config, RequiredConfig } from './types';
-import _default, { hierarchy, roles } from './default';
+import _default, { hierarchy } from './default';
 import development from './development';
 import production from './production';
 import staging from './staging';
@@ -55,7 +55,7 @@ export type ProductEntityType = (typeof appConfig.productEntityTypes)[number];
  * Relatable context entities - context entities that appear as parents of product entities.
  * Used for activities table columns and CDC context extraction.
  */
-export type RelatableContextEntityType = (typeof hierarchy.relatableContextTypes)[number];
+export type RelatableContextEntityType = (typeof appConfig.relatableContextEntityTypes)[number];
 
 /**
  * Offline entities that support offline transactions
@@ -118,15 +118,9 @@ export type SystemRole = (typeof appConfig.systemRoles)[number];
  ******************************************************************************/
 
 /**
- * All entity roles from the role registry (for DB enum).
- * Returns a tuple with at least one element.
- */
-export const allEntityRoles = [...roles.all] as [string, ...string[]];
-
-/**
  * Entity roles type - union of all roles from the role registry.
  */
-export type EntityRole = (typeof roles.all)[number];
+export type EntityRole = (typeof appConfig.entityRoles)[number];
 
 // Re-export entity type guards
 export { getContextRoles, isContextEntity, isProductEntity, isRealtimeEntity } from './entity-guards';
@@ -203,8 +197,3 @@ const _productTypesMatch1: ProductEntityType extends HierarchyProductType ? true
 const _productTypesMatch2: HierarchyProductType extends ProductEntityType ? true : false = true;
 void _productTypesMatch1;
 void _productTypesMatch2;
-
-/**
- * Relatable context entity types - context entities that are parents of product entities.
- */
-export const relatableContextEntityTypes = hierarchy.relatableContextTypes;

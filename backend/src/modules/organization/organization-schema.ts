@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { allEntityRoles, appConfig, recordFromKeys, type EntityType } from 'config';
+import { appConfig, type EntityType, recordFromKeys } from 'config';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { organizationsTable } from '#/db/schema/organizations';
 import { authStrategiesEnum } from '#/db/schema/sessions';
@@ -13,6 +13,7 @@ import {
   validDomainsSchema,
   validNameSchema,
   validSlugSchema,
+  validTempIdSchema,
   validUrlSchema,
 } from '#/schemas';
 import { mockOrganizationResponse } from '../../../mocks/mock-organization';
@@ -29,7 +30,7 @@ const entityCountSchema = z.object(
 );
 
 export const membershipCountSchema = z.object({
-  ...recordFromKeys(allEntityRoles, () => z.number()),
+  ...recordFromKeys(appConfig.entityRoles, () => z.number()),
   pending: z.number(),
   total: z.number(),
 });
@@ -50,10 +51,20 @@ export const organizationSchema = z
 
 export const organizationWithMembershipSchema = organizationSchema.extend({ membership: membershipBaseSchema });
 
-export const organizationCreateBodySchema = z.object({
+const organizationCreateItemSchema = z.object({
+  id: validTempIdSchema,
   name: validNameSchema,
   slug: validSlugSchema,
 });
+
+/** Array schema for batch creates - rejects duplicate slugs */
+export const organizationCreateBodySchema = organizationCreateItemSchema
+  .array()
+  .min(1)
+  .max(10)
+  .refine((items) => new Set(items.map((i) => i.slug)).size === items.length, {
+    message: 'Duplicate slugs are not allowed',
+  });
 
 export const organizationUpdateBodySchema = createInsertSchema(organizationsTable, {
   slug: validSlugSchema,
@@ -92,7 +103,7 @@ export const organizationUpdateBodySchema = createInsertSchema(organizationsTabl
 export const organizationListQuerySchema = paginationQuerySchema.extend({
   sort: z.enum(['id', 'name', 'createdAt']).default('createdAt').optional(),
   userId: z.string().optional(),
-  role: z.enum(allEntityRoles as [string, ...string[]]).optional(),
+  role: z.enum(appConfig.entityRoles).optional(),
   excludeArchived: z
     .enum(['true', 'false'])
     .optional()

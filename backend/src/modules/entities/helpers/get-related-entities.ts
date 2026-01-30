@@ -2,7 +2,7 @@ import { appConfig, type ContextEntityType, type ProductEntityType } from 'confi
 import { entityTables } from '#/table-config';
 
 // Define a mapped type to check if key name passed as 'T' exists in each table and filter out 'never' types
-export type ValidEntities<T extends (typeof appConfig.entityIdColumnKeys)[ContextEntityType]> = Extract<
+type ValidEntities<T extends (typeof appConfig.entityIdColumnKeys)[ContextEntityType]> = Extract<
   {
     [K in ProductEntityType | ContextEntityType]: T extends keyof (typeof entityTables)[K] ? K : never;
   }[ProductEntityType | ContextEntityType],

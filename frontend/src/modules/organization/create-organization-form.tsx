@@ -14,6 +14,7 @@ import { useStepper } from '~/modules/common/stepper';
 import { toaster } from '~/modules/common/toaster/service';
 import { useOrganizationCreateMutation } from '~/modules/organization/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
+import { nanoid } from '~/utils/nanoid';
 import { Form, type LabelDirectionType } from '~/modules/ui/form';
 
 interface Props {
@@ -23,7 +24,8 @@ interface Props {
   callback?: (args: CallbackArgs<Organization>) => void;
 }
 
-const formSchema = zCreateOrganizationsData.shape.body;
+// Extract the single item schema from the bulk creation array
+const formSchema = zCreateOrganizationsData.shape.body.element.omit({ id: true });
 type FormValues = z.infer<typeof formSchema>;
 
 function CreateOrganizationForm({ labelDirection = 'top', children, callback }: Props) {
@@ -49,7 +51,7 @@ function CreateOrganizationForm({ labelDirection = 'top', children, callback }: 
   const { mutate, isPending } = useOrganizationCreateMutation();
 
   const onSubmit = (values: FormValues) => {
-    mutate(values, {
+    mutate([{ ...values, id: `temp-${nanoid()}` }], {
       onSuccess: (createdOrganization) => {
         form.reset();
         toaster(t('common:success.create_resource', { resource: t('common:organization') }), 'success');

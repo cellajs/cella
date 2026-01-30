@@ -177,6 +177,11 @@
               "required": true,
               "description": "Identifiers of items that could not be processed",
               "itemType": "string"
+            },
+            "rejectionReasons": {
+              "type": "object",
+              "required": false,
+              "description": "Map of rejected item ID to reason code"
             }
           },
           "contentType": "application/json"
@@ -220,21 +225,29 @@
     ],
     "request": {
       "body": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "required": true,
-            "minLength": 2,
-            "maxLength": 100
-          },
-          "slug": {
-            "type": "string",
-            "required": true,
-            "minLength": 2,
-            "maxLength": 100
+        "type": "array",
+        "itemType": "object",
+        "items": {
+          "type": "object",
+          "required": true,
+          "properties": {
+            "id": { "type": "string", "required": true },
+            "name": {
+              "type": "string",
+              "required": true,
+              "minLength": 2,
+              "maxLength": 100
+            },
+            "slug": {
+              "type": "string",
+              "required": true,
+              "minLength": 2,
+              "maxLength": 100
+            }
           }
         },
+        "minItems": 1,
+        "maxItems": 10,
         "required": true,
         "contentType": "application/json"
       }

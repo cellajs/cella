@@ -2,7 +2,7 @@ import type { EntityActionType, ProductEntityType } from 'config';
 import { getContextMemberships, getContextUserSystemRole } from '#/lib/context';
 import { type EntityModel, resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/error';
-import { isPermissionAllowed, type PermissionResult } from '#/permissions';
+import { checkPermission, type PermissionResult } from '#/permissions';
 
 /**
  * Result type for product entity validation including the can object.
@@ -40,7 +40,7 @@ export const getValidProductEntity = async <K extends ProductEntityType>(
   if (!entity) throw new AppError(404, 'not_found', 'warn', { entityType });
 
   // Step 2: Check permission for the requested action (system admin bypass is handled inside)
-  const { allowed, can } = isPermissionAllowed(memberships, action, entity, { systemRole: userSystemRole });
+  const { allowed, can } = checkPermission(memberships, action, entity, { systemRole: userSystemRole });
 
   if (!allowed) {
     throw new AppError(403, 'forbidden', 'warn', { entityType, meta: { action } });

@@ -1,4 +1,4 @@
-import { appConfig, relatableContextEntityTypes, type RelatableContextEntityType } from 'config';
+import { appConfig, type RelatableContextEntityType } from 'config';
 import { getRowValue } from './get-row-value';
 
 /**
@@ -19,7 +19,7 @@ export type ContextEntityIds = {
 export function extractContextEntityIds(row: Record<string, unknown>): ContextEntityIds {
   const contextEntityIds: ContextEntityIds = {};
 
-  for (const contextEntityType of relatableContextEntityTypes) {
+  for (const contextEntityType of appConfig.relatableContextEntityTypes) {
     const columnKey = appConfig.entityIdColumnKeys[contextEntityType];
     contextEntityIds[columnKey] = getRowValue(row, columnKey) ?? null;
   }

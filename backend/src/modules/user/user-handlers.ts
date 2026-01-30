@@ -52,19 +52,14 @@ const userRouteHandlers = app
 
     // Base user query with ordering
     // Note: lastSeenAt requires subquery since it's in user_activity table
-    const orderColumn = getOrderColumn(
-      {
-        id: usersTable.id,
-        name: usersTable.name,
-        email: usersTable.email,
-        createdAt: usersTable.createdAt,
-        lastSeenAt: sql`(SELECT ${lastSeenTable.lastSeenAt} FROM ${lastSeenTable} WHERE ${lastSeenTable.userId} = ${usersTable.id})`,
-        role: systemRolesTable.role,
-      },
-      sort,
-      usersTable.id,
-      order,
-    );
+    const orderColumn = getOrderColumn(sort, usersTable.id, order, {
+      id: usersTable.id,
+      name: usersTable.name,
+      email: usersTable.email,
+      createdAt: usersTable.createdAt,
+      lastSeenAt: sql`(SELECT ${lastSeenTable.lastSeenAt} FROM ${lastSeenTable} WHERE ${lastSeenTable.userId} = ${usersTable.id})`,
+      role: systemRolesTable.role,
+    });
 
     const targetMembership = alias(membershipsTable, 'targetMembership'); // memberships of users being queried
     const requesterMembership = alias(membershipsTable, 'requesterMembership'); // memberships of requesting user

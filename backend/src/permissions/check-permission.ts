@@ -34,35 +34,29 @@ export interface BatchPermissionResult {
  * Checks if a permission is allowed for the given memberships and action.
  * Accepts a single entity or array of entities.
  *
- * For single entity: returns PermissionResult.
- * For array of entities: returns BatchPermissionResult with results and decisions maps.
+ * @param memberships - User's memberships to check against
+ * @param action - The action to check (create, read, update, delete, search)
+ * @param entityOrEntities - Single entity or array of entities to check
+ * @param options - Optional settings (e.g., systemRole for admin bypass)
+ * @returns Single entity: `PermissionResult` with `{ allowed, membership, can }`
+ * @returns Array: `BatchPermissionResult` with `{ results: Map<id, PermissionResult>, decisions }`
  *
- * ## Requirements
- *
- * 1. **Membership matching**: The returned `membership` must satisfy:
- *    `membership[entityIdColumnKeys[entityType]]` === `entity.id` OR `entity[entityIdColumnKey]`
- *    - For context entities (e.g., organization): use `entity.id`
- *    - For product entities (e.g., attachment): use `entity[organizationId]` etc.
- *
- * 2. **Permission logic**: Permission is allowed if the entity OR an ancestor matches:
- *    - We traverse the entity hierarchy (entity itself → parent contexts)
- *    - For each level, check if a membership grants the requested action
- *
- * 3. **System admin**: If options.systemRole is 'admin', all permissions are granted.
+ * Permission is allowed if the entity OR an ancestor matches a membership grant.
+ * System admins (options.systemRole === 'admin') get all permissions.
  */
-export function isPermissionAllowed(
+export function checkPermission(
   memberships: MembershipBaseModel[],
   action: EntityActionType,
   entity: SubjectForPermission,
   options?: PermissionCheckOptions,
 ): PermissionResult;
-export function isPermissionAllowed(
+export function checkPermission(
   memberships: MembershipBaseModel[],
   action: EntityActionType,
   entities: SubjectForPermission[],
   options?: PermissionCheckOptions,
 ): BatchPermissionResult;
-export function isPermissionAllowed(
+export function checkPermission(
   memberships: MembershipBaseModel[],
   action: EntityActionType,
   entityOrEntities: SubjectForPermission | SubjectForPermission[],

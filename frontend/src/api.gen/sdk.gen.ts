@@ -1394,8 +1394,6 @@ export const getOrganizations = <ThrowOnError extends boolean = true>(
  * **POST /organization** ·· [createOrganizations](https://api.cellajs.com/docs#tag/organizations/post/organization) ·· _organizations_
  *
  * @param {createOrganizationsData} options
- * @param {string=} options.body.name - `string` (optional)
- * @param {string=} options.body.slug - `string` (optional)
  * @returns Possible status codes: 201, 400, 401, 403, 404, 429
  */
 export const createOrganizations = <ThrowOnError extends boolean = true>(

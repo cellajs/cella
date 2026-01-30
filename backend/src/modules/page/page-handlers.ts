@@ -226,16 +226,11 @@ const pageRouteHandlers = app
       filters.push(...qFilters);
     }
 
-    const orderColumn = getOrderColumn(
-      {
-        status: pagesTable.status,
-        createdAt: pagesTable.createdAt,
-        name: pagesTable.name,
-      },
-      sort,
-      pagesTable.status,
-      order,
-    );
+    const orderColumn = getOrderColumn(sort, pagesTable.status, order, {
+      status: pagesTable.status,
+      createdAt: pagesTable.createdAt,
+      name: pagesTable.name,
+    });
 
     const pagesQuery = db
       .select(getTableColumns(pagesTable))

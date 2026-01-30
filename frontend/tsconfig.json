@@ -4,7 +4,7 @@
     "noEmit": true,
 
     "target": "es2022",
-    "lib": ["es2022", "DOM", "DOM.Iterable"],
+    "lib": ["es2024", "DOM", "DOM.Iterable"],
     "types": ["vite/client", "vite-plugin-pwa/client"],
 
     "allowArbitraryExtensions": true,

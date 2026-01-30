@@ -1,9 +1,10 @@
+export { addPermission, type WithAllowance } from './add-permission';
 export { canCreateEntity } from './can-create';
 export { getValidContextEntity, type ValidContextEntityResult } from './get-context-entity';
 export { getValidProductEntity, type ValidProductEntityResult } from './get-product-entity';
 export {
   type BatchPermissionResult,
-  isPermissionAllowed,
+  checkPermission,
   type PermissionResult,
-} from './is-permission-allowed';
-export { splitByAllowance } from './split-by-allowance';
+} from './check-permission';
+export { splitByPermission } from './split-by-permission';

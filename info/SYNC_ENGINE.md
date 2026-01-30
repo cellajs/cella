@@ -23,7 +23,7 @@ By internalizing the sync engine, cella can make unique combos: audit trail func
 | Concern | External services | Built-in approach |
 |---------|-------------------|-------------------|
 | **OpenAPI contract** | Bypassed | Extends existing endpoints with `tx` object in entity |
-| **Authorization** | Requires re-implementing | Reuses `isPermissionAllowed()` and existing guards |
+| **Authorization** | Requires re-implementing | Reuses `checkPermission()` and existing guards |
 | **Schema ownership** | Sync layer dictates patterns | Drizzle/Zod schemas remain authoritative |
 | **Opt-in complexity** | All-or-nothing | Progressive: REST → Tracked → Offline → Realtime |
 | **React Query** | New reactive layer | Builds on existing TanStack Query cache & hooks |

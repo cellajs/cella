@@ -1,19 +1,20 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { allEntityRoles, appConfig, recordFromKeys } from 'config';
+import { appConfig, recordFromKeys } from 'config';
 import { and, count, eq, getTableColumns, ilike, inArray, type SQL } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 import { type Env, getContextMemberships, getContextUser, getContextUserSystemRole } from '#/lib/context';
 import { AppError } from '#/lib/error';
-import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
+import { filterWithRejection, takeWithRestriction } from '#/lib/rejection-utils';
+import { checkSlugAvailable, checkSlugsAvailable } from '#/modules/entities/helpers/check-slug';
 import { getEntityCounts, getEntityCountsSelect } from '#/modules/entities/helpers/get-entity-counts';
 import { getEntityTypesScopedByContextEntityType } from '#/modules/entities/helpers/get-related-entities';
 import { insertMemberships } from '#/modules/memberships/helpers';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import organizationRoutes from '#/modules/organization/organization-routes';
-import { getValidContextEntity, isPermissionAllowed } from '#/permissions';
-import { splitByAllowance } from '#/permissions/split-by-allowance';
+import { addPermission, getValidContextEntity } from '#/permissions';
+import { splitByPermission } from '#/permissions/split-by-permission';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
@@ -28,57 +29,98 @@ const organizationRouteHandlers = app
    * Create one or more organizations
    */
   .openapi(organizationRoutes.createOrganizations, async (ctx) => {
-    const { name, slug } = ctx.req.valid('json');
+    const items = ctx.req.valid('json');
+
     const user = getContextUser();
     const memberships = getContextMemberships();
 
-    const createdOrgsCount = memberships.reduce((count, m) => {
-      return m.contextType === 'organization' && m.createdBy === user.id ? count + 1 : count;
+    // Count user's existing created orgs
+    const createdOrgsCount = memberships.reduce((cnt, m) => {
+      return m.contextType === 'organization' && m.createdBy === user.id ? cnt + 1 : cnt;
     }, 0);
 
-    if (createdOrgsCount === 5) throw new AppError(403, 'restrict_by_app', 'warn', { entityType: 'organization' });
+    // Organization restriction is hardcoded to max 5 for now
+    const availableSlots = 5 - createdOrgsCount;
 
-    // Check if slug is available
-    const slugAvailable = await checkSlugAvailable(slug);
-    if (!slugAvailable) throw new AppError(409, 'slug_exists', 'warn', { entityType: 'organization', meta: { slug } });
+    // No slots
+    if (availableSlots <= 0) throw new AppError(403, 'restrict_by_app', 'warn', { entityType: 'organization' });
 
-    const [createdOrganization] = await db
+    // Check slug availability in database
+    const slugs = items.map((item) => item.slug);
+    const slugAvailability = slugs.length > 0 ? await checkSlugsAvailable(slugs) : new Map();
+
+    // Filter by slug availability, track rejections
+    const slugFiltered = filterWithRejection(items, (item) => slugAvailability.get(item.slug) === true, 'slug_exists');
+
+    // Enforce org creation restriction
+    const restrictionFiltered = takeWithRestriction(
+      slugFiltered.items,
+      availableSlots,
+      'org_limit_reached',
+      slugFiltered.rejectionState,
+    );
+
+    // Final items to create and rejection state
+    const itemsToCreate = restrictionFiltered.items;
+    const rejectionState = restrictionFiltered.rejectionState;
+
+    // If nothing to create, return early
+    if (itemsToCreate.length === 0) {
+      return ctx.json({ data: [], ...rejectionState }, 201);
+    }
+
+    // Batch insert organizations
+    const createdOrganizations = await db
       .insert(organizationsTable)
-      .values({
-        name,
-        shortName: name,
-        slug,
-        languages: [appConfig.defaultLanguage],
-        welcomeText: defaultWelcomeText,
-        defaultLanguage: appConfig.defaultLanguage,
-        createdBy: user.id,
-      })
+      .values(
+        itemsToCreate.map((item) => ({
+          name: item.name,
+          shortName: item.name,
+          slug: item.slug,
+          languages: [appConfig.defaultLanguage],
+          welcomeText: defaultWelcomeText,
+          defaultLanguage: appConfig.defaultLanguage,
+          createdBy: user.id,
+        })),
+      )
       .returning();
 
-    logEvent('info', 'Organization created', { organizationId: createdOrganization.id });
+    logEvent(
+      'info',
+      'Organizations created',
+      createdOrganizations.map((org) => org.id),
+    );
 
-    // Insert membership
-    const [createdMembership] = await insertMemberships([
-      { userId: user.id, createdBy: user.id, role: 'admin', entity: createdOrganization },
-    ]);
+    // Insert memberships
+    const membershipInserts = createdOrganizations.map((org) => ({
+      userId: user.id,
+      createdBy: user.id,
+      role: 'admin' as const,
+      entity: org,
+    }));
+
+    const createdMemberships = await insertMemberships(membershipInserts);
 
     // Build counts
-    const validEntities = getEntityTypesScopedByContextEntityType(createdOrganization.entityType);
+    const validEntities = getEntityTypesScopedByContextEntityType('organization');
     const entitiesCounts = recordFromKeys(validEntities, () => 0);
-    const entityRoleCounts = recordFromKeys(allEntityRoles, (role) => (role === 'admin' ? 1 : 0));
+    const entityRoleCounts = recordFromKeys(appConfig.entityRoles, (role) => (role === 'admin' ? 1 : 0));
     const memberCounts = { ...entityRoleCounts, pending: 0, total: 1 };
 
     // Creator is admin, grant all permissions
     const can = recordFromKeys(appConfig.entityActions, () => true);
 
-    const data = {
-      ...createdOrganization,
-      membership: createdMembership,
+    // Map memberships by organizationId
+    const membershipByOrgId = new Map(createdMemberships.map((m) => [m.organizationId, m]));
+
+    const data = createdOrganizations.map((org) => ({
+      ...org,
+      membership: membershipByOrgId.get(org.id),
       counts: { membership: memberCounts, entities: entitiesCounts },
       can,
-    };
+    }));
 
-    return ctx.json({ data: [data], rejectedItemIds: [] }, 201);
+    return ctx.json({ data, ...rejectionState }, 201);
   })
   /**
    * Get list of organizations
@@ -129,17 +171,12 @@ const organizationRouteHandlers = app
 
     const [{ total }] = await db.select({ total: count() }).from(totalQuery);
 
-    const orderColumn = getOrderColumn(
-      {
-        id: organizationsTable.id,
-        name: organizationsTable.name,
-        createdAt: organizationsTable.createdAt,
-        userRole: membershipsTable.role,
-      },
-      sort,
-      organizationsTable.id,
-      order,
-    );
+    const orderColumn = getOrderColumn(sort, organizationsTable.id, order, {
+      id: organizationsTable.id,
+      name: organizationsTable.name,
+      createdAt: organizationsTable.createdAt,
+      userRole: membershipsTable.role,
+    });
 
     const selectShape = {
       ...getTableColumns(organizationsTable),
@@ -163,13 +200,7 @@ const organizationRouteHandlers = app
       .offset(offset);
 
     // Enrich organizations with can object using batch permission check
-    const { results } = isPermissionAllowed(getContextMemberships(), 'read', organizations, {
-      systemRole: userSystemRole,
-    });
-    const organizationsWithCan = organizations.map((org) => {
-      const permResult = results.get(org.id);
-      return { ...org, can: permResult?.can };
-    });
+    const organizationsWithCan = addPermission('read', organizations);
 
     return ctx.json({ items: organizationsWithCan, total }, 200);
   })
@@ -220,7 +251,6 @@ const organizationRouteHandlers = app
       .where(eq(organizationsTable.id, organization.id))
       .returning();
 
-    // Event emitted via CDC -> activities table -> activityBus ('organization.updated')
     logEvent('info', 'Organization updated', { organizationId: updatedOrganization.id });
 
     const counts = await getEntityCounts(organization.entityType, organization.id);
@@ -241,7 +271,7 @@ const organizationRouteHandlers = app
     if (!toDeleteIds.length) throw new AppError(400, 'invalid_request', 'error', { entityType: 'organization' });
 
     // Split ids into allowed and disallowed
-    const { allowedIds, disallowedIds: rejectedItemIds } = await splitByAllowance(
+    const { allowedIds, disallowedIds: rejectedItemIds } = await splitByPermission(
       'delete',
       'organization',
       toDeleteIds,

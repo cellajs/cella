@@ -118,17 +118,12 @@ const requestsRouteHandlers = app
 
     const [{ total }] = await db.select({ total: count() }).from(requestsQuery.as('requests'));
 
-    const orderColumn = getOrderColumn(
-      {
-        id: requestsTable.id,
-        email: requestsTable.email,
-        createdAt: requestsTable.createdAt,
-        type: requestsTable.type,
-      },
-      sort,
-      requestsTable.id,
-      order,
-    );
+    const orderColumn = getOrderColumn(sort, requestsTable.id, order, {
+      id: requestsTable.id,
+      email: requestsTable.email,
+      createdAt: requestsTable.createdAt,
+      type: requestsTable.type,
+    });
 
     const items = await db.select().from(requestsQuery.as('requests')).orderBy(orderColumn).limit(limit).offset(offset);
 

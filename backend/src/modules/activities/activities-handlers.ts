@@ -37,16 +37,11 @@ const activitiesRouteHandlers = app
       ...(q ? [ilike(activitiesTable.type, prepareStringForILikeFilter(q))] : []),
     ];
 
-    const orderColumn = getOrderColumn(
-      {
-        createdAt: activitiesTable.createdAt,
-        type: activitiesTable.type,
-        tableName: activitiesTable.tableName,
-      },
-      sort,
-      activitiesTable.createdAt,
-      order,
-    );
+    const orderColumn = getOrderColumn(sort, activitiesTable.createdAt, order, {
+      createdAt: activitiesTable.createdAt,
+      type: activitiesTable.type,
+      tableName: activitiesTable.tableName,
+    });
 
     const activitiesQuery = db
       .select()

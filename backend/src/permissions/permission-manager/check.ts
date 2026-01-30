@@ -306,6 +306,7 @@ export function getAllDecisions<T extends MembershipForPermission>(
     results.set(subject.id, decision);
   }
 
+  console.debug(`[Permission] Checked permissions for ${subjectArray.length} subject(s)`);
   // Debug logging
   if (env.DEBUG) {
     if (isSingle) {

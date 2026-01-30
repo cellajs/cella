@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { allEntityRoles } from 'config';
+import { appConfig } from 'config';
 import { createSelectSchema } from 'drizzle-zod';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -41,7 +41,7 @@ export const memberListQuerySchema = paginationQuerySchema.extend({
   idOrSlug: idOrSlugSchema,
   entityType: contextEntityTypeSchema,
   sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt']).default('createdAt').optional(),
-  role: z.enum(allEntityRoles as [string, ...string[]]).optional(),
+  role: z.enum(appConfig.entityRoles).optional(),
 });
 
 export const pendingMembershipListQuerySchema = paginationQuerySchema.extend({

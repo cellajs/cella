@@ -1,4 +1,4 @@
-import { allEntityRoles, type ContextEntityType } from 'config';
+import { appConfig, type ContextEntityType } from 'config';
 import { eq, sql } from 'drizzle-orm';
 import type z from 'zod';
 import { db } from '#/db/db';
@@ -28,7 +28,7 @@ export const getEntityCountsSelect = (entityType: ContextEntityType) => {
     .join(', ');
 
   // Build dynamic role JSON pairs from config
-  const roleJsonPairs = allEntityRoles
+  const roleJsonPairs = appConfig.entityRoles
     .map((role) => `'${role}', COALESCE("membership_counts"."${role}", 0)`)
     .join(', ');
 

@@ -34,6 +34,7 @@ export {
   validEmailSchema,
   validNameSchema,
   validSlugSchema,
+  validTempIdSchema,
   validUrlSchema,
 } from './common-schemas';
 // Error response schemas

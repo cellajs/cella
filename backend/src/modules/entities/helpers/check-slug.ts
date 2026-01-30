@@ -23,3 +23,18 @@ export const checkSlugAvailable = async (slug: string, entityType?: EntityTypeWi
 
   return isAvailable;
 };
+
+/**
+ * Batch check slug availability. Returns a Map of slug -> boolean (true = available).
+ * @param slugs - Array of slugs to check.
+ * @param entityType - (Optional) The type of entity to check against.
+ */
+export const checkSlugsAvailable = async (slugs: string[], entityType?: EntityTypeWithSlug) => {
+  const results = await Promise.all(
+    slugs.map(async (slug) => ({
+      slug,
+      available: await checkSlugAvailable(slug, entityType),
+    })),
+  );
+  return new Map(results.map((r) => [r.slug, r.available]));
+};

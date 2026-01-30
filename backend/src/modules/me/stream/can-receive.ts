@@ -1,5 +1,5 @@
 import { appConfig, type RealtimeEntityType } from 'config';
-import { isPermissionAllowed } from '#/permissions';
+import { checkPermission } from '#/permissions';
 import type { ActivityEventWithEntity } from '#/sync/activity-bus';
 import { logEvent } from '#/utils/logger';
 import type { AppStreamSubscriber } from './types';
@@ -51,7 +51,7 @@ function canReceiveProductEntityEvent(subscriber: AppStreamSubscriber, event: Ac
   if (subscriber.userSystemRole === 'admin') return true;
 
   // Check permissions using user's memberships
-  const { allowed } = isPermissionAllowed(subscriber.memberships, 'read', {
+  const { allowed } = checkPermission(subscriber.memberships, 'read', {
     id: event.entityId,
     entityType: event.entityType as RealtimeEntityType,
     organizationId: event.organizationId,

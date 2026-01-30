@@ -8,8 +8,8 @@
 import pc from 'picocolors';
 import type { MergeResult, RuntimeConfig } from '../config/types';
 import {
-  type LinkOptions,
   createSpinner,
+  type LinkOptions,
   printAnalyzeComplete,
   printDivergedPreview,
   printDriftedWarning,
@@ -45,7 +45,7 @@ export async function runAnalyze(config: RuntimeConfig): Promise<MergeResult> {
   spinnerSuccess();
 
   // Build link options from result and config
-  const linkOptions = {
+  const linkOptions: LinkOptions = {
     upstreamGitHubUrl: result.upstreamGitHubUrl,
     upstreamBranch: result.upstreamBranch,
     fileLinkMode: config.settings.fileLinkMode,

@@ -1,4 +1,4 @@
-import { type allEntityRoles, appConfig } from 'config';
+import { appConfig, type EntityRole } from 'config';
 import i18n from 'i18next';
 import { Column, Row, Text } from 'jsx-email';
 import { Avatar, EmailBody, EmailButton, EmailContainer, EmailHeader, EmailLogo, Footer } from '../components';
@@ -8,7 +8,7 @@ interface MemberInviteEmailProps extends BasicTemplateType {
   memberInviteLink: string;
   senderName: string;
   entityName: string;
-  role: (typeof allEntityRoles)[number];
+  role: EntityRole;
 }
 
 const appName = appConfig.name;

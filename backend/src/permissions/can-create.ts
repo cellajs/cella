@@ -2,7 +2,7 @@ import type { ContextEntityType, ProductEntityType } from 'config';
 import { getContextMemberships, getContextOrganization, getContextUserSystemRole } from '#/lib/context';
 import type { EntityModel } from '#/lib/entity';
 import { AppError } from '#/lib/error';
-import { isPermissionAllowed } from '#/permissions';
+import { checkPermission } from '#/permissions';
 
 /**
  * Checks if user has permission to create product or context entity.
@@ -20,7 +20,7 @@ export const canCreateEntity = <K extends Exclude<ContextEntityType, 'organizati
   const { entityType } = entity;
 
   // Step 1: Permission check (system admin bypass is handled inside)
-  const { allowed } = isPermissionAllowed(memberships, 'create', entity, { systemRole: userSystemRole });
+  const { allowed } = checkPermission(memberships, 'create', entity, { systemRole: userSystemRole });
 
   // Deny if not allowed
   if (!allowed) {

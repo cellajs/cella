@@ -1068,10 +1068,16 @@ export const zGetOrganizationsResponse = z.object({
 });
 
 export const zCreateOrganizationsData = z.object({
-  body: z.object({
-    name: z.string().min(2).max(100),
-    slug: z.string().min(2).max(100),
-  }),
+  body: z
+    .array(
+      z.object({
+        id: z.string().regex(/^temp-/),
+        name: z.string().min(2).max(100),
+        slug: z.string().min(2).max(100),
+      }),
+    )
+    .min(1)
+    .max(10),
   path: z.optional(z.never()),
   query: z.optional(z.never()),
 });
@@ -1088,6 +1094,7 @@ export const zCreateOrganizationsResponse = z.object({
     ),
   ),
   rejectedItemIds: z.array(z.string()),
+  rejectionReasons: z.optional(z.record(z.string(), z.string())),
 });
 
 export const zGetOrganizationData = z.object({
@@ -1210,10 +1217,12 @@ export const zCreatePagesResponse = z.union([
   z.object({
     data: z.array(zPage),
     rejectedItemIds: z.array(z.string()),
+    rejectionReasons: z.optional(z.record(z.string(), z.string())),
   }),
   z.object({
     data: z.array(zPage),
     rejectedItemIds: z.array(z.string()),
+    rejectionReasons: z.optional(z.record(z.string(), z.string())),
   }),
 ]);
 
@@ -1600,10 +1609,12 @@ export const zCreateAttachmentsResponse = z.union([
   z.object({
     data: z.array(zAttachment),
     rejectedItemIds: z.array(z.string()),
+    rejectionReasons: z.optional(z.record(z.string(), z.string())),
   }),
   z.object({
     data: z.array(zAttachment),
     rejectedItemIds: z.array(z.string()),
+    rejectionReasons: z.optional(z.record(z.string(), z.string())),
   }),
 ]);
 

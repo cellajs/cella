@@ -1,4 +1,4 @@
-import { allEntityRoles } from 'config';
+import { appConfig } from 'config';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
@@ -80,7 +80,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
             renderSelect({
               row,
               onRowChange,
-              options: allEntityRoles,
+              options: appConfig.entityRoles,
             }),
         }),
       },

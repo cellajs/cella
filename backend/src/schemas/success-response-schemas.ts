@@ -35,10 +35,11 @@ export interface SuccessWithRejectedItemsResponse {
  *
  * @example
  * const pagesResponseSchema = batchResponseSchema(pageSchema);
- * // Result: { data: Page[], rejectedItems: string[] }
+ * // Result: { data: Page[], rejectedItemIds: string[], rejectionReasons?: Record<string, string> }
  */
 export const batchResponseSchema = <T extends z.ZodTypeAny>(itemSchema: T) =>
   z.object({
     data: z.array(itemSchema),
     rejectedItemIds: z.array(z.string()).describe('Identifiers of items that could not be processed'),
+    rejectionReasons: z.record(z.string(), z.string()).optional().describe('Map of rejected item ID to reason code'),
   });
