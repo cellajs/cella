@@ -10,9 +10,9 @@ export const TEMPLATE_URL = 'github:cellajs/cella';
 // URL to the repository
 export const CELLA_REMOTE_URL = 'git@github.com:cellajs/cella.git';
 
+import pc from 'picocolors';
 // Import package.json dynamically for version and website information
 import packageJson from '../package.json' with { type: 'json' };
-import pc from 'picocolors';
 
 // Export details from package.json
 export const DESCRIPTION: string = packageJson.description;

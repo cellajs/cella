@@ -78,10 +78,12 @@ describe('Membership Invitation', async () => {
     );
 
     expect(res.status).toBe(200);
-    const response = await parseResponse<{ success: boolean; rejectedItems: string[]; invitesSentCount: number }>(res);
+    const response = await parseResponse<{ success: boolean; rejectedItemIds: string[]; invitesSentCount: number }>(
+      res,
+    );
     expect(response.success).toBe(true);
     expect(response.invitesSentCount).toBe(2);
-    expect(response.rejectedItems).toHaveLength(0);
+    expect(response.rejectedItemIds).toHaveLength(0);
 
     const inactiveMemberships = await getInactiveMemberships(organization.id);
     expect(inactiveMemberships).toHaveLength(2);
@@ -102,10 +104,12 @@ describe('Membership Invitation', async () => {
     );
 
     expect(res.status).toBe(200);
-    const response = await parseResponse<{ success: boolean; rejectedItems: string[]; invitesSentCount: number }>(res);
+    const response = await parseResponse<{ success: boolean; rejectedItemIds: string[]; invitesSentCount: number }>(
+      res,
+    );
     expect(response.success).toBe(true);
     expect(response.invitesSentCount).toBe(1);
-    expect(response.rejectedItems).toHaveLength(0);
+    expect(response.rejectedItemIds).toHaveLength(0);
 
     const inactiveMemberships = await getInactiveMemberships(organization.id);
     expect(inactiveMemberships).toHaveLength(1);
@@ -124,10 +128,12 @@ describe('Membership Invitation', async () => {
     );
 
     expect(res.status).toBe(200);
-    const response = await parseResponse<{ success: boolean; rejectedItems: string[]; invitesSentCount: number }>(res);
+    const response = await parseResponse<{ success: boolean; rejectedItemIds: string[]; invitesSentCount: number }>(
+      res,
+    );
     expect(response.success).toBe(true);
     expect(response.invitesSentCount).toBe(2);
-    expect(response.rejectedItems).toHaveLength(0);
+    expect(response.rejectedItemIds).toHaveLength(0);
 
     const inactiveMemberships = await getInactiveMemberships(organization.id);
     expect(inactiveMemberships).toHaveLength(2);
@@ -213,11 +219,11 @@ describe('Membership Invitation', async () => {
     const secondRes = await makeInviteRequest(organization.id, inviteData, sessionCookie);
     expect(secondRes.status).toBe(200);
 
-    const response = await parseResponse<{ success: boolean; rejectedItems: string[]; invitesSentCount: number }>(
+    const response = await parseResponse<{ success: boolean; rejectedItemIds: string[]; invitesSentCount: number }>(
       secondRes,
     );
     expect(response.success).toBe(false);
     expect(response.invitesSentCount).toBe(0);
-    expect(response.rejectedItems).toHaveLength(0);
+    expect(response.rejectedItemIds).toHaveLength(0);
   });
 });

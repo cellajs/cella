@@ -36,6 +36,7 @@ function UpdateOrganizationForm({ organization, callback, sheet: isSheet }: Prop
   const { t } = useTranslation();
   const { mutate, isPending } = useOrganizationUpdateMutation();
 
+  // TODO is there a util possible to reduce schema repetition?
   const formOptions: UseFormProps<FormValues> = {
     resolver: zodResolver(formSchema),
     defaultValues: {

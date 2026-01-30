@@ -20,6 +20,15 @@ pnpm seed
 pnpm dev
 ```
 
+## Development modes
+
+| Mode | Database | Docker | Use Case |
+|------|----------|--------|----------|
+| `none` | None | ❌ | OpenAPI generation, basic tests |
+| `basic` | PGlite | ❌ | Fast local dev (`pnpm quick`) |
+| `core` | PostgreSQL | ✅ | Standard development (`pnpm dev:core`) |
+| `full` | PostgreSQL + CDC | ✅ | Complete features (`pnpm dev`) |
+
 ## To check your types & format + fix code style
 
 ```bash
@@ -46,7 +55,7 @@ Cella CLI is currently limited to: creating a cella project, listing diverged fi
 Pull and sync upstream changes from cella repository.
 
 ```bash
-pnpm sync
+pnpm cella
 ```
 
 ### Troubleshooting

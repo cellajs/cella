@@ -22,7 +22,7 @@ export interface PermissionResult {
 type PermissionEntity = SubjectForPermission & { id?: string };
 
 /**
- * Checks if a permission is allowed for the given memberships and action on an entity.
+ * Checks if a permission is allowed for the given memberships and action on a context or product entity.
  * Returns the membership object and a `can` object with all action permissions.
  *
  * ## Requirements

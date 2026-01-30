@@ -16,7 +16,9 @@ The **hybrid sync engine** extends Cella's **OpenAPI + React Query** infrastruct
 
 ## Why a built-in sync engine?
 
-External sync solutions bypass REST endpoints, authorization, and caching patterns, forcing all-or-nothing adoption and resulting in poor DX. By internalizing the entire sync engine, cella can make unique combos: audit trail functionality, internal event bus functionality and a unified tracing strategy.
+External sync solutions bypass REST endpoints, authorization, and caching patterns, forcing all-or-nothing adoption and resulting in poor DX. 
+
+By internalizing the sync engine, cella can make unique combos: audit trail functionality, internal event bus functionality and a unified tracing strategy.
 
 | Concern | External services | Built-in approach |
 |---------|-------------------|-------------------|

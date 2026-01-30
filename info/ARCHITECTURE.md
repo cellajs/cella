@@ -95,7 +95,7 @@ Some of the db tables (check out [/backend/src/db/schema]() ) in cella are an `e
 The example cella setup has one product entity - `attachments` - and one context: `organizations`. But in a typical app you would have a context entity such as a 'bookclub' and more product entities such as 'books' and 'reviews'.
 
 ## API Design
-An OpenAPI is built with [zod-openapi](https://github.com/honojs/middleware/tree/main/packages/zod-openapi). Please read the readme in this middleware before you get started. An API reference is created using [scalar](https://github.com/scalar/scalar).
+The API runs through [zod-openapi](https://github.com/honojs/middleware/tree/main/packages/zod-openapi) to build an OpenAPI 3.1 specification. Please read the readme in this middleware before you get started.
 
 ## Modularity
 Both frontend and backend have business logic split in modules. Most of them are in both backend and frontend, such as `authentication`, `users` and `organizations`. The benefit of modularity is twofold: better code (readability, portability etc) and to pull upstream cella changes with less friction.

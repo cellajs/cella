@@ -57,7 +57,7 @@ export default defineConfig({
       // basic mode: skip database connection entirely
       // core/full: use PostgreSQL test container
       ...(isBasic
-        ? { SKIP_DB: '1' }
+        ? { DEV_MODE: 'none' }
         : { DATABASE_URL: 'postgres://postgres:postgres@0.0.0.0:5434/postgres' }),
     },
   },

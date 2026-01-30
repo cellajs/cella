@@ -45,7 +45,7 @@
     "check": "pnpm generate:openapi && pnpm ts && pnpm lint:fix",
     "lint": "pnpm biome check .",
     "lint:fix": "pnpm biome check --write .",
-    "ts": "pnpm --filter backend ts && pnpm --filter @cella/cdc --filter @cella/proxy --filter frontend ts",
+    "ts": "pnpm --filter backend ts && pnpm --filter '!backend' ts",
     "ts:beta": "pnpm --filter backend ts:beta && pnpm --filter frontend ts:beta",
     "tsperf": "pnpm --filter backend tsperf && pnpm --filter frontend tsperf ",
     "tsperf:beta": "pnpm --filter backend tsperf:beta && pnpm --filter frontend tsperf:beta ",
@@ -58,14 +58,14 @@
     "test:core": "pnpm docker:test && pnpm --filter backend test && pnpm --filter frontend test",
     "test:full": "pnpm docker:test && pnpm --filter backend test:full && pnpm --filter frontend test && pnpm --filter @cellajs/sync test",
     "test:update": "pnpm --filter backend exec vitest run -u && pnpm --filter frontend exec vitest run -u",
-    "sync": "pnpm --filter @cellajs/sync sync",
+    "cella": "pnpm --filter @cellajs/cli cella",
     "deps:update": "pnpm -r update",
-    "deps:outdated": "pnpm --filter @cellajs/sync deps:outdated"
+    "deps:outdated": "pnpm --filter @cellajs/cli deps:outdated"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.13",
     "@evilmartians/lefthook": "^2.0.16",
-    "@typescript/native-preview": "7.0.0-dev.20260113.1",
+    "@typescript/native-preview": "7.0.0-dev.20260129.1",
     "cross-env": "^10.1.0",
     "knip": "^5.82.1",
     "rimraf": "^6.1.2",

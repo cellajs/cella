@@ -1,0 +1,31 @@
+# Ignore everything by default
+*
+
+# Include necessary files for build context
+
+# Root config files
+!package.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
+
+# CDC Worker
+!cdc/package.json
+!cdc/src/
+!cdc/tsconfig.json
+
+# Config package
+!config/
+
+# Tracing package
+!packages/tracing/
+
+# Ignore tests and dev files
+**/*.test.ts
+**/*.spec.ts
+**/tests/
+**/.env*
+**/node_modules/
+**/.git/
+**/dist/
+**/*.md
+**/.DS_Store

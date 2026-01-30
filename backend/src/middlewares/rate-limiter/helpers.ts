@@ -23,7 +23,8 @@ export const getRateLimiterInstance = (options: Omit<IRateLimiterPostgresOptions
     tableName: defaultOptions.tableName,
   };
 
-  return env.DEV_MODE === 'basic'
+  // Use in-memory rate limiter for basic mode and none mode (no database)
+  return env.DEV_MODE === 'basic' || env.DEV_MODE === 'none'
     ? new RateLimiterMemory(enforcedOptions)
     : new RateLimiterPostgres({
         ...enforcedOptions,

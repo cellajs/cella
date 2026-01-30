@@ -60,7 +60,7 @@ pnpm check          # Run generate:openapi + typecheck + lint:fix
 pnpm generate       # Create Drizzle migrations from schema changes
 pnpm seed           # Seed database with test data
 pnpm test           # Run all Vitest tests
-pnpm sync           # Sync changes from upstream cella to fork (useful for forks)
+pnpm cella           # Sync changes from upstream cella to fork (useful for forks)
 ```
 
 ## Code style and conventions

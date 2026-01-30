@@ -1,10 +1,10 @@
+---
 packages:
-  - 'backend'
-  - 'cdc'
-  - 'config'
-  - 'cli/*'
-  - 'frontend'
-  - 'locales'
-  - 'packages/*'
-  - 'proxy'
-  - 'studio'
+  - backend
+  - cdc
+  - config
+  - cli/*
+  - frontend
+  - locales
+  - packages/*
+  - studio

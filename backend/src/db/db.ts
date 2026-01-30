@@ -23,11 +23,10 @@ export const migrateConfig = { migrationsFolder: 'drizzle', migrationsSchema: 'd
  * Database connection configuration.
  */
 const connection = (() => {
-  if (process.env.AVOID_DB_CONNECTION === 'true') return {};
+  // No database connection needed (OpenAPI generation, basic tests)
+  if (env.DEV_MODE === 'none') return {};
 
   if (env.DEV_MODE === 'basic') {
-    if (process.env.NODE_ENV === 'test') return {}; // In-memory database for tests
-
     // PGLite for quick local development
     return { dataDir: './.db' };
   }
@@ -47,7 +46,7 @@ type DB = PgDatabase<any> & { $client: PGlite | NodePgClient };
  */
 export let db: DB;
 
-if (process.env.SKIP_DB === '1') db = {} as DB;
+if (env.DEV_MODE === 'none') db = {} as DB;
 else
   db = (
     env.DEV_MODE === 'basic' ? pgliteDrizzle({ connection, ...dbConfig }) : pgDrizzle({ connection, ...dbConfig })

@@ -5,15 +5,11 @@
  * Uses a single spinner that updates in place.
  */
 
+import ora, { type Ora } from 'ora';
 import pc from 'picocolors';
-import { Writable } from 'node:stream';
-import yoctoSpinner, { type Spinner } from 'yocto-spinner';
-
-/** Null stream that discards all output */
-const nullStream = new Writable({ write: (_chunk, _encoding, callback) => callback() });
 
 /** Global reference to the currently active spinner */
-let activeSpinner: Spinner | null = null;
+let activeSpinner: Ora | null = null;
 
 /** Pause the active spinner (for interactive prompts) */
 export function pauseSpinner(): void {
@@ -56,9 +52,9 @@ export interface ProgressTracker {
 export function createProgress(title: string, silent = false): ProgressTracker {
   const completedSteps: string[] = [];
 
-  const spinner = yoctoSpinner({
+  const spinner = ora({
     text: title,
-    stream: silent ? nullStream : process.stderr,
+    isSilent: silent,
   });
 
   activeSpinner = spinner;

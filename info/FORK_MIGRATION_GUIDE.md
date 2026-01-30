@@ -42,12 +42,12 @@ When preparing a migration guide for a fork:
 
 ### For the Fork Repository (Single Workspace)
 
-After running `pnpm sync` in your fork, provide this prompt to Copilot/Claude:
+After running `pnpm cella` in your fork, provide this prompt to Copilot/Claude:
 
 ```markdown
 ## Context
 
-I just synced my fork with upstream Cella using `pnpm sync`. The sync handled most file changes automatically, but I need to migrate changes for files that are ignored or pinned in my `cella.config.ts`.
+I just synced my fork with upstream Cella using `pnpm cella`. The sync handled most file changes automatically, but I need to migrate changes for files that are ignored or pinned in my `cella.config.ts`.
 
 ## Fork Configuration
 
@@ -409,7 +409,7 @@ systemRoles: ['admin'] as const,
 
 ### Recommended post-sync actions
 
-1. **Run sync**: `pnpm sync` in raak
+1. **Run sync**: `pnpm cella` in raak
 2. **Review conflicts**: Check any merge conflicts in sync-branch
 3. **Update config**: Add `entityConfig` to raak's config/default.ts
 4. **Regenerate types**: `pnpm generate:openapi`

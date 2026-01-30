@@ -2,7 +2,7 @@
 
 exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
 {
-  "inputHash": "1b5f2fa28c6af0f9",
+  "inputHash": "debfc3389d8c02e6",
   "output": {
     "info": {
       "description": "⚠️ ATTENTION: PRERELEASE!  
@@ -881,7 +881,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "SSE stream for membership and organization events affecting the *current user*. Use offset for catch-up, live=sse for streaming.",
+        "description": "SSE stream for membership and entity notifications affecting the *current user*. Sends lightweight notifications - client fetches entity data via API.",
         "extensions": {
           "xGuard": [
             "isAuthenticated",
@@ -895,7 +895,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "id": "getAppStream",
         "method": "get",
         "path": "/me/stream",
-        "summary": "User event stream",
+        "summary": "App event stream",
         "tags": [
           "me",
         ],
@@ -1470,6 +1470,52 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
+        "description": "Returns entity cache statistics including hit rates, sizes, and invalidations.
+      Useful for monitoring cache performance and tuning.",
+        "extensions": {
+          "xGuard": [
+            "isAuthenticated",
+            "hasSystemAccess",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": false,
+        "hasParams": false,
+        "hasRequestBody": false,
+        "hash": "tag/metrics/GET/metrics/cache",
+        "id": "getCacheStats",
+        "method": "get",
+        "path": "/metrics/cache",
+        "summary": "Get entity cache statistics",
+        "tags": [
+          "metrics",
+        ],
+      },
+      {
+        "deprecated": false,
+        "description": "Returns metrics for the sync flow: CDC Worker → ActivityBus → SSE streams.
+      Includes event counts, connection stats, and tracing span data.",
+        "extensions": {
+          "xGuard": [
+            "isAuthenticated",
+            "hasSystemAccess",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": false,
+        "hasParams": false,
+        "hasRequestBody": false,
+        "hash": "tag/metrics/GET/metrics/sync",
+        "id": "getSyncMetrics",
+        "method": "get",
+        "path": "/metrics/sync",
+        "summary": "Get sync flow metrics",
+        "tags": [
+          "metrics",
+        ],
+      },
+      {
+        "deprecated": false,
         "description": "Returns a paginated list of *attachments* for the organization.",
         "extensions": {
           "xGuard": [
@@ -1713,12 +1759,12 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
     ],
     "schemaTags": [
       {
-        "count": 3,
+        "count": 4,
         "description": "Schemas with base fields only",
         "name": "base",
       },
       {
-        "count": 13,
+        "count": 15,
         "description": "Complete data schemas",
         "name": "data",
       },
@@ -1909,6 +1955,220 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "type": "object",
         },
         "schemaTag": "base",
+        "type": "object",
+      },
+      {
+        "name": "TxBase",
+        "ref": "#/components/schemas/TxBase",
+        "schema": {
+          "properties": {
+            "fieldVersions": {
+              "required": true,
+              "type": "object",
+            },
+            "id": {
+              "required": true,
+              "type": "string",
+            },
+            "sourceId": {
+              "required": true,
+              "type": "string",
+            },
+            "version": {
+              "required": true,
+              "type": "number",
+            },
+          },
+          "type": "object",
+        },
+        "schemaTag": "base",
+        "type": "object",
+      },
+      {
+        "name": "StreamNotification",
+        "ref": "#/components/schemas/StreamNotification",
+        "schema": {
+          "properties": {
+            "action": {
+              "enum": [
+                "create",
+                "update",
+                "delete",
+              ],
+              "required": true,
+              "type": "string",
+            },
+            "cacheToken": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "contextType": {
+              "enum": [
+                "organization",
+                null,
+              ],
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "entityId": {
+              "required": true,
+              "type": "string",
+            },
+            "entityType": {
+              "enum": [
+                "attachment",
+                "page",
+                null,
+              ],
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "organizationId": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "resourceType": {
+              "enum": [
+                "request",
+                "membership",
+                null,
+              ],
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "seq": {
+              "required": true,
+              "type": [
+                "integer",
+                "null",
+              ],
+            },
+            "tx": {
+              "properties": {
+                "fieldVersions": {
+                  "required": true,
+                  "type": "object",
+                },
+                "id": {
+                  "required": true,
+                  "type": "string",
+                },
+                "sourceId": {
+                  "required": true,
+                  "type": "string",
+                },
+                "version": {
+                  "required": true,
+                  "type": "integer",
+                },
+              },
+              "ref": "#/components/schemas/TxStreamMessage",
+              "required": true,
+              "type": [
+                "object",
+                "null",
+              ],
+            },
+          },
+          "type": "object",
+        },
+        "schemaTag": "data",
+        "type": "object",
+      },
+      {
+        "name": "TxStreamMessage",
+        "ref": "#/components/schemas/TxStreamMessage",
+        "schema": {
+          "properties": {
+            "fieldVersions": {
+              "required": true,
+              "type": "object",
+            },
+            "id": {
+              "required": true,
+              "type": "string",
+            },
+            "sourceId": {
+              "required": true,
+              "type": "string",
+            },
+            "version": {
+              "required": true,
+              "type": "integer",
+            },
+          },
+          "type": [
+            "object",
+            "null",
+          ],
+        },
+        "schemaTag": "data",
+        "type": [
+          "object",
+          "null",
+        ],
+      },
+      {
+        "name": "PublicStreamActivity",
+        "ref": "#/components/schemas/PublicStreamActivity",
+        "schema": {
+          "properties": {
+            "action": {
+              "enum": [
+                "create",
+                "update",
+                "delete",
+              ],
+              "required": true,
+              "type": "string",
+            },
+            "activityId": {
+              "required": true,
+              "type": "string",
+            },
+            "changedKeys": {
+              "itemType": "string",
+              "required": true,
+              "type": [
+                "array",
+                "null",
+              ],
+            },
+            "createdAt": {
+              "required": true,
+              "type": "string",
+            },
+            "entityId": {
+              "required": true,
+              "type": "string",
+            },
+            "entityType": {
+              "enum": [
+                "attachment",
+                "page",
+              ],
+              "required": true,
+              "type": "string",
+            },
+          },
+          "type": "object",
+        },
+        "schemaTag": "data",
         "type": "object",
       },
       {
@@ -2410,13 +2670,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 "create",
                 "update",
                 "delete",
-                null,
               ],
               "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
+              "type": "string",
             },
             "changedKeys": {
               "anyOf": [
@@ -2510,34 +2766,29 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "type": "string",
             },
             "tx": {
-              "anyOf": [
-                {
-                  "required": false,
-                  "type": "string",
-                },
-                {
-                  "required": false,
-                  "type": "number",
-                },
-                {
-                  "required": false,
-                  "type": "boolean",
-                },
-                {
-                  "required": false,
-                  "type": "null",
-                },
-                {
-                  "required": false,
+              "properties": {
+                "fieldVersions": {
+                  "required": true,
                   "type": "object",
                 },
-                {
-                  "itemType": "object",
-                  "required": false,
-                  "type": "array",
+                "id": {
+                  "required": true,
+                  "type": "string",
                 },
-              ],
+                "sourceId": {
+                  "required": true,
+                  "type": "string",
+                },
+                "version": {
+                  "required": true,
+                  "type": "number",
+                },
+              },
               "required": true,
+              "type": [
+                "object",
+                "null",
+              ],
             },
             "type": {
               "required": true,
@@ -3610,39 +3861,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "type": "object",
       },
       {
-        "name": "TxStreamMessage",
-        "ref": "#/components/schemas/TxStreamMessage",
-        "schema": {
-          "properties": {
-            "fieldVersions": {
-              "required": true,
-              "type": "object",
-            },
-            "id": {
-              "required": true,
-              "type": "string",
-            },
-            "sourceId": {
-              "required": true,
-              "type": "string",
-            },
-            "version": {
-              "required": true,
-              "type": "integer",
-            },
-          },
-          "type": [
-            "object",
-            "null",
-          ],
-        },
-        "schemaTag": "data",
-        "type": [
-          "object",
-          "null",
-        ],
-      },
-      {
         "example": {
           "createdAt": "2024-08-06T10:28:33.226Z",
           "createdBy": "0f0ak5vkrrl687pmkwpa1vju",
@@ -3656,7 +3874,12 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "name": "Infit pauci optio demo.",
           "parentId": null,
           "status": "unpublished",
-          "tx": null,
+          "tx": {
+            "fieldVersions": {},
+            "id": "4tufkeho7gg1xwx21e333ngq",
+            "sourceId": "src_ujcbpukfple60p8h3tnk9zpo",
+            "version": 1,
+          },
         },
         "name": "Page",
         "ref": "#/components/schemas/Page",
@@ -3736,34 +3959,26 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "type": "string",
             },
             "tx": {
-              "anyOf": [
-                {
-                  "required": false,
-                  "type": "string",
-                },
-                {
-                  "required": false,
-                  "type": "number",
-                },
-                {
-                  "required": false,
-                  "type": "boolean",
-                },
-                {
-                  "required": false,
-                  "type": "null",
-                },
-                {
-                  "required": false,
+              "properties": {
+                "fieldVersions": {
+                  "required": true,
                   "type": "object",
                 },
-                {
-                  "itemType": "object",
-                  "required": false,
-                  "type": "array",
+                "id": {
+                  "required": true,
+                  "type": "string",
                 },
-              ],
+                "sourceId": {
+                  "required": true,
+                  "type": "string",
+                },
+                "version": {
+                  "required": true,
+                  "type": "number",
+                },
+              },
               "required": true,
+              "type": "object",
             },
           },
           "type": "object",
@@ -3817,12 +4032,17 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "modifiedAt": "2024-10-12T17:43:05.360Z",
           "modifiedBy": "0uwim8y2tppz7th9tol75wjz",
           "name": "yet_rightfully_lest.ogx",
-          "organizationId": "8dwkbmpkeuemouu8t58r8fuj",
+          "organizationId": "pmuhw07eswx7d6csd6xo4nqw",
           "originalKey": "uploads/ofr579y6bqnt152wowxrfkyy/yet_rightfully_lest.ogx",
           "public": false,
           "size": "6046908",
           "thumbnailKey": null,
-          "tx": null,
+          "tx": {
+            "fieldVersions": {},
+            "id": "8dwkbmpkeuemouu8t58r8fuj",
+            "sourceId": "src_3tlenhqurk6hu54pnfytf99m",
+            "version": 1,
+          },
         },
         "name": "Attachment",
         "ref": "#/components/schemas/Attachment",
@@ -3962,34 +4182,26 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               ],
             },
             "tx": {
-              "anyOf": [
-                {
-                  "required": false,
-                  "type": "string",
-                },
-                {
-                  "required": false,
-                  "type": "number",
-                },
-                {
-                  "required": false,
-                  "type": "boolean",
-                },
-                {
-                  "required": false,
-                  "type": "null",
-                },
-                {
-                  "required": false,
+              "properties": {
+                "fieldVersions": {
+                  "required": true,
                   "type": "object",
                 },
-                {
-                  "itemType": "object",
-                  "required": false,
-                  "type": "array",
+                "id": {
+                  "required": true,
+                  "type": "string",
                 },
-              ],
+                "sourceId": {
+                  "required": true,
+                  "type": "string",
+                },
+                "version": {
+                  "required": true,
+                  "type": "number",
+                },
+              },
               "required": true,
+              "type": "object",
             },
           },
           "type": "object",
@@ -4104,12 +4316,15 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "update",
                     "delete",
                   ],
-                  "required": false,
+                  "required": true,
                   "type": "string",
                 },
                 "entityId": {
                   "required": false,
-                  "type": "string",
+                  "type": [
+                    "string",
+                    "null",
+                  ],
                 },
                 "entityType": {
                   "enum": [
@@ -4117,9 +4332,13 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "organization",
                     "attachment",
                     "page",
+                    null,
                   ],
                   "required": false,
-                  "type": "string",
+                  "type": [
+                    "string",
+                    "null",
+                  ],
                 },
                 "limit": {
                   "required": false,
@@ -4145,9 +4364,13 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "enum": [
                     "request",
                     "membership",
+                    null,
                   ],
                   "required": false,
-                  "type": "string",
+                  "type": [
+                    "string",
+                    "null",
+                  ],
                 },
                 "sort": {
                   "enum": [
@@ -4168,7 +4391,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 },
                 "userId": {
                   "required": false,
-                  "type": "string",
+                  "type": [
+                    "string",
+                    "null",
+                  ],
                 },
               },
             },
@@ -4189,13 +4415,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                             "create",
                             "update",
                             "delete",
-                            null,
                           ],
                           "required": true,
-                          "type": [
-                            "string",
-                            "null",
-                          ],
+                          "type": "string",
                         },
                         "changedKeys": {
                           "anyOf": [
@@ -4289,34 +4511,29 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "type": "string",
                         },
                         "tx": {
-                          "anyOf": [
-                            {
-                              "required": false,
-                              "type": "string",
-                            },
-                            {
-                              "required": false,
-                              "type": "number",
-                            },
-                            {
-                              "required": false,
-                              "type": "boolean",
-                            },
-                            {
-                              "required": false,
-                              "type": "null",
-                            },
-                            {
-                              "required": false,
+                          "properties": {
+                            "fieldVersions": {
+                              "required": true,
                               "type": "object",
                             },
-                            {
-                              "itemType": "object",
-                              "required": false,
-                              "type": "array",
+                            "id": {
+                              "required": true,
+                              "type": "string",
                             },
-                          ],
+                            "sourceId": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "version": {
+                              "required": true,
+                              "type": "number",
+                            },
+                          },
                           "required": true,
+                          "type": [
+                            "object",
+                            "null",
+                          ],
                         },
                         "type": {
                           "required": true,
@@ -4576,34 +4793,26 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           ],
                         },
                         "tx": {
-                          "anyOf": [
-                            {
-                              "required": false,
-                              "type": "string",
-                            },
-                            {
-                              "required": false,
-                              "type": "number",
-                            },
-                            {
-                              "required": false,
-                              "type": "boolean",
-                            },
-                            {
-                              "required": false,
-                              "type": "null",
-                            },
-                            {
-                              "required": false,
+                          "properties": {
+                            "fieldVersions": {
+                              "required": true,
                               "type": "object",
                             },
-                            {
-                              "itemType": "object",
-                              "required": false,
-                              "type": "array",
+                            "id": {
+                              "required": true,
+                              "type": "string",
                             },
-                          ],
+                            "sourceId": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "version": {
+                              "required": true,
+                              "type": "number",
+                            },
+                          },
                           "required": true,
+                          "type": "object",
                         },
                       },
                       "ref": "#/components/schemas/Attachment",
@@ -4664,118 +4873,113 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "request": {
             "body": {
               "contentType": "application/json",
-              "properties": {
-                "data": {
-                  "itemType": "object",
-                  "items": {
+              "itemType": "object",
+              "items": {
+                "properties": {
+                  "bucketName": {
+                    "required": true,
+                    "type": "string",
+                  },
+                  "contentType": {
+                    "required": true,
+                    "type": "string",
+                  },
+                  "convertedContentType": {
+                    "required": false,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "convertedKey": {
+                    "required": false,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "createdBy": {
+                    "required": false,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "filename": {
+                    "required": true,
+                    "type": "string",
+                  },
+                  "groupId": {
+                    "required": false,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "id": {
+                    "required": false,
+                    "type": "string",
+                  },
+                  "name": {
+                    "required": false,
+                    "type": "string",
+                  },
+                  "organizationId": {
+                    "required": true,
+                    "type": "string",
+                  },
+                  "originalKey": {
+                    "required": true,
+                    "type": "string",
+                  },
+                  "public": {
+                    "required": false,
+                    "type": "boolean",
+                  },
+                  "size": {
+                    "required": true,
+                    "type": "string",
+                  },
+                  "thumbnailKey": {
+                    "required": false,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "tx": {
                     "properties": {
-                      "bucketName": {
+                      "baseVersion": {
+                        "description": "Entity version when read (for conflict detection)",
+                        "minimum": 0,
                         "required": true,
-                        "type": "string",
-                      },
-                      "contentType": {
-                        "required": true,
-                        "type": "string",
-                      },
-                      "convertedContentType": {
-                        "required": false,
-                        "type": [
-                          "string",
-                          "null",
-                        ],
-                      },
-                      "convertedKey": {
-                        "required": false,
-                        "type": [
-                          "string",
-                          "null",
-                        ],
-                      },
-                      "createdBy": {
-                        "required": false,
-                        "type": [
-                          "string",
-                          "null",
-                        ],
-                      },
-                      "filename": {
-                        "required": true,
-                        "type": "string",
-                      },
-                      "groupId": {
-                        "required": false,
-                        "type": [
-                          "string",
-                          "null",
-                        ],
+                        "type": "integer",
                       },
                       "id": {
-                        "required": false,
-                        "type": "string",
-                      },
-                      "name": {
-                        "required": false,
-                        "type": "string",
-                      },
-                      "organizationId": {
+                        "description": "Unique mutation ID (nanoid)",
+                        "maxLength": 32,
                         "required": true,
                         "type": "string",
                       },
-                      "originalKey": {
+                      "sourceId": {
+                        "description": "Tab/instance identifier for echo prevention",
+                        "maxLength": 64,
                         "required": true,
                         "type": "string",
-                      },
-                      "public": {
-                        "required": false,
-                        "type": "boolean",
-                      },
-                      "size": {
-                        "required": true,
-                        "type": "string",
-                      },
-                      "thumbnailKey": {
-                        "required": false,
-                        "type": [
-                          "string",
-                          "null",
-                        ],
                       },
                     },
+                    "ref": "#/components/schemas/TxRequest",
+                    "required": true,
                     "type": "object",
                   },
-                  "maxItems": 50,
-                  "minItems": 1,
-                  "required": true,
-                  "type": "array",
                 },
-                "tx": {
-                  "properties": {
-                    "baseVersion": {
-                      "description": "Entity version when read (for conflict detection)",
-                      "minimum": 0,
-                      "required": true,
-                      "type": "integer",
-                    },
-                    "id": {
-                      "description": "Unique mutation ID (nanoid)",
-                      "maxLength": 32,
-                      "required": true,
-                      "type": "string",
-                    },
-                    "sourceId": {
-                      "description": "Tab/instance identifier for echo prevention",
-                      "maxLength": 64,
-                      "required": true,
-                      "type": "string",
-                    },
-                  },
-                  "ref": "#/components/schemas/TxRequest",
-                  "required": true,
-                  "type": "object",
-                },
+                "required": true,
+                "type": "object",
               },
+              "maxItems": 50,
+              "minItems": 1,
               "required": true,
-              "type": "object",
+              "type": "array",
             },
             "path": {
               "properties": {
@@ -4932,34 +5136,26 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           ],
                         },
                         "tx": {
-                          "anyOf": [
-                            {
-                              "required": false,
-                              "type": "string",
-                            },
-                            {
-                              "required": false,
-                              "type": "number",
-                            },
-                            {
-                              "required": false,
-                              "type": "boolean",
-                            },
-                            {
-                              "required": false,
-                              "type": "null",
-                            },
-                            {
-                              "required": false,
+                          "properties": {
+                            "fieldVersions": {
+                              "required": true,
                               "type": "object",
                             },
-                            {
-                              "itemType": "object",
-                              "required": false,
-                              "type": "array",
+                            "id": {
+                              "required": true,
+                              "type": "string",
                             },
-                          ],
+                            "sourceId": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "version": {
+                              "required": true,
+                              "type": "number",
+                            },
+                          },
                           "required": true,
+                          "type": "object",
                         },
                       },
                       "ref": "#/components/schemas/Attachment",
@@ -5124,34 +5320,26 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           ],
                         },
                         "tx": {
-                          "anyOf": [
-                            {
-                              "required": false,
-                              "type": "string",
-                            },
-                            {
-                              "required": false,
-                              "type": "number",
-                            },
-                            {
-                              "required": false,
-                              "type": "boolean",
-                            },
-                            {
-                              "required": false,
-                              "type": "null",
-                            },
-                            {
-                              "required": false,
+                          "properties": {
+                            "fieldVersions": {
+                              "required": true,
                               "type": "object",
                             },
-                            {
-                              "itemType": "object",
-                              "required": false,
-                              "type": "array",
+                            "id": {
+                              "required": true,
+                              "type": "string",
                             },
-                          ],
+                            "sourceId": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "version": {
+                              "required": true,
+                              "type": "number",
+                            },
+                          },
                           "required": true,
+                          "type": "object",
                         },
                       },
                       "ref": "#/components/schemas/Attachment",
@@ -5307,19 +5495,13 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "body": {
               "contentType": "application/json",
               "properties": {
-                "data": {
-                  "properties": {
-                    "name": {
-                      "required": false,
-                      "type": "string",
-                    },
-                    "originalKey": {
-                      "required": false,
-                      "type": "string",
-                    },
-                  },
-                  "required": true,
-                  "type": "object",
+                "name": {
+                  "required": false,
+                  "type": "string",
+                },
+                "originalKey": {
+                  "required": false,
+                  "type": "string",
                 },
                 "tx": {
                   "properties": {
@@ -5384,12 +5566,17 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 "modifiedAt": "2024-10-12T17:43:05.360Z",
                 "modifiedBy": "0uwim8y2tppz7th9tol75wjz",
                 "name": "yet_rightfully_lest.ogx",
-                "organizationId": "8dwkbmpkeuemouu8t58r8fuj",
+                "organizationId": "pmuhw07eswx7d6csd6xo4nqw",
                 "originalKey": "uploads/ofr579y6bqnt152wowxrfkyy/yet_rightfully_lest.ogx",
                 "public": false,
                 "size": "6046908",
                 "thumbnailKey": null,
-                "tx": null,
+                "tx": {
+                  "fieldVersions": {},
+                  "id": "8dwkbmpkeuemouu8t58r8fuj",
+                  "sourceId": "src_3tlenhqurk6hu54pnfytf99m",
+                  "version": 1,
+                },
               },
               "name": "Attachment",
               "ref": "#/components/schemas/Attachment",
@@ -5530,34 +5717,26 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     ],
                   },
                   "tx": {
-                    "anyOf": [
-                      {
-                        "required": false,
-                        "type": "string",
-                      },
-                      {
-                        "required": false,
-                        "type": "number",
-                      },
-                      {
-                        "required": false,
-                        "type": "boolean",
-                      },
-                      {
-                        "required": false,
-                        "type": "null",
-                      },
-                      {
-                        "required": false,
+                    "properties": {
+                      "fieldVersions": {
+                        "required": true,
                         "type": "object",
                       },
-                      {
-                        "itemType": "object",
-                        "required": false,
-                        "type": "array",
+                      "id": {
+                        "required": true,
+                        "type": "string",
                       },
-                    ],
+                      "sourceId": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "version": {
+                        "required": true,
+                        "type": "number",
+                      },
+                    },
                     "required": true,
+                    "type": "object",
                   },
                 },
                 "ref": "#/components/schemas/Attachment",
@@ -9008,7 +9187,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "type": "string",
                 },
                 "offset": {
-                  "description": "Starting offset: 'now' for live-only, or activity ID for catch-up",
+                  "description": "Starting offset: 'now' for live-only, or activity ID to receive missed notifications",
                   "required": false,
                   "type": "string",
                 },
@@ -9018,12 +9197,114 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "responses": [
             {
               "contentType": "application/json",
-              "description": "SSE stream or catch-up response",
+              "description": "SSE stream or notification response",
               "schema": {
                 "contentType": "application/json",
                 "properties": {
                   "activities": {
                     "itemType": "object",
+                    "items": {
+                      "properties": {
+                        "action": {
+                          "enum": [
+                            "create",
+                            "update",
+                            "delete",
+                          ],
+                          "required": true,
+                          "type": "string",
+                        },
+                        "cacheToken": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "contextType": {
+                          "enum": [
+                            "organization",
+                            null,
+                          ],
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "entityId": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "entityType": {
+                          "enum": [
+                            "attachment",
+                            "page",
+                            null,
+                          ],
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "organizationId": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "resourceType": {
+                          "enum": [
+                            "request",
+                            "membership",
+                            null,
+                          ],
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "seq": {
+                          "required": true,
+                          "type": [
+                            "integer",
+                            "null",
+                          ],
+                        },
+                        "tx": {
+                          "properties": {
+                            "fieldVersions": {
+                              "required": true,
+                              "type": "object",
+                            },
+                            "id": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "sourceId": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "version": {
+                              "required": true,
+                              "type": "integer",
+                            },
+                          },
+                          "ref": "#/components/schemas/TxStreamMessage",
+                          "required": true,
+                          "type": [
+                            "object",
+                            "null",
+                          ],
+                        },
+                      },
+                      "ref": "#/components/schemas/StreamNotification",
+                      "type": "object",
+                    },
+                    "ref": "#/components/schemas/StreamNotification",
                     "required": true,
                     "type": "array",
                   },
@@ -10329,6 +10610,284 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "user": {
                     "required": true,
                     "type": "number",
+                  },
+                },
+                "type": "object",
+              },
+              "status": 200,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Bad request: problem processing request.",
+              "name": "BadRequestError",
+              "ref": "#/components/responses/BadRequestError",
+              "status": 400,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Unauthorized: authentication required.",
+              "name": "UnauthorizedError",
+              "ref": "#/components/responses/UnauthorizedError",
+              "status": 401,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Forbidden: insufficient permissions.",
+              "name": "ForbiddenError",
+              "ref": "#/components/responses/ForbiddenError",
+              "status": 403,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Not found: resource does not exist.",
+              "name": "NotFoundError",
+              "ref": "#/components/responses/NotFoundError",
+              "status": 404,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Rate limit: too many requests.",
+              "name": "TooManyRequestsError",
+              "ref": "#/components/responses/TooManyRequestsError",
+              "status": 429,
+            },
+          ],
+        },
+        {
+          "operationId": "getCacheStats",
+          "responses": [
+            {
+              "contentType": "application/json",
+              "description": "Cache statistics",
+              "schema": {
+                "contentType": "application/json",
+                "properties": {
+                  "combined": {
+                    "properties": {
+                      "overallHitRate": {
+                        "required": true,
+                        "type": "number",
+                      },
+                      "totalHits": {
+                        "required": true,
+                        "type": "number",
+                      },
+                      "totalInvalidations": {
+                        "required": true,
+                        "type": "number",
+                      },
+                      "totalMisses": {
+                        "required": true,
+                        "type": "number",
+                      },
+                    },
+                    "required": true,
+                    "type": "object",
+                  },
+                  "public": {
+                    "description": "Public cache statistics (no auth required)",
+                    "properties": {
+                      "capacity": {
+                        "description": "Maximum cache capacity",
+                        "required": true,
+                        "type": "number",
+                      },
+                      "coalescedRequests": {
+                        "description": "Number of coalesced requests (avoided duplicate fetches)",
+                        "required": true,
+                        "type": "number",
+                      },
+                      "hitRate": {
+                        "description": "Hit rate percentage (0-100)",
+                        "required": true,
+                        "type": "number",
+                      },
+                      "hits": {
+                        "description": "Number of cache hits",
+                        "required": true,
+                        "type": "number",
+                      },
+                      "invalidations": {
+                        "description": "Number of cache invalidations",
+                        "required": true,
+                        "type": "number",
+                      },
+                      "misses": {
+                        "description": "Number of cache misses",
+                        "required": true,
+                        "type": "number",
+                      },
+                      "size": {
+                        "description": "Current number of cached entries",
+                        "required": true,
+                        "type": "number",
+                      },
+                      "totalRequests": {
+                        "description": "Total requests (hits + misses)",
+                        "required": true,
+                        "type": "number",
+                      },
+                      "uptimeSeconds": {
+                        "description": "Seconds since metrics were last reset",
+                        "required": true,
+                        "type": "number",
+                      },
+                      "utilization": {
+                        "description": "Cache utilization (0-1)",
+                        "required": true,
+                        "type": "number",
+                      },
+                    },
+                    "required": true,
+                    "type": "object",
+                  },
+                  "token": {
+                    "description": "Token cache statistics (membership required)",
+                    "properties": {
+                      "capacity": {
+                        "description": "Maximum cache capacity",
+                        "required": true,
+                        "type": "number",
+                      },
+                      "coalescedRequests": {
+                        "description": "Number of coalesced requests (avoided duplicate fetches)",
+                        "required": true,
+                        "type": "number",
+                      },
+                      "hitRate": {
+                        "description": "Hit rate percentage (0-100)",
+                        "required": true,
+                        "type": "number",
+                      },
+                      "hits": {
+                        "description": "Number of cache hits",
+                        "required": true,
+                        "type": "number",
+                      },
+                      "invalidations": {
+                        "description": "Number of cache invalidations",
+                        "required": true,
+                        "type": "number",
+                      },
+                      "misses": {
+                        "description": "Number of cache misses",
+                        "required": true,
+                        "type": "number",
+                      },
+                      "size": {
+                        "description": "Current number of cached entries",
+                        "required": true,
+                        "type": "number",
+                      },
+                      "totalRequests": {
+                        "description": "Total requests (hits + misses)",
+                        "required": true,
+                        "type": "number",
+                      },
+                      "uptimeSeconds": {
+                        "description": "Seconds since metrics were last reset",
+                        "required": true,
+                        "type": "number",
+                      },
+                      "utilization": {
+                        "description": "Cache utilization (0-1)",
+                        "required": true,
+                        "type": "number",
+                      },
+                    },
+                    "required": true,
+                    "type": "object",
+                  },
+                },
+                "type": "object",
+              },
+              "status": 200,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Bad request: problem processing request.",
+              "name": "BadRequestError",
+              "ref": "#/components/responses/BadRequestError",
+              "status": 400,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Unauthorized: authentication required.",
+              "name": "UnauthorizedError",
+              "ref": "#/components/responses/UnauthorizedError",
+              "status": 401,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Forbidden: insufficient permissions.",
+              "name": "ForbiddenError",
+              "ref": "#/components/responses/ForbiddenError",
+              "status": 403,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Not found: resource does not exist.",
+              "name": "NotFoundError",
+              "ref": "#/components/responses/NotFoundError",
+              "status": 404,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Rate limit: too many requests.",
+              "name": "TooManyRequestsError",
+              "ref": "#/components/responses/TooManyRequestsError",
+              "status": 429,
+            },
+          ],
+        },
+        {
+          "operationId": "getSyncMetrics",
+          "responses": [
+            {
+              "contentType": "application/json",
+              "description": "Sync metrics",
+              "schema": {
+                "contentType": "application/json",
+                "properties": {
+                  "activeConnections": {
+                    "description": "Current number of active SSE connections",
+                    "required": true,
+                    "type": "number",
+                  },
+                  "avgDurationByName": {
+                    "description": "Average duration by span name (ms)",
+                    "required": true,
+                    "type": "object",
+                  },
+                  "errorCount": {
+                    "description": "Number of spans with error status",
+                    "required": true,
+                    "type": "number",
+                  },
+                  "eventsEmitted": {
+                    "description": "Total events emitted to SSE streams",
+                    "required": true,
+                    "type": "number",
+                  },
+                  "eventsReceived": {
+                    "description": "Total CDC events received from worker",
+                    "required": true,
+                    "type": "number",
+                  },
+                  "pgNotifyFallbacks": {
+                    "description": "Times pg_notify was used as fallback",
+                    "required": true,
+                    "type": "number",
+                  },
+                  "recentSpanCount": {
+                    "description": "Number of recent spans in memory",
+                    "required": true,
+                    "type": "number",
+                  },
+                  "spansByName": {
+                    "description": "Span counts by name",
+                    "required": true,
+                    "type": "object",
                   },
                 },
                 "type": "object",
@@ -12248,10 +12807,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "required": true,
                           "type": "string",
                         },
-                        "data": {
-                          "required": false,
-                          "type": "object",
-                        },
                         "entityId": {
                           "required": true,
                           "type": "string",
@@ -12264,35 +12819,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "required": true,
                           "type": "string",
                         },
-                        "tx": {
-                          "properties": {
-                            "fieldVersions": {
-                              "required": true,
-                              "type": "object",
-                            },
-                            "id": {
-                              "required": true,
-                              "type": "string",
-                            },
-                            "sourceId": {
-                              "required": true,
-                              "type": "string",
-                            },
-                            "version": {
-                              "required": true,
-                              "type": "integer",
-                            },
-                          },
-                          "ref": "#/components/schemas/TxStreamMessage",
-                          "required": true,
-                          "type": [
-                            "object",
-                            "null",
-                          ],
-                        },
                       },
+                      "ref": "#/components/schemas/PublicStreamActivity",
                       "type": "object",
                     },
+                    "ref": "#/components/schemas/PublicStreamActivity",
                     "required": true,
                     "type": "array",
                   },
@@ -12351,51 +12882,46 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "request": {
             "body": {
               "contentType": "application/json",
-              "properties": {
-                "data": {
-                  "itemType": "object",
-                  "items": {
+              "itemType": "object",
+              "items": {
+                "properties": {
+                  "name": {
+                    "required": false,
+                    "type": "string",
+                  },
+                  "tx": {
                     "properties": {
-                      "name": {
-                        "required": false,
+                      "baseVersion": {
+                        "description": "Entity version when read (for conflict detection)",
+                        "minimum": 0,
+                        "required": true,
+                        "type": "integer",
+                      },
+                      "id": {
+                        "description": "Unique mutation ID (nanoid)",
+                        "maxLength": 32,
+                        "required": true,
+                        "type": "string",
+                      },
+                      "sourceId": {
+                        "description": "Tab/instance identifier for echo prevention",
+                        "maxLength": 64,
+                        "required": true,
                         "type": "string",
                       },
                     },
+                    "ref": "#/components/schemas/TxRequest",
+                    "required": true,
                     "type": "object",
                   },
-                  "maxItems": 50,
-                  "minItems": 1,
-                  "required": true,
-                  "type": "array",
                 },
-                "tx": {
-                  "properties": {
-                    "baseVersion": {
-                      "description": "Entity version when read (for conflict detection)",
-                      "minimum": 0,
-                      "required": true,
-                      "type": "integer",
-                    },
-                    "id": {
-                      "description": "Unique mutation ID (nanoid)",
-                      "maxLength": 32,
-                      "required": true,
-                      "type": "string",
-                    },
-                    "sourceId": {
-                      "description": "Tab/instance identifier for echo prevention",
-                      "maxLength": 64,
-                      "required": true,
-                      "type": "string",
-                    },
-                  },
-                  "ref": "#/components/schemas/TxRequest",
-                  "required": true,
-                  "type": "object",
-                },
+                "required": true,
+                "type": "object",
               },
+              "maxItems": 50,
+              "minItems": 1,
               "required": true,
-              "type": "object",
+              "type": "array",
             },
           },
           "responses": [
@@ -12483,34 +13009,26 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "type": "string",
                         },
                         "tx": {
-                          "anyOf": [
-                            {
-                              "required": false,
-                              "type": "string",
-                            },
-                            {
-                              "required": false,
-                              "type": "number",
-                            },
-                            {
-                              "required": false,
-                              "type": "boolean",
-                            },
-                            {
-                              "required": false,
-                              "type": "null",
-                            },
-                            {
-                              "required": false,
+                          "properties": {
+                            "fieldVersions": {
+                              "required": true,
                               "type": "object",
                             },
-                            {
-                              "itemType": "object",
-                              "required": false,
-                              "type": "array",
+                            "id": {
+                              "required": true,
+                              "type": "string",
                             },
-                          ],
+                            "sourceId": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "version": {
+                              "required": true,
+                              "type": "number",
+                            },
+                          },
                           "required": true,
+                          "type": "object",
                         },
                       },
                       "ref": "#/components/schemas/Page",
@@ -12615,34 +13133,26 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "type": "string",
                         },
                         "tx": {
-                          "anyOf": [
-                            {
-                              "required": false,
-                              "type": "string",
-                            },
-                            {
-                              "required": false,
-                              "type": "number",
-                            },
-                            {
-                              "required": false,
-                              "type": "boolean",
-                            },
-                            {
-                              "required": false,
-                              "type": "null",
-                            },
-                            {
-                              "required": false,
+                          "properties": {
+                            "fieldVersions": {
+                              "required": true,
                               "type": "object",
                             },
-                            {
-                              "itemType": "object",
-                              "required": false,
-                              "type": "array",
+                            "id": {
+                              "required": true,
+                              "type": "string",
                             },
-                          ],
+                            "sourceId": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "version": {
+                              "required": true,
+                              "type": "number",
+                            },
+                          },
                           "required": true,
+                          "type": "object",
                         },
                       },
                       "ref": "#/components/schemas/Page",
@@ -12822,34 +13332,26 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "type": "string",
                         },
                         "tx": {
-                          "anyOf": [
-                            {
-                              "required": false,
-                              "type": "string",
-                            },
-                            {
-                              "required": false,
-                              "type": "number",
-                            },
-                            {
-                              "required": false,
-                              "type": "boolean",
-                            },
-                            {
-                              "required": false,
-                              "type": "null",
-                            },
-                            {
-                              "required": false,
+                          "properties": {
+                            "fieldVersions": {
+                              "required": true,
                               "type": "object",
                             },
-                            {
-                              "itemType": "object",
-                              "required": false,
-                              "type": "array",
+                            "id": {
+                              "required": true,
+                              "type": "string",
                             },
-                          ],
+                            "sourceId": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "version": {
+                              "required": true,
+                              "type": "number",
+                            },
+                          },
                           "required": true,
+                          "type": "object",
                         },
                       },
                       "ref": "#/components/schemas/Page",
@@ -12994,7 +13496,12 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 "name": "Infit pauci optio demo.",
                 "parentId": null,
                 "status": "unpublished",
-                "tx": null,
+                "tx": {
+                  "fieldVersions": {},
+                  "id": "4tufkeho7gg1xwx21e333ngq",
+                  "sourceId": "src_ujcbpukfple60p8h3tnk9zpo",
+                  "version": 1,
+                },
               },
               "name": "Page",
               "ref": "#/components/schemas/Page",
@@ -13075,34 +13582,26 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "type": "string",
                   },
                   "tx": {
-                    "anyOf": [
-                      {
-                        "required": false,
-                        "type": "string",
-                      },
-                      {
-                        "required": false,
-                        "type": "number",
-                      },
-                      {
-                        "required": false,
-                        "type": "boolean",
-                      },
-                      {
-                        "required": false,
-                        "type": "null",
-                      },
-                      {
-                        "required": false,
+                    "properties": {
+                      "fieldVersions": {
+                        "required": true,
                         "type": "object",
                       },
-                      {
-                        "itemType": "object",
-                        "required": false,
-                        "type": "array",
+                      "id": {
+                        "required": true,
+                        "type": "string",
                       },
-                    ],
+                      "sourceId": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "version": {
+                        "required": true,
+                        "type": "number",
+                      },
+                    },
                     "required": true,
+                    "type": "object",
                   },
                 },
                 "ref": "#/components/schemas/Page",
@@ -13153,48 +13652,42 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "body": {
               "contentType": "application/json",
               "properties": {
-                "data": {
-                  "properties": {
-                    "description": {
-                      "required": false,
-                      "type": [
-                        "string",
-                        "null",
-                      ],
-                    },
-                    "displayOrder": {
-                      "maximum": 140737488355327,
-                      "minimum": -140737488355328,
-                      "required": false,
-                      "type": "number",
-                    },
-                    "keywords": {
-                      "required": false,
-                      "type": "string",
-                    },
-                    "name": {
-                      "required": false,
-                      "type": "string",
-                    },
-                    "parentId": {
-                      "required": false,
-                      "type": [
-                        "string",
-                        "null",
-                      ],
-                    },
-                    "status": {
-                      "enum": [
-                        "unpublished",
-                        "published",
-                        "archived",
-                      ],
-                      "required": false,
-                      "type": "string",
-                    },
-                  },
-                  "required": true,
-                  "type": "object",
+                "description": {
+                  "required": false,
+                  "type": [
+                    "string",
+                    "null",
+                  ],
+                },
+                "displayOrder": {
+                  "maximum": 140737488355327,
+                  "minimum": -140737488355328,
+                  "required": false,
+                  "type": "number",
+                },
+                "keywords": {
+                  "required": false,
+                  "type": "string",
+                },
+                "name": {
+                  "required": false,
+                  "type": "string",
+                },
+                "parentId": {
+                  "required": false,
+                  "type": [
+                    "string",
+                    "null",
+                  ],
+                },
+                "status": {
+                  "enum": [
+                    "unpublished",
+                    "published",
+                    "archived",
+                  ],
+                  "required": false,
+                  "type": "string",
                 },
                 "tx": {
                   "properties": {
@@ -13251,7 +13744,12 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 "name": "Infit pauci optio demo.",
                 "parentId": null,
                 "status": "unpublished",
-                "tx": null,
+                "tx": {
+                  "fieldVersions": {},
+                  "id": "4tufkeho7gg1xwx21e333ngq",
+                  "sourceId": "src_ujcbpukfple60p8h3tnk9zpo",
+                  "version": 1,
+                },
               },
               "name": "Page",
               "ref": "#/components/schemas/Page",
@@ -13332,34 +13830,26 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "type": "string",
                   },
                   "tx": {
-                    "anyOf": [
-                      {
-                        "required": false,
-                        "type": "string",
-                      },
-                      {
-                        "required": false,
-                        "type": "number",
-                      },
-                      {
-                        "required": false,
-                        "type": "boolean",
-                      },
-                      {
-                        "required": false,
-                        "type": "null",
-                      },
-                      {
-                        "required": false,
+                    "properties": {
+                      "fieldVersions": {
+                        "required": true,
                         "type": "object",
                       },
-                      {
-                        "itemType": "object",
-                        "required": false,
-                        "type": "array",
+                      "id": {
+                        "required": true,
+                        "type": "string",
                       },
-                    ],
+                      "sourceId": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "version": {
+                        "required": true,
+                        "type": "number",
+                      },
+                    },
                     "required": true,
+                    "type": "object",
                   },
                 },
                 "ref": "#/components/schemas/Page",
@@ -14978,7 +15468,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "name": "pages",
       },
       {
-        "count": 3,
+        "count": 5,
         "description": "Endpoints for retrieving system level statistics and basic observability data. Includes internal
         metrics as well as simple, high level counts for entities such as \`users\` and \`organizations\`.",
         "name": "metrics",

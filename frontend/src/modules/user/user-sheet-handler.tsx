@@ -29,9 +29,14 @@ function UserSheetHandlerBase() {
         side: 'right',
         className: 'max-w-full lg:max-w-4xl p-0',
 
+        // TODO this isn't working as expected - need to fix
         onClose: (isCleanup) => {
           // If sheet is being cleaned up, do nothing
           if (isCleanup) return;
+
+          // Check if sheet still exists - if not, it was already removed by route change
+          if (!useSheeter.getState().get(sheetInstanceId)) return;
+
 
           // If trigger, simply do history back
           if (sheetTrigger) return history.back();

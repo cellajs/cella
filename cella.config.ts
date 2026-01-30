@@ -1,7 +1,7 @@
-import { defineConfig } from './cli/sync/config';
+import { defineConfig } from './cli/cella/config';
 
 /**
- * Cella sync config: run with `pnpm sync`.
+ * Cella CLI config: run with `pnpm cella`.
  */
 export default defineConfig({
   settings: {

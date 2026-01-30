@@ -32,24 +32,24 @@
     "test-build": "pnpm run build && node index.js",
     "prepublishOnly": "pnpm run build",
     "check": "pnpm ts && pnpm biome check --write .",
-    "ts": "tsc --noEmit",
+    "ts": "tsc --pretty",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@inquirer/prompts": "^6.0.1",
+    "@inquirer/prompts": "^8.2.0",
     "axios": "^1.13.4",
     "commander": "^14.0.2",
-    "cross-spawn": "^7.0.6",
-    "giget": "^1.2.5",
+    "giget": "^3.1.1",
+    "nano-spawn": "^2.0.0",
+    "ora": "^9.1.0",
     "picocolors": "^1.1.1",
-    "validate-npm-package-name": "^5.0.1",
-    "yocto-spinner": "^0.1.2"
+    "validate-npm-package-name": "^7.0.2"
   },
   "devDependencies": {
-    "@types/cross-spawn": "^6.0.6",
+    "@types/node": "^24.10.1",
     "@types/validate-npm-package-name": "^4.0.2",
     "tsup": "^8.5.1",
     "tsx": "^4.21.0"

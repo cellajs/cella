@@ -104,4 +104,4 @@ Cella is a TypeScript template for building collaborative web apps with sync and
 - `pnpm seed`: Seed the database with initial/test data.
 - `pnpm diverged`: List files that have diverged from the upstream Cella template.
 - `pnpm upstream:pull`: Pull changes from the upstream Cella template (automatically undoes changes in ignored files).
-- `pnpm sync`: Orchestrates the full execution flow of the Cella sync CLI (boilerplate/fork sync).
+- `pnpm cella`: Orchestrates the full execution flow of the Cella sync CLI (boilerplate/fork sync).

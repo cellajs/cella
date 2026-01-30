@@ -1,4 +1,4 @@
-import spawn from 'cross-spawn';
+import spawn from 'nano-spawn';
 
 /**
  * Executes a command using the specified package manager (e.g., pnpm).
@@ -13,38 +13,15 @@ export async function runPackageManagerCommand(
   args: string[],
   env: Record<string, string> = {},
 ): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const child = spawn(packageManager, args, {
-      env: {
-        ...process.env,
-        ...env,
-      },
+  try {
+    await spawn(packageManager, args, {
+      env: { ...process.env, ...env },
       stdio: ['pipe', 'pipe', 'pipe'],
     });
-
-    // Buffer for capturing stderr and stdout output
-    let stderrBuffer = '';
-    let stdoutBuffer = '';
-
-    // Capture stderr output
-    child.stderr?.on('data', (data: Buffer) => {
-      stderrBuffer += data.toString();
-    });
-
-    // Capture stdout output
-    child.stdout?.on('data', (data: Buffer) => {
-      stdoutBuffer += data.toString();
-    });
-
-    // Handle process exit
-    child.on('close', (code: number | null) => {
-      if (code !== 0) {
-        reject(`"${packageManager} ${args.join(' ')}" failed ${stdoutBuffer} ${stderrBuffer}`);
-        return;
-      }
-      resolve();
-    });
-  });
+  } catch (error) {
+    const err = error as { stdout?: string; stderr?: string };
+    throw new Error(`"${packageManager} ${args.join(' ')}" failed ${err.stdout || ''} ${err.stderr || ''}`);
+  }
 }
 
 /**
