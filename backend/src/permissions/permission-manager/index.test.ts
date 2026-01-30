@@ -2,7 +2,6 @@ import { appConfig, getContextRoles, hierarchy, isContextEntity, isProductEntity
 import { describe, expect, it } from 'vitest';
 import { configureAccessPolicies } from './access-policies';
 import { getAllDecisions } from './check';
-import { getAncestorContexts } from './hierarchy';
 import type { MembershipForPermission, SubjectForPermission } from './types';
 
 /**
@@ -13,33 +12,20 @@ import type { MembershipForPermission, SubjectForPermission } from './types';
  */
 
 describe('hierarchy (from appConfig.hierarchy)', () => {
-  describe('getAncestorContexts', () => {
+  describe('hierarchy.getOrderedAncestors', () => {
     it('returns empty array for root context', () => {
-      const ancestors = getAncestorContexts('organization');
+      const ancestors = hierarchy.getOrderedAncestors('organization');
       expect(ancestors).toEqual([]);
     });
 
     it('returns direct parent for product entity', () => {
-      const ancestors = getAncestorContexts('attachment');
+      const ancestors = hierarchy.getOrderedAncestors('attachment');
       expect(ancestors).toContain('organization');
     });
 
     it('returns empty array for page entity (no organization scope)', () => {
       // Note: page entities in cella have parent: null (global)
-      const ancestors = getAncestorContexts('page');
-      expect(ancestors).toEqual([]);
-    });
-  });
-
-  describe('hierarchy.getOrderedAncestors', () => {
-    it('returns ordered ancestors from most-specific to root', () => {
-      // For attachment with parent 'organization', should return ['organization']
-      const ancestors = hierarchy.getOrderedAncestors('attachment');
-      expect(ancestors).toEqual(['organization']);
-    });
-
-    it('returns empty array for root context', () => {
-      const ancestors = hierarchy.getOrderedAncestors('organization');
+      const ancestors = hierarchy.getOrderedAncestors('page');
       expect(ancestors).toEqual([]);
     });
   });

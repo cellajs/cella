@@ -1,9 +1,14 @@
-import { appConfig, type ContextEntityType, getContextRoles, isContextEntity, type ProductEntityType } from 'config';
+import {
+  appConfig,
+  type ContextEntityType,
+  getContextRoles,
+  hierarchy,
+  isContextEntity,
+  type ProductEntityType,
+} from 'config';
 import { env } from '#/env';
 import { allActionsAllowed, createActionRecord } from './action-helpers';
-import { PermissionError } from './errors';
 import { formatBatchPermissionSummary, formatPermissionDecision } from './format';
-import { getAncestorContexts } from './hierarchy';
 import type {
   AccessPolicies,
   ActionAttribution,
@@ -15,19 +20,13 @@ import type {
 } from './types';
 import { validateMembership, validateSubject } from './validation';
 
-// Re-export for convenience
-export { PermissionError } from './errors';
-
 /** Membership index: Map from `${contextType}:${contextId}` to memberships */
 type MembershipIndex<T extends MembershipForPermission> = Map<string, T[]>;
 
 /** Policy index: Map from `${contextType}:${role}` to permissions */
 type PolicyIndex = Map<string, EntityActionPermissions>;
 
-/**
- * Builds a Map indexing memberships by `${contextType}:${contextId}` for O(1) lookup.
- * Each key maps to an array of memberships (user can have multiple roles in same context).
- */
+/** Builds a Map indexing memberships by `${contextType}:${contextId}` for O(1) lookup. */
 const buildMembershipIndex = <T extends MembershipForPermission>(memberships: T[]): MembershipIndex<T> => {
   const index: MembershipIndex<T> = new Map();
   for (const m of memberships) {
@@ -83,19 +82,6 @@ const getSubjectContextId = (subject: SubjectForPermission, contextType: Context
 };
 
 /**
- * Returns context types to check for permissions, ordered from most specific to root.
- * - Context entities: `[entityType, ...getAncestorContexts()]` (e.g., project → [project, organization])
- * - Product entities: `getAncestorContexts(entityType)` (e.g., attachment → [organization])
- * The first element `[0]` is always the primary context used for membership capture.
- */
-const getOrderedContexts = (entityType: ContextEntityType | ProductEntityType): ContextEntityType[] => {
-  if (isContextEntity(entityType)) {
-    return [entityType, ...getAncestorContexts(entityType)];
-  }
-  return getAncestorContexts(entityType);
-};
-
-/**
  * Internal function to check permissions for a single subject using pre-built indices.
  * This is the core logic shared by both single and batch permission checks.
  */
@@ -124,13 +110,10 @@ const checkWithIndices = <T extends MembershipForPermission>(
     }));
 
     const can = { ...allActionsAllowed };
+    const contextIds = primaryContextId ? { [primaryContext]: primaryContextId } : {};
 
     return {
-      subject: {
-        entityType: subject.entityType,
-        id: subject.id,
-        contextIds: primaryContextId ? { [primaryContext]: primaryContextId } : {},
-      },
+      subject: { entityType: subject.entityType, id: subject.id, contextIds },
       orderedContexts,
       primaryContext,
       actions: allGranted,
@@ -150,10 +133,8 @@ const checkWithIndices = <T extends MembershipForPermission>(
     // Strict: context in hierarchy must have roles defined
     const contextRoles = getContextRoles(contextType);
     if (contextRoles.length === 0) {
-      throw new PermissionError(
-        `Context type "${contextType}" has no roles defined but is in hierarchy for "${subject.entityType}"`,
-        'CONFIG_ERROR',
-        { contextType, entityType: subject.entityType, orderedContexts },
+      throw new Error(
+        `[Permission] Context "${contextType}" has no roles defined but is in hierarchy for ${subject.entityType}`,
       );
     }
 
@@ -162,7 +143,7 @@ const checkWithIndices = <T extends MembershipForPermission>(
     if (!subjectContextId) {
       // This can be valid for optional context levels - log warning in debug mode
       if (env.DEBUG) {
-        console.warn(`[Permission] Subject ${subject.entityType}:${subject.id} missing context ID for ${contextType}`);
+        console.warn(`[Permission] ${subject.entityType}:${subject.id} missing context ID for ${contextType}`);
       }
       continue;
     }
@@ -178,23 +159,16 @@ const checkWithIndices = <T extends MembershipForPermission>(
       const permissions = policyIndex.get(`${contextType}:${m.role}`);
       if (!permissions) {
         // Strict: role exists in membership but has no policy - likely config/data issue
-        throw new PermissionError(
-          `Role "${m.role}" in context "${contextType}" has no policy for entity type "${subject.entityType}"`,
-          'UNKNOWN_ROLE',
-          { role: m.role, contextType, entityType: subject.entityType },
+        throw new Error(
+          `[Permission] Role "${m.role}" in context ${contextType} has no policy for ${subject.entityType}`,
         );
       }
 
       // Attribute each granted action to this membership
       for (const action of appConfig.entityActions) {
-        if (permissions[action] === 1) {
-          actions[action].enabled = true;
-          actions[action].grantedBy.push({
-            contextType,
-            contextId: subjectContextId,
-            role: m.role,
-          });
-        }
+        if (permissions[action] !== 1) continue;
+        actions[action].enabled = true;
+        actions[action].grantedBy.push({ contextType, contextId: subjectContextId, role: m.role });
       }
     }
   }
@@ -203,11 +177,7 @@ const checkWithIndices = <T extends MembershipForPermission>(
   const can = createActionRecord((action) => actions[action].enabled);
 
   return {
-    subject: {
-      entityType: subject.entityType,
-      id: subject.id,
-      contextIds,
-    },
+    subject: { entityType: subject.entityType, id: subject.id, contextIds },
     orderedContexts,
     primaryContext,
     actions,
@@ -292,39 +262,36 @@ export function getAllDecisions<T extends MembershipForPermission>(
   const contextCache = new Map<ContextEntityType | ProductEntityType, ContextEntityType[]>();
 
   for (const subject of subjectArray) {
-    // Get or compute ordered contexts for this entity type (most specific first)
+    // Get or compute ordered contexts for this entity type (most specific → root).
+    // For context entities (e.g., project): [project, organization] — includes self + ancestors
+    // For product entities (e.g., attachment): [organization] — just ancestors
+    // The first element [0] is always the primary context used for membership capture.
     let orderedContexts = contextCache.get(subject.entityType);
 
     if (!orderedContexts) {
-      orderedContexts = getOrderedContexts(subject.entityType);
+      const ancestors = hierarchy.getOrderedAncestors(subject.entityType) as ContextEntityType[];
+      orderedContexts = isContextEntity(subject.entityType) ? [subject.entityType, ...ancestors] : [...ancestors];
       contextCache.set(subject.entityType, orderedContexts);
     }
     // Get or build policy index for this entity type
     const policyIndex = getOrBuildPolicyIndex(policies, subject.entityType, policyIndexCache);
 
+    // Perform the permission check using pre-built indices
     const decision = checkWithIndices(membershipIndex, policyIndex, subject, orderedContexts, isSystemAdmin);
     results.set(subject.id, decision);
-  }
-
-  console.debug(`[Permission] Checked permissions for ${subjectArray.length} subject(s)`);
-  // Debug logging
-  if (env.DEBUG) {
-    if (isSingle) {
-      const decision = results.get(subjects.id);
-      if (decision) console.debug(formatPermissionDecision(decision));
-    } else {
-      console.debug(formatBatchPermissionSummary(results));
-    }
   }
 
   // Return single decision or full map based on input type
   if (isSingle) {
     const decision = results.get(subjects.id);
-    if (!decision) {
-      throw new Error(`Permission check failed for subject ${subjects.entityType}:${subjects.id}`);
-    }
+
+    // Should never happen
+    if (!decision) throw new Error(`[Permission] Check failed for subject ${subjects.entityType}:${subjects.id}`);
+
+    if (env.DEBUG) console.debug(formatPermissionDecision(decision));
     return decision;
   }
 
+  if (env.DEBUG) console.debug(formatBatchPermissionSummary(results));
   return results;
 }

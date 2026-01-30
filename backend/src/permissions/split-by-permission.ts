@@ -37,7 +37,7 @@ export const splitByPermission = async (
 
   for (const entity of entities) {
     const result = results.get(entity.id);
-    if (result?.allowed) {
+    if (result?.isAllowed) {
       allowedIds.push(entity.id);
     } else {
       disallowedIds.push(entity.id);

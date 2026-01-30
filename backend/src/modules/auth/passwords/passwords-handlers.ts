@@ -166,12 +166,7 @@ const authPasswordsRouteHandlers = app
     const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, token.userId)).limit(1);
 
     // If the user is not found
-    if (!user) {
-      throw new AppError(404, 'not_found', 'warn', {
-        entityType: 'user',
-        meta: { userId: token.userId },
-      });
-    }
+    if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { userId: token.userId } });
 
     // Hash password
     const hashedPassword = await hashPassword(password);

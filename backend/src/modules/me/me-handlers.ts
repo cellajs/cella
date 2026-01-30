@@ -243,11 +243,7 @@ const meRouteHandlers = app
   .openapi(meRoutes.updateMe, async (ctx) => {
     const user = getContextUser();
 
-    if (!user)
-      throw new AppError(404, 'not_found', 'warn', {
-        entityType: 'user',
-        meta: { user: 'self' },
-      });
+    if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { user: 'self' } });
 
     const { userFlags, ...passedUpdates } = ctx.req.valid('json');
 
@@ -279,11 +275,7 @@ const meRouteHandlers = app
     const user = getContextUser();
 
     // Check if user exists
-    if (!user)
-      throw new AppError(404, 'not_found', 'warn', {
-        entityType: 'user',
-        meta: { user: 'self' },
-      });
+    if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { user: 'self' } });
 
     // Delete user
     await db.delete(usersTable).where(eq(usersTable.id, user.id));

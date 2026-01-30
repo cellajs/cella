@@ -14,8 +14,8 @@ import { useStepper } from '~/modules/common/stepper';
 import { toaster } from '~/modules/common/toaster/service';
 import { useOrganizationCreateMutation } from '~/modules/organization/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
-import { nanoid } from '~/utils/nanoid';
 import { Form, type LabelDirectionType } from '~/modules/ui/form';
+import { nanoid } from '~/utils/nanoid';
 
 interface Props {
   dialog?: boolean;

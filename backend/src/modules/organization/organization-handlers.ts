@@ -1,5 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { appConfig, recordFromKeys } from 'config';
+import { appConfig, hierarchy, recordFromKeys } from 'config';
 import { and, count, eq, getTableColumns, ilike, inArray, type SQL } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -9,7 +9,6 @@ import { AppError } from '#/lib/error';
 import { filterWithRejection, takeWithRestriction } from '#/lib/rejection-utils';
 import { checkSlugAvailable, checkSlugsAvailable } from '#/modules/entities/helpers/check-slug';
 import { getEntityCounts, getEntityCountsSelect } from '#/modules/entities/helpers/get-entity-counts';
-import { getEntityTypesScopedByContextEntityType } from '#/modules/entities/helpers/get-related-entities';
 import { insertMemberships } from '#/modules/memberships/helpers';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import organizationRoutes from '#/modules/organization/organization-routes';
@@ -102,7 +101,7 @@ const organizationRouteHandlers = app
     const createdMemberships = await insertMemberships(membershipInserts);
 
     // Build counts
-    const validEntities = getEntityTypesScopedByContextEntityType('organization');
+    const validEntities = hierarchy.getChildren('organization');
     const entitiesCounts = recordFromKeys(validEntities, () => 0);
     const entityRoleCounts = recordFromKeys(appConfig.entityRoles, (role) => (role === 'admin' ? 1 : 0));
     const memberCounts = { ...entityRoleCounts, pending: 0, total: 1 };
@@ -233,10 +232,7 @@ const organizationRouteHandlers = app
     if (slug && slug !== organization.slug) {
       const slugAvailable = await checkSlugAvailable(slug);
       if (!slugAvailable)
-        throw new AppError(409, 'slug_exists', 'warn', {
-          entityType: 'organization',
-          meta: { slug },
-        });
+        throw new AppError(409, 'slug_exists', 'warn', { entityType: 'organization', meta: { slug } });
     }
 
     // TODO sanitize blocknote blocks for welcomeText? How to only allow  image urls from our own cdn plus a list from allowed domains?
@@ -271,18 +267,14 @@ const organizationRouteHandlers = app
     if (!toDeleteIds.length) throw new AppError(400, 'invalid_request', 'error', { entityType: 'organization' });
 
     // Split ids into allowed and disallowed
-    const { allowedIds, disallowedIds: rejectedItemIds } = await splitByPermission(
-      'delete',
-      'organization',
-      toDeleteIds,
-      memberships,
-    );
+    const result = await splitByPermission('delete', 'organization', toDeleteIds, memberships);
+    const { allowedIds, disallowedIds: rejectedItemIds } = result;
+
     if (!allowedIds.length) throw new AppError(403, 'forbidden', 'warn', { entityType: 'organization' });
 
     // Delete the organizations
     await db.delete(organizationsTable).where(inArray(organizationsTable.id, allowedIds));
 
-    // Event emitted via CDC -> activities table -> activityBus ('organization.deleted')
     logEvent('info', 'Organizations deleted', allowedIds);
 
     return ctx.json({ success: true, rejectedItemIds }, 200);

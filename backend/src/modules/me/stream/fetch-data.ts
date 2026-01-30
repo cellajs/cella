@@ -4,7 +4,7 @@ import { db } from '#/db/db';
 import { activitiesTable } from '#/db/schema/activities';
 import { generateCacheToken } from '#/lib/cache-token';
 import type { StreamNotification } from '#/schemas';
-import type { ActivityEventWithEntity } from '#/sync/activity-bus';
+import { type ActivityEventWithEntity, getTypedEntity } from '#/sync/activity-bus';
 import type { BuildNotificationOptions } from '#/sync/stream';
 
 /**
@@ -39,8 +39,8 @@ export function buildStreamNotification(
   }
 
   // Extract contextType for membership events
-  const contextType: ContextEntityType | null =
-    event.resourceType === 'membership' ? ((event.entity?.contextType as ContextEntityType | undefined) ?? null) : null;
+  const membership = event.resourceType === 'membership' ? getTypedEntity(event, 'membership') : null;
+  const contextType: ContextEntityType | null = (membership?.contextType as ContextEntityType | undefined) ?? null;
 
   return {
     action: event.action,

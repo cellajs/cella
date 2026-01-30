@@ -1,9 +1,8 @@
-import { appConfig, type ContextEntityType } from 'config';
+import { appConfig, type ContextEntityType, hierarchy } from 'config';
 import { eq, sql } from 'drizzle-orm';
 import type z from 'zod';
 import { db } from '#/db/db';
 import { getMemberCountsSubquery } from '#/modules/entities/helpers/get-member-counts';
-import { getEntityTypesScopedByContextEntityType } from '#/modules/entities/helpers/get-related-entities';
 import { getRelatedCountsSubquery } from '#/modules/entities/helpers/get-related-entity-counts';
 import type { membershipCountSchema } from '#/modules/organization/organization-schema';
 import { entityTables } from '#/table-config';
@@ -22,7 +21,7 @@ export const getEntityCountsSelect = (entityType: ContextEntityType) => {
   const memberCountsSubquery = getMemberCountsSubquery(entityType);
   const relatedCountsSubquery = getRelatedCountsSubquery(entityType);
 
-  const validEntities = getEntityTypesScopedByContextEntityType(entityType);
+  const validEntities = hierarchy.getChildren(entityType);
   const relatedJsonPairs = validEntities
     .map((entity) => `'${entity}', COALESCE("related_counts"."${entity}", 0)`)
     .join(', ');

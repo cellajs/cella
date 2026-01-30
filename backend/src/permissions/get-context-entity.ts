@@ -44,9 +44,9 @@ export const getValidContextEntity = async <T extends ContextEntityType>(
   if (!entity) throw new AppError(404, 'not_found', 'warn', { entityType });
 
   // Step 2: Check permission for the requested action (system admin bypass is handled inside)
-  const { allowed, membership, can } = checkPermission(memberships, action, entity, { systemRole: userSystemRole });
+  const { isAllowed, membership, can } = checkPermission(memberships, action, entity, { systemRole: userSystemRole });
 
-  if (!allowed) {
+  if (!isAllowed) {
     throw new AppError(403, 'forbidden', 'warn', { entityType, meta: { action } });
   }
 

@@ -13,7 +13,7 @@ import { accessPolicies } from './permissions-config';
  */
 export interface PermissionResult {
   /** Whether the specific action is allowed */
-  allowed: boolean;
+  isAllowed: boolean;
   /** The user's membership for this entity, if any */
   membership: MembershipBaseModel | null;
   /** Object containing permission state for all entity actions */
@@ -66,7 +66,7 @@ export function checkPermission(
 
   if (isSingle) {
     const { can, membership } = getAllDecisions(accessPolicies, memberships, entityOrEntities, options);
-    return { allowed: can[action], membership, can };
+    return { isAllowed: can[action], membership, can };
   }
 
   const decisions = getAllDecisions(accessPolicies, memberships, entityOrEntities, options);
@@ -74,7 +74,7 @@ export function checkPermission(
 
   for (const [id, decision] of decisions) {
     const can = decision.can;
-    results.set(id, { allowed: can[action], membership: decision.membership, can });
+    results.set(id, { isAllowed: can[action], membership: decision.membership, can });
   }
 
   return { results, decisions };

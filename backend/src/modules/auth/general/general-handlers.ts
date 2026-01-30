@@ -141,11 +141,7 @@ const authGeneralRouteHandlers = app
 
     const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, targetUserId)).limit(1);
 
-    if (!user)
-      throw new AppError(404, 'not_found', 'warn', {
-        entityType: 'user',
-        meta: { targetUserId },
-      });
+    if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { targetUserId } });
 
     const adminUser = getContextUser();
     await setUserSession(ctx, user, 'password', 'impersonation');

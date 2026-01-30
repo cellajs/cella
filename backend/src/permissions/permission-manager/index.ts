@@ -5,13 +5,7 @@ export { configureAccessPolicies, getPolicyPermissions, getSubjectPolicies } fro
 export { allActionsAllowed, allActionsDenied, createActionRecord } from './action-helpers';
 
 // Permission check functions
-export {
-  getAllDecisions,
-  PermissionError,
-} from './check';
-
-// Hierarchy functions
-export { getAncestorContexts } from './hierarchy';
+export { getAllDecisions } from './check';
 
 // Types
 export type {

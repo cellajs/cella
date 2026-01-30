@@ -40,9 +40,9 @@ export const getValidProductEntity = async <K extends ProductEntityType>(
   if (!entity) throw new AppError(404, 'not_found', 'warn', { entityType });
 
   // Step 2: Check permission for the requested action (system admin bypass is handled inside)
-  const { allowed, can } = checkPermission(memberships, action, entity, { systemRole: userSystemRole });
+  const { isAllowed, can } = checkPermission(memberships, action, entity, { systemRole: userSystemRole });
 
-  if (!allowed) {
+  if (!isAllowed) {
     throw new AppError(403, 'forbidden', 'warn', { entityType, meta: { action } });
   }
 

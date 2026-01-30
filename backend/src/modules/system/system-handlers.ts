@@ -202,9 +202,9 @@ const systemRouteHandlers = app
           .where(eq(membershipsTable.userId, user.id));
 
         const isSystemAdmin = userSystemRole === 'admin';
-        const { allowed } = checkPermission(memberships, 'read', attachment);
+        const { isAllowed } = checkPermission(memberships, 'read', attachment);
 
-        if (!isSystemAdmin && !allowed)
+        if (!isSystemAdmin && !isAllowed)
           throw new AppError(403, 'forbidden', 'warn', { entityType: attachment.entityType });
       }
     }

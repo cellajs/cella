@@ -1,7 +1,7 @@
 import { EventEmitter } from 'node:events';
 import { appConfig, type EntityType } from 'config';
 import type { ActivityModel } from '#/db/schema/activities';
-import { type ResourceType, resourceTypes } from '#/table-config';
+import { type ResourceType, resourceTypes, type TrackedModel, type TrackedType } from '#/table-config';
 import { logEvent } from '#/utils/logger';
 import { eventAttrs, recordEventReceived, type SyncTraceContext, startSyncSpan, syncSpanNames } from './sync-metrics';
 
@@ -13,10 +13,9 @@ export const activityActions = ['create', 'update', 'delete'] as const;
 export type ActivityAction = (typeof activityActions)[number];
 
 /**
- * All possible tracked types (entities + resources).
+ * All possible tracked types (entities + resources) for event type generation.
  */
 const trackedTypes = [...appConfig.entityTypes, ...resourceTypes] as const;
-type TrackedType = (typeof trackedTypes)[number];
 
 /**
  * Generate all possible activity event types.
@@ -69,9 +68,29 @@ export type ActivityEvent = Omit<ActivityModel, 'type' | 'action' | 'entityType'
  */
 export interface ActivityEventWithEntity extends ActivityEvent {
   /** Full entity data from CDC Worker replication row. */
-  entity?: Record<string, unknown>;
+  entity?: unknown;
   /** Trace context for end-to-end correlation. */
   _trace?: SyncTraceContext;
+}
+
+/**
+ * Type guard helper to get typed entity from an event.
+ * Returns the entity with proper typing if the event matches the specified type.
+ *
+ * @example
+ * ```typescript
+ * if (event.resourceType === 'membership') {
+ *   const membership = getTypedEntity(event, 'membership');
+ *   console.log(membership?.userId); // Properly typed as string
+ * }
+ * ```
+ */
+export function getTypedEntity<T extends TrackedType>(
+  event: ActivityEventWithEntity,
+  trackedType: T,
+): TrackedModel<T> | undefined {
+  const matches = event.entityType === trackedType || event.resourceType === trackedType;
+  return matches ? (event.entity as TrackedModel<T>) : undefined;
 }
 
 /**

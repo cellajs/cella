@@ -1,9 +1,8 @@
-import { appConfig, type ContextEntityType } from 'config';
+import { appConfig, type ContextEntityType, hierarchy } from 'config';
 import { count, eq, type SelectedFields, type SQL, sql } from 'drizzle-orm';
 import type { PgColumn, SubqueryWithSelection } from 'drizzle-orm/pg-core';
 import { db } from '#/db/db';
 import { organizationsTable } from '#/db/schema/organizations';
-import { getEntityTypesScopedByContextEntityType } from '#/modules/entities/helpers/get-related-entities';
 import { entityTables } from '#/table-config';
 
 /**
@@ -21,7 +20,7 @@ export const getRelatedCountsSubquery = (entityType: ContextEntityType) => {
   const entityIdColumn = table.id;
 
   // Only keep entity types that actually contain the ID field we care about
-  const validEntities = getEntityTypesScopedByContextEntityType(entityType);
+  const validEntities = hierarchy.getChildren(entityType);
   if (!validEntities.length)
     return db.select({ id: entityIdColumn }).from(table).where(sql`false`).as('related_counts');
 

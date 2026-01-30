@@ -236,6 +236,8 @@ export class EntityHierarchy<
   private readonly entities: ReadonlyMap<string, EntityEntry>;
   private readonly roleRegistry: TRoles;
   private readonly ancestorCache = new Map<string, readonly string[]>();
+  private readonly childrenCache = new Map<string, readonly (TContexts | TProducts)[]>();
+  private readonly descendantsCache = new Map<string, readonly (TContexts | TProducts)[]>();
 
   /** All context entity type names */
   readonly contextTypes: readonly TContexts[];
@@ -399,18 +401,66 @@ export class EntityHierarchy<
   }
 
   /**
+   * Get direct children of a context entity (entities where parent === contextType).
+   * Returns both context and product entities. Cached for performance.
+   *
+   * @example
+   * // Given: organization → project, organization → attachment
+   * hierarchy.getChildren('organization') // ['project', 'attachment']
+   */
+  getChildren(contextType: string): readonly (TContexts | TProducts)[] {
+    const cached = this.childrenCache.get(contextType);
+    if (cached) return cached;
+
+    const children: (TContexts | TProducts)[] = [];
+    for (const [name, entry] of this.entities) {
+      if (entry.kind === 'user') continue;
+      if (entry.parent === contextType) {
+        children.push(name as TContexts | TProducts);
+      }
+    }
+
+    const frozen = Object.freeze(children);
+    this.childrenCache.set(contextType, frozen);
+    return frozen;
+  }
+
+  /**
+   * Get all descendants of a context entity (breadth-first traversal).
+   * Returns entities level by level: direct children first, then grandchildren, etc.
+   * Cached for performance.
+   *
+   * @example
+   * // Given: organization → project → task, organization → attachment
+   * hierarchy.getOrderedDescendants('organization') // ['project', 'attachment', 'task']
+   */
+  getOrderedDescendants(contextType: string): readonly (TContexts | TProducts)[] {
+    const cached = this.descendantsCache.get(contextType);
+    if (cached) return cached;
+
+    const descendants: (TContexts | TProducts)[] = [];
+    const queue = [...this.getChildren(contextType)];
+    let index = 0;
+
+    while (index < queue.length) {
+      const current = queue[index++];
+      descendants.push(current);
+      // Only context entities can have children
+      if (this.isContext(current)) {
+        queue.push(...this.getChildren(current));
+      }
+    }
+
+    const frozen = Object.freeze(descendants);
+    this.descendantsCache.set(contextType, frozen);
+    return frozen;
+  }
+
+  /**
    * Get the role registry.
    */
   get roles(): TRoles {
     return this.roleRegistry;
-  }
-
-  /**
-   * Get the entity ID column key for an entity type.
-   * Follows the convention: `${entityType}Id`
-   */
-  getIdColumnKey<T extends 'user' | TContexts | TProducts>(entityType: T): `${T}Id` {
-    return `${entityType}Id` as `${T}Id`;
   }
 }
 

@@ -185,11 +185,7 @@ const userRouteHandlers = app
       .where(or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug)))
       .limit(1);
 
-    if (!targetUser)
-      throw new AppError(404, 'not_found', 'warn', {
-        entityType: 'user',
-        meta: { user: idOrSlug },
-      });
+    if (!targetUser) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { user: idOrSlug } });
 
     const requesterOrgIds = requesterMemberships
       .filter((m) => m.contextType === 'organization')
@@ -208,10 +204,7 @@ const userRouteHandlers = app
       .limit(1);
 
     if (requstingUserSystemRole !== 'admin' && !sharedMembership) {
-      throw new AppError(403, 'forbidden', 'warn', {
-        entityType: 'user',
-        meta: { user: targetUser.id },
-      });
+      throw new AppError(403, 'forbidden', 'warn', { entityType: 'user', meta: { user: targetUser.id } });
     }
 
     return ctx.json(targetUser, 200);
@@ -230,11 +223,7 @@ const userRouteHandlers = app
       .where(or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug)))
       .limit(1);
 
-    if (!targetUser)
-      throw new AppError(404, 'not_found', 'warn', {
-        entityType: 'user',
-        meta: { user: idOrSlug },
-      });
+    if (!targetUser) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { user: idOrSlug } });
 
     const { bannerUrl, firstName, lastName, language, newsletter, thumbnailUrl, slug } = ctx.req.valid('json');
 

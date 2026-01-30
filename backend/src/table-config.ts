@@ -6,6 +6,15 @@ import { membershipsTable } from './db/schema/memberships';
 import { pagesTable } from './db/schema/pages';
 import { requestsTable } from './db/schema/requests';
 
+/** Combined type of all tracked tables (entities + resources) */
+type AllTrackedTables = typeof entityTables & typeof resourceTables;
+
+/** All tracked type names (entity types + resource types) */
+export type TrackedType = keyof AllTrackedTables;
+
+/** Infer the model type from a tracked type name */
+export type TrackedModel<T extends TrackedType> = AllTrackedTables[T]['$inferSelect'];
+
 export type EntityTableName = (typeof entityTableNames)[number];
 
 export type ResourceTableName = (typeof resourceTableNames)[number];

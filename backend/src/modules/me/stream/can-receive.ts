@@ -1,6 +1,6 @@
-import { appConfig, type RealtimeEntityType } from 'config';
+import { isContextEntity, isRealtimeEntity, type RealtimeEntityType } from 'config';
 import { checkPermission } from '#/permissions';
-import type { ActivityEventWithEntity } from '#/sync/activity-bus';
+import { type ActivityEventWithEntity, getTypedEntity } from '#/sync/activity-bus';
 import { logEvent } from '#/utils/logger';
 import type { AppStreamSubscriber } from './types';
 
@@ -10,7 +10,7 @@ import type { AppStreamSubscriber } from './types';
  * For membership events:
  * - User is the subject of the membership (entity.userId matches)
  *
- * For organization events:
+ * For context entity events (organization, etc.):
  * - User is a member of the org
  *
  * For product entity events (page, attachment):
@@ -19,18 +19,20 @@ import type { AppStreamSubscriber } from './types';
 export function canReceiveUserEvent(subscriber: AppStreamSubscriber, event: ActivityEventWithEntity): boolean {
   // For membership events, check if user is the subject
   if (event.resourceType === 'membership') {
-    const membershipUserId = event.entity?.userId as string | undefined;
-    return membershipUserId === subscriber.userId;
+    const membership = getTypedEntity(event, 'membership');
+    return membership?.userId === subscriber.userId;
   }
 
-  // For organization events, check if user is member
-  if (event.entityType === 'organization' && event.organizationId) {
+  const { entityType } = event;
+
+  // For context entity events, check if user is member of the organization
+  if (entityType && isContextEntity(entityType) && event.organizationId) {
     return subscriber.orgIds.has(event.organizationId);
   }
 
   // For product entity events (page, attachment, etc.)
-  if (event.entityType && appConfig.realtimeEntityTypes.includes(event.entityType as RealtimeEntityType)) {
-    return canReceiveProductEntityEvent(subscriber, event);
+  if (isRealtimeEntity(entityType)) {
+    return canReceiveProductEntityEvent(subscriber, event, entityType);
   }
 
   return false;
@@ -40,30 +42,35 @@ export function canReceiveUserEvent(subscriber: AppStreamSubscriber, event: Acti
  * Check if user subscriber can receive a product entity event.
  * Reuses permission logic from org stream.
  */
-function canReceiveProductEntityEvent(subscriber: AppStreamSubscriber, event: ActivityEventWithEntity): boolean {
+function canReceiveProductEntityEvent(
+  subscriber: AppStreamSubscriber,
+  event: ActivityEventWithEntity,
+  entityType: RealtimeEntityType,
+): boolean {
   // Must have entity ID and organization ID
   if (!event.entityId || !event.organizationId) return false;
 
-  // Must be member of the org
+  // Defense in depth: user must be member of the organization
   if (!subscriber.orgIds.has(event.organizationId)) return false;
 
-  // System admins bypass ACLs
-  if (subscriber.userSystemRole === 'admin') return true;
+  const eventEntity = {
+    id: event.entityId,
+    entityType,
+    organizationId: event.organizationId,
+  };
 
   // Check permissions using user's memberships
-  const { allowed } = checkPermission(subscriber.memberships, 'read', {
-    id: event.entityId,
-    entityType: event.entityType as RealtimeEntityType,
-    organizationId: event.organizationId,
+  const { isAllowed } = checkPermission(subscriber.memberships, 'read', eventEntity, {
+    systemRole: subscriber.userSystemRole,
   });
 
-  if (!allowed) {
+  if (!isAllowed) {
     logEvent('debug', 'User stream notification filtered by permission', {
       userId: subscriber.userId,
-      entityType: event.entityType,
+      entityType,
       entityId: event.entityId,
     });
   }
 
-  return allowed;
+  return isAllowed;
 }

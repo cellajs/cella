@@ -433,26 +433,17 @@ const membershipsRouteHandlers = app
       .limit(1);
 
     if (!membershipToUpdate) {
-      throw new AppError(404, 'not_found', 'warn', {
-        entityType: 'user',
-        meta: { membership: membershipId },
-      });
+      throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { membership: membershipId } });
     }
 
     const updatedType = membershipToUpdate.contextType;
     const updatedEntityIdField = appConfig.entityIdColumnKeys[updatedType];
 
     const membershipContextId = membershipToUpdate[updatedEntityIdField];
-    if (!membershipContextId)
-      throw new AppError(500, 'server_error', 'error', {
-        entityType: updatedType,
-      });
+    if (!membershipContextId) throw new AppError(500, 'server_error', 'error', { entityType: updatedType });
 
     const membershipContext = await resolveEntity(updatedType, membershipContextId);
-    if (!membershipContext)
-      throw new AppError(404, 'not_found', 'warn', {
-        entityType: updatedType,
-      });
+    if (!membershipContext) throw new AppError(404, 'not_found', 'warn', { entityType: updatedType });
 
     // Check if user has permission to update someone elses membership role
     if (role) await getValidContextEntity(membershipContextId, updatedType, 'update');
@@ -503,23 +494,16 @@ const membershipsRouteHandlers = app
       .limit(1);
 
     if (!inactiveMembership)
-      throw new AppError(404, 'inactive_membership_not_found', 'error', {
-        meta: { id: inactiveMembershipId },
-      });
+      throw new AppError(404, 'inactive_membership_not_found', 'error', { meta: { id: inactiveMembershipId } });
 
     if (acceptOrReject === 'accept') {
       const entityFieldIdName = appConfig.entityIdColumnKeys[inactiveMembership.contextType];
       const entityFieldId = inactiveMembership[entityFieldIdName];
       if (!entityFieldId)
-        throw new AppError(500, 'server_error', 'error', {
-          entityType: inactiveMembership.contextType,
-        });
+        throw new AppError(500, 'server_error', 'error', { entityType: inactiveMembership.contextType });
 
       const entity = await resolveEntity(inactiveMembership.contextType, entityFieldId);
-      if (!entity)
-        throw new AppError(404, 'not_found', 'error', {
-          entityType: inactiveMembership.contextType,
-        });
+      if (!entity) throw new AppError(404, 'not_found', 'error', { entityType: inactiveMembership.contextType });
 
       const activatedMemberships = await insertMemberships([
         { entity, userId: user.id, role: inactiveMembership.role, createdBy: inactiveMembership.createdBy },
