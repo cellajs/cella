@@ -1,12 +1,29 @@
 import { faker } from '@faker-js/faker';
-import { appConfig } from 'config';
+import { appConfig, type ContextEntityType, type EntityRole } from 'config';
 import type { InactiveMembershipModel } from '#/db/schema/inactive-memberships';
 import type { InsertMembershipModel, MembershipModel } from '#/db/schema/memberships';
 import type { OrganizationModel } from '#/db/schema/organizations';
 import type { UserModel } from '#/db/schema/users';
-import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { nanoid } from '#/utils/nanoid';
-import { generateMockContextEntityIdColumns, mockNanoid, pastIsoDate, withFakerSeed } from './utils';
+import {
+  generateMockContextEntityIdColumns,
+  type MockContextEntityIdColumns,
+  mockNanoid,
+  mockPaginated,
+  pastIsoDate,
+  withFakerSeed,
+} from './utils';
+
+/** MembershipBase type defined here to avoid circular dependency with memberships-schema */
+type MembershipBase = {
+  id: string;
+  contextType: ContextEntityType;
+  userId: string;
+  role: EntityRole;
+  order: number;
+  muted: boolean;
+  archived: boolean;
+} & MockContextEntityIdColumns;
 
 // Tracks the current order offset for memberships per context (e.g., organization)
 const membershipOrderMap: Map<string, number> = new Map();
@@ -45,7 +62,7 @@ export const mockOrganizationMembership = (organization: OrganizationModel, user
  * Uses deterministic seeding - same key produces same data.
  * Context entity ID columns are generated dynamically based on appConfig.contextEntityTypes.
  */
-export const mockMembershipBase = (key = 'membership-base:default'): MembershipBaseModel =>
+export const mockMembershipBase = (key = 'membership-base:default'): MembershipBase =>
   withFakerSeed(key, () => ({
     id: mockNanoid(),
     contextType: 'organization' as const,
@@ -119,3 +136,58 @@ export const mockInactiveMembership = (key = 'inactive-membership:default'): Ina
 
 /** Alias for API response examples */
 export const mockInactiveMembershipResponse = mockInactiveMembership;
+
+/**
+ * Generates a paginated mock inactive membership list response for getPendingMemberships endpoint.
+ */
+export const mockPaginatedInactiveMembershipsResponse = (count = 2) =>
+  mockPaginated(mockInactiveMembershipResponse, count);
+
+/**
+ * Generates a mock member response (user with membership).
+ * Used for getMembers endpoint example.
+ */
+export const mockMemberResponse = (key = 'member:default') =>
+  withFakerSeed(key, () => {
+    const refDate = new Date('2025-01-01T00:00:00.000Z');
+    const createdAt = faker.date.past({ refDate }).toISOString();
+    const userId = mockNanoid();
+
+    return {
+      id: userId,
+      entityType: 'user' as const,
+      name: faker.person.fullName(),
+      firstName: faker.person.firstName(),
+      lastName: faker.person.lastName(),
+      email: faker.internet.email().toLowerCase(),
+      slug: faker.internet.username().toLowerCase(),
+      description: null,
+      thumbnailUrl: null,
+      bannerUrl: null,
+      language: 'en' as const,
+      mfaRequired: false,
+      createdAt,
+      modifiedAt: createdAt,
+      modifiedBy: null,
+      lastStartedAt: createdAt,
+      lastSignInAt: createdAt,
+      lastSeenAt: createdAt,
+      membership: mockMembershipBase(`${key}:membership`),
+    };
+  });
+
+/**
+ * Generates a paginated mock member list response for getMembers endpoint.
+ */
+export const mockPaginatedMembersResponse = (count = 2) => mockPaginated(mockMemberResponse, count);
+
+/**
+ * Generates a mock membership invite response.
+ * Used for membershipInvite endpoint example.
+ */
+export const mockMembershipInviteResponse = (key = 'membership-invite:default') =>
+  withFakerSeed(key, () => ({
+    success: true,
+    rejectedItemIds: [] as string[],
+    invitesSentCount: 2,
+  }));

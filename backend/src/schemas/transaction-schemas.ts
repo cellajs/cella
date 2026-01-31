@@ -1,4 +1,5 @@
 import { z } from '@hono/zod-openapi';
+import { mockTxRequest, mockTxResponse, mockTxStreamMessage } from '../../mocks/mock-entity-base';
 
 /**
  * Transaction metadata sent with product entity mutations.
@@ -10,7 +11,7 @@ export const txRequestSchema = z
     sourceId: z.string().max(64).describe('Tab/instance identifier for echo prevention'),
     baseVersion: z.number().int().min(0).describe('Entity version when read (for conflict detection)'),
   })
-  .openapi('TxRequest');
+  .openapi('TxRequest', { example: mockTxRequest() });
 
 export type TxRequest = z.infer<typeof txRequestSchema>;
 
@@ -23,7 +24,7 @@ export const txResponseSchema = z
     id: z.string().describe('Echoes the request mutation ID'),
     version: z.number().int().describe('New entity version after mutation'),
   })
-  .openapi('TxResponse');
+  .openapi('TxResponse', { example: mockTxResponse() });
 
 export type TxResponse = z.infer<typeof txResponseSchema>;
 
@@ -38,6 +39,6 @@ export const txStreamMessageSchema = z
     version: z.number().int(),
     fieldVersions: z.record(z.string(), z.number().int()),
   })
-  .openapi('TxStreamMessage');
+  .openapi('TxStreamMessage', { example: mockTxStreamMessage() });
 
 export type TxStreamMessage = z.infer<typeof txStreamMessageSchema>;

@@ -2,6 +2,7 @@ import { z } from '@hono/zod-openapi';
 import { appConfig } from 'config';
 import { activityActions } from '#/sync/activity-bus';
 import { resourceTypes } from '#/table-config';
+import { mockPublicStreamActivity, mockStreamNotification } from '../../mocks/mock-entity-base';
 import { txStreamMessageSchema } from './transaction-schemas';
 
 /**
@@ -35,7 +36,7 @@ export const streamNotificationSchema = z
     /** HMAC-signed token for LRU cache access (entities only) */
     cacheToken: z.string().nullable(),
   })
-  .openapi('StreamNotification');
+  .openapi('StreamNotification', { example: mockStreamNotification() });
 
 export type StreamNotification = z.infer<typeof streamNotificationSchema>;
 
@@ -52,6 +53,6 @@ export const publicStreamActivitySchema = z
     changedKeys: z.array(z.string()).nullable(),
     createdAt: z.string(),
   })
-  .openapi('PublicStreamActivity');
+  .openapi('PublicStreamActivity', { example: mockPublicStreamActivity() });
 
 export type PublicStreamActivity = z.infer<typeof publicStreamActivitySchema>;

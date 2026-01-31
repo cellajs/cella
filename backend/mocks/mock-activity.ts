@@ -1,14 +1,16 @@
 import { faker } from '@faker-js/faker';
+import { appConfig } from 'config';
 import type { ActivityModel } from '#/db/schema/activities';
 import { activityActions } from '#/sync/activity-bus';
 import { entityTableNames } from '#/table-config';
-import { mockNanoid, withFakerSeed } from './utils';
+import { generateMockContextEntityIdColumns, mockNanoid, mockPaginated, withFakerSeed } from './utils';
 
 /**
  * Generates a mock activity with all fields populated. Currently hardcoded
  * with entityType values but true schema also includes resourceType values.
  * It should always be oneOf: entityType or resourceType populated with their respective values.
  * Uses deterministic seeding - same key produces same data.
+ * Context entity ID columns are generated dynamically based on relatable context entity types.
  * Used for DB seeding, tests, and API response examples.
  */
 export const mockActivity = (key = 'activity:default'): ActivityModel =>
@@ -23,13 +25,12 @@ export const mockActivity = (key = 'activity:default'): ActivityModel =>
     return {
       id: mockNanoid(),
       userId: mockNanoid(),
-      entityType: faker.helpers.arrayElement(['user', 'organization', 'attachment', null]),
+      entityType: faker.helpers.arrayElement([...appConfig.entityTypes, null]),
       resourceType: null,
       action,
       tableName,
       type: `${singularName}.${verb}`,
       entityId: mockNanoid(),
-      organizationId: mockNanoid(),
       createdAt,
       changedKeys:
         action === 'update'
@@ -37,8 +38,14 @@ export const mockActivity = (key = 'activity:default'): ActivityModel =>
           : null,
       tx: null,
       seq: faker.number.int({ min: 1, max: 1000 }),
+      ...generateMockContextEntityIdColumns('relatable'),
     };
   });
 
 /** Alias for API response examples (activity schema matches DB schema) */
 export const mockActivityResponse = mockActivity;
+
+/**
+ * Generates a paginated mock activity list response for getActivities endpoint.
+ */
+export const mockPaginatedActivitiesResponse = (count = 2) => mockPaginated(mockActivityResponse, count);

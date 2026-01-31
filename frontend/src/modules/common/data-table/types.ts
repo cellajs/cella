@@ -1,7 +1,7 @@
-import type { ColumnOrColumnGroup as GridColumnOrColumnGroup } from '@cella/data-grid';
 import type { QueryKey } from '@tanstack/react-query';
 import type { Dispatch, SetStateAction } from 'react';
 import { ApiError } from '~/api.gen';
+import type { ColumnOrColumnGroup as GridColumnOrColumnGroup } from '~/modules/common/data-grid';
 
 export type BaseTableSearchVariables<T> = T & {
   limit: number;

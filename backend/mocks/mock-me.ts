@@ -1,7 +1,9 @@
 import { faker } from '@faker-js/faker';
 import type { MeAuthDataResponse, MeResponse, UploadTokenResponse } from '#/modules/me/types';
+import { mockContextEntityBase, mockStreamNotification } from './mock-entity-base';
+import { mockInactiveMembershipResponse } from './mock-membership';
 import { mockUserResponse } from './mock-user';
-import { mockNanoid, withFakerSeed } from './utils';
+import { mockNanoid, mockPaginated, withFakerSeed } from './utils';
 
 /**
  * Generates a mock Me response (current user with system role).
@@ -66,5 +68,35 @@ export const mockUploadTokenResponse = (key = 'upload-token:default'): UploadTok
           expires: expiresAt.toISOString(),
         },
       },
+    };
+  });
+
+/**
+ * Generates a mock pending invitation response.
+ * Used for getMyInvitations endpoint example.
+ */
+export const mockPendingInvitationResponse = (key = 'pending-invitation:default') =>
+  withFakerSeed(key, () => ({
+    entity: mockContextEntityBase(`${key}:entity`),
+    inactiveMembership: mockInactiveMembershipResponse(`${key}:inactive-membership`),
+  }));
+
+/**
+ * Generates a paginated mock pending invitation list response for getMyInvitations endpoint.
+ */
+export const mockPaginatedInvitationsResponse = (count = 2) => mockPaginated(mockPendingInvitationResponse, count);
+
+/**
+ * Generates a mock app stream response.
+ * Used for getAppStream endpoint example (JSON mode).
+ */
+export const mockAppStreamResponse = (key = 'app-stream:default') =>
+  withFakerSeed(key, () => {
+    // Generate cursor BEFORE nested mock to ensure deterministic output
+    // (mockStreamNotification uses nested withFakerSeed which resets the seed after)
+    const cursor = mockNanoid();
+    return {
+      activities: [mockStreamNotification(`${key}:notification`)],
+      cursor,
     };
   });

@@ -6,6 +6,7 @@ import { isNoBot } from '#/middlewares/is-no-bot';
 import { emailEnumLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { emailBodySchema, tokenWithDataSchema } from '#/modules/auth/general/general-schema';
 import { cookieSchema, emailOrTokenIdQuerySchema, errorResponseRefs, idSchema, locationSchema } from '#/schemas';
+import { mockTokenDataResponse } from '../../../../mocks/mock-auth';
 
 const authGeneralRoutes = {
   /**
@@ -114,7 +115,7 @@ const authGeneralRoutes = {
     responses: {
       200: {
         description: 'Token is valid',
-        content: { 'application/json': { schema: tokenWithDataSchema } },
+        content: { 'application/json': { schema: tokenWithDataSchema, example: mockTokenDataResponse() } },
       },
       ...errorResponseRefs,
     },

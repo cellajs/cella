@@ -5,50 +5,22 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1769258086046,
-      "tag": "0000_silly_captain_cross",
+      "when": 1769823690125,
+      "tag": "0000_remarkable_tigra",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
-      "when": 1769258086484,
+      "when": 1769823690567,
       "tag": "0001_cdc_setup",
       "breakpoints": true
     },
     {
       "idx": 2,
       "version": "7",
-      "when": 1769258086678,
+      "when": 1769823690740,
       "tag": "0002_partman_setup",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1769389960299,
-      "tag": "0003_swift_mojo",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1769503341928,
-      "tag": "0004_same_mimic",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1769552101850,
-      "tag": "0005_curious_human_cannonball",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1769598411052,
-      "tag": "0006_opposite_zemo",
       "breakpoints": true
     }
   ]

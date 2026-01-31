@@ -1,6 +1,6 @@
 import { appConfig } from 'config';
 import { sql } from 'drizzle-orm';
-import { foreignKey, index, integer, jsonb, pgTable, varchar } from 'drizzle-orm/pg-core';
+import { foreignKey, index, integer, jsonb, pgTable, primaryKey, varchar } from 'drizzle-orm/pg-core';
 import {
   generateActivityContextColumns,
   generateActivityContextForeignKeys,
@@ -18,12 +18,18 @@ import { usersTable } from './users';
  * Tracks create, update, and delete operations across all resources.
  * Can serve as an audit log and future webhook queue.
  *
+ * PARTITIONING (production only):
+ * - Partitioned by createdAt via pg_partman (see partman_setup migration)
+ * - Weekly partitions, 90-day retention
+ * - Drizzle sees regular table; PostgreSQL has partitioned table
+ * - Standard ALTERs (ADD/DROP COLUMN, ADD INDEX) work normally
+ *
  * @link http://localhost:4000/docs#tag/activities
  */
 export const activitiesTable = pgTable(
   'activities',
   {
-    id: varchar().primaryKey().$defaultFn(nanoid),
+    id: varchar().notNull().$defaultFn(nanoid),
     userId: varchar(), // User who performed the action (nullable for system actions)
     entityType: varchar({ enum: appConfig.entityTypes }), // Entity type if applicable
     resourceType: varchar({ enum: resourceTypes }), // Resource type if not an entity
@@ -43,6 +49,8 @@ export const activitiesTable = pgTable(
     seq: integer(),
   },
   (table) => [
+    // Composite PK for pg_partman partitioning by createdAt
+    primaryKey({ columns: [table.id, table.createdAt] }),
     index('activities_created_at_index').on(table.createdAt.desc()),
     index('activities_type_index').on(table.type),
     index('activities_user_id_index').on(table.userId),

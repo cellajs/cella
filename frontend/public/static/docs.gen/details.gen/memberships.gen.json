@@ -380,6 +380,17 @@
           },
           "ref": "#/components/schemas/ContextEntityBase",
           "contentType": "application/json"
+        },
+        "example": {
+          "id": "bafp6iiu2dt74olfvl618xur",
+          "createdAt": "2024-09-15T16:29:26.122Z",
+          "modifiedAt": "2024-12-04T06:32:26.983Z",
+          "name": "Nolan - Jacobson",
+          "description": "Horizontal demand-driven support",
+          "entityType": "organization",
+          "slug": "nolan---jacobson",
+          "thumbnailUrl": null,
+          "bannerUrl": null
         }
       },
       {
@@ -550,6 +561,71 @@
             "total": { "type": "number", "required": true }
           },
           "contentType": "application/json"
+        },
+        "example": {
+          "items": [
+            {
+              "id": "qqp8d07imsvjbtqtl3rtjgxd",
+              "entityType": "user",
+              "name": "Tasha Abernathy",
+              "firstName": "Rose",
+              "lastName": "Dicki",
+              "email": "marlon3@hotmail.com",
+              "slug": "christine.greenholt23",
+              "description": null,
+              "thumbnailUrl": null,
+              "bannerUrl": null,
+              "language": "en",
+              "mfaRequired": false,
+              "createdAt": "2024-11-21T04:00:59.122Z",
+              "modifiedAt": "2024-11-21T04:00:59.122Z",
+              "modifiedBy": null,
+              "lastStartedAt": "2024-11-21T04:00:59.122Z",
+              "lastSignInAt": "2024-11-21T04:00:59.122Z",
+              "lastSeenAt": "2024-11-21T04:00:59.122Z",
+              "membership": {
+                "id": "300jor4orrvsgezqoyxfckg3",
+                "contextType": "organization",
+                "userId": "ifex0agu87zf240qkfh0faoq",
+                "organizationId": "jip69qfpb1r33xdbp099f3xi",
+                "role": "admin",
+                "order": 2,
+                "muted": false,
+                "archived": false
+              }
+            },
+            {
+              "id": "hg5ogh3yr2b2dbwf7b9eckaj",
+              "entityType": "user",
+              "name": "Lula Schaefer",
+              "firstName": "Sarah",
+              "lastName": "Witting",
+              "email": "nestor.miller@yahoo.com",
+              "slug": "harley45",
+              "description": null,
+              "thumbnailUrl": null,
+              "bannerUrl": null,
+              "language": "en",
+              "mfaRequired": false,
+              "createdAt": "2024-10-29T08:46:20.790Z",
+              "modifiedAt": "2024-10-29T08:46:20.790Z",
+              "modifiedBy": null,
+              "lastStartedAt": "2024-10-29T08:46:20.790Z",
+              "lastSignInAt": "2024-10-29T08:46:20.790Z",
+              "lastSeenAt": "2024-10-29T08:46:20.790Z",
+              "membership": {
+                "id": "1u44cckbz5av195r4h3wiruz",
+                "contextType": "organization",
+                "userId": "44b7wkilwj64zmkwsnsmrzo2",
+                "organizationId": "zxd2hreylomg4p6xgvt4g11e",
+                "role": "admin",
+                "order": 50,
+                "muted": false,
+                "archived": false
+              }
+            }
+          ],
+          "total": 2
         }
       },
       {
@@ -675,6 +751,37 @@
             "total": { "type": "number", "required": true }
           },
           "contentType": "application/json"
+        },
+        "example": {
+          "items": [
+            {
+              "id": "eyvjbbm5piweg2q4gqa3vx9c",
+              "contextType": "organization",
+              "email": "waino61@hotmail.com",
+              "userId": "qqp8d07imsvjbtqtl3rtjgxd",
+              "tokenId": "xtanaxnsp9nes1yx645yb0gl",
+              "role": "admin",
+              "rejectedAt": null,
+              "createdAt": "2024-11-21T04:00:59.122Z",
+              "createdBy": "9hmikgme3gy3a9lhe0ctrmzc",
+              "organizationId": "9xn03u76eo7z71y60a882cwp",
+              "uniqueKey": "qqp8d07imsvjbtqtl3rtjgxd-9xn03u76eo7z71y60a882cwp"
+            },
+            {
+              "id": "pi37syiavgc67t5nr6k4huj5",
+              "contextType": "organization",
+              "email": "serena33@yahoo.com",
+              "userId": "hg5ogh3yr2b2dbwf7b9eckaj",
+              "tokenId": "1sr6utecq3o02wpa56tpd77k",
+              "role": "member",
+              "rejectedAt": null,
+              "createdAt": "2024-10-29T08:46:20.790Z",
+              "createdBy": "vl0e44bpmhsyauxcwuwjsrzv",
+              "organizationId": "clxs8vayzrul7vmeyahbgyu0",
+              "uniqueKey": "hg5ogh3yr2b2dbwf7b9eckaj-clxs8vayzrul7vmeyahbgyu0"
+            }
+          ],
+          "total": 2
         }
       },
       {

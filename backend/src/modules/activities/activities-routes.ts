@@ -2,6 +2,7 @@ import { createXRoute } from '#/docs/x-routes';
 import { hasSystemAccess, isAuthenticated } from '#/middlewares/guard';
 import { activityListQuerySchema, activitySchema } from '#/modules/activities/activities-schema';
 import { errorResponseRefs, paginationSchema } from '#/schemas';
+import { mockPaginatedActivitiesResponse } from '../../../mocks/mock-activity';
 
 const activityRoutes = {
   /**
@@ -23,6 +24,7 @@ const activityRoutes = {
         content: {
           'application/json': {
             schema: paginationSchema(activitySchema),
+            example: mockPaginatedActivitiesResponse(),
           },
         },
       },

@@ -1,3 +1,5 @@
+import { appConfig } from 'config';
+import { type Key, type ReactNode, useCallback, useRef } from 'react';
 import {
   type CellMouseArgs,
   type CellMouseEvent,
@@ -5,10 +7,8 @@ import {
   type RenderRowProps,
   type RowsChangeData,
   type SortColumn,
-} from '@cella/data-grid';
-import { appConfig } from 'config';
-import { type Key, type ReactNode, useCallback, useRef } from 'react';
-import '@cella/data-grid/styles.css';
+} from '~/modules/common/data-grid';
+import '~/modules/common/data-grid/style/data-grid.css';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { InfiniteLoader } from '~/modules/common/data-table/infinite-loader';

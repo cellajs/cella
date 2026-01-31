@@ -5,7 +5,11 @@ import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { membershipsTable } from '#/db/schema/memberships';
 import { userBaseSchema } from '#/modules/user/user-schema-base';
 import { contextEntityTypeSchema, idOrSlugSchema, paginationQuerySchema, validEmailSchema } from '#/schemas';
-import { mockInactiveMembershipResponse, mockMembershipResponse } from '../../../mocks/mock-membership';
+import {
+  mockInactiveMembershipResponse,
+  mockMembershipBase,
+  mockMembershipResponse,
+} from '../../../mocks/mock-membership';
 
 export const membershipSchema = z
   .object(createSelectSchema(membershipsTable).shape)
@@ -23,7 +27,7 @@ export const membershipBaseSchema = membershipSchema
     modifiedBy: true,
     uniqueKey: true,
   })
-  .openapi('MembershipBase');
+  .openapi('MembershipBase', { example: mockMembershipBase() });
 
 export const membershipCreateBodySchema = z.object({
   emails: validEmailSchema.array().min(1).max(50),

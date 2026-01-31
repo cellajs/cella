@@ -120,7 +120,6 @@ export const OperationExamples = ({ operationId, tagName }: OperationExamplesPro
 
   return (
     <div className="mt-4">
-      <h4 className="text-sm font-medium mb-4">{t('common:docs.response_examples')}</h4>
       <ExamplesAccordion
         responses={responses}
         schemas={schemas}

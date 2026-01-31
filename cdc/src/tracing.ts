@@ -1,7 +1,7 @@
 /**
  * CDC Worker tracing module.
  *
- * Thin wrapper around @cella/tracing with CDC-specific metrics.
+ * Thin wrapper around config/tracing with CDC-specific metrics.
  */
 
 import {
@@ -14,7 +14,7 @@ import {
   type SpanAttributes,
   type SpanData,
   type TraceContext,
-} from '@cella/tracing';
+} from 'config/tracing';
 import { logEvent } from './pino';
 
 // Re-export span names and attribute helpers from shared package

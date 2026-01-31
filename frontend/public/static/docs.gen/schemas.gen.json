@@ -39,7 +39,19 @@
       }
     },
     "schemaTag": "base",
-    "description": "Base user schema with essential fields for identification and display."
+    "description": "Base user schema with essential fields for identification and display.",
+    "example": {
+      "id": "1b1eyp654w9neyhyka0hezx1",
+      "createdAt": "2024-12-04T07:25:23.386Z",
+      "modifiedAt": "2024-12-22T02:34:34.155Z",
+      "name": "Cali Stanton",
+      "description": null,
+      "entityType": "user",
+      "slug": "cali.stanton36",
+      "thumbnailUrl": null,
+      "bannerUrl": null,
+      "email": "cali_stanton@gmail.com"
+    }
   },
   {
     "name": "ContextEntityBase",
@@ -75,7 +87,18 @@
         }
       }
     },
-    "schemaTag": "base"
+    "schemaTag": "base",
+    "example": {
+      "id": "bafp6iiu2dt74olfvl618xur",
+      "createdAt": "2024-09-15T16:29:26.122Z",
+      "modifiedAt": "2024-12-04T06:32:26.983Z",
+      "name": "Nolan - Jacobson",
+      "description": "Horizontal demand-driven support",
+      "entityType": "organization",
+      "slug": "nolan---jacobson",
+      "thumbnailUrl": null,
+      "bannerUrl": null
+    }
   },
   {
     "name": "MembershipBase",
@@ -107,7 +130,17 @@
         "organizationId": { "type": "string", "required": true }
       }
     },
-    "schemaTag": "base"
+    "schemaTag": "base",
+    "example": {
+      "id": "vn86f6g3ci8ybeh37sz3gscf",
+      "contextType": "organization",
+      "userId": "gmpj3uavw3f7pkm7vsxl2157",
+      "organizationId": "n34cen80754cxm7om1aq3bat",
+      "role": "member",
+      "order": 9,
+      "muted": false,
+      "archived": false
+    }
   },
   {
     "name": "TxBase",
@@ -122,7 +155,13 @@
         "fieldVersions": { "type": "object", "required": true }
       }
     },
-    "schemaTag": "base"
+    "schemaTag": "base",
+    "example": {
+      "id": "gen-abc123def456ghi789",
+      "sourceId": "src_gen-xyz987wvu654",
+      "version": 1,
+      "fieldVersions": { "name": 1, "description": 1 }
+    }
   },
   {
     "name": "StreamNotification",
@@ -177,7 +216,23 @@
         }
       }
     },
-    "schemaTag": "data"
+    "schemaTag": "data",
+    "example": {
+      "action": "update",
+      "entityType": "attachment",
+      "resourceType": null,
+      "entityId": "gj2w2bwxrkgnv0oa592jxwar",
+      "organizationId": "c2u05q7olzsfy1csy8m2q98f",
+      "contextType": null,
+      "seq": 550,
+      "cacheToken": "UyMeEcuBnWoD28KSeQr21dJgZDmxiD2W",
+      "tx": {
+        "id": "wiooyt8ngdjsef4skbnrj1fg",
+        "sourceId": "m3unlw6p4wjqfhll7n1r95ec",
+        "version": 3,
+        "fieldVersions": { "name": 1 }
+      }
+    }
   },
   {
     "name": "TxStreamMessage",
@@ -192,7 +247,13 @@
         "fieldVersions": { "type": "object", "required": true }
       }
     },
-    "schemaTag": "data"
+    "schemaTag": "data",
+    "example": {
+      "id": "gd9m8kym1wafivmk7c3du9yy",
+      "sourceId": "u3is64cucutsxomeo8xiy6bt",
+      "version": 4,
+      "fieldVersions": { "name": 1 }
+    }
   },
   {
     "name": "PublicStreamActivity",
@@ -221,7 +282,16 @@
         "createdAt": { "type": "string", "required": true }
       }
     },
-    "schemaTag": "data"
+    "schemaTag": "data",
+    "example": {
+      "activityId": "tr1619any4wiivw7050pxbnj",
+      "action": "update",
+      "entityType": "attachment",
+      "entityId": "9pjvmlsr1u1yqqvio34f744e",
+      "changedKeys": ["keywords"],
+      "createdAt": "2024-01-31T10:09:41.032Z",
+      "modifiedAt": "2024-07-15T15:19:59.216Z"
+    }
   },
   {
     "name": "BadRequestError",
@@ -259,7 +329,15 @@
     },
     "schemaTag": "errors",
     "description": "Error returned when the request is malformed or contains invalid data.",
-    "extendsRef": "#/components/schemas/ApiError"
+    "extendsRef": "#/components/schemas/ApiError",
+    "example": {
+      "name": "BadRequestError",
+      "message": "error:bad_request_action",
+      "type": "validation_error",
+      "status": 400,
+      "severity": "warn",
+      "timestamp": "2025-01-01T12:00:00.000Z"
+    }
   },
   {
     "name": "ApiError",
@@ -295,7 +373,15 @@
         "organizationId": { "type": "string", "required": false }
       }
     },
-    "schemaTag": "errors"
+    "schemaTag": "errors",
+    "example": {
+      "name": "BadRequestError",
+      "message": "error:bad_request_action",
+      "type": "validation_error",
+      "status": 400,
+      "severity": "warn",
+      "timestamp": "2025-01-01T12:00:00.000Z"
+    }
   },
   {
     "name": "UnauthorizedError",
@@ -333,7 +419,15 @@
     },
     "schemaTag": "errors",
     "description": "Error returned when authentication is missing or invalid.",
-    "extendsRef": "#/components/schemas/ApiError"
+    "extendsRef": "#/components/schemas/ApiError",
+    "example": {
+      "name": "BadRequestError",
+      "message": "error:bad_request_action",
+      "type": "validation_error",
+      "status": 400,
+      "severity": "warn",
+      "timestamp": "2025-01-01T12:00:00.000Z"
+    }
   },
   {
     "name": "ForbiddenError",
@@ -371,7 +465,15 @@
     },
     "schemaTag": "errors",
     "description": "Error returned when the user lacks permission for the requested action.",
-    "extendsRef": "#/components/schemas/ApiError"
+    "extendsRef": "#/components/schemas/ApiError",
+    "example": {
+      "name": "BadRequestError",
+      "message": "error:bad_request_action",
+      "type": "validation_error",
+      "status": 400,
+      "severity": "warn",
+      "timestamp": "2025-01-01T12:00:00.000Z"
+    }
   },
   {
     "name": "NotFoundError",
@@ -409,7 +511,15 @@
     },
     "schemaTag": "errors",
     "description": "Error returned when the requested resource cannot be found.",
-    "extendsRef": "#/components/schemas/ApiError"
+    "extendsRef": "#/components/schemas/ApiError",
+    "example": {
+      "name": "BadRequestError",
+      "message": "error:bad_request_action",
+      "type": "validation_error",
+      "status": 400,
+      "severity": "warn",
+      "timestamp": "2025-01-01T12:00:00.000Z"
+    }
   },
   {
     "name": "TooManyRequestsError",
@@ -447,7 +557,15 @@
     },
     "schemaTag": "errors",
     "description": "Error returned when rate limits are exceeded.",
-    "extendsRef": "#/components/schemas/ApiError"
+    "extendsRef": "#/components/schemas/ApiError",
+    "example": {
+      "name": "BadRequestError",
+      "message": "error:bad_request_action",
+      "type": "validation_error",
+      "status": 400,
+      "severity": "warn",
+      "timestamp": "2025-01-01T12:00:00.000Z"
+    }
   },
   {
     "name": "Activity",
@@ -488,29 +606,26 @@
         },
         "createdAt": { "type": "string", "required": true },
         "changedKeys": {
+          "type": ["array", "null"],
           "required": true,
-          "anyOf": [
-            { "type": "string", "required": false },
-            { "type": "number", "required": false },
-            { "type": "boolean", "required": false },
-            { "type": "null", "required": false },
-            { "type": "object", "required": false },
-            {
-              "type": "array",
-              "required": false,
-              "itemType": "object"
-            }
-          ]
+          "itemType": "string"
         },
         "tx": {
-          "type": ["object", "null"],
           "required": true,
-          "properties": {
-            "id": { "type": "string", "required": true },
-            "sourceId": { "type": "string", "required": true },
-            "version": { "type": "number", "required": true },
-            "fieldVersions": { "type": "object", "required": true }
-          }
+          "anyOf": [
+            {
+              "type": "object",
+              "required": false,
+              "properties": {
+                "id": { "type": "string", "required": true },
+                "sourceId": { "type": "string", "required": true },
+                "version": { "type": "number", "required": true },
+                "fieldVersions": { "type": "object", "required": true }
+              },
+              "ref": "#/components/schemas/TxBase"
+            },
+            { "type": "null", "required": false }
+          ]
         },
         "seq": {
           "type": ["integer", "null"],
@@ -530,11 +645,11 @@
       "tableName": "pages",
       "type": "page.updated",
       "entityId": "21rs6psa9stclacdgtonoqr1",
-      "organizationId": "t2j8omleaz2pg8iwtnhw3666",
       "createdAt": "2024-10-11T19:21:02.239Z",
-      "changedKeys": ["email", "description", "name"],
+      "changedKeys": ["slug", "description", "email", "name"],
       "tx": null,
-      "seq": 431
+      "seq": 668,
+      "organizationId": "mleaz2pg8iwtnhw3666j3aif"
     }
   },
   {
@@ -1244,7 +1359,8 @@
             "sourceId": { "type": "string", "required": true },
             "version": { "type": "number", "required": true },
             "fieldVersions": { "type": "object", "required": true }
-          }
+          },
+          "ref": "#/components/schemas/TxBase"
         },
         "status": {
           "type": "string",
@@ -1312,7 +1428,44 @@
         }
       }
     },
-    "schemaTag": "data"
+    "schemaTag": "data",
+    "example": {
+      "id": "uoobg3gmzvie508npzus4h2j",
+      "sourceId": "q0fso83v5i0v5s1hl5zutg31",
+      "baseVersion": 0
+    }
+  },
+  {
+    "name": "Request",
+    "ref": "#/components/schemas/Request",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "createdAt": { "type": "string", "required": true },
+        "id": { "type": "string", "required": true },
+        "message": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "email": { "type": "string", "required": true },
+        "type": {
+          "type": "string",
+          "required": true,
+          "enum": ["waitlist", "newsletter", "contact"]
+        },
+        "wasInvited": { "type": "boolean", "required": true }
+      }
+    },
+    "schemaTag": "data",
+    "example": {
+      "id": "wejsiq864y0sbytrzsnlr9a0",
+      "email": "anderson.pfannerstill23@yahoo.com",
+      "type": "contact",
+      "message": "Suggero accusator demens terreo amiculum comitatus necessitatibus candidus.",
+      "createdAt": "2024-06-05T15:03:46.141Z",
+      "wasInvited": false
+    }
   },
   {
     "name": "Attachment",
@@ -1354,7 +1507,8 @@
             "sourceId": { "type": "string", "required": true },
             "version": { "type": "number", "required": true },
             "fieldVersions": { "type": "object", "required": true }
-          }
+          },
+          "ref": "#/components/schemas/TxBase"
         },
         "public": { "type": "boolean", "required": true },
         "bucketName": { "type": "string", "required": true },

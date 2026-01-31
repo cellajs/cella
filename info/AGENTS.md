@@ -56,6 +56,7 @@ Cella is a TypeScript template for building collaborative web apps with sync and
 - **Environment**: Check `.env` and `config/default.ts` for configuration.
 - **Debug Mode**: Set `VITE_DEBUG_MODE=true` in `frontend/.env` to enable debug features:
 - **Stores, no Providers**: The code base favours Stores over react Provider pattern due to DX and render performance.
+- **OpenAPI nullable schemas**: When making a named OpenAPI schema nullable, use `z.union([namedSchema, z.null()])` instead of `namedSchema.nullable()`. The `.nullable()` approach generates an `allOf` intersection in OpenAPI, resulting in `Type & ({[key: string]: unknown} | null)` in generated types. Using `z.union()` generates a proper `anyOf`, resulting in clean `Type | null`.
 
 ## Coding Style & Naming Conventions
 - Formatter/Linter: Biome (see `biome.json`). Run it with `pnpm lint` or `pnpm lint:fix`.

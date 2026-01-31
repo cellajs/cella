@@ -5,6 +5,8 @@
       {
         "status": 201,
         "description": "Requests",
+        "name": "Request",
+        "ref": "#/components/schemas/Request",
         "contentType": "application/json",
         "schema": {
           "type": "object",
@@ -23,7 +25,16 @@
             },
             "wasInvited": { "type": "boolean", "required": true }
           },
+          "ref": "#/components/schemas/Request",
           "contentType": "application/json"
+        },
+        "example": {
+          "id": "wejsiq864y0sbytrzsnlr9a0",
+          "email": "anderson.pfannerstill23@yahoo.com",
+          "type": "contact",
+          "message": "Suggero accusator demens terreo amiculum comitatus necessitatibus candidus.",
+          "createdAt": "2024-06-05T15:03:46.141Z",
+          "wasInvited": false
         }
       },
       {
@@ -100,6 +111,7 @@
               "type": "array",
               "required": true,
               "itemType": "object",
+              "ref": "#/components/schemas/Request",
               "items": {
                 "type": "object",
                 "properties": {
@@ -116,12 +128,34 @@
                     "enum": ["waitlist", "newsletter", "contact"]
                   },
                   "wasInvited": { "type": "boolean", "required": true }
-                }
+                },
+                "ref": "#/components/schemas/Request"
               }
             },
             "total": { "type": "number", "required": true }
           },
           "contentType": "application/json"
+        },
+        "example": {
+          "items": [
+            {
+              "id": "vqqp8d07imsvjbtqtl3rtjgx",
+              "email": "destin10@hotmail.com",
+              "type": "contact",
+              "message": "Aufero cubo stipes bene.",
+              "createdAt": "2024-12-26T18:45:14.064Z",
+              "wasInvited": false
+            },
+            {
+              "id": "thg5ogh3yr2b2dbwf7b9ecka",
+              "email": "fay23@hotmail.com",
+              "type": "contact",
+              "message": "Voluntarius volva tandem turba pauci.",
+              "createdAt": "2024-03-19T05:56:29.150Z",
+              "wasInvited": false
+            }
+          ],
+          "total": 2
         }
       },
       {

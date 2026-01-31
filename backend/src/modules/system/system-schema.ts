@@ -3,6 +3,7 @@ import { appConfig } from 'config';
 import { createSelectSchema } from 'drizzle-zod';
 import { systemRolesTable } from '#/db/schema/system-roles';
 import { userSchema } from '#/modules/user/user-schema';
+import { mockSystemRoleBase, mockSystemRoleResponse } from '../../../mocks/mock-system';
 
 export const inviteBodySchema = z.object({
   emails: userSchema.shape.email.array().min(1).max(50),
@@ -24,11 +25,13 @@ export const sendNewsletterBodySchema = z.object({
   content: z.string(),
 });
 
-export const systemRoleSchema = z.object(createSelectSchema(systemRolesTable).shape).openapi('SystemRole');
+export const systemRoleSchema = z
+  .object(createSelectSchema(systemRolesTable).shape)
+  .openapi('SystemRole', { example: mockSystemRoleResponse() });
 
 export const systemRoleBaseSchema = systemRoleSchema
   .omit({
     createdAt: true,
     modifiedAt: true,
   })
-  .openapi('SystemRoleBase');
+  .openapi('SystemRoleBase', { example: mockSystemRoleBase() });

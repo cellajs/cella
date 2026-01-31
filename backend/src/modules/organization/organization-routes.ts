@@ -15,6 +15,11 @@ import {
   paginationSchema,
   successWithRejectedItemsSchema,
 } from '#/schemas';
+import {
+  mockBatchOrganizationsResponse,
+  mockOrganizationResponse,
+  mockPaginatedOrganizationsResponse,
+} from '../../../mocks/mock-organization';
 
 const organizationRoutes = {
   /**
@@ -37,7 +42,12 @@ const organizationRoutes = {
     responses: {
       201: {
         description: 'Organizations were created',
-        content: { 'application/json': { schema: batchResponseSchema(organizationWithMembershipSchema) } },
+        content: {
+          'application/json': {
+            schema: batchResponseSchema(organizationWithMembershipSchema),
+            example: mockBatchOrganizationsResponse(),
+          },
+        },
       },
       ...errorResponseRefs,
     },
@@ -57,7 +67,12 @@ const organizationRoutes = {
     responses: {
       200: {
         description: 'Organizations',
-        content: { 'application/json': { schema: paginationSchema(organizationSchema) } },
+        content: {
+          'application/json': {
+            schema: paginationSchema(organizationSchema),
+            example: mockPaginatedOrganizationsResponse(),
+          },
+        },
       },
       ...errorResponseRefs,
     },
@@ -82,7 +97,7 @@ const organizationRoutes = {
     responses: {
       200: {
         description: 'Organization was updated',
-        content: { 'application/json': { schema: organizationSchema } },
+        content: { 'application/json': { schema: organizationSchema, example: mockOrganizationResponse() } },
       },
       ...errorResponseRefs,
     },
@@ -102,7 +117,7 @@ const organizationRoutes = {
     responses: {
       200: {
         description: 'Organization',
-        content: { 'application/json': { schema: organizationSchema } },
+        content: { 'application/json': { schema: organizationSchema, example: mockOrganizationResponse() } },
       },
       ...errorResponseRefs,
     },

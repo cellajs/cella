@@ -1,5 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { contextEntityBaseSchema } from '#/modules/entities/entities-schema-base';
+import { mockUserBase } from '../../../mocks/mock-entity-base';
 
 /**
  * Base schema for user, including common fields. Exported separately to avoid circular dependencies.
@@ -11,4 +12,7 @@ export const userBaseSchema = contextEntityBaseSchema
     email: z.email(),
     entityType: z.literal('user'),
   })
-  .openapi('UserBase', { description: 'Base user schema with essential fields for identification and display.' });
+  .openapi('UserBase', {
+    description: 'Base user schema with essential fields for identification and display.',
+    example: mockUserBase(),
+  });

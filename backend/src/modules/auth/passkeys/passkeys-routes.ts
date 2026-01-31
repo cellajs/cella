@@ -10,6 +10,7 @@ import {
   passkeyVerificationBodySchema,
 } from '#/modules/auth/passkeys/passkeys-schema';
 import { cookieSchema, errorResponseRefs, idSchema } from '#/schemas';
+import { mockPasskeyChallengeResponse, mockPasskeyResponse } from '../../../../mocks/mock-auth';
 
 const authPasskeysRoutes = {
   /**
@@ -33,7 +34,7 @@ const authPasskeysRoutes = {
     responses: {
       200: {
         description: 'Challenge generated',
-        content: { 'application/json': { schema: passkeyChallengeSchema } },
+        content: { 'application/json': { schema: passkeyChallengeSchema, example: mockPasskeyChallengeResponse() } },
       },
       ...errorResponseRefs,
     },
@@ -59,7 +60,7 @@ const authPasskeysRoutes = {
     responses: {
       201: {
         description: 'Passkey created',
-        content: { 'application/json': { schema: passkeySchema } },
+        content: { 'application/json': { schema: passkeySchema, example: mockPasskeyResponse() } },
       },
       ...errorResponseRefs,
     },

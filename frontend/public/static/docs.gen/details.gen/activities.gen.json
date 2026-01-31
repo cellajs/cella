@@ -49,29 +49,26 @@
                   },
                   "createdAt": { "type": "string", "required": true },
                   "changedKeys": {
+                    "type": ["array", "null"],
                     "required": true,
-                    "anyOf": [
-                      { "type": "string", "required": false },
-                      { "type": "number", "required": false },
-                      { "type": "boolean", "required": false },
-                      { "type": "null", "required": false },
-                      { "type": "object", "required": false },
-                      {
-                        "type": "array",
-                        "required": false,
-                        "itemType": "object"
-                      }
-                    ]
+                    "itemType": "string"
                   },
                   "tx": {
-                    "type": ["object", "null"],
                     "required": true,
-                    "properties": {
-                      "id": { "type": "string", "required": true },
-                      "sourceId": { "type": "string", "required": true },
-                      "version": { "type": "number", "required": true },
-                      "fieldVersions": { "type": "object", "required": true }
-                    }
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "required": false,
+                        "properties": {
+                          "id": { "type": "string", "required": true },
+                          "sourceId": { "type": "string", "required": true },
+                          "version": { "type": "number", "required": true },
+                          "fieldVersions": { "type": "object", "required": true }
+                        },
+                        "ref": "#/components/schemas/TxBase"
+                      },
+                      { "type": "null", "required": false }
+                    ]
                   },
                   "seq": {
                     "type": ["integer", "null"],
@@ -86,6 +83,41 @@
             "total": { "type": "number", "required": true }
           },
           "contentType": "application/json"
+        },
+        "example": {
+          "items": [
+            {
+              "id": "p8d07imsvjbtqtl3rtjgxd9x",
+              "userId": "n03u76eo7z71y60a882cwpxt",
+              "entityType": "organization",
+              "resourceType": null,
+              "action": "delete",
+              "tableName": "attachments",
+              "type": "attachment.deleted",
+              "entityId": "naxnsp9nes1yx645yb0gleyv",
+              "createdAt": "2024-11-21T04:00:59.122Z",
+              "changedKeys": null,
+              "tx": null,
+              "seq": 547,
+              "organizationId": "bbm5piweg2q4gqa3vx9cfyey"
+            },
+            {
+              "id": "5ogh3yr2b2dbwf7b9eckajcl",
+              "userId": "xs8vayzrul7vmeyahbgyu01s",
+              "entityType": "page",
+              "resourceType": null,
+              "action": "update",
+              "tableName": "organizations",
+              "type": "organization.updated",
+              "entityId": "6utecq3o02wpa56tpd77kpi3",
+              "createdAt": "2024-10-29T08:46:20.790Z",
+              "changedKeys": ["slug", "description"],
+              "tx": null,
+              "seq": 521,
+              "organizationId": "avgc67t5nr6k4huj5qv4k6bw"
+            }
+          ],
+          "total": 2
         }
       },
       {

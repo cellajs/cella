@@ -185,6 +185,111 @@
             }
           },
           "contentType": "application/json"
+        },
+        "example": {
+          "data": [
+            {
+              "id": "kzmv5qbhdcqeiuvwlosan0fc",
+              "entityType": "organization",
+              "name": "Koss, Price and Greenfelder",
+              "slug": "koss-price-and-greenfelder",
+              "description": "Organic 24 hour firmware",
+              "shortName": "Koss,",
+              "country": "Israel",
+              "timezone": "Pacific/Kanton",
+              "defaultLanguage": "en",
+              "languages": ["en"],
+              "notificationEmail": "notifications@koss-price-and-greenfelder.example",
+              "emailDomains": [],
+              "color": "#74e1bc",
+              "thumbnailUrl": null,
+              "logoUrl": "https://picsum.photos/seed/IqAjLNA/2603/574",
+              "bannerUrl": null,
+              "websiteUrl": "https://koss-price-and-greenfelder.example",
+              "welcomeText": "Welcome to Koss, Price and Greenfelder!",
+              "authStrategies": ["password"],
+              "chatSupport": false,
+              "createdAt": "2024-04-19T14:04:35.773Z",
+              "createdBy": null,
+              "modifiedAt": "2024-04-19T14:04:35.773Z",
+              "modifiedBy": null,
+              "restrictions": {
+                "user": 1000,
+                "attachment": 100,
+                "page": 0
+              },
+              "membership": {
+                "id": "3y6ee6h5lc8sjfv4trxwe3yb",
+                "contextType": "organization",
+                "userId": "89fjn21t4n7coocr6ixfzcb6",
+                "organizationId": "kzmv5qbhdcqeiuvwlosan0fc",
+                "role": "admin",
+                "order": 56,
+                "muted": false,
+                "archived": false
+              },
+              "counts": {
+                "membership": {
+                  "admin": 43,
+                  "member": 58,
+                  "pending": 47,
+                  "total": 101
+                },
+                "entities": { "attachment": 294, "page": 327 }
+              }
+            },
+            {
+              "id": "p3t0ygxx0aa83en3sk1fs1we",
+              "entityType": "organization",
+              "name": "Collins - Mitchell",
+              "slug": "collins-mitchell",
+              "description": "Diverse cloud-native concept",
+              "shortName": "Collins",
+              "country": "Australia",
+              "timezone": "America/Phoenix",
+              "defaultLanguage": "en",
+              "languages": ["en"],
+              "notificationEmail": "notifications@collins-mitchell.example",
+              "emailDomains": [],
+              "color": "#dfee6f",
+              "thumbnailUrl": null,
+              "logoUrl": "https://picsum.photos/seed/ea53YIsG/1518/1592",
+              "bannerUrl": null,
+              "websiteUrl": "https://collins-mitchell.example",
+              "welcomeText": "Welcome to Collins - Mitchell!",
+              "authStrategies": ["password"],
+              "chatSupport": true,
+              "createdAt": "2024-02-25T13:01:35.301Z",
+              "createdBy": null,
+              "modifiedAt": "2024-02-25T13:01:35.301Z",
+              "modifiedBy": null,
+              "restrictions": {
+                "user": 1000,
+                "attachment": 100,
+                "page": 0
+              },
+              "membership": {
+                "id": "ry5f7szmj5jhp0ad93klgj3e",
+                "contextType": "organization",
+                "userId": "j6ly81u4oy2u1m55abgsmrl1",
+                "organizationId": "p3t0ygxx0aa83en3sk1fs1we",
+                "role": "admin",
+                "order": 1,
+                "muted": false,
+                "archived": false
+              },
+              "counts": {
+                "membership": {
+                  "admin": 22,
+                  "member": 122,
+                  "pending": 44,
+                  "total": 144
+                },
+                "entities": { "attachment": 321, "page": 94 }
+              }
+            }
+          ],
+          "rejectedItemIds": []
         }
       },
       {
@@ -436,6 +541,111 @@
             "total": { "type": "number", "required": true }
           },
           "contentType": "application/json"
+        },
+        "example": {
+          "items": [
+            {
+              "id": "qqp8d07imsvjbtqtl3rtjgxd",
+              "entityType": "organization",
+              "name": "Walsh - Nitzsche",
+              "slug": "walsh-nitzsche",
+              "description": "AI-driven bottom-line software",
+              "shortName": "Walsh",
+              "country": "Costa Rica",
+              "timezone": "America/Bogota",
+              "defaultLanguage": "en",
+              "languages": ["en"],
+              "notificationEmail": "notifications@walsh-nitzsche.example",
+              "emailDomains": [],
+              "color": "#8f4f40",
+              "thumbnailUrl": null,
+              "logoUrl": "https://picsum.photos/seed/iee4l/3821/740",
+              "bannerUrl": null,
+              "websiteUrl": "https://walsh-nitzsche.example",
+              "welcomeText": "Welcome to Walsh - Nitzsche!",
+              "authStrategies": ["password"],
+              "chatSupport": false,
+              "createdAt": "2024-11-21T04:00:59.122Z",
+              "createdBy": null,
+              "modifiedAt": "2024-11-21T04:00:59.122Z",
+              "modifiedBy": null,
+              "restrictions": {
+                "user": 1000,
+                "attachment": 100,
+                "page": 0
+              },
+              "membership": {
+                "id": "300jor4orrvsgezqoyxfckg3",
+                "contextType": "organization",
+                "userId": "ifex0agu87zf240qkfh0faoq",
+                "organizationId": "qqp8d07imsvjbtqtl3rtjgxd",
+                "role": "admin",
+                "order": 2,
+                "muted": false,
+                "archived": false
+              },
+              "counts": {
+                "membership": {
+                  "admin": 30,
+                  "member": 20,
+                  "pending": 27,
+                  "total": 50
+                },
+                "entities": { "attachment": 188, "page": 390 }
+              }
+            },
+            {
+              "id": "hg5ogh3yr2b2dbwf7b9eckaj",
+              "entityType": "organization",
+              "name": "Mohr and Sons",
+              "slug": "mohr-and-sons",
+              "description": "Secured data-driven strategy",
+              "shortName": "Mohr",
+              "country": "Finland",
+              "timezone": "Pacific/Noumea",
+              "defaultLanguage": "en",
+              "languages": ["en"],
+              "notificationEmail": "notifications@mohr-and-sons.example",
+              "emailDomains": [],
+              "color": "#facd4c",
+              "thumbnailUrl": null,
+              "logoUrl": "https://picsum.photos/seed/iuksXQ02MK/2528/1650",
+              "bannerUrl": null,
+              "websiteUrl": "https://mohr-and-sons.example",
+              "welcomeText": "Welcome to Mohr and Sons!",
+              "authStrategies": ["password"],
+              "chatSupport": true,
+              "createdAt": "2024-10-29T08:46:20.790Z",
+              "createdBy": null,
+              "modifiedAt": "2024-10-29T08:46:20.790Z",
+              "modifiedBy": null,
+              "restrictions": {
+                "user": 1000,
+                "attachment": 100,
+                "page": 0
+              },
+              "membership": {
+                "id": "1u44cckbz5av195r4h3wiruz",
+                "contextType": "organization",
+                "userId": "44b7wkilwj64zmkwsnsmrzo2",
+                "organizationId": "hg5ogh3yr2b2dbwf7b9eckaj",
+                "role": "admin",
+                "order": 50,
+                "muted": false,
+                "archived": false
+              },
+              "counts": {
+                "membership": {
+                  "admin": 7,
+                  "member": 150,
+                  "pending": 18,
+                  "total": 157
+                },
+                "entities": { "attachment": 1, "page": 272 }
+              }
+            }
+          ],
+          "total": 2
         }
       },
       {

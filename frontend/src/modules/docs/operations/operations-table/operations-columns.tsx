@@ -49,7 +49,7 @@ function openExamplesSheet(operation: GenOperationSummary, buttonRef: RefObject<
       triggerRef: buttonRef,
       side: 'right',
       className: 'max-w-full lg:max-w-4xl',
-      title: i18n.t('common:docs.response_examples'),
+      title: i18n.t('common:docs.success_response'),
     },
   );
 }
@@ -73,12 +73,16 @@ function PathCell({ row }: { row: GenOperationSummary }) {
 }
 
 /**
- * Cell component for clickable example icon that opens examples sheet
+ * Cell component for clickable example icon that opens examples sheet.
  */
 function ExampleCell({ row }: { row: GenOperationSummary }) {
   const buttonRef = useRef<HTMLButtonElement>(null);
 
-  if (!row.hasExample) return <></>;
+  // No response body means examples are not applicable
+  if (!row.hasResponseBody) return <div className="w-full text-center text-muted-foreground/50">na</div>;
+
+  // Has response body but no example yet
+  if (!row.hasExample) return <div className="w-full text-center text-muted-foreground">-</div>;
 
   return (
     <button

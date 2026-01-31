@@ -22,6 +22,13 @@ import {
   paginationSchema,
   successWithRejectedItemsSchema,
 } from '#/schemas';
+import { mockContextEntityBase } from '../../../mocks/mock-entity-base';
+import {
+  mockMembershipInviteResponse,
+  mockMembershipResponse,
+  mockPaginatedInactiveMembershipsResponse,
+  mockPaginatedMembersResponse,
+} from '../../../mocks/mock-membership';
 
 const membershipRoutes = {
   /**
@@ -48,7 +55,10 @@ const membershipRoutes = {
       200: {
         description: 'Number of sent invitations',
         content: {
-          'application/json': { schema: successWithRejectedItemsSchema.extend({ invitesSentCount: z.number() }) },
+          'application/json': {
+            schema: successWithRejectedItemsSchema.extend({ invitesSentCount: z.number() }),
+            example: mockMembershipInviteResponse(),
+          },
         },
       },
       ...errorResponseRefs,
@@ -106,7 +116,7 @@ const membershipRoutes = {
     responses: {
       200: {
         description: 'Membership updated',
-        content: { 'application/json': { schema: membershipSchema } },
+        content: { 'application/json': { schema: membershipSchema, example: mockMembershipResponse() } },
       },
       ...errorResponseRefs,
     },
@@ -128,7 +138,7 @@ const membershipRoutes = {
     responses: {
       200: {
         description: 'Invitation was accepted',
-        content: { 'application/json': { schema: contextEntityBaseSchema } },
+        content: { 'application/json': { schema: contextEntityBaseSchema, example: mockContextEntityBase() } },
       },
       ...errorResponseRefs,
     },
@@ -155,6 +165,7 @@ const membershipRoutes = {
         content: {
           'application/json': {
             schema: paginationSchema(memberSchema),
+            example: mockPaginatedMembersResponse(),
           },
         },
       },
@@ -183,6 +194,7 @@ const membershipRoutes = {
         content: {
           'application/json': {
             schema: paginationSchema(pendingMembershipSchema),
+            example: mockPaginatedInactiveMembershipsResponse(),
           },
         },
       },

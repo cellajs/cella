@@ -189,6 +189,17 @@ export async function startCdcWorker() {
     const tag = msg.tag;
     const tableName = 'relation' in msg ? msg.relation?.name : undefined;
 
+    // Early exit for seeded data (gen- prefix) - no logging to avoid flooding during seed scripts
+    if (tag === 'insert' || tag === 'update' || tag === 'delete') {
+      const rowData = 'new' in msg ? msg.new : 'old' in msg ? msg.old : null;
+      const id = rowData && typeof rowData === 'object' ? (rowData as Record<string, unknown>).id : null;
+      if (typeof id === 'string' && id.startsWith('gen-')) {
+        // Acknowledge LSN to advance replication, but skip processing entirely
+        if (wsClient.isConnected()) await service?.acknowledge(lsn);
+        return;
+      }
+    }
+
     await withSpan(cdcSpanNames.processWal, cdcAttrs({ lsn, tag, table: tableName }), async (traceCtx) => {
       lastLsn = lsn;
       recordCdcMetric('messagesProcessed');

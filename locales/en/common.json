@@ -147,7 +147,7 @@
   "docs.rate_limiter": "Rate limiter",
   "docs.request": "Request",
   "docs.request_body": "Request body",
-  "docs.response_examples": "Response examples",
+  "docs.success_response": "Success response",
   "docs.responses": "Responses",
   "docs.schema_definitions": "Schema definitions for API request and response objects",
   "docs.schema_docs_in_development": "Schema documentation is currently in development.",

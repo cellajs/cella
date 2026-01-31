@@ -10,6 +10,7 @@ import {
   paginationSchema,
   successWithRejectedItemsSchema,
 } from '#/schemas';
+import { mockPaginatedUsersResponse, mockUserResponse } from '../../../mocks/mock-user';
 
 const userRoutes = {
   /**
@@ -35,6 +36,7 @@ const userRoutes = {
                 role: systemRoleBaseSchema.shape.role.optional(),
               }),
             ),
+            example: mockPaginatedUsersResponse(),
           },
         },
       },
@@ -82,7 +84,7 @@ const userRoutes = {
     responses: {
       200: {
         description: 'User',
-        content: { 'application/json': { schema: userSchema } },
+        content: { 'application/json': { schema: userSchema, example: mockUserResponse() } },
       },
       ...errorResponseRefs,
     },
@@ -107,7 +109,7 @@ const userRoutes = {
     responses: {
       200: {
         description: 'User',
-        content: { 'application/json': { schema: userSchema } },
+        content: { 'application/json': { schema: userSchema, example: mockUserResponse() } },
       },
       ...errorResponseRefs,
     },

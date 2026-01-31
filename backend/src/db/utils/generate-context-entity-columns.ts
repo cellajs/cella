@@ -1,10 +1,6 @@
-import { appConfig, ContextEntityType } from 'config';
-import { PgVarcharBuilderInitial, varchar } from 'drizzle-orm/pg-core';
-import {
-  allContextEntityTables,
-  type RelatableContextEntityType,
-  relatableContextEntityTables,
-} from '#/relatable-config';
+import { appConfig, type ContextEntityType, type RelatableContextEntityType } from 'config';
+import { type PgVarcharBuilderInitial, varchar } from 'drizzle-orm/pg-core';
+import { allContextEntityTables, relatableContextEntityTables } from '#/relatable-config';
 
 /**
  * Type representing the column names used to identify an entity using other entities' IDs' as foreign keys.

@@ -6,6 +6,10 @@
   },
   "exports": {
     ".": "./index.ts",
-    "./templates": "./templates.ts"
+    "./templates": "./templates.ts",
+    "./tracing": "./src/index.ts"
+  },
+  "dependencies": {
+    "nanoid": "^5.1.6"
   }
 }

@@ -1,6 +1,7 @@
 import { faker } from '@faker-js/faker';
 import type { PageModel } from '#/db/schema/pages';
-import { mockNanoid, mockTx, withFakerSeed } from './utils';
+import { mockBatchResponse } from './mock-common';
+import { mockNanoid, mockPaginated, mockTx, withFakerSeed } from './utils';
 
 /**
  * Generates a mock page with all fields populated.
@@ -37,3 +38,14 @@ export const mockPage = (key = 'page:default'): PageModel =>
 
 /** Alias for API response examples (page schema matches DB schema) */
 export const mockPageResponse = mockPage;
+
+/**
+ * Generates a paginated mock page list response for getPages endpoint.
+ */
+export const mockPaginatedPagesResponse = (count = 2) => mockPaginated(mockPageResponse, count);
+
+/**
+ * Generates a mock batch pages response.
+ * Used for createPages endpoint examples.
+ */
+export const mockBatchPagesResponse = (count = 2) => mockBatchResponse(mockPageResponse, count);

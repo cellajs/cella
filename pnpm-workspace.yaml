@@ -6,5 +6,4 @@ packages:
   - cli/*
   - frontend
   - locales
-  - packages/*
   - studio

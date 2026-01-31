@@ -4,6 +4,7 @@ import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/
 import { presignedUrlLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { inviteBodySchema, preasignedURLQuerySchema, sendNewsletterBodySchema } from '#/modules/system/system-schema';
 import { booleanTransformSchema, errorResponseRefs, successWithRejectedItemsSchema } from '#/schemas';
+import { mockPresignedUrlResponse, mockSystemInviteResponse } from '../../../mocks/mock-system';
 
 const systemRoutes = {
   /**
@@ -28,7 +29,10 @@ const systemRoutes = {
       200: {
         description: 'Invitations are sent',
         content: {
-          'application/json': { schema: successWithRejectedItemsSchema.extend({ invitesSentCount: z.number() }) },
+          'application/json': {
+            schema: successWithRejectedItemsSchema.extend({ invitesSentCount: z.number() }),
+            example: mockSystemInviteResponse(),
+          },
         },
       },
       ...errorResponseRefs,
@@ -75,7 +79,7 @@ const systemRoutes = {
     responses: {
       200: {
         description: 'Presigned URL',
-        content: { 'application/json': { schema: z.string() } },
+        content: { 'application/json': { schema: z.string(), example: mockPresignedUrlResponse() } },
       },
       ...errorResponseRefs,
     },

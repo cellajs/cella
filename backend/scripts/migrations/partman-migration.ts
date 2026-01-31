@@ -2,19 +2,19 @@
  * Generate pg_partman Migration Script
  *
  * This script generates SQL for setting up pg_partman automatic partitioning
- * and cleanup for token/session tables.
+ * and cleanup for token/session/activity tables.
  *
  * Tables affected:
  * - sessions: partitioned by expires_at (weekly, 30-day retention)
  * - tokens: partitioned by expires_at (weekly, 30-day retention)
  * - unsubscribe_tokens: partitioned by created_at (monthly, 90-day retention)
+ * - activities: partitioned by created_at (weekly, 90-day retention)
+ *
+ * The activities table uses PostgreSQL's LIKE clause to clone whatever structure
+ * Drizzle created, making it robust to schema changes and fork customizations.
  *
  * The generated migration is idempotent and gracefully skips if pg_partman
  * is not available (e.g., local PGlite development).
- *
- * IMPORTANT: When modifying Drizzle schemas for these tables, ensure the SQL
- * definitions below stay in sync. Standard ALTER TABLE operations are fine,
- * but this script must be re-run if table structure changes significantly.
  *
  * Usage:
  *   pnpm generate:partman-migration
@@ -22,6 +22,10 @@
 
 import pc from 'picocolors';
 import { logMigrationResult, upsertMigration } from './helpers/drizzle-utils';
+
+// =============================================================================
+// PARTITION CONFIGURATION
+// =============================================================================
 
 // Configuration for each partitioned table
 interface PartitionConfig {
@@ -32,14 +36,17 @@ interface PartitionConfig {
   interval: string;
   /** Retention period (e.g., '30 days', '90 days') */
   retention: string;
-  /** SQL for table creation (must match Drizzle schema) */
-  createTableSql: string;
-  /** SQL for index creation */
+  /**
+   * SQL for table creation. If null, uses LIKE clause to clone existing table.
+   * This is useful for tables with dynamic columns (like activities).
+   */
+  createTableSql: string | null;
+  /** SQL for index creation. If empty and createTableSql is null, indexes are cloned. */
   indexesSql: string[];
 }
 
 // Define partition configurations - these must match the Drizzle schemas
-// See: backend/src/db/schema/sessions.ts, tokens.ts, unsubscribe-tokens.ts
+// See: backend/src/db/schema/sessions.ts, tokens.ts, unsubscribe-tokens.ts, activities.ts
 const partitionConfigs: PartitionConfig[] = [
   {
     name: 'sessions',
@@ -112,14 +119,79 @@ const partitionConfigs: PartitionConfig[] = [
       'CREATE INDEX unsubscribe_tokens_user_id_idx ON unsubscribe_tokens (user_id)',
     ],
   },
+  // Activities uses LIKE clause to clone Drizzle's schema (supports dynamic context columns)
+  {
+    name: 'activities',
+    partitionColumn: 'created_at',
+    interval: '1 week',
+    retention: '90 days',
+    createTableSql: null, // Use LIKE clause instead
+    indexesSql: [], // Indexes are cloned from original table
+  },
 ];
 
 /**
  * Generate SQL for a single table partition setup using dynamic SQL.
  * Uses EXECUTE to avoid parser errors in environments that don't support PARTITION BY.
+ *
+ * For tables with createTableSql = null (like activities), uses PostgreSQL's LIKE clause
+ * to clone the existing table structure. This makes it robust to dynamic columns.
  */
 function generateTablePartitionSql(config: PartitionConfig): string {
-  // Escape single quotes for embedding in dynamic SQL
+  // Handle tables that use LIKE clause (dynamic schema)
+  if (config.createTableSql === null) {
+    return `  -- ==========================================================================
+  -- ${config.name.toUpperCase()} TABLE: Convert to partitioned (using LIKE clause)
+  -- ==========================================================================
+  -- Uses LIKE to clone existing table structure, making it robust to schema changes
+  
+  -- 1. Create partitioned table cloning structure from Drizzle-created table
+  -- Note: We create the partitioned version first, then swap
+  EXECUTE 'CREATE TABLE ${config.name}_partitioned (LIKE ${config.name} INCLUDING DEFAULTS INCLUDING CONSTRAINTS) PARTITION BY RANGE (${config.partitionColumn})';
+  
+  -- 2. Clone indexes from original table
+  FOR r IN 
+    SELECT indexdef 
+    FROM pg_indexes 
+    WHERE tablename = '${config.name}' 
+    AND indexname NOT LIKE '%_pkey'
+  LOOP
+    -- Replace table name in index definition
+    EXECUTE replace(r.indexdef, ' ON ${config.name} ', ' ON ${config.name}_partitioned ');
+  END LOOP;
+  
+  -- 3. Setup pg_partman (${config.interval} partitions, 4 weeks ahead)
+  PERFORM partman.create_parent(
+    p_parent_table => 'public.${config.name}_partitioned',
+    p_control => '${config.partitionColumn}',
+    p_interval => '${config.interval}'
+  );
+  
+  -- 4. Configure retention (${config.retention}, drop old partitions)
+  UPDATE partman.part_config SET
+    retention = '${config.retention}',
+    retention_keep_table = false,
+    infinite_time_partitions = true
+  WHERE parent_table = 'public.${config.name}_partitioned';
+  
+  -- 5. Migrate existing data
+  INSERT INTO ${config.name}_partitioned SELECT * FROM ${config.name};
+  
+  -- 6. Swap tables atomically
+  ALTER TABLE ${config.name} RENAME TO ${config.name}_old;
+  ALTER TABLE ${config.name}_partitioned RENAME TO ${config.name};
+  
+  -- 7. Update partman config to use new table name
+  UPDATE partman.part_config SET parent_table = 'public.${config.name}' WHERE parent_table = 'public.${config.name}_partitioned';
+  
+  -- 8. Drop old table
+  DROP TABLE ${config.name}_old;
+  
+  RAISE NOTICE '${config.name} table converted to partitioned (via LIKE clause)';
+`;
+  }
+
+  // Standard path for tables with explicit createTableSql
   const escapedCreateTableSql = config.createTableSql.replace(/'/g, "''");
   const escapedIndexesSql = config.indexesSql.map((sql) => sql.replace(/'/g, "''"));
 
@@ -164,9 +236,9 @@ ${escapedIndexesSql.map((sql) => `  EXECUTE '${sql}';`).join('\n')}
 const tableSetupSql = partitionConfigs.map(generateTablePartitionSql).join('\n');
 
 const migrationSql = `-- =============================================================================
--- Migration: pg_partman Setup for Token/Session Tables
+-- Migration: pg_partman Setup for Token/Session/Activity Tables
 -- =============================================================================
--- This migration converts sessions, tokens, and unsubscribe_tokens to
+-- This migration converts sessions, tokens, unsubscribe_tokens, and activities to
 -- partitioned tables managed by pg_partman for automatic cleanup.
 --
 -- IMPORTANT: This creates a schema drift between Drizzle and the actual DB:
@@ -180,6 +252,7 @@ const migrationSql = `-- =======================================================
 -- - sessions: partitioned by expires_at (weekly, 30-day retention)
 -- - tokens: partitioned by expires_at (weekly, 30-day retention)  
 -- - unsubscribe_tokens: partitioned by created_at (monthly, 90-day retention)
+-- - activities: partitioned by created_at (weekly, 90-day retention)
 --
 -- For environments without pg_partman (PGlite, etc.): migration is skipped,
 -- manual cleanup via db-maintenance.ts handles expired records.
@@ -200,6 +273,7 @@ END $$;--> statement-breakpoint
 DO $$
 DECLARE
   partman_available BOOLEAN := false;
+  r RECORD;
 BEGIN
   -- Try to create pg_partman extension
   BEGIN

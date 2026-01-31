@@ -126,7 +126,8 @@
             "inactiveMembershipId": { "type": "string", "required": false }
           },
           "contentType": "application/json"
-        }
+        },
+        "example": { "email": "bradford_ryan98@demo.local", "userId": "dh2fifqwn7yznn0t633emq5s" }
       },
       {
         "status": 400,
@@ -392,7 +393,8 @@
             "manualKey": { "type": "string", "required": true }
           },
           "contentType": "application/json"
-        }
+        },
+        "example": { "totpUri": "otpauth://totp/Cella:user@example.com?secret=MGNEKSGGQO2Q7CMRC525Z7X2IGCP19Z3&issuer=Cella", "manualKey": "ZEEY2N36QIFGDJ3KZL2U0JTJY5GGUNL8" }
       },
       {
         "status": 400,
@@ -649,7 +651,8 @@
             "membershipInvite": { "type": "boolean", "required": true }
           },
           "contentType": "application/json"
-        }
+        },
+        "example": { "membershipInvite": true }
       },
       {
         "status": 400,
@@ -781,7 +784,8 @@
             "mfa": { "type": "boolean", "required": true }
           },
           "contentType": "application/json"
-        }
+        },
+        "example": { "mfa": false }
       },
       {
         "status": 400,
@@ -854,7 +858,8 @@
             "mfa": { "type": "boolean", "required": false }
           },
           "contentType": "application/json"
-        }
+        },
+        "example": { "emailVerified": true, "mfa": false }
       },
       {
         "status": 400,
@@ -946,6 +951,13 @@
             "createdAt": { "type": "string", "required": true }
           },
           "contentType": "application/json"
+        },
+        "example": {
+          "id": "wi1u74x2b4g096dtzu91o9w8",
+          "userId": "zslal6vzkcqd10drzf37piml",
+          "nameOnDevice": "Chrome on Mac",
+          "userAgent": "FakerBot/2.17.17",
+          "createdAt": "2024-08-15T16:12:55.564Z"
         }
       },
       {
@@ -1063,6 +1075,10 @@
             }
           },
           "contentType": "application/json"
+        },
+        "example": {
+          "challengeBase64": "c5SiUKPbCCFqoXyIZHNC3ufdzv1sE6cuymwA9IMSiP6",
+          "credentialIds": ["3EQAejE9eLT26kT6iIsM52HWd5x3aKpV"]
         }
       },
       {

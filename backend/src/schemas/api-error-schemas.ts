@@ -1,5 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import type { Severity } from 'config';
+import { mockApiError } from '../../mocks/mock-error';
 import { entityTypeSchema } from './common-schemas';
 
 /** Severity levels array for zod enum */
@@ -41,4 +42,4 @@ export const apiErrorSchema = z
     userId: z.string().optional(), // Optional user identifier
     organizationId: z.string().optional(), // Optional organization identifier
   })
-  .openapi('ApiError');
+  .openapi('ApiError', { example: mockApiError() });

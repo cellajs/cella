@@ -1,7 +1,7 @@
-import type { RowsChangeData } from '@cella/data-grid';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import useSearchParams from '~/hooks/use-search-params';
+import type { RowsChangeData } from '~/modules/common/data-grid';
 import { DataTable } from '~/modules/common/data-table';
 import { FocusViewContainer } from '~/modules/common/focus-view';
 import { OperationsTableBar } from '~/modules/docs/operations/operations-table/operations-bar';

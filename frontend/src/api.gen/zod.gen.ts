@@ -150,23 +150,8 @@ export const zActivity = z.object({
   entityId: z.union([z.string(), z.null()]),
   organizationId: z.union([z.string(), z.null()]),
   createdAt: z.string(),
-  changedKeys: z.union([
-    z.string(),
-    z.number(),
-    z.boolean(),
-    z.null(),
-    z.record(z.string(), z.unknown()),
-    z.array(z.unknown()),
-  ]),
-  tx: z.union([
-    z.object({
-      id: z.string(),
-      sourceId: z.string(),
-      version: z.number(),
-      fieldVersions: z.record(z.string(), z.number()),
-    }),
-    z.null(),
-  ]),
+  changedKeys: z.union([z.array(z.string()), z.null()]),
+  tx: z.union([zTxBase, z.null()]),
   seq: z.union([z.int().gte(-2147483648).lte(2147483647), z.null()]),
 });
 
@@ -326,12 +311,7 @@ export const zPage = z.object({
   keywords: z.string(),
   createdBy: z.union([z.string(), z.null()]),
   modifiedBy: z.union([z.string(), z.null()]),
-  tx: z.object({
-    id: z.string(),
-    sourceId: z.string(),
-    version: z.number(),
-    fieldVersions: z.record(z.string(), z.number()),
-  }),
+  tx: zTxBase,
   status: z.enum(['unpublished', 'published', 'archived']),
   parentId: z.union([z.string(), z.null()]),
   displayOrder: z.number().gte(-140737488355328).lte(140737488355327),
@@ -341,6 +321,15 @@ export const zTxRequest = z.object({
   id: z.string().max(32),
   sourceId: z.string().max(64),
   baseVersion: z.int().gte(0),
+});
+
+export const zRequest = z.object({
+  createdAt: z.string(),
+  id: z.string(),
+  message: z.union([z.string(), z.null()]),
+  email: z.string(),
+  type: z.enum(['waitlist', 'newsletter', 'contact']),
+  wasInvited: z.boolean(),
 });
 
 export const zAttachment = z.object({
@@ -353,12 +342,7 @@ export const zAttachment = z.object({
   keywords: z.string(),
   createdBy: z.union([z.string(), z.null()]),
   modifiedBy: z.union([z.string(), z.null()]),
-  tx: z.object({
-    id: z.string(),
-    sourceId: z.string(),
-    version: z.number(),
-    fieldVersions: z.record(z.string(), z.number()),
-  }),
+  tx: zTxBase,
   public: z.boolean(),
   bucketName: z.string(),
   groupId: z.union([z.string(), z.null()]),
@@ -1367,16 +1351,7 @@ export const zGetRequestsData = z.object({
  * Requests
  */
 export const zGetRequestsResponse = z.object({
-  items: z.array(
-    z.object({
-      createdAt: z.string(),
-      id: z.string(),
-      message: z.union([z.string(), z.null()]),
-      email: z.string(),
-      type: z.enum(['waitlist', 'newsletter', 'contact']),
-      wasInvited: z.boolean(),
-    }),
-  ),
+  items: z.array(zRequest),
   total: z.number(),
 });
 
@@ -1393,14 +1368,7 @@ export const zCreateRequestData = z.object({
 /**
  * Requests
  */
-export const zCreateRequestResponse = z.object({
-  createdAt: z.string(),
-  id: z.string(),
-  message: z.union([z.string(), z.null()]),
-  email: z.string(),
-  type: z.enum(['waitlist', 'newsletter', 'contact']),
-  wasInvited: z.boolean(),
-});
+export const zCreateRequestResponse = zRequest;
 
 export const zGetMetricsData = z.object({
   body: z.optional(z.never()),

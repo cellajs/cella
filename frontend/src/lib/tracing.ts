@@ -1,7 +1,7 @@
 /**
  * Frontend tracing module.
  *
- * Thin wrapper around @cella/tracing with frontend-specific store.
+ * Thin wrapper around config/tracing with frontend-specific store.
  * Spans are stored in memory and accessible via SyncDevtools.
  */
 
@@ -16,7 +16,7 @@ import {
   withSpan as sharedWithSpan,
   withSpanSync as sharedWithSpanSync,
   type TraceContext,
-} from '@cella/tracing';
+} from 'config/tracing';
 import { isDebugMode } from '~/env';
 
 // Re-export span names (aliased for backwards compatibility)

@@ -1,4 +1,4 @@
-import { type Column, SelectColumn } from '@cella/data-grid';
+import { type Column, SelectColumn } from '~/modules/common/data-grid';
 
 // biome-ignore lint/suspicious/noExplicitAny: any is used for compatibility with react-data-grid
 const CheckboxColumn: Column<any> & {

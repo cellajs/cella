@@ -4,6 +4,7 @@ import { isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { totpVerificationLimiter } from '#/middlewares/rate-limiter/limiters';
 import { totpCreateBodySchema } from '#/modules/auth/totps/totps-schema';
 import { cookieSchema, errorResponseRefs } from '#/schemas';
+import { mockTotpKeyResponse } from '../../../../mocks/mock-auth';
 
 const authTotpsRoutes = {
   /**
@@ -20,7 +21,12 @@ const authTotpsRoutes = {
     responses: {
       200: {
         description: 'Challenge created',
-        content: { 'application/json': { schema: z.object({ totpUri: z.string(), manualKey: z.string() }) } },
+        content: {
+          'application/json': {
+            schema: z.object({ totpUri: z.string(), manualKey: z.string() }),
+            example: mockTotpKeyResponse(),
+          },
+        },
       },
       ...errorResponseRefs,
     },

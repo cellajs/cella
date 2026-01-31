@@ -1,7 +1,7 @@
 -- =============================================================================
--- Migration: pg_partman Setup for Token/Session Tables
+-- Migration: pg_partman Setup for Token/Session/Activity Tables
 -- =============================================================================
--- This migration converts sessions, tokens, and unsubscribe_tokens to
+-- This migration converts sessions, tokens, unsubscribe_tokens, and activities to
 -- partitioned tables managed by pg_partman for automatic cleanup.
 --
 -- IMPORTANT: This creates a schema drift between Drizzle and the actual DB:
@@ -15,6 +15,7 @@
 -- - sessions: partitioned by expires_at (weekly, 30-day retention)
 -- - tokens: partitioned by expires_at (weekly, 30-day retention)  
 -- - unsubscribe_tokens: partitioned by created_at (monthly, 90-day retention)
+-- - activities: partitioned by created_at (weekly, 90-day retention)
 --
 -- For environments without pg_partman (PGlite, etc.): migration is skipped,
 -- manual cleanup via db-maintenance.ts handles expired records.
@@ -35,6 +36,7 @@ END $$;--> statement-breakpoint
 DO $$
 DECLARE
   partman_available BOOLEAN := false;
+  r RECORD;
 BEGIN
   -- Try to create pg_partman extension
   BEGIN
@@ -196,6 +198,55 @@ BEGIN
   DROP TABLE unsubscribe_tokens_old;
   
   RAISE NOTICE 'unsubscribe_tokens table converted to partitioned';
+
+  -- ==========================================================================
+  -- ACTIVITIES TABLE: Convert to partitioned (using LIKE clause)
+  -- ==========================================================================
+  -- Uses LIKE to clone existing table structure, making it robust to schema changes
+  
+  -- 1. Create partitioned table cloning structure from Drizzle-created table
+  -- Note: We create the partitioned version first, then swap
+  EXECUTE 'CREATE TABLE activities_partitioned (LIKE activities INCLUDING DEFAULTS INCLUDING CONSTRAINTS) PARTITION BY RANGE (created_at)';
+  
+  -- 2. Clone indexes from original table
+  FOR r IN 
+    SELECT indexdef 
+    FROM pg_indexes 
+    WHERE tablename = 'activities' 
+    AND indexname NOT LIKE '%_pkey'
+  LOOP
+    -- Replace table name in index definition
+    EXECUTE replace(r.indexdef, ' ON activities ', ' ON activities_partitioned ');
+  END LOOP;
+  
+  -- 3. Setup pg_partman (1 week partitions, 4 weeks ahead)
+  PERFORM partman.create_parent(
+    p_parent_table => 'public.activities_partitioned',
+    p_control => 'created_at',
+    p_interval => '1 week'
+  );
+  
+  -- 4. Configure retention (90 days, drop old partitions)
+  UPDATE partman.part_config SET
+    retention = '90 days',
+    retention_keep_table = false,
+    infinite_time_partitions = true
+  WHERE parent_table = 'public.activities_partitioned';
+  
+  -- 5. Migrate existing data
+  INSERT INTO activities_partitioned SELECT * FROM activities;
+  
+  -- 6. Swap tables atomically
+  ALTER TABLE activities RENAME TO activities_old;
+  ALTER TABLE activities_partitioned RENAME TO activities;
+  
+  -- 7. Update partman config to use new table name
+  UPDATE partman.part_config SET parent_table = 'public.activities' WHERE parent_table = 'public.activities_partitioned';
+  
+  -- 8. Drop old table
+  DROP TABLE activities_old;
+  
+  RAISE NOTICE 'activities table converted to partitioned (via LIKE clause)';
 
   -- ==========================================================================
   -- Schedule automatic maintenance

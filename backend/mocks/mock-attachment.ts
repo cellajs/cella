@@ -1,6 +1,7 @@
 import { faker } from '@faker-js/faker';
 import type { AttachmentModel } from '#/db/schema/attachments';
-import { generateMockContextEntityIdColumns, mockNanoid, mockTx, withFakerSeed } from './utils';
+import { mockBatchResponse } from './mock-common';
+import { generateMockContextEntityIdColumns, mockNanoid, mockPaginated, mockTx, withFakerSeed } from './utils';
 
 /**
  * Generates a mock attachment with all fields populated.
@@ -41,3 +42,14 @@ export const mockAttachment = (key = 'attachment:default'): AttachmentModel =>
 
 /** Alias for API response examples (attachment schema matches DB schema) */
 export const mockAttachmentResponse = mockAttachment;
+
+/**
+ * Generates a paginated mock attachment list response for getAttachments endpoint.
+ */
+export const mockPaginatedAttachmentsResponse = (count = 2) => mockPaginated(mockAttachmentResponse, count);
+
+/**
+ * Generates a mock batch attachments response.
+ * Used for createAttachments endpoint examples.
+ */
+export const mockBatchAttachmentsResponse = (count = 2) => mockBatchResponse(mockAttachmentResponse, count);

@@ -20,6 +20,14 @@ import {
   streamNotificationSchema,
   successWithRejectedItemsSchema,
 } from '#/schemas';
+import {
+  mockAppStreamResponse,
+  mockMeAuthDataResponse,
+  mockMeResponse,
+  mockPaginatedInvitationsResponse,
+  mockUploadTokenResponse,
+} from '../../../mocks/mock-me';
+import { mockUserResponse } from '../../../mocks/mock-user';
 
 const meRoutes = {
   /**
@@ -39,6 +47,7 @@ const meRoutes = {
         content: {
           'application/json': {
             schema: meSchema,
+            example: mockMeResponse(),
           },
         },
       },
@@ -59,7 +68,12 @@ const meRoutes = {
     responses: {
       200: {
         description: 'Invitations pending',
-        content: { 'application/json': { schema: paginationSchema(mePendingInvitationSchema) } },
+        content: {
+          'application/json': {
+            schema: paginationSchema(mePendingInvitationSchema),
+            example: mockPaginatedInvitationsResponse(),
+          },
+        },
       },
       ...errorResponseRefs,
     },
@@ -88,7 +102,7 @@ const meRoutes = {
     responses: {
       200: {
         description: 'User',
-        content: { 'application/json': { schema: userSchema } },
+        content: { 'application/json': { schema: userSchema, example: mockUserResponse() } },
       },
       ...errorResponseRefs,
     },
@@ -125,7 +139,7 @@ const meRoutes = {
     responses: {
       200: {
         description: 'User sign-up info',
-        content: { 'application/json': { schema: meAuthDataSchema } },
+        content: { 'application/json': { schema: meAuthDataSchema, example: mockMeAuthDataResponse() } },
       },
       ...errorResponseRefs,
     },
@@ -213,7 +227,7 @@ const meRoutes = {
     responses: {
       200: {
         description: 'Upload token with a scope for a user or organization',
-        content: { 'application/json': { schema: uploadTokenSchema } },
+        content: { 'application/json': { schema: uploadTokenSchema, example: mockUploadTokenResponse() } },
       },
       ...errorResponseRefs,
     },
@@ -236,7 +250,7 @@ const meRoutes = {
     responses: {
       200: {
         description: 'User',
-        content: { 'application/json': { schema: userSchema } },
+        content: { 'application/json': { schema: userSchema, example: mockUserResponse() } },
       },
       ...errorResponseRefs,
     },
@@ -275,6 +289,7 @@ const meRoutes = {
               activities: z.array(streamNotificationSchema),
               cursor: z.string().nullable(),
             }),
+            example: mockAppStreamResponse(),
           },
         },
       },

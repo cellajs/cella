@@ -1,7 +1,7 @@
 /**
  * Backend sync metrics and tracing.
  *
- * Uses @cella/tracing for spans and adds OTel metrics integration.
+ * Uses config/tracing for spans and adds OTel metrics integration.
  * Tracks ActivityBus events and SSE stream metrics.
  */
 
@@ -15,7 +15,7 @@ import {
   type SpanData,
   withSpan as sharedWithSpan,
   type TraceContext,
-} from '@cella/tracing';
+} from 'config/tracing';
 import { meterProvider } from '#/tracing';
 
 // Re-export span names and attribute helpers

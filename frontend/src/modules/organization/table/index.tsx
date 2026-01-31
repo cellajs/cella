@@ -1,4 +1,3 @@
-import type { RowsChangeData } from '@cella/data-grid';
 import { onlineManager, useInfiniteQuery } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import { BirdIcon } from 'lucide-react';
@@ -7,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { membershipInvite, type Organization } from '~/api.gen';
 import useSearchParams from '~/hooks/use-search-params';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
+import type { RowsChangeData } from '~/modules/common/data-grid';
 import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { toaster } from '~/modules/common/toaster/service';

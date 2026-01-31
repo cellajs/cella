@@ -50,7 +50,8 @@
                       "sourceId": { "type": "string", "required": true },
                       "version": { "type": "number", "required": true },
                       "fieldVersions": { "type": "object", "required": true }
-                    }
+                    },
+                    "ref": "#/components/schemas/TxBase"
                   },
                   "public": { "type": "boolean", "required": true },
                   "bucketName": { "type": "string", "required": true },
@@ -93,6 +94,67 @@
             "total": { "type": "number", "required": true }
           },
           "contentType": "application/json"
+        },
+        "example": {
+          "items": [
+            {
+              "id": "o7z71y60a882cwpxtanaxnsp",
+              "entityType": "attachment",
+              "name": "elegantly.vst",
+              "description": null,
+              "keywords": "caterva socius cultura",
+              "public": false,
+              "bucketName": "attachments",
+              "groupId": null,
+              "filename": "elegantly.vst",
+              "contentType": "image/vnd.microsoft.icon",
+              "convertedContentType": null,
+              "size": "419263",
+              "originalKey": "uploads/yx645yb0gleyvjbbm5piweg2/elegantly.vst",
+              "convertedKey": null,
+              "thumbnailKey": null,
+              "createdAt": "2024-11-21T04:00:59.122Z",
+              "createdBy": "qqp8d07imsvjbtqtl3rtjgxd",
+              "modifiedAt": "2024-11-21T04:00:59.122Z",
+              "modifiedBy": "qqp8d07imsvjbtqtl3rtjgxd",
+              "tx": {
+                "id": "q4gqa3vx9cfyey6mqh9hmikg",
+                "sourceId": "src_me3gy3a9lhe0ctrmzc53x7z2",
+                "version": 1,
+                "fieldVersions": {}
+              },
+              "organizationId": "22ydtq57iu31mz5oaqf10oe7"
+            },
+            {
+              "id": "yahbgyu01sr6utecq3o02wpa",
+              "entityType": "attachment",
+              "name": "woefully_bah.vsw",
+              "description": null,
+              "keywords": "argentum attonbitus trans",
+              "public": false,
+              "bucketName": "attachments",
+              "groupId": null,
+              "filename": "woefully_bah.vsw",
+              "contentType": "image/gif",
+              "convertedContentType": null,
+              "size": "3774704",
+              "originalKey": "uploads/77kpi37syiavgc67t5nr6k4h/woefully_bah.vsw",
+              "convertedKey": null,
+              "thumbnailKey": null,
+              "createdAt": "2024-10-29T08:46:20.790Z",
+              "createdBy": "hg5ogh3yr2b2dbwf7b9eckaj",
+              "modifiedAt": "2024-10-29T08:46:20.790Z",
+              "modifiedBy": "hg5ogh3yr2b2dbwf7b9eckaj",
+              "tx": {
+                "id": "uj5qv4k6bwmvl0e44bpmhsya",
+                "sourceId": "src_uxcwuwjsrzvzac8qx1h9s6vz",
+                "version": 1,
+                "fieldVersions": {}
+              },
+              "organizationId": "hgvcj0rs3xtuk03gxco9kzp2"
+            }
+          ],
+          "total": 2
         }
       },
       {
@@ -211,7 +273,8 @@
                       "sourceId": { "type": "string", "required": true },
                       "version": { "type": "number", "required": true },
                       "fieldVersions": { "type": "object", "required": true }
-                    }
+                    },
+                    "ref": "#/components/schemas/TxBase"
                   },
                   "public": { "type": "boolean", "required": true },
                   "bucketName": { "type": "string", "required": true },
@@ -264,6 +327,67 @@
             }
           },
           "contentType": "application/json"
+        },
+        "example": {
+          "data": [
+            {
+              "id": "slwtksu3yccsd9ihoiny6rso",
+              "entityType": "attachment",
+              "name": "excluding_ugh_besides.svgz",
+              "description": null,
+              "keywords": "colo benigne id",
+              "public": false,
+              "bucketName": "attachments",
+              "groupId": null,
+              "filename": "excluding_ugh_besides.svgz",
+              "contentType": "application/epub+zip",
+              "convertedContentType": null,
+              "size": "7211145",
+              "originalKey": "uploads/6kfz7rauzy6zwhhoizpinjn9/excluding_ugh_besides.svgz",
+              "convertedKey": null,
+              "thumbnailKey": null,
+              "createdAt": "2024-04-19T14:04:35.773Z",
+              "createdBy": "kzmv5qbhdcqeiuvwlosan0fc",
+              "modifiedAt": "2024-04-19T14:04:35.773Z",
+              "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
+              "tx": {
+                "id": "as93qcb6pakf4ovzm1ne3h55",
+                "sourceId": "src_lgj31d63n9apx99a5auvr5cy",
+                "version": 1,
+                "fieldVersions": {}
+              },
+              "organizationId": "j5s37irnjjhhc4mupuqz0iqm"
+            },
+            {
+              "id": "pxxbqdej8622zpgo54qw5fqo",
+              "entityType": "attachment",
+              "name": "gown.ini",
+              "description": null,
+              "keywords": "cetera velociter vehemens",
+              "public": false,
+              "bucketName": "attachments",
+              "groupId": null,
+              "filename": "gown.ini",
+              "contentType": "application/zip",
+              "convertedContentType": null,
+              "size": "9066537",
+              "originalKey": "uploads/5hu8fmg18wbwob9s8r85nah6/gown.ini",
+              "convertedKey": null,
+              "thumbnailKey": null,
+              "createdAt": "2024-02-25T13:01:35.301Z",
+              "createdBy": "p3t0ygxx0aa83en3sk1fs1we",
+              "modifiedAt": "2024-02-25T13:01:35.301Z",
+              "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
+              "tx": {
+                "id": "71ybl6y4dvzpz75e03ldr2ga",
+                "sourceId": "src_54hj92yzr7v1itpc9wztvbcy",
+                "version": 1,
+                "fieldVersions": {}
+              },
+              "organizationId": "21q04oq81k5rbzt4yq63pob5"
+            }
+          ],
+          "rejectedItemIds": []
         }
       },
       {
@@ -314,7 +438,8 @@
                       "sourceId": { "type": "string", "required": true },
                       "version": { "type": "number", "required": true },
                       "fieldVersions": { "type": "object", "required": true }
-                    }
+                    },
+                    "ref": "#/components/schemas/TxBase"
                   },
                   "public": { "type": "boolean", "required": true },
                   "bucketName": { "type": "string", "required": true },
@@ -367,6 +492,67 @@
             }
           },
           "contentType": "application/json"
+        },
+        "example": {
+          "data": [
+            {
+              "id": "slwtksu3yccsd9ihoiny6rso",
+              "entityType": "attachment",
+              "name": "excluding_ugh_besides.svgz",
+              "description": null,
+              "keywords": "colo benigne id",
+              "public": false,
+              "bucketName": "attachments",
+              "groupId": null,
+              "filename": "excluding_ugh_besides.svgz",
+              "contentType": "application/epub+zip",
+              "convertedContentType": null,
+              "size": "7211145",
+              "originalKey": "uploads/6kfz7rauzy6zwhhoizpinjn9/excluding_ugh_besides.svgz",
+              "convertedKey": null,
+              "thumbnailKey": null,
+              "createdAt": "2024-04-19T14:04:35.773Z",
+              "createdBy": "kzmv5qbhdcqeiuvwlosan0fc",
+              "modifiedAt": "2024-04-19T14:04:35.773Z",
+              "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
+              "tx": {
+                "id": "as93qcb6pakf4ovzm1ne3h55",
+                "sourceId": "src_lgj31d63n9apx99a5auvr5cy",
+                "version": 1,
+                "fieldVersions": {}
+              },
+              "organizationId": "j5s37irnjjhhc4mupuqz0iqm"
+            },
+            {
+              "id": "pxxbqdej8622zpgo54qw5fqo",
+              "entityType": "attachment",
+              "name": "gown.ini",
+              "description": null,
+              "keywords": "cetera velociter vehemens",
+              "public": false,
+              "bucketName": "attachments",
+              "groupId": null,
+              "filename": "gown.ini",
+              "contentType": "application/zip",
+              "convertedContentType": null,
+              "size": "9066537",
+              "originalKey": "uploads/5hu8fmg18wbwob9s8r85nah6/gown.ini",
+              "convertedKey": null,
+              "thumbnailKey": null,
+              "createdAt": "2024-02-25T13:01:35.301Z",
+              "createdBy": "p3t0ygxx0aa83en3sk1fs1we",
+              "modifiedAt": "2024-02-25T13:01:35.301Z",
+              "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
+              "tx": {
+                "id": "71ybl6y4dvzpz75e03ldr2ga",
+                "sourceId": "src_54hj92yzr7v1itpc9wztvbcy",
+                "version": 1,
+                "fieldVersions": {}
+              },
+              "organizationId": "21q04oq81k5rbzt4yq63pob5"
+            }
+          ],
+          "rejectedItemIds": []
         }
       },
       {
@@ -619,7 +805,8 @@
                 "sourceId": { "type": "string", "required": true },
                 "version": { "type": "number", "required": true },
                 "fieldVersions": { "type": "object", "required": true }
-              }
+              },
+              "ref": "#/components/schemas/TxBase"
             },
             "public": { "type": "boolean", "required": true },
             "bucketName": { "type": "string", "required": true },

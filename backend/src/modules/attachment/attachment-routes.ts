@@ -18,6 +18,11 @@ import {
   paginationSchema,
   successWithRejectedItemsSchema,
 } from '#/schemas';
+import {
+  mockAttachmentResponse,
+  mockBatchAttachmentsResponse,
+  mockPaginatedAttachmentsResponse,
+} from '../../../mocks/mock-attachment';
 
 const attachmentRoutes = {
   /**
@@ -38,7 +43,12 @@ const attachmentRoutes = {
     responses: {
       200: {
         description: 'Attachments',
-        content: { 'application/json': { schema: paginationSchema(attachmentSchema) } },
+        content: {
+          'application/json': {
+            schema: paginationSchema(attachmentSchema),
+            example: mockPaginatedAttachmentsResponse(),
+          },
+        },
       },
       ...errorResponseRefs,
     },
@@ -65,11 +75,15 @@ const attachmentRoutes = {
     responses: {
       200: {
         description: 'Attachments already created (idempotent)',
-        content: { 'application/json': { schema: attachmentCreateResponseSchema } },
+        content: {
+          'application/json': { schema: attachmentCreateResponseSchema, example: mockBatchAttachmentsResponse() },
+        },
       },
       201: {
         description: 'Attachments created',
-        content: { 'application/json': { schema: attachmentCreateResponseSchema } },
+        content: {
+          'application/json': { schema: attachmentCreateResponseSchema, example: mockBatchAttachmentsResponse() },
+        },
       },
       ...errorResponseRefs,
     },
@@ -95,7 +109,7 @@ const attachmentRoutes = {
     responses: {
       200: {
         description: 'Attachment was updated',
-        content: { 'application/json': { schema: attachmentSchema } },
+        content: { 'application/json': { schema: attachmentSchema, example: mockAttachmentResponse() } },
       },
       ...errorResponseRefs,
     },

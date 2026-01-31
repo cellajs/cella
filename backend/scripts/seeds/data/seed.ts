@@ -3,8 +3,11 @@ import { checkMark, loadingMark } from '#/utils/console';
 import { db } from '#/db/db';
 import { pagesTable } from '#/db/schema/pages';
 import { mockPage } from '../../../mocks/mock-page';
-import { mockMany } from '../../../mocks/utils';
+import { mockMany, setMockContext } from '../../../mocks/utils';
 import { defaultAdminUser } from '../fixtures';
+
+// Set mock context for seed script - IDs will get 'gen-' prefix
+setMockContext('script');
 
 const isProduction = appConfig.mode === 'production';
 const PAGES_COUNT = 10;

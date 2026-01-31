@@ -1,5 +1,5 @@
 {
-  "id": "d661e262-8d91-4e28-a82d-047a357b3f5e",
+  "id": "3111b732-b03f-4698-a0bc-b8801d0a0bc0",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -11,7 +11,7 @@
         "id": {
           "name": "id",
           "type": "varchar",
-          "primaryKey": true,
+          "primaryKey": false,
           "notNull": true
         },
         "user_id": {
@@ -36,7 +36,7 @@
           "name": "action",
           "type": "varchar",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "table_name": {
           "name": "table_name",
@@ -78,6 +78,12 @@
         "tx": {
           "name": "tx",
           "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "seq": {
+          "name": "seq",
+          "type": "integer",
           "primaryKey": false,
           "notNull": false
         }
@@ -158,6 +164,21 @@
           "method": "btree",
           "with": {}
         },
+        "activities_tx_id_index": {
+          "name": "activities_tx_id_index",
+          "columns": [
+            {
+              "expression": "(tx->>'id')",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "activities_organization_id_index": {
           "name": "activities_organization_id_index",
           "columns": [
@@ -173,38 +194,17 @@
           "method": "btree",
           "with": {}
         },
-        "activities_tx_id_index": {
-          "name": "activities_tx_id_index",
+        "activities_organization_id_seq_index": {
+          "name": "activities_organization_id_seq_index",
           "columns": [
             {
-              "expression": "(tx->>'transactionId')",
-              "asc": true,
-              "isExpression": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "activities_tx_field_index": {
-          "name": "activities_tx_field_index",
-          "columns": [
-            {
-              "expression": "entity_type",
+              "expression": "organization_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
             },
             {
-              "expression": "entity_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "(tx->>'changedField')",
+              "expression": "\"seq\" desc",
               "asc": true,
               "isExpression": true,
               "nulls": "last"
@@ -244,7 +244,15 @@
           "onUpdate": "no action"
         }
       },
-      "compositePrimaryKeys": {},
+      "compositePrimaryKeys": {
+        "activities_id_created_at_pk": {
+          "name": "activities_id_created_at_pk",
+          "columns": [
+            "id",
+            "created_at"
+          ]
+        }
+      },
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
@@ -315,7 +323,7 @@
           "name": "tx",
           "type": "jsonb",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "public": {
           "name": "public",
@@ -1366,7 +1374,7 @@
           "name": "tx",
           "type": "jsonb",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "status": {
           "name": "status",

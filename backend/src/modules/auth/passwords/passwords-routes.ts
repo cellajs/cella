@@ -7,6 +7,11 @@ import { emailEnumLimiter, passwordLimiter, spamLimiter, tokenLimiter } from '#/
 import { emailBodySchema } from '#/modules/auth/general/general-schema';
 import { emailPasswordBodySchema } from '#/modules/auth/passwords/passwords-schema';
 import { cookieSchema, errorResponseRefs, locationSchema, passwordSchema } from '#/schemas';
+import {
+  mockCreatePasswordResponse,
+  mockSignInResponse,
+  mockSignUpWithTokenResponse,
+} from '../../../../mocks/mock-auth';
 
 const authPasswordsRoutes = {
   /**
@@ -64,7 +69,12 @@ const authPasswordsRoutes = {
       201: {
         description: 'User signed up',
         headers: z.object({ 'Set-Cookie': cookieSchema }),
-        content: { 'application/json': { schema: z.object({ membershipInvite: z.boolean() }) } },
+        content: {
+          'application/json': {
+            schema: z.object({ membershipInvite: z.boolean() }),
+            example: mockSignUpWithTokenResponse(),
+          },
+        },
       },
       ...errorResponseRefs,
     },
@@ -118,7 +128,9 @@ const authPasswordsRoutes = {
     responses: {
       201: {
         description: 'Password created',
-        content: { 'application/json': { schema: z.object({ mfa: z.boolean() }) } },
+        content: {
+          'application/json': { schema: z.object({ mfa: z.boolean() }), example: mockCreatePasswordResponse() },
+        },
       },
       ...errorResponseRefs,
     },
@@ -148,6 +160,7 @@ const authPasswordsRoutes = {
         content: {
           'application/json': {
             schema: z.object({ emailVerified: z.boolean(), mfa: z.boolean().optional() }),
+            example: mockSignInResponse(),
           },
         },
       },

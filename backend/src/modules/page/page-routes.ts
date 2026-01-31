@@ -2,6 +2,7 @@ import z from 'zod';
 import { createXRoute } from '#/docs/x-routes';
 import { isAuthenticated, isPublicAccess, isSystemAdmin } from '#/middlewares/guard';
 import { errorResponseRefs, idsBodySchema, paginationSchema, publicStreamActivitySchema } from '#/schemas';
+import { mockBatchPagesResponse, mockPageResponse, mockPaginatedPagesResponse } from '../../../mocks/mock-page';
 import {
   pageCreateManyTxBodySchema,
   pageCreateResponseSchema,
@@ -75,6 +76,7 @@ const pagesRoutes = {
         content: {
           'application/json': {
             schema: pageCreateResponseSchema,
+            example: mockBatchPagesResponse(),
           },
         },
       },
@@ -83,6 +85,7 @@ const pagesRoutes = {
         content: {
           'application/json': {
             schema: pageCreateResponseSchema,
+            example: mockBatchPagesResponse(),
           },
         },
       },
@@ -107,7 +110,7 @@ const pagesRoutes = {
       200: {
         description: 'Pages',
         content: {
-          'application/json': { schema: paginationSchema(pageSchema) },
+          'application/json': { schema: paginationSchema(pageSchema), example: mockPaginatedPagesResponse() },
         },
       },
       ...errorResponseRefs,
@@ -132,7 +135,7 @@ const pagesRoutes = {
     responses: {
       200: {
         description: 'Page',
-        content: { 'application/json': { schema: pageSchema } },
+        content: { 'application/json': { schema: pageSchema, example: mockPageResponse() } },
       },
       ...errorResponseRefs,
     },
@@ -160,7 +163,7 @@ const pagesRoutes = {
     responses: {
       200: {
         description: 'Page updated',
-        content: { 'application/json': { schema: pageSchema } },
+        content: { 'application/json': { schema: pageSchema, example: mockPageResponse() } },
       },
       ...errorResponseRefs,
     },

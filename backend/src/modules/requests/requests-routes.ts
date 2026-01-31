@@ -4,6 +4,7 @@ import { isNoBot } from '#/middlewares/is-no-bot';
 import { emailEnumLimiter, spamLimiter } from '#/middlewares/rate-limiter/limiters';
 import { requestCreateBodySchema, requestListQuerySchema, requestSchema } from '#/modules/requests/requests-schema';
 import { errorResponseRefs, idsBodySchema, paginationSchema } from '#/schemas';
+import { mockPaginatedRequestsResponse, mockRequestResponse } from '../../../mocks/mock-request';
 
 const requestRoutes = {
   /**
@@ -29,7 +30,7 @@ const requestRoutes = {
     responses: {
       201: {
         description: 'Requests',
-        content: { 'application/json': { schema: requestSchema } },
+        content: { 'application/json': { schema: requestSchema, example: mockRequestResponse() } },
       },
       ...errorResponseRefs,
     },
@@ -52,6 +53,7 @@ const requestRoutes = {
         content: {
           'application/json': {
             schema: paginationSchema(requestSchema),
+            example: mockPaginatedRequestsResponse(),
           },
         },
       },

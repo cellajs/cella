@@ -143,23 +143,8 @@ export type Activity = {
   entityId: string | null;
   organizationId: string | null;
   createdAt: string;
-  changedKeys:
-    | string
-    | number
-    | boolean
-    | null
-    | {
-        [key: string]: unknown;
-      }
-    | Array<unknown>;
-  tx: {
-    id: string;
-    sourceId: string;
-    version: number;
-    fieldVersions: {
-      [key: string]: number;
-    };
-  } | null;
+  changedKeys: Array<string> | null;
+  tx: TxBase | null;
   seq: number | null;
 };
 
@@ -320,14 +305,7 @@ export type Page = {
   keywords: string;
   createdBy: string | null;
   modifiedBy: string | null;
-  tx: {
-    id: string;
-    sourceId: string;
-    version: number;
-    fieldVersions: {
-      [key: string]: number;
-    };
-  };
+  tx: TxBase;
   status: 'unpublished' | 'published' | 'archived';
   parentId: string | null;
   displayOrder: number;
@@ -348,6 +326,15 @@ export type TxRequest = {
   baseVersion: number;
 };
 
+export type Request = {
+  createdAt: string;
+  id: string;
+  message: string | null;
+  email: string;
+  type: 'waitlist' | 'newsletter' | 'contact';
+  wasInvited: boolean;
+};
+
 export type Attachment = {
   createdAt: string;
   id: string;
@@ -358,14 +345,7 @@ export type Attachment = {
   keywords: string;
   createdBy: string | null;
   modifiedBy: string | null;
-  tx: {
-    id: string;
-    sourceId: string;
-    version: number;
-    fieldVersions: {
-      [key: string]: number;
-    };
-  };
+  tx: TxBase;
   public: boolean;
   bucketName: string;
   groupId: string | null;
@@ -3148,14 +3128,7 @@ export type GetRequestsResponses = {
    * Requests
    */
   200: {
-    items: Array<{
-      createdAt: string;
-      id: string;
-      message: string | null;
-      email: string;
-      type: 'waitlist' | 'newsletter' | 'contact';
-      wasInvited: boolean;
-    }>;
+    items: Array<Request>;
     total: number;
   };
 };
@@ -3202,14 +3175,7 @@ export type CreateRequestResponses = {
   /**
    * Requests
    */
-  201: {
-    createdAt: string;
-    id: string;
-    message: string | null;
-    email: string;
-    type: 'waitlist' | 'newsletter' | 'contact';
-    wasInvited: boolean;
-  };
+  201: Request;
 };
 
 export type CreateRequestResponse = CreateRequestResponses[keyof CreateRequestResponses];

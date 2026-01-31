@@ -7,12 +7,14 @@ import type { AuthStrategy } from '#/db/schema/sessions';
 import { defaultRestrictions } from '#/db/utils/organization-restrictions';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { nanoid } from '#/utils/nanoid';
+import { mockBatchResponse } from './mock-common';
 import { mockMembershipBase } from './mock-membership';
 import {
   generateMockFullCounts,
   type MockEntityCounts,
   type MockMembershipCounts,
   mockNanoid,
+  mockPaginated,
   pastIsoDate,
   withFakerSeed,
 } from './utils';
@@ -106,3 +108,13 @@ export const mockOrganizationResponse = (
       counts: generateMockFullCounts(`${key}:counts`),
     };
   });
+/**
+ * Generates a paginated mock organization list response for getOrganizations endpoint.
+ */
+export const mockPaginatedOrganizationsResponse = (count = 2) => mockPaginated(mockOrganizationResponse, count);
+
+/**
+ * Generates a mock batch organizations response.
+ * Used for createOrganizations endpoint examples.
+ */
+export const mockBatchOrganizationsResponse = (count = 2) => mockBatchResponse(mockOrganizationResponse, count);

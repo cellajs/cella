@@ -86,7 +86,8 @@
         "status": 200,
         "description": "Presigned URL",
         "contentType": "application/json",
-        "schema": { "type": "string", "contentType": "application/json" }
+        "schema": { "type": "string", "contentType": "application/json" },
+        "example": "https://s3.amazonaws.com/bucket/uploads/lgiwmb008oicrnov90vfyg5s?X-Amz-Signature=y6Osv8Aux8OzYRD80WpVgzOEyivrH99LUayD8R60gihmFy74ZLvXyfck7snD3jom"
       },
       {
         "status": 400,

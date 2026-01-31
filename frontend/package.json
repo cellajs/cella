@@ -34,8 +34,6 @@
     "@blocknote/core": "^0.46.2",
     "@blocknote/react": "^0.46.2",
     "@blocknote/shadcn": "^0.46.2",
-    "@cella/data-grid": "workspace:*",
-    "@cella/tracing": "workspace:*",
     "@floating-ui/dom": "^1.7.5",
     "@floating-ui/react": "^0.27.17",
     "@github/mini-throttle": "^2.1.1",

@@ -7,6 +7,7 @@ import {
   productEntityTypeSchema,
   slugSchema,
 } from '#/schemas';
+import { mockContextEntityBase, mockProductEntityBase } from '../../../mocks/mock-entity-base';
 
 /**
  * Base schema shared by all entities (mirrors baseEntityColumns).
@@ -38,7 +39,7 @@ export const contextEntityBaseSchema = z
     thumbnailUrl: imageUrlSchema.nullable(),
     bannerUrl: imageUrlSchema.nullable(),
   })
-  .openapi('ContextEntityBase');
+  .openapi('ContextEntityBase', { example: mockContextEntityBase() });
 
 /**
  * Base schema for product entities, including common fields. Exported separately to avoid circular dependencies.
@@ -50,4 +51,4 @@ export const productEntityBaseSchema = z
     entityType: productEntityTypeSchema,
     keywords: z.string(),
   })
-  .openapi('ProductEntityBase');
+  .openapi('ProductEntityBase', { example: mockProductEntityBase() });

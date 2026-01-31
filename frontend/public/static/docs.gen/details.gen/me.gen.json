@@ -812,6 +812,63 @@
             "total": { "type": "number", "required": true }
           },
           "contentType": "application/json"
+        },
+        "example": {
+          "items": [
+            {
+              "entity": {
+                "id": "kk63h1dxe8cgq643ccglytgb",
+                "createdAt": "2024-12-25T19:05:51.784Z",
+                "modifiedAt": "2024-12-27T22:12:06.410Z",
+                "name": "Effertz Group",
+                "description": "Organized systemic adapter",
+                "entityType": "organization",
+                "slug": "effertz-group",
+                "thumbnailUrl": null,
+                "bannerUrl": null
+              },
+              "inactiveMembership": {
+                "id": "6gr354pie22th7dif16z86xc",
+                "contextType": "organization",
+                "email": "felicity.steuber@yahoo.com",
+                "userId": "ezumc4icc5vmduw22tjoaw74",
+                "tokenId": "3zfj14fctcamlgi5coyrzuov",
+                "role": "admin",
+                "rejectedAt": null,
+                "createdAt": "2024-11-13T18:39:21.444Z",
+                "createdBy": "6385w1ul2bx3ld4na8k0ts70",
+                "organizationId": "ft7nt6w77qphfz9detwtt178",
+                "uniqueKey": "ezumc4icc5vmduw22tjoaw74-ft7nt6w77qphfz9detwtt178"
+              }
+            },
+            {
+              "entity": {
+                "id": "ip52vb8otvpz1qn2gfy3zjnp",
+                "createdAt": "2024-03-25T23:28:46.492Z",
+                "modifiedAt": "2024-06-03T13:50:52.760Z",
+                "name": "Hansen - Reynolds",
+                "description": "Progressive fresh-thinking concept",
+                "entityType": "organization",
+                "slug": "hansen---reynolds",
+                "thumbnailUrl": null,
+                "bannerUrl": null
+              },
+              "inactiveMembership": {
+                "id": "3gqwjug71n1cwllydl9l6917",
+                "contextType": "organization",
+                "email": "carmela35@gmail.com",
+                "userId": "gbc099sv1n33rsaavdzvrv0a",
+                "tokenId": "rzesl0rhhdendngwylqyrn1s",
+                "role": "admin",
+                "rejectedAt": null,
+                "createdAt": "2024-04-12T10:35:38.557Z",
+                "createdBy": "r95gtt9htxwawq5tdvqh553o",
+                "organizationId": "okmsol2r5n4cy72j57t1tgy0",
+                "uniqueKey": "gbc099sv1n33rsaavdzvrv0a-okmsol2r5n4cy72j57t1tgy0"
+              }
+            }
+          ],
+          "total": 2
         }
       },
       {
@@ -1208,6 +1265,27 @@
             }
           },
           "contentType": "application/json"
+        },
+        "example": {
+          "activities": [
+            {
+              "action": "create",
+              "entityType": "page",
+              "resourceType": null,
+              "entityId": "p4mjvy3c0rjatirn6hp0rcgf",
+              "organizationId": "ufjhv1cwh0j4x3xi7ae54uen",
+              "contextType": null,
+              "seq": 526,
+              "cacheToken": "hg18eRugoaB38Ug7A1n7Zj018TyC3pwn",
+              "tx": {
+                "id": "gdgo47kv9o7rvgjoql6a1dxp",
+                "sourceId": "8u6gifwzsuyr58fapjsndxb3",
+                "version": 5,
+                "fieldVersions": { "name": 1 }
+              }
+            }
+          ],
+          "cursor": "ll6ebv8jmzcs1cydc8ytq68u"
         }
       },
       {
