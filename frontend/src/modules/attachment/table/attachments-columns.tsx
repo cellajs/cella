@@ -48,7 +48,7 @@ export const useColumns = (entity: ContextEntityData, isSheet: boolean, isCompac
         }),
       },
       {
-        key: 'syncStatus',
+        key: 'uploadStatus',
         name: '',
         visible: true,
         sortable: false,

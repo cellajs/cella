@@ -1,22 +1,24 @@
 import { AlertCircleIcon, CloudIcon, CloudOffIcon, LoaderIcon, UploadCloudIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Attachment } from '~/api.gen';
-import { useBlobSyncStatus } from '~/modules/attachment/hooks/use-blob-sync-status';
+import { useBlobUploadStatus } from '~/modules/attachment/hooks/use-blob-sync-status';
 
 interface SyncStatusCellProps {
   row: Attachment;
 }
 
 /**
- * Displays sync status for an attachment with appropriate icon and tooltip.
- * Uses Dexie blob storage to determine actual sync state.
+ * Displays upload status for an attachment with appropriate icon and tooltip.
+ * Uses Dexie blob storage to determine actual upload state.
  */
 export const SyncStatusCell = ({ row }: SyncStatusCellProps) => {
   const { t } = useTranslation();
-  const { syncStatus, hasLocalBlob, isSynced, isSyncing, isFailed, isPending, isLocalOnly } = useBlobSyncStatus(row.id);
+  const { uploadStatus, hasLocalBlob, isUploaded, isUploading, isFailed, isPending, isLocalOnly } = useBlobUploadStatus(
+    row.id,
+  );
 
-  // No local blob = cloud-only (synced)
-  if (!hasLocalBlob || isSynced) {
+  // No local blob = cloud-only (uploaded)
+  if (!hasLocalBlob || isUploaded) {
     return (
       <div
         className="flex justify-center items-center h-full w-full"
@@ -28,13 +30,13 @@ export const SyncStatusCell = ({ row }: SyncStatusCellProps) => {
     );
   }
 
-  // Currently syncing
-  if (isSyncing) {
+  // Currently uploading
+  if (isUploading) {
     return (
       <div
         className="flex justify-center items-center h-full w-full"
         data-tooltip="true"
-        data-tooltip-content={t('common:syncing')}
+        data-tooltip-content={t('common:uploading')}
       >
         <LoaderIcon className="text-muted-foreground animate-spin" size={16} />
       </div>
@@ -54,13 +56,13 @@ export const SyncStatusCell = ({ row }: SyncStatusCellProps) => {
     );
   }
 
-  // Failed sync
+  // Failed upload
   if (isFailed) {
     return (
       <div
         className="flex justify-center items-center h-full w-full"
         data-tooltip="true"
-        data-tooltip-content={t('common:sync_failed')}
+        data-tooltip-content={t('common:upload_failed')}
       >
         <AlertCircleIcon className="text-destructive" size={16} />
       </div>
@@ -85,7 +87,7 @@ export const SyncStatusCell = ({ row }: SyncStatusCellProps) => {
     <div
       className="flex justify-center items-center h-full w-full"
       data-tooltip="true"
-      data-tooltip-content={syncStatus || t('common:unknown')}
+      data-tooltip-content={uploadStatus || t('common:unknown')}
     >
       <CloudIcon className="text-muted-foreground" size={16} />
     </div>

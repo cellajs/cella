@@ -23,6 +23,7 @@ import * as Y from 'yjs';
 import { getPresignedUrl } from '~/api.gen';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import router from '~/lib/router';
+import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
 import { customSchema } from '~/modules/common/blocknote/blocknote-config';
 import { Mention } from '~/modules/common/blocknote/custom-elements/mention';
 import { CustomFilePanel } from '~/modules/common/blocknote/custom-file-panel';
@@ -141,10 +142,25 @@ function BlockNote({
     trailingBlock,
     dictionary: getDictionary(),
     collaboration: collaborationConfig,
-    // TODO-002(BLOCKING) remove image blink (https://github.com/TypeCellOS/BlockNote/issues/1570)
-    resolveFileUrl: (key) => {
-      if (!key.length) return Promise.resolve('');
+    // Offline-first file URL resolution:
+    // 1. If key looks like an attachment ID (nanoid format), check local blob storage
+    // 2. Fall back to presigned URL from cloud
+    resolveFileUrl: async (key) => {
+      if (!key.length) return '';
 
+      // Check if this looks like an attachment ID (for offline-first lookup)
+      // Attachment IDs are nanoid format, cloud keys contain slashes
+      const isAttachmentId = !key.includes('/');
+
+      if (isAttachmentId) {
+        // Try local blob with variant fallback (converted → original → raw)
+        const localResult = await attachmentStorage.createBlobUrlWithVariant(key, 'converted', true);
+        if (localResult) {
+          return localResult.url;
+        }
+      }
+
+      // Fall back to presigned URL from cloud
       const isPublic = String(baseFilePanelProps?.isPublic || false);
       return getPresignedUrl({ query: { key, isPublic } });
     },

@@ -17,29 +17,151 @@ import {
   type AttachmentBlob,
   attachmentsDb,
   type BlobSource,
+  type BlobVariant,
   type DownloadQueueEntry,
-  type QueueStatus,
-  type SyncStatus,
+  type DownloadStatus,
+  makeBlobKey,
+  parseBlobKey,
   type UploadContext,
+  type UploadStatus,
 } from '~/modules/attachment/dexie/attachments-db';
 import type { CustomUppyFile } from '~/modules/common/uploader/types';
+
+/** Fallback chain for blob resolution - try these variants in order */
+const displayFallbackChain: BlobVariant[] = ['converted', 'original', 'raw'];
+const thumbnailFallbackChain: BlobVariant[] = ['thumbnail', 'original', 'raw'];
 
 /**
  * Attachment storage service with local-first capabilities.
  */
 class AttachmentStorageService {
-  // ─────────────────────────────────────────────────────────────────────────────
-  // BLOB STORAGE (Uploads + Downloads)
-  // ─────────────────────────────────────────────────────────────────────────────
+  /**
+   * Get a blob by attachment ID and variant, with optional fallback chain.
+   */
+  async getBlobWithVariant(
+    attachmentId: string,
+    variant: BlobVariant,
+    useFallback = false,
+  ): Promise<{ blob: AttachmentBlob; actualVariant: BlobVariant } | null> {
+    const chain = useFallback ? (variant === 'thumbnail' ? thumbnailFallbackChain : displayFallbackChain) : [variant];
+
+    for (const v of chain) {
+      const key = makeBlobKey(attachmentId, v);
+      const blob = await this.getBlob(key);
+      if (blob) {
+        return { blob, actualVariant: v };
+      }
+    }
+    return null;
+  }
 
   /**
-   * Store a blob from Uppy file upload.
+   * Create a blob URL for a specific variant with fallback.
+   * Returns the URL and which variant was actually used.
    */
+  async createBlobUrlWithVariant(
+    attachmentId: string,
+    variant: BlobVariant,
+    useFallback = true,
+  ): Promise<{ url: string; actualVariant: BlobVariant } | null> {
+    const result = await this.getBlobWithVariant(attachmentId, variant, useFallback);
+    if (!result) return null;
+
+    const url = URL.createObjectURL(result.blob.blob);
+    return { url, actualVariant: result.actualVariant };
+  }
+
+  /**
+   * Store a downloaded blob with variant.
+   */
+  async storeDownloadBlobWithVariant(
+    attachmentId: string,
+    variant: BlobVariant,
+    organizationId: string,
+    blob: Blob,
+    contentType: string,
+  ): Promise<AttachmentBlob> {
+    const key = makeBlobKey(attachmentId, variant);
+
+    const record: AttachmentBlob = {
+      id: key,
+      attachmentId,
+      variant,
+      organizationId,
+      blob,
+      size: blob.size,
+      contentType,
+      source: 'download',
+      uploadStatus: 'uploaded',
+      syncAttempts: 0,
+      nextRetryAt: null,
+      lastError: null,
+      storedAt: new Date(),
+    };
+
+    try {
+      await attachmentsDb.blobs.put(record);
+      return record;
+    } catch (error) {
+      Sentry.captureException(error);
+      console.error('Failed to store download blob:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Evict raw blob after processed version is available.
+   * Call this when 'original' variant is successfully downloaded.
+   */
+  async evictRawBlob(attachmentId: string): Promise<boolean> {
+    const rawKey = makeBlobKey(attachmentId, 'raw');
+    try {
+      const exists = await attachmentsDb.blobs.get(rawKey);
+      if (exists) {
+        await attachmentsDb.blobs.delete(rawKey);
+        console.debug(`[Storage] Evicted raw blob for ${attachmentId}`);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      Sentry.captureException(error);
+      console.error(`Failed to evict raw blob (${attachmentId}):`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Check if any variant of an attachment exists locally.
+   */
+  async hasAnyVariant(attachmentId: string): Promise<BlobVariant | null> {
+    for (const variant of ['original', 'converted', 'thumbnail', 'raw'] as BlobVariant[]) {
+      const key = makeBlobKey(attachmentId, variant);
+      const exists = await attachmentsDb.blobs.get(key);
+      if (exists) return variant;
+    }
+    return null;
+  }
+
+  /**
+   * Get all variants stored for an attachment.
+   */
+  async getStoredVariants(attachmentId: string): Promise<BlobVariant[]> {
+    try {
+      const blobs = await attachmentsDb.blobs.where('attachmentId').equals(attachmentId).toArray();
+      return blobs.map((b) => b.variant);
+    } catch (error) {
+      Sentry.captureException(error);
+      return [];
+    }
+  }
+
+  /** Store a blob from Uppy file upload (stores as 'raw' variant). */
   async storeUploadBlob(
     file: CustomUppyFile,
     organizationId: string,
-    syncStatus: SyncStatus = 'pending',
+    uploadStatus: UploadStatus = 'pending',
     uploadContext?: UploadContext,
+    attachmentId?: string,
   ): Promise<AttachmentBlob> {
     // Validate file has blob data
     if (!file.data || !(file.data instanceof Blob)) {
@@ -49,8 +171,14 @@ class AttachmentStorageService {
     const blobData = file.data as Blob;
     const size = file.size ?? blobData.size ?? 0;
 
+    // Use provided attachmentId or fall back to file.id for temp storage
+    const actualAttachmentId = attachmentId || file.id;
+    const key = makeBlobKey(actualAttachmentId, 'raw');
+
     const blob: AttachmentBlob = {
-      id: file.id,
+      id: key,
+      attachmentId: actualAttachmentId,
+      variant: 'raw',
       organizationId,
       blob: blobData,
       filename: file.name || undefined,
@@ -58,7 +186,7 @@ class AttachmentStorageService {
       size,
       contentType: file.type || 'application/octet-stream',
       source: 'upload',
-      syncStatus,
+      uploadStatus,
       syncAttempts: 0,
       nextRetryAt: null,
       lastError: null,
@@ -77,6 +205,7 @@ class AttachmentStorageService {
 
   /**
    * Store a blob from download (for offline viewing).
+   * @deprecated Use storeDownloadBlobWithVariant for variant-aware storage
    */
   async storeDownloadBlob(
     id: string,
@@ -84,14 +213,22 @@ class AttachmentStorageService {
     blob: Blob,
     contentType: string,
   ): Promise<AttachmentBlob> {
+    // Parse the id to extract attachmentId - for backwards compat, assume 'original' if no variant
+    const parsed = id.includes(':') ? null : { attachmentId: id, variant: 'original' as BlobVariant };
+    const attachmentId = parsed?.attachmentId || id;
+    const variant: BlobVariant = 'original';
+    const key = makeBlobKey(attachmentId, variant);
+
     const record: AttachmentBlob = {
-      id,
+      id: key,
+      attachmentId,
+      variant,
       organizationId,
       blob,
       size: blob.size,
       contentType,
       source: 'download',
-      syncStatus: 'synced', // Downloaded = already synced
+      uploadStatus: 'uploaded', // Downloaded = already uploaded to cloud
       syncAttempts: 0,
       nextRetryAt: null,
       lastError: null,
@@ -109,7 +246,7 @@ class AttachmentStorageService {
   }
 
   /**
-   * Get a blob by ID.
+   * Get a blob by composite key (id:variant format).
    */
   async getBlob(id: string): Promise<AttachmentBlob | undefined> {
     try {
@@ -122,7 +259,7 @@ class AttachmentStorageService {
   }
 
   /**
-   * Get blob data for rendering.
+   * Get blob data for rendering by composite key.
    */
   async getBlobData(id: string): Promise<Blob | null> {
     const record = await this.getBlob(id);
@@ -130,8 +267,9 @@ class AttachmentStorageService {
   }
 
   /**
-   * Create a blob URL for rendering.
+   * Create a blob URL for rendering by composite key.
    * Remember to revoke when done using URL.revokeObjectURL().
+   * @deprecated Use createBlobUrlWithVariant for variant-aware URL creation
    */
   async createBlobUrl(id: string): Promise<string | null> {
     const blob = await this.getBlobData(id);
@@ -139,7 +277,7 @@ class AttachmentStorageService {
   }
 
   /**
-   * Check if a blob exists locally.
+   * Check if a blob exists locally by composite key.
    */
   async hasBlob(id: string): Promise<boolean> {
     try {
@@ -152,11 +290,14 @@ class AttachmentStorageService {
   }
 
   /**
-   * Delete blobs by IDs.
+   * Delete blobs by attachment IDs (deletes all variants).
    */
   async deleteBlobs(ids: string[]): Promise<void> {
     try {
-      await attachmentsDb.blobs.bulkDelete(ids);
+      // Delete all variants for each attachment ID
+      for (const id of ids) {
+        await attachmentsDb.blobs.where('attachmentId').equals(id).delete();
+      }
     } catch (error) {
       Sentry.captureException(error);
       console.error('Failed to delete blobs:', error);
@@ -164,17 +305,24 @@ class AttachmentStorageService {
     }
   }
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // UPLOAD SYNC
-  // ─────────────────────────────────────────────────────────────────────────────
-
   /**
-   * Get pending uploads for an organization.
+   * Delete blobs by composite keys directly.
    */
+  async deleteBlobsByKeys(keys: string[]): Promise<void> {
+    try {
+      await attachmentsDb.blobs.bulkDelete(keys);
+    } catch (error) {
+      Sentry.captureException(error);
+      console.error('Failed to delete blobs by keys:', error);
+      throw error;
+    }
+  }
+
+  /** Get pending uploads for an organization. */
   async getPendingUploads(organizationId: string): Promise<AttachmentBlob[]> {
     try {
       return await attachmentsDb.blobs
-        .where('[organizationId+syncStatus]')
+        .where('[organizationId+uploadStatus]')
         .equals([organizationId, 'pending'])
         .toArray();
     } catch (error) {
@@ -193,7 +341,7 @@ class AttachmentStorageService {
 
       // Get pending uploads
       const pending = await attachmentsDb.blobs
-        .where('[organizationId+syncStatus]')
+        .where('[organizationId+uploadStatus]')
         .equals([organizationId, 'pending'])
         .toArray();
 
@@ -202,7 +350,7 @@ class AttachmentStorageService {
       const maxRetries = config?.uploadRetryAttempts ?? 3;
 
       const retryReady = await attachmentsDb.blobs
-        .where('[organizationId+syncStatus]')
+        .where('[organizationId+uploadStatus]')
         .equals([organizationId, 'failed'])
         .filter(
           (blob) =>
@@ -221,11 +369,11 @@ class AttachmentStorageService {
   }
 
   /**
-   * Update sync status for a blob.
+   * Update upload status for a blob.
    */
-  async updateSyncStatus(id: string, status: SyncStatus, error?: string): Promise<void> {
+  async updateUploadStatus(id: string, status: UploadStatus, error?: string): Promise<void> {
     try {
-      const updates: Partial<AttachmentBlob> = { syncStatus: status };
+      const updates: Partial<AttachmentBlob> = { uploadStatus: status };
 
       if (status === 'failed' && error) {
         const blob = await attachmentsDb.blobs.get(id);
@@ -241,7 +389,7 @@ class AttachmentStorageService {
         }
       }
 
-      if (status === 'synced') {
+      if (status === 'uploaded') {
         updates.lastError = null;
         updates.nextRetryAt = null;
       }
@@ -255,24 +403,24 @@ class AttachmentStorageService {
   }
 
   /**
-   * Mark upload as syncing.
+   * Mark upload as uploading.
    */
-  async markSyncing(id: string): Promise<void> {
-    await this.updateSyncStatus(id, 'syncing');
+  async markUploading(id: string): Promise<void> {
+    await this.updateUploadStatus(id, 'uploading');
   }
 
   /**
-   * Mark upload as synced (successfully uploaded to cloud).
+   * Mark upload as uploaded (successfully uploaded to cloud).
    */
-  async markSynced(id: string): Promise<void> {
-    await this.updateSyncStatus(id, 'synced');
+  async markUploaded(id: string): Promise<void> {
+    await this.updateUploadStatus(id, 'uploaded');
   }
 
   /**
    * Mark upload as failed with error.
    */
   async markFailed(id: string, error: string): Promise<void> {
-    await this.updateSyncStatus(id, 'failed', error);
+    await this.updateUploadStatus(id, 'failed', error);
   }
 
   /**
@@ -281,11 +429,11 @@ class AttachmentStorageService {
   async resetFailedUploads(organizationId: string): Promise<void> {
     try {
       await attachmentsDb.blobs
-        .where('[organizationId+syncStatus]')
+        .where('[organizationId+uploadStatus]')
         .equals([organizationId, 'failed'])
         .filter((blob) => blob.source === 'upload')
         .modify({
-          syncStatus: 'pending',
+          uploadStatus: 'pending',
           syncAttempts: 0,
           nextRetryAt: null,
           lastError: null,
@@ -297,13 +445,7 @@ class AttachmentStorageService {
     }
   }
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // DOWNLOAD QUEUE
-  // ─────────────────────────────────────────────────────────────────────────────
-
-  /**
-   * Queue attachments for download (offline caching).
-   */
+  /** Queue attachments for download (offline caching). */
   async queueForDownload(attachments: Attachment[], organizationId: string): Promise<void> {
     if (!attachments.length) return;
 
@@ -311,20 +453,47 @@ class AttachmentStorageService {
     if (!config?.enabled) return;
 
     try {
-      // Filter out already queued or cached
-      const existingBlobIds = new Set(
-        await attachmentsDb.blobs.where('organizationId').equals(organizationId).primaryKeys(),
+      // Get existing blob attachmentIds (need to extract from composite keys)
+      const existingBlobKeys = await attachmentsDb.blobs.where('organizationId').equals(organizationId).primaryKeys();
+      const existingBlobAttachmentIds = new Set(
+        existingBlobKeys.map((key) => {
+          const parsed = parseBlobKey(key);
+          return parsed?.attachmentId ?? key;
+        }),
       );
 
-      const existingQueueIds = new Set(
-        await attachmentsDb.downloadQueue.where('organizationId').equals(organizationId).primaryKeys(),
-      );
+      // Get existing queue entries (keyed by attachment id)
+      const existingQueueEntries = await attachmentsDb.downloadQueue
+        .where('organizationId')
+        .equals(organizationId)
+        .toArray();
+      const queueEntriesById = new Map(existingQueueEntries.map((e) => [e.id, e]));
 
       const entries: DownloadQueueEntry[] = [];
+      const resetIds: string[] = [];
 
       for (const attachment of attachments) {
-        // Skip if already cached or queued
-        if (existingBlobIds.has(attachment.id) || existingQueueIds.has(attachment.id)) continue;
+        // Skip if blob already cached for display (original/converted/thumbnail)
+        if (existingBlobAttachmentIds.has(attachment.id)) {
+          // Check if it's just raw - if so, we still need to download processed versions
+          const variants = await this.getStoredVariants(attachment.id);
+          const hasProcessedVariant = variants.some((v) => v !== 'raw');
+          if (hasProcessedVariant) continue;
+        }
+
+        const existingEntry = queueEntriesById.get(attachment.id);
+
+        if (existingEntry) {
+          // Re-queue if skipped due to missing keys but now has keys
+          if (
+            existingEntry.status === 'skipped' &&
+            existingEntry.skipReason === 'No originalKey' &&
+            attachment.originalKey
+          ) {
+            resetIds.push(attachment.id);
+          }
+          continue;
+        }
 
         // Apply filters
         const skipReason = this.shouldSkipDownload(attachment, config);
@@ -340,8 +509,15 @@ class AttachmentStorageService {
         });
       }
 
+      // Add new entries
       if (entries.length > 0) {
         await attachmentsDb.downloadQueue.bulkAdd(entries);
+      }
+
+      // Reset skipped entries that now have keys
+      if (resetIds.length > 0) {
+        await attachmentsDb.downloadQueue.where('id').anyOf(resetIds).modify({ status: 'pending', skipReason: null });
+        console.debug(`[Storage] Reset ${resetIds.length} skipped entries for re-download`);
       }
     } catch (error) {
       Sentry.captureException(error);
@@ -371,7 +547,7 @@ class AttachmentStorageService {
   /**
    * Update download queue entry status.
    */
-  async updateDownloadStatus(id: string, status: QueueStatus, skipReason?: string): Promise<void> {
+  async updateDownloadStatus(id: string, status: DownloadStatus, skipReason?: string): Promise<void> {
     try {
       const updates: Partial<DownloadQueueEntry> = { status };
       if (skipReason) updates.skipReason = skipReason;
@@ -387,14 +563,14 @@ class AttachmentStorageService {
   }
 
   /**
-   * Remove completed/skipped entries from queue (cleanup).
+   * Remove downloaded/skipped entries from queue (cleanup).
    */
   async cleanupDownloadQueue(organizationId: string): Promise<void> {
     try {
       await attachmentsDb.downloadQueue
         .where('organizationId')
         .equals(organizationId)
-        .filter((entry) => entry.status === 'completed' || entry.status === 'skipped')
+        .filter((entry) => entry.status === 'downloaded' || entry.status === 'skipped')
         .delete();
     } catch (error) {
       Sentry.captureException(error);
@@ -402,13 +578,7 @@ class AttachmentStorageService {
     }
   }
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // STORAGE MANAGEMENT
-  // ─────────────────────────────────────────────────────────────────────────────
-
-  /**
-   * Get total storage used by blobs for an organization.
-   */
+  /** Get total storage used by blobs for an organization. */
   async getStorageUsed(organizationId: string): Promise<number> {
     try {
       const blobs = await attachmentsDb.blobs.where('organizationId').equals(organizationId).toArray();
@@ -458,13 +628,7 @@ class AttachmentStorageService {
     }
   }
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // HELPERS
-  // ─────────────────────────────────────────────────────────────────────────────
-
-  /**
-   * Check if attachment should be skipped based on config filters.
-   */
+  /** Check if attachment should be skipped based on config filters. */
   private shouldSkipDownload(attachment: Attachment, config: typeof appConfig.localBlobStorage): string | null {
     if (!config) return 'Config not available';
 

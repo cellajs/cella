@@ -10,9 +10,9 @@ import appTitle from '~/utils/app-title';
 import { noDirectAccess } from '~/utils/no-direct-access'; // Lazy-loaded route components
 
 // Lazy-loaded route components
-const OrganizationsTable = lazy(() => import('~/modules/organization/table'));
+const OrganizationsTable = lazy(() => import('~/modules/organization/table/organizations-table'));
 const UsersTable = lazy(() => import('~/modules/user/table'));
-const RequestsTable = lazy(() => import('~/modules/requests/table'));
+const RequestsTable = lazy(() => import('~/modules/requests/table/requests-table'));
 const RequestsPerMinute = lazy(() => import('~/modules/metrics/requests-per-minute'));
 
 /**

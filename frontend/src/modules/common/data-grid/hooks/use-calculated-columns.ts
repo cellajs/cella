@@ -145,8 +145,6 @@ export function useCalculatedColumns<R, SR>({
       }
       if (frozenB) return 1;
 
-      // TODO-007: sort columns to keep them grouped if they have a parent
-
       // Sort other columns last:
       return 0;
     });

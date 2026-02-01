@@ -85,6 +85,7 @@ export const AppLayoutRoute = createRoute({
     </Suspense>
   ),
   beforeLoad: async ({ location, cause }) => {
+    console.debug('[AppLayout] beforeLoad called with cause:', cause);
     if (cause !== 'enter') return;
 
     try {
@@ -121,7 +122,9 @@ export const AppLayoutRoute = createRoute({
   },
 
   loader: async ({ cause, context }) => {
-    if (cause !== 'enter') return;
+    console.debug('[AppLayout] Loader called with cause:', cause);
+    // Run on 'enter' (initial navigation) and 'stay' (page reload)
+    if (cause !== 'enter' && cause !== 'stay') return;
 
     try {
       console.debug('[AppLayout] Fetching menu while loading app:', location.pathname);

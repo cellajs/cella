@@ -8,18 +8,18 @@ import type { InfiniteQueryData, PageParams, QueryData } from '~/query/types';
  *
  *  Includes:
  *  - `initialPageParam`: default page parameters `{ page: 0, offset: 0 }`.
- *  - `staleTime`: cache freshness duration (2 minutes).
  *  - `getNextPageParam`: generic pagination logic that works with
  *    API responses shaped like `{ items: T[]; total: number }`.
  *
  *  Pagination logic:
  *  - Counts how many items are fetched across all pages.
  *  - If fetched count >= `total` → returns `undefined` (no more pages).
- *  -  Otherwise → returns next page params `{ page, offset }`.
+ *  - Otherwise → returns next page params `{ page, offset }`.
+ *
+ *  Note: staleTime uses global default from query-client.ts (1 min online, infinite offline).
  */
 export const baseInfiniteQueryOptions = {
   initialPageParam: { page: 0, offset: 0 },
-  staleTime: 1000 * 60 * 2, // 2 minutes
   getNextPageParam: ((lastPage, allPages) => {
     const total = lastPage.total;
     const fetchedCount = allPages.reduce((acc, page) => acc + page.items.length, 0);

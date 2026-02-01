@@ -3,16 +3,16 @@ import { lazy, Suspense, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster/service';
-import type { PendingMembershipsTableProps } from '~/modules/memberships/pending-table';
+import type { PendingMembershipsTableProps } from '~/modules/memberships/pending-table/pending-memberships-table';
 import { Button } from '~/modules/ui/button';
 
-const PendingMembershipsTable = lazy(() => import('~/modules/memberships/pending-table'));
+const PendingMembershipsTable = lazy(() => import('~/modules/memberships/pending-table/pending-memberships-table'));
 
 /**
  * Component to display pending memberships count.
  * Users can click to open them in a table in a sheet.
  */
-export const PendingMemberships = ({ entity }: PendingMembershipsTableProps) => {
+export const PendingMembershipsCount = ({ entity }: PendingMembershipsTableProps) => {
   const { t } = useTranslation();
   const buttonRef = useRef(null);
 

@@ -2042,7 +2042,7 @@ export type DeleteUsersData = {
   };
   path?: never;
   query?: never;
-  url: '/user';
+  url: '/users';
 };
 
 export type DeleteUsersErrors = {
@@ -2092,7 +2092,7 @@ export type GetUsersData = {
     targetEntityType?: 'organization';
     targetEntityId?: string;
   };
-  url: '/user';
+  url: '/users';
 };
 
 export type GetUsersErrors = {
@@ -2146,7 +2146,7 @@ export type GetUserData = {
     idOrSlug: string;
   };
   query?: never;
-  url: '/user/{idOrSlug}';
+  url: '/users/{idOrSlug}';
 };
 
 export type GetUserErrors = {
@@ -2200,7 +2200,7 @@ export type UpdateUserData = {
     idOrSlug: string;
   };
   query?: never;
-  url: '/user/{idOrSlug}';
+  url: '/users/{idOrSlug}';
 };
 
 export type UpdateUserErrors = {
@@ -2243,7 +2243,7 @@ export type DeleteOrganizationsData = {
   };
   path?: never;
   query?: never;
-  url: '/organization';
+  url: '/organizations';
 };
 
 export type DeleteOrganizationsErrors = {
@@ -2294,7 +2294,7 @@ export type GetOrganizationsData = {
     excludeArchived?: 'true' | 'false';
     include?: string;
   };
-  url: '/organization';
+  url: '/organizations';
 };
 
 export type GetOrganizationsErrors = {
@@ -2342,7 +2342,7 @@ export type CreateOrganizationsData = {
   }>;
   path?: never;
   query?: never;
-  url: '/organization';
+  url: '/organizations';
 };
 
 export type CreateOrganizationsErrors = {
@@ -2404,7 +2404,7 @@ export type GetOrganizationData = {
     idOrSlug: string;
   };
   query?: never;
-  url: '/organization/{idOrSlug}';
+  url: '/organizations/{idOrSlug}';
 };
 
 export type GetOrganizationErrors = {
@@ -2468,7 +2468,7 @@ export type UpdateOrganizationData = {
     idOrSlug: string;
   };
   query?: never;
-  url: '/organization/{idOrSlug}';
+  url: '/organizations/{idOrSlug}';
 };
 
 export type UpdateOrganizationErrors = {
@@ -2518,7 +2518,7 @@ export type PagesPublicStreamData = {
      */
     live?: 'sse';
   };
-  url: '/page/stream';
+  url: '/pages/stream';
 };
 
 export type PagesPublicStreamErrors = {
@@ -2567,7 +2567,7 @@ export type DeletePagesData = {
   };
   path?: never;
   query?: never;
-  url: '/page';
+  url: '/pages';
 };
 
 export type DeletePagesErrors = {
@@ -2614,7 +2614,7 @@ export type GetPagesData = {
     offset?: string;
     limit?: string;
   };
-  url: '/page';
+  url: '/pages';
 };
 
 export type GetPagesErrors = {
@@ -2661,7 +2661,7 @@ export type CreatePagesData = {
   }>;
   path?: never;
   query?: never;
-  url: '/page';
+  url: '/pages';
 };
 
 export type CreatePagesErrors = {
@@ -2732,7 +2732,7 @@ export type GetPageData = {
     id: string;
   };
   query?: never;
-  url: '/page/{id}';
+  url: '/pages/{id}';
 };
 
 export type GetPageErrors = {
@@ -2783,7 +2783,7 @@ export type UpdatePageData = {
     id: string;
   };
   query?: never;
-  url: '/page/{id}';
+  url: '/pages/{id}';
 };
 
 export type UpdatePageErrors = {
@@ -3594,7 +3594,7 @@ export type DeleteAttachmentsData = {
     orgIdOrSlug: string;
   };
   query?: never;
-  url: '/{orgIdOrSlug}/attachment';
+  url: '/{orgIdOrSlug}/attachments';
 };
 
 export type DeleteAttachmentsErrors = {
@@ -3646,7 +3646,7 @@ export type GetAttachmentsData = {
     offset?: string;
     limit?: string;
   };
-  url: '/{orgIdOrSlug}/attachment';
+  url: '/{orgIdOrSlug}/attachments';
 };
 
 export type GetAttachmentsErrors = {
@@ -3711,7 +3711,7 @@ export type CreateAttachmentsData = {
     orgIdOrSlug: string;
   };
   query?: never;
-  url: '/{orgIdOrSlug}/attachment';
+  url: '/{orgIdOrSlug}/attachments';
 };
 
 export type CreateAttachmentsErrors = {
@@ -3790,7 +3790,7 @@ export type UpdateAttachmentData = {
     orgIdOrSlug: string;
   };
   query?: never;
-  url: '/{orgIdOrSlug}/attachment/{id}';
+  url: '/{orgIdOrSlug}/attachments/{id}';
 };
 
 export type UpdateAttachmentErrors = {
@@ -3833,7 +3833,7 @@ export type RedirectToAttachmentData = {
     id: string;
   };
   query?: never;
-  url: '/{orgIdOrSlug}/attachment/{id}/link';
+  url: '/{orgIdOrSlug}/attachments/{id}/link';
 };
 
 export type RedirectToAttachmentErrors = {

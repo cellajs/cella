@@ -9,6 +9,8 @@
  */
 
 import type { QueryClient, QueryKey } from '@tanstack/react-query';
+import type { ContextEntityType } from 'config';
+import { getEntityQueryKeys } from './entity-query-registry';
 
 /**
  * Check if invalidation should be skipped because other related mutations are still running.
@@ -51,5 +53,39 @@ export function shouldSkipInvalidation(queryClient: QueryClient, mutationKey: Qu
 export function invalidateIfLastMutation(queryClient: QueryClient, mutationKey: QueryKey, queryKey: QueryKey): void {
   if (!shouldSkipInvalidation(queryClient, mutationKey)) {
     queryClient.invalidateQueries({ queryKey });
+  }
+}
+
+/**
+ * Invalidate context entity queries when membership changes.
+ * Call this after invite/update/delete membership mutations to sync entity counts.
+ *
+ * Invalidates:
+ * - Entity detail + list queries for the affected entity
+ * - Parent organization detail if organizationId differs from entityId
+ *
+ * @param queryClient - React Query client
+ * @param entityType - Type of the context entity (e.g., 'organization')
+ * @param entityId - ID of the affected entity
+ * @param organizationId - Parent organization ID (if entity is nested under an org)
+ */
+export function invalidateOnMembershipChange(
+  queryClient: QueryClient,
+  entityType: ContextEntityType,
+  entityId: string,
+  organizationId?: string,
+): void {
+  const keys = getEntityQueryKeys(entityType);
+  if (keys) {
+    queryClient.invalidateQueries({ queryKey: keys.detail.byId(entityId), refetchType: 'active' });
+    queryClient.invalidateQueries({ queryKey: keys.list.base, refetchType: 'active' });
+  }
+
+  // If entity belongs to a different parent org, invalidate that too
+  if (organizationId && organizationId !== entityId) {
+    const orgKeys = getEntityQueryKeys('organization');
+    if (orgKeys) {
+      queryClient.invalidateQueries({ queryKey: orgKeys.detail.byId(organizationId), refetchType: 'active' });
+    }
   }
 }

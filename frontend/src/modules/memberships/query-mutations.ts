@@ -18,7 +18,13 @@ import type {
   MutationUpdateMembership,
 } from '~/modules/memberships/types';
 import { getMenuData } from '~/modules/navigation/menu-sheet/helpers';
-import { formatUpdatedCacheData, getQueryItems, getSimilarQueries, useMutateQueryData } from '~/query/basic';
+import {
+  formatUpdatedCacheData,
+  getQueryItems,
+  getSimilarQueries,
+  invalidateOnMembershipChange,
+  useMutateQueryData,
+} from '~/query/basic';
 import { queryClient } from '~/query/query-client';
 
 const limit = appConfig.requestLimits.members;
@@ -88,6 +94,9 @@ export const useInviteMemberMutation = () =>
             entity ? updateMembershipCounts(entity, invitesSentCount) : entity,
           );
         }
+
+        // Invalidate entity detail/list queries to ensure fresh data
+        invalidateOnMembershipChange(queryClient, entityType, id, organizationId);
       }
     },
     onError,
@@ -189,6 +198,10 @@ export const useMemberUpdateMutation = () =>
           return formatUpdatedCacheData(oldData, updatedData, limit);
         });
       }
+
+      // Invalidate entity queries to ensure counts and data are fresh
+      invalidateOnMembershipChange(queryClient, entityType, idOrSlug, orgIdOrSlug);
+
       toaster(toastMessage, 'success');
     },
     onError: (_, __, context) => {
@@ -234,7 +247,11 @@ export const useMembershipsDeleteMutation = () =>
 
       return context;
     },
-    onSuccess: () => toaster(t('common:success.delete_members'), 'success'),
+    onSuccess: (_, { idOrSlug, entityType, orgIdOrSlug }) => {
+      // Invalidate entity queries to ensure counts are fresh
+      invalidateOnMembershipChange(queryClient, entityType, idOrSlug, orgIdOrSlug);
+      toaster(t('common:success.delete_members'), 'success');
+    },
     onError,
   });
 

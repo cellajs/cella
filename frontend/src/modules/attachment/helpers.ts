@@ -1,9 +1,74 @@
-import { uploadTemplates } from 'config/templates';
+import { assemblyTemplates } from 'config/assembly-templates';
 import type { Attachment } from '~/api.gen';
+import { getPresignedUrl } from '~/api.gen/sdk.gen';
 import { zAttachment } from '~/api.gen/zod.gen';
+import type { BlobVariant } from '~/modules/attachment/dexie/attachments-db';
+import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
+import { downloadService } from '~/modules/attachment/download-service';
+import { findAttachmentInListCache } from '~/modules/attachment/query';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
 import { createOptimisticEntity } from '~/query/basic';
 import { nanoid } from '~/utils/nanoid';
+
+/** Result of resolving an attachment URL */
+export interface ResolvedUrl {
+  url: string;
+  isLocal: boolean;
+  variant: BlobVariant | null;
+}
+
+export interface ResolveOptions {
+  preferredVariant?: BlobVariant;
+  useFallback?: boolean;
+  preferCloud?: boolean;
+  queueDownload?: boolean;
+}
+
+/**
+ * Core URL resolution: local blob first, then cloud fallback.
+ * Pure async function - no React hooks.
+ *
+ * @returns Resolved URL info, or null if not resolvable
+ */
+export async function resolveAttachmentUrl(
+  attachmentId: string,
+  attachment: Pick<Attachment, 'originalKey' | 'convertedKey' | 'thumbnailKey' | 'public'> | null,
+  options: ResolveOptions = {},
+): Promise<ResolvedUrl | null> {
+  const { preferredVariant = 'original', useFallback = true, preferCloud = false, queueDownload = true } = options;
+
+  // 1. Try local blob first (unless preferCloud)
+  if (!preferCloud) {
+    const localResult = await attachmentStorage.createBlobUrlWithVariant(attachmentId, preferredVariant, useFallback);
+    if (localResult) {
+      return { url: localResult.url, isLocal: true, variant: localResult.actualVariant };
+    }
+  }
+
+  // 2. Need attachment metadata for cloud URL - try cache if not provided
+  const meta = attachment ?? findAttachmentInListCache(attachmentId);
+  if (!meta) return null;
+
+  // 3. Get cloud presigned URL
+  const cloudKey =
+    preferredVariant === 'thumbnail' && meta.thumbnailKey
+      ? meta.thumbnailKey
+      : preferredVariant === 'converted' && meta.convertedKey
+        ? meta.convertedKey
+        : meta.originalKey;
+
+  if (!cloudKey) return null;
+
+  const presignedUrl = await getPresignedUrl({ query: { key: cloudKey, isPublic: meta.public } });
+
+  // 4. Queue for background download
+  if (queueDownload) {
+    const fullAttachment = findAttachmentInListCache(attachmentId);
+    if (fullAttachment) downloadService.queueForDownload([fullAttachment]);
+  }
+
+  return { url: presignedUrl, isLocal: false, variant: null };
+}
 
 export const parseUploadedAttachments = (
   result: UploadedUppyFile<'attachment'>,
@@ -45,7 +110,7 @@ export const parseUploadedAttachments = (
   }
 
   //  Process converted + thumbnail variants
-  const steps = uploadTemplates.attachment.use.filter((step) => step !== ':original');
+  const steps = assemblyTemplates.attachment.use.filter((step) => step !== ':original');
 
   for (const step of steps) {
     const files = result[step] ?? [];

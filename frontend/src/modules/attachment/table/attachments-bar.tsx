@@ -4,7 +4,7 @@ import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Attachment } from '~/api.gen';
 import DeleteAttachments from '~/modules/attachment/delete-attachments';
-import type { AttachmentsTableProps } from '~/modules/attachment/table';
+import type { AttachmentsTableProps } from '~/modules/attachment/table/attachments-table';
 import { useAttachmentsUploadDialog } from '~/modules/attachment/table/helpers';
 import type { AttachmentsRouteSearchParams } from '~/modules/attachment/types';
 import { AlertWrap } from '~/modules/common/alert-wrap';

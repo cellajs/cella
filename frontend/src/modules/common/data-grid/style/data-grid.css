@@ -37,17 +37,19 @@
     --rdg-row-selected-background-color: hsl(var(--accent));
     --rdg-row-selected-hover-background-color: hsl(var(--accent));
     --rdg-checkbox-focus-color: hsl(var(--ring));
+    /* Z-index for frozen rows portal - can be overridden per grid instance */
+    --rdg-frozen-row-z-index: 100;
 
     display: grid;
     accent-color: hsl(var(--primary));
 
-    /* Stacking context and containment */
-    contain: content;
+    /* Page-embedded mode: vertical overflow visible, horizontal scroll internal */
+    contain: layout style;
     content-visibility: auto;
-    block-size: 350px;
     border: 1px solid var(--rdg-border-color);
     box-sizing: border-box;
-    overflow: auto;
+    overflow-x: auto;
+    overflow-y: visible;
     background-color: var(--rdg-background-color);
     color: var(--rdg-color);
     font-size: var(--rdg-font-size);

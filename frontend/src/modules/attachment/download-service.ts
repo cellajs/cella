@@ -4,6 +4,9 @@
  * Background service that downloads attachments from cloud for offline viewing.
  * Uses the download queue in Dexie and respects config filters (size, content type).
  *
+ * Variant download priority: thumbnail → converted → original
+ * After downloading 'original', evicts 'raw' blob if present.
+ *
  * Integration with react-query:
  * - Attachments are fetched via normal queries and cached
  * - This service queues them for blob download in background
@@ -14,12 +17,15 @@ import { onlineManager } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import type { Attachment } from '~/api.gen';
 import { getPresignedUrl } from '~/api.gen/sdk.gen';
-import { attachmentsDb } from '~/modules/attachment/dexie/attachments-db';
+import { attachmentsDb, type BlobVariant } from '~/modules/attachment/dexie/attachments-db';
 import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
 import { attachmentQueryKeys } from '~/modules/attachment/query';
 import { findInListCache } from '~/query/basic';
 import { flattenInfiniteData } from '~/query/basic/flatten';
 import { queryClient } from '~/query/query-client';
+
+/** Variant download priority - download in this order */
+const variantPriority: BlobVariant[] = ['thumbnail', 'converted', 'original'];
 
 class AttachmentDownloadService {
   private processing = false;
@@ -186,6 +192,11 @@ class AttachmentDownloadService {
   /**
    * Download a single attachment by looking up metadata from react-query cache.
    */
+  /**
+   * Download a single attachment by looking up metadata from react-query cache.
+   * Downloads variants in priority order: thumbnail → converted → original.
+   * Evicts raw blob after original is downloaded.
+   */
   private async downloadAttachment(attachmentId: string, organizationId: string): Promise<void> {
     try {
       // Mark as downloading
@@ -205,38 +216,67 @@ class AttachmentDownloadService {
         return;
       }
 
-      // Get presigned URL
-      const url = await getPresignedUrl({
-        query: {
-          key: attachment.originalKey,
-          isPublic: attachment.public,
-        },
-      });
+      // Download variants in priority order
+      let downloadedOriginal = false;
 
-      // Download with timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000);
+      for (const variant of variantPriority) {
+        const key = this.getVariantKey(attachment, variant);
+        if (!key) continue;
 
-      const response = await fetch(url, { signal: controller.signal });
-      clearTimeout(timeoutId);
+        // Check if already downloaded
+        const existingVariant = await attachmentStorage.hasAnyVariant(attachmentId);
+        if (existingVariant === variant) continue;
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+        try {
+          const url = await getPresignedUrl({
+            query: { key, isPublic: attachment.public },
+          });
+
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+          const response = await fetch(url, { signal: controller.signal });
+          clearTimeout(timeoutId);
+
+          if (!response.ok) {
+            console.debug(
+              `[DownloadService] Failed to download ${variant} for ${attachmentId}: HTTP ${response.status}`,
+            );
+            continue;
+          }
+
+          const blob = await response.blob();
+          const contentType =
+            variant === 'converted' && attachment.convertedContentType
+              ? attachment.convertedContentType
+              : attachment.contentType || blob.type;
+
+          await attachmentStorage.storeDownloadBlobWithVariant(
+            attachmentId,
+            variant,
+            organizationId,
+            blob,
+            contentType,
+          );
+
+          console.debug(`[DownloadService] Downloaded ${variant} for ${attachmentId}`);
+
+          if (variant === 'original') {
+            downloadedOriginal = true;
+          }
+        } catch (err) {
+          console.debug(`[DownloadService] Error downloading ${variant} for ${attachmentId}:`, err);
+        }
       }
 
-      const blob = await response.blob();
+      // Evict raw blob after original is downloaded (smart eviction)
+      if (downloadedOriginal) {
+        await attachmentStorage.evictRawBlob(attachmentId);
+      }
 
-      // Store in IndexedDB
-      await attachmentStorage.storeDownloadBlob(
-        attachment.id,
-        organizationId,
-        blob,
-        attachment.contentType || blob.type,
-      );
-
-      // Mark as completed in queue
-      await attachmentStorage.updateDownloadStatus(attachmentId, 'completed');
-      console.debug(`[DownloadService] Downloaded attachment ${attachmentId}`);
+      // Mark as downloaded in queue
+      await attachmentStorage.updateDownloadStatus(attachmentId, 'downloaded');
+      console.debug(`[DownloadService] Completed downloading attachment ${attachmentId}`);
     } catch (error) {
       console.error(`[DownloadService] Failed to download ${attachmentId}:`, error);
       await attachmentStorage.updateDownloadStatus(attachmentId, 'failed');
@@ -244,19 +284,35 @@ class AttachmentDownloadService {
   }
 
   /**
+   * Get the cloud key for a specific variant.
+   */
+  private getVariantKey(attachment: Attachment, variant: BlobVariant): string | null {
+    switch (variant) {
+      case 'thumbnail':
+        return attachment.thumbnailKey || null;
+      case 'converted':
+        return attachment.convertedKey || null;
+      case 'original':
+        return attachment.originalKey || null;
+      default:
+        return null;
+    }
+  }
+
+  /**
    * Download an attachment immediately (not queued).
-   * Use this when you have the full attachment data.
+   * Downloads original variant and evicts raw if present.
    */
   async downloadNow(attachment: Attachment): Promise<boolean> {
     if (!this.config?.enabled) return false;
     if (!onlineManager.isOnline()) return false;
 
     try {
-      // Check if already cached
-      const exists = await attachmentStorage.hasBlob(attachment.id);
-      if (exists) return true;
+      // Check if original already cached
+      const existingVariant = await attachmentStorage.hasAnyVariant(attachment.id);
+      if (existingVariant === 'original') return true;
 
-      // Get presigned URL
+      // Get presigned URL for original
       const url = await getPresignedUrl({
         query: {
           key: attachment.originalKey,
@@ -277,13 +333,17 @@ class AttachmentDownloadService {
 
       const blob = await response.blob();
 
-      // Store in IndexedDB
-      await attachmentStorage.storeDownloadBlob(
+      // Store as original variant
+      await attachmentStorage.storeDownloadBlobWithVariant(
         attachment.id,
+        'original',
         attachment.organizationId,
         blob,
         attachment.contentType || blob.type,
       );
+
+      // Evict raw blob if present
+      await attachmentStorage.evictRawBlob(attachment.id);
 
       console.debug(`[DownloadService] Downloaded attachment ${attachment.id}`);
       return true;
@@ -299,7 +359,7 @@ class AttachmentDownloadService {
   async getStats(organizationId?: string): Promise<{
     pending: number;
     downloading: number;
-    completed: number;
+    downloaded: number;
     failed: number;
     skipped: number;
     storageUsed: number;
@@ -313,7 +373,7 @@ class AttachmentDownloadService {
     const stats = {
       pending: 0,
       downloading: 0,
-      completed: 0,
+      downloaded: 0,
       failed: 0,
       skipped: 0,
     };
@@ -326,8 +386,8 @@ class AttachmentDownloadService {
         case 'downloading':
           stats.downloading++;
           break;
-        case 'completed':
-          stats.completed++;
+        case 'downloaded':
+          stats.downloaded++;
           break;
         case 'failed':
           stats.failed++;

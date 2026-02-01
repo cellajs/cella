@@ -19,8 +19,8 @@ import { rewriteUrlToSlug } from '~/utils/rewrite-url-to-slug';
 
 //Lazy-loaded components
 const OrganizationPage = lazy(() => import('~/modules/organization/organization-page'));
-const MembersTable = lazy(() => import('~/modules/memberships/members-table'));
-const AttachmentsTable = lazy(() => import('~/modules/attachment/table'));
+const MembersTable = lazy(() => import('~/modules/memberships/members-table/members-table'));
+const AttachmentsTable = lazy(() => import('~/modules/attachment/table/attachments-table'));
 const OrganizationSettings = lazy(() => import('~/modules/organization/organization-settings'));
 
 /**
@@ -37,10 +37,10 @@ export const OrganizationLayoutRoute = createRoute({
     const isOnline = onlineManager.isOnline();
 
     const bootstrap = organizationQueryOptions(idOrSlug);
-    const bootstrapWithRevalidate = { ...bootstrap, revalidateIfStale: true };
 
+    // Instant navigation from cache. component useSuspenseQuery handles refetch if stale.
     const organization = isOnline
-      ? await queryClient.ensureQueryData(bootstrapWithRevalidate)
+      ? await queryClient.ensureQueryData(bootstrap)
       : (queryClient.getQueryData(bootstrap.queryKey) ?? findOrganizationInListCache(idOrSlug));
 
     if (!organization) {
@@ -48,8 +48,10 @@ export const OrganizationLayoutRoute = createRoute({
       throw redirect({ to: '/home', replace: true });
     }
 
-    // Canonical cache entry (always ID), remove slug entry
-    queryClient.setQueryData(organizationQueryKeys.detail.byId(organization.id), organization);
+    // Copy to canonical (ID-based) cache entry, preserving original staleness
+    const slugQuery = queryClient.getQueryState(bootstrap.queryKey);
+    const idKey = organizationQueryKeys.detail.byId(organization.id);
+    queryClient.setQueryData(idKey, organization, { updatedAt: slugQuery?.dataUpdatedAt });
     queryClient.removeQueries({ queryKey: bootstrap.queryKey, exact: true });
 
     // Rewrite URL to use slug if user navigated with ID

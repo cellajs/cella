@@ -18,7 +18,7 @@ export {
   hasEntityQueryKeys,
   registerEntityQueryKeys,
 } from './entity-query-registry';
-export { findInListCache, useFindInListCache } from './find-in-list-cache';
+export { findInListCache, findInListCacheWithTimestamp, useFindInListCache } from './find-in-list-cache';
 export { flattenInfiniteData } from './flatten';
 export { getQueryKeySortOrder } from './get-query-key-sort-order';
 export {
@@ -28,7 +28,7 @@ export {
   isArbitraryQueryData,
 } from './helpers';
 export { baseInfiniteQueryOptions, infiniteQueryUseCachedIfCompleteOptions } from './infinite-query-options';
-export { invalidateIfLastMutation, shouldSkipInvalidation } from './invalidation-helpers';
+export { invalidateIfLastMutation, invalidateOnMembershipChange, shouldSkipInvalidation } from './invalidation-helpers';
 export {
   formatUpdatedCacheData,
   getExactQuery,

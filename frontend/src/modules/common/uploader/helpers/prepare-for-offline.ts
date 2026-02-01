@@ -1,6 +1,6 @@
 import type { AssemblyResponse } from '@uppy/transloadit';
-import { uploadTemplates } from 'config/templates';
-import type { SyncStatus, UploadContext } from '~/modules/attachment/dexie/attachments-db';
+import { assemblyTemplates } from 'config/assembly-templates';
+import type { UploadContext, UploadStatus } from '~/modules/attachment/dexie/attachments-db';
 import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
 import type { CustomUppyFile } from '~/modules/common/uploader/types';
 import type { UploadTokenQuery } from '~/modules/me/types';
@@ -8,17 +8,17 @@ import type { UploadTokenQuery } from '~/modules/me/types';
 type PrepareFilesForOffline = (
   files: Record<string, CustomUppyFile>,
   tokenQuery: UploadTokenQuery,
-  syncStatus?: SyncStatus,
+  uploadStatus?: UploadStatus,
 ) => Promise<AssemblyResponse>;
 
 /**
  * Prepares files for offline/local storage and returns an assembly response.
- * Stores blobs in Dexie for later sync (when online) or permanent local storage.
+ * Stores blobs in Dexie for later upload (when online) or permanent local storage.
  */
-export const prepareFilesForOffline: PrepareFilesForOffline = async (files, tokenQuery, syncStatus = 'pending') => {
+export const prepareFilesForOffline: PrepareFilesForOffline = async (files, tokenQuery, uploadStatus = 'pending') => {
   console.warn('Files will be stored locally in IndexedDB.');
 
-  const template = uploadTemplates.attachment;
+  const template = assemblyTemplates.attachment;
   const templateKey = template.use[0];
   const organizationId = tokenQuery.organizationId;
 
@@ -34,7 +34,7 @@ export const prepareFilesForOffline: PrepareFilesForOffline = async (files, toke
 
   // Store each file blob locally
   for (const file of Object.values(files)) {
-    await attachmentStorage.storeUploadBlob(file, organizationId, syncStatus, uploadContext);
+    await attachmentStorage.storeUploadBlob(file, organizationId, uploadStatus, uploadContext);
   }
 
   // Prepare files for a manual 'complete' event (successfully uploaded files)

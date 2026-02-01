@@ -1,7 +1,7 @@
 import type { ReactNode, RefObject } from 'react';
 import { create } from 'zustand';
 
-type TriggerRef = RefObject<HTMLButtonElement | HTMLAnchorElement | null>;
+export type TriggerRef = RefObject<HTMLButtonElement | HTMLAnchorElement | null>;
 
 type SheetContainerOptions = {
   ref: RefObject<HTMLDivElement | null>;

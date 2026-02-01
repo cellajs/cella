@@ -17,6 +17,7 @@ import {
   baseInfiniteQueryOptions,
   createEntityKeys,
   findInListCache,
+  findInListCacheWithTimestamp,
   invalidateIfLastMutation,
   registerEntityQueryKeys,
   useMutateQueryData,
@@ -42,16 +43,23 @@ export const findOrganizationInListCache = (idOrSlug: string) =>
  * Query options for a single organization by id or slug.
  * Uses initialData from the organizations list cache (e.g., menu data) to provide
  * instant loading while revalidating in the background.
+ * The initialDataUpdatedAt ensures proper staleness tracking - without it,
+ * React Query treats initialData as fresh (dataUpdatedAt = now), preventing refetch.
  */
-export const organizationQueryOptions = (idOrSlug: string) =>
-  queryOptions({
+export const organizationQueryOptions = (idOrSlug: string) => {
+  const cached = findInListCacheWithTimestamp<Organization>(
+    keys.list.base,
+    (org) => org.id === idOrSlug || org.slug === idOrSlug,
+  );
+  return queryOptions({
     queryKey: keys.detail.byId(idOrSlug),
     queryFn: async () => getOrganization({ path: { idOrSlug } }),
     // Seed from list cache (e.g., organizations loaded for menu) for instant display
-    initialData: () => findOrganizationInListCache(idOrSlug),
-    // Treat list data as fresh for 30 seconds to avoid unnecessary refetches
-    staleTime: 30_000,
+    initialData: cached?.data,
+    // Preserve original fetch timestamp so staleness is correctly calculated
+    initialDataUpdatedAt: cached?.dataUpdatedAt,
   });
+};
 
 type OrganizationsListParams = Omit<NonNullable<GetOrganizationsData['query']>, 'limit' | 'offset'> & {
   limit?: number;

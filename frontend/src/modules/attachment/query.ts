@@ -1,4 +1,10 @@
-import { infiniteQueryOptions, type QueryClient, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  infiniteQueryOptions,
+  type QueryClient,
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { appConfig } from 'config';
 import {
   type Attachment,
@@ -84,6 +90,28 @@ export const attachmentsQueryOptions = (params: AttachmentsListParams) => {
 
 /** Find an attachment in the list cache by id. */
 export const findAttachmentInListCache = (id: string) => findInListCache<Attachment>(keys.list.base, id);
+
+/**
+ * Reactive hook to get all attachments with a specific groupId.
+ * Subscribes to the attachments list query and filters by groupId.
+ * Returns null if no groupId provided or no matches found.
+ */
+export function useGroupAttachments(orgIdOrSlug: string | undefined, groupId: string | undefined) {
+  const queryOptions = orgIdOrSlug ? attachmentsQueryOptions({ orgIdOrSlug, sort: 'createdAt', order: 'desc' }) : null;
+
+  const { data } = useInfiniteQuery({
+    ...queryOptions!,
+    enabled: !!orgIdOrSlug && !!groupId,
+    select: (data) => {
+      if (!groupId) return null;
+      const allItems = data.pages.flatMap((page) => page.items);
+      const filtered = allItems.filter((item) => item.groupId === groupId);
+      return filtered.length > 0 ? filtered : null;
+    },
+  });
+
+  return data ?? null;
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Mutation hooks - standard React Query with sync utilities

@@ -97,6 +97,9 @@ function PageHeader({ entity, panel, parent, disableScroll, ...coverProps }: Pag
                 )}
                 <BreadcrumbItem className="flex items-center text-foreground/70">
                   <span>{entity.entityType}</span>
+                  {appConfig.mode === 'development' && (
+                    <span className="max-sm:hidden ml-2 text-foreground/50">{entity.id}</span>
+                  )}
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>

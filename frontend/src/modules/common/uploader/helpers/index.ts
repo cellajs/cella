@@ -4,7 +4,7 @@ import { Uppy } from '@uppy/core';
 import Transloadit from '@uppy/transloadit';
 import { appConfig } from 'config';
 import { getUploadToken, type UploadToken } from '~/api.gen';
-import type { UploadContext } from '~/modules/attachment/dexie/attachments-db';
+import { makeBlobKey, type UploadContext } from '~/modules/attachment/dexie/attachments-db';
 import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
 import { prepareFilesForOffline } from '~/modules/common/uploader/helpers/prepare-for-offline';
 import type { CustomUppy, CustomUppyFile, CustomUppyOpt } from '~/modules/common/uploader/types';
@@ -69,15 +69,15 @@ export const createBaseTransloaditUppy = async (
   uppy.on('upload', async (_uploadId, uploadFiles) => {
     const filesMap = Object.fromEntries(uploadFiles.map((f) => [f.id, f]));
 
-    // Determine sync status based on cloud availability
-    // - 'pending': Cloud available, queue for sync
+    // Determine upload status based on cloud availability
+    // - 'pending': Cloud available, queue for upload
     // - 'local-only': No cloud configured, permanent local storage
     const isOnline = onlineManager.isOnline();
-    const syncStatus = hasCloudUpload ? 'pending' : 'local-only';
+    const uploadStatus = hasCloudUpload ? 'pending' : 'local-only';
 
     // If cloud upload not available, store locally and emit completion
     if (!hasCloudUpload) {
-      const assembly = await prepareFilesForOffline(filesMap, tokenQuery, syncStatus);
+      const assembly = await prepareFilesForOffline(filesMap, tokenQuery, uploadStatus);
       uppy.cancelAll();
       uppy.emit('transloadit:complete', assembly);
       return;
@@ -126,7 +126,9 @@ export const createBaseTransloaditUppy = async (
           // Handle both string and string[] types
           const fileIdStr = Array.isArray(fileId) ? fileId[0] : fileId;
           if (fileIdStr) {
-            await attachmentStorage.markSynced(fileIdStr);
+            // Use composite key for raw variant
+            const compositeKey = makeBlobKey(fileIdStr, 'raw');
+            await attachmentStorage.markUploaded(compositeKey);
           }
         }
       }
@@ -140,7 +142,9 @@ export const createBaseTransloaditUppy = async (
         // Handle both string and string[] types
         const fileIdStr = Array.isArray(fileId) ? fileId[0] : fileId;
         if (fileIdStr) {
-          await attachmentStorage.markFailed(fileIdStr, errorMessage);
+          // Use composite key for raw variant
+          const compositeKey = makeBlobKey(fileIdStr, 'raw');
+          await attachmentStorage.markFailed(compositeKey, errorMessage);
         }
       }
     });

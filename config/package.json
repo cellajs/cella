@@ -6,7 +6,7 @@
   },
   "exports": {
     ".": "./index.ts",
-    "./templates": "./templates.ts",
+    "./assembly-templates": "./assembly-templates.ts",
     "./tracing": "./src/index.ts"
   },
   "dependencies": {

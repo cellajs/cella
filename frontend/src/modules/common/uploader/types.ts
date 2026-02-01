@@ -1,12 +1,12 @@
 import type { Uppy, UppyFile, UppyOptions } from '@uppy/core';
 import type { AssemblyResult } from '@uppy/transloadit';
 import type { UploadTemplateId } from 'config';
-import type { uploadTemplates } from 'config/templates';
+import type { assemblyTemplates } from 'config/assembly-templates';
 
 type UppyBody = Record<string, unknown>;
 type UppyMeta = { public: boolean; bucketName: string; offlineUploaded: boolean };
 
-type TemplateStepKeys<T extends UploadTemplateId> = (typeof uploadTemplates)[T]['use'][number];
+type TemplateStepKeys<T extends UploadTemplateId> = (typeof assemblyTemplates)[T]['use'][number];
 
 export type CustomUppy = Uppy<UppyMeta, UppyBody>;
 export type CustomUppyFile = UppyFile<UppyMeta, UppyBody>;

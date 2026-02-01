@@ -149,7 +149,7 @@ function UpdatePageForm({ page }: Props) {
               id: `${appConfig.name}-blocknote-page-${page.id}`,
               trailingBlock: false,
               className:
-                'min-h-20 max-h-[50vh] overflow-auto bg-background focus-visible:ring-ring max-focus-visible:ring-transparent max-focus-visible:ring-offset-0 flex w-full text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-hidden sm:focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+                'min-h-[50vh] bg-background focus-visible:ring-ring max-focus-visible:ring-transparent max-focus-visible:ring-offset-0 flex w-full text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-hidden sm:focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
               baseFilePanelProps: { isPublic: true, organizationId: 'page' },
             }}
           />

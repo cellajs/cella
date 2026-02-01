@@ -136,7 +136,7 @@ const attachment = {
   ] as const,
 };
 
-export const uploadTemplates = {
+export const assemblyTemplates = {
   avatar,
   cover,
   attachment,

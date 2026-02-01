@@ -8,7 +8,7 @@
  * Entity modules call addMutationRegistrar() at module load time to register
  * their mutation defaults. The query modules are explicitly imported in
  * provider.tsx AFTER this module is fully initialized, which triggers their
- * registration. Then initializeMutationDefaults() applies all registrations.
+ * registration. Then initMutationDefaults() applies all registrations.
  *
  * @see https://tanstack.com/query/latest/docs/framework/react/guides/mutations#persist-mutations
  */
@@ -40,7 +40,7 @@ export function addMutationRegistrar(registrar: MutationDefaultsRegistrar): void
  * Initialize all registered mutation defaults.
  * Call this once during app startup, before PersistQueryClientProvider restores.
  */
-export function initializeMutationDefaults(queryClient: QueryClient): void {
+export function initMutationDefaults(queryClient: QueryClient): void {
   for (const registrar of registrars) {
     registrar(queryClient);
   }

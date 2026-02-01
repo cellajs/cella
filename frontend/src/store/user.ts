@@ -101,6 +101,7 @@ export const useUserStore = create<UserStoreState>()(
         name: `${appConfig.slug}-user`,
         partialize: (state) => ({
           user: state.user,
+          systemRole: state.systemRole,
           oauth: state.enabledOAuth,
           passkey: state.hasPasskey,
           totp: state.hasTotp,

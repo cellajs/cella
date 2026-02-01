@@ -4,8 +4,8 @@ import { DownloadIcon, ExternalLinkIcon } from 'lucide-react';
 import { useRef, useState } from 'react';
 import useDownloader from 'react-use-downloader';
 import { clearAttachmentDialogSearchParams, openAttachmentDialog } from '~/modules/attachment/dialog/lib';
+import FilePlaceholder from '~/modules/attachment/file-placeholder';
 import { AttachmentRender } from '~/modules/attachment/render';
-import FilePlaceholder from '~/modules/attachment/table/preview/placeholder';
 import CloseButton from '~/modules/common/close-button';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import Spinner from '~/modules/common/spinner';
@@ -55,7 +55,6 @@ function AttachmentsCarousel({
   classNameContainer,
 }: CarouselProps) {
   const navigate = useNavigate();
-
   const removeDialog = useDialoger((state) => state.remove);
   const { download, isInProgress } = useDownloader();
 
@@ -80,6 +79,7 @@ function AttachmentsCarousel({
       return;
     }
 
+    // Update URL for sharing/bookmarking - dialog uses select to avoid re-render
     navigate({
       to: '.',
       replace: true,

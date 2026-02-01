@@ -63,7 +63,6 @@ import type {
   TouchModeConfig,
 } from './types';
 import {
-  abs,
   assertIsValidKeyGetter,
   canExitGrid,
   classnames,
@@ -379,8 +378,6 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   /**
    * states
    */
-  const [scrollTop, setScrollTop] = useState(0);
-  const [scrollLeft, setScrollLeft] = useState(0);
   const [columnWidthsInternal, setColumnWidthsInternal] = useState((): ColumnWidths => columnWidthsRaw ?? new Map());
   const [isColumnResizing, setColumnResizing] = useState(false);
   const [isDragging, setDragging] = useState(false);
@@ -428,7 +425,14 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     [columnWidths],
   );
 
-  const [gridRef, gridWidth, gridHeight, horizontalScrollbarHeight] = useGridDimensions();
+  const {
+    gridRef,
+    inlineSize: gridWidth,
+    viewportHeight,
+    horizontalScrollbarHeight,
+    scrollTop,
+    scrollLeft,
+  } = useGridDimensions();
   const {
     columns,
     colSpanColumns,
@@ -477,7 +481,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   const isTreeGrid = role === 'treegrid';
   const headerRowsHeight = headerRowsCount * headerRowHeight;
   const summaryRowsHeight = summaryRowsCount * summaryRowHeight;
-  const clientHeight = gridHeight - headerRowsHeight - summaryRowsHeight;
+  const clientHeight = viewportHeight - headerRowsHeight - summaryRowsHeight;
   const isSelectable = selectedRows != null && onSelectedRowsChange != null;
   const { leftKey, rightKey } = getLeftRightKey(direction);
   const ariaRowCount = rawAriaRowCount ?? headerRowsCount + rows.length + summaryRowsCount;
@@ -756,12 +760,8 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   }
 
   function handleScroll(event: React.UIEvent<HTMLDivElement>) {
-    const { scrollTop, scrollLeft } = event.currentTarget;
-    flushSync(() => {
-      setScrollTop(scrollTop);
-      // scrollLeft is nagative when direction is rtl
-      setScrollLeft(abs(scrollLeft));
-    });
+    // Scroll state is now managed by useGridDimensions hook
+    // This handler only passes the event to the consumer
     onScroll?.(event);
   }
 
@@ -1384,7 +1384,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
               const isSummaryRowSelected = selectedPosition.rowIdx === summaryRowIdx;
               const top =
                 clientHeight > totalRowHeight
-                  ? gridHeight - summaryRowHeight * (bottomSummaryRows.length - rowIdx)
+                  ? viewportHeight - summaryRowHeight * (bottomSummaryRows.length - rowIdx)
                   : undefined;
               const bottom = top === undefined ? summaryRowHeight * (bottomSummaryRows.length - 1 - rowIdx) : undefined;
 

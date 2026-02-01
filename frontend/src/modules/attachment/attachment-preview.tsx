@@ -1,4 +1,4 @@
-import FilePlaceholder from '~/modules/attachment/table/preview/placeholder';
+import FilePlaceholder from '~/modules/attachment/file-placeholder';
 
 interface Props {
   contentType: string;

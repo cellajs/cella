@@ -4,6 +4,7 @@ import { flattenInfiniteData } from './flatten';
 
 // Frame-scoped cache to avoid rebuilding for every call in the same render cycle
 let cachedMap: Map<string, unknown> = new Map();
+let cachedTimestampMap: Map<string, number> = new Map();
 let cacheTimestamp: number | null = null;
 const cacheTimeoutMs = 100;
 
@@ -24,15 +25,20 @@ export function findInListCache<T extends { id: string }>(
   // Rebuild cache if expired or first call
   if (cacheTimestamp === null || now - cacheTimestamp > cacheTimeoutMs) {
     cachedMap = new Map();
+    cachedTimestampMap = new Map();
     cacheTimestamp = now;
 
     const queries = queryClient.getQueryCache().findAll({ queryKey });
 
     for (const query of queries) {
+      const dataUpdatedAt = query.state.dataUpdatedAt;
       const items = flattenInfiniteData<T>(query.state.data);
       for (const item of items) {
         if (item && typeof item === 'object' && 'id' in item) {
-          cachedMap.set((item as { id: string }).id, item);
+          const id = (item as { id: string }).id;
+          cachedMap.set(id, item);
+          // Store the timestamp for when this data was fetched
+          if (dataUpdatedAt) cachedTimestampMap.set(id, dataUpdatedAt);
         }
       }
     }
@@ -49,6 +55,25 @@ export function findInListCache<T extends { id: string }>(
   }
 
   return undefined;
+}
+
+/**
+ * Find an entity in the query list cache, returning both the data and its dataUpdatedAt timestamp.
+ * This enables proper staleness tracking when using initialData with initialDataUpdatedAt.
+ *
+ * @param queryKey - Query key prefix to search (e.g., ['page', 'list'])
+ * @param matcher - ID string or function that returns true when the entity is found
+ * @returns Object with data and dataUpdatedAt, or undefined if not found
+ */
+export function findInListCacheWithTimestamp<T extends { id: string }>(
+  queryKey: readonly unknown[],
+  matcher: string | ((item: T) => boolean),
+): { data: T; dataUpdatedAt: number | undefined } | undefined {
+  const data = findInListCache<T>(queryKey, matcher);
+  if (!data) return undefined;
+
+  const dataUpdatedAt = cachedTimestampMap.get(data.id);
+  return { data, dataUpdatedAt };
 }
 
 /**

@@ -90,7 +90,6 @@ export const pageQueryOptions = (id: string) =>
       return result;
     },
     initialData: () => findPageInListCache(id),
-    staleTime: 30_000,
   });
 
 type PagesListParams = Omit<NonNullable<GetPagesData['query']>, 'limit' | 'offset'> & {

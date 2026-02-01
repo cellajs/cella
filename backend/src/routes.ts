@@ -25,14 +25,14 @@ const app = baseApp
   .route('/auth/', authPasskeysRouteHandlers)
   .route('/auth/', authOAuthRouteHandlers)
   .route('/me', meRouteHandlers)
-  .route('/user', userRouteHandlers)
-  .route('/organization', organizationRouteHandlers)
-  .route('/page', pageRouteHandlers)
+  .route('/users', userRouteHandlers)
+  .route('/organizations', organizationRouteHandlers)
+  .route('/pages', pageRouteHandlers)
   .route('/', entitiesRouteHandlers)
   .route('/system', systemRouteHandlers)
   .route('/requests', requestsRouteHandlers)
   .route('/metrics', metricsRouteHandlers)
-  .route('/:orgIdOrSlug/attachment', attachmentRouteHandlers)
+  .route('/:orgIdOrSlug/attachments', attachmentRouteHandlers)
   .route('/:orgIdOrSlug/memberships', membershipsRouteHandlers);
 
 export default app;

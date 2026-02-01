@@ -26,6 +26,8 @@ import type { CustomUppy, CustomUppyOpt, UploadedUppyFile } from '~/modules/comm
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
 import { useUIStore } from '~/store/ui';
 
+import '~/modules/common/uploader/uppy-styles';
+
 const basicBlockTypes = {
   image: {
     allowedFileTypes: ['image/*'],

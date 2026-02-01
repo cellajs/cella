@@ -7,10 +7,10 @@ import { useTranslation } from 'react-i18next';
 import useDownloader from 'react-use-downloader';
 import { type Attachment, getPresignedUrl } from '~/api.gen';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
+import AttachmentPreview from '~/modules/attachment/attachment-preview';
 import DeleteAttachments from '~/modules/attachment/delete-attachments';
 import { useAttachmentUrl } from '~/modules/attachment/hooks/use-attachment-url';
-import { useBlobSyncStatus } from '~/modules/attachment/hooks/use-blob-sync-status';
-import AttachmentPreview from '~/modules/attachment/table/preview';
+import { useBlobUploadStatus } from '~/modules/attachment/hooks/use-blob-sync-status';
 import type { EllipsisOption } from '~/modules/common/data-table/table-ellipsis';
 import TableEllipsis from '~/modules/common/data-table/table-ellipsis';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -33,8 +33,8 @@ export const ThumbnailCell = ({ row, tabIndex }: ThumbnailCellProps) => {
 
   const wrapClass = 'flex space-x-2 items-center justify-center w-full h-full';
 
-  // Use attachment URL hook which handles local blob vs cloud URL
-  const { url } = useAttachmentUrl(row);
+  // Use attachment URL hook - prefer thumbnail variant for table cells
+  const { url } = useAttachmentUrl(row, { preferredVariant: 'thumbnail' });
 
   // Remote URLs: wrap in a Link with custom behavior
   return (
@@ -77,9 +77,9 @@ export const CopyUrlCell = ({ row, tabIndex }: CopyUrlCellProps) => {
   const { t } = useTranslation();
   const { copyToClipboard, copied } = useCopyToClipboard();
 
-  // Check if blob is synced to cloud
-  const { isSynced, hasLocalBlob } = useBlobSyncStatus(row.id);
-  const canCopy = !hasLocalBlob || isSynced;
+  // Check if blob is uploaded to cloud
+  const { isUploaded, hasLocalBlob } = useBlobUploadStatus(row.id);
+  const canCopy = !hasLocalBlob || isUploaded;
 
   if (!canCopy) return <div className="text-muted text-center w-full">-</div>;
 
@@ -109,9 +109,9 @@ export const DownloadCell = ({ row, tabIndex }: DownloadCellProps) => {
   const { t } = useTranslation();
   const { download, isInProgress } = useDownloader();
 
-  // Check if blob is synced to cloud
-  const { isSynced, hasLocalBlob } = useBlobSyncStatus(row.id);
-  const canDownload = !hasLocalBlob || isSynced;
+  // Check if blob is uploaded to cloud
+  const { isUploaded, hasLocalBlob } = useBlobUploadStatus(row.id);
+  const canDownload = !hasLocalBlob || isUploaded;
 
   if (!canDownload) return <div className="text-muted text-center w-full">-</div>;
 
@@ -146,9 +146,9 @@ export const EllipsisCell = ({ row, tabIndex, organizationSlug }: EllipsisCellPr
   const { t } = useTranslation();
   const { copyToClipboard } = useCopyToClipboard();
 
-  // Check if blob is synced to cloud
-  const { isSynced, hasLocalBlob } = useBlobSyncStatus(row.id);
-  const canShare = !hasLocalBlob || isSynced;
+  // Check if blob is uploaded to cloud
+  const { isUploaded, hasLocalBlob } = useBlobUploadStatus(row.id);
+  const canShare = !hasLocalBlob || isUploaded;
 
   // Build options - delete is always available, copy URL only if synced
   const ellipsisOptions: EllipsisOption<Attachment>[] = [

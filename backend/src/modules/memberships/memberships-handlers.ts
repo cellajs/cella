@@ -36,7 +36,7 @@ import { encodeLowerCased } from '#/utils/oslo';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { createDate, TimeSpan } from '#/utils/time-span';
-import { MemberInviteEmail, MemberInviteWithTokenEmail } from '../../../emails';
+import { MemberAddedEmail, MemberInviteEmail, MemberInviteWithTokenEmail } from '../../../emails';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -333,7 +333,18 @@ const membershipsRouteHandlers = app
       await mailer.prepareEmails(MemberInviteEmail, staticProps, noTokenRecipients, user.email);
     }
 
-    // TODO-016 for scenario 2b we might want to send a different email notifying user of direct addition
+    // Step 7b: Send direct addition notification for Scenario 2b
+    const entityLink = `${appConfig.frontendUrl}/${entityType}/${entitySlug}`;
+    const directAdditionRecipients = existingUsersToDirectAdd.map(({ email }) => ({
+      email,
+      lng,
+      name: slugFromEmail(email),
+      entityLink,
+    }));
+
+    if (directAdditionRecipients.length > 0) {
+      await mailer.prepareEmails(MemberAddedEmail, staticProps, directAdditionRecipients, user.email);
+    }
 
     // Step 8: Send invite with token emails for Scenario 3
     if (withTokenRecipients.length > 0) {

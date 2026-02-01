@@ -1,17 +1,19 @@
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { appConfig } from 'config';
 import { useEffect, useMemo, useState } from 'react';
+import { downloadService } from '~/modules/attachment/download-service';
+import { uploadService } from '~/modules/attachment/upload-service';
 import type { UserMenuItem } from '~/modules/me/types';
 import { getMenuData } from '~/modules/navigation/menu-sheet/helpers/get-menu-data';
 import { entityToPrefetchQueries } from '~/offline-config';
 import { prefetchQuery } from '~/query/basic';
-import { initializeMutationDefaults } from '~/query/mutation-registry';
+import { initMutationDefaults } from '~/query/mutation-registry';
 // Import query modules AFTER mutation-registry to ensure registrars is initialized.
 // These modules call addMutationRegistrar() at module load time.
 import '~/modules/attachment/query';
 import '~/modules/page/query';
 import { persister } from '~/query/persister';
-import { queryClient } from '~/query/query-client';
+import { queryClient, silentRevalidateOnReconnect, updateStaleTime } from '~/query/query-client';
 import { initTabCoordinator, useTabCoordinatorStore } from '~/query/realtime/tab-coordinator';
 import { sessionPersister } from '~/query/session-persister';
 import { useUIStore } from '~/store/ui';
@@ -20,11 +22,15 @@ import { useUserStore } from '~/store/user';
 // Initialize mutation defaults BEFORE any cache restoration.
 // This registers mutationFn for each entity type so that paused mutations
 // can resume after page reload (mutationFn cannot be serialized to IndexedDB).
-initializeMutationDefaults(queryClient);
+initMutationDefaults(queryClient);
 
 // Initialize tab coordinator early so we know leader status before persistence decisions.
 // This is async but fast (uses Web Locks ifAvailable: true for quick determination).
 initTabCoordinator();
+
+// Start offline services for background blob caching and upload sync
+downloadService.start();
+uploadService.start();
 
 /** Configuration for offline-capable queries. */
 export const offlineQueryConfig = {
@@ -87,12 +93,22 @@ export function QueryClientProvider({ children }: { children: React.ReactNode })
   // - session: sessionStorage (survives refresh, cleared on tab close)
   const activePersister = useMemo(() => (offlineAccess ? persister : sessionPersister), [offlineAccess]);
 
-  // Track online/offline status
+  // Track online/offline status and update staleTime accordingly
   useEffect(() => {
     if (!offlineAccess) return;
 
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
+    const handleOnline = () => {
+      setIsOnline(true);
+      updateStaleTime(true, true);
+      silentRevalidateOnReconnect();
+    };
+    const handleOffline = () => {
+      setIsOnline(false);
+      updateStaleTime(true, false);
+    };
+
+    // Set initial staleTime based on current network status
+    updateStaleTime(true, navigator.onLine);
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
@@ -100,6 +116,8 @@ export function QueryClientProvider({ children }: { children: React.ReactNode })
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
+      // Reset to default staleTime when offlineAccess is disabled
+      updateStaleTime(false, true);
     };
   }, [offlineAccess]);
 

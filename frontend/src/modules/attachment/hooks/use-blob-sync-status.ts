@@ -1,73 +1,68 @@
 /**
- * Hook to get blob sync status from Dexie storage.
- *
- * Returns the sync status for attachments stored in IndexedDB:
- * - 'pending': Waiting to upload
- * - 'syncing': Currently uploading
- * - 'synced': Successfully uploaded or downloaded from cloud
- * - 'failed': Upload failed after retries
- * - 'local-only': No cloud configured, permanent local storage
- * - null: Not in local storage (cloud-only attachment)
+ * Hook to get blob upload status from Dexie storage.
+ * Returns upload status for attachments stored in IndexedDB.
  */
 import { useEffect, useState } from 'react';
-import { type AttachmentBlob, attachmentsDb, type SyncStatus } from '~/modules/attachment/dexie/attachments-db';
+import {
+  type AttachmentBlob,
+  attachmentsDb,
+  type BlobVariant,
+  type UploadStatus,
+} from '~/modules/attachment/dexie/attachments-db';
 
-export interface BlobSyncInfo {
-  /** Sync status or null if not in local storage */
-  syncStatus: SyncStatus | null;
-  /** Whether blob exists locally */
+export interface BlobUploadInfo {
+  uploadStatus: UploadStatus | null;
   hasLocalBlob: boolean;
-  /** Whether attachment is synced to cloud */
-  isSynced: boolean;
-  /** Whether attachment is currently syncing */
-  isSyncing: boolean;
-  /** Whether attachment sync failed */
+  storedVariants: BlobVariant[];
+  isUploaded: boolean;
+  isUploading: boolean;
   isFailed: boolean;
-  /** Whether attachment is pending sync */
   isPending: boolean;
-  /** Whether attachment is local-only (no cloud) */
   isLocalOnly: boolean;
-  /** Last error message if failed */
   lastError: string | null;
 }
 
-const defaultSyncInfo: BlobSyncInfo = {
-  syncStatus: null,
+const defaultUploadInfo: BlobUploadInfo = {
+  uploadStatus: null,
   hasLocalBlob: false,
-  isSynced: true, // No local blob = assume synced (cloud-only)
-  isSyncing: false,
+  storedVariants: [],
+  isUploaded: true,
+  isUploading: false,
   isFailed: false,
   isPending: false,
   isLocalOnly: false,
   lastError: null,
 };
 
-/** Convert blob record to sync info */
-function blobToSyncInfo(blob: AttachmentBlob | undefined): BlobSyncInfo {
-  if (!blob) return defaultSyncInfo;
+function blobsToUploadInfo(blobs: AttachmentBlob[]): BlobUploadInfo {
+  if (!blobs.length) return defaultUploadInfo;
+
+  const storedVariants = blobs.map((b) => b.variant);
+  const rawBlob = blobs.find((b) => b.variant === 'raw');
+  const primaryBlob = rawBlob || blobs[0];
 
   return {
-    syncStatus: blob.syncStatus,
+    uploadStatus: primaryBlob.uploadStatus,
     hasLocalBlob: true,
-    isSynced: blob.syncStatus === 'synced',
-    isSyncing: blob.syncStatus === 'syncing',
-    isFailed: blob.syncStatus === 'failed',
-    isPending: blob.syncStatus === 'pending',
-    isLocalOnly: blob.syncStatus === 'local-only',
-    lastError: blob.lastError,
+    storedVariants,
+    isUploaded: primaryBlob.uploadStatus === 'uploaded',
+    isUploading: primaryBlob.uploadStatus === 'uploading',
+    isFailed: primaryBlob.uploadStatus === 'failed',
+    isPending: primaryBlob.uploadStatus === 'pending',
+    isLocalOnly: primaryBlob.uploadStatus === 'local-only',
+    lastError: primaryBlob.lastError,
   };
 }
 
 /**
- * Get sync status for a single attachment.
- * Polls for changes while component is mounted.
+ * Get upload status for an attachment. Polls for changes while mounted.
  */
-export function useBlobSyncStatus(attachmentId: string | null | undefined): BlobSyncInfo {
-  const [syncInfo, setSyncInfo] = useState<BlobSyncInfo>(defaultSyncInfo);
+export function useBlobUploadStatus(attachmentId: string | null | undefined): BlobUploadInfo {
+  const [uploadInfo, setUploadInfo] = useState<BlobUploadInfo>(defaultUploadInfo);
 
   useEffect(() => {
     if (!attachmentId) {
-      setSyncInfo(defaultSyncInfo);
+      setUploadInfo(defaultUploadInfo);
       return;
     }
 
@@ -75,22 +70,15 @@ export function useBlobSyncStatus(attachmentId: string | null | undefined): Blob
 
     const fetchStatus = async () => {
       try {
-        const blob = await attachmentsDb.blobs.get(attachmentId);
-        if (!cancelled) {
-          setSyncInfo(blobToSyncInfo(blob));
-        }
+        const blobs = await attachmentsDb.blobs.where('attachmentId').equals(attachmentId).toArray();
+        if (!cancelled) setUploadInfo(blobsToUploadInfo(blobs));
       } catch (error) {
-        console.error('Failed to get blob sync status:', error);
-        if (!cancelled) {
-          setSyncInfo(defaultSyncInfo);
-        }
+        console.error('Failed to get blob upload status:', error);
+        if (!cancelled) setUploadInfo(defaultUploadInfo);
       }
     };
 
-    // Initial fetch
     fetchStatus();
-
-    // Poll for changes (sync status can change when upload completes)
     const intervalId = setInterval(fetchStatus, 2000);
 
     return () => {
@@ -99,59 +87,5 @@ export function useBlobSyncStatus(attachmentId: string | null | undefined): Blob
     };
   }, [attachmentId]);
 
-  return syncInfo;
-}
-
-/**
- * Get sync status for multiple attachments.
- * Returns a Map of attachment ID to sync info.
- */
-export function useBlobSyncStatusBatch(attachmentIds: string[] | null | undefined): Map<string, BlobSyncInfo> {
-  const [syncInfoMap, setSyncInfoMap] = useState<Map<string, BlobSyncInfo>>(new Map());
-
-  useEffect(() => {
-    if (!attachmentIds?.length) {
-      setSyncInfoMap(new Map());
-      return;
-    }
-
-    let cancelled = false;
-
-    const fetchStatuses = async () => {
-      try {
-        const blobs = await attachmentsDb.blobs.where('id').anyOf(attachmentIds).toArray();
-
-        if (!cancelled) {
-          const result = new Map<string, BlobSyncInfo>();
-
-          // Initialize all IDs with default (cloud-only)
-          for (const id of attachmentIds) {
-            result.set(id, defaultSyncInfo);
-          }
-
-          // Override with actual blob data
-          for (const blob of blobs) {
-            result.set(blob.id, blobToSyncInfo(blob));
-          }
-
-          setSyncInfoMap(result);
-        }
-      } catch (error) {
-        console.error('Failed to get blob sync statuses:', error);
-      }
-    };
-
-    // Initial fetch
-    fetchStatuses();
-
-    // Poll for changes
-    const intervalId = setInterval(fetchStatuses, 2000);
-
-    return () => {
-      cancelled = true;
-      clearInterval(intervalId);
-    };
-  }, [attachmentIds?.join(',')]);
-
-  return syncInfoMap;
+  return uploadInfo;
 }

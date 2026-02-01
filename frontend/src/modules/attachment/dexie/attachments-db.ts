@@ -12,8 +12,40 @@ import { appConfig, type UploadTemplateId } from 'config';
 import { Dexie, type EntityTable } from 'dexie';
 
 export type BlobSource = 'upload' | 'download';
-export type SyncStatus = 'pending' | 'syncing' | 'synced' | 'failed' | 'local-only';
-export type QueueStatus = 'pending' | 'downloading' | 'completed' | 'failed' | 'skipped';
+export type UploadStatus = 'pending' | 'uploading' | 'uploaded' | 'failed' | 'local-only';
+export type DownloadStatus = 'pending' | 'downloading' | 'downloaded' | 'failed' | 'skipped';
+
+/**
+ * Blob variant types:
+ * - 'raw': Original file from user upload (before Transloadit processing)
+ * - 'original': Processed original from Transloadit (:original step)
+ * - 'converted': Converted format from Transloadit (e.g., PDF to images)
+ * - 'thumbnail': Thumbnail from Transloadit (thumb_* steps)
+ */
+export type BlobVariant = 'raw' | 'original' | 'converted' | 'thumbnail';
+
+/**
+ * Create composite key for variant-aware blob storage.
+ * Format: `${attachmentId}:${variant}`
+ */
+export function makeBlobKey(attachmentId: string, variant: BlobVariant): string {
+  return `${attachmentId}:${variant}`;
+}
+
+/**
+ * Parse composite key back to attachmentId and variant.
+ */
+export function parseBlobKey(compositeKey: string): { attachmentId: string; variant: BlobVariant } | null {
+  const lastColon = compositeKey.lastIndexOf(':');
+  if (lastColon === -1) return null;
+
+  const attachmentId = compositeKey.slice(0, lastColon);
+  const variant = compositeKey.slice(lastColon + 1) as BlobVariant;
+
+  if (!['raw', 'original', 'converted', 'thumbnail'].includes(variant)) return null;
+
+  return { attachmentId, variant };
+}
 
 /** Upload context stored with blob for sync worker to use when re-uploading */
 export interface UploadContext {
@@ -27,10 +59,21 @@ export interface UploadContext {
  * Single table serves two purposes:
  * - 'upload': Files created locally, pending cloud sync
  * - 'download': Files fetched from cloud for offline viewing
+ *
+ * Uses composite key format: `${attachmentId}:${variant}`
  */
 export interface AttachmentBlob {
-  /** Matches Attachment.id in react-query cache */
+  /**
+   * Composite key: `${attachmentId}:${variant}`
+   * Use makeBlobKey() to create, parseBlobKey() to parse.
+   */
   id: string;
+
+  /** The attachment ID this blob belongs to */
+  attachmentId: string;
+
+  /** Which variant of the attachment this blob represents */
+  variant: BlobVariant;
 
   /** Organization scope */
   organizationId: string;
@@ -58,14 +101,14 @@ export interface AttachmentBlob {
   source: BlobSource;
 
   /**
-   * Sync status:
+   * Upload status:
    * - 'pending': Waiting to upload (source='upload' only)
-   * - 'syncing': Currently uploading (source='upload' only)
-   * - 'synced': Uploaded successfully or downloaded from cloud
+   * - 'uploading': Currently uploading (source='upload' only)
+   * - 'uploaded': Uploaded successfully or downloaded from cloud
    * - 'failed': Upload failed after retries (source='upload' only)
    * - 'local-only': No cloud configured, permanent local storage
    */
-  syncStatus: SyncStatus;
+  uploadStatus: UploadStatus;
 
   /** Upload retry count (source='upload' only) */
   syncAttempts: number;
@@ -95,14 +138,14 @@ export interface DownloadQueueEntry {
   priority: number;
 
   /**
-   * Queue status:
+   * Download status:
    * - 'pending': Waiting to download
    * - 'downloading': Currently fetching
-   * - 'completed': Successfully stored in blobs table
+   * - 'downloaded': Successfully stored in blobs table
    * - 'failed': Download failed
    * - 'skipped': Skipped due to filter (too large, wrong type)
    */
-  status: QueueStatus;
+  status: DownloadStatus;
 
   /** Why skipped (if status='skipped') */
   skipReason: string | null;
@@ -123,7 +166,7 @@ export class AttachmentsDatabase extends Dexie {
 
     this.version(1).stores({
       blobs:
-        '&id, organizationId, source, syncStatus, contentType, [organizationId+source], [organizationId+syncStatus]',
+        '&id, attachmentId, variant, organizationId, source, uploadStatus, contentType, [organizationId+source], [organizationId+uploadStatus], [attachmentId+variant]',
       downloadQueue: '&id, organizationId, status, priority, [organizationId+status]',
     });
   }
