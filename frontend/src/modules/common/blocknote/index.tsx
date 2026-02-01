@@ -141,7 +141,7 @@ function BlockNote({
     trailingBlock,
     dictionary: getDictionary(),
     collaboration: collaborationConfig,
-    // TODO(BLOCKING) remove image blink (https://github.com/TypeCellOS/BlockNote/issues/1570)
+    // TODO-002(BLOCKING) remove image blink (https://github.com/TypeCellOS/BlockNote/issues/1570)
     resolveFileUrl: (key) => {
       if (!key.length) return Promise.resolve('');
 
@@ -279,7 +279,7 @@ function BlockNote({
     else editor.replaceBlocks(editor.document, passedContent);
   }, [passedContent]);
 
-  // TODO(BLOCKING) Autofocus issue  https://github.com/TypeCellOS/BlockNote/issues/891
+  // TODO-003(BLOCKING) Autofocus issue  https://github.com/TypeCellOS/BlockNote/issues/891
   useEffect(() => {
     if (!autoFocus || !editable || !editor) return;
 

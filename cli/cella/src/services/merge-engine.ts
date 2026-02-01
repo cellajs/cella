@@ -38,6 +38,7 @@ import {
   getRemoteUrl,
   gitRm,
   merge,
+  removeFileFromWorktree,
   restoreToHead,
 } from '../utils/git';
 import { isIgnored, isPinned } from '../utils/overrides';
@@ -124,6 +125,7 @@ async function applyDirectMerge(
       } else {
         onProgress?.(`→ ${filePath}: removing (ignored, new from upstream)`);
         await gitRm(forkPath, filePath);
+        await removeFileFromWorktree(forkPath, filePath);
       }
       resolved++;
       continue;
@@ -153,6 +155,8 @@ async function applyDirectMerge(
         // Upstream deleted file - remove from fork
         onProgress?.(`→ ${filePath}: removing (deleted in upstream)`);
         await gitRm(forkPath, filePath);
+        // Also remove from filesystem if git rm didn't (e.g., after squash merge)
+        await removeFileFromWorktree(forkPath, filePath);
       }
       // If file exists in both, merge already applied upstream changes
       resolved++;
@@ -162,6 +166,7 @@ async function applyDirectMerge(
     if (status === 'deleted') {
       if (await fileExistsInWorktree(forkPath, filePath)) {
         await gitRm(forkPath, filePath);
+        await removeFileFromWorktree(forkPath, filePath);
       }
       resolved++;
       continue;
@@ -182,6 +187,7 @@ async function applyDirectMerge(
       } else {
         onProgress?.(`→ ${filePath}: removing (ignored conflict)`);
         await gitRm(forkPath, filePath);
+        await removeFileFromWorktree(forkPath, filePath);
       }
       resolved++;
     } else if (fileIsPinned) {

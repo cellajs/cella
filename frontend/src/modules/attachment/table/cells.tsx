@@ -1,4 +1,3 @@
-import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import i18n from 'i18next';
@@ -9,8 +8,9 @@ import useDownloader from 'react-use-downloader';
 import { type Attachment, getPresignedUrl } from '~/api.gen';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import DeleteAttachments from '~/modules/attachment/delete-attachments';
+import { useAttachmentUrl } from '~/modules/attachment/hooks/use-attachment-url';
+import { useBlobSyncStatus } from '~/modules/attachment/hooks/use-blob-sync-status';
 import AttachmentPreview from '~/modules/attachment/table/preview';
-import { isLocalAttachment } from '~/modules/attachment/utils';
 import type { EllipsisOption } from '~/modules/common/data-table/table-ellipsis';
 import TableEllipsis from '~/modules/common/data-table/table-ellipsis';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -26,29 +26,20 @@ interface ThumbnailCellProps {
 }
 
 export const ThumbnailCell = ({ row, tabIndex }: ThumbnailCellProps) => {
-  const { id, filename, contentType, thumbnailKey, public: isPublic, originalKey, groupId } = row;
+  const { id, filename, contentType, groupId } = row;
   const navigate = useNavigate();
   const setTriggerRef = useDialoger((state) => state.setTriggerRef);
   const cellRef = useRef<HTMLAnchorElement | null>(null);
 
   const wrapClass = 'flex space-x-2 items-center justify-center w-full h-full';
-  const key = thumbnailKey || originalKey;
 
-  // The computed URL for preview and link
-  const { data: presignedUrl } = useQuery({
-    queryKey: ['presigned-url', key, isPublic],
-    queryFn: () => getPresignedUrl({ query: { key, isPublic } }),
-    enabled: !isLocalAttachment(key),
-  });
-
-  // For local attachments, use the key directly (it's already a blob URL)
-  // For remote attachments, use the presigned URL
-  const url = isLocalAttachment(key) ? key : presignedUrl;
+  // Use attachment URL hook which handles local blob vs cloud URL
+  const { url } = useAttachmentUrl(row);
 
   // Remote URLs: wrap in a Link with custom behavior
   return (
     <Link
-      to={url}
+      to={url ?? undefined}
       ref={cellRef}
       draggable="false"
       tabIndex={tabIndex}
@@ -72,7 +63,7 @@ export const ThumbnailCell = ({ row, tabIndex }: ThumbnailCellProps) => {
         });
       }}
     >
-      <AttachmentPreview name={filename} url={url} contentType={contentType} />
+      <AttachmentPreview name={filename} url={url ?? undefined} contentType={contentType} />
     </Link>
   );
 };
@@ -86,10 +77,11 @@ export const CopyUrlCell = ({ row, tabIndex }: CopyUrlCellProps) => {
   const { t } = useTranslation();
   const { copyToClipboard, copied } = useCopyToClipboard();
 
-  const key = row.thumbnailKey || row.originalKey;
-  const isLocal = isLocalAttachment(key);
+  // Check if blob is synced to cloud
+  const { isSynced, hasLocalBlob } = useBlobSyncStatus(row.id);
+  const canCopy = !hasLocalBlob || isSynced;
 
-  if (isLocal) return <div className="text-muted text-center w-full">-</div>;
+  if (!canCopy) return <div className="text-muted text-center w-full">-</div>;
 
   const shareLink = `${appConfig.backendUrl}/${row.organizationId}/attachments/${row.id}/link`;
   return (
@@ -117,10 +109,11 @@ export const DownloadCell = ({ row, tabIndex }: DownloadCellProps) => {
   const { t } = useTranslation();
   const { download, isInProgress } = useDownloader();
 
-  const key = row.thumbnailKey || row.originalKey;
-  const isLocal = isLocalAttachment(key);
+  // Check if blob is synced to cloud
+  const { isSynced, hasLocalBlob } = useBlobSyncStatus(row.id);
+  const canDownload = !hasLocalBlob || isSynced;
 
-  if (isLocal) return <div className="text-muted text-center w-full">-</div>;
+  if (!canDownload) return <div className="text-muted text-center w-full">-</div>;
 
   return (
     <Button
@@ -153,11 +146,11 @@ export const EllipsisCell = ({ row, tabIndex, organizationSlug }: EllipsisCellPr
   const { t } = useTranslation();
   const { copyToClipboard } = useCopyToClipboard();
 
-  const key = row.thumbnailKey || row.originalKey;
-  const isLocal = isLocalAttachment(key);
+  // Check if blob is synced to cloud
+  const { isSynced, hasLocalBlob } = useBlobSyncStatus(row.id);
+  const canShare = !hasLocalBlob || isSynced;
 
-  if (isLocal) return <div className="text-muted text-center w-full">-</div>;
-
+  // Build options - delete is always available, copy URL only if synced
   const ellipsisOptions: EllipsisOption<Attachment>[] = [
     {
       label: i18n.t('common:delete'),
@@ -177,7 +170,7 @@ export const EllipsisCell = ({ row, tabIndex, organizationSlug }: EllipsisCellPr
     },
   ];
 
-  if (!isLocal) {
+  if (canShare) {
     const shareLink = `${appConfig.backendUrl}/${row.organizationId}/attachments/${row.id}/link`;
 
     ellipsisOptions.push({

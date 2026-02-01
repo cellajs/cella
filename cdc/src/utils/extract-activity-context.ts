@@ -1,5 +1,4 @@
-import type { EntityType } from 'config';
-import type { ResourceType } from '#/table-config';
+import type { EntityType, ResourceType } from 'config';
 import type { TableRegistryEntry } from '../types';
 import { extractContextEntityIds, type ContextEntityIds } from './extract-context-entity-ids';
 import { getRowValue } from './get-row-value';

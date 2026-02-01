@@ -267,5 +267,47 @@ describe('sync e2e', () => {
       // File should be deleted from fork
       expect(fileExists(env.forkPath, 'temp.ts')).toBe(false);
     });
+
+    it('should handle file moves from upstream (delete old location, add new)', async () => {
+      // Add a file in a subdirectory to upstream first
+      makeCommit(env.upstreamPath, {
+        files: { 'old-dir/moved-file.ts': '// File to be moved\nexport const value = 1;\n' },
+        message: 'chore: add file in old-dir',
+      });
+
+      // Sync to get the file
+      fetchUpstream(env.forkPath);
+      let config = buildRuntimeConfig(env, { service: 'sync', mergeStrategy: 'merge' });
+      await runSync(config);
+
+      expect(fileExists(env.forkPath, 'old-dir/moved-file.ts')).toBe(true);
+
+      // Complete the merge commit
+      const { execSync } = await import('node:child_process');
+      try {
+        execSync('git add -A && git commit --allow-empty -m "sync: merge upstream"', {
+          cwd: env.forkPath,
+          encoding: 'utf-8',
+        });
+      } catch {
+        // Ignore
+      }
+
+      // Now move the file in upstream (delete from old, add to new)
+      deleteFileAndCommit(env.upstreamPath, 'old-dir/moved-file.ts', 'refactor: move file to new location');
+      makeCommit(env.upstreamPath, {
+        files: { 'new-dir/moved-file.ts': '// File to be moved\nexport const value = 1;\n' },
+        message: 'refactor: add file in new location',
+      });
+
+      fetchUpstream(env.forkPath);
+      config = buildRuntimeConfig(env, { service: 'sync', mergeStrategy: 'merge' });
+      const result = await runSync(config);
+
+      expect(result.success).toBe(true);
+      // Old file should be deleted, new file should exist
+      expect(fileExists(env.forkPath, 'old-dir/moved-file.ts')).toBe(false);
+      expect(fileExists(env.forkPath, 'new-dir/moved-file.ts')).toBe(true);
+    });
   });
 });

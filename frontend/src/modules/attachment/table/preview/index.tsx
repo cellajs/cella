@@ -6,7 +6,6 @@ interface Props {
   url?: string;
 }
 
-// TODO review mb move quey here out of column
 function AttachmentPreview({ url, contentType, name }: Props) {
   if (!url || !contentType.startsWith('image/')) return <FilePlaceholder contentType={contentType} />;
 

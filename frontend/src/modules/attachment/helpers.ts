@@ -1,36 +1,14 @@
 import { uploadTemplates } from 'config/templates';
-import { Attachment } from '~/api.gen';
+import type { Attachment } from '~/api.gen';
+import { zAttachment } from '~/api.gen/zod.gen';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
-import { useUserStore } from '~/store/user';
+import { createOptimisticEntity } from '~/query/basic';
 import { nanoid } from '~/utils/nanoid';
-
-// Placeholder tx for optimistic updates (replaced by real tx from server)
-//TODO review this, shouldnt client set some of this and we might as well do it directly?
-const placeholderTx = {
-  id: '',
-  sourceId: '',
-  version: 0,
-  fieldVersions: {},
-};
-
-const baseAttachmentValues = {
-  entityType: 'attachment' as const,
-  convertedContentType: null,
-  convertedKey: null,
-  thumbnailKey: null,
-  modifiedAt: null,
-  modifiedBy: null,
-  keywords: '',
-  tx: placeholderTx,
-};
 
 export const parseUploadedAttachments = (
   result: UploadedUppyFile<'attachment'>,
   organizationId: string,
 ): Attachment[] => {
-  const createdBy = useUserStore.getState().user.id;
-  const createdAt = new Date().toISOString();
-
   // Process original files
   const originalFiles = result[':original'] ?? [];
 
@@ -46,8 +24,8 @@ export const parseUploadedAttachments = (
     const extIndex = filename.lastIndexOf('.');
     const name = extIndex > 0 ? filename.substring(0, extIndex) : filename;
 
-    attachmentsById.set(id, {
-      id,
+    // Use createOptimisticEntity to get schema defaults (including placeholder tx)
+    const attachment = createOptimisticEntity(zAttachment, {
       size: String(size ?? 0),
       contentType: mime,
       filename,
@@ -58,10 +36,12 @@ export const parseUploadedAttachments = (
       originalKey: url,
       groupId,
       organizationId,
-      createdBy,
-      createdAt,
-      ...baseAttachmentValues,
     });
+
+    // Override the temp id with the upload-provided id
+    attachment.id = id;
+
+    attachmentsById.set(id, attachment);
   }
 
   //  Process converted + thumbnail variants

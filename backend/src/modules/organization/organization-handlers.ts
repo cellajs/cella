@@ -235,7 +235,7 @@ const organizationRouteHandlers = app
         throw new AppError(409, 'slug_exists', 'warn', { entityType: 'organization', meta: { slug } });
     }
 
-    // TODO sanitize blocknote blocks for welcomeText? How to only allow  image urls from our own cdn plus a list from allowed domains?
+    // TODO-019 sanitize blocknote blocks for welcomeText? How to only allow image urls from our own cdn plus a list from allowed domains?
 
     const [updatedOrganization] = await db
       .update(organizationsTable)

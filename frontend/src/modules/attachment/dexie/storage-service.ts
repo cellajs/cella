@@ -20,6 +20,7 @@ import {
   type DownloadQueueEntry,
   type QueueStatus,
   type SyncStatus,
+  type UploadContext,
 } from '~/modules/attachment/dexie/attachments-db';
 import type { CustomUppyFile } from '~/modules/common/uploader/types';
 
@@ -38,6 +39,7 @@ class AttachmentStorageService {
     file: CustomUppyFile,
     organizationId: string,
     syncStatus: SyncStatus = 'pending',
+    uploadContext?: UploadContext,
   ): Promise<AttachmentBlob> {
     // Validate file has blob data
     if (!file.data || !(file.data instanceof Blob)) {
@@ -51,6 +53,8 @@ class AttachmentStorageService {
       id: file.id,
       organizationId,
       blob: blobData,
+      filename: file.name || undefined,
+      uploadContext,
       size,
       contentType: file.type || 'application/octet-stream',
       source: 'upload',

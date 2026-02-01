@@ -270,7 +270,7 @@ const membershipsRouteHandlers = app
       });
 
       // Step 5b: Link waitlist requests to new tokens (if any)
-      // TODO: This should be handled by eventManager in requests module itself
+      // TODO-015: This should be handled by eventManager in requests module itself
       await Promise.all(
         insertedTokens.map(({ id, email }) =>
           db
@@ -333,7 +333,7 @@ const membershipsRouteHandlers = app
       await mailer.prepareEmails(MemberInviteEmail, staticProps, noTokenRecipients, user.email);
     }
 
-    // TODO for scenario 2b we might want to send a different email notifying user of direct addition
+    // TODO-016 for scenario 2b we might want to send a different email notifying user of direct addition
 
     // Step 8: Send invite with token emails for Scenario 3
     if (withTokenRecipients.length > 0) {

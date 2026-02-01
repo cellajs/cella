@@ -1,7 +1,7 @@
 import { EventEmitter } from 'node:events';
-import { appConfig, type EntityType } from 'config';
+import { appConfig, type EntityType, type ResourceType } from 'config';
 import type { ActivityModel } from '#/db/schema/activities';
-import { type ResourceType, resourceTypes, type TrackedModel, type TrackedType } from '#/table-config';
+import { type TrackedModel, type TrackedType } from '#/table-config';
 import { logEvent } from '#/utils/logger';
 import { eventAttrs, recordEventReceived, type SyncTraceContext, startSyncSpan, syncSpanNames } from './sync-metrics';
 
@@ -15,7 +15,7 @@ export type ActivityAction = (typeof activityActions)[number];
 /**
  * All possible tracked types (entities + resources) for event type generation.
  */
-const trackedTypes = [...appConfig.entityTypes, ...resourceTypes] as const;
+const trackedTypes = [...appConfig.entityTypes, ...appConfig.resourceTypes] as const;
 
 /**
  * Generate all possible activity event types.

@@ -62,6 +62,9 @@ export const config = {
   /** Available CRUD actions for permission checks */
   entityActions: ['create', 'read', 'update', 'delete', 'search'] as const,
 
+  /** Resource types that are not entities but have activities logged */
+  resourceTypes: ['request', 'membership'] as const,
+
   /**
    * User menu structure of context entities with optional nested subentities.
    * If subentityType is set, the table must include `${entity}Id` foreign key.

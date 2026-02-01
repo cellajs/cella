@@ -160,14 +160,13 @@ function AttachmentsCarousel({
         {items.map(({ id, url, convertedUrl, contentType = 'image', convertedContentType }, idx) => {
           return (
             <CarouselItem
-              key={url}
+              key={id}
               onClick={() => {
                 if (isDialog) return;
                 openAttachmentDialog({ attachmentIndex: idx, attachments: items, triggerRef: nextButtonRef });
               }}
             >
               <AttachmentRender
-                id={id}
                 containerClassName={cn(
                   'overflow-hidden h-full relative flex items-center justify-center ',
                   classNameContainer,

@@ -142,8 +142,7 @@ export default function HeaderCell<R, SR>({
       event.preventDefault();
       onSort(event.ctrlKey || event.metaKey);
     } else if (resizable && isCtrlKeyHeldDown(event) && (key === 'ArrowLeft' || key === 'ArrowRight')) {
-      // prevent navigation
-      // TODO: check if we can use `preventDefault` instead
+      // stopPropagation prevents grid navigation during column resize
       event.stopPropagation();
       const { width } = event.currentTarget.getBoundingClientRect();
       const { leftKey } = getLeftRightKey(direction);

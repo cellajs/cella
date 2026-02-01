@@ -9,7 +9,6 @@ const RenderPDF = lazy(() => import('~/modules/attachment/render/pdf'));
 const RenderVideo = lazy(() => import('~/modules/attachment/render/video'));
 
 interface AttachmentRenderProps {
-  id: string;
   type: string;
   url: string;
   altName?: string;
@@ -20,6 +19,10 @@ interface AttachmentRenderProps {
   onPanStateToggle?: (state: boolean) => void;
 }
 
+/**
+ * Pure presentational component for rendering attachments.
+ * Expects a valid URL - URL resolution should happen at a higher level.
+ */
 export const AttachmentRender = ({
   url,
   type,

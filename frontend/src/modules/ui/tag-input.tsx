@@ -1,5 +1,5 @@
 import type { VariantProps } from 'class-variance-authority';
-import { RefreshCwIcon } from 'lucide-react';
+import { LoaderIcon, RefreshCwIcon } from 'lucide-react';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { toaster } from '~/modules/common/toaster/service';
@@ -15,6 +15,9 @@ enum Delimiter {
 
 type OmittedInputProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, 'placeholder' | 'size' | 'value'>;
 
+/** Delimiter can be a single character, 'Enter', or a regex pattern for splitting */
+type DelimiterType = Delimiter | RegExp;
+
 interface TagInputStyleClassesProps {
   tagList?: string;
   tag?: { body?: string; closeButton?: string };
@@ -29,7 +32,7 @@ interface TagInputProps extends OmittedInputProps {
   placeholder?: string;
   placeholderWhenFull?: string;
 
-  delimiter?: Delimiter;
+  delimiter?: DelimiterType;
   truncate?: number;
   minLength?: number;
   maxLength?: number;
@@ -39,6 +42,7 @@ interface TagInputProps extends OmittedInputProps {
   addTagsOnBlur?: boolean;
   showCount?: boolean;
   showClearAllButton?: boolean;
+  isLoading?: boolean;
 
   inputProps?: React.InputHTMLAttributes<HTMLInputElement>;
   badgeVariants?: Partial<VariantProps<typeof badgeVariants>>;
@@ -72,6 +76,7 @@ function TagInputBase(props: TagInputProps, ref: React.ForwardedRef<HTMLInputEle
     addTagsOnBlur = false,
     showCount = false,
     showClearAllButton = false,
+    isLoading = false,
 
     badgeVariants,
     inputProps = {},
@@ -92,6 +97,18 @@ function TagInputBase(props: TagInputProps, ref: React.ForwardedRef<HTMLInputEle
   const [activeTagIndex, setActiveTagIndex] = React.useState<number | null>(null);
   const [inputValue, setInputValue] = React.useState('');
   const [tagCount, setTagCount] = React.useState(Math.max(0, tags.length));
+
+  /** Check if delimiter matches in value (supports regex or string) */
+  const delimiterMatches = (value: string): boolean => {
+    if (delimiter instanceof RegExp) return delimiter.test(value);
+    return value.includes(delimiter);
+  };
+
+  /** Split value by delimiter (supports regex or string) */
+  const splitByDelimiter = (value: string): string[] => {
+    if (delimiter instanceof RegExp) return value.split(delimiter);
+    return value.split(delimiter);
+  };
 
   if (maxTags !== undefined && maxTags < 1) {
     console.warn('maxTags cannot be less than 1');
@@ -114,9 +131,8 @@ function TagInputBase(props: TagInputProps, ref: React.ForwardedRef<HTMLInputEle
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
-    if (addOnPaste && newValue.includes(delimiter)) {
-      const splitValues = newValue
-        .split(delimiter)
+    if (addOnPaste && delimiterMatches(newValue)) {
+      const splitValues = splitByDelimiter(newValue)
         .map((v) => v.trim())
         .filter((v) => v && v.length > 0); // Remove empty strings
 
@@ -162,8 +178,11 @@ function TagInputBase(props: TagInputProps, ref: React.ForwardedRef<HTMLInputEle
     const trimmedInput = inputValue.trim();
     const hasInput = trimmedInput.length > 0;
 
+    // Check if key matches delimiter (string match for non-regex, or Enter as universal confirm)
+    const isDelimiterKey = delimiter instanceof RegExp ? key === 'Enter' : key === delimiter || key === 'Enter';
+
     // Adding a new tag
-    if ((key === delimiter || key === 'Enter') && hasInput) {
+    if (isDelimiterKey && hasInput) {
       e.preventDefault();
 
       const errorMessage = newTagValidation(trimmedInput);
@@ -291,6 +310,7 @@ function TagInputBase(props: TagInputProps, ref: React.ForwardedRef<HTMLInputEle
           )}
           disabled={maxTags !== undefined && tags.length >= maxTags}
         />
+        {isLoading && <LoaderIcon className="ml-2 size-4 animate-spin text-muted-foreground" />}
       </div>
 
       {showCount && (
@@ -379,4 +399,4 @@ function TagList({ tags, classStyleProps, onTagClick, onRemoveTag, activeTagInde
   );
 }
 
-export { TagInput };
+export { TagInput, Delimiter, type TagInputProps };

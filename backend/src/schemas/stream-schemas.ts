@@ -1,7 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { appConfig } from 'config';
 import { activityActions } from '#/sync/activity-bus';
-import { resourceTypes } from '#/table-config';
 import { mockPublicStreamActivity, mockStreamNotification } from '../../mocks/mock-entity-base';
 import { txStreamMessageSchema } from './transaction-schemas';
 
@@ -24,7 +23,7 @@ export const streamNotificationSchema = z
     /** Entity type for realtime entity events */
     entityType: z.enum(appConfig.realtimeEntityTypes).nullable(),
     /** Resource type for non-entity events (membership) */
-    resourceType: z.enum(resourceTypes).nullable(),
+    resourceType: z.enum(appConfig.resourceTypes).nullable(),
     entityId: z.string(),
     organizationId: z.string().nullable(),
     /** Context entity type for membership events (organization, project, etc.) */

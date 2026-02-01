@@ -9,7 +9,6 @@ import {
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import type { TxBase } from '#/db/utils/tx-columns';
 import { activityActions } from '#/sync/activity-bus';
-import { resourceTypes } from '#/table-config';
 import { nanoid } from '#/utils/nanoid';
 import { usersTable } from './users';
 
@@ -32,7 +31,7 @@ export const activitiesTable = pgTable(
     id: varchar().notNull().$defaultFn(nanoid),
     userId: varchar(), // User who performed the action (nullable for system actions)
     entityType: varchar({ enum: appConfig.entityTypes }), // Entity type if applicable
-    resourceType: varchar({ enum: resourceTypes }), // Resource type if not an entity
+    resourceType: varchar({ enum: appConfig.resourceTypes }), // Resource type if not an entity
     action: varchar({ enum: activityActions }).notNull(), // create, update, delete
     tableName: varchar().notNull(), // Source table name (e.g., 'users', 'organizations')
     type: varchar().notNull(), // Composite type (e.g., 'user.created', 'organization.updated')

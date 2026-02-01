@@ -73,7 +73,7 @@ function InviteEmailForm({ entity, dialog: isDialog, children }: Props) {
                   placeholder={t('common:add_email')}
                   emails={value}
                   onChange={onChange}
-                  autoComplete="off"
+                  inputProps={{ autoComplete: 'off' }}
                 />
               </FormControl>
               <FormMessage />

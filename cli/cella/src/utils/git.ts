@@ -356,3 +356,43 @@ export async function fileExistsInWorktree(cwd: string, filePath: string): Promi
   const { join } = await import('node:path');
   return existsSync(join(cwd, filePath));
 }
+
+/**
+ * Remove a file from the worktree filesystem if it exists.
+ * Used to clean up files that git rm may not have removed (e.g., after squash merge).
+ */
+export async function removeFileFromWorktree(cwd: string, filePath: string): Promise<void> {
+  const { unlink } = await import('node:fs/promises');
+  const { join, dirname } = await import('node:path');
+  const fullPath = join(cwd, filePath);
+  try {
+    await unlink(fullPath);
+    // Try to clean up empty parent directories
+    await cleanupEmptyParentDirs(cwd, dirname(filePath));
+  } catch {
+    // File doesn't exist or can't be removed - ignore
+  }
+}
+
+/**
+ * Recursively remove empty parent directories up to (but not including) the root.
+ * Stops when encountering a non-empty directory or the root.
+ */
+async function cleanupEmptyParentDirs(cwd: string, relativePath: string): Promise<void> {
+  if (!relativePath || relativePath === '.') return;
+
+  const { rmdir, readdir } = await import('node:fs/promises');
+  const { join, dirname } = await import('node:path');
+
+  const fullPath = join(cwd, relativePath);
+  try {
+    const entries = await readdir(fullPath);
+    if (entries.length === 0) {
+      await rmdir(fullPath);
+      // Recurse to parent
+      await cleanupEmptyParentDirs(cwd, dirname(relativePath));
+    }
+  } catch {
+    // Directory doesn't exist, not empty, or can't be removed - stop
+  }
+}

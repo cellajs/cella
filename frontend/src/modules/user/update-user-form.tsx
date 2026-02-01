@@ -55,15 +55,7 @@ function UpdateUserForm({ user, callback, sheet: isSheet, hiddenFields, children
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
       resolver: zodResolver(formSchema),
-      defaultValues: {
-        slug: user.slug,
-        thumbnailUrl: user.thumbnailUrl,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        language: user.language,
-        newsletter: user.newsletter,
-      },
+      defaultValues: user,
     }),
     [],
   );

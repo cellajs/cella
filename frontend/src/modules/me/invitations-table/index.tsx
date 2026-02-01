@@ -28,7 +28,7 @@ function InvitationsTable() {
     ...queryOptions,
   });
 
-  // TODO Update rows
+  // TODO-004 Update rows
   // const onRowsChange = (changedRows: Attachment[], { indexes, column }: RowsChangeData<Attachment>) => {
   //   if (column.key !== 'name') return;
 

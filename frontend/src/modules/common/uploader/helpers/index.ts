@@ -4,6 +4,7 @@ import { Uppy } from '@uppy/core';
 import Transloadit from '@uppy/transloadit';
 import { appConfig } from 'config';
 import { getUploadToken, type UploadToken } from '~/api.gen';
+import type { UploadContext } from '~/modules/attachment/dexie/attachments-db';
 import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
 import { prepareFilesForOffline } from '~/modules/common/uploader/helpers/prepare-for-offline';
 import type { CustomUppy, CustomUppyFile, CustomUppyOpt } from '~/modules/common/uploader/types';
@@ -93,8 +94,12 @@ export const createBaseTransloaditUppy = async (
     // Online with cloud - store locally first (as pending), then upload
     const organizationId = tokenQuery.organizationId;
     if (organizationId) {
+      const uploadContext: UploadContext = {
+        templateId: tokenQuery.templateId,
+        public: tokenQuery.public,
+      };
       for (const file of uploadFiles) {
-        await attachmentStorage.storeUploadBlob(file, organizationId, 'pending');
+        await attachmentStorage.storeUploadBlob(file, organizationId, 'pending', uploadContext);
       }
     }
   });

@@ -1,11 +1,10 @@
-import { CloudIcon, CloudOffIcon } from 'lucide-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Attachment } from '~/api.gen';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { CopyUrlCell, DownloadCell, EllipsisCell, ThumbnailCell } from '~/modules/attachment/table/cells';
 import { formatBytes } from '~/modules/attachment/table/helpers';
-import { isLocalAttachment } from '~/modules/attachment/utils';
+import { SyncStatusCell } from '~/modules/attachment/table/sync-status-cell';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
@@ -49,29 +48,12 @@ export const useColumns = (entity: ContextEntityData, isSheet: boolean, isCompac
         }),
       },
       {
-        key: 'storeType',
+        key: 'syncStatus',
         name: '',
         visible: true,
         sortable: false,
         width: 32,
-        renderCell: ({ row }) => {
-          const key = row.thumbnailKey || row.originalKey;
-          const isLocal = isLocalAttachment(key);
-
-          return (
-            <div
-              className="flex justify-center items-center h-full w-full"
-              data-tooltip="true"
-              data-tooltip-content={isLocal ? t('common:local_only') : t('common:online')}
-            >
-              {isLocal ? (
-                <CloudOffIcon className="opacity-50" size={16} />
-              ) : (
-                <CloudIcon className="text-success" size={16} />
-              )}
-            </div>
-          );
-        },
+        renderCell: ({ row }) => <SyncStatusCell row={row} />,
       },
       {
         key: 'url',

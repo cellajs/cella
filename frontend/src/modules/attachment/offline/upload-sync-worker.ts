@@ -4,10 +4,15 @@
  * Background worker that syncs pending local uploads to cloud storage.
  * Runs periodically and when coming back online.
  *
- * This is a simplified implementation that marks blobs for re-upload.
- * Full Transloadit re-upload would require recreating the assembly.
+ * Uses headless Uppy with @uppy/transloadit for reliable uploads with:
+ * - Tus resumable upload protocol
+ * - Built-in exponential backoff for rate limiting
+ * - Lazy token fetching per upload (never expires mid-upload)
+ * - Assembly completion waiting with internal polling
  */
 import { onlineManager } from '@tanstack/react-query';
+import { Uppy } from '@uppy/core';
+import Transloadit from '@uppy/transloadit';
 import { getUploadToken } from '~/api.gen';
 import { type AttachmentBlob, attachmentsDb } from '~/modules/attachment/dexie/attachments-db';
 import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
@@ -67,7 +72,7 @@ class UploadSyncWorker {
 
       console.debug(`[UploadSyncWorker] Found ${pending.length} pending uploads`);
 
-      // Group by organization for efficient token requests
+      // Group by organization for batch processing
       const byOrg = new Map<string, AttachmentBlob[]>();
       for (const blob of pending) {
         const existing = byOrg.get(blob.organizationId) || [];
@@ -75,7 +80,7 @@ class UploadSyncWorker {
         byOrg.set(blob.organizationId, existing);
       }
 
-      // Process each organization
+      // Process each organization's blobs
       for (const [organizationId, blobs] of byOrg) {
         await this.syncOrganizationUploads(organizationId, blobs);
       }
@@ -87,49 +92,115 @@ class UploadSyncWorker {
   }
 
   /**
+   * Check if cloud upload is available for an organization.
+   * Returns true if Transloadit is configured.
+   */
+  private async checkCloudAvailability(organizationId: string): Promise<boolean> {
+    try {
+      const token = await getUploadToken({
+        query: { public: false, templateId: 'attachment', organizationId },
+      });
+      return !!(token?.params && token?.signature);
+    } catch {
+      return false;
+    }
+  }
+
+  /**
    * Sync uploads for a specific organization.
+   * Each blob gets a fresh token via lazy assemblyOptions.
    */
   private async syncOrganizationUploads(organizationId: string, blobs: AttachmentBlob[]): Promise<void> {
+    // Quick check if cloud is available at all
+    const cloudAvailable = await this.checkCloudAvailability(organizationId);
+
+    if (!cloudAvailable) {
+      console.debug(`[UploadSyncWorker] No cloud available for org ${organizationId}, marking as local-only`);
+      for (const blob of blobs) {
+        await attachmentStorage.updateSyncStatus(blob.id, 'local-only');
+      }
+      return;
+    }
+
+    console.debug(`[UploadSyncWorker] Syncing ${blobs.length} blobs for org ${organizationId}`);
+
+    // Process blobs individually with lazy token fetching
+    for (const blob of blobs) {
+      await this.syncSingleBlob(blob);
+    }
+  }
+
+  /**
+   * Sync a single blob using headless Uppy with lazy token fetching.
+   * Token is fetched fresh per upload via assemblyOptions callback.
+   */
+  private async syncSingleBlob(blob: AttachmentBlob): Promise<void> {
+    // Mark as syncing
+    await attachmentStorage.updateSyncStatus(blob.id, 'syncing');
+
+    // Create headless Uppy instance for this upload
+    const uppy = new Uppy({
+      autoProceed: false,
+      allowMultipleUploadBatches: false,
+    });
+
     try {
-      // Check if cloud upload is available
-      const token = await getUploadToken({
-        query: {
-          public: false,
-          templateId: 'attachment',
-          organizationId,
+      // Configure Transloadit plugin with lazy token fetching
+      uppy.use(Transloadit, {
+        waitForEncoding: true,
+        alwaysRunAssembly: true,
+        // Lazy token: fetched fresh for each assembly (never expires mid-upload)
+        assemblyOptions: async () => {
+          const token = await getUploadToken({
+            query: {
+              public: blob.uploadContext?.public ?? false,
+              templateId: blob.uploadContext?.templateId ?? 'attachment',
+              organizationId: blob.organizationId,
+            },
+          });
+
+          if (!token?.params || !token?.signature) {
+            throw new Error('Failed to get upload token');
+          }
+
+          return { params: token.params, signature: token.signature };
         },
       });
 
-      // If no Transloadit configured, mark all as local-only
-      if (!token?.params || !token?.signature) {
-        console.debug(`[UploadSyncWorker] No cloud available for org ${organizationId}, marking as local-only`);
-        for (const blob of blobs) {
-          await attachmentStorage.updateSyncStatus(blob.id, 'local-only');
-        }
+      // Add the blob as a file
+      uppy.addFile({
+        name: blob.filename || `${blob.id}.bin`,
+        type: blob.contentType,
+        data: blob.blob,
+        meta: { attachmentId: blob.id },
+      });
+
+      // Start upload and wait for completion
+      const result = await uppy.upload();
+
+      if (!result) {
+        await attachmentStorage.markFailed(blob.id, 'Upload returned no result');
         return;
       }
 
-      // Cloud is available - for now just log
-      // Full implementation would use Transloadit SDK to create assembly
-      console.debug(`[UploadSyncWorker] Cloud available for org ${organizationId}, ${blobs.length} blobs to sync`);
-
-      // TODO: Implement actual Transloadit upload
-      // This requires:
-      // 1. Creating a new Transloadit assembly
-      // 2. Uploading each blob
-      // 3. Waiting for encoding
-      // 4. Updating the attachment record with new URLs
-      // 5. Marking blob as synced
-
-      // For now, mark as syncing to indicate cloud is available
-      // The user can manually re-upload or we implement full sync later
-      for (const blob of blobs) {
-        // For MVP: Just mark that sync is possible
-        // In production: Actually upload to Transloadit
-        console.debug(`[UploadSyncWorker] Blob ${blob.id} ready for sync (implementation pending)`);
+      if (result.successful && result.successful.length > 0) {
+        // Upload succeeded - mark as synced
+        await attachmentStorage.markSynced(blob.id);
+        console.debug(`[UploadSyncWorker] Blob ${blob.id} synced successfully`);
+      } else if (result.failed && result.failed.length > 0) {
+        // Upload failed - error is a string in Uppy
+        const file = result.failed[0];
+        const errorMsg = typeof file.error === 'string' ? file.error : 'Upload failed';
+        await attachmentStorage.markFailed(blob.id, errorMsg);
+        console.warn(`[UploadSyncWorker] Blob ${blob.id} failed:`, errorMsg);
       }
     } catch (error) {
-      console.error(`[UploadSyncWorker] Failed to sync org ${organizationId}:`, error);
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      await attachmentStorage.markFailed(blob.id, errorMsg);
+      console.error(`[UploadSyncWorker] Blob ${blob.id} error:`, error);
+    } finally {
+      // Clean up Uppy instance
+      uppy.destroy();
     }
   }
 

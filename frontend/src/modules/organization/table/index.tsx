@@ -80,7 +80,7 @@ function OrganizationsTable() {
       const orgIdOrSlug = organization.id;
 
       try {
-        // TODO re-check and add mutation or invalidation all connected queries(members table, single organization query)
+        // TODO-021 re-check and add mutation or invalidation all connected queries(members table, single organization query)
         if (partOfOrganization) {
           await updateMember.mutateAsync({ id: membership.id, role: newRole, orgIdOrSlug, ...mutationVariables });
           // Update organizations cache to reflect membership change
@@ -93,7 +93,7 @@ function OrganizationsTable() {
             body: { emails: [user.email], role: newRole },
           });
 
-          // TODO REVIEW
+          // TODO-021b REVIEW
           // const targetMenuItem = menu.organization.find((org) => org.id === organization.id);
           // if (targetMenuItem) {
           //   const updatedOrganization = { ...organization, membership: targetMenuItem.membership };

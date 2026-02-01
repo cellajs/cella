@@ -1,3 +1,8 @@
 {
-    "about": "Over"
+    "about": "Over",
+    "local_only": "Alleen zichtbaar voor jou",
+    "sync_failed": "Synchronisatie mislukt",
+    "synced": "Gesynchroniseerd",
+    "syncing": "Synchroniseren",
+    "pending_sync": "Wacht op synchronisatie"
 }

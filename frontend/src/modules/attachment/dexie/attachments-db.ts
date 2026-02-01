@@ -8,12 +8,18 @@
  * React-query cache is the source of truth for attachment metadata.
  * This database only stores the actual blob data and sync state.
  */
-import { appConfig } from 'config';
+import { appConfig, type UploadTemplateId } from 'config';
 import { Dexie, type EntityTable } from 'dexie';
 
 export type BlobSource = 'upload' | 'download';
 export type SyncStatus = 'pending' | 'syncing' | 'synced' | 'failed' | 'local-only';
 export type QueueStatus = 'pending' | 'downloading' | 'completed' | 'failed' | 'skipped';
+
+/** Upload context stored with blob for sync worker to use when re-uploading */
+export interface UploadContext {
+  templateId: UploadTemplateId;
+  public: boolean;
+}
 
 /**
  * Blob storage for attachments.
@@ -31,6 +37,12 @@ export interface AttachmentBlob {
 
   /** The actual file blob */
   blob: Blob;
+
+  /** Original filename (for sync worker to use during re-upload) */
+  filename?: string;
+
+  /** Upload context for sync worker (templateId, public flag) */
+  uploadContext?: UploadContext;
 
   /** File size in bytes (denormalized for filtering) */
   size: number;

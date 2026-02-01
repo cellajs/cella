@@ -10,10 +10,12 @@ import {
   type UpdateAttachmentData,
   updateAttachment,
 } from '~/api.gen';
+import { zAttachment } from '~/api.gen/zod.gen';
 import {
   baseInfiniteQueryOptions,
   createEntityKeys,
   findInListCache,
+  getSchemaDefaults,
   invalidateIfLastMutation,
   registerEntityQueryKeys,
   useMutateQueryData,
@@ -112,22 +114,15 @@ export const useAttachmentCreateMutation = (orgIdOrSlug: string) => {
       // Cancel in-flight queries to prevent race conditions with stale data
       await queryClient.cancelQueries({ queryKey: keys.list.base });
 
-      // Placeholder tx for optimistic updates (replaced by real tx from server)
-      const placeholderTx = { id: '', sourceId: '', version: 0, fieldVersions: {} };
-
-      // TODO use createOptimisticEntity?
-      // Build optimistic attachments (they already have IDs from Transloadit)
+      // Build optimistic attachments using schema defaults + input data
+      // Note: Attachments already have IDs from Transloadit, so we preserve them
+      const schemaDefaults = getSchemaDefaults(zAttachment);
       const optimisticAttachments = newAttachments.map((att) => ({
+        ...schemaDefaults,
         ...att,
-        entityType: 'attachment' as const,
         createdAt: new Date().toISOString(),
         modifiedAt: null,
         modifiedBy: null,
-        description: '',
-        keywords: '',
-        url: '',
-        thumbnailUrl: null,
-        tx: placeholderTx,
       })) as Attachment[];
 
       // Insert optimistic entities into list cache for instant UI update

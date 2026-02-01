@@ -68,6 +68,11 @@ export type OfflineEntityType = (typeof appConfig.offlineEntityTypes)[number];
 export type RealtimeEntityType = (typeof appConfig.realtimeEntityTypes)[number];
 
 /**
+ * Resource types that are not entities but have activities logged
+ */
+export type ResourceType = (typeof appConfig.resourceTypes)[number];
+
+/**
  * Menu sections in the menu structure
  */
 export type MenuSection = {
