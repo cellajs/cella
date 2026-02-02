@@ -64,20 +64,12 @@
     "request": {
       "path": {
         "properties": {
-          "orgIdOrSlug": {
-            "type": "string",
-            "required": true,
-            "description": "Entity ID or slug. ID is always preferred."
-          }
+          "orgId": { "type": "string", "required": true }
         }
       },
       "query": {
         "properties": {
-          "idOrSlug": {
-            "type": "string",
-            "required": true,
-            "description": "Entity ID or slug. ID is always preferred."
-          },
+          "id": { "type": "string", "required": true },
           "entityType": {
             "type": "string",
             "required": true,
@@ -175,20 +167,12 @@
     "request": {
       "path": {
         "properties": {
-          "orgIdOrSlug": {
-            "type": "string",
-            "required": true,
-            "description": "Entity ID or slug. ID is always preferred."
-          }
+          "orgId": { "type": "string", "required": true }
         }
       },
       "query": {
         "properties": {
-          "idOrSlug": {
-            "type": "string",
-            "required": true,
-            "description": "Entity ID or slug. ID is always preferred."
-          },
+          "id": { "type": "string", "required": true },
           "entityType": {
             "type": "string",
             "required": true,
@@ -316,11 +300,7 @@
       "path": {
         "properties": {
           "id": { "type": "string", "required": true },
-          "orgIdOrSlug": {
-            "type": "string",
-            "required": true,
-            "description": "Entity ID or slug. ID is always preferred."
-          }
+          "orgId": { "type": "string", "required": true }
         }
       },
       "body": {
@@ -438,11 +418,7 @@
             "required": true,
             "enum": ["accept", "reject"]
           },
-          "orgIdOrSlug": {
-            "type": "string",
-            "required": true,
-            "description": "Entity ID or slug. ID is always preferred."
-          }
+          "orgId": { "type": "string", "required": true }
         }
       }
     }
@@ -667,11 +643,7 @@
     "request": {
       "path": {
         "properties": {
-          "orgIdOrSlug": {
-            "type": "string",
-            "required": true,
-            "description": "Entity ID or slug. ID is always preferred."
-          }
+          "orgId": { "type": "string", "required": true }
         }
       },
       "query": {
@@ -689,11 +661,7 @@
           },
           "offset": { "type": "string", "required": false },
           "limit": { "type": "string", "required": false },
-          "idOrSlug": {
-            "type": "string",
-            "required": true,
-            "description": "Entity ID or slug. ID is always preferred."
-          },
+          "id": { "type": "string", "required": true },
           "entityType": {
             "type": "string",
             "required": true,
@@ -823,11 +791,7 @@
     "request": {
       "path": {
         "properties": {
-          "orgIdOrSlug": {
-            "type": "string",
-            "required": true,
-            "description": "Entity ID or slug. ID is always preferred."
-          }
+          "orgId": { "type": "string", "required": true }
         }
       },
       "query": {
@@ -845,11 +809,7 @@
           },
           "offset": { "type": "string", "required": false },
           "limit": { "type": "string", "required": false },
-          "idOrSlug": {
-            "type": "string",
-            "required": true,
-            "description": "Entity ID or slug. ID is always preferred."
-          },
+          "id": { "type": "string", "required": true },
           "entityType": {
             "type": "string",
             "required": true,

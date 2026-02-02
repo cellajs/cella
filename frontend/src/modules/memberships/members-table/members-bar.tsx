@@ -122,10 +122,10 @@ export const MembersTableBar = ({
         role,
         limit: String(limit),
         offset: '0',
-        idOrSlug: entity.slug,
+        id: entity.id,
         entityType: entity.entityType,
       },
-      path: { orgIdOrSlug: entity.organizationId || entity.id },
+      path: { orgId: entity.organizationId || entity.id },
     });
     return items;
   };

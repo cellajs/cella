@@ -4957,12 +4957,10 @@
         "parameters": [
           {
             "schema": {
-              "type": "string",
-              "description": "Entity ID or slug. ID is always preferred."
+              "type": "string"
             },
             "required": true,
-            "description": "Entity ID or slug. ID is always preferred.",
-            "name": "idOrSlug",
+            "name": "id",
             "in": "query"
           },
           {
@@ -5603,7 +5601,7 @@
         }
       }
     },
-    "/users/{idOrSlug}": {
+    "/users/{id}": {
       "get": {
         "security": [
           {
@@ -5615,7 +5613,7 @@
           "users"
         ],
         "summary": "Get user",
-        "description": "Retrieves a *user* by ID or slug.",
+        "description": "Retrieves a *user* by ID.",
         "x-guard": [
           "isAuthenticated"
         ],
@@ -5623,12 +5621,10 @@
         "parameters": [
           {
             "schema": {
-              "type": "string",
-              "description": "Entity ID or slug. ID is always preferred."
+              "type": "string"
             },
             "required": true,
-            "description": "Entity ID or slug. ID is always preferred.",
-            "name": "idOrSlug",
+            "name": "id",
             "in": "path"
           }
         ],
@@ -5693,7 +5689,7 @@
           "users"
         ],
         "summary": "Update user",
-        "description": "Updates a *user* identified by ID or slug.",
+        "description": "Updates a *user* identified by ID.",
         "x-guard": [
           "isAuthenticated",
           "hasSystemAccess"
@@ -5702,12 +5698,10 @@
         "parameters": [
           {
             "schema": {
-              "type": "string",
-              "description": "Entity ID or slug. ID is always preferred."
+              "type": "string"
             },
             "required": true,
-            "description": "Entity ID or slug. ID is always preferred.",
-            "name": "idOrSlug",
+            "name": "id",
             "in": "path"
           }
         ],
@@ -6450,7 +6444,7 @@
         }
       }
     },
-    "/organizations/{idOrSlug}": {
+    "/organizations/{id}": {
       "get": {
         "security": [
           {
@@ -6462,7 +6456,7 @@
           "organizations"
         ],
         "summary": "Get organization",
-        "description": "Retrieves an *organization* by ID or slug.",
+        "description": "Retrieves an *organization* by ID.",
         "x-guard": [
           "isAuthenticated"
         ],
@@ -6470,12 +6464,10 @@
         "parameters": [
           {
             "schema": {
-              "type": "string",
-              "description": "Entity ID or slug. ID is always preferred."
+              "type": "string"
             },
             "required": true,
-            "description": "Entity ID or slug. ID is always preferred.",
-            "name": "idOrSlug",
+            "name": "id",
             "in": "path"
           }
         ],
@@ -6583,12 +6575,10 @@
         "parameters": [
           {
             "schema": {
-              "type": "string",
-              "description": "Entity ID or slug. ID is always preferred."
+              "type": "string"
             },
             "required": true,
-            "description": "Entity ID or slug. ID is always preferred.",
-            "name": "idOrSlug",
+            "name": "id",
             "in": "path"
           }
         ],
@@ -8777,7 +8767,7 @@
         }
       }
     },
-    "/{orgIdOrSlug}/attachments": {
+    "/{orgId}/attachments": {
       "get": {
         "security": [
           {
@@ -8798,12 +8788,10 @@
         "parameters": [
           {
             "schema": {
-              "type": "string",
-              "description": "Entity ID or slug. ID is always preferred."
+              "type": "string"
             },
             "required": true,
-            "description": "Entity ID or slug. ID is always preferred.",
-            "name": "orgIdOrSlug",
+            "name": "orgId",
             "in": "path"
           },
           {
@@ -8982,12 +8970,10 @@
         "parameters": [
           {
             "schema": {
-              "type": "string",
-              "description": "Entity ID or slug. ID is always preferred."
+              "type": "string"
             },
             "required": true,
-            "description": "Entity ID or slug. ID is always preferred.",
-            "name": "orgIdOrSlug",
+            "name": "orgId",
             "in": "path"
           }
         ],
@@ -9309,12 +9295,10 @@
         "parameters": [
           {
             "schema": {
-              "type": "string",
-              "description": "Entity ID or slug. ID is always preferred."
+              "type": "string"
             },
             "required": true,
-            "description": "Entity ID or slug. ID is always preferred.",
-            "name": "orgIdOrSlug",
+            "name": "orgId",
             "in": "path"
           }
         ],
@@ -9370,7 +9354,7 @@
         }
       }
     },
-    "/{orgIdOrSlug}/attachments/{id}": {
+    "/{orgId}/attachments/{id}": {
       "put": {
         "security": [
           {
@@ -9399,12 +9383,10 @@
           },
           {
             "schema": {
-              "type": "string",
-              "description": "Entity ID or slug. ID is always preferred."
+              "type": "string"
             },
             "required": true,
-            "description": "Entity ID or slug. ID is always preferred.",
-            "name": "orgIdOrSlug",
+            "name": "orgId",
             "in": "path"
           }
         ],
@@ -9489,7 +9471,7 @@
         }
       }
     },
-    "/{orgIdOrSlug}/attachments/{id}/link": {
+    "/{orgId}/attachments/{id}/link": {
       "get": {
         "security": [],
         "operationId": "redirectToAttachment",
@@ -9536,7 +9518,7 @@
         }
       }
     },
-    "/{orgIdOrSlug}/memberships": {
+    "/{orgId}/memberships": {
       "post": {
         "security": [
           {
@@ -9557,22 +9539,18 @@
         "parameters": [
           {
             "schema": {
-              "type": "string",
-              "description": "Entity ID or slug. ID is always preferred."
+              "type": "string"
             },
             "required": true,
-            "description": "Entity ID or slug. ID is always preferred.",
-            "name": "orgIdOrSlug",
+            "name": "orgId",
             "in": "path"
           },
           {
             "schema": {
-              "type": "string",
-              "description": "Entity ID or slug. ID is always preferred."
+              "type": "string"
             },
             "required": true,
-            "description": "Entity ID or slug. ID is always preferred.",
-            "name": "idOrSlug",
+            "name": "id",
             "in": "query"
           },
           {
@@ -9693,22 +9671,18 @@
         "parameters": [
           {
             "schema": {
-              "type": "string",
-              "description": "Entity ID or slug. ID is always preferred."
+              "type": "string"
             },
             "required": true,
-            "description": "Entity ID or slug. ID is always preferred.",
-            "name": "orgIdOrSlug",
+            "name": "orgId",
             "in": "path"
           },
           {
             "schema": {
-              "type": "string",
-              "description": "Entity ID or slug. ID is always preferred."
+              "type": "string"
             },
             "required": true,
-            "description": "Entity ID or slug. ID is always preferred.",
-            "name": "idOrSlug",
+            "name": "id",
             "in": "query"
           },
           {
@@ -9775,7 +9749,7 @@
         }
       }
     },
-    "/{orgIdOrSlug}/memberships/{id}": {
+    "/{orgId}/memberships/{id}": {
       "put": {
         "security": [
           {
@@ -9804,12 +9778,10 @@
           },
           {
             "schema": {
-              "type": "string",
-              "description": "Entity ID or slug. ID is always preferred."
+              "type": "string"
             },
             "required": true,
-            "description": "Entity ID or slug. ID is always preferred.",
-            "name": "orgIdOrSlug",
+            "name": "orgId",
             "in": "path"
           }
         ],
@@ -9884,7 +9856,7 @@
         }
       }
     },
-    "/{orgIdOrSlug}/memberships/{id}/{acceptOrReject}": {
+    "/{orgId}/memberships/{id}/{acceptOrReject}": {
       "post": {
         "security": [
           {
@@ -9924,12 +9896,10 @@
           },
           {
             "schema": {
-              "type": "string",
-              "description": "Entity ID or slug. ID is always preferred."
+              "type": "string"
             },
             "required": true,
-            "description": "Entity ID or slug. ID is always preferred.",
-            "name": "orgIdOrSlug",
+            "name": "orgId",
             "in": "path"
           }
         ],
@@ -9973,7 +9943,7 @@
         }
       }
     },
-    "/{orgIdOrSlug}/memberships/members": {
+    "/{orgId}/memberships/members": {
       "get": {
         "security": [
           {
@@ -9985,7 +9955,7 @@
           "memberships"
         ],
         "summary": "Get list of members",
-        "description": "Retrieves members (users) of a context entity by ID or slug, including their associated *membership* data.",
+        "description": "Retrieves members (users) of a context entity by ID, including their associated *membership* data.",
         "x-guard": [
           "isAuthenticated",
           "hasOrgAccess"
@@ -9994,12 +9964,10 @@
         "parameters": [
           {
             "schema": {
-              "type": "string",
-              "description": "Entity ID or slug. ID is always preferred."
+              "type": "string"
             },
             "required": true,
-            "description": "Entity ID or slug. ID is always preferred.",
-            "name": "orgIdOrSlug",
+            "name": "orgId",
             "in": "path"
           },
           {
@@ -10058,12 +10026,10 @@
           },
           {
             "schema": {
-              "type": "string",
-              "description": "Entity ID or slug. ID is always preferred."
+              "type": "string"
             },
             "required": true,
-            "description": "Entity ID or slug. ID is always preferred.",
-            "name": "idOrSlug",
+            "name": "id",
             "in": "query"
           },
           {
@@ -10321,7 +10287,7 @@
         }
       }
     },
-    "/{orgIdOrSlug}/memberships/pending": {
+    "/{orgId}/memberships/pending": {
       "get": {
         "security": [
           {
@@ -10333,7 +10299,7 @@
           "memberships"
         ],
         "summary": "Get list of pending memberships",
-        "description": "Returns pending memberships for a context entity, identified by ID or slug. This does not include pending invitations for non-existing users.",
+        "description": "Returns pending memberships for a context entity, identified by ID. This does not include pending invitations for non-existing users.",
         "x-guard": [
           "isAuthenticated",
           "hasOrgAccess"
@@ -10342,12 +10308,10 @@
         "parameters": [
           {
             "schema": {
-              "type": "string",
-              "description": "Entity ID or slug. ID is always preferred."
+              "type": "string"
             },
             "required": true,
-            "description": "Entity ID or slug. ID is always preferred.",
-            "name": "orgIdOrSlug",
+            "name": "orgId",
             "in": "path"
           },
           {
@@ -10401,12 +10365,10 @@
           },
           {
             "schema": {
-              "type": "string",
-              "description": "Entity ID or slug. ID is always preferred."
+              "type": "string"
             },
             "required": true,
-            "description": "Entity ID or slug. ID is always preferred.",
-            "name": "idOrSlug",
+            "name": "id",
             "in": "query"
           },
           {

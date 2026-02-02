@@ -196,11 +196,7 @@
     "request": {
       "path": {
         "properties": {
-          "orgIdOrSlug": {
-            "type": "string",
-            "required": true,
-            "description": "Entity ID or slug. ID is always preferred."
-          }
+          "orgId": { "type": "string", "required": true }
         }
       },
       "query": {
@@ -594,11 +590,7 @@
     "request": {
       "path": {
         "properties": {
-          "orgIdOrSlug": {
-            "type": "string",
-            "required": true,
-            "description": "Entity ID or slug. ID is always preferred."
-          }
+          "orgId": { "type": "string", "required": true }
         }
       },
       "body": {
@@ -737,11 +729,7 @@
     "request": {
       "path": {
         "properties": {
-          "orgIdOrSlug": {
-            "type": "string",
-            "required": true,
-            "description": "Entity ID or slug. ID is always preferred."
-          }
+          "orgId": { "type": "string", "required": true }
         }
       },
       "body": {
@@ -915,11 +903,7 @@
       "path": {
         "properties": {
           "id": { "type": "string", "required": true },
-          "orgIdOrSlug": {
-            "type": "string",
-            "required": true,
-            "description": "Entity ID or slug. ID is always preferred."
-          }
+          "orgId": { "type": "string", "required": true }
         }
       },
       "body": {

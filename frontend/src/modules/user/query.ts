@@ -19,12 +19,12 @@ const keys = createEntityKeys<UserFilters>('user');
 export const userQueryKeys = keys;
 
 /**
- * Query options for fetching a user by ID or slug.
+ * Query options for fetching a user by ID.
  */
-export const userQueryOptions = (idOrSlug: string) =>
+export const userQueryOptions = (id: string) =>
   queryOptions({
-    queryKey: keys.detail.byId(idOrSlug),
-    queryFn: () => getUser({ path: { idOrSlug } }),
+    queryKey: keys.detail.byId(id),
+    queryFn: () => getUser({ path: { id } }),
   });
 
 /**
@@ -67,9 +67,9 @@ export const useUserUpdateMutation = () => {
   const queryClient = useQueryClient();
   const mutateCache = useMutateQueryData(keys.list.base, () => keys.detail.base, ['update']);
 
-  return useMutation<User, ApiError, UpdateUserData['body'] & { idOrSlug: string }>({
+  return useMutation<User, ApiError, UpdateUserData['body'] & { id: string }>({
     mutationKey: keys.update,
-    mutationFn: ({ idOrSlug, ...body }) => updateUser({ path: { idOrSlug }, body }),
+    mutationFn: ({ id, ...body }) => updateUser({ path: { id }, body }),
     onSuccess: (updatedUser) => {
       mutateCache.update([updatedUser]);
     },

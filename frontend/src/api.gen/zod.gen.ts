@@ -879,7 +879,7 @@ export const zDeleteMyMembershipData = z.object({
   body: z.optional(z.never()),
   path: z.optional(z.never()),
   query: z.object({
-    idOrSlug: z.string(),
+    id: z.string(),
     entityType: z.enum(['organization']),
   }),
 });
@@ -979,7 +979,7 @@ export const zGetUsersResponse = z.object({
 export const zGetUserData = z.object({
   body: z.optional(z.never()),
   path: z.object({
-    idOrSlug: z.string(),
+    id: z.string(),
   }),
   query: z.optional(z.never()),
 });
@@ -1002,7 +1002,7 @@ export const zUpdateUserData = z.object({
     }),
   ),
   path: z.object({
-    idOrSlug: z.string(),
+    id: z.string(),
   }),
   query: z.optional(z.never()),
 });
@@ -1084,7 +1084,7 @@ export const zCreateOrganizationsResponse = z.object({
 export const zGetOrganizationData = z.object({
   body: z.optional(z.never()),
   path: z.object({
-    idOrSlug: z.string(),
+    id: z.string(),
   }),
   query: z.optional(z.never()),
 });
@@ -1119,7 +1119,7 @@ export const zUpdateOrganizationData = z.object({
     }),
   ),
   path: z.object({
-    idOrSlug: z.string(),
+    id: z.string(),
   }),
   query: z.optional(z.never()),
 });
@@ -1510,7 +1510,7 @@ export const zDeleteAttachmentsData = z.object({
     ids: z.array(z.string()).min(1).max(50),
   }),
   path: z.object({
-    orgIdOrSlug: z.string(),
+    orgId: z.string(),
   }),
   query: z.optional(z.never()),
 });
@@ -1523,7 +1523,7 @@ export const zDeleteAttachmentsResponse = zSuccessWithRejectedItems;
 export const zGetAttachmentsData = z.object({
   body: z.optional(z.never()),
   path: z.object({
-    orgIdOrSlug: z.string(),
+    orgId: z.string(),
   }),
   query: z.optional(
     z.object({
@@ -1568,7 +1568,7 @@ export const zCreateAttachmentsData = z.object({
     .min(1)
     .max(50),
   path: z.object({
-    orgIdOrSlug: z.string(),
+    orgId: z.string(),
   }),
   query: z.optional(z.never()),
 });
@@ -1594,7 +1594,7 @@ export const zUpdateAttachmentData = z.object({
   }),
   path: z.object({
     id: z.string(),
-    orgIdOrSlug: z.string(),
+    orgId: z.string(),
   }),
   query: z.optional(z.never()),
 });
@@ -1617,10 +1617,10 @@ export const zDeleteMembershipsData = z.object({
     ids: z.array(z.string()).min(1).max(50),
   }),
   path: z.object({
-    orgIdOrSlug: z.string(),
+    orgId: z.string(),
   }),
   query: z.object({
-    idOrSlug: z.string(),
+    id: z.string(),
     entityType: z.enum(['organization']),
   }),
 });
@@ -1636,10 +1636,10 @@ export const zMembershipInviteData = z.object({
     role: z.enum(['admin', 'member']),
   }),
   path: z.object({
-    orgIdOrSlug: z.string(),
+    orgId: z.string(),
   }),
   query: z.object({
-    idOrSlug: z.string(),
+    id: z.string(),
     entityType: z.enum(['organization']),
   }),
 });
@@ -1664,7 +1664,7 @@ export const zUpdateMembershipData = z.object({
   ),
   path: z.object({
     id: z.string(),
-    orgIdOrSlug: z.string(),
+    orgId: z.string(),
   }),
   query: z.optional(z.never()),
 });
@@ -1679,7 +1679,7 @@ export const zHandleMembershipInvitationData = z.object({
   path: z.object({
     id: z.string(),
     acceptOrReject: z.enum(['accept', 'reject']),
-    orgIdOrSlug: z.string(),
+    orgId: z.string(),
   }),
   query: z.optional(z.never()),
 });
@@ -1692,7 +1692,7 @@ export const zHandleMembershipInvitationResponse = zContextEntityBase;
 export const zGetMembersData = z.object({
   body: z.optional(z.never()),
   path: z.object({
-    orgIdOrSlug: z.string(),
+    orgId: z.string(),
   }),
   query: z.object({
     q: z.optional(z.string()),
@@ -1700,7 +1700,7 @@ export const zGetMembersData = z.object({
     order: z.optional(z.enum(['asc', 'desc'])),
     offset: z.optional(z.string()),
     limit: z.optional(z.string()),
-    idOrSlug: z.string(),
+    id: z.string(),
     entityType: z.enum(['organization']),
     role: z.optional(z.enum(['admin', 'member'])),
   }),
@@ -1739,7 +1739,7 @@ export const zGetMembersResponse = z.object({
 export const zGetPendingMembershipsData = z.object({
   body: z.optional(z.never()),
   path: z.object({
-    orgIdOrSlug: z.string(),
+    orgId: z.string(),
   }),
   query: z.object({
     q: z.optional(z.string()),
@@ -1747,7 +1747,7 @@ export const zGetPendingMembershipsData = z.object({
     order: z.optional(z.enum(['asc', 'desc'])),
     offset: z.optional(z.string()),
     limit: z.optional(z.string()),
-    idOrSlug: z.string(),
+    id: z.string(),
     entityType: z.enum(['organization']),
   }),
 });

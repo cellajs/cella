@@ -28,8 +28,9 @@ export type InviteMember = NonNullable<MembershipInviteData['body']> & { entity:
 
 type UpdateMembershipProp = NonNullable<UpdateMembershipData['body']> & UpdateMembershipData['path'];
 export type MutationUpdateMembership = {
-  idOrSlug: string;
+  entityId: string;
   entityType: ContextEntityType;
+  orgId: string;
 } & UpdateMembershipProp;
 
-export type DeleteMembership = DeleteMembershipsData['query'] & DeleteMembershipsData['path'] & { members: Member[] };
+export type DeleteMembership = { entityId: string; entityType: ContextEntityType; orgId: string; members: Member[] };

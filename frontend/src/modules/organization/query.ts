@@ -45,7 +45,7 @@ export const findOrganizationInListCache = (idOrSlug: string) =>
 export const organizationQueryOptions = (id: string) =>
   queryOptions({
     queryKey: keys.detail.byId(id),
-    queryFn: async () => getOrganization({ path: { idOrSlug: id } }),
+    queryFn: async () => getOrganization({ path: { id } }),
     placeholderData: () => findOrganizationInListCache(id),
   });
 
@@ -122,9 +122,9 @@ export const useOrganizationUpdateMutation = () => {
   const queryClient = useQueryClient();
   const mutateCache = useMutateQueryData(keys.list.base, () => keys.detail.base, ['update']);
 
-  return useMutation<Organization, ApiError, { idOrSlug: string; body: UpdateOrganizationData['body'] }>({
+  return useMutation<Organization, ApiError, { id: string; body: UpdateOrganizationData['body'] }>({
     mutationKey: keys.update,
-    mutationFn: ({ idOrSlug, body }) => updateOrganization({ body, path: { idOrSlug } }),
+    mutationFn: ({ id, body }) => updateOrganization({ body, path: { id } }),
     onSuccess: (updatedOrganization) => {
       mutateCache.update([updatedOrganization]);
     },

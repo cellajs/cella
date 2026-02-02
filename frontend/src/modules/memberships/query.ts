@@ -13,12 +13,9 @@ const keys = {
   list: {
     base: ['member', 'list'],
     members: (filters: GetMembersParams) => [...keys.list.base, filters],
-    similarMembers: (filters: Pick<GetMembersParams, 'orgIdOrSlug' | 'idOrSlug' | 'entityType'>) => [
-      ...keys.list.base,
-      filters,
-    ],
+    similarMembers: (filters: Pick<GetMembersParams, 'orgId' | 'id' | 'entityType'>) => [...keys.list.base, filters],
     pending: (filters: GetPendingMembershipsParams) => ['invites', ...keys.list.base, filters],
-    similarPending: (filters: Pick<GetPendingMembershipsParams, 'idOrSlug' | 'entityType'>) => [
+    similarPending: (filters: Pick<GetPendingMembershipsParams, 'id' | 'entityType'>) => [
       'invites',
       ...keys.list.base,
       filters,
@@ -35,9 +32,9 @@ export const memberQueryKeys = keys;
  *
  * This function returns the configuration needed to query a list of members from target entity with pagination.
  *
- * @param param.idOrSlug - ID or slug of entity.
+ * @param param.id - ID or slug of entity.
  * @param param.entityType - Type of entity.
- * @param param.orgIdOrSlug - ID or slug of organization based of witch entity created.
+ * @param param.orgId - ID or slug of organization based of witch entity created.
  * @param param.q - Optional search query to filter members by (default is an empty string).
  * @param param.role - Role of the members to filter by.
  * @param param.sort - Field to sort by (default is 'createdAt').
@@ -46,8 +43,8 @@ export const memberQueryKeys = keys;
  * @returns Infinite query options.
  */
 export const membersQueryOptions = ({
-  idOrSlug,
-  orgIdOrSlug,
+  id,
+  orgId,
   entityType,
   q = '',
   sort = 'createdAt',
@@ -58,15 +55,15 @@ export const membersQueryOptions = ({
   const limit = String(baseLimit);
 
   const baseQueryKey = keys.list.members({
-    idOrSlug,
+    id,
     entityType,
-    orgIdOrSlug,
+    orgId,
     q: '',
     sort: 'createdAt',
     order: 'desc',
     role: undefined,
   });
-  const queryKey = keys.list.members({ idOrSlug, entityType, orgIdOrSlug, q, sort, order, role });
+  const queryKey = keys.list.members({ id, entityType, orgId, q, sort, order, role });
 
   return infiniteQueryOptions({
     queryKey,
@@ -74,8 +71,8 @@ export const membersQueryOptions = ({
       const offset = String(_offset || (page || 0) * Number(limit));
 
       return await getMembers({
-        query: { q, sort, order, role, limit, idOrSlug, entityType, offset },
-        path: { orgIdOrSlug },
+        query: { q, sort, order, role, limit, id, entityType, offset },
+        path: { orgId },
         signal,
       });
     },
@@ -97,9 +94,9 @@ export const membersQueryOptions = ({
  *
  * This function returns the configuration needed to query a list of members from target entity with pagination.
  *
- * @param param.idOrSlug - ID or slug of entity.
+ * @param param.id - ID or slug of entity.
  * @param param.entityType - Type of entity.
- * @param param.orgIdOrSlug - ID or slug of organization based of witch entity created.
+ * @param param.orgId - ID or slug of organization based of witch entity created.
  * @param param.q - Optional search query to filter invited members by (default is an empty string).
  * @param param.sort - Field to sort by (default is 'createdAt').
  * @param param.order - Order of sorting (default is 'desc').
@@ -107,8 +104,8 @@ export const membersQueryOptions = ({
  * @returns Infinite query options.
  */
 export const pendingMembershipsQueryOptions = ({
-  idOrSlug,
-  orgIdOrSlug,
+  id,
+  orgId,
   entityType,
   q = '',
   sort = 'createdAt',
@@ -118,14 +115,14 @@ export const pendingMembershipsQueryOptions = ({
   const limit = String(baseLimit);
 
   const baseQueryKey = keys.list.pending({
-    idOrSlug,
+    id,
     entityType,
-    orgIdOrSlug,
+    orgId,
     q: '',
     sort: 'createdAt',
     order: 'desc',
   });
-  const queryKey = keys.list.pending({ idOrSlug, entityType, orgIdOrSlug, q, sort, order });
+  const queryKey = keys.list.pending({ id, entityType, orgId, q, sort, order });
 
   return infiniteQueryOptions({
     queryKey,
@@ -133,8 +130,8 @@ export const pendingMembershipsQueryOptions = ({
       const offset = String(_offset || (page || 0) * Number(limit));
 
       return await getPendingMemberships({
-        query: { q, sort, order, limit, idOrSlug, entityType, offset },
-        path: { orgIdOrSlug },
+        query: { q, sort, order, limit, id, entityType, offset },
+        path: { orgId },
         signal,
       });
     },

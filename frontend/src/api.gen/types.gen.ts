@@ -1861,10 +1861,7 @@ export type DeleteMyMembershipData = {
   body?: never;
   path?: never;
   query: {
-    /**
-     * Entity ID or slug. ID is always preferred.
-     */
-    idOrSlug: string;
+    id: string;
     entityType: 'organization';
   };
   url: '/me/leave';
@@ -2140,13 +2137,10 @@ export type GetUsersResponse = GetUsersResponses[keyof GetUsersResponses];
 export type GetUserData = {
   body?: never;
   path: {
-    /**
-     * Entity ID or slug. ID is always preferred.
-     */
-    idOrSlug: string;
+    id: string;
   };
   query?: never;
-  url: '/users/{idOrSlug}';
+  url: '/users/{id}';
 };
 
 export type GetUserErrors = {
@@ -2194,13 +2188,10 @@ export type UpdateUserData = {
     slug?: string;
   };
   path: {
-    /**
-     * Entity ID or slug. ID is always preferred.
-     */
-    idOrSlug: string;
+    id: string;
   };
   query?: never;
-  url: '/users/{idOrSlug}';
+  url: '/users/{id}';
 };
 
 export type UpdateUserErrors = {
@@ -2398,13 +2389,10 @@ export type CreateOrganizationsResponse = CreateOrganizationsResponses[keyof Cre
 export type GetOrganizationData = {
   body?: never;
   path: {
-    /**
-     * Entity ID or slug. ID is always preferred.
-     */
-    idOrSlug: string;
+    id: string;
   };
   query?: never;
-  url: '/organizations/{idOrSlug}';
+  url: '/organizations/{id}';
 };
 
 export type GetOrganizationErrors = {
@@ -2462,13 +2450,10 @@ export type UpdateOrganizationData = {
     chatSupport?: boolean;
   };
   path: {
-    /**
-     * Entity ID or slug. ID is always preferred.
-     */
-    idOrSlug: string;
+    id: string;
   };
   query?: never;
-  url: '/organizations/{idOrSlug}';
+  url: '/organizations/{id}';
 };
 
 export type UpdateOrganizationErrors = {
@@ -3588,13 +3573,10 @@ export type DeleteAttachmentsData = {
     ids: Array<string>;
   };
   path: {
-    /**
-     * Entity ID or slug. ID is always preferred.
-     */
-    orgIdOrSlug: string;
+    orgId: string;
   };
   query?: never;
-  url: '/{orgIdOrSlug}/attachments';
+  url: '/{orgId}/attachments';
 };
 
 export type DeleteAttachmentsErrors = {
@@ -3634,10 +3616,7 @@ export type DeleteAttachmentsResponse = DeleteAttachmentsResponses[keyof DeleteA
 export type GetAttachmentsData = {
   body?: never;
   path: {
-    /**
-     * Entity ID or slug. ID is always preferred.
-     */
-    orgIdOrSlug: string;
+    orgId: string;
   };
   query?: {
     q?: string;
@@ -3646,7 +3625,7 @@ export type GetAttachmentsData = {
     offset?: string;
     limit?: string;
   };
-  url: '/{orgIdOrSlug}/attachments';
+  url: '/{orgId}/attachments';
 };
 
 export type GetAttachmentsErrors = {
@@ -3705,13 +3684,10 @@ export type CreateAttachmentsData = {
     tx: TxRequest;
   }>;
   path: {
-    /**
-     * Entity ID or slug. ID is always preferred.
-     */
-    orgIdOrSlug: string;
+    orgId: string;
   };
   query?: never;
-  url: '/{orgIdOrSlug}/attachments';
+  url: '/{orgId}/attachments';
 };
 
 export type CreateAttachmentsErrors = {
@@ -3784,13 +3760,10 @@ export type UpdateAttachmentData = {
   };
   path: {
     id: string;
-    /**
-     * Entity ID or slug. ID is always preferred.
-     */
-    orgIdOrSlug: string;
+    orgId: string;
   };
   query?: never;
-  url: '/{orgIdOrSlug}/attachments/{id}';
+  url: '/{orgId}/attachments/{id}';
 };
 
 export type UpdateAttachmentErrors = {
@@ -3833,7 +3806,7 @@ export type RedirectToAttachmentData = {
     id: string;
   };
   query?: never;
-  url: '/{orgIdOrSlug}/attachments/{id}/link';
+  url: '/{orgId}/attachments/{id}/link';
 };
 
 export type RedirectToAttachmentErrors = {
@@ -3873,19 +3846,13 @@ export type DeleteMembershipsData = {
     ids: Array<string>;
   };
   path: {
-    /**
-     * Entity ID or slug. ID is always preferred.
-     */
-    orgIdOrSlug: string;
+    orgId: string;
   };
   query: {
-    /**
-     * Entity ID or slug. ID is always preferred.
-     */
-    idOrSlug: string;
+    id: string;
     entityType: 'organization';
   };
-  url: '/{orgIdOrSlug}/memberships';
+  url: '/{orgId}/memberships';
 };
 
 export type DeleteMembershipsErrors = {
@@ -3928,19 +3895,13 @@ export type MembershipInviteData = {
     role: 'admin' | 'member';
   };
   path: {
-    /**
-     * Entity ID or slug. ID is always preferred.
-     */
-    orgIdOrSlug: string;
+    orgId: string;
   };
   query: {
-    /**
-     * Entity ID or slug. ID is always preferred.
-     */
-    idOrSlug: string;
+    id: string;
     entityType: 'organization';
   };
-  url: '/{orgIdOrSlug}/memberships';
+  url: '/{orgId}/memberships';
 };
 
 export type MembershipInviteErrors = {
@@ -3988,13 +3949,10 @@ export type UpdateMembershipData = {
   };
   path: {
     id: string;
-    /**
-     * Entity ID or slug. ID is always preferred.
-     */
-    orgIdOrSlug: string;
+    orgId: string;
   };
   query?: never;
-  url: '/{orgIdOrSlug}/memberships/{id}';
+  url: '/{orgId}/memberships/{id}';
 };
 
 export type UpdateMembershipErrors = {
@@ -4036,13 +3994,10 @@ export type HandleMembershipInvitationData = {
   path: {
     id: string;
     acceptOrReject: 'accept' | 'reject';
-    /**
-     * Entity ID or slug. ID is always preferred.
-     */
-    orgIdOrSlug: string;
+    orgId: string;
   };
   query?: never;
-  url: '/{orgIdOrSlug}/memberships/{id}/{acceptOrReject}';
+  url: '/{orgId}/memberships/{id}/{acceptOrReject}';
 };
 
 export type HandleMembershipInvitationErrors = {
@@ -4083,10 +4038,7 @@ export type HandleMembershipInvitationResponse =
 export type GetMembersData = {
   body?: never;
   path: {
-    /**
-     * Entity ID or slug. ID is always preferred.
-     */
-    orgIdOrSlug: string;
+    orgId: string;
   };
   query: {
     q?: string;
@@ -4094,14 +4046,11 @@ export type GetMembersData = {
     order?: 'asc' | 'desc';
     offset?: string;
     limit?: string;
-    /**
-     * Entity ID or slug. ID is always preferred.
-     */
-    idOrSlug: string;
+    id: string;
     entityType: 'organization';
     role?: 'admin' | 'member';
   };
-  url: '/{orgIdOrSlug}/memberships/members';
+  url: '/{orgId}/memberships/members';
 };
 
 export type GetMembersErrors = {
@@ -4164,10 +4113,7 @@ export type GetMembersResponse = GetMembersResponses[keyof GetMembersResponses];
 export type GetPendingMembershipsData = {
   body?: never;
   path: {
-    /**
-     * Entity ID or slug. ID is always preferred.
-     */
-    orgIdOrSlug: string;
+    orgId: string;
   };
   query: {
     q?: string;
@@ -4175,13 +4121,10 @@ export type GetPendingMembershipsData = {
     order?: 'asc' | 'desc';
     offset?: string;
     limit?: string;
-    /**
-     * Entity ID or slug. ID is always preferred.
-     */
-    idOrSlug: string;
+    id: string;
     entityType: 'organization';
   };
-  url: '/{orgIdOrSlug}/memberships/pending';
+  url: '/{orgId}/memberships/pending';
 };
 
 export type GetPendingMembershipsErrors = {
