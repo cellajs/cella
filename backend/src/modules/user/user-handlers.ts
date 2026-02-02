@@ -211,6 +211,7 @@ const userRouteHandlers = app
   })
   /**
    * Update a user by id or slug
+  //  * TODO we should review update being allowed via slug. leads to complictions in frontend cache
    */
   .openapi(userRoutes.updateUser, async (ctx) => {
     const { idOrSlug } = ctx.req.valid('param');

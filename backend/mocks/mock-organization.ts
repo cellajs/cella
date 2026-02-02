@@ -53,7 +53,7 @@ const generateOrganizationBase = (id: string, name: string, createdAt: string) =
     emailDomains: [] as string[],
     color: faker.color.rgb(),
     thumbnailUrl: null,
-    logoUrl: faker.image.url(),
+    logoUrl: null,
     bannerUrl: null,
     websiteUrl: `https://${slug}.example`,
     welcomeText: `Welcome to ${name}!`,

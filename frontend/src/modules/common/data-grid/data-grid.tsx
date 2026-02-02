@@ -426,8 +426,8 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   const selectedCellRange = isSelectedCellRangeControlled ? selectedCellRangeProp : selectedCellRangeInternal;
   const setSelectedCellRange = isSelectedCellRangeControlled
     ? (range: CellRange | null) => {
-      onSelectedCellRangeChange({ range });
-    }
+        onSelectedCellRangeChange({ range });
+      }
     : setSelectedCellRangeInternal;
 
   // Suppress unused variable warning - setSelectedCellRange will be used in range selection handlers
@@ -444,10 +444,10 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   const columnWidths = isColumnWidthsControlled ? columnWidthsRaw : columnWidthsInternal;
   const onColumnWidthsChange = isColumnWidthsControlled
     ? (columnWidths: ColumnWidths) => {
-      // we keep the internal state in sync with the prop but this prevents an extra render
-      setColumnWidthsInternal(columnWidths);
-      onColumnWidthsChangeRaw(columnWidths);
-    }
+        // we keep the internal state in sync with the prop but this prevents an extra render
+        setColumnWidthsInternal(columnWidths);
+        onColumnWidthsChangeRaw(columnWidths);
+      }
     : setColumnWidthsInternal;
 
   const getColumnWidth = useCallback(
@@ -1221,10 +1221,10 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
       return selectedPosition.idx > colOverscanEndIdx
         ? [...viewportColumns, selectedColumn]
         : [
-          ...viewportColumns.slice(0, lastFrozenColumnIndex + 1),
-          selectedColumn,
-          ...viewportColumns.slice(lastFrozenColumnIndex + 1),
-        ];
+            ...viewportColumns.slice(0, lastFrozenColumnIndex + 1),
+            selectedColumn,
+            ...viewportColumns.slice(lastFrozenColumnIndex + 1),
+          ];
     }
     return viewportColumns;
   }
@@ -1357,8 +1357,9 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
             : undefined,
         scrollPaddingBlock:
           isRowIdxWithinViewportBounds(selectedPosition.rowIdx) || scrollToPosition?.rowIdx !== undefined
-            ? `${headerRowsHeight + topSummaryRowsCount * summaryRowHeight}px ${bottomSummaryRowsCount * summaryRowHeight
-            }px`
+            ? `${headerRowsHeight + topSummaryRowsCount * summaryRowHeight}px ${
+                bottomSummaryRowsCount * summaryRowHeight
+              }px`
             : undefined,
         gridTemplateColumns,
         gridTemplateRows: templateRows,

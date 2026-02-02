@@ -834,7 +834,7 @@
     "path": "/organizations/{idOrSlug}",
     "tags": ["organizations"],
     "summary": "Update organization",
-    "description": "Updates an *organization* by ID or slug.",
+    "description": "Updates an *organization*.",
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": true,

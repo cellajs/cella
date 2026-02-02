@@ -87,7 +87,7 @@ const organizationRoutes = {
     xGuard: [isAuthenticated],
     tags: ['organizations'],
     summary: 'Update organization',
-    description: 'Updates an *organization* by ID or slug.',
+    description: 'Updates an *organization*.',
     request: {
       params: entityParamSchema,
       body: {

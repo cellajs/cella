@@ -1446,7 +1446,7 @@ export const getOrganization = <ThrowOnError extends boolean = true>(
 /**
  * Update organization
  *
- * Updates an *organization* by ID or slug.
+ * Updates an *organization*.
  *
  * **PUT /organizations/{idOrSlug}** ·· [updateOrganization](https://api.cellajs.com/docs#tag/organizations/put/organizations/{idOrSlug}) ·· _organizations_
  *
