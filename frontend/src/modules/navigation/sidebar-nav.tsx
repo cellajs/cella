@@ -76,10 +76,11 @@ export function SidebarNav({ triggerNavItem }: SidebarNavProps) {
 
   return (
     <div className="contents" style={cssVars}>
-      {/* Spacer to push content */}
+      {/* Spacer to push content - no animation on initial mount */}
       <div
         data-slot="sidebar-spacer"
-        className="relative bg-transparent w-(--spacer-w) transition-[width] duration-300 ease-out group-[.focus-view]/body:hidden"
+        data-started={hasStarted}
+        className="relative bg-transparent w-(--spacer-w) data-[started=true]:transition-[width] data-[started=true]:duration-300 data-[started=true]:ease-out group-[.focus-view]/body:hidden"
       />
       {/* Fixed sidebar */}
       <Sidebar
