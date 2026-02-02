@@ -10,9 +10,9 @@ import {
   loadCache,
   type NpmRegistryData,
   terminalLink,
-} from '../src/run-outdated';
+} from '../src/utils/audit-utils';
 
-describe('run-outdated', () => {
+describe('audit-utils', () => {
   describe('isMajorVersionChange', () => {
     it('should detect major version bumps', () => {
       expect(isMajorVersionChange('1.0.0', '2.0.0')).toBe(true);
@@ -84,7 +84,7 @@ describe('run-outdated', () => {
     });
 
     it('should have correct cache file location', () => {
-      expect(CACHE_FILE).toContain('.outdated.cache.json');
+      expect(CACHE_FILE).toContain('.audit.cache.json');
     });
   });
 

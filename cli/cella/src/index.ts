@@ -12,6 +12,7 @@ import pc from 'picocolors';
 import { parseCli } from './cli';
 import type { CellaCliConfig } from './config/types';
 import { runAnalyze } from './services/analyze';
+import { runAudit } from './services/audit';
 import { runPackages } from './services/packages';
 import { runSync } from './services/sync';
 import { registerSignalHandlers } from './utils/cleanup';
@@ -102,8 +103,8 @@ async function main(): Promise<void> {
     // Parse CLI and get runtime config
     const config = await parseCli(userConfig, forkPath);
 
-    // Run preflight checks (except for packages which doesn't need clean working dir)
-    if (config.service !== 'packages') {
+    // Run preflight checks (except for packages/audit which don't need clean working dir)
+    if (!['packages', 'audit'].includes(config.service)) {
       const skipCleanCheck = config.service === 'analyze';
       await preflight(forkPath, userConfig.settings.forkBranch, { skipCleanCheck });
     }
@@ -120,6 +121,10 @@ async function main(): Promise<void> {
 
       case 'packages':
         await runPackages(config);
+        break;
+
+      case 'audit':
+        await runAudit(config);
         break;
     }
 

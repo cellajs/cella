@@ -1,3 +1,4 @@
+import { appConfig } from 'config';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
@@ -7,6 +8,8 @@ import { SidebarMenuButton, SidebarMenuItem } from '~/modules/ui/sidebar';
 import { useUIStore } from '~/store/ui';
 import { useUserStore } from '~/store/user';
 import { cn } from '~/utils/cn';
+
+const { hasSidebarTextLabels } = appConfig.theme.navigation;
 
 export interface NavButtonProps {
   navItem: NavItem;
@@ -58,31 +61,30 @@ export function NavButton({ navItem, isActive, isCollapsed, onClick }: NavButton
   const buttonRef = useRef<HTMLButtonElement>(null);
   const theme = useUIStore((state) => state.theme);
 
+  const showTooltip = isCollapsed || !hasSidebarTextLabels;
+
   return (
     <SidebarMenuItem className="flex transform grow-0 justify-start pb-2">
       <SidebarMenuButton
         ref={buttonRef}
         size="lg"
-        tooltip={{ children: t(`common:${navItem.id}`), hidden: !isCollapsed }}
+        data-collapsed={isCollapsed}
+        tooltip={{ children: t(`common:${navItem.id}`), hidden: !showTooltip }}
         onClick={() => onClick(navItem.id, buttonRef)}
         isActive={isActive}
         data-theme={theme}
-        className={cn(
-          'h-14 ring-inset pl-3.5 focus-visible:ring-offset-0 group transition-[width] duration-200 linear',
-          'data-[active=true]:bg-background/50 hover:bg-background/30',
-          'text-primary-foreground data-[theme=none]:text-inherit',
-          isCollapsed ? 'w-16' : 'w-full',
-        )}
+        className="h-14 ring-inset focus-visible:ring-offset-0 group transition-[width] duration-200 linear
+          data-[active=true]:bg-background/50 hover:bg-background/30
+          text-primary-foreground data-[theme=none]:text-inherit
+          w-full data-[collapsed=true]:w-16 justify-center"
       >
         <AppNavIcon navItem={navItem} />
-        <span
-          className={cn(
-            'pl-1.5 font-medium whitespace-nowrap transition-[opacity,width] duration-200 linear overflow-hidden',
-            isCollapsed ? 'opacity-0 w-0' : 'opacity-100 w-auto',
-          )}
-        >
-          {t(`common:${navItem.id}`)}
-        </span>
+        {hasSidebarTextLabels && (
+          <span className="pl-1.5 font-medium whitespace-nowrap transition-[opacity,width] duration-200 linear overflow-hidden
+            opacity-100 w-auto group-data-[collapsed=true]:opacity-0 group-data-[collapsed=true]:w-0">
+            {t(`common:${navItem.id}`)}
+          </span>
+        )}
       </SidebarMenuButton>
     </SidebarMenuItem>
   );

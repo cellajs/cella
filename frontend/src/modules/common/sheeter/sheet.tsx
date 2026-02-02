@@ -23,6 +23,7 @@ export const SheeterSheet = ({ sheet }: { sheet: InternalSheet }) => {
     content,
     closeSheetOnEsc = true,
     container,
+    skipAnimation,
   } = sheet;
 
   const isMobile = useBreakpoints('max', 'sm', false);
@@ -99,7 +100,7 @@ export const SheeterSheet = ({ sheet }: { sheet: InternalSheet }) => {
         showCloseButton={showCloseButton}
         aria-describedby={undefined}
         container={containerElement}
-        className={cn(className, 'items-start', containerElement && 'z-40')}
+        className={cn(className, 'items-start', containerElement && 'z-40', skipAnimation && 'duration-0!')}
         onEscapeKeyDown={handleEscapeKeyDown}
         onInteractOutside={handleInteractOutside}
         onOpenAutoFocus={(event: Event) => {

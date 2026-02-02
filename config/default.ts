@@ -314,6 +314,12 @@ export const config = {
   themeColor: '#26262b',
   /** Theme configuration for UI components */
   theme: {
+    navigation: {
+      hasSidebarTextLabels: false,
+      sidebarWidthExpanded: '16rem',
+      sidebarWidthCollapsed: '4rem',
+      sheetPanelWidth: '20rem',
+    },
     colors: {
       rose: '#e11d48',
     },

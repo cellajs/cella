@@ -125,7 +125,7 @@
     "react-intersection-observer": "^10.0.2",
     "react-lazy-with-preload": "^2.2.1",
     "react-pdf": "^10.3.0",
-    "react-resizable-panels": "^4.5.7",
+    "react-resizable-panels": "^4.5.8",
     "react-use-downloader": "^1.3.0",
     "recharts": "^3.7.0",
     "shiki": "^3.22.0",

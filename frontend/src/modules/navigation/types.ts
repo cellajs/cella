@@ -12,7 +12,15 @@ export type PageDraggableItemData = DraggableItemData<UserMenuItem, 'menuItem'>;
  */
 export type NavItemId = (typeof navItems)[number]['id'];
 
-export type TriggerNavItemFn = (id: NavItemId, ref?: React.RefObject<HTMLButtonElement | null>) => void | Promise<void>;
+export type TriggerNavItemOptions = {
+  skipAnimation?: boolean;
+};
+
+export type TriggerNavItemFn = (
+  id: NavItemId,
+  ref?: React.RefObject<HTMLButtonElement | null>,
+  options?: TriggerNavItemOptions,
+) => void | Promise<void>;
 
 export type NavItem = {
   id: NavItemId;

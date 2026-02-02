@@ -20,6 +20,7 @@ export type SheetData = {
   modal?: boolean;
   closeSheetOnRouteChange?: boolean;
   container?: SheetContainerOptions;
+  skipAnimation?: boolean;
   onClose?: (isCleanup?: boolean) => void;
 };
 

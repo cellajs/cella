@@ -1,5 +1,5 @@
 import { useNavigate } from '@tanstack/react-router';
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import router from '~/lib/router';
@@ -13,9 +13,9 @@ import { navItems } from '~/nav-config';
 import { useNavigationStore } from '~/store/navigation';
 import { useUIStore } from '~/store/ui';
 
-// Sheet class for floating sheets
+// Sheet class for nav sheets - positioned next to sidebar icon bar on sm+, pushes content when keepMenuOpen
 export const navSheetClassName =
-  'sm:w-80 linear sm:z-105 sm:inset-0 xs:max-w-80 xl:group-[.keep-menu-open]/body:group-[.keep-menu-open]/body:shadow-none xl:group-[.keep-menu-open]/body:group-[.keep-menu-open]/body:border-r dark:shadow-[0_0_2px_5px_rgba(255,255,255,0.05)]';
+  'sm:left-16 sm:z-90 xs:max-w-80 sm:w-80 sm:group-[.keep-menu-open]/body:shadow-none sm:group-[.keep-menu-open]/body:border-r max-sm:shadow-[0_0_2px_5px_rgba(0,0,0,0.1)] dark:max-sm:shadow-[0_0_2px_5px_rgba(255,255,255,0.05)]';
 
 /** Application navigation component.
  * - Renders floating, sidebar, or bottom bar nav.
@@ -28,17 +28,15 @@ function AppNav() {
   const isMobile = useBreakpoints('max', 'sm');
   const isDesktop = useBreakpoints('min', 'xl', true);
 
-  // Ref for the sidebar sheet container (for inline rendering on desktop)
-  const sheetContainerRef = useRef<HTMLDivElement>(null);
-
   const updateSheet = useSheeter((state) => state.update);
 
   const navSheetOpen = useNavigationStore((state) => state.navSheetOpen);
+  const keepOpenPreference = useNavigationStore((state) => state.keepOpenPreference);
   const setFocusView = useUIStore((state) => state.setFocusView);
   const setNavLoading = useNavigationStore((state) => state.setNavLoading);
   const setNavSheetOpen = useNavigationStore((state) => state.setNavSheetOpen);
 
-  const triggerNavItem: TriggerNavItemFn = (id, ref) => {
+  const triggerNavItem: TriggerNavItemFn = (id, ref, options) => {
     const triggerRef = ref || {
       current: document.activeElement instanceof HTMLButtonElement ? document.activeElement : null,
     };
@@ -71,10 +69,6 @@ function AppNav() {
 
       const sheetSide = isMobile && navItem.mirrorOnMobile ? 'right' : 'left';
 
-      // On desktop, use container to render inline in sidebar
-      // On mobile, render as drawer (no container)
-      const container = !isMobile && sheetContainerRef.current ? { ref: sheetContainerRef } : undefined;
-
       useSheeter.getState().create(navItem.sheet, {
         id: 'nav-sheet',
         triggerRef,
@@ -82,7 +76,7 @@ function AppNav() {
         showCloseButton: false,
         modal: isMobile,
         className: navSheetClassName,
-        container,
+        skipAnimation: options?.skipAnimation,
         onClose: () => setNavSheetOpen(null, isDesktop),
       });
     }
@@ -96,7 +90,14 @@ function AppNav() {
     ['Shift + M', () => triggerNavItem('menu')],
   ]);
 
-  // Listen to route changes to close dialogs and sheets
+  // Auto-open menu on mount when keepOpenPreference is enabled on desktop
+  useEffect(() => {
+    if (isDesktop && keepOpenPreference && !navSheetOpen) {
+      triggerNavItem('menu', undefined, { skipAnimation: true });
+    }
+  }, []);
+
+  // Listen to route changes to close dialogs and reset focus view
   useEffect(() => {
     router.subscribe('onBeforeLoad', ({ pathChanged }) => {
       if (!pathChanged) return;
@@ -105,7 +106,7 @@ function AppNav() {
       if (uiState.focusView) setFocusView(false);
 
       useDialoger.getState().remove();
-      useSheeter.getState().removeOnRouteChange({ isCleanup: true });
+      // Note: Sheet cleanup handled by Sheeter provider (respects keepMenuOpen)
 
       // Set nav bar loading state
       setNavLoading(true);
@@ -119,7 +120,7 @@ function AppNav() {
       {isMobile ? (
         <BottomBarNav triggerNavItem={triggerNavItem} />
       ) : (
-        <SidebarNav triggerNavItem={triggerNavItem} sheetContainerRef={sheetContainerRef} />
+        <SidebarNav triggerNavItem={triggerNavItem} />
       )}
     </>
   );

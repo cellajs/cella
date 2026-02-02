@@ -105,7 +105,7 @@ export function defineConfig(config: CellaCliConfig): CellaCliConfig {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Sync services available in the CLI */
-export type SyncService = 'analyze' | 'sync' | 'packages';
+export type SyncService = 'analyze' | 'sync' | 'packages' | 'audit';
 
 /** Runtime configuration with all resolved values */
 export interface RuntimeConfig extends CellaCliConfig {

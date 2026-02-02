@@ -16,6 +16,7 @@ const serviceDescriptions: Record<SyncService, string> = {
   analyze: 'dry run to see what would change',
   sync: 'merge upstream changes',
   packages: 'sync package.json keys with upstream',
+  audit: 'check for outdated packages & vulnerabilities',
 };
 
 /**
@@ -30,9 +31,9 @@ export async function parseCli(userConfig: CellaCliConfig, forkPath: string): Pr
     .version(VERSION, '-v, --version', 'output the current version')
     .usage('[options]')
     .helpOption('-h, --help', 'display this help message')
-    .option('--service <name>', 'service to run: analyze, sync, packages', (value) => {
-      if (!['analyze', 'sync', 'packages'].includes(value)) {
-        console.error(`Invalid service: ${value}. Must be one of: analyze, sync, packages`);
+    .option('--service <name>', 'service to run: analyze, sync, packages, audit', (value) => {
+      if (!['analyze', 'sync', 'packages', 'audit'].includes(value)) {
+        console.error(`Invalid service: ${value}. Must be one of: analyze, sync, packages, audit`);
         process.exit(1);
       }
       service = value as SyncService;
@@ -64,6 +65,7 @@ export async function parseCli(userConfig: CellaCliConfig, forkPath: string): Pr
         { value: 'analyze' as SyncService, name: `analyze    ${pc.dim(serviceDescriptions.analyze)}` },
         { value: 'sync' as SyncService, name: `sync       ${pc.dim(serviceDescriptions.sync)}` },
         { value: 'packages' as SyncService, name: `packages   ${pc.dim(serviceDescriptions.packages)}` },
+        { value: 'audit' as SyncService, name: `audit      ${pc.dim(serviceDescriptions.audit)}` },
         { type: 'separator', separator: '─'.repeat(40) },
         { value: 'exit', name: pc.red(`exit       ${pc.dim('quit without doing anything')}`) },
       ],
