@@ -401,8 +401,21 @@ async function analyzeFiles(
         // File was in base, upstream deleted it - sync deletion unless pinned
         status = fileIsPinned ? 'ahead' : 'behind';
       } else {
-        // Fork-only file (never existed upstream)
-        status = 'ahead';
+        // Fork-only file (never existed in merge-base)
+        // Check if this file's content exists at a different path in upstream
+        // (indicates a rename that we couldn't detect due to squash merge-base)
+        const forkFileHash = forkHash;
+        let isRenamedSource = false;
+        if (forkFileHash) {
+          for (const [upPath, upHash] of upstreamHashes) {
+            if (upHash === forkFileHash && upPath !== filePath) {
+              // Same content at different path - this is likely a rename source
+              isRenamedSource = true;
+              break;
+            }
+          }
+        }
+        status = isRenamedSource ? 'behind' : 'ahead';
       }
     } else if (forkHash === upstreamHash) {
       // Identical

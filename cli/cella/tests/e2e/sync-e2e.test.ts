@@ -320,6 +320,8 @@ describe('sync e2e', () => {
 
     it('should handle file renames with squash strategy', async () => {
       const fs = await import('node:fs');
+      const { getFileChanges, getMergeBase, git } = await import('../../src/utils/git');
+      const { execSync } = await import('node:child_process');
 
       // Add a file to upstream
       makeCommit(env.upstreamPath, {
@@ -335,7 +337,6 @@ describe('sync e2e', () => {
       expect(fileExists(env.forkPath, 'src/old-name.ts')).toBe(true);
 
       // Complete the squash commit
-      const { execSync } = await import('node:child_process');
       try {
         execSync('git add -A && git commit --allow-empty -m "sync: squash upstream"', {
           cwd: env.forkPath,
@@ -349,6 +350,24 @@ describe('sync e2e', () => {
       renameFileAndCommit(env.upstreamPath, 'src/old-name.ts', 'src/new-name.ts', 'refactor: rename file');
 
       fetchUpstream(env.forkPath);
+
+      // Debug: Check what getFileChanges returns
+      const upstreamRef = 'cella-upstream/main';
+      const mergeBase = await getMergeBase(env.forkPath, 'HEAD', upstreamRef);
+
+      // Raw diff-tree output
+      const rawDiff = await git(['diff-tree', '-r', '-M90%', '--no-commit-id', mergeBase, upstreamRef], env.forkPath);
+
+      const upstreamChanges = await getFileChanges(env.forkPath, mergeBase, upstreamRef);
+
+      const debugInfo1 = {
+        mergeBase,
+        upstreamRef,
+        rawDiff,
+        upstreamChanges: Array.from(upstreamChanges.entries()).map(([k, v]) => ({ path: k, ...v })),
+      };
+      fs.writeFileSync('/tmp/cella-test-debug1.json', JSON.stringify(debugInfo1, null, 2));
+
       config = buildRuntimeConfig(env, { service: 'sync', mergeStrategy: 'squash' });
       const result = await runSync(config);
 

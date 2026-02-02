@@ -13,6 +13,7 @@ import {
   printAnalyzeComplete,
   printDivergedPreview,
   printDriftedWarning,
+  printPinnedPreview,
   printSummary,
   printSyncFiles,
   resetSteps,
@@ -57,6 +58,7 @@ export async function runAnalyze(config: RuntimeConfig): Promise<MergeResult> {
   printSyncFiles(result.files, linkOptions);
   printDriftedWarning(result.files, linkOptions);
   printDivergedPreview(result.files, linkOptions);
+  printPinnedPreview(result.files, linkOptions);
 
   // Print summary at the end
   printSummary(result.summary, 'analysis summary');

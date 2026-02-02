@@ -313,8 +313,9 @@ export async function getFileChanges(
     if (!line) continue;
 
     // Check for rename first (Rxx status with two paths)
-    // Format: :100644 100644 abc123... def456... R100\toldpath\tnewpath
-    const renameMatch = line.match(/^:\d+ \d+ ([a-f0-9]+) ([a-f0-9]+) R\d*\t(.+)\t(.+)$/);
+    // Format: :100644 100644 abc123... def456... R100 oldpath\tnewpath
+    // Note: space after Rxx, then tab between old and new paths
+    const renameMatch = line.match(/^:\d+ \d+ ([a-f0-9]+) ([a-f0-9]+) R\d*\s+(.+)\t(.+)$/);
     if (renameMatch) {
       const [, baseHash, targetHash, oldPath, newPath] = renameMatch;
       changes.set(newPath, {
