@@ -46,7 +46,7 @@ function TagItemBase({ tag, operations, isExpanded, isActive, activeOperationInd
           <Link
             to="/docs/operations"
             search={(prev) => ({ ...prev, operationTag: isExpanded ? undefined : tag.name })}
-            hash={isExpanded ? undefined : `tag/${tag.name}`}
+            hash={`tag/${tag.name}`}
             replace
             resetScroll={false}
             draggable="false"
@@ -56,7 +56,7 @@ function TagItemBase({ tag, operations, isExpanded, isActive, activeOperationInd
               'group-data-[expanded=true]/tag:opacity-100 group-data-[active=true]/tag:bg-accent',
             )}
             onClick={() => {
-              if (!isExpanded) requestAnimationFrame(() => scrollToSectionById(`tag/${tag.name}`));
+              requestAnimationFrame(() => scrollToSectionById(`tag/${tag.name}`));
               useSheeter.getState().remove(DOCS_SIDEBAR_SHEET_ID);
             }}
           >

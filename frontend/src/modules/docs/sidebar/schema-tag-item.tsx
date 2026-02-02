@@ -45,7 +45,7 @@ function SchemaTagItemBase({ tag, schemas, isExpanded, layoutId, isActive, activ
           <Link
             to="/docs/schemas"
             search={(prev) => ({ ...prev, schemaTag: isExpanded ? undefined : (tag.name as SchemaTag) })}
-            hash={isExpanded ? undefined : tag.name}
+            hash={tag.name}
             replace
             resetScroll={false}
             draggable="false"
@@ -55,7 +55,7 @@ function SchemaTagItemBase({ tag, schemas, isExpanded, layoutId, isActive, activ
               'group-data-[expanded=true]/tag:opacity-100 group-data-[active=true]/tag:bg-accent',
             )}
             onClick={() => {
-              if (!isExpanded) requestAnimationFrame(() => scrollToSectionById(tag.name));
+              requestAnimationFrame(() => scrollToSectionById(tag.name));
               useSheeter.getState().remove(DOCS_SIDEBAR_SHEET_ID);
             }}
           >

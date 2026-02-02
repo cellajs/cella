@@ -24,7 +24,8 @@ const DebugToolbars =
   appConfig.mode !== 'production' ? lazy(() => import('~/modules/common/debug-toolbars')) : () => null;
 
 // Sidebar dimensions from config
-const { hasSidebarTextLabels, sidebarWidthExpanded, sidebarWidthCollapsed, sheetPanelWidth } = appConfig.theme.navigation;
+const { hasSidebarTextLabels, sidebarWidthExpanded, sidebarWidthCollapsed, sheetPanelWidth } =
+  appConfig.theme.navigation;
 
 // Cached base nav items
 let baseNavItems: NavItem[] | null = null;
@@ -64,8 +65,12 @@ export function SidebarNav({ triggerNavItem }: SidebarNavProps) {
   const iconBarWidth = isExpanded ? sidebarWidthExpanded : sidebarWidthCollapsed;
   const sidebarWidth = iconBarWidth;
   const spacerWidth = isOverlay
-    ? hasSidebarTextLabels && isDesktop ? sidebarWidthExpanded : sidebarWidthCollapsed
-    : navSheetExists ? `calc(${iconBarWidth} + ${sheetPanelWidth})` : iconBarWidth;
+    ? hasSidebarTextLabels && isDesktop
+      ? sidebarWidthExpanded
+      : sidebarWidthCollapsed
+    : navSheetExists
+      ? `calc(${iconBarWidth} + ${sheetPanelWidth})`
+      : iconBarWidth;
 
   // CSS custom properties for widths
   const cssVars = {

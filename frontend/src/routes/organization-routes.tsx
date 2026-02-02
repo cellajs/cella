@@ -2,11 +2,15 @@ import { onlineManager } from '@tanstack/react-query';
 import { createRoute, Outlet, redirect, useLoaderData } from '@tanstack/react-router';
 import i18n from 'i18next';
 import { lazy, Suspense } from 'react';
-import { type Organization, getOrganization } from '~/api.gen';
+import { getOrganization, type Organization } from '~/api.gen';
 import { attachmentsRouteSearchParamsSchema } from '~/modules/attachment/search-params-schemas';
 import ErrorNotice from '~/modules/common/error-notice';
 import { membersRouteSearchParamsSchema } from '~/modules/memberships/search-params-schemas';
-import { findOrganizationInListCache, organizationQueryKeys, organizationQueryOptions } from '~/modules/organization/query';
+import {
+  findOrganizationInListCache,
+  organizationQueryKeys,
+  organizationQueryOptions,
+} from '~/modules/organization/query';
 import { queryClient } from '~/query/query-client';
 import { AppLayoutRoute } from '~/routes/base-routes';
 import { useToastStore } from '~/store/toast';
@@ -45,7 +49,7 @@ export const OrganizationLayoutRoute = createRoute({
       const orgOptions = organizationQueryOptions(orgId);
       organization = isOnline
         ? await queryClient.ensureQueryData({ ...orgOptions, revalidateIfStale: true })
-        : queryClient.getQueryData(orgOptions.queryKey) ?? cached;
+        : (queryClient.getQueryData(orgOptions.queryKey) ?? cached);
     } else if (isOnline) {
       // No cache - fetch by slug, then populate ID-based cache
       const fetched = await getOrganization({ path: { idOrSlug } });

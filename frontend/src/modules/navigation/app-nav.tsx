@@ -117,11 +117,7 @@ function AppNav() {
   return (
     <>
       <FloatingNav triggerNavItem={triggerNavItem} />
-      {isMobile ? (
-        <BottomBarNav triggerNavItem={triggerNavItem} />
-      ) : (
-        <SidebarNav triggerNavItem={triggerNavItem} />
-      )}
+      {isMobile ? <BottomBarNav triggerNavItem={triggerNavItem} /> : <SidebarNav triggerNavItem={triggerNavItem} />}
     </>
   );
 }

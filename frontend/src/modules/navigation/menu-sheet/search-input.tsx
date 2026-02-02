@@ -2,7 +2,6 @@ import { appConfig } from 'config';
 import { XCircleIcon } from 'lucide-react';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
 import useFocusByRef from '~/hooks/use-focus-by-ref';
 import useMounted from '~/hooks/use-mounted';
 import { SearchSpinner } from '~/modules/common/search-spinner';
@@ -27,7 +26,6 @@ export const MenuSheetSearchInput = ({
 }: MenuSheetSearchProps) => {
   const { t } = useTranslation();
   const { hasStarted } = useMounted();
-  const isMobile = useBreakpoints('max', 'sm');
 
   const { setFocus, focusRef } = useFocusByRef();
 
@@ -54,7 +52,7 @@ export const MenuSheetSearchInput = ({
     <InputGroup className={cn('z-20 border-0 shadow-none', className)}>
       <InputGroupInput
         id="nav-sheet-search"
-        disabled={!hasStarted && isMobile} // Delay to prevent focus on initial render
+        disabled={!hasStarted} // Delay to prevent focus on initial render
         type="text"
         ref={focusRef}
         placeholder={t('common:placeholder.search')}

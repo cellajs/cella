@@ -80,8 +80,10 @@ export function NavButton({ navItem, isActive, isCollapsed, onClick }: NavButton
       >
         <AppNavIcon navItem={navItem} />
         {hasSidebarTextLabels && (
-          <span className="pl-1.5 font-medium whitespace-nowrap transition-[opacity,width] duration-200 linear overflow-hidden
-            opacity-100 w-auto group-data-[collapsed=true]:opacity-0 group-data-[collapsed=true]:w-0">
+          <span
+            className="pl-1.5 font-medium whitespace-nowrap transition-[opacity,width] duration-200 linear overflow-hidden
+            opacity-100 w-auto group-data-[collapsed=true]:opacity-0 group-data-[collapsed=true]:w-0"
+          >
             {t(`common:${navItem.id}`)}
           </span>
         )}

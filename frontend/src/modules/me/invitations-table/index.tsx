@@ -28,22 +28,6 @@ function InvitationsTable() {
     ...queryOptions,
   });
 
-  // TODO-004 Update rows
-  // const onRowsChange = (changedRows: Attachment[], { indexes, column }: RowsChangeData<Attachment>) => {
-  //   if (column.key !== 'name') return;
-
-  //   // If name is changed, update the attachment
-  //   for (const index of indexes) {
-  //     const attachment = changedRows[index];
-  //     attachmentUpdateMutation.mutate({
-  //       id: attachment.id,
-  //       orgIdOrSlug: entity.id,
-  //       name: attachment.name,
-  //       localUpdate: !isCDNUrl(attachment.url),
-  //     });
-  //   }
-  // };
-
   return (
     <div className="flex flex-col gap-4 h-full">
       {/* Explainer alert box */}

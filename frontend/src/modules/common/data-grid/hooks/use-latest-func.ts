@@ -1,20 +1,12 @@
-import { useCallback, useLayoutEffect, useRef } from 'react';
-
+import { useLatestCallback } from '~/hooks/use-latest-ref';
 import type { Maybe } from '../types';
 
-// https://reactjs.org/docs/hooks-faq.html#what-can-i-do-if-my-effect-dependencies-change-too-often
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+/**
+ * Returns a stable callback that always calls the latest function.
+ * Delegates to centralized useLatestCallback hook.
+ * @deprecated Use useLatestCallback from '~/hooks/use-latest-ref' directly
+ */
+// biome-ignore lint/suspicious/noExplicitAny: function signature compatibility
 export function useLatestFunc<T extends Maybe<(...args: any[]) => any>>(fn: T): T {
-  const ref = useRef(fn);
-
-  useLayoutEffect(() => {
-    ref.current = fn;
-  });
-
-  const callbackFn = useCallback((...args: Parameters<NonNullable<T>>) => {
-    ref.current!(...args);
-  }, []);
-
-  // @ts-expect-error
-  return fn ? callbackFn : fn;
+  return useLatestCallback(fn);
 }

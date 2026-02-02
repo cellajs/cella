@@ -63,6 +63,32 @@ function getServerSnapshot() {
   return sortedBreakpoints[0];
 }
 
+/** Breakpoint key type for responsive utilities. */
+export type BreakpointKey = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+
+/**
+ * Hook to get the current breakpoint key based on viewport width.
+ * Uses useSyncExternalStore for efficient single subscription.
+ */
+export function useCurrentBreakpoint(enableReactivity = true): BreakpointKey {
+  const breakpointState = useSyncExternalStore(
+    enableReactivity ? subscribe : () => () => { },
+    getSnapshot,
+    getServerSnapshot,
+  );
+  // Handle 'xs' case when breakpoint is smaller than 'sm'
+  const smIndex = sortedBreakpoints.indexOf('sm');
+  const currentIndex = sortedBreakpoints.indexOf(breakpointState);
+  if (
+    currentIndex <= smIndex &&
+    typeof window !== 'undefined' &&
+    window.innerWidth < Number.parseInt(breakpoints.sm, 10)
+  ) {
+    return 'xs';
+  }
+  return breakpointState as BreakpointKey;
+}
+
 /**
  * Breakpoint hook to determine if the current viewport matches the specified breakpoint condition.
  * @param mustBe - 'min' for minimum breakpoint, 'max' for maximum breakpoint
@@ -75,7 +101,7 @@ function getServerSnapshot() {
 export function useBreakpoints(mustBe: 'min' | 'max', breakpoint: keyof typeof breakpoints, enableReactivity = true) {
   // useSyncExternalStore provides tear-free reads from external state
   const breakpointState = useSyncExternalStore(
-    enableReactivity ? subscribe : () => () => {},
+    enableReactivity ? subscribe : () => () => { },
     getSnapshot,
     getServerSnapshot,
   );
