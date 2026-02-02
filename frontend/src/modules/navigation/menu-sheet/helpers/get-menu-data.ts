@@ -22,7 +22,7 @@ export async function getMenuData(opts?: { detailedMenu?: boolean }) {
 
       const queryOpts = { ...factory({ userId }) };
 
-      const data = await queryClient.ensureInfiniteQueryData(queryOpts);
+      const data = await queryClient.ensureInfiniteQueryData({ ...queryOpts, revalidateIfStale: true });
       byType.set(entityType, flattenInfiniteData<ContextEntityDataWithMembership>(data));
     }),
   );

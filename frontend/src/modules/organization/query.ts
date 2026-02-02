@@ -39,18 +39,14 @@ export const findOrganizationInListCache = (idOrSlug: string) =>
   findInListCache<Organization>(keys.list.base, (org) => org.id === idOrSlug || org.slug === idOrSlug);
 
 /**
- * Query options for a single organization by id or slug.
- * Uses initialData from the organizations list cache (e.g., menu data) to provide
- * instant loading while revalidating in the background.
+ * Query options for a single organization by ID.
+ * Always cache by ID to prevent duplicate cache entries when navigating via slug.
  */
-export const organizationQueryOptions = (idOrSlug: string) =>
+export const organizationQueryOptions = (id: string) =>
   queryOptions({
-    queryKey: keys.detail.byId(idOrSlug),
-    queryFn: async () => getOrganization({ path: { idOrSlug } }),
-    // Seed from list cache (e.g., organizations loaded for menu) for instant display
-    initialData: () => findOrganizationInListCache(idOrSlug),
-    // Treat list data as fresh for 30 seconds to avoid unnecessary refetches
-    staleTime: 30_000,
+    queryKey: keys.detail.byId(id),
+    queryFn: async () => getOrganization({ path: { idOrSlug: id } }),
+    placeholderData: () => findOrganizationInListCache(id),
   });
 
 type OrganizationsListParams = Omit<NonNullable<GetOrganizationsData['query']>, 'limit' | 'offset'> & {

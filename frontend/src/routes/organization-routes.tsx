@@ -2,14 +2,11 @@ import { onlineManager } from '@tanstack/react-query';
 import { createRoute, Outlet, redirect, useLoaderData } from '@tanstack/react-router';
 import i18n from 'i18next';
 import { lazy, Suspense } from 'react';
+import { type Organization, getOrganization } from '~/api.gen';
 import { attachmentsRouteSearchParamsSchema } from '~/modules/attachment/search-params-schemas';
 import ErrorNotice from '~/modules/common/error-notice';
 import { membersRouteSearchParamsSchema } from '~/modules/memberships/search-params-schemas';
-import {
-  findOrganizationInListCache,
-  organizationQueryKeys,
-  organizationQueryOptions,
-} from '~/modules/organization/query';
+import { findOrganizationInListCache, organizationQueryKeys, organizationQueryOptions } from '~/modules/organization/query';
 import { queryClient } from '~/query/query-client';
 import { AppLayoutRoute } from '~/routes/base-routes';
 import { useToastStore } from '~/store/toast';
@@ -36,23 +33,32 @@ export const OrganizationLayoutRoute = createRoute({
     const { idOrSlug } = params;
     const isOnline = onlineManager.isOnline();
 
-    const bootstrap = organizationQueryOptions(idOrSlug);
+    // Resolve slug to ID via list cache (from menu), or fetch if not cached
+    const cached = findOrganizationInListCache(idOrSlug);
+    const orgId = cached?.id;
 
-    // Instant navigation from cache. component useSuspenseQuery handles refetch if stale.
-    const organization = isOnline
-      ? await queryClient.ensureQueryData(bootstrap)
-      : (queryClient.getQueryData(bootstrap.queryKey) ?? findOrganizationInListCache(idOrSlug));
+    // If we have the ID from cache, use ID-based query; otherwise fetch by slug first
+    let organization: Organization | undefined;
+
+    if (orgId) {
+      // We know the ID - use canonical cache key
+      const orgOptions = organizationQueryOptions(orgId);
+      organization = isOnline
+        ? await queryClient.ensureQueryData({ ...orgOptions, revalidateIfStale: true })
+        : queryClient.getQueryData(orgOptions.queryKey) ?? cached;
+    } else if (isOnline) {
+      // No cache - fetch by slug, then populate ID-based cache
+      const fetched = await getOrganization({ path: { idOrSlug } });
+      if (fetched) {
+        queryClient.setQueryData(organizationQueryKeys.detail.byId(fetched.id), fetched);
+        organization = fetched;
+      }
+    }
 
     if (!organization) {
       if (!isOnline) useToastStore.getState().showToast(i18n.t('common:offline_cache_miss.text'), 'warning');
       throw redirect({ to: '/home', replace: true });
     }
-
-    // Copy to canonical (ID-based) cache entry, preserving original staleness
-    const slugQuery = queryClient.getQueryState(bootstrap.queryKey);
-    const idKey = organizationQueryKeys.detail.byId(organization.id);
-    queryClient.setQueryData(idKey, organization, { updatedAt: slugQuery?.dataUpdatedAt });
-    queryClient.removeQueries({ queryKey: bootstrap.queryKey, exact: true });
 
     // Rewrite URL to use slug if user navigated with ID
     rewriteUrlToSlug(params, { idOrSlug: organization.slug }, OrganizationLayoutRoute.to);
