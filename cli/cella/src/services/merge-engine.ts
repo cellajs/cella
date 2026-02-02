@@ -36,6 +36,7 @@ import {
   getFileHashesAtRef,
   getMergeBase,
   getRemoteUrl,
+  gitMv,
   gitRm,
   merge,
   removeFileFromWorktree,
@@ -171,6 +172,43 @@ async function applyDirectMerge(
       resolved++;
       continue;
     }
+
+    if (status === 'renamed' && file.renamedFrom) {
+      // Upstream renamed a file - apply as git mv to preserve history
+      const oldPath = file.renamedFrom;
+      const oldPathExists = await fileExistsInWorktree(forkPath, oldPath);
+      const newPathExists = await fileExistsInWorktree(forkPath, filePath);
+
+      if (oldPathExists && !newPathExists) {
+        // Old exists, new doesn't - use git mv to move the file, preserving history
+        onProgress?.(`→ ${oldPath} → ${filePath}: moving (renamed in upstream)`);
+        try {
+          await gitMv(forkPath, oldPath, filePath);
+        } catch {
+          // git mv failed (possibly due to merge state) - fall back to manual approach
+          await gitRm(forkPath, oldPath);
+          await removeFileFromWorktree(forkPath, oldPath);
+          await checkoutFromRef(forkPath, upstreamRef, filePath);
+        }
+      } else if (oldPathExists && newPathExists) {
+        // Both exist (merge already staged the new file, but old still in worktree)
+        // Remove old and ensure new has correct content
+        onProgress?.(`→ ${oldPath} → ${filePath}: completing rename (removing old)`);
+        await gitRm(forkPath, oldPath);
+        await removeFileFromWorktree(forkPath, oldPath);
+        await checkoutFromRef(forkPath, upstreamRef, filePath);
+      } else if (!oldPathExists && newPathExists) {
+        // Rename already fully applied - just ensure content is correct
+        onProgress?.(`→ ${filePath}: updating from upstream (rename already applied)`);
+        await checkoutFromRef(forkPath, upstreamRef, filePath);
+      } else {
+        // Neither exists - checkout new path from upstream
+        onProgress?.(`→ ${filePath}: adding from upstream (renamed)`);
+        await checkoutFromRef(forkPath, upstreamRef, filePath);
+      }
+      resolved++;
+      continue;
+    }
   }
 
   // Handle remaining git conflicts (only auto-resolve ignored/pinned)
@@ -211,6 +249,7 @@ async function applyDirectMerge(
  * - Gets all file hashes in one call per ref (not per file)
  * - Uses diff-tree to identify changed files between base and upstream
  * - Only does detailed analysis on changed files
+ * - Detects renames from upstream for proper git mv handling
  */
 async function analyzeFiles(
   _worktreePath: string,
@@ -229,30 +268,51 @@ async function analyzeFiles(
     getFileHashesAtRef(forkPath, mergeBaseRef),
   ]);
 
-  // Get only files that changed between base and upstream
+  // Get only files that changed between base and upstream (includes renames with -M90%)
   const upstreamChanges = await getFileChanges(forkPath, mergeBaseRef, upstreamRef);
   // Get only files that changed between base and fork
   const forkChanges = await getFileChanges(forkPath, mergeBaseRef, 'HEAD');
 
+  // Build a map of old paths that were renamed in upstream (oldPath -> newPath)
+  const upstreamRenames = new Map<string, string>();
+  for (const [newPath, change] of upstreamChanges) {
+    if (change.status === 'R' && change.oldPath) {
+      upstreamRenames.set(change.oldPath, newPath);
+    }
+  }
+
   // Combined set of all files (for completeness, but we'll only analyze non-identical)
-  const allFiles = new Set([...forkHashes.keys(), ...upstreamHashes.keys()]);
+  // Also include old paths from renames to properly track them
+  const allFiles = new Set([...forkHashes.keys(), ...upstreamHashes.keys(), ...upstreamRenames.keys()]);
 
   // Files that actually need analysis (changed somewhere)
-  const changedFiles = new Set([...upstreamChanges.keys(), ...forkChanges.keys()]);
+  const changedFiles = new Set([...upstreamChanges.keys(), ...forkChanges.keys(), ...upstreamRenames.keys()]);
 
   onProgress?.(
     `analyzing ${changedFiles.size} changed files (${allFiles.size - changedFiles.size} identical skipped)...`,
   );
 
   const analyzedFiles: AnalyzedFile[] = [];
+  // Track old paths that have been handled as part of a rename
+  const handledOldPaths = new Set<string>();
   let processed = 0;
 
   for (const filePath of allFiles) {
+    // Skip old paths that were already handled as part of a rename
+    if (handledOldPaths.has(filePath)) continue;
+
     const inFork = forkHashes.has(filePath);
     const inUpstream = upstreamHashes.has(filePath);
 
     const fileIsIgnored = isIgnored(filePath, config);
     const fileIsPinned = isPinned(filePath, config);
+
+    // Check if this file is the NEW path of an upstream rename
+    const upstreamChange = upstreamChanges.get(filePath);
+    const isUpstreamRename = upstreamChange?.status === 'R' && upstreamChange.oldPath;
+
+    // Check if this file is the OLD path that was renamed in upstream
+    const renamedToPath = upstreamRenames.get(filePath);
 
     // Fast path: if file didn't change anywhere, it's identical
     if (!changedFiles.has(filePath) && inFork && inUpstream) {
@@ -278,6 +338,57 @@ async function analyzeFiles(
 
     // Determine status
     let status: FileStatus;
+    let renamedFrom: string | undefined;
+
+    // Handle upstream renames
+    if (isUpstreamRename && upstreamChange.oldPath) {
+      const oldPath = upstreamChange.oldPath;
+      const oldPathInFork = forkHashes.has(oldPath);
+      const forkOldHash = forkHashes.get(oldPath) ?? null;
+      const baseOldHash = baseHashes.get(oldPath) ?? null;
+
+      // Mark the old path as handled so we don't process it separately
+      handledOldPaths.add(oldPath);
+
+      // Check if fork modified the old file
+      const forkModifiedOld = forkOldHash !== baseOldHash;
+
+      if (fileIsPinned || isIgnored(oldPath, config)) {
+        // Pinned or ignored - keep fork's version
+        status = 'pinned';
+      } else if (!oldPathInFork) {
+        // Old path doesn't exist in fork (fork already deleted or moved it)
+        // Treat as normal behind - let git's merge handle it
+        status = 'behind';
+      } else if (forkModifiedOld) {
+        // Fork modified the old file - this is a diverged situation
+        // Let git's merge handle the conflict naturally
+        status = 'diverged';
+        renamedFrom = oldPath;
+      } else {
+        // Fork has unmodified old file - this is a clean rename to apply
+        status = 'renamed';
+        renamedFrom = oldPath;
+      }
+
+      analyzedFiles.push({
+        path: filePath,
+        status,
+        isIgnored: fileIsIgnored,
+        isPinned: fileIsPinned,
+        existsInFork: inFork,
+        existsInUpstream: true,
+        renamedFrom,
+      });
+      continue;
+    }
+
+    // Skip old paths that were renamed - they'll be handled via the new path
+    if (renamedToPath) {
+      // This is an old path that upstream renamed - skip it, handled above
+      handledOldPaths.add(filePath);
+      continue;
+    }
 
     if (fileIsIgnored) {
       status = 'ignored';
@@ -342,6 +453,7 @@ function calculateSummary(files: AnalyzedFile[]): AnalysisSummary {
     pinned: 0,
     ignored: 0,
     deleted: 0,
+    renamed: 0,
     total: files.length,
   };
 

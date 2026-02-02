@@ -37,7 +37,7 @@
   {
     "name": "auth",
     "description": "*Authentication* endpoints supporting multiple sign-in methods, including email/password, OAuth\n        (Google, Microsoft, GitHub), and passkeys (WebAuthn). These routes cover user sign-up, sign-in, password\n        recovery, email verification, account linking, and impersonation for system admins.",
-    "count": 26
+    "count": 27
   },
   {
     "name": "attachments",

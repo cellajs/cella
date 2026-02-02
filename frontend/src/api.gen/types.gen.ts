@@ -439,6 +439,50 @@ export type GetActivitiesResponses = {
 
 export type GetActivitiesResponse = GetActivitiesResponses[keyof GetActivitiesResponses];
 
+export type GetAuthHealthData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/auth/health';
+};
+
+export type GetAuthHealthErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetAuthHealthError = GetAuthHealthErrors[keyof GetAuthHealthErrors];
+
+export type GetAuthHealthResponses = {
+  /**
+   * Auth health status
+   */
+  200: {
+    restrictedMode: boolean;
+    retryAfter?: number;
+  };
+};
+
+export type GetAuthHealthResponse = GetAuthHealthResponses[keyof GetAuthHealthResponses];
+
 export type CheckEmailData = {
   body: {
     email: string;
@@ -2030,6 +2074,9 @@ export type GetAppStreamResponses = {
    */
   200: {
     activities: Array<StreamNotification>;
+    /**
+     * Last activity ID (use as offset for next request)
+     */
     cursor: string | null;
   };
 };
@@ -2510,7 +2557,7 @@ export type PagesPublicStreamData = {
   path?: never;
   query?: {
     /**
-     * Cursor offset: "-1" for all history, "now" for live-only, or activity ID
+     * Starting offset: 'now' for live-only, or activity ID to receive missed notifications
      */
     offset?: string;
     /**

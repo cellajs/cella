@@ -85,6 +85,7 @@
   "invalid_origin": "Invalid origin",
   "invalid_param": "Invalid parameters",
   "invalid_param.text": "If you copied a URL, please check if it is correct and complete.",
+  "invalid_credentials": "Invalid email or password",
   "invalid_password": "Invalid password",
   "invalid_request": "Invalid request",
   "invalid_request.text": "Request could not be processed due to missing or wrong data.",

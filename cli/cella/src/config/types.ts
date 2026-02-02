@@ -134,7 +134,8 @@ export type FileStatus =
   | 'diverged' // Both changed, will merge
   | 'pinned' // Fork wins on conflict
   | 'ignored' // Excluded from sync entirely
-  | 'deleted'; // Fork deleted, will stay deleted
+  | 'deleted' // Fork deleted, will stay deleted
+  | 'renamed'; // Upstream renamed file
 
 /** Analyzed file with status and metadata */
 export interface AnalyzedFile {
@@ -158,6 +159,8 @@ export interface AnalyzedFile {
   upstreamChangedAt?: string;
   /** For diverged files: short commit hash of the upstream change */
   upstreamCommit?: string;
+  /** For renamed files: the original path before rename */
+  renamedFrom?: string;
 }
 
 /** Summary counts by status */
@@ -170,6 +173,7 @@ export interface AnalysisSummary {
   pinned: number;
   ignored: number;
   deleted: number;
+  renamed: number;
   total: number;
 }
 

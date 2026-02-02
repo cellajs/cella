@@ -4,11 +4,15 @@
  */
 
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { env as dotenv } from '@dotenv-run/core';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import pg from 'pg';
 import { checkMark, crossMark, loadingMark } from '#/utils/console';
+
+// Get directory path for ESM
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Load .env file from project root
 dotenv({ root: '../..', files: ['.env'] });
@@ -47,7 +51,8 @@ export default async function globalSetup() {
 
   const pool = new pg.Pool({ connectionString: DATABASE_URL });
   const db = drizzle({ client: pool, casing: 'snake_case' });
-  const migrationsFolder = path.resolve(process.cwd(), 'drizzle');
+  // Use __dirname to get absolute path regardless of cwd (works with vitest workspace)
+  const migrationsFolder = path.resolve(__dirname, '../drizzle');
 
   try {
     await migrate(db, { migrationsFolder, migrationsSchema: 'drizzle-backend' });

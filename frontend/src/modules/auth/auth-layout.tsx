@@ -5,7 +5,10 @@ import { type FooterLinkProps, FooterLinks } from '~/modules/common/app/app-foot
 import Logo from '~/modules/common/logo';
 
 // Auth footer links
-const authFooterLinks: FooterLinkProps[] = [{ id: 'about', href: '/about' }];
+const authFooterLinks: FooterLinkProps[] = [
+  { id: 'sign_in', href: '/authenticate' },
+  { id: 'about', href: '/about' },
+];
 
 // Lazy load bg animation
 const BgAnimation = lazy(() => import('~/modules/common/bg-animation'));
@@ -34,7 +37,7 @@ function AuthLayout() {
             <Logo height={34} />
           </Link>
 
-          <FooterLinks className="max-sm:hidden justify-center" links={authFooterLinks} />
+          <FooterLinks className="justify-center" links={authFooterLinks} />
         </div>
       </div>
     </div>

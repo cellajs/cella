@@ -43,7 +43,7 @@ export function RequestPasswordForm({ email = '', onEmailChange }: { email?: str
         type="email"
         id="reset-email-field"
         autoFocus={!isMobile}
-        className="mb-4"
+        className="mb-4 h-12"
         placeholder={t('common:email')}
         value={emailValue} // Set the default value instead of value
         onChange={(e) => handleEmailChange(e.target.value)}

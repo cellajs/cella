@@ -10,6 +10,33 @@ import { mockTokenDataResponse } from '../../../../mocks/mock-auth';
 
 const authGeneralRoutes = {
   /**
+   * Auth health check with rate limit status
+   */
+  health: createXRoute({
+    operationId: 'getAuthHealth',
+    method: 'get',
+    path: '/health',
+    xGuard: isPublicAccess,
+    tags: ['auth'],
+    summary: 'Auth health check',
+    description:
+      'Returns auth health status including whether the client IP is rate-limited for email enumeration protection.',
+    responses: {
+      200: {
+        description: 'Auth health status',
+        content: {
+          'application/json': {
+            schema: z.object({
+              restrictedMode: z.boolean(),
+              retryAfter: z.number().optional(),
+            }),
+          },
+        },
+      },
+      ...errorResponseRefs,
+    },
+  }),
+  /**
    * Start impersonating
    */
   startImpersonation: createXRoute({

@@ -1,7 +1,9 @@
+import { useQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { getAuthHealth } from '~/api.gen';
 import OAuthProviders from '~/modules/auth/oauth-providers';
 import PasskeyStrategy from '~/modules/auth/passkey-strategy';
 import { CheckEmailStep } from '~/modules/auth/steps/check-email';
@@ -41,25 +43,48 @@ function AuthenticatePage() {
   const { tokenId } = useSearch({ from: '/publicLayout/authLayout/auth/authenticate' });
 
   const { lastUser } = useUserStore();
-  const { step, email, setStep } = useAuthStore();
+  const { step, email, setStep, restrictedMode, setRestrictedMode } = useAuthStore();
 
   const { data: tokenData, isLoading } = useGetTokenData('invitation', tokenId, !!tokenId);
 
+  // Fetch auth health & check for rate limit (restrictedMode)
+  const { data: healthData, isLoading: isHealthLoading } = useQuery({
+    queryKey: ['auth', 'health'],
+    queryFn: async () => getAuthHealth(),
+    staleTime: 0,
+    refetchOnMount: 'always',
+    retry: false,
+  });
+
+  // Update restrictedMode based on health response
+  useEffect(() => {
+    if (healthData?.restrictedMode !== undefined) {
+      setRestrictedMode(healthData.restrictedMode);
+    }
+  }, [healthData, setRestrictedMode]);
+
   // If token, proceed to sign up with token. If last user and no token, use last user as email
+  // In restricted mode with no token/lastUser, go directly to signIn step
   useEffect(() => {
     if (lastUser?.email && !tokenId) return setStep('signIn', lastUser.email);
 
-    if (!tokenData?.email) return;
+    if (!tokenData?.email) {
+      // In restricted mode, skip checkEmail and go directly to signIn
+      if (restrictedMode && step === 'checkEmail') {
+        setStep('signIn', '');
+      }
+      return;
+    }
     setStep('signUp', tokenData.email);
-  }, [tokenData, lastUser]);
+  }, [tokenData, lastUser, restrictedMode, step]);
 
-  // Loading invitation token
-  if (isLoading) return <Spinner className="h-10 w-10" />;
+  // Loading invitation token or health check
+  if (isLoading || isHealthLoading) return <Spinner className="h-10 w-10" />;
 
   // Render form based on current step
   return (
     <>
-      {step === 'checkEmail' && <CheckEmailStep />}
+      {step === 'checkEmail' && !restrictedMode && <CheckEmailStep />}
 
       {step === 'signIn' && <SignInStep />}
       {step === 'signUp' && <SignUpStep tokenData={tokenData} />}

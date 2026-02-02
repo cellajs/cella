@@ -67,14 +67,6 @@ export const mockContextMembership = <T extends ContextEntityType>(
 };
 
 /**
- * Generates a mock membership linking a user to an organization.
- * @deprecated Use mockContextMembership('organization', organization, user) instead.
- */
-export const mockOrganizationMembership = (organization: ContextEntity, user: UserModel): InsertMembershipModel => {
-  return mockContextMembership('organization', organization, user);
-};
-
-/**
  * Generates a mock membership base for API responses.
  * Uses deterministic seeding - same key produces same data.
  * Context entity ID columns are generated dynamically based on appConfig.contextEntityTypes.

@@ -90,7 +90,7 @@
           "offset": {
             "type": "string",
             "required": false,
-            "description": "Cursor offset: \"-1\" for all history, \"now\" for live-only, or activity ID"
+            "description": "Starting offset: 'now' for live-only, or activity ID to receive missed notifications"
           },
           "live": {
             "type": "string",

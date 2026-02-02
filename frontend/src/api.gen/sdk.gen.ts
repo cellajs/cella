@@ -78,6 +78,9 @@ import type {
   GetAttachmentsData,
   GetAttachmentsErrors,
   GetAttachmentsResponses,
+  GetAuthHealthData,
+  GetAuthHealthErrors,
+  GetAuthHealthResponses,
   GetCacheStatsData,
   GetCacheStatsErrors,
   GetCacheStatsResponses,
@@ -278,6 +281,25 @@ export const getActivities = <ThrowOnError extends boolean = true>(options: Opti
       },
     ],
     url: '/activities',
+    ...options,
+  });
+
+/**
+ * Auth health check
+ *
+ * Returns auth health status including whether the client IP is rate-limited for email enumeration protection.
+ *
+ * **GET /auth/health** ·· [getAuthHealth](https://api.cellajs.com/docs#tag/auth/get/auth/health) ·· _auth_
+ *
+ * @param {getAuthHealthData} options
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const getAuthHealth = <ThrowOnError extends boolean = true>(
+  options?: Options<GetAuthHealthData, ThrowOnError>,
+) =>
+  (options?.client ?? client).get<GetAuthHealthResponses, GetAuthHealthErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/auth/health',
     ...options,
   });
 

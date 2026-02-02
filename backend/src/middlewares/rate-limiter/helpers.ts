@@ -1,35 +1,41 @@
 import type { Context } from 'hono';
-import {
-  type IRateLimiterPostgresOptions,
-  RateLimiterMemory,
-  RateLimiterPostgres,
-  type RateLimiterRes,
-} from 'rate-limiter-flexible';
+import { RateLimiterDrizzle, RateLimiterMemory, type RateLimiterRes } from 'rate-limiter-flexible';
 import { db } from '#/db/db';
+import { rateLimitsTable } from '#/db/schema/rate-limits';
 import { env } from '#/env';
 import { Env, getContextUser } from '#/lib/context';
 import { AppError } from '#/lib/error';
-import { defaultOptions } from '#/middlewares/rate-limiter/core';
+import { defaultOptions, slowOptions } from '#/middlewares/rate-limiter/core';
 import { Identifiers, RateLimitIdentifier } from '#/middlewares/rate-limiter/types';
 import { getIp } from '#/utils/get-ip';
 
+type RateLimiterOptions = {
+  keyPrefix?: string;
+  points?: number;
+  duration?: number;
+  blockDuration?: number;
+};
+
 /**
- * Get instance of rate limiter with correct store
+ * Get instance of rate limiter with correct store.
+ * Uses RateLimiterDrizzle with a Drizzle-managed schema - no async table creation needed.
  */
-export const getRateLimiterInstance = (options: Omit<IRateLimiterPostgresOptions, 'storeClient'>) => {
-  // tableName is always set to defaultOptions.tableName
+export const getRateLimiterInstance = (options: RateLimiterOptions) => {
   const enforcedOptions = {
     ...options,
     tableName: defaultOptions.tableName,
   };
 
   // Use in-memory rate limiter for basic mode and none mode (no database)
-  return env.DEV_MODE === 'basic' || env.DEV_MODE === 'none'
-    ? new RateLimiterMemory(enforcedOptions)
-    : new RateLimiterPostgres({
-        ...enforcedOptions,
-        storeClient: db.$client,
-      });
+  if (env.DEV_MODE === 'basic' || env.DEV_MODE === 'none') {
+    return new RateLimiterMemory(enforcedOptions);
+  }
+
+  return new RateLimiterDrizzle({
+    ...enforcedOptions,
+    storeClient: db,
+    schema: rateLimitsTable,
+  });
 };
 
 /**
@@ -114,4 +120,30 @@ export const extractIdentifiers = async (
   }
 
   return results;
+};
+
+/**
+ * Check if a rate limit key is currently blocked without consuming points.
+ * Used by /auth/health to detect restrictedMode for email enumeration protection.
+ */
+export const checkRateLimitStatus = async (
+  keyPrefix: string,
+  rateLimitKey: string,
+): Promise<{ isLimited: boolean; retryAfter?: number }> => {
+  const limiter = getRateLimiterInstance({ ...defaultOptions, keyPrefix });
+  const slowLimiter = getRateLimiterInstance({ ...slowOptions, keyPrefix: `${keyPrefix}:slow` });
+
+  const [state, slowState] = await Promise.all([limiter.get(rateLimitKey), slowLimiter.get(rateLimitKey)]);
+
+  // Check main limiter
+  if (state && state.consumedPoints > (defaultOptions.points ?? 10)) {
+    return { isLimited: true, retryAfter: Math.round(state.msBeforeNext / 1000) };
+  }
+
+  // Check slow brute force limiter
+  if (slowState && slowState.consumedPoints > (slowOptions.points ?? 100)) {
+    return { isLimited: true, retryAfter: Math.round(slowState.msBeforeNext / 1000) };
+  }
+
+  return { isLimited: false };
 };

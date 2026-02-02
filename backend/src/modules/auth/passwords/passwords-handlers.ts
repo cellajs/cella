@@ -10,6 +10,7 @@ import { usersTable } from '#/db/schema/users';
 import { type Env, getContextToken } from '#/lib/context';
 import { AppError } from '#/lib/error';
 import { mailer } from '#/lib/mailer';
+import { checkRateLimitStatus } from '#/middlewares/rate-limiter/helpers';
 import { initiateMfa } from '#/modules/auth/general/helpers/mfa';
 import { sendVerificationEmail } from '#/modules/auth/general/helpers/send-verification-email';
 import { setUserSession } from '#/modules/auth/general/helpers/session';
@@ -18,6 +19,7 @@ import { hashPassword, verifyPasswordHash } from '#/modules/auth/passwords/helpe
 import authPasswordsRoutes from '#/modules/auth/passwords/passwords-routes';
 import { userSelect } from '#/modules/user/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
+import { getIp } from '#/utils/get-ip';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
@@ -199,6 +201,11 @@ const authPasswordsRouteHandlers = app
       throw new AppError(400, 'forbidden_strategy', 'error', { meta: { strategy } });
     }
 
+    // Check if IP is rate-limited for email enumeration (restricted mode)
+    const ip = getIp(ctx);
+    const rateLimitKey = `ip:${ip}`;
+    const { isLimited: restrictedMode } = await checkRateLimitStatus('emailEnum_failseries', rateLimitKey);
+
     const normalizedEmail = email.toLowerCase().trim();
 
     const [info] = await db
@@ -209,15 +216,25 @@ const authPasswordsRouteHandlers = app
       .where(eq(emailsTable.email, normalizedEmail))
       .limit(1);
 
-    // If user is not found or doesn't have password
-    if (!info) throw new AppError(404, 'not_found', 'warn', { entityType: 'user' });
+    // If user is not found or doesn't have password - in restricted mode, return unified error
+    if (!info) {
+      if (restrictedMode) throw new AppError(401, 'invalid_credentials', 'warn');
+      throw new AppError(404, 'not_found', 'warn', { entityType: 'user' });
+    }
 
     const { user, hashedPassword, emailVerified } = info;
 
-    if (!hashedPassword) throw new AppError(403, 'no_password_found', 'warn');
-    // Verify password
+    if (!hashedPassword) {
+      if (restrictedMode) throw new AppError(401, 'invalid_credentials', 'warn');
+      throw new AppError(403, 'no_password_found', 'warn');
+    }
+
+    // Verify password - in restricted mode, return unified error for invalid password
     const validPassword = await verifyPasswordHash(hashedPassword, password);
-    if (!validPassword) throw new AppError(403, 'invalid_password', 'warn');
+    if (!validPassword) {
+      if (restrictedMode) throw new AppError(401, 'invalid_credentials', 'warn');
+      throw new AppError(403, 'invalid_password', 'warn');
+    }
 
     // If email is not verified, send verification email
     if (!emailVerified) {

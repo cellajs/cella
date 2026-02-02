@@ -408,6 +408,20 @@ export const zGetActivitiesResponse = z.object({
   total: z.number(),
 });
 
+export const zGetAuthHealthData = z.object({
+  body: z.optional(z.never()),
+  path: z.optional(z.never()),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Auth health status
+ */
+export const zGetAuthHealthResponse = z.object({
+  restrictedMode: z.boolean(),
+  retryAfter: z.optional(z.number()),
+});
+
 export const zCheckEmailData = z.object({
   body: z.object({
     email: z.email(),

@@ -1,7 +1,13 @@
-import z from 'zod';
+import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/docs/x-routes';
 import { isAuthenticated, isPublicAccess, isSystemAdmin } from '#/middlewares/guard';
-import { errorResponseRefs, idsBodySchema, paginationSchema, publicStreamActivitySchema } from '#/schemas';
+import {
+  errorResponseRefs,
+  idsBodySchema,
+  paginationSchema,
+  publicStreamQuerySchema,
+  publicStreamResponseSchema,
+} from '#/schemas';
 import { mockBatchPagesResponse, mockPageResponse, mockPaginatedPagesResponse } from '../../../mocks/mock-page';
 import {
   pageCreateManyTxBodySchema,
@@ -10,22 +16,6 @@ import {
   pageSchema,
   pageUpdateTxBodySchema,
 } from './page-schema';
-
-/**
- * Query parameters for the public pages stream.
- */
-const publicStreamQuerySchema = z.object({
-  offset: z.string().optional().describe('Cursor offset: "-1" for all history, "now" for live-only, or activity ID'),
-  live: z.enum(['sse']).optional().describe('Set to "sse" for live updates (SSE stream)'),
-});
-
-/**
- * Catch-up response for public pages stream.
- */
-const publicStreamResponseSchema = z.object({
-  activities: z.array(publicStreamActivitySchema),
-  cursor: z.string().nullable().describe('Last activity ID (use as offset for next request)'),
-});
 
 const pagesRoutes = {
   /**

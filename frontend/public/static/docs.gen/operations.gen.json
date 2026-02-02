@@ -18,6 +18,24 @@
     }
   },
   {
+    "id": "getAuthHealth",
+    "hash": "tag/auth/GET/auth/health",
+    "method": "get",
+    "path": "/auth/health",
+    "tags": ["auth"],
+    "summary": "Auth health check",
+    "description": "Returns auth health status including whether the client IP is rate-limited for email enumeration protection.",
+    "deprecated": false,
+    "hasParams": false,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["isPublicAccess"],
+      "xRateLimiter": []
+    }
+  },
+  {
     "id": "checkEmail",
     "hash": "tag/auth/POST/auth/check-email",
     "method": "post",

@@ -10,7 +10,7 @@ import { passwordsTable } from '#/db/schema/passwords';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { UserModel, usersTable } from '#/db/schema/users';
 import { hashPassword } from '#/modules/auth/passwords/helpers/argon2id';
-import { getMembershipOrderOffset, mockOrganizationMembership } from '../../../mocks/mock-membership';
+import { getMembershipOrderOffset, mockContextMembership } from '../../../mocks/mock-membership';
 import { mockOrganization } from '../../../mocks/mock-organization';
 import { mockEmail, mockPassword, mockUnsubscribeToken, mockUser } from '../../../mocks/mock-user';
 import { mockMany } from '../../../mocks/utils';
@@ -87,7 +87,7 @@ export const organizationsSeed = async () => {
       .values(emailRecords)
       .onConflictDoNothing();
 
-    const membershipRecords = users.map(user => mockOrganizationMembership(organization, user));
+    const membershipRecords = users.map(user => mockContextMembership('organization', organization, user));
 
     // Insert memberships into the database
     await db
@@ -138,7 +138,7 @@ const addAdminMembership = (
   if (adminMemberships.length >= SYSTEM_ADMIN_MEMBERSHIP_COUNT) return;
 
   // Make admin membership
-  const membership = mockOrganizationMembership(organization, adminUser);
+  const membership = mockContextMembership('organization', organization, adminUser);
 
   // Adjust the admin membership
   membership.archived = faker.datatype.boolean(0.5);

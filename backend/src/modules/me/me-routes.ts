@@ -12,12 +12,13 @@ import {
 } from '#/modules/me/me-schema';
 import { userFlagsSchema, userSchema, userUpdateBodySchema } from '#/modules/user/user-schema';
 import {
+  appStreamResponseSchema,
   entityWithTypeQuerySchema,
   errorResponseRefs,
   idsBodySchema,
   locationSchema,
   paginationSchema,
-  streamNotificationSchema,
+  streamQuerySchema,
   successWithRejectedItemsSchema,
 } from '#/schemas';
 import {
@@ -268,16 +269,7 @@ const meRoutes = {
     description:
       'SSE stream for membership and entity notifications affecting the *current user*. Sends lightweight notifications - client fetches entity data via API.',
     request: {
-      query: z.object({
-        offset: z.string().optional().openapi({
-          description: "Starting offset: 'now' for live-only, or activity ID to receive missed notifications",
-          example: 'now',
-        }),
-        live: z.enum(['sse', 'poll']).optional().openapi({
-          description: "Connection mode: 'sse' for streaming, 'poll' for one-time fetch",
-          example: 'sse',
-        }),
-      }),
+      query: streamQuerySchema,
     },
     responses: {
       200: {
@@ -285,10 +277,7 @@ const meRoutes = {
         content: {
           'text/event-stream': { schema: z.any() },
           'application/json': {
-            schema: z.object({
-              activities: z.array(streamNotificationSchema),
-              cursor: z.string().nullable(),
-            }),
+            schema: appStreamResponseSchema,
             example: mockAppStreamResponse(),
           },
         },

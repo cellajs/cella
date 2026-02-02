@@ -131,6 +131,20 @@ export function deleteFileAndCommit(repoPath: string, filePath: string, message:
 }
 
 /**
+ * Rename/move a file and commit.
+ * Uses git mv to ensure git detects it as a rename.
+ */
+export function renameFileAndCommit(repoPath: string, oldPath: string, newPath: string, message: string): string {
+  const newDir = path.dirname(path.join(repoPath, newPath));
+  if (!fs.existsSync(newDir)) {
+    fs.mkdirSync(newDir, { recursive: true });
+  }
+  exec(`git mv "${oldPath}" "${newPath}"`, repoPath);
+  exec(`git commit -m "${message}"`, repoPath);
+  return exec('git rev-parse HEAD', repoPath);
+}
+
+/**
  * Read a file from a repo. Returns null if file doesn't exist.
  */
 export function readRepoFile(repoPath: string, filePath: string): string | null {

@@ -92,4 +92,7 @@ export const env = createEnv({
   },
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,
+  // Skip validation when running in Vitest (env vars set by vitest.config.ts test.env)
+  // This allows vitest workspace to import tests before env vars are fully configured
+  skipValidation: !!process.env.VITEST,
 });

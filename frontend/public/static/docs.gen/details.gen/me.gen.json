@@ -1261,7 +1261,8 @@
             },
             "cursor": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "description": "Last activity ID (use as offset for next request)"
             }
           },
           "contentType": "application/json"

@@ -94,6 +94,7 @@ function CreatePasswordPage() {
                 <div className="relative">
                   <Input
                     type="password"
+                    className="h-12"
                     autoFocus={!isMobile}
                     placeholder={t('common:new_password')}
                     autoComplete="new-password"

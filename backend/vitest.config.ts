@@ -54,6 +54,11 @@ export default defineConfig({
     env: {
       PINO_LOG_LEVEL: 'silent',
       NODE_ENV: 'test',
+      // Test secrets (safe dummy values for unit tests)
+      ARGON_SECRET: 'test-argon-secret-for-unit-tests',
+      COOKIE_SECRET: 'test-cookie-secret-for-unit-tests',
+      UNSUBSCRIBE_SECRET: 'test-unsubscribe-secret',
+      REMOTE_SYSTEM_ACCESS_IP: '127.0.0.1',
       // basic mode: skip database connection entirely
       // core/full: use PostgreSQL test container
       ...(isBasic
