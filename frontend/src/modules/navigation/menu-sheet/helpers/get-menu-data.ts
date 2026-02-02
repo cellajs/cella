@@ -8,14 +8,11 @@ import { useUserStore } from '~/store/user';
 
 /**
  * Retrieves user menu data and stores it in react query cache.
- * Uses revalidateIfStale to refetch stale data in the background.
  *
  * @returns The menu data.
  */
 export async function getMenuData(opts?: { detailedMenu?: boolean }) {
   const userId = useUserStore.getState().user.id;
-  console.debug('[getMenuData] Called for userId:', userId);
-
   const byType = new Map<ContextEntityType, ContextEntityDataWithMembership[]>();
 
   await Promise.all(
@@ -23,12 +20,7 @@ export async function getMenuData(opts?: { detailedMenu?: boolean }) {
       const factory = getContextEntityTypeToListQueries()[entityType];
       if (!factory) return byType.set(entityType, []);
 
-      const queryOpts = { ...factory({ userId }), revalidateIfStale: true };
-
-      // Debug: check staleness before fetch
-      const queryState = queryClient.getQueryState(queryOpts.queryKey);
-      const isStale = queryState ? Date.now() - queryState.dataUpdatedAt > 60000 : true;
-      console.debug(`[getMenuData] ${entityType}: dataUpdatedAt=${queryState?.dataUpdatedAt}, isStale=${isStale}`);
+      const queryOpts = { ...factory({ userId }) };
 
       const data = await queryClient.ensureInfiniteQueryData(queryOpts);
       byType.set(entityType, flattenInfiniteData<ContextEntityDataWithMembership>(data));

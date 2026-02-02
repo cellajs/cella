@@ -592,7 +592,7 @@
   border-block-end: 1px solid hsl(var(--border) / 0.5);
 }
 
-.rdg-mobile-sub-key {
+.rdg-mobile-sub-label {
   flex-shrink: 0;
   font-weight: 500;
   color: hsl(var(--muted-foreground));

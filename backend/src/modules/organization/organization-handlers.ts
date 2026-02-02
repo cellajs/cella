@@ -183,8 +183,10 @@ const organizationRouteHandlers = app
       ...(countData && { counts: countData.countsSelect }),
     } as const;
 
-    // Build query - only join count subqueries when includeCounts is true
-    let query = db.select(selectShape).from(organizationsTable).innerJoin(membershipsTable, membershipOn);
+    // Build query - system admin sees all orgs (leftJoin), others only their memberships (innerJoin)
+    let query = isSystemAdmin
+      ? db.select(selectShape).from(organizationsTable).leftJoin(membershipsTable, membershipOn)
+      : db.select(selectShape).from(organizationsTable).innerJoin(membershipsTable, membershipOn);
 
     if (countData) {
       query = query

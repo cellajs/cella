@@ -62,7 +62,7 @@ export const PublicLayoutRoute = createRoute({
       console.debug('[PublicLayout] Fetching me while entering public page:', location.pathname);
 
       // Fetch and set user
-      await queryClient.ensureQueryData({ ...meQueryOptions(), revalidateIfStale: true });
+      await queryClient.ensureQueryData({ ...meQueryOptions() });
     } catch (error) {
       if (error instanceof Error) {
         Sentry.captureException(error);
@@ -85,7 +85,6 @@ export const AppLayoutRoute = createRoute({
     </Suspense>
   ),
   beforeLoad: async ({ location, cause }) => {
-    console.debug('[AppLayout] beforeLoad called with cause:', cause);
     if (cause !== 'enter') return;
 
     try {
@@ -99,7 +98,7 @@ export const AppLayoutRoute = createRoute({
       }
 
       // Fetch and set user
-      const user = await queryClient.ensureQueryData({ ...meQueryOptions(), revalidateIfStale: true });
+      const user = await queryClient.ensureQueryData({ ...meQueryOptions() });
       return { user };
     } catch (error) {
       if (error instanceof Error) {
@@ -122,15 +121,13 @@ export const AppLayoutRoute = createRoute({
   },
 
   loader: async ({ cause, context }) => {
-    console.debug('[AppLayout] Loader called with cause:', cause);
-    // Run on 'enter' (initial navigation) and 'stay' (page reload)
-    if (cause !== 'enter' && cause !== 'stay') return;
+    if (cause !== 'enter') return;
 
     try {
       console.debug('[AppLayout] Fetching menu while loading app:', location.pathname);
 
       // Revalidate user if not already awaited above
-      if (!context?.user) await queryClient.ensureQueryData({ ...meQueryOptions(), revalidateIfStale: true });
+      if (!context?.user) await queryClient.ensureQueryData({ ...meQueryOptions() });
 
       // Get menu too but defer it so no need to hang while its being retrieved
       return await defer(getMenuData());

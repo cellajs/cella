@@ -22,8 +22,7 @@ export const UserProfileRoute = createRoute({
   getParentRoute: () => AppLayoutRoute,
   loader: async ({ params: { idOrSlug } }) => {
     const userOptions = userQueryOptions(idOrSlug);
-    const options = { ...userOptions, revalidateIfStale: true };
-    return queryClient.ensureQueryData(options);
+    return queryClient.ensureQueryData({ ...userOptions });
   },
   head: (ctx) => {
     const user = ctx.match.loaderData;
@@ -49,8 +48,7 @@ export const UserInOrganizationProfileRoute = createRoute({
   getParentRoute: () => AppLayoutRoute,
   loader: async ({ params: { idOrSlug } }) => {
     const userOptions = userQueryOptions(idOrSlug);
-    const options = { ...userOptions, revalidateIfStale: true };
-    return queryClient.ensureQueryData(options);
+    return queryClient.ensureQueryData({ ...userOptions });
   },
   head: (ctx) => {
     const user = ctx.match.loaderData;
@@ -89,8 +87,7 @@ export const UserAccountRoute = createRoute({
   },
   loader: async () => {
     const userAuthOptions = meAuthQueryOptions();
-    const options = { ...userAuthOptions, revalidateIfStale: true };
-    return queryClient.ensureQueryData(options);
+    return queryClient.ensureQueryData({ ...userAuthOptions });
   },
   component: () => {
     return (

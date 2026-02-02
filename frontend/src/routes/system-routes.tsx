@@ -11,7 +11,7 @@ import { noDirectAccess } from '~/utils/no-direct-access'; // Lazy-loaded route 
 
 // Lazy-loaded route components
 const OrganizationsTable = lazy(() => import('~/modules/organization/table/organizations-table'));
-const UsersTable = lazy(() => import('~/modules/user/table'));
+const UsersTable = lazy(() => import('~/modules/user/table/users-table'));
 const RequestsTable = lazy(() => import('~/modules/requests/table/requests-table'));
 const RequestsPerMinute = lazy(() => import('~/modules/metrics/requests-per-minute'));
 

@@ -18,7 +18,7 @@ export {
   hasEntityQueryKeys,
   registerEntityQueryKeys,
 } from './entity-query-registry';
-export { findInListCache, findInListCacheWithTimestamp, useFindInListCache } from './find-in-list-cache';
+export { findInListCache, useFindInListCache } from './find-in-list-cache';
 export { flattenInfiniteData } from './flatten';
 export { getQueryKeySortOrder } from './get-query-key-sort-order';
 export {

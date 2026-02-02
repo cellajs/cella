@@ -2,6 +2,7 @@ import type { RenderCheckboxProps } from '../types';
 
 const checkboxClassname = 'rdg-checkbox-input';
 
+// TODO not used, perhaps remove
 export function renderCheckbox({ onChange, indeterminate, ...props }: RenderCheckboxProps) {
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     onChange(e.target.checked, (e.nativeEvent as MouseEvent).shiftKey);

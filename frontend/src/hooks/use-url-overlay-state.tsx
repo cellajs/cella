@@ -1,28 +1,23 @@
 import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
-import { useCallback, useEffect, useRef } from 'react';
-import { type TriggerRef, useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { useCallback, useRef } from 'react';
+import type { TriggerRef } from '~/modules/common/dialoger/use-dialoger';
 import { fallbackContentRef } from '~/utils/fallback-content-ref';
 
-type OverlayType = 'sheet' | 'dialog';
+interface StoreWithTriggerRefs {
+  getTriggerRef: (id: string) => TriggerRef | null;
+}
 
 interface UseUrlOverlayStateOptions {
-  /** Additional search param keys to clear when closing */
   additionalParamKeys?: string[];
+  getStore: () => StoreWithTriggerRefs;
 }
 
 interface UrlOverlayState {
-  /** Whether the overlay should be open (param exists) */
   isOpen: boolean;
-  /** The param value (stable - captured when opened, won't change on navigation) */
   value: string | null;
-  /** Organization context from route params */
   orgIdOrSlug: string | undefined;
-  /** Trigger ref for focus restoration */
   triggerRef: TriggerRef;
-  /** Whether a trigger exists (determines close behavior) */
   hasTrigger: boolean;
-  /** Close handler - uses history.back() if trigger exists, else navigate */
   close: (isCleanup?: boolean) => void;
 }
 
@@ -31,52 +26,38 @@ interface UrlOverlayState {
  * Returns state and close handler - caller controls overlay creation.
  *
  * @param searchParamKey - The search param to watch (e.g., 'userSheetId')
- * @param type - 'sheet' or 'dialog' (determines which store to use for trigger lookup)
- * @param options - Additional options like extra params to clear on close
+ * @param options - Options including getStore for trigger ref lookup
  */
-export function useUrlOverlayState(
-  searchParamKey: string,
-  type: OverlayType,
-  options: UseUrlOverlayStateOptions = {},
-): UrlOverlayState {
-  const { additionalParamKeys = [] } = options;
+export function useUrlOverlayState(searchParamKey: string, options: UseUrlOverlayStateOptions): UrlOverlayState {
+  const { additionalParamKeys = [], getStore } = options;
 
   const navigate = useNavigate();
   const searchParams = useSearch({ strict: false }) as Record<string, string | undefined>;
   const { orgIdOrSlug: baseOrgIdOrSlug, idOrSlug } = useParams({ strict: false });
 
   const orgIdOrSlug = baseOrgIdOrSlug || idOrSlug;
-  const searchParamValue = searchParams[searchParamKey];
-  const isOpen = !!searchParamValue;
+  const value = searchParams[searchParamKey] ?? null;
+  const isOpen = !!value;
 
-  // Get the appropriate store for trigger lookup
-  const sheeterStore = useSheeter();
-  const dialogerStore = useDialoger();
-  const store = type === 'sheet' ? sheeterStore : dialogerStore;
+  // Get trigger ref at render time (stable for initial open)
+  const triggerRef = value ? getStore().getTriggerRef(value) || fallbackContentRef : fallbackContentRef;
+  const hasTrigger = !!(value && getStore().getTriggerRef(value));
 
-  // Capture initial value when opening (stable across value changes)
-  const initialValueRef = useRef<string | null>(null);
-  const isClosingRef = useRef(false);
-
-  useEffect(() => {
-    if (isOpen && initialValueRef.current === null) {
-      initialValueRef.current = searchParamValue ?? null;
-    } else if (!isOpen) {
-      initialValueRef.current = null;
-    }
-  }, [isOpen, searchParamValue]);
-
-  const value = initialValueRef.current;
-  const triggerRef = value ? store.getTriggerRef(value) || fallbackContentRef : fallbackContentRef;
-  const hasTrigger = !!(value && store.getTriggerRef(value));
+  // Use refs to keep close stable while having access to current values
+  const stateRef = useRef({ value, hasTrigger, isClosing: false });
+  stateRef.current = { ...stateRef.current, value, hasTrigger };
 
   const close = useCallback(
     (isCleanup?: boolean) => {
       if (isCleanup) return;
-      if (isClosingRef.current) return;
-      isClosingRef.current = true;
+      if (stateRef.current.isClosing) return;
+      stateRef.current.isClosing = true;
 
-      if (hasTrigger) {
+      // Check hasTrigger at call time to get current state
+      const currentValue = stateRef.current.value;
+      const currentHasTrigger = !!(currentValue && getStore().getTriggerRef(currentValue));
+
+      if (currentHasTrigger) {
         history.back();
       } else {
         const paramsToRemove = [searchParamKey, ...additionalParamKeys];
@@ -93,9 +74,9 @@ export function useUrlOverlayState(
           },
         });
       }
-      isClosingRef.current = false;
+      stateRef.current.isClosing = false;
     },
-    [hasTrigger, searchParamKey, additionalParamKeys, navigate],
+    [getStore, searchParamKey, additionalParamKeys, navigate],
   );
 
   return { isOpen, value, orgIdOrSlug, triggerRef, hasTrigger, close };

@@ -68,7 +68,7 @@ pnpm cella           # Sync changes from upstream cella to fork (useful for fork
 - **Formatter/Linter**: Biome (`pnpm lint:fix`)
 - **Indentation**: 2 spaces, single quotes, trailing commas (ES5)
 - **Files**: kebab-case (`user-profile.tsx`)
-- **Variables/functions**: camelCase (including constants - no UPPER_CASE)
+- **Variables/functions**: camelCase (including constants)
 - **Components**: PascalCase
 - **Translation keys**: snake_case
 - **Headers**: Sentence case only (`## Code style`, not `## Code Style`)

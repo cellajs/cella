@@ -2,7 +2,6 @@ import { faker } from '@faker-js/faker';
 import { appConfig, type ContextEntityType, type EntityRole } from 'config';
 import type { InactiveMembershipModel } from '#/db/schema/inactive-memberships';
 import type { InsertMembershipModel, MembershipModel } from '#/db/schema/memberships';
-import type { OrganizationModel } from '#/db/schema/organizations';
 import type { UserModel } from '#/db/schema/users';
 import { nanoid } from '#/utils/nanoid';
 import {
@@ -39,22 +38,40 @@ export const getMembershipOrderOffset = (contextId: string): number => {
   return membershipOrderMap.get(contextId)!;
 };
 
+/** Minimal context entity interface for membership creation */
+type ContextEntity = { id: string };
+
 /**
- * Generates a mock membership linking a user to an organization.
+ * Generates a mock membership linking a user to a context entity.
+ * Works with any context entity type (organization, project, etc.).
  * Ensures consistent ordering via the `getMembershipOrderOffset` function.
  */
-export const mockOrganizationMembership = (organization: OrganizationModel, user: UserModel): InsertMembershipModel => {
+export const mockContextMembership = <T extends ContextEntityType>(
+  contextType: T,
+  contextEntity: ContextEntity,
+  user: UserModel,
+): InsertMembershipModel => {
+  const idColumnKey = appConfig.entityIdColumnKeys[contextType] as keyof MockContextEntityIdColumns;
+
   return {
     id: nanoid(),
     userId: user.id,
-    organizationId: organization.id,
-    contextType: 'organization',
+    contextType,
+    [idColumnKey]: contextEntity.id,
     role: faker.helpers.arrayElement(appConfig.entityRoles),
-    order: getMembershipOrderOffset(organization.id) * 10,
+    order: getMembershipOrderOffset(contextEntity.id) * 10,
     createdAt: pastIsoDate(),
     createdBy: user.id,
-    uniqueKey: `${user.id}-${organization.id}`,
-  };
+    uniqueKey: `${user.id}-${contextEntity.id}`,
+  } as InsertMembershipModel;
+};
+
+/**
+ * Generates a mock membership linking a user to an organization.
+ * @deprecated Use mockContextMembership('organization', organization, user) instead.
+ */
+export const mockOrganizationMembership = (organization: ContextEntity, user: UserModel): InsertMembershipModel => {
+  return mockContextMembership('organization', organization, user);
 };
 
 /**

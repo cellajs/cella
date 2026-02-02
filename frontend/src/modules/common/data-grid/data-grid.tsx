@@ -1,5 +1,5 @@
 import type { Key, KeyboardEvent } from 'react';
-import { useCallback, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { defaultRenderCell } from './cell';
 import { renderCheckbox as defaultRenderCheckbox } from './cellRenderers';
@@ -89,6 +89,16 @@ interface EditCellState<R> extends Position {
   readonly mode: 'EDIT';
   readonly row: R;
   readonly originalRow: R;
+}
+
+/** Arguments passed to onRowsEndApproaching callback */
+export interface RowsEndApproachingArgs {
+  /** Index of the last row being rendered (with overscan) */
+  rowOverscanEndIdx: number;
+  /** Total number of rows in the dataset */
+  totalRows: number;
+  /** Number of rows remaining until the end */
+  rowsRemaining: number;
 }
 
 export type DefaultColumnOptions<R, SR> = Pick<
@@ -260,6 +270,22 @@ export interface DataGridProps<R, SR = unknown, K extends Key = Key> extends Sha
   onExpandedRowsChange?: Maybe<(expandedRows: Set<number>) => void>;
 
   /**
+   * Infinite scroll support
+   */
+  /**
+   * Callback triggered when the rendered rows approach the end of the dataset.
+   * Useful for implementing infinite scroll / load more functionality.
+   * Fires when rowOverscanEndIdx >= rows.length - rowsEndApproachingThreshold.
+   * Only fires once per rows.length to prevent re-triggering after data loads.
+   */
+  onRowsEndApproaching?: Maybe<(args: RowsEndApproachingArgs) => void>;
+  /**
+   * Number of rows from the end at which onRowsEndApproaching fires.
+   * @default Dynamic: 25% of rows, clamped between 10 and 50
+   */
+  rowsEndApproachingThreshold?: Maybe<number>;
+
+  /**
    * Miscellaneous
    */
   /** Custom renderers for cells, rows, and other components */
@@ -331,6 +357,9 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     enableMobileSubRows: rawEnableMobileSubRows,
     expandedRows: expandedRowsProp,
     onExpandedRowsChange,
+    // Infinite scroll
+    onRowsEndApproaching,
+    rowsEndApproachingThreshold: rawRowsEndApproachingThreshold,
     // Miscellaneous
     renderers,
     className,
@@ -367,6 +396,9 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   const enableColumnVirtualization = rawEnableColumnVirtualization ?? enableVirtualization;
   const selectionMode: SelectionMode = rawSelectionMode ?? 'row-multi';
   const direction = rawDirection ?? 'ltr';
+  // Default threshold: 25% of rows, minimum 10, maximum 50
+  const rowsEndApproachingThreshold =
+    rawRowsEndApproachingThreshold ?? Math.min(50, Math.max(10, Math.floor(rows.length * 0.25)));
 
   // Get current breakpoint for responsive features
   const currentBreakpoint = useCurrentBreakpoint();
@@ -394,8 +426,8 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   const selectedCellRange = isSelectedCellRangeControlled ? selectedCellRangeProp : selectedCellRangeInternal;
   const setSelectedCellRange = isSelectedCellRangeControlled
     ? (range: CellRange | null) => {
-        onSelectedCellRangeChange({ range });
-      }
+      onSelectedCellRangeChange({ range });
+    }
     : setSelectedCellRangeInternal;
 
   // Suppress unused variable warning - setSelectedCellRange will be used in range selection handlers
@@ -412,10 +444,10 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   const columnWidths = isColumnWidthsControlled ? columnWidthsRaw : columnWidthsInternal;
   const onColumnWidthsChange = isColumnWidthsControlled
     ? (columnWidths: ColumnWidths) => {
-        // we keep the internal state in sync with the prop but this prevents an extra render
-        setColumnWidthsInternal(columnWidths);
-        onColumnWidthsChangeRaw(columnWidths);
-      }
+      // we keep the internal state in sync with the prop but this prevents an extra render
+      setColumnWidthsInternal(columnWidths);
+      onColumnWidthsChangeRaw(columnWidths);
+    }
     : setColumnWidthsInternal;
 
   const getColumnWidth = useCallback(
@@ -631,6 +663,30 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
       setShouldFocusCell(false);
     }
   }, [shouldFocusCell, focusCell, selectedPosition.idx]);
+
+  /**
+   * Infinite scroll: fires onRowsEndApproaching when user scrolls near the end of data.
+   * Uses rowOverscanEndIdx from virtualization to detect scroll position.
+   * Tracks lastFiredForRowsLength to prevent re-triggering after new data loads.
+   */
+  const lastFiredForRowsLengthRef = useRef(0);
+
+  useEffect(() => {
+    if (!onRowsEndApproaching || rows.length === 0) return;
+
+    const isApproachingEnd = rowOverscanEndIdx >= rows.length - rowsEndApproachingThreshold;
+
+    // Fire callback when approaching end, but only once per rows.length
+    // (prevents re-triggering immediately after new data arrives)
+    if (isApproachingEnd && lastFiredForRowsLengthRef.current !== rows.length) {
+      lastFiredForRowsLengthRef.current = rows.length;
+      onRowsEndApproaching({
+        rowOverscanEndIdx,
+        totalRows: rows.length,
+        rowsRemaining: rows.length - 1 - rowOverscanEndIdx,
+      });
+    }
+  }, [onRowsEndApproaching, rowOverscanEndIdx, rows.length, rowsEndApproachingThreshold]);
 
   useImperativeHandle(
     ref,
@@ -1165,10 +1221,10 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
       return selectedPosition.idx > colOverscanEndIdx
         ? [...viewportColumns, selectedColumn]
         : [
-            ...viewportColumns.slice(0, lastFrozenColumnIndex + 1),
-            selectedColumn,
-            ...viewportColumns.slice(lastFrozenColumnIndex + 1),
-          ];
+          ...viewportColumns.slice(0, lastFrozenColumnIndex + 1),
+          selectedColumn,
+          ...viewportColumns.slice(lastFrozenColumnIndex + 1),
+        ];
     }
     return viewportColumns;
   }
@@ -1301,9 +1357,8 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
             : undefined,
         scrollPaddingBlock:
           isRowIdxWithinViewportBounds(selectedPosition.rowIdx) || scrollToPosition?.rowIdx !== undefined
-            ? `${headerRowsHeight + topSummaryRowsCount * summaryRowHeight}px ${
-                bottomSummaryRowsCount * summaryRowHeight
-              }px`
+            ? `${headerRowsHeight + topSummaryRowsCount * summaryRowHeight}px ${bottomSummaryRowsCount * summaryRowHeight
+            }px`
             : undefined,
         gridTemplateColumns,
         gridTemplateRows: templateRows,

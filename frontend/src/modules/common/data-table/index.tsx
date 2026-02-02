@@ -1,4 +1,3 @@
-import { appConfig } from 'config';
 import { type Key, type ReactNode, useCallback, useRef } from 'react';
 import {
   type CellMouseArgs,
@@ -61,7 +60,6 @@ export const DataTable = <TData,>({
   rowKeyGetter,
   error,
   isLoading,
-  limit = appConfig.requestLimits.default,
   isFetching,
   NoRowsComponent,
   isFiltered,
@@ -83,6 +81,12 @@ export const DataTable = <TData,>({
 
   const gridRef = useRef<HTMLDivElement | null>(null);
   useTableTooltip(gridRef, !isLoading);
+
+  // Handle infinite scroll - guards against multiple calls while fetching
+  const handleRowsEndApproaching = useCallback(() => {
+    if (!fetchMore || isFetching || !hasNextPage) return;
+    fetchMore();
+  }, [fetchMore, isFetching, hasNextPage]);
 
   // Wrap selection handler to enforce max selection limit
   const handleSelectedRowsChange = useCallback(
@@ -141,6 +145,7 @@ export const DataTable = <TData,>({
                 onSelectedRowsChange={handleSelectedRowsChange}
                 sortColumns={sortColumns}
                 onSortColumnsChange={onSortColumnsChange}
+                onRowsEndApproaching={handleRowsEndApproaching}
                 renderers={{
                   renderRow,
                   renderCheckbox: ({ onChange, ...props }) => {
@@ -166,16 +171,7 @@ export const DataTable = <TData,>({
                   },
                 }}
               />
-              <InfiniteLoader
-                hasNextPage={hasNextPage}
-                isFetching={isFetching}
-                isFetchMoreError={!!error}
-                measureStyle={{
-                  height: `${Math.min(rows.length, 200) * 0.25 * rowHeight}px`,
-                  maxHeight: `${rowHeight * limit}px`,
-                }}
-                fetchMore={fetchMore}
-              />
+              <InfiniteLoader hasNextPage={hasNextPage} isFetching={isFetching} isFetchMoreError={!!error} />
             </div>
           )}
         </>

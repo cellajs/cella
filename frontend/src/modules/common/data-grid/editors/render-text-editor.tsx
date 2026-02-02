@@ -7,6 +7,7 @@ function autoFocusAndSelect(input: HTMLInputElement | null) {
   input?.select();
 }
 
+// TODO use shadcn input component?
 export default function textTextEditor<TRow, TSummaryRow>({
   row,
   column,

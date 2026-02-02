@@ -9,6 +9,7 @@ export {
   type DataGridHandle,
   type DataGridProps,
   type DefaultColumnOptions,
+  type RowsEndApproachingArgs,
 } from './data-grid';
 export { DataGridDefaultRenderersContext } from './data-grid-default-renderers-context';
 export { default as renderTextEditor } from './editors/render-text-editor';

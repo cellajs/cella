@@ -34,9 +34,45 @@ export const ThumbnailCell = ({ row, tabIndex }: ThumbnailCellProps) => {
   const wrapClass = 'flex space-x-2 items-center justify-center w-full h-full';
 
   // Use attachment URL hook - prefer thumbnail variant for table cells
-  const { url } = useAttachmentUrl(row, { preferredVariant: 'thumbnail' });
+  const { url, isLocal } = useAttachmentUrl(row, { preferredVariant: 'thumbnail' });
 
-  // Remote URLs: wrap in a Link with custom behavior
+  const handleClick = (e: React.MouseEvent) => {
+    // For non-local URLs, allow cmd/ctrl+click to open in new tab
+    if (!isLocal && (e.metaKey || e.ctrlKey)) return;
+    e.preventDefault();
+
+    // Store focus anchor
+    setTriggerRef(id, cellRef);
+
+    navigate({
+      to: '.',
+      replace: false,
+      resetScroll: false,
+      search: (prev) => ({
+        ...prev,
+        attachmentDialogId: id,
+        groupId: groupId || undefined,
+      }),
+    });
+  };
+
+  // Use regular anchor for blob URLs (local) since TanStack Router blocks blob: protocol
+  // For remote URLs, use Link for proper router integration
+  if (isLocal) {
+    return (
+      <a
+        ref={cellRef}
+        href={url ?? undefined}
+        draggable="false"
+        tabIndex={tabIndex}
+        className={wrapClass}
+        onClick={handleClick}
+      >
+        <AttachmentPreview name={filename} url={url ?? undefined} contentType={contentType} />
+      </a>
+    );
+  }
+
   return (
     <Link
       to={url ?? undefined}
@@ -44,24 +80,7 @@ export const ThumbnailCell = ({ row, tabIndex }: ThumbnailCellProps) => {
       draggable="false"
       tabIndex={tabIndex}
       className={wrapClass}
-      onClick={(e) => {
-        if (e.metaKey || e.ctrlKey) return; // allow new tab
-        e.preventDefault();
-
-        // Store focus anchor
-        setTriggerRef(id, cellRef);
-
-        navigate({
-          to: '.',
-          replace: false,
-          resetScroll: false,
-          search: (prev) => ({
-            ...prev,
-            attachmentDialogId: id,
-            groupId: groupId || undefined,
-          }),
-        });
-      }}
+      onClick={handleClick}
     >
       <AttachmentPreview name={filename} url={url ?? undefined} contentType={contentType} />
     </Link>
