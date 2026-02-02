@@ -156,10 +156,29 @@ export const locationSchema = z.object({ Location: z.string() });
  * Validation schemas (for create and update)
  ************************************************************************************************/
 
+/**
+ * Creates a superRefine validator that passes a custom error type for i18n translation.
+ * The error type is passed via params.type and extracted by defaultHook.
+ * @param check - Validation function returning true if valid
+ * @param errorType - Translation key (e.g., 'invalid_slug') used as error type
+ */
+export const refineWithType = <T>(check: (val: T) => boolean, errorType: string) => {
+  return (val: T, ctx: z.RefinementCtx) => {
+    if (!check(val)) {
+      ctx.addIssue({
+        code: 'custom',
+        message: t(`error:${errorType}`),
+        input: val,
+        params: { type: errorType },
+      });
+    }
+  };
+};
+
 /** Schema for a valid HTTPS URL */
 export const validUrlSchema = z
   .string()
-  .refine((url: string) => url.startsWith('https'), t('error:invalid_url'))
+  .superRefine(refineWithType((url: string) => url.startsWith('https'), 'invalid_url'))
   .transform((str) => str.toLowerCase().trim());
 
 /** Schema for a valid name: string between 2 and 100 characters, allowing specific characters */
@@ -167,10 +186,7 @@ export const validNameSchema = z
   .string()
   .min(2, t('error:invalid_between_num', { name: 'Name', min: 2, max: 100 }))
   .max(100, t('error:invalid_between_num', { name: 'Name', min: 2, max: 100 }))
-  .refine(
-    (s) => /^[\p{L}\d\-., '&()]+$/u.test(s), // Allow only specified characters
-    t('error:invalid_name'),
-  );
+  .superRefine(refineWithType((s) => /^[\p{L}\d\-., '&()]+$/u.test(s), 'invalid_name'));
 
 /** Schema for a valid email */
 export const validEmailSchema = z
@@ -184,12 +200,12 @@ export const validSlugSchema = z
   .string()
   .min(2, t('error:invalid_between_num', { name: 'Slug', min: 2, max: 100 }))
   .max(100, t('error:invalid_between_num', { name: 'Slug', min: 2, max: 100 }))
-  .refine((s) => /^[a-z0-9]+(-{0,3}[a-z0-9]+)*$/i.test(s), t('error:invalid_slug'))
+  .superRefine(refineWithType((s) => /^[a-z0-9]+(-{0,3}[a-z0-9]+)*$/i.test(s), 'invalid_slug'))
   .transform((str) => str.toLowerCase().trim());
 
 export const validCDNUrlSchema = z
   .string()
-  .refine((url: string) => isCDNUrl(url), t('error:invalid_cdn_url'))
+  .superRefine(refineWithType((url: string) => isCDNUrl(url), 'invalid_cdn_url'))
   .transform((str) => str.trim());
 
 /** Schema for an array of valid domains */
@@ -199,7 +215,7 @@ export const validDomainsSchema = z
       .string()
       .min(4, t('error:invalid_between_num', { name: 'Domain', min: 4, max: 100 }))
       .max(100, t('error:invalid_between_num', { name: 'Domain', min: 4, max: 100 }))
-      .refine((s) => /^[a-z0-9].*[a-z0-9]$/i.test(s) && s.includes('.'), t('error:invalid_domain'))
+      .superRefine(refineWithType((s) => /^[a-z0-9].*[a-z0-9]$/i.test(s) && s.includes('.'), 'invalid_domain'))
       .transform((str) => str.toLowerCase().trim()),
   )
   .optional();

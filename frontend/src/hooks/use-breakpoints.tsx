@@ -72,7 +72,7 @@ export type BreakpointKey = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
  */
 export function useCurrentBreakpoint(enableReactivity = true): BreakpointKey {
   const breakpointState = useSyncExternalStore(
-    enableReactivity ? subscribe : () => () => { },
+    enableReactivity ? subscribe : () => () => {},
     getSnapshot,
     getServerSnapshot,
   );
@@ -101,7 +101,7 @@ export function useCurrentBreakpoint(enableReactivity = true): BreakpointKey {
 export function useBreakpoints(mustBe: 'min' | 'max', breakpoint: keyof typeof breakpoints, enableReactivity = true) {
   // useSyncExternalStore provides tear-free reads from external state
   const breakpointState = useSyncExternalStore(
-    enableReactivity ? subscribe : () => () => { },
+    enableReactivity ? subscribe : () => () => {},
     getSnapshot,
     getServerSnapshot,
   );

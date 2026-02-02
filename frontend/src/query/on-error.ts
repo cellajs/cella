@@ -16,13 +16,26 @@ const fallbackMessages = {
   429: i18n.t('error:too_many_requests'),
 };
 
+/**
+ * Resolves the best error message for display.
+ * Priority: resource-specific translation → type translation → raw message → status fallback
+ */
 const getErrorMessage = ({ type, entityType, message, status }: ApiError) => {
+  // Priority 1: Resource-specific translation (e.g., resource_not_found with entity interpolation)
   if (entityType && type && i18next.exists(`error:resource_${type}`)) {
     return i18n.t(`error:resource_${type}`, { resource: i18n.t(entityType) });
   }
-  if (type && i18next.exists(`error:${type}`)) return i18n.t(`error:${type}`);
 
-  return message || fallbackMessages[status as keyof typeof fallbackMessages] || 'Unknown error occurred';
+  // Priority 2: Direct type translation (e.g., invalid_slug, invalid_cdn_url)
+  if (type && i18next.exists(`error:${type}`)) {
+    return i18n.t(`error:${type}`);
+  }
+
+  // Priority 3: Use message from backend (contains Zod-translated message for form errors)
+  if (message) return message;
+
+  // Priority 4: Status-based fallback
+  return fallbackMessages[status as keyof typeof fallbackMessages] || 'Unknown error occurred';
 };
 
 /**

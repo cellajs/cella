@@ -119,14 +119,12 @@ export const OperationExamples = ({ operationId, tagName }: OperationExamplesPro
   }
 
   return (
-    <div className="mt-4">
-      <ExamplesAccordion
-        responses={responses}
-        schemas={schemas}
-        operationId={operationId}
-        zodContent={zodContent}
-        typesContent={typesContent}
-      />
-    </div>
+    <ExamplesAccordion
+      responses={responses}
+      schemas={schemas}
+      operationId={operationId}
+      zodContent={zodContent}
+      typesContent={typesContent}
+    />
   );
 };
