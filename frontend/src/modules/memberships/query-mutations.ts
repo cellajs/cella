@@ -20,6 +20,7 @@ import type {
 import { getMenuData } from '~/modules/navigation/menu-sheet/helpers';
 import {
   formatUpdatedCacheData,
+  getEntityQueryKeys,
   getQueryItems,
   getSimilarQueries,
   invalidateOnMembershipChange,
@@ -54,18 +55,14 @@ export const useInviteMemberMutation = () =>
       if (invitesSentCount) {
         // If the entity is not an organization but belongs to one, update its cache too
         if (entityType !== 'organization' && organizationId) {
-          const orgEntityType = 'organization';
-          queryClient.setQueryData<ContextEntityData>([orgEntityType], (oldOrg) => {
-            if (!oldOrg || !oldOrg.counts || oldOrg.id !== organizationId) return oldOrg;
-
-            const orgPendingTableQueries = getSimilarQueries(
-              memberQueryKeys.list.similarPending({ idOrSlug: oldOrg.slug, entityType }),
-            );
-            for (const [queryKey] of orgPendingTableQueries)
-              queryClient.invalidateQueries({ queryKey, refetchType: 'all' });
-
-            return updateMembershipCounts(oldOrg, invitesSentCount);
-          });
+          const orgKeys = getEntityQueryKeys('organization');
+          if (orgKeys) {
+            const orgDetailQueryKey = orgKeys.detail.byId(organizationId);
+            queryClient.setQueryData<ContextEntityData>(orgDetailQueryKey, (oldOrg) => {
+              if (!oldOrg || !oldOrg.counts) return oldOrg;
+              return updateMembershipCounts(oldOrg, invitesSentCount);
+            });
+          }
         }
 
         const entityPendingTableQueries = getSimilarQueries(
@@ -74,18 +71,22 @@ export const useInviteMemberMutation = () =>
         for (const [queryKey] of entityPendingTableQueries)
           queryClient.invalidateQueries({ queryKey, refetchType: 'all' });
 
-        // Try cache update for both id and slug
-        queryClient.setQueryData<ContextEntityData>([entityType], (oldEntity) => {
-          if (!oldEntity || !oldEntity.counts || oldEntity.id !== id) return oldEntity;
+        // Update entity detail cache using the proper query key
+        const entityKeys = getEntityQueryKeys(entityType);
+        if (entityKeys) {
+          const detailQueryKey = entityKeys.detail.byId(id);
+          queryClient.setQueryData<ContextEntityData>(detailQueryKey, (oldEntity) => {
+            if (!oldEntity || !oldEntity.counts) return oldEntity;
+            return updateMembershipCounts(oldEntity, invitesSentCount);
+          });
+        }
 
-          return updateMembershipCounts(oldEntity, invitesSentCount);
-        });
-
+        // Also update any other entity queries that match this entity
         const queries = queryClient.getQueriesData<ContextEntityData>({
           queryKey: [entityType],
           predicate: (query) => {
             const oldEntity = query.state.data as ContextEntityData | undefined;
-            return !!oldEntity && oldEntity.id === id; // only update matching entity
+            return !!oldEntity && oldEntity.id === id;
           },
         });
 
