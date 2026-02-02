@@ -81,6 +81,7 @@ export const useInviteMemberMutation = () =>
           });
         }
 
+        // TODO remove it after use everything by id
         // Also update any other entity queries that match this entity
         const queries = queryClient.getQueriesData<ContextEntityData>({
           queryKey: [entityType],
