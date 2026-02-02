@@ -83,7 +83,7 @@ const organizationRoutes = {
   updateOrganization: createXRoute({
     operationId: 'updateOrganization',
     method: 'put',
-    path: '/{idOrSlug}',
+    path: '/{id}',
     xGuard: [isAuthenticated],
     tags: ['organizations'],
     summary: 'Update organization',
@@ -108,11 +108,11 @@ const organizationRoutes = {
   getOrganization: createXRoute({
     operationId: 'getOrganization',
     method: 'get',
-    path: '/{idOrSlug}',
+    path: '/{id}',
     xGuard: [isAuthenticated],
     tags: ['organizations'],
     summary: 'Get organization',
-    description: 'Retrieves an *organization* by ID or slug.',
+    description: 'Retrieves an *organization* by ID.',
     request: { params: entityParamSchema },
     responses: {
       200: {

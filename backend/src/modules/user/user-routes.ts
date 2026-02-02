@@ -75,11 +75,11 @@ const userRoutes = {
   getUser: createXRoute({
     operationId: 'getUser',
     method: 'get',
-    path: '/{idOrSlug}',
+    path: '/{id}',
     xGuard: isAuthenticated,
     tags: ['users'],
     summary: 'Get user',
-    description: 'Retrieves a *user* by ID or slug.',
+    description: 'Retrieves a *user* by ID.',
     request: { params: entityParamSchema },
     responses: {
       200: {
@@ -95,11 +95,11 @@ const userRoutes = {
   updateUser: createXRoute({
     operationId: 'updateUser',
     method: 'put',
-    path: '/{idOrSlug}',
+    path: '/{id}',
     xGuard: [isAuthenticated, hasSystemAccess],
     tags: ['users'],
     summary: 'Update user',
-    description: 'Updates a *user* identified by ID or slug.',
+    description: 'Updates a *user* identified by ID.',
     request: {
       params: entityParamSchema,
       body: {

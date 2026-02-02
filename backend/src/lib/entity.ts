@@ -1,5 +1,5 @@
 import type { EntityType } from 'config';
-import { eq, inArray, or, type TableConfig } from 'drizzle-orm';
+import { eq, inArray, type TableConfig } from 'drizzle-orm';
 import type { PgTableWithColumns } from 'drizzle-orm/pg-core';
 import { db } from '#/db/db';
 import { entityTables } from '#/table-config';
@@ -7,30 +7,22 @@ import { entityTables } from '#/table-config';
 export type EntityModel<T extends EntityType> = (typeof entityTables)[T]['$inferSelect'];
 
 /**
- * Resolves entity based on `id` or `slug`.
+ * Resolves entity based on `id`.
  *
  * @param entityType - The type of entity.
- * @param idOrSlug - The unique identifier (ID or Slug) of entity.
+ * @param id - The unique identifier of entity.
  */
 export async function resolveEntity<T extends EntityType>(
   entityType: T,
-  idOrSlug: string,
+  id: string,
 ): Promise<EntityModel<T> | undefined>;
-export async function resolveEntity<T extends EntityType>(entityType: T, idOrSlug: string) {
+export async function resolveEntity<T extends EntityType>(entityType: T, id: string) {
   const table = entityTables[entityType] as unknown as PgTableWithColumns<TableConfig>;
 
   // Return early if table is not available
   if (!table) throw new Error(`Invalid entityType: ${entityType}`);
 
-  const $where = [eq(table.id, idOrSlug)];
-
-  // Check if table has a slug column
-  if ('slug' in table) $where.push(eq(table.slug, idOrSlug));
-
-  const [entity] = await db
-    .select()
-    .from(table)
-    .where(or(...$where));
+  const [entity] = await db.select().from(table).where(eq(table.id, id));
 
   return entity;
 }

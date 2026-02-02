@@ -1,6 +1,6 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { appConfig } from 'config';
-import { and, count, eq, ilike, inArray, ne, or, sql } from 'drizzle-orm';
+import { and, count, eq, ilike, inArray, ne, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import { db } from '#/db/db';
 import { lastSeenTable } from '#/db/schema/last-seen';
@@ -172,20 +172,16 @@ const userRouteHandlers = app
    * Get a user by id or slug
    */
   .openapi(userRoutes.getUser, async (ctx) => {
-    const { idOrSlug } = ctx.req.valid('param');
+    const { id } = ctx.req.valid('param');
     const requestingUser = getContextUser();
     const requesterMemberships = getContextMemberships();
     const requstingUserSystemRole = getContextUserSystemRole();
 
-    if (idOrSlug === requestingUser.id || idOrSlug === requestingUser.slug) return ctx.json(requestingUser, 200);
+    if (id === requestingUser.id) return ctx.json(requestingUser, 200);
 
-    const [targetUser] = await db
-      .select(userSelect)
-      .from(usersTable)
-      .where(or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug)))
-      .limit(1);
+    const [targetUser] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, id)).limit(1);
 
-    if (!targetUser) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { user: idOrSlug } });
+    if (!targetUser) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { user: id } });
 
     const requesterOrgIds = requesterMemberships
       .filter((m) => m.contextType === 'organization')
@@ -214,17 +210,13 @@ const userRouteHandlers = app
   //  * TODO we should review update being allowed via slug. leads to complictions in frontend cache
    */
   .openapi(userRoutes.updateUser, async (ctx) => {
-    const { idOrSlug } = ctx.req.valid('param');
+    const { id } = ctx.req.valid('param');
 
     const user = getContextUser();
 
-    const [targetUser] = await db
-      .select(userSelect)
-      .from(usersTable)
-      .where(or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug)))
-      .limit(1);
+    const [targetUser] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, id)).limit(1);
 
-    if (!targetUser) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { user: idOrSlug } });
+    if (!targetUser) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { user: id } });
 
     const { bannerUrl, firstName, lastName, language, newsletter, thumbnailUrl, slug } = ctx.req.valid('json');
 

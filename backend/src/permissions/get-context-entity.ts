@@ -25,13 +25,13 @@ export interface ValidContextEntityResult<T extends ContextEntityType> {
  * of a higher-level entity as defined in `permissions-config`.
  * Throws an error if entity cannot be found or user lacks required permissions.
  *
- * @param idOrSlug - Entity's unique ID or slug.
+ * @param id - Entity's unique ID.
  * @param entityType - Type of context entity (e.g., organization, project).
  * @param action - Action to check (e.g., `"read" | "update" | "delete"`).
  * @returns An object containing resolved entity, associated membership (or `null`), and can object.
  */
 export const getValidContextEntity = async <T extends ContextEntityType>(
-  idOrSlug: string,
+  id: string,
   entityType: T,
   action: Exclude<EntityActionType, 'create'>,
 ): Promise<ValidContextEntityResult<T>> => {
@@ -40,7 +40,7 @@ export const getValidContextEntity = async <T extends ContextEntityType>(
   const memberships = getContextMemberships();
 
   // Step 1: Resolve target entity by ID or slug
-  const entity = await resolveEntity(entityType, idOrSlug);
+  const entity = await resolveEntity(entityType, id);
   if (!entity) throw new AppError(404, 'not_found', 'warn', { entityType });
 
   // Step 2: Check permission for the requested action (system admin bypass is handled inside)

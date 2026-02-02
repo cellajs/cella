@@ -14,7 +14,6 @@ export {
   entityWithTypeQuerySchema,
   type IncludeOption,
   idInOrgParamSchema,
-  idOrSlugSchema,
   idSchema,
   idsBodySchema,
   imageUrlSchema,

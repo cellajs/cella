@@ -57,9 +57,6 @@ export const cookieSchema = z.string();
 /** Schema for session cookie */
 export const sessionCookieSchema = z.object({ sessionToken: z.string(), adminUserId: z.string().optional() });
 
-/** Schema for either an ID or a slug (both are strings, so no need for anyOf) */
-export const idOrSlugSchema = z.string().openapi({ description: 'Entity ID or slug. ID is always preferred.' });
-
 /** Password schema: string - min 8 - max 100 characters */
 export const passwordSchema = z.string().min(8).max(100);
 
@@ -70,24 +67,24 @@ export const languageSchema = z.enum(appConfig.languages);
  * Common param schemas
  ************************************************************************************************/
 
-/** Schema for entity identifier idOrSlug */
-export const entityParamSchema = z.object({ idOrSlug: idOrSlugSchema });
+/** Schema for entity identifier id */
+export const entityParamSchema = z.object({ id: idSchema });
 
-/** Schema for an organization identifier idOrSlug */
-export const inOrgParamSchema = z.object({ orgIdOrSlug: idOrSlugSchema });
+/** Schema for an organization identifier orgId */
+export const inOrgParamSchema = z.object({ orgId: idSchema });
 
-/** Schema for an entity idOrSlug within an organization orgIdOrSlug */
-export const entityInOrgParamSchema = z.object({ idOrSlug: idOrSlugSchema, orgIdOrSlug: idOrSlugSchema });
+/** Schema for an entity id within an organization orgId */
+export const entityInOrgParamSchema = z.object({ id: idSchema, orgId: idSchema });
 
-/** Schema for an entity id within an organization orgIdOrSlug */
-export const idInOrgParamSchema = z.object({ id: idSchema, orgIdOrSlug: idOrSlugSchema });
+/** Schema for an entity id within an organization orgId */
+export const idInOrgParamSchema = z.object({ id: idSchema, orgId: idSchema });
 
 /*************************************************************************************************
  * Common query schemas
  ************************************************************************************************/
 
-/** Schema for idOrSlug that must be a specific entity type */
-export const entityWithTypeQuerySchema = z.object({ idOrSlug: idOrSlugSchema, entityType: contextEntityTypeSchema });
+/** Schema for id that must be a specific entity type */
+export const entityWithTypeQuerySchema = z.object({ id: idSchema, entityType: contextEntityTypeSchema });
 
 const offsetRefine = (value: number) => value >= 0;
 const limitMax = 1000;
