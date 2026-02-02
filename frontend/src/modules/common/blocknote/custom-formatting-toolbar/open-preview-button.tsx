@@ -11,20 +11,24 @@ export const FileOpenPreviewButton = () => {
   const Components = useComponentsContext()!;
 
   const selectedBlocks = useSelectedBlocks(editor);
-  const showButton = useMemo(() => {
-    // Checks if only one block is selected.
-    if (selectedBlocks.length !== 1) return false;
 
+  const selectedFileBlock = useMemo(() => {
+    if (selectedBlocks.length !== 1) return null;
     const block = selectedBlocks[0];
+    return block.type === 'file' || block.type === 'image' || block.type === 'video' || block.type === 'audio'
+      ? block
+      : null;
+  }, [selectedBlocks]);
 
-    return block.type === 'file';
-  }, [editor, selectedBlocks]);
+  if (!selectedFileBlock) return null;
 
-  if (!showButton) return null;
+  // Get the URL of the selected block to open carousel at that item
+  const blockUrl = 'url' in selectedFileBlock.props ? (selectedFileBlock.props.url as string) : undefined;
+
   return (
     <Components.FormattingToolbar.Button
       className={'bn-button'}
-      onClick={(event) => openAttachment(event, editor, ref)}
+      onClick={() => openAttachment(editor, ref, blockUrl)}
       mainTooltip={'Open attachment preview'}
       label={'Open attachment preview'}
       icon={<ScalingIcon size={14} />}

@@ -100,7 +100,7 @@ export function usePublicStream(options: UsePublicStreamOptions = {}): UsePublic
 
   // SSE connection management
   const { state, eventSourceRef, connect, disconnect, reconnect } = useSSEConnection({
-    url: `${appConfig.backendUrl}/page/stream`,
+    url: `${appConfig.backendUrl}/pages/stream`,
     enabled,
     withCredentials: false,
     initialOffset,

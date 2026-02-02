@@ -96,8 +96,17 @@ function CommandList({ className, ...props }: React.ComponentProps<typeof Comman
   return <CommandPrimitive.List data-slot="command-list" className={cn('', className)} {...props} />;
 }
 
-function CommandEmpty({ ...props }: React.ComponentProps<typeof CommandPrimitive.Empty>) {
-  return <CommandPrimitive.Empty data-slot="command-empty" className="py-6 text-center text-sm" {...props} />;
+interface CommandEmptyProps extends React.ComponentProps<typeof CommandPrimitive.Empty> {
+  /** When true, hides children to prevent flicker during async search */
+  isLoading?: boolean;
+}
+
+function CommandEmpty({ isLoading, children, ...props }: CommandEmptyProps) {
+  return (
+    <CommandPrimitive.Empty data-slot="command-empty" className="py-6 text-center text-sm" {...props}>
+      {isLoading ? null : children}
+    </CommandPrimitive.Empty>
+  );
 }
 
 function CommandGroup({ className, ...props }: React.ComponentProps<typeof CommandPrimitive.Group>) {

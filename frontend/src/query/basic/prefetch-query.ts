@@ -12,6 +12,7 @@ export async function prefetchQuery<T extends UseInfiniteQueryOptions<any, any, 
 /**
  * Prefetches a query and returns cached data if available.
  * If the data is not cached and the user is online, it fetches the query.
+ * TODO we still need this? Since we have networkMode offlineFirst?
  *
  * @param options - Query options for a regular or infinite query.
  * @returns Cached data if available, or fetched data if online; otherwise undefined.

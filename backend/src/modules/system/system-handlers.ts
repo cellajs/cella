@@ -184,6 +184,7 @@ const systemRouteHandlers = app
       )
       .limit(1);
 
+    // Use attachment record if found, otherwise use query param (defaults to false for privacy)
     const { bucketName, public: isPublic } = attachment ?? {
       public: queryPublic,
       bucketName: queryPublic ? appConfig.s3.publicBucket : appConfig.s3.privateBucket,

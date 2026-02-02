@@ -40,14 +40,14 @@ export function AppNavIcon({ navItem, className }: { navItem: NavItem; className
   }
 
   if (navItem.id === 'home') {
-    return <AppNavLoader className={'size-5 min-w-5 min-h-5 sm:ml-0.5 shrink-0'} />;
+    return <AppNavLoader className={'size-5 min-w-5 min-h-5 shrink-0'} />;
   }
 
   const NavItemIcon = navItem.icon;
 
   return (
     <NavItemIcon
-      className={cn('group-hover:scale-110 transition-transform size-5 min-w-5 min-h-5 sm:ml-0.5 shrink-0', className)}
+      className={cn('group-hover:scale-110 transition-transform size-5 min-w-5 min-h-5 shrink-0', className)}
       strokeWidth={1.8}
     />
   );

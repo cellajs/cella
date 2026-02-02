@@ -46,12 +46,19 @@ function ViewPage({ pageId }: ViewPageProps) {
               </Button>
             )}
           </div>
-          <div className="text-sm text-muted-foreground">
-            {t('common:created_at')} {dateShort(page.createdAt)}
+          <div className="flex lowercase flex-col items-end gap-1 text-sm text-muted-foreground">
+            <div>
+              {page.status === 'published' ? t('common:published') : t('common:created')} {dateShort(page.createdAt)}
+            </div>
+            {page.status === 'published' && page.modifiedAt && (
+              <div className="opacity-50">
+                {t('common:last_edited')} {dateShort(page.modifiedAt)}
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="prose dark:prose-invert">
+        <div className="prose dark:prose-invert max-w-none">
           <h1 className="pt-2">{page.name}</h1>
 
           {page.description && (
@@ -62,6 +69,7 @@ function ViewPage({ pageId }: ViewPageProps) {
                 defaultValue={page.description}
                 className="text-muted-foreground font-light"
                 clickOpensPreview
+                publicFiles
               />
             </Suspense>
           )}

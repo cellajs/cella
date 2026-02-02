@@ -20,6 +20,7 @@ function NewsletterPreview() {
             defaultValue={form.getValues('content')}
             className="text-muted-foreground font-light"
             clickOpensPreview
+            publicFiles
           />
         </Suspense>
       </section>

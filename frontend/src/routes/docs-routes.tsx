@@ -15,6 +15,7 @@ import {
   operationsRouteSearchParamsSchema,
   schemasRouteSearchParamsSchema,
 } from '~/modules/docs/search-params-schemas';
+import { pagesQueryOptions } from '~/modules/page/query';
 import { pagesRouteSearchParamsSchema } from '~/modules/page/search-params-schemas';
 import { queryClient } from '~/query/query-client';
 import { PublicLayoutRoute } from '~/routes/base-routes';
@@ -25,6 +26,7 @@ import { stripParams } from '~/utils/strip-search-params';
 /**
  * Ensures query data is available, falling back to cache if fetch fails (offline support).
  * Returns undefined if neither fetch nor cache succeeds.
+ * TODO this doenst belong here and I wonder if its necessary at all since we have `offlineFirst` networkMode
  */
 async function ensureQueryDataWithFallback<T, TQueryKey extends readonly unknown[]>(
   options: EnsureQueryDataOptions<T, Error, T, TQueryKey>,
@@ -60,10 +62,11 @@ export const DocsLayoutRoute = createRoute({
   errorComponent: ({ error }) => <ErrorNotice level="public" error={error} homePath="/docs" />,
   notFoundComponent: () => <ErrorNotice level="public" error={new Error('Page not found')} homePath="/docs" />,
   loader: async () => {
-    // Prefetch tags and schemas (schemas used for error response deduplication)
+    // Prefetch tags, schemas (used for error response deduplication), and pages
     await Promise.all([
       ensureQueryDataWithFallback(tagsQueryOptions),
       ensureQueryDataWithFallback(schemasQueryOptions),
+      queryClient.prefetchInfiniteQuery(pagesQueryOptions({})),
     ]);
   },
   component: () => (

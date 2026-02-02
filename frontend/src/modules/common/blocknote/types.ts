@@ -75,6 +75,8 @@ export type CommonBlockNoteProps = {
   excludeBlockTypes?: CustomBlockRegularTypes[];
   excludeFileBlockTypes?: CustomBlockFileTypes[];
   members?: Member[]; // for mentions
+  /** Whether embedded files are public (no auth needed). Affects URL resolution in all modes. */
+  publicFiles?: boolean;
   onFocus?: () => void;
   onEscapeClick?: () => void;
   onEnterClick?: () => void;

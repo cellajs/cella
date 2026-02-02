@@ -11,6 +11,7 @@ export const inviteBodySchema = z.object({
 
 export const preasignedURLQuerySchema = z.object({
   key: z.string(),
+  // Privacy by design: defaults to false (private). Must explicitly opt-in for public access.
   isPublic: z
     .union([z.boolean(), z.string()])
     .optional()

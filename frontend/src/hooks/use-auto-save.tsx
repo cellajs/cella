@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
+import { useLatestRef } from './use-latest-ref';
 
 interface UseAutoSaveOptions<T> {
   /** Current data to potentially save */
@@ -21,15 +22,7 @@ interface UseAutoSaveOptions<T> {
  * Saves occur when:
  * - User stops making changes for `inactivityDelay` milliseconds
  * - OR `maxDelay` milliseconds have passed since the first unsaved change
- *
- * @example
- * useAutoSave({
- *   data: formValues,
- *   hasChanges: (data) => data.name !== originalName,
- *   onSave: (data) => collection.update(id, data),
- *   inactivityDelay: 5000,
- *   maxDelay: 30000,
- * });
+ * - OR the component unmounts with unsaved changes (route change)
  */
 export function useAutoSave<T>({
   data,
@@ -39,11 +32,15 @@ export function useAutoSave<T>({
   maxDelay = 30000,
   enabled = true,
 }: UseAutoSaveOptions<T>) {
-  // Refs to track timers and state without triggering re-renders
+  // Use latest refs to avoid stale closures in timers and cleanup
+  const dataRef = useLatestRef(data);
+  const hasChangesRef = useLatestRef(hasChanges);
+  const onSaveRef = useLatestRef(onSave);
+
+  // Timer refs
   const inactivityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const maxDelayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const firstChangeTimeRef = useRef<number | null>(null);
-  const lastSavedDataRef = useRef<T>(data);
   const isSavingRef = useRef(false);
 
   // Clear all timers
@@ -59,49 +56,42 @@ export function useAutoSave<T>({
     firstChangeTimeRef.current = null;
   }, []);
 
-  // Save function that clears timers and updates last saved data
+  // Save function - uses refs so no stale closure issues
   const save = useCallback(async () => {
     if (isSavingRef.current) return;
 
-    const currentData = data;
-    if (!hasChanges(currentData)) {
+    const currentData = dataRef.current;
+    if (!hasChangesRef.current(currentData)) {
       clearTimers();
       return;
     }
 
     isSavingRef.current = true;
     try {
-      await onSave(currentData);
-      lastSavedDataRef.current = currentData;
+      await onSaveRef.current(currentData);
       clearTimers();
     } finally {
       isSavingRef.current = false;
     }
-  }, [data, hasChanges, onSave, clearTimers]);
+  }, [clearTimers]);
 
-  // Effect that manages auto-save timing
+  // Manage auto-save timing
   useEffect(() => {
     if (!enabled || !hasChanges(data)) {
       clearTimers();
       return;
     }
 
-    // Clear existing inactivity timer (new change came in)
+    // Reset inactivity timer on each change
     if (inactivityTimerRef.current) {
       clearTimeout(inactivityTimerRef.current);
     }
+    inactivityTimerRef.current = setTimeout(save, inactivityDelay);
 
-    // Set inactivity timer
-    inactivityTimerRef.current = setTimeout(() => {
-      save();
-    }, inactivityDelay);
-
-    // Set max delay timer only if this is the first unsaved change
+    // Set max delay timer only on first unsaved change
     if (!firstChangeTimeRef.current) {
       firstChangeTimeRef.current = Date.now();
-      maxDelayTimerRef.current = setTimeout(() => {
-        save();
-      }, maxDelay);
+      maxDelayTimerRef.current = setTimeout(save, maxDelay);
     }
 
     return () => {
@@ -111,18 +101,16 @@ export function useAutoSave<T>({
     };
   }, [data, enabled, hasChanges, inactivityDelay, maxDelay, save, clearTimers]);
 
-  // Cleanup on unmount - save if there are pending changes
+  // Save on unmount if there are pending changes (handles route changes)
   useEffect(() => {
     return () => {
       clearTimers();
-      // Save on unmount if there are unsaved changes
-      if (hasChanges(data) && !isSavingRef.current) {
-        onSave(data);
+      if (hasChangesRef.current(dataRef.current) && !isSavingRef.current) {
+        onSaveRef.current(dataRef.current);
       }
     };
-  }, []);
+  }, [clearTimers]);
 
-  // Expose manual save and status
   return {
     /** Manually trigger a save */
     saveNow: save,

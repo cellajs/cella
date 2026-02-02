@@ -109,6 +109,7 @@ export const pagesQueryOptions = (params: PagesListParams = {}) => {
 
   return infiniteQueryOptions({
     queryKey,
+    staleTime: 1000 * 30, // 30 seconds - explicit to ensure route prefetch respects it
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
       const offset = String(_offset ?? (page ?? 0) * Number(limit));
 
