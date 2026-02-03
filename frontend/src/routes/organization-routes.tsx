@@ -1,4 +1,4 @@
-import { onlineManager } from '@tanstack/react-query';
+import { onlineManager, useSuspenseQuery } from '@tanstack/react-query';
 import { createRoute, Outlet, redirect, useLoaderData } from '@tanstack/react-router';
 import i18n from 'i18next';
 import { lazy, Suspense } from 'react';
@@ -86,7 +86,8 @@ export const OrganizationRoute = createRoute({
   getParentRoute: () => OrganizationLayoutRoute,
   errorComponent: ({ error }) => <ErrorNotice boundary="app" error={error} />,
   component: () => {
-    const organization = useLoaderData({ from: OrganizationLayoutRoute.id });
+    const { id: loadedOrgID } = useLoaderData({ from: OrganizationLayoutRoute.id });
+    const { data: organization } = useSuspenseQuery(organizationQueryOptions(loadedOrgID));
     return (
       <Suspense>
         <OrganizationPage key={organization.slug} organizationId={organization.id} />
@@ -105,8 +106,8 @@ export const OrganizationMembersRoute = createRoute({
   getParentRoute: () => OrganizationRoute,
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
   component: () => {
-    const organization = useLoaderData({ from: OrganizationLayoutRoute.id });
-    if (!organization) return;
+    const { id: loadedOrgID } = useLoaderData({ from: OrganizationLayoutRoute.id });
+    const { data: organization } = useSuspenseQuery(organizationQueryOptions(loadedOrgID));
     return (
       <Suspense>
         <MembersTable key={organization.id} entity={organization} />
@@ -124,8 +125,8 @@ export const OrganizationAttachmentsRoute = createRoute({
   staticData: { isAuth: true, navTab: { id: 'attachments', label: 'common:attachments' } },
   getParentRoute: () => OrganizationRoute,
   component: () => {
-    const organization = useLoaderData({ from: OrganizationLayoutRoute.id });
-    if (!organization) return;
+    const { id: loadedOrgID } = useLoaderData({ from: OrganizationLayoutRoute.id });
+    const { data: organization } = useSuspenseQuery(organizationQueryOptions(loadedOrgID));
     return (
       <Suspense>
         <AttachmentsTable canUpload={true} key={organization.id} entity={organization} />
@@ -142,8 +143,8 @@ export const OrganizationSettingsRoute = createRoute({
   staticData: { isAuth: true, navTab: { id: 'settings', label: 'common:settings' } },
   getParentRoute: () => OrganizationRoute,
   component: () => {
-    const organization = useLoaderData({ from: OrganizationLayoutRoute.id });
-    if (!organization) return;
+    const { id: loadedOrgID } = useLoaderData({ from: OrganizationLayoutRoute.id });
+    const { data: organization } = useSuspenseQuery(organizationQueryOptions(loadedOrgID));
     return (
       <Suspense>
         <OrganizationSettings organization={organization} />
