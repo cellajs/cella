@@ -1,7 +1,7 @@
 import type { AnyRoute } from '@tanstack/react-router';
 import { useMemo } from 'react';
-import router from '~/lib/router';
 import type { PageTab } from '~/modules/common/page/nav';
+import router from '~/routes/router';
 
 /**
  * Extract navigation tabs from child routes based on their staticData.navTab configuration.

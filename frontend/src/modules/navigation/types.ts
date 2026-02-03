@@ -25,7 +25,7 @@ export type TriggerNavItemFn = (
 export type NavItem = {
   id: NavItemId;
   icon: React.ElementType<LucideProps>;
-  type: 'base' | 'floating';
+  type: 'base' | 'floating' | 'footer';
   sheet?: React.ReactNode;
   action?: (ref: RefObject<HTMLButtonElement | null>) => void;
   href?: string;

@@ -22,7 +22,6 @@ import { WebrtcProvider } from 'y-webrtc';
 import * as Y from 'yjs';
 import { getPresignedUrl } from '~/api.gen';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import router from '~/lib/router';
 import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
 import { customSchema } from '~/modules/common/blocknote/blocknote-config';
 import { Mention } from '~/modules/common/blocknote/custom-elements/mention';
@@ -42,6 +41,7 @@ import type {
   CustomBlockRegularTypes,
   CustomBlockTypes,
 } from '~/modules/common/blocknote/types';
+import router from '~/routes/router';
 import { useUIStore } from '~/store/ui';
 
 type BlockNoteProps =

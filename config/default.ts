@@ -1,4 +1,4 @@
-import type { BaseAuthStrategies, BaseOAuthProviders, ConfigMode, S3Config } from './types';
+import type { BaseAuthStrategies, BaseOAuthProviders, ConfigMode, RequiredConfig, S3Config } from './types';
 import { createEntityHierarchy, createRoleRegistry } from './entity-hierarchy';
 
 /******************************************************************************
@@ -346,8 +346,6 @@ export const config = {
     'bg-pink-300',
     'bg-red-300',
   ],
-  /** CSS animation class for nav logo */
-  navLogoAnimation: 'animate-spin-slow',
 
   /******************************************************************************
    * LOCALIZATION
@@ -401,7 +399,7 @@ export const config = {
   defaultUserFlags: {
     finishedOnboarding: false,
   },
-};
+} satisfies RequiredConfig;
 
 export default config;
 

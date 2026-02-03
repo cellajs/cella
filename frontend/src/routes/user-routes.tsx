@@ -28,7 +28,7 @@ export const UserProfileRoute = createRoute({
     const user = ctx.match.loaderData;
     return { meta: [{ title: appTitle(user?.name) }] };
   },
-  errorComponent: ({ error }) => <ErrorNotice level="app" error={error} />,
+  errorComponent: ({ error }) => <ErrorNotice boundary="app" error={error} />,
   component: () => {
     const { idOrSlug } = useParams({ from: '/appLayout/user/$idOrSlug' });
     return (
@@ -54,7 +54,7 @@ export const UserInOrganizationProfileRoute = createRoute({
     const user = ctx.match.loaderData;
     return { meta: [{ title: appTitle(user?.name) }] };
   },
-  errorComponent: ({ error }) => <ErrorNotice level="app" error={error} />,
+  errorComponent: ({ error }) => <ErrorNotice boundary="app" error={error} />,
   component: () => {
     const { idOrSlug, orgIdOrSlug } = useParams({ from: '/appLayout/$orgIdOrSlug/user/$idOrSlug' });
     return (

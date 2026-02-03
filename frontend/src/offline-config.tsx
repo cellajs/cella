@@ -3,13 +3,43 @@ import { membersQueryOptions } from '~/modules/memberships/query';
 import { organizationsQueryOptions } from '~/modules/organization/query';
 
 /**
+ * Query factory type for context entity list queries.
+ * Returns infinite query options that produce items extending ContextEntityDataWithMembership.
+ *
+ * Uses a structural type to allow different query option signatures while ensuring
+ * the queryKey is present. The actual return data type is validated
+ * at usage sites via flattenInfiniteData<ContextEntityDataWithMembership>.
+ *
+ * When adding new context entity types in forks, ensure each query factory
+ * returns data compatible with ContextEntityDataWithMembership.
+ *
+ * @example
+ * ```typescript
+ * export const getContextEntityTypeToListQueries = () =>
+ *   ({
+ *     organization: organizationsQueryOptions,
+ *     workspace: workspacesQueryOptions,
+ *   }) satisfies ContextEntityQueryRegistry;
+ * ```
+ */
+export type ContextEntityQueryFactory = (params: { userId: string }) => {
+  queryKey: readonly unknown[];
+};
+
+/** Registry mapping context entity types to their query factories. */
+export type ContextEntityQueryRegistry = Partial<Record<ContextEntityType, ContextEntityQueryFactory>>;
+
+/**
  * Map entity types to their corresponding list query options functions.
  * This is used to generate the menu based on entity types defined in appConfig.menuStructure.
+ *
+ * When extending for forks with multiple context entity types, ensure each query factory
+ * returns data compatible with ContextEntityDataWithMembership for proper type inference.
  */
 export const getContextEntityTypeToListQueries = () =>
   ({
     organization: organizationsQueryOptions,
-  }) satisfies Partial<Record<ContextEntityType, unknown>>;
+  }) satisfies ContextEntityQueryRegistry;
 
 /**
  * Given an entity ID and type, return an array of query options to prefetch related data.

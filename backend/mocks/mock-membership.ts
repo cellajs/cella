@@ -41,28 +41,37 @@ export const getMembershipOrderOffset = (contextId: string): number => {
 /** Minimal context entity interface for membership creation */
 type ContextEntity = { id: string };
 
+/** Override IDs for context entity columns (organizationId, workspaceId, etc.) */
+type ContextEntityIdOverrides = Partial<MockContextEntityIdColumns>;
+
 /**
  * Generates a mock membership linking a user to a context entity.
  * Works with any context entity type (organization, project, etc.).
+ * Uses generateMockContextEntityIdColumns() as base, then overrides with provided IDs.
  * Ensures consistent ordering via the `getMembershipOrderOffset` function.
  */
 export const mockContextMembership = <T extends ContextEntityType>(
   contextType: T,
   contextEntity: ContextEntity,
-  user: UserModel,
+  user: UserModel | { id: string },
+  overrideIds?: ContextEntityIdOverrides,
 ): InsertMembershipModel => {
-  const idColumnKey = appConfig.entityIdColumnKeys[contextType] as keyof MockContextEntityIdColumns;
+  const userId = user.id;
+
+  // Generate all context entity ID columns, then override with actual IDs
+  const contextEntityColumns = generateMockContextEntityIdColumns();
 
   return {
     id: nanoid(),
-    userId: user.id,
+    userId,
     contextType,
-    [idColumnKey]: contextEntity.id,
+    ...contextEntityColumns,
+    ...overrideIds,
     role: faker.helpers.arrayElement(appConfig.entityRoles),
     order: getMembershipOrderOffset(contextEntity.id) * 10,
     createdAt: pastIsoDate(),
-    createdBy: user.id,
-    uniqueKey: `${user.id}-${contextEntity.id}`,
+    createdBy: userId,
+    uniqueKey: `${userId}-${contextEntity.id}`,
   } as InsertMembershipModel;
 };
 

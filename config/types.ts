@@ -1,108 +1,217 @@
-import type config from "./default";
+import type config from './default';
 
 export type DeepPartial<T> = T extends object
   ? {
-    [P in keyof T]?: DeepPartial<T[P]>;
-  }
+      [P in keyof T]?: DeepPartial<T[P]>;
+    }
   : T;
 
-/** Environment mode - set per environment config file */
 export type ConfigMode = 'development' | 'production' | 'tunnel' | 'test' | 'staging';
-
-export type BaseAuthStrategies = 'password' | 'passkey' | 'oauth' | 'totp'
-export type BaseOAuthProviders = 'github' | 'google' | 'microsoft'
+export type BaseAuthStrategies = 'password' | 'passkey' | 'oauth' | 'totp';
+export type BaseOAuthProviders = 'github' | 'google' | 'microsoft';
 
 /******************************************************************************
- * REQUIRED CONFIG TYPES
- * These types enforce critical config keys that forks must provide.
- * TypeScript will error if these are missing or malformed.
+ * CONFIG SUB-TYPES
  ******************************************************************************/
 
-/** S3-compatible storage configuration */
 export interface S3Config {
-  /** Prefix to namespace files when sharing a bucket */
   bucketPrefix?: string;
-  /** Public bucket name for publicly accessible files */
   publicBucket: string;
-  /** Private bucket name for authenticated-only files */
   privateBucket: string;
-  /** S3 region identifier */
   region: string;
-  /** S3 host endpoint */
   host: string;
-  /** CDN URL for private bucket */
   privateCDNUrl?: string;
-  /** CDN URL for public bucket */
   publicCDNUrl?: string;
 }
 
-/**
- * Request limits config - must include 'default' key.
- * Other keys are entity-specific limits.
- */
 export interface RequestLimitsConfig {
   default: number;
   [key: string]: number;
 }
 
-/**
- * Required config keys that forks must provide.
- * These are critical for the entity model, storage, and API limits.
- */
-export interface RequiredConfig {
-  /** Environment mode */
-  mode: ConfigMode;
-  /** S3 storage configuration */
-  s3: S3Config;
-  /** System-wide roles */
-  systemRoles: readonly string[];
-  /** Request page size limits */
-  requestLimits: RequestLimitsConfig;
-  /** All entity types - derived from hierarchy */
-  entityTypes: readonly string[];
-  /** Context entities with memberships - derived from hierarchy */
-  contextEntityTypes: readonly string[];
-  /** Product/content entities - derived from hierarchy */
-  productEntityTypes: readonly string[];
-  /** Upload template IDs for Transloadit */
-  uploadTemplateIds: readonly string[];
-  /** Maps entity types to their ID column names */
-  entityIdColumnKeys: Record<string, string>;
+export interface FeatureFlagsConfig {
+  pwa: boolean;
+  registrationEnabled: boolean;
+  waitlist: boolean;
+  uploadEnabled: boolean;
+}
+
+export interface TotpConfig {
+  intervalInSeconds: number;
+  gracePeriodInSeconds: number;
+  digits: number;
+}
+
+export interface UppyRestrictionsConfig {
+  maxFileSize: number;
+  maxNumberOfFiles: number;
+  allowedFileTypes: string[];
+  maxTotalFileSize: number;
+  minFileSize: number | null;
+  minNumberOfFiles: number | null;
+  requiredMetaFields: string[];
+}
+
+export interface LocalBlobStorageConfig {
+  enabled: boolean;
+  maxFileSize: number;
+  maxTotalSize: number;
+  allowedContentTypes: string[];
+  excludedContentTypes: string[];
+  downloadConcurrency: number;
+  uploadRetryAttempts: number;
+  uploadRetryDelays: readonly number[];
+}
+
+export interface ThemeNavigationConfig {
+  hasSidebarTextLabels: boolean;
+  sidebarWidthExpanded: string;
+  sidebarWidthCollapsed: string;
+  sheetPanelWidth: string;
+}
+
+export interface ThemeConfig {
+  navigation: ThemeNavigationConfig;
+  colors: Record<string, string>;
+  strokeWidth: number;
+  screenSizes: Record<string, string>;
+}
+
+export interface CompanyConfig {
+  name: string;
+  shortName: string;
+  email: string;
+  supportEmail: string;
+  tel: string;
+  streetAddress: string;
+  postcode: string;
+  city: string;
+  country: string;
+  registration: string;
+  bankAccount: string;
+  googleMapsUrl: string;
+  scheduleCallUrl: string;
+  blueskyUrl: string;
+  blueskyHandle: string;
+  element: string;
+  githubUrl: string;
+  mapZoom: number;
+  coordinates: { lat: number; lng: number };
+}
+
+export interface MenuStructureItem {
+  entityType: string;
+  subentityType: string | null;
 }
 
 /******************************************************************************
- * GENERATION SCRIPTS
+ * REQUIRED CONFIG
+ * Complete config type that forks must satisfy.
+ * Use `satisfies RequiredConfig` in fork's default.ts for type enforcement.
  ******************************************************************************/
 
-/**
- * Type of generation script.
- * - 'drizzle': Schema-to-SQL generation (drizzle-kit generate)
- * - 'migration': Custom migration script that upserts to drizzle folder
- */
-export type GenerateScriptType = 'drizzle' | 'migration';
+export interface RequiredConfig {
+  // Entity data model
+  entityTypes: readonly string[];
+  contextEntityTypes: readonly string[];
+  productEntityTypes: readonly string[];
+  relatableContextEntityTypes: readonly string[];
+  entityRoles: readonly string[];
+  offlineEntityTypes: readonly string[];
+  realtimeEntityTypes: readonly string[];
+  entityIdColumnKeys: Record<string, string>;
+  entityActions: readonly string[];
+  resourceTypes: readonly string[];
+  menuStructure: readonly MenuStructureItem[];
+  defaultOrganizationRestrictions: Record<string, number>;
 
-/**
- * Configuration for a generation script run during `pnpm generate`.
- */
-export interface GenerateScript {
-  /** Human-readable name for the script */
+  // System roles
+  systemRoles: readonly string[];
+
+  // App identity
   name: string;
-  /** Shell command to run */
-  command: string;
-  /** Script type - determines behavior and validation */
-  type: GenerateScriptType;
-  /** For 'migration' type: the migration tag suffix (e.g., 'cdc_setup') */
-  migrationTag?: string;
+  slug: string;
+  domain: string;
+  description: string;
+  keywords: string;
+
+  // URLs & endpoints
+  frontendUrl: string;
+  backendUrl: string;
+  backendAuthUrl: string;
+  aboutUrl: string;
+  statusUrl: string;
+  productionUrl: string;
+  defaultRedirectPath: string;
+  welcomeRedirectPath: string;
+
+  // Email
+  supportEmail: string;
+  notificationsEmail: string;
+
+  // Mode & flags
+  mode: ConfigMode;
+  debug: boolean;
+  maintenance: boolean;
+  cookieVersion: string;
+
+  // Feature flags
+  has: FeatureFlagsConfig;
+
+  // Authentication
+  enabledAuthStrategies: readonly BaseAuthStrategies[];
+  enabledOAuthProviders: readonly BaseOAuthProviders[];
+  tokenTypes: readonly string[];
+  totpConfig: TotpConfig;
+
+  // API configuration
+  apiVersion: string;
+  apiDescription: string;
+
+  // Request limits
+  requestLimits: RequestLimitsConfig;
+  jsonBodyLimit: number;
+  fileUploadLimit: number;
+  defaultBodyLimit: number;
+
+  // Storage & uploads
+  s3: S3Config;
+  uploadTemplateIds: readonly string[];
+  uppy: { defaultRestrictions: UppyRestrictionsConfig };
+  localBlobStorage: LocalBlobStorageConfig;
+
+  // Third-party services
+  paddleToken: string;
+  paddlePriceIds: Record<string, string>;
+  sentryDsn: string;
+  sentSentrySourceMaps: boolean;
+  gleapToken: string;
+  googleMapsKey: string;
+  matrixURL: string;
+
+  // Theming & UI
+  themeColor: string;
+  theme: ThemeConfig;
+  placeholderColors: readonly string[];
+
+  // Localization
+  defaultLanguage: string;
+  languages: readonly string[];
+  common: { countries: readonly string[]; timezones: readonly string[] };
+
+  // Company details
+  company: CompanyConfig;
+
+  // User defaults
+  defaultUserFlags: Record<string, boolean>;
 }
 
 /******************************************************************************
  * CONFIG TYPE
- ******************************************************************************/
-
-type ConfigType = DeepPartial<typeof config>
+ *****************************************************************************/
 
 /**
- * Full config type - combines optional fields with required config.
- * Forks get TypeScript errors when required config is missing or malformed.
+ * Full config type derived from default.ts.
+ * Forks should use `satisfies RequiredConfig` for type enforcement.
  */
-export type Config = Omit<ConfigType, keyof RequiredConfig> & RequiredConfig;
+export type Config = typeof config;

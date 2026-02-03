@@ -139,7 +139,7 @@ export const useOrganizationUpdateMutation = () => {
  */
 export const useOrganizationDeleteMutation = () => {
   const queryClient = useQueryClient();
-  const mutateCache = useMutateQueryData(keys.list.base, () => keys.detail.base, ['remove']);
+  const mutateCache = useMutateQueryData(keys.list.base, (org) => keys.detail.byId(org.id), ['remove']);
 
   return useMutation<void, ApiError, Organization[]>({
     mutationKey: keys.delete,

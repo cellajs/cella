@@ -43,8 +43,8 @@ export const DocsLayoutRoute = createRoute({
     noDirectAccess(DocsLayoutRoute.to, DocsOperationsRoute.to);
   },
   getParentRoute: () => PublicLayoutRoute,
-  errorComponent: ({ error }) => <ErrorNotice level="public" error={error} homePath="/docs" />,
-  notFoundComponent: () => <ErrorNotice level="public" error={new Error('Page not found')} homePath="/docs" />,
+  errorComponent: ({ error }) => <ErrorNotice boundary="public" error={error} homePath="/docs" />,
+  notFoundComponent: () => <ErrorNotice boundary="public" error={new Error('Page not found')} homePath="/docs" />,
   loader: async () => {
     // Prefetch tags, schemas (used for error response deduplication), and pages
     await Promise.all([
@@ -184,8 +184,8 @@ export const DocsPageRoute = createRoute({
   loader: ({ params: { id } }) => ({ pageId: id }),
   head: () => ({ meta: [{ title: appTitle('Page') }] }),
   getParentRoute: () => DocsLayoutRoute,
-  errorComponent: ({ error }) => <ErrorNotice level="public" error={error} homePath="/docs" />,
-  notFoundComponent: () => <ErrorNotice level="public" error={new Error('Page not found')} homePath="/docs" />,
+  errorComponent: ({ error }) => <ErrorNotice boundary="public" error={error} homePath="/docs" />,
+  notFoundComponent: () => <ErrorNotice boundary="public" error={new Error('Page not found')} homePath="/docs" />,
   component: () => {
     const { pageId } = useLoaderData({ from: DocsPageRoute.id });
     return (
@@ -205,8 +205,8 @@ export const DocsPageEditRoute = createRoute({
   loader: ({ params: { id } }) => ({ pageId: id }),
   head: () => ({ meta: [{ title: appTitle('Edit Page') }] }),
   getParentRoute: () => DocsLayoutRoute,
-  errorComponent: ({ error }) => <ErrorNotice level="public" error={error} homePath="/docs" />,
-  notFoundComponent: () => <ErrorNotice level="public" error={new Error('Page not found')} homePath="/docs" />,
+  errorComponent: ({ error }) => <ErrorNotice boundary="public" error={error} homePath="/docs" />,
+  notFoundComponent: () => <ErrorNotice boundary="public" error={new Error('Page not found')} homePath="/docs" />,
   component: () => {
     const { pageId } = useLoaderData({ from: DocsPageEditRoute.id });
     return (

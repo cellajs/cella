@@ -17,7 +17,7 @@ interface DebugItem {
   element?: string;
 }
 
-interface DebugToolbarsProps {
+interface DebugDropdownProps {
   className?: string;
 }
 
@@ -31,7 +31,7 @@ const debugOptions: DebugItem[] = [
   { id: 'sync-devtools', icon: '⚡' },
 ];
 
-function DebugToolbars({ className }: DebugToolbarsProps) {
+function DebugDropdown({ className }: DebugDropdownProps) {
   const [syncDevtoolsOpen, setSyncDevtoolsOpen] = useState(false);
 
   // Function to handle toggling debug options in different ways
@@ -95,4 +95,4 @@ function DebugToolbars({ className }: DebugToolbarsProps) {
   );
 }
 
-export default DebugToolbars;
+export default DebugDropdown;

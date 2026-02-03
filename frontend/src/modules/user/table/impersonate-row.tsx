@@ -3,11 +3,11 @@ import i18n from 'i18next';
 import { VenetianMaskIcon } from 'lucide-react';
 import type { User } from '~/api.gen';
 import { startImpersonation } from '~/api.gen';
-import router from '~/lib/router';
 import { toaster } from '~/modules/common/toaster/service';
 import { getAndSetMe } from '~/modules/me/helpers';
 import { getMenuData } from '~/modules/navigation/menu-sheet/helpers';
 import { Button } from '~/modules/ui/button';
+import router from '~/routes/router';
 import { useUIStore } from '~/store/ui';
 
 interface Props {

@@ -1,4 +1,4 @@
-import type { GenerateScript } from 'config';
+import type { GenerateScript } from './types';
 
 /** Scripts run during `pnpm generate` for migrations */
 export const generateScripts: GenerateScript[] = [

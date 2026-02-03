@@ -20,13 +20,7 @@ export type {
 export { createEntityHierarchy, createRoleRegistry } from './entity-hierarchy';
 
 // Re-export other types
-export type {
-  GenerateScript,
-  GenerateScriptType,
-  RequestLimitsConfig,
-  RequiredConfig,
-  S3Config,
-} from './types';
+export type { RequestLimitsConfig, RequiredConfig, S3Config } from './types';
 export { hasKey, recordFromKeys, identityRecord } from './utils';
 
 // Re-export role registry and hierarchy from default

@@ -34,7 +34,10 @@ export const LegalContent = () => {
   const { subject: currentSubject } = useParams({ from: '/legal/$subject' });
 
   // Get section IDs for the current subject
-  const sectionIds = useMemo(() => legalConfig[currentSubject]?.sections.map((s) => s.id) || [], [currentSubject]);
+  const sectionIds = useMemo(
+    () => legalConfig[currentSubject as LegalSubject]?.sections.map((s: { id: string }) => s.id) || [],
+    [currentSubject],
+  );
 
   // Enable scroll spy near the content - uses useLocation for hash in aside
   useScrollSpy(sectionIds);

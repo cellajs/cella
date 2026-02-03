@@ -137,6 +137,6 @@ export function setTestConfig(overrides: ConfigOverride) {
   }
 
   if (overrides.registrationEnabled !== undefined) {
-    appConfig.has.registrationEnabled = overrides.registrationEnabled;
+    (appConfig.has as { registrationEnabled: boolean }).registrationEnabled = overrides.registrationEnabled;
   }
 }

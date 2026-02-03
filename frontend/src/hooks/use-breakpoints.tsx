@@ -48,7 +48,24 @@ if (typeof window !== 'undefined') {
   window.addEventListener('resize', updateGlobalBreakpoint);
 }
 
-// Subscribe function for useSyncExternalStore
+/**
+ * Subscribe to breakpoint changes (works outside React components).
+ * @param callback - Function to call when breakpoint changes
+ * @returns Unsubscribe function
+ */
+export function subscribeToBreakpointChanges(callback: () => void) {
+  listeners.add(callback);
+  return () => listeners.delete(callback);
+}
+
+/**
+ * Get the current breakpoint snapshot (works outside React components).
+ */
+export function getBreakpointSnapshot() {
+  return currentBreakpoint;
+}
+
+// Subscribe function for useSyncExternalStore (internal use)
 function subscribe(callback: () => void) {
   listeners.add(callback);
   return () => listeners.delete(callback);

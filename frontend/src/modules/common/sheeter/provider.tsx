@@ -1,10 +1,11 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import useBodyClass from '~/hooks/use-body-class';
+import { useBoundaryCleanup } from '~/hooks/use-boundary-cleanup';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import router from '~/lib/router';
 import { SheeterDrawer } from '~/modules/common/sheeter/drawer';
 import { SheeterSheet } from '~/modules/common/sheeter/sheet';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import router from '~/routes/router';
 import { useNavigationStore } from '~/store/navigation';
 
 /**
@@ -14,39 +15,46 @@ import { useNavigationStore } from '~/store/navigation';
  */
 export const Sheeter = () => {
   const isMobile = useBreakpoints('max', 'sm');
-
-  // Get sheets from store
   const sheets = useSheeter((state) => state.sheets);
 
-  // Apply body class
   useBodyClass({ 'sheeter-open': sheets.length > 0 });
 
-  // Subscribe to router to close sheets
+  // Close sheets that morph between drawer/sheet (no container) on resize
+  const getItemsToCloseOnResize = useCallback(
+    () =>
+      useSheeter
+        .getState()
+        .sheets.filter((s) => !s.container)
+        .map((s) => s.id),
+    [],
+  );
+  const closeAll = useCallback(() => useSheeter.getState().remove(undefined, { isCleanup: true }), []);
+  const closeById = useCallback(
+    (id: string | number) => useSheeter.getState().remove(String(id), { isCleanup: true }),
+    [],
+  );
+
+  useBoundaryCleanup(getItemsToCloseOnResize, closeAll, closeById);
+
+  // Handle route changes (respects nav menu keepOpen preference)
   useEffect(() => {
-    const unsubscribe = router.subscribe('onBeforeLoad', ({ hrefChanged }) => {
+    return router.subscribe('onBeforeLoad', ({ hrefChanged }) => {
+      if (!hrefChanged) return;
+
       const navState = useNavigationStore.getState();
-      const sheetOpen = navState.navSheetOpen;
-      const activeSheets = useSheeter.getState().sheets;
-
-      if (!hrefChanged || !activeSheets.length) return;
-
-      // Filter to only sheets that should close on route change
-      const sheetsToClose = activeSheets.filter((sheet) => sheet.closeSheetOnRouteChange !== false);
+      const sheetsToClose = useSheeter.getState().sheets.filter((s) => s.closeSheetOnRouteChange !== false);
       if (!sheetsToClose.length) return;
 
-      // Safe to remove sheets that opt-in to close on route change
-      if (!sheetOpen || sheetOpen !== 'menu' || !navState.keepMenuOpen) {
-        return useSheeter.getState().removeOnRouteChange({ isCleanup: true });
+      if (!navState.navSheetOpen || navState.navSheetOpen !== 'menu' || !navState.keepMenuOpen) {
+        useSheeter.getState().removeOnRouteChange({ isCleanup: true });
+        return;
       }
 
-      // Remove sheets except the nav sheet (if it should close on route change)
-      const removeSheetIds = sheetsToClose.filter((sheet) => sheet.id !== 'nav-sheet').map((sheet) => sheet.id);
-      for (const sheetId of removeSheetIds) {
-        useSheeter.getState().remove(sheetId, { isCleanup: true });
+      // Keep nav-sheet open, close others
+      for (const sheet of sheetsToClose.filter((s) => s.id !== 'nav-sheet')) {
+        useSheeter.getState().remove(sheet.id, { isCleanup: true });
       }
     });
-
-    return unsubscribe;
   }, []);
 
   if (!sheets.length) return null;
@@ -54,7 +62,6 @@ export const Sheeter = () => {
   return (
     <>
       {sheets.map((sheet) => {
-        // Use drawer on mobile (without container), sheet on desktop
         const SheetComponent = isMobile && !sheet.container ? SheeterDrawer : SheeterSheet;
         return <SheetComponent key={sheet.id} sheet={sheet} />;
       })}

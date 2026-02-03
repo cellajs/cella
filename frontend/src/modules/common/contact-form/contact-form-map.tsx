@@ -117,7 +117,7 @@ function ContactFormMap() {
   return (
     <ErrorBoundary
       fallbackRender={({ error, resetErrorBoundary }) => (
-        <ErrorNotice level="app" error={error as ErrorNoticeError} resetErrorBoundary={resetErrorBoundary} />
+        <ErrorNotice boundary="app" error={error as ErrorNoticeError} resetErrorBoundary={resetErrorBoundary} />
       )}
     >
       <div className="w-full h-full">

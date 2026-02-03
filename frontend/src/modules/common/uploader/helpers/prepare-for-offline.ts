@@ -1,5 +1,5 @@
 import type { AssemblyResponse } from '@uppy/transloadit';
-import { assemblyTemplates } from 'config/assembly-templates';
+import { uploadTemplates } from 'config/upload-templates';
 import type { UploadContext, UploadStatus } from '~/modules/attachment/dexie/attachments-db';
 import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
 import type { CustomUppyFile } from '~/modules/common/uploader/types';
@@ -18,7 +18,7 @@ type PrepareFilesForOffline = (
 export const prepareFilesForOffline: PrepareFilesForOffline = async (files, tokenQuery, uploadStatus = 'pending') => {
   console.warn('Files will be stored locally in IndexedDB.');
 
-  const template = assemblyTemplates.attachment;
+  const template = uploadTemplates.attachment;
   const templateKey = template.use[0];
   const organizationId = tokenQuery.organizationId;
 

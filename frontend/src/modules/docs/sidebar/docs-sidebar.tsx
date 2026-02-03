@@ -29,8 +29,8 @@ import { useSheeter } from '../../common/sheeter/use-sheeter';
 import UserTheme from '../../me/user-theme';
 import { openApiSpecQueryOptions, openApiUrl } from '../query';
 
-const DebugToolbars =
-  appConfig.mode !== 'production' ? lazy(() => import('~/modules/common/debug-toolbars')) : () => null;
+const DebugDropdown =
+  appConfig.mode !== 'production' ? lazy(() => import('~/modules/common/debug-dropdown')) : () => null;
 
 /** Suspense-wrapped JsonActions for OpenAPI spec */
 function OpenApiJsonActions() {
@@ -279,9 +279,7 @@ export function DocsSidebar({ tags }: DocsSidebarProps) {
       </SidebarGroup>
 
       {/* Debug Toolbars */}
-      <div className="mt-auto p-4">
-        <Suspense>{DebugToolbars ? <DebugToolbars /> : null}</Suspense>
-      </div>
+      <Suspense>{DebugDropdown ? <DebugDropdown className="mt-auto p-4" /> : null}</Suspense>
     </SidebarContent>
   );
 }

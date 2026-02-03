@@ -5,17 +5,18 @@ import { AnimatePresence, motion } from 'motion/react';
 import { type RefObject, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ApiError } from '~/lib/api';
-import router from '~/lib/router';
 import { AppFooter } from '~/modules/common/app/app-footer';
 import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
 import { Dialoger } from '~/modules/common/dialoger/provider';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '~/modules/ui/card';
+import router from '~/routes/router';
+import type { BoundaryType } from '~/routes/types';
 
 export type ErrorNoticeError = ApiError | Error | null;
 
 interface ErrorNoticeProps {
-  level: 'root' | 'app' | 'public';
+  boundary: BoundaryType;
   error?: ErrorNoticeError;
   children?: React.ReactNode;
   resetErrorBoundary?: () => void;
@@ -77,7 +78,7 @@ export const getErrorInfo = ({ error, errorFromQuery }: { error?: ErrorNoticeErr
  * app: no footer required
  * public: show footer
  */
-function ErrorNotice({ error, children, resetErrorBoundary, level, homePath = '/' }: ErrorNoticeProps) {
+function ErrorNotice({ error, children, resetErrorBoundary, boundary, homePath = '/' }: ErrorNoticeProps) {
   const { t } = useTranslation();
   const { location } = useRouterState();
   const contactButtonRef = useRef<HTMLButtonElement>(null);
@@ -111,7 +112,7 @@ function ErrorNotice({ error, children, resetErrorBoundary, level, homePath = '/
 
   return (
     <>
-      {level === 'root' && <Dialoger />}
+      {boundary === 'root' && <Dialoger />}
       <div className="container flex flex-col min-h-[calc(100vh-10rem)] items-center error-notice">
         <div className="mt-auto mb-auto">
           <Card className="max-w-[80vw] sm:w-160 mt-8 bg-transparent border-none">
@@ -203,7 +204,7 @@ function ErrorNotice({ error, children, resetErrorBoundary, level, homePath = '/
               )}
             </CardFooter>
           </Card>
-          {level !== 'app' && <AppFooter className="items-center mt-10" />}
+          {boundary !== 'app' && <AppFooter className="items-center mt-10" />}
         </div>
       </div>
     </>

@@ -1,4 +1,4 @@
-import { assemblyTemplates } from 'config/assembly-templates';
+import { uploadTemplates } from 'config/upload-templates';
 import type { Attachment } from '~/api.gen';
 import { getPresignedUrl } from '~/api.gen/sdk.gen';
 import { zAttachment } from '~/api.gen/zod.gen';
@@ -110,7 +110,7 @@ export const parseUploadedAttachments = (
   }
 
   //  Process converted + thumbnail variants
-  const steps = assemblyTemplates.attachment.use.filter((step) => step !== ':original');
+  const steps = uploadTemplates.attachment.use.filter((step) => step !== ':original');
 
   for (const step of steps) {
     const files = result[step] ?? [];

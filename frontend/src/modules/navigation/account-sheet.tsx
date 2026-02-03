@@ -1,11 +1,10 @@
 import { Link } from '@tanstack/react-router';
-import { LogOutIcon, type LucideProps, UserRoundCogIcon, UserRoundIcon, WrenchIcon } from 'lucide-react';
+import { LogOutIcon, type LucideProps, SettingsIcon, UserRoundIcon, WrenchIcon } from 'lucide-react';
 import type React from 'react';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useOnlineManager } from '~/hooks/use-online-manager';
-import { AppFooter } from '~/modules/common/app/app-footer';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { toaster } from '~/modules/common/toaster/service';
 import { buttonVariants } from '~/modules/ui/button';
@@ -94,7 +93,7 @@ export const AccountSheet = () => {
         <AccountButton
           offlineAccess={false}
           isOnline={isOnline}
-          icon={UserRoundCogIcon}
+          icon={SettingsIcon}
           id="btn-account"
           label={t('common:my_account')}
           action="/account"
@@ -118,8 +117,6 @@ export const AccountSheet = () => {
           action="/sign-out"
         />
       </div>
-      <div className="grow border-b border-dashed" />
-      <AppFooter className="items-center" />
     </div>
   );
 };

@@ -26,7 +26,7 @@ export const SystemRoute = createRoute({
   },
   getParentRoute: () => AppLayoutRoute,
   component: () => <SystemPage />,
-  errorComponent: ({ error }) => <ErrorNotice level="app" error={error} />,
+  errorComponent: ({ error }) => <ErrorNotice boundary="app" error={error} />,
 });
 
 /**

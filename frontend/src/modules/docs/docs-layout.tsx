@@ -7,7 +7,7 @@ import { useHotkeys } from '~/hooks/use-hot-keys';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { tagsQueryOptions } from '~/modules/docs/query';
 import { DocsSidebar } from '~/modules/docs/sidebar/docs-sidebar';
-import FloatingNav, { type FloatingNavItem } from '~/modules/navigation/floating-nav';
+import FloatingNav, { type FloatingNavItem } from '~/modules/navigation/floating-nav/floating-nav';
 import { ResizableGroup, ResizablePanel, ResizableSeparator } from '~/modules/ui/resizable';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { PublicStream } from '~/query/realtime';

@@ -6,22 +6,26 @@ import { useEffect, useState } from 'react';
  * @returns flags for:
  * - `hasMounted`: component mounted
  * - `hasStarted`: component started after 200ms
- * - `hasWaited`: component after 800ms
+ * - `hasWaited`: component waited 800ms
+ * - `hasLoaded`: component loaded after 3000ms (for initial loading animations)
  */
 export const useMounted = () => {
   const [hasMounted, setMounted] = useState(false);
   const [hasStarted, setStarted] = useState(false);
   const [hasWaited, setWaited] = useState(false);
+  const [hasLoaded, setLoaded] = useState(false);
 
   useEffect(() => {
     setMounted(true);
 
     const startTimeout = setTimeout(() => setStarted(true), 200);
     const readyTimeout = setTimeout(() => setWaited(true), 800);
+    const loadedTimeout = setTimeout(() => setLoaded(true), 3000);
 
     return () => {
       clearTimeout(startTimeout);
       clearTimeout(readyTimeout);
+      clearTimeout(loadedTimeout);
     };
   }, []);
 
@@ -29,6 +33,7 @@ export const useMounted = () => {
     hasMounted,
     hasStarted,
     hasWaited,
+    hasLoaded,
   };
 };
 

@@ -20,8 +20,8 @@ import { navItems } from '~/nav-config';
 import { useNavigationStore } from '~/store/navigation';
 import { useUIStore } from '~/store/ui';
 
-const DebugToolbars =
-  appConfig.mode !== 'production' ? lazy(() => import('~/modules/common/debug-toolbars')) : () => null;
+const DebugDropdown =
+  appConfig.mode !== 'production' ? lazy(() => import('~/modules/common/debug-dropdown')) : () => null;
 
 // Sidebar dimensions from config
 const { hasSidebarTextLabels, sidebarWidthExpanded, sidebarWidthCollapsed, sheetPanelWidth } =
@@ -32,6 +32,13 @@ let baseNavItems: NavItem[] | null = null;
 function getBaseNavItems() {
   if (!baseNavItems) baseNavItems = navItems.filter(({ type }) => type === 'base');
   return baseNavItems;
+}
+
+// Cached footer nav items
+let footerNavItems: NavItem[] | null = null;
+function getFooterNavItems() {
+  if (!footerNavItems) footerNavItems = navItems.filter(({ type }) => type === 'footer');
+  return footerNavItems;
 }
 
 interface SidebarNavProps {
@@ -118,9 +125,20 @@ export function SidebarNav({ triggerNavItem }: SidebarNavProps) {
                 </SidebarGroupContent>
               </SidebarGroup>
             </SidebarContent>
-            <SidebarFooter className="p-2 gap-2">
-              <Suspense>{DebugToolbars ? <DebugToolbars /> : null}</Suspense>
-              <StopImpersonation />
+            <SidebarFooter className="p-0 gap-2">
+              <Suspense>{DebugDropdown ? <DebugDropdown className="mx-2" /> : null}</Suspense>
+              <StopImpersonation isCollapsed={!isExpanded} />
+              <SidebarMenu className="gap-1">
+                {getFooterNavItems().map((navItem: NavItem) => (
+                  <NavButton
+                    key={navItem.id}
+                    navItem={navItem}
+                    isActive={navSheetOpen === navItem.id}
+                    isCollapsed={!isExpanded}
+                    onClick={triggerNavItem}
+                  />
+                ))}
+              </SidebarMenu>
             </SidebarFooter>
           </div>
         </div>

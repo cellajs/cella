@@ -11,7 +11,7 @@ function PublicLayout() {
   return (
     <ErrorBoundary
       fallbackRender={({ error, resetErrorBoundary }) => (
-        <ErrorNotice error={error as ErrorNoticeError} level="root" resetErrorBoundary={resetErrorBoundary} />
+        <ErrorNotice error={error as ErrorNoticeError} boundary="root" resetErrorBoundary={resetErrorBoundary} />
       )}
     >
       <Alerter mode="public" />

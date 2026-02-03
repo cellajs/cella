@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 import { appConfig, type UploadTemplateId } from 'config';
-import { assemblyTemplates } from 'config/assembly-templates';
+import { uploadTemplates } from 'config/upload-templates';
 import { env } from '#/env';
 import { nanoid } from '#/utils/nanoid';
 import { utcDateString } from '#/utils/utc-data-string';
@@ -16,7 +16,7 @@ export const getParams = (templateId: UploadTemplateId, isPublic: boolean, sub: 
   const authSecret = env.TRANSLOADIT_SECRET;
   if (!authKey || !authSecret) throw Error('auth_key_not_found');
 
-  const template = assemblyTemplates[templateId];
+  const template = uploadTemplates[templateId];
 
   return {
     auth: {

@@ -65,7 +65,7 @@ function CreatePasswordPage() {
   // If error, allow to request new password reset
   if (error || resetPasswordError)
     return (
-      <ErrorNotice error={error || resetPasswordError} level={'public'}>
+      <ErrorNotice error={error || resetPasswordError} boundary="public">
         <RequestPasswordDialog email={data?.email}>
           <Button ref={requestButtonRef}>{t('common:forgot_password')}</Button>
         </RequestPasswordDialog>

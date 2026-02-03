@@ -1,5 +1,5 @@
 import { hierarchy, type RealtimeEntityType } from 'config';
-import router from '~/lib/router';
+import router from '~/routes/router';
 
 export type SyncPriority = 'high' | 'medium' | 'low';
 
