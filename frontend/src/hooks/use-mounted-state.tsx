@@ -9,7 +9,7 @@ import { useEffect, useState } from 'react';
  * - `hasWaited`: component waited 800ms
  * - `hasLoaded`: component loaded after 3000ms (for initial loading animations)
  */
-export const useMounted = () => {
+export const useMountedState = () => {
   const [hasMounted, setMounted] = useState(false);
   const [hasStarted, setStarted] = useState(false);
   const [hasWaited, setWaited] = useState(false);
@@ -37,4 +37,4 @@ export const useMounted = () => {
   };
 };
 
-export default useMounted;
+export default useMountedState;

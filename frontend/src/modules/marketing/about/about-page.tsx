@@ -1,4 +1,3 @@
-import { Link, useNavigate } from '@tanstack/react-router';
 import { ArrowDownIcon, CheckIcon, CopyIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
@@ -26,11 +25,10 @@ const aboutSectionIds = ['hero', 'why', 'features', 'integrations', 'showcase', 
 
 function AboutPage() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
 
   const { copyToClipboard, copied } = useCopyToClipboard();
 
-  useScrollSpy(aboutSectionIds);
+  const { scrollToSection } = useScrollSpy(aboutSectionIds);
 
   return (
     <>
@@ -60,26 +58,15 @@ function AboutPage() {
               {copied ? <CheckIcon size={16} /> : <CopyIcon size={16} />}
             </Button>
           </div>
-          <Link
-            to="/about"
-            replace
-            hash="why"
-            onClick={(e) => {
-              if (window.location.hash !== '#why') return;
-
-              e.preventDefault();
-              navigate({ to: '.', hash: 'top', replace: true });
-
-              setTimeout(() => {
-                navigate({ hash: 'why', replace: true });
-              }, 20);
-            }}
+          <button
+            type="button"
+            onClick={() => scrollToSection('why')}
             className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }), 'group')}
             aria-label="Read more"
           >
             <span className="font-normal opacity-70 group-hover:opacity-100">{t('about:why')}</span>
             <ArrowDownIcon size={16} className="ml-2 animate-bounce opacity-70 group-hover:opacity-100" />
-          </Link>
+          </button>
         </Hero>
 
         <div className="my-12">

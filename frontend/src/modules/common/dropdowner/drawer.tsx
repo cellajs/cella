@@ -1,5 +1,5 @@
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
-import { useEffect } from 'react';
+import { useEventListener } from '~/hooks/use-event-listener';
 import { type InternalDropdown, useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '~/modules/ui/drawer';
 
@@ -15,10 +15,7 @@ export default function DropdownerDrawer({ dropdown }: { dropdown: InternalDropd
   };
 
   // Close dropdown drawer when user navigates away
-  useEffect(() => {
-    window.addEventListener('popstate', closeDialog);
-    return () => window.removeEventListener('popstate', closeDialog);
-  }, []);
+  useEventListener('popstate', closeDialog);
 
   return (
     <Drawer key={id} open={true} onOpenChange={onOpenChange} onClose={closeDialog} noBodyStyles>

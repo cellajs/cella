@@ -4,7 +4,7 @@ import { lazy, Suspense, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FocusViewContainer } from '~/modules/common/focus-view';
 import { PageHeader } from '~/modules/common/page/header';
-import { PageNav } from '~/modules/common/page/nav';
+import { PageTabNav } from '~/modules/common/page/tab-nav';
 import { toaster } from '~/modules/common/toaster/service';
 import { organizationQueryOptions, useOrganizationUpdateMutation } from '~/modules/organization/query';
 import { OrganizationRoute } from '~/routes/organization-routes';
@@ -56,7 +56,7 @@ function OrganizationPage({ organizationId }: { organizationId: string }) {
           )
         }
       />
-      <PageNav
+      <PageTabNav
         title={organization.name}
         avatar={organization}
         parentRouteId={OrganizationRoute.id}

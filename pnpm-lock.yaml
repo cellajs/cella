@@ -473,9 +473,6 @@ importers:
       '@floating-ui/react':
         specifier: ^0.27.17
         version: 0.27.17(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      '@github/mini-throttle':
-        specifier: ^2.1.1
-        version: 2.1.1
       '@hookform/resolvers':
         specifier: ^5.2.2
         version: 5.2.2(react-hook-form@7.71.1(react@19.2.4))(zod@4.3.6)
@@ -770,6 +767,9 @@ importers:
       use-count-up:
         specifier: ^3.0.1
         version: 3.0.1(react@19.2.4)
+      use-debounce:
+        specifier: ^10.1.0
+        version: 10.1.0(react@19.2.4)
       vaul:
         specifier: ^1.1.2
         version: 1.1.2(@types/react-dom@19.2.3(@types/react@19.2.10))(@types/react@19.2.10)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -2289,9 +2289,6 @@ packages:
 
   '@getbrevo/brevo@3.0.1':
     resolution: {integrity: sha512-BS5hlgb9qPHhXqjV+VbEOciygnsEVZV8BgoX+JYpD+I+R9u3U05y/euqdmk8nATfcEUCUlQq+aWdWOWTF4cEjQ==}
-
-  '@github/mini-throttle@2.1.1':
-    resolution: {integrity: sha512-KtOPaB+FiKJ6jcKm9UKyaM5fPURHGf+xcp+b4Mzoi81hOc6M1sIGpMZMAVbNzfa2lW5+RPGKq888Px0j76OZ/A==}
 
   '@grpc/grpc-js@1.14.3':
     resolution: {integrity: sha512-Iq8QQQ/7X3Sac15oB6p0FmUg/klxQvXLeileoqrTRGJYLV+/9tubbr9ipz0GKHjmXVsgFPo/+W+2cA8eNcR+XA==}
@@ -10900,6 +10897,12 @@ packages:
     peerDependencies:
       react: '>=16.8.0'
 
+  use-debounce@10.1.0:
+    resolution: {integrity: sha512-lu87Za35V3n/MyMoEpD5zJv0k7hCn0p+V/fK2kWD+3k2u3kOCwO593UArbczg1fhfs2rqPEnHpULJ3KmGdDzvg==}
+    engines: {node: '>= 16.0.0'}
+    peerDependencies:
+      react: '*'
+
   use-elapsed-time@3.0.2:
     resolution: {integrity: sha512-2EY9lJ5DWbAvT8wWiEp6Ztnl46DjXz2j78uhWbXaz/bg3OfpbgVucCAlcN8Bih6hTJfFTdVYX9L6ySMn5py/wQ==}
     peerDependencies:
@@ -13217,8 +13220,6 @@ snapshots:
       - debug
       - jiti
       - supports-color
-
-  '@github/mini-throttle@2.1.1': {}
 
   '@grpc/grpc-js@1.14.3':
     dependencies:
@@ -22886,6 +22887,10 @@ snapshots:
     dependencies:
       react: 19.2.4
       use-elapsed-time: 3.0.2(react@19.2.4)
+
+  use-debounce@10.1.0(react@19.2.4):
+    dependencies:
+      react: 19.2.4
 
   use-elapsed-time@3.0.2(react@19.2.4):
     dependencies:

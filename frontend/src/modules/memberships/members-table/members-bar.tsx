@@ -8,7 +8,12 @@ import Export from '~/modules/common/data-table/export';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
 import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
 import TableCount from '~/modules/common/data-table/table-count';
-import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
+import {
+  FilterBarActions,
+  FilterBarFilters,
+  FilterBarSearch,
+  TableFilterBar,
+} from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
 import type { BaseTableBarProps } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -170,15 +175,18 @@ export const MembersTableBar = ({
 
           <div className="sm:grow" />
 
-          <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-left max-sm:fade-in max-sm:duration-300">
+          <FilterBarSearch>
             <TableSearch name="memberSearch" value={q} setQuery={onSearch} />
+          </FilterBarSearch>
+          {/* TODO allow dropdowner here or a variantion of of so it can be shown as drawer? perhaps combobox? */}
+          <FilterBarFilters>
             <SelectRole
               entity
               value={role === undefined ? 'all' : role}
               onChange={onRoleChange}
               className="h-10 w-auto sm:min-w-32"
             />
-          </FilterBarContent>
+          </FilterBarFilters>
         </TableFilterBar>
 
         {/* Columns view dropdown */}

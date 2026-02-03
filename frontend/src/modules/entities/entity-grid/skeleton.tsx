@@ -1,11 +1,11 @@
-import useMounted from '~/hooks/use-mounted';
+import useMountedState from '~/hooks/use-mounted-state';
 import { Skeleton } from '~/modules/ui/skeleton';
 
 /**
  * Renders a loading skeleton for the entity grid.
  */
 export function EntityGridSkeleton() {
-  const { hasStarted } = useMounted();
+  const { hasStarted } = useMountedState();
 
   const items = Array.from({ length: 6 }, () => ({
     membersCount: Math.floor(Math.random() * 4) + 1,

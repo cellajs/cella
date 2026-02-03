@@ -1,7 +1,8 @@
 import { useIsFetching } from '@tanstack/react-query';
 import { HomeIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { useMounted } from '~/hooks/use-mounted';
+import { useDebounce } from '~/hooks/use-debounce';
+import { useMountedState } from '~/hooks/use-mounted-state';
 import Logo from '~/modules/common/logo';
 import Spinner from '~/modules/common/spinner';
 import { useNavigationStore } from '~/store/navigation';
@@ -12,9 +13,10 @@ import { cn } from '~/utils/cn';
  * Shows logo for 3 seconds on startup (scales up and fades in), then transitions out
  * before the home icon appears. During subsequent loading states, shows a spinner.
  * Skips the initial logo animation if the menu sheet is already open.
+ * Uses debounced loading state to avoid flickering for quick loads.
  */
 function AppNavLoader({ className }: { className?: string }) {
-  const { hasLoaded } = useMounted();
+  const { hasLoaded } = useMountedState();
   const navSheetOpen = useNavigationStore((state) => state.navSheetOpen);
 
   const isFetching = useIsFetching({
@@ -25,7 +27,10 @@ function AppNavLoader({ className }: { className?: string }) {
   });
 
   const navLoading = useNavigationStore((state) => state.navLoading);
-  const isLoading = isFetching > 0 || navLoading;
+  const isLoadingRaw = isFetching > 0 || navLoading;
+
+  // Debounce loading state: delays showing spinner but hides it instantly
+  const isLoading = useDebounce(isLoadingRaw, 200, { immediateValue: false });
 
   // Skip logo phase if menu sheet is open or initial load completed
   const showLogo = !hasLoaded && navSheetOpen !== 'menu';

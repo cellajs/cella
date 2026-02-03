@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import useMounted from '~/hooks/use-mounted';
+import useMountedState from '~/hooks/use-mounted-state';
 import { useNavTabs } from '~/hooks/use-nav-tabs';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import StickyBox from '~/modules/common/sticky-box';
@@ -37,7 +37,7 @@ interface Props {
   className?: string;
 }
 
-export const PageNav = ({
+export const PageTabNav = ({
   tabs: explicitTabs,
   parentRouteId,
   filterTabIds,
@@ -48,7 +48,7 @@ export const PageNav = ({
 }: Props) => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm', false);
-  const { hasStarted } = useMounted();
+  const { hasStarted } = useMountedState();
 
   // Use explicit tabs or auto-generate from parent route's children
   const autoTabs = useNavTabs(parentRouteId ?? '', filterTabIds);
@@ -85,7 +85,7 @@ export const PageNav = ({
       <div id="tabs-position" ref={inViewRef} />
       <StickyBox
         className={cn(
-          'group/sticky max-sm:overflow-x-auto block text-center [scrollbar-width:none] [&::-webkit-scrollbar]:hidden gap-1 border-b bg-background/75 backdrop-blur-xs z-80',
+          'group/sticky block text-center gap-1 border-b bg-background/75 backdrop-blur-xs z-80',
           className,
         )}
       >
@@ -101,50 +101,54 @@ export const PageNav = ({
           )}
           {title && <div className="truncate leading-5 font-semibold text-sm max-w-42 sm:block">{title}</div>}
         </div>
-        <div className="inline-flex min-w-max gap-1 px-1 sm:justify-center sm:flex">
-          {tabs.map(
-            (
-              { id, path, label, search = {}, params = true, activeOptions = { exact: true, includeSearch: false } },
-              index,
-            ) => (
-              <Link
-                key={id}
-                id={`tab-${id}`}
-                ref={(el) => {
-                  if (el) tabRefs.current[id] = el;
-                }}
-                resetScroll={false}
-                className="relative last:mr-4 p-2 lg:px-4 rounded-sm font-medium focus-effect group"
-                to={path}
-                draggable="false"
-                data-active={fallbackToFirst && index === 0 ? true : undefined}
-                params={params}
-                search={search}
-                activeOptions={activeOptions}
-                activeProps={{ 'data-active': true }}
-                onClick={(e) => updateScrollPosition(e.currentTarget)}
-              >
-                {({ isActive }) => {
-                  const showAsActive = isActive || (fallbackToFirst && index === 0);
-                  if (showAsActive) scrollTabIntoView(id);
+        <div className="overflow-x-auto max-w-screen [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="inline-flex min-w-max gap-1 px-1 sm:justify-center sm:flex">
+            {tabs.map(
+              (
+                { id, path, label, search = {}, params = true, activeOptions = { exact: true, includeSearch: false } },
+                index,
+              ) => (
+                <Link
+                  key={id}
+                  id={`tab-${id}`}
+                  ref={(el) => {
+                    if (el) tabRefs.current[id] = el;
+                  }}
+                  resetScroll={false}
+                  className="relative last:mr-4 p-2 lg:px-4 rounded-sm font-medium focus-effect ring-inset ring-offset-0 group"
+                  to={path}
+                  draggable="false"
+                  data-active={fallbackToFirst && index === 0 ? true : undefined}
+                  params={params}
+                  search={search}
+                  activeOptions={activeOptions}
+                  activeProps={{ 'data-active': true }}
+                  onClick={(e) => updateScrollPosition(e.currentTarget)}
+                >
+                  {({ isActive }) => {
+                    const showAsActive = isActive || (fallbackToFirst && index === 0);
+                    if (showAsActive) scrollTabIntoView(id);
 
-                  return (
-                    <>
-                      <span className="block group-active:translate-y-[.05rem]">{t(label)}</span>
-                      {showAsActive && (
-                        <motion.span
-                          initial={false}
-                          layoutId={layoutId}
-                          transition={{ type: 'spring', duration: 0.4, bounce: 0, delay: 0.1 }}
-                          className="h-1 bg-primary rounded-sm w-[calc(100%-1rem)] absolute bottom-0 left-2"
-                        />
-                      )}
-                    </>
-                  );
-                }}
-              </Link>
-            ),
-          )}
+                    return (
+                      <>
+                        <span className="block group-active:translate-y-[.05rem]">{t(label)}</span>
+                        {showAsActive && hasStarted && (
+                          <motion.span
+                            layoutId={layoutId}
+                            transition={{ type: 'spring', duration: 0.4, bounce: 0, delay: 0.1 }}
+                            className="h-1 bg-primary rounded-sm w-[calc(100%-1rem)] absolute bottom-0 left-2"
+                          />
+                        )}
+                        {showAsActive && !hasStarted && (
+                          <span className="h-1 bg-primary rounded-sm w-[calc(100%-1rem)] absolute bottom-0 left-2" />
+                        )}
+                      </>
+                    );
+                  }}
+                </Link>
+              ),
+            )}
+          </div>
         </div>
       </StickyBox>
     </>

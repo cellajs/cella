@@ -3,7 +3,7 @@ import type { CSSProperties } from 'react';
 import { lazy, Suspense } from 'react';
 import useBodyClass from '~/hooks/use-body-class';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import useMounted from '~/hooks/use-mounted';
+import useMountedState from '~/hooks/use-mounted-state';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { NavButton } from '~/modules/navigation/nav-buttons';
 import StopImpersonation from '~/modules/navigation/stop-impersonation';
@@ -51,7 +51,7 @@ interface SidebarNavProps {
  * Data attributes control non-width styling (opacity, position, pointer-events).
  */
 export function SidebarNav({ triggerNavItem }: SidebarNavProps) {
-  const { hasStarted } = useMounted();
+  const { hasStarted } = useMountedState();
   const isDesktop = useBreakpoints('min', 'xl', true);
 
   const theme = useUIStore((state) => state.theme);

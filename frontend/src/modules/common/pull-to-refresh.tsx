@@ -1,6 +1,6 @@
 import { CircleIcon } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useBodyClassPresence } from '~/hooks/use-body-class-presence';
+import { useUIStore } from '~/store/ui';
 
 type Props = {
   onRefresh: () => void | Promise<void>;
@@ -18,9 +18,9 @@ function PullToRefresh({ onRefresh, refreshThreshold = 100, maximumPullLength = 
 
   const isPulling = pullPosition > 0;
 
-  // If dialoger, dropdowner or sheeter are open, disable pull to refresh
-  const isUIBlocking = useBodyClassPresence(['dropdowner-open', 'sheeter-open', 'dialoger-open']);
-  if (isUIBlocking) isDisabled = true;
+  // Disable when UI is locked (dialog, dropdown, sheet open)
+  const isUILocked = useUIStore((state) => state.uiLocks.length > 0);
+  if (isUILocked) isDisabled = true;
 
   const startPull = useCallback(
     (e: TouchEvent) => {

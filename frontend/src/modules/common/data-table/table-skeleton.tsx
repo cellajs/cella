@@ -1,4 +1,4 @@
-import useMounted from '~/hooks/use-mounted';
+import useMountedState from '~/hooks/use-mounted-state';
 import { Skeleton } from '~/modules/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~/modules/ui/table';
 
@@ -18,7 +18,7 @@ export const DataTableSkeleton = ({
   shrinkTable = false,
 }: DataTableSkeletonProps) => {
   const renderCellHeight = cellHeight - 18;
-  const { hasStarted } = useMounted();
+  const { hasStarted } = useMountedState();
 
   return (
     <div

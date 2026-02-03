@@ -7,6 +7,7 @@ import { SheeterSheet } from '~/modules/common/sheeter/sheet';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import router from '~/routes/router';
 import { useNavigationStore } from '~/store/navigation';
+import { useUIStore } from '~/store/ui';
 
 /**
  * Sheeter provider to render drawers on mobile, sheets on desktop.
@@ -16,8 +17,17 @@ import { useNavigationStore } from '~/store/navigation';
 export const Sheeter = () => {
   const isMobile = useBreakpoints('max', 'sm');
   const sheets = useSheeter((state) => state.sheets);
+  const { lockUI, unlockUI } = useUIStore();
 
   useBodyClass({ 'sheeter-open': sheets.length > 0 });
+
+  // Lock UI when sheets are open
+  useEffect(() => {
+    if (sheets.length > 0) {
+      lockUI('sheeter');
+      return () => unlockUI('sheeter');
+    }
+  }, [sheets.length > 0]);
 
   // Close sheets that morph between drawer/sheet (no container) on resize
   const getItemsToCloseOnResize = useCallback(

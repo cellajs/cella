@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { memo } from 'react';
-import { scrollToSectionById } from '~/hooks/scroll-spy-store';
+import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
 import type { GenOperationSummary } from '~/modules/docs/types';
 import { Badge } from '~/modules/ui/badge';
 import { buttonVariants } from '~/modules/ui/button';

@@ -1,4 +1,4 @@
-import { createRoute, useLoaderData } from '@tanstack/react-router';
+import { createRoute, useParams } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
 import ErrorNotice from '~/modules/common/error-notice';
 import {
@@ -181,16 +181,15 @@ export const DocsPagesRoute = createRoute({
 export const DocsPageRoute = createRoute({
   path: '/page/$id',
   staticData: { isAuth: false },
-  loader: ({ params: { id } }) => ({ pageId: id }),
   head: () => ({ meta: [{ title: appTitle('Page') }] }),
   getParentRoute: () => DocsLayoutRoute,
   errorComponent: ({ error }) => <ErrorNotice boundary="public" error={error} homePath="/docs" />,
   notFoundComponent: () => <ErrorNotice boundary="public" error={new Error('Page not found')} homePath="/docs" />,
   component: () => {
-    const { pageId } = useLoaderData({ from: DocsPageRoute.id });
+    const { id } = useParams({ from: DocsPageRoute.id });
     return (
       <Suspense>
-        <ViewPage key={pageId} pageId={pageId} />
+        <ViewPage key={id} pageId={id} />
       </Suspense>
     );
   },
@@ -202,16 +201,15 @@ export const DocsPageRoute = createRoute({
 export const DocsPageEditRoute = createRoute({
   path: '/page/$id/edit',
   staticData: { isAuth: false },
-  loader: ({ params: { id } }) => ({ pageId: id }),
   head: () => ({ meta: [{ title: appTitle('Edit Page') }] }),
   getParentRoute: () => DocsLayoutRoute,
   errorComponent: ({ error }) => <ErrorNotice boundary="public" error={error} homePath="/docs" />,
   notFoundComponent: () => <ErrorNotice boundary="public" error={new Error('Page not found')} homePath="/docs" />,
   component: () => {
-    const { pageId } = useLoaderData({ from: DocsPageEditRoute.id });
+    const { id } = useParams({ from: DocsPageEditRoute.id });
     return (
       <Suspense>
-        <UpdatePage key={pageId} pageId={pageId} />
+        <UpdatePage key={id} pageId={id} />
       </Suspense>
     );
   },

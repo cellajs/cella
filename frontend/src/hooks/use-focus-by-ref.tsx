@@ -1,12 +1,20 @@
 import { useEffect, useRef } from 'react';
 
+interface UseFocusByRefOptions {
+  /** When provided, focuses the element when trigger becomes true */
+  trigger?: boolean;
+  /** Delay in ms before focusing (useful for animations) */
+  delay?: number;
+}
+
 /**
  * Hook to provide focus control for an element.
- * Focus is only set on mount if window width is greater than 700px.
- *
- * @returns A ref to attach to an element and a function to manually re-trigger focus.
+ * Focus is only set if window width is >= 640px.
+ * Without options: focuses on mount.
+ * With trigger: focuses when trigger becomes true.
  */
-function useFocusByRef() {
+function useFocusByRef(options?: UseFocusByRefOptions) {
+  const { trigger, delay = 0 } = options ?? {};
   const focusRef = useRef<HTMLInputElement | null>(null);
 
   const setFocus = () => {
@@ -16,8 +24,18 @@ function useFocusByRef() {
   };
 
   useEffect(() => {
-    if (window.innerWidth >= 640) setFocus();
-  }, [setFocus]);
+    if (trigger === undefined) {
+      // Original behavior: focus on mount
+      if (window.innerWidth >= 640) setFocus();
+    } else if (trigger) {
+      // Focus when trigger becomes true
+      if (delay) {
+        const timer = setTimeout(setFocus, delay);
+        return () => clearTimeout(timer);
+      }
+      setFocus();
+    }
+  }, [trigger, delay]);
 
   return { focusRef, setFocus };
 }

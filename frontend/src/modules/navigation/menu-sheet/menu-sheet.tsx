@@ -5,18 +5,18 @@ import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop
 import { Link } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import { ArrowLeftIcon, SearchIcon } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { menuSectionsSchema } from '~/menu-config';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
-import type { UserMenuItem } from '~/modules/me/types';
+import Spinner from '~/modules/common/spinner';
 import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
 import { AccountSheet } from '~/modules/navigation/account-sheet';
 import { navSheetClassName } from '~/modules/navigation/app-nav';
 import { MenuSheetHeader } from '~/modules/navigation/menu-sheet/header';
-import { getRelativeItemOrder, isPageData } from '~/modules/navigation/menu-sheet/helpers';
+import { filterMenuItems, getRelativeItemOrder, isPageData } from '~/modules/navigation/menu-sheet/helpers';
 import { MenuSheetItem } from '~/modules/navigation/menu-sheet/item';
 import { MenuSheetSection } from '~/modules/navigation/menu-sheet/section';
 import { Button, buttonVariants } from '~/modules/ui/button';
@@ -35,12 +35,13 @@ export const MenuSheet = () => {
   const { mutateAsync } = useMemberUpdateMutation();
 
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [searchResults, setSearchResults] = useState<UserMenuItem[]>([]);
   const [isSearchActive, setSearchActive] = useState<boolean>(false);
 
   const accountButtonRef = useRef(null);
 
-  const { menu } = useMenu(user.id, { detailedMenu });
+  const { menu, isLoading } = useMenu(user?.id, { detailedMenu });
+
+  const searchResults = useMemo(() => filterMenuItems(menu, searchTerm), [menu, searchTerm]);
 
   // monitoring drop event
   useEffect(() => {
@@ -91,9 +92,12 @@ export const MenuSheet = () => {
     );
   }, [menu]);
 
+  // Show skeleton when loading or no user data yet
+  if (isLoading || !user) return <Spinner />;
+
   const searchResultsListItems = () => {
     return searchResults.length > 0
-      ? searchResults.map((item: UserMenuItem) => <MenuSheetItem key={item.id} searchResults item={item} />)
+      ? searchResults.map((item) => <MenuSheetItem key={item.id} searchResults item={item} />)
       : [];
   };
 
@@ -144,10 +148,8 @@ export const MenuSheet = () => {
       </div>
 
       <MenuSheetHeader
-        menu={menu}
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
-        searchResultsChange={setSearchResults}
         isSearchActive={isSearchActive}
         setSearchActive={setSearchActive}
       />

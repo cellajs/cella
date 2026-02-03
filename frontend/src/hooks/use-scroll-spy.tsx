@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { registerSections, scrollToSectionById, unregisterSections } from './scroll-spy-store';
+import { registerSections, scrollToSectionById, unregisterSections } from './use-scroll-spy-store';
 
 /**
  * Register sections for scroll spy tracking. Hash is auto-written by the store.

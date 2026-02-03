@@ -1,6 +1,6 @@
 import { Link, Outlet } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
-import useMounted from '~/hooks/use-mounted';
+import useMountedState from '~/hooks/use-mounted-state';
 import { type FooterLinkProps, FooterLinks } from '~/modules/common/app/app-footer';
 import Logo from '~/modules/common/logo';
 
@@ -14,7 +14,7 @@ const authFooterLinks: FooterLinkProps[] = [
 const BgAnimation = lazy(() => import('~/modules/common/bg-animation'));
 
 function AuthLayout() {
-  const { hasStarted, hasWaited } = useMounted();
+  const { hasStarted, hasWaited } = useMountedState();
 
   return (
     <div

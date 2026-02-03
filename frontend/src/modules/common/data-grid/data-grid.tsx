@@ -91,6 +91,8 @@ interface EditCellState<R> extends Position {
   readonly originalRow: R;
 }
 
+// TODO seems to be heavy when resizing browser tab, please investigate
+
 /** Arguments passed to onRowsEndApproaching callback */
 export interface RowsEndApproachingArgs {
   /** Index of the last row being rendered (with overscan) */

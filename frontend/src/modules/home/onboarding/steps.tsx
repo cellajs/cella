@@ -3,7 +3,7 @@ import { XIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Organization } from '~/api.gen';
-import useMounted from '~/hooks/use-mounted';
+import useMountedState from '~/hooks/use-mounted-state';
 import { CallbackArgs } from '~/modules/common/data-table/types';
 import { Step, Stepper } from '~/modules/common/stepper';
 import StepperFooter from '~/modules/home/onboarding/footer';
@@ -27,7 +27,7 @@ interface OnboardingProps {
 
 function Onboarding({ onboarding = 'start', setOnboardingState }: OnboardingProps) {
   const { user } = useUserStore();
-  const { hasStarted } = useMounted();
+  const { hasStarted } = useMountedState();
   const { t } = useTranslation();
 
   const [steps, setSteps] = useState(onboardingSteps);
@@ -79,7 +79,7 @@ function Onboarding({ onboarding = 'start', setOnboardingState }: OnboardingProp
                     )}
                     <CardContent>
                       {id === 'profile' && (
-                        <UpdateUserForm user={user} hiddenFields={['email', 'newsletter', 'slug', 'language']}>
+                        <UpdateUserForm user={user} compact>
                           <StepperFooter setOnboardingState={setOnboardingState} />
                         </UpdateUserForm>
                       )}

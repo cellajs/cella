@@ -1,6 +1,6 @@
 import type { AnyRoute } from '@tanstack/react-router';
 import { useMemo } from 'react';
-import type { PageTab } from '~/modules/common/page/nav';
+import type { PageTab } from '~/modules/common/page/tab-nav';
 import router from '~/routes/router';
 
 /**

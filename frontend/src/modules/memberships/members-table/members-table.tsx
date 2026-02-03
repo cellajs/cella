@@ -65,7 +65,16 @@ function MembersTable({ entity, isSheet = false, children }: MembersTableWrapper
     hasNextPage,
   } = useInfiniteQuery({
     ...queryOptions,
-    select: ({ pages }) => pages.flatMap(({ items }) => items),
+    // Deduplicate by id to prevent React key warnings during filter transitions
+    select: ({ pages }) => {
+      const allItems = pages.flatMap(({ items }) => items);
+      const seen = new Set<string>();
+      return allItems.filter((item) => {
+        if (seen.has(item.id)) return false;
+        seen.add(item.id);
+        return true;
+      });
+    },
   });
 
   // Update rows
@@ -105,10 +114,8 @@ function MembersTable({ entity, isSheet = false, children }: MembersTableWrapper
     [rows],
   );
 
-  // Memoize the Set of selected row IDs to prevent unnecessary re-renders
   const selectedRowIds = useMemo(() => new Set(selected.map((s) => s.id)), [selected]);
 
-  // Memoize visible columns to prevent recalculation on every render
   const visibleColumns = useMemo(() => columns.filter((column) => column.visible), [columns]);
 
   return (

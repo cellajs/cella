@@ -2,7 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { ChevronDownIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 import { memo } from 'react';
-import { scrollToSectionById } from '~/hooks/scroll-spy-store';
+import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
 import type { GenOperationSummary, GenTagSummary } from '~/modules/docs/types';
 import { buttonVariants } from '~/modules/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';

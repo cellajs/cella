@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { isLeader } from './tab-coordinator';
 
 /** Options for useVisibilityReconnect hook. */
@@ -18,19 +18,19 @@ export interface UseVisibilityReconnectOptions {
 export function useVisibilityReconnect(options: UseVisibilityReconnectOptions): void {
   const { reconnect, eventSourceRef, debugLabel = 'SSE' } = options;
 
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (
-        document.visibilityState === 'visible' &&
-        isLeader() &&
-        eventSourceRef.current?.readyState === EventSource.CLOSED
-      ) {
-        console.debug(`[${debugLabel}] Leader tab visible, reconnecting...`);
-        reconnect();
-      }
-    };
-
-    window.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => window.removeEventListener('visibilitychange', handleVisibilityChange);
+  const handleVisibilityChange = useCallback(() => {
+    if (
+      document.visibilityState === 'visible' &&
+      isLeader() &&
+      eventSourceRef.current?.readyState === EventSource.CLOSED
+    ) {
+      console.debug(`[${debugLabel}] Leader tab visible, reconnecting...`);
+      reconnect();
+    }
   }, [reconnect, eventSourceRef, debugLabel]);
+
+  useEffect(() => {
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [handleVisibilityChange]);
 }

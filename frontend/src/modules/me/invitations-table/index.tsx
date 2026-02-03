@@ -20,7 +20,6 @@ function InvitationsTable() {
   // Build columns
   const columns = useColumns();
 
-  // Memoize visible columns to prevent recalculation on every render
   const visibleColumns = useMemo(() => columns.filter((column) => column.visible), [columns]);
 
   const queryOptions = meInvitationsQueryOptions();

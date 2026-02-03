@@ -8,7 +8,7 @@ import Export from '~/modules/common/data-table/export';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
 import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
 import TableCount from '~/modules/common/data-table/table-count';
-import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
+import { FilterBarActions, FilterBarSearch, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
 import type { BaseTableBarProps, CallbackArgs } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -148,9 +148,9 @@ export const RequestsTableBar = ({
 
         <div className="sm:grow" />
 
-        <FilterBarContent>
+        <FilterBarSearch>
           <TableSearch name="requestSearch" value={q} setQuery={onSearch} />
-        </FilterBarContent>
+        </FilterBarSearch>
       </TableFilterBar>
 
       {/* Columns view */}

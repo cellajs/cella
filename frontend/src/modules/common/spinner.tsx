@@ -1,9 +1,9 @@
 import { Loader2Icon } from 'lucide-react';
-import useMounted from '~/hooks/use-mounted';
+import useMountedState from '~/hooks/use-mounted-state';
 import { cn } from '~/utils/cn';
 
 function Spinner({ className = '', noDelay = false }) {
-  const { hasStarted } = useMounted();
+  const { hasStarted } = useMountedState();
 
   return (
     <div

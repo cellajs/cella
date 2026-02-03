@@ -133,6 +133,7 @@ const organizationRouteHandlers = app
     const userSystemRole = getContextUserSystemRole();
     const isSystemAdmin = userSystemRole === 'admin' && !userId;
 
+    // TODO We should only allow this if you have a relationship to the target user
     const targetUserId = userId ?? user.id;
 
     // Base membership join key (who we're attaching membership for)

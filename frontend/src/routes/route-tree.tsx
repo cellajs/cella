@@ -24,7 +24,7 @@ import {
 } from '~/routes/route-tree.base';
 
 // App-specific route imports
-// import { CustomRoute } from '~/routes/custom-routes';
+// ..
 
 /**
  * The route tree for the entire app.

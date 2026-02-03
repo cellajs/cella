@@ -2,6 +2,7 @@ import { SuggestionMenu } from '@blocknote/core/extensions';
 import { type DefaultReactSuggestionItem, type SuggestionMenuProps, useExtension } from '@blocknote/react';
 import { useEffect, useRef } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { useEventListener } from '~/hooks/use-event-listener';
 import { customSlashIndexedItems } from '~/modules/common/blocknote/blocknote-config';
 import type { CustomBlockTypes } from '~/modules/common/blocknote/types';
 import { DialogTitle } from '~/modules/ui/dialog';
@@ -45,13 +46,8 @@ export const slashMenu = (
     onItemClick?.(item);
   };
 
-  useEffect(() => {
-    // Ensure that all items are loaded
-    if (loadingState !== 'loaded') return;
-
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [loadingState]);
+  // Ensure that all items are loaded before listening for keyboard shortcuts
+  useEventListener('keydown', handleKeyPress, { enabled: loadingState === 'loaded' });
 
   // To be able to use in sheet
   useEffect(() => {
