@@ -1,4 +1,3 @@
-import type { EnsureQueryDataOptions } from '@tanstack/react-query';
 import { createRoute, useLoaderData } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
 import ErrorNotice from '~/modules/common/error-notice';
@@ -17,27 +16,12 @@ import {
 } from '~/modules/docs/search-params-schemas';
 import { pagesQueryOptions } from '~/modules/page/query';
 import { pagesRouteSearchParamsSchema } from '~/modules/page/search-params-schemas';
+import { ensureQueryDataWithFallback } from '~/query/basic';
 import { queryClient } from '~/query/query-client';
 import { PublicLayoutRoute } from '~/routes/base-routes';
 import appTitle from '~/utils/app-title';
 import { noDirectAccess } from '~/utils/no-direct-access';
 import { stripParams } from '~/utils/strip-search-params';
-
-/**
- * Ensures query data is available, falling back to cache if fetch fails (offline support).
- * Returns undefined if neither fetch nor cache succeeds.
- * TODO this doenst belong here and I wonder if its necessary at all since we have `offlineFirst` networkMode
- */
-async function ensureQueryDataWithFallback<T, TQueryKey extends readonly unknown[]>(
-  options: EnsureQueryDataOptions<T, Error, T, TQueryKey>,
-): Promise<T | undefined> {
-  try {
-    return await queryClient.ensureQueryData(options);
-  } catch {
-    // If fetch fails (e.g., offline), try to return cached data
-    return queryClient.getQueryData(options.queryKey);
-  }
-}
 
 const DocsLayout = lazy(() => import('~/modules/docs/docs-layout'));
 const OverviewPage = lazy(() => import('~/modules/docs/overview-page'));

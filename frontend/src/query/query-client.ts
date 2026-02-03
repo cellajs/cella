@@ -36,7 +36,7 @@ export const queryClient = new QueryClient({
 
       refetchOnMount: false,
       refetchOnWindowFocus: false,
-      refetchOnReconnect: false,
+      refetchOnReconnect: true, // Automatically refetch when coming back online
 
       retry: false,
     },

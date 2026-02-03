@@ -11,6 +11,7 @@
 export { compareQueryKeys } from './compare-query-keys';
 export { createOptimisticEntity, type EntityFromSchema, getSchemaDefaults } from './create-optimistic';
 export { createEntityKeys, type StandardEntityKeys } from './create-query-keys';
+export { ensureQueryDataWithFallback, prefetchQuery } from './ensure-query-data';
 export {
   type EntityQueryKeys,
   getEntityQueryKeys,
@@ -37,7 +38,6 @@ export {
   isInfiniteQueryData,
   isQueryData,
 } from './mutate-query';
-export { prefetchQuery } from './prefetch-query';
 export type {
   ArbitraryEntityQueryData,
   EntityIdAndType,

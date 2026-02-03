@@ -99,7 +99,12 @@ class AttachmentUploadService {
     }
 
     for (const blob of blobs) {
-      await this.syncSingleBlob(blob);
+      try {
+        await this.syncSingleBlob(blob);
+      } catch (error) {
+        console.error(`[UploadService] Failed to sync blob ${blob.id}:`, error);
+        await attachmentStorage.updateUploadStatus(blob.id, 'failed');
+      }
     }
   }
 

@@ -206,8 +206,9 @@ class AttachmentDownloadService {
       const attachment = findInListCache<Attachment>(attachmentQueryKeys.list.base, attachmentId);
 
       if (!attachment) {
-        console.debug(`[DownloadService] Attachment ${attachmentId} not found in cache, skipping`);
-        await attachmentStorage.updateDownloadStatus(attachmentId, 'skipped', 'Not found in cache');
+        console.debug(`[DownloadService] Attachment ${attachmentId} not found in cache, will retry later`);
+        // Leave in 'pending' state for retry - don't mark as skipped
+        await attachmentStorage.updateDownloadStatus(attachmentId, 'pending', 'Waiting for cache');
         return;
       }
 
