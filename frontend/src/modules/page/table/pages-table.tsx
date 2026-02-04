@@ -8,7 +8,7 @@ import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { FocusViewContainer } from '~/modules/common/focus-view';
-import { pagesLimit, pagesQueryOptions } from '~/modules/page/query';
+import { pagesLimit, pagesListQueryOptions } from '~/modules/page/query';
 import type { PagesRouteSearchParams } from '~/modules/page/types';
 import { PagesTableBar } from './pages-bar';
 import { usePagesTableColumns } from './pages-columns';
@@ -36,7 +36,7 @@ function PagesTable() {
   const { columns, visibleColumns, setColumns } = usePagesTableColumns(isCompact);
   const { sortColumns, setSortColumns } = useSortColumns(sort, order, setSearch);
 
-  const queryOptions = pagesQueryOptions({ q, sort, order, limit });
+  const queryOptions = pagesListQueryOptions({ q, sort, order, limit });
 
   // Infinite query for paginated data
   const {

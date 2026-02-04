@@ -48,9 +48,9 @@ export function PendingMembershipsTable({ entity }: PendingMembershipsTableProps
   const visibleColumns = useMemo(() => columns.filter((column) => column.visible), [columns]);
 
   const queryOptions = pendingMembershipsQueryOptions({
-    idOrSlug: entity.slug,
+    entityId: entity.id,
     entityType: entity.entityType,
-    orgIdOrSlug: entity.organizationId || entity.id,
+    orgId: entity.organizationId || entity.id,
     ...search,
     limit,
   });

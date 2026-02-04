@@ -1,17 +1,6 @@
-/**
- * Basic React Query utilities.
- *
- * Common utilities for queries and mutations:
- * - Query key factories
- * - Infinite query helpers
- * - Cache manipulation utilities
- * - Prefetch helpers
- */
-
 export { compareQueryKeys } from './compare-query-keys';
 export { createOptimisticEntity, type EntityFromSchema, getSchemaDefaults } from './create-optimistic';
 export { createEntityKeys, type StandardEntityKeys } from './create-query-keys';
-export { ensureQueryDataWithFallback, prefetchQuery } from './ensure-query-data';
 export {
   type EntityQueryKeys,
   getEntityQueryKeys,
@@ -28,7 +17,7 @@ export {
   changeQueryData,
   isArbitraryQueryData,
 } from './helpers';
-export { baseInfiniteQueryOptions, infiniteQueryUseCachedIfCompleteOptions } from './infinite-query-options';
+export { baseInfiniteQueryOptions } from './infinite-query-options';
 export { invalidateIfLastMutation, invalidateOnMembershipChange, shouldSkipInvalidation } from './invalidation-helpers';
 export {
   formatUpdatedCacheData,
@@ -49,4 +38,3 @@ export type {
 } from './types';
 export { useInfiniteQueryTotal } from './use-infinite-query-total';
 export { useMutateQueryData } from './use-mutate-query-data';
-export { getPendingMutationsCount, usePendingMutations, usePendingMutationsCount } from './use-pending-mutations';

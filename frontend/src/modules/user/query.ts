@@ -3,11 +3,9 @@ import { appConfig } from 'config';
 import type { User } from '~/api.gen';
 import { deleteUsers, type GetUsersData, getUser, getUsers, type UpdateUserData, updateUser } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
-import type { UserWithRoleAndMemberships } from '~/modules/user/types';
 import {
   baseInfiniteQueryOptions,
   createEntityKeys,
-  infiniteQueryUseCachedIfCompleteOptions,
   invalidateIfLastMutation,
   useMutateQueryData,
 } from '~/query/basic';
@@ -19,18 +17,18 @@ const keys = createEntityKeys<UserFilters>('user');
 export const userQueryKeys = keys;
 
 /**
- * Query options for fetching a user by ID or slug.
+ * Query options for fetching a user by ID.
  */
-export const userQueryOptions = (idOrSlug: string) =>
+export const userQueryOptions = (id: string) =>
   queryOptions({
-    queryKey: keys.detail.byId(idOrSlug),
-    queryFn: () => getUser({ path: { idOrSlug } }),
+    queryKey: keys.detail.byId(id),
+    queryFn: () => getUser({ path: { id } }),
   });
 
 /**
  * Infinite query options to get a paginated list of users.
  */
-export const usersQueryOptions = ({
+export const usersListQueryOptions = ({
   q = '',
   sort = 'createdAt',
   order = 'desc',
@@ -39,7 +37,6 @@ export const usersQueryOptions = ({
 }: Omit<NonNullable<GetUsersData['query']>, 'limit' | 'offset'> & { limit?: number }) => {
   const limit = String(baseLimit);
 
-  const baseQueryKey = keys.list.filtered({ q: '', sort: 'createdAt', order: 'desc' });
   const queryKey = keys.list.filtered({ q, sort, order, role });
 
   return infiniteQueryOptions({
@@ -49,14 +46,7 @@ export const usersQueryOptions = ({
       return await getUsers({ query: { q, sort, order, role, limit, offset }, signal });
     },
     ...baseInfiniteQueryOptions,
-    ...infiniteQueryUseCachedIfCompleteOptions<UserWithRoleAndMemberships>(baseQueryKey, {
-      q,
-      sort,
-      order,
-      searchIn: ['email', 'name'],
-      limit: baseLimit,
-      additionalFilter: role ? (u) => u.role === role : undefined,
-    }),
+    refetchOnMount: true,
   });
 };
 
@@ -67,9 +57,9 @@ export const useUserUpdateMutation = () => {
   const queryClient = useQueryClient();
   const mutateCache = useMutateQueryData(keys.list.base, () => keys.detail.base, ['update']);
 
-  return useMutation<User, ApiError, UpdateUserData['body'] & { idOrSlug: string }>({
+  return useMutation<User, ApiError, UpdateUserData['body'] & { id: string }>({
     mutationKey: keys.update,
-    mutationFn: ({ idOrSlug, ...body }) => updateUser({ path: { idOrSlug }, body }),
+    mutationFn: ({ id, ...body }) => updateUser({ path: { id }, body }),
     onSuccess: (updatedUser) => {
       mutateCache.update([updatedUser]);
     },

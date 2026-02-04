@@ -7,10 +7,10 @@ import { entityTables } from '#/table-config';
 export type EntityModel<T extends EntityType> = (typeof entityTables)[T]['$inferSelect'];
 
 /**
- * Resolves entity based on `id` or `slug`.
+ * Resolves entity based on `id`.
  *
  * @param entityType - The type of entity.
- * @param idOrSlug - The unique identifier (ID or Slug) of entity.
+ * @param id - The unique identifier of entity.
  */
 export async function resolveEntity<T extends EntityType>(
   entityType: T,
@@ -22,15 +22,10 @@ export async function resolveEntity<T extends EntityType>(entityType: T, idOrSlu
   // Return early if table is not available
   if (!table) throw new Error(`Invalid entityType: ${entityType}`);
 
-  const $where = [eq(table.id, idOrSlug)];
-
-  // Check if table has a slug column
-  if ('slug' in table) $where.push(eq(table.slug, idOrSlug));
-
   const [entity] = await db
     .select()
     .from(table)
-    .where(or(...$where));
+    .where(or(eq(table.id, idOrSlug), eq(table.slug, idOrSlug)));
 
   return entity;
 }

@@ -1,8 +1,3 @@
-/**
- * Dispatch logic for public entity stream.
- * Entity-agnostic: uses config.publicProductEntityTypes dynamically.
- */
-
 import { appConfig, type PublicProductEntityType } from 'config';
 import { createStreamDispatcher } from '#/sync/stream';
 import { type PublicStreamSubscriber, publicChannel } from './types';

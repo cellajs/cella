@@ -11,7 +11,7 @@ import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { toaster } from '~/modules/common/toaster/service';
 import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
-import { organizationQueryKeys, organizationsQueryOptions } from '~/modules/organization/query';
+import { organizationQueryKeys, organizationsListQueryOptions } from '~/modules/organization/query';
 import { OrganizationsTableBar } from '~/modules/organization/table/organizations-bar';
 import { useColumns } from '~/modules/organization/table/organizations-columns';
 import type { OrganizationsRouteSearchParams } from '~/modules/organization/types';
@@ -46,7 +46,7 @@ function OrganizationsTable() {
   const [columns, setColumns] = useColumns(isCompact);
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
-  const queryOptions = organizationsQueryOptions({ ...search, limit, include: 'counts' });
+  const queryOptions = organizationsListQueryOptions({ ...search, limit, include: 'counts' });
 
   const {
     data: rows,
@@ -76,29 +76,23 @@ function OrganizationsTable() {
 
       const newRole = membership.role;
       const partOfOrganization = !!membership.id;
-      const mutationVariables = { idOrSlug: organization.id, entityType: organization.entityType };
-      const orgIdOrSlug = organization.id;
+      const mutationVariables = { id: membership.id, entityId: organization.id, entityType: organization.entityType };
+      const orgId = organization.id;
 
       try {
-        // TODO-021 re-check and add mutation or invalidation all connected queries(members table, single organization query)
+        // TODO review if we can move some of this logic to query.ts / mutation itself.
         if (partOfOrganization) {
-          await updateMember.mutateAsync({ id: membership.id, role: newRole, orgIdOrSlug, ...mutationVariables });
+          await updateMember.mutateAsync({ role: newRole, orgId, ...mutationVariables });
           // Update organizations cache to reflect membership change
           const updatedOrganization = { ...organization, membership: { ...membership, role: newRole } };
           mutateOrganizationsCache.update([updatedOrganization]);
         } else {
           await membershipInvite({
             query: mutationVariables,
-            path: { orgIdOrSlug },
+            path: { orgId },
             body: { emails: [user.email], role: newRole },
           });
 
-          // TODO-021b REVIEW
-          // const targetMenuItem = menu.organization.find((org) => org.id === organization.id);
-          // if (targetMenuItem) {
-          //   const updatedOrganization = { ...organization, membership: targetMenuItem.membership };
-          //   mutateOrganizationsCache.update([updatedOrganization]);
-          // }
           toaster(t('common:success.role_updated'), 'success');
         }
       } catch (err) {

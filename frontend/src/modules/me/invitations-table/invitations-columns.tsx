@@ -30,13 +30,13 @@ export const useColumns = () => {
     { label: t('common:reject'), variant: 'destructive', action: 'reject' },
   ] as const;
 
+  // TODO Move this to query.ts for me module?
   const { mutate: handleInvitation } = useMutation<
     HandleMembershipInvitationResponse,
     ApiError,
     HandleMembershipInvitationData['path']
   >({
-    mutationFn: ({ id, acceptOrReject, orgIdOrSlug }) =>
-      handleMembershipInvitation({ path: { id, acceptOrReject, orgIdOrSlug } }),
+    mutationFn: ({ id, acceptOrReject, orgId }) => handleMembershipInvitation({ path: { id, acceptOrReject, orgId } }),
     onSuccess: async (settledEntity, { acceptOrReject }) => {
       await getMenuData();
 
@@ -141,7 +141,7 @@ export const useColumns = () => {
                 handleInvitation({
                   id: row.inactiveMembership.id,
                   acceptOrReject: action,
-                  orgIdOrSlug: row.inactiveMembership.organizationId,
+                  orgId: row.inactiveMembership.organizationId,
                 })
               }
             >

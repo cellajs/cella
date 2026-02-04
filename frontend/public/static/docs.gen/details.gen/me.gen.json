@@ -1031,11 +1031,7 @@
     "request": {
       "query": {
         "properties": {
-          "idOrSlug": {
-            "type": "string",
-            "required": true,
-            "description": "Entity ID or slug. ID is always preferred."
-          },
+          "entityId": { "type": "string", "required": true },
           "entityType": {
             "type": "string",
             "required": true,

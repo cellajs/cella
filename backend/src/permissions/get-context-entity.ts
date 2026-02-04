@@ -25,7 +25,7 @@ export interface ValidContextEntityResult<T extends ContextEntityType> {
  * of a higher-level entity as defined in `permissions-config`.
  * Throws an error if entity cannot be found or user lacks required permissions.
  *
- * @param idOrSlug - Entity's unique ID or slug.
+ * @param id - Entity's unique ID.
  * @param entityType - Type of context entity (e.g., organization, project).
  * @param action - Action to check (e.g., `"read" | "update" | "delete"`).
  * @returns An object containing resolved entity, associated membership (or `null`), and can object.

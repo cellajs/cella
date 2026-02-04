@@ -32,7 +32,7 @@ const app = baseApp
   .route('/system', systemRouteHandlers)
   .route('/requests', requestsRouteHandlers)
   .route('/metrics', metricsRouteHandlers)
-  .route('/:orgIdOrSlug/attachments', attachmentRouteHandlers)
-  .route('/:orgIdOrSlug/memberships', membershipsRouteHandlers);
+  .route('/:orgId/attachments', attachmentRouteHandlers)
+  .route('/:orgId/memberships', membershipsRouteHandlers);
 
 export default app;

@@ -230,9 +230,9 @@ const meRouteHandlers = app
   .openapi(meRoutes.deleteMyMembership, async (ctx) => {
     const user = getContextUser();
 
-    const { entityType, idOrSlug } = ctx.req.valid('query');
+    const { entityType, entityId } = ctx.req.valid('query');
 
-    const entity = await resolveEntity(entityType, idOrSlug);
+    const entity = await resolveEntity(entityType, entityId);
     if (!entity) throw new AppError(404, 'not_found', 'warn', { entityType });
 
     const entityIdColumnKey = appConfig.entityIdColumnKeys[entityType];

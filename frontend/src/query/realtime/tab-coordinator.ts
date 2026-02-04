@@ -1,7 +1,3 @@
-/**
- * Multi-tab coordination using Web Locks for leader election and BroadcastChannel for messaging.
- * Leader tab maintains SSE connections and persists mutations; followers receive updates via broadcast.
- */
 import { create } from 'zustand';
 import type { AppStreamNotification } from './types';
 

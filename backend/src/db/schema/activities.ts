@@ -63,9 +63,7 @@ export const activitiesTable = pgTable(
     index('activities_table_name_index').on(table.tableName),
     index('activities_tx_id_index').on(sql`(tx->>'id')`),
     // Index for querying dead letters (failed activities with error field)
-    index('activities_error_lsn_index')
-      .on(sql`(error->>'lsn')`)
-      .where(sql`error IS NOT NULL`),
+    index('activities_error_lsn_index').on(sql`(error->>'lsn')`).where(sql`error IS NOT NULL`),
     foreignKey({
       columns: [table.userId],
       foreignColumns: [usersTable.id],

@@ -4,7 +4,7 @@ import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
 import { systemRoleBaseSchema } from '#/modules/system/system-schema';
 import { userListQuerySchema, userSchema, userUpdateBodySchema } from '#/modules/user/user-schema';
 import {
-  entityParamSchema,
+  entityIdParamSchema,
   errorResponseRefs,
   idsBodySchema,
   paginationSchema,
@@ -75,12 +75,12 @@ const userRoutes = {
   getUser: createXRoute({
     operationId: 'getUser',
     method: 'get',
-    path: '/{idOrSlug}',
+    path: '/{id}',
     xGuard: isAuthenticated,
     tags: ['users'],
     summary: 'Get user',
-    description: 'Retrieves a *user* by ID or slug.',
-    request: { params: entityParamSchema },
+    description: 'Retrieves a *user* by ID.',
+    request: { params: entityIdParamSchema },
     responses: {
       200: {
         description: 'User',
@@ -95,13 +95,13 @@ const userRoutes = {
   updateUser: createXRoute({
     operationId: 'updateUser',
     method: 'put',
-    path: '/{idOrSlug}',
+    path: '/{id}',
     xGuard: [isAuthenticated, hasSystemAccess],
     tags: ['users'],
     summary: 'Update user',
-    description: 'Updates a *user* identified by ID or slug.',
+    description: 'Updates a *user* identified by ID.',
     request: {
-      params: entityParamSchema,
+      params: entityIdParamSchema,
       body: {
         content: { 'application/json': { schema: userUpdateBodySchema } },
       },

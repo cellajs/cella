@@ -14,9 +14,8 @@ import {
   operationsRouteSearchParamsSchema,
   schemasRouteSearchParamsSchema,
 } from '~/modules/docs/search-params-schemas';
-import { pagesQueryOptions } from '~/modules/page/query';
+import { pagesListQueryOptions } from '~/modules/page/query';
 import { pagesRouteSearchParamsSchema } from '~/modules/page/search-params-schemas';
-import { ensureQueryDataWithFallback } from '~/query/basic';
 import { queryClient } from '~/query/query-client';
 import { PublicLayoutRoute } from '~/routes/base-routes';
 import appTitle from '~/utils/app-title';
@@ -48,9 +47,9 @@ export const DocsLayoutRoute = createRoute({
   loader: async () => {
     // Prefetch tags, schemas (used for error response deduplication), and pages
     await Promise.all([
-      ensureQueryDataWithFallback(tagsQueryOptions),
-      ensureQueryDataWithFallback(schemasQueryOptions),
-      queryClient.prefetchInfiniteQuery(pagesQueryOptions({})),
+      queryClient.ensureQueryData(tagsQueryOptions),
+      queryClient.ensureQueryData(schemasQueryOptions),
+      queryClient.prefetchInfiniteQuery(pagesListQueryOptions({})),
     ]);
   },
   component: () => (
@@ -75,12 +74,10 @@ export const DocsOperationsRoute = createRoute({
   loader: async () => {
     // Prefetch operations and tags, then prefetch all tag details
     const [, tags] = await Promise.all([
-      ensureQueryDataWithFallback(operationsQueryOptions),
-      ensureQueryDataWithFallback(tagsQueryOptions),
+      queryClient.ensureQueryData(operationsQueryOptions),
+      queryClient.ensureQueryData(tagsQueryOptions),
     ]);
-    if (tags) {
-      await Promise.all(tags.map((tag) => queryClient.prefetchQuery(tagDetailsQueryOptions(tag.name))));
-    }
+    await Promise.all(tags.map((tag) => queryClient.prefetchQuery(tagDetailsQueryOptions(tag.name))));
   },
   component: () => (
     <Suspense>
@@ -99,7 +96,7 @@ export const DocsOperationsTableRoute = createRoute({
   head: () => ({ meta: [{ title: appTitle('Operations table') }] }),
   loader: async () => {
     // Prefetch operations for table view
-    await ensureQueryDataWithFallback(operationsQueryOptions);
+    await queryClient.ensureQueryData(operationsQueryOptions);
   },
   component: () => (
     <Suspense>
@@ -119,8 +116,8 @@ export const DocsOverviewRoute = createRoute({
   loader: async () => {
     // Prefetch info and OpenAPI spec used by OverviewTable and OpenApiSpecViewer
     await Promise.all([
-      ensureQueryDataWithFallback(infoQueryOptions),
-      ensureQueryDataWithFallback(openApiSpecQueryOptions),
+      queryClient.ensureQueryData(infoQueryOptions),
+      queryClient.ensureQueryData(openApiSpecQueryOptions),
     ]);
   },
   component: () => (
@@ -145,8 +142,8 @@ export const DocsSchemasRoute = createRoute({
   loader: async () => {
     // Prefetch schemas and schema tags used by SchemasPage and SchemasSidebar
     await Promise.all([
-      ensureQueryDataWithFallback(schemasQueryOptions),
-      ensureQueryDataWithFallback(schemaTagsQueryOptions),
+      queryClient.ensureQueryData(schemasQueryOptions),
+      queryClient.ensureQueryData(schemaTagsQueryOptions),
     ]);
   },
   component: () => (

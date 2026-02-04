@@ -13,34 +13,23 @@ import { handlePublicStreamMessage } from './public-stream-handler';
 import { broadcastNotification, initTabCoordinator, isLeader, onNotification } from './tab-coordinator';
 import type { AppStreamNotification, StreamState } from './types';
 
-/** Configuration for a stream instance */
 interface StreamConfig {
-  /** Debug label for console logs */
   debugLabel: string;
-  /** SSE endpoint URL */
   endpoint: string;
-  /** Whether to include credentials (cookies) */
   withCredentials: boolean;
-  /** Whether to use tab coordination (leader/follower pattern) */
   useTabCoordination: boolean;
-  /** Function to fetch catchup activities */
   fetchCatchup: (offset: string | null) => Promise<{ activities: unknown[]; cursor: string | null }>;
-  /** Function to process a single notification */
   processNotification: (notification: unknown) => void;
-  /** Function to process catchup batch (optional, for app stream) */
   processCatchupBatch?: (activities: unknown[], options: { lastSyncAt: string | null }) => void;
-  /** Whether to invalidate page list on reconnect */
   invalidateOnReconnect?: boolean;
 }
 
-/** Stream store state */
 interface StreamStoreState {
   state: StreamState;
   cursor: string | null;
   isFirstConnect: boolean;
 }
 
-/** Stream store actions */
 interface StreamStoreActions {
   setState: (state: StreamState) => void;
   setCursor: (cursor: string | null) => void;
@@ -50,7 +39,6 @@ interface StreamStoreActions {
 
 type StreamStore = StreamStoreState & StreamStoreActions;
 
-/** Create a stream store with the given name */
 function createStreamStore(name: string) {
   return create<StreamStore>()(
     devtools(
@@ -58,7 +46,6 @@ function createStreamStore(name: string) {
         state: 'disconnected',
         cursor: null,
         isFirstConnect: true,
-
         setState: (state) => set({ state }),
         setCursor: (cursor) => set({ cursor }),
         setIsFirstConnect: (isFirst) => set({ isFirstConnect: isFirst }),
@@ -69,10 +56,7 @@ function createStreamStore(name: string) {
   );
 }
 
-/**
- * Stream manager class that handles SSE connection lifecycle.
- * Works with a Zustand store for state and is configured per stream type.
- */
+/** Manages SSE connection lifecycle with Zustand store for state. */
 class StreamManager {
   private config: StreamConfig;
   private store: ReturnType<typeof createStreamStore>;
@@ -86,26 +70,19 @@ class StreamManager {
     this.store = store;
   }
 
-  /** Get the Zustand store hook */
   get useStore() {
     return this.store;
   }
 
-  /** Check if SSE connection is open */
   isConnected(): boolean {
     return this.eventSource?.readyState === EventSource.OPEN;
   }
 
-  /** Connect to the stream (two-phase: catchup → live) */
+  /** Connect to stream (two-phase: catchup → live SSE). */
   async connect() {
     const { state } = this.store.getState();
+    if (state === 'catching-up' || state === 'connecting' || state === 'live') return;
 
-    // Prevent duplicate connections
-    if (state === 'catching-up' || state === 'connecting' || state === 'live') {
-      return;
-    }
-
-    // Abort any pending operations
     this.abortController?.abort();
     this.abortController = new AbortController();
     const { signal } = this.abortController;
@@ -113,20 +90,15 @@ class StreamManager {
     const { debugLabel, useTabCoordination } = this.config;
 
     try {
-      // Initialize tab coordination if needed
       if (useTabCoordination) {
         await initTabCoordinator();
         if (signal.aborted) return;
 
-        // Listen for broadcast notifications from leader (follower tabs)
         this.broadcastCleanup?.();
         this.broadcastCleanup = onNotification((notification) => {
-          if (!isLeader()) {
-            this.config.processNotification(notification);
-          }
+          if (!isLeader()) this.config.processNotification(notification);
         });
 
-        // Followers just listen to broadcasts, don't connect SSE
         if (!isLeader()) {
           console.debug(`[${debugLabel}] Not leader, listening to broadcasts only`);
           this.store.getState().setState('live');
@@ -137,30 +109,22 @@ class StreamManager {
       // Phase 1: Fetch catchup as JSON batch
       this.store.getState().setState('catching-up');
 
-      // Get cursor from sync store for app stream, or local state for public
       const currentCursor = useTabCoordination ? useSyncStore.getState().cursor : this.store.getState().cursor;
       const lastSyncAt = useTabCoordination ? useSyncStore.getState().lastSyncAt : null;
 
       console.debug(`[${debugLabel}] Fetching catchup from offset: ${currentCursor ?? 'null'}`);
-
       const { activities, cursor: newCursor } = await this.config.fetchCatchup(currentCursor);
-
       if (signal.aborted) return;
 
-      // Process catchup activities
       if (activities.length > 0) {
         console.debug(`[${debugLabel}] Processing ${activities.length} catchup activities`);
-
         if (this.config.processCatchupBatch) {
           this.config.processCatchupBatch(activities, { lastSyncAt });
         } else {
-          for (const activity of activities) {
-            this.config.processNotification(activity);
-          }
+          for (const activity of activities) this.config.processNotification(activity);
         }
       }
 
-      // Update cursor
       if (newCursor) {
         this.store.getState().setCursor(newCursor);
         if (useTabCoordination) {
@@ -169,7 +133,6 @@ class StreamManager {
         }
       }
 
-      // Invalidate list on reconnect if configured
       const { isFirstConnect } = this.store.getState();
       if (!isFirstConnect && this.config.invalidateOnReconnect) {
         console.debug(`[${debugLabel}] Invalidating list for modifiedAfter refetch`);
@@ -179,10 +142,7 @@ class StreamManager {
 
       console.debug(`[${debugLabel}] Catchup complete, cursor: ${newCursor}`);
 
-      // Phase 2: Connect SSE for live updates
-      if (!signal.aborted) {
-        this.connectSSE();
-      }
+      if (!signal.aborted) this.connectSSE();
     } catch (error) {
       if (!signal.aborted) {
         console.error(`[${debugLabel}] Catchup failed:`, error);
@@ -192,7 +152,6 @@ class StreamManager {
     }
   }
 
-  /** Connect to SSE endpoint for live-only updates */
   private connectSSE() {
     const { debugLabel, endpoint, withCredentials, useTabCoordination } = this.config;
 
@@ -201,7 +160,6 @@ class StreamManager {
     sseUrl.searchParams.set('offset', 'now');
 
     this.store.getState().setState('connecting');
-
     const eventSource = new EventSource(sseUrl.toString(), { withCredentials });
 
     eventSource.onopen = () => {
@@ -213,20 +171,12 @@ class StreamManager {
         const notification = JSON.parse(e.data);
         const eventId = e.lastEventId || undefined;
 
-        // Update cursor
         if (eventId) {
           this.store.getState().setCursor(eventId);
-          if (useTabCoordination) {
-            useSyncStore.getState().setCursor(eventId);
-          }
+          if (useTabCoordination) useSyncStore.getState().setCursor(eventId);
         }
 
-        // Broadcast to follower tabs if leader
-        if (useTabCoordination && isLeader()) {
-          broadcastNotification(notification, 'user');
-        }
-
-        // Process notification
+        if (useTabCoordination && isLeader()) broadcastNotification(notification, 'user');
         this.config.processNotification(notification);
       } catch (error) {
         console.debug(`[${debugLabel}] Failed to parse message:`, error);
@@ -237,16 +187,12 @@ class StreamManager {
       console.debug(`[${debugLabel}] SSE offset received: ${e.data}`);
       if (e.data) {
         this.store.getState().setCursor(e.data);
-        if (useTabCoordination) {
-          useSyncStore.getState().setCursor(e.data);
-        }
+        if (useTabCoordination) useSyncStore.getState().setCursor(e.data);
       }
       this.store.getState().setState('live');
     });
 
-    eventSource.addEventListener('ping', () => {
-      // Keep-alive, no action needed
-    });
+    eventSource.addEventListener('ping', () => {});
 
     eventSource.onerror = () => {
       this.store.getState().setState('error');
@@ -258,17 +204,14 @@ class StreamManager {
     this.eventSource = eventSource;
   }
 
-  /** Schedule a reconnection attempt */
   private scheduleReconnect() {
     if (this.reconnectTimeout) return;
-
     this.reconnectTimeout = setTimeout(() => {
       this.reconnectTimeout = null;
       this.connect();
     }, 5000);
   }
 
-  /** Disconnect from the stream */
   disconnect() {
     this.abortController?.abort();
     this.abortController = null;
@@ -285,20 +228,16 @@ class StreamManager {
 
     this.broadcastCleanup?.();
     this.broadcastCleanup = null;
-
     this.store.getState().setState('disconnected');
   }
 
-  /** Force reconnect (disconnect + connect) */
   reconnect() {
     this.disconnect();
     this.connect();
   }
 }
 
-// ============================================================================
 // Public Stream
-// ============================================================================
 
 const publicStreamStore = createStreamStore('public-stream');
 
@@ -310,25 +249,15 @@ const publicStreamConfig: StreamConfig = {
   invalidateOnReconnect: true,
   fetchCatchup: async (offset) => {
     const response = await publicStream({ query: { offset: offset ?? undefined } });
-    return {
-      activities: (response.activities ?? []) as PublicStreamActivity[],
-      cursor: response.cursor ?? null,
-    };
+    return { activities: (response.activities ?? []) as PublicStreamActivity[], cursor: response.cursor ?? null };
   },
-  processNotification: (notification) => {
-    handlePublicStreamMessage(notification as PublicStreamActivity);
-  },
+  processNotification: (notification) => handlePublicStreamMessage(notification as PublicStreamActivity),
 };
 
-/** Public stream manager singleton */
 export const publicStreamManager = new StreamManager(publicStreamConfig, publicStreamStore);
-
-/** Zustand store for public stream state */
 export const usePublicStreamStore = publicStreamStore;
 
-// ============================================================================
 // App Stream
-// ============================================================================
 
 const appStreamStore = createStreamStore('app-stream');
 
@@ -340,21 +269,11 @@ const appStreamConfig: StreamConfig = {
   invalidateOnReconnect: false,
   fetchCatchup: async (offset) => {
     const response = await getAppStream({ query: { offset: offset ?? undefined } });
-    return {
-      activities: (response.activities ?? []) as StreamNotification[],
-      cursor: response.cursor ?? null,
-    };
+    return { activities: (response.activities ?? []) as StreamNotification[], cursor: response.cursor ?? null };
   },
-  processNotification: (notification) => {
-    handleAppStreamNotification(notification as AppStreamNotification);
-  },
-  processCatchupBatch: (activities, options) => {
-    processCatchupBatch(activities as AppStreamNotification[], options);
-  },
+  processNotification: (notification) => handleAppStreamNotification(notification as AppStreamNotification),
+  processCatchupBatch: (activities, options) => processCatchupBatch(activities as AppStreamNotification[], options),
 };
 
-/** App stream manager singleton */
 export const appStreamManager = new StreamManager(appStreamConfig, appStreamStore);
-
-/** Zustand store for app stream state */
 export const useAppStreamStore = appStreamStore;

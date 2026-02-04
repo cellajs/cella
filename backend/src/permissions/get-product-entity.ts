@@ -21,13 +21,13 @@ export interface ValidProductEntityResult<K extends ProductEntityType> {
  * Returns resolved product entity and a `can` object with all action permissions.
  * Throws an error if entity cannot be found or user lacks required permissions.
  *
- * @param idOrSlug - Product's unique ID or slug.
+ * @param id - Product's unique ID.
  * @param entityType - Type of product entity.
  * @param action - The action to check (e.g., `"read" | "update" | "delete"`).
  * @returns An object containing resolved entity and can object.
  */
 export const getValidProductEntity = async <K extends ProductEntityType>(
-  idOrSlug: string,
+  id: string,
   entityType: K,
   action: Exclude<EntityActionType, 'create'>,
 ): Promise<ValidProductEntityResult<K>> => {
@@ -36,7 +36,7 @@ export const getValidProductEntity = async <K extends ProductEntityType>(
   const memberships = getContextMemberships();
 
   // Step 1: Resolve target entity by ID or slug
-  const entity = await resolveEntity(entityType, idOrSlug);
+  const entity = await resolveEntity(entityType, id);
   if (!entity) throw new AppError(404, 'not_found', 'warn', { entityType });
 
   // Step 2: Check permission for the requested action (system admin bypass is handled inside)

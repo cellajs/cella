@@ -11,6 +11,7 @@ import {
   organizationQueryKeys,
   organizationQueryOptions,
 } from '~/modules/organization/query';
+import { fetchSlugCacheId } from '~/query/fetch-slug-cache-id';
 import { queryClient } from '~/query/query-client';
 import { AppLayoutRoute } from '~/routes/base-routes';
 import { useToastStore } from '~/store/toast';
@@ -31,7 +32,7 @@ const OrganizationSettings = lazy(() => import('~/modules/organization/organizat
  */
 export const OrganizationLayoutRoute = createRoute({
   path: '/$idOrSlug',
-  staticData: { isAuth: true, entityType: 'organization' },
+  staticData: { isAuth: true },
   getParentRoute: () => AppLayoutRoute,
   beforeLoad: async ({ params }) => {
     const { idOrSlug } = params;
@@ -45,18 +46,13 @@ export const OrganizationLayoutRoute = createRoute({
     let organization: Organization | undefined;
 
     if (orgId) {
-      // We know the ID - use canonical cache key
       const orgOptions = organizationQueryOptions(orgId);
-      organization = isOnline
-        ? await queryClient.ensureQueryData({ ...orgOptions, revalidateIfStale: true })
-        : (queryClient.getQueryData(orgOptions.queryKey) ?? cached);
+      organization = await queryClient.ensureQueryData({ ...orgOptions, revalidateIfStale: true });
     } else if (isOnline) {
-      // No cache - fetch by slug, then populate ID-based cache
-      const fetched = await getOrganization({ path: { idOrSlug } });
-      if (fetched) {
-        queryClient.setQueryData(organizationQueryKeys.detail.byId(fetched.id), fetched);
-        organization = fetched;
-      }
+      organization = await fetchSlugCacheId(
+        () => getOrganization({ path: { idOrSlug } }),
+        organizationQueryKeys.detail.byId,
+      );
     }
 
     if (!organization) {

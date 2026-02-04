@@ -503,11 +503,7 @@
     "request": {
       "path": {
         "properties": {
-          "idOrSlug": {
-            "type": "string",
-            "required": true,
-            "description": "Entity ID or slug. ID is always preferred."
-          }
+          "id": { "type": "string", "required": true }
         }
       }
     }
@@ -661,11 +657,7 @@
     "request": {
       "path": {
         "properties": {
-          "idOrSlug": {
-            "type": "string",
-            "required": true,
-            "description": "Entity ID or slug. ID is always preferred."
-          }
+          "id": { "type": "string", "required": true }
         }
       },
       "body": {

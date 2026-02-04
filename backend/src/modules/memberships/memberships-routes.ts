@@ -15,7 +15,6 @@ import {
   entityWithTypeQuerySchema,
   errorResponseRefs,
   idInOrgParamSchema,
-  idOrSlugSchema,
   idSchema,
   idsBodySchema,
   inOrgParamSchema,
@@ -133,7 +132,7 @@ const membershipRoutes = {
     summary: 'Respond to membership invitation',
     description: 'Accepting activates the associated membership. Rejecting simply removes the invitation token.',
     request: {
-      params: z.object({ id: idSchema, acceptOrReject: z.enum(['accept', 'reject']), orgIdOrSlug: idOrSlugSchema }),
+      params: z.object({ id: idSchema, acceptOrReject: z.enum(['accept', 'reject']), orgId: idSchema }),
     },
     responses: {
       200: {
@@ -153,8 +152,7 @@ const membershipRoutes = {
     xGuard: [isAuthenticated, hasOrgAccess],
     tags: ['memberships'],
     summary: 'Get list of members',
-    description:
-      'Retrieves members (users) of a context entity by ID or slug, including their associated *membership* data.',
+    description: 'Retrieves members (users) of a context entity by ID, including their associated *membership* data.',
     request: {
       params: inOrgParamSchema,
       query: memberListQuerySchema,
@@ -183,7 +181,7 @@ const membershipRoutes = {
     tags: ['memberships'],
     summary: 'Get list of pending memberships',
     description:
-      'Returns pending memberships for a context entity, identified by ID or slug. This does not include pending invitations for non-existing users.',
+      'Returns pending memberships for a context entity, identified by ID. This does not include pending invitations for non-existing users.',
     request: {
       params: inOrgParamSchema,
       query: pendingMembershipListQuerySchema,

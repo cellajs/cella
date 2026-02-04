@@ -29,6 +29,12 @@ export { hierarchy, roles } from './default';
 
 export { getContextRoles, isContextEntity, isProductEntity, isPublicProductEntity } from './entity-guards';
 
+// TODO: rename config to shared and all default to default-config.ts and developent to development-config.ts etc
+// TODO split this file in a pure barrel, a src/builder/types.ts file for config build types, and a types.ts file for external types.
+//  THe existing types.ts file should be merged with src/builder/types.ts
+//  In this src/builder we also put entity-hierarchy, entity-guards
+//  this way, in root we only have the
+
 /******************************************************************************
  * HELPER TYPES FOR ENTITY HIERARCHY
  ******************************************************************************/

@@ -19,7 +19,7 @@ export const useAttachmentsUploadDialog = (organizationSlug: string) => {
       // Create attachments via API with transaction metadata (tx embedded in each item)
       const tx = createTxForCreate();
       const body = attachments.map((att) => ({ ...att, tx }));
-      await createAttachments({ path: { orgIdOrSlug: organizationSlug }, body });
+      await createAttachments({ path: { orgId: organizationSlug }, body });
 
       // Invalidate the cache to refresh the table
       queryClient.invalidateQueries({ queryKey: attachmentQueryKeys.list.base });

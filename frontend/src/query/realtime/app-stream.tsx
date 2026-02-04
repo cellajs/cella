@@ -18,6 +18,8 @@ const debugLabel = 'AppStream';
  * - Leader tab: Opens SSE, broadcasts notifications to followers via BroadcastChannel
  * - Follower tabs: Receive notifications via broadcast, no SSE connection
  */
+// TODO feels like the logic is too close to the stream-store.tsx itself? Either combine or reduce the store for things
+//  that are rewritten here
 export function useAppStream(options: UseAppStreamOptions = {}): UseAppStreamReturn {
   const {
     enabled = true,

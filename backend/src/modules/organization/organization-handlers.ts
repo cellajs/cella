@@ -224,9 +224,9 @@ const organizationRouteHandlers = app
    * Update an organization by id or slug
    */
   .openapi(organizationRoutes.updateOrganization, async (ctx) => {
-    const { idOrSlug } = ctx.req.valid('param');
+    const { id } = ctx.req.valid('param');
 
-    const { entity: organization, membership, can } = await getValidContextEntity(idOrSlug, 'organization', 'update');
+    const { entity: organization, membership, can } = await getValidContextEntity(id, 'organization', 'update');
     const user = getContextUser();
 
     const updatedFields = ctx.req.valid('json');

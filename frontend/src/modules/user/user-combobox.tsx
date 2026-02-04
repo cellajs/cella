@@ -14,7 +14,7 @@ import { Badge } from '~/modules/ui/badge';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { ScrollArea } from '~/modules/ui/scroll-area';
-import { usersQueryOptions } from '~/modules/user/query';
+import { usersListQueryOptions } from '~/modules/user/query';
 
 interface Props {
   value: string[];
@@ -57,7 +57,7 @@ export const UserCombobox = ({ value, onChange, entity }: Props) => {
     setOpen(false);
   };
 
-  const queryOptions = usersQueryOptions({
+  const queryOptions = usersListQueryOptions({
     q: debouncedSearchQuery,
     targetEntityId: entity.id,
     targetEntityType: entity.entityType,

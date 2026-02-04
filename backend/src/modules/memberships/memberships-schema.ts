@@ -4,7 +4,7 @@ import { createSelectSchema } from 'drizzle-zod';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { membershipsTable } from '#/db/schema/memberships';
 import { userBaseSchema } from '#/modules/user/user-schema-base';
-import { contextEntityTypeSchema, idOrSlugSchema, paginationQuerySchema, validEmailSchema } from '#/schemas';
+import { contextEntityTypeSchema, idSchema, paginationQuerySchema, validEmailSchema } from '#/schemas';
 import {
   mockInactiveMembershipResponse,
   mockMembershipBase,
@@ -42,14 +42,14 @@ export const membershipUpdateBodySchema = z.object({
 });
 
 export const memberListQuerySchema = paginationQuerySchema.extend({
-  idOrSlug: idOrSlugSchema,
+  entityId: idSchema,
   entityType: contextEntityTypeSchema,
   sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt']).default('createdAt').optional(),
   role: z.enum(appConfig.entityRoles).optional(),
 });
 
 export const pendingMembershipListQuerySchema = paginationQuerySchema.extend({
-  idOrSlug: idOrSlugSchema,
+  entityId: idSchema,
   entityType: contextEntityTypeSchema,
   sort: z.enum(['createdAt']).default('createdAt').optional(),
 });

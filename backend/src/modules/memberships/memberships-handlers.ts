@@ -61,16 +61,16 @@ const membershipsRouteHandlers = app
   .openapi(membershipRoutes.createMemberships, async (ctx) => {
     // Step 0: Parse and normalize input
     const { emails, role } = ctx.req.valid('json');
-    const { idOrSlug, entityType } = ctx.req.valid('query');
+    const { entityId, entityType } = ctx.req.valid('query');
 
     const normalizedEmails = [...new Set(emails.map((e: string) => e.toLowerCase().trim()))];
     if (!normalizedEmails.length) throw new AppError(400, 'no_recipients', 'warn');
 
     // Step 0: Validate target entity and caller permission (update)
-    const { entity } = await getValidContextEntity(idOrSlug, entityType, 'update');
+    const { entity } = await getValidContextEntity(entityId, entityType, 'update');
 
     // Step 0: Extract entity context
-    const { id: entityId, slug: entitySlug, name: entityName } = entity;
+    const { slug: entitySlug, name: entityName } = entity;
     const targetEntityIdField = appConfig.entityIdColumnKeys[entityType];
 
     // Step 0: Contextual user and organization
@@ -116,7 +116,7 @@ const membershipsRouteHandlers = app
         and(
           eq(membershipsTable.userId, usersTable.id),
           eq(membershipsTable.contextType, entityType),
-          eq(membershipsTable[targetEntityIdField], entityId),
+          eq(membershipsTable[targetEntityIdField], entity.id),
         ),
       )
       // join inactiveMemberships by userId OR email so we also see email-only invites
@@ -124,7 +124,7 @@ const membershipsRouteHandlers = app
         inactiveMembershipsTable,
         and(
           eq(inactiveMembershipsTable.contextType, entityType),
-          eq(inactiveMembershipsTable[targetEntityIdField], entityId),
+          eq(inactiveMembershipsTable[targetEntityIdField], entity.id),
           or(eq(inactiveMembershipsTable.userId, usersTable.id), eq(inactiveMembershipsTable.email, emailsTable.email)),
         ),
       )
@@ -380,10 +380,10 @@ const membershipsRouteHandlers = app
    * When user is allowed to delete entity, they can delete memberships too
    */
   .openapi(membershipRoutes.deleteMemberships, async (ctx) => {
-    const { entityType, idOrSlug } = ctx.req.valid('query');
+    const { entityType, entityId } = ctx.req.valid('query');
     const { ids } = ctx.req.valid('json');
 
-    const { entity } = await getValidContextEntity(idOrSlug, entityType, 'delete');
+    const { entity } = await getValidContextEntity(entityId, entityType, 'delete');
 
     const entityIdColumnKey = appConfig.entityIdColumnKeys[entityType];
 
@@ -543,12 +543,12 @@ const membershipsRouteHandlers = app
    * Get members by entity id/slug and type
    */
   .openapi(membershipRoutes.getMembers, async (ctx) => {
-    const { idOrSlug, entityType, q, sort, order, offset, limit, role } = ctx.req.valid('query');
+    const { entityId, entityType, q, sort, order, offset, limit, role } = ctx.req.valid('query');
 
     const organization = getContextOrganization();
 
     // Validate entity existence and check read permission
-    const { entity } = await getValidContextEntity(idOrSlug, entityType, 'read');
+    const { entity } = await getValidContextEntity(entityId, entityType, 'read');
 
     const entityIdColumnKey = appConfig.entityIdColumnKeys[entity.entityType];
 
@@ -596,10 +596,10 @@ const membershipsRouteHandlers = app
    * Get pending memberships by entity id/slug and type.
    */
   .openapi(membershipRoutes.getPendingMemberships, async (ctx) => {
-    const { idOrSlug, entityType, sort, order, offset, limit } = ctx.req.valid('query');
+    const { entityId, entityType, sort, order, offset, limit } = ctx.req.valid('query');
 
     const organization = getContextOrganization();
-    const { entity } = await getValidContextEntity(idOrSlug, entityType, 'read');
+    const { entity } = await getValidContextEntity(entityId, entityType, 'read');
     const entityIdColumnKey = appConfig.entityIdColumnKeys[entity.entityType];
 
     const table = inactiveMembershipsTable;

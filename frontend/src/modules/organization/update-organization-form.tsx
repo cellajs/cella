@@ -52,7 +52,7 @@ function UpdateOrganizationForm({ organization, callback, sheet: isSheet }: Prop
 
   const onSubmit = (body: FormValues) => {
     mutate(
-      { idOrSlug: organization.slug, body },
+      { id: organization.id, body },
       {
         onSuccess: (updatedOrganization) => {
           if (isSheet) useSheeter.getState().remove(formContainerId);

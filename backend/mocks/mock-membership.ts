@@ -61,11 +61,15 @@ export const mockContextMembership = <T extends ContextEntityType>(
   // Generate all context entity ID columns, then override with actual IDs
   const contextEntityColumns = generateMockContextEntityIdColumns();
 
+  // Determine the correct ID column name for this context type (e.g., 'organizationId')
+  const contextIdColumnKey = appConfig.entityIdColumnKeys[contextType];
+
   return {
     id: nanoid(),
     userId,
     contextType,
     ...contextEntityColumns,
+    [contextIdColumnKey]: contextEntity.id, // Set the correct context entity ID
     ...overrideIds,
     role: faker.helpers.arrayElement(appConfig.entityRoles),
     order: getMembershipOrderOffset(contextEntity.id) * 10,

@@ -40,7 +40,7 @@ export const findOrganizationInListCache = (idOrSlug: string) =>
 
 /**
  * Query options for a single organization by ID.
- * Always cache by ID to prevent duplicate cache entries when navigating via slug.
+ * NOTE: Slug is only used on page load. All subsequent queries must use ID.
  */
 export const organizationQueryOptions = (id: string) =>
   queryOptions({
@@ -58,7 +58,7 @@ type OrganizationsListParams = Omit<NonNullable<GetOrganizationsData['query']>, 
  * Note: `include` is NOT part of the cache key - queries with/without counts share the same cache
  * for seamless offline behavior. The most recent fetch determines what's cached.
  */
-export const organizationsQueryOptions = (params: OrganizationsListParams) => {
+export const organizationsListQueryOptions = (params: OrganizationsListParams) => {
   const {
     q = '',
     sort = 'createdAt',
@@ -89,6 +89,7 @@ export const organizationsQueryOptions = (params: OrganizationsListParams) => {
       });
     },
     ...baseInfiniteQueryOptions,
+    refetchOnMount: true,
   });
 };
 
@@ -122,9 +123,9 @@ export const useOrganizationUpdateMutation = () => {
   const queryClient = useQueryClient();
   const mutateCache = useMutateQueryData(keys.list.base, () => keys.detail.base, ['update']);
 
-  return useMutation<Organization, ApiError, { idOrSlug: string; body: UpdateOrganizationData['body'] }>({
+  return useMutation<Organization, ApiError, { id: string; body: UpdateOrganizationData['body'] }>({
     mutationKey: keys.update,
-    mutationFn: ({ idOrSlug, body }) => updateOrganization({ body, path: { idOrSlug } }),
+    mutationFn: ({ id, body }) => updateOrganization({ body, path: { id } }),
     onSuccess: (updatedOrganization) => {
       mutateCache.update([updatedOrganization]);
     },
