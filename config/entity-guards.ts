@@ -1,5 +1,5 @@
-import _default, { hierarchy } from './default';
-import type { ContextEntityType, ProductEntityType, RealtimeEntityType } from './index';
+import { hierarchy } from './default';
+import type { ContextEntityType, ProductEntityType, PublicProductEntityType } from './index';
 
 /******************************************************************************
  * ENTITY TYPE GUARDS
@@ -23,14 +23,15 @@ export function isContextEntity(entityType: string): entityType is ContextEntity
 
 /**
  * Check if entity type is a product entity (type guard).
+ * All product entities support realtime sync and offline transactions.
  */
-export function isProductEntity(entityType: string): entityType is ProductEntityType {
-  return hierarchy.isProduct(entityType);
+export function isProductEntity(entityType: string | null | undefined): entityType is ProductEntityType {
+  return !!entityType && hierarchy.isProduct(entityType);
 }
 
 /**
- * Check if entity type is a realtime entity (supports SSE notifications).
+ * Check if entity type is a public product entity (no parent context).
  */
-export function isRealtimeEntity(entityType: string | null | undefined): entityType is RealtimeEntityType {
-  return !!entityType && _default.realtimeEntityTypes.includes(entityType as RealtimeEntityType);
+export function isPublicProductEntity(entityType: string): entityType is PublicProductEntityType {
+  return (hierarchy.parentlessProductTypes as readonly string[]).includes(entityType);
 }

@@ -12,10 +12,24 @@ import { activityActions } from '#/sync/activity-bus';
 import { nanoid } from '#/utils/nanoid';
 import { usersTable } from './users';
 
+export interface ActivityError {
+  /** PostgreSQL LSN for idempotency on replay */
+  lsn: string;
+  message: string;
+  /** PostgreSQL error code if available */
+  code?: string | null;
+  retryCount: number;
+  /** Whether this dead letter has been resolved/replayed */
+  resolved?: boolean;
+}
+
 /**
  * Activities table for Change Data Capture (CDC).
  * Tracks create, update, and delete operations across all resources.
  * Can serve as an audit log and future webhook queue.
+ *
+ * Failed CDC messages (dead letters) are stored with error information
+ * in the `error` JSONB field for later inspection and potential replay.
  *
  * PARTITIONING (production only):
  * - Partitioned by createdAt via pg_partman (see partman_setup migration)
@@ -46,6 +60,8 @@ export const activitiesTable = pgTable(
     // Scope is determined dynamically by CDC based on entity's context hierarchy
     // (e.g., per-project for tasks, per-org for attachments).
     seq: integer(),
+    // Dead letter error info (null for successfully processed activities)
+    error: jsonb().$type<ActivityError>(),
   },
   (table) => [
     // Composite PK for pg_partman partitioning by createdAt
@@ -56,6 +72,10 @@ export const activitiesTable = pgTable(
     index('activities_entity_id_index').on(table.entityId),
     index('activities_table_name_index').on(table.tableName),
     index('activities_tx_id_index').on(sql`(tx->>'id')`),
+    // Index for querying dead letters (failed activities with error field)
+    index('activities_error_lsn_index')
+      .on(sql`(error->>'lsn')`)
+      .where(sql`error IS NOT NULL`),
     foreignKey({
       columns: [table.userId],
       foreignColumns: [usersTable.id],

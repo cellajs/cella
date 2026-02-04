@@ -101,10 +101,7 @@ export function createSpinner(text: string): Ora {
  * Stop the active spinner with success and print step.
  */
 export function spinnerSuccess(message?: string, detail?: string): void {
-  if (activeSpinner) {
-    activeSpinner.stop();
-    activeSpinner = null;
-  }
+  stopSpinner();
   if (message) {
     printStep(message, detail);
   }
@@ -114,10 +111,7 @@ export function spinnerSuccess(message?: string, detail?: string): void {
  * Stop the active spinner with failure.
  */
 export function spinnerFail(message: string): void {
-  if (activeSpinner) {
-    activeSpinner.stop();
-    activeSpinner = null;
-  }
+  stopSpinner();
   console.info(`${pc.red('✗')} ${message}`);
 }
 
@@ -127,6 +121,16 @@ export function spinnerFail(message: string): void {
 export function spinnerText(text: string): void {
   if (activeSpinner) {
     activeSpinner.text = text;
+  }
+}
+
+/**
+ * Stop and clear the active spinner.
+ */
+function stopSpinner(): void {
+  if (activeSpinner) {
+    activeSpinner.stop();
+    activeSpinner = null;
   }
 }
 
@@ -178,6 +182,30 @@ function getFileLink(
   return { label: '' };
 }
 
+/**
+ * Print a section header with title and divider.
+ */
+function printSectionHeader(title: string): void {
+  console.info();
+  console.info(title);
+  console.info(DIVIDER);
+  console.info();
+}
+
+/**
+ * Format file date info with link for display.
+ */
+function formatFileDateInfo(
+  filePath: string,
+  commit: string | undefined,
+  date: string | undefined,
+  linkOptions: LinkOptions,
+): string {
+  const link = getFileLink(filePath, commit, linkOptions);
+  const linkLabel = link.label ? hyperlink(link.label, link.url) : '';
+  return date ? pc.dim(` ≠ ${date} ${linkLabel}`) : '';
+}
+
 /** Status icons */
 const statusIcons: Record<string, string> = {
   identical: pc.gray('✓'),
@@ -217,10 +245,7 @@ const statusColors: Record<string, (text: string) => string> = {
  * Print the analysis summary.
  */
 export function printSummary(summary: AnalysisSummary, title = 'summary'): void {
-  console.info();
-  console.info(pc.cyan(title));
-  console.info(DIVIDER);
-  console.info();
+  printSectionHeader(pc.cyan(title));
 
   // Format counts with padding (exclude ignored from max calculation)
   const maxCount = Math.max(
@@ -263,17 +288,11 @@ export function printSyncFiles(files: AnalyzedFile[], linkOptions: LinkOptions):
 
   if (syncFiles.length === 0) return;
 
-  console.info();
-  console.info(pc.cyan('↓ behind on upstream') + pc.dim(` · ${syncFiles.length} files`));
-  console.info(DIVIDER);
-  console.info();
+  printSectionHeader(pc.cyan('↓ behind on upstream') + pc.dim(` · ${syncFiles.length} files`));
 
   for (const file of syncFiles) {
-    const icon = statusIcons[file.status];
-    const link = getFileLink(file.path, file.changedCommit, linkOptions);
-    const linkLabel = link.label ? hyperlink(link.label, link.url) : '';
-    const dateInfo = file.changedAt ? pc.dim(` ≠ ${file.changedAt} ${linkLabel}`) : '';
-    console.info(`  ${icon} ${file.path}${dateInfo}`);
+    const dateInfo = formatFileDateInfo(file.path, file.changedCommit, file.changedAt, linkOptions);
+    console.info(`  ${statusIcons.behind} ${file.path}${dateInfo}`);
   }
 }
 
@@ -285,15 +304,10 @@ export function printDriftedWarning(files: AnalyzedFile[], linkOptions: LinkOpti
 
   if (driftedFiles.length === 0) return;
 
-  console.info();
-  console.info(`${pc.yellow('⚠ drifted from upstream')} ${pc.dim(`· ${driftedFiles.length} files`)}`);
-  console.info(DIVIDER);
-  console.info();
+  printSectionHeader(`${pc.yellow('⚠ drifted from upstream')} ${pc.dim(`· ${driftedFiles.length} files`)}`);
 
   for (const file of driftedFiles) {
-    const link = getFileLink(file.path, file.changedCommit, linkOptions);
-    const linkLabel = link.label ? hyperlink(link.label, link.url) : '';
-    const dateInfo = file.changedAt ? pc.dim(` ≠ ${file.changedAt} ${linkLabel}`) : '';
+    const dateInfo = formatFileDateInfo(file.path, file.changedCommit, file.changedAt, linkOptions);
     console.info(`  ${statusIcons.drifted} ${file.path}${dateInfo}`);
   }
 
@@ -310,20 +324,35 @@ export function printDivergedPreview(files: AnalyzedFile[], linkOptions: LinkOpt
 
   if (divergedFiles.length === 0) return;
 
-  console.info();
-  console.info(`${pc.magenta('⇅ diverged')} ${pc.dim(`· ${divergedFiles.length} files`)}`);
-  console.info(DIVIDER);
-  console.info();
+  printSectionHeader(`${pc.magenta('⇅ diverged')} ${pc.dim(`· ${divergedFiles.length} files`)}`);
 
   for (const file of divergedFiles) {
-    const link = getFileLink(file.path, file.upstreamCommit, linkOptions);
-    const linkLabel = link.label ? hyperlink(link.label, link.url) : '';
-    const dateInfo = file.upstreamChangedAt ? pc.dim(` ≠ ${file.upstreamChangedAt} ${linkLabel}`) : '';
+    const dateInfo = formatFileDateInfo(file.path, file.upstreamCommit, file.upstreamChangedAt, linkOptions);
     console.info(`  ${statusIcons.diverged} ${file.path}${dateInfo}`);
   }
 
   console.info();
   console.info(pc.dim('  Both fork and upstream changed.'));
+}
+
+/**
+ * Print pinned files preview for analyze mode.
+ * These files have both fork and upstream changes, but fork changes take precedence.
+ */
+export function printPinnedPreview(files: AnalyzedFile[], linkOptions: LinkOptions): void {
+  const pinnedFiles = files.filter((f) => f.status === 'pinned');
+
+  if (pinnedFiles.length === 0) return;
+
+  printSectionHeader(`${pc.green('⨀ pinned')} ${pc.dim(`· ${pinnedFiles.length} files`)}`);
+
+  for (const file of pinnedFiles) {
+    const dateInfo = formatFileDateInfo(file.path, file.upstreamCommit, file.upstreamChangedAt, linkOptions);
+    console.info(`  ${statusIcons.pinned} ${file.path}${dateInfo}`);
+  }
+
+  console.info();
+  console.info(pc.dim('  Both changed, fork wins (pinned in cella.config.ts).'));
 }
 
 /**
@@ -333,10 +362,7 @@ export function printDivergedPreview(files: AnalyzedFile[], linkOptions: LinkOpt
 export function printConflicts(conflicts: string[]): void {
   if (conflicts.length === 0) return;
 
-  console.info();
-  console.info(`${pc.red('✗')} Unresolved conflicts (${conflicts.length} files)`);
-  console.info(DIVIDER);
-  console.info();
+  printSectionHeader(`${pc.red('✗')} Unresolved conflicts (${conflicts.length} files)`);
 
   for (const file of conflicts) {
     console.info(`  ${pc.red('!')} ${file}`);

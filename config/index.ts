@@ -17,16 +17,14 @@ export type {
   RoleFromRegistry,
   UserEntityView,
 } from './entity-hierarchy';
-export { createEntityHierarchy, createRoleRegistry } from './entity-hierarchy';
+export {
+  createEntityHierarchy,
+  createRoleRegistry,
+  validatePublicProductEntities,
+} from './entity-hierarchy';
 
 // Re-export other types
-export type {
-  GenerateScript,
-  GenerateScriptType,
-  RequestLimitsConfig,
-  RequiredConfig,
-  S3Config,
-} from './types';
+export type { RequestLimitsConfig, RequiredConfig, S3Config } from './types';
 export { hasKey, recordFromKeys, identityRecord } from './utils';
 
 // Re-export role registry and hierarchy from default
@@ -52,20 +50,15 @@ export type ContextEntityType = (typeof appConfig.contextEntityTypes)[number];
 export type ProductEntityType = (typeof appConfig.productEntityTypes)[number];
 
 /**
+ * Public product entities (parent: null) - accessible without authentication
+ */
+export type PublicProductEntityType = (typeof appConfig.publicProductEntityTypes)[number];
+
+/**
  * Relatable context entities - context entities that appear as parents of product entities.
  * Used for activities table columns and CDC context extraction.
  */
 export type RelatableContextEntityType = (typeof appConfig.relatableContextEntityTypes)[number];
-
-/**
- * Offline entities that support offline transactions
- */
-export type OfflineEntityType = (typeof appConfig.offlineEntityTypes)[number];
-
-/**
- * Realtime entities that support realtime & offline transactions
- */
-export type RealtimeEntityType = (typeof appConfig.realtimeEntityTypes)[number];
 
 /**
  * Resource types that are not entities but have activities logged
@@ -128,7 +121,7 @@ export type SystemRole = (typeof appConfig.systemRoles)[number];
 export type EntityRole = (typeof appConfig.entityRoles)[number];
 
 // Re-export entity type guards
-export { getContextRoles, isContextEntity, isProductEntity, isRealtimeEntity } from './entity-guards';
+export { getContextRoles, isContextEntity, isProductEntity, isPublicProductEntity } from './entity-guards';
 
 /**
  * Expected shape for entityIdColumnKeys - must have all entity types as keys.

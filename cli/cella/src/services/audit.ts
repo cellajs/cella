@@ -10,10 +10,9 @@ import pc from 'picocolors';
 import type { RuntimeConfig } from '../config/types';
 import {
   type AuditResult,
-  type EnhancedPackageInfo,
-  type VulnerabilityInfo,
   buildVulnerabilityMap,
   clearCache,
+  type EnhancedPackageInfo,
   fetchNpmMetadata,
   findChangelogUrl,
   formatDependents,
@@ -28,6 +27,7 @@ import {
   runPnpmAudit,
   saveCache,
   terminalLink,
+  type VulnerabilityInfo,
 } from '../utils/audit-utils';
 import { createSpinner, spinnerSuccess } from '../utils/display';
 
@@ -297,7 +297,9 @@ function printVulnerabilityResults(auditResult: AuditResult | null, vulnMap: Map
 
     if (totalVulns > 0) {
       console.info();
-      console.info(pc.dim(`Run ${pc.cyan('pnpm audit --fix')} to add overrides for non-vulnerable versions`));
+      console.info(
+        pc.dim('Run ') + pc.cyan('pnpm audit --fix') + pc.dim(' to add overrides for non-vulnerable versions'),
+      );
     }
   } else {
     console.info();

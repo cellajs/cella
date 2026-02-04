@@ -2,7 +2,7 @@
 
 exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
 {
-  "inputHash": "debfc3389d8c02e6",
+  "inputHash": "cb55d950e4679cf4",
   "output": {
     "info": {
       "description": "⚠️ ATTENTION: PRERELEASE!  
@@ -59,6 +59,18 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             },
           },
         },
+        {
+          "description": "Caching strategy applied to the endpoint",
+          "id": "xCache",
+          "key": "x-cache",
+          "required": false,
+          "translationKey": "common:docs.cache",
+          "values": {
+            "publicCache": {
+              "description": "LRU cache for public page entities",
+            },
+          },
+        },
       ],
       "openapiVersion": "3.1.0",
       "title": "Cella DEVELOPMENT API",
@@ -69,15 +81,17 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Returns a paginated list of *activities* (audit log entries). Activities track create, update, and delete operations across all resources.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isAuthenticated",
             "hasSystemAccess",
           ],
           "xRateLimiter": [],
         },
-        "hasExample": false,
+        "hasExample": true,
         "hasParams": true,
         "hasRequestBody": false,
+        "hasResponseBody": true,
         "hash": "tag/activities/GET/activities",
         "id": "getActivities",
         "method": "get",
@@ -89,8 +103,32 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
+        "description": "Returns auth health status including whether the client IP is rate-limited for email enumeration protection.",
+        "extensions": {
+          "xCache": [],
+          "xGuard": [
+            "isPublicAccess",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": false,
+        "hasParams": false,
+        "hasRequestBody": false,
+        "hasResponseBody": true,
+        "hash": "tag/auth/GET/auth/health",
+        "id": "getAuthHealth",
+        "method": "get",
+        "path": "/auth/health",
+        "summary": "Auth health check",
+        "tags": [
+          "auth",
+        ],
+      },
+      {
+        "deprecated": false,
         "description": "Checks if a user with the specified email address exists in the system.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isPublicAccess",
           ],
@@ -101,6 +139,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": false,
         "hasParams": false,
         "hasRequestBody": true,
+        "hasResponseBody": false,
         "hash": "tag/auth/POST/auth/check-email",
         "id": "checkEmail",
         "method": "post",
@@ -114,6 +153,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Validates and invokes a token (for password reset, email verification, invitations, mfa) and redirects user to backend with a one-purpose, single-use token session in a cookie.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isPublicAccess",
           ],
@@ -124,6 +164,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": false,
         "hasParams": true,
         "hasRequestBody": false,
+        "hasResponseBody": false,
         "hash": "tag/auth/GET/auth/invoke-token/{type}/{token}",
         "id": "invokeToken",
         "method": "get",
@@ -137,6 +178,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Get basic token data from single-use token session, It returns basic data if the session is still valid.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isPublicAccess",
           ],
@@ -144,9 +186,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "tokenLimiter",
           ],
         },
-        "hasExample": false,
+        "hasExample": true,
         "hasParams": true,
         "hasRequestBody": false,
+        "hasResponseBody": true,
         "hash": "tag/auth/GET/auth/token/{type}/{id}",
         "id": "getTokenData",
         "method": "get",
@@ -160,6 +203,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Allows a system admin to impersonate a specific user by ID, returning a temporary impersonation session.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isAuthenticated",
             "hasSystemAccess",
@@ -169,6 +213,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": false,
         "hasParams": true,
         "hasRequestBody": false,
+        "hasResponseBody": false,
         "hash": "tag/auth/GET/auth/impersonation/start",
         "id": "startImpersonation",
         "method": "get",
@@ -182,6 +227,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Ends impersonation by clearing the current impersonation session and restoring the admin context.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isAuthenticated",
           ],
@@ -190,6 +236,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": false,
         "hasParams": false,
         "hasRequestBody": false,
+        "hasResponseBody": false,
         "hash": "tag/auth/GET/auth/impersonation/stop",
         "id": "stopImpersonation",
         "method": "get",
@@ -203,6 +250,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Resends an invitation email with token to a new user using the provided email address and token ID.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isPublicAccess",
           ],
@@ -213,6 +261,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": false,
         "hasParams": false,
         "hasRequestBody": true,
+        "hasResponseBody": false,
         "hash": "tag/auth/POST/auth/resend-invitation",
         "id": "resendInvitationWithToken",
         "method": "post",
@@ -226,6 +275,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Signs out the *current user* and clears the active session.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isPublicAccess",
           ],
@@ -234,6 +284,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": false,
         "hasParams": false,
         "hasRequestBody": false,
+        "hasResponseBody": false,
         "hash": "tag/auth/POST/auth/sign-out",
         "id": "signOut",
         "method": "post",
@@ -247,14 +298,16 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Generates a new TOTP key for current user and returns a provisioning URI and Base32 manual key.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isAuthenticated",
           ],
           "xRateLimiter": [],
         },
-        "hasExample": false,
+        "hasExample": true,
         "hasParams": false,
         "hasRequestBody": false,
+        "hasResponseBody": true,
         "hash": "tag/auth/POST/auth/totp/generate-key",
         "id": "generateTotpKey",
         "method": "post",
@@ -268,6 +321,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Confirms TOTP setup by verifying a code from the authenticator app for the first time. On success, TOTP is registered for current user.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isAuthenticated",
           ],
@@ -276,6 +330,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": false,
         "hasParams": false,
         "hasRequestBody": true,
+        "hasResponseBody": false,
         "hash": "tag/auth/POST/auth/totp",
         "id": "createTotp",
         "method": "post",
@@ -289,6 +344,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Delete TOTP credential for current user.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isAuthenticated",
           ],
@@ -297,6 +353,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": false,
         "hasParams": false,
         "hasRequestBody": false,
+        "hasResponseBody": false,
         "hash": "tag/auth/DELETE/auth/totp",
         "id": "deleteTotp",
         "method": "delete",
@@ -310,6 +367,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Validates the TOTP code and completes TOTP based authentication.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isPublicAccess",
           ],
@@ -320,6 +378,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": false,
         "hasParams": false,
         "hasRequestBody": true,
+        "hasResponseBody": false,
         "hash": "tag/auth/POST/auth/totp-verification",
         "id": "signInWithTotp",
         "method": "post",
@@ -333,6 +392,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Registers a new user using an email and password. Sends a verification email upon successful sign up.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isPublicAccess",
           ],
@@ -344,6 +404,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": false,
         "hasParams": false,
         "hasRequestBody": true,
+        "hasResponseBody": false,
         "hash": "tag/auth/POST/auth/sign-up",
         "id": "signUp",
         "method": "post",
@@ -357,6 +418,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Registers a user using an email and password in response to a system or organization invitation.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isPublicAccess",
           ],
@@ -365,9 +427,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "emailEnumLimiter",
           ],
         },
-        "hasExample": false,
+        "hasExample": true,
         "hasParams": true,
         "hasRequestBody": true,
+        "hasResponseBody": true,
         "hash": "tag/auth/POST/auth/sign-up/{tokenId}",
         "id": "signUpWithToken",
         "method": "post",
@@ -381,6 +444,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Sends an email with a link to reset the user's password.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isPublicAccess",
           ],
@@ -392,6 +456,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": false,
         "hasParams": false,
         "hasRequestBody": true,
+        "hasResponseBody": false,
         "hash": "tag/auth/POST/auth/request-password",
         "id": "requestPassword",
         "method": "post",
@@ -405,6 +470,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Sets a new password using a single-use session token in cookie and grants a session immediately upon success.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isPublicAccess",
           ],
@@ -412,9 +478,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "tokenLimiter",
           ],
         },
-        "hasExample": false,
+        "hasExample": true,
         "hasParams": true,
         "hasRequestBody": true,
+        "hasResponseBody": true,
         "hash": "tag/auth/POST/auth/create-password/{tokenId}",
         "id": "createPassword",
         "method": "post",
@@ -428,6 +495,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Authenticates an existing user using their email and password.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isPublicAccess",
           ],
@@ -435,9 +503,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "passwordLimiter",
           ],
         },
-        "hasExample": false,
+        "hasExample": true,
         "hasParams": false,
         "hasRequestBody": true,
+        "hasResponseBody": true,
         "hash": "tag/auth/POST/auth/sign-in",
         "id": "signIn",
         "method": "post",
@@ -451,14 +520,16 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Register a passkey for passwordless authentication by verifying a signed challenge and linking it to the *current user*. Multiple passkeys can be created for different devices/browsers.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isAuthenticated",
           ],
           "xRateLimiter": [],
         },
-        "hasExample": false,
+        "hasExample": true,
         "hasParams": false,
         "hasRequestBody": true,
+        "hasResponseBody": true,
         "hash": "tag/auth/POST/auth/passkey",
         "id": "createPasskey",
         "method": "post",
@@ -472,6 +543,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Delete a passkey by id from the *current user*.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isAuthenticated",
           ],
@@ -480,6 +552,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": false,
         "hasParams": true,
         "hasRequestBody": false,
+        "hasResponseBody": false,
         "hash": "tag/auth/DELETE/auth/passkey/{id}",
         "id": "deletePasskey",
         "method": "delete",
@@ -493,6 +566,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Initiates the passkey registration or authentication flow by generating a device bound challenge.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isPublicAccess",
           ],
@@ -500,9 +574,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "passkeyChallengeLimiter",
           ],
         },
-        "hasExample": false,
+        "hasExample": true,
         "hasParams": false,
         "hasRequestBody": true,
+        "hasResponseBody": true,
         "hash": "tag/auth/POST/auth/passkey/generate-challenge",
         "id": "generatePasskeyChallenge",
         "method": "post",
@@ -516,6 +591,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Validates the signed challenge and completes passkey based authentication.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isPublicAccess",
           ],
@@ -526,6 +602,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": false,
         "hasParams": false,
         "hasRequestBody": true,
+        "hasResponseBody": false,
         "hash": "tag/auth/POST/auth/passkey-verification",
         "id": "signInWithPasskey",
         "method": "post",
@@ -539,6 +616,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Starts OAuth authentication with GitHub. Can be used for account connection, email verification, invitation process, defaults to authentication.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isPublicAccess",
           ],
@@ -547,6 +625,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": false,
         "hasParams": true,
         "hasRequestBody": false,
+        "hasResponseBody": false,
         "hash": "tag/auth/GET/auth/github",
         "id": "github",
         "method": "get",
@@ -560,6 +639,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Starts OAuth authentication with Google. Can be used for account connection, email verification, invitation process, defaults to authentication.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isPublicAccess",
           ],
@@ -568,6 +648,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": false,
         "hasParams": true,
         "hasRequestBody": false,
+        "hasResponseBody": false,
         "hash": "tag/auth/GET/auth/google",
         "id": "google",
         "method": "get",
@@ -581,6 +662,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Starts OAuth authentication with Microsoft. Can be used for account connection, email verification, invitation process, defaults to authentication.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isPublicAccess",
           ],
@@ -589,6 +671,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": false,
         "hasParams": true,
         "hasRequestBody": false,
+        "hasResponseBody": false,
         "hash": "tag/auth/GET/auth/microsoft",
         "id": "microsoft",
         "method": "get",
@@ -602,6 +685,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Handles GitHub OAuth callback, retrieves user identity, and establishes a session or links account.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isPublicAccess",
           ],
@@ -612,6 +696,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": false,
         "hasParams": true,
         "hasRequestBody": false,
+        "hasResponseBody": false,
         "hash": "tag/auth/GET/auth/github/callback",
         "id": "githubCallback",
         "method": "get",
@@ -625,6 +710,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Handles Google OAuth callback, retrieves user identity, and establishes a session or links account.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isPublicAccess",
           ],
@@ -635,6 +721,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": false,
         "hasParams": true,
         "hasRequestBody": false,
+        "hasResponseBody": false,
         "hash": "tag/auth/GET/auth/google/callback",
         "id": "googleCallback",
         "method": "get",
@@ -648,6 +735,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Handles Microsoft OAuth callback, retrieves user identity, and establishes a session or links account.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isPublicAccess",
           ],
@@ -658,6 +746,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": false,
         "hasParams": true,
         "hasRequestBody": false,
+        "hasResponseBody": false,
         "hash": "tag/auth/GET/auth/microsoft/callback",
         "id": "microsoftCallback",
         "method": "get",
@@ -671,6 +760,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Returns the *current user*.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isAuthenticated",
           ],
@@ -679,6 +769,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": true,
         "hasParams": false,
         "hasRequestBody": false,
+        "hasResponseBody": true,
         "hash": "tag/me/GET/me",
         "id": "getMe",
         "method": "get",
@@ -692,6 +783,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Updates the *current user*.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isAuthenticated",
           ],
@@ -700,6 +792,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": true,
         "hasParams": false,
         "hasRequestBody": true,
+        "hasResponseBody": true,
         "hash": "tag/me/PUT/me",
         "id": "updateMe",
         "method": "put",
@@ -713,6 +806,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Deletes the *current user*. This also removes the user's memberships (cascade) and sets references to the user to \`null\` where applicable.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isAuthenticated",
           ],
@@ -721,6 +815,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": false,
         "hasParams": false,
         "hasRequestBody": false,
+        "hasResponseBody": false,
         "hash": "tag/me/DELETE/me",
         "id": "deleteMe",
         "method": "delete",
@@ -734,6 +829,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Enable or disable multifactor authentication for the *current user*. Always requires passkey or TOTP reauthentication.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isAuthenticated",
           ],
@@ -742,6 +838,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": true,
         "hasParams": false,
         "hasRequestBody": true,
+        "hasResponseBody": true,
         "hash": "tag/me/PUT/me/mfa",
         "id": "toggleMfa",
         "method": "put",
@@ -755,6 +852,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Returns authentication related data of *current user*, including sessions, OAuth accounts, and sign in options.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isAuthenticated",
           ],
@@ -763,6 +861,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": true,
         "hasParams": false,
         "hasRequestBody": false,
+        "hasResponseBody": true,
         "hash": "tag/me/GET/me/auth",
         "id": "getMyAuth",
         "method": "get",
@@ -776,14 +875,16 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Returns a list of pending memberships with entity data.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isAuthenticated",
           ],
           "xRateLimiter": [],
         },
-        "hasExample": false,
+        "hasExample": true,
         "hasParams": false,
         "hasRequestBody": false,
+        "hasResponseBody": true,
         "hash": "tag/me/GET/me/invitations",
         "id": "getMyInvitations",
         "method": "get",
@@ -797,6 +898,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Ends one or more sessions for the *current user* based on provided session IDs.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isAuthenticated",
           ],
@@ -805,6 +907,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": true,
         "hasParams": false,
         "hasRequestBody": true,
+        "hasResponseBody": true,
         "hash": "tag/me/DELETE/me/sessions",
         "id": "deleteMySessions",
         "method": "delete",
@@ -818,6 +921,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Removes the *current user* from an entity they are a member of.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isAuthenticated",
           ],
@@ -826,6 +930,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": false,
         "hasParams": true,
         "hasRequestBody": false,
+        "hasResponseBody": false,
         "hash": "tag/me/DELETE/me/leave",
         "id": "deleteMyMembership",
         "method": "delete",
@@ -839,6 +944,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Generates and returns an upload token for uploading files or images to a private S3 bucket, scoped to the *current user* and organization",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isAuthenticated",
           ],
@@ -847,6 +953,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": true,
         "hasParams": true,
         "hasRequestBody": false,
+        "hasResponseBody": true,
         "hash": "tag/me/GET/me/upload-token",
         "id": "getUploadToken",
         "method": "get",
@@ -860,6 +967,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Unsubscribes the user from email notifications using a personal unsubscribe token. No authentication is required, as the token implicitly identifies the *current user*.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isPublicAccess",
           ],
@@ -870,6 +978,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": false,
         "hasParams": true,
         "hasRequestBody": false,
+        "hasResponseBody": false,
         "hash": "tag/me/GET/me/unsubscribe",
         "id": "unsubscribeMe",
         "method": "get",
@@ -881,41 +990,22 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "SSE stream for membership and entity notifications affecting the *current user*. Sends lightweight notifications - client fetches entity data via API.",
-        "extensions": {
-          "xGuard": [
-            "isAuthenticated",
-          ],
-          "xRateLimiter": [],
-        },
-        "hasExample": false,
-        "hasParams": true,
-        "hasRequestBody": false,
-        "hash": "tag/me/GET/me/stream",
-        "id": "getAppStream",
-        "method": "get",
-        "path": "/me/stream",
-        "summary": "App event stream",
-        "tags": [
-          "me",
-        ],
-      },
-      {
-        "deprecated": false,
         "description": "Returns a list of *users*.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isAuthenticated",
           ],
           "xRateLimiter": [],
         },
-        "hasExample": false,
+        "hasExample": true,
         "hasParams": true,
         "hasRequestBody": false,
-        "hash": "tag/users/GET/user",
+        "hasResponseBody": true,
+        "hash": "tag/users/GET/users",
         "id": "getUsers",
         "method": "get",
-        "path": "/user",
+        "path": "/users",
         "summary": "Get list of users",
         "tags": [
           "users",
@@ -925,6 +1015,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Deletes one or more *users* from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to \`null\` where applicable.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isAuthenticated",
             "hasSystemAccess",
@@ -934,10 +1025,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": true,
         "hasParams": false,
         "hasRequestBody": true,
-        "hash": "tag/users/DELETE/user",
+        "hasResponseBody": true,
+        "hash": "tag/users/DELETE/users",
         "id": "deleteUsers",
         "method": "delete",
-        "path": "/user",
+        "path": "/users",
         "summary": "Delete users",
         "tags": [
           "users",
@@ -947,6 +1039,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Retrieves a *user* by ID or slug.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isAuthenticated",
           ],
@@ -955,10 +1048,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": true,
         "hasParams": true,
         "hasRequestBody": false,
-        "hash": "tag/users/GET/user/{idOrSlug}",
+        "hasResponseBody": true,
+        "hash": "tag/users/GET/users/{idOrSlug}",
         "id": "getUser",
         "method": "get",
-        "path": "/user/{idOrSlug}",
+        "path": "/users/{idOrSlug}",
         "summary": "Get user",
         "tags": [
           "users",
@@ -968,6 +1062,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Updates a *user* identified by ID or slug.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isAuthenticated",
             "hasSystemAccess",
@@ -977,10 +1072,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": true,
         "hasParams": true,
         "hasRequestBody": true,
-        "hash": "tag/users/PUT/user/{idOrSlug}",
+        "hasResponseBody": true,
+        "hash": "tag/users/PUT/users/{idOrSlug}",
         "id": "updateUser",
         "method": "put",
-        "path": "/user/{idOrSlug}",
+        "path": "/users/{idOrSlug}",
         "summary": "Update user",
         "tags": [
           "users",
@@ -990,18 +1086,20 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Creates one or more new *organizations*.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isAuthenticated",
           ],
           "xRateLimiter": [],
         },
-        "hasExample": false,
+        "hasExample": true,
         "hasParams": false,
         "hasRequestBody": true,
-        "hash": "tag/organizations/POST/organization",
+        "hasResponseBody": true,
+        "hash": "tag/organizations/POST/organizations",
         "id": "createOrganizations",
         "method": "post",
-        "path": "/organization",
+        "path": "/organizations",
         "summary": "Create organizations",
         "tags": [
           "organizations",
@@ -1011,18 +1109,20 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Returns a list of *organizations*.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isAuthenticated",
           ],
           "xRateLimiter": [],
         },
-        "hasExample": false,
+        "hasExample": true,
         "hasParams": true,
         "hasRequestBody": false,
-        "hash": "tag/organizations/GET/organization",
+        "hasResponseBody": true,
+        "hash": "tag/organizations/GET/organizations",
         "id": "getOrganizations",
         "method": "get",
-        "path": "/organization",
+        "path": "/organizations",
         "summary": "Get list of organizations",
         "tags": [
           "organizations",
@@ -1032,6 +1132,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Deletes one or more *organizations* by ID.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isAuthenticated",
           ],
@@ -1040,10 +1141,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": true,
         "hasParams": false,
         "hasRequestBody": true,
-        "hash": "tag/organizations/DELETE/organization",
+        "hasResponseBody": true,
+        "hash": "tag/organizations/DELETE/organizations",
         "id": "deleteOrganizations",
         "method": "delete",
-        "path": "/organization",
+        "path": "/organizations",
         "summary": "Delete organizations",
         "tags": [
           "organizations",
@@ -1053,6 +1155,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Retrieves an *organization* by ID or slug.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isAuthenticated",
           ],
@@ -1061,10 +1164,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": true,
         "hasParams": true,
         "hasRequestBody": false,
-        "hash": "tag/organizations/GET/organization/{idOrSlug}",
+        "hasResponseBody": true,
+        "hash": "tag/organizations/GET/organizations/{idOrSlug}",
         "id": "getOrganization",
         "method": "get",
-        "path": "/organization/{idOrSlug}",
+        "path": "/organizations/{idOrSlug}",
         "summary": "Get organization",
         "tags": [
           "organizations",
@@ -1072,8 +1176,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Updates an *organization* by ID or slug.",
+        "description": "Updates an *organization*.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isAuthenticated",
           ],
@@ -1082,10 +1187,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": true,
         "hasParams": true,
         "hasRequestBody": true,
-        "hash": "tag/organizations/PUT/organization/{idOrSlug}",
+        "hasResponseBody": true,
+        "hash": "tag/organizations/PUT/organizations/{idOrSlug}",
         "id": "updateOrganization",
         "method": "put",
-        "path": "/organization/{idOrSlug}",
+        "path": "/organizations/{idOrSlug}",
         "summary": "Update organization",
         "tags": [
           "organizations",
@@ -1093,42 +1199,23 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Stream real-time changes for pages. No authentication required. Use offset for catch-up, live=sse for SSE streaming.",
-        "extensions": {
-          "xGuard": [
-            "isPublicAccess",
-          ],
-          "xRateLimiter": [],
-        },
-        "hasExample": false,
-        "hasParams": true,
-        "hasRequestBody": false,
-        "hash": "tag/pages/GET/page/stream",
-        "id": "pagesPublicStream",
-        "method": "get",
-        "path": "/page/stream",
-        "summary": "Public stream of page changes",
-        "tags": [
-          "pages",
-        ],
-      },
-      {
-        "deprecated": false,
         "description": "Insert one or more new *pages*. Returns created pages and any rejected items.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isAuthenticated",
             "isSystemAdmin",
           ],
           "xRateLimiter": [],
         },
-        "hasExample": false,
+        "hasExample": true,
         "hasParams": false,
         "hasRequestBody": true,
-        "hash": "tag/pages/POST/page",
+        "hasResponseBody": true,
+        "hash": "tag/pages/POST/pages",
         "id": "createPages",
         "method": "post",
-        "path": "/page",
+        "path": "/pages",
         "summary": "Create pages",
         "tags": [
           "pages",
@@ -1138,18 +1225,20 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Get all matching *pages*.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isPublicAccess",
           ],
           "xRateLimiter": [],
         },
-        "hasExample": false,
+        "hasExample": true,
         "hasParams": true,
         "hasRequestBody": false,
-        "hash": "tag/pages/GET/page",
+        "hasResponseBody": true,
+        "hash": "tag/pages/GET/pages",
         "id": "getPages",
         "method": "get",
-        "path": "/page",
+        "path": "/pages",
         "summary": "Get pages",
         "tags": [
           "pages",
@@ -1159,6 +1248,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Delete one or more *pages* by ID.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isAuthenticated",
             "isSystemAdmin",
@@ -1168,10 +1258,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": false,
         "hasParams": false,
         "hasRequestBody": true,
-        "hash": "tag/pages/DELETE/page",
+        "hasResponseBody": false,
+        "hash": "tag/pages/DELETE/pages",
         "id": "deletePages",
         "method": "delete",
-        "path": "/page",
+        "path": "/pages",
         "summary": "Delete pages",
         "tags": [
           "pages",
@@ -1179,8 +1270,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Get a single *page* by ID.",
+        "description": "Get a single *page* by ID. Cached using LRU - first request warms cache.",
         "extensions": {
+          "xCache": [
+            "publicCache",
+          ],
           "xGuard": [
             "isPublicAccess",
           ],
@@ -1189,10 +1283,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": true,
         "hasParams": true,
         "hasRequestBody": false,
-        "hash": "tag/pages/GET/page/{id}",
+        "hasResponseBody": true,
+        "hash": "tag/pages/GET/pages/{id}",
         "id": "getPage",
         "method": "get",
-        "path": "/page/{id}",
+        "path": "/pages/{id}",
         "summary": "Get page",
         "tags": [
           "pages",
@@ -1202,6 +1297,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Update a single *page* by ID.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isAuthenticated",
             "isSystemAdmin",
@@ -1211,10 +1307,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": true,
         "hasParams": true,
         "hasRequestBody": true,
-        "hash": "tag/pages/PUT/page/{id}",
+        "hasResponseBody": true,
+        "hash": "tag/pages/PUT/pages/{id}",
         "id": "updatePage",
         "method": "put",
-        "path": "/page/{id}",
+        "path": "/pages/{id}",
         "summary": "Update page",
         "tags": [
           "pages",
@@ -1225,6 +1322,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "description": "Checks whether a given slug is available across all entity types (e.g. *organizations*, *users*).
       Primarily used to prevent slug collisions before creating or updating an entity.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isAuthenticated",
           ],
@@ -1233,11 +1331,58 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": false,
         "hasParams": false,
         "hasRequestBody": true,
-        "hash": "tag/entities/POST/check-slug",
+        "hasResponseBody": false,
+        "hash": "tag/entities/POST/entities/check-slug",
         "id": "checkSlug",
         "method": "post",
-        "path": "/check-slug",
+        "path": "/entities/check-slug",
         "summary": "Check slug availability",
+        "tags": [
+          "entities",
+        ],
+      },
+      {
+        "deprecated": false,
+        "description": "Stream real-time changes for public entities (entities with no parent context). No authentication required. Use offset for catch-up, live=sse for SSE streaming.",
+        "extensions": {
+          "xCache": [],
+          "xGuard": [
+            "isPublicAccess",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": false,
+        "hasParams": true,
+        "hasRequestBody": false,
+        "hasResponseBody": true,
+        "hash": "tag/entities/GET/entities/public/stream",
+        "id": "publicStream",
+        "method": "get",
+        "path": "/entities/public/stream",
+        "summary": "Public entity stream",
+        "tags": [
+          "entities",
+        ],
+      },
+      {
+        "deprecated": false,
+        "description": "SSE stream for membership and entity notifications affecting the *current user*. Sends lightweight notifications - client fetches entity data via API.",
+        "extensions": {
+          "xCache": [],
+          "xGuard": [
+            "isAuthenticated",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": true,
+        "hasParams": true,
+        "hasRequestBody": false,
+        "hasResponseBody": true,
+        "hash": "tag/entities/GET/entities/app/stream",
+        "id": "getAppStream",
+        "method": "get",
+        "path": "/entities/app/stream",
+        "summary": "App event stream",
         "tags": [
           "entities",
         ],
@@ -1246,6 +1391,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Invites one or more users to the system via email. Can be used to onboard system level users or admins.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isAuthenticated",
             "hasSystemAccess",
@@ -1255,6 +1401,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": true,
         "hasParams": false,
         "hasRequestBody": true,
+        "hasResponseBody": true,
         "hash": "tag/system/POST/system/invite",
         "id": "systemInvite",
         "method": "post",
@@ -1268,6 +1415,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Generates and returns a presigned URL for uploading files to an S3 bucket.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isPublicAccess",
           ],
@@ -1275,9 +1423,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "presignedUrlLimiter",
           ],
         },
-        "hasExample": false,
+        "hasExample": true,
         "hasParams": true,
         "hasRequestBody": false,
+        "hasResponseBody": true,
         "hash": "tag/system/GET/system/presigned-url",
         "id": "getPresignedUrl",
         "method": "get",
@@ -1291,6 +1440,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Receives and handles Paddle subscription events such as purchases, renewals, and cancellations.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isPublicAccess",
           ],
@@ -1301,6 +1451,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": false,
         "hasParams": false,
         "hasRequestBody": true,
+        "hasResponseBody": false,
         "hash": "tag/system/POST/system/paddle-webhook",
         "id": "paddleWebhook",
         "method": "post",
@@ -1314,6 +1465,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Sends a newsletter to members of one or more specified organizations.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isAuthenticated",
             "hasSystemAccess",
@@ -1323,6 +1475,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": false,
         "hasParams": true,
         "hasRequestBody": true,
+        "hasResponseBody": false,
         "hash": "tag/system/POST/system/newsletter",
         "id": "sendNewsletter",
         "method": "post",
@@ -1336,6 +1489,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Submits a new *request* to the system. Supported types include contact form, newsletter signup, and waitlist entry.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isPublicAccess",
           ],
@@ -1344,9 +1498,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "spamLimiter",
           ],
         },
-        "hasExample": false,
+        "hasExample": true,
         "hasParams": false,
         "hasRequestBody": true,
+        "hasResponseBody": true,
         "hash": "tag/requests/POST/requests",
         "id": "createRequest",
         "method": "post",
@@ -1360,15 +1515,17 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Returns a list of submitted *requests* across all types: contact form, newsletter, and waitlist.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isAuthenticated",
             "hasSystemAccess",
           ],
           "xRateLimiter": [],
         },
-        "hasExample": false,
+        "hasExample": true,
         "hasParams": true,
         "hasRequestBody": false,
+        "hasResponseBody": true,
         "hash": "tag/requests/GET/requests",
         "id": "getRequests",
         "method": "get",
@@ -1382,6 +1539,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Deletes one or more *requests* from the system by their IDs.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isAuthenticated",
             "hasSystemAccess",
@@ -1391,6 +1549,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": false,
         "hasParams": false,
         "hasRequestBody": true,
+        "hasResponseBody": false,
         "hash": "tag/requests/DELETE/requests",
         "id": "deleteRequests",
         "method": "delete",
@@ -1405,6 +1564,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "description": "EXPERIMENTAL. Returns raw system observability data (e.g. node level statistics or runtime insights).
       Primarily intended for internal monitoring and diagnostics.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isAuthenticated",
             "hasSystemAccess",
@@ -1414,6 +1574,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": false,
         "hasParams": false,
         "hasRequestBody": false,
+        "hasResponseBody": true,
         "hash": "tag/metrics/GET/metrics",
         "id": "getMetrics",
         "method": "get",
@@ -1428,6 +1589,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "description": "Returns Node.js process health metrics and OpenTelemetry runtime instrumentation data.
       Includes memory usage, CPU time, uptime, and event loop utilization.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isAuthenticated",
             "hasSystemAccess",
@@ -1437,6 +1599,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": false,
         "hasParams": false,
         "hasRequestBody": false,
+        "hasResponseBody": true,
         "hash": "tag/metrics/GET/metrics/runtime",
         "id": "getRuntimeMetrics",
         "method": "get",
@@ -1451,6 +1614,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "description": "Returns basic count metrics for entity types such as \`users\` and \`organizations\`.
       This endpoint is public and uses a 1 minute in memory cache for performance.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isPublicAccess",
           ],
@@ -1459,6 +1623,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": false,
         "hasParams": false,
         "hasRequestBody": false,
+        "hasResponseBody": true,
         "hash": "tag/metrics/GET/metrics/public",
         "id": "getPublicCounts",
         "method": "get",
@@ -1473,6 +1638,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "description": "Returns entity cache statistics including hit rates, sizes, and invalidations.
       Useful for monitoring cache performance and tuning.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isAuthenticated",
             "hasSystemAccess",
@@ -1482,6 +1648,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": false,
         "hasParams": false,
         "hasRequestBody": false,
+        "hasResponseBody": true,
         "hash": "tag/metrics/GET/metrics/cache",
         "id": "getCacheStats",
         "method": "get",
@@ -1496,6 +1663,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "description": "Returns metrics for the sync flow: CDC Worker → ActivityBus → SSE streams.
       Includes event counts, connection stats, and tracing span data.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isAuthenticated",
             "hasSystemAccess",
@@ -1505,6 +1673,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": false,
         "hasParams": false,
         "hasRequestBody": false,
+        "hasResponseBody": true,
         "hash": "tag/metrics/GET/metrics/sync",
         "id": "getSyncMetrics",
         "method": "get",
@@ -1518,19 +1687,21 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Returns a paginated list of *attachments* for the organization.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isAuthenticated",
             "hasOrgAccess",
           ],
           "xRateLimiter": [],
         },
-        "hasExample": false,
+        "hasExample": true,
         "hasParams": true,
         "hasRequestBody": false,
-        "hash": "tag/attachments/GET/{orgIdOrSlug}/attachment",
+        "hasResponseBody": true,
+        "hash": "tag/attachments/GET/{orgIdOrSlug}/attachments",
         "id": "getAttachments",
         "method": "get",
-        "path": "/{orgIdOrSlug}/attachment",
+        "path": "/{orgIdOrSlug}/attachments",
         "summary": "Get attachments",
         "tags": [
           "attachments",
@@ -1540,19 +1711,21 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Registers one or more new *attachments* after client side upload. Includes metadata like name, type, and linked entity.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isAuthenticated",
             "hasOrgAccess",
           ],
           "xRateLimiter": [],
         },
-        "hasExample": false,
+        "hasExample": true,
         "hasParams": true,
         "hasRequestBody": true,
-        "hash": "tag/attachments/POST/{orgIdOrSlug}/attachment",
+        "hasResponseBody": true,
+        "hash": "tag/attachments/POST/{orgIdOrSlug}/attachments",
         "id": "createAttachments",
         "method": "post",
-        "path": "/{orgIdOrSlug}/attachment",
+        "path": "/{orgIdOrSlug}/attachments",
         "summary": "Create attachments",
         "tags": [
           "attachments",
@@ -1562,6 +1735,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Deletes one or more *attachment* records by ID. This does not delete the underlying file in storage.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isAuthenticated",
             "hasOrgAccess",
@@ -1571,10 +1745,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": true,
         "hasParams": true,
         "hasRequestBody": true,
-        "hash": "tag/attachments/DELETE/{orgIdOrSlug}/attachment",
+        "hasResponseBody": true,
+        "hash": "tag/attachments/DELETE/{orgIdOrSlug}/attachments",
         "id": "deleteAttachments",
         "method": "delete",
-        "path": "/{orgIdOrSlug}/attachment",
+        "path": "/{orgIdOrSlug}/attachments",
         "summary": "Delete attachments",
         "tags": [
           "attachments",
@@ -1584,6 +1759,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Updates metadata of an *attachment*, such as its name or associated entity.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isAuthenticated",
             "hasOrgAccess",
@@ -1593,10 +1769,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": true,
         "hasParams": true,
         "hasRequestBody": true,
-        "hash": "tag/attachments/PUT/{orgIdOrSlug}/attachment/{id}",
+        "hasResponseBody": true,
+        "hash": "tag/attachments/PUT/{orgIdOrSlug}/attachments/{id}",
         "id": "updateAttachment",
         "method": "put",
-        "path": "/{orgIdOrSlug}/attachment/{id}",
+        "path": "/{orgIdOrSlug}/attachments/{id}",
         "summary": "Update attachment",
         "tags": [
           "attachments",
@@ -1606,6 +1783,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Redirects to the file's public or presigned URL, depending on storage visibility.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isPublicAccess",
           ],
@@ -1616,10 +1794,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": false,
         "hasParams": true,
         "hasRequestBody": false,
-        "hash": "tag/attachments/GET/{orgIdOrSlug}/attachment/{id}/link",
+        "hasResponseBody": false,
+        "hash": "tag/attachments/GET/{orgIdOrSlug}/attachments/{id}/link",
         "id": "redirectToAttachment",
         "method": "get",
-        "path": "/{orgIdOrSlug}/attachment/{id}/link",
+        "path": "/{orgIdOrSlug}/attachments/{id}/link",
         "summary": "Redirect to attachment",
         "tags": [
           "attachments",
@@ -1629,6 +1808,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Creates one or more *memberships*, inviting users (existing or new) to a context entity such as an organization.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isAuthenticated",
             "hasOrgAccess",
@@ -1638,6 +1818,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": true,
         "hasParams": true,
         "hasRequestBody": true,
+        "hasResponseBody": true,
         "hash": "tag/memberships/POST/{orgIdOrSlug}/memberships",
         "id": "membershipInvite",
         "method": "post",
@@ -1651,6 +1832,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Deletes one or more *memberships* by ID. This removes the membership but does not delete the associated user(s).",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isAuthenticated",
             "hasOrgAccess",
@@ -1660,6 +1842,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": true,
         "hasParams": true,
         "hasRequestBody": true,
+        "hasResponseBody": true,
         "hash": "tag/memberships/DELETE/{orgIdOrSlug}/memberships",
         "id": "deleteMemberships",
         "method": "delete",
@@ -1673,6 +1856,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Updates the *membership* metadata, such as role, \`muted\`, or \`archived\` status.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isAuthenticated",
             "hasOrgAccess",
@@ -1682,6 +1866,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasExample": true,
         "hasParams": true,
         "hasRequestBody": true,
+        "hasResponseBody": true,
         "hash": "tag/memberships/PUT/{orgIdOrSlug}/memberships/{id}",
         "id": "updateMembership",
         "method": "put",
@@ -1695,14 +1880,16 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Accepting activates the associated membership. Rejecting simply removes the invitation token.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isAuthenticated",
           ],
           "xRateLimiter": [],
         },
-        "hasExample": false,
+        "hasExample": true,
         "hasParams": true,
         "hasRequestBody": false,
+        "hasResponseBody": true,
         "hash": "tag/memberships/POST/{orgIdOrSlug}/memberships/{id}/{acceptOrReject}",
         "id": "handleMembershipInvitation",
         "method": "post",
@@ -1716,15 +1903,17 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Retrieves members (users) of a context entity by ID or slug, including their associated *membership* data.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isAuthenticated",
             "hasOrgAccess",
           ],
           "xRateLimiter": [],
         },
-        "hasExample": false,
+        "hasExample": true,
         "hasParams": true,
         "hasRequestBody": false,
+        "hasResponseBody": true,
         "hash": "tag/memberships/GET/{orgIdOrSlug}/memberships/members",
         "id": "getMembers",
         "method": "get",
@@ -1738,15 +1927,17 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "deprecated": false,
         "description": "Returns pending memberships for a context entity, identified by ID or slug. This does not include pending invitations for non-existing users.",
         "extensions": {
+          "xCache": [],
           "xGuard": [
             "isAuthenticated",
             "hasOrgAccess",
           ],
           "xRateLimiter": [],
         },
-        "hasExample": false,
+        "hasExample": true,
         "hasParams": true,
         "hasRequestBody": false,
+        "hasResponseBody": true,
         "hash": "tag/memberships/GET/{orgIdOrSlug}/memberships/pending",
         "id": "getPendingMemberships",
         "method": "get",
@@ -1764,7 +1955,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "name": "base",
       },
       {
-        "count": 15,
+        "count": 16,
         "description": "Complete data schemas",
         "name": "data",
       },
@@ -1777,6 +1968,18 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
     "schemas": [
       {
         "description": "Base user schema with essential fields for identification and display.",
+        "example": {
+          "bannerUrl": null,
+          "createdAt": "2024-12-04T07:25:23.386Z",
+          "description": null,
+          "email": "cali_stanton@gmail.com",
+          "entityType": "user",
+          "id": "1b1eyp654w9neyhyka0hezx1",
+          "modifiedAt": "2024-12-22T02:34:34.155Z",
+          "name": "Cali Stanton",
+          "slug": "cali.stanton36",
+          "thumbnailUrl": null,
+        },
         "name": "UserBase",
         "ref": "#/components/schemas/UserBase",
         "schema": {
@@ -1844,6 +2047,17 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "type": "object",
       },
       {
+        "example": {
+          "bannerUrl": null,
+          "createdAt": "2024-09-15T16:29:26.122Z",
+          "description": "Horizontal demand-driven support",
+          "entityType": "organization",
+          "id": "bafp6iiu2dt74olfvl618xur",
+          "modifiedAt": "2024-12-04T06:32:26.983Z",
+          "name": "Nolan - Jacobson",
+          "slug": "nolan---jacobson",
+          "thumbnailUrl": null,
+        },
         "name": "ContextEntityBase",
         "ref": "#/components/schemas/ContextEntityBase",
         "schema": {
@@ -1906,6 +2120,16 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "type": "object",
       },
       {
+        "example": {
+          "archived": false,
+          "contextType": "organization",
+          "id": "vn86f6g3ci8ybeh37sz3gscf",
+          "muted": false,
+          "order": 9,
+          "organizationId": "n34cen80754cxm7om1aq3bat",
+          "role": "member",
+          "userId": "gmpj3uavw3f7pkm7vsxl2157",
+        },
         "name": "MembershipBase",
         "ref": "#/components/schemas/MembershipBase",
         "schema": {
@@ -1958,6 +2182,15 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "type": "object",
       },
       {
+        "example": {
+          "fieldVersions": {
+            "description": 1,
+            "name": 1,
+          },
+          "id": "gen-abc123def456ghi789",
+          "sourceId": "src_gen-xyz987wvu654",
+          "version": 1,
+        },
         "name": "TxBase",
         "ref": "#/components/schemas/TxBase",
         "schema": {
@@ -1985,6 +2218,24 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "type": "object",
       },
       {
+        "example": {
+          "action": "update",
+          "cacheToken": "UyMeEcuBnWoD28KSeQr21dJgZDmxiD2W",
+          "contextType": null,
+          "entityId": "gj2w2bwxrkgnv0oa592jxwar",
+          "entityType": "attachment",
+          "organizationId": "c2u05q7olzsfy1csy8m2q98f",
+          "resourceType": null,
+          "seq": 550,
+          "tx": {
+            "fieldVersions": {
+              "name": 1,
+            },
+            "id": "wiooyt8ngdjsef4skbnrj1fg",
+            "sourceId": "m3unlw6p4wjqfhll7n1r95ec",
+            "version": 3,
+          },
+        },
         "name": "StreamNotification",
         "ref": "#/components/schemas/StreamNotification",
         "schema": {
@@ -2091,6 +2342,14 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "type": "object",
       },
       {
+        "example": {
+          "fieldVersions": {
+            "name": 1,
+          },
+          "id": "gd9m8kym1wafivmk7c3du9yy",
+          "sourceId": "u3is64cucutsxomeo8xiy6bt",
+          "version": 4,
+        },
         "name": "TxStreamMessage",
         "ref": "#/components/schemas/TxStreamMessage",
         "schema": {
@@ -2124,6 +2383,17 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         ],
       },
       {
+        "example": {
+          "action": "update",
+          "activityId": "tr1619any4wiivw7050pxbnj",
+          "changedKeys": [
+            "keywords",
+          ],
+          "createdAt": "2024-01-31T10:09:41.032Z",
+          "entityId": "9pjvmlsr1u1yqqvio34f744e",
+          "entityType": "attachment",
+          "modifiedAt": "2024-07-15T15:19:59.216Z",
+        },
         "name": "PublicStreamActivity",
         "ref": "#/components/schemas/PublicStreamActivity",
         "schema": {
@@ -2173,6 +2443,14 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
       },
       {
         "description": "Error returned when the request is malformed or contains invalid data.",
+        "example": {
+          "message": "error:bad_request_action",
+          "name": "BadRequestError",
+          "severity": "warn",
+          "status": 400,
+          "timestamp": "2025-01-01T12:00:00.000Z",
+          "type": "validation_error",
+        },
         "extendsRef": "#/components/schemas/ApiError",
         "name": "BadRequestError",
         "ref": "#/components/schemas/BadRequestError",
@@ -2251,6 +2529,14 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "type": "object",
       },
       {
+        "example": {
+          "message": "error:bad_request_action",
+          "name": "BadRequestError",
+          "severity": "warn",
+          "status": 400,
+          "timestamp": "2025-01-01T12:00:00.000Z",
+          "type": "validation_error",
+        },
         "name": "ApiError",
         "ref": "#/components/schemas/ApiError",
         "schema": {
@@ -2327,6 +2613,14 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
       },
       {
         "description": "Error returned when authentication is missing or invalid.",
+        "example": {
+          "message": "error:bad_request_action",
+          "name": "BadRequestError",
+          "severity": "warn",
+          "status": 400,
+          "timestamp": "2025-01-01T12:00:00.000Z",
+          "type": "validation_error",
+        },
         "extendsRef": "#/components/schemas/ApiError",
         "name": "UnauthorizedError",
         "ref": "#/components/schemas/UnauthorizedError",
@@ -2406,6 +2700,14 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
       },
       {
         "description": "Error returned when the user lacks permission for the requested action.",
+        "example": {
+          "message": "error:bad_request_action",
+          "name": "BadRequestError",
+          "severity": "warn",
+          "status": 400,
+          "timestamp": "2025-01-01T12:00:00.000Z",
+          "type": "validation_error",
+        },
         "extendsRef": "#/components/schemas/ApiError",
         "name": "ForbiddenError",
         "ref": "#/components/schemas/ForbiddenError",
@@ -2485,6 +2787,14 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
       },
       {
         "description": "Error returned when the requested resource cannot be found.",
+        "example": {
+          "message": "error:bad_request_action",
+          "name": "BadRequestError",
+          "severity": "warn",
+          "status": 400,
+          "timestamp": "2025-01-01T12:00:00.000Z",
+          "type": "validation_error",
+        },
         "extendsRef": "#/components/schemas/ApiError",
         "name": "NotFoundError",
         "ref": "#/components/schemas/NotFoundError",
@@ -2564,6 +2874,14 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
       },
       {
         "description": "Error returned when rate limits are exceeded.",
+        "example": {
+          "message": "error:bad_request_action",
+          "name": "BadRequestError",
+          "severity": "warn",
+          "status": 400,
+          "timestamp": "2025-01-01T12:00:00.000Z",
+          "type": "validation_error",
+        },
         "extendsRef": "#/components/schemas/ApiError",
         "name": "TooManyRequestsError",
         "ref": "#/components/schemas/TooManyRequestsError",
@@ -2645,17 +2963,18 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "example": {
           "action": "update",
           "changedKeys": [
-            "email",
+            "slug",
             "description",
+            "email",
             "name",
           ],
           "createdAt": "2024-10-11T19:21:02.239Z",
           "entityId": "21rs6psa9stclacdgtonoqr1",
           "entityType": "user",
           "id": "s933zhzgm8axl572xlcja86p",
-          "organizationId": "t2j8omleaz2pg8iwtnhw3666",
+          "organizationId": "mleaz2pg8iwtnhw3666j3aif",
           "resourceType": null,
-          "seq": 431,
+          "seq": 668,
           "tableName": "pages",
           "tx": null,
           "type": "page.updated",
@@ -2675,34 +2994,12 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "type": "string",
             },
             "changedKeys": {
-              "anyOf": [
-                {
-                  "required": false,
-                  "type": "string",
-                },
-                {
-                  "required": false,
-                  "type": "number",
-                },
-                {
-                  "required": false,
-                  "type": "boolean",
-                },
-                {
-                  "required": false,
-                  "type": "null",
-                },
-                {
-                  "required": false,
-                  "type": "object",
-                },
-                {
-                  "itemType": "object",
-                  "required": false,
-                  "type": "array",
-                },
-              ],
+              "itemType": "string",
               "required": true,
+              "type": [
+                "array",
+                "null",
+              ],
             },
             "createdAt": {
               "required": true,
@@ -2766,29 +3063,36 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "type": "string",
             },
             "tx": {
-              "properties": {
-                "fieldVersions": {
-                  "required": true,
+              "anyOf": [
+                {
+                  "properties": {
+                    "fieldVersions": {
+                      "required": true,
+                      "type": "object",
+                    },
+                    "id": {
+                      "required": true,
+                      "type": "string",
+                    },
+                    "sourceId": {
+                      "required": true,
+                      "type": "string",
+                    },
+                    "version": {
+                      "required": true,
+                      "type": "number",
+                    },
+                  },
+                  "ref": "#/components/schemas/TxBase",
+                  "required": false,
                   "type": "object",
                 },
-                "id": {
-                  "required": true,
-                  "type": "string",
+                {
+                  "required": false,
+                  "type": "null",
                 },
-                "sourceId": {
-                  "required": true,
-                  "type": "string",
-                },
-                "version": {
-                  "required": true,
-                  "type": "number",
-                },
-              },
-              "required": true,
-              "type": [
-                "object",
-                "null",
               ],
+              "required": true,
             },
             "type": {
               "required": true,
@@ -3511,7 +3815,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "password",
           ],
           "bannerUrl": null,
-          "chatSupport": true,
+          "chatSupport": false,
           "color": "#daf7e3",
           "country": "Guatemala",
           "counts": {
@@ -3536,7 +3840,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "languages": [
             "en",
           ],
-          "logoUrl": "https://picsum.photos/seed/CGEa4RRQS/2665/3362",
+          "logoUrl": null,
           "membership": {
             "archived": false,
             "contextType": "organization",
@@ -3977,6 +4281,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "type": "number",
                 },
               },
+              "ref": "#/components/schemas/TxBase",
               "required": true,
               "type": "object",
             },
@@ -3987,6 +4292,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "type": "object",
       },
       {
+        "example": {
+          "baseVersion": 0,
+          "id": "uoobg3gmzvie508npzus4h2j",
+          "sourceId": "q0fso83v5i0v5s1hl5zutg31",
+        },
         "name": "TxRequest",
         "ref": "#/components/schemas/TxRequest",
         "schema": {
@@ -4008,6 +4318,57 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "maxLength": 64,
               "required": true,
               "type": "string",
+            },
+          },
+          "type": "object",
+        },
+        "schemaTag": "data",
+        "type": "object",
+      },
+      {
+        "example": {
+          "createdAt": "2024-06-05T15:03:46.141Z",
+          "email": "anderson.pfannerstill23@yahoo.com",
+          "id": "wejsiq864y0sbytrzsnlr9a0",
+          "message": "Suggero accusator demens terreo amiculum comitatus necessitatibus candidus.",
+          "type": "contact",
+          "wasInvited": false,
+        },
+        "name": "Request",
+        "ref": "#/components/schemas/Request",
+        "schema": {
+          "properties": {
+            "createdAt": {
+              "required": true,
+              "type": "string",
+            },
+            "email": {
+              "required": true,
+              "type": "string",
+            },
+            "id": {
+              "required": true,
+              "type": "string",
+            },
+            "message": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "type": {
+              "enum": [
+                "waitlist",
+                "newsletter",
+                "contact",
+              ],
+              "required": true,
+              "type": "string",
+            },
+            "wasInvited": {
+              "required": true,
+              "type": "boolean",
             },
           },
           "type": "object",
@@ -4200,6 +4561,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "type": "number",
                 },
               },
+              "ref": "#/components/schemas/TxBase",
               "required": true,
               "type": "object",
             },
@@ -4403,6 +4765,44 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             {
               "contentType": "application/json",
               "description": "Activities",
+              "example": {
+                "items": [
+                  {
+                    "action": "delete",
+                    "changedKeys": null,
+                    "createdAt": "2024-11-21T04:00:59.122Z",
+                    "entityId": "naxnsp9nes1yx645yb0gleyv",
+                    "entityType": "organization",
+                    "id": "p8d07imsvjbtqtl3rtjgxd9x",
+                    "organizationId": "bbm5piweg2q4gqa3vx9cfyey",
+                    "resourceType": null,
+                    "seq": 547,
+                    "tableName": "attachments",
+                    "tx": null,
+                    "type": "attachment.deleted",
+                    "userId": "n03u76eo7z71y60a882cwpxt",
+                  },
+                  {
+                    "action": "update",
+                    "changedKeys": [
+                      "slug",
+                      "description",
+                    ],
+                    "createdAt": "2024-10-29T08:46:20.790Z",
+                    "entityId": "6utecq3o02wpa56tpd77kpi3",
+                    "entityType": "page",
+                    "id": "5ogh3yr2b2dbwf7b9eckajcl",
+                    "organizationId": "avgc67t5nr6k4huj5qv4k6bw",
+                    "resourceType": null,
+                    "seq": 521,
+                    "tableName": "organizations",
+                    "tx": null,
+                    "type": "organization.updated",
+                    "userId": "xs8vayzrul7vmeyahbgyu01s",
+                  },
+                ],
+                "total": 2,
+              },
               "schema": {
                 "contentType": "application/json",
                 "properties": {
@@ -4420,34 +4820,12 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "type": "string",
                         },
                         "changedKeys": {
-                          "anyOf": [
-                            {
-                              "required": false,
-                              "type": "string",
-                            },
-                            {
-                              "required": false,
-                              "type": "number",
-                            },
-                            {
-                              "required": false,
-                              "type": "boolean",
-                            },
-                            {
-                              "required": false,
-                              "type": "null",
-                            },
-                            {
-                              "required": false,
-                              "type": "object",
-                            },
-                            {
-                              "itemType": "object",
-                              "required": false,
-                              "type": "array",
-                            },
-                          ],
+                          "itemType": "string",
                           "required": true,
+                          "type": [
+                            "array",
+                            "null",
+                          ],
                         },
                         "createdAt": {
                           "required": true,
@@ -4511,29 +4889,36 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "type": "string",
                         },
                         "tx": {
-                          "properties": {
-                            "fieldVersions": {
-                              "required": true,
+                          "anyOf": [
+                            {
+                              "properties": {
+                                "fieldVersions": {
+                                  "required": true,
+                                  "type": "object",
+                                },
+                                "id": {
+                                  "required": true,
+                                  "type": "string",
+                                },
+                                "sourceId": {
+                                  "required": true,
+                                  "type": "string",
+                                },
+                                "version": {
+                                  "required": true,
+                                  "type": "number",
+                                },
+                              },
+                              "ref": "#/components/schemas/TxBase",
+                              "required": false,
                               "type": "object",
                             },
-                            "id": {
-                              "required": true,
-                              "type": "string",
+                            {
+                              "required": false,
+                              "type": "null",
                             },
-                            "sourceId": {
-                              "required": true,
-                              "type": "string",
-                            },
-                            "version": {
-                              "required": true,
-                              "type": "number",
-                            },
-                          },
-                          "required": true,
-                          "type": [
-                            "object",
-                            "null",
                           ],
+                          "required": true,
                         },
                         "type": {
                           "required": true,
@@ -4620,6 +5005,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "required": false,
                   "type": "string",
                 },
+                "modifiedAfter": {
+                  "format": "date-time",
+                  "required": false,
+                  "type": "string",
+                },
                 "offset": {
                   "required": false,
                   "type": "string",
@@ -4652,6 +5042,67 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             {
               "contentType": "application/json",
               "description": "Attachments",
+              "example": {
+                "items": [
+                  {
+                    "bucketName": "attachments",
+                    "contentType": "image/vnd.microsoft.icon",
+                    "convertedContentType": null,
+                    "convertedKey": null,
+                    "createdAt": "2024-11-21T04:00:59.122Z",
+                    "createdBy": "qqp8d07imsvjbtqtl3rtjgxd",
+                    "description": null,
+                    "entityType": "attachment",
+                    "filename": "elegantly.vst",
+                    "groupId": null,
+                    "id": "o7z71y60a882cwpxtanaxnsp",
+                    "keywords": "caterva socius cultura",
+                    "modifiedAt": "2024-11-21T04:00:59.122Z",
+                    "modifiedBy": "qqp8d07imsvjbtqtl3rtjgxd",
+                    "name": "elegantly.vst",
+                    "organizationId": "22ydtq57iu31mz5oaqf10oe7",
+                    "originalKey": "uploads/yx645yb0gleyvjbbm5piweg2/elegantly.vst",
+                    "public": false,
+                    "size": "419263",
+                    "thumbnailKey": null,
+                    "tx": {
+                      "fieldVersions": {},
+                      "id": "q4gqa3vx9cfyey6mqh9hmikg",
+                      "sourceId": "src_me3gy3a9lhe0ctrmzc53x7z2",
+                      "version": 1,
+                    },
+                  },
+                  {
+                    "bucketName": "attachments",
+                    "contentType": "image/gif",
+                    "convertedContentType": null,
+                    "convertedKey": null,
+                    "createdAt": "2024-10-29T08:46:20.790Z",
+                    "createdBy": "hg5ogh3yr2b2dbwf7b9eckaj",
+                    "description": null,
+                    "entityType": "attachment",
+                    "filename": "woefully_bah.vsw",
+                    "groupId": null,
+                    "id": "yahbgyu01sr6utecq3o02wpa",
+                    "keywords": "argentum attonbitus trans",
+                    "modifiedAt": "2024-10-29T08:46:20.790Z",
+                    "modifiedBy": "hg5ogh3yr2b2dbwf7b9eckaj",
+                    "name": "woefully_bah.vsw",
+                    "organizationId": "hgvcj0rs3xtuk03gxco9kzp2",
+                    "originalKey": "uploads/77kpi37syiavgc67t5nr6k4h/woefully_bah.vsw",
+                    "public": false,
+                    "size": "3774704",
+                    "thumbnailKey": null,
+                    "tx": {
+                      "fieldVersions": {},
+                      "id": "uj5qv4k6bwmvl0e44bpmhsya",
+                      "sourceId": "src_uxcwuwjsrzvzac8qx1h9s6vz",
+                      "version": 1,
+                    },
+                  },
+                ],
+                "total": 2,
+              },
               "schema": {
                 "contentType": "application/json",
                 "properties": {
@@ -4811,6 +5262,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                               "type": "number",
                             },
                           },
+                          "ref": "#/components/schemas/TxBase",
                           "required": true,
                           "type": "object",
                         },
@@ -4995,6 +5447,67 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             {
               "contentType": "application/json",
               "description": "Attachments already created (idempotent)",
+              "example": {
+                "data": [
+                  {
+                    "bucketName": "attachments",
+                    "contentType": "application/epub+zip",
+                    "convertedContentType": null,
+                    "convertedKey": null,
+                    "createdAt": "2024-04-19T14:04:35.773Z",
+                    "createdBy": "kzmv5qbhdcqeiuvwlosan0fc",
+                    "description": null,
+                    "entityType": "attachment",
+                    "filename": "excluding_ugh_besides.svgz",
+                    "groupId": null,
+                    "id": "slwtksu3yccsd9ihoiny6rso",
+                    "keywords": "colo benigne id",
+                    "modifiedAt": "2024-04-19T14:04:35.773Z",
+                    "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
+                    "name": "excluding_ugh_besides.svgz",
+                    "organizationId": "j5s37irnjjhhc4mupuqz0iqm",
+                    "originalKey": "uploads/6kfz7rauzy6zwhhoizpinjn9/excluding_ugh_besides.svgz",
+                    "public": false,
+                    "size": "7211145",
+                    "thumbnailKey": null,
+                    "tx": {
+                      "fieldVersions": {},
+                      "id": "as93qcb6pakf4ovzm1ne3h55",
+                      "sourceId": "src_lgj31d63n9apx99a5auvr5cy",
+                      "version": 1,
+                    },
+                  },
+                  {
+                    "bucketName": "attachments",
+                    "contentType": "application/zip",
+                    "convertedContentType": null,
+                    "convertedKey": null,
+                    "createdAt": "2024-02-25T13:01:35.301Z",
+                    "createdBy": "p3t0ygxx0aa83en3sk1fs1we",
+                    "description": null,
+                    "entityType": "attachment",
+                    "filename": "gown.ini",
+                    "groupId": null,
+                    "id": "pxxbqdej8622zpgo54qw5fqo",
+                    "keywords": "cetera velociter vehemens",
+                    "modifiedAt": "2024-02-25T13:01:35.301Z",
+                    "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
+                    "name": "gown.ini",
+                    "organizationId": "21q04oq81k5rbzt4yq63pob5",
+                    "originalKey": "uploads/5hu8fmg18wbwob9s8r85nah6/gown.ini",
+                    "public": false,
+                    "size": "9066537",
+                    "thumbnailKey": null,
+                    "tx": {
+                      "fieldVersions": {},
+                      "id": "71ybl6y4dvzpz75e03ldr2ga",
+                      "sourceId": "src_54hj92yzr7v1itpc9wztvbcy",
+                      "version": 1,
+                    },
+                  },
+                ],
+                "rejectedItemIds": [],
+              },
               "schema": {
                 "contentType": "application/json",
                 "properties": {
@@ -5154,6 +5667,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                               "type": "number",
                             },
                           },
+                          "ref": "#/components/schemas/TxBase",
                           "required": true,
                           "type": "object",
                         },
@@ -5170,6 +5684,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "itemType": "string",
                     "required": true,
                     "type": "array",
+                  },
+                  "rejectionReasons": {
+                    "description": "Map of rejected item ID to reason code",
+                    "required": false,
+                    "type": "object",
                   },
                 },
                 "type": "object",
@@ -5179,6 +5698,67 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             {
               "contentType": "application/json",
               "description": "Attachments created",
+              "example": {
+                "data": [
+                  {
+                    "bucketName": "attachments",
+                    "contentType": "application/epub+zip",
+                    "convertedContentType": null,
+                    "convertedKey": null,
+                    "createdAt": "2024-04-19T14:04:35.773Z",
+                    "createdBy": "kzmv5qbhdcqeiuvwlosan0fc",
+                    "description": null,
+                    "entityType": "attachment",
+                    "filename": "excluding_ugh_besides.svgz",
+                    "groupId": null,
+                    "id": "slwtksu3yccsd9ihoiny6rso",
+                    "keywords": "colo benigne id",
+                    "modifiedAt": "2024-04-19T14:04:35.773Z",
+                    "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
+                    "name": "excluding_ugh_besides.svgz",
+                    "organizationId": "j5s37irnjjhhc4mupuqz0iqm",
+                    "originalKey": "uploads/6kfz7rauzy6zwhhoizpinjn9/excluding_ugh_besides.svgz",
+                    "public": false,
+                    "size": "7211145",
+                    "thumbnailKey": null,
+                    "tx": {
+                      "fieldVersions": {},
+                      "id": "as93qcb6pakf4ovzm1ne3h55",
+                      "sourceId": "src_lgj31d63n9apx99a5auvr5cy",
+                      "version": 1,
+                    },
+                  },
+                  {
+                    "bucketName": "attachments",
+                    "contentType": "application/zip",
+                    "convertedContentType": null,
+                    "convertedKey": null,
+                    "createdAt": "2024-02-25T13:01:35.301Z",
+                    "createdBy": "p3t0ygxx0aa83en3sk1fs1we",
+                    "description": null,
+                    "entityType": "attachment",
+                    "filename": "gown.ini",
+                    "groupId": null,
+                    "id": "pxxbqdej8622zpgo54qw5fqo",
+                    "keywords": "cetera velociter vehemens",
+                    "modifiedAt": "2024-02-25T13:01:35.301Z",
+                    "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
+                    "name": "gown.ini",
+                    "organizationId": "21q04oq81k5rbzt4yq63pob5",
+                    "originalKey": "uploads/5hu8fmg18wbwob9s8r85nah6/gown.ini",
+                    "public": false,
+                    "size": "9066537",
+                    "thumbnailKey": null,
+                    "tx": {
+                      "fieldVersions": {},
+                      "id": "71ybl6y4dvzpz75e03ldr2ga",
+                      "sourceId": "src_54hj92yzr7v1itpc9wztvbcy",
+                      "version": 1,
+                    },
+                  },
+                ],
+                "rejectedItemIds": [],
+              },
               "schema": {
                 "contentType": "application/json",
                 "properties": {
@@ -5338,6 +5918,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                               "type": "number",
                             },
                           },
+                          "ref": "#/components/schemas/TxBase",
                           "required": true,
                           "type": "object",
                         },
@@ -5354,6 +5935,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "itemType": "string",
                     "required": true,
                     "type": "array",
+                  },
+                  "rejectionReasons": {
+                    "description": "Map of rejected item ID to reason code",
+                    "required": false,
+                    "type": "object",
                   },
                 },
                 "type": "object",
@@ -5735,6 +6321,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                         "type": "number",
                       },
                     },
+                    "ref": "#/components/schemas/TxBase",
                     "required": true,
                     "type": "object",
                   },
@@ -5837,6 +6424,65 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         },
       ],
       "auth": [
+        {
+          "operationId": "getAuthHealth",
+          "responses": [
+            {
+              "contentType": "application/json",
+              "description": "Auth health status",
+              "schema": {
+                "contentType": "application/json",
+                "properties": {
+                  "restrictedMode": {
+                    "required": true,
+                    "type": "boolean",
+                  },
+                  "retryAfter": {
+                    "required": false,
+                    "type": "number",
+                  },
+                },
+                "type": "object",
+              },
+              "status": 200,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Bad request: problem processing request.",
+              "name": "BadRequestError",
+              "ref": "#/components/responses/BadRequestError",
+              "status": 400,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Unauthorized: authentication required.",
+              "name": "UnauthorizedError",
+              "ref": "#/components/responses/UnauthorizedError",
+              "status": 401,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Forbidden: insufficient permissions.",
+              "name": "ForbiddenError",
+              "ref": "#/components/responses/ForbiddenError",
+              "status": 403,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Not found: resource does not exist.",
+              "name": "NotFoundError",
+              "ref": "#/components/responses/NotFoundError",
+              "status": 404,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Rate limit: too many requests.",
+              "name": "TooManyRequestsError",
+              "ref": "#/components/responses/TooManyRequestsError",
+              "status": 429,
+            },
+          ],
+        },
         {
           "operationId": "checkEmail",
           "request": {
@@ -5987,6 +6633,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             {
               "contentType": "application/json",
               "description": "Token is valid",
+              "example": {
+                "email": "bradford_ryan98@demo.local",
+                "userId": "dh2fifqwn7yznn0t633emq5s",
+              },
               "schema": {
                 "contentType": "application/json",
                 "properties": {
@@ -6273,6 +6923,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             {
               "contentType": "application/json",
               "description": "Challenge created",
+              "example": {
+                "manualKey": "ZEEY2N36QIFGDJ3KZL2U0JTJY5GGUNL8",
+                "totpUri": "otpauth://totp/Cella:user@example.com?secret=MGNEKSGGQO2Q7CMRC525Z7X2IGCP19Z3&issuer=Cella",
+              },
               "schema": {
                 "contentType": "application/json",
                 "properties": {
@@ -6586,6 +7240,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             {
               "contentType": "application/json",
               "description": "User signed up",
+              "example": {
+                "membershipInvite": true,
+              },
               "schema": {
                 "contentType": "application/json",
                 "properties": {
@@ -6722,6 +7379,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             {
               "contentType": "application/json",
               "description": "Password created",
+              "example": {
+                "mfa": false,
+              },
               "schema": {
                 "contentType": "application/json",
                 "properties": {
@@ -6797,6 +7457,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             {
               "contentType": "application/json",
               "description": "User signed in",
+              "example": {
+                "emailVerified": true,
+                "mfa": false,
+              },
               "schema": {
                 "contentType": "application/json",
                 "properties": {
@@ -6877,6 +7541,13 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             {
               "contentType": "application/json",
               "description": "Passkey created",
+              "example": {
+                "createdAt": "2024-08-15T16:12:55.564Z",
+                "id": "wi1u74x2b4g096dtzu91o9w8",
+                "nameOnDevice": "Chrome on Mac",
+                "userAgent": "FakerBot/2.17.17",
+                "userId": "zslal6vzkcqd10drzf37piml",
+              },
               "schema": {
                 "contentType": "application/json",
                 "properties": {
@@ -7049,6 +7720,12 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             {
               "contentType": "application/json",
               "description": "Challenge generated",
+              "example": {
+                "challengeBase64": "c5SiUKPbCCFqoXyIZHNC3ufdzv1sE6cuymwA9IMSiP6",
+                "credentialIds": [
+                  "3EQAejE9eLT26kT6iIsM52HWd5x3aKpV",
+                ],
+              },
               "schema": {
                 "contentType": "application/json",
                 "properties": {
@@ -7591,6 +8268,342 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             {
               "description": "Slug is available",
               "status": 204,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Bad request: problem processing request.",
+              "name": "BadRequestError",
+              "ref": "#/components/responses/BadRequestError",
+              "status": 400,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Unauthorized: authentication required.",
+              "name": "UnauthorizedError",
+              "ref": "#/components/responses/UnauthorizedError",
+              "status": 401,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Forbidden: insufficient permissions.",
+              "name": "ForbiddenError",
+              "ref": "#/components/responses/ForbiddenError",
+              "status": 403,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Not found: resource does not exist.",
+              "name": "NotFoundError",
+              "ref": "#/components/responses/NotFoundError",
+              "status": 404,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Rate limit: too many requests.",
+              "name": "TooManyRequestsError",
+              "ref": "#/components/responses/TooManyRequestsError",
+              "status": 429,
+            },
+          ],
+        },
+        {
+          "operationId": "publicStream",
+          "request": {
+            "query": {
+              "properties": {
+                "live": {
+                  "description": "Set to "sse" for live updates (SSE stream)",
+                  "enum": [
+                    "sse",
+                  ],
+                  "required": false,
+                  "type": "string",
+                },
+                "offset": {
+                  "description": "Starting offset: 'now' for live-only, or activity ID to receive missed notifications",
+                  "required": false,
+                  "type": "string",
+                },
+              },
+            },
+          },
+          "responses": [
+            {
+              "contentType": "application/json",
+              "description": "Catch-up activities or SSE stream started",
+              "schema": {
+                "contentType": "application/json",
+                "properties": {
+                  "activities": {
+                    "itemType": "object",
+                    "items": {
+                      "properties": {
+                        "action": {
+                          "enum": [
+                            "create",
+                            "update",
+                            "delete",
+                          ],
+                          "required": true,
+                          "type": "string",
+                        },
+                        "activityId": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "changedKeys": {
+                          "itemType": "string",
+                          "required": true,
+                          "type": [
+                            "array",
+                            "null",
+                          ],
+                        },
+                        "createdAt": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "entityId": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "entityType": {
+                          "enum": [
+                            "attachment",
+                            "page",
+                          ],
+                          "required": true,
+                          "type": "string",
+                        },
+                      },
+                      "ref": "#/components/schemas/PublicStreamActivity",
+                      "type": "object",
+                    },
+                    "ref": "#/components/schemas/PublicStreamActivity",
+                    "required": true,
+                    "type": "array",
+                  },
+                  "cursor": {
+                    "description": "Last activity ID (use as offset for next request)",
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                },
+                "type": "object",
+              },
+              "status": 200,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Bad request: problem processing request.",
+              "name": "BadRequestError",
+              "ref": "#/components/responses/BadRequestError",
+              "status": 400,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Unauthorized: authentication required.",
+              "name": "UnauthorizedError",
+              "ref": "#/components/responses/UnauthorizedError",
+              "status": 401,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Forbidden: insufficient permissions.",
+              "name": "ForbiddenError",
+              "ref": "#/components/responses/ForbiddenError",
+              "status": 403,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Not found: resource does not exist.",
+              "name": "NotFoundError",
+              "ref": "#/components/responses/NotFoundError",
+              "status": 404,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Rate limit: too many requests.",
+              "name": "TooManyRequestsError",
+              "ref": "#/components/responses/TooManyRequestsError",
+              "status": 429,
+            },
+          ],
+        },
+        {
+          "operationId": "getAppStream",
+          "request": {
+            "query": {
+              "properties": {
+                "live": {
+                  "description": "Connection mode: 'sse' for streaming, 'poll' for one-time fetch",
+                  "enum": [
+                    "sse",
+                    "poll",
+                  ],
+                  "required": false,
+                  "type": "string",
+                },
+                "offset": {
+                  "description": "Starting offset: 'now' for live-only, or activity ID to receive missed notifications",
+                  "required": false,
+                  "type": "string",
+                },
+              },
+            },
+          },
+          "responses": [
+            {
+              "contentType": "application/json",
+              "description": "SSE stream or notification response",
+              "example": {
+                "activities": [
+                  {
+                    "action": "create",
+                    "cacheToken": "hg18eRugoaB38Ug7A1n7Zj018TyC3pwn",
+                    "contextType": null,
+                    "entityId": "p4mjvy3c0rjatirn6hp0rcgf",
+                    "entityType": "page",
+                    "organizationId": "ufjhv1cwh0j4x3xi7ae54uen",
+                    "resourceType": null,
+                    "seq": 526,
+                    "tx": {
+                      "fieldVersions": {
+                        "name": 1,
+                      },
+                      "id": "gdgo47kv9o7rvgjoql6a1dxp",
+                      "sourceId": "8u6gifwzsuyr58fapjsndxb3",
+                      "version": 5,
+                    },
+                  },
+                ],
+                "cursor": "ll6ebv8jmzcs1cydc8ytq68u",
+              },
+              "schema": {
+                "contentType": "application/json",
+                "properties": {
+                  "activities": {
+                    "itemType": "object",
+                    "items": {
+                      "properties": {
+                        "action": {
+                          "enum": [
+                            "create",
+                            "update",
+                            "delete",
+                          ],
+                          "required": true,
+                          "type": "string",
+                        },
+                        "cacheToken": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "contextType": {
+                          "enum": [
+                            "organization",
+                            null,
+                          ],
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "entityId": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "entityType": {
+                          "enum": [
+                            "attachment",
+                            "page",
+                            null,
+                          ],
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "organizationId": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "resourceType": {
+                          "enum": [
+                            "request",
+                            "membership",
+                            null,
+                          ],
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "seq": {
+                          "required": true,
+                          "type": [
+                            "integer",
+                            "null",
+                          ],
+                        },
+                        "tx": {
+                          "properties": {
+                            "fieldVersions": {
+                              "required": true,
+                              "type": "object",
+                            },
+                            "id": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "sourceId": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "version": {
+                              "required": true,
+                              "type": "integer",
+                            },
+                          },
+                          "ref": "#/components/schemas/TxStreamMessage",
+                          "required": true,
+                          "type": [
+                            "object",
+                            "null",
+                          ],
+                        },
+                      },
+                      "ref": "#/components/schemas/StreamNotification",
+                      "type": "object",
+                    },
+                    "ref": "#/components/schemas/StreamNotification",
+                    "required": true,
+                    "type": "array",
+                  },
+                  "cursor": {
+                    "description": "Last activity ID (use as offset for next request)",
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                },
+                "type": "object",
+              },
+              "status": 200,
             },
             {
               "contentType": "application/json",
@@ -8655,6 +9668,63 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             {
               "contentType": "application/json",
               "description": "Invitations pending",
+              "example": {
+                "items": [
+                  {
+                    "entity": {
+                      "bannerUrl": null,
+                      "createdAt": "2024-12-25T19:05:51.784Z",
+                      "description": "Organized systemic adapter",
+                      "entityType": "organization",
+                      "id": "kk63h1dxe8cgq643ccglytgb",
+                      "modifiedAt": "2024-12-27T22:12:06.410Z",
+                      "name": "Effertz Group",
+                      "slug": "effertz-group",
+                      "thumbnailUrl": null,
+                    },
+                    "inactiveMembership": {
+                      "contextType": "organization",
+                      "createdAt": "2024-11-13T18:39:21.444Z",
+                      "createdBy": "6385w1ul2bx3ld4na8k0ts70",
+                      "email": "felicity.steuber@yahoo.com",
+                      "id": "6gr354pie22th7dif16z86xc",
+                      "organizationId": "ft7nt6w77qphfz9detwtt178",
+                      "rejectedAt": null,
+                      "role": "admin",
+                      "tokenId": "3zfj14fctcamlgi5coyrzuov",
+                      "uniqueKey": "ezumc4icc5vmduw22tjoaw74-ft7nt6w77qphfz9detwtt178",
+                      "userId": "ezumc4icc5vmduw22tjoaw74",
+                    },
+                  },
+                  {
+                    "entity": {
+                      "bannerUrl": null,
+                      "createdAt": "2024-03-25T23:28:46.492Z",
+                      "description": "Progressive fresh-thinking concept",
+                      "entityType": "organization",
+                      "id": "ip52vb8otvpz1qn2gfy3zjnp",
+                      "modifiedAt": "2024-06-03T13:50:52.760Z",
+                      "name": "Hansen - Reynolds",
+                      "slug": "hansen---reynolds",
+                      "thumbnailUrl": null,
+                    },
+                    "inactiveMembership": {
+                      "contextType": "organization",
+                      "createdAt": "2024-04-12T10:35:38.557Z",
+                      "createdBy": "r95gtt9htxwawq5tdvqh553o",
+                      "email": "carmela35@gmail.com",
+                      "id": "3gqwjug71n1cwllydl9l6917",
+                      "organizationId": "okmsol2r5n4cy72j57t1tgy0",
+                      "rejectedAt": null,
+                      "role": "admin",
+                      "tokenId": "rzesl0rhhdendngwylqyrn1s",
+                      "uniqueKey": "gbc099sv1n33rsaavdzvrv0a-okmsol2r5n4cy72j57t1tgy0",
+                      "userId": "gbc099sv1n33rsaavdzvrv0a",
+                    },
+                  },
+                ],
+                "total": 2,
+              },
               "schema": {
                 "contentType": "application/json",
                 "properties": {
@@ -9172,191 +10242,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             },
           ],
         },
-        {
-          "operationId": "getAppStream",
-          "request": {
-            "query": {
-              "properties": {
-                "live": {
-                  "description": "Connection mode: 'sse' for streaming, 'poll' for one-time fetch",
-                  "enum": [
-                    "sse",
-                    "poll",
-                  ],
-                  "required": false,
-                  "type": "string",
-                },
-                "offset": {
-                  "description": "Starting offset: 'now' for live-only, or activity ID to receive missed notifications",
-                  "required": false,
-                  "type": "string",
-                },
-              },
-            },
-          },
-          "responses": [
-            {
-              "contentType": "application/json",
-              "description": "SSE stream or notification response",
-              "schema": {
-                "contentType": "application/json",
-                "properties": {
-                  "activities": {
-                    "itemType": "object",
-                    "items": {
-                      "properties": {
-                        "action": {
-                          "enum": [
-                            "create",
-                            "update",
-                            "delete",
-                          ],
-                          "required": true,
-                          "type": "string",
-                        },
-                        "cacheToken": {
-                          "required": true,
-                          "type": [
-                            "string",
-                            "null",
-                          ],
-                        },
-                        "contextType": {
-                          "enum": [
-                            "organization",
-                            null,
-                          ],
-                          "required": true,
-                          "type": [
-                            "string",
-                            "null",
-                          ],
-                        },
-                        "entityId": {
-                          "required": true,
-                          "type": "string",
-                        },
-                        "entityType": {
-                          "enum": [
-                            "attachment",
-                            "page",
-                            null,
-                          ],
-                          "required": true,
-                          "type": [
-                            "string",
-                            "null",
-                          ],
-                        },
-                        "organizationId": {
-                          "required": true,
-                          "type": [
-                            "string",
-                            "null",
-                          ],
-                        },
-                        "resourceType": {
-                          "enum": [
-                            "request",
-                            "membership",
-                            null,
-                          ],
-                          "required": true,
-                          "type": [
-                            "string",
-                            "null",
-                          ],
-                        },
-                        "seq": {
-                          "required": true,
-                          "type": [
-                            "integer",
-                            "null",
-                          ],
-                        },
-                        "tx": {
-                          "properties": {
-                            "fieldVersions": {
-                              "required": true,
-                              "type": "object",
-                            },
-                            "id": {
-                              "required": true,
-                              "type": "string",
-                            },
-                            "sourceId": {
-                              "required": true,
-                              "type": "string",
-                            },
-                            "version": {
-                              "required": true,
-                              "type": "integer",
-                            },
-                          },
-                          "ref": "#/components/schemas/TxStreamMessage",
-                          "required": true,
-                          "type": [
-                            "object",
-                            "null",
-                          ],
-                        },
-                      },
-                      "ref": "#/components/schemas/StreamNotification",
-                      "type": "object",
-                    },
-                    "ref": "#/components/schemas/StreamNotification",
-                    "required": true,
-                    "type": "array",
-                  },
-                  "cursor": {
-                    "required": true,
-                    "type": [
-                      "string",
-                      "null",
-                    ],
-                  },
-                },
-                "type": "object",
-              },
-              "status": 200,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Bad request: problem processing request.",
-              "name": "BadRequestError",
-              "ref": "#/components/responses/BadRequestError",
-              "status": 400,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Unauthorized: authentication required.",
-              "name": "UnauthorizedError",
-              "ref": "#/components/responses/UnauthorizedError",
-              "status": 401,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Forbidden: insufficient permissions.",
-              "name": "ForbiddenError",
-              "ref": "#/components/responses/ForbiddenError",
-              "status": 403,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Not found: resource does not exist.",
-              "name": "NotFoundError",
-              "ref": "#/components/responses/NotFoundError",
-              "status": 404,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Rate limit: too many requests.",
-              "name": "TooManyRequestsError",
-              "ref": "#/components/responses/TooManyRequestsError",
-              "status": 429,
-            },
-          ],
-        },
       ],
       "memberships": [
         {
@@ -9795,6 +10680,17 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             {
               "contentType": "application/json",
               "description": "Invitation was accepted",
+              "example": {
+                "bannerUrl": null,
+                "createdAt": "2024-09-15T16:29:26.122Z",
+                "description": "Horizontal demand-driven support",
+                "entityType": "organization",
+                "id": "bafp6iiu2dt74olfvl618xur",
+                "modifiedAt": "2024-12-04T06:32:26.983Z",
+                "name": "Nolan - Jacobson",
+                "slug": "nolan---jacobson",
+                "thumbnailUrl": null,
+              },
               "name": "ContextEntityBase",
               "ref": "#/components/schemas/ContextEntityBase",
               "schema": {
@@ -9967,6 +10863,71 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             {
               "contentType": "application/json",
               "description": "Members",
+              "example": {
+                "items": [
+                  {
+                    "bannerUrl": null,
+                    "createdAt": "2024-11-21T04:00:59.122Z",
+                    "description": null,
+                    "email": "marlon3@hotmail.com",
+                    "entityType": "user",
+                    "firstName": "Rose",
+                    "id": "qqp8d07imsvjbtqtl3rtjgxd",
+                    "language": "en",
+                    "lastName": "Dicki",
+                    "lastSeenAt": "2024-11-21T04:00:59.122Z",
+                    "lastSignInAt": "2024-11-21T04:00:59.122Z",
+                    "lastStartedAt": "2024-11-21T04:00:59.122Z",
+                    "membership": {
+                      "archived": false,
+                      "contextType": "organization",
+                      "id": "300jor4orrvsgezqoyxfckg3",
+                      "muted": false,
+                      "order": 2,
+                      "organizationId": "jip69qfpb1r33xdbp099f3xi",
+                      "role": "admin",
+                      "userId": "ifex0agu87zf240qkfh0faoq",
+                    },
+                    "mfaRequired": false,
+                    "modifiedAt": "2024-11-21T04:00:59.122Z",
+                    "modifiedBy": null,
+                    "name": "Tasha Abernathy",
+                    "slug": "christine.greenholt23",
+                    "thumbnailUrl": null,
+                  },
+                  {
+                    "bannerUrl": null,
+                    "createdAt": "2024-10-29T08:46:20.790Z",
+                    "description": null,
+                    "email": "nestor.miller@yahoo.com",
+                    "entityType": "user",
+                    "firstName": "Sarah",
+                    "id": "hg5ogh3yr2b2dbwf7b9eckaj",
+                    "language": "en",
+                    "lastName": "Witting",
+                    "lastSeenAt": "2024-10-29T08:46:20.790Z",
+                    "lastSignInAt": "2024-10-29T08:46:20.790Z",
+                    "lastStartedAt": "2024-10-29T08:46:20.790Z",
+                    "membership": {
+                      "archived": false,
+                      "contextType": "organization",
+                      "id": "1u44cckbz5av195r4h3wiruz",
+                      "muted": false,
+                      "order": 50,
+                      "organizationId": "zxd2hreylomg4p6xgvt4g11e",
+                      "role": "admin",
+                      "userId": "44b7wkilwj64zmkwsnsmrzo2",
+                    },
+                    "mfaRequired": false,
+                    "modifiedAt": "2024-10-29T08:46:20.790Z",
+                    "modifiedBy": null,
+                    "name": "Lula Schaefer",
+                    "slug": "harley45",
+                    "thumbnailUrl": null,
+                  },
+                ],
+                "total": 2,
+              },
               "schema": {
                 "contentType": "application/json",
                 "properties": {
@@ -10250,6 +11211,37 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             {
               "contentType": "application/json",
               "description": "Pending memberships",
+              "example": {
+                "items": [
+                  {
+                    "contextType": "organization",
+                    "createdAt": "2024-11-21T04:00:59.122Z",
+                    "createdBy": "9hmikgme3gy3a9lhe0ctrmzc",
+                    "email": "waino61@hotmail.com",
+                    "id": "eyvjbbm5piweg2q4gqa3vx9c",
+                    "organizationId": "9xn03u76eo7z71y60a882cwp",
+                    "rejectedAt": null,
+                    "role": "admin",
+                    "tokenId": "xtanaxnsp9nes1yx645yb0gl",
+                    "uniqueKey": "qqp8d07imsvjbtqtl3rtjgxd-9xn03u76eo7z71y60a882cwp",
+                    "userId": "qqp8d07imsvjbtqtl3rtjgxd",
+                  },
+                  {
+                    "contextType": "organization",
+                    "createdAt": "2024-10-29T08:46:20.790Z",
+                    "createdBy": "vl0e44bpmhsyauxcwuwjsrzv",
+                    "email": "serena33@yahoo.com",
+                    "id": "pi37syiavgc67t5nr6k4huj5",
+                    "organizationId": "clxs8vayzrul7vmeyahbgyu0",
+                    "rejectedAt": null,
+                    "role": "member",
+                    "tokenId": "1sr6utecq3o02wpa56tpd77k",
+                    "uniqueKey": "hg5ogh3yr2b2dbwf7b9eckaj-clxs8vayzrul7vmeyahbgyu0",
+                    "userId": "hg5ogh3yr2b2dbwf7b9eckaj",
+                  },
+                ],
+                "total": 2,
+              },
               "schema": {
                 "contentType": "application/json",
                 "properties": {
@@ -10662,30 +11654,8 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "schema": {
                 "contentType": "application/json",
                 "properties": {
-                  "combined": {
-                    "properties": {
-                      "overallHitRate": {
-                        "required": true,
-                        "type": "number",
-                      },
-                      "totalHits": {
-                        "required": true,
-                        "type": "number",
-                      },
-                      "totalInvalidations": {
-                        "required": true,
-                        "type": "number",
-                      },
-                      "totalMisses": {
-                        "required": true,
-                        "type": "number",
-                      },
-                    },
-                    "required": true,
-                    "type": "object",
-                  },
-                  "public": {
-                    "description": "Public cache statistics (no auth required)",
+                  "cache": {
+                    "description": "Entity cache statistics",
                     "properties": {
                       "capacity": {
                         "description": "Maximum cache capacity",
@@ -10707,61 +11677,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                         "required": true,
                         "type": "number",
                       },
-                      "invalidations": {
-                        "description": "Number of cache invalidations",
-                        "required": true,
-                        "type": "number",
-                      },
-                      "misses": {
-                        "description": "Number of cache misses",
-                        "required": true,
-                        "type": "number",
-                      },
-                      "size": {
-                        "description": "Current number of cached entries",
-                        "required": true,
-                        "type": "number",
-                      },
-                      "totalRequests": {
-                        "description": "Total requests (hits + misses)",
-                        "required": true,
-                        "type": "number",
-                      },
-                      "uptimeSeconds": {
-                        "description": "Seconds since metrics were last reset",
-                        "required": true,
-                        "type": "number",
-                      },
-                      "utilization": {
-                        "description": "Cache utilization (0-1)",
-                        "required": true,
-                        "type": "number",
-                      },
-                    },
-                    "required": true,
-                    "type": "object",
-                  },
-                  "token": {
-                    "description": "Token cache statistics (membership required)",
-                    "properties": {
-                      "capacity": {
-                        "description": "Maximum cache capacity",
-                        "required": true,
-                        "type": "number",
-                      },
-                      "coalescedRequests": {
-                        "description": "Number of coalesced requests (avoided duplicate fetches)",
-                        "required": true,
-                        "type": "number",
-                      },
-                      "hitRate": {
-                        "description": "Hit rate percentage (0-100)",
-                        "required": true,
-                        "type": "number",
-                      },
-                      "hits": {
-                        "description": "Number of cache hits",
-                        "required": true,
+                      "indexSize": {
+                        "description": "Current number of indexed entities",
+                        "required": false,
                         "type": "number",
                       },
                       "invalidations": {
@@ -10938,28 +11856,158 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "request": {
             "body": {
               "contentType": "application/json",
-              "properties": {
-                "name": {
-                  "maxLength": 100,
-                  "minLength": 2,
-                  "required": true,
-                  "type": "string",
+              "itemType": "object",
+              "items": {
+                "properties": {
+                  "id": {
+                    "required": true,
+                    "type": "string",
+                  },
+                  "name": {
+                    "maxLength": 100,
+                    "minLength": 2,
+                    "required": true,
+                    "type": "string",
+                  },
+                  "slug": {
+                    "maxLength": 100,
+                    "minLength": 2,
+                    "required": true,
+                    "type": "string",
+                  },
                 },
-                "slug": {
-                  "maxLength": 100,
-                  "minLength": 2,
-                  "required": true,
-                  "type": "string",
-                },
+                "required": true,
+                "type": "object",
               },
+              "maxItems": 10,
+              "minItems": 1,
               "required": true,
-              "type": "object",
+              "type": "array",
             },
           },
           "responses": [
             {
               "contentType": "application/json",
               "description": "Organizations were created",
+              "example": {
+                "data": [
+                  {
+                    "authStrategies": [
+                      "password",
+                    ],
+                    "bannerUrl": null,
+                    "chatSupport": false,
+                    "color": "#74e1bc",
+                    "country": "Israel",
+                    "counts": {
+                      "entities": {
+                        "attachment": 294,
+                        "page": 327,
+                      },
+                      "membership": {
+                        "admin": 43,
+                        "member": 58,
+                        "pending": 47,
+                        "total": 101,
+                      },
+                    },
+                    "createdAt": "2024-04-19T14:04:35.773Z",
+                    "createdBy": null,
+                    "defaultLanguage": "en",
+                    "description": "Organic 24 hour firmware",
+                    "emailDomains": [],
+                    "entityType": "organization",
+                    "id": "kzmv5qbhdcqeiuvwlosan0fc",
+                    "languages": [
+                      "en",
+                    ],
+                    "logoUrl": null,
+                    "membership": {
+                      "archived": false,
+                      "contextType": "organization",
+                      "id": "3y6ee6h5lc8sjfv4trxwe3yb",
+                      "muted": false,
+                      "order": 56,
+                      "organizationId": "kzmv5qbhdcqeiuvwlosan0fc",
+                      "role": "admin",
+                      "userId": "89fjn21t4n7coocr6ixfzcb6",
+                    },
+                    "modifiedAt": "2024-04-19T14:04:35.773Z",
+                    "modifiedBy": null,
+                    "name": "Koss, Price and Greenfelder",
+                    "notificationEmail": "notifications@koss-price-and-greenfelder.example",
+                    "restrictions": {
+                      "attachment": 100,
+                      "page": 0,
+                      "user": 1000,
+                    },
+                    "shortName": "Koss,",
+                    "slug": "koss-price-and-greenfelder",
+                    "thumbnailUrl": null,
+                    "timezone": "Pacific/Kanton",
+                    "websiteUrl": "https://koss-price-and-greenfelder.example",
+                    "welcomeText": "Welcome to Koss, Price and Greenfelder!",
+                  },
+                  {
+                    "authStrategies": [
+                      "password",
+                    ],
+                    "bannerUrl": null,
+                    "chatSupport": true,
+                    "color": "#dfee6f",
+                    "country": "Australia",
+                    "counts": {
+                      "entities": {
+                        "attachment": 321,
+                        "page": 94,
+                      },
+                      "membership": {
+                        "admin": 22,
+                        "member": 122,
+                        "pending": 44,
+                        "total": 144,
+                      },
+                    },
+                    "createdAt": "2024-02-25T13:01:35.301Z",
+                    "createdBy": null,
+                    "defaultLanguage": "en",
+                    "description": "Diverse cloud-native concept",
+                    "emailDomains": [],
+                    "entityType": "organization",
+                    "id": "p3t0ygxx0aa83en3sk1fs1we",
+                    "languages": [
+                      "en",
+                    ],
+                    "logoUrl": null,
+                    "membership": {
+                      "archived": false,
+                      "contextType": "organization",
+                      "id": "ry5f7szmj5jhp0ad93klgj3e",
+                      "muted": false,
+                      "order": 1,
+                      "organizationId": "p3t0ygxx0aa83en3sk1fs1we",
+                      "role": "admin",
+                      "userId": "j6ly81u4oy2u1m55abgsmrl1",
+                    },
+                    "modifiedAt": "2024-02-25T13:01:35.301Z",
+                    "modifiedBy": null,
+                    "name": "Collins - Mitchell",
+                    "notificationEmail": "notifications@collins-mitchell.example",
+                    "restrictions": {
+                      "attachment": 100,
+                      "page": 0,
+                      "user": 1000,
+                    },
+                    "shortName": "Collins",
+                    "slug": "collins-mitchell",
+                    "thumbnailUrl": null,
+                    "timezone": "America/Phoenix",
+                    "websiteUrl": "https://collins-mitchell.example",
+                    "welcomeText": "Welcome to Collins - Mitchell!",
+                  },
+                ],
+                "rejectedItemIds": [],
+              },
               "schema": {
                 "contentType": "application/json",
                 "properties": {
@@ -11258,6 +12306,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "required": true,
                     "type": "array",
                   },
+                  "rejectionReasons": {
+                    "description": "Map of rejected item ID to reason code",
+                    "required": false,
+                    "type": "object",
+                  },
                 },
                 "type": "object",
               },
@@ -11365,6 +12418,125 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             {
               "contentType": "application/json",
               "description": "Organizations",
+              "example": {
+                "items": [
+                  {
+                    "authStrategies": [
+                      "password",
+                    ],
+                    "bannerUrl": null,
+                    "chatSupport": false,
+                    "color": "#8f4f40",
+                    "country": "Costa Rica",
+                    "counts": {
+                      "entities": {
+                        "attachment": 188,
+                        "page": 390,
+                      },
+                      "membership": {
+                        "admin": 30,
+                        "member": 20,
+                        "pending": 27,
+                        "total": 50,
+                      },
+                    },
+                    "createdAt": "2024-11-21T04:00:59.122Z",
+                    "createdBy": null,
+                    "defaultLanguage": "en",
+                    "description": "AI-driven bottom-line software",
+                    "emailDomains": [],
+                    "entityType": "organization",
+                    "id": "qqp8d07imsvjbtqtl3rtjgxd",
+                    "languages": [
+                      "en",
+                    ],
+                    "logoUrl": null,
+                    "membership": {
+                      "archived": false,
+                      "contextType": "organization",
+                      "id": "300jor4orrvsgezqoyxfckg3",
+                      "muted": false,
+                      "order": 2,
+                      "organizationId": "qqp8d07imsvjbtqtl3rtjgxd",
+                      "role": "admin",
+                      "userId": "ifex0agu87zf240qkfh0faoq",
+                    },
+                    "modifiedAt": "2024-11-21T04:00:59.122Z",
+                    "modifiedBy": null,
+                    "name": "Walsh - Nitzsche",
+                    "notificationEmail": "notifications@walsh-nitzsche.example",
+                    "restrictions": {
+                      "attachment": 100,
+                      "page": 0,
+                      "user": 1000,
+                    },
+                    "shortName": "Walsh",
+                    "slug": "walsh-nitzsche",
+                    "thumbnailUrl": null,
+                    "timezone": "America/Bogota",
+                    "websiteUrl": "https://walsh-nitzsche.example",
+                    "welcomeText": "Welcome to Walsh - Nitzsche!",
+                  },
+                  {
+                    "authStrategies": [
+                      "password",
+                    ],
+                    "bannerUrl": null,
+                    "chatSupport": false,
+                    "color": "#facd4c",
+                    "country": "Finland",
+                    "counts": {
+                      "entities": {
+                        "attachment": 1,
+                        "page": 272,
+                      },
+                      "membership": {
+                        "admin": 7,
+                        "member": 150,
+                        "pending": 18,
+                        "total": 157,
+                      },
+                    },
+                    "createdAt": "2024-10-29T08:46:20.790Z",
+                    "createdBy": null,
+                    "defaultLanguage": "en",
+                    "description": "Secured data-driven strategy",
+                    "emailDomains": [],
+                    "entityType": "organization",
+                    "id": "hg5ogh3yr2b2dbwf7b9eckaj",
+                    "languages": [
+                      "en",
+                    ],
+                    "logoUrl": null,
+                    "membership": {
+                      "archived": false,
+                      "contextType": "organization",
+                      "id": "1u44cckbz5av195r4h3wiruz",
+                      "muted": false,
+                      "order": 50,
+                      "organizationId": "hg5ogh3yr2b2dbwf7b9eckaj",
+                      "role": "admin",
+                      "userId": "44b7wkilwj64zmkwsnsmrzo2",
+                    },
+                    "modifiedAt": "2024-10-29T08:46:20.790Z",
+                    "modifiedBy": null,
+                    "name": "Mohr and Sons",
+                    "notificationEmail": "notifications@mohr-and-sons.example",
+                    "restrictions": {
+                      "attachment": 100,
+                      "page": 0,
+                      "user": 1000,
+                    },
+                    "shortName": "Mohr",
+                    "slug": "mohr-and-sons",
+                    "thumbnailUrl": null,
+                    "timezone": "Pacific/Noumea",
+                    "websiteUrl": "https://mohr-and-sons.example",
+                    "welcomeText": "Welcome to Mohr and Sons!",
+                  },
+                ],
+                "total": 2,
+              },
               "schema": {
                 "contentType": "application/json",
                 "properties": {
@@ -11818,7 +12990,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "password",
                 ],
                 "bannerUrl": null,
-                "chatSupport": true,
+                "chatSupport": false,
                 "color": "#daf7e3",
                 "country": "Guatemala",
                 "counts": {
@@ -11843,7 +13015,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 "languages": [
                   "en",
                 ],
-                "logoUrl": "https://picsum.photos/seed/CGEa4RRQS/2665/3362",
+                "logoUrl": null,
                 "membership": {
                   "archived": false,
                   "contextType": "organization",
@@ -12361,7 +13533,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "password",
                 ],
                 "bannerUrl": null,
-                "chatSupport": true,
+                "chatSupport": false,
                 "color": "#daf7e3",
                 "country": "Guatemala",
                 "counts": {
@@ -12386,7 +13558,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 "languages": [
                   "en",
                 ],
-                "logoUrl": "https://picsum.photos/seed/CGEa4RRQS/2665/3362",
+                "logoUrl": null,
                 "membership": {
                   "archived": false,
                   "contextType": "organization",
@@ -12751,133 +13923,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
       ],
       "pages": [
         {
-          "operationId": "pagesPublicStream",
-          "request": {
-            "query": {
-              "properties": {
-                "live": {
-                  "description": "Set to "sse" for live updates (SSE stream)",
-                  "enum": [
-                    "sse",
-                  ],
-                  "required": false,
-                  "type": "string",
-                },
-                "offset": {
-                  "description": "Cursor offset: "-1" for all history, "now" for live-only, or activity ID",
-                  "required": false,
-                  "type": "string",
-                },
-              },
-            },
-          },
-          "responses": [
-            {
-              "contentType": "application/json",
-              "description": "Catch-up activities or SSE stream started",
-              "schema": {
-                "contentType": "application/json",
-                "properties": {
-                  "activities": {
-                    "itemType": "object",
-                    "items": {
-                      "properties": {
-                        "action": {
-                          "enum": [
-                            "create",
-                            "update",
-                            "delete",
-                          ],
-                          "required": true,
-                          "type": "string",
-                        },
-                        "activityId": {
-                          "required": true,
-                          "type": "string",
-                        },
-                        "changedKeys": {
-                          "itemType": "string",
-                          "required": true,
-                          "type": [
-                            "array",
-                            "null",
-                          ],
-                        },
-                        "createdAt": {
-                          "required": true,
-                          "type": "string",
-                        },
-                        "entityId": {
-                          "required": true,
-                          "type": "string",
-                        },
-                        "entityType": {
-                          "enum": [
-                            "attachment",
-                            "page",
-                          ],
-                          "required": true,
-                          "type": "string",
-                        },
-                      },
-                      "ref": "#/components/schemas/PublicStreamActivity",
-                      "type": "object",
-                    },
-                    "ref": "#/components/schemas/PublicStreamActivity",
-                    "required": true,
-                    "type": "array",
-                  },
-                  "cursor": {
-                    "description": "Last activity ID (use as offset for next request)",
-                    "required": true,
-                    "type": [
-                      "string",
-                      "null",
-                    ],
-                  },
-                },
-                "type": "object",
-              },
-              "status": 200,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Bad request: problem processing request.",
-              "name": "BadRequestError",
-              "ref": "#/components/responses/BadRequestError",
-              "status": 400,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Unauthorized: authentication required.",
-              "name": "UnauthorizedError",
-              "ref": "#/components/responses/UnauthorizedError",
-              "status": 401,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Forbidden: insufficient permissions.",
-              "name": "ForbiddenError",
-              "ref": "#/components/responses/ForbiddenError",
-              "status": 403,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Not found: resource does not exist.",
-              "name": "NotFoundError",
-              "ref": "#/components/responses/NotFoundError",
-              "status": 404,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Rate limit: too many requests.",
-              "name": "TooManyRequestsError",
-              "ref": "#/components/responses/TooManyRequestsError",
-              "status": 429,
-            },
-          ],
-        },
-        {
           "operationId": "createPages",
           "request": {
             "body": {
@@ -12928,6 +13973,51 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             {
               "contentType": "application/json",
               "description": "Pages already created (idempotent)",
+              "example": {
+                "data": [
+                  {
+                    "createdAt": "2024-04-19T14:04:35.773Z",
+                    "createdBy": "kzmv5qbhdcqeiuvwlosan0fc",
+                    "description": "[{"content":[{"type":"text","text":"Alii voluntarius contra consequuntur tergo crepusculum certe desparatus depromo. Dolor somnus vobis atavus tergiversatio tersus suadeo colo. Id abduco supplanto asporto.\\nCuratio xiphias auxilium teneo claudeo unde vulgo. Atavus vorax vergo deputo deprimo statim eos vulnero subito eligendi. Exercitationem somnus cattus cilicium textilis cervus alo tactus.","styles":{}}],"children":[]}]",
+                    "displayOrder": 70.17,
+                    "entityType": "page",
+                    "id": "wgpaj0cfyc7n2sjn5fpfkbrs",
+                    "keywords": "confido colligo audio",
+                    "modifiedAt": "2024-04-19T14:04:35.773Z",
+                    "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
+                    "name": "Velociter torqueo nihil texo.",
+                    "parentId": null,
+                    "status": "unpublished",
+                    "tx": {
+                      "fieldVersions": {},
+                      "id": "akf4ovzm1ne3h55lgj31d63n",
+                      "sourceId": "src_9apx99a5auvr5cyj5s37irnj",
+                      "version": 1,
+                    },
+                  },
+                  {
+                    "createdAt": "2024-02-25T13:01:35.301Z",
+                    "createdBy": "p3t0ygxx0aa83en3sk1fs1we",
+                    "description": "[{"content":[{"type":"text","text":"Debilito taedium spargo cetera. Vehemens deprecator ventus ascit denique tum candidus curvo perspiciatis defendo. Carpo verecundia cometes.\\nSortitus colligo ceno terra cado temptatio carmen arx sequi cicuta. Attollo autem adipisci vinitor comminor odit. Virga aptus corrupti utpote.","styles":{}}],"children":[]}]",
+                    "displayOrder": 19.64,
+                    "entityType": "page",
+                    "id": "74l7581dwpxxbqdej8622zpg",
+                    "keywords": "vulnus subseco vomica",
+                    "modifiedAt": "2024-02-25T13:01:35.301Z",
+                    "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
+                    "name": "Aspernatur angustus suus ver.",
+                    "parentId": null,
+                    "status": "unpublished",
+                    "tx": {
+                      "fieldVersions": {},
+                      "id": "5e03ldr2ga54hj92yzr7v1it",
+                      "sourceId": "src_pc9wztvbcy21q04oq81k5rbz",
+                      "version": 1,
+                    },
+                  },
+                ],
+                "rejectedItemIds": [],
+              },
               "schema": {
                 "contentType": "application/json",
                 "properties": {
@@ -13027,6 +14117,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                               "type": "number",
                             },
                           },
+                          "ref": "#/components/schemas/TxBase",
                           "required": true,
                           "type": "object",
                         },
@@ -13043,6 +14134,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "itemType": "string",
                     "required": true,
                     "type": "array",
+                  },
+                  "rejectionReasons": {
+                    "description": "Map of rejected item ID to reason code",
+                    "required": false,
+                    "type": "object",
                   },
                 },
                 "type": "object",
@@ -13052,6 +14148,51 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             {
               "contentType": "application/json",
               "description": "Pages created",
+              "example": {
+                "data": [
+                  {
+                    "createdAt": "2024-04-19T14:04:35.773Z",
+                    "createdBy": "kzmv5qbhdcqeiuvwlosan0fc",
+                    "description": "[{"content":[{"type":"text","text":"Alii voluntarius contra consequuntur tergo crepusculum certe desparatus depromo. Dolor somnus vobis atavus tergiversatio tersus suadeo colo. Id abduco supplanto asporto.\\nCuratio xiphias auxilium teneo claudeo unde vulgo. Atavus vorax vergo deputo deprimo statim eos vulnero subito eligendi. Exercitationem somnus cattus cilicium textilis cervus alo tactus.","styles":{}}],"children":[]}]",
+                    "displayOrder": 70.17,
+                    "entityType": "page",
+                    "id": "wgpaj0cfyc7n2sjn5fpfkbrs",
+                    "keywords": "confido colligo audio",
+                    "modifiedAt": "2024-04-19T14:04:35.773Z",
+                    "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
+                    "name": "Velociter torqueo nihil texo.",
+                    "parentId": null,
+                    "status": "unpublished",
+                    "tx": {
+                      "fieldVersions": {},
+                      "id": "akf4ovzm1ne3h55lgj31d63n",
+                      "sourceId": "src_9apx99a5auvr5cyj5s37irnj",
+                      "version": 1,
+                    },
+                  },
+                  {
+                    "createdAt": "2024-02-25T13:01:35.301Z",
+                    "createdBy": "p3t0ygxx0aa83en3sk1fs1we",
+                    "description": "[{"content":[{"type":"text","text":"Debilito taedium spargo cetera. Vehemens deprecator ventus ascit denique tum candidus curvo perspiciatis defendo. Carpo verecundia cometes.\\nSortitus colligo ceno terra cado temptatio carmen arx sequi cicuta. Attollo autem adipisci vinitor comminor odit. Virga aptus corrupti utpote.","styles":{}}],"children":[]}]",
+                    "displayOrder": 19.64,
+                    "entityType": "page",
+                    "id": "74l7581dwpxxbqdej8622zpg",
+                    "keywords": "vulnus subseco vomica",
+                    "modifiedAt": "2024-02-25T13:01:35.301Z",
+                    "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
+                    "name": "Aspernatur angustus suus ver.",
+                    "parentId": null,
+                    "status": "unpublished",
+                    "tx": {
+                      "fieldVersions": {},
+                      "id": "5e03ldr2ga54hj92yzr7v1it",
+                      "sourceId": "src_pc9wztvbcy21q04oq81k5rbz",
+                      "version": 1,
+                    },
+                  },
+                ],
+                "rejectedItemIds": [],
+              },
               "schema": {
                 "contentType": "application/json",
                 "properties": {
@@ -13151,6 +14292,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                               "type": "number",
                             },
                           },
+                          "ref": "#/components/schemas/TxBase",
                           "required": true,
                           "type": "object",
                         },
@@ -13167,6 +14309,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "itemType": "string",
                     "required": true,
                     "type": "array",
+                  },
+                  "rejectionReasons": {
+                    "description": "Map of rejected item ID to reason code",
+                    "required": false,
+                    "type": "object",
                   },
                 },
                 "type": "object",
@@ -13219,6 +14366,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "required": false,
                   "type": "string",
                 },
+                "modifiedAfter": {
+                  "format": "date-time",
+                  "required": false,
+                  "type": "string",
+                },
                 "offset": {
                   "required": false,
                   "type": "string",
@@ -13251,6 +14403,51 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             {
               "contentType": "application/json",
               "description": "Pages",
+              "example": {
+                "items": [
+                  {
+                    "createdAt": "2024-11-21T04:00:59.122Z",
+                    "createdBy": "qqp8d07imsvjbtqtl3rtjgxd",
+                    "description": "[{"content":[{"type":"text","text":"Tersus summa caterva socius cultura tergo adhuc virtus. Audentia angustus articulus voco commodi abduco deduco occaecati cubicularis volo. In comminor concedo quae arca sumptus dolorem varius crudelis deduco.\\nSurgo angulus demens. Clibanus alioqui valens vester cavus contego debeo volubilis. Vindico audacia perspiciatis supra derideo chirographum.","styles":{}}],"children":[]}]",
+                    "displayOrder": 56.42,
+                    "entityType": "page",
+                    "id": "9xn03u76eo7z71y60a882cwp",
+                    "keywords": "depraedor rem dolorum",
+                    "modifiedAt": "2024-11-21T04:00:59.122Z",
+                    "modifiedBy": "qqp8d07imsvjbtqtl3rtjgxd",
+                    "name": "Tot clarus sequi cimentarius vesco.",
+                    "parentId": null,
+                    "status": "unpublished",
+                    "tx": {
+                      "fieldVersions": {},
+                      "id": "gme3gy3a9lhe0ctrmzc53x7z",
+                      "sourceId": "src_222ydtq57iu31mz5oaqf10oe",
+                      "version": 1,
+                    },
+                  },
+                  {
+                    "createdAt": "2024-10-29T08:46:20.790Z",
+                    "createdBy": "hg5ogh3yr2b2dbwf7b9eckaj",
+                    "description": "[{"content":[{"type":"text","text":"Tum timidus cultellus conitor. Aiunt speculum acidus advoco ventus sub cogito argentum. Trans summa crapula bestia.\\nNon sui desino amor. Tersus vitiosus eligendi clementia. Demens conor auctor basium tolero aspernatur soluta temporibus aut.","styles":{}}],"children":[]}]",
+                    "displayOrder": 85.3,
+                    "entityType": "page",
+                    "id": "clxs8vayzrul7vmeyahbgyu0",
+                    "keywords": "labore appello depono",
+                    "modifiedAt": "2024-10-29T08:46:20.790Z",
+                    "modifiedBy": "hg5ogh3yr2b2dbwf7b9eckaj",
+                    "name": "Tergo tardus.",
+                    "parentId": null,
+                    "status": "unpublished",
+                    "tx": {
+                      "fieldVersions": {},
+                      "id": "j5qv4k6bwmvl0e44bpmhsyau",
+                      "sourceId": "src_xcwuwjsrzvzac8qx1h9s6vzh",
+                      "version": 1,
+                    },
+                  },
+                ],
+                "total": 2,
+              },
               "schema": {
                 "contentType": "application/json",
                 "properties": {
@@ -13350,6 +14547,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                               "type": "number",
                             },
                           },
+                          "ref": "#/components/schemas/TxBase",
                           "required": true,
                           "type": "object",
                         },
@@ -13600,6 +14798,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                         "type": "number",
                       },
                     },
+                    "ref": "#/components/schemas/TxBase",
                     "required": true,
                     "type": "object",
                   },
@@ -13848,6 +15047,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                         "type": "number",
                       },
                     },
+                    "ref": "#/components/schemas/TxBase",
                     "required": true,
                     "type": "object",
                   },
@@ -13932,6 +15132,16 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             {
               "contentType": "application/json",
               "description": "Requests",
+              "example": {
+                "createdAt": "2024-06-05T15:03:46.141Z",
+                "email": "anderson.pfannerstill23@yahoo.com",
+                "id": "wejsiq864y0sbytrzsnlr9a0",
+                "message": "Suggero accusator demens terreo amiculum comitatus necessitatibus candidus.",
+                "type": "contact",
+                "wasInvited": false,
+              },
+              "name": "Request",
+              "ref": "#/components/schemas/Request",
               "schema": {
                 "contentType": "application/json",
                 "properties": {
@@ -13968,6 +15178,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "type": "boolean",
                   },
                 },
+                "ref": "#/components/schemas/Request",
                 "type": "object",
               },
               "status": 201,
@@ -14051,6 +15262,27 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             {
               "contentType": "application/json",
               "description": "Requests",
+              "example": {
+                "items": [
+                  {
+                    "createdAt": "2024-12-26T18:45:14.064Z",
+                    "email": "destin10@hotmail.com",
+                    "id": "vqqp8d07imsvjbtqtl3rtjgx",
+                    "message": "Aufero cubo stipes bene.",
+                    "type": "contact",
+                    "wasInvited": false,
+                  },
+                  {
+                    "createdAt": "2024-03-19T05:56:29.150Z",
+                    "email": "fay23@hotmail.com",
+                    "id": "thg5ogh3yr2b2dbwf7b9ecka",
+                    "message": "Voluntarius volva tandem turba pauci.",
+                    "type": "contact",
+                    "wasInvited": false,
+                  },
+                ],
+                "total": 2,
+              },
               "schema": {
                 "contentType": "application/json",
                 "properties": {
@@ -14091,8 +15323,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "type": "boolean",
                         },
                       },
+                      "ref": "#/components/schemas/Request",
                       "type": "object",
                     },
+                    "ref": "#/components/schemas/Request",
                     "required": true,
                     "type": "array",
                   },
@@ -14319,6 +15553,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             {
               "contentType": "application/json",
               "description": "Presigned URL",
+              "example": "https://s3.amazonaws.com/bucket/uploads/lgiwmb008oicrnov90vfyg5s?X-Amz-Signature=y6Osv8Aux8OzYRD80WpVgzOEyivrH99LUayD8R60gihmFy74ZLvXyfck7snD3jom",
               "schema": {
                 "contentType": "application/json",
                 "type": "string",
@@ -14570,6 +15805,79 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             {
               "contentType": "application/json",
               "description": "Users",
+              "example": {
+                "items": [
+                  {
+                    "bannerUrl": null,
+                    "createdAt": "2024-11-11T02:15:51.916Z",
+                    "description": null,
+                    "email": "ciara.blanda30@yahoo.com",
+                    "entityType": "user",
+                    "firstName": "Ciara",
+                    "id": "s6ymybas8856dxliw6zkuiov",
+                    "language": "en",
+                    "lastName": "Blanda",
+                    "lastSeenAt": "2024-11-11T02:15:51.916Z",
+                    "lastSignInAt": "2024-11-11T02:15:51.916Z",
+                    "lastStartedAt": "2024-11-11T02:15:51.916Z",
+                    "memberships": [
+                      {
+                        "archived": false,
+                        "contextType": "organization",
+                        "id": "300jor4orrvsgezqoyxfckg3",
+                        "muted": false,
+                        "order": 2,
+                        "organizationId": "jip69qfpb1r33xdbp099f3xi",
+                        "role": "admin",
+                        "userId": "ifex0agu87zf240qkfh0faoq",
+                      },
+                    ],
+                    "mfaRequired": false,
+                    "modifiedAt": "2024-11-11T02:15:51.916Z",
+                    "modifiedBy": null,
+                    "name": "Ciara Blanda",
+                    "newsletter": false,
+                    "slug": "ciarablanda",
+                    "thumbnailUrl": null,
+                    "userFlags": {},
+                  },
+                  {
+                    "bannerUrl": null,
+                    "createdAt": "2024-05-19T00:16:13.149Z",
+                    "description": null,
+                    "email": "carlee.murray48@gmail.com",
+                    "entityType": "user",
+                    "firstName": "Carlee",
+                    "id": "8n0rfau2m1vkjc8nvp8e05me",
+                    "language": "en",
+                    "lastName": "Murray",
+                    "lastSeenAt": "2024-05-19T00:16:13.149Z",
+                    "lastSignInAt": "2024-05-19T00:16:13.149Z",
+                    "lastStartedAt": "2024-05-19T00:16:13.149Z",
+                    "memberships": [
+                      {
+                        "archived": false,
+                        "contextType": "organization",
+                        "id": "1u44cckbz5av195r4h3wiruz",
+                        "muted": false,
+                        "order": 50,
+                        "organizationId": "zxd2hreylomg4p6xgvt4g11e",
+                        "role": "admin",
+                        "userId": "44b7wkilwj64zmkwsnsmrzo2",
+                      },
+                    ],
+                    "mfaRequired": false,
+                    "modifiedAt": "2024-05-19T00:16:13.149Z",
+                    "modifiedBy": null,
+                    "name": "Carlee Murray",
+                    "newsletter": true,
+                    "slug": "carleemurray75",
+                    "thumbnailUrl": null,
+                    "userFlags": {},
+                  },
+                ],
+                "total": 2,
+              },
               "schema": {
                 "contentType": "application/json",
                 "properties": {
@@ -15398,7 +16706,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
     },
     "tags": [
       {
-        "count": 11,
+        "count": 10,
         "description": "Endpoints related to the *current user*, meaning the user associated with the active session making
         the request. These routes are distinct from general \`users\` endpoints: while \`users\` may operate on
         any user in the system, \`me\` endpoints are scoped exclusively to the *current user* and follow a
@@ -15434,7 +16742,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "name": "requests",
       },
       {
-        "count": 1,
+        "count": 3,
         "description": "Endpoints that operate across multiple *entity types*, such as \`users\` and \`organizations\`.
         *Entities* are identifiable domain objects that may be contextual, hierarchical (with parent/child
         relations), or actor-like. These endpoints offer shared logic across modules, including slug validation
@@ -15448,7 +16756,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "name": "system",
       },
       {
-        "count": 26,
+        "count": 27,
         "description": "*Authentication* endpoints supporting multiple sign-in methods, including email/password, OAuth
         (Google, Microsoft, GitHub), and passkeys (WebAuthn). These routes cover user sign-up, sign-in, password
         recovery, email verification, account linking, and impersonation for system admins.",
@@ -15462,7 +16770,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "name": "attachments",
       },
       {
-        "count": 6,
+        "count": 5,
         "description": "Endpoints for managing *pages*, which are product entities supporting realtime sync and offline
         capabilities. Pages can be organized hierarchically and are used in /docs.",
         "name": "pages",

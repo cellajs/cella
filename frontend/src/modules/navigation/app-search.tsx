@@ -130,7 +130,7 @@ export const AppSearch = () => {
       />
       <ScrollArea id={'item-search'} ref={scrollAreaRef} className="sm:h-[40vh] overflow-y-auto">
         <CommandList className="h-full">
-          <CommandEmpty className="h-full sm:h-[36vh]">
+          <CommandEmpty className="h-full sm:h-[36vh]" isLoading={isFetching}>
             <ContentPlaceholder
               icon={SearchIcon}
               title={searchValue.length ? 'common:no_resource_found' : 'common:global_search.text'}

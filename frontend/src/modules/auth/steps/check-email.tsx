@@ -29,7 +29,7 @@ type FormValues = z.infer<typeof formSchema>;
 export function CheckEmailStep() {
   const { t } = useTranslation();
 
-  const { setStep } = useAuthStore();
+  const { setStep, setRestrictedMode } = useAuthStore();
 
   const isMobile = window.innerWidth < 640;
   const title = appConfig.has.registrationEnabled ? t('common:sign_in_or_up') : t('common:sign_in');
@@ -43,6 +43,12 @@ export function CheckEmailStep() {
     mutationFn: (body) => checkEmail({ body }),
     onSuccess: () => setStep('signIn', form.getValues('email')),
     onError: (error: ApiError) => {
+      // Rate limited - switch to restricted mode
+      if (error.status === 429) {
+        setRestrictedMode(true);
+        return setStep('signIn', form.getValues('email'));
+      }
+
       let nextStep: AuthStep = 'inviteOnly';
 
       // If registration is enabled or user has a token, proceed to sign up
@@ -70,7 +76,13 @@ export function CheckEmailStep() {
               // Custom css due to html injection by browser extensions
               <FormItem className="gap-0">
                 <FormControl>
-                  <Input {...field} type="email" autoFocus={!isMobile} placeholder={t('common:email')} />
+                  <Input
+                    {...field}
+                    className="h-12"
+                    type="email"
+                    autoFocus={!isMobile}
+                    placeholder={t('common:email')}
+                  />
                 </FormControl>
                 <FormMessage className="mt-2" />
               </FormItem>

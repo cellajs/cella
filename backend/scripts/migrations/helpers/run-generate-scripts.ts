@@ -1,10 +1,10 @@
 import { spawn } from 'node:child_process';
 import pc from 'picocolors';
 import { checkMark } from '#/utils/console';
-import type { GenerateScript } from 'config';
+import type { GenerateScript } from '#/../scripts/types';
 
 // Re-export for convenience
-export type { GenerateScript } from 'config';
+export type { GenerateScript } from '#/../scripts/types';
 
 /**
  * Run a shell command and return a promise.

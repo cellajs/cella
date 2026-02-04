@@ -22,7 +22,6 @@ import { WebrtcProvider } from 'y-webrtc';
 import * as Y from 'yjs';
 import { getPresignedUrl } from '~/api.gen';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import router from '~/lib/router';
 import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
 import { customSchema } from '~/modules/common/blocknote/blocknote-config';
 import { Mention } from '~/modules/common/blocknote/custom-elements/mention';
@@ -42,6 +41,7 @@ import type {
   CustomBlockRegularTypes,
   CustomBlockTypes,
 } from '~/modules/common/blocknote/types';
+import router from '~/routes/router';
 import { useUIStore } from '~/store/ui';
 
 type BlockNoteProps =
@@ -95,6 +95,7 @@ function BlockNote({
   excludeBlockTypes = [], // default types
   excludeFileBlockTypes = [], // default filetypes
   members, // for mentions
+  publicFiles,
   filePanel,
   baseFilePanelProps,
   // Collaboration
@@ -144,7 +145,7 @@ function BlockNote({
     collaboration: collaborationConfig,
     // Offline-first file URL resolution:
     // 1. If key looks like an attachment ID (nanoid format), check local blob storage
-    // 2. Fall back to presigned URL from cloud
+    // 2. Fall back to presigned URL from cloud (backend infers public/private from key pattern)
     resolveFileUrl: async (key) => {
       if (!key.length) return '';
 
@@ -161,7 +162,8 @@ function BlockNote({
       }
 
       // Fall back to presigned URL from cloud
-      const isPublic = String(baseFilePanelProps?.isPublic || false);
+      // Use publicFiles prop if set, otherwise let backend infer from attachment record
+      const isPublic = publicFiles ?? baseFilePanelProps?.isPublic;
       return getPresignedUrl({ query: { key, isPublic } });
     },
   });
@@ -274,15 +276,19 @@ function BlockNote({
 
       const target = event.target as HTMLElement;
 
-      const tagIsMedia = ['IMG', 'AUDIO', 'VIDEO'].includes(target.tagName);
-      const insideFileNameDiv = !!target.closest('.bn-file-name-with-icon');
-      const containsMedia = target.querySelector('img, video, audio');
+      // Check if click is on or inside a media element
+      const mediaElement = target.closest('img, video, audio') || target.querySelector('img, video, audio');
+      const insideFileBlock = !!target.closest('.bn-file-block-content-wrapper');
 
-      if (!tagIsMedia && !insideFileNameDiv && !containsMedia) return;
+      if (!mediaElement && !insideFileBlock) return;
 
-      openAttachment(event, editor, blockNoteRef);
+      event.preventDefault();
+
+      // Get the src of the clicked media to start carousel at that item
+      const clickedSrc = (mediaElement as HTMLMediaElement)?.src;
+      openAttachment(editor, blockNoteRef, clickedSrc);
     },
-    [editable, type],
+    [editor, clickOpensPreview, editable],
   );
 
   const passedContent = useMemo(() => getParsedContent(defaultValue), [defaultValue]);

@@ -1,4 +1,9 @@
-// TODO check all hooks for compatibility with our existing hooks to perhaps consolidate
+// Hooks consolidation notes:
+// - use-current-breakpoint: Re-exports from ~/hooks/use-breakpoints (consolidated)
+// - use-latest-func: Delegates to ~/hooks/use-latest-ref useLatestCallback (deprecated)
+// - use-grid-dimensions: Grid-specific (scroll tracking, viewport height) - keep separate
+// - use-copy-paste: Grid-specific (TSV format, range selection) - different from use-copy-to-clipboard
+// - Remaining hooks: All grid-specific virtualization/selection logic - keep separate
 export * from './use-calculated-columns';
 export * from './use-column-widths';
 export * from './use-copy-paste';

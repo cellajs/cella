@@ -29,7 +29,6 @@ import {
 } from '~/query/basic';
 import { addMutationRegistrar } from '~/query/mutation-registry';
 import { createTxForCreate, createTxForUpdate, squashPendingMutation } from '~/query/offline';
-import { getCacheToken } from '~/query/realtime/cache-token-store';
 
 // Use generated types from api.gen for mutation input shapes
 // Body is array of items with tx embedded, extract element type without tx
@@ -68,25 +67,13 @@ export const findPageInListCache = (id: string) => findInListCache<Page>(keys.li
  * Query options for a single page by id.
  * Uses initialData from the pages list cache to provide
  * instant loading while revalidating in the background.
- *
- * If a cache token is available from SSE stream notification, it's passed
- * in the X-Cache-Token header to enable server-side entity caching.
+ * Server uses LRU cache for efficient public page access.
  */
 export const pageQueryOptions = (id: string) =>
   queryOptions({
     queryKey: keys.detail.byId(id),
     queryFn: async () => {
-      // Check for cache token from SSE stream
-      const cacheToken = getCacheToken('page', id);
-      const headers: Record<string, string> = {};
-      if (cacheToken) {
-        headers['X-Cache-Token'] = cacheToken;
-      }
-
-      const result = await getPage({
-        path: { id },
-        headers: Object.keys(headers).length > 0 ? headers : undefined,
-      });
+      const result = await getPage({ path: { id } });
       return result;
     },
     initialData: () => findPageInListCache(id),
@@ -109,6 +96,7 @@ export const pagesQueryOptions = (params: PagesListParams = {}) => {
 
   return infiniteQueryOptions({
     queryKey,
+    staleTime: 1000 * 30, // 30 seconds - explicit to ensure route prefetch respects it
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
       const offset = String(_offset ?? (page ?? 0) * Number(limit));
 

@@ -269,32 +269,66 @@ export async function getMergeBase(cwd: string, ref1: string, ref2: string): Pro
   return git(['merge-base', ref1, ref2], cwd);
 }
 
+/** File change status codes from git diff-tree */
+export type FileChangeStatus = 'A' | 'D' | 'M' | 'T' | 'R';
+
+/** File change info from git diff-tree */
+export interface FileChange {
+  status: FileChangeStatus;
+  baseHash: string | null;
+  targetHash: string | null;
+  /** For renames: the original path (before rename) */
+  oldPath?: string;
+  /** For renames: the new path (after rename) */
+  newPath?: string;
+}
+
 /**
  * Get files changed between two refs using diff-tree.
- * Returns a map of filePath -> { status, hash1, hash2 }
+ * Returns a map of filePath -> FileChange
  *
  * This is much faster than checking each file individually.
- * Status codes: A=added, D=deleted, M=modified, T=type-changed
+ * Status codes: A=added, D=deleted, M=modified, T=type-changed, R=renamed
+ *
+ * Uses -M90% to detect renames with 90% similarity threshold.
+ * For renames, the map key is the NEW path, with oldPath stored in the value.
  */
 export async function getFileChanges(
   cwd: string,
   baseRef: string,
   targetRef: string,
-): Promise<Map<string, { status: 'A' | 'D' | 'M' | 'T'; baseHash: string | null; targetHash: string | null }>> {
-  // Use diff-tree to get all changed files between refs
-  // Format: :oldmode newmode oldhash newhash status\tpath
-  const output = await git(['diff-tree', '-r', '--no-commit-id', baseRef, targetRef], cwd, { ignoreErrors: true });
+): Promise<Map<string, FileChange>> {
+  // Use diff-tree with -M90% to detect renames (90% similarity threshold)
+  // Format for non-renames: :oldmode newmode oldhash newhash status\tpath
+  // Format for renames: :oldmode newmode oldhash newhash Rxx\toldpath\tnewpath
+  const output = await git(['diff-tree', '-r', '-M90%', '--no-commit-id', baseRef, targetRef], cwd, {
+    ignoreErrors: true,
+  });
 
-  const changes = new Map<
-    string,
-    { status: 'A' | 'D' | 'M' | 'T'; baseHash: string | null; targetHash: string | null }
-  >();
+  const changes = new Map<string, FileChange>();
 
   if (!output) return changes;
 
   for (const line of output.split('\n')) {
     if (!line) continue;
-    // Parse: :100644 100644 abc123... def456... M\tpath/to/file
+
+    // Check for rename first (Rxx status with two paths)
+    // Format: :100644 100644 abc123... def456... R100 oldpath\tnewpath
+    // Note: space after Rxx, then tab between old and new paths
+    const renameMatch = line.match(/^:\d+ \d+ ([a-f0-9]+) ([a-f0-9]+) R\d*\s+(.+)\t(.+)$/);
+    if (renameMatch) {
+      const [, baseHash, targetHash, oldPath, newPath] = renameMatch;
+      changes.set(newPath, {
+        status: 'R',
+        baseHash: baseHash === '0'.repeat(40) ? null : baseHash,
+        targetHash: targetHash === '0'.repeat(40) ? null : targetHash,
+        oldPath,
+        newPath,
+      });
+      continue;
+    }
+
+    // Parse non-rename: :100644 100644 abc123... def456... M\tpath/to/file
     const match = line.match(/^:\d+ \d+ ([a-f0-9]+) ([a-f0-9]+) ([ADMT])\t(.+)$/);
     if (match) {
       const [, baseHash, targetHash, status, filePath] = match;
@@ -346,6 +380,21 @@ export async function restoreToHead(cwd: string, filePath: string): Promise<void
  */
 export async function gitRm(cwd: string, filePath: string): Promise<void> {
   await git(['rm', '-f', '--', filePath], cwd, { ignoreErrors: true });
+}
+
+/**
+ * Move/rename a file using git mv.
+ * Creates parent directories if needed and preserves git history.
+ */
+export async function gitMv(cwd: string, oldPath: string, newPath: string): Promise<void> {
+  const { mkdir } = await import('node:fs/promises');
+  const { join, dirname } = await import('node:path');
+
+  // Ensure parent directory exists for new path
+  const newDir = dirname(join(cwd, newPath));
+  await mkdir(newDir, { recursive: true });
+
+  await git(['mv', '-f', oldPath, newPath], cwd);
 }
 
 /**

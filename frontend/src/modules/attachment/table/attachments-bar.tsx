@@ -12,7 +12,7 @@ import ColumnsView from '~/modules/common/data-table/columns-view';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
 import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
 import TableCount from '~/modules/common/data-table/table-count';
-import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
+import { FilterBarActions, FilterBarSearch, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
 import type { BaseTableBarProps } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -110,9 +110,9 @@ export const AttachmentsTableBar = ({
             )}
           </FilterBarActions>
           <div className="sm:grow" />
-          <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-left max-sm:fade-in max-sm:duration-300">
+          <FilterBarSearch>
             <TableSearch name="attachmentSearch" value={q} setQuery={onSearch} allowOfflineSearch={true} />
-          </FilterBarContent>
+          </FilterBarSearch>
         </TableFilterBar>
 
         {/* Columns view */}

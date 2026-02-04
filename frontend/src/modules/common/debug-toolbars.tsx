@@ -7,12 +7,18 @@ import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 import { queryClient } from '~/query/query-client';
 
+import { cn } from '~/utils/cn';
+
 interface DebugItem {
   url?: string;
   id: string;
   icon: string;
   parent?: string;
   element?: string;
+}
+
+interface DebugToolbarsProps {
+  className?: string;
 }
 
 const debugOptions: DebugItem[] = [
@@ -25,7 +31,7 @@ const debugOptions: DebugItem[] = [
   { id: 'sync-devtools', icon: '⚡' },
 ];
 
-function DebugToolbars() {
+function DebugToolbars({ className }: DebugToolbarsProps) {
   const [syncDevtoolsOpen, setSyncDevtoolsOpen] = useState(false);
 
   // Function to handle toggling debug options in different ways
@@ -72,7 +78,7 @@ function DebugToolbars() {
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="w-12 h-12" aria-label="toggle debug toolbar">
+          <Button variant="ghost" className={cn('w-12 h-12', className)} aria-label="toggle debug toolbar">
             🐞
           </Button>
         </DropdownMenuTrigger>

@@ -6,6 +6,7 @@ import type { InfiniteQueryData } from '~/query/types';
 /**
  * Returns the total number of items from an infinite query.
  * Automatically updates when the query cache changes.
+ * Returns null while fetching if only initialData is available (dataUpdatedAt is 0).
  */
 export function useInfiniteQueryTotal<T = unknown>(queryKey: QueryKey) {
   return useSyncExternalStore(
@@ -14,11 +15,14 @@ export function useInfiniteQueryTotal<T = unknown>(queryKey: QueryKey) {
 
     // Calculate snapshot of the total
     () => {
-      const queryData = queryClient.getQueryData<InfiniteQueryData<T>>(queryKey);
-      if (!queryData || !queryData.pages.length) return null;
+      const queryState = queryClient.getQueryState<InfiniteQueryData<T>>(queryKey);
+      if (!queryState?.data || !queryState.data.pages.length) return null;
 
-      // Return total last page
-      return queryData.pages[queryData.pages.length - 1].total;
+      // If only initialData is present (dataUpdatedAt is 0) and still fetching, defer showing total
+      if (queryState.dataUpdatedAt === 0 && queryState.fetchStatus === 'fetching') return null;
+
+      // Return total from last page
+      return queryState.data.pages[queryState.data.pages.length - 1].total;
     },
   );
 }

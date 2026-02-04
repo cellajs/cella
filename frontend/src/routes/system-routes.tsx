@@ -26,7 +26,7 @@ export const SystemRoute = createRoute({
   },
   getParentRoute: () => AppLayoutRoute,
   component: () => <SystemPage />,
-  errorComponent: ({ error }) => <ErrorNotice level="app" error={error} />,
+  errorComponent: ({ error }) => <ErrorNotice boundary="app" error={error} />,
 });
 
 /**
@@ -38,7 +38,6 @@ export const UsersTableRoute = createRoute({
   staticData: { isAuth: true, navTab: { id: 'users', label: 'common:users' } },
   head: () => ({ meta: [{ title: appTitle('Users') }] }),
   getParentRoute: () => SystemRoute,
-  loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
   component: () => (
     <Suspense>
       <UsersTable />
@@ -55,7 +54,6 @@ export const OrganizationsTableRoute = createRoute({
   staticData: { isAuth: true, navTab: { id: 'organizations', label: 'common:organizations' } },
   head: () => ({ meta: [{ title: appTitle('Organizations') }] }),
   getParentRoute: () => SystemRoute,
-  loaderDeps: ({ search: { q, sort, order } }) => ({ q, sort, order }),
   component: () => (
     <Suspense>
       <OrganizationsTable />
@@ -72,7 +70,6 @@ export const RequestsTableRoute = createRoute({
   staticData: { isAuth: true, navTab: { id: 'requests', label: 'common:requests' } },
   head: () => ({ meta: [{ title: appTitle('Requests') }] }),
   getParentRoute: () => SystemRoute,
-  loaderDeps: ({ search: { q, sort, order } }) => ({ q, sort, order }),
   component: () => (
     <Suspense>
       <RequestsTable />

@@ -1,6 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useNavigate } from '@tanstack/react-router';
 import { appConfig } from 'config';
-import { Check, Loader2 } from 'lucide-react';
+import { Check, EyeIcon, Loader2 } from 'lucide-react';
 import { lazy, Suspense, useCallback, useMemo, useState } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { useWatch } from 'react-hook-form';
@@ -14,6 +15,7 @@ import { useFormWithDraft } from '~/hooks/use-draft-form';
 import InputFormField from '~/modules/common/form-fields/input';
 import Spinner from '~/modules/common/spinner';
 import { usePageUpdateMutation } from '~/modules/page/query';
+import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
 
 const BlockNoteContentField = lazy(() => import('~/modules/common/form-fields/blocknote-content'));
@@ -29,6 +31,8 @@ interface Props {
 
 function UpdatePageForm({ page }: Props) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const updatePage = usePageUpdateMutation();
 
@@ -111,10 +115,15 @@ function UpdatePageForm({ page }: Props) {
   if (form.loading) return null;
 
   return (
-    <Form {...form}>
-      <form className="space-y-6 [&_label]:hidden">
-        {/* Auto-save status indicator */}
-        <div className="flex items-center justify-end h-6 text-sm text-muted-foreground">
+    <>
+      <div className="flex items-center justify-between gap-3 mb-6">
+        <div className="flex items-center gap-2">
+          <Button variant="plain" onClick={() => navigate({ to: '/docs/page/$id', params: { id: page.id } })}>
+            <EyeIcon size={16} className="mr-2" />
+            {t('common:view')}
+          </Button>
+        </div>
+        <div>
           {saveStatus === 'saving' && (
             <span className="flex items-center gap-1.5">
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -131,31 +140,35 @@ function UpdatePageForm({ page }: Props) {
             <span className="text-muted-foreground/60">{t('common:unsaved_changes')}</span>
           )}
         </div>
+      </div>
 
-        <InputFormField
-          inputClassName="h-14 text-4xl font-bold border-0 p-0 focus:ring-0 focus:ring-offset-0 shadow-none"
-          control={form.control}
-          name="name"
-          label={t('common:title')}
-          required
-        />
-
-        <Suspense fallback={<Spinner className="my-16 h-6 w-6 opacity-50" noDelay />}>
-          <BlockNoteContentField
+      <Form {...form}>
+        <form className="space-y-6 [&_label]:hidden">
+          <InputFormField
+            inputClassName="h-14 text-4xl font-bold border-0 p-0 focus:ring-0 focus:ring-offset-0 shadow-none"
             control={form.control}
-            name="description"
-            autoFocus
-            baseBlockNoteProps={{
-              id: `${appConfig.name}-blocknote-page-${page.id}`,
-              trailingBlock: false,
-              className:
-                'min-h-[50vh] bg-background focus-visible:ring-ring max-focus-visible:ring-transparent max-focus-visible:ring-offset-0 flex w-full text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-hidden sm:focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
-              baseFilePanelProps: { isPublic: true, organizationId: 'page' },
-            }}
+            name="name"
+            label={t('common:title')}
+            required
           />
-        </Suspense>
-      </form>
-    </Form>
+
+          <Suspense fallback={<Spinner className="my-16 h-6 w-6 opacity-50" noDelay />}>
+            <BlockNoteContentField
+              control={form.control}
+              name="description"
+              autoFocus
+              baseBlockNoteProps={{
+                id: `${appConfig.name}-blocknote-page-${page.id}`,
+                trailingBlock: false,
+                className:
+                  'min-h-[50vh] bg-background focus-visible:ring-ring max-focus-visible:ring-transparent max-focus-visible:ring-offset-0 flex w-full text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-hidden sm:focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+                baseFilePanelProps: { isPublic: true, organizationId: 'page' },
+              }}
+            />
+          </Suspense>
+        </form>
+      </Form>
+    </>
   );
 }
 

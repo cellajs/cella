@@ -8,7 +8,6 @@ import type { User } from '~/api.gen';
 import { zUpdateUserData } from '~/api.gen/zod.gen';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
-import useHideElementsById from '~/hooks/use-hide-elements-by-id';
 import { CallbackArgs } from '~/modules/common/data-table/types';
 import AvatarFormField from '~/modules/common/form-fields/avatar';
 import InputFormField from '~/modules/common/form-fields/input';
@@ -32,22 +31,17 @@ type FormValues = z.infer<typeof formSchema>;
 interface UpdateUserFormProps {
   user: User;
   sheet?: boolean;
-  hiddenFields?: string[];
+  /** Show only essential fields (avatar, name) for onboarding */
+  compact?: boolean;
   children?: React.ReactNode;
   callback?: (args: CallbackArgs<User>) => void;
 }
 
-function UpdateUserForm({ user, callback, sheet: isSheet, hiddenFields, children }: UpdateUserFormProps) {
+function UpdateUserForm({ user, callback, sheet: isSheet, compact, children }: UpdateUserFormProps) {
   const { t } = useTranslation();
   const { user: currentUser } = useUserStore();
   const isSelf = currentUser.id === user.id;
   const { nextStep } = useStepper();
-
-  // Hide fields if requested
-  if (hiddenFields) {
-    const fieldIds = hiddenFields.map((field) => `${field}-form-item-container`);
-    useHideElementsById(fieldIds);
-  }
 
   const mutationFn = isSelf ? useUpdateSelfMutation : useUserUpdateMutation;
   const { mutate, isPending } = mutationFn();
@@ -117,61 +111,65 @@ function UpdateUserForm({ user, callback, sheet: isSheet, hiddenFields, children
             required
           />
         </div>
-        {(!hiddenFields || !hiddenFields.includes('slug')) && (
-          <SlugFormField
-            control={form.control}
-            entityType="user"
-            label={t('common:resource_handle', { resource: t('common:user') })}
-            description={t('common:user_handle.text')}
-            previousSlug={user.slug}
-          />
+
+        {!compact && (
+          <>
+            <SlugFormField
+              control={form.control}
+              entityType="user"
+              label={t('common:resource_handle', { resource: t('common:user') })}
+              description={t('common:user_handle.text')}
+              previousSlug={user.slug}
+            />
+
+            <div className="flex-col flex gap-2">
+              <Label>{t('common:email')}</Label>
+              <Input value={user.email} autoComplete="off" disabled />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="language"
+              render={({ field }) => (
+                <FormItem name="language">
+                  <FormLabel>
+                    {t('common:language')}
+                    <span className="ml-1 opacity-50">*</span>
+                  </FormLabel>
+                  <FormControl>
+                    <SelectLanguage
+                      options={[...appConfig.languages]}
+                      value={field.value ?? appConfig.defaultLanguage}
+                      onChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="newsletter"
+              render={({ field }) => (
+                <FormItem className="flex-row items-center" name="newsletter">
+                  <FormControl>
+                    <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                  </FormControl>
+                  <FormLabel>{t('common:newsletter')}</FormLabel>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </>
         )}
-
-        <div id="email-form-item-container" className="flex-col flex gap-2">
-          <Label>{t('common:email')}</Label>
-          <Input value={user.email} autoComplete="off" disabled />
-        </div>
-
-        <FormField
-          control={form.control}
-          name="language"
-          render={({ field }) => (
-            <FormItem name="language">
-              <FormLabel>
-                {t('common:language')}
-                <span className="ml-1 opacity-50">*</span>
-              </FormLabel>
-              <FormControl>
-                <SelectLanguage
-                  options={[...appConfig.languages]}
-                  value={field.value ?? appConfig.defaultLanguage}
-                  onChange={field.onChange}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="newsletter"
-          render={({ field }) => (
-            <FormItem className="flex-row items-center" name="newsletter">
-              <FormControl>
-                <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-              </FormControl>
-              <FormLabel>{t('common:newsletter')}</FormLabel>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
 
         <div className="flex flex-col sm:flex-row gap-2">
           <SubmitButton
-            disabled={!hiddenFields?.length && (!form.isDirty || Object.keys(form.formState.errors).length > 0)}
+            disabled={!compact && (!form.isDirty || Object.keys(form.formState.errors).length > 0)}
             loading={isPending}
           >
-            {t(`common:${hiddenFields?.length ? 'continue' : 'save_changes'}`)}
+            {t(`common:${compact ? 'continue' : 'save_changes'}`)}
           </SubmitButton>
           {!children && (
             <Button

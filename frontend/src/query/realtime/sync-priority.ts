@@ -1,10 +1,10 @@
-import { hierarchy, type RealtimeEntityType } from 'config';
-import router from '~/lib/router';
+import { hierarchy, type ProductEntityType } from 'config';
+import router from '~/routes/router';
 
 export type SyncPriority = 'high' | 'medium' | 'low';
 
 interface SyncNotification {
-  entityType: RealtimeEntityType;
+  entityType: ProductEntityType;
   entityId: string;
   organizationId: string | null;
 }

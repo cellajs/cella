@@ -408,6 +408,20 @@ export const zGetActivitiesResponse = z.object({
   total: z.number(),
 });
 
+export const zGetAuthHealthData = z.object({
+  body: z.optional(z.never()),
+  path: z.optional(z.never()),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Auth health status
+ */
+export const zGetAuthHealthResponse = z.object({
+  restrictedMode: z.boolean(),
+  retryAfter: z.optional(z.number()),
+});
+
 export const zCheckEmailData = z.object({
   body: z.object({
     email: z.email(),
@@ -912,25 +926,6 @@ export const zUnsubscribeMeData = z.object({
   }),
 });
 
-export const zGetAppStreamData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.optional(
-    z.object({
-      offset: z.optional(z.string()),
-      live: z.optional(z.enum(['sse', 'poll'])),
-    }),
-  ),
-});
-
-/**
- * SSE stream or notification response
- */
-export const zGetAppStreamResponse = z.object({
-  activities: z.array(zStreamNotification),
-  cursor: z.union([z.string(), z.null()]),
-});
-
 export const zDeleteUsersData = z.object({
   body: z.object({
     ids: z.array(z.string()).min(1).max(50),
@@ -1129,25 +1124,6 @@ export const zUpdateOrganizationData = z.object({
  */
 export const zUpdateOrganizationResponse = zOrganization;
 
-export const zPagesPublicStreamData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.optional(
-    z.object({
-      offset: z.optional(z.string()),
-      live: z.optional(z.enum(['sse'])),
-    }),
-  ),
-});
-
-/**
- * Catch-up activities or SSE stream started
- */
-export const zPagesPublicStreamResponse = z.object({
-  activities: z.array(zPublicStreamActivity),
-  cursor: z.union([z.string(), z.null()]),
-});
-
 export const zDeletePagesData = z.object({
   body: z.object({
     ids: z.array(z.string()).min(1).max(50),
@@ -1171,6 +1147,7 @@ export const zGetPagesData = z.object({
       order: z.optional(z.enum(['asc', 'desc'])),
       offset: z.optional(z.string()),
       limit: z.optional(z.string()),
+      modifiedAfter: z.optional(z.iso.datetime()),
     }),
   ),
 });
@@ -1257,6 +1234,44 @@ export const zCheckSlugData = z.object({
  * Slug is available
  */
 export const zCheckSlugResponse = z.void();
+
+export const zPublicStreamData = z.object({
+  body: z.optional(z.never()),
+  path: z.optional(z.never()),
+  query: z.optional(
+    z.object({
+      offset: z.optional(z.string()),
+      live: z.optional(z.enum(['sse'])),
+    }),
+  ),
+});
+
+/**
+ * Catch-up activities or SSE stream started
+ */
+export const zPublicStreamResponse = z.object({
+  activities: z.array(zPublicStreamActivity),
+  cursor: z.union([z.string(), z.null()]),
+});
+
+export const zGetAppStreamData = z.object({
+  body: z.optional(z.never()),
+  path: z.optional(z.never()),
+  query: z.optional(
+    z.object({
+      offset: z.optional(z.string()),
+      live: z.optional(z.enum(['sse', 'poll'])),
+    }),
+  ),
+});
+
+/**
+ * SSE stream or notification response
+ */
+export const zGetAppStreamResponse = z.object({
+  activities: z.array(zStreamNotification),
+  cursor: z.union([z.string(), z.null()]),
+});
 
 export const zSystemInviteData = z.object({
   body: z.object({
@@ -1453,7 +1468,7 @@ export const zGetCacheStatsData = z.object({
  * Cache statistics
  */
 export const zGetCacheStatsResponse = z.object({
-  public: z.object({
+  cache: z.object({
     hits: z.number(),
     misses: z.number(),
     hitRate: z.number(),
@@ -1462,26 +1477,9 @@ export const zGetCacheStatsResponse = z.object({
     totalRequests: z.number(),
     uptimeSeconds: z.number(),
     size: z.number(),
+    indexSize: z.optional(z.number()),
     capacity: z.number(),
     utilization: z.number(),
-  }),
-  token: z.object({
-    hits: z.number(),
-    misses: z.number(),
-    hitRate: z.number(),
-    invalidations: z.number(),
-    coalescedRequests: z.number(),
-    totalRequests: z.number(),
-    uptimeSeconds: z.number(),
-    size: z.number(),
-    capacity: z.number(),
-    utilization: z.number(),
-  }),
-  combined: z.object({
-    totalHits: z.number(),
-    totalMisses: z.number(),
-    overallHitRate: z.number(),
-    totalInvalidations: z.number(),
   }),
 });
 
@@ -1508,6 +1506,12 @@ export const zGetSyncMetricsResponse = z.object({
 export const zDeleteAttachmentsData = z.object({
   body: z.object({
     ids: z.array(z.string()).min(1).max(50),
+    tx: z.optional(
+      z.object({
+        id: z.string(),
+        sourceId: z.string(),
+      }),
+    ),
   }),
   path: z.object({
     orgId: z.string(),
@@ -1532,6 +1536,7 @@ export const zGetAttachmentsData = z.object({
       order: z.optional(z.enum(['asc', 'desc'])),
       offset: z.optional(z.string()),
       limit: z.optional(z.string()),
+      modifiedAfter: z.optional(z.iso.datetime()),
     }),
   ),
 });
@@ -1585,6 +1590,20 @@ export const zCreateAttachmentsResponse = z.union([
     rejectionReasons: z.optional(z.record(z.string(), z.string())),
   }),
 ]);
+
+export const zGetAttachmentData = z.object({
+  body: z.optional(z.never()),
+  path: z.object({
+    id: z.string(),
+    orgIdOrSlug: z.string(),
+  }),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Attachment
+ */
+export const zGetAttachmentResponse = zAttachment;
 
 export const zUpdateAttachmentData = z.object({
   body: z.object({

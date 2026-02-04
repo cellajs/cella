@@ -41,7 +41,7 @@ function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
     form.reset();
   };
 
-  const { mutate: createRequest } = useCreateRequestMutation();
+  const { mutate: createRequest, isPending } = useCreateRequestMutation();
 
   const onSubmit: SubmitHandler<FormValues> = (body) => {
     createRequest(body, {
@@ -85,7 +85,7 @@ function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
               icon={<MessageSquareIcon size={16} />}
             />
             <div className="flex flex-col sm:flex-row gap-2">
-              <SubmitButton>
+              <SubmitButton loading={isPending}>
                 <SendIcon size={16} className="mr-2" />
                 {t('common:send')}
               </SubmitButton>

@@ -1,7 +1,7 @@
 import { Outlet } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { FocusViewContainer } from '~/modules/common/focus-view';
-import { PageNav } from '~/modules/common/page/nav';
+import { PageTabNav } from '~/modules/common/page/tab-nav';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import { SystemRoute } from '~/routes/system-routes';
 
@@ -16,7 +16,7 @@ function SystemPage() {
         className="pt-4 md:pt-6 md:px-6"
       />
 
-      <PageNav className="mt-4" parentRouteId={SystemRoute.id} />
+      <PageTabNav className="mt-4" parentRouteId={SystemRoute.id} />
 
       <FocusViewContainer className="container min-h-screen">
         <Outlet />

@@ -22,7 +22,7 @@ function AppLayout() {
     <div id="appLayout" className="max-sm:mb-16 in-[.floating-nav]:mb-0">
       <ErrorBoundary
         fallbackRender={({ error, resetErrorBoundary }) => (
-          <ErrorNotice error={error as ErrorNoticeError} level="root" resetErrorBoundary={resetErrorBoundary} />
+          <ErrorNotice error={error as ErrorNoticeError} boundary="root" resetErrorBoundary={resetErrorBoundary} />
         )}
       >
         <SidebarWrapper>

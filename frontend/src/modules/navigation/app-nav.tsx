@@ -2,14 +2,14 @@ import { useNavigate } from '@tanstack/react-router';
 import { useEffect } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useHotkeys } from '~/hooks/use-hot-keys';
-import router from '~/lib/router';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import BottomBarNav from '~/modules/navigation/bottom-bar-nav';
-import FloatingNav from '~/modules/navigation/floating-nav';
+import FloatingNav from '~/modules/navigation/floating-nav/floating-nav';
 import SidebarNav from '~/modules/navigation/sidebar-nav';
 import type { NavItem, TriggerNavItemFn } from '~/modules/navigation/types';
 import { navItems } from '~/nav-config';
+import router from '~/routes/router';
 import { useNavigationStore } from '~/store/navigation';
 import { useUIStore } from '~/store/ui';
 
@@ -117,11 +117,7 @@ function AppNav() {
   return (
     <>
       <FloatingNav triggerNavItem={triggerNavItem} />
-      {isMobile ? (
-        <BottomBarNav triggerNavItem={triggerNavItem} />
-      ) : (
-        <SidebarNav triggerNavItem={triggerNavItem} />
-      )}
+      {isMobile ? <BottomBarNav triggerNavItem={triggerNavItem} /> : <SidebarNav triggerNavItem={triggerNavItem} />}
     </>
   );
 }

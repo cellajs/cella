@@ -66,9 +66,9 @@ export function useUrlOverlayState(searchParamKey: string, options: UseUrlOverla
           replace: true,
           resetScroll: false,
           search: (prev) => {
-            const next = { ...prev };
+            const next: Record<string, unknown> = { ...prev };
             for (const key of paramsToRemove) {
-              (next as Record<string, unknown>)[key] = undefined;
+              next[key] = undefined;
             }
             return next;
           },

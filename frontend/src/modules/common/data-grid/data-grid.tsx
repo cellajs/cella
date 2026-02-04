@@ -91,6 +91,8 @@ interface EditCellState<R> extends Position {
   readonly originalRow: R;
 }
 
+// TODO seems to be heavy when resizing browser tab, please investigate
+
 /** Arguments passed to onRowsEndApproaching callback */
 export interface RowsEndApproachingArgs {
   /** Index of the last row being rendered (with overscan) */
@@ -1174,7 +1176,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
       setSelectedPosition(({ idx, rowIdx }) => ({ idx, rowIdx, mode: 'SELECT' }));
     };
 
-    const onRowChange = (row: R, commitChanges: boolean, shouldFocusCell: boolean) => {
+    const onRowChange = async (row: R, commitChanges: boolean, shouldFocusCell: boolean) => {
       if (commitChanges) {
         // Prevents two issues when editor is closed by clicking on a different cell
         //
@@ -1182,8 +1184,10 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
         // SELECT and this results in onRowChange getting called twice.
         flushSync(() => {
           updateRow(column, selectedPosition.rowIdx, row);
-          closeEditor(shouldFocusCell);
         });
+        // Brief delay allows optimistic updates to propagate to cache before editor closes
+        await new Promise((r) => setTimeout(r, 200));
+        closeEditor(shouldFocusCell);
       } else {
         setSelectedPosition((position) => ({ ...position, row }));
       }

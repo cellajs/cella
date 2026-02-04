@@ -20,8 +20,8 @@ import { txStreamMessageSchema } from './transaction-schemas';
 export const streamNotificationSchema = z
   .object({
     action: z.enum(activityActions),
-    /** Entity type for realtime entity events */
-    entityType: z.enum(appConfig.realtimeEntityTypes).nullable(),
+    /** Entity type for product entity events */
+    entityType: z.enum(appConfig.productEntityTypes).nullable(),
     /** Resource type for non-entity events (membership) */
     resourceType: z.enum(appConfig.resourceTypes).nullable(),
     entityId: z.string(),
@@ -47,7 +47,7 @@ export const publicStreamActivitySchema = z
   .object({
     activityId: z.string(),
     action: z.enum(activityActions),
-    entityType: z.enum(appConfig.realtimeEntityTypes),
+    entityType: z.enum(appConfig.productEntityTypes),
     entityId: z.string(),
     changedKeys: z.array(z.string()).nullable(),
     createdAt: z.string(),
@@ -55,3 +55,46 @@ export const publicStreamActivitySchema = z
   .openapi('PublicStreamActivity', { example: mockPublicStreamActivity() });
 
 export type PublicStreamActivity = z.infer<typeof publicStreamActivitySchema>;
+
+/**
+ * Base query parameters for SSE streams.
+ * Offset determines where to start: 'now' for live-only, activity ID for catch-up.
+ */
+export const streamQuerySchema = z.object({
+  offset: z.string().optional().openapi({
+    description: "Starting offset: 'now' for live-only, or activity ID to receive missed notifications",
+    example: 'now',
+  }),
+  live: z.enum(['sse', 'poll']).optional().openapi({
+    description: "Connection mode: 'sse' for streaming, 'poll' for one-time fetch",
+    example: 'sse',
+  }),
+});
+
+/**
+ * Query schema for public streams (SSE only, no poll mode).
+ */
+export const publicStreamQuerySchema = streamQuerySchema.extend({
+  live: z.enum(['sse']).optional().openapi({
+    description: 'Set to "sse" for live updates (SSE stream)',
+    example: 'sse',
+  }),
+});
+
+/**
+ * Generic stream response schema factory.
+ * Returns activities array with cursor for pagination.
+ */
+export const streamResponseSchema = <T extends z.ZodTypeAny>(activitySchema: T) =>
+  z.object({
+    activities: z.array(activitySchema),
+    cursor: z.string().nullable().openapi({ description: 'Last activity ID (use as offset for next request)' }),
+  });
+
+/** App stream response (for authenticated user streams) */
+export const appStreamResponseSchema = streamResponseSchema(streamNotificationSchema);
+export type AppStreamResponse = z.infer<typeof appStreamResponseSchema>;
+
+/** Public stream response (for unauthenticated entity streams) */
+export const publicStreamResponseSchema = streamResponseSchema(publicStreamActivitySchema);
+export type PublicStreamResponse = z.infer<typeof publicStreamResponseSchema>;

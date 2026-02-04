@@ -12,6 +12,7 @@ import {
   createAttachments,
   deleteAttachments,
   type GetAttachmentsData,
+  getAttachment,
   getAttachments,
   type UpdateAttachmentData,
   updateAttachment,
@@ -27,7 +28,8 @@ import {
   useMutateQueryData,
 } from '~/query/basic';
 import { addMutationRegistrar } from '~/query/mutation-registry';
-import { createTxForCreate, createTxForUpdate, squashPendingMutation } from '~/query/offline';
+import { createTxForCreate, createTxForDelete, createTxForUpdate, squashPendingMutation } from '~/query/offline';
+import { getCacheToken } from '~/query/realtime';
 
 // Use generated types from api.gen for mutation input shapes
 // Body is array of items with tx embedded, so extract element type without tx
@@ -87,6 +89,31 @@ export const attachmentsQueryOptions = (params: AttachmentsListParams) => {
     ...baseInfiniteQueryOptions,
   });
 };
+
+/**
+ * Query options to get a single attachment by ID.
+ * Uses cache token from SSE notification for efficient server-side cache hit.
+ *
+ * @param orgIdOrSlug - Organization ID or slug
+ * @param id - Attachment ID
+ */
+export const attachmentQueryOptions = (orgIdOrSlug: string, id: string) => ({
+  queryKey: keys.detail.byId(id),
+  queryFn: async () => {
+    // Check for cache token from SSE notification
+    const cacheToken = getCacheToken('attachment', id);
+
+    const result = await getAttachment({
+      path: { orgIdOrSlug, id },
+      // Pass cache token header for server-side cache hit
+      headers: cacheToken ? { 'X-Cache-Token': cacheToken } : undefined,
+    });
+
+    return result;
+  },
+  // Use list cache as initial data for instant display
+  initialData: () => findAttachmentInListCache(id),
+});
 
 /** Find an attachment in the list cache by id. */
 export const findAttachmentInListCache = (id: string) => findInListCache<Attachment>(keys.list.base, id);
@@ -260,10 +287,11 @@ export const useAttachmentDeleteMutation = (orgId: string) => {
   return useMutation({
     mutationKey: keys.delete,
 
-    // Execute batch delete API call
+    // Execute batch delete API call with tx for echo prevention
     mutationFn: async (attachments: Attachment[]) => {
       const ids = attachments.map((a) => a.id);
-      await deleteAttachments({ path: { orgId }, body: { ids } });
+      const tx = createTxForDelete();
+      await deleteAttachments({ path: { orgId }, body: { ids, tx } });
     },
 
     // Runs BEFORE mutationFn - remove items immediately from UI

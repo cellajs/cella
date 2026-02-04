@@ -37,7 +37,12 @@ export const LegalNotice = ({
 
   return (
     <p className="font-light text-center space-x-1">
-      {mode === 'signup' && <span>{t('common:legal_notice.text', { email })}</span>}
+      {mode === 'signup' &&
+        (email ? (
+          <span>{t('common:legal_notice_email.text', { email })}</span>
+        ) : (
+          <span>{t('common:legal_notice.text')}</span>
+        ))}
       {mode === 'waitlist' && <span>{t('common:legal_notice_waitlist.text', { email })}</span>}
       {mode === 'verify' && <span>{t('common:request_verification.legal_notice')}</span>}
       <Button

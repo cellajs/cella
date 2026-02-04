@@ -1,5 +1,4 @@
-import type { EnsureQueryDataOptions } from '@tanstack/react-query';
-import { createRoute, useLoaderData } from '@tanstack/react-router';
+import { createRoute, useParams } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
 import ErrorNotice from '~/modules/common/error-notice';
 import {
@@ -15,27 +14,14 @@ import {
   operationsRouteSearchParamsSchema,
   schemasRouteSearchParamsSchema,
 } from '~/modules/docs/search-params-schemas';
+import { pagesQueryOptions } from '~/modules/page/query';
 import { pagesRouteSearchParamsSchema } from '~/modules/page/search-params-schemas';
+import { ensureQueryDataWithFallback } from '~/query/basic';
 import { queryClient } from '~/query/query-client';
 import { PublicLayoutRoute } from '~/routes/base-routes';
 import appTitle from '~/utils/app-title';
 import { noDirectAccess } from '~/utils/no-direct-access';
 import { stripParams } from '~/utils/strip-search-params';
-
-/**
- * Ensures query data is available, falling back to cache if fetch fails (offline support).
- * Returns undefined if neither fetch nor cache succeeds.
- */
-async function ensureQueryDataWithFallback<T, TQueryKey extends readonly unknown[]>(
-  options: EnsureQueryDataOptions<T, Error, T, TQueryKey>,
-): Promise<T | undefined> {
-  try {
-    return await queryClient.ensureQueryData(options);
-  } catch {
-    // If fetch fails (e.g., offline), try to return cached data
-    return queryClient.getQueryData(options.queryKey);
-  }
-}
 
 const DocsLayout = lazy(() => import('~/modules/docs/docs-layout'));
 const OverviewPage = lazy(() => import('~/modules/docs/overview-page'));
@@ -57,13 +43,14 @@ export const DocsLayoutRoute = createRoute({
     noDirectAccess(DocsLayoutRoute.to, DocsOperationsRoute.to);
   },
   getParentRoute: () => PublicLayoutRoute,
-  errorComponent: ({ error }) => <ErrorNotice level="public" error={error} homePath="/docs" />,
-  notFoundComponent: () => <ErrorNotice level="public" error={new Error('Page not found')} homePath="/docs" />,
+  errorComponent: ({ error }) => <ErrorNotice boundary="public" error={error} homePath="/docs" />,
+  notFoundComponent: () => <ErrorNotice boundary="public" error={new Error('Page not found')} homePath="/docs" />,
   loader: async () => {
-    // Prefetch tags and schemas (schemas used for error response deduplication)
+    // Prefetch tags, schemas (used for error response deduplication), and pages
     await Promise.all([
       ensureQueryDataWithFallback(tagsQueryOptions),
       ensureQueryDataWithFallback(schemasQueryOptions),
+      queryClient.prefetchInfiniteQuery(pagesQueryOptions({})),
     ]);
   },
   component: () => (
@@ -194,16 +181,15 @@ export const DocsPagesRoute = createRoute({
 export const DocsPageRoute = createRoute({
   path: '/page/$id',
   staticData: { isAuth: false },
-  loader: ({ params: { id } }) => ({ pageId: id }),
   head: () => ({ meta: [{ title: appTitle('Page') }] }),
   getParentRoute: () => DocsLayoutRoute,
-  errorComponent: ({ error }) => <ErrorNotice level="public" error={error} homePath="/docs" />,
-  notFoundComponent: () => <ErrorNotice level="public" error={new Error('Page not found')} homePath="/docs" />,
+  errorComponent: ({ error }) => <ErrorNotice boundary="public" error={error} homePath="/docs" />,
+  notFoundComponent: () => <ErrorNotice boundary="public" error={new Error('Page not found')} homePath="/docs" />,
   component: () => {
-    const { pageId } = useLoaderData({ from: DocsPageRoute.id });
+    const { id } = useParams({ from: DocsPageRoute.id });
     return (
       <Suspense>
-        <ViewPage key={pageId} pageId={pageId} />
+        <ViewPage key={id} pageId={id} />
       </Suspense>
     );
   },
@@ -215,16 +201,15 @@ export const DocsPageRoute = createRoute({
 export const DocsPageEditRoute = createRoute({
   path: '/page/$id/edit',
   staticData: { isAuth: false },
-  loader: ({ params: { id } }) => ({ pageId: id }),
   head: () => ({ meta: [{ title: appTitle('Edit Page') }] }),
   getParentRoute: () => DocsLayoutRoute,
-  errorComponent: ({ error }) => <ErrorNotice level="public" error={error} homePath="/docs" />,
-  notFoundComponent: () => <ErrorNotice level="public" error={new Error('Page not found')} homePath="/docs" />,
+  errorComponent: ({ error }) => <ErrorNotice boundary="public" error={error} homePath="/docs" />,
+  notFoundComponent: () => <ErrorNotice boundary="public" error={new Error('Page not found')} homePath="/docs" />,
   component: () => {
-    const { pageId } = useLoaderData({ from: DocsPageEditRoute.id });
+    const { id } = useParams({ from: DocsPageEditRoute.id });
     return (
       <Suspense>
-        <UpdatePage key={pageId} pageId={pageId} />
+        <UpdatePage key={id} pageId={id} />
       </Suspense>
     );
   },

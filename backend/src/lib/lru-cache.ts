@@ -1,47 +1,50 @@
 /**
- * TTL-based cache with prefix invalidation support.
- * Wraps @isaacs/ttlcache with additional methods for entity cache use cases.
+ * LRU cache with prefix invalidation support.
+ * Wraps the lru-cache package for least-recently-used eviction.
  *
- * Uses pure TTL eviction (soonest-expiring first) rather than LRU,
- * which is a better fit for version-keyed entity caching with CDC invalidation.
+ * Best suited for frequently accessed items that should stay cached,
+ * with eviction based on access patterns rather than time.
  */
 
-import { TTLCache } from '@isaacs/ttlcache';
+import { LRUCache as LRU } from 'lru-cache';
 
-/** Dispose reason from ttlcache */
-export type DisposeReason = 'stale' | 'set' | 'evict' | 'delete';
+/** Dispose reason */
+export type DisposeReason = 'set' | 'evict' | 'delete';
 
-export interface EntityCacheOptions<T> {
+export interface LRUCacheOptions<T> {
   /** Maximum number of entries */
   maxSize: number;
-  /** Default TTL in milliseconds */
-  defaultTtl: number;
+  /** Optional max TTL in milliseconds (items can still be evicted earlier by LRU) */
+  maxTtl?: number;
   /** Optional callback when entries are removed */
   onDispose?: (key: string, value: T, reason: DisposeReason) => void;
 }
 
 /**
- * TTL cache with prefix invalidation for entity caching.
- * Automatic expiration via timer (no manual prune needed).
+ * LRU cache with prefix invalidation.
+ * Evicts least recently used items when capacity is reached.
  */
-export class EntityTTLCache<T> {
-  private cache: TTLCache<string, T>;
+export class LRUCache<T extends {}> {
+  private cache: LRU<string, T>;
   private readonly maxSize: number;
-  private readonly defaultTtl: number;
 
-  constructor(options: EntityCacheOptions<T>) {
+  constructor(options: LRUCacheOptions<T>) {
     this.maxSize = options.maxSize;
-    this.defaultTtl = options.defaultTtl;
 
-    this.cache = new TTLCache<string, T>({
+    this.cache = new LRU<string, T>({
       max: options.maxSize,
-      ttl: options.defaultTtl,
-      dispose: options.onDispose ? (value, key, reason) => options.onDispose!(key, value, reason) : undefined,
+      ttl: options.maxTtl,
+      dispose: options.onDispose
+        ? (value, key, reason) => {
+            const mappedReason: DisposeReason = reason === 'set' ? 'set' : reason === 'evict' ? 'evict' : 'delete';
+            options.onDispose!(key, value, mappedReason);
+          }
+        : undefined,
     });
   }
 
   /**
-   * Get value by key. Returns undefined if not found or expired.
+   * Get value by key. Updates recency for LRU.
    */
   get(key: string): T | undefined {
     return this.cache.get(key);
@@ -51,11 +54,11 @@ export class EntityTTLCache<T> {
    * Set value with optional custom TTL.
    */
   set(key: string, value: T, ttl?: number): void {
-    this.cache.set(key, value, { ttl: ttl ?? this.defaultTtl });
+    this.cache.set(key, value, { ttl });
   }
 
   /**
-   * Check if key exists and is not expired.
+   * Check if key exists.
    */
   has(key: string): boolean {
     return this.cache.has(key);
@@ -92,7 +95,7 @@ export class EntityTTLCache<T> {
 
   /**
    * Get remaining TTL for a key in milliseconds.
-   * Returns 0 if key is not found or expired.
+   * Returns 0 if key is not found or has no TTL.
    */
   getRemainingTTL(key: string): number {
     return this.cache.getRemainingTTL(key);
@@ -116,17 +119,4 @@ export class EntityTTLCache<T> {
       utilization: this.cache.size / this.maxSize,
     };
   }
-
-  /**
-   * Cancel internal timer for graceful shutdown.
-   * After calling this, items will not automatically expire.
-   */
-  cancelTimer(): void {
-    this.cache.cancelTimer();
-  }
 }
-
-/**
- * @deprecated Use EntityTTLCache instead. Kept for backward compatibility.
- */
-export { EntityTTLCache as LRUCache };

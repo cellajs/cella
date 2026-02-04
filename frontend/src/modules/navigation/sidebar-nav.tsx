@@ -3,7 +3,7 @@ import type { CSSProperties } from 'react';
 import { lazy, Suspense } from 'react';
 import useBodyClass from '~/hooks/use-body-class';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import useMounted from '~/hooks/use-mounted';
+import useMountedState from '~/hooks/use-mounted-state';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { NavButton } from '~/modules/navigation/nav-buttons';
 import StopImpersonation from '~/modules/navigation/stop-impersonation';
@@ -20,17 +20,25 @@ import { navItems } from '~/nav-config';
 import { useNavigationStore } from '~/store/navigation';
 import { useUIStore } from '~/store/ui';
 
-const DebugToolbars =
-  appConfig.mode !== 'production' ? lazy(() => import('~/modules/common/debug-toolbars')) : () => null;
+const DebugDropdown =
+  appConfig.mode !== 'production' ? lazy(() => import('~/modules/common/debug-dropdown')) : () => null;
 
 // Sidebar dimensions from config
-const { hasSidebarTextLabels, sidebarWidthExpanded, sidebarWidthCollapsed, sheetPanelWidth } = appConfig.theme.navigation;
+const { hasSidebarTextLabels, sidebarWidthExpanded, sidebarWidthCollapsed, sheetPanelWidth } =
+  appConfig.theme.navigation;
 
 // Cached base nav items
 let baseNavItems: NavItem[] | null = null;
 function getBaseNavItems() {
   if (!baseNavItems) baseNavItems = navItems.filter(({ type }) => type === 'base');
   return baseNavItems;
+}
+
+// Cached footer nav items
+let footerNavItems: NavItem[] | null = null;
+function getFooterNavItems() {
+  if (!footerNavItems) footerNavItems = navItems.filter(({ type }) => type === 'footer');
+  return footerNavItems;
 }
 
 interface SidebarNavProps {
@@ -43,7 +51,7 @@ interface SidebarNavProps {
  * Data attributes control non-width styling (opacity, position, pointer-events).
  */
 export function SidebarNav({ triggerNavItem }: SidebarNavProps) {
-  const { hasStarted } = useMounted();
+  const { hasStarted } = useMountedState();
   const isDesktop = useBreakpoints('min', 'xl', true);
 
   const theme = useUIStore((state) => state.theme);
@@ -64,8 +72,12 @@ export function SidebarNav({ triggerNavItem }: SidebarNavProps) {
   const iconBarWidth = isExpanded ? sidebarWidthExpanded : sidebarWidthCollapsed;
   const sidebarWidth = iconBarWidth;
   const spacerWidth = isOverlay
-    ? hasSidebarTextLabels && isDesktop ? sidebarWidthExpanded : sidebarWidthCollapsed
-    : navSheetExists ? `calc(${iconBarWidth} + ${sheetPanelWidth})` : iconBarWidth;
+    ? hasSidebarTextLabels && isDesktop
+      ? sidebarWidthExpanded
+      : sidebarWidthCollapsed
+    : navSheetExists
+      ? `calc(${iconBarWidth} + ${sheetPanelWidth})`
+      : iconBarWidth;
 
   // CSS custom properties for widths
   const cssVars = {
@@ -113,9 +125,20 @@ export function SidebarNav({ triggerNavItem }: SidebarNavProps) {
                 </SidebarGroupContent>
               </SidebarGroup>
             </SidebarContent>
-            <SidebarFooter className="p-2 gap-2">
-              <Suspense>{DebugToolbars ? <DebugToolbars /> : null}</Suspense>
-              <StopImpersonation />
+            <SidebarFooter className="p-0 gap-2">
+              <Suspense>{DebugDropdown ? <DebugDropdown className="mx-2" /> : null}</Suspense>
+              <StopImpersonation isCollapsed={!isExpanded} />
+              <SidebarMenu className="gap-1">
+                {getFooterNavItems().map((navItem: NavItem) => (
+                  <NavButton
+                    key={navItem.id}
+                    navItem={navItem}
+                    isActive={navSheetOpen === navItem.id}
+                    isCollapsed={!isExpanded}
+                    onClick={triggerNavItem}
+                  />
+                ))}
+              </SidebarMenu>
             </SidebarFooter>
           </div>
         </div>

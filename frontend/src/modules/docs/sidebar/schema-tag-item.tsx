@@ -2,7 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { ChevronDownIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 import { memo } from 'react';
-import { scrollToSectionById } from '~/hooks/scroll-spy-store';
+import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
 import type { GenComponentSchema, GenSchemaTagSummary, SchemaTag } from '~/modules/docs/types';
 import { buttonVariants } from '~/modules/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';
@@ -11,8 +11,11 @@ import { cn } from '~/utils/cn';
 import { useSheeter } from '../../common/sheeter/use-sheeter';
 import { SchemaItem } from './schema-item';
 
-const ITEM_HEIGHT = 32;
-const LIST_PADDING_TOP = 4;
+// Use rem values for proper mobile scaling
+const ITEM_HEIGHT_REM = 2; // 32px at base 16px
+const LIST_PADDING_TOP_REM = 0.25; // 4px at base 16px
+const INDICATOR_OFFSET_REM = 0.5; // 8px at base 16px
+const INDICATOR_HEIGHT_REM = 1; // 16px (ITEM_HEIGHT - 16)
 const DOCS_SIDEBAR_SHEET_ID = 'docs-sidebar';
 
 type SchemaTagItemProps = {
@@ -44,8 +47,11 @@ function SchemaTagItemBase({ tag, schemas, isExpanded, layoutId, isActive, activ
         <CollapsibleTrigger asChild>
           <Link
             to="/docs/schemas"
-            search={(prev) => ({ ...prev, schemaTag: isExpanded ? undefined : (tag.name as SchemaTag) })}
-            hash={isExpanded ? undefined : tag.name}
+            search={(prev) => ({
+              ...prev,
+              schemaTag: isExpanded ? undefined : (tag.name as SchemaTag),
+            })}
+            hash={tag.name}
             replace
             resetScroll={false}
             draggable="false"
@@ -55,7 +61,7 @@ function SchemaTagItemBase({ tag, schemas, isExpanded, layoutId, isActive, activ
               'group-data-[expanded=true]/tag:opacity-100 group-data-[active=true]/tag:bg-accent',
             )}
             onClick={() => {
-              if (!isExpanded) requestAnimationFrame(() => scrollToSectionById(tag.name));
+              requestAnimationFrame(() => scrollToSectionById(tag.name));
               useSheeter.getState().remove(DOCS_SIDEBAR_SHEET_ID);
             }}
           >
@@ -75,8 +81,8 @@ function SchemaTagItemBase({ tag, schemas, isExpanded, layoutId, isActive, activ
                 transition={{ type: 'spring', stiffness: 300, damping: 30, mass: 0.8 }}
                 className="w-[0.20rem] bg-primary rounded-full absolute left-2 ml-px"
                 style={{
-                  top: LIST_PADDING_TOP + activeSchemaIndex * ITEM_HEIGHT + 8,
-                  height: ITEM_HEIGHT - 16,
+                  top: `${LIST_PADDING_TOP_REM + activeSchemaIndex * ITEM_HEIGHT_REM + INDICATOR_OFFSET_REM}rem`,
+                  height: `${INDICATOR_HEIGHT_REM}rem`,
                 }}
               />
             )}

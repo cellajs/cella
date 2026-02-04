@@ -1,6 +1,6 @@
 # Cella hybrid sync engine
 
-> **Architecture context**: Cella has a dynamic entity model—a 'fork' can have different and extended entity compositions. See [ARCHITECTURE.md](./ARCHITECTURE.md).
+> **Architecture context**: Cella has a dynamic entity model—a 'fork' can have different and/or extended entity config. See [ARCHITECTURE.md](./ARCHITECTURE.md).
 
 ## Overview
 
@@ -8,9 +8,8 @@ The **hybrid sync engine** extends Cella's **OpenAPI + React Query** infrastruct
 
 | Mode | Entity type | Features | Example |
 |------|-------------|----------|---------|
-| basic | `EntityType` | Standard REST CRUD, server-generated IDs | `organization` |
-| offline | `OfflineEntityType` | + transaction tracking, offline queue, conflict detection | (currently empty) |
-| realtime | `RealtimeEntityType` | + Live stream (SSE), live cache updates, multi-tab leader election | `page`, `attachment` |
+| basic | `ContextEntityType` | Standard REST CRUD, server-generated IDs | `organization` |
+| realtime | `ProductEntityType` | + Transaction tracking, offline queue, conflict detection, Live stream (SSE), live cache updates, multi-tab leader election | `page`, `attachment` |
 
 ---
 
@@ -40,6 +39,7 @@ By internalizing the sync engine, cella can make unique combos: audit trail func
 ### Architecture overview
 - **Logical replication** - A Change Data Capture (CDC) worker receives all changes and inserts them into `activitiesTable`
 - **Live stream** - SSE streaming backed by CDC Worker + WebSocket for realtime notifications
+- **Catchup-then-SSE pattern** - Catch-up via REST fetch, then SSE for live-only notifications
 - **Notify + fetch pattern** - SSE sends lightweight notifications; clients fetch entity data with priority-based scheduling; TTL cache enables efficient fan-out
 - **React Query as merge point** - Initial/prefetch load and notification-triggered fetches feed into the same cache
 
@@ -113,19 +113,31 @@ This architecture uses a persistent WebSocket connection from CDC Worker to API 
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-> **CLIENT**: LIST for initial load, notify + fetch for deltas
+> **CLIENT**: Catchup-then-SSE pattern with priority-based fetching
 
-Stream sends lightweight notifications. Client determines fetch priority based on current view, then fetches entity data via REST.
+Two-phase connection: fetch catch-up batch, then SSE for live-only. Stream sends lightweight notifications. Client determines fetch priority based on current view, then fetches entity data via REST.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                           Frontend                                      │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                         │
-│  1. Initial Load               2. Live Updates (notify + fetch)         │
+│  Connection (catchup-then-SSE)                                          │
+│                                                                         │
+│  ┌────────────────────────────────────────────────────────────────────┐ │
+│  │ 1. Catchup: GET /me/stream?offset=<cursor>                         │ │
+│  │    → Returns batch of catch-up activities as JSON                  │ │
+│  │    → processCatchupBatch(): deletes, invalidations, membership     │ │
+│  │                                                                    │ │
+│  │ 2. SSE: GET /me/stream?offset=now&live=sse                         │ │
+│  │    → Live notifications only (no catch-up in SSE)                  │ │
+│  │    → Server sends offset marker immediately                        │ │
+│  └────────────────────────────────────────────────────────────────────┘ │
+│                                                                         │
+│  Data Flow                                                              │
 │                                                                         │
 │  ┌──────────────┐              ┌──────────────────────────────────────┐ │
-│  │ useQuery()   │              │  SSE Stream (/me/stream)             │ │
+│  │ useQuery()   │              │  SSE Stream (live-only)              │ │
 │  │ pagesQuery   │              │                                      │ │
 │  └──────┬───────┘              │  event: change                       │ │
 │         │                      │  data: { entityType: 'page',         │ │
@@ -191,6 +203,60 @@ interface StreamNotification {
 
 ---
 
+## Stream types
+
+Cella has two stream types with different characteristics:
+
+### App stream (`/me/stream`)
+
+Authenticated stream for all user-scoped entities and memberships.
+
+| Aspect | Implementation |
+|--------|----------------|
+| **Auth** | Requires authentication (session cookie) |
+| **Scope** | All orgs user belongs to + memberships |
+| **Catch-up** | Full activities (create, update, delete) via catchup fetch |
+| **Processing** | `processCatchupBatch()` - deletes, invalidations, membership refresh |
+| **Cursor storage** | Persisted in sync store (survives refresh) |
+
+### Public stream (`/pages/stream`)
+
+Unauthenticated stream for public entities (e.g., pages).
+
+| Aspect | Implementation |
+|--------|----------------|
+| **Auth** | No authentication required |
+| **Scope** | All public pages |
+| **Catch-up** | **Delete activities only** via catchup fetch |
+| **Processing** | Remove deleted pages from cache, then invalidate list for `modifiedAfter` refetch |
+| **Cursor storage** | In-memory only (module-level variable) |
+
+**Why delete-only catch-up?** Create/update changes are handled via `modifiedAfter` query param on the list endpoint. Only deletes need explicit catch-up since they can't be detected by `modifiedAfter`.
+
+### Catchup-then-SSE pattern (both streams)
+
+Both streams use the same two-phase connection pattern:
+
+```
+1. Catchup phase: GET /stream?offset=<cursor>
+   └── Returns batch of activities as JSON
+   └── Process: deletes, invalidations, etc.
+   └── Get new cursor from response
+
+2. SSE phase: GET /stream?offset=now&live=sse
+   └── Server sends offset marker immediately
+   └── Live notifications only (no catch-up in SSE)
+   └── Updates cursor on each notification
+```
+
+**Benefits:**
+- Catch-up as efficient batch (one HTTP request)
+- SSE connection is lightweight (live-only)
+- No race between catch-up and live events
+- Cursor always up-to-date before SSE starts
+
+---
+
 ## Conflict handling
 
 ### Three-layer conflict prevention
@@ -234,8 +300,6 @@ Server rejects conflicting mutations with 409 status. Client must refetch, rebas
 └───────────────────────────────────────────────────────────────────────────┘
 ```
 
-See [query-client.ts](../frontend/src/query/query-client.ts) for `networkMode: 'offlineFirst'` configuration.
-
 | Scenario | Behavior | Result |
 |----------|----------|--------|
 | User types rapidly (online) | Debounced, only final sent | No server flood |
@@ -253,17 +317,9 @@ Replaying the same mutation (same `tx.id`) produces the same result without side
 
 ## Offline sync
 
-### Hydrate barrier
-
-**Problem**: Stream notifications arriving before initial LIST completes can cause data regression.
-
-**Solution**: Queue stream notifications during hydration using `useHydrateBarrier` hook. The `useLiveStream` hook accepts an `isHydrated` option that controls when queued notifications are flushed.
-
 ### Gap detection (seq)
 
 Uses per-scope sequence numbers (`seq`) on activities table for **list-level gap detection**. When `notification.seq > lastSeenSeq + 1`, a gap is detected and list invalidation is triggered.
-
-See [user-stream-handler.ts](../frontend/src/query/realtime/user-stream-handler.ts) for implementation.
 
 **How it works:**
 ```typescript
@@ -288,8 +344,6 @@ seqStore.set(scopeKey, seq);
 ### Conflict detection (version)
 
 Uses entity-level version numbers (`tx.version`) and field-level versions (`tx.fieldVersions`) for **mutation conflict detection**.
-
-See [tx-utils.ts](../frontend/src/query/offline/tx-utils.ts) for client-side utilities.
 
 **Client-side (mutation creation):**
 ```typescript
@@ -342,7 +396,7 @@ Each browser tab generates a unique `sourceId` on load, sent with every mutation
 
 ### Mutation queue
 
-Uses React Query's mutation cache with `squashPendingMutation()` from [squash-utils.ts](../frontend/src/query/offline/squash-utils.ts).
+Uses React Query's mutation cache with `squashPendingMutation()`.
 
 **Squashing behavior:**
 - Same-entity mutations squash (cancel pending, keep latest)
@@ -407,8 +461,6 @@ Tab B: Refreshes → restores [A1] (leader's state) → B1 was lost but A1 is sa
 
 The tradeoff: follower mutations are lost on refresh. In practice this is rare — users typically work in one tab, and online mutations complete before refresh.
 
-See [tab-coordinator.ts](../frontend/src/query/realtime/tab-coordinator.ts) for implementation.
-
 ---
 
 ## TTL entity cache
@@ -422,10 +474,12 @@ The TTL-based entity cache is **essential for the sync engine to scale**. This c
 
 | Tier | Key format | TTL | Use case |
 |------|-----------|-----|----------|
-| **Public** | `public:{entityType}:{entityId}:{version}` | 5 min | Public pages, org profiles |
-| **Token-gated** | `token:{prefix}:{entityType}:{entityId}:{version}` | 10 min | Attachments, contacts requiring membership |
+| **Public** | `{entityType}:{entityId}` (LRU) | 10 min | Public pages (simple LRU, no tokens) |
+| **Token-gated** | `token:{prefix}:{entityType}:{entityId}:{version}` | 10 min | Attachments requiring membership |
 
-### Token flow (notification-based)
+**Note**: Public entities (like pages) use a simple LRU cache without tokens since no authentication is required. The token-gated cache is only for authenticated entities accessed via app stream.
+
+### Token flow (app stream only)
 
 When a realtime entity changes, the SSE stream notification includes a `cacheToken`:
 
@@ -447,12 +501,12 @@ When a realtime entity changes, the SSE stream notification includes a `cacheTok
    └── Subsequent clients get cache hit (X-Cache: HIT)
 ```
 
-**Token generation** ([cache-token.ts](../backend/src/lib/cache-token.ts)):
+**Token generation:**
 - HMAC-signed with `ARGON_SECRET`
 - Contains: userId, organizationIds, entityType, entityId, version, expiresAt
 - TTL: 10 minutes (matches cache TTL)
 
-**Frontend flow** ([cache-token-store.ts](../frontend/src/query/realtime/cache-token-store.ts)):
+**Frontend flow:**
 - Stream handler stores tokens on notification receive
 - Query options check store and add X-Cache-Token header
 - Tokens removed on entity deletion

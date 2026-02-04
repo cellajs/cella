@@ -1,7 +1,7 @@
+import { useMutation } from '@tanstack/react-query';
 import { SendIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { systemInvite as baseSystemInvite } from '~/api.gen';
-import { useMutation } from '~/hooks/use-mutations';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { SelectEmails } from '~/modules/common/form-fields/select-emails';
 import SelectRoleRadio from '~/modules/common/form-fields/select-role-radio';

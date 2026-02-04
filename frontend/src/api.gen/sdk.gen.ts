@@ -75,9 +75,15 @@ import type {
   GetAppStreamData,
   GetAppStreamErrors,
   GetAppStreamResponses,
+  GetAttachmentData,
+  GetAttachmentErrors,
+  GetAttachmentResponses,
   GetAttachmentsData,
   GetAttachmentsErrors,
   GetAttachmentsResponses,
+  GetAuthHealthData,
+  GetAuthHealthErrors,
+  GetAuthHealthResponses,
   GetCacheStatsData,
   GetCacheStatsErrors,
   GetCacheStatsResponses,
@@ -161,9 +167,9 @@ import type {
   PaddleWebhookData,
   PaddleWebhookErrors,
   PaddleWebhookResponses,
-  PagesPublicStreamData,
-  PagesPublicStreamErrors,
-  PagesPublicStreamResponses,
+  PublicStreamData,
+  PublicStreamErrors,
+  PublicStreamResponses,
   RedirectToAttachmentData,
   RedirectToAttachmentErrors,
   RedirectToAttachmentResponses,
@@ -278,6 +284,25 @@ export const getActivities = <ThrowOnError extends boolean = true>(options: Opti
       },
     ],
     url: '/activities',
+    ...options,
+  });
+
+/**
+ * Auth health check
+ *
+ * Returns auth health status including whether the client IP is rate-limited for email enumeration protection.
+ *
+ * **GET /auth/health** ·· [getAuthHealth](https://api.cellajs.com/docs#tag/auth/get/auth/health) ·· _auth_
+ *
+ * @param {getAuthHealthData} options
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const getAuthHealth = <ThrowOnError extends boolean = true>(
+  options?: Options<GetAuthHealthData, ThrowOnError>,
+) =>
+  (options?.client ?? client).get<GetAuthHealthResponses, GetAuthHealthErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/auth/health',
     ...options,
   });
 
@@ -1173,32 +1198,6 @@ export const unsubscribeMe = <ThrowOnError extends boolean = true>(options: Opti
   });
 
 /**
- * App event stream
- *
- * SSE stream for membership and entity notifications affecting the *current user*. Sends lightweight notifications - client fetches entity data via API.
- *
- * **GET /me/stream** ·· [getAppStream](https://api.cellajs.com/docs#tag/me/get/me/stream) ·· _me_
- *
- * @param {getAppStreamData} options
- * @param {string=} options.query.offset - `string` (optional)
- * @param {enum=} options.query.live - `enum` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const getAppStream = <ThrowOnError extends boolean = true>(options?: Options<GetAppStreamData, ThrowOnError>) =>
-  (options?.client ?? client).get<GetAppStreamResponses, GetAppStreamErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/me/stream',
-    ...options,
-  });
-
-/**
  * Delete users
  *
  * Deletes one or more *users* from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.
@@ -1492,27 +1491,6 @@ export const updateOrganization = <ThrowOnError extends boolean = true>(
   });
 
 /**
- * Public stream of page changes
- *
- * Stream real-time changes for pages. No authentication required. Use offset for catch-up, live=sse for SSE streaming.
- *
- * **GET /pages/stream** ·· [pagesPublicStream](https://api.cellajs.com/docs#tag/pages/get/pages/stream) ·· _pages_
- *
- * @param {pagesPublicStreamData} options
- * @param {string=} options.query.offset - `string` (optional)
- * @param {enum=} options.query.live - `enum` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const pagesPublicStream = <ThrowOnError extends boolean = true>(
-  options?: Options<PagesPublicStreamData, ThrowOnError>,
-) =>
-  (options?.client ?? client).get<PagesPublicStreamResponses, PagesPublicStreamErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/pages/stream',
-    ...options,
-  });
-
-/**
  * Delete pages
  *
  * Delete one or more *pages* by ID.
@@ -1554,6 +1532,7 @@ export const deletePages = <ThrowOnError extends boolean = true>(options: Option
  * @param {enum=} options.query.order - `enum` (optional)
  * @param {string=} options.query.offset - `string` (optional)
  * @param {string=} options.query.limit - `string` (optional)
+ * @param {string=} options.query.modifiedafter - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getPages = <ThrowOnError extends boolean = true>(options?: Options<GetPagesData, ThrowOnError>) =>
@@ -1594,7 +1573,7 @@ export const createPages = <ThrowOnError extends boolean = true>(options: Option
 /**
  * Get page
  *
- * Get a single *page* by ID.
+ * Get a single *page* by ID. Cached using LRU - first request warms cache.
  *
  * **GET /pages/{id}** ·· [getPage](https://api.cellajs.com/docs#tag/pages/get/pages/{id}) ·· _pages_
  *
@@ -1651,7 +1630,7 @@ export const updatePage = <ThrowOnError extends boolean = true>(options: Options
  * Checks whether a given slug is available across all entity types (e.g. *organizations*, *users*).
  * Primarily used to prevent slug collisions before creating or updating an entity.
  *
- * **POST /check-slug** ·· [checkSlug](https://api.cellajs.com/docs#tag/entities/post/check-slug) ·· _entities_
+ * **POST /entities/check-slug** ·· [checkSlug](https://api.cellajs.com/docs#tag/entities/post/entities/check-slug) ·· _entities_
  *
  * @param {checkSlugData} options
  * @param {string=} options.body.slug - `string` (optional)
@@ -1668,12 +1647,57 @@ export const checkSlug = <ThrowOnError extends boolean = true>(options: Options<
         type: 'apiKey',
       },
     ],
-    url: '/check-slug',
+    url: '/entities/check-slug',
     ...options,
     headers: {
       'Content-Type': 'application/json',
       ...options.headers,
     },
+  });
+
+/**
+ * Public entity stream
+ *
+ * Stream real-time changes for public entities (entities with no parent context). No authentication required. Use offset for catch-up, live=sse for SSE streaming.
+ *
+ * **GET /entities/public/stream** ·· [publicStream](https://api.cellajs.com/docs#tag/entities/get/entities/public/stream) ·· _entities_
+ *
+ * @param {publicStreamData} options
+ * @param {string=} options.query.offset - `string` (optional)
+ * @param {enum=} options.query.live - `enum` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const publicStream = <ThrowOnError extends boolean = true>(options?: Options<PublicStreamData, ThrowOnError>) =>
+  (options?.client ?? client).get<PublicStreamResponses, PublicStreamErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/entities/public/stream',
+    ...options,
+  });
+
+/**
+ * App event stream
+ *
+ * SSE stream for membership and entity notifications affecting the *current user*. Sends lightweight notifications - client fetches entity data via API.
+ *
+ * **GET /entities/app/stream** ·· [getAppStream](https://api.cellajs.com/docs#tag/entities/get/entities/app/stream) ·· _entities_
+ *
+ * @param {getAppStreamData} options
+ * @param {string=} options.query.offset - `string` (optional)
+ * @param {enum=} options.query.live - `enum` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const getAppStream = <ThrowOnError extends boolean = true>(options?: Options<GetAppStreamData, ThrowOnError>) =>
+  (options?.client ?? client).get<GetAppStreamResponses, GetAppStreamErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/entities/app/stream',
+    ...options,
   });
 
 /**
@@ -2004,6 +2028,7 @@ export const getSyncMetrics = <ThrowOnError extends boolean = true>(
  * @param {deleteAttachmentsData} options
  * @param {string} options.path.orgid - `string`
  * @param {any[]=} options.body.ids - `any[]` (optional)
+ * @param {object} options.body.tx - `object`
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const deleteAttachments = <ThrowOnError extends boolean = true>(
@@ -2040,6 +2065,7 @@ export const deleteAttachments = <ThrowOnError extends boolean = true>(
  * @param {enum=} options.query.order - `enum` (optional)
  * @param {string=} options.query.offset - `string` (optional)
  * @param {string=} options.query.limit - `string` (optional)
+ * @param {string=} options.query.modifiedafter - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getAttachments = <ThrowOnError extends boolean = true>(
@@ -2087,6 +2113,32 @@ export const createAttachments = <ThrowOnError extends boolean = true>(
       'Content-Type': 'application/json',
       ...options.headers,
     },
+  });
+
+/**
+ * Get attachment
+ *
+ * Returns a single *attachment* by ID. Supports CDC cache via X-Cache-Token header.
+ *
+ * **GET /{orgIdOrSlug}/attachments/{id}** ·· [getAttachment](https://api.cellajs.com/docs#tag/attachments/get/{orgIdOrSlug}/attachments/{id}) ·· _attachments_
+ *
+ * @param {getAttachmentData} options
+ * @param {string} options.path.id - `string`
+ * @param {string} options.path.orgidorslug - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const getAttachment = <ThrowOnError extends boolean = true>(options: Options<GetAttachmentData, ThrowOnError>) =>
+  (options.client ?? client).get<GetAttachmentResponses, GetAttachmentErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/{orgIdOrSlug}/attachments/{id}',
+    ...options,
   });
 
 /**

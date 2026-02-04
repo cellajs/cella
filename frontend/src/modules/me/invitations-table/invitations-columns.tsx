@@ -1,3 +1,4 @@
+import { useMutation } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import {
   ApiError,
@@ -7,7 +8,6 @@ import {
   handleMembershipInvitation,
 } from '~/api.gen';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import { useMutation } from '~/hooks/use-mutations';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';

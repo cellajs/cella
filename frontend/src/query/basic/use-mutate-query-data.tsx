@@ -57,11 +57,17 @@ export function useMutateQueryData(
         changeArbitraryQueryData(queryKey, items as EntityIdAndType[], action, entity, keyToOperateIn);
     }
 
-    // Invalidate queries if invalidateKeyGetter is provided and the action is included in useInvalidateOnActions
+    // Handle detail queries if invalidateKeyGetter is provided and the action is included in useInvalidateOnActions
     if (invalidateKeyGetter && useInvalidateOnActions?.includes(action)) {
       for (const item of items) {
-        const queryKeyToInvalidate = invalidateKeyGetter(item);
-        queryClient.invalidateQueries({ queryKey: queryKeyToInvalidate });
+        const queryKey = invalidateKeyGetter(item);
+        // For remove action, remove the query from cache to prevent refetch of deleted entities
+        // For other actions, invalidate to trigger a refetch
+        if (action === 'remove') {
+          queryClient.removeQueries({ queryKey });
+        } else {
+          queryClient.invalidateQueries({ queryKey });
+        }
       }
     }
   }

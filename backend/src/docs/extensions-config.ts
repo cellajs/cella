@@ -36,6 +36,12 @@ export const extensionRegistryMap = {
     description: 'Rate limiting rules applied to the endpoint',
     required: false,
   },
+  'x-cache': {
+    id: 'xCache',
+    translationKey: 'common:docs.cache',
+    description: 'Caching strategy applied to the endpoint',
+    required: false,
+  },
 } as const satisfies Record<string, ExtensionMetadata>;
 
 /** Derive ExtensionType from the registry keys */
@@ -50,6 +56,8 @@ export type XMiddlewareOptions = {
   xGuard: MiddlewareArray;
   /** Rate limiter middleware (optional) */
   xRateLimiter?: MiddlewareArray;
+  /** Cache middleware (optional) */
+  xCache?: MiddlewareArray;
 };
 
 /** Extension property IDs derived from XMiddlewareOptions */

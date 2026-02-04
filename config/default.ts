@@ -1,4 +1,4 @@
-import type { BaseAuthStrategies, BaseOAuthProviders, ConfigMode, S3Config } from './types';
+import type { BaseAuthStrategies, BaseOAuthProviders, ConfigMode, RequiredConfig, S3Config } from './types';
 import { createEntityHierarchy, createRoleRegistry } from './entity-hierarchy';
 
 /******************************************************************************
@@ -40,16 +40,16 @@ export const config = {
   /** Product/content entities - must match hierarchy.productTypes. Explicit tuple for Drizzle compatibility. */
   productEntityTypes: ['attachment', 'page'] as const,
 
+  /** Public product entities with no parent context (parent: null). Must be explicitly declared for security. */
+  publicProductEntityTypes: ['page'] as const,
+
   /** Context entities that are parents of product entities - derived from hierarchy */
   relatableContextEntityTypes: hierarchy.relatableContextTypes,
 
   /** Entity roles for memberships - derived from role registry */
   entityRoles: roles.all,
 
-  /** Entities that support offline transactions */
-  offlineEntityTypes: [] as const,
-  /** Entities with realtime sync and offline transactions */
-  realtimeEntityTypes: ['attachment', 'page'] as const,
+
 
   /** Maps entity types to their ID column names - must match entityTypes */
   entityIdColumnKeys: {
@@ -346,8 +346,6 @@ export const config = {
     'bg-pink-300',
     'bg-red-300',
   ],
-  /** CSS animation class for nav logo */
-  navLogoAnimation: 'animate-spin-slow',
 
   /******************************************************************************
    * LOCALIZATION
@@ -401,7 +399,7 @@ export const config = {
   defaultUserFlags: {
     finishedOnboarding: false,
   },
-};
+} satisfies RequiredConfig;
 
 export default config;
 

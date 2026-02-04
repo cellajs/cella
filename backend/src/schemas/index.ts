@@ -16,6 +16,7 @@ export {
   idInOrgParamSchema,
   idSchema,
   idsBodySchema,
+  idsWithTxBodySchema,
   imageUrlSchema,
   includeOptions,
   includeQuerySchema,
@@ -43,10 +44,17 @@ export { mapEntitiesToSchema } from './map-entities-to-schema';
 
 // Stream schemas
 export {
+  type AppStreamResponse,
+  appStreamResponseSchema,
   type PublicStreamActivity,
+  type PublicStreamResponse,
   publicStreamActivitySchema,
+  publicStreamQuerySchema,
+  publicStreamResponseSchema,
   type StreamNotification,
   streamNotificationSchema,
+  streamQuerySchema,
+  streamResponseSchema,
 } from './stream-schemas';
 
 // Success response schemas

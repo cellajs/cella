@@ -45,7 +45,6 @@ export function PendingMembershipsTable({ entity }: PendingMembershipsTableProps
   const [columns] = useColumns();
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
-  // Memoize visible columns to prevent recalculation on every render
   const visibleColumns = useMemo(() => columns.filter((column) => column.visible), [columns]);
 
   const queryOptions = pendingMembershipsQueryOptions({

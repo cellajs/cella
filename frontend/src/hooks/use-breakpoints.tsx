@@ -48,7 +48,24 @@ if (typeof window !== 'undefined') {
   window.addEventListener('resize', updateGlobalBreakpoint);
 }
 
-// Subscribe function for useSyncExternalStore
+/**
+ * Subscribe to breakpoint changes (works outside React components).
+ * @param callback - Function to call when breakpoint changes
+ * @returns Unsubscribe function
+ */
+export function subscribeToBreakpointChanges(callback: () => void) {
+  listeners.add(callback);
+  return () => listeners.delete(callback);
+}
+
+/**
+ * Get the current breakpoint snapshot (works outside React components).
+ */
+export function getBreakpointSnapshot() {
+  return currentBreakpoint;
+}
+
+// Subscribe function for useSyncExternalStore (internal use)
 function subscribe(callback: () => void) {
   listeners.add(callback);
   return () => listeners.delete(callback);
@@ -61,6 +78,32 @@ function getSnapshot() {
 
 function getServerSnapshot() {
   return sortedBreakpoints[0];
+}
+
+/** Breakpoint key type for responsive utilities. */
+export type BreakpointKey = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+
+/**
+ * Hook to get the current breakpoint key based on viewport width.
+ * Uses useSyncExternalStore for efficient single subscription.
+ */
+export function useCurrentBreakpoint(enableReactivity = true): BreakpointKey {
+  const breakpointState = useSyncExternalStore(
+    enableReactivity ? subscribe : () => () => {},
+    getSnapshot,
+    getServerSnapshot,
+  );
+  // Handle 'xs' case when breakpoint is smaller than 'sm'
+  const smIndex = sortedBreakpoints.indexOf('sm');
+  const currentIndex = sortedBreakpoints.indexOf(breakpointState);
+  if (
+    currentIndex <= smIndex &&
+    typeof window !== 'undefined' &&
+    window.innerWidth < Number.parseInt(breakpoints.sm, 10)
+  ) {
+    return 'xs';
+  }
+  return breakpointState as BreakpointKey;
 }
 
 /**

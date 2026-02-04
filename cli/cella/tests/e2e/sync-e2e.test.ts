@@ -15,6 +15,7 @@ import {
   fileExists,
   makeCommit,
   readRepoFile,
+  renameFileAndCommit,
   resetFork,
   type TestEnv,
 } from './helpers/test-env';
@@ -268,7 +269,7 @@ describe('sync e2e', () => {
       expect(fileExists(env.forkPath, 'temp.ts')).toBe(false);
     });
 
-    it('should handle file moves from upstream (delete old location, add new)', async () => {
+    it('should handle file renames from upstream with git mv', async () => {
       // Add a file in a subdirectory to upstream first
       makeCommit(env.upstreamPath, {
         files: { 'old-dir/moved-file.ts': '// File to be moved\nexport const value = 1;\n' },
@@ -293,12 +294,13 @@ describe('sync e2e', () => {
         // Ignore
       }
 
-      // Now move the file in upstream (delete from old, add to new)
-      deleteFileAndCommit(env.upstreamPath, 'old-dir/moved-file.ts', 'refactor: move file to new location');
-      makeCommit(env.upstreamPath, {
-        files: { 'new-dir/moved-file.ts': '// File to be moved\nexport const value = 1;\n' },
-        message: 'refactor: add file in new location',
-      });
+      // Now rename the file in upstream using git mv (single commit, detected as rename)
+      renameFileAndCommit(
+        env.upstreamPath,
+        'old-dir/moved-file.ts',
+        'new-dir/moved-file.ts',
+        'refactor: move file to new location',
+      );
 
       fetchUpstream(env.forkPath);
       config = buildRuntimeConfig(env, { service: 'sync', mergeStrategy: 'merge' });
@@ -308,6 +310,82 @@ describe('sync e2e', () => {
       // Old file should be deleted, new file should exist
       expect(fileExists(env.forkPath, 'old-dir/moved-file.ts')).toBe(false);
       expect(fileExists(env.forkPath, 'new-dir/moved-file.ts')).toBe(true);
+
+      // Check that the rename was detected in analysis
+      const renamedFile = result.files.find((f) => f.path === 'new-dir/moved-file.ts');
+      expect(renamedFile).toBeDefined();
+      expect(renamedFile?.status).toBe('renamed');
+      expect(renamedFile?.renamedFrom).toBe('old-dir/moved-file.ts');
+    });
+
+    it('should handle file renames with squash strategy', async () => {
+      const fs = await import('node:fs');
+      const { getFileChanges, getMergeBase, git } = await import('../../src/utils/git');
+      const { execSync } = await import('node:child_process');
+
+      // Add a file to upstream
+      makeCommit(env.upstreamPath, {
+        files: { 'src/old-name.ts': '// File to rename\nexport const x = 1;\n' },
+        message: 'chore: add file',
+      });
+
+      // Sync to get the file
+      fetchUpstream(env.forkPath);
+      let config = buildRuntimeConfig(env, { service: 'sync', mergeStrategy: 'squash' });
+      await runSync(config);
+
+      expect(fileExists(env.forkPath, 'src/old-name.ts')).toBe(true);
+
+      // Complete the squash commit
+      try {
+        execSync('git add -A && git commit --allow-empty -m "sync: squash upstream"', {
+          cwd: env.forkPath,
+          encoding: 'utf-8',
+        });
+      } catch {
+        // Ignore
+      }
+
+      // Rename the file in upstream
+      renameFileAndCommit(env.upstreamPath, 'src/old-name.ts', 'src/new-name.ts', 'refactor: rename file');
+
+      fetchUpstream(env.forkPath);
+
+      // Debug: Check what getFileChanges returns
+      const upstreamRef = 'cella-upstream/main';
+      const mergeBase = await getMergeBase(env.forkPath, 'HEAD', upstreamRef);
+
+      // Raw diff-tree output
+      const rawDiff = await git(['diff-tree', '-r', '-M90%', '--no-commit-id', mergeBase, upstreamRef], env.forkPath);
+
+      const upstreamChanges = await getFileChanges(env.forkPath, mergeBase, upstreamRef);
+
+      const debugInfo1 = {
+        mergeBase,
+        upstreamRef,
+        rawDiff,
+        upstreamChanges: Array.from(upstreamChanges.entries()).map(([k, v]) => ({ path: k, ...v })),
+      };
+      fs.writeFileSync('/tmp/cella-test-debug1.json', JSON.stringify(debugInfo1, null, 2));
+
+      config = buildRuntimeConfig(env, { service: 'sync', mergeStrategy: 'squash' });
+      const result = await runSync(config);
+
+      // Debug: Check what status was detected for the files
+      const newFile = result.files.find((f) => f.path === 'src/new-name.ts');
+      const oldFile = result.files.find((f) => f.path === 'src/old-name.ts');
+      const debugInfo = {
+        newFileStatus: newFile?.status,
+        newFileRenamedFrom: newFile?.renamedFrom,
+        oldFileStatus: oldFile?.status,
+        summary: result.summary,
+        allFiles: result.files.map((f) => ({ path: f.path, status: f.status, renamedFrom: f.renamedFrom })),
+      };
+      fs.writeFileSync('/tmp/cella-test-debug.json', JSON.stringify(debugInfo, null, 2));
+
+      expect(result.success).toBe(true);
+      expect(fileExists(env.forkPath, 'src/old-name.ts')).toBe(false);
+      expect(fileExists(env.forkPath, 'src/new-name.ts')).toBe(true);
     });
   });
 });

@@ -20,29 +20,12 @@ function InvitationsTable() {
   // Build columns
   const columns = useColumns();
 
-  // Memoize visible columns to prevent recalculation on every render
   const visibleColumns = useMemo(() => columns.filter((column) => column.visible), [columns]);
 
   const queryOptions = meInvitationsQueryOptions();
   const { data, isLoading, isFetching, error } = useQuery({
     ...queryOptions,
   });
-
-  // TODO-004 Update rows
-  // const onRowsChange = (changedRows: Attachment[], { indexes, column }: RowsChangeData<Attachment>) => {
-  //   if (column.key !== 'name') return;
-
-  //   // If name is changed, update the attachment
-  //   for (const index of indexes) {
-  //     const attachment = changedRows[index];
-  //     attachmentUpdateMutation.mutate({
-  //       id: attachment.id,
-  //       orgIdOrSlug: entity.id,
-  //       name: attachment.name,
-  //       localUpdate: !isCDNUrl(attachment.url),
-  //     });
-  //   }
-  // };
 
   return (
     <div className="flex flex-col gap-4 h-full">

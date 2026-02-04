@@ -2,9 +2,9 @@ import { Link, useLocation } from '@tanstack/react-router';
 import type { LucideProps } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { scrollToSectionById } from '~/hooks/scroll-spy-store';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
+import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
 import { buttonVariants } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 

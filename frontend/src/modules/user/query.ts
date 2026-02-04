@@ -85,7 +85,7 @@ export const useUserUpdateMutation = () => {
  */
 export const useUserDeleteMutation = () => {
   const queryClient = useQueryClient();
-  const mutateCache = useMutateQueryData(keys.list.base, () => keys.detail.base, ['remove']);
+  const mutateCache = useMutateQueryData(keys.list.base, (user) => keys.detail.byId(user.id), ['remove']);
 
   return useMutation<void, ApiError, User[]>({
     mutationKey: keys.delete,

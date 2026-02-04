@@ -86,7 +86,10 @@ function OperationsPage() {
                   <div className="flex w-full justify-center">
                     <Link
                       to="."
-                      search={(prev) => ({ ...prev, operationTag: isOpen ? undefined : tag.name })}
+                      search={(prev) => ({
+                        ...prev,
+                        operationTag: isOpen ? undefined : tag.name,
+                      })}
                       replace
                       draggable={false}
                       resetScroll={false}

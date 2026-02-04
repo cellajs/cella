@@ -13,7 +13,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { useTranslation } from 'react-i18next';
-import useMounted from '~/hooks/use-mounted';
+import useMountedState from '~/hooks/use-mounted-state';
 import ErrorNotice, { type ErrorNoticeError } from '~/modules/common/error-notice';
 import { Button } from '~/modules/ui/button';
 import { useUIStore } from '~/store/ui';
@@ -110,14 +110,14 @@ function ContactFormMap() {
   const mode = useUIStore((state) => state.mode);
   const [zoom, setZoom] = useState(appConfig.company.mapZoom);
   const [mapConfig] = useState<MapConfig>(mode === 'dark' ? mapStyles[1] : mapStyles[0]);
-  const { hasStarted } = useMounted();
+  const { hasStarted } = useMountedState();
 
   if (!appConfig.company.coordinates || !appConfig.googleMapsKey) return null;
 
   return (
     <ErrorBoundary
       fallbackRender={({ error, resetErrorBoundary }) => (
-        <ErrorNotice level="app" error={error as ErrorNoticeError} resetErrorBoundary={resetErrorBoundary} />
+        <ErrorNotice boundary="app" error={error as ErrorNoticeError} resetErrorBoundary={resetErrorBoundary} />
       )}
     >
       <div className="w-full h-full">

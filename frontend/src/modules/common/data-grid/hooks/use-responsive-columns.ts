@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
+import { useEventListener } from '~/hooks/use-event-listener';
 import type { Column, ColumnOrColumnGroup } from '../types';
 
 export type ResponsiveBreakpoint = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
@@ -96,16 +97,11 @@ export function useResponsiveColumns<R, SR = unknown>({
 
   const windowWidth = controlledWidth ?? internalWidth;
 
-  useEffect(() => {
-    if (controlledWidth !== undefined) return;
+  const handleResize = useCallback(() => {
+    setInternalWidth(window.innerWidth);
+  }, []);
 
-    const handleResize = () => {
-      setInternalWidth(window.innerWidth);
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [controlledWidth]);
+  useEventListener('resize', handleResize, { enabled: controlledWidth === undefined });
 
   const currentBreakpoint = useMemo(() => getBreakpoint(windowWidth, breakpoints), [windowWidth, breakpoints]);
 

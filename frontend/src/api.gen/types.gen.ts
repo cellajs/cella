@@ -439,6 +439,50 @@ export type GetActivitiesResponses = {
 
 export type GetActivitiesResponse = GetActivitiesResponses[keyof GetActivitiesResponses];
 
+export type GetAuthHealthData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/auth/health';
+};
+
+export type GetAuthHealthErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetAuthHealthError = GetAuthHealthErrors[keyof GetAuthHealthErrors];
+
+export type GetAuthHealthResponses = {
+  /**
+   * Auth health status
+   */
+  200: {
+    restrictedMode: boolean;
+    retryAfter?: number;
+  };
+};
+
+export type GetAuthHealthResponse = GetAuthHealthResponses[keyof GetAuthHealthResponses];
+
 export type CheckEmailData = {
   body: {
     email: string;
@@ -1980,59 +2024,6 @@ export type UnsubscribeMeErrors = {
 
 export type UnsubscribeMeError = UnsubscribeMeErrors[keyof UnsubscribeMeErrors];
 
-export type GetAppStreamData = {
-  body?: never;
-  path?: never;
-  query?: {
-    /**
-     * Starting offset: 'now' for live-only, or activity ID to receive missed notifications
-     */
-    offset?: string;
-    /**
-     * Connection mode: 'sse' for streaming, 'poll' for one-time fetch
-     */
-    live?: 'sse' | 'poll';
-  };
-  url: '/me/stream';
-};
-
-export type GetAppStreamErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type GetAppStreamError = GetAppStreamErrors[keyof GetAppStreamErrors];
-
-export type GetAppStreamResponses = {
-  /**
-   * SSE stream or notification response
-   */
-  200: {
-    activities: Array<StreamNotification>;
-    cursor: string | null;
-  };
-};
-
-export type GetAppStreamResponse = GetAppStreamResponses[keyof GetAppStreamResponses];
-
 export type DeleteUsersData = {
   body: {
     ids: Array<string>;
@@ -2490,62 +2481,6 @@ export type UpdateOrganizationResponses = {
 
 export type UpdateOrganizationResponse = UpdateOrganizationResponses[keyof UpdateOrganizationResponses];
 
-export type PagesPublicStreamData = {
-  body?: never;
-  path?: never;
-  query?: {
-    /**
-     * Cursor offset: "-1" for all history, "now" for live-only, or activity ID
-     */
-    offset?: string;
-    /**
-     * Set to "sse" for live updates (SSE stream)
-     */
-    live?: 'sse';
-  };
-  url: '/pages/stream';
-};
-
-export type PagesPublicStreamErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type PagesPublicStreamError = PagesPublicStreamErrors[keyof PagesPublicStreamErrors];
-
-export type PagesPublicStreamResponses = {
-  /**
-   * Catch-up activities or SSE stream started
-   */
-  200: {
-    activities: Array<PublicStreamActivity>;
-    /**
-     * Last activity ID (use as offset for next request)
-     */
-    cursor: string | null;
-  };
-};
-
-export type PagesPublicStreamResponse = PagesPublicStreamResponses[keyof PagesPublicStreamResponses];
-
 export type DeletePagesData = {
   body: {
     ids: Array<string>;
@@ -2598,6 +2533,7 @@ export type GetPagesData = {
     order?: 'asc' | 'desc';
     offset?: string;
     limit?: string;
+    modifiedAfter?: string;
   };
   url: '/pages';
 };
@@ -2812,7 +2748,7 @@ export type CheckSlugData = {
   };
   path?: never;
   query?: never;
-  url: '/check-slug';
+  url: '/entities/check-slug';
 };
 
 export type CheckSlugErrors = {
@@ -2848,6 +2784,118 @@ export type CheckSlugResponses = {
 };
 
 export type CheckSlugResponse = CheckSlugResponses[keyof CheckSlugResponses];
+
+export type PublicStreamData = {
+  body?: never;
+  path?: never;
+  query?: {
+    /**
+     * Starting offset: 'now' for live-only, or activity ID to receive missed notifications
+     */
+    offset?: string;
+    /**
+     * Set to "sse" for live updates (SSE stream)
+     */
+    live?: 'sse';
+  };
+  url: '/entities/public/stream';
+};
+
+export type PublicStreamErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type PublicStreamError = PublicStreamErrors[keyof PublicStreamErrors];
+
+export type PublicStreamResponses = {
+  /**
+   * Catch-up activities or SSE stream started
+   */
+  200: {
+    activities: Array<PublicStreamActivity>;
+    /**
+     * Last activity ID (use as offset for next request)
+     */
+    cursor: string | null;
+  };
+};
+
+export type PublicStreamResponse = PublicStreamResponses[keyof PublicStreamResponses];
+
+export type GetAppStreamData = {
+  body?: never;
+  path?: never;
+  query?: {
+    /**
+     * Starting offset: 'now' for live-only, or activity ID to receive missed notifications
+     */
+    offset?: string;
+    /**
+     * Connection mode: 'sse' for streaming, 'poll' for one-time fetch
+     */
+    live?: 'sse' | 'poll';
+  };
+  url: '/entities/app/stream';
+};
+
+export type GetAppStreamErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetAppStreamError = GetAppStreamErrors[keyof GetAppStreamErrors];
+
+export type GetAppStreamResponses = {
+  /**
+   * SSE stream or notification response
+   */
+  200: {
+    activities: Array<StreamNotification>;
+    /**
+     * Last activity ID (use as offset for next request)
+     */
+    cursor: string | null;
+  };
+};
+
+export type GetAppStreamResponse = GetAppStreamResponses[keyof GetAppStreamResponses];
 
 export type SystemInviteData = {
   body: {
@@ -3390,9 +3438,9 @@ export type GetCacheStatsResponses = {
    */
   200: {
     /**
-     * Public cache statistics (no auth required)
+     * Entity cache statistics
      */
-    public: {
+    cache: {
       /**
        * Number of cache hits
        */
@@ -3426,50 +3474,9 @@ export type GetCacheStatsResponses = {
        */
       size: number;
       /**
-       * Maximum cache capacity
+       * Current number of indexed entities
        */
-      capacity: number;
-      /**
-       * Cache utilization (0-1)
-       */
-      utilization: number;
-    };
-    /**
-     * Token cache statistics (membership required)
-     */
-    token: {
-      /**
-       * Number of cache hits
-       */
-      hits: number;
-      /**
-       * Number of cache misses
-       */
-      misses: number;
-      /**
-       * Hit rate percentage (0-100)
-       */
-      hitRate: number;
-      /**
-       * Number of cache invalidations
-       */
-      invalidations: number;
-      /**
-       * Number of coalesced requests (avoided duplicate fetches)
-       */
-      coalescedRequests: number;
-      /**
-       * Total requests (hits + misses)
-       */
-      totalRequests: number;
-      /**
-       * Seconds since metrics were last reset
-       */
-      uptimeSeconds: number;
-      /**
-       * Current number of cached entries
-       */
-      size: number;
+      indexSize?: number;
       /**
        * Maximum cache capacity
        */
@@ -3478,12 +3485,6 @@ export type GetCacheStatsResponses = {
        * Cache utilization (0-1)
        */
       utilization: number;
-    };
-    combined: {
-      totalHits: number;
-      totalMisses: number;
-      overallHitRate: number;
-      totalInvalidations: number;
     };
   };
 };
@@ -3571,6 +3572,10 @@ export type GetSyncMetricsResponse = GetSyncMetricsResponses[keyof GetSyncMetric
 export type DeleteAttachmentsData = {
   body: {
     ids: Array<string>;
+    tx?: {
+      id: string;
+      sourceId: string;
+    };
   };
   path: {
     orgId: string;
@@ -3624,6 +3629,7 @@ export type GetAttachmentsData = {
     order?: 'asc' | 'desc';
     offset?: string;
     limit?: string;
+    modifiedAfter?: string;
   };
   url: '/{orgId}/attachments';
 };
@@ -3751,6 +3757,53 @@ export type CreateAttachmentsResponses = {
 };
 
 export type CreateAttachmentsResponse = CreateAttachmentsResponses[keyof CreateAttachmentsResponses];
+
+export type GetAttachmentData = {
+  body?: never;
+  path: {
+    id: string;
+    /**
+     * Entity ID or slug. ID is always preferred.
+     */
+    orgIdOrSlug: string;
+  };
+  query?: never;
+  url: '/{orgIdOrSlug}/attachments/{id}';
+};
+
+export type GetAttachmentErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetAttachmentError = GetAttachmentErrors[keyof GetAttachmentErrors];
+
+export type GetAttachmentResponses = {
+  /**
+   * Attachment
+   */
+  200: Attachment;
+};
+
+export type GetAttachmentResponse = GetAttachmentResponses[keyof GetAttachmentResponses];
 
 export type UpdateAttachmentData = {
   body: {

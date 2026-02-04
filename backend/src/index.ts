@@ -4,7 +4,7 @@ import '#/lib/i18n';
 import { serve } from '@hono/node-server';
 import * as Sentry from '@sentry/node';
 import { nodeProfilingIntegration } from '@sentry/profiling-node';
-import { appConfig } from 'config';
+import { appConfig, hierarchy, validatePublicProductEntities } from 'config';
 import { migrate as pgMigrate } from 'drizzle-orm/node-postgres/migrator';
 import type { PgliteDatabase } from 'drizzle-orm/pglite';
 import { migrate as pgliteMigrate } from 'drizzle-orm/pglite/migrator';
@@ -40,6 +40,9 @@ Sentry.init({
 });
 
 const main = async () => {
+  // Validate public product entity configuration (security check)
+  validatePublicProductEntities(hierarchy, appConfig.publicProductEntityTypes);
+
   // Migrate db
   if (isPGliteDatabase(db)) {
     await pgliteMigrate(db, migrateConfig);

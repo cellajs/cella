@@ -17,11 +17,9 @@ import {
   idsBodySchema,
   locationSchema,
   paginationSchema,
-  streamNotificationSchema,
   successWithRejectedItemsSchema,
 } from '#/schemas';
 import {
-  mockAppStreamResponse,
   mockMeAuthDataResponse,
   mockMeResponse,
   mockPaginatedInvitationsResponse,
@@ -251,47 +249,6 @@ const meRoutes = {
       200: {
         description: 'User',
         content: { 'application/json': { schema: userSchema, example: mockUserResponse() } },
-      },
-      ...errorResponseRefs,
-    },
-  }),
-  /**
-   * App event stream
-   */
-  stream: createXRoute({
-    operationId: 'getAppStream',
-    method: 'get',
-    path: '/stream',
-    xGuard: isAuthenticated,
-    tags: ['me'],
-    summary: 'App event stream',
-    description:
-      'SSE stream for membership and entity notifications affecting the *current user*. Sends lightweight notifications - client fetches entity data via API.',
-    request: {
-      query: z.object({
-        offset: z.string().optional().openapi({
-          description: "Starting offset: 'now' for live-only, or activity ID to receive missed notifications",
-          example: 'now',
-        }),
-        live: z.enum(['sse', 'poll']).optional().openapi({
-          description: "Connection mode: 'sse' for streaming, 'poll' for one-time fetch",
-          example: 'sse',
-        }),
-      }),
-    },
-    responses: {
-      200: {
-        description: 'SSE stream or notification response',
-        content: {
-          'text/event-stream': { schema: z.any() },
-          'application/json': {
-            schema: z.object({
-              activities: z.array(streamNotificationSchema),
-              cursor: z.string().nullable(),
-            }),
-            example: mockAppStreamResponse(),
-          },
-        },
       },
       ...errorResponseRefs,
     },

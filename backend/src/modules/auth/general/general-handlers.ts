@@ -12,6 +12,7 @@ import { type Env, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { AppError, type ErrorKey } from '#/lib/error';
 import { mailer } from '#/lib/mailer';
+import { checkRateLimitStatus } from '#/middlewares/rate-limiter/helpers';
 import authGeneralRoutes from '#/modules/auth/general/general-routes';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { getParsedSessionCookie, setUserSession, validateSession } from '#/modules/auth/general/helpers/session';
@@ -19,6 +20,7 @@ import { handleOAuthVerification } from '#/modules/auth/oauth/helpers/handle-oau
 import { handleEmailVerification } from '#/modules/auth/passwords/helpers/handle-email-verification';
 import { userSelect } from '#/modules/user/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
+import { getIp } from '#/utils/get-ip';
 import { getValidSingleUseToken } from '#/utils/get-valid-single-use-token';
 import { getValidToken } from '#/utils/get-valid-token';
 import { isExpiredDate } from '#/utils/is-expired-date';
@@ -32,6 +34,18 @@ import { MemberInviteWithTokenEmail, SystemInviteEmail } from '../../../../email
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 const authGeneralRouteHandlers = app
+  /**
+   * Auth health check with rate limit status
+   */
+  .openapi(authGeneralRoutes.health, async (ctx) => {
+    const ip = getIp(ctx);
+    const rateLimitKey = `ip:${ip}`;
+
+    // Check emailEnum rate limit status without consuming points
+    const { isLimited, retryAfter } = await checkRateLimitStatus('emailEnum_failseries', rateLimitKey);
+
+    return ctx.json({ restrictedMode: isLimited, ...(retryAfter && { retryAfter }) }, 200);
+  })
   /**
    * Check if email exists
    */

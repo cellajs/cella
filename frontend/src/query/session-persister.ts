@@ -11,6 +11,7 @@
  *
  * Note: sessionStorage has ~5MB limit. If this becomes an issue,
  * we can switch to session-scoped IndexedDB using a session ID.
+ * TODO review this, we might benefit from having just IndexedDB always
  */
 import * as Sentry from '@sentry/react';
 import type { PersistedClient, Persister } from '@tanstack/react-query-persist-client';

@@ -175,10 +175,7 @@ export const insertMemberships = async <T extends BaseEntityModel>(
 
   const [insertedTarget] = await Promise.all([
     // targetRows → main insert (returns inserted memberships)
-    db
-      .insert(membershipsTable)
-      .values(targetRows)
-      .returning(membershipBaseSelect),
+    db.insert(membershipsTable).values(targetRows).returning(membershipBaseSelect),
 
     // optional org + associated inserts (safe upserts)
     orgRows.length ? db.insert(membershipsTable).values(orgRows).onConflictDoNothing() : Promise.resolve(),

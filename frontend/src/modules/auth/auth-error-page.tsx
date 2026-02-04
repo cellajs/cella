@@ -21,7 +21,7 @@ function AuthErrorPage() {
   const resendData = tokenId ? { tokenId } : email ? { email } : false;
 
   return (
-    <ErrorNotice error={error} level={'public'}>
+    <ErrorNotice error={error} boundary="public">
       {showResendButton && resendData && <ResendInvitationButton resendData={resendData} />}
 
       <Link

@@ -40,14 +40,14 @@ export function AppNavIcon({ navItem, className }: { navItem: NavItem; className
   }
 
   if (navItem.id === 'home') {
-    return <AppNavLoader className={'size-5 min-w-5 min-h-5 sm:ml-0.5 shrink-0'} />;
+    return <AppNavLoader className={'size-5 min-w-5 min-h-5 shrink-0'} />;
   }
 
   const NavItemIcon = navItem.icon;
 
   return (
     <NavItemIcon
-      className={cn('group-hover:scale-110 transition-transform size-5 min-w-5 min-h-5 sm:ml-0.5 shrink-0', className)}
+      className={cn('group-hover:scale-110 transition-transform size-5 min-w-5 min-h-5 shrink-0', className)}
       strokeWidth={1.8}
     />
   );
@@ -80,8 +80,10 @@ export function NavButton({ navItem, isActive, isCollapsed, onClick }: NavButton
       >
         <AppNavIcon navItem={navItem} />
         {hasSidebarTextLabels && (
-          <span className="pl-1.5 font-medium whitespace-nowrap transition-[opacity,width] duration-200 linear overflow-hidden
-            opacity-100 w-auto group-data-[collapsed=true]:opacity-0 group-data-[collapsed=true]:w-0">
+          <span
+            className="pl-1.5 font-medium whitespace-nowrap transition-[opacity,width] duration-200 linear overflow-hidden
+            opacity-100 w-auto group-data-[collapsed=true]:opacity-0 group-data-[collapsed=true]:w-0"
+          >
             {t(`common:${navItem.id}`)}
           </span>
         )}

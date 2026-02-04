@@ -213,7 +213,12 @@
             "enum": ["asc", "desc"]
           },
           "offset": { "type": "string", "required": false },
-          "limit": { "type": "string", "required": false }
+          "limit": { "type": "string", "required": false },
+          "modifiedAfter": {
+            "type": "string",
+            "required": false,
+            "format": "date-time"
+          }
         }
       }
     }
@@ -741,10 +746,182 @@
             "minItems": 1,
             "maxItems": 50,
             "itemType": "string"
+          },
+          "tx": {
+            "type": "object",
+            "required": false,
+            "properties": {
+              "id": { "type": "string", "required": true },
+              "sourceId": { "type": "string", "required": true }
+            }
           }
         },
         "required": true,
         "contentType": "application/json"
+      }
+    }
+  },
+  {
+    "operationId": "getAttachment",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Attachment",
+        "name": "Attachment",
+        "ref": "#/components/schemas/Attachment",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "createdAt": { "type": "string", "required": true },
+            "id": { "type": "string", "required": true },
+            "entityType": {
+              "type": "string",
+              "required": true,
+              "enum": ["attachment"]
+            },
+            "name": { "type": "string", "required": true },
+            "description": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "modifiedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "keywords": { "type": "string", "required": true },
+            "createdBy": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "modifiedBy": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "tx": {
+              "type": "object",
+              "required": true,
+              "properties": {
+                "id": { "type": "string", "required": true },
+                "sourceId": { "type": "string", "required": true },
+                "version": { "type": "number", "required": true },
+                "fieldVersions": { "type": "object", "required": true }
+              },
+              "ref": "#/components/schemas/TxBase"
+            },
+            "public": { "type": "boolean", "required": true },
+            "bucketName": { "type": "string", "required": true },
+            "groupId": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "filename": { "type": "string", "required": true },
+            "contentType": { "type": "string", "required": true },
+            "convertedContentType": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "size": { "type": "string", "required": true },
+            "originalKey": { "type": "string", "required": true },
+            "convertedKey": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "thumbnailKey": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "organizationId": { "type": "string", "required": true },
+            "can": {
+              "type": "object",
+              "required": false,
+              "properties": {
+                "create": { "type": "boolean", "required": true },
+                "read": { "type": "boolean", "required": true },
+                "update": { "type": "boolean", "required": true },
+                "delete": { "type": "boolean", "required": true },
+                "search": { "type": "boolean", "required": true }
+              }
+            }
+          },
+          "ref": "#/components/schemas/Attachment",
+          "contentType": "application/json"
+        },
+        "example": {
+          "id": "og9ynkm3vp2mdgi3oeicogxv",
+          "entityType": "attachment",
+          "name": "yet_rightfully_lest.ogx",
+          "description": null,
+          "keywords": "pectus subvenio depromo",
+          "public": false,
+          "bucketName": "attachments",
+          "groupId": null,
+          "filename": "yet_rightfully_lest.ogx",
+          "contentType": "video/mp2t",
+          "convertedContentType": null,
+          "size": "6046908",
+          "originalKey": "uploads/ofr579y6bqnt152wowxrfkyy/yet_rightfully_lest.ogx",
+          "convertedKey": null,
+          "thumbnailKey": null,
+          "createdAt": "2024-10-12T17:43:05.360Z",
+          "createdBy": "0uwim8y2tppz7th9tol75wjz",
+          "modifiedAt": "2024-10-12T17:43:05.360Z",
+          "modifiedBy": "0uwim8y2tppz7th9tol75wjz",
+          "tx": {
+            "id": "8dwkbmpkeuemouu8t58r8fuj",
+            "sourceId": "src_3tlenhqurk6hu54pnfytf99m",
+            "version": 1,
+            "fieldVersions": {}
+          },
+          "organizationId": "pmuhw07eswx7d6csd6xo4nqw"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "id": { "type": "string", "required": true },
+          "orgIdOrSlug": {
+            "type": "string",
+            "required": true,
+            "description": "Entity ID or slug. ID is always preferred."
+          }
+        }
       }
     }
   },

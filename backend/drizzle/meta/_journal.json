@@ -22,6 +22,13 @@
       "when": 1769823690740,
       "tag": "0002_partman_setup",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1770071162120,
+      "tag": "0003_sudden_dagger",
+      "breakpoints": true
     }
   ]
 }

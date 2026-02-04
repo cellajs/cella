@@ -68,7 +68,6 @@ function PagesTable() {
     [rows],
   );
 
-  // Memoize the Set of selected row IDs to prevent unnecessary re-renders
   const selectedRowIds = useMemo(() => new Set(selected.map((row) => row.id)), [selected]);
 
   const clearSelection = () => setSelected([]);

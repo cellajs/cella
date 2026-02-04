@@ -1,5 +1,5 @@
 import { redirect } from '@tanstack/react-router';
-import router from '~/lib/router';
+import router from '~/routes/router';
 
 /**
  * Prevents direct access to a parent route by redirecting the user to a specified child route.

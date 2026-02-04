@@ -24,7 +24,6 @@
   },
   "scripts": {
     "cella": "tsx index.ts",
-    "audit": "tsx index.ts --service audit",
     "validate": "tsx index.ts --sync-service validate",
     "check": "pnpm ts && pnpm biome check --write .",
     "ts": "tsc --pretty",
@@ -36,12 +35,12 @@
   "dependencies": {
     "@inquirer/prompts": "^8.2.0",
     "commander": "^14.0.3",
-    "ora": "^9.1.0",
+    "ora": "^9.2.0",
     "picocolors": "^1.1.1",
     "semver": "^7.7.3"
   },
   "devDependencies": {
-    "@types/node": "^24.10.9",
+    "@types/node": "^24.10.10",
     "@types/semver": "^7.7.1",
     "tsup": "^8.5.1",
     "tsx": "^4.21.0"

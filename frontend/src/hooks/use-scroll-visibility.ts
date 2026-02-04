@@ -2,6 +2,7 @@ import { type RefObject, useCallback, useEffect, useRef, useState } from 'react'
 
 const SCROLL_THRESHOLD = 10; // Minimum scroll delta to toggle visibility
 const RESET_COOLDOWN_MS = 3000; // Cooldown period after reset where scroll events are ignored
+const INITIAL_COOLDOWN_MS = 500; // Brief cooldown on mount to prevent hiding from restored scroll position
 
 /**
  * Hook that tracks scroll direction and returns visibility state.
@@ -16,7 +17,8 @@ export const useScrollVisibility = (enabled = true, containerRef?: RefObject<HTM
   const [container, setContainer] = useState<HTMLElement | Window | null>(null);
   const lastScrollY = useRef(0);
   const ticking = useRef(false);
-  const cooldownUntil = useRef(0);
+  // Start with brief cooldown to handle browser scroll restoration on page reload
+  const cooldownUntil = useRef(Date.now() + INITIAL_COOLDOWN_MS);
 
   const reset = useCallback(() => {
     setIsVisible(true);
@@ -61,6 +63,11 @@ export const useScrollVisibility = (enabled = true, containerRef?: RefObject<HTM
       if (!enabled) setIsVisible(true);
       return;
     }
+
+    // Sync lastScrollY with actual position to handle restored scroll on page reload
+    const initialY = container instanceof Window ? container.scrollY : container.scrollTop;
+    lastScrollY.current = initialY;
+    setScrollTop(initialY);
 
     const handleScroll = () => {
       const currentY = container instanceof Window ? container.scrollY : container.scrollTop;

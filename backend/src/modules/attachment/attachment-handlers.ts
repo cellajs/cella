@@ -1,6 +1,6 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { appConfig } from 'config';
-import { and, count, eq, getTableColumns, ilike, inArray, or, type SQL } from 'drizzle-orm';
+import { and, count, eq, getTableColumns, gte, ilike, inArray, or, type SQL, sql } from 'drizzle-orm';
 import { html, raw } from 'hono/html';
 import { db } from '#/db/db';
 import { attachmentsTable } from '#/db/schema/attachments';
@@ -10,7 +10,7 @@ import { AppError } from '#/lib/error';
 import attachmentRoutes from '#/modules/attachment/attachment-routes';
 import { getValidProductEntity } from '#/permissions/get-product-entity';
 import { splitByPermission } from '#/permissions/split-by-permission';
-import { getEntityByTransaction, isTransactionProcessed } from '#/sync';
+import { isTransactionProcessed } from '#/sync';
 import {
   buildFieldVersions,
   checkFieldConflicts,
@@ -30,11 +30,16 @@ const attachmentRouteHandlers = app
    * Get list of attachments
    */
   .openapi(attachmentRoutes.getAttachments, async (ctx) => {
-    const { q, sort, order, limit, offset } = ctx.req.valid('query');
+    const { q, sort, order, limit, offset, modifiedAfter } = ctx.req.valid('query');
 
     const organization = getContextOrganization();
 
     const filters: SQL[] = [eq(attachmentsTable.organizationId, organization.id)];
+
+    // Delta sync filter: only return attachments modified at or after the given timestamp
+    if (modifiedAfter) {
+      filters.push(gte(attachmentsTable.modifiedAt, modifiedAfter));
+    }
 
     if (q?.trim()) {
       const queryToken = prepareStringForILikeFilter(q.trim());
@@ -66,21 +71,41 @@ const attachmentRouteHandlers = app
     return ctx.json({ items, total }, 200);
   })
   /**
+   * Get single attachment by ID
+   */
+  .openapi(attachmentRoutes.getAttachment, async (ctx) => {
+    const { id } = ctx.req.valid('param');
+    const organization = getContextOrganization();
+
+    // Get attachment with permission check
+    const { entity: attachment } = await getValidProductEntity(id, 'attachment', 'read');
+
+    // Verify attachment belongs to the organization context
+    if (attachment.organizationId !== organization.id) {
+      throw new AppError(404, 'not_found', 'warn', { entityType: 'attachment' });
+    }
+
+    // Set cache data for passthrough pattern (appCache middleware will cache this)
+    ctx.set('entityCacheData', attachment as Record<string, unknown>);
+
+    return ctx.json(attachment, 200);
+  })
+  /**
    * Create one or more attachments
    */
   .openapi(attachmentRoutes.createAttachments, async (ctx) => {
     const newAttachments = ctx.req.valid('json');
 
-    // Idempotency check - use first item's tx.id
-    const firstTx = newAttachments[0].tx;
-    if (await isTransactionProcessed(firstTx.id)) {
-      const ref = await getEntityByTransaction(firstTx.id);
-      if (ref) {
-        // For batch create, the first attachment ID is stored - fetch all from that batch
-        const existing = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, ref.entityId));
-        if (existing.length > 0) {
-          return ctx.json({ data: existing, rejectedItemIds: [] }, 200);
-        }
+    // Idempotency check - use first item's tx.id to check entire batch
+    const batchTxId = newAttachments[0].tx.id;
+    if (await isTransactionProcessed(batchTxId)) {
+      // Fetch all items from same batch by querying tx.id in JSONB column
+      const existingBatch = await db
+        .select()
+        .from(attachmentsTable)
+        .where(sql`${attachmentsTable.tx}->>'id' = ${batchTxId}`);
+      if (existingBatch.length > 0) {
+        return ctx.json({ data: existingBatch, rejectedItemIds: [] }, 200);
       }
     }
 
@@ -175,9 +200,15 @@ const attachmentRouteHandlers = app
    * Delete attachments by ids
    */
   .openapi(attachmentRoutes.deleteAttachments, async (ctx) => {
-    const { ids } = ctx.req.valid('json');
+    const { ids, tx } = ctx.req.valid('json');
 
     const memberships = getContextMemberships();
+
+    // tx is available for CDC echo prevention (sourceId tracking)
+    // CDC will read tx from the deleted row's old data
+    if (tx) {
+      logEvent('debug', 'Delete with tx metadata', { txId: tx.id, sourceId: tx.sourceId });
+    }
 
     // Convert the ids to an array
     const toDeleteIds = Array.isArray(ids) ? ids : [ids];
