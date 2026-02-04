@@ -301,8 +301,8 @@
           "live": {
             "type": "string",
             "required": false,
-            "description": "Connection mode: 'sse' for streaming, 'poll' for one-time fetch",
-            "enum": ["sse", "poll"]
+            "description": "Connection mode: 'sse' for streaming, 'catchup' for one-time fetch",
+            "enum": ["sse", "catchup"]
           }
         }
       }

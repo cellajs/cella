@@ -28,6 +28,7 @@ export type Env = {
     organization: OrganizationModel & { membership: MembershipBaseModel | null };
     memberships: (MembershipBaseModel & { createdBy: string | null })[];
     token: TokenModel;
+    sessionToken: string;
     logId: string;
     sentry: typeof Sentry;
     sentrySpan?: ReturnType<typeof Sentry.startSpan>;
@@ -79,4 +80,13 @@ export const getContextMemberships = () => {
  */
 export const getContextToken = () => {
   return getContext<Env>().var.token;
+};
+
+/**
+ * Access the current session token (hashed) for cache token signing.
+ *
+ * @returns The hashed session token string.
+ */
+export const getContextSessionToken = () => {
+  return getContext<Env>().var.sessionToken;
 };

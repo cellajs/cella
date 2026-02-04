@@ -91,6 +91,7 @@ export class EntityHierarchyBuilder<
   TRoles extends { all: readonly string[] },
   TContexts extends string = never,
   TProducts extends string = never,
+  TParentlessProducts extends string = never,
 > {
   private readonly entities = new Map<string, EntityEntry>();
   private readonly roles: TRoles;
@@ -103,7 +104,7 @@ export class EntityHierarchyBuilder<
   /**
    * Add the user entity (required, can only be called once).
    */
-  user(): EntityHierarchyBuilder<TRoles, TContexts, TProducts> {
+  user(): EntityHierarchyBuilder<TRoles, TContexts, TProducts, TParentlessProducts> {
     if (this.hasUser) {
       throw new Error('EntityHierarchy: user() can only be called once');
     }
@@ -124,7 +125,7 @@ export class EntityHierarchyBuilder<
       parent: TContexts | null;
       roles: readonly RoleFromRegistry<TRoles>[];
     },
-  ): EntityHierarchyBuilder<TRoles, TContexts | N, TProducts> {
+  ): EntityHierarchyBuilder<TRoles, TContexts | N, TProducts, TParentlessProducts> {
     this.validateName(name);
     this.validateParent(name, options.parent, 'context');
     this.validateRoles(name, options.roles);
@@ -135,19 +136,20 @@ export class EntityHierarchyBuilder<
       roles: options.roles,
     });
 
-    return this as EntityHierarchyBuilder<TRoles, TContexts | N, TProducts>;
+    return this as EntityHierarchyBuilder<TRoles, TContexts | N, TProducts, TParentlessProducts>;
   }
 
   /**
    * Add a product entity with optional parent.
+   * Products with parent: null are tracked at compile time as TParentlessProducts.
    *
    * @param name - Entity type name (e.g., 'attachment', 'task')
    * @param options - Configuration with parent reference (context entity or null)
    */
-  product<N extends string>(
+  product<N extends string, P extends TContexts | null>(
     name: N,
-    options: { parent: TContexts | null },
-  ): EntityHierarchyBuilder<TRoles, TContexts, TProducts | N> {
+    options: { parent: P },
+  ): EntityHierarchyBuilder<TRoles, TContexts, TProducts | N, P extends null ? TParentlessProducts | N : TParentlessProducts> {
     this.validateName(name);
     this.validateParent(name, options.parent, 'product');
 
@@ -156,14 +158,15 @@ export class EntityHierarchyBuilder<
       parent: options.parent,
     });
 
-    return this as EntityHierarchyBuilder<TRoles, TContexts, TProducts | N>;
+    // Type assertion required: conditional return type cannot be proven by TS without runtime check
+    return this as unknown as EntityHierarchyBuilder<TRoles, TContexts, TProducts | N, P extends null ? TParentlessProducts | N : TParentlessProducts>;
   }
 
   /**
    * Build and freeze the hierarchy.
    * Returns an EntityHierarchy instance with query methods.
    */
-  build(): EntityHierarchy<TRoles, TContexts, TProducts> {
+  build(): EntityHierarchy<TRoles, TContexts, TProducts, TParentlessProducts> {
     if (!this.hasUser) {
       throw new Error('EntityHierarchy: user() must be called before build()');
     }
@@ -232,6 +235,7 @@ export class EntityHierarchy<
   TRoles extends { all: readonly string[] },
   TContexts extends string = string,
   TProducts extends string = string,
+  TParentlessProducts extends string = string,
 > {
   private readonly entities: ReadonlyMap<string, EntityEntry>;
   private readonly roleRegistry: TRoles;
@@ -247,8 +251,8 @@ export class EntityHierarchy<
   readonly allTypes: readonly ('user' | TContexts | TProducts)[];
   /** Context entities that are parents of product entities */
   readonly relatableContextTypes: readonly TContexts[];
-  /** Product entities with no parent context (parent: null) - candidates for public access */
-  readonly parentlessProductTypes: readonly TProducts[];
+  /** Product entities with no parent context (parent: null) - compile-time tracked for type safety */
+  readonly parentlessProductTypes: readonly TParentlessProducts[];
 
   constructor(roles: TRoles, entities: Map<string, EntityEntry>) {
     this.roleRegistry = roles;
@@ -270,10 +274,11 @@ export class EntityHierarchy<
     this.allTypes = Object.freeze(all);
 
     // Compute parentless product types (candidates for public access)
+    // Runtime computation matches compile-time TParentlessProducts tracking
     const parentlessProducts = products.filter((p) => {
       const entry = entities.get(p);
       return entry?.kind === 'product' && entry.parent === null;
-    });
+    }) as unknown as TParentlessProducts[];
     this.parentlessProductTypes = Object.freeze(parentlessProducts);
 
     // Compute relatable context types (context entities that are parents of products)
@@ -490,7 +495,7 @@ export class EntityHierarchy<
  */
 export function createEntityHierarchy<R extends { all: readonly string[] }>(
   roles: R,
-): EntityHierarchyBuilder<R, never, never> {
+): EntityHierarchyBuilder<R, never, never, never> {
   return new EntityHierarchyBuilder(roles);
 }
 
@@ -508,8 +513,8 @@ export function createEntityHierarchy<R extends { all: readonly string[] }>(
  * @param publicProductEntityTypes - Explicitly declared public product entity types from config
  * @throws Error if any parentless product entity is not in publicProductEntityTypes, or vice versa
  */
-export function validatePublicProductEntities<T extends string>(
-  hierarchy: EntityHierarchy<{ all: readonly string[] }, string, T>,
+export function validatePublicProductEntities<TProducts extends string, TParentless extends string>(
+  hierarchy: EntityHierarchy<{ all: readonly string[] }, string, TProducts, TParentless>,
   publicProductEntityTypes: readonly string[],
 ): void {
   const parentlessFromHierarchy = new Set<string>(hierarchy.parentlessProductTypes);
@@ -540,9 +545,9 @@ export function validatePublicProductEntities<T extends string>(
  * Check if a product entity type is a public entity (no parent context).
  * Utility for runtime checks in handlers and middleware.
  */
-export function isPublicProductEntity<T extends string>(
-  hierarchy: EntityHierarchy<{ all: readonly string[] }, string, T>,
+export function isPublicProductEntity<TProducts extends string, TParentless extends string>(
+  hierarchy: EntityHierarchy<{ all: readonly string[] }, string, TProducts, TParentless>,
   entityType: string,
 ): boolean {
-  return hierarchy.parentlessProductTypes.includes(entityType as T);
+  return hierarchy.parentlessProductTypes.includes(entityType as TParentless);
 }

@@ -2,7 +2,7 @@
 
 exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
 {
-  "inputHash": "cb55d950e4679cf4",
+  "inputHash": "71a1e3c01f40b982",
   "output": {
     "info": {
       "description": "⚠️ ATTENTION: PRERELEASE!  
@@ -66,6 +66,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "required": false,
           "translationKey": "common:docs.cache",
           "values": {
+            "appCache": {
+              "description": "TTL cache with CDC token reservation pattern",
+            },
             "publicCache": {
               "description": "LRU cache for public page entities",
             },
@@ -1751,6 +1754,32 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "method": "delete",
         "path": "/{orgIdOrSlug}/attachments",
         "summary": "Delete attachments",
+        "tags": [
+          "attachments",
+        ],
+      },
+      {
+        "deprecated": false,
+        "description": "Returns a single *attachment* by ID. Supports CDC cache via X-Cache-Token header.",
+        "extensions": {
+          "xCache": [
+            "appCache",
+          ],
+          "xGuard": [
+            "isAuthenticated",
+            "hasOrgAccess",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": true,
+        "hasParams": true,
+        "hasRequestBody": false,
+        "hasResponseBody": true,
+        "hash": "tag/attachments/GET/{orgIdOrSlug}/attachments/{id}",
+        "id": "getAttachment",
+        "method": "get",
+        "path": "/{orgIdOrSlug}/attachments/{id}",
+        "summary": "Get attachment",
         "tags": [
           "attachments",
         ],
@@ -5996,6 +6025,20 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "required": true,
                   "type": "array",
                 },
+                "tx": {
+                  "properties": {
+                    "id": {
+                      "required": true,
+                      "type": "string",
+                    },
+                    "sourceId": {
+                      "required": true,
+                      "type": "string",
+                    },
+                  },
+                  "required": false,
+                  "type": "object",
+                },
               },
               "required": true,
               "type": "object",
@@ -6034,6 +6077,259 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   },
                 },
                 "ref": "#/components/schemas/SuccessWithRejectedItems",
+                "type": "object",
+              },
+              "status": 200,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Bad request: problem processing request.",
+              "name": "BadRequestError",
+              "ref": "#/components/responses/BadRequestError",
+              "status": 400,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Unauthorized: authentication required.",
+              "name": "UnauthorizedError",
+              "ref": "#/components/responses/UnauthorizedError",
+              "status": 401,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Forbidden: insufficient permissions.",
+              "name": "ForbiddenError",
+              "ref": "#/components/responses/ForbiddenError",
+              "status": 403,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Not found: resource does not exist.",
+              "name": "NotFoundError",
+              "ref": "#/components/responses/NotFoundError",
+              "status": 404,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Rate limit: too many requests.",
+              "name": "TooManyRequestsError",
+              "ref": "#/components/responses/TooManyRequestsError",
+              "status": 429,
+            },
+          ],
+        },
+        {
+          "operationId": "getAttachment",
+          "request": {
+            "path": {
+              "properties": {
+                "id": {
+                  "required": true,
+                  "type": "string",
+                },
+                "orgIdOrSlug": {
+                  "description": "Entity ID or slug. ID is always preferred.",
+                  "required": true,
+                  "type": "string",
+                },
+              },
+            },
+          },
+          "responses": [
+            {
+              "contentType": "application/json",
+              "description": "Attachment",
+              "example": {
+                "bucketName": "attachments",
+                "contentType": "video/mp2t",
+                "convertedContentType": null,
+                "convertedKey": null,
+                "createdAt": "2024-10-12T17:43:05.360Z",
+                "createdBy": "0uwim8y2tppz7th9tol75wjz",
+                "description": null,
+                "entityType": "attachment",
+                "filename": "yet_rightfully_lest.ogx",
+                "groupId": null,
+                "id": "og9ynkm3vp2mdgi3oeicogxv",
+                "keywords": "pectus subvenio depromo",
+                "modifiedAt": "2024-10-12T17:43:05.360Z",
+                "modifiedBy": "0uwim8y2tppz7th9tol75wjz",
+                "name": "yet_rightfully_lest.ogx",
+                "organizationId": "pmuhw07eswx7d6csd6xo4nqw",
+                "originalKey": "uploads/ofr579y6bqnt152wowxrfkyy/yet_rightfully_lest.ogx",
+                "public": false,
+                "size": "6046908",
+                "thumbnailKey": null,
+                "tx": {
+                  "fieldVersions": {},
+                  "id": "8dwkbmpkeuemouu8t58r8fuj",
+                  "sourceId": "src_3tlenhqurk6hu54pnfytf99m",
+                  "version": 1,
+                },
+              },
+              "name": "Attachment",
+              "ref": "#/components/schemas/Attachment",
+              "schema": {
+                "contentType": "application/json",
+                "properties": {
+                  "bucketName": {
+                    "required": true,
+                    "type": "string",
+                  },
+                  "can": {
+                    "properties": {
+                      "create": {
+                        "required": true,
+                        "type": "boolean",
+                      },
+                      "delete": {
+                        "required": true,
+                        "type": "boolean",
+                      },
+                      "read": {
+                        "required": true,
+                        "type": "boolean",
+                      },
+                      "search": {
+                        "required": true,
+                        "type": "boolean",
+                      },
+                      "update": {
+                        "required": true,
+                        "type": "boolean",
+                      },
+                    },
+                    "required": false,
+                    "type": "object",
+                  },
+                  "contentType": {
+                    "required": true,
+                    "type": "string",
+                  },
+                  "convertedContentType": {
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "convertedKey": {
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "createdAt": {
+                    "required": true,
+                    "type": "string",
+                  },
+                  "createdBy": {
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "description": {
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "entityType": {
+                    "enum": [
+                      "attachment",
+                    ],
+                    "required": true,
+                    "type": "string",
+                  },
+                  "filename": {
+                    "required": true,
+                    "type": "string",
+                  },
+                  "groupId": {
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "id": {
+                    "required": true,
+                    "type": "string",
+                  },
+                  "keywords": {
+                    "required": true,
+                    "type": "string",
+                  },
+                  "modifiedAt": {
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "modifiedBy": {
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "name": {
+                    "required": true,
+                    "type": "string",
+                  },
+                  "organizationId": {
+                    "required": true,
+                    "type": "string",
+                  },
+                  "originalKey": {
+                    "required": true,
+                    "type": "string",
+                  },
+                  "public": {
+                    "required": true,
+                    "type": "boolean",
+                  },
+                  "size": {
+                    "required": true,
+                    "type": "string",
+                  },
+                  "thumbnailKey": {
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "tx": {
+                    "properties": {
+                      "fieldVersions": {
+                        "required": true,
+                        "type": "object",
+                      },
+                      "id": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "sourceId": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "version": {
+                        "required": true,
+                        "type": "number",
+                      },
+                    },
+                    "ref": "#/components/schemas/TxBase",
+                    "required": true,
+                    "type": "object",
+                  },
+                },
+                "ref": "#/components/schemas/Attachment",
                 "type": "object",
               },
               "status": 200,
@@ -8439,10 +8735,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "query": {
               "properties": {
                 "live": {
-                  "description": "Connection mode: 'sse' for streaming, 'poll' for one-time fetch",
+                  "description": "Connection mode: 'sse' for streaming, 'catchup' for one-time fetch",
                   "enum": [
                     "sse",
-                    "poll",
+                    "catchup",
                   ],
                   "required": false,
                   "type": "string",
@@ -16763,7 +17059,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "name": "auth",
       },
       {
-        "count": 5,
+        "count": 6,
         "description": "Endpoints for managing file based *attachments* (e.g. images, PDFs, documents) linked to
         entities such as organizations or users. Files are uploaded directly by the client; the API handles
         metadata registration, linking, access, and preview utilities.",

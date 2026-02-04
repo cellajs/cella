@@ -7,6 +7,7 @@ export {
   removeCacheToken,
   storeCacheToken,
 } from './cache-token-store';
+export type { UsePublicStreamOptions, UsePublicStreamReturn } from './public-stream';
 export { default as PublicStream, usePublicStream } from './public-stream';
 export { handlePublicStreamMessage } from './public-stream-handler';
 export {
@@ -25,8 +26,6 @@ export type {
   StreamState,
   UseAppStreamOptions,
   UseAppStreamReturn,
-  UsePublicStreamOptions,
-  UsePublicStreamReturn,
 } from './types';
 
 export type { UseLeaderReconnectOptions } from './use-leader-reconnect';

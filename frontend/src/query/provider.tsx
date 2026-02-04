@@ -14,7 +14,7 @@ import '~/modules/attachment/query';
 import '~/modules/page/query';
 import { persister } from '~/query/persister';
 import { queryClient, silentRevalidateOnReconnect, updateStaleTime } from '~/query/query-client';
-import { initTabCoordinator, useTabCoordinatorStore } from '~/query/realtime/tab-coordinator';
+import { useTabCoordinatorStore } from '~/query/realtime/tab-coordinator';
 import { sessionPersister } from '~/query/session-persister';
 import { useUIStore } from '~/store/ui';
 import { useUserStore } from '~/store/user';
@@ -23,10 +23,6 @@ import { useUserStore } from '~/store/user';
 // This registers mutationFn for each entity type so that paused mutations
 // can resume after page reload (mutationFn cannot be serialized to IndexedDB).
 initMutationDefaults(queryClient);
-
-// Initialize tab coordinator early so we know leader status before persistence decisions.
-// This is async but fast (uses Web Locks ifAvailable: true for quick determination).
-initTabCoordinator();
 
 // Start offline services for background blob caching and upload sync
 downloadService.start();
@@ -49,41 +45,17 @@ export const offlineQueryConfig = {
 export const waitFor = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
- * QueryClientProvider wrapper that handles cache persistence and offline capabilities.
- *
- * ## Persistence modes
- *
- * Both modes use PersistQueryClientProvider, but with different storage backends:
- *
- * 1. **Session Mode** (offlineAccess = false):
- *    - Uses sessionStorage persister (survives refresh, cleared on tab close)
- *    - No prefetching
- *
- * 2. **Offline Mode** (offlineAccess = true):
- *    - Uses IndexedDB persister (survives browser restart)
- *    - Automatically prefetches content for offline availability
- *
- * ## Mutation persistence (leader-only)
- *
- * To prevent cross-tab conflicts when persisting mutations:
- * - **Leader tab**: Persists mutations to storage (survives refresh)
- * - **Follower tabs**: Mutations stay in-memory only
- *
- * The tab coordinator uses Web Locks API to elect a single leader across tabs.
- * If the leader tab closes, a follower is promoted and takes over persistence.
- *
- * ## Offline prefetch strategy (offlineAccess = true only)
- *
- * The prefetch logic operates in phases:
- *
- * 1. **Menu structure**: Already cached from entity list queries
- * 2. **Menu content**: Prefetches content within each menu item
+ * QueryClientProvider wrapper handling cache persistence and offline capabilities.
+ * Uses session or IndexedDB persister based on offlineAccess setting.
+ * Only leader tab persists mutations in app routes to prevent cross-tab conflicts.
  */
 export function QueryClientProvider({ children }: { children: React.ReactNode }) {
   const { user } = useUserStore();
   const { offlineAccess, toggleOfflineAccess } = useUIStore();
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const isLeader = useTabCoordinatorStore((state) => state.isLeader);
+  const isReady = useTabCoordinatorStore((state) => state.isReady);
+  const isActive = useTabCoordinatorStore((state) => state.isActive);
 
   // Disable offline access if PWA is not enabled in the config
   if (!appConfig.has.pwa && offlineAccess) toggleOfflineAccess();
@@ -179,10 +151,8 @@ export function QueryClientProvider({ children }: { children: React.ReactNode })
       persistOptions={{
         persister: activePersister,
         dehydrateOptions: {
-          // Only leader tab persists mutations to storage.
-          // This prevents cross-tab conflicts when multiple tabs queue mutations.
-          // Follower tabs keep mutations in-memory (work while tab is open).
-          shouldDehydrateMutation: () => isLeader,
+          // Public routes (!isActive): always persist. App routes: only leader persists after ready.
+          shouldDehydrateMutation: () => !isActive || (isReady && isLeader),
         },
       }}
       onSuccess={() => {

@@ -1,4 +1,5 @@
 import type config from './default';
+import type { RequiredPublicProductEntityTypes } from './hierarchy';
 
 export type DeepPartial<T> = T extends object
   ? {
@@ -115,7 +116,11 @@ export interface RequiredConfig {
   entityTypes: readonly string[];
   contextEntityTypes: readonly string[];
   productEntityTypes: readonly string[];
-  publicProductEntityTypes: readonly string[];
+  /**
+   * Product entities with parent: null MUST be declared here.
+   * Type is inferred from hierarchy.parentlessProductTypes to enforce compile-time validation.
+   */
+  publicProductEntityTypes: RequiredPublicProductEntityTypes;
   relatableContextEntityTypes: readonly string[];
   entityRoles: readonly string[];
   entityIdColumnKeys: Record<string, string>;

@@ -7,7 +7,6 @@ import test from './test';
 import tunnel from './tunnel';
 import { mergeDeep } from './utils';
 
-// Re-export hierarchy builder types for external use
 export type {
   ContextEntityView,
   EntityHierarchy,
@@ -23,12 +22,12 @@ export {
   validatePublicProductEntities,
 } from './entity-hierarchy';
 
-// Re-export other types
 export type { RequestLimitsConfig, RequiredConfig, S3Config } from './types';
 export { hasKey, recordFromKeys, identityRecord } from './utils';
 
-// Re-export role registry and hierarchy from default
 export { hierarchy, roles } from './default';
+
+export { getContextRoles, isContextEntity, isProductEntity, isPublicProductEntity } from './entity-guards';
 
 /******************************************************************************
  * HELPER TYPES FOR ENTITY HIERARCHY
@@ -119,9 +118,6 @@ export type SystemRole = (typeof appConfig.systemRoles)[number];
  * Entity roles type - union of all roles from the role registry.
  */
 export type EntityRole = (typeof appConfig.entityRoles)[number];
-
-// Re-export entity type guards
-export { getContextRoles, isContextEntity, isProductEntity, isPublicProductEntity } from './entity-guards';
 
 /**
  * Expected shape for entityIdColumnKeys - must have all entity types as keys.

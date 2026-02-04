@@ -2,6 +2,7 @@ import { appConfig } from 'config';
 import pino from 'pino';
 import { env } from './env';
 
+// TODO consider changing these keys to all inlcude 'secret' for clarity
 const redactedFields = [
   'passwords.hashedPassword',
   'unsubscribeTokensTable.token',

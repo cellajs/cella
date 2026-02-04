@@ -9,6 +9,8 @@ import type { CursoredSubscriber } from '#/sync/stream';
 export interface AppStreamSubscriber extends CursoredSubscriber {
   /** User ID */
   userId: string;
+  /** User's hashed session token (for signing cache tokens) */
+  sessionToken: string;
   /** Set of org IDs user belongs to (for filtering org events) */
   orgIds: Set<string>;
   /** User's system role for permission bypass */

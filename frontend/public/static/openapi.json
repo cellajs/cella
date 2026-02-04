@@ -65,7 +65,7 @@
         "required": false,
         "values": {
           "appCache": {
-            "description": "TTL cache with CDC token reservation pattern"
+            "description": "TTL cache with session-signed token validation"
           },
           "publicCache": {
             "description": "LRU cache for public page entities"
@@ -7633,13 +7633,13 @@
               "type": "string",
               "enum": [
                 "sse",
-                "poll"
+                "catchup"
               ],
-              "description": "Connection mode: 'sse' for streaming, 'poll' for one-time fetch",
+              "description": "Connection mode: 'sse' for streaming, 'catchup' for one-time fetch",
               "example": "sse"
             },
             "required": false,
-            "description": "Connection mode: 'sse' for streaming, 'poll' for one-time fetch",
+            "description": "Connection mode: 'sse' for streaming, 'catchup' for one-time fetch",
             "name": "live",
             "in": "query"
           }

@@ -39,7 +39,7 @@
       "description": "Caching strategy applied to the endpoint",
       "required": false,
       "values": {
-        "appCache": { "description": "TTL cache with CDC token reservation pattern" },
+        "appCache": { "description": "TTL cache with session-signed token validation" },
         "publicCache": { "description": "LRU cache for public page entities" }
       }
     }

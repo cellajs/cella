@@ -1260,7 +1260,7 @@ export const zGetAppStreamData = z.object({
   query: z.optional(
     z.object({
       offset: z.optional(z.string()),
-      live: z.optional(z.enum(['sse', 'poll'])),
+      live: z.optional(z.enum(['sse', 'catchup'])),
     }),
   ),
 });

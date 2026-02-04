@@ -115,29 +115,3 @@ export const useSyncStore = create<SyncStoreState>()(
 export function getSyncCursor(): string {
   return useSyncStore.getState().cursor ?? 'now';
 }
-
-/**
- * Extract timestamp from ULID cursor.
- * ULID encodes timestamp in first 10 characters (Crockford base32).
- * Returns ISO string or null if invalid.
- */
-export function getCursorTimestamp(cursor: string | null): string | null {
-  if (!cursor || cursor === 'now' || cursor.length < 10) return null;
-
-  try {
-    // ULID timestamp is first 10 chars in Crockford base32
-    const crockford = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
-    let timestamp = 0;
-
-    for (let i = 0; i < 10; i++) {
-      const char = cursor[i].toUpperCase();
-      const value = crockford.indexOf(char);
-      if (value === -1) return null;
-      timestamp = timestamp * 32 + value;
-    }
-
-    return new Date(timestamp).toISOString();
-  } catch {
-    return null;
-  }
-}

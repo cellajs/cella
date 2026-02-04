@@ -35,6 +35,7 @@ export const isAuthenticated = xMiddleware(
 
       // Set user in context and add to monitoring
       ctx.set('user', user);
+      ctx.set('sessionToken', sessionToken);
       Sentry.setUser({
         id: user.id,
         email: user.email,

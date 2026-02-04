@@ -6,6 +6,7 @@ import { DownAlert } from '~/modules/common/down-alert';
 import { Dropdowner } from '~/modules/common/dropdowner/provider';
 import ErrorNotice, { type ErrorNoticeError } from '~/modules/common/error-notice';
 import { Sheeter } from '~/modules/common/sheeter/provider';
+import { TabCoordinator } from '~/modules/common/tab-coordinator';
 import { Uploader } from '~/modules/common/uploader/uploader';
 import AppNav from '~/modules/navigation/app-nav';
 import { SidebarWrapper } from '~/modules/ui/sidebar';
@@ -29,6 +30,7 @@ function AppLayout() {
           <AppNav />
           <AppContent />
         </SidebarWrapper>
+        <TabCoordinator />
         <AppStream />
         <Uploader />
         <Dialoger />

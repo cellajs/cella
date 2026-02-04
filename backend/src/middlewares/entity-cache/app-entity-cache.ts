@@ -12,16 +12,18 @@
  */
 
 import { publicCacheMetrics } from '#/lib/cache-metrics';
-import { cacheTokenTtl } from '#/lib/cache-token';
 import { coalesce, isInFlight } from '#/lib/request-coalescing';
 import { TTLCache } from '#/lib/ttl-cache';
+
+/** Cache TTL: 10 minutes */
+const cacheTtl = 10 * 60 * 1000;
 
 /** Cache configuration */
 const cacheConfig = {
   /** Max entries in cache */
   maxSize: 5000,
-  /** Default TTL: 10 minutes (matches token TTL) */
-  defaultTtl: cacheTokenTtl,
+  /** Default TTL: 10 minutes */
+  defaultTtl: cacheTtl,
 };
 
 /** Entity data type - null means reserved but not enriched */

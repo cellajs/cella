@@ -41,9 +41,3 @@ export interface UseAppStreamOptions extends BaseStreamOptions {
 
 /** Return value for useAppStream hook. */
 export type UseAppStreamReturn = BaseStreamReturn;
-
-/** Options for usePublicStream hook. */
-export type UsePublicStreamOptions = Pick<BaseStreamOptions, 'enabled' | 'onStateChange'>;
-
-/** Return value for usePublicStream hook. */
-export type UsePublicStreamReturn = BaseStreamReturn;

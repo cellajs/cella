@@ -65,14 +65,14 @@ export const streamQuerySchema = z.object({
     description: "Starting offset: 'now' for live-only, or activity ID to receive missed notifications",
     example: 'now',
   }),
-  live: z.enum(['sse', 'poll']).optional().openapi({
-    description: "Connection mode: 'sse' for streaming, 'poll' for one-time fetch",
+  live: z.enum(['sse', 'catchup']).optional().openapi({
+    description: "Connection mode: 'sse' for streaming, 'catchup' for one-time fetch",
     example: 'sse',
   }),
 });
 
 /**
- * Query schema for public streams (SSE only, no poll mode).
+ * Query schema for public streams (SSE only, no catchup mode).
  */
 export const publicStreamQuerySchema = streamQuerySchema.extend({
   live: z.enum(['sse']).optional().openapi({
