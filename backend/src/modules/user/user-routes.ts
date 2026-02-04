@@ -4,7 +4,7 @@ import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
 import { systemRoleBaseSchema } from '#/modules/system/system-schema';
 import { userListQuerySchema, userSchema, userUpdateBodySchema } from '#/modules/user/user-schema';
 import {
-  entityParamSchema,
+  entityIdParamSchema,
   errorResponseRefs,
   idsBodySchema,
   paginationSchema,
@@ -80,7 +80,7 @@ const userRoutes = {
     tags: ['users'],
     summary: 'Get user',
     description: 'Retrieves a *user* by ID.',
-    request: { params: entityParamSchema },
+    request: { params: entityIdParamSchema },
     responses: {
       200: {
         description: 'User',
@@ -101,7 +101,7 @@ const userRoutes = {
     summary: 'Update user',
     description: 'Updates a *user* identified by ID.',
     request: {
-      params: entityParamSchema,
+      params: entityIdParamSchema,
       body: {
         content: { 'application/json': { schema: userUpdateBodySchema } },
       },

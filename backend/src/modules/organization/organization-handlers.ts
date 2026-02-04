@@ -211,9 +211,9 @@ const organizationRouteHandlers = app
    * Get organization by id or slug
    */
   .openapi(organizationRoutes.getOrganization, async (ctx) => {
-    const { id } = ctx.req.valid('param');
+    const { idOrSlug } = ctx.req.valid('param');
 
-    const { entity: organization, membership, can } = await getValidContextEntity(id, 'organization', 'read');
+    const { entity: organization, membership, can } = await getValidContextEntity(idOrSlug, 'organization', 'read');
 
     const counts = await getEntityCounts(organization.entityType, organization.id);
     const data = { ...organization, membership, counts, can };

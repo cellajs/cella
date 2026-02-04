@@ -7,7 +7,7 @@ import useSearchParams from '~/hooks/use-search-params';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
-import { requestsQueryOptions } from '~/modules/requests/query';
+import { requestsListQueryOptions } from '~/modules/requests/query';
 import { RequestsTableBar } from '~/modules/requests/table/requests-bar';
 import { useColumns } from '~/modules/requests/table/requests-columns';
 import type { Request, RequestsRouteSearchParams } from '~/modules/requests/types';
@@ -32,7 +32,7 @@ function RequestsTable() {
   const [columns, setColumns] = useColumns();
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
-  const queryOptions = requestsQueryOptions({ ...search, limit });
+  const queryOptions = requestsListQueryOptions({ ...search, limit });
   const {
     data: rows,
     isLoading,

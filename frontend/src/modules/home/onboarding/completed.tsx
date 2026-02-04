@@ -7,7 +7,7 @@ import { Organization } from '~/api.gen';
 import { Confetti } from '~/modules/home/onboarding/confetti';
 import { onboardingFinishCallback } from '~/modules/home/onboarding/onboarding-config';
 import { useUpdateSelfFlagsMutation } from '~/modules/me/query';
-import { organizationsQueryOptions } from '~/modules/organization/query';
+import { organizationsListQueryOptions } from '~/modules/organization/query';
 import { flattenInfiniteData } from '~/query/basic';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
@@ -23,7 +23,7 @@ export const OnboardingCompleted = () => {
   const didRun = useRef(false);
 
   // Fetch organizations to determine the last created organization
-  const orgQuery = useInfiniteQuery(organizationsQueryOptions({ userId: user.id }));
+  const orgQuery = useInfiniteQuery(organizationsListQueryOptions({ userId: user.id }));
   const organizations = flattenInfiniteData<Organization>(orgQuery.data);
 
   const lastCreatedOrganization =

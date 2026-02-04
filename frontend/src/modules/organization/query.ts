@@ -40,12 +40,12 @@ export const findOrganizationInListCache = (idOrSlug: string) =>
 
 /**
  * Query options for a single organization by ID.
- * Always cache by ID to prevent duplicate cache entries when navigating via slug.
+ * NOTE: Slug is only used on page load. All subsequent queries must use ID.
  */
 export const organizationQueryOptions = (id: string) =>
   queryOptions({
     queryKey: keys.detail.byId(id),
-    queryFn: async () => getOrganization({ path: { id } }),
+    queryFn: async () => getOrganization({ path: { idOrSlug: id } }),
     placeholderData: () => findOrganizationInListCache(id),
   });
 
@@ -58,7 +58,7 @@ type OrganizationsListParams = Omit<NonNullable<GetOrganizationsData['query']>, 
  * Note: `include` is NOT part of the cache key - queries with/without counts share the same cache
  * for seamless offline behavior. The most recent fetch determines what's cached.
  */
-export const organizationsQueryOptions = (params: OrganizationsListParams) => {
+export const organizationsListQueryOptions = (params: OrganizationsListParams) => {
   const {
     q = '',
     sort = 'createdAt',
@@ -89,6 +89,7 @@ export const organizationsQueryOptions = (params: OrganizationsListParams) => {
       });
     },
     ...baseInfiniteQueryOptions,
+    refetchOnMount: true,
   });
 };
 

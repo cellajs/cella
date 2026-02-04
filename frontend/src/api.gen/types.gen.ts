@@ -1917,7 +1917,7 @@ export type DeleteMyMembershipData = {
   body?: never;
   path?: never;
   query: {
-    id: string;
+    entityId: string;
     entityType: 'organization';
   };
   url: '/me/leave';
@@ -2392,10 +2392,10 @@ export type CreateOrganizationsResponse = CreateOrganizationsResponses[keyof Cre
 export type GetOrganizationData = {
   body?: never;
   path: {
-    id: string;
+    idOrSlug: string;
   };
   query?: never;
-  url: '/organizations/{id}';
+  url: '/organizations/{idOrSlug}';
 };
 
 export type GetOrganizationErrors = {
@@ -3911,7 +3911,7 @@ export type DeleteMembershipsData = {
     orgId: string;
   };
   query: {
-    id: string;
+    entityId: string;
     entityType: 'organization';
   };
   url: '/{orgId}/memberships';
@@ -3960,7 +3960,7 @@ export type MembershipInviteData = {
     orgId: string;
   };
   query: {
-    id: string;
+    entityId: string;
     entityType: 'organization';
   };
   url: '/{orgId}/memberships';
@@ -4108,7 +4108,7 @@ export type GetMembersData = {
     order?: 'asc' | 'desc';
     offset?: string;
     limit?: string;
-    id: string;
+    entityId: string;
     entityType: 'organization';
     role?: 'admin' | 'member';
   };
@@ -4183,7 +4183,7 @@ export type GetPendingMembershipsData = {
     order?: 'asc' | 'desc';
     offset?: string;
     limit?: string;
-    id: string;
+    entityId: string;
     entityType: 'organization';
   };
   url: '/{orgId}/memberships/pending';

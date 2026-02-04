@@ -11,7 +11,7 @@ import { operationsQueryOptions, schemasQueryOptions, tagsQueryOptions } from '~
 import { OperationsSidebar } from '~/modules/docs/sidebar/operations-sidebar';
 import { SchemasSidebar } from '~/modules/docs/sidebar/schemas-sidebar';
 import type { GenTagSummary } from '~/modules/docs/types';
-import { pagesQueryOptions } from '~/modules/page/query';
+import { pagesListQueryOptions } from '~/modules/page/query';
 import { buttonVariants } from '~/modules/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';
 import {
@@ -79,7 +79,7 @@ export function DocsSidebar({ tags }: DocsSidebarProps) {
 
   // Query for pages - using React Query instead of useLiveQuery
   const { data: pages } = useInfiniteQuery({
-    ...pagesQueryOptions({}),
+    ...pagesListQueryOptions({}),
     select: ({ pages }) => pages.flatMap(({ items }) => items),
   });
 

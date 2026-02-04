@@ -64,7 +64,7 @@ function UpdateUserForm({ user, callback, sheet: isSheet, compact, children }: U
     if (!user) return;
 
     mutate(
-      { idOrSlug: user.id, ...values },
+      { id: user.id, ...values },
       {
         onSuccess: (updatedUser) => {
           const message = isSelf

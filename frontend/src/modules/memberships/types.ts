@@ -1,7 +1,6 @@
 import type { ContextEntityType } from 'config';
 import type z from 'zod';
 import type {
-  DeleteMembershipsData,
   GetMembersResponse,
   GetPendingMembershipsResponse,
   MembershipInviteData,

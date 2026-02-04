@@ -47,7 +47,7 @@ function UserProfilePage({ idOrSlug, isSheet, orgIdOrSlug }: Props) {
 
   const coverUpdateCallback = (bannerUrl: string) => {
     mutate(
-      { idOrSlug: currentUser.id, bannerUrl },
+      { id: currentUser.id, bannerUrl },
       {
         onSuccess: () => toaster(t('common:success.upload_cover'), 'success'),
         onError: () => toaster(t('error:image_upload_failed'), 'error'),

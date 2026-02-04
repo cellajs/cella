@@ -24,9 +24,10 @@ function OrganizationPage({ organizationId }: { organizationId: string }) {
 
   const { mutate } = useOrganizationUpdateMutation();
 
+  // TODO research alternative pattern
   const coverUpdateCallback = (bannerUrl: string) => {
     mutate(
-      { idOrSlug: organization.id, body: { bannerUrl } },
+      { id: organization.id, body: { bannerUrl } },
       {
         onSuccess: () => toaster(t('common:success.upload_cover'), 'success'),
         onError: () => toaster(t('error:image_upload_failed'), 'error'),

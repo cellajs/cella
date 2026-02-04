@@ -6,7 +6,7 @@ import { useMembershipsDeleteMutation } from '~/modules/memberships/query-mutati
 import type { Member } from '~/modules/memberships/types';
 
 interface Props {
-  entityIdOrSlug: string;
+  entityId: string;
   organizationId: string;
   members: Member[];
   entityType: ContextEntityType;
@@ -14,12 +14,19 @@ interface Props {
   callback?: (args: CallbackArgs<Member[]>) => void;
 }
 
-function DeleteMemberships({ members, entityIdOrSlug, entityType, organizationId, callback, dialog: isDialog }: Props) {
+export function DeleteMemberships({
+  members,
+  entityId,
+  entityType,
+  organizationId,
+  callback,
+  dialog: isDialog,
+}: Props) {
   const removeDialog = useDialoger((state) => state.remove);
   const { mutate: deleteMemberships, isPending } = useMembershipsDeleteMutation();
 
   const onDeleteMembers = () => {
-    deleteMemberships({ orgIdOrSlug: organizationId, idOrSlug: entityIdOrSlug, entityType, members });
+    deleteMemberships({ orgId: organizationId, entityId, entityType, members });
 
     if (isDialog) removeDialog();
     callback?.({ data: members, status: 'success' });
@@ -34,5 +41,3 @@ function DeleteMemberships({ members, entityIdOrSlug, entityType, organizationId
     />
   );
 }
-
-export default DeleteMemberships;

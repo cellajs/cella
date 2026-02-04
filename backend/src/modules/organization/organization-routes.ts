@@ -9,12 +9,13 @@ import {
 } from '#/modules/organization/organization-schema';
 import {
   batchResponseSchema,
-  entityParamSchema,
+  entityIdParamSchema,
   errorResponseRefs,
   idsBodySchema,
   paginationSchema,
   successWithRejectedItemsSchema,
 } from '#/schemas';
+import { entityIdOrSlugParamSchema } from '#/schemas/common-schemas';
 import {
   mockBatchOrganizationsResponse,
   mockOrganizationResponse,
@@ -89,7 +90,7 @@ const organizationRoutes = {
     summary: 'Update organization',
     description: 'Updates an *organization*.',
     request: {
-      params: entityParamSchema,
+      params: entityIdParamSchema,
       body: {
         content: { 'application/json': { schema: organizationUpdateBodySchema } },
       },
@@ -108,12 +109,12 @@ const organizationRoutes = {
   getOrganization: createXRoute({
     operationId: 'getOrganization',
     method: 'get',
-    path: '/{id}',
+    path: '/{idOrSlug}',
     xGuard: [isAuthenticated],
     tags: ['organizations'],
     summary: 'Get organization',
-    description: 'Retrieves an *organization* by ID.',
-    request: { params: entityParamSchema },
+    description: 'Retrieves an *organization* by ID or slug.',
+    request: { params: entityIdOrSlugParamSchema },
     responses: {
       200: {
         description: 'Organization',

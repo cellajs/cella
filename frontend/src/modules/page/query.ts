@@ -86,7 +86,7 @@ type PagesListParams = Omit<NonNullable<GetPagesData['query']>, 'limit' | 'offse
 /**
  * Infinite query options to get a paginated list of pages.
  */
-export const pagesQueryOptions = (params: PagesListParams = {}) => {
+export const pagesListQueryOptions = (params: PagesListParams = {}) => {
   const { q = '', sort = 'createdAt', order = 'desc', limit: baseLimit = pagesLimit } = params;
 
   const limit = String(baseLimit);

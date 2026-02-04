@@ -1,6 +1,6 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { appConfig } from 'config';
-import { and, count, eq, ilike, inArray, ne, sql } from 'drizzle-orm';
+import { and, count, eq, ilike, inArray, ne, or, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import { db } from '#/db/db';
 import { lastSeenTable } from '#/db/schema/last-seen';
@@ -207,7 +207,6 @@ const userRouteHandlers = app
   })
   /**
    * Update a user by id or slug
-  //  * TODO we should review update being allowed via slug. leads to complictions in frontend cache
    */
   .openapi(userRoutes.updateUser, async (ctx) => {
     const { id } = ctx.req.valid('param');

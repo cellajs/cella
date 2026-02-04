@@ -42,14 +42,14 @@ export const membershipUpdateBodySchema = z.object({
 });
 
 export const memberListQuerySchema = paginationQuerySchema.extend({
-  id: idSchema,
+  entityId: idSchema,
   entityType: contextEntityTypeSchema,
   sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt']).default('createdAt').optional(),
   role: z.enum(appConfig.entityRoles).optional(),
 });
 
 export const pendingMembershipListQuerySchema = paginationQuerySchema.extend({
-  id: idSchema,
+  entityId: idSchema,
   entityType: contextEntityTypeSchema,
   sort: z.enum(['createdAt']).default('createdAt').optional(),
 });

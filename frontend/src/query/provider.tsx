@@ -6,7 +6,6 @@ import { uploadService } from '~/modules/attachment/upload-service';
 import type { UserMenuItem } from '~/modules/me/types';
 import { getMenuData } from '~/modules/navigation/menu-sheet/helpers/get-menu-data';
 import { entityToPrefetchQueries } from '~/offline-config';
-import { prefetchQuery } from '~/query/basic';
 import { initMutationDefaults } from '~/query/mutation-registry';
 // Import query modules AFTER mutation-registry to ensure registrars is initialized.
 // These modules call addMutationRegistrar() at module load time.
@@ -120,11 +119,12 @@ export function QueryClientProvider({ children }: { children: React.ReactNode })
 
           // Prefetch data (e.g., members as a react query, attachments as a collection, etc.)
           const prefetchPromises = entityToPrefetchQueries(item.id, item.entityType, item.organizationId).map(
-            (source) =>
-              prefetchQuery({
-                ...source,
-                ...offlineQueryConfig,
-              }),
+            (source) => {
+              const options = { ...source, ...offlineQueryConfig };
+              // Use ensureInfiniteQueryData for infinite queries (have getNextPageParam)
+              if ('getNextPageParam' in options) return queryClient.ensureInfiniteQueryData(options);
+              return queryClient.ensureQueryData(options);
+            },
           );
           await Promise.allSettled(prefetchPromises);
 

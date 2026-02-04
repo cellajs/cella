@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Attachment } from '~/api.gen';
 import useSearchParams from '~/hooks/use-search-params';
-import { attachmentsQueryOptions, useAttachmentUpdateMutation } from '~/modules/attachment/query';
+import { attachmentsListQueryOptions, useAttachmentUpdateMutation } from '~/modules/attachment/query';
 import { AttachmentsTableBar } from '~/modules/attachment/table/attachments-bar';
 import { useColumns } from '~/modules/attachment/table/attachments-columns';
 import type { AttachmentsRouteSearchParams } from '~/modules/attachment/types';
@@ -56,7 +56,7 @@ function AttachmentsTable({ entity, canUpload = true, isSheet = false }: Attachm
     );
   }, [isCompact]);
 
-  const queryOptions = attachmentsQueryOptions({ orgIdOrSlug: entity.slug, q, sort, order, limit });
+  const queryOptions = attachmentsListQueryOptions({ orgId: entity.id, q, sort, order, limit });
 
   const {
     data: rows,

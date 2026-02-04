@@ -1130,7 +1130,7 @@ export const deleteMySessions = <ThrowOnError extends boolean = true>(
  * **DELETE /me/leave** ·· [deleteMyMembership](https://api.cellajs.com/docs#tag/me/delete/me/leave) ·· _me_
  *
  * @param {deleteMyMembershipData} options
- * @param {string} options.query.id - `string`
+ * @param {string} options.query.entityid - `string`
  * @param {enum} options.query.entitytype - `enum`
  * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
@@ -1418,12 +1418,12 @@ export const createOrganizations = <ThrowOnError extends boolean = true>(
 /**
  * Get organization
  *
- * Retrieves an *organization* by ID.
+ * Retrieves an *organization* by ID or slug.
  *
- * **GET /organizations/{id}** ·· [getOrganization](https://api.cellajs.com/docs#tag/organizations/get/organizations/{id}) ·· _organizations_
+ * **GET /organizations/{idOrSlug}** ·· [getOrganization](https://api.cellajs.com/docs#tag/organizations/get/organizations/{idOrSlug}) ·· _organizations_
  *
  * @param {getOrganizationData} options
- * @param {string} options.path.id - `string`
+ * @param {string} options.path.idorslug - `string`
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getOrganization = <ThrowOnError extends boolean = true>(
@@ -1438,7 +1438,7 @@ export const getOrganization = <ThrowOnError extends boolean = true>(
         type: 'apiKey',
       },
     ],
-    url: '/organizations/{id}',
+    url: '/organizations/{idOrSlug}',
     ...options,
   });
 
@@ -2205,7 +2205,7 @@ export const redirectToAttachment = <ThrowOnError extends boolean = true>(
  *
  * @param {deleteMembershipsData} options
  * @param {string} options.path.orgid - `string`
- * @param {string} options.query.id - `string`
+ * @param {string} options.query.entityid - `string`
  * @param {enum} options.query.entitytype - `enum`
  * @param {any[]=} options.body.ids - `any[]` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
@@ -2239,7 +2239,7 @@ export const deleteMemberships = <ThrowOnError extends boolean = true>(
  *
  * @param {membershipInviteData} options
  * @param {string} options.path.orgid - `string`
- * @param {string} options.query.id - `string`
+ * @param {string} options.query.entityid - `string`
  * @param {enum} options.query.entitytype - `enum`
  * @param {any[]=} options.body.emails - `any[]` (optional)
  * @param {enum=} options.body.role - `enum` (optional)
@@ -2349,7 +2349,7 @@ export const handleMembershipInvitation = <ThrowOnError extends boolean = true>(
  * @param {enum=} options.query.order - `enum` (optional)
  * @param {string=} options.query.offset - `string` (optional)
  * @param {string=} options.query.limit - `string` (optional)
- * @param {string} options.query.id - `string`
+ * @param {string} options.query.entityid - `string`
  * @param {enum} options.query.entitytype - `enum`
  * @param {enum=} options.query.role - `enum` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
@@ -2382,7 +2382,7 @@ export const getMembers = <ThrowOnError extends boolean = true>(options: Options
  * @param {enum=} options.query.order - `enum` (optional)
  * @param {string=} options.query.offset - `string` (optional)
  * @param {string=} options.query.limit - `string` (optional)
- * @param {string} options.query.id - `string`
+ * @param {string} options.query.entityid - `string`
  * @param {enum} options.query.entitytype - `enum`
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */

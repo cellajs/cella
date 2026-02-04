@@ -1,5 +1,5 @@
 import type { EntityType } from 'config';
-import { eq, inArray, type TableConfig } from 'drizzle-orm';
+import { eq, inArray, or, type TableConfig } from 'drizzle-orm';
 import type { PgTableWithColumns } from 'drizzle-orm/pg-core';
 import { db } from '#/db/db';
 import { entityTables } from '#/table-config';
@@ -14,15 +14,18 @@ export type EntityModel<T extends EntityType> = (typeof entityTables)[T]['$infer
  */
 export async function resolveEntity<T extends EntityType>(
   entityType: T,
-  id: string,
+  idOrSlug: string,
 ): Promise<EntityModel<T> | undefined>;
-export async function resolveEntity<T extends EntityType>(entityType: T, id: string) {
+export async function resolveEntity<T extends EntityType>(entityType: T, idOrSlug: string) {
   const table = entityTables[entityType] as unknown as PgTableWithColumns<TableConfig>;
 
   // Return early if table is not available
   if (!table) throw new Error(`Invalid entityType: ${entityType}`);
 
-  const [entity] = await db.select().from(table).where(eq(table.id, id));
+  const [entity] = await db
+    .select()
+    .from(table)
+    .where(or(eq(table.id, idOrSlug), eq(table.slug, idOrSlug)));
 
   return entity;
 }

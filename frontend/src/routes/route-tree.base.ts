@@ -1,6 +1,5 @@
 // Base route segments - upstream owned
 // Forks should NOT modify this file. Instead, spread these in route-tree.tsx
-import { ContextEntityType } from 'config';
 import { NavItemId } from '~/modules/navigation/types';
 import {
   AuthErrorRoute,
@@ -110,8 +109,6 @@ declare module '@tanstack/react-router' {
   interface StaticDataRouteOption {
     boundary?: BoundaryType;
     isAuth: boolean;
-    // TODO not using this one?
-    entityType?: ContextEntityType;
     floatingNavButtons?: {
       right?: NavItemId;
       left?: NavItemId;

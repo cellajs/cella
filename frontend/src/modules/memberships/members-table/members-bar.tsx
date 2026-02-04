@@ -21,7 +21,7 @@ import { FocusView } from '~/modules/common/focus-view';
 import SelectRole from '~/modules/common/form-fields/select-role';
 import { toaster } from '~/modules/common/toaster/service';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
-import DeleteMembershipsForm from '~/modules/memberships/delete-memberships';
+import { DeleteMemberships } from '~/modules/memberships/delete-memberships';
 import type { MembersTableWrapperProps } from '~/modules/memberships/members-table/members-table';
 import { PendingMembershipsCount } from '~/modules/memberships/pending-memberships-count';
 import type { Member, MembersRouteSearchParams } from '~/modules/memberships/types';
@@ -76,9 +76,9 @@ export const MembersTableBar = ({
 
   const openDeleteDialog = () => {
     createDialog(
-      <DeleteMembershipsForm
+      <DeleteMemberships
         organizationId={entity.organizationId || entity.id}
-        entityIdOrSlug={entity.slug}
+        entityId={entity.id}
         entityType={entity.entityType}
         dialog
         members={selected}
@@ -127,7 +127,7 @@ export const MembersTableBar = ({
         role,
         limit: String(limit),
         offset: '0',
-        id: entity.id,
+        entityId: entity.id,
         entityType: entity.entityType,
       },
       path: { orgId: entity.organizationId || entity.id },

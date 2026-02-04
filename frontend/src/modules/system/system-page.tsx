@@ -10,11 +10,13 @@ function SystemPage() {
 
   return (
     <>
-      <SimpleHeader
-        heading={t('common:system_panel')}
-        text={t('common:system_panel.text')}
-        className="pt-4 md:pt-6 md:px-6"
-      />
+      <div className="container">
+        <SimpleHeader
+          heading={t('common:system_panel')}
+          text={t('common:system_panel.text')}
+          className="pt-4 md:pt-6"
+        />
+      </div>
 
       <PageTabNav className="mt-4" parentRouteId={SystemRoute.id} />
 

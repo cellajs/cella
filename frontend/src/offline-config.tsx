@@ -1,6 +1,6 @@
 import type { ContextEntityType, EntityType } from 'config';
-import { membersQueryOptions } from '~/modules/memberships/query';
-import { organizationsQueryOptions } from '~/modules/organization/query';
+import { membersListQueryOptions } from '~/modules/memberships/query';
+import { organizationsListQueryOptions } from '~/modules/organization/query';
 
 /**
  * Query factory type for context entity list queries.
@@ -17,7 +17,7 @@ import { organizationsQueryOptions } from '~/modules/organization/query';
  * ```typescript
  * export const getContextEntityTypeToListQueries = () =>
  *   ({
- *     organization: organizationsQueryOptions,
+ *     organization: organizationsListQueryOptions,
  *     workspace: workspacesQueryOptions,
  *   }) satisfies ContextEntityQueryRegistry;
  * ```
@@ -38,7 +38,7 @@ export type ContextEntityQueryRegistry = Partial<Record<ContextEntityType, Conte
  */
 export const getContextEntityTypeToListQueries = () =>
   ({
-    organization: organizationsQueryOptions,
+    organization: organizationsListQueryOptions,
   }) satisfies ContextEntityQueryRegistry;
 
 /**
@@ -51,9 +51,9 @@ export const entityToPrefetchQueries = (entityId: string, entityType: EntityType
   switch (entityType) {
     case 'organization':
       return [
-        membersQueryOptions({
-          idOrSlug: entityId,
-          orgIdOrSlug: entityId,
+        membersListQueryOptions({
+          entityId: entityId,
+          orgId: entityId,
           entityType: entityType,
         }),
       ];

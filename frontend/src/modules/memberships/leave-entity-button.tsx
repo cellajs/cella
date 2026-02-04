@@ -28,8 +28,8 @@ export const LeaveEntityButton = ({
 
   const { mutate: leaveEntity } = useMutation({
     mutationFn: async () => {
-      const idOrSlug = entity.id;
-      return await deleteMyMembership({ query: { idOrSlug, entityType: entity.entityType } });
+      const entityId = entity.id;
+      return await deleteMyMembership({ query: { entityId, entityType: entity.entityType } });
     },
     onSuccess: () => {
       toaster(t('common:success.you_left_entity', { entity: entity.entityType }), 'success');

@@ -1,5 +1,6 @@
 import { hierarchy, type ProductEntityType } from 'config';
 import router from '~/routes/router';
+import { baseEntityRoutes } from '~/routes-config';
 
 export type SyncPriority = 'high' | 'medium' | 'low';
 
@@ -9,30 +10,21 @@ interface SyncNotification {
   organizationId: string | null;
 }
 
-/** Extract context entity IDs from router's loaderData (already resolved by route loaders). */
-function getRouteContext(): Record<string, string> {
-  const context: Record<string, string> = {};
-
-  for (const match of router.state.matches) {
-    const entityType = (match.staticData as { entityType?: string } | undefined)?.entityType;
-    const id = (match.loaderData as { id?: string } | null)?.id;
-    if (entityType && id) context[entityType] = id;
-  }
-
-  return context;
+/** Extract org ID from current route pathname using baseEntityRoutes pattern. */
+function getRouteOrgId(): string | null {
+  const pathname = router.state.location.pathname;
+  // Convert baseEntityRoutes.organization pattern to regex: /$idOrSlug/organization → /([^/]+)/organization
+  const pattern = baseEntityRoutes.organization.replace('$idOrSlug', '([^/]+)');
+  const match = pathname.match(new RegExp(`^${pattern}`));
+  return match?.[1] ?? null;
 }
 
 /**
- * Determine sync priority based on hierarchy.getOrderedAncestors() and current route context.
- *
- * Uses the ancestor chain from hierarchy to understand entity scoping:
- * - attachment with parent 'organization' → scoped to org
- * - page with parent null → global, no org scope
+ * Determine sync priority based on current route context.
  *
  * Priority levels:
- * - high: User is viewing a context that scopes this entity
- * - medium: User is in same org but different view, or global entity
- * - low: User is elsewhere (different org, unauthenticated, etc.)
+ * - high: User is viewing the organization that scopes this entity
+ * - low: User is elsewhere (different org, not in org route, etc.)
  */
 export function getSyncPriority(notification: SyncNotification): SyncPriority {
   const { entityType, organizationId } = notification;
@@ -40,22 +32,14 @@ export function getSyncPriority(notification: SyncNotification): SyncPriority {
   // Only product entities have sync priority logic
   if (!hierarchy.isProduct(entityType)) return 'low';
 
-  const ancestors = hierarchy.getOrderedAncestors(entityType);
-  const routeContext = getRouteContext();
-
-  // Global entity (no ancestors, like 'page') → medium if user is in app
-  if (ancestors.length === 0) {
-    return Object.keys(routeContext).length > 0 ? 'medium' : 'low';
-  }
-
-  const routeOrg = routeContext.organization;
+  const routeOrgId = getRouteOrgId();
 
   // Not in an org route → low priority
-  if (!routeOrg) return 'low';
+  if (!routeOrgId) return 'low';
 
   // Different org → low priority
-  if (organizationId && routeOrg !== organizationId) return 'low';
+  if (organizationId && routeOrgId !== organizationId) return 'low';
 
-  // User is in matching org - high if viewing an ancestor context, else medium
-  return ancestors.some((a) => routeContext[a]) ? 'high' : 'medium';
+  // User is in matching org context
+  return 'high';
 }

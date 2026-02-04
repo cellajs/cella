@@ -11,7 +11,7 @@ import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { ContextEntityData } from '~/modules/entities/types';
 import { MembersTableBar } from '~/modules/memberships/members-table/members-bar';
 import { useColumns } from '~/modules/memberships/members-table/members-columns';
-import { membersQueryOptions } from '~/modules/memberships/query';
+import { membersListQueryOptions } from '~/modules/memberships/query';
 import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
 import type { Member, MembersRouteSearchParams } from '~/modules/memberships/types';
 
@@ -36,7 +36,7 @@ function MembersTable({ entity, isSheet = false, children }: MembersTableWrapper
 
   const entityType = entity.entityType;
   const organizationId = entity.organizationId || entity.id;
-  // Use can.update if available for permission-based access control
+  // TODO can should always be here? Use can.update if available for permission-based access control
   const canUpdate = entity.can?.update ?? false;
 
   // Table state
@@ -48,10 +48,10 @@ function MembersTable({ entity, isSheet = false, children }: MembersTableWrapper
   const [columns, setColumns] = useColumns(canUpdate, isSheet);
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
-  const queryOptions = membersQueryOptions({
-    idOrSlug: entity.slug,
+  const queryOptions = membersListQueryOptions({
+    entityId: entity.id,
     entityType,
-    orgIdOrSlug: organizationId,
+    orgId: organizationId,
     ...search,
     limit,
   });
@@ -65,23 +65,23 @@ function MembersTable({ entity, isSheet = false, children }: MembersTableWrapper
     hasNextPage,
   } = useInfiniteQuery({
     ...queryOptions,
-    // Deduplicate by id to prevent React key warnings during filter transitions
-    select: ({ pages }) => {
-      const allItems = pages.flatMap(({ items }) => items);
-      const seen = new Set<string>();
-      return allItems.filter((item) => {
-        if (seen.has(item.id)) return false;
-        seen.add(item.id);
-        return true;
-      });
-    },
+    select: ({ pages }) => pages.flatMap(({ items }) => items),
+    // TODO review Deduplicate by id to prevent React key warnings during filter transitions
+    // select: ({ pages }) => {
+    //   const allItems = pages.flatMap(({ items }) => items);
+    //   const seen = new Set<string>();
+    //   return allItems.filter((item) => {
+    //     if (seen.has(item.id)) return false;
+    //     seen.add(item.id);
+    //     return true;
+    //   });
+    // },
   });
 
   // Update rows
   const onRowsChange = (changedRows: Member[], { indexes, column }: RowsChangeData<Member>) => {
     if (column.key !== 'role') return;
 
-    const idOrSlug = entity.slug;
     const entityType = entity.entityType;
     const organizationId = entity.organizationId || entity.id;
 
@@ -90,9 +90,8 @@ function MembersTable({ entity, isSheet = false, children }: MembersTableWrapper
       const updatedMembership = {
         id: changedRows[index].membership.id,
         role: changedRows[index].membership.role,
-        orgIdOrSlug: organizationId,
-        // Mutation variables
-        idOrSlug,
+        orgId: organizationId,
+        entityId: entity.id,
         entityType,
       };
 

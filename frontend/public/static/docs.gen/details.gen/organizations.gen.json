@@ -1060,7 +1060,7 @@
     "request": {
       "path": {
         "properties": {
-          "id": { "type": "string", "required": true }
+          "idOrSlug": { "type": "string", "required": true }
         }
       }
     }

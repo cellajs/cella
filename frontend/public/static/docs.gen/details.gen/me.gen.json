@@ -1031,7 +1031,7 @@
     "request": {
       "query": {
         "properties": {
-          "id": { "type": "string", "required": true },
+          "entityId": { "type": "string", "required": true },
           "entityType": {
             "type": "string",
             "required": true,

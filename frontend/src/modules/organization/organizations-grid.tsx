@@ -1,9 +1,9 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import useSearchParams from '~/hooks/use-search-params';
 import { BaseEntityGrid, EntityGridBar, EntityGridTile } from '~/modules/entities/entity-grid';
-import { organizationsQueryOptions } from './query';
+import { organizationsListQueryOptions } from './query';
 
-type OrgSearch = Parameters<typeof organizationsQueryOptions>[0];
+type OrgSearch = Parameters<typeof organizationsListQueryOptions>[0];
 
 interface Props {
   fixedQuery?: Partial<OrgSearch>;
@@ -22,7 +22,7 @@ export function OrganizationsGrid({ fixedQuery, saveDataInSearch, focusView }: P
 
   const search: OrgSearch = { ...baseSearch, ...(fixedQuery ?? {}) };
 
-  const queryOptions = organizationsQueryOptions(search);
+  const queryOptions = organizationsListQueryOptions(search);
 
   const q = search.q ?? '';
   const isFiltered = !!q;

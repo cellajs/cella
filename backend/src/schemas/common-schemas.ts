@@ -68,15 +68,15 @@ export const languageSchema = z.enum(appConfig.languages);
  ************************************************************************************************/
 
 /** Schema for entity identifier id */
-export const entityParamSchema = z.object({ id: idSchema });
+export const entityIdParamSchema = z.object({ id: idSchema });
+
+/** Schema for entity identifier id or slug */
+export const entityIdOrSlugParamSchema = z.object({ idOrSlug: idSchema });
 
 /** Schema for an organization identifier orgId */
 export const inOrgParamSchema = z.object({ orgId: idSchema });
 
-/** Schema for an entity id within an organization orgId */
-export const entityInOrgParamSchema = z.object({ id: idSchema, orgId: idSchema });
-
-/** Schema for an entity id within an organization orgId */
+/** Schema for entity id within an organization orgId */
 export const idInOrgParamSchema = z.object({ id: idSchema, orgId: idSchema });
 
 /*************************************************************************************************
@@ -84,7 +84,7 @@ export const idInOrgParamSchema = z.object({ id: idSchema, orgId: idSchema });
  ************************************************************************************************/
 
 /** Schema for id that must be a specific entity type */
-export const entityWithTypeQuerySchema = z.object({ id: idSchema, entityType: contextEntityTypeSchema });
+export const entityWithTypeQuerySchema = z.object({ entityId: idSchema, entityType: contextEntityTypeSchema });
 
 const offsetRefine = (value: number) => value >= 0;
 const limitMax = 1000;

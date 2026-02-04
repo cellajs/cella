@@ -31,7 +31,7 @@ export interface ValidContextEntityResult<T extends ContextEntityType> {
  * @returns An object containing resolved entity, associated membership (or `null`), and can object.
  */
 export const getValidContextEntity = async <T extends ContextEntityType>(
-  id: string,
+  idOrSlug: string,
   entityType: T,
   action: Exclude<EntityActionType, 'create'>,
 ): Promise<ValidContextEntityResult<T>> => {
@@ -40,7 +40,7 @@ export const getValidContextEntity = async <T extends ContextEntityType>(
   const memberships = getContextMemberships();
 
   // Step 1: Resolve target entity by ID or slug
-  const entity = await resolveEntity(entityType, id);
+  const entity = await resolveEntity(entityType, idOrSlug);
   if (!entity) throw new AppError(404, 'not_found', 'warn', { entityType });
 
   // Step 2: Check permission for the requested action (system admin bypass is handled inside)

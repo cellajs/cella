@@ -46,11 +46,11 @@ export const useInviteMemberMutation = () =>
     mutationFn: ({ entity, ...body }) =>
       membershipInvite({
         body,
-        query: { id: entity.id, entityType: entity.entityType },
+        query: { entityId: entity.id, entityType: entity.entityType },
         path: { orgId: entity.organizationId || entity.id },
       }),
     onSuccess: ({ invitesSentCount }, { entity }) => {
-      const { id, slug, entityType, organizationId } = entity;
+      const { id: entityId, entityType, organizationId } = entity;
 
       if (invitesSentCount) {
         // If the entity is not an organization but belongs to one, update its cache too
@@ -66,7 +66,7 @@ export const useInviteMemberMutation = () =>
         }
 
         const entityPendingTableQueries = getSimilarQueries(
-          memberQueryKeys.list.similarPending({ id: slug, entityType }),
+          memberQueryKeys.list.similarPending({ entityId, entityType }),
         );
         for (const [queryKey] of entityPendingTableQueries)
           queryClient.invalidateQueries({ queryKey, refetchType: 'all' });
@@ -74,31 +74,15 @@ export const useInviteMemberMutation = () =>
         // Update entity detail cache using the proper query key
         const entityKeys = getEntityQueryKeys(entityType);
         if (entityKeys) {
-          const detailQueryKey = entityKeys.detail.byId(id);
+          const detailQueryKey = entityKeys.detail.byId(entityId);
           queryClient.setQueryData<ContextEntityData>(detailQueryKey, (oldEntity) => {
             if (!oldEntity || !oldEntity.counts) return oldEntity;
             return updateMembershipCounts(oldEntity, invitesSentCount);
           });
         }
 
-        // TODO remove it after use everything by id
-        // Also update any other entity queries that match this entity
-        const queries = queryClient.getQueriesData<ContextEntityData>({
-          queryKey: [entityType],
-          predicate: (query) => {
-            const oldEntity = query.state.data as ContextEntityData | undefined;
-            return !!oldEntity && oldEntity.id === id;
-          },
-        });
-
-        for (const [key] of queries) {
-          queryClient.setQueryData<ContextEntityData>(key, (entity) =>
-            entity ? updateMembershipCounts(entity, invitesSentCount) : entity,
-          );
-        }
-
         // Invalidate entity detail/list queries to ensure fresh data
-        invalidateOnMembershipChange(queryClient, entityType, id, organizationId);
+        invalidateOnMembershipChange(queryClient, entityType, entityId, organizationId);
       }
     },
     onError,
@@ -144,7 +128,7 @@ export const useMemberUpdateMutation = () =>
       updateEntityMembership([membershipInfo], entityType);
 
       // Get affected queries
-      const similarKey = memberQueryKeys.list.similarMembers({ id: entityId, entityType, orgId });
+      const similarKey = memberQueryKeys.list.similarMembers({ entityId, entityType, orgId });
       // Cancel all affected queries
       await queryClient.cancelQueries({ queryKey: similarKey });
       const queries = getSimilarQueries<Member>(similarKey);
@@ -178,7 +162,7 @@ export const useMemberUpdateMutation = () =>
       updateEntityMembership([updatedMembership], entityType);
 
       // Get affected queries
-      const similarKey = memberQueryKeys.list.similarMembers({ id: entityId, entityType, orgId });
+      const similarKey = memberQueryKeys.list.similarMembers({ entityId, entityType, orgId });
       //Cancel all affected queries
       const queries = getSimilarQueries<Member>(similarKey);
 
@@ -217,7 +201,7 @@ export const useMembershipsDeleteMutation = () =>
     mutationKey: memberQueryKeys.delete(),
     mutationFn: async ({ entityId, entityType, orgId, members }) => {
       const ids = members.map(({ id }) => id);
-      await deleteMemberships({ query: { id: entityId, entityType }, body: { ids }, path: { orgId } });
+      await deleteMemberships({ query: { entityId, entityType }, body: { ids }, path: { orgId } });
     },
     onMutate: async (variables) => {
       const { members, entityId, entityType, orgId } = variables;
@@ -226,7 +210,7 @@ export const useMembershipsDeleteMutation = () =>
       const context: MemberContextProp[] = []; // previous query data for rollback if an Apierror occurs
 
       // Get affected queries
-      const similarKey = memberQueryKeys.list.similarMembers({ id: entityId, entityType, orgId });
+      const similarKey = memberQueryKeys.list.similarMembers({ entityId, entityType, orgId });
       //Cancel all affected queries
       await queryClient.cancelQueries({ queryKey: similarKey });
       const queries = getSimilarQueries<Member>(similarKey);

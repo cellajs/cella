@@ -65,7 +65,7 @@ type AttachmentsListParams = Omit<NonNullable<GetAttachmentsData['query']>, 'lim
 /**
  * Infinite query options to get a paginated list of attachments for an organization.
  */
-export const attachmentsQueryOptions = (params: AttachmentsListParams) => {
+export const attachmentsListQueryOptions = (params: AttachmentsListParams) => {
   const { orgId, q = '', sort = 'createdAt', order = 'desc', limit: baseLimit = attachmentsLimit } = params;
 
   const limit = String(baseLimit);
@@ -94,17 +94,17 @@ export const attachmentsQueryOptions = (params: AttachmentsListParams) => {
  * Query options to get a single attachment by ID.
  * Uses cache token from SSE notification for efficient server-side cache hit.
  *
- * @param orgIdOrSlug - Organization ID or slug
+ * @param orgId - Organization ID
  * @param id - Attachment ID
  */
-export const attachmentQueryOptions = (orgIdOrSlug: string, id: string) => ({
+export const attachmentQueryOptions = (orgId: string, id: string) => ({
   queryKey: keys.detail.byId(id),
   queryFn: async () => {
     // Check for cache token from SSE notification
     const cacheToken = getCacheToken('attachment', id);
 
     const result = await getAttachment({
-      path: { orgIdOrSlug, id },
+      path: { orgId, id },
       // Pass cache token header for server-side cache hit
       headers: cacheToken ? { 'X-Cache-Token': cacheToken } : undefined,
     });
@@ -124,7 +124,7 @@ export const findAttachmentInListCache = (id: string) => findInListCache<Attachm
  * Returns null if no groupId provided or no matches found.
  */
 export function useGroupAttachments(orgId: string | undefined, groupId: string | undefined) {
-  const queryOptions = orgId ? attachmentsQueryOptions({ orgId, sort: 'createdAt', order: 'desc' }) : null;
+  const queryOptions = orgId ? attachmentsListQueryOptions({ orgId, sort: 'createdAt', order: 'desc' }) : null;
 
   const { data } = useInfiniteQuery({
     ...queryOptions!,

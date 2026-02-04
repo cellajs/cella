@@ -5114,7 +5114,7 @@
               "type": "string"
             },
             "required": true,
-            "name": "id",
+            "name": "entityId",
             "in": "query"
           },
           {
@@ -6489,7 +6489,7 @@
         }
       }
     },
-    "/organizations/{id}": {
+    "/organizations/{idOrSlug}": {
       "get": {
         "security": [
           {
@@ -6501,7 +6501,7 @@
           "organizations"
         ],
         "summary": "Get organization",
-        "description": "Retrieves an *organization* by ID.",
+        "description": "Retrieves an *organization* by ID or slug.",
         "x-guard": [
           "isAuthenticated"
         ],
@@ -6513,7 +6513,7 @@
               "type": "string"
             },
             "required": true,
-            "name": "id",
+            "name": "idOrSlug",
             "in": "path"
           }
         ],
@@ -6601,7 +6601,9 @@
             "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
-      },
+      }
+    },
+    "/organizations/{id}": {
       "put": {
         "security": [
           {
@@ -9794,7 +9796,7 @@
               "type": "string"
             },
             "required": true,
-            "name": "id",
+            "name": "entityId",
             "in": "query"
           },
           {
@@ -9927,7 +9929,7 @@
               "type": "string"
             },
             "required": true,
-            "name": "id",
+            "name": "entityId",
             "in": "query"
           },
           {
@@ -10277,7 +10279,7 @@
               "type": "string"
             },
             "required": true,
-            "name": "id",
+            "name": "entityId",
             "in": "query"
           },
           {
@@ -10617,7 +10619,7 @@
               "type": "string"
             },
             "required": true,
-            "name": "id",
+            "name": "entityId",
             "in": "query"
           },
           {
