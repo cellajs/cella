@@ -69,25 +69,20 @@ for (const eventType of membershipEvents) {
   });
 }
 
-// Product entity events - routed via org channel to App stream subscribers
-// TODO not entityConfig agnostic yet
-const productEntityEvents = [
-  'page.created',
-  'page.updated',
-  'page.deleted',
-  'attachment.created',
-  'attachment.updated',
-  'attachment.deleted',
-] as const;
+// Product entity events - dynamically registered from config
+const productEntityActions = ['created', 'updated', 'deleted'] as const;
 
-for (const eventType of productEntityEvents) {
-  activityBus.on(eventType, async (event: ActivityEventWithEntity) => {
-    try {
-      await dispatchToUserSubscribers(event);
-    } catch (error) {
-      logEvent('error', 'Failed to dispatch product entity event', { error, activityId: event.id });
-    }
-  });
+for (const entityType of appConfig.productEntityTypes) {
+  for (const action of productEntityActions) {
+    const eventType = `${entityType}.${action}` as const;
+    activityBus.on(eventType, async (event: ActivityEventWithEntity) => {
+      try {
+        await dispatchToUserSubscribers(event);
+      } catch (error) {
+        logEvent('error', 'Failed to dispatch product entity event', { error, activityId: event.id });
+      }
+    });
+  }
 }
 
 // Organization events - routed via org channel

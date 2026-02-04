@@ -2028,6 +2028,7 @@ export const getSyncMetrics = <ThrowOnError extends boolean = true>(
  * @param {deleteAttachmentsData} options
  * @param {string} options.path.orgidorslug - `string`
  * @param {any[]=} options.body.ids - `any[]` (optional)
+ * @param {object} options.body.tx - `object`
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const deleteAttachments = <ThrowOnError extends boolean = true>(

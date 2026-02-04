@@ -11,6 +11,7 @@
  */
 
 import { getEntityQueryKeys } from '~/query/basic';
+import { sourceId } from '~/query/offline';
 import * as cacheOps from './cache-ops';
 import * as membershipOps from './membership-ops';
 import type { AppStreamNotification } from './types';
@@ -30,10 +31,21 @@ export interface CatchupOptions {
 export function processCatchupBatch(activities: AppStreamNotification[], options: CatchupOptions): void {
   if (activities.length === 0) return;
 
-  console.debug(`[CatchupProcessor] Processing ${activities.length} activities, lastSyncAt=${options.lastSyncAt}`);
+  // Echo prevention: filter out own mutations from catchup
+  const filteredActivities = activities.filter((a) => a.tx?.sourceId !== sourceId);
+  const skippedCount = activities.length - filteredActivities.length;
+  if (skippedCount > 0) {
+    console.debug(`[CatchupProcessor] Echo prevention: skipped ${skippedCount} own mutations`);
+  }
+
+  if (filteredActivities.length === 0) return;
+
+  console.debug(
+    `[CatchupProcessor] Processing ${filteredActivities.length} activities, lastSyncAt=${options.lastSyncAt}`,
+  );
 
   // Phase 1: Immediate deletes (remove from cache)
-  const deletes = activities.filter((a) => a.action === 'delete');
+  const deletes = filteredActivities.filter((a) => a.action === 'delete');
   for (const activity of deletes) {
     if (activity.entityType) {
       cacheOps.removeEntityFromCache(activity.entityType, activity.entityId);
@@ -42,7 +54,7 @@ export function processCatchupBatch(activities: AppStreamNotification[], options
   }
 
   // Phase 2: Collect entity types that need list refetch
-  const createUpdates = activities.filter((a) => a.action !== 'delete');
+  const createUpdates = filteredActivities.filter((a) => a.action !== 'delete');
   const entityTypesToRefetch = new Set<string>();
 
   for (const activity of createUpdates) {
@@ -62,7 +74,7 @@ export function processCatchupBatch(activities: AppStreamNotification[], options
   }
 
   // Phase 4: Handle membership changes (once per batch)
-  const membershipActivities = activities.filter((a) => a.resourceType === 'membership');
+  const membershipActivities = filteredActivities.filter((a) => a.resourceType === 'membership');
   if (membershipActivities.length > 0) {
     const hasCreateOrDelete = membershipActivities.some((a) => a.action === 'create' || a.action === 'delete');
     const hasUpdate = membershipActivities.some((a) => a.action === 'update');

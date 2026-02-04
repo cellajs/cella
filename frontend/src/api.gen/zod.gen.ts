@@ -1506,6 +1506,12 @@ export const zGetSyncMetricsResponse = z.object({
 export const zDeleteAttachmentsData = z.object({
   body: z.object({
     ids: z.array(z.string()).min(1).max(50),
+    tx: z.optional(
+      z.object({
+        id: z.string(),
+        sourceId: z.string(),
+      }),
+    ),
   }),
   path: z.object({
     orgIdOrSlug: z.string(),

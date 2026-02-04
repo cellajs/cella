@@ -3587,6 +3587,10 @@ export type GetSyncMetricsResponse = GetSyncMetricsResponses[keyof GetSyncMetric
 export type DeleteAttachmentsData = {
   body: {
     ids: Array<string>;
+    tx?: {
+      id: string;
+      sourceId: string;
+    };
   };
   path: {
     /**

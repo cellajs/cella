@@ -145,6 +145,21 @@ export const idsBodySchema = (maxItems = 50) =>
       .max(maxItems, t('error:invalid_max_items', { max: maxItems, name: 'ID' })),
   });
 
+/** Schema for a request body containing IDs with optional tx for echo prevention */
+export const idsWithTxBodySchema = (maxItems = 50) =>
+  z.object({
+    ids: z
+      .array(z.string())
+      .min(1, t('error:invalid_min_items', { min: 'one', name: 'ID' }))
+      .max(maxItems, t('error:invalid_max_items', { max: maxItems, name: 'ID' })),
+    tx: z
+      .object({
+        id: z.string(),
+        sourceId: z.string(),
+      })
+      .optional(),
+  });
+
 /*************************************************************************************************
  * Common headers schemas
  ************************************************************************************************/

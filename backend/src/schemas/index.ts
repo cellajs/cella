@@ -17,6 +17,7 @@ export {
   idOrSlugSchema,
   idSchema,
   idsBodySchema,
+  idsWithTxBodySchema,
   imageUrlSchema,
   includeOptions,
   includeQuerySchema,

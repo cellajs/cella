@@ -14,7 +14,7 @@ import {
   errorResponseRefs,
   idInOrgParamSchema,
   idSchema,
-  idsBodySchema,
+  idsWithTxBodySchema,
   inOrgParamSchema,
   paginationSchema,
   successWithRejectedItemsSchema,
@@ -153,7 +153,7 @@ const attachmentRoutes = {
       params: inOrgParamSchema,
       body: {
         required: true,
-        content: { 'application/json': { schema: idsBodySchema() } },
+        content: { 'application/json': { schema: idsWithTxBodySchema() } },
       },
     },
     responses: {

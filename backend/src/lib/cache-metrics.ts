@@ -94,14 +94,17 @@ class CacheMetrics {
 }
 
 /** Singleton metrics instance for entity cache */
-export const publicCacheMetrics = new CacheMetrics();
+export const entityCacheMetrics = new CacheMetrics();
+
+/** @deprecated Use entityCacheMetrics instead */
+export const publicCacheMetrics = entityCacheMetrics;
 
 /** Get cache metrics */
 export function getCacheMetrics(): ReturnType<CacheMetrics['getStats']> {
-  return publicCacheMetrics.getStats();
+  return entityCacheMetrics.getStats();
 }
 
 /** Reset cache metrics */
 export function resetCacheMetrics(): void {
-  publicCacheMetrics.reset();
+  entityCacheMetrics.reset();
 }

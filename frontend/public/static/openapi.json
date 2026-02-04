@@ -9414,6 +9414,21 @@
                     },
                     "minItems": 1,
                     "maxItems": 50
+                  },
+                  "tx": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "sourceId": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "sourceId"
+                    ]
                   }
                 },
                 "required": [

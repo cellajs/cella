@@ -758,6 +758,14 @@
             "minItems": 1,
             "maxItems": 50,
             "itemType": "string"
+          },
+          "tx": {
+            "type": "object",
+            "required": false,
+            "properties": {
+              "id": { "type": "string", "required": true },
+              "sourceId": { "type": "string", "required": true }
+            }
           }
         },
         "required": true,

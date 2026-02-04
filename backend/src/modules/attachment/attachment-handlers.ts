@@ -1,6 +1,6 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { appConfig } from 'config';
-import { and, count, eq, getTableColumns, gte, ilike, inArray, or, type SQL } from 'drizzle-orm';
+import { and, count, eq, getTableColumns, gte, ilike, inArray, or, type SQL, sql } from 'drizzle-orm';
 import { html, raw } from 'hono/html';
 import { db } from '#/db/db';
 import { attachmentsTable } from '#/db/schema/attachments';
@@ -10,7 +10,7 @@ import { AppError } from '#/lib/error';
 import attachmentRoutes from '#/modules/attachment/attachment-routes';
 import { getValidProductEntity } from '#/permissions/get-product-entity';
 import { splitByPermission } from '#/permissions/split-by-permission';
-import { getEntityByTransaction, isTransactionProcessed } from '#/sync';
+import { isTransactionProcessed } from '#/sync';
 import {
   buildFieldVersions,
   checkFieldConflicts,
@@ -96,16 +96,16 @@ const attachmentRouteHandlers = app
   .openapi(attachmentRoutes.createAttachments, async (ctx) => {
     const newAttachments = ctx.req.valid('json');
 
-    // Idempotency check - use first item's tx.id
-    const firstTx = newAttachments[0].tx;
-    if (await isTransactionProcessed(firstTx.id)) {
-      const ref = await getEntityByTransaction(firstTx.id);
-      if (ref) {
-        // For batch create, the first attachment ID is stored - fetch all from that batch
-        const existing = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, ref.entityId));
-        if (existing.length > 0) {
-          return ctx.json({ data: existing, rejectedItemIds: [] }, 200);
-        }
+    // Idempotency check - use first item's tx.id to check entire batch
+    const batchTxId = newAttachments[0].tx.id;
+    if (await isTransactionProcessed(batchTxId)) {
+      // Fetch all items from same batch by querying tx.id in JSONB column
+      const existingBatch = await db
+        .select()
+        .from(attachmentsTable)
+        .where(sql`${attachmentsTable.tx}->>'id' = ${batchTxId}`);
+      if (existingBatch.length > 0) {
+        return ctx.json({ data: existingBatch, rejectedItemIds: [] }, 200);
       }
     }
 
@@ -200,9 +200,15 @@ const attachmentRouteHandlers = app
    * Delete attachments by ids
    */
   .openapi(attachmentRoutes.deleteAttachments, async (ctx) => {
-    const { ids } = ctx.req.valid('json');
+    const { ids, tx } = ctx.req.valid('json');
 
     const memberships = getContextMemberships();
+
+    // tx is available for CDC echo prevention (sourceId tracking)
+    // CDC will read tx from the deleted row's old data
+    if (tx) {
+      logEvent('debug', 'Delete with tx metadata', { txId: tx.id, sourceId: tx.sourceId });
+    }
 
     // Convert the ids to an array
     const toDeleteIds = Array.isArray(ids) ? ids : [ids];
