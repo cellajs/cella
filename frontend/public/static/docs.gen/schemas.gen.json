@@ -632,6 +632,29 @@
           "required": true,
           "minimum": -2147483648,
           "maximum": 2147483647
+        },
+        "error": {
+          "required": true,
+          "anyOf": [
+            {
+              "type": "object",
+              "required": false,
+              "description": "Error info for failed CDC activities (dead letters)",
+              "properties": {
+                "lsn": { "type": "string", "required": true },
+                "message": { "type": "string", "required": true },
+                "code": {
+                  "type": ["string", "null"],
+                  "required": false
+                },
+                "retryCount": { "type": "number", "required": true },
+                "resolved": { "type": "boolean", "required": false }
+              },
+              "ref": "#/components/schemas/ActivityError",
+              "refDescription": "Error info for failed CDC activities (dead letters)"
+            },
+            { "type": "null", "required": false }
+          ]
         }
       }
     },
@@ -649,7 +672,35 @@
       "changedKeys": ["slug", "description", "email", "name"],
       "tx": null,
       "seq": 668,
+      "error": null,
       "organizationId": "mleaz2pg8iwtnhw3666j3aif"
+    }
+  },
+  {
+    "name": "ActivityError",
+    "ref": "#/components/schemas/ActivityError",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "lsn": { "type": "string", "required": true },
+        "message": { "type": "string", "required": true },
+        "code": {
+          "type": ["string", "null"],
+          "required": false
+        },
+        "retryCount": { "type": "number", "required": true },
+        "resolved": { "type": "boolean", "required": false }
+      }
+    },
+    "schemaTag": "errors",
+    "description": "Error info for failed CDC activities (dead letters)",
+    "example": {
+      "lsn": "0/16B3A40",
+      "message": "Connection timeout during processing",
+      "code": null,
+      "retryCount": 3,
+      "resolved": false
     }
   },
   {

@@ -915,6 +915,16 @@
             ],
             "minimum": -2147483648,
             "maximum": 2147483647
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ActivityError"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -930,7 +940,8 @@
           "createdAt",
           "changedKeys",
           "tx",
-          "seq"
+          "seq",
+          "error"
         ],
         "example": {
           "id": "s933zhzgm8axl572xlcja86p",
@@ -950,7 +961,44 @@
           ],
           "tx": null,
           "seq": 668,
+          "error": null,
           "organizationId": "mleaz2pg8iwtnhw3666j3aif"
+        }
+      },
+      "ActivityError": {
+        "type": "object",
+        "properties": {
+          "lsn": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "code": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "retryCount": {
+            "type": "number"
+          },
+          "resolved": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "lsn",
+          "message",
+          "retryCount"
+        ],
+        "description": "Error info for failed CDC activities (dead letters)",
+        "example": {
+          "lsn": "0/16B3A40",
+          "message": "Connection timeout during processing",
+          "code": null,
+          "retryCount": 3,
+          "resolved": false
         }
       },
       "Me": {
@@ -2463,6 +2511,7 @@
                       "changedKeys": null,
                       "tx": null,
                       "seq": 547,
+                      "error": null,
                       "organizationId": "bbm5piweg2q4gqa3vx9cfyey"
                     },
                     {
@@ -2481,6 +2530,7 @@
                       ],
                       "tx": null,
                       "seq": 521,
+                      "error": null,
                       "organizationId": "avgc67t5nr6k4huj5qv4k6bw"
                     }
                   ],

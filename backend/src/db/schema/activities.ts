@@ -1,6 +1,7 @@
 import { appConfig } from 'config';
 import { sql } from 'drizzle-orm';
 import { foreignKey, index, integer, jsonb, pgTable, primaryKey, varchar } from 'drizzle-orm/pg-core';
+import type { ActivityError } from '#/db/utils/activity-error-schema';
 import {
   generateActivityContextColumns,
   generateActivityContextForeignKeys,
@@ -11,17 +12,6 @@ import type { TxBase } from '#/db/utils/tx-columns';
 import { activityActions } from '#/sync/activity-bus';
 import { nanoid } from '#/utils/nanoid';
 import { usersTable } from './users';
-
-export interface ActivityError {
-  /** PostgreSQL LSN for idempotency on replay */
-  lsn: string;
-  message: string;
-  /** PostgreSQL error code if available */
-  code?: string | null;
-  retryCount: number;
-  /** Whether this dead letter has been resolved/replayed */
-  resolved?: boolean;
-}
 
 /**
  * Activities table for Change Data Capture (CDC).

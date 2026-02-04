@@ -84,6 +84,7 @@ export {
 } from './sdk.gen';
 export type {
   Activity,
+  ActivityError,
   ApiError,
   Attachment,
   BadRequestError,

@@ -48,6 +48,7 @@ describe('EventBus Integration', () => {
         createdAt: new Date().toISOString(),
         tx: null,
         seq: null,
+        error: null,
       };
 
       activityBus.emit(mockEvent);
@@ -75,6 +76,7 @@ describe('EventBus Integration', () => {
         createdAt: new Date().toISOString(),
         tx: null,
         seq: null,
+        error: null,
       };
 
       activityBus.emit(mockEvent);
