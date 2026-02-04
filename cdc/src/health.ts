@@ -5,49 +5,42 @@ import { env } from './env';
 import { cdcErrorHandler } from './lib/error';
 import { logEvent } from './pino';
 import { getCdcMetrics } from './tracing';
-import { getCdcHealthState, type CdcHealthState } from './worker';
+import { RESOURCE_LIMITS } from './constants';
+import { getCdcHealthState, getReplicationPausedAt, getWalBytes, getFreeDiskSpace, type CdcHealthState } from './worker';
 
-/**
- * Health status derived from CDC state.
- */
 export type HealthStatus = 'healthy' | 'degraded' | 'unhealthy';
 
-/**
- * Health response payload.
- */
 interface HealthResponse {
   status: HealthStatus;
   wsState: string;
   replicationState: string;
   lastLsn: string | null;
   lastMessageAt: string | null;
+  pausedDurationMs: number | null;
+  walBytes: number | null;
+  freeDiskBytes: number | null;
 }
 
-/**
- * Determine health status from CDC state.
- */
-function getHealthStatus(state: CdcHealthState): HealthStatus {
-  // Healthy: WebSocket OPEN and replication active
-  if (state.wsState === 'open' && state.replicationState === 'active') {
-    return 'healthy';
+const { runtime } = RESOURCE_LIMITS;
+
+async function getHealthStatus(state: CdcHealthState): Promise<HealthStatus> {
+  if (state.wsState === 'open' && state.replicationState === 'active') return 'healthy';
+
+  const walBytes = await getWalBytes();
+  if (walBytes !== null) {
+    if (walBytes > runtime.walShutdownBytes) return 'unhealthy';
+    if (walBytes > runtime.walWarningBytes) return 'degraded';
   }
 
-  // Degraded: WebSocket reconnecting and replication paused
-  if (state.wsState === 'reconnecting' && state.replicationState === 'paused') {
-    return 'degraded';
-  }
+  const freeDisk = getFreeDiskSpace();
+  if (freeDisk !== null && freeDisk < runtime.diskUnhealthyBytes) return 'unhealthy';
 
-  // Unhealthy: WebSocket closed for > 30 seconds
-  if (state.wsState === 'closed' || state.wsState === 'reconnecting') {
-    // We don't have disconnectedAt exposed, but we can check lastMessageAt
-    // If no messages and not connected, consider unhealthy after threshold
-    // For now, treat closed as unhealthy, reconnecting as degraded
-    if (state.wsState === 'closed') {
-      return 'unhealthy';
-    }
-  }
+  const pausedAt = getReplicationPausedAt();
+  if (pausedAt && Date.now() - pausedAt.getTime() > runtime.pauseUnhealthyMs) return 'unhealthy';
 
-  // Default to degraded for other states
+  if (state.wsState === 'reconnecting' && state.replicationState === 'paused') return 'degraded';
+  if (state.wsState === 'closed') return 'unhealthy';
+
   return 'degraded';
 }
 
@@ -58,10 +51,18 @@ const app = new Hono();
 app.use('*', secureHeaders());
 
 // Health check endpoint
-app.get('/health', (c) => {
+app.get('/health', async (c) => {
   const cdcState = getCdcHealthState();
-  const status = getHealthStatus(cdcState);
+  const status = await getHealthStatus(cdcState);
   const metrics = getCdcMetrics();
+
+  // Calculate paused duration if replication is paused
+  const pausedAt = getReplicationPausedAt();
+  const pausedDurationMs = pausedAt ? Date.now() - pausedAt.getTime() : null;
+  
+  // Get WAL and disk space metrics
+  const walBytes = await getWalBytes();
+  const freeDiskBytes = getFreeDiskSpace();
 
   const response: HealthResponse & { metrics: typeof metrics } = {
     status,
@@ -69,6 +70,9 @@ app.get('/health', (c) => {
     replicationState: cdcState.replicationState,
     lastLsn: cdcState.lastLsn,
     lastMessageAt: cdcState.lastMessageAt?.toISOString() ?? null,
+    pausedDurationMs,
+    walBytes,
+    freeDiskBytes,
     metrics,
   };
 
