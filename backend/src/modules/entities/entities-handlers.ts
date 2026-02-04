@@ -2,7 +2,14 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { appConfig } from 'config';
 import { streamSSE } from 'hono/streaming';
 import { nanoid } from 'nanoid';
-import { type Env, getContextMemberships, getContextUser, getContextUserSystemRole } from '#/lib/context';
+import { signCacheToken } from '#/lib/cache-token-signer';
+import {
+  type Env,
+  getContextMemberships,
+  getContextSessionToken,
+  getContextUser,
+  getContextUserSystemRole,
+} from '#/lib/context';
 import { publicEntityCache } from '#/middlewares/entity-cache';
 import {
   type AppStreamSubscriber,
@@ -150,7 +157,7 @@ const entitiesRouteHandlers = app
       });
     }
 
-    // SSE streaming mode - live only, no catch-up (client polls first)
+    // SSE streaming mode - live only, no catch-up (client catches up first)
     return streamSSE(ctx, async (stream) => {
       ctx.header('Content-Encoding', '');
 
@@ -188,6 +195,7 @@ const entitiesRouteHandlers = app
     const user = getContextUser();
     const memberships = getContextMemberships();
     const userSystemRole = getContextUserSystemRole();
+    const sessionToken = getContextSessionToken();
     const orgIds = new Set(memberships.map((m) => m.organizationId));
 
     // Resolve cursor from offset parameter
@@ -203,8 +211,14 @@ const entitiesRouteHandlers = app
       const catchUpActivities = await fetchUserCatchUpActivities(user.id, orgIds, cursor);
       const lastActivity = catchUpActivities.at(-1);
 
+      // Sign cache tokens for this user's session
+      const signedActivities = catchUpActivities.map((a) => ({
+        ...a.notification,
+        cacheToken: a.notification.cacheToken ? signCacheToken(a.notification.cacheToken, sessionToken) : null,
+      }));
+
       return ctx.json({
-        activities: catchUpActivities.map((a) => a.notification),
+        activities: signedActivities,
         cursor: lastActivity?.activityId ?? cursor,
       });
     }
@@ -213,10 +227,13 @@ const entitiesRouteHandlers = app
     return streamSSE(ctx, async (stream) => {
       ctx.header('Content-Encoding', '');
 
-      // Send catch-up activities
+      // Send catch-up activities with signed tokens
       const catchUpActivities = await fetchUserCatchUpActivities(user.id, orgIds, cursor);
       for (const { activityId, notification } of catchUpActivities) {
-        await writeChange(stream, activityId, notification);
+        const signedNotification = notification.cacheToken
+          ? { ...notification, cacheToken: signCacheToken(notification.cacheToken, sessionToken) }
+          : notification;
+        await writeChange(stream, activityId, signedNotification);
         cursor = activityId;
       }
 
@@ -231,6 +248,7 @@ const entitiesRouteHandlers = app
         channel: orgChannels[0] ?? '',
         stream,
         userId: user.id,
+        sessionToken,
         orgIds,
         userSystemRole,
         memberships,

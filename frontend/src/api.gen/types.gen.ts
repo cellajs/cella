@@ -2865,9 +2865,9 @@ export type GetAppStreamData = {
      */
     offset?: string;
     /**
-     * Connection mode: 'sse' for streaming, 'poll' for one-time fetch
+     * Connection mode: 'sse' for streaming, 'catchup' for one-time fetch
      */
-    live?: 'sse' | 'poll';
+    live?: 'sse' | 'catchup';
   };
   url: '/entities/app/stream';
 };

@@ -1,46 +1,34 @@
 /**
- * Multi-tab coordination for sync engine.
- * Uses Web Locks API for leader election and BroadcastChannel for cross-tab messaging.
- *
- * The leader tab:
- * - Maintains SSE connections (prevents redundant server connections)
- * - Broadcasts SSE notifications to follower tabs
- * - Is the only tab that persists mutations to storage (prevents cross-tab conflicts)
- *
- * Follower tabs:
- * - Receive SSE updates via BroadcastChannel
- * - Keep mutations in-memory only (not persisted)
+ * Multi-tab coordination using Web Locks for leader election and BroadcastChannel for messaging.
+ * Leader tab maintains SSE connections and persists mutations; followers receive updates via broadcast.
  */
 import { create } from 'zustand';
 import type { AppStreamNotification } from './types';
 
-// Tab coordination channel name
-const CHANNEL_NAME = 'cella-sync';
-
-// Web Lock name for leader election
-const LEADER_LOCK_NAME = 'cella-sync-leader';
+const channelName = 'tab-sync';
+const leaderLockName = 'tab-leader';
 
 /** Message types for BroadcastChannel communication */
 type BroadcastMessage = { type: 'stream-notification'; notification: AppStreamNotification; orgId: string };
 
 /** Tab coordinator state */
 interface TabCoordinatorState {
-  /** Whether this tab is the leader (manages SSE connections and mutation persistence) */
   isLeader: boolean;
-  /** Whether leader election has completed */
   isReady: boolean;
-  /** Set whether this tab is the leader */
+  isActive: boolean;
   setIsLeader: (isLeader: boolean) => void;
-  /** Mark coordinator as ready */
   setIsReady: (isReady: boolean) => void;
+  setIsActive: (isActive: boolean) => void;
 }
 
 /** Zustand store for tab coordination state */
 export const useTabCoordinatorStore = create<TabCoordinatorState>((set) => ({
   isLeader: false,
   isReady: false,
+  isActive: false,
   setIsLeader: (isLeader) => set({ isLeader }),
   setIsReady: (isReady) => set({ isReady }),
+  setIsActive: (isActive) => set({ isActive }),
 }));
 
 // Module-level state for channel and lock
@@ -76,9 +64,12 @@ export const initTabCoordinator = async (): Promise<void> => {
   initPromise = (async () => {
     const store = useTabCoordinatorStore.getState();
 
+    // Mark coordinator as active
+    store.setIsActive(true);
+
     // Set up BroadcastChannel if available (only once)
     if (isBroadcastChannelAvailable() && !broadcastChannel) {
-      broadcastChannel = new BroadcastChannel(CHANNEL_NAME);
+      broadcastChannel = new BroadcastChannel(channelName);
       broadcastChannel.onmessage = handleBroadcastMessage;
       console.debug('[TabCoordinator] BroadcastChannel initialized');
     }
@@ -110,8 +101,8 @@ const attemptLeaderElection = (): Promise<void> => {
     // Debug: Query existing locks first
     if (navigator.locks.query) {
       navigator.locks.query().then((state) => {
-        const heldLocks = state.held?.filter((l) => l.name === LEADER_LOCK_NAME) ?? [];
-        const pendingLocks = state.pending?.filter((l) => l.name === LEADER_LOCK_NAME) ?? [];
+        const heldLocks = state.held?.filter((l) => l.name === leaderLockName) ?? [];
+        const pendingLocks = state.pending?.filter((l) => l.name === leaderLockName) ?? [];
         console.debug('[TabCoordinator] Lock state before election:', {
           held: heldLocks.length,
           pending: pendingLocks.length,
@@ -122,7 +113,7 @@ const attemptLeaderElection = (): Promise<void> => {
 
     // Try to acquire the lock with ifAvailable: true first to quickly determine status
     navigator.locks
-      .request(LEADER_LOCK_NAME, { ifAvailable: true }, async (lock) => {
+      .request(leaderLockName, { ifAvailable: true }, async (lock) => {
         console.debug('[TabCoordinator] Lock request callback, lock acquired:', !!lock);
 
         if (lock) {
@@ -168,7 +159,7 @@ const waitForLeadership = (): void => {
   lockController = new AbortController();
 
   navigator.locks
-    .request(LEADER_LOCK_NAME, { signal: lockController.signal }, async () => {
+    .request(leaderLockName, { signal: lockController.signal }, async () => {
       console.debug('[TabCoordinator] Promoted to leader');
       store.setIsLeader(true);
 

@@ -1,4 +1,5 @@
 import { isProductEntity } from 'config';
+import { signCacheToken } from '#/lib/cache-token-signer';
 import type { ActivityEventWithEntity } from '#/sync/activity-bus';
 import { streamSubscriberManager, writeChange } from '#/sync/stream';
 import { logEvent } from '#/utils/logger';
@@ -8,10 +9,15 @@ import { type AppStreamSubscriber, orgChannel } from './types';
 
 /**
  * Dispatch an activity event to the user subscriber.
- * Sends notification-only payload - no entity data included.
+ * Signs the cache token with the subscriber's session before sending.
  */
 async function sendToUserSubscriber(subscriber: AppStreamSubscriber, event: ActivityEventWithEntity): Promise<void> {
   const notification = buildStreamNotification(event);
+
+  // Sign cache token with subscriber's session for defense-in-depth
+  if (notification.cacheToken) {
+    notification.cacheToken = signCacheToken(notification.cacheToken, subscriber.sessionToken);
+  }
 
   logEvent('debug', 'SSE notification sent to user subscriber', {
     subscriberId: subscriber.id,

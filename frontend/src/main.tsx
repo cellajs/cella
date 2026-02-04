@@ -13,7 +13,6 @@ import { appConfig, type ConfigMode } from 'config';
 import { initSentry } from '~/lib/sentry';
 import { RouterWrapper } from '~/modules/common/router-wrapper';
 import { QueryClientProvider } from '~/query/provider';
-import { initTabCoordinator } from '~/query/realtime';
 import { addBadgeToFavicon } from '~/utils/add-badge-to-favicon';
 import { renderAscii } from '~/utils/ascii';
 
@@ -32,9 +31,6 @@ addBadgeToFavicon(appConfig.mode as ConfigMode);
 
 // Initialize Sentry
 initSentry();
-
-// Initialize tab coordinator for multi-tab leader election (realtime sync)
-initTabCoordinator();
 
 ReactDOM.createRoot(root).render(
   <StrictMode>
