@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { EntityTTLCache } from '#/lib/ttl-cache';
+import { TTLCache } from '#/lib/ttl-cache';
 
-describe('EntityTTLCache', () => {
-  let cache: EntityTTLCache<string>;
+describe('TTLCache', () => {
+  let cache: TTLCache<string>;
 
   beforeEach(() => {
-    cache = new EntityTTLCache<string>({
+    cache = new TTLCache<string>({
       maxSize: 3,
       defaultTtl: 1000, // 1 second
     });
@@ -90,7 +90,7 @@ describe('EntityTTLCache', () => {
 
   describe('TTL expiration', () => {
     it('should expire entries after TTL', async () => {
-      const shortTtlCache = new EntityTTLCache<string>({
+      const shortTtlCache = new TTLCache<string>({
         maxSize: 10,
         defaultTtl: 50, // 50ms
       });
@@ -115,7 +115,7 @@ describe('EntityTTLCache', () => {
     });
 
     it('should auto-expire entries (ttlcache handles automatically)', async () => {
-      const shortTtlCache = new EntityTTLCache<string>({
+      const shortTtlCache = new TTLCache<string>({
         maxSize: 10,
         defaultTtl: 50,
       });

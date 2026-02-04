@@ -14,7 +14,7 @@ class StreamSubscriberManager {
    * Primary channel is on subscriber.channel, additional channels for multi-org routing.
    *
    * @example
-   * // User stream subscribes to user channel + all org channels
+   * // App stream subscribes to user channel + all org channels
    * const orgChannels = [...orgIds].map(id => `org:${id}`);
    * manager.register(subscriber, orgChannels);
    */

@@ -1,17 +1,16 @@
 /**
  * TTL-based cache with prefix invalidation support.
- * Wraps @isaacs/ttlcache with additional methods for entity cache use cases.
+ * Wraps @isaacs/ttlcache with additional methods.
  *
- * Uses pure TTL eviction (soonest-expiring first) rather than LRU,
- * which is a better fit for version-keyed entity caching with CDC invalidation.
+ * Uses pure TTL eviction (soonest-expiring first) rather than LRU.
  */
 
-import { TTLCache } from '@isaacs/ttlcache';
+import { TTLCache as BaseTTLCache } from '@isaacs/ttlcache';
 
 /** Dispose reason from ttlcache */
 export type DisposeReason = 'stale' | 'set' | 'evict' | 'delete';
 
-export interface EntityCacheOptions<T> {
+export interface TTLCacheOptions<T> {
   /** Maximum number of entries */
   maxSize: number;
   /** Default TTL in milliseconds */
@@ -21,19 +20,19 @@ export interface EntityCacheOptions<T> {
 }
 
 /**
- * TTL cache with prefix invalidation for entity caching.
+ * TTL cache with prefix invalidation.
  * Automatic expiration via timer (no manual prune needed).
  */
-export class EntityTTLCache<T> {
-  private cache: TTLCache<string, T>;
+export class TTLCache<T> {
+  private cache: BaseTTLCache<string, T>;
   private readonly maxSize: number;
   private readonly defaultTtl: number;
 
-  constructor(options: EntityCacheOptions<T>) {
+  constructor(options: TTLCacheOptions<T>) {
     this.maxSize = options.maxSize;
     this.defaultTtl = options.defaultTtl;
 
-    this.cache = new TTLCache<string, T>({
+    this.cache = new BaseTTLCache<string, T>({
       max: options.maxSize,
       ttl: options.defaultTtl,
       dispose: options.onDispose ? (value, key, reason) => options.onDispose!(key, value, reason) : undefined,

@@ -9,6 +9,8 @@ import {
 } from '#/schemas';
 import { mockContextEntityBase, mockProductEntityBase } from '../../../mocks/mock-entity-base';
 
+// TODO consider moving all these to backend/src/schemas/entity-base.ts?
+
 /**
  * Base schema shared by all entities (mirrors baseEntityColumns).
  */

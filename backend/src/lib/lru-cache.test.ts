@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { EntityTTLCache } from '#/lib/lru-cache';
+import { LRUCache } from '#/lib/lru-cache';
 
-describe('EntityTTLCache', () => {
-  let cache: EntityTTLCache<string>;
+describe('LRUCache', () => {
+  let cache: LRUCache<string>;
 
   beforeEach(() => {
-    cache = new EntityTTLCache<string>({
+    cache = new LRUCache<string>({
       maxSize: 3,
-      defaultTtl: 1000, // 1 second
+      maxTtl: 1000, // 1 second
     });
   });
 
@@ -54,22 +54,21 @@ describe('EntityTTLCache', () => {
       expect(cache.get('key4')).toBe('value4');
     });
 
-    it('should evict soonest-expiring when at capacity (TTL-based, not LRU)', () => {
-      // With TTL-based eviction, the soonest-expiring entry is evicted
-      // Since all entries have the same TTL in this test, the oldest (first added) is evicted
+    it('should evict least recently used when at capacity', () => {
       cache.set('key1', 'value1');
       cache.set('key2', 'value2');
       cache.set('key3', 'value3');
 
-      // Access key1 - unlike LRU, this does NOT refresh its position
+      // Access key1 to make it recently used
       cache.get('key1');
 
-      // Add new key - evicts soonest-expiring (key1, added first)
+      // Add new key - evicts key2 (least recently used)
       cache.set('key4', 'value4');
 
-      // TTL-based cache evicts by expiration time, so key1 (added first) is evicted
-      expect(cache.get('key1')).toBeUndefined();
-      expect(cache.get('key2')).toBe('value2');
+      expect(cache.get('key1')).toBe('value1');
+      expect(cache.get('key2')).toBeUndefined();
+      expect(cache.get('key3')).toBe('value3');
+      expect(cache.get('key4')).toBe('value4');
     });
 
     it('should update position on set of existing key', () => {
@@ -90,9 +89,9 @@ describe('EntityTTLCache', () => {
 
   describe('TTL expiration', () => {
     it('should expire entries after TTL', async () => {
-      const shortTtlCache = new EntityTTLCache<string>({
+      const shortTtlCache = new LRUCache<string>({
         maxSize: 10,
-        defaultTtl: 50, // 50ms
+        maxTtl: 50, // 50ms
       });
 
       shortTtlCache.set('key1', 'value1');
@@ -114,10 +113,10 @@ describe('EntityTTLCache', () => {
       expect(cache.get('key2')).toBe('value2');
     });
 
-    it('should auto-expire entries (ttlcache handles automatically)', async () => {
-      const shortTtlCache = new EntityTTLCache<string>({
+    it('should auto-expire entries', async () => {
+      const shortTtlCache = new LRUCache<string>({
         maxSize: 10,
-        defaultTtl: 50,
+        maxTtl: 50,
       });
 
       shortTtlCache.set('key1', 'value1');
@@ -125,7 +124,7 @@ describe('EntityTTLCache', () => {
 
       await new Promise((resolve) => setTimeout(resolve, 60));
 
-      // Entries should be auto-expired by ttlcache timer
+      // Entries should be expired
       expect(shortTtlCache.get('key1')).toBeUndefined();
       expect(shortTtlCache.get('key2')).toBeUndefined();
     });

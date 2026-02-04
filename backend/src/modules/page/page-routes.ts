@@ -1,13 +1,8 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/docs/x-routes';
+import { publicCache } from '#/middlewares/entity-cache';
 import { isAuthenticated, isPublicAccess, isSystemAdmin } from '#/middlewares/guard';
-import {
-  errorResponseRefs,
-  idsBodySchema,
-  paginationSchema,
-  publicStreamQuerySchema,
-  publicStreamResponseSchema,
-} from '#/schemas';
+import { errorResponseRefs, idsBodySchema, paginationSchema } from '#/schemas';
 import { mockBatchPagesResponse, mockPageResponse, mockPaginatedPagesResponse } from '../../../mocks/mock-page';
 import {
   pageCreateManyTxBodySchema,
@@ -17,32 +12,9 @@ import {
   pageUpdateTxBodySchema,
 } from './page-schema';
 
+// NOTE: Public stream route has been moved to entities module (/entities/public/stream)
+
 const pagesRoutes = {
-  /**
-   * Public stream for page changes (no auth required)
-   */
-  publicStream: createXRoute({
-    operationId: 'pagesPublicStream',
-    method: 'get',
-    path: '/stream',
-    xGuard: isPublicAccess,
-    tags: ['pages'],
-    summary: 'Public stream of page changes',
-    description:
-      'Stream real-time changes for pages. No authentication required. Use offset for catch-up, live=sse for SSE streaming.',
-    request: { query: publicStreamQuerySchema },
-    responses: {
-      200: {
-        description: 'Catch-up activities or SSE stream started',
-        content: {
-          'application/json': {
-            schema: publicStreamResponseSchema,
-          },
-        },
-      },
-      ...errorResponseRefs,
-    },
-  }),
   /**
    * Create one or more pages
    */
@@ -114,9 +86,10 @@ const pagesRoutes = {
     method: 'get',
     path: '/{id}',
     xGuard: [isPublicAccess],
+    xCache: publicCache('page'),
     tags: ['pages'],
     summary: 'Get page',
-    description: 'Get a single *page* by ID.',
+    description: 'Get a single *page* by ID. Cached using LRU - first request warms cache.',
     request: {
       params: z.object({
         id: z.string(),

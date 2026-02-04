@@ -83,7 +83,8 @@ export const parseUploadedAttachments = (
   for (const file of originalFiles) {
     const { size, url, mime, original_name, original_id, user_meta } = file;
 
-    const id = original_id || nanoid();
+    // Handle original_id being string or string[] from Transloadit
+    const id = (Array.isArray(original_id) ? original_id[0] : original_id) || nanoid();
 
     const filename = original_name || user_meta?.name || 'file';
     const extIndex = filename.lastIndexOf('.');
@@ -92,13 +93,13 @@ export const parseUploadedAttachments = (
     // Use createOptimisticEntity to get schema defaults (including placeholder tx)
     const attachment = createOptimisticEntity(zAttachment, {
       size: String(size ?? 0),
-      contentType: mime,
+      contentType: mime ?? 'application/octet-stream',
       filename,
       name,
       description: '',
       public: user_meta?.public === 'true',
       bucketName: user_meta?.bucketName,
-      originalKey: url,
+      originalKey: url ?? '',
       groupId,
       organizationId,
     });
@@ -118,16 +119,18 @@ export const parseUploadedAttachments = (
     for (const { url, mime, original_id } of files) {
       if (!original_id) continue;
 
-      const target = attachmentsById.get(original_id);
+      // Handle original_id being string or string[] from Transloadit
+      const resolvedId = Array.isArray(original_id) ? original_id[0] : original_id;
+      const target = attachmentsById.get(resolvedId);
       if (!target) continue;
 
       if (step.startsWith('converted_')) {
-        target.convertedKey = url;
-        target.convertedContentType = mime;
+        target.convertedKey = url ?? null;
+        target.convertedContentType = mime ?? null;
       }
 
       if (step.startsWith('thumb_')) {
-        target.thumbnailKey = url;
+        target.thumbnailKey = url ?? null;
       }
     }
   }

@@ -10,7 +10,6 @@ import { DocsSidebar } from '~/modules/docs/sidebar/docs-sidebar';
 import FloatingNav, { type FloatingNavItem } from '~/modules/navigation/floating-nav/floating-nav';
 import { ResizableGroup, ResizablePanel, ResizableSeparator } from '~/modules/ui/resizable';
 import { ScrollArea } from '~/modules/ui/scroll-area';
-import { PublicStream } from '~/query/realtime';
 import { useUIStore } from '~/store/ui';
 
 function DocsLayout() {
@@ -93,7 +92,6 @@ function DocsLayout() {
   if (isMobile) {
     return (
       <>
-        <PublicStream />
         <div>
           <FloatingNav
             items={floatingNavItems}
@@ -113,7 +111,6 @@ function DocsLayout() {
   // Desktop layout with resizable panels
   return (
     <>
-      <PublicStream />
       <div className="h-screen [--card:oklch(0.987_0.0013_285.76)] dark:[--card:oklch(0.232_0.0095_285.56)]">
         <ResizableGroup orientation="horizontal" className="h-screen">
           {!focusView && (

@@ -40,6 +40,9 @@ export const config = {
   /** Product/content entities - must match hierarchy.productTypes. Explicit tuple for Drizzle compatibility. */
   productEntityTypes: ['attachment', 'page'] as const,
 
+  /** Public product entities with no parent context (parent: null). Must be explicitly declared for security. */
+  publicProductEntityTypes: ['page'] as const,
+
   /** Context entities that are parents of product entities - derived from hierarchy */
   relatableContextEntityTypes: hierarchy.relatableContextTypes,
 

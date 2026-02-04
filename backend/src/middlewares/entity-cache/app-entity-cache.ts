@@ -11,10 +11,10 @@
  * 3. Subsequent users get cache hit
  */
 
-import { publicCacheMetrics } from './cache-metrics';
-import { cacheTokenTtl } from './cache-token';
-import { coalesce, isInFlight } from './request-coalescing';
-import { EntityTTLCache } from './ttl-cache';
+import { publicCacheMetrics } from '#/lib/cache-metrics';
+import { cacheTokenTtl } from '#/lib/cache-token';
+import { coalesce, isInFlight } from '#/lib/request-coalescing';
+import { TTLCache } from '#/lib/ttl-cache';
 
 /** Cache configuration */
 const cacheConfig = {
@@ -28,7 +28,7 @@ const cacheConfig = {
 type CacheValue = Record<string, unknown> | null;
 
 /** Main cache: token → entity data (or null if reserved) */
-const cache = new EntityTTLCache<CacheValue>({
+const cache = new TTLCache<CacheValue>({
   maxSize: cacheConfig.maxSize,
   defaultTtl: cacheConfig.defaultTtl,
   onDispose: (key, _value, reason) => {

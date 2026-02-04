@@ -1,11 +1,12 @@
 import { appConfig } from 'config';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { pagesPublicStream } from '~/api.gen';
+import type { PublicStreamActivity } from '~/api.gen';
+import { publicStream } from '~/api.gen';
 import { useLatestRef } from '~/hooks/use-latest-ref';
 import { pageQueryKeys } from '~/modules/page/query';
 import { queryClient } from '~/query/query-client';
+import { handlePublicStreamMessage } from './public-stream-handler';
 import type { StreamState, UsePublicStreamOptions, UsePublicStreamReturn } from './types';
-import { handlePublicStreamMessage, type PublicStreamMessage } from './public-stream-handler';
 import { useSSEConnection } from './use-sse-connection';
 import { useVisibilityReconnect } from './use-visibility-reconnect';
 
@@ -14,25 +15,20 @@ const debugLabel = 'PublicStream';
 /** Store cursor (activity ID) for catch-up on reconnect */
 let lastCursor: string | null = null;
 
-/** Get stored cursor for delete catch-up on reconnect */
-export function getPageStreamCursor(): string | null {
-  return lastCursor;
-}
-
 /**
  * Fetch delete catch-up activities as JSON batch (not SSE).
  * Returns delete activities and cursor for subsequent SSE connection.
  */
 async function fetchDeleteCatchup(
   offset: string | null,
-): Promise<{ activities: PublicStreamMessage[]; cursor: string | null }> {
-  const response = await pagesPublicStream({
+): Promise<{ activities: PublicStreamActivity[]; cursor: string | null }> {
+  const response = await publicStream({
     query: { offset: offset ?? undefined },
     // Note: no 'live' param = JSON batch response
   });
 
   return {
-    activities: (response.activities ?? []) as PublicStreamMessage[],
+    activities: (response.activities ?? []) as PublicStreamActivity[],
     cursor: response.cursor ?? null,
   };
 }
@@ -69,7 +65,7 @@ export function usePublicStream(options: UsePublicStreamOptions = {}): UsePublic
   }, []);
 
   // Process a notification
-  const processMessage = useCallback((message: PublicStreamMessage) => {
+  const processMessage = useCallback((message: PublicStreamActivity) => {
     handlePublicStreamMessage(message);
   }, []);
 
@@ -77,7 +73,7 @@ export function usePublicStream(options: UsePublicStreamOptions = {}): UsePublic
   const handleSSENotification = useCallback(
     (event: MessageEvent) => {
       try {
-        const message = JSON.parse(event.data) as PublicStreamMessage;
+        const message = JSON.parse(event.data) as PublicStreamActivity;
         processMessage(message);
       } catch (error) {
         console.debug(`[${debugLabel}] Failed to parse message:`, error);
@@ -111,7 +107,7 @@ export function usePublicStream(options: UsePublicStreamOptions = {}): UsePublic
     connect: sseConnect,
     disconnect: sseDisconnect,
   } = useSSEConnection({
-    url: `${appConfig.backendUrl}/pages/stream`,
+    url: `${appConfig.backendUrl}/entities/public/stream`,
     enabled,
     withCredentials: false,
     requireLeader: false, // Public streams don't use tab coordination
@@ -133,7 +129,9 @@ export function usePublicStream(options: UsePublicStreamOptions = {}): UsePublic
   const initialize = useCallback(async () => {
     // Prevent duplicate initialization
     if (initializingRef.current || catchupCompleteRef.current) {
-      console.debug(`[${debugLabel}] Skipping initialize (already ${initializingRef.current ? 'in progress' : 'complete'})`);
+      console.debug(
+        `[${debugLabel}] Skipping initialize (already ${initializingRef.current ? 'in progress' : 'complete'})`,
+      );
       return;
     }
 
@@ -209,7 +207,7 @@ export function usePublicStream(options: UsePublicStreamOptions = {}): UsePublic
 
 /**
  * Component that connects to the public stream for real-time updates.
- * Syncs public entities (pages) via the `/pages/stream` endpoint.
+ * Syncs public entities (e.g., pages) via the `/entities/public/stream` endpoint.
  * No tab coordination - each tab maintains its own connection.
  */
 export default function PublicStream() {

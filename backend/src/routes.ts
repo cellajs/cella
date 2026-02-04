@@ -28,7 +28,7 @@ const app = baseApp
   .route('/users', userRouteHandlers)
   .route('/organizations', organizationRouteHandlers)
   .route('/pages', pageRouteHandlers)
-  .route('/', entitiesRouteHandlers)
+  .route('/entities', entitiesRouteHandlers)
   .route('/system', systemRouteHandlers)
   .route('/requests', requestsRouteHandlers)
   .route('/metrics', metricsRouteHandlers)

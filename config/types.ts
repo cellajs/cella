@@ -115,6 +115,7 @@ export interface RequiredConfig {
   entityTypes: readonly string[];
   contextEntityTypes: readonly string[];
   productEntityTypes: readonly string[];
+  publicProductEntityTypes: readonly string[];
   relatableContextEntityTypes: readonly string[];
   entityRoles: readonly string[];
   entityIdColumnKeys: Record<string, string>;

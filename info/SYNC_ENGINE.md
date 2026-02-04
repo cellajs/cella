@@ -1,6 +1,6 @@
 # Cella hybrid sync engine
 
-> **Architecture context**: Cella has a dynamic entity model—a 'fork' can have different and extended entity compositions. See [ARCHITECTURE.md](./ARCHITECTURE.md).
+> **Architecture context**: Cella has a dynamic entity model—a 'fork' can have different and/or extended entity config. See [ARCHITECTURE.md](./ARCHITECTURE.md).
 
 ## Overview
 
@@ -219,9 +219,6 @@ Authenticated stream for all user-scoped entities and memberships.
 | **Processing** | `processCatchupBatch()` - deletes, invalidations, membership refresh |
 | **Cursor storage** | Persisted in sync store (survives refresh) |
 
-**Frontend**: [app-stream.tsx](../frontend/src/query/realtime/app-stream.tsx)
-**Backend**: [me-handlers.ts](../backend/src/modules/me/me-handlers.ts)
-
 ### Public stream (`/pages/stream`)
 
 Unauthenticated stream for public entities (e.g., pages).
@@ -235,9 +232,6 @@ Unauthenticated stream for public entities (e.g., pages).
 | **Cursor storage** | In-memory only (module-level variable) |
 
 **Why delete-only catch-up?** Create/update changes are handled via `modifiedAfter` query param on the list endpoint. Only deletes need explicit catch-up since they can't be detected by `modifiedAfter`.
-
-**Frontend**: [public-stream.tsx](../frontend/src/query/realtime/public-stream.tsx)
-**Backend**: [page-handlers.ts](../backend/src/modules/page/page-handlers.ts)
 
 ### Catchup-then-SSE pattern (both streams)
 
@@ -306,8 +300,6 @@ Server rejects conflicting mutations with 409 status. Client must refetch, rebas
 └───────────────────────────────────────────────────────────────────────────┘
 ```
 
-See [query-client.ts](../frontend/src/query/query-client.ts) for `networkMode: 'offlineFirst'` configuration.
-
 | Scenario | Behavior | Result |
 |----------|----------|--------|
 | User types rapidly (online) | Debounced, only final sent | No server flood |
@@ -328,8 +320,6 @@ Replaying the same mutation (same `tx.id`) produces the same result without side
 ### Gap detection (seq)
 
 Uses per-scope sequence numbers (`seq`) on activities table for **list-level gap detection**. When `notification.seq > lastSeenSeq + 1`, a gap is detected and list invalidation is triggered.
-
-See [user-stream-handler.ts](../frontend/src/query/realtime/user-stream-handler.ts) for implementation.
 
 **How it works:**
 ```typescript
@@ -354,8 +344,6 @@ seqStore.set(scopeKey, seq);
 ### Conflict detection (version)
 
 Uses entity-level version numbers (`tx.version`) and field-level versions (`tx.fieldVersions`) for **mutation conflict detection**.
-
-See [tx-utils.ts](../frontend/src/query/offline/tx-utils.ts) for client-side utilities.
 
 **Client-side (mutation creation):**
 ```typescript
@@ -408,7 +396,7 @@ Each browser tab generates a unique `sourceId` on load, sent with every mutation
 
 ### Mutation queue
 
-Uses React Query's mutation cache with `squashPendingMutation()` from [squash-utils.ts](../frontend/src/query/offline/squash-utils.ts).
+Uses React Query's mutation cache with `squashPendingMutation()`.
 
 **Squashing behavior:**
 - Same-entity mutations squash (cancel pending, keep latest)
@@ -473,8 +461,6 @@ Tab B: Refreshes → restores [A1] (leader's state) → B1 was lost but A1 is sa
 
 The tradeoff: follower mutations are lost on refresh. In practice this is rare — users typically work in one tab, and online mutations complete before refresh.
 
-See [tab-coordinator.ts](../frontend/src/query/realtime/tab-coordinator.ts) for implementation.
-
 ---
 
 ## TTL entity cache
@@ -491,7 +477,7 @@ The TTL-based entity cache is **essential for the sync engine to scale**. This c
 | **Public** | `{entityType}:{entityId}` (LRU) | 10 min | Public pages (simple LRU, no tokens) |
 | **Token-gated** | `token:{prefix}:{entityType}:{entityId}:{version}` | 10 min | Attachments requiring membership |
 
-**Note**: Public entities (like pages) use a simple LRU cache ([page-cache.ts](../backend/src/lib/page-cache.ts)) without tokens since no authentication is required. The token-gated cache is only for authenticated entities accessed via app stream.
+**Note**: Public entities (like pages) use a simple LRU cache without tokens since no authentication is required. The token-gated cache is only for authenticated entities accessed via app stream.
 
 ### Token flow (app stream only)
 
@@ -515,12 +501,12 @@ When a realtime entity changes, the SSE stream notification includes a `cacheTok
    └── Subsequent clients get cache hit (X-Cache: HIT)
 ```
 
-**Token generation** ([cache-token.ts](../backend/src/lib/cache-token.ts)):
+**Token generation:**
 - HMAC-signed with `ARGON_SECRET`
 - Contains: userId, organizationIds, entityType, entityId, version, expiresAt
 - TTL: 10 minutes (matches cache TTL)
 
-**Frontend flow** ([cache-token-store.ts](../frontend/src/query/realtime/cache-token-store.ts)):
+**Frontend flow:**
 - Stream handler stores tokens on notification receive
 - Query options check store and add X-Cache-Token header
 - Tokens removed on entity deletion

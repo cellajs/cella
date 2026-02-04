@@ -54,5 +54,258 @@
         "contentType": "application/json"
       }
     }
+  },
+  {
+    "operationId": "publicStream",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Catch-up activities or SSE stream started",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "activities": {
+              "type": "array",
+              "required": true,
+              "itemType": "object",
+              "ref": "#/components/schemas/PublicStreamActivity",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "activityId": { "type": "string", "required": true },
+                  "action": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["create", "update", "delete"]
+                  },
+                  "entityType": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["attachment", "page"]
+                  },
+                  "entityId": { "type": "string", "required": true },
+                  "changedKeys": {
+                    "type": ["array", "null"],
+                    "required": true,
+                    "itemType": "string"
+                  },
+                  "createdAt": { "type": "string", "required": true }
+                },
+                "ref": "#/components/schemas/PublicStreamActivity"
+              }
+            },
+            "cursor": {
+              "type": ["string", "null"],
+              "required": true,
+              "description": "Last activity ID (use as offset for next request)"
+            }
+          },
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "query": {
+        "properties": {
+          "offset": {
+            "type": "string",
+            "required": false,
+            "description": "Starting offset: 'now' for live-only, or activity ID to receive missed notifications"
+          },
+          "live": {
+            "type": "string",
+            "required": false,
+            "description": "Set to \"sse\" for live updates (SSE stream)",
+            "enum": ["sse"]
+          }
+        }
+      }
+    }
+  },
+  {
+    "operationId": "getAppStream",
+    "responses": [
+      {
+        "status": 200,
+        "description": "SSE stream or notification response",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "activities": {
+              "type": "array",
+              "required": true,
+              "itemType": "object",
+              "ref": "#/components/schemas/StreamNotification",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "action": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["create", "update", "delete"]
+                  },
+                  "entityType": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "enum": ["attachment", "page", null]
+                  },
+                  "resourceType": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "enum": ["request", "membership", null]
+                  },
+                  "entityId": { "type": "string", "required": true },
+                  "organizationId": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "contextType": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "enum": ["organization", null]
+                  },
+                  "seq": {
+                    "type": ["integer", "null"],
+                    "required": true
+                  },
+                  "tx": {
+                    "type": ["object", "null"],
+                    "required": true,
+                    "properties": {
+                      "id": { "type": "string", "required": true },
+                      "sourceId": { "type": "string", "required": true },
+                      "version": { "type": "integer", "required": true },
+                      "fieldVersions": { "type": "object", "required": true }
+                    },
+                    "ref": "#/components/schemas/TxStreamMessage"
+                  },
+                  "cacheToken": {
+                    "type": ["string", "null"],
+                    "required": true
+                  }
+                },
+                "ref": "#/components/schemas/StreamNotification"
+              }
+            },
+            "cursor": {
+              "type": ["string", "null"],
+              "required": true,
+              "description": "Last activity ID (use as offset for next request)"
+            }
+          },
+          "contentType": "application/json"
+        },
+        "example": {
+          "activities": [
+            {
+              "action": "create",
+              "entityType": "page",
+              "resourceType": null,
+              "entityId": "p4mjvy3c0rjatirn6hp0rcgf",
+              "organizationId": "ufjhv1cwh0j4x3xi7ae54uen",
+              "contextType": null,
+              "seq": 526,
+              "cacheToken": "hg18eRugoaB38Ug7A1n7Zj018TyC3pwn",
+              "tx": {
+                "id": "gdgo47kv9o7rvgjoql6a1dxp",
+                "sourceId": "8u6gifwzsuyr58fapjsndxb3",
+                "version": 5,
+                "fieldVersions": { "name": 1 }
+              }
+            }
+          ],
+          "cursor": "ll6ebv8jmzcs1cydc8ytq68u"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "query": {
+        "properties": {
+          "offset": {
+            "type": "string",
+            "required": false,
+            "description": "Starting offset: 'now' for live-only, or activity ID to receive missed notifications"
+          },
+          "live": {
+            "type": "string",
+            "required": false,
+            "description": "Connection mode: 'sse' for streaming, 'poll' for one-time fetch",
+            "enum": ["sse", "poll"]
+          }
+        }
+      }
+    }
   }
 ]

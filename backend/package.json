@@ -85,6 +85,7 @@
     "jsonwebtoken": "^9.0.3",
     "jsx-email": "^2.8.4",
     "locales": "workspace:*",
+    "lru-cache": "^11.2.5",
     "nanoid": "^5.1.6",
     "node-html-parser": "^7.0.2",
     "pg": "^8.18.0",

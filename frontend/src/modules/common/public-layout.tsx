@@ -5,6 +5,7 @@ import { Dialoger } from '~/modules/common/dialoger/provider';
 import { DownAlert } from '~/modules/common/down-alert';
 import ErrorNotice, { type ErrorNoticeError } from '~/modules/common/error-notice';
 import { Sheeter } from '~/modules/common/sheeter/provider';
+import PublicStream from '~/query/realtime/public-stream';
 
 // Also in public routes, some components need to be initialized.
 function PublicLayout() {
@@ -17,6 +18,8 @@ function PublicLayout() {
       <Alerter mode="public" />
       <Dialoger />
       <Sheeter />
+      <PublicStream />
+
       <DownAlert />
       <Outlet />
     </ErrorBoundary>

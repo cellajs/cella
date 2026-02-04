@@ -2,10 +2,10 @@ import type { ContextEntityType, ProductEntityType } from 'config';
 import { syncSpanNames, withSpanSync } from '~/lib/tracing';
 import { type EntityQueryKeys, getEntityQueryKeys } from '~/query/basic';
 import { sourceId } from '~/query/offline';
-import type { AppStreamNotification } from './types';
 import * as cacheOps from './cache-ops';
 import * as membershipOps from './membership-ops';
 import { getSyncPriority } from './sync-priority';
+import type { AppStreamNotification } from './types';
 
 /**
  * Per-scope sequence tracking for gap detection.

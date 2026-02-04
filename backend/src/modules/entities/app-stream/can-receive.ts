@@ -65,7 +65,7 @@ function canReceiveProductEntityEvent(
   });
 
   if (!isAllowed) {
-    logEvent('debug', 'User stream notification filtered by permission', {
+    logEvent('debug', 'App stream notification filtered by permission', {
       userId: subscriber.userId,
       entityType,
       entityId: event.entityId,

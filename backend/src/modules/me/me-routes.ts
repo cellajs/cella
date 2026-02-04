@@ -12,17 +12,14 @@ import {
 } from '#/modules/me/me-schema';
 import { userFlagsSchema, userSchema, userUpdateBodySchema } from '#/modules/user/user-schema';
 import {
-  appStreamResponseSchema,
   entityWithTypeQuerySchema,
   errorResponseRefs,
   idsBodySchema,
   locationSchema,
   paginationSchema,
-  streamQuerySchema,
   successWithRejectedItemsSchema,
 } from '#/schemas';
 import {
-  mockAppStreamResponse,
   mockMeAuthDataResponse,
   mockMeResponse,
   mockPaginatedInvitationsResponse,
@@ -252,35 +249,6 @@ const meRoutes = {
       200: {
         description: 'User',
         content: { 'application/json': { schema: userSchema, example: mockUserResponse() } },
-      },
-      ...errorResponseRefs,
-    },
-  }),
-  /**
-   * App event stream
-   */
-  stream: createXRoute({
-    operationId: 'getAppStream',
-    method: 'get',
-    path: '/stream',
-    xGuard: isAuthenticated,
-    tags: ['me'],
-    summary: 'App event stream',
-    description:
-      'SSE stream for membership and entity notifications affecting the *current user*. Sends lightweight notifications - client fetches entity data via API.',
-    request: {
-      query: streamQuerySchema,
-    },
-    responses: {
-      200: {
-        description: 'SSE stream or notification response',
-        content: {
-          'text/event-stream': { schema: z.any() },
-          'application/json': {
-            schema: appStreamResponseSchema,
-            example: mockAppStreamResponse(),
-          },
-        },
       },
       ...errorResponseRefs,
     },

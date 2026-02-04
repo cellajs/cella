@@ -2,8 +2,6 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import type { EnabledOAuthProvider } from 'config';
 import { appConfig } from 'config';
 import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
-import { streamSSE } from 'hono/streaming';
-import { nanoid } from 'nanoid';
 import { db } from '#/db/db';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -11,7 +9,7 @@ import { AuthStrategy, sessionsTable } from '#/db/schema/sessions';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { usersTable } from '#/db/schema/users';
 import { env } from '#/env';
-import { type Env, getContextMemberships, getContextUser, getContextUserSystemRole } from '#/lib/context';
+import { type Env, getContextUser, getContextUserSystemRole } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/error';
 import { getParams, getSignature } from '#/lib/transloadit';
@@ -23,16 +21,7 @@ import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { makeContextEntityBaseSelect } from '#/modules/entities/helpers/select';
 import { getAuthInfo, getUserSessions } from '#/modules/me/helpers/get-user-info';
 import meRoutes from '#/modules/me/me-routes';
-import {
-  type AppStreamSubscriber,
-  dispatchToUserSubscribers,
-  fetchUserCatchUpActivities,
-  getLatestUserActivityId,
-  orgChannel,
-} from '#/modules/me/stream';
 import { userSelect } from '#/modules/user/helpers/select';
-import { type ActivityEventWithEntity, activityBus } from '#/sync/activity-bus';
-import { keepAlive, streamSubscriberManager, writeChange, writeOffset } from '#/sync/stream';
 import { entityTables } from '#/table-config';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
@@ -40,56 +29,6 @@ import { logEvent } from '#/utils/logger';
 import { verifyUnsubscribeToken } from '#/utils/unsubscribe-token';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
-
-// ============================================
-// ActivityBus registration for user stream events
-// ============================================
-
-// Membership events - routed via user channel
-const membershipEvents = ['membership.created', 'membership.updated', 'membership.deleted'] as const;
-
-for (const eventType of membershipEvents) {
-  activityBus.on(eventType, async (event: ActivityEventWithEntity) => {
-    try {
-      await dispatchToUserSubscribers(event);
-    } catch (error) {
-      logEvent('error', 'Failed to dispatch membership event', { error, activityId: event.id });
-    }
-  });
-}
-
-// Product entity events - routed via org channel to user stream subscribers
-const productEntityEvents = [
-  'page.created',
-  'page.updated',
-  'page.deleted',
-  'attachment.created',
-  'attachment.updated',
-  'attachment.deleted',
-] as const;
-
-for (const eventType of productEntityEvents) {
-  activityBus.on(eventType, async (event: ActivityEventWithEntity) => {
-    try {
-      await dispatchToUserSubscribers(event);
-    } catch (error) {
-      logEvent('error', 'Failed to dispatch product entity event', { error, activityId: event.id });
-    }
-  });
-}
-
-// Organization events - routed via org channel
-const organizationEvents = ['organization.updated', 'organization.deleted'] as const;
-
-for (const eventType of organizationEvents) {
-  activityBus.on(eventType, async (event: ActivityEventWithEntity) => {
-    try {
-      await dispatchToUserSubscribers(event);
-    } catch (error) {
-      logEvent('error', 'Failed to dispatch organization event', { error, activityId: event.id });
-    }
-  });
-}
 
 // ============================================
 // Route handlers
@@ -365,83 +304,6 @@ const meRouteHandlers = app
 
     const redirectUrl = new URL('/auth/unsubscribed', appConfig.frontendUrl);
     return ctx.redirect(redirectUrl, 302);
-  })
-  /**
-   *  App stream (membership an realtime entity updates)
-   */
-  .openapi(meRoutes.stream, async (ctx) => {
-    const { offset, live } = ctx.req.valid('query');
-    const user = getContextUser();
-    const memberships = getContextMemberships();
-    const userSystemRole = getContextUserSystemRole();
-    const orgIds = new Set(memberships.map((m) => m.organizationId));
-
-    // Resolve cursor from offset parameter
-    let cursor: string | null = null;
-    if (offset === 'now') {
-      cursor = await getLatestUserActivityId(user.id, orgIds);
-    } else if (offset) {
-      cursor = offset;
-    }
-
-    // Non-streaming catch-up request
-    if (live !== 'sse') {
-      const catchUpActivities = await fetchUserCatchUpActivities(user.id, orgIds, cursor);
-      const lastActivity = catchUpActivities.at(-1);
-
-      return ctx.json({
-        activities: catchUpActivities.map((a) => a.notification),
-        cursor: lastActivity?.activityId ?? cursor,
-      });
-    }
-
-    // SSE streaming mode
-    return streamSSE(ctx, async (stream) => {
-      ctx.header('Content-Encoding', '');
-
-      // Send catch-up activities
-      const catchUpActivities = await fetchUserCatchUpActivities(user.id, orgIds, cursor);
-      for (const { activityId, notification } of catchUpActivities) {
-        await writeChange(stream, activityId, notification);
-        cursor = activityId;
-      }
-
-      // Send offset marker (catch-up complete)
-      await writeOffset(stream, cursor);
-
-      // Build subscriber with memberships for permission checks
-      // Primary channel is first org channel (or empty if no orgs)
-      const orgChannels = [...orgIds].map((id) => orgChannel(id));
-      const subscriber: AppStreamSubscriber = {
-        id: nanoid(),
-        channel: orgChannels[0] ?? '',
-        stream,
-        userId: user.id,
-        orgIds,
-        userSystemRole,
-        memberships,
-        cursor,
-      };
-
-      // Register on all org channels - all events (including memberships) route through org channels
-      // NOTE: If user is added to new org while connected, they won't receive events for that
-      // org until reconnect. Frontend should reconnect stream when membership.created is received.
-      streamSubscriberManager.register(subscriber, orgChannels.slice(1));
-      logEvent('info', 'User stream subscriber registered', {
-        subscriberId: subscriber.id,
-        userId: user.id,
-        orgCount: orgIds.size,
-      });
-
-      // Handle disconnect
-      stream.onAbort(() => {
-        streamSubscriberManager.unregister(subscriber.id);
-        logEvent('info', 'User stream subscriber disconnected', { subscriberId: subscriber.id, userId: user.id });
-      });
-
-      // Keep connection alive
-      await keepAlive(stream);
-    });
   });
 
 export default meRouteHandlers;

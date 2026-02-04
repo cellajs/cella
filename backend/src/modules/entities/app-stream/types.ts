@@ -3,7 +3,7 @@ import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import type { CursoredSubscriber } from '#/sync/stream';
 
 /**
- * User-scoped stream subscriber.
+ * App stream subscriber (authenticated).
  * Receives all events (memberships, product entities, org) via org channels.
  */
 export interface AppStreamSubscriber extends CursoredSubscriber {

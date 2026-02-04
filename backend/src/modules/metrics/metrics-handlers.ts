@@ -6,7 +6,7 @@ import type { z } from 'zod';
 import { db } from '#/db/db';
 import { getCacheMetrics } from '#/lib/cache-metrics';
 import type { Env } from '#/lib/context';
-import { entityCache } from '#/lib/entity-cache';
+import { entityCache } from '#/middlewares/entity-cache';
 import { metricsConfig } from '#/middlewares/observability/config';
 import { calculateRequestsPerMinute } from '#/modules/metrics/helpers/calculate-requests-per-minute';
 import { parsePromMetrics } from '#/modules/metrics/helpers/parse-prom-metrics';

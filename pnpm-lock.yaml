@@ -190,6 +190,9 @@ importers:
       locales:
         specifier: workspace:*
         version: link:../locales
+      lru-cache:
+        specifier: ^11.2.5
+        version: 11.2.5
       nanoid:
         specifier: ^5.1.6
         version: 5.1.6

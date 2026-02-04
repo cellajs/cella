@@ -17,7 +17,11 @@ export type {
   RoleFromRegistry,
   UserEntityView,
 } from './entity-hierarchy';
-export { createEntityHierarchy, createRoleRegistry } from './entity-hierarchy';
+export {
+  createEntityHierarchy,
+  createRoleRegistry,
+  validatePublicProductEntities,
+} from './entity-hierarchy';
 
 // Re-export other types
 export type { RequestLimitsConfig, RequiredConfig, S3Config } from './types';
@@ -44,6 +48,11 @@ export type ContextEntityType = (typeof appConfig.contextEntityTypes)[number];
  * Product entities aka (user-generated) content (no memberships assigned)
  */
 export type ProductEntityType = (typeof appConfig.productEntityTypes)[number];
+
+/**
+ * Public product entities (parent: null) - accessible without authentication
+ */
+export type PublicProductEntityType = (typeof appConfig.publicProductEntityTypes)[number];
 
 /**
  * Relatable context entities - context entities that appear as parents of product entities.
@@ -112,7 +121,7 @@ export type SystemRole = (typeof appConfig.systemRoles)[number];
 export type EntityRole = (typeof appConfig.entityRoles)[number];
 
 // Re-export entity type guards
-export { getContextRoles, isContextEntity, isProductEntity } from './entity-guards';
+export { getContextRoles, isContextEntity, isProductEntity, isPublicProductEntity } from './entity-guards';
 
 /**
  * Expected shape for entityIdColumnKeys - must have all entity types as keys.

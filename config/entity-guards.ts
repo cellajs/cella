@@ -1,5 +1,5 @@
 import { hierarchy } from './default';
-import type { ContextEntityType, ProductEntityType } from './index';
+import type { ContextEntityType, ProductEntityType, PublicProductEntityType } from './index';
 
 /******************************************************************************
  * ENTITY TYPE GUARDS
@@ -27,4 +27,11 @@ export function isContextEntity(entityType: string): entityType is ContextEntity
  */
 export function isProductEntity(entityType: string | null | undefined): entityType is ProductEntityType {
   return !!entityType && hierarchy.isProduct(entityType);
+}
+
+/**
+ * Check if entity type is a public product entity (no parent context).
+ */
+export function isPublicProductEntity(entityType: string): entityType is PublicProductEntityType {
+  return (hierarchy.parentlessProductTypes as readonly string[]).includes(entityType);
 }

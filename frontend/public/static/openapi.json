@@ -56,6 +56,21 @@
             "description": "Blocks IP for 30 min after 10 consecutive token failures"
           }
         }
+      },
+      {
+        "key": "x-cache",
+        "id": "xCache",
+        "translationKey": "common:docs.cache",
+        "description": "Caching strategy applied to the endpoint",
+        "required": false,
+        "values": {
+          "appCache": {
+            "description": "TTL cache with CDC token reservation pattern"
+          },
+          "publicCache": {
+            "description": "LRU cache for public page entities"
+          }
+        }
       }
     ]
   },
@@ -2271,6 +2286,7 @@
           "hasSystemAccess"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -2504,6 +2520,7 @@
           "isPublicAccess"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "responses": {
           "200": {
             "description": "Auth health status",
@@ -2559,6 +2576,7 @@
         "x-rate-limiter": [
           "emailEnumLimiter"
         ],
+        "x-cache": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -2615,6 +2633,7 @@
         "x-rate-limiter": [
           "tokenLimiter"
         ],
+        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -2685,6 +2704,7 @@
         "x-rate-limiter": [
           "tokenLimiter"
         ],
+        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -2776,6 +2796,7 @@
           "hasSystemAccess"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -2833,6 +2854,7 @@
           "isAuthenticated"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "responses": {
           "204": {
             "description": "Stopped impersonating"
@@ -2870,6 +2892,7 @@
         "x-rate-limiter": [
           "spamLimiter"
         ],
+        "x-cache": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -2946,6 +2969,7 @@
           "isPublicAccess"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "responses": {
           "204": {
             "description": "User signed out"
@@ -2985,6 +3009,7 @@
           "isAuthenticated"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "responses": {
           "200": {
             "description": "Challenge created",
@@ -3047,6 +3072,7 @@
           "isAuthenticated"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -3103,6 +3129,7 @@
           "isAuthenticated"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "responses": {
           "204": {
             "description": "TOTP deleted"
@@ -3140,6 +3167,7 @@
         "x-rate-limiter": [
           "totpVerificationLimiter"
         ],
+        "x-cache": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -3205,6 +3233,7 @@
           "spamLimiter",
           "emailEnumLimiter"
         ],
+        "x-cache": [],
         "requestBody": {
           "content": {
             "application/json": {
@@ -3286,6 +3315,7 @@
           "tokenLimiter",
           "emailEnumLimiter"
         ],
+        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -3385,6 +3415,7 @@
           "spamLimiter",
           "emailEnumLimiter"
         ],
+        "x-cache": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -3441,6 +3472,7 @@
         "x-rate-limiter": [
           "tokenLimiter"
         ],
+        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -3526,6 +3558,7 @@
         "x-rate-limiter": [
           "passwordLimiter"
         ],
+        "x-cache": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -3620,6 +3653,7 @@
           "isAuthenticated"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -3748,6 +3782,7 @@
           "isAuthenticated"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -3795,6 +3830,7 @@
         "x-rate-limiter": [
           "passkeyChallengeLimiter"
         ],
+        "x-cache": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -3886,6 +3922,7 @@
         "x-rate-limiter": [
           "tokenLimiter"
         ],
+        "x-cache": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -3970,6 +4007,7 @@
           "isPublicAccess"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -4038,6 +4076,7 @@
           "isPublicAccess"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -4106,6 +4145,7 @@
           "isPublicAccess"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -4176,6 +4216,7 @@
         "x-rate-limiter": [
           "tokenLimiter"
         ],
+        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -4263,6 +4304,7 @@
         "x-rate-limiter": [
           "tokenLimiter"
         ],
+        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -4326,6 +4368,7 @@
         "x-rate-limiter": [
           "tokenLimiter"
         ],
+        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -4391,6 +4434,7 @@
           "isAuthenticated"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "responses": {
           "200": {
             "description": "User",
@@ -4460,6 +4504,7 @@
           "isAuthenticated"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -4589,6 +4634,7 @@
           "isAuthenticated"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "responses": {
           "204": {
             "description": "User deleted"
@@ -4628,6 +4674,7 @@
           "isAuthenticated"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "requestBody": {
           "content": {
             "application/json": {
@@ -4740,6 +4787,7 @@
           "isAuthenticated"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "responses": {
           "200": {
             "description": "User sign-up info",
@@ -4809,6 +4857,7 @@
           "isAuthenticated"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "responses": {
           "200": {
             "description": "Invitations pending",
@@ -4939,6 +4988,7 @@
           "isAuthenticated"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "requestBody": {
           "content": {
             "application/json": {
@@ -5007,6 +5057,7 @@
           "isAuthenticated"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -5069,6 +5120,7 @@
           "isAuthenticated"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -5164,6 +5216,7 @@
         "x-rate-limiter": [
           "tokenLimiter"
         ],
+        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -5204,125 +5257,6 @@
         }
       }
     },
-    "/me/stream": {
-      "get": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "getAppStream",
-        "tags": [
-          "me"
-        ],
-        "summary": "App event stream",
-        "description": "SSE stream for membership and entity notifications affecting the *current user*. Sends lightweight notifications - client fetches entity data via API.",
-        "x-guard": [
-          "isAuthenticated"
-        ],
-        "x-rate-limiter": [],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "description": "Starting offset: 'now' for live-only, or activity ID to receive missed notifications",
-              "example": "now"
-            },
-            "required": false,
-            "description": "Starting offset: 'now' for live-only, or activity ID to receive missed notifications",
-            "name": "offset",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": [
-                "sse",
-                "poll"
-              ],
-              "description": "Connection mode: 'sse' for streaming, 'poll' for one-time fetch",
-              "example": "sse"
-            },
-            "required": false,
-            "description": "Connection mode: 'sse' for streaming, 'poll' for one-time fetch",
-            "name": "live",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "SSE stream or notification response",
-            "content": {
-              "text/event-stream": {
-                "schema": {}
-              },
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "activities": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/StreamNotification"
-                      }
-                    },
-                    "cursor": {
-                      "type": [
-                        "string",
-                        "null"
-                      ],
-                      "description": "Last activity ID (use as offset for next request)"
-                    }
-                  },
-                  "required": [
-                    "activities",
-                    "cursor"
-                  ]
-                },
-                "example": {
-                  "activities": [
-                    {
-                      "action": "create",
-                      "entityType": "page",
-                      "resourceType": null,
-                      "entityId": "p4mjvy3c0rjatirn6hp0rcgf",
-                      "organizationId": "ufjhv1cwh0j4x3xi7ae54uen",
-                      "contextType": null,
-                      "seq": 526,
-                      "cacheToken": "hg18eRugoaB38Ug7A1n7Zj018TyC3pwn",
-                      "tx": {
-                        "id": "gdgo47kv9o7rvgjoql6a1dxp",
-                        "sourceId": "8u6gifwzsuyr58fapjsndxb3",
-                        "version": 5,
-                        "fieldVersions": {
-                          "name": 1
-                        }
-                      }
-                    }
-                  ],
-                  "cursor": "ll6ebv8jmzcs1cydc8ytq68u"
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      }
-    },
     "/users": {
       "get": {
         "security": [
@@ -5340,6 +5274,7 @@
           "isAuthenticated"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -5605,6 +5540,7 @@
           "hasSystemAccess"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -5674,6 +5610,7 @@
           "isAuthenticated"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -5753,6 +5690,7 @@
           "hasSystemAccess"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -5887,6 +5825,7 @@
           "isAuthenticated"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -6181,6 +6120,7 @@
           "isAuthenticated"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -6452,6 +6392,7 @@
           "isAuthenticated"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -6521,6 +6462,7 @@
           "isAuthenticated"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -6634,6 +6576,7 @@
           "isAuthenticated"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -6859,94 +6802,6 @@
         }
       }
     },
-    "/pages/stream": {
-      "get": {
-        "security": [],
-        "operationId": "pagesPublicStream",
-        "tags": [
-          "pages"
-        ],
-        "summary": "Public stream of page changes",
-        "description": "Stream real-time changes for pages. No authentication required. Use offset for catch-up, live=sse for SSE streaming.",
-        "x-guard": [
-          "isPublicAccess"
-        ],
-        "x-rate-limiter": [],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "description": "Starting offset: 'now' for live-only, or activity ID to receive missed notifications",
-              "example": "now"
-            },
-            "required": false,
-            "description": "Starting offset: 'now' for live-only, or activity ID to receive missed notifications",
-            "name": "offset",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": [
-                "sse"
-              ],
-              "description": "Set to \"sse\" for live updates (SSE stream)",
-              "example": "sse"
-            },
-            "required": false,
-            "description": "Set to \"sse\" for live updates (SSE stream)",
-            "name": "live",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Catch-up activities or SSE stream started",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "activities": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/PublicStreamActivity"
-                      }
-                    },
-                    "cursor": {
-                      "type": [
-                        "string",
-                        "null"
-                      ],
-                      "description": "Last activity ID (use as offset for next request)"
-                    }
-                  },
-                  "required": [
-                    "activities",
-                    "cursor"
-                  ]
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      }
-    },
     "/pages": {
       "post": {
         "security": [
@@ -6965,6 +6820,7 @@
           "isSystemAdmin"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -7183,6 +7039,7 @@
           "isPublicAccess"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -7350,6 +7207,7 @@
           "isSystemAdmin"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -7403,11 +7261,14 @@
           "pages"
         ],
         "summary": "Get page",
-        "description": "Get a single *page* by ID.",
+        "description": "Get a single *page* by ID. Cached using LRU - first request warms cache.",
         "x-guard": [
           "isPublicAccess"
         ],
         "x-rate-limiter": [],
+        "x-cache": [
+          "publicCache"
+        ],
         "parameters": [
           {
             "schema": {
@@ -7483,6 +7344,7 @@
           "isSystemAdmin"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -7591,7 +7453,7 @@
         }
       }
     },
-    "/check-slug": {
+    "/entities/check-slug": {
       "post": {
         "security": [
           {
@@ -7608,6 +7470,7 @@
           "isAuthenticated"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -7656,6 +7519,215 @@
         }
       }
     },
+    "/entities/public/stream": {
+      "get": {
+        "security": [],
+        "operationId": "publicStream",
+        "tags": [
+          "entities"
+        ],
+        "summary": "Public entity stream",
+        "description": "Stream real-time changes for public entities (entities with no parent context). No authentication required. Use offset for catch-up, live=sse for SSE streaming.",
+        "x-guard": [
+          "isPublicAccess"
+        ],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Starting offset: 'now' for live-only, or activity ID to receive missed notifications",
+              "example": "now"
+            },
+            "required": false,
+            "description": "Starting offset: 'now' for live-only, or activity ID to receive missed notifications",
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "sse"
+              ],
+              "description": "Set to \"sse\" for live updates (SSE stream)",
+              "example": "sse"
+            },
+            "required": false,
+            "description": "Set to \"sse\" for live updates (SSE stream)",
+            "name": "live",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Catch-up activities or SSE stream started",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "activities": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/PublicStreamActivity"
+                      }
+                    },
+                    "cursor": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "description": "Last activity ID (use as offset for next request)"
+                    }
+                  },
+                  "required": [
+                    "activities",
+                    "cursor"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/entities/app/stream": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getAppStream",
+        "tags": [
+          "entities"
+        ],
+        "summary": "App event stream",
+        "description": "SSE stream for membership and entity notifications affecting the *current user*. Sends lightweight notifications - client fetches entity data via API.",
+        "x-guard": [
+          "isAuthenticated"
+        ],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Starting offset: 'now' for live-only, or activity ID to receive missed notifications",
+              "example": "now"
+            },
+            "required": false,
+            "description": "Starting offset: 'now' for live-only, or activity ID to receive missed notifications",
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "sse",
+                "poll"
+              ],
+              "description": "Connection mode: 'sse' for streaming, 'poll' for one-time fetch",
+              "example": "sse"
+            },
+            "required": false,
+            "description": "Connection mode: 'sse' for streaming, 'poll' for one-time fetch",
+            "name": "live",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "SSE stream or notification response",
+            "content": {
+              "text/event-stream": {
+                "schema": {}
+              },
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "activities": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/StreamNotification"
+                      }
+                    },
+                    "cursor": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "description": "Last activity ID (use as offset for next request)"
+                    }
+                  },
+                  "required": [
+                    "activities",
+                    "cursor"
+                  ]
+                },
+                "example": {
+                  "activities": [
+                    {
+                      "action": "create",
+                      "entityType": "page",
+                      "resourceType": null,
+                      "entityId": "p4mjvy3c0rjatirn6hp0rcgf",
+                      "organizationId": "ufjhv1cwh0j4x3xi7ae54uen",
+                      "contextType": null,
+                      "seq": 526,
+                      "cacheToken": "hg18eRugoaB38Ug7A1n7Zj018TyC3pwn",
+                      "tx": {
+                        "id": "gdgo47kv9o7rvgjoql6a1dxp",
+                        "sourceId": "8u6gifwzsuyr58fapjsndxb3",
+                        "version": 5,
+                        "fieldVersions": {
+                          "name": 1
+                        }
+                      }
+                    }
+                  ],
+                  "cursor": "ll6ebv8jmzcs1cydc8ytq68u"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
     "/system/invite": {
       "post": {
         "security": [
@@ -7674,6 +7746,7 @@
           "hasSystemAccess"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -7766,6 +7839,7 @@
         "x-rate-limiter": [
           "presignedUrlLimiter"
         ],
+        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -7837,6 +7911,7 @@
         "x-rate-limiter": [
           "tokenLimiter"
         ],
+        "x-cache": [],
         "requestBody": {
           "content": {
             "application/json": {
@@ -7884,6 +7959,7 @@
           "hasSystemAccess"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -7981,6 +8057,7 @@
           "emailEnumLimiter",
           "spamLimiter"
         ],
+        "x-cache": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -8069,6 +8146,7 @@
           "hasSystemAccess"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -8204,6 +8282,7 @@
           "hasSystemAccess"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -8267,6 +8346,7 @@
           "hasSystemAccess"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "responses": {
           "200": {
             "description": "Metrics",
@@ -8329,6 +8409,7 @@
           "hasSystemAccess"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "responses": {
           "200": {
             "description": "Runtime metrics",
@@ -8503,6 +8584,7 @@
           "isPublicAccess"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "responses": {
           "200": {
             "description": "Public counts",
@@ -8570,6 +8652,7 @@
           "hasSystemAccess"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "responses": {
           "200": {
             "description": "Cache statistics",
@@ -8684,6 +8767,7 @@
           "hasSystemAccess"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "responses": {
           "200": {
             "description": "Sync metrics",
@@ -8781,6 +8865,7 @@
           "hasOrgAccess"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -8974,6 +9059,7 @@
           "hasOrgAccess"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -9301,6 +9387,7 @@
           "hasOrgAccess"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -9366,6 +9453,102 @@
       }
     },
     "/{orgIdOrSlug}/attachments/{id}": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getAttachment",
+        "tags": [
+          "attachments"
+        ],
+        "summary": "Get attachment",
+        "description": "Returns a single *attachment* by ID. Supports CDC cache via X-Cache-Token header.",
+        "x-guard": [
+          "isAuthenticated",
+          "hasOrgAccess"
+        ],
+        "x-rate-limiter": [],
+        "x-cache": [
+          "appCache"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Entity ID or slug. ID is always preferred."
+            },
+            "required": true,
+            "description": "Entity ID or slug. ID is always preferred.",
+            "name": "orgIdOrSlug",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Attachment",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Attachment"
+                },
+                "example": {
+                  "id": "og9ynkm3vp2mdgi3oeicogxv",
+                  "entityType": "attachment",
+                  "name": "yet_rightfully_lest.ogx",
+                  "description": null,
+                  "keywords": "pectus subvenio depromo",
+                  "public": false,
+                  "bucketName": "attachments",
+                  "groupId": null,
+                  "filename": "yet_rightfully_lest.ogx",
+                  "contentType": "video/mp2t",
+                  "convertedContentType": null,
+                  "size": "6046908",
+                  "originalKey": "uploads/ofr579y6bqnt152wowxrfkyy/yet_rightfully_lest.ogx",
+                  "convertedKey": null,
+                  "thumbnailKey": null,
+                  "createdAt": "2024-10-12T17:43:05.360Z",
+                  "createdBy": "0uwim8y2tppz7th9tol75wjz",
+                  "modifiedAt": "2024-10-12T17:43:05.360Z",
+                  "modifiedBy": "0uwim8y2tppz7th9tol75wjz",
+                  "tx": {
+                    "id": "8dwkbmpkeuemouu8t58r8fuj",
+                    "sourceId": "src_3tlenhqurk6hu54pnfytf99m",
+                    "version": 1,
+                    "fieldVersions": {}
+                  },
+                  "organizationId": "pmuhw07eswx7d6csd6xo4nqw"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      },
       "put": {
         "security": [
           {
@@ -9383,6 +9566,7 @@
           "hasOrgAccess"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -9499,6 +9683,7 @@
         "x-rate-limiter": [
           "tokenLimiter"
         ],
+        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -9549,6 +9734,7 @@
           "hasOrgAccess"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -9685,6 +9871,7 @@
           "hasOrgAccess"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -9788,6 +9975,7 @@
           "hasOrgAccess"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -9896,6 +10084,7 @@
           "isAuthenticated"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -9986,6 +10175,7 @@
           "hasOrgAccess"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -10334,6 +10524,7 @@
           "hasOrgAccess"
         ],
         "x-rate-limiter": [],
+        "x-cache": [],
         "parameters": [
           {
             "schema": {

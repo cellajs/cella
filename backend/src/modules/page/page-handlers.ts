@@ -1,155 +1,31 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { and, count, desc, eq, getTableColumns, gt, gte, ilike, inArray, or, SQL } from 'drizzle-orm';
-import { streamSSE } from 'hono/streaming';
-import { nanoid as generateNanoid } from 'nanoid';
+import { and, count, eq, getTableColumns, gte, ilike, inArray, or, SQL } from 'drizzle-orm';
 import { db } from '#/db/db';
-import { activitiesTable } from '#/db/schema/activities';
-import { PageModel, pagesTable } from '#/db/schema/pages';
+import type { PageModel } from '#/db/schema/pages';
+import { pagesTable } from '#/db/schema/pages';
 import { usersTable } from '#/db/schema/users';
 import { type Env, getContextUser } from '#/lib/context';
-import { resolveEntity } from '#/lib/entity.ts';
+import { resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/error';
-import { pageCache } from '#/lib/page-cache';
 import pagesRoutes from '#/modules/page/page-routes';
 import { getValidProductEntity } from '#/permissions/get-product-entity';
 import { getEntityByTransaction, isTransactionProcessed } from '#/sync';
-import { activityBus } from '#/sync/activity-bus';
 import {
   buildFieldVersions,
   checkFieldConflicts,
   getChangedTrackedFields,
   throwIfConflicts,
 } from '#/sync/field-versions';
-import { keepAlive, streamSubscriberManager, writeOffset } from '#/sync/stream';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
-import { dispatchToPublicPageSubscribers, type PublicPageSubscriber, publicPageChannel } from './stream';
-
-// Register ActivityBus listeners for public page stream
-// Register ActivityBus listeners for public page stream and cache invalidation
-activityBus.on('page.created', (event) => {
-  if (event.entityId) pageCache.delete(event.entityId);
-  dispatchToPublicPageSubscribers(event);
-});
-activityBus.on('page.updated', (event) => {
-  if (event.entityId) pageCache.delete(event.entityId);
-  dispatchToPublicPageSubscribers(event);
-});
-activityBus.on('page.deleted', (event) => {
-  if (event.entityId) pageCache.delete(event.entityId);
-  dispatchToPublicPageSubscribers(event);
-});
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
-/**
- * Fetch delete activities for public page catch-up.
- * Only returns page.deleted activities since the cursor.
- */
-async function fetchPublicDeleteCatchUp(cursor: string | null, limit = 100) {
-  const conditions = [eq(activitiesTable.type, 'page.deleted')];
-  if (cursor) {
-    conditions.push(gt(activitiesTable.id, cursor));
-  }
-
-  const activities = await db
-    .select({
-      id: activitiesTable.id,
-      entityId: activitiesTable.entityId,
-      createdAt: activitiesTable.createdAt,
-    })
-    .from(activitiesTable)
-    .where(and(...conditions))
-    .orderBy(activitiesTable.id) // Use ascending order for forward cursor pagination
-    .limit(limit);
-
-  return activities;
-}
-
-/**
- * Get latest page activity ID (for 'now' offset).
- */
-async function getLatestPageActivityId(): Promise<string | null> {
-  const result = await db
-    .select({ id: activitiesTable.id })
-    .from(activitiesTable)
-    .where(eq(activitiesTable.entityType, 'page'))
-    .orderBy(desc(activitiesTable.id)) // Order by id for consistency with cursor
-    .limit(1);
-
-  return result[0]?.id ?? null;
-}
-
 const pageRouteHandlers = app
-  /**
-   * Public stream for page changes.
-   * Two modes:
-   * - Poll (no live param): Returns batch of delete activities since offset
-   * - SSE (live=sse): Live notifications only (client should poll first, then connect with offset=now)
-   */
-  .openapi(pagesRoutes.publicStream, async (ctx) => {
-    const { offset, live } = ctx.req.valid('query');
-
-    // Resolve cursor from offset parameter
-    let cursor: string | null = null;
-    if (offset === 'now') {
-      cursor = await getLatestPageActivityId();
-    } else if (offset) {
-      cursor = offset;
-    }
-
-    // Non-SSE request: return delete catch-up activities as batch
-    if (live !== 'sse') {
-      const deleteActivities = await fetchPublicDeleteCatchUp(cursor);
-      const lastActivity = deleteActivities.at(-1);
-
-      // Always return a consistent cursor - use lastActivity.id, original cursor, or empty string
-      const newCursor = lastActivity?.id ?? cursor ?? '';
-
-      return ctx.json({
-        activities: deleteActivities.map((a) => ({
-          action: 'delete' as const,
-          entityType: 'page' as const,
-          entityId: a.entityId!,
-          changedKeys: null,
-          createdAt: a.createdAt,
-        })),
-        cursor: newCursor,
-      });
-    }
-
-    // SSE streaming mode - live only, no catch-up (client polls first)
-    return streamSSE(ctx, async (stream) => {
-      ctx.header('Content-Encoding', '');
-
-      // Send offset marker immediately (live mode ready)
-      await writeOffset(stream, cursor);
-
-      // Register subscriber
-      const subscriber: PublicPageSubscriber = {
-        id: generateNanoid(),
-        channel: publicPageChannel,
-        stream,
-        cursor,
-      };
-
-      streamSubscriberManager.register(subscriber);
-      logEvent('info', 'Public page stream subscriber registered', { subscriberId: subscriber.id });
-
-      // Handle disconnect
-      stream.onAbort(() => {
-        streamSubscriberManager.unregister(subscriber.id);
-        logEvent('info', 'Public page stream subscriber disconnected', { subscriberId: subscriber.id });
-      });
-
-      // Keep connection alive
-      await keepAlive(stream);
-    });
-  })
   /**
    * Create one or more pages
    */
@@ -172,6 +48,7 @@ const pageRouteHandlers = app
     const user = getContextUser();
 
     // Prepare pages with tx metadata for CDC
+    // TODO not finished here
     const pagesToInsert = newPages.map(({ tx, ...pageData }) => ({
       ...pageData,
       id: nanoid(),
@@ -231,7 +108,7 @@ const pageRouteHandlers = app
           : [
               // this seems stricter
               inArray(pagesTable.name, searchTerms),
-              inArray(pagesTable.keywords, searchTerms), // hm
+              inArray(pagesTable.keywords, searchTerms),
               inArray(pagesTable.description, searchTerms),
               inArray(usersTable.name, searchTerms),
               inArray(usersTable.email, searchTerms),
@@ -266,25 +143,17 @@ const pageRouteHandlers = app
   })
   /**
    * Get page by id.
-   * Uses LRU cache for efficient public page access.
+   * Cache middleware (xCache) handles HIT. On MISS, handler fetches and sets entityCacheData.
    */
   .openapi(pagesRoutes.getPage, async (ctx) => {
     const { id } = ctx.req.valid('param');
 
-    // Check page cache first
-    const cached = pageCache.get(id);
-    if (cached) {
-      ctx.header('X-Cache', 'HIT');
-      return ctx.json(cached, 200);
-    }
-
-    // Cache miss - fetch from DB
+    // Fetch from DB (enrichment could be added here if needed)
     const page = await resolveEntity('page', id);
     if (!page) throw new AppError(404, 'not_found', 'warn', { entityType: 'page' });
 
-    // Cache the result
-    pageCache.set(id, page);
-    ctx.header('X-Cache', 'MISS');
+    // Set data for cache middleware to store
+    ctx.set('entityCacheData', page);
 
     return ctx.json(page, 200);
   })

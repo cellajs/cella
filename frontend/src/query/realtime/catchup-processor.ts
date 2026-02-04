@@ -11,9 +11,9 @@
  */
 
 import { getEntityQueryKeys } from '~/query/basic';
-import type { AppStreamNotification } from './types';
 import * as cacheOps from './cache-ops';
 import * as membershipOps from './membership-ops';
+import type { AppStreamNotification } from './types';
 
 export interface CatchupOptions {
   /** ISO timestamp of last successful sync (for modifiedAfter queries) */

@@ -4,7 +4,6 @@ import { getAppStream } from '~/api.gen';
 import { useLatestRef } from '~/hooks/use-latest-ref';
 import { useSyncStore } from '~/store/sync';
 import { handleAppStreamNotification } from './app-stream-handler';
-import type { AppStreamNotification, StreamState, UseAppStreamOptions, UseAppStreamReturn } from './types';
 import { processCatchupBatch } from './catchup-processor';
 import {
   broadcastNotification,
@@ -13,6 +12,7 @@ import {
   onNotification,
   useTabCoordinatorStore,
 } from './tab-coordinator';
+import type { AppStreamNotification, StreamState, UseAppStreamOptions, UseAppStreamReturn } from './types';
 import { useLeaderReconnect } from './use-leader-reconnect';
 import { useSSEConnection } from './use-sse-connection';
 import { useVisibilityReconnect } from './use-visibility-reconnect';
@@ -136,7 +136,7 @@ export function useAppStream(options: UseAppStreamOptions = {}): UseAppStreamRet
     connect: sseConnect,
     disconnect: sseDisconnect,
   } = useSSEConnection({
-    url: `${appConfig.backendUrl}/me/stream`,
+    url: `${appConfig.backendUrl}/entities/app/stream`,
     enabled, // Pass through for potential future auto-connect or state tracking
     withCredentials: true,
     getOffset: () => 'now', // Always 'now' since we already did catchup
@@ -157,7 +157,9 @@ export function useAppStream(options: UseAppStreamOptions = {}): UseAppStreamRet
   const initialize = useCallback(async () => {
     // Prevent duplicate initialization
     if (initializingRef.current || catchupCompleteRef.current) {
-      console.debug(`[${debugLabel}] Skipping initialize (already ${initializingRef.current ? 'in progress' : 'complete'})`);
+      console.debug(
+        `[${debugLabel}] Skipping initialize (already ${initializingRef.current ? 'in progress' : 'complete'})`,
+      );
       return;
     }
 

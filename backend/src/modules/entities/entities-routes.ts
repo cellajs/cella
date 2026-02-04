@@ -1,7 +1,15 @@
+import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/docs/x-routes';
-import { isAuthenticated } from '#/middlewares/guard';
+import { isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { checkSlugBodySchema } from '#/modules/entities/entities-schema';
-import { errorResponseRefs } from '#/schemas';
+import {
+  appStreamResponseSchema,
+  errorResponseRefs,
+  publicStreamQuerySchema,
+  publicStreamResponseSchema,
+  streamQuerySchema,
+} from '#/schemas';
+import { mockAppStreamResponse } from '../../../mocks/mock-me';
 
 const entityRoutes = {
   /**
@@ -25,6 +33,62 @@ const entityRoutes = {
     responses: {
       204: {
         description: 'Slug is available',
+      },
+      ...errorResponseRefs,
+    },
+  }),
+
+  /**
+   * Public stream for all public entity changes (no auth required)
+   */
+  publicStream: createXRoute({
+    operationId: 'publicStream',
+    method: 'get',
+    path: '/public/stream',
+    xGuard: isPublicAccess,
+    tags: ['entities'],
+    summary: 'Public entity stream',
+    description:
+      'Stream real-time changes for public entities (entities with no parent context). No authentication required. Use offset for catch-up, live=sse for SSE streaming.',
+    request: { query: publicStreamQuerySchema },
+    responses: {
+      200: {
+        description: 'Catch-up activities or SSE stream started',
+        content: {
+          'application/json': {
+            schema: publicStreamResponseSchema,
+          },
+        },
+      },
+      ...errorResponseRefs,
+    },
+  }),
+
+  /**
+   * App event stream (authenticated user stream)
+   */
+  appStream: createXRoute({
+    operationId: 'getAppStream',
+    method: 'get',
+    path: '/app/stream',
+    xGuard: isAuthenticated,
+    tags: ['entities'],
+    summary: 'App event stream',
+    description:
+      'SSE stream for membership and entity notifications affecting the *current user*. Sends lightweight notifications - client fetches entity data via API.',
+    request: {
+      query: streamQuerySchema,
+    },
+    responses: {
+      200: {
+        description: 'SSE stream or notification response',
+        content: {
+          'text/event-stream': { schema: z.any() },
+          'application/json': {
+            schema: appStreamResponseSchema,
+            example: mockAppStreamResponse(),
+          },
+        },
       },
       ...errorResponseRefs,
     },

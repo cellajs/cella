@@ -71,6 +71,26 @@ const attachmentRouteHandlers = app
     return ctx.json({ items, total }, 200);
   })
   /**
+   * Get single attachment by ID
+   */
+  .openapi(attachmentRoutes.getAttachment, async (ctx) => {
+    const { id } = ctx.req.valid('param');
+    const organization = getContextOrganization();
+
+    // Get attachment with permission check
+    const { entity: attachment } = await getValidProductEntity(id, 'attachment', 'read');
+
+    // Verify attachment belongs to the organization context
+    if (attachment.organizationId !== organization.id) {
+      throw new AppError(404, 'not_found', 'warn', { entityType: 'attachment' });
+    }
+
+    // Set cache data for passthrough pattern (appCache middleware will cache this)
+    ctx.set('entityCacheData', attachment as Record<string, unknown>);
+
+    return ctx.json(attachment, 200);
+  })
+  /**
    * Create one or more attachments
    */
   .openapi(attachmentRoutes.createAttachments, async (ctx) => {

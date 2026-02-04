@@ -247,6 +247,8 @@ export class EntityHierarchy<
   readonly allTypes: readonly ('user' | TContexts | TProducts)[];
   /** Context entities that are parents of product entities */
   readonly relatableContextTypes: readonly TContexts[];
+  /** Product entities with no parent context (parent: null) - candidates for public access */
+  readonly parentlessProductTypes: readonly TProducts[];
 
   constructor(roles: TRoles, entities: Map<string, EntityEntry>) {
     this.roleRegistry = roles;
@@ -266,6 +268,13 @@ export class EntityHierarchy<
     this.contextTypes = Object.freeze(contexts);
     this.productTypes = Object.freeze(products);
     this.allTypes = Object.freeze(all);
+
+    // Compute parentless product types (candidates for public access)
+    const parentlessProducts = products.filter((p) => {
+      const entry = entities.get(p);
+      return entry?.kind === 'product' && entry.parent === null;
+    });
+    this.parentlessProductTypes = Object.freeze(parentlessProducts);
 
     // Compute relatable context types (context entities that are parents of products)
     const relatableContexts = new Set<TContexts>();
@@ -483,4 +492,57 @@ export function createEntityHierarchy<R extends { all: readonly string[] }>(
   roles: R,
 ): EntityHierarchyBuilder<R, never, never> {
   return new EntityHierarchyBuilder(roles);
+}
+
+/******************************************************************************
+ * PUBLIC ENTITY VALIDATION
+ ******************************************************************************/
+
+/**
+ * Validates that all product entities with parent: null are explicitly declared in publicProductEntityTypes.
+ * This provides security-by-design: public entities must be intentionally configured.
+ *
+ * Call this at app startup (e.g., in server initialization) to catch misconfigurations early.
+ *
+ * @param hierarchy - The built entity hierarchy
+ * @param publicProductEntityTypes - Explicitly declared public product entity types from config
+ * @throws Error if any parentless product entity is not in publicProductEntityTypes, or vice versa
+ */
+export function validatePublicProductEntities<T extends string>(
+  hierarchy: EntityHierarchy<{ all: readonly string[] }, string, T>,
+  publicProductEntityTypes: readonly string[],
+): void {
+  const parentlessFromHierarchy = new Set<string>(hierarchy.parentlessProductTypes);
+  const declaredPublic = new Set(publicProductEntityTypes);
+
+  // Check for parentless products not declared as public (security risk if unintentional)
+  const undeclaredPublic = [...parentlessFromHierarchy].filter((t) => !declaredPublic.has(t));
+  if (undeclaredPublic.length > 0) {
+    throw new Error(
+      `EntityHierarchy: Product entities with parent: null must be declared in publicProductEntityTypes. ` +
+        `Missing: ${undeclaredPublic.join(', ')}. ` +
+        `Either add them to publicProductEntityTypes or set a parent context for these entities.`,
+    );
+  }
+
+  // Check for declared public types that actually have a parent (misconfiguration)
+  const invalidPublic = [...declaredPublic].filter((t) => !parentlessFromHierarchy.has(t));
+  if (invalidPublic.length > 0) {
+    throw new Error(
+      `EntityHierarchy: publicProductEntityTypes contains entities with a parent context. ` +
+        `Invalid: ${invalidPublic.join(', ')}. ` +
+        `Public product entities must have parent: null in the hierarchy.`,
+    );
+  }
+}
+
+/**
+ * Check if a product entity type is a public entity (no parent context).
+ * Utility for runtime checks in handlers and middleware.
+ */
+export function isPublicProductEntity<T extends string>(
+  hierarchy: EntityHierarchy<{ all: readonly string[] }, string, T>,
+  entityType: string,
+): boolean {
+  return hierarchy.parentlessProductTypes.includes(entityType as T);
 }

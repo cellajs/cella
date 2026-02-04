@@ -1,5 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/docs/x-routes';
+import { appCache } from '#/middlewares/entity-cache';
 import { hasOrgAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
@@ -84,6 +85,29 @@ const attachmentRoutes = {
         content: {
           'application/json': { schema: attachmentCreateResponseSchema, example: mockBatchAttachmentsResponse() },
         },
+      },
+      ...errorResponseRefs,
+    },
+  }),
+  /**
+   * Get single attachment by ID
+   */
+  getAttachment: createXRoute({
+    operationId: 'getAttachment',
+    method: 'get',
+    path: '/{id}',
+    xGuard: [isAuthenticated, hasOrgAccess],
+    xCache: appCache(),
+    tags: ['attachments'],
+    summary: 'Get attachment',
+    description: 'Returns a single *attachment* by ID. Supports CDC cache via X-Cache-Token header.',
+    request: {
+      params: idInOrgParamSchema,
+    },
+    responses: {
+      200: {
+        description: 'Attachment',
+        content: { 'application/json': { schema: attachmentSchema, example: mockAttachmentResponse() } },
       },
       ...errorResponseRefs,
     },

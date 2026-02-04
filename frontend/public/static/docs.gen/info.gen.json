@@ -31,6 +31,17 @@
         "passkeyChallengeLimiter": { "description": "Max 5 passkey challenges/hour per IP" },
         "tokenLimiter": { "description": "Blocks IP for 30 min after 10 consecutive token failures" }
       }
+    },
+    {
+      "key": "x-cache",
+      "id": "xCache",
+      "translationKey": "common:docs.cache",
+      "description": "Caching strategy applied to the endpoint",
+      "required": false,
+      "values": {
+        "appCache": { "description": "TTL cache with CDC token reservation pattern" },
+        "publicCache": { "description": "LRU cache for public page entities" }
+      }
     }
   ]
 }

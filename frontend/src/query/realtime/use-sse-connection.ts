@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { startSyncSpan, syncSpanNames } from '~/lib/tracing';
-import type { StreamState } from './types';
 import { isLeader } from './tab-coordinator';
+import type { StreamState } from './types';
 
 /** SSE event handlers configuration. */
 export interface SSEEventHandlers {
@@ -58,7 +58,7 @@ export interface UseSSEConnectionReturn {
 export function useSSEConnection(options: UseSSEConnectionOptions): UseSSEConnectionReturn {
   const {
     url,
-    enabled = true,
+    enabled: _enabled = true,
     withCredentials = false,
     requireLeader = true,
     getOffset,
