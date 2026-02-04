@@ -146,6 +146,18 @@ export type Activity = {
   changedKeys: Array<string> | null;
   tx: TxBase | null;
   seq: number | null;
+  error: ActivityError | null;
+};
+
+/**
+ * Error info for failed CDC activities (dead letters)
+ */
+export type ActivityError = {
+  lsn: string;
+  message: string;
+  code?: string | null;
+  retryCount: number;
+  resolved?: boolean;
 };
 
 export type Me = {

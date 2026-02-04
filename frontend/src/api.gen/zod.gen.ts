@@ -139,6 +139,17 @@ export const zTooManyRequestsError = zApiError.and(
   }),
 );
 
+/**
+ * Error info for failed CDC activities (dead letters)
+ */
+export const zActivityError = z.object({
+  lsn: z.string(),
+  message: z.string(),
+  code: z.optional(z.union([z.string(), z.null()])),
+  retryCount: z.number(),
+  resolved: z.optional(z.boolean()),
+});
+
 export const zActivity = z.object({
   id: z.string(),
   userId: z.union([z.string(), z.null()]),
@@ -153,6 +164,7 @@ export const zActivity = z.object({
   changedKeys: z.union([z.array(z.string()), z.null()]),
   tx: z.union([zTxBase, z.null()]),
   seq: z.union([z.int().gte(-2147483648).lte(2147483647), z.null()]),
+  error: z.union([zActivityError, z.null()]),
 });
 
 export const zUser = z.object({

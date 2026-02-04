@@ -75,6 +75,29 @@
                     "required": true,
                     "minimum": -2147483648,
                     "maximum": 2147483647
+                  },
+                  "error": {
+                    "required": true,
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "required": false,
+                        "description": "Error info for failed CDC activities (dead letters)",
+                        "properties": {
+                          "lsn": { "type": "string", "required": true },
+                          "message": { "type": "string", "required": true },
+                          "code": {
+                            "type": ["string", "null"],
+                            "required": false
+                          },
+                          "retryCount": { "type": "number", "required": true },
+                          "resolved": { "type": "boolean", "required": false }
+                        },
+                        "ref": "#/components/schemas/ActivityError",
+                        "refDescription": "Error info for failed CDC activities (dead letters)"
+                      },
+                      { "type": "null", "required": false }
+                    ]
                   }
                 },
                 "ref": "#/components/schemas/Activity"
@@ -99,6 +122,7 @@
               "changedKeys": null,
               "tx": null,
               "seq": 547,
+              "error": null,
               "organizationId": "bbm5piweg2q4gqa3vx9cfyey"
             },
             {
@@ -114,6 +138,7 @@
               "changedKeys": ["slug", "description"],
               "tx": null,
               "seq": 521,
+              "error": null,
               "organizationId": "avgc67t5nr6k4huj5qv4k6bw"
             }
           ],

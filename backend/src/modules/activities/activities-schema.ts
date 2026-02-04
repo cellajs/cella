@@ -2,6 +2,7 @@ import { z } from '@hono/zod-openapi';
 import { appConfig } from 'config';
 import { createSelectSchema } from 'drizzle-zod';
 import { activitiesTable } from '#/db/schema/activities';
+import { activityErrorSchema } from '#/db/utils/activity-error-schema';
 import { txBaseSchema } from '#/db/utils/tx-columns';
 import { paginationQuerySchema } from '#/schemas';
 import { activityActions } from '#/sync/activity-bus';
@@ -13,6 +14,9 @@ export const activityActionSchema = z.enum(activityActions);
 /** Schema for resource types enum */
 export const resourceTypeSchema = z.enum(appConfig.resourceTypes);
 
+// Re-export for convenience
+export { activityErrorSchema } from '#/db/utils/activity-error-schema';
+
 /** Full activity schema derived from table, with proper tx and changedKeys typing */
 export const activitySchema = z
   .object({
@@ -21,6 +25,7 @@ export const activitySchema = z
     changedKeys: z.array(z.string()).nullable(),
     // Use union instead of .nullable() to generate proper anyOf in OpenAPI (avoids allOf intersection issue)
     tx: z.union([txBaseSchema, z.null()]),
+    error: z.union([activityErrorSchema, z.null()]),
   })
   .openapi('Activity', { example: mockActivityResponse() });
 
