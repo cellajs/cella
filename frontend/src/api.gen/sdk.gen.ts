@@ -2120,11 +2120,11 @@ export const createAttachments = <ThrowOnError extends boolean = true>(
  *
  * Returns a single *attachment* by ID. Supports CDC cache via X-Cache-Token header.
  *
- * **GET /{orgIdOrSlug}/attachments/{id}** ·· [getAttachment](https://api.cellajs.com/docs#tag/attachments/get/{orgIdOrSlug}/attachments/{id}) ·· _attachments_
+ * **GET /{orgId}/attachments/{id}** ·· [getAttachment](https://api.cellajs.com/docs#tag/attachments/get/{orgId}/attachments/{id}) ·· _attachments_
  *
  * @param {getAttachmentData} options
  * @param {string} options.path.id - `string`
- * @param {string} options.path.orgidorslug - `string`
+ * @param {string} options.path.orgid - `string`
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getAttachment = <ThrowOnError extends boolean = true>(options: Options<GetAttachmentData, ThrowOnError>) =>
@@ -2137,7 +2137,7 @@ export const getAttachment = <ThrowOnError extends boolean = true>(options: Opti
         type: 'apiKey',
       },
     ],
-    url: '/{orgIdOrSlug}/attachments/{id}',
+    url: '/{orgId}/attachments/{id}',
     ...options,
   });
 

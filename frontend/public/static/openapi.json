@@ -9501,7 +9501,7 @@
         }
       }
     },
-    "/{orgIdOrSlug}/attachments/{id}": {
+    "/{orgId}/attachments/{id}": {
       "get": {
         "security": [
           {
@@ -9533,12 +9533,10 @@
           },
           {
             "schema": {
-              "type": "string",
-              "description": "Entity ID or slug. ID is always preferred."
+              "type": "string"
             },
             "required": true,
-            "description": "Entity ID or slug. ID is always preferred.",
-            "name": "orgIdOrSlug",
+            "name": "orgId",
             "in": "path"
           }
         ],

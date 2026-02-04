@@ -3774,13 +3774,10 @@ export type GetAttachmentData = {
   body?: never;
   path: {
     id: string;
-    /**
-     * Entity ID or slug. ID is always preferred.
-     */
-    orgIdOrSlug: string;
+    orgId: string;
   };
   query?: never;
-  url: '/{orgIdOrSlug}/attachments/{id}';
+  url: '/{orgId}/attachments/{id}';
 };
 
 export type GetAttachmentErrors = {

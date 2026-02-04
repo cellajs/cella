@@ -1331,9 +1331,9 @@
   },
   {
     "id": "getAttachment",
-    "hash": "tag/attachments/GET/{orgIdOrSlug}/attachments/{id}",
+    "hash": "tag/attachments/GET/{orgId}/attachments/{id}",
     "method": "get",
-    "path": "/{orgIdOrSlug}/attachments/{id}",
+    "path": "/{orgId}/attachments/{id}",
     "tags": ["attachments"],
     "summary": "Get attachment",
     "description": "Returns a single *attachment* by ID. Supports CDC cache via X-Cache-Token header.",
