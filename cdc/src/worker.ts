@@ -199,7 +199,7 @@ function generateActivityId(lsn: string, tableName: string): string {
 
 /**
  * Record a failed message as a dead letter in the activities table.
- * Uses the activity with status='failed' and error information.
+ * Uses the activity with error JSONB field containing all error info.
  */
 async function recordDeadLetter(
   lsn: string,
@@ -213,15 +213,16 @@ async function recordDeadLetter(
       .values({
         ...activity,
         id: activityId,
-        lsn,
-        status: 'failed',
-        errorMessage: error.message,
-        errorCode: getErrorCode(error),
-        retryCount: RESOURCE_LIMITS.retry.maxAttempts,
-        resolved: false,
+        error: {
+          lsn,
+          message: error.message,
+          code: getErrorCode(error),
+          retryCount: RESOURCE_LIMITS.retry.maxAttempts,
+          resolved: false,
+        },
       })
-      .onConflictDoNothing();
-      
+      .onConflictDoNothing()
+
     logEvent('error', 'Activity recorded as dead letter', {
       activityId,
       lsn,

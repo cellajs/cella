@@ -38,13 +38,8 @@ export const mockActivity = (key = 'activity:default'): ActivityModel =>
           : null,
       tx: null,
       seq: faker.number.int({ min: 1, max: 1000 }),
-      // Dead letter fields
-      lsn: null,
-      status: null,
-      errorMessage: null,
-      errorCode: null,
-      retryCount: null,
-      resolved: null,
+      // Dead letter error info (null for successfully processed activities)
+      error: null,
       ...generateMockContextEntityIdColumns('relatable'),
     };
   });
