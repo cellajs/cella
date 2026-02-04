@@ -1,5 +1,5 @@
-import type { ProductEntityType } from 'config';
 import { varchar } from 'drizzle-orm/pg-core';
+import type { ProductEntityType } from 'shared';
 import { usersTable } from '#/db/schema/users';
 import { baseEntityColumns } from '#/db/utils/base-entity-columns';
 

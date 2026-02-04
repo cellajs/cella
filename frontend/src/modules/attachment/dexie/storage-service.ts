@@ -11,7 +11,7 @@
  * This service manages the actual blob data.
  */
 import * as Sentry from '@sentry/react';
-import { appConfig } from 'config';
+import { appConfig } from 'shared';
 import type { Attachment } from '~/api.gen';
 import {
   type AttachmentBlob,

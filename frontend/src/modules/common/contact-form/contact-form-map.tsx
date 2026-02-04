@@ -7,12 +7,12 @@ import {
   MapControl,
   useAdvancedMarkerRef,
 } from '@vis.gl/react-google-maps';
-import { appConfig } from 'config';
 import { ArrowUpRightIcon, MilestoneIcon, MinusIcon, PlusIcon, XIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import useMountedState from '~/hooks/use-mounted-state';
 import ErrorNotice, { type ErrorNoticeError } from '~/modules/common/error-notice';
 import { Button } from '~/modules/ui/button';

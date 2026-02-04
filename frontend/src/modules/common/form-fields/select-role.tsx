@@ -1,5 +1,5 @@
-import { appConfig } from 'config';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
 import { cn } from '~/utils/cn';

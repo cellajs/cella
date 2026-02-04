@@ -1,6 +1,6 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { appConfig, hierarchy, recordFromKeys } from 'config';
 import { and, count, eq, getTableColumns, ilike, inArray, type SQL } from 'drizzle-orm';
+import { appConfig, hierarchy, recordFromKeys } from 'shared';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';

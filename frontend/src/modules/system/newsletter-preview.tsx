@@ -1,5 +1,5 @@
-import { appConfig } from 'config';
 import { lazy, Suspense } from 'react';
+import { appConfig } from 'shared';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import Spinner from '~/modules/common/spinner';
 

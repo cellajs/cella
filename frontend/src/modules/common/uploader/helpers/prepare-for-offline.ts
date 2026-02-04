@@ -1,5 +1,5 @@
 import type { AssemblyResponse } from '@uppy/transloadit';
-import { uploadTemplates } from 'config/upload-templates';
+import { uploadTemplates } from 'shared/upload-templates';
 import type { UploadContext, UploadStatus } from '~/modules/attachment/dexie/attachments-db';
 import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
 import type { CustomUppyFile } from '~/modules/common/uploader/types';

@@ -1,6 +1,6 @@
 import brevo from '@getbrevo/brevo';
-import { appConfig } from 'config';
 import { render } from 'jsx-email';
+import { appConfig } from 'shared';
 import { env } from '#/env';
 import { sanitizeEmailSubject } from '#/utils/sanitize-email-subject';
 

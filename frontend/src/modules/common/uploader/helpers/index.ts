@@ -2,7 +2,7 @@ import * as Sentry from '@sentry/react';
 import { onlineManager } from '@tanstack/react-query';
 import { Uppy } from '@uppy/core';
 import Transloadit from '@uppy/transloadit';
-import { appConfig } from 'config';
+import { appConfig } from 'shared';
 import { getUploadToken, type UploadToken } from '~/api.gen';
 import { makeBlobKey, type UploadContext } from '~/modules/attachment/dexie/attachments-db';
 import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';

@@ -11,8 +11,8 @@
  */
 import * as Sentry from '@sentry/react';
 import type { PersistedClient, Persister } from '@tanstack/react-query-persist-client';
-import { appConfig } from 'config';
 import { Dexie } from 'dexie';
+import { appConfig } from 'shared';
 
 interface PersistedRecord {
   key: string;

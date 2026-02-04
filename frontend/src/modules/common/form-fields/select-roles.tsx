@@ -1,5 +1,5 @@
-import { appConfig } from 'config';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import { Checkbox } from '~/modules/ui/checkbox';
 import { cn } from '~/utils/cn';
 

@@ -1,8 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { appConfig } from 'config';
 import { lazy, Suspense } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import type { z } from 'zod';
 import type { Organization } from '~/api.gen';
 import { zUpdateOrganizationData } from '~/api.gen/zod.gen';

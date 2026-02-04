@@ -1,5 +1,5 @@
-import { appConfig } from 'config';
 import { index, pgTable, primaryKey, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { appConfig } from 'shared';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { usersTable } from '#/db/schema/users';
 import { timestampColumns } from '#/db/utils/timestamp-columns';

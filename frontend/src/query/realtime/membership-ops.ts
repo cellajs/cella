@@ -5,7 +5,7 @@
  * Used by both live stream handler and catchup processor.
  */
 
-import type { ContextEntityType } from 'config';
+import type { ContextEntityType } from 'shared';
 import { getAndSetMe } from '~/modules/me/helpers';
 import { memberQueryKeys } from '~/modules/memberships/query';
 import { getMenuData } from '~/modules/navigation/menu-sheet/helpers';

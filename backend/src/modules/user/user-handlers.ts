@@ -1,7 +1,7 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { appConfig } from 'config';
 import { and, count, eq, ilike, inArray, ne, or, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
+import { appConfig } from 'shared';
 import { db } from '#/db/db';
 import { lastSeenTable } from '#/db/schema/last-seen';
 import { membershipsTable } from '#/db/schema/memberships';

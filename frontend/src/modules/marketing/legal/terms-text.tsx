@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { appConfig } from 'config';
+import { appConfig } from 'shared';
 import LegalContact from '~/modules/marketing/legal/legal-contact';
 
 function TermsText() {

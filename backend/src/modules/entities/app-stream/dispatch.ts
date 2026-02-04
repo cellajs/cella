@@ -1,4 +1,4 @@
-import { isProductEntity } from 'config';
+import { isProductEntity } from 'shared';
 import { signCacheToken } from '#/lib/cache-token-signer';
 import type { ActivityEventWithEntity } from '#/sync/activity-bus';
 import { streamSubscriberManager, writeChange } from '#/sync/stream';

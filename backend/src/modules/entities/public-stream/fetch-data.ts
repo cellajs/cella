@@ -3,8 +3,8 @@
  * Entity-agnostic: uses config.publicProductEntityTypes dynamically.
  */
 
-import { appConfig, type PublicProductEntityType } from 'config';
 import { and, desc, gt, inArray } from 'drizzle-orm';
+import { appConfig, type PublicProductEntityType } from 'shared';
 import { db } from '#/db/db';
 import { activitiesTable } from '#/db/schema/activities';
 

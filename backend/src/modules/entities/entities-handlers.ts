@@ -1,7 +1,7 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { appConfig } from 'config';
 import { streamSSE } from 'hono/streaming';
 import { nanoid } from 'nanoid';
+import { appConfig } from 'shared';
 import { signCacheToken } from '#/lib/cache-token-signer';
 import {
   type Env,

@@ -45,7 +45,7 @@ export const TO_COPY: Record<string, string> = {
 
 // Files to be edited after downloading
 export const TO_EDIT: Record<string, { regexMatch: RegExp; replaceWith: string }[]> = {
-  './config/default.ts': [
+  './shared/default-config.ts': [
     {
       regexMatch: /enabledAuthStrategies:\s*\[[^\]]+\]\s*as\s*const,/g,
       replaceWith: "enabledAuthStrategies: ['password', 'passkey', 'totp'] as const,",

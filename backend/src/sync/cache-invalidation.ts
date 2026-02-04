@@ -11,7 +11,7 @@
  * Import this module during server startup to enable automatic cache management.
  */
 
-import { isProductEntity, isPublicProductEntity } from 'config';
+import { isProductEntity, isPublicProductEntity } from 'shared';
 import { entityCache } from '#/middlewares/entity-cache';
 import { type ActivityEventWithEntity, activityBus } from '#/sync/activity-bus';
 import { logEvent } from '#/utils/logger';

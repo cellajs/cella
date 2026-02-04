@@ -1,5 +1,5 @@
 import type { ImageEditorOptions } from '@uppy/image-editor';
-import type { UploadTemplateId } from 'config';
+import type { UploadTemplateId } from 'shared';
 
 const baseCropperOptions = {
   croppedCanvasOptions: {},

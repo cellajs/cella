@@ -5,7 +5,7 @@ import {
   hierarchy,
   isContextEntity,
   type ProductEntityType,
-} from 'config';
+} from 'shared';
 import { env } from '#/env';
 import { allActionsAllowed, createActionRecord } from './action-helpers';
 import { formatBatchPermissionSummary, formatPermissionDecision } from './format';

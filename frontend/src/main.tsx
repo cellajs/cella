@@ -9,7 +9,7 @@ import './styling/tailwind.css';
 import '~/lib/dayjs';
 import '~/lib/i18n';
 
-import { appConfig, type ConfigMode } from 'config';
+import { appConfig, type ConfigMode } from 'shared';
 import { initSentry } from '~/lib/sentry';
 import { RouterWrapper } from '~/modules/common/router-wrapper';
 import { QueryClientProvider } from '~/query/provider';

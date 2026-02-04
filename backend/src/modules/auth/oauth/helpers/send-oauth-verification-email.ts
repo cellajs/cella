@@ -1,6 +1,6 @@
-import { appConfig } from 'config';
 import { and, eq } from 'drizzle-orm';
 import i18n from 'i18next';
+import { appConfig } from 'shared';
 import { db } from '#/db/db';
 import { type EmailModel, emailsTable } from '#/db/schema/emails';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';

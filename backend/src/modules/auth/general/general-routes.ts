@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { appConfig } from 'config';
+import { appConfig } from 'shared';
 import { createXRoute } from '#/docs/x-routes';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';

@@ -1,6 +1,6 @@
-import { appConfig, type EnabledOAuthProvider } from 'config';
 import { and, eq } from 'drizzle-orm';
 import type { Context } from 'hono';
+import { appConfig, type EnabledOAuthProvider } from 'shared';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { type OAuthAccountModel, oauthAccountsTable } from '#/db/schema/oauth-accounts';

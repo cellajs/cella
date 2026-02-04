@@ -1,4 +1,4 @@
-import type { ContextEntityType, EntityActionType, ProductEntityType } from 'config';
+import type { ContextEntityType, EntityActionType, ProductEntityType } from 'shared';
 import { getContextUserSystemRole } from '#/lib/context';
 import { resolveEntities } from '#/lib/entity';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';

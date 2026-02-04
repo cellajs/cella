@@ -1,6 +1,6 @@
-import { appConfig } from 'config';
 import { sql } from 'drizzle-orm';
 import { foreignKey, index, integer, jsonb, pgTable, primaryKey, varchar } from 'drizzle-orm/pg-core';
+import { appConfig } from 'shared';
 import type { ActivityError } from '#/db/utils/activity-error-schema';
 import {
   generateActivityContextColumns,

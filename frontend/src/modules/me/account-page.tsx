@@ -1,9 +1,9 @@
 import * as Sentry from '@sentry/react';
 import { onlineManager, useMutation } from '@tanstack/react-query';
-import { appConfig, type EnabledOAuthProvider } from 'config';
 import { CheckIcon, SendIcon, TrashIcon } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { appConfig, type EnabledOAuthProvider } from 'shared';
 import {
   type ApiError,
   type RequestPasswordData,

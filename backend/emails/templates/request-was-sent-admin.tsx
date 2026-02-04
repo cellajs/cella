@@ -1,6 +1,6 @@
-import { appConfig } from 'config';
 import i18n from 'i18next';
 import { Text } from 'jsx-email';
+import { appConfig } from 'shared';
 import { EmailBody, EmailContainer, EmailHeader, EmailLogo, Footer } from '../components';
 import { RequestResponseEmailProps } from './request-was-sent';
 

@@ -16,6 +16,6 @@
       "#json/*": ["../json/*"]
     }
   },
-  "include": ["src/**/*", "../backend/src/**/*", "../backend/mocks/**/*", "../backend/emails/**/*", "../config/*"],
+  "include": ["src/**/*", "../backend/src/**/*", "../backend/mocks/**/*", "../backend/emails/**/*", "../shared/*"],
   "exclude": ["**/node_modules", "**/dist", "**/.*/", "../backend/tests"]
 }

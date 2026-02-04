@@ -1,5 +1,5 @@
 import { decodeBase64, encodeBase64 } from '@oslojs/encoding';
-import { appConfig } from 'config';
+import { appConfig } from 'shared';
 import { generatePasskeyChallenge } from '~/api.gen';
 import type { PasskeyCredentialProps } from '~/modules/auth/types';
 import { generatePasskeyName } from '~/modules/me/helpers';

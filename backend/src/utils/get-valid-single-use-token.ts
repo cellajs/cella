@@ -1,6 +1,6 @@
-import { TokenType } from 'config';
 import { and, eq } from 'drizzle-orm';
 import { Context } from 'hono';
+import { TokenType } from 'shared';
 import { db } from '#/db/db';
 import { type TokenModel, tokensTable } from '#/db/schema/tokens';
 import { AppError } from '#/lib/error';

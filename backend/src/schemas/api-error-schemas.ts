@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import type { Severity } from 'config';
+import type { Severity } from 'shared';
 import { mockApiError } from '../../mocks/mock-error';
 import { entityTypeSchema } from './common-schemas';
 

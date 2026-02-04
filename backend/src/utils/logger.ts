@@ -1,4 +1,4 @@
-import { appConfig, type Severity } from 'config';
+import { appConfig, type Severity } from 'shared';
 import { eventLogger } from '#/pino';
 
 const isProduction = appConfig.mode === 'production';

@@ -1,4 +1,4 @@
-import type { EntityActionType } from 'config';
+import type { EntityActionType } from 'shared';
 import { getContextMemberships, getContextUserSystemRole } from '#/lib/context';
 import type { PermissionResult } from './check-permission';
 import { checkPermission } from './check-permission';

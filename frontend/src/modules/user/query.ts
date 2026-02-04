@@ -1,5 +1,5 @@
 import { infiniteQueryOptions, queryOptions, useMutation, useQueryClient } from '@tanstack/react-query';
-import { appConfig } from 'config';
+import { appConfig } from 'shared';
 import type { User } from '~/api.gen';
 import { deleteUsers, type GetUsersData, getUser, getUsers, type UpdateUserData, updateUser } from '~/api.gen';
 import type { ApiError } from '~/lib/api';

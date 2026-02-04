@@ -14,7 +14,7 @@
  * - Blobs are stored in IndexedDB for offline access
  */
 import { onlineManager } from '@tanstack/react-query';
-import { appConfig } from 'config';
+import { appConfig } from 'shared';
 import type { Attachment } from '~/api.gen';
 import { getPresignedUrl } from '~/api.gen/sdk.gen';
 import { attachmentsDb, type BlobVariant } from '~/modules/attachment/dexie/attachments-db';

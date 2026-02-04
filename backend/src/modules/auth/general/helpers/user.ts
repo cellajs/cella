@@ -1,5 +1,5 @@
-import { appConfig } from 'config';
 import { and, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
+import { appConfig } from 'shared';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';

@@ -1,5 +1,5 @@
-import { appConfig } from 'config';
 import { boolean, doublePrecision, index, pgTable, varchar } from 'drizzle-orm/pg-core';
+import { appConfig } from 'shared';
 import { usersTable } from '#/db/schema/users';
 import { generateContextEntityIdColumns } from '#/db/utils/generate-context-entity-columns';
 import { timestampColumns } from '#/db/utils/timestamp-columns';

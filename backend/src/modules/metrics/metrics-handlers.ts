@@ -1,7 +1,7 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { appConfig } from 'config';
 import { count } from 'drizzle-orm';
 import { register } from 'prom-client';
+import { appConfig } from 'shared';
 import type { z } from 'zod';
 import { db } from '#/db/db';
 import { getCacheMetrics } from '#/lib/cache-metrics';

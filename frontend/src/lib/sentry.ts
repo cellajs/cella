@@ -1,5 +1,5 @@
 import * as Sentry from '@sentry/react';
-import { appConfig } from 'config';
+import { appConfig } from 'shared';
 
 export const initSentry = () => {
   if (!appConfig.sentryDsn) return;

@@ -1,4 +1,4 @@
-import { appConfig, type EntityActionType, recordFromKeys } from 'config';
+import { appConfig, type EntityActionType, recordFromKeys } from 'shared';
 
 /******************************************************************************
  * ACTION RECORD HELPERS

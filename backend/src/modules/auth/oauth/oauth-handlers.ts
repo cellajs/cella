@@ -1,6 +1,6 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { generateCodeVerifier, generateState, OAuth2RequestError } from 'arctic';
-import { appConfig, type EnabledOAuthProvider } from 'config';
+import { appConfig, type EnabledOAuthProvider } from 'shared';
 import { env } from '#/env';
 import { type Env } from '#/lib/context';
 import { AppError } from '#/lib/error';

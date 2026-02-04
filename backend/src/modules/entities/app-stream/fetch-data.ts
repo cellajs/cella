@@ -1,5 +1,5 @@
-import { appConfig, type ContextEntityType, isProductEntity } from 'config';
 import { and, desc, eq, gt, inArray, or } from 'drizzle-orm';
+import { appConfig, type ContextEntityType, isProductEntity } from 'shared';
 import { db } from '#/db/db';
 import { activitiesTable } from '#/db/schema/activities';
 import type { StreamNotification } from '#/schemas';

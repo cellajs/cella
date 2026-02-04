@@ -1,8 +1,8 @@
-import type { ContextEntityType } from 'config';
 import { InfoIcon, type LucideIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { type RefObject, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { ContextEntityType } from 'shared';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { AlertWrap } from '~/modules/common/alert-wrap';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';

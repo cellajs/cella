@@ -1,4 +1,4 @@
-import { appConfig, type PublicProductEntityType } from 'config';
+import { appConfig, type PublicProductEntityType } from 'shared';
 import { createStreamDispatcher } from '#/sync/stream';
 import { type PublicStreamSubscriber, publicChannel } from './types';
 

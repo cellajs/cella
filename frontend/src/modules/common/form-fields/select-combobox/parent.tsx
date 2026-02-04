@@ -1,6 +1,6 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
-import type { ContextEntityType } from 'config';
 import type { FieldValues } from 'react-hook-form';
+import type { ContextEntityType } from 'shared';
 import { ContextEntityBase } from '~/api.gen';
 import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
 import Combobox, { type ComboboxProps } from '~/modules/ui/combobox';

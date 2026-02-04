@@ -1,4 +1,4 @@
-import { appConfig } from 'config';
+import { appConfig } from 'shared';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import type { PublicStreamActivity, StreamNotification } from '~/api.gen';

@@ -1,8 +1,8 @@
 import { initializePaddle, type Paddle } from '@paddle/paddle-js';
 import { onlineManager } from '@tanstack/react-query';
-import { appConfig } from 'config';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import type { Organization } from '~/api.gen';
 import { toaster } from '~/modules/common/toaster/service';
 import { Button } from '~/modules/ui/button';

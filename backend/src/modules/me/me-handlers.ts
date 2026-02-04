@@ -1,7 +1,7 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import type { EnabledOAuthProvider } from 'config';
-import { appConfig } from 'config';
 import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
+import type { EnabledOAuthProvider } from 'shared';
+import { appConfig } from 'shared';
 import { db } from '#/db/db';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { membershipsTable } from '#/db/schema/memberships';

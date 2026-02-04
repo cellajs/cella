@@ -1,4 +1,4 @@
-import { appConfig } from 'config';
+import { appConfig } from 'shared';
 import { useUIStore } from '~/store/ui';
 
 export interface LogoProps extends React.SVGProps<SVGSVGElement> {

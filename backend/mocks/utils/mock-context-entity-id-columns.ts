@@ -1,4 +1,4 @@
-import { appConfig, type ContextEntityType } from 'config';
+import { appConfig, type ContextEntityType } from 'shared';
 import { relatableContextEntityTables } from '#/relatable-config';
 import { mockNanoid } from './mock-nanoid';
 

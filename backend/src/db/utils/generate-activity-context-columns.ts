@@ -1,7 +1,7 @@
-import { appConfig, type RelatableContextEntityType } from 'config';
 import { desc } from 'drizzle-orm';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import { foreignKey, index, varchar } from 'drizzle-orm/pg-core';
+import { appConfig, type RelatableContextEntityType } from 'shared';
 import { relatableContextEntityTables } from '#/relatable-config';
 
 /** Relatable context entity types derived from relatableContextEntityTables. */

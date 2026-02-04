@@ -14,8 +14,8 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.19.9",
-    "config": "workspace:*",
     "dotenv": "^16.6.1",
+    "shared": "workspace:*",
     "drizzle-orm": "^0.45.1",
     "hono": "^4.11.7",
     "lru-cache": "^11.2.5",

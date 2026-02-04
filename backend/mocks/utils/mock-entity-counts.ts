@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { appConfig, type EntityType } from 'config';
+import { appConfig, type EntityType } from 'shared';
 import { withFakerSeed } from './faker-seed';
 
 // Entity count schema should exclude 'user' and 'organization'

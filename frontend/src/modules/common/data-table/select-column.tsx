@@ -1,6 +1,6 @@
 import { SelectTrigger } from '@radix-ui/react-select';
-import type { appConfig } from 'config';
 import { useTranslation } from 'react-i18next';
+import type { appConfig } from 'shared';
 import type { Organization, User } from '~/api.gen';
 import type { Member } from '~/modules/memberships/types';
 import { Select, SelectContent, SelectItem, SelectValue } from '~/modules/ui/select';

@@ -1,5 +1,5 @@
-import { appConfig, type EntityRole } from 'config';
 import { useTranslation } from 'react-i18next';
+import { appConfig, type EntityRole } from 'shared';
 import { RadioGroup, RadioGroupItem } from '~/modules/ui/radio-group';
 import { cn } from '~/utils/cn';
 

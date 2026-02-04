@@ -10,7 +10,7 @@ import { defineConfig, Plugin, type UserConfig } from 'vite';
 import { createHtmlPlugin } from 'vite-plugin-html';
 import { VitePWA } from 'vite-plugin-pwa';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
-import { appConfig } from '../config';
+import { appConfig } from '../shared';
 // import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
 import { i18nextHMRPlugin } from 'i18next-hmr/vite';
 import { openApiWatch } from './vite/openapi-watch';

@@ -14,7 +14,7 @@ import {
   type SpanAttributes,
   type SpanData,
   type TraceContext,
-} from 'config/tracing';
+} from 'shared/tracing';
 import { logEvent } from './pino';
 
 // Re-export span names and attribute helpers from shared package

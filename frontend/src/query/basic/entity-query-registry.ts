@@ -1,4 +1,4 @@
-import type { EntityType } from 'config';
+import type { EntityType } from 'shared';
 
 /** Minimal query keys interface needed by stream handlers. */
 export interface EntityQueryKeys {

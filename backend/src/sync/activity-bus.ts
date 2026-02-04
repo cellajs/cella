@@ -1,5 +1,5 @@
 import { EventEmitter } from 'node:events';
-import { appConfig, type EntityType, type ResourceType } from 'config';
+import { appConfig, type EntityType, type ResourceType } from 'shared';
 import type { ActivityModel } from '#/db/schema/activities';
 import { type TrackedModel, type TrackedType } from '#/table-config';
 import { logEvent } from '#/utils/logger';

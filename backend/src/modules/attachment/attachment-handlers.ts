@@ -1,7 +1,7 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { appConfig } from 'config';
 import { and, count, eq, getTableColumns, gte, ilike, inArray, or, type SQL, sql } from 'drizzle-orm';
 import { html, raw } from 'hono/html';
+import { appConfig } from 'shared';
 import { db } from '#/db/db';
 import { attachmentsTable } from '#/db/schema/attachments';
 import { organizationsTable } from '#/db/schema/organizations';

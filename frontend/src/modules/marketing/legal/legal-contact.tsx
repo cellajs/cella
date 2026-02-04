@@ -1,4 +1,4 @@
-import { appConfig } from 'config';
+import { appConfig } from 'shared';
 
 function LegalContact() {
   const companyFull = appConfig.company.name;

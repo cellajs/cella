@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createEntityHierarchy, createRoleRegistry } from './entity-hierarchy';
+import { createEntityHierarchy, createRoleRegistry } from './src/builder/entity-hierarchy';
 
 describe('EntityHierarchyBuilder', () => {
   const roles = createRoleRegistry(['admin', 'member', 'guest'] as const);

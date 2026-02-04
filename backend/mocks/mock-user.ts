@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
-import { appConfig, type SystemRole, type UserFlags } from 'config';
 import { UniqueEnforcer } from 'enforce-unique';
+import { appConfig, type SystemRole, type UserFlags } from 'shared';
 import slugify from 'slugify';
 import type { InsertEmailModel } from '#/db/schema/emails';
 import type { InsertPasswordModel } from '#/db/schema/passwords';

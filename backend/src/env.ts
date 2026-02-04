@@ -1,6 +1,6 @@
 import { env as dotenv } from '@dotenv-run/core';
 import { createEnv } from '@t3-oss/env-core';
-import { appConfig } from 'config';
+import { appConfig } from 'shared';
 import { z } from 'zod';
 import { additionalEnvSchema } from '#/custom-env';
 import { severityLevels } from '#/schemas/api-error-schemas';

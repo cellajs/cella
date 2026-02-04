@@ -1,7 +1,7 @@
-import { appConfig } from 'config';
 import type { MiddlewareHandler } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import { createMiddleware } from 'hono/factory';
+import { appConfig } from 'shared';
 import type { Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
 

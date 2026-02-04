@@ -1,7 +1,7 @@
 import { HeadContent, Outlet } from '@tanstack/react-router';
-import { appConfig } from 'config';
 import { configure } from 'onedollarstats';
 import { Suspense, useEffect } from 'react';
+import { appConfig } from 'shared';
 import useLazyComponent from '~/hooks/use-lazy-component'; // Adjust the import path accordingly
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import ReloadPrompt from '~/modules/common/reload-prompt';

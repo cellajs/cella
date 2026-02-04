@@ -1,4 +1,4 @@
-import { appConfig } from 'config';
+import { appConfig } from 'shared';
 import { describe, expect, it } from 'vitest';
 import { configureAccessPolicies } from './access-policies';
 import { getAllDecisions } from './check';

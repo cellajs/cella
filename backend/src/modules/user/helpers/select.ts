@@ -1,5 +1,5 @@
-import { appConfig, type UserFlags } from 'config';
 import { getTableColumns, sql } from 'drizzle-orm';
+import { appConfig, type UserFlags } from 'shared';
 import { lastSeenTable } from '#/db/schema/last-seen';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { pickColumns } from '#/db/utils/pick-columns';

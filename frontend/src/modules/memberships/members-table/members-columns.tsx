@@ -1,6 +1,6 @@
-import { appConfig } from 'config';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import HeaderCell from '~/modules/common/data-table/header-cell';

@@ -1,8 +1,8 @@
 import * as Sentry from '@sentry/react';
 import { createRootRouteWithContext, createRoute, defer, redirect } from '@tanstack/react-router';
-import { appConfig } from 'config';
 import i18n from 'i18next';
 import { lazy, Suspense } from 'react';
+import { appConfig } from 'shared';
 import { z } from 'zod';
 import { zApiError } from '~/api.gen/zod.gen';
 import ErrorNotice from '~/modules/common/error-notice';

@@ -1,5 +1,5 @@
-import type { ContextEntityType } from 'config';
 import { varchar } from 'drizzle-orm/pg-core';
+import type { ContextEntityType } from 'shared';
 import { usersTable } from '#/db/schema/users';
 import { baseEntityColumns } from '#/db/utils/base-entity-columns';
 

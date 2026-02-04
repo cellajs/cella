@@ -1,5 +1,5 @@
 import type { QueryKey } from '@tanstack/react-query';
-import type { EntityType } from 'config';
+import type { EntityType } from 'shared';
 import type { ContextEntityBase } from '~/api.gen';
 import type {
   ArbitraryEntityQueryData,

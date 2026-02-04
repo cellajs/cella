@@ -1,7 +1,7 @@
 import { decodeBase32 } from '@oslojs/encoding';
 import { verifyTOTPWithGracePeriod } from '@oslojs/otp';
-import { appConfig } from 'config';
 import { eq } from 'drizzle-orm';
+import { appConfig } from 'shared';
 import { db } from '#/db/db';
 import { totpsTable } from '#/db/schema/totps';
 import { AppError } from '#/lib/error';

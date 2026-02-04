@@ -1,6 +1,6 @@
 import { useQueries } from '@tanstack/react-query';
-import { appConfig, type ContextEntityType } from 'config';
 import { useMemo } from 'react';
+import { appConfig, type ContextEntityType } from 'shared';
 import type { UserMenuItem } from '~/modules/me/types';
 import { getContextEntityTypeToListQueries } from '~/offline-config';
 import { flattenInfiniteData } from '~/query/basic';

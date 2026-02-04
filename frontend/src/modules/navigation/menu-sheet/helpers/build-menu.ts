@@ -1,4 +1,4 @@
-import { appConfig, ContextEntityType, type MenuSection } from 'config';
+import { appConfig, ContextEntityType, type MenuSection } from 'shared';
 import { UserMenuItem } from '~/modules/me/types';
 
 // Build initial menu state based on the provided menu structure.

@@ -1,6 +1,6 @@
-import { appConfig } from 'config';
 import { and, eq } from 'drizzle-orm';
 import { Context } from 'hono';
+import { appConfig } from 'shared';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import type { TokenModel } from '#/db/schema/tokens';

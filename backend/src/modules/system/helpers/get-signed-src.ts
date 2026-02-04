@@ -1,4 +1,4 @@
-import { appConfig } from 'config';
+import { appConfig } from 'shared';
 import { getSignedUrlFromKey } from '#/lib/signed-url';
 
 export const replaceSignedSrcs = async (content: string): Promise<string> => {

@@ -1,5 +1,5 @@
 import { infiniteQueryOptions, queryOptions, useMutation, useQueryClient } from '@tanstack/react-query';
-import { appConfig } from 'config';
+import { appConfig } from 'shared';
 import {
   type CreateOrganizationsData,
   createOrganizations,

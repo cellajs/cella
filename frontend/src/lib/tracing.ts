@@ -16,7 +16,7 @@ import {
   withSpan as sharedWithSpan,
   withSpanSync as sharedWithSpanSync,
   type TraceContext,
-} from 'config/tracing';
+} from 'shared/tracing';
 import { isDebugMode } from '~/env';
 
 // Re-export span names (aliased for backwards compatibility)

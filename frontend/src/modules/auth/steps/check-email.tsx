@@ -1,9 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
-import { appConfig } from 'config';
 import { ArrowRightIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import type { z } from 'zod';
 import { type CheckEmailData, type CheckEmailResponse, checkEmail } from '~/api.gen';
 import { zCheckEmailData } from '~/api.gen/zod.gen';

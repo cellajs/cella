@@ -1,6 +1,6 @@
-import { appConfig } from 'config';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import InvitationsTable from '~/modules/me/invitations-table';
 import { Card, CardContent, CardHeader, CardTitle } from '~/modules/ui/card';

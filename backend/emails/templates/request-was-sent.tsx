@@ -1,6 +1,6 @@
-import { appConfig } from 'config';
 import i18n from 'i18next';
 import { Text } from 'jsx-email';
+import { appConfig } from 'shared';
 import type { requestTypeEnum } from '#/db/schema/requests';
 import { EmailBody, EmailContainer, EmailHeader, EmailLogo, Footer } from '../components';
 import type { BasicTemplateType } from '../types';

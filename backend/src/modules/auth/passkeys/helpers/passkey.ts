@@ -17,9 +17,9 @@ import {
   parseAuthenticatorData,
   parseClientDataJSON,
 } from '@oslojs/webauthn';
-import { appConfig } from 'config';
 import { and, eq } from 'drizzle-orm';
 import { Context } from 'hono';
+import { appConfig } from 'shared';
 import { db } from '#/db/db';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { AppError } from '#/lib/error';

@@ -1,8 +1,8 @@
 import { useNavigate, useParams } from '@tanstack/react-router';
-import { appConfig } from 'config';
 import { TrashIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 // import Subscription from '~/modules/organization/subscription';
 import type { Organization } from '~/api.gen';
 import { AsideAnchor } from '~/modules/common/aside-anchor';

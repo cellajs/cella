@@ -15,7 +15,7 @@ import {
   type SpanData,
   withSpan as sharedWithSpan,
   type TraceContext,
-} from 'config/tracing';
+} from 'shared/tracing';
 import { meterProvider } from '#/tracing';
 
 // Re-export span names and attribute helpers

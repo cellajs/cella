@@ -1,5 +1,5 @@
 import { queryOptions } from '@tanstack/react-query';
-import { appConfig } from 'config';
+import { appConfig } from 'shared';
 import type {
   GenComponentSchema,
   GenInfoSummary,

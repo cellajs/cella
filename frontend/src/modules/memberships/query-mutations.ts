@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
-import { appConfig } from 'config';
 import { t } from 'i18next';
+import { appConfig } from 'shared';
 import { deleteMemberships, type MembershipInviteResponse, membershipInvite, updateMembership } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import { toaster } from '~/modules/common/toaster/service';

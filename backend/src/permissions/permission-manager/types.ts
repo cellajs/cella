@@ -6,7 +6,7 @@ import type {
   EntityType,
   ProductEntityType,
   SystemRole,
-} from 'config';
+} from 'shared';
 
 /**
  * Permission value: 1 = allowed, 0 = denied.

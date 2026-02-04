@@ -1,8 +1,8 @@
 import { useNavigate } from '@tanstack/react-router';
-import { appConfig } from 'config';
 import { CheckIcon, SparklesIcon } from 'lucide-react';
 import { createRef, type RefObject, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 
 import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';

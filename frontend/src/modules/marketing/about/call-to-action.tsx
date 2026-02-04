@@ -1,6 +1,6 @@
-import { appConfig } from 'config';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
 import { Button } from '~/modules/ui/button';
 

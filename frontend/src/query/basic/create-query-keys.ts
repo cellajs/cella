@@ -1,4 +1,4 @@
-import type { EntityType } from 'config';
+import type { EntityType } from 'shared';
 
 export type StandardEntityKeys<E extends EntityType, LF extends object = {}, SID extends string | number = string> = {
   all: [E];

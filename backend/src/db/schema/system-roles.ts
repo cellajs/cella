@@ -1,5 +1,5 @@
-import { appConfig } from 'config';
 import { pgTable, varchar } from 'drizzle-orm/pg-core';
+import { appConfig } from 'shared';
 import { usersTable } from '#/db/schema/users';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';

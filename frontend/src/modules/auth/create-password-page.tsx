@@ -1,11 +1,11 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate, useParams } from '@tanstack/react-router';
-import { appConfig } from 'config';
 import { ArrowRightIcon } from 'lucide-react';
 import { lazy, Suspense, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import { z } from 'zod';
 import { type CreatePasswordData, type CreatePasswordResponse, createPassword } from '~/api.gen';
 import type { ApiError } from '~/lib/api';

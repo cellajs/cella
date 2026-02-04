@@ -1,11 +1,11 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { CheckedState } from '@radix-ui/react-checkbox';
 import { useMutation } from '@tanstack/react-query';
-import { appConfig } from 'config';
 import { InfoIcon, SendIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import type { z } from 'zod';
 import { type SendNewsletterData, SendNewsletterResponse, sendNewsletter } from '~/api.gen';
 import { zSendNewsletterData } from '~/api.gen/zod.gen';

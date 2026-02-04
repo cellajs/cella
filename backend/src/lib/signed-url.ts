@@ -1,6 +1,6 @@
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl as s3SignedUrl } from '@aws-sdk/s3-request-presigner';
-import { appConfig } from 'config';
+import { appConfig } from 'shared';
 import { env } from '#/env';
 
 const s3Client = new S3Client({

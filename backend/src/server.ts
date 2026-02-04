@@ -1,6 +1,6 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { appConfig } from 'config';
 import { contextStorage } from 'hono/context-storage';
+import { appConfig } from 'shared';
 import type { Env } from '#/lib/context';
 import { AppError, appErrorHandler } from '#/lib/error';
 import middlewares from '#/middlewares/app';

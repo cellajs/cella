@@ -1,4 +1,4 @@
-import type { ContextEntityType, ProductEntityType } from 'config';
+import type { ContextEntityType, ProductEntityType } from 'shared';
 import { syncSpanNames, withSpanSync } from '~/lib/tracing';
 import { type EntityQueryKeys, getEntityQueryKeys } from '~/query/basic';
 import { sourceId } from '~/query/offline';

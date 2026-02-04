@@ -1,8 +1,8 @@
 /**
  * Entity hierarchy and role registry definitions.
- * Separated from default.ts to enable type inference before config object creation.
+ * Separated from default-config.ts to enable type inference before config object creation.
  */
-import { createEntityHierarchy, createRoleRegistry } from './entity-hierarchy';
+import { createEntityHierarchy, createRoleRegistry } from './src/builder/entity-hierarchy';
 
 /******************************************************************************
  * ROLE REGISTRY

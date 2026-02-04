@@ -9,8 +9,8 @@
  * 3. Middleware caches result after handler completes
  */
 
-import type { ProductEntityType } from 'config';
 import type { MiddlewareHandler } from 'hono';
+import type { ProductEntityType } from 'shared';
 import { xMiddleware } from '#/docs/x-middleware';
 import { validateSignedCacheToken } from '#/lib/cache-token-signer';
 import type { Env } from '#/lib/context';

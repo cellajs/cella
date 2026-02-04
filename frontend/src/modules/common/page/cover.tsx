@@ -1,8 +1,8 @@
 import { onlineManager } from '@tanstack/react-query';
-import { appConfig } from 'config';
 import { UploadIcon } from 'lucide-react';
 import { memo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import { toaster } from '~/modules/common/toaster/service';
 import { useUploader } from '~/modules/common/uploader/use-uploader';
 import { Button } from '~/modules/ui/button';

@@ -1,12 +1,22 @@
-import type { Config, RequiredConfig } from './types';
-import _default, { hierarchy } from './default';
-import development from './development';
-import production from './production';
-import staging from './staging';
-import test from './test';
-import tunnel from './tunnel';
+/**
+ * Shared package - Main barrel file
+ *
+ * Re-exports configuration, entity hierarchy, and utility functions.
+ */
+import type { RequiredConfig } from './src/builder/types';
+import _default, { hierarchy } from './default-config';
+import development from './development-config';
+import production from './production-config';
+import staging from './staging-config';
+import test from './test-config';
+import tunnel from './tunnel-config';
 import { mergeDeep } from './utils';
 
+/******************************************************************************
+ * RE-EXPORTS FROM BUILDER
+ ******************************************************************************/
+
+// Entity hierarchy types and functions
 export type {
   ContextEntityView,
   EntityHierarchy,
@@ -15,19 +25,58 @@ export type {
   ProductEntityView,
   RoleFromRegistry,
   UserEntityView,
-} from './entity-hierarchy';
+} from './src/builder/entity-hierarchy';
 export {
   createEntityHierarchy,
   createRoleRegistry,
   validatePublicProductEntities,
-} from './entity-hierarchy';
+} from './src/builder/entity-hierarchy';
 
-export type { RequestLimitsConfig, RequiredConfig, S3Config } from './types';
+// Config types
+export type { RequestLimitsConfig, RequiredConfig, S3Config } from './src/builder/types';
+
+/******************************************************************************
+ * RE-EXPORTS FROM UTILS
+ ******************************************************************************/
+
 export { hasKey, recordFromKeys, identityRecord } from './utils';
 
-export { hierarchy, roles } from './default';
+/******************************************************************************
+ * RE-EXPORTS FROM HIERARCHY
+ ******************************************************************************/
 
-export { getContextRoles, isContextEntity, isProductEntity, isPublicProductEntity } from './entity-guards';
+export { hierarchy, roles } from './default-config';
+
+/******************************************************************************
+ * ENTITY GUARD FUNCTIONS (bound to app hierarchy)
+ ******************************************************************************/
+
+import {
+  getContextRoles as _getContextRoles,
+  isContextEntity as _isContextEntity,
+  isProductEntity as _isProductEntity,
+  isPublicProductEntity as _isPublicProductEntity,
+} from './src/builder/entity-guards';
+
+/** Get roles for a context entity. */
+export function getContextRoles(contextType: string): readonly string[] {
+  return _getContextRoles(hierarchy, contextType);
+}
+
+/** Check if entity type is a context entity (type guard). */
+export function isContextEntity(entityType: string): entityType is ContextEntityType {
+  return _isContextEntity(hierarchy, entityType);
+}
+
+/** Check if entity type is a product entity (type guard). */
+export function isProductEntity(entityType: string | null | undefined): entityType is ProductEntityType {
+  return _isProductEntity(hierarchy, entityType);
+}
+
+/** Check if entity type is a public product entity (no parent context). */
+export function isPublicProductEntity(entityType: string): entityType is PublicProductEntityType {
+  return _isPublicProductEntity(hierarchy, entityType);
+}
 
 // TODO: rename config to shared and all default to default-config.ts and developent to development-config.ts etc
 // TODO split this file in a pure barrel, a src/builder/types.ts file for config build types, and a types.ts file for external types.
@@ -74,8 +123,8 @@ export type ResourceType = (typeof appConfig.resourceTypes)[number];
  * Menu sections in the menu structure
  */
 export type MenuSection = {
-  entityType: typeof appConfig.menuStructure[number]['entityType'];
-  subentityType: typeof appConfig.menuStructure[number]['subentityType'] | null;
+  entityType: (typeof appConfig.menuStructure)[number]['entityType'];
+  subentityType: (typeof appConfig.menuStructure)[number]['subentityType'] | null;
 };
 
 /**
@@ -94,9 +143,9 @@ export type UploadTemplateId = (typeof appConfig.uploadTemplateIds)[number];
 export type Language = (typeof appConfig.languages)[number];
 
 /**
- * User flags 
+ * User flags
  */
-export type UserFlags = typeof appConfig.defaultUserFlags
+export type UserFlags = typeof appConfig.defaultUserFlags;
 
 /**
  * Theme options
@@ -109,7 +158,7 @@ export type Severity = 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
 /**
  * All token types used in the app
  */
-export type TokenType = (typeof appConfig.tokenTypes)[number]
+export type TokenType = (typeof appConfig.tokenTypes)[number];
 
 /**
  * System roles available in the app
@@ -150,9 +199,10 @@ export type EntityActionType = (typeof appConfig.entityActions)[number];
  * CONFIG MERGING
  *****************************************************************************/
 
+type Config = typeof _default;
 const configModes = { development, tunnel, staging, production, test } satisfies Record<Config['mode'], unknown>;
 
-export type ConfigMode = Config['mode']
+export type ConfigMode = Config['mode'];
 
 const mode = (process.env.NODE_ENV || 'development') as Config['mode'];
 
@@ -178,21 +228,21 @@ const _entityIdKeysCheck: ExpectedIdColumnKeys = appConfig.entityIdColumnKeys;
 void _entityIdKeysCheck;
 
 // Validate entityTypes matches hierarchy.allTypes (bi-directional type check)
-type HierarchyEntityType = typeof hierarchy.allTypes[number];
+type HierarchyEntityType = (typeof hierarchy.allTypes)[number];
 const _entityTypesMatch1: EntityType extends HierarchyEntityType ? true : false = true;
 const _entityTypesMatch2: HierarchyEntityType extends EntityType ? true : false = true;
 void _entityTypesMatch1;
 void _entityTypesMatch2;
 
 // Validate contextEntityTypes matches hierarchy.contextTypes
-type HierarchyContextType = typeof hierarchy.contextTypes[number];
+type HierarchyContextType = (typeof hierarchy.contextTypes)[number];
 const _contextTypesMatch1: ContextEntityType extends HierarchyContextType ? true : false = true;
 const _contextTypesMatch2: HierarchyContextType extends ContextEntityType ? true : false = true;
 void _contextTypesMatch1;
 void _contextTypesMatch2;
 
 // Validate productEntityTypes matches hierarchy.productTypes
-type HierarchyProductType = typeof hierarchy.productTypes[number];
+type HierarchyProductType = (typeof hierarchy.productTypes)[number];
 const _productTypesMatch1: ProductEntityType extends HierarchyProductType ? true : false = true;
 const _productTypesMatch2: HierarchyProductType extends ProductEntityType ? true : false = true;
 void _productTypesMatch1;

@@ -1,4 +1,4 @@
-import { appConfig, isContextEntity, isProductEntity } from 'config';
+import { appConfig, isContextEntity, isProductEntity } from 'shared';
 import type { MembershipForPermission, SubjectForPermission } from './types';
 
 /** Validates a subject has required fields for permission checking. */

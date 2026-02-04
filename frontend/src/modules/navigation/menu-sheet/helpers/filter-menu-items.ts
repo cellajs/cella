@@ -1,4 +1,4 @@
-import { appConfig } from 'config';
+import { appConfig } from 'shared';
 import type { UserMenu, UserMenuItem } from '~/modules/me/types';
 
 /**

@@ -1,6 +1,6 @@
 import { createRoute, redirect } from '@tanstack/react-router';
-import { appConfig } from 'config';
 import i18n from 'i18next';
+import { appConfig } from 'shared';
 import { z } from 'zod';
 import AuthErrorPage from '~/modules/auth/auth-error-page';
 import AuthLayout from '~/modules/auth/auth-layout';

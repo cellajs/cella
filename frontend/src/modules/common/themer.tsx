@@ -1,5 +1,5 @@
-import { appConfig, type Theme } from 'config';
 import { useEffect } from 'react';
+import { appConfig, type Theme } from 'shared';
 import { type Mode, useUIStore } from '~/store/ui';
 import { hexToHsl } from '~/utils/hex-to-hsl';
 

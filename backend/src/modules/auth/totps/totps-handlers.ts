@@ -1,8 +1,8 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { encodeBase32UpperCase } from '@oslojs/encoding';
 import { createTOTPKeyURI } from '@oslojs/otp';
-import { appConfig } from 'config';
 import { eq } from 'drizzle-orm';
+import { appConfig } from 'shared';
 import { db } from '#/db/db';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { totpsTable } from '#/db/schema/totps';

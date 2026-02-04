@@ -540,14 +540,3 @@ export function validatePublicProductEntities<TProducts extends string, TParentl
     );
   }
 }
-
-/**
- * Check if a product entity type is a public entity (no parent context).
- * Utility for runtime checks in handlers and middleware.
- */
-export function isPublicProductEntity<TProducts extends string, TParentless extends string>(
-  hierarchy: EntityHierarchy<{ all: readonly string[] }, string, TProducts, TParentless>,
-  entityType: string,
-): boolean {
-  return hierarchy.parentlessProductTypes.includes(entityType as TParentless);
-}

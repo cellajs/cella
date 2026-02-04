@@ -5,7 +5,7 @@ import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { usersTable } from '#/db/schema/users';
 import { hashPassword } from '#/modules/auth/passwords/helpers/argon2id';
 import pc from 'picocolors';
-import { appConfig } from 'config';
+import { appConfig } from 'shared';
 import { mockAdmin, mockEmail, mockPassword, mockUnsubscribeToken } from '../../../mocks/mock-user';
 import { defaultAdminUser } from '../fixtures';
 import { systemRolesTable } from '#/db/schema/system-roles';

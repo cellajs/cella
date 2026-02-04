@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { appConfig, type ContextEntityType, type EntityRole } from 'config';
+import { appConfig, type ContextEntityType, type EntityRole } from 'shared';
 import type { InactiveMembershipModel } from '#/db/schema/inactive-memberships';
 import type { InsertMembershipModel, MembershipModel } from '#/db/schema/memberships';
 import type { UserModel } from '#/db/schema/users';

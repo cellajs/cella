@@ -1,7 +1,7 @@
-import { appConfig } from 'config';
 import { MailboxIcon, PlusIcon, TrashIcon, XSquareIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import { getOrganizations, type Organization } from '~/api.gen';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export';

@@ -1,4 +1,4 @@
-import { appConfig, hasKey, hierarchy } from 'config';
+import { appConfig, hasKey, hierarchy } from 'shared';
 import type { TableRegistryEntry } from '../types';
 
 export interface SeqScope {

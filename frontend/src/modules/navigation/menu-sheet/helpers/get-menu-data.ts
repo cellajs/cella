@@ -1,4 +1,4 @@
-import { appConfig, ContextEntityType } from 'config';
+import { appConfig, ContextEntityType } from 'shared';
 import { ContextEntityDataWithMembership } from '~/modules/me/types';
 import { buildMenu } from '~/modules/navigation/menu-sheet/helpers/build-menu';
 import { getContextEntityTypeToListQueries } from '~/offline-config';

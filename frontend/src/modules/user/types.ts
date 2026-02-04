@@ -1,4 +1,4 @@
-import { SystemRole } from 'config';
+import { SystemRole } from 'shared';
 import type z from 'zod';
 import type { MembershipBase, User } from '~/api.gen';
 import type { usersRouteSearchParamsSchema } from '~/modules/user/search-params-schemas';

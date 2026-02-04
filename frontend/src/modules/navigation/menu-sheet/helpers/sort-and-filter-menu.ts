@@ -1,4 +1,4 @@
-import type { ContextEntityType } from 'config';
+import type { ContextEntityType } from 'shared';
 import type { UserMenuItem } from '~/modules/me/types';
 
 /**

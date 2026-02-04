@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
-import { appConfig } from 'config';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import { getAuthHealth } from '~/api.gen';
 import OAuthProviders from '~/modules/auth/oauth-providers';
 import PasskeyStrategy from '~/modules/auth/passkey-strategy';

@@ -1,5 +1,5 @@
-import { appConfig } from 'config';
 import i18n from 'i18next';
+import { appConfig } from 'shared';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';

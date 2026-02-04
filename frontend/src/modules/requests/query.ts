@@ -1,6 +1,6 @@
 import { infiniteQueryOptions, useMutation } from '@tanstack/react-query';
-import { appConfig } from 'config';
 import { t } from 'i18next';
+import { appConfig } from 'shared';
 import {
   type CreateRequestData,
   type CreateRequestResponse,

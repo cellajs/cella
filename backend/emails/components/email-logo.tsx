@@ -1,5 +1,5 @@
-import { appConfig } from 'config';
 import type { JSX } from 'react';
+import { appConfig } from 'shared';
 
 /**
  * Email-safe logo component using styled HTML text instead of images.

@@ -5,8 +5,8 @@ import {
   type Edge,
   extractClosestEdge,
 } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
-import type { EntityType } from 'config';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { EntityType } from 'shared';
 import { DropIndicator } from '~/modules/common/drop-indicator';
 import type { UserMenuItem } from '~/modules/me/types';
 import { isPageData } from '~/modules/navigation/menu-sheet/helpers';

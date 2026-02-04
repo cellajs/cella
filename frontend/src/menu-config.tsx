@@ -1,6 +1,6 @@
-import type { ContextEntityType } from 'config';
 import i18n from 'i18next';
 import type { RefObject } from 'react';
+import type { ContextEntityType } from 'shared';
 import type { Organization } from '~/api.gen';
 import { CallbackArgs } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';

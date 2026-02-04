@@ -1,5 +1,5 @@
-import { appConfig } from 'config';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 
 /**
  * Displays a greeting and a message indicating that the app is invite-only.

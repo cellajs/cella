@@ -1,8 +1,8 @@
-import { appConfig } from 'config';
 import { t } from 'i18next';
 import { AlertTriangleIcon, ClockAlertIcon, CloudOffIcon, ConstructionIcon, ShieldAlertIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Trans } from 'react-i18next';
+import { appConfig } from 'shared';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { healthCheck } from '~/lib/health-check';
 import CloseButton from '~/modules/common/close-button';

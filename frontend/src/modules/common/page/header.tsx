@@ -1,8 +1,8 @@
 import { Link } from '@tanstack/react-router';
-import { appConfig, ContextEntityType } from 'config';
 import { ChevronRightIcon, HomeIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { appConfig, ContextEntityType } from 'shared';
 import type { ContextEntityBase, UserBase } from '~/api.gen';
 import useScrollTo from '~/hooks/use-scroll-to';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';

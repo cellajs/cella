@@ -1,8 +1,8 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { appConfig } from 'config';
 import { UndoIcon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import { Organization } from '~/api.gen';
 import { Confetti } from '~/modules/home/onboarding/confetti';
 import { onboardingFinishCallback } from '~/modules/home/onboarding/onboarding-config';

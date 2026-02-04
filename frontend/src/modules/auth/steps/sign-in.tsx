@@ -1,11 +1,11 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { appConfig } from 'config';
 import { ArrowRightIcon, ChevronDownIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import type { z } from 'zod';
 import { type SignInData, type SignInResponse, signIn } from '~/api.gen';
 import { zSignUpData } from '~/api.gen/zod.gen';

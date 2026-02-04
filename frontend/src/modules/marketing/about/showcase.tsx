@@ -1,7 +1,7 @@
-import { appConfig } from 'config';
 import { ArrowUpRightIcon } from 'lucide-react';
 import { lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import Spinner from '~/modules/common/spinner';
 import { showcaseItems } from '~/modules/marketing/marketing-config';
 

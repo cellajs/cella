@@ -5,7 +5,7 @@ import {
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query';
-import { appConfig } from 'config';
+import { appConfig } from 'shared';
 import {
   type Attachment,
   type CreateAttachmentsData,

@@ -1,4 +1,4 @@
-import { isProductEntity } from 'config';
+import { isProductEntity } from 'shared';
 import type { StreamNotification } from '#/schemas';
 import type { ActivityEventWithEntity } from '#/sync/activity-bus';
 

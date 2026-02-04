@@ -1,4 +1,4 @@
-import type { ContextEntityType, EntityType } from 'config';
+import type { ContextEntityType, EntityType } from 'shared';
 import { membersListQueryOptions } from '~/modules/memberships/query';
 import { organizationsListQueryOptions } from '~/modules/organization/query';
 

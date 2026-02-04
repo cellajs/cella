@@ -1,6 +1,6 @@
-import { appConfig } from 'config';
 import type { MiddlewareHandler } from 'hono';
 import { requestId } from 'hono/request-id';
+import { appConfig } from 'shared';
 import { requestLogger } from '#/pino';
 
 /**

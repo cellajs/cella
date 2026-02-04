@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import clsx from 'clsx';
-import { appConfig } from 'config';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 
 import Logo from '~/modules/common/logo';
 import { BackgroundCurve } from '~/modules/marketing/about/hero';

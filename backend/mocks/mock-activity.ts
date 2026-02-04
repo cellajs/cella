@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { appConfig } from 'config';
+import { appConfig } from 'shared';
 import type { ActivityModel } from '#/db/schema/activities';
 import { activityActions } from '#/sync/activity-bus';
 import { entityTableNames } from '#/table-config';

@@ -1,5 +1,5 @@
-import { appConfig } from 'config';
 import { t } from 'i18next';
+import { appConfig } from 'shared';
 import { createAttachments } from '~/api.gen';
 import { parseUploadedAttachments } from '~/modules/attachment/helpers';
 import { attachmentQueryKeys } from '~/modules/attachment/query';

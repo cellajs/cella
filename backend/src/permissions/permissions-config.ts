@@ -1,4 +1,4 @@
-import { appConfig } from 'config';
+import { appConfig } from 'shared';
 import { configureAccessPolicies } from './permission-manager';
 
 // Note: Entity hierarchy is now defined in appConfig.entityConfig.

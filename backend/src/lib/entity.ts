@@ -1,6 +1,6 @@
-import type { EntityType } from 'config';
 import { eq, inArray, or, type TableConfig } from 'drizzle-orm';
 import type { PgTableWithColumns } from 'drizzle-orm/pg-core';
+import type { EntityType } from 'shared';
 import { db } from '#/db/db';
 import { entityTables } from '#/table-config';
 

@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
-import { appConfig } from 'config';
 import { createSelectSchema } from 'drizzle-zod';
+import { appConfig } from 'shared';
 import { sessionsTable } from '#/db/schema/sessions';
 import { passkeySchema, webAuthnAssertionSchema } from '#/modules/auth/passkeys/passkeys-schema';
 import { totpCreateBodySchema } from '#/modules/auth/totps/totps-schema';

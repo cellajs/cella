@@ -1,6 +1,6 @@
-import { appConfig } from 'config';
 import { InfoIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { AlertWrap } from '~/modules/common/alert-wrap';
 import { OfflineAccessSwitch } from '~/modules/navigation/menu-sheet/offline-access-switch';

@@ -1,4 +1,4 @@
-import type { BaseAuthStrategies, BaseOAuthProviders, ConfigMode, RequiredConfig, S3Config } from './types';
+import type { BaseAuthStrategies, BaseOAuthProviders, ConfigMode, RequiredConfig, S3Config } from './src/builder/types';
 import { roles, hierarchy, type ValidatePublicProducts } from './hierarchy';
 
 // Re-export for external consumers

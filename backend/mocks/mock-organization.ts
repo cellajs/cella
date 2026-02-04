@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
-import { appConfig, type Language } from 'config';
 import { UniqueEnforcer } from 'enforce-unique';
+import { appConfig, type Language } from 'shared';
 import slugify from 'slugify';
 import type { InsertOrganizationModel, OrganizationModel } from '#/db/schema/organizations';
 import type { AuthStrategy } from '#/db/schema/sessions';

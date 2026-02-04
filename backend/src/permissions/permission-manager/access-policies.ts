@@ -5,7 +5,7 @@ import {
   type EntityType,
   getContextRoles,
   type ProductEntityType,
-} from 'config';
+} from 'shared';
 import type {
   AccessPolicies,
   AccessPolicyCallback,

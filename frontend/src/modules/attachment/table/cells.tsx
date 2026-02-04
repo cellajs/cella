@@ -1,10 +1,10 @@
 import { Link, useNavigate } from '@tanstack/react-router';
-import { appConfig } from 'config';
 import i18n from 'i18next';
 import { CopyCheckIcon, CopyIcon, DownloadIcon, TrashIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import useDownloader from 'react-use-downloader';
+import { appConfig } from 'shared';
 import { type Attachment, getPresignedUrl } from '~/api.gen';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import AttachmentPreview from '~/modules/attachment/attachment-preview';

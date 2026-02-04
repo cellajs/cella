@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { appConfig, type EntityType } from 'config';
+import { appConfig, type EntityType } from 'shared';
 import type { ZodType } from 'zod';
 
 /**

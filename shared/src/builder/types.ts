@@ -1,11 +1,22 @@
-import type config from './default';
-import type { RequiredPublicProductEntityTypes } from './hierarchy';
+/******************************************************************************
+ * CONFIG BUILDER TYPES
+ * Types for building and validating configuration.
+ * Includes both external config interface and hierarchy-derived types.
+ ******************************************************************************/
+
+/******************************************************************************
+ * DEEP PARTIAL UTILITY
+ ******************************************************************************/
 
 export type DeepPartial<T> = T extends object
   ? {
       [P in keyof T]?: DeepPartial<T[P]>;
     }
   : T;
+
+/******************************************************************************
+ * CONFIG MODE & BASE TYPES
+ ******************************************************************************/
 
 export type ConfigMode = 'development' | 'production' | 'tunnel' | 'test' | 'staging';
 export type BaseAuthStrategies = 'password' | 'passkey' | 'oauth' | 'totp';
@@ -120,7 +131,7 @@ export interface RequiredConfig {
    * Product entities with parent: null MUST be declared here.
    * Type is inferred from hierarchy.parentlessProductTypes to enforce compile-time validation.
    */
-  publicProductEntityTypes: RequiredPublicProductEntityTypes;
+  publicProductEntityTypes: readonly string[];
   relatableContextEntityTypes: readonly string[];
   entityRoles: readonly string[];
   entityIdColumnKeys: Record<string, string>;
@@ -209,13 +220,3 @@ export interface RequiredConfig {
   // User defaults
   defaultUserFlags: Record<string, boolean>;
 }
-
-/******************************************************************************
- * CONFIG TYPE
- *****************************************************************************/
-
-/**
- * Full config type derived from default.ts.
- * Forks should use `satisfies RequiredConfig` for type enforcement.
- */
-export type Config = typeof config;

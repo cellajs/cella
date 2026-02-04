@@ -1,6 +1,6 @@
-import { appConfig } from 'config';
 import i18n from 'i18next';
 import { VenetianMaskIcon } from 'lucide-react';
+import { appConfig } from 'shared';
 import type { User } from '~/api.gen';
 import { startImpersonation } from '~/api.gen';
 import { toaster } from '~/modules/common/toaster/service';

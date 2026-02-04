@@ -1,5 +1,5 @@
-import type { EntityType, Severity } from 'config';
 import type { ClientErrorStatusCode, ServerErrorStatusCode } from 'hono/utils/http-status';
+import type { EntityType, Severity } from 'shared';
 
 export const clientConfig = {
   fetch: (input: RequestInfo | URL, init?: RequestInit) => fetch(input, { ...init, credentials: 'include' }),

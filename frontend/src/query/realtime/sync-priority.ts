@@ -1,4 +1,4 @@
-import { hierarchy, type ProductEntityType } from 'config';
+import { hierarchy, type ProductEntityType } from 'shared';
 import router from '~/routes/router';
 import { baseEntityRoutes } from '~/routes-config';
 

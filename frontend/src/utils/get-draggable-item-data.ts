@@ -1,4 +1,4 @@
-import type { EntityType } from 'config';
+import type { EntityType } from 'shared';
 
 // Drag and drop data
 export type DraggableItemData<T, D extends string> = {

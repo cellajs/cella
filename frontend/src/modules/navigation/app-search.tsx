@@ -1,9 +1,9 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { appConfig } from 'config';
 import { HistoryIcon, SearchIcon, XIcon } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import type { ContextEntityBase, UserBase } from '~/api.gen';
 import useFocusByRef from '~/hooks/use-focus-by-ref';
 import ContentPlaceholder from '~/modules/common/content-placeholder';

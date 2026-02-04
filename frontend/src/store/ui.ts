@@ -1,4 +1,4 @@
-import { appConfig, type Theme } from 'config';
+import { appConfig, type Theme } from 'shared';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';

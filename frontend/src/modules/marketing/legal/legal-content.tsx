@@ -1,7 +1,7 @@
 import { useParams } from '@tanstack/react-router';
-import { appConfig } from 'config';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import { usePreloadLazyComponents } from '~/hooks/use-preload-lazy-components';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { SimpleHeader } from '~/modules/common/simple-header';

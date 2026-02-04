@@ -1,6 +1,6 @@
-import type { TokenType } from 'config';
 import type { MiddlewareHandler } from 'hono';
 import { createMiddleware } from 'hono/factory';
+import type { TokenType } from 'shared';
 import type { Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
 import { deleteAuthCookie } from '#/modules/auth/general/helpers/cookie';

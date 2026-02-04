@@ -9,7 +9,7 @@
  */
 
 import type { QueryClient, QueryKey } from '@tanstack/react-query';
-import type { ContextEntityType } from 'config';
+import type { ContextEntityType } from 'shared';
 import { getEntityQueryKeys } from './entity-query-registry';
 
 /**

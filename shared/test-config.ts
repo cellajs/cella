@@ -1,5 +1,5 @@
-import type { DeepPartial } from './types';
-import type _default from './default';
+import type { DeepPartial } from './src/builder/types';
+import type _default from './default-config';
 
 /**
  * Ensure that this file does not include or use any sensitive information.

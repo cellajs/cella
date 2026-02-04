@@ -1,4 +1,4 @@
-import type { SystemRole } from 'config';
+import type { SystemRole } from 'shared';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import type { CursoredSubscriber } from '#/sync/stream';
 

@@ -1,8 +1,7 @@
-import { appConfig } from 'config';
 import { SendIcon } from 'lucide-react';
 import { useRef } from 'react';
-
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import { toaster } from '~/modules/common/toaster/service';
 import { useCreateRequestMutation } from '~/modules/requests/query';
 import { SubmitButton } from '~/modules/ui/button';

@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
-import { appConfig, type EnabledOAuthProvider, type UserFlags } from 'config';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
+import { appConfig, type EnabledOAuthProvider, type UserFlags } from 'shared';
 import { usersTable } from '#/db/schema/users';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
 import {

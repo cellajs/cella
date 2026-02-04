@@ -15,7 +15,7 @@
  */
 import * as Sentry from '@sentry/react';
 import type { PersistedClient, Persister } from '@tanstack/react-query-persist-client';
-import { appConfig } from 'config';
+import { appConfig } from 'shared';
 
 const STORAGE_KEY = `${appConfig.slug}-query-session-cache`;
 

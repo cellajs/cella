@@ -1,4 +1,4 @@
-import { appConfig, type RelatableContextEntityType } from 'config';
+import { appConfig, type RelatableContextEntityType } from 'shared';
 import { getRowValue } from './get-row-value';
 
 /**

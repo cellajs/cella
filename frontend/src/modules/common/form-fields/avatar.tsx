@@ -1,9 +1,9 @@
 import { onlineManager } from '@tanstack/react-query';
-import { appConfig } from 'config';
 import { TrashIcon, UploadIcon } from 'lucide-react';
 import { useRef } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import { AvatarWrap, type AvatarWrapProps } from '~/modules/common/avatar-wrap';
 import { toaster } from '~/modules/common/toaster/service';
 import { useUploader } from '~/modules/common/uploader/use-uploader';

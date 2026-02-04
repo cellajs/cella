@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { appConfig } from 'config';
+import { appConfig } from 'shared';
 import { activityActions } from '#/sync/activity-bus';
 import { mockPublicStreamActivity, mockStreamNotification } from '../../mocks/mock-entity-base';
 import { txStreamMessageSchema } from './transaction-schemas';

@@ -1,4 +1,4 @@
-import type { ContextEntityType } from 'config';
+import type { ContextEntityType } from 'shared';
 import type z from 'zod';
 import type {
   GetMembersResponse,

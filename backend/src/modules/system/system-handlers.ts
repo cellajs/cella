@@ -1,8 +1,8 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
-import { appConfig } from 'config';
 import { and, eq, inArray, isNull, or } from 'drizzle-orm';
 import i18n from 'i18next';
+import { appConfig } from 'shared';
 import { db } from '#/db/db';
 import { attachmentsTable } from '#/db/schema/attachments';
 import { emailsTable } from '#/db/schema/emails';

@@ -1,5 +1,5 @@
-import { appConfig, type ContextEntityType, type RelatableContextEntityType } from 'config';
 import { type PgVarcharBuilderInitial, varchar } from 'drizzle-orm/pg-core';
+import { appConfig, type ContextEntityType, type RelatableContextEntityType } from 'shared';
 import { allContextEntityTables, relatableContextEntityTables } from '#/relatable-config';
 
 /**

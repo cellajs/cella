@@ -1,6 +1,6 @@
-import { appConfig } from 'config';
 import Gleap from 'gleap';
 import { useEffect } from 'react';
+import { appConfig } from 'shared';
 import type { User } from '~/api.gen';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import '~/modules/common/gleap/style.css';

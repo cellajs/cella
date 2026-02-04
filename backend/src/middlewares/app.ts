@@ -1,10 +1,10 @@
 import { httpInstrumentationMiddleware } from '@hono/otel';
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { appConfig } from 'config';
 import { compress } from 'hono/compress';
 import { cors } from 'hono/cors';
 import { csrf } from 'hono/csrf';
 import { secureHeaders } from 'hono/secure-headers';
+import { appConfig } from 'shared';
 import type { Env } from '#/lib/context';
 import { dynamicBodyLimit } from '#/middlewares/body-limit';
 import { loggerMiddleware } from '#/middlewares/logger';

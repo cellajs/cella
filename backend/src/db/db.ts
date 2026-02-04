@@ -1,9 +1,9 @@
 import type { PGlite } from '@electric-sql/pglite';
-import { appConfig } from 'config';
 import { type DrizzleConfig } from 'drizzle-orm';
 import { type NodePgClient, drizzle as pgDrizzle } from 'drizzle-orm/node-postgres';
 import type { PgDatabase } from 'drizzle-orm/pg-core';
 import { drizzle as pgliteDrizzle } from 'drizzle-orm/pglite';
+import { appConfig } from 'shared';
 import { env } from '../env';
 
 /**

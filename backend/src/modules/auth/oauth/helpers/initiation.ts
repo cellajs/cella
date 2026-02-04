@@ -1,5 +1,5 @@
-import { appConfig } from 'config';
 import type { Context } from 'hono';
+import { appConfig } from 'shared';
 import z from 'zod';
 import { Env } from '#/lib/context';
 import { AppError, type ErrorKey } from '#/lib/error';

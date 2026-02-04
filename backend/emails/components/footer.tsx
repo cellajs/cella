@@ -1,6 +1,6 @@
-import { appConfig } from 'config';
 import i18n from 'i18next';
 import { Link, Text } from 'jsx-email';
+import { appConfig } from 'shared';
 
 /**
  * Email footer component with company address and support email link.

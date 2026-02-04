@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import type { OpenAPIHono } from '@hono/zod-openapi';
 import { Scalar } from '@scalar/hono-api-reference';
-import { appConfig } from 'config';
+import { appConfig } from 'shared';
 import { txBaseSchema } from '#/db/utils/tx-columns';
 import { buildExtensionRegistry } from '#/docs/openapi-extensions';
 import { openapiTags, registerAppSchema } from '#/docs/tags-config';

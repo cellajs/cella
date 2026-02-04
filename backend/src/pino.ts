@@ -1,5 +1,5 @@
-import { appConfig } from 'config';
 import pino from 'pino';
+import { appConfig } from 'shared';
 import { env } from './env';
 
 // TODO consider changing these keys to all inlcude 'secret' for clarity

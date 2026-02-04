@@ -1,4 +1,4 @@
-import { appConfig, getContextRoles, hierarchy, isContextEntity, isProductEntity } from 'config';
+import { appConfig, getContextRoles, hierarchy, isContextEntity, isProductEntity } from 'shared';
 import { describe, expect, it } from 'vitest';
 import { configureAccessPolicies } from './access-policies';
 import { getAllDecisions } from './check';

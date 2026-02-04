@@ -5,7 +5,7 @@ import { nanoid } from 'nanoid';
 import { LogicalReplicationService, type Pgoutput, PgoutputPlugin } from 'pg-logical-replication';
 import { db } from '#/db/db';
 import { activitiesTable, type InsertActivityModel } from '#/db/schema/activities';
-import { appConfig, isProductEntity } from 'config';
+import { appConfig, isProductEntity } from 'shared';
 import { CDC_PUBLICATION_NAME, CDC_SLOT_NAME, RESOURCE_LIMITS } from './constants';
 import { env } from './env';
 import { getErrorCode, withRetry } from './lib/retry';

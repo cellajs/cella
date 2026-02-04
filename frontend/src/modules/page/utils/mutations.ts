@@ -1,6 +1,6 @@
 import { type QueryKey, useMutation } from '@tanstack/react-query';
-import type { EntityType } from 'config';
 import { useTranslation } from 'react-i18next';
+import type { EntityType } from 'shared';
 import { toaster } from '~/modules/common/toaster/service';
 import type { InfiniteQueryData, QueryData } from '~/query/types';
 

@@ -1,6 +1,6 @@
-import { appConfig } from 'config';
 import { BanIcon, CircleIcon, type LucideProps, MoonIcon, SunIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import { Button } from '~/modules/ui/button';
 import {
   DropdownMenu,

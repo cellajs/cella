@@ -1,7 +1,7 @@
 import { useNavigate } from '@tanstack/react-router';
-import { appConfig } from 'config';
 import { UserXIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import { stopImpersonation as breakImpersonation } from '~/api.gen';
 import { toaster } from '~/modules/common/toaster/service';
 import { getAndSetMe } from '~/modules/me/helpers';

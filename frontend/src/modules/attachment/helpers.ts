@@ -1,4 +1,4 @@
-import { uploadTemplates } from 'config/upload-templates';
+import { uploadTemplates } from 'shared/upload-templates';
 import type { Attachment } from '~/api.gen';
 import { getPresignedUrl } from '~/api.gen/sdk.gen';
 import { zAttachment } from '~/api.gen/zod.gen';

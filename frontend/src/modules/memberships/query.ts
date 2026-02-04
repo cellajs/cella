@@ -1,5 +1,5 @@
 import { infiniteQueryOptions } from '@tanstack/react-query';
-import { appConfig } from 'config';
+import { appConfig } from 'shared';
 import { type GetMembersData, type GetPendingMembershipsData, getMembers, getPendingMemberships } from '~/api.gen';
 import { baseInfiniteQueryOptions } from '~/query/basic';
 

@@ -1,7 +1,7 @@
 import { onlineManager } from '@tanstack/react-query';
-import { appConfig, type Language } from 'config';
 import i18n from 'i18next';
 import { useTranslation } from 'react-i18next';
+import { appConfig, type Language } from 'shared';
 import { updateMe } from '~/api.gen';
 import CountryFlag from '~/modules/common/country-flag';
 import { toaster } from '~/modules/common/toaster/service';

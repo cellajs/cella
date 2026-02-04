@@ -1,4 +1,4 @@
-import { appConfig } from 'config';
+import { appConfig } from 'shared';
 import { checkMark, loadingMark } from '#/utils/console';
 import { db } from '#/db/db';
 import { pagesTable } from '#/db/schema/pages';

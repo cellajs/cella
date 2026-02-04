@@ -1,4 +1,4 @@
-import type { EntityType, ResourceType } from 'config';
+import type { EntityType, ResourceType } from 'shared';
 import type { TableRegistryEntry } from '../types';
 import { extractContextEntityIds, type ContextEntityIds } from './extract-context-entity-ids';
 import { getRowValue } from './get-row-value';

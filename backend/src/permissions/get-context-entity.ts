@@ -1,4 +1,4 @@
-import type { ContextEntityType, EntityActionType } from 'config';
+import type { ContextEntityType, EntityActionType } from 'shared';
 import { getContextMemberships, getContextUserSystemRole } from '#/lib/context';
 import { type EntityModel, resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/error';

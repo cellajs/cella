@@ -1,5 +1,5 @@
-import { appConfig, type ContextEntityType } from 'config';
 import { inArray, max } from 'drizzle-orm';
+import { appConfig, type ContextEntityType } from 'shared';
 import { db } from '#/db/db';
 import { InsertMembershipModel, type MembershipModel, membershipsTable } from '#/db/schema/memberships';
 import type { EntityModel } from '#/lib/entity';

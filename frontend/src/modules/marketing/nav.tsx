@@ -1,9 +1,9 @@
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { Link } from '@tanstack/react-router';
-import { appConfig } from 'config';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
+import { appConfig } from 'shared';
 import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
 import HamburgerButton from '~/modules/common/hamburger';
 import Logo from '~/modules/common/logo';

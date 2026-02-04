@@ -1,7 +1,7 @@
-import { appConfig, type Language } from 'config';
 import { CheckIcon, ChevronDownIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { appConfig, type Language } from 'shared';
 import { useMeasure } from '~/hooks/use-measure';
 import CountryFlag from '~/modules/common/country-flag';
 import { Button } from '~/modules/ui/button';

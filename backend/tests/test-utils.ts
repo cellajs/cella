@@ -10,9 +10,9 @@
  * These functions are intended to be used in test files to keep setup DRY and consistent.
  */
 
-import { appConfig } from 'config';
 import { sql } from 'drizzle-orm';
 import { Context, Next } from 'hono';
+import { appConfig } from 'shared';
 import { vi } from 'vitest';
 import { db } from '#/db/db';
 import { resetOrganizationMockEnforcers } from '../mocks/mock-organization';

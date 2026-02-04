@@ -1,7 +1,6 @@
-import { appConfig } from 'config';
 import { ArrowUpRightIcon, CalendarCheckIcon, MailIcon, MapPinIcon, PhoneCallIcon } from 'lucide-react';
-
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import ContactFormMap from '~/modules/common/contact-form/contact-form';
 import MarketingLayout from '~/modules/marketing/layout';
 

@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
-import { appConfig, type EntityType, recordFromKeys } from 'config';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
+import { appConfig, type EntityType, recordFromKeys } from 'shared';
 import { organizationsTable } from '#/db/schema/organizations';
 import { authStrategiesEnum } from '#/db/schema/sessions';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';

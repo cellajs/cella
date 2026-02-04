@@ -1,4 +1,4 @@
-import type { ContextEntityType } from 'config';
+import type { ContextEntityType } from 'shared';
 import { CallbackArgs } from '~/modules/common/data-table/types';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';

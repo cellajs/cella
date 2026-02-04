@@ -1,8 +1,8 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { appConfig } from 'config';
 import { PaperclipIcon } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import type { Attachment } from '~/api.gen';
 import useSearchParams from '~/hooks/use-search-params';
 import { attachmentsListQueryOptions, useAttachmentUpdateMutation } from '~/modules/attachment/query';

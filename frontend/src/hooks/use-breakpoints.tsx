@@ -1,5 +1,5 @@
-import { appConfig } from 'config';
 import { useSyncExternalStore } from 'react';
+import { appConfig } from 'shared';
 
 // Sort breakpoints once for efficiency
 const breakpoints: { [key: string]: string } = appConfig.theme.screenSizes;

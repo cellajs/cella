@@ -1,9 +1,9 @@
 import { useInfiniteQuery, useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { Link, useRouterState } from '@tanstack/react-router';
-import { appConfig } from 'config';
 import { ChevronDownIcon, PencilIcon } from 'lucide-react';
 import { lazy, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import Logo from '~/modules/common/logo';
 import { JsonActions } from '~/modules/docs/json-actions';

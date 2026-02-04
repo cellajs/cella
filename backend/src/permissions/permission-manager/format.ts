@@ -1,4 +1,4 @@
-import { appConfig, type EntityActionType } from 'config';
+import { appConfig, type EntityActionType } from 'shared';
 import { createActionRecord } from './action-helpers';
 import type { MembershipForPermission, PermissionDecision } from './types';
 

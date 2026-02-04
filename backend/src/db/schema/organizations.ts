@@ -1,5 +1,5 @@
-import { appConfig, type Language } from 'config';
 import { boolean, index, json, pgTable, varchar } from 'drizzle-orm/pg-core';
+import { appConfig, type Language } from 'shared';
 import type { AuthStrategy } from '#/db/schema/sessions';
 import { contextEntityColumns } from '#/db/utils/context-entity-columns';
 import { defaultRestrictions, type Restrictions } from '#/db/utils/organization-restrictions';

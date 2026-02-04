@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
-import { appConfig } from 'config';
 import { createSelectSchema } from 'drizzle-zod';
+import { appConfig } from 'shared';
 import { activitiesTable } from '#/db/schema/activities';
 import { activityErrorSchema } from '#/db/utils/activity-error-schema';
 import { txBaseSchema } from '#/db/utils/tx-columns';

@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { appConfig, type EntityRole } from 'config';
+import { appConfig, type EntityRole } from 'shared';
 import { withFakerSeed } from './faker-seed';
 
 /**

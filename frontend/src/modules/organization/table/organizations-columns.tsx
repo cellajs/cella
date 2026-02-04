@@ -1,8 +1,8 @@
 import { Link } from '@tanstack/react-router';
-import { appConfig } from 'config';
 import { ShieldIcon, UserRoundIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import type { Organization } from '~/api.gen';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';

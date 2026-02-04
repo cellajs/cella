@@ -1,4 +1,4 @@
-import { appConfig } from 'config';
+import { appConfig } from 'shared';
 import type { ActivityAction } from '#/sync/activity-bus';
 
 /**

@@ -1,4 +1,4 @@
-import { appConfig } from 'config';
+import { appConfig } from 'shared';
 import type { CreateClientConfig } from '~/api.gen/client.gen';
 import { ApiError, clientConfig } from '~/lib/api';
 

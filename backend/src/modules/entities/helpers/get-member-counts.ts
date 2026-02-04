@@ -1,5 +1,5 @@
-import { appConfig, type ContextEntityType } from 'config';
 import { count, eq, isNull, sql } from 'drizzle-orm';
+import { appConfig, type ContextEntityType } from 'shared';
 import { db } from '#/db/db';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { membershipsTable } from '#/db/schema/memberships';

@@ -1,12 +1,12 @@
 import typographyPlugin from '@tailwindcss/typography';
-import { appConfig } from 'config';
+import { appConfig } from 'shared';
 import type { Config } from 'tailwindcss';
 import animatePlugin from 'tailwindcss-animate';
 /** @type {Config} */
 
 export default {
   darkMode: 'class',
-  content: ['./src/**/*.{ts,tsx}', '../config/**/*.{ts,tsx}'],
+  content: ['./src/**/*.{ts,tsx}', '../shared/**/*.{ts,tsx}'],
   theme: {
     screens: appConfig.theme.screenSizes,
     container: {

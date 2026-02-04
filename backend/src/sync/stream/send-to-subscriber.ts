@@ -1,4 +1,4 @@
-import { isProductEntity } from 'config';
+import { isProductEntity } from 'shared';
 import type { ActivityEventWithEntity } from '#/sync/activity-bus';
 import { logEvent } from '#/utils/logger';
 import { buildStreamNotification } from './build-message';

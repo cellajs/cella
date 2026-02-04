@@ -1,6 +1,6 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { appConfig } from 'config';
 import { useCallback, useMemo, useState } from 'react';
+import { appConfig } from 'shared';
 import useSearchParams from '~/hooks/use-search-params';
 import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';

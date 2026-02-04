@@ -1,5 +1,5 @@
-import { appConfig, type ContextEntityType, hierarchy } from 'config';
 import { eq, sql } from 'drizzle-orm';
+import { appConfig, type ContextEntityType, hierarchy } from 'shared';
 import type z from 'zod';
 import { db } from '#/db/db';
 import { getMemberCountsSubquery } from '#/modules/entities/helpers/get-member-counts';

@@ -8,8 +8,9 @@
  * React-query cache is the source of truth for attachment metadata.
  * This database only stores the actual blob data and sync state.
  */
-import { appConfig, type UploadTemplateId } from 'config';
+
 import { Dexie, type EntityTable } from 'dexie';
+import { appConfig, type UploadTemplateId } from 'shared';
 
 export type BlobSource = 'upload' | 'download';
 export type UploadStatus = 'pending' | 'uploading' | 'uploaded' | 'failed' | 'local-only';

@@ -1,4 +1,4 @@
-import { appConfig, type PublicProductEntityType } from 'config';
+import { appConfig, type PublicProductEntityType } from 'shared';
 import type { PublicStreamActivity } from '~/api.gen';
 import { pageQueryKeys } from '~/modules/page/query';
 import { queryClient } from '~/query/query-client';

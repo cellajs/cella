@@ -1,4 +1,4 @@
-import { appConfig, type EntityType } from 'config';
+import { appConfig, type EntityType } from 'shared';
 
 export type Restrictions = Record<Exclude<EntityType, 'organization'>, number>;
 

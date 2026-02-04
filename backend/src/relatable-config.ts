@@ -1,4 +1,4 @@
-import type { ContextEntityType } from 'config';
+import type { ContextEntityType } from 'shared';
 import { organizationsTable } from '#/db/schema/organizations';
 
 /**
@@ -13,7 +13,7 @@ export const allContextEntityTables = {
 /**
  * Mapping of relatable context entity types to their tables for FK column generation.
  *
- * ⚠️ IMPORTANT: Keep in sync with hierarchy in config/default.ts.
+ * ⚠️ IMPORTANT: Keep in sync with hierarchy in shared/default-config.ts.
  * The keys here should match context entities that appear as ancestors of any entity
  * (both context and product entities with a parent).
  */

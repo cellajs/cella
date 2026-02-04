@@ -1,4 +1,4 @@
-import { isContextEntity, isProductEntity, type ProductEntityType } from 'config';
+import { isContextEntity, isProductEntity, type ProductEntityType } from 'shared';
 import { checkPermission } from '#/permissions';
 import { type ActivityEventWithEntity, getTypedEntity } from '#/sync/activity-bus';
 import { logEvent } from '#/utils/logger';

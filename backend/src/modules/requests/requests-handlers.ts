@@ -1,7 +1,7 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { appConfig } from 'config';
 import { and, count, eq, getTableColumns, ilike, inArray, type SQL, sql } from 'drizzle-orm';
 import i18n from 'i18next';
+import { appConfig } from 'shared';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { type RequestModel, requestsTable } from '#/db/schema/requests';

@@ -1,6 +1,6 @@
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
-import { appConfig } from 'config';
 import { useEffect, useMemo, useState } from 'react';
+import { appConfig } from 'shared';
 import { downloadService } from '~/modules/attachment/download-service';
 import { uploadService } from '~/modules/attachment/upload-service';
 import type { UserMenuItem } from '~/modules/me/types';

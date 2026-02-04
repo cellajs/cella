@@ -1,8 +1,8 @@
 import { getRandomValues } from 'node:crypto';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { encodeBase64 } from '@oslojs/encoding';
-import { appConfig } from 'config';
 import { and, eq, getTableColumns } from 'drizzle-orm';
+import { appConfig } from 'shared';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { passkeysTable } from '#/db/schema/passkeys';

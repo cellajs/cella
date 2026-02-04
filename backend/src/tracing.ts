@@ -9,7 +9,7 @@ import {
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace-node';
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions';
-import { appConfig } from 'config';
+import { appConfig } from 'shared';
 
 /**
  * In-memory metric exporter for reading OTel metrics via API.

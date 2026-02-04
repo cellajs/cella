@@ -1,6 +1,6 @@
-import { appConfig } from 'config';
 import { eq } from 'drizzle-orm';
 import type { Context } from 'hono';
+import { appConfig } from 'shared';
 import { db } from '#/db/db';
 import { tokensTable } from '#/db/schema/tokens';
 import { type UserModel, usersTable } from '#/db/schema/users';

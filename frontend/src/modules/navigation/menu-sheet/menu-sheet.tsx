@@ -3,10 +3,10 @@ import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/ad
 import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
 import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { Link } from '@tanstack/react-router';
-import { appConfig } from 'config';
 import { ArrowLeftIcon, SearchIcon } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import { menuSectionsSchema } from '~/menu-config';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import ContentPlaceholder from '~/modules/common/content-placeholder';

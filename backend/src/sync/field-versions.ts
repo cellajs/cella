@@ -3,7 +3,7 @@
  * Uses fieldVersions to track per-field versions and detect conflicts.
  */
 
-import type { EntityType } from 'config';
+import type { EntityType } from 'shared';
 import type { TxBase } from '#/db/utils/tx-columns';
 import { AppError } from '#/lib/error';
 

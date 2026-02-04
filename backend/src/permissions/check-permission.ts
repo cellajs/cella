@@ -1,4 +1,4 @@
-import type { EntityActionType } from 'config';
+import type { EntityActionType } from 'shared';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import {
   getAllDecisions,

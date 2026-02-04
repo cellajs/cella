@@ -1,7 +1,7 @@
 import { keepPreviousData, queryOptions, useQuery } from '@tanstack/react-query';
-import { appConfig, type EntityType } from 'config';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
+import { appConfig, type EntityType } from 'shared';
 import { CountUp } from 'use-count-up';
 import { getPublicCounts } from '~/api.gen';
 import { counts } from '~/modules/marketing/marketing-config';

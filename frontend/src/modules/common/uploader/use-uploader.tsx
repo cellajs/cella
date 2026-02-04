@@ -1,4 +1,4 @@
-import type { UploadTemplateId } from 'config';
+import type { UploadTemplateId } from 'shared';
 import { create } from 'zustand';
 import type { CustomUppyOpt, Plugins, StatusEventHandlers } from '~/modules/common/uploader/types';
 

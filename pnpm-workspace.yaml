@@ -2,7 +2,7 @@
 packages:
   - backend
   - cdc
-  - config
+  - shared
   - cli/*
   - frontend
   - locales
