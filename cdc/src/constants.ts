@@ -64,4 +64,33 @@ export const RESOURCE_LIMITS = {
     /** Free disk emergency shutdown threshold (5 GB) */
     diskShutdownBytes: 5e9,
   },
+
+  // Retry configuration for transient errors
+  retry: {
+    /** Maximum number of retry attempts */
+    maxAttempts: 3,
+    /** Initial delay before first retry (ms) */
+    initialDelayMs: 100,
+    /** Maximum delay between retries (ms) */
+    maxDelayMs: 5000,
+    /** Backoff multiplier */
+    backoffMultiplier: 2,
+  },
 } as const;
+
+/**
+ * Transient error codes that should trigger retry.
+ * These are PostgreSQL error codes that indicate temporary failures.
+ */
+export const TRANSIENT_ERROR_CODES = new Set([
+  '40001', // serialization_failure
+  '40P01', // deadlock_detected
+  '53000', // insufficient_resources
+  '53100', // disk_full
+  '53200', // out_of_memory
+  '53300', // too_many_connections
+  '57P03', // cannot_connect_now
+  '08000', // connection_exception
+  '08003', // connection_does_not_exist
+  '08006', // connection_failure
+]);

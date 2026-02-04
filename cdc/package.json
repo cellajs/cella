@@ -8,7 +8,9 @@
   "scripts": {
     "start": "tsx src/index.ts",
     "dev": "cross-env NODE_ENV=development wait-on -i 2000 -t 60000 http://localhost:4000/ping && tsx watch --env-file=../backend/.env src/index.ts",
-    "ts": "tsc --pretty"
+    "ts": "tsc --pretty",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@hono/node-server": "^1.19.9",
@@ -30,6 +32,7 @@
     "cross-env": "^7.0.3",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
+    "vitest": "^4.0.18",
     "wait-on": "^8.0.5"
   }
 }
