@@ -1,8 +1,9 @@
 import { sql } from 'drizzle-orm';
+import { nanoid } from 'nanoid';
 import { LogicalReplicationService, type Pgoutput, PgoutputPlugin } from 'pg-logical-replication';
 import { db } from '#/db/db';
 import { activitiesTable, type InsertActivityModel } from '#/db/schema/activities';
-import { appConfig } from 'config';
+import { appConfig, isProductEntity } from 'config';
 import { CDC_PUBLICATION_NAME, CDC_SLOT_NAME } from './constants';
 import { env } from './env';
 import { logEvent } from './pino';
@@ -64,13 +65,16 @@ async function ensureReplicationSlot(): Promise<void> {
 
 /**
  * Send activity + entity data to API server via WebSocket.
- * Returns trace context for correlation.
+ * Generates cacheToken for product entities.
  */
 function sendActivityToApi(
   activity: InsertActivityModel,
   entityData: Record<string, unknown>,
   traceContext: TraceContext,
 ): void {
+  // Generate cache token for product entities
+  const cacheToken = activity.entityType && isProductEntity(activity.entityType) ? nanoid() : null;
+
   const payload = {
     activity: {
       id: activity.id,
@@ -87,6 +91,8 @@ function sendActivityToApi(
       createdAt: new Date().toISOString(),
     },
     entity: entityData,
+    // Cache token for server-side entity cache
+    cacheToken,
     // Include trace context for end-to-end correlation
     _trace: traceContext,
   };

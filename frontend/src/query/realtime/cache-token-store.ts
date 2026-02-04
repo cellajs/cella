@@ -8,21 +8,12 @@
  * Key format: `${entityType}:${entityId}`
  * Value: The cache token string
  *
- * Tokens automatically expire (10 min TTL), but we don't track expiry client-side.
+ * Tokens automatically expire (10 min TTL on server), but we don't track expiry client-side.
  * Invalid tokens are simply ignored by the server, resulting in a cache miss.
  */
 
-/** Token entry with metadata */
-interface CacheTokenEntry {
-  token: string;
-  /** Version this token is for (from tx.version) */
-  version: number;
-  /** Timestamp when stored (for debugging) */
-  storedAt: number;
-}
-
 /** In-memory cache token store */
-const tokenStore = new Map<string, CacheTokenEntry>();
+const tokenStore = new Map<string, string>();
 
 /**
  * Build a key for the token store.
@@ -37,20 +28,10 @@ function buildKey(entityType: string, entityId: string): string {
  * @param entityType - Entity type (e.g., 'page', 'attachment')
  * @param entityId - Entity ID
  * @param token - The cache token from SSE notification
- * @param version - Entity version the token is for
  */
-export function storeCacheToken(entityType: string, entityId: string, token: string, version: number): void {
+export function storeCacheToken(entityType: string, entityId: string, token: string): void {
   const key = buildKey(entityType, entityId);
-  const existing = tokenStore.get(key);
-
-  // Only update if this is a newer version
-  if (!existing || version >= existing.version) {
-    tokenStore.set(key, {
-      token,
-      version,
-      storedAt: Date.now(),
-    });
-  }
+  tokenStore.set(key, token);
 }
 
 /**
@@ -61,18 +42,6 @@ export function storeCacheToken(entityType: string, entityId: string, token: str
  * @returns The cache token if available, undefined otherwise
  */
 export function getCacheToken(entityType: string, entityId: string): string | undefined {
-  const key = buildKey(entityType, entityId);
-  return tokenStore.get(key)?.token;
-}
-
-/**
- * Get cache token entry with metadata.
- *
- * @param entityType - Entity type
- * @param entityId - Entity ID
- * @returns Token entry with version and timestamp, or undefined
- */
-export function getCacheTokenEntry(entityType: string, entityId: string): CacheTokenEntry | undefined {
   const key = buildKey(entityType, entityId);
   return tokenStore.get(key);
 }
@@ -100,16 +69,9 @@ export function clearCacheTokens(): void {
  * Get statistics about the token store.
  * Useful for debugging.
  */
-export function getCacheTokenStats(): { size: number; entries: Array<{ key: string; version: number; age: number }> } {
-  const now = Date.now();
-  const entries = Array.from(tokenStore.entries()).map(([key, entry]) => ({
-    key,
-    version: entry.version,
-    age: now - entry.storedAt,
-  }));
-
+export function getCacheTokenStats(): { size: number; keys: string[] } {
   return {
     size: tokenStore.size,
-    entries,
+    keys: Array.from(tokenStore.keys()),
   };
 }

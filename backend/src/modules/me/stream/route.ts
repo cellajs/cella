@@ -1,4 +1,4 @@
-import { appConfig, type RealtimeEntityType } from 'config';
+import { isProductEntity } from 'config';
 import type { ActivityEventWithEntity } from '#/sync/activity-bus';
 import { streamSubscriberManager, writeChange } from '#/sync/stream';
 import { logEvent } from '#/utils/logger';
@@ -11,10 +11,7 @@ import { type AppStreamSubscriber, orgChannel } from './types';
  * Sends notification-only payload - no entity data included.
  */
 async function sendToUserSubscriber(subscriber: AppStreamSubscriber, event: ActivityEventWithEntity): Promise<void> {
-  const notification = buildStreamNotification(event, {
-    userId: subscriber.userId,
-    organizationIds: Array.from(subscriber.orgIds),
-  });
+  const notification = buildStreamNotification(event);
 
   logEvent('debug', 'SSE notification sent to user subscriber', {
     subscriberId: subscriber.id,
@@ -51,7 +48,7 @@ export async function dispatchToUserSubscribers(event: ActivityEventWithEntity):
   let eventType = 'organization';
   if (event.resourceType === 'membership') {
     eventType = 'membership';
-  } else if (event.entityType && appConfig.realtimeEntityTypes.includes(event.entityType as RealtimeEntityType)) {
+  } else if (event.entityType && isProductEntity(event.entityType)) {
     eventType = 'product entity';
   }
 

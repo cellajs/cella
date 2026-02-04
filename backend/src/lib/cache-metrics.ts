@@ -93,44 +93,15 @@ class CacheMetrics {
   }
 }
 
-/** Singleton metrics instance for public cache */
+/** Singleton metrics instance for entity cache */
 export const publicCacheMetrics = new CacheMetrics();
 
-/** Singleton metrics instance for token cache */
-export const tokenCacheMetrics = new CacheMetrics();
-
-/** Get combined metrics for all caches */
-export function getCombinedCacheMetrics(): {
-  public: ReturnType<CacheMetrics['getStats']>;
-  token: ReturnType<CacheMetrics['getStats']>;
-  combined: {
-    totalHits: number;
-    totalMisses: number;
-    overallHitRate: number;
-    totalInvalidations: number;
-  };
-} {
-  const publicStats = publicCacheMetrics.getStats();
-  const tokenStats = tokenCacheMetrics.getStats();
-
-  const totalHits = publicStats.hits + tokenStats.hits;
-  const totalMisses = publicStats.misses + tokenStats.misses;
-  const total = totalHits + totalMisses;
-
-  return {
-    public: publicStats,
-    token: tokenStats,
-    combined: {
-      totalHits,
-      totalMisses,
-      overallHitRate: total > 0 ? Math.round((totalHits / total) * 10000) / 100 : 0,
-      totalInvalidations: publicStats.invalidations + tokenStats.invalidations,
-    },
-  };
+/** Get cache metrics */
+export function getCacheMetrics(): ReturnType<CacheMetrics['getStats']> {
+  return publicCacheMetrics.getStats();
 }
 
-/** Reset all cache metrics */
-export function resetAllCacheMetrics(): void {
+/** Reset cache metrics */
+export function resetCacheMetrics(): void {
   publicCacheMetrics.reset();
-  tokenCacheMetrics.reset();
 }

@@ -95,7 +95,7 @@ When upstream adds new entity types or modifies existing ones:
 
 - **New entity types**: Decide if fork needs them; if not, keep fork's entity arrays
 - **Entity config structure**: If upstream added `entityConfig`, fork must populate with its entities
-- **`realtimeEntityTypes`**: Entities that use the new SSE-based sync (was Electric-based)
+- **`productEntityTypes`**: All product entities now support SSE-based sync and offline
 - **Column/field additions**: Review if fork's entities need corresponding changes
 
 ### 3. Sync Engine Architecture (Major Change)
@@ -115,7 +115,7 @@ When upstream refactors the sync engine (e.g., Electric → SSE/CDC):
 
 **Fork implications:**
 - If fork uses realtime for custom entities (e.g., `task`, `label`), must create stream routes
-- Review if `realtimeEntityTypes` array needs updating
+- Review if `productEntityTypes` array needs updating
 - Check if fork's sync patterns need migration
 
 ### 4. Backend API Changes
@@ -186,15 +186,13 @@ Use this template when generating a migration plan for a specific fork:
 When upstream adds a new property to `config/default.ts`:
 
 ```typescript
-// Upstream added:
-offlineEntityTypes: [] as const,
-realtimeEntityTypes: ['attachment', 'page'] as const,
+// Upstream added new product entity types:
+productEntityTypes: ['attachment', 'page'] as const,
 
 // Fork migration:
 // 1. Identify fork's equivalent entities
 // 2. Add properties with fork-appropriate values
-offlineEntityTypes: [] as const,
-realtimeEntityTypes: ['task', 'document'] as const,  // Fork's entities
+productEntityTypes: ['task', 'document'] as const,  // Fork's entities
 ```
 
 ### Pattern B: New Frontend Utility
@@ -205,8 +203,8 @@ When upstream adds new utilities in `frontend/src/query/`:
 // If fork uses same patterns, file should sync automatically
 // If fork has custom query setup, review and adapt:
 
-// 1. Check if utility uses EntityType
-import type { RealtimeEntityType } from 'config';
+// 1. Check if utility uses ProductEntityType
+import type { ProductEntityType } from 'config';
 
 // 2. Verify fork's entity types are compatible
 // 3. Import utility in fork's module where needed
@@ -363,7 +361,6 @@ systemRoles: ['admin'] as const,
 - `use-visibility-reconnect.ts` - Reconnect on tab visibility
 - `use-leader-reconnect.ts` - Leader tab reconnection
 - `user-stream-handler.ts` - Message handling
-- `hydrate-barrier.ts` - Prevents hydration races
 
 **Raak has**: Old `use-live-stream.ts` pattern.
 

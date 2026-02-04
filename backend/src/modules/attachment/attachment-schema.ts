@@ -56,4 +56,6 @@ const attachmentSortKeys = attachmentSelectSchema.keyof().extract(['name', 'crea
 
 export const attachmentListQuerySchema = paginationQuerySchema.extend({
   sort: attachmentSortKeys.default('createdAt').optional(),
+  /** ISO timestamp filter for delta sync - returns attachments modified at or after this time */
+  modifiedAfter: z.string().datetime().optional(),
 });

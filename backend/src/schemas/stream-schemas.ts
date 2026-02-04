@@ -20,8 +20,8 @@ import { txStreamMessageSchema } from './transaction-schemas';
 export const streamNotificationSchema = z
   .object({
     action: z.enum(activityActions),
-    /** Entity type for realtime entity events */
-    entityType: z.enum(appConfig.realtimeEntityTypes).nullable(),
+    /** Entity type for product entity events */
+    entityType: z.enum(appConfig.productEntityTypes).nullable(),
     /** Resource type for non-entity events (membership) */
     resourceType: z.enum(appConfig.resourceTypes).nullable(),
     entityId: z.string(),
@@ -47,7 +47,7 @@ export const publicStreamActivitySchema = z
   .object({
     activityId: z.string(),
     action: z.enum(activityActions),
-    entityType: z.enum(appConfig.realtimeEntityTypes),
+    entityType: z.enum(appConfig.productEntityTypes),
     entityId: z.string(),
     changedKeys: z.array(z.string()).nullable(),
     createdAt: z.string(),

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { startSyncSpan, syncSpanNames } from '~/lib/tracing';
-import type { StreamState } from './app-stream-types';
+import type { StreamState } from './types';
 import { isLeader } from './tab-coordinator';
 
 /** SSE event handlers configuration. */
@@ -21,8 +21,10 @@ export interface UseSSEConnectionOptions {
   enabled?: boolean;
   /** Whether to include credentials (cookies) in the request. */
   withCredentials?: boolean;
-  /** Initial offset query parameter value. */
-  initialOffset?: string | null;
+  /** Whether to require leader status before connecting. Default: true */
+  requireLeader?: boolean;
+  /** Function to get the current offset for reconnection. */
+  getOffset?: () => string | null;
   /** Event handlers for SSE events. */
   handlers: SSEEventHandlers;
   /** Callback when state changes. */
@@ -50,14 +52,16 @@ export interface UseSSEConnectionReturn {
 /**
  * Low-level hook for managing SSE (EventSource) connections.
  * Handles connection lifecycle, auto-reconnection on error, and state management.
- * Only connects when the tab is the leader (via tab coordinator).
+ * By default only connects when the tab is the leader (via tab coordinator),
+ * but can be configured to connect without leader check (e.g., for public streams).
  */
 export function useSSEConnection(options: UseSSEConnectionOptions): UseSSEConnectionReturn {
   const {
     url,
     enabled = true,
     withCredentials = false,
-    initialOffset,
+    requireLeader = true,
+    getOffset,
     handlers,
     onStateChange,
     reconnectDelay = 5000,
@@ -71,8 +75,10 @@ export function useSSEConnection(options: UseSSEConnectionOptions): UseSSEConnec
   // Store callbacks in refs to avoid dependency issues
   const onStateChangeRef = useRef(onStateChange);
   const handlersRef = useRef(handlers);
+  const getOffsetRef = useRef(getOffset);
   onStateChangeRef.current = onStateChange;
   handlersRef.current = handlers;
+  getOffsetRef.current = getOffset;
 
   // Update state and notify callback
   const updateState = useCallback((newState: StreamState) => {
@@ -80,12 +86,11 @@ export function useSSEConnection(options: UseSSEConnectionOptions): UseSSEConnec
     onStateChangeRef.current?.(newState);
   }, []);
 
-  // Connect to SSE endpoint (leader only)
+  // Connect to SSE endpoint
+  // Note: `enabled` is not checked here - callers should check before calling connect()
   const connect = useCallback(() => {
-    if (!enabled) return;
-
-    // Only leader connects to SSE
-    if (!isLeader()) {
+    // Check leader status if required
+    if (requireLeader && !isLeader()) {
       console.debug(`[${debugLabel}] Not leader, listening to broadcasts`);
       updateState('live');
       return;
@@ -94,8 +99,9 @@ export function useSSEConnection(options: UseSSEConnectionOptions): UseSSEConnec
     // Build URL with query params
     const sseUrl = new URL(url);
     sseUrl.searchParams.set('live', 'sse');
-    if (initialOffset) {
-      sseUrl.searchParams.set('offset', initialOffset);
+    const offset = getOffsetRef.current?.();
+    if (offset) {
+      sseUrl.searchParams.set('offset', offset);
     }
 
     // Close existing connection
@@ -157,7 +163,7 @@ export function useSSEConnection(options: UseSSEConnectionOptions): UseSSEConnec
     };
 
     eventSourceRef.current = eventSource;
-  }, [enabled, url, initialOffset, withCredentials, reconnectDelay, debugLabel, updateState]);
+  }, [url, withCredentials, requireLeader, reconnectDelay, debugLabel, updateState]);
 
   // Disconnect from SSE
   const disconnect = useCallback(() => {

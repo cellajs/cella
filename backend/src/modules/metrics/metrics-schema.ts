@@ -55,20 +55,14 @@ const cacheTierStatsSchema = z.object({
   totalRequests: z.number().describe('Total requests (hits + misses)'),
   uptimeSeconds: z.number().describe('Seconds since metrics were last reset'),
   size: z.number().describe('Current number of cached entries'),
+  indexSize: z.number().describe('Current number of indexed entities').optional(),
   capacity: z.number().describe('Maximum cache capacity'),
   utilization: z.number().describe('Cache utilization (0-1)'),
 });
 
 /** Schema for entity cache stats response. */
 export const cacheStatsSchema = z.object({
-  public: cacheTierStatsSchema.describe('Public cache statistics (no auth required)'),
-  token: cacheTierStatsSchema.describe('Token cache statistics (membership required)'),
-  combined: z.object({
-    totalHits: z.number(),
-    totalMisses: z.number(),
-    overallHitRate: z.number(),
-    totalInvalidations: z.number(),
-  }),
+  cache: cacheTierStatsSchema.describe('Entity cache statistics'),
 });
 
 /** Schema for sync metrics response. */

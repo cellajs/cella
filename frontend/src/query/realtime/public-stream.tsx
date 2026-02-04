@@ -1,81 +1,84 @@
 import { appConfig } from 'config';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { pagesPublicStream } from '~/api.gen';
 import { useLatestRef } from '~/hooks/use-latest-ref';
-import type {
-  AppStreamNotification,
-  AppStreamOffsetEvent,
-  UsePublicStreamOptions,
-  UsePublicStreamReturn,
-} from './app-stream-types';
-import { createHydrateBarrier } from './hydrate-barrier';
+import { pageQueryKeys } from '~/modules/page/query';
+import { queryClient } from '~/query/query-client';
+import type { StreamState, UsePublicStreamOptions, UsePublicStreamReturn } from './types';
 import { handlePublicStreamMessage, type PublicStreamMessage } from './public-stream-handler';
-import {
-  broadcastNotification,
-  initTabCoordinator,
-  isLeader,
-  onNotification,
-  useTabCoordinatorStore,
-} from './tab-coordinator';
-import { useLeaderReconnect } from './use-leader-reconnect';
 import { useSSEConnection } from './use-sse-connection';
 import { useVisibilityReconnect } from './use-visibility-reconnect';
 
 const debugLabel = 'PublicStream';
 
+/** Store cursor (activity ID) for catch-up on reconnect */
+let lastCursor: string | null = null;
+
+/** Get stored cursor for delete catch-up on reconnect */
+export function getPageStreamCursor(): string | null {
+  return lastCursor;
+}
+
 /**
- * Hook to sync public entities (pages) via live stream.
- * Automatically updates React Query cache when stream notifications arrive.
- * Uses the public `/page/stream` endpoint (no auth required).
+ * Fetch delete catch-up activities as JSON batch (not SSE).
+ * Returns delete activities and cursor for subsequent SSE connection.
+ */
+async function fetchDeleteCatchup(
+  offset: string | null,
+): Promise<{ activities: PublicStreamMessage[]; cursor: string | null }> {
+  const response = await pagesPublicStream({
+    query: { offset: offset ?? undefined },
+    // Note: no 'live' param = JSON batch response
+  });
+
+  return {
+    activities: (response.activities ?? []) as PublicStreamMessage[],
+    cursor: response.cursor ?? null,
+  };
+}
+
+/**
+ * Hook to sync public pages via live stream.
+ * No tab coordination - each tab maintains its own connection.
+ * Public streams are cheap (no auth, cacheable at edge).
  *
- * Uses tab coordination to ensure only one tab maintains the SSE connection:
- * - Leader tab: Opens SSE, broadcasts notifications to followers via BroadcastChannel
- * - Follower tabs: Receive notifications via broadcast, no SSE connection
- *
- * This prevents redundant IDB writes when the React Query cache is persisted across tabs.
+ * Flow:
+ * 1. Poll: Fetch delete catch-up as JSON batch
+ * 2. Process: Remove deleted pages from cache
+ * 3. SSE: Connect with offset=now for live-only updates
+ * 4. Invalidate list for modifiedAfter refetch of create/updates
  */
 export function usePublicStream(options: UsePublicStreamOptions = {}): UsePublicStreamReturn {
-  const { enabled = true, initialOffset = 'now', onCatchUpComplete, onStateChange, isHydrated = true } = options;
+  const { enabled = true, onStateChange } = options;
 
-  const [cursor, setCursor] = useState<string | null>(null);
-  const isLeaderTab = useTabCoordinatorStore((state) => state.isLeader);
-  const broadcastCleanupRef = useRef<(() => void) | null>(null);
+  const [state, setState] = useState<StreamState>('disconnected');
+  const [cursor, setCursor] = useState<string | null>(lastCursor);
+  const eventSourceRef = useRef<EventSource | null>(null);
+  const catchupCompleteRef = useRef(false);
+  const initializingRef = useRef(false);
+  const isReconnectRef = useRef(lastCursor !== null);
 
-  // Store callbacks in refs to avoid recreating handlers on every render
-  const onCatchUpCompleteRef = useLatestRef(onCatchUpComplete);
+  // Store callback in ref
+  const onStateChangeRef = useRef(onStateChange);
+  onStateChangeRef.current = onStateChange;
 
-  // Hydrate barrier: queue notifications until initial queries complete
-  const barrierRef = useRef(createHydrateBarrier<{ message: PublicStreamMessage; eventId?: string }>());
+  // Update state and notify callback
+  const updateState = useCallback((newState: StreamState) => {
+    setState(newState);
+    onStateChangeRef.current?.(newState);
+  }, []);
 
-  // Flush queued notifications when hydration completes
-  useEffect(() => {
-    if (isHydrated) {
-      const queued = barrierRef.current.complete();
-      for (const { message, eventId } of queued) {
-        if (eventId) setCursor(eventId);
-        handlePublicStreamMessage(message);
-      }
-    }
-  }, [isHydrated]);
-
-  // Process a notification (used by both leader and followers)
-  const processMessage = useCallback((message: PublicStreamMessage, eventId?: string) => {
-    if (barrierRef.current.enqueue({ message, eventId })) {
-      console.debug(`[${debugLabel}] Queued message during hydration:`, message.entityType, message.action);
-      return;
-    }
-    if (eventId) setCursor(eventId);
+  // Process a notification
+  const processMessage = useCallback((message: PublicStreamMessage) => {
     handlePublicStreamMessage(message);
   }, []);
 
-  // Handle incoming SSE notifications (leader only)
-  const handleMessage = useCallback(
+  // Handle incoming SSE notifications
+  const handleSSENotification = useCallback(
     (event: MessageEvent) => {
       try {
         const message = JSON.parse(event.data) as PublicStreamMessage;
-        const eventId = event.lastEventId || undefined;
-        // Cast to AppStreamNotification for broadcast (compatible core fields)
-        broadcastNotification(message as unknown as AppStreamNotification, 'page');
-        processMessage(message, eventId);
+        processMessage(message);
       } catch (error) {
         console.debug(`[${debugLabel}] Failed to parse message:`, error);
       }
@@ -83,74 +86,131 @@ export function usePublicStream(options: UsePublicStreamOptions = {}): UsePublic
     [processMessage],
   );
 
-  // Handle offset event (end of catch-up)
-  const handleOffset = useCallback((event: MessageEvent) => {
-    try {
-      const data = JSON.parse(event.data) as AppStreamOffsetEvent;
-      setCursor(data.cursor);
-      onCatchUpCompleteRef.current?.(data.cursor);
-    } catch (error) {
-      console.debug(`[${debugLabel}] Failed to parse offset event:`, error);
-    }
-  }, []);
+  // Handle SSE offset event (signals ready for live events)
+  const handleSSEOffset = useCallback(
+    (event: MessageEvent) => {
+      const offsetData = event.data;
+      console.debug(`[${debugLabel}] SSE offset received: ${offsetData}`);
+      if (offsetData) {
+        lastCursor = offsetData;
+        setCursor(offsetData);
+      }
+      updateState('live');
+    },
+    [updateState],
+  );
 
   // Store handlers in refs for SSE connection
-  const handleMessageRef = useLatestRef(handleMessage);
-  const handleOffsetRef = useLatestRef(handleOffset);
+  const handleSSENotificationRef = useLatestRef(handleSSENotification);
+  const handleSSEOffsetRef = useLatestRef(handleSSEOffset);
 
-  // SSE connection management
-  const { state, eventSourceRef, connect, disconnect, reconnect } = useSSEConnection({
+  // SSE connection for live-only (after catchup completes)
+  // No tab coordination for public streams - each tab connects independently
+  const {
+    eventSourceRef: sseEventSourceRef,
+    connect: sseConnect,
+    disconnect: sseDisconnect,
+  } = useSSEConnection({
     url: `${appConfig.backendUrl}/pages/stream`,
     enabled,
     withCredentials: false,
-    initialOffset,
+    requireLeader: false, // Public streams don't use tab coordination
+    getOffset: () => 'now', // Always 'now' since we already did catchup
     handlers: {
-      change: (e) => handleMessageRef.current(e),
-      offset: (e) => handleOffsetRef.current(e),
+      change: (e) => handleSSENotificationRef.current(e),
+      offset: (e) => handleSSEOffsetRef.current(e),
     },
-    onStateChange,
+    onStateChange: updateState,
     debugLabel,
   });
 
-  // Initialize tab coordinator and connect
+  // Keep eventSourceRef in sync
+  useEffect(() => {
+    eventSourceRef.current = sseEventSourceRef.current;
+  }, [sseEventSourceRef.current]);
+
+  // Two-phase initialization: catchup (JSON) → live (SSE)
+  const initialize = useCallback(async () => {
+    // Prevent duplicate initialization
+    if (initializingRef.current || catchupCompleteRef.current) {
+      console.debug(`[${debugLabel}] Skipping initialize (already ${initializingRef.current ? 'in progress' : 'complete'})`);
+      return;
+    }
+
+    initializingRef.current = true;
+
+    try {
+      updateState('catching-up');
+      console.debug(`[${debugLabel}] Fetching delete catchup from offset: ${lastCursor ?? 'null'}`);
+
+      // Phase 1: Fetch delete catchup as JSON batch
+      const { activities, cursor: newCursor } = await fetchDeleteCatchup(lastCursor);
+
+      // Process delete activities
+      if (activities.length > 0) {
+        console.debug(`[${debugLabel}] Processing ${activities.length} delete activities`);
+        for (const activity of activities) {
+          processMessage(activity);
+        }
+      }
+
+      // Update cursor
+      if (newCursor) {
+        lastCursor = newCursor;
+        setCursor(newCursor);
+      }
+
+      // Invalidate list to trigger modifiedAfter refetch for create/updates
+      if (isReconnectRef.current) {
+        console.debug(`[${debugLabel}] Invalidating list for modifiedAfter refetch`);
+        queryClient.invalidateQueries({ queryKey: pageQueryKeys.list.base });
+      }
+
+      catchupCompleteRef.current = true;
+      isReconnectRef.current = true;
+      console.debug(`[${debugLabel}] Catchup complete, cursor: ${newCursor}`);
+
+      // Phase 2: Connect SSE for live updates
+      sseConnect();
+    } catch (error) {
+      console.error(`[${debugLabel}] Catchup failed:`, error);
+      updateState('error');
+    } finally {
+      initializingRef.current = false;
+    }
+  }, [updateState, sseConnect, processMessage]);
+
+  // Manual reconnect (disconnect + reinitialize)
+  const reconnect = useCallback(() => {
+    sseDisconnect();
+    catchupCompleteRef.current = false;
+    initializingRef.current = false;
+    initialize();
+  }, [sseDisconnect, initialize]);
+
+  // Start two-phase connection (no tab coordination for public streams)
   useEffect(() => {
     if (!enabled) return;
 
-    let cleanup = false;
-
-    initTabCoordinator().then(() => {
-      if (cleanup) return;
-
-      // Listen for broadcast notifications from leader (follower tabs)
-      // Cast from AppStreamNotification to PublicStreamMessage (compatible core fields)
-      broadcastCleanupRef.current = onNotification((notification) => {
-        if (!isLeader()) processMessage(notification as unknown as PublicStreamMessage);
-      });
-
-      connect();
-    });
+    initialize();
 
     return () => {
-      cleanup = true;
-      disconnect();
-      broadcastCleanupRef.current?.();
-      broadcastCleanupRef.current = null;
+      sseDisconnect();
+      catchupCompleteRef.current = false;
+      initializingRef.current = false;
     };
-  }, [enabled, connect, disconnect, processMessage]);
-
-  // Reconnect when becoming leader
-  useLeaderReconnect({ enabled, isLeaderTab, reconnect, debugLabel });
+  }, [enabled, initialize, sseDisconnect]);
 
   // Reconnect on visibility change (tab becomes visible)
-  useVisibilityReconnect({ reconnect, eventSourceRef, debugLabel });
+  useVisibilityReconnect({ reconnect, eventSourceRef, requireLeader: false, debugLabel });
 
-  return { state, cursor, reconnect, disconnect };
+  return { state, cursor, reconnect, disconnect: sseDisconnect };
 }
 
 /**
  * Component that connects to the public stream for real-time updates.
- * Syncs public entities (pages) via the `/page/stream` endpoint.
- * Use in DocsLayout or public-facing layouts for real-time page sync.
+ * Syncs public entities (pages) via the `/pages/stream` endpoint.
+ * No tab coordination - each tab maintains its own connection.
  */
 export default function PublicStream() {
   usePublicStream({

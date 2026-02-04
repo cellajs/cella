@@ -1,11 +1,9 @@
-import { type ContextEntityType, isRealtimeEntity } from 'config';
+import { appConfig, type ContextEntityType, isProductEntity } from 'config';
 import { and, desc, eq, gt, inArray, or } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { activitiesTable } from '#/db/schema/activities';
-import { generateCacheToken } from '#/lib/cache-token';
 import type { StreamNotification } from '#/schemas';
 import { type ActivityEventWithEntity, getTypedEntity } from '#/sync/activity-bus';
-import type { BuildNotificationOptions } from '#/sync/stream';
 
 /**
  * Build stream notification from activity event.
@@ -13,30 +11,18 @@ import type { BuildNotificationOptions } from '#/sync/stream';
  *
  * For realtime entities:
  * - Includes tx, seq, cacheToken for sync engine
- * - Client uses cacheToken to fetch entity via LRU cache
+ * - Client uses cacheToken to fetch entity via entity cache
  *
  * For membership:
  * - tx/seq/cacheToken are null
  * - Client invalidates queries to refetch
  */
-export function buildStreamNotification(
-  event: ActivityEventWithEntity,
-  options: BuildNotificationOptions = {},
-): StreamNotification {
+export function buildStreamNotification(event: ActivityEventWithEntity): StreamNotification {
   const { entityType } = event;
-  const isRealtime = isRealtimeEntity(entityType);
+  const isProduct = isProductEntity(entityType);
 
-  // Generate cache token for product entities if user context is available
-  let cacheToken: string | null = null;
-  if (isRealtimeEntity(entityType) && options.userId && options.organizationIds && event.tx) {
-    cacheToken = generateCacheToken(
-      options.userId,
-      options.organizationIds,
-      entityType,
-      event.entityId!,
-      event.tx.version,
-    );
-  }
+  // Use cache token from CDC (all users share the same token)
+  const cacheToken = isProduct ? (event.cacheToken ?? null) : null;
 
   // Extract contextType for membership events
   const membership = event.resourceType === 'membership' ? getTypedEntity(event, 'membership') : null;
@@ -44,14 +30,14 @@ export function buildStreamNotification(
 
   return {
     action: event.action,
-    entityType: isRealtime ? entityType : null,
+    entityType: isProduct ? entityType : null,
     resourceType: event.resourceType,
     entityId: event.entityId!,
     organizationId: event.organizationId,
     contextType,
-    seq: isRealtime ? (event.seq ?? 0) : null,
+    seq: isProduct ? (event.seq ?? 0) : null,
     tx:
-      isRealtime && event.tx
+      isProduct && event.tx
         ? {
             id: event.tx.id,
             sourceId: event.tx.sourceId,
@@ -73,7 +59,8 @@ export interface CatchUpActivity {
 
 /**
  * Fetch catch-up activities for a user.
- * Returns membership and organization events for orgs the user belongs to.
+ * Returns activities for all synced entity types in user's orgs.
+ * Entity-agnostic: uses appConfig.productEntityTypes and appConfig.contextEntityTypes.
  */
 export async function fetchUserCatchUpActivities(
   _userId: string,
@@ -85,13 +72,16 @@ export async function fetchUserCatchUpActivities(
 
   const orgIdArray = Array.from(orgIds);
 
-  // Build conditions
+  // Combine all synced entity types (product + context entities)
+  const syncedEntityTypes = [...appConfig.productEntityTypes, ...appConfig.contextEntityTypes];
+
+  // Build conditions: all synced entities in user's orgs + membership events
   const conditions = [
     or(
-      // Membership events where the user is the subject
+      // Membership events for user's orgs
       and(eq(activitiesTable.resourceType, 'membership'), inArray(activitiesTable.organizationId, orgIdArray)),
-      // Organization update/delete events for user's orgs
-      and(eq(activitiesTable.entityType, 'organization'), inArray(activitiesTable.entityId, orgIdArray)),
+      // All synced entity types in user's orgs
+      and(inArray(activitiesTable.entityType, syncedEntityTypes), inArray(activitiesTable.organizationId, orgIdArray)),
     ),
   ];
 
@@ -112,7 +102,7 @@ export async function fetchUserCatchUpActivities(
   for (const activity of activities) {
     const notification: StreamNotification = {
       action: activity.action,
-      entityType: isRealtimeEntity(activity.entityType) ? activity.entityType : null,
+      entityType: isProductEntity(activity.entityType) ? activity.entityType : null,
       resourceType: activity.resourceType,
       entityId: activity.entityId!,
       organizationId: activity.organizationId,
@@ -133,11 +123,13 @@ export async function fetchUserCatchUpActivities(
 
 /**
  * Get the latest activity ID relevant to a user.
+ * Entity-agnostic: uses appConfig.productEntityTypes and appConfig.contextEntityTypes.
  */
 export async function getLatestUserActivityId(_userId: string, orgIds: Set<string>): Promise<string | null> {
   if (orgIds.size === 0) return null;
 
   const orgIdArray = Array.from(orgIds);
+  const syncedEntityTypes = [...appConfig.productEntityTypes, ...appConfig.contextEntityTypes];
 
   const result = await db
     .select({ id: activitiesTable.id })
@@ -145,7 +137,10 @@ export async function getLatestUserActivityId(_userId: string, orgIds: Set<strin
     .where(
       or(
         and(eq(activitiesTable.resourceType, 'membership'), inArray(activitiesTable.organizationId, orgIdArray)),
-        and(eq(activitiesTable.entityType, 'organization'), inArray(activitiesTable.entityId, orgIdArray)),
+        and(
+          inArray(activitiesTable.entityType, syncedEntityTypes),
+          inArray(activitiesTable.organizationId, orgIdArray),
+        ),
       ),
     )
     .orderBy(desc(activitiesTable.createdAt))

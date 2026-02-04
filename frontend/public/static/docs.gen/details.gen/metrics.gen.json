@@ -265,10 +265,10 @@
         "schema": {
           "type": "object",
           "properties": {
-            "public": {
+            "cache": {
               "type": "object",
               "required": true,
-              "description": "Public cache statistics (no auth required)",
+              "description": "Entity cache statistics",
               "properties": {
                 "hits": {
                   "type": "number",
@@ -310,62 +310,10 @@
                   "required": true,
                   "description": "Current number of cached entries"
                 },
-                "capacity": {
+                "indexSize": {
                   "type": "number",
-                  "required": true,
-                  "description": "Maximum cache capacity"
-                },
-                "utilization": {
-                  "type": "number",
-                  "required": true,
-                  "description": "Cache utilization (0-1)"
-                }
-              }
-            },
-            "token": {
-              "type": "object",
-              "required": true,
-              "description": "Token cache statistics (membership required)",
-              "properties": {
-                "hits": {
-                  "type": "number",
-                  "required": true,
-                  "description": "Number of cache hits"
-                },
-                "misses": {
-                  "type": "number",
-                  "required": true,
-                  "description": "Number of cache misses"
-                },
-                "hitRate": {
-                  "type": "number",
-                  "required": true,
-                  "description": "Hit rate percentage (0-100)"
-                },
-                "invalidations": {
-                  "type": "number",
-                  "required": true,
-                  "description": "Number of cache invalidations"
-                },
-                "coalescedRequests": {
-                  "type": "number",
-                  "required": true,
-                  "description": "Number of coalesced requests (avoided duplicate fetches)"
-                },
-                "totalRequests": {
-                  "type": "number",
-                  "required": true,
-                  "description": "Total requests (hits + misses)"
-                },
-                "uptimeSeconds": {
-                  "type": "number",
-                  "required": true,
-                  "description": "Seconds since metrics were last reset"
-                },
-                "size": {
-                  "type": "number",
-                  "required": true,
-                  "description": "Current number of cached entries"
+                  "required": false,
+                  "description": "Current number of indexed entities"
                 },
                 "capacity": {
                   "type": "number",
@@ -377,16 +325,6 @@
                   "required": true,
                   "description": "Cache utilization (0-1)"
                 }
-              }
-            },
-            "combined": {
-              "type": "object",
-              "required": true,
-              "properties": {
-                "totalHits": { "type": "number", "required": true },
-                "totalMisses": { "type": "number", "required": true },
-                "overallHitRate": { "type": "number", "required": true },
-                "totalInvalidations": { "type": "number", "required": true }
               }
             }
           },

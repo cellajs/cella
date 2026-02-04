@@ -7,27 +7,31 @@ export interface UseVisibilityReconnectOptions {
   reconnect: () => void;
   /** Reference to the EventSource to check if closed. */
   eventSourceRef: React.RefObject<EventSource | null>;
+  /** Whether to require leader status before reconnecting. Default: true */
+  requireLeader?: boolean;
   /** Debug label for console logs. */
   debugLabel?: string;
 }
 
 /**
  * Hook that reconnects the SSE connection when the tab becomes visible
- * and the connection was closed. Only triggers for the leader tab.
+ * and the connection was closed. By default only triggers for the leader tab,
+ * but can be configured to trigger for any tab (e.g., for public streams).
  */
 export function useVisibilityReconnect(options: UseVisibilityReconnectOptions): void {
-  const { reconnect, eventSourceRef, debugLabel = 'SSE' } = options;
+  const { reconnect, eventSourceRef, requireLeader = true, debugLabel = 'SSE' } = options;
 
   const handleVisibilityChange = useCallback(() => {
+    const isLeaderOrNotRequired = !requireLeader || isLeader();
     if (
       document.visibilityState === 'visible' &&
-      isLeader() &&
+      isLeaderOrNotRequired &&
       eventSourceRef.current?.readyState === EventSource.CLOSED
     ) {
-      console.debug(`[${debugLabel}] Leader tab visible, reconnecting...`);
+      console.debug(`[${debugLabel}] Tab visible, reconnecting...`);
       reconnect();
     }
-  }, [reconnect, eventSourceRef, debugLabel]);
+  }, [reconnect, eventSourceRef, requireLeader, debugLabel]);
 
   useEffect(() => {
     document.addEventListener('visibilitychange', handleVisibilityChange);

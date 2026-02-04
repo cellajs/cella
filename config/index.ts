@@ -52,16 +52,6 @@ export type ProductEntityType = (typeof appConfig.productEntityTypes)[number];
 export type RelatableContextEntityType = (typeof appConfig.relatableContextEntityTypes)[number];
 
 /**
- * Offline entities that support offline transactions
- */
-export type OfflineEntityType = (typeof appConfig.offlineEntityTypes)[number];
-
-/**
- * Realtime entities that support realtime & offline transactions
- */
-export type RealtimeEntityType = (typeof appConfig.realtimeEntityTypes)[number];
-
-/**
  * Resource types that are not entities but have activities logged
  */
 export type ResourceType = (typeof appConfig.resourceTypes)[number];
@@ -122,7 +112,7 @@ export type SystemRole = (typeof appConfig.systemRoles)[number];
 export type EntityRole = (typeof appConfig.entityRoles)[number];
 
 // Re-export entity type guards
-export { getContextRoles, isContextEntity, isProductEntity, isRealtimeEntity } from './entity-guards';
+export { getContextRoles, isContextEntity, isProductEntity } from './entity-guards';
 
 /**
  * Expected shape for entityIdColumnKeys - must have all entity types as keys.

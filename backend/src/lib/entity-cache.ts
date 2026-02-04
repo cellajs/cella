@@ -1,259 +1,200 @@
 /**
- * Entity cache service with two tiers:
- * - Public tier: No auth required (public pages, etc.)
- * - Token tier: Requires access token proving membership
+ * Entity cache service - simple key-value store with TTL.
  *
- * Caches enriched API responses (not raw CDC data).
+ * Cache token (nanoid) is the key, entity data is the value.
+ * Empty value (null) means reserved but not enriched yet.
+ * Index maps entityType:entityId → token for delete lookups.
+ *
+ * Flow:
+ * 1. CDC reserves token with null value
+ * 2. First user fetch enriches: handler sets actual data
+ * 3. Subsequent users get cache hit
  */
 
-import { verifyAccessToken } from './access-token';
-import { publicCacheMetrics, tokenCacheMetrics } from './cache-metrics';
+import { publicCacheMetrics } from './cache-metrics';
+import { cacheTokenTtl } from './cache-token';
 import { coalesce, isInFlight } from './request-coalescing';
 import { EntityTTLCache } from './ttl-cache';
 
 /** Cache configuration */
 const cacheConfig = {
-  /** Max entries for public cache */
-  publicMaxSize: 1000,
-  /** TTL for public cache: 5 minutes */
-  publicTtl: 5 * 60 * 1000,
-  /** Max entries for token cache */
-  tokenMaxSize: 5000,
-  /** TTL for token cache: 10 minutes (matches token expiry) */
-  tokenTtl: 10 * 60 * 1000,
+  /** Max entries in cache */
+  maxSize: 5000,
+  /** Default TTL: 10 minutes (matches token TTL) */
+  defaultTtl: cacheTokenTtl,
 };
 
-/** Entity data type */
-type EntityData = Record<string, unknown>;
+/** Entity data type - null means reserved but not enriched */
+type CacheValue = Record<string, unknown> | null;
 
-/** Public cache: no auth required */
-const publicCache = new EntityTTLCache<EntityData>({
-  maxSize: cacheConfig.publicMaxSize,
-  defaultTtl: cacheConfig.publicTtl,
+/** Main cache: token → entity data (or null if reserved) */
+const cache = new EntityTTLCache<CacheValue>({
+  maxSize: cacheConfig.maxSize,
+  defaultTtl: cacheConfig.defaultTtl,
   onDispose: (key, _value, reason) => {
     if (reason === 'stale' || reason === 'evict') {
-      console.debug('[cache:public] DISPOSE', { key, reason });
+      console.debug('[cache] DISPOSE', { key: key.slice(0, 8), reason });
+      // Also remove from index when cache entry is disposed
+      for (const [indexKey, token] of entityIndex.entries()) {
+        if (token === key) {
+          entityIndex.delete(indexKey);
+          break;
+        }
+      }
     }
   },
 });
 
-/** Token cache: requires access token */
-const tokenCache = new EntityTTLCache<EntityData>({
-  maxSize: cacheConfig.tokenMaxSize,
-  defaultTtl: cacheConfig.tokenTtl,
-  onDispose: (key, _value, reason) => {
-    if (reason === 'stale' || reason === 'evict') {
-      console.debug('[cache:token] DISPOSE', { key, reason });
-    }
-  },
-});
+/** Index: entityType:entityId → token (for delete lookups) */
+const entityIndex = new Map<string, string>();
 
-/** Build public cache key */
-function publicKey(entityType: string, entityId: string, version: number): string {
-  return `public:${entityType}:${entityId}:${version}`;
-}
-
-/** Build token cache key (uses token suffix for uniqueness) */
-function tokenKey(tokenSuffix: string, entityType: string, entityId: string, version: number): string {
-  return `token:${tokenSuffix}:${entityType}:${entityId}:${version}`;
-}
-
-/** Extract token suffix for cache key (last 12 chars, from signature) */
-function getTokenSuffix(token: string): string {
-  return token.slice(-12);
+/** Build index key */
+function indexKey(entityType: string, entityId: string): string {
+  return `${entityType}:${entityId}`;
 }
 
 /**
  * Entity cache service.
- * Two-tier caching for public and protected entities.
+ * Simple token → data store with reserve/set/get semantics.
  */
 export const entityCache = {
-  // ─────────────────────────────────────────────────────────────────────────────
-  // PUBLIC CACHE (no auth required)
-  // ─────────────────────────────────────────────────────────────────────────────
-
   /**
-   * Get from public cache.
+   * Reserve a cache slot for an entity.
+   * Called by CDC when entity changes. Sets null value with index.
    *
-   * @param entityType - Entity type (e.g., 'page', 'organization')
-   * @param entityId - Entity ID
-   * @param version - Entity version
-   * @returns Cached data or undefined
+   * @param token - Cache token (nanoid)
+   * @param entityType - Entity type for index
+   * @param entityId - Entity ID for index
+   * @param ttlMs - Optional TTL in ms (defaults to cacheTokenTtl)
    */
-  getPublic(entityType: string, entityId: string, version: number): EntityData | undefined {
-    const key = publicKey(entityType, entityId, version);
-    const data = publicCache.get(key);
+  reserve(token: string, entityType: string, entityId: string, ttlMs?: number): void {
+    const key = indexKey(entityType, entityId);
 
-    if (data) {
-      publicCacheMetrics.recordHit();
-    } else {
-      publicCacheMetrics.recordMiss();
+    // Remove old token from cache if exists
+    const oldToken = entityIndex.get(key);
+    if (oldToken && oldToken !== token) {
+      cache.delete(oldToken);
     }
 
-    return data;
+    // Set new token with null value (reserved, not enriched)
+    cache.set(token, null, ttlMs ?? cacheConfig.defaultTtl);
+    entityIndex.set(key, token);
   },
 
   /**
-   * Set in public cache.
+   * Set enriched entity data in cache.
+   * Called by handler after fetching and enriching from DB.
    *
-   * @param entityType - Entity type
-   * @param entityId - Entity ID
-   * @param version - Entity version
-   * @param data - Enriched entity data to cache
+   * @param token - Cache token
+   * @param data - Enriched entity data
+   * @param ttlMs - Optional TTL in ms
    */
-  setPublic(entityType: string, entityId: string, version: number, data: EntityData): void {
-    const key = publicKey(entityType, entityId, version);
-    publicCache.set(key, data);
+  set(token: string, data: Record<string, unknown>, ttlMs?: number): void {
+    cache.set(token, data, ttlMs ?? cacheConfig.defaultTtl);
   },
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // TOKEN CACHE (requires access token)
-  // ─────────────────────────────────────────────────────────────────────────────
-
   /**
-   * Get from token cache. Verifies token before returning data.
+   * Get entity data from cache.
+   * Returns undefined if token not found.
+   * Returns null if reserved but not enriched.
+   * Returns data if enriched.
    *
-   * @param token - Access token
-   * @param entityType - Entity type
-   * @param entityId - Entity ID
-   * @param version - Entity version
-   * @returns Cached data or undefined if not found or token invalid
+   * @param token - Cache token
+   * @returns Entity data, null (reserved), or undefined (not found)
    */
-  getWithToken(token: string, entityType: string, entityId: string, version: number): EntityData | undefined {
-    // Verify token is valid
-    const payload = verifyAccessToken(token);
-    if (!payload) {
-      tokenCacheMetrics.recordMiss();
+  get(token: string): Record<string, unknown> | null | undefined {
+    const data = cache.get(token);
+
+    if (data === undefined) {
+      publicCacheMetrics.recordMiss();
       return undefined;
     }
 
-    const key = tokenKey(getTokenSuffix(token), entityType, entityId, version);
-    const data = tokenCache.get(key);
-
-    if (data) {
-      tokenCacheMetrics.recordHit();
-    } else {
-      tokenCacheMetrics.recordMiss();
+    if (data === null) {
+      // Reserved but not enriched - treat as miss for metrics
+      publicCacheMetrics.recordMiss();
+      return null;
     }
 
+    publicCacheMetrics.recordHit();
     return data;
   },
 
   /**
-   * Set in token cache.
+   * Check if cache entry is enriched (has actual data, not just reserved).
+   * Uses presence of 'id' field as enrichment indicator.
    *
-   * @param token - Access token
-   * @param entityType - Entity type
-   * @param entityId - Entity ID
-   * @param version - Entity version
-   * @param data - Enriched entity data to cache
+   * @param token - Cache token
+   * @returns true if enriched, false if reserved/missing
    */
-  setWithToken(token: string, entityType: string, entityId: string, version: number, data: EntityData): void {
-    const key = tokenKey(getTokenSuffix(token), entityType, entityId, version);
-    tokenCache.set(key, data);
+  isEnriched(token: string): boolean {
+    const data = cache.get(token);
+    return data !== undefined && data !== null && 'id' in data;
   },
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // COMBINED GET (tries public first, then token)
-  // ─────────────────────────────────────────────────────────────────────────────
-
   /**
-   * Get from cache, trying public first, then token cache.
+   * Invalidate cache entry by entity type and ID.
+   * Uses index to find token, removes both cache entry and index.
    *
    * @param entityType - Entity type
    * @param entityId - Entity ID
-   * @param version - Entity version
-   * @param token - Optional access token for protected entities
-   * @returns Cached data or undefined
+   * @returns true if entry was found and removed
    */
-  get(entityType: string, entityId: string, version: number, token?: string): EntityData | undefined {
-    // Try public cache first
-    const publicData = this.getPublic(entityType, entityId, version);
-    if (publicData) return publicData;
+  invalidateByEntity(entityType: string, entityId: string): boolean {
+    const key = indexKey(entityType, entityId);
+    const token = entityIndex.get(key);
 
-    // Try token cache if token provided
     if (token) {
-      return this.getWithToken(token, entityType, entityId, version);
+      cache.delete(token);
+      entityIndex.delete(key);
+      publicCacheMetrics.recordInvalidation(1);
+      return true;
     }
 
-    return undefined;
+    return false;
   },
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // INVALIDATION
-  // ─────────────────────────────────────────────────────────────────────────────
-
   /**
-   * Invalidate all cached versions of an entity.
-   * Called on CDC update/delete events.
+   * Get token for an entity if cached.
    *
    * @param entityType - Entity type
    * @param entityId - Entity ID
-   * @returns Number of entries invalidated
+   * @returns Token if found, undefined otherwise
    */
-  invalidateEntity(entityType: string, entityId: string): number {
-    const publicPrefix = `public:${entityType}:${entityId}:`;
-
-    // Invalidate public cache entries
-    const publicDeleted = publicCache.invalidateByPrefix(publicPrefix);
-
-    // For token cache, we need to match the entityType:entityId pattern
-    // which appears after the token suffix
-    let tokenDeleted = 0;
-    // Token cache keys: token:{suffix}:{entityType}:{entityId}:{version}
-    // We can't easily prefix-match, so we iterate
-    // This is acceptable because invalidation is infrequent relative to reads
-
-    publicCacheMetrics.recordInvalidation(publicDeleted);
-    tokenCacheMetrics.recordInvalidation(tokenDeleted);
-
-    return publicDeleted + tokenDeleted;
+  getToken(entityType: string, entityId: string): string | undefined {
+    return entityIndex.get(indexKey(entityType, entityId));
   },
 
   /**
-   * Clear all caches.
+   * Clear all cache entries and index.
    */
   clear(): void {
-    publicCache.clear();
-    tokenCache.clear();
+    cache.clear();
+    entityIndex.clear();
   },
-
-  // ─────────────────────────────────────────────────────────────────────────────
-  // REQUEST COALESCING
-  // ─────────────────────────────────────────────────────────────────────────────
 
   /**
    * Fetch with coalescing: prevents thundering herd on cache miss.
-   * Concurrent requests for same key share a single fetch.
+   * Concurrent requests for same token share a single fetch.
    *
-   * @param entityType - Entity type
-   * @param entityId - Entity ID
-   * @param version - Entity version
+   * @param token - Cache token
    * @param fetcher - Async function to fetch and enrich data
-   * @param options - Caching options
-   * @returns The fetched/cached data
+   * @returns The fetched/cached data or null
    */
   async fetchWithCoalescing(
-    entityType: string,
-    entityId: string,
-    version: number,
-    fetcher: () => Promise<EntityData | null>,
-    options?: {
-      isPublic?: boolean;
-      token?: string;
-    },
-  ): Promise<EntityData | null> {
+    token: string,
+    fetcher: () => Promise<Record<string, unknown> | null>,
+  ): Promise<Record<string, unknown> | null> {
     // Check cache first
-    const cached = this.get(entityType, entityId, version, options?.token);
-    if (cached) return cached;
-
-    // Use coalescing to prevent thundering herd
-    const coalescingKey = `${entityType}:${entityId}:${version}`;
+    const cached = this.get(token);
+    if (cached !== undefined && cached !== null) {
+      return cached;
+    }
 
     // Track if this was coalesced
-    const wasInFlight = isInFlight(coalescingKey);
+    const wasInFlight = isInFlight(token);
 
-    const data = await coalesce(coalescingKey, fetcher);
+    const data = await coalesce(token, fetcher);
 
     if (wasInFlight) {
       publicCacheMetrics.recordCoalesced();
@@ -261,30 +202,27 @@ export const entityCache = {
 
     // Cache the result if fetched successfully
     if (data) {
-      if (options?.isPublic) {
-        this.setPublic(entityType, entityId, version, data);
-      } else if (options?.token) {
-        this.setWithToken(options.token, entityType, entityId, version, data);
-      }
+      this.set(token, data);
     }
 
     return data;
   },
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // STATS
-  // ─────────────────────────────────────────────────────────────────────────────
-
   /**
    * Get cache statistics.
    */
   stats(): {
-    public: { size: number; capacity: number; utilization: number };
-    token: { size: number; capacity: number; utilization: number };
+    cacheSize: number;
+    indexSize: number;
+    capacity: number;
+    utilization: number;
   } {
+    const cacheStats = cache.stats;
     return {
-      public: publicCache.stats,
-      token: tokenCache.stats,
+      cacheSize: cacheStats.size,
+      indexSize: entityIndex.size,
+      capacity: cacheStats.capacity,
+      utilization: cacheStats.utilization,
     };
   },
 };

@@ -1,4 +1,4 @@
-import { isContextEntity, isRealtimeEntity, type RealtimeEntityType } from 'config';
+import { isContextEntity, isProductEntity, type ProductEntityType } from 'config';
 import { checkPermission } from '#/permissions';
 import { type ActivityEventWithEntity, getTypedEntity } from '#/sync/activity-bus';
 import { logEvent } from '#/utils/logger';
@@ -31,7 +31,7 @@ export function canReceiveUserEvent(subscriber: AppStreamSubscriber, event: Acti
   }
 
   // For product entity events (page, attachment, etc.)
-  if (isRealtimeEntity(entityType)) {
+  if (isProductEntity(entityType)) {
     return canReceiveProductEntityEvent(subscriber, event, entityType);
   }
 
@@ -45,7 +45,7 @@ export function canReceiveUserEvent(subscriber: AppStreamSubscriber, event: Acti
 function canReceiveProductEntityEvent(
   subscriber: AppStreamSubscriber,
   event: ActivityEventWithEntity,
-  entityType: RealtimeEntityType,
+  entityType: ProductEntityType,
 ): boolean {
   // Must have entity ID and organization ID
   if (!event.entityId || !event.organizationId) return false;

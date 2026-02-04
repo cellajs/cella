@@ -1,14 +1,16 @@
 /**
  * Hono middleware for entity cache.
- * Checks cache before handler, caches response after.
+ * Checks cache before handler, enriches and caches response after.
  *
- * Supports two token sources:
- * - X-Cache-Token header: Token from SSE stream notification (preferred)
- * - accessToken query param: Legacy fallback
+ * Flow:
+ * 1. Get cache token from X-Cache-Token header
+ * 2. Check if cache has enriched data (has 'id' field)
+ * 3. If enriched: return cached data
+ * 4. If not enriched or miss: run handler
+ * 5. After handler: cache the enriched response
  */
 
 import { createMiddleware } from 'hono/factory';
-import { verifyCacheToken } from '#/lib/cache-token';
 import { entityCache } from '#/lib/entity-cache';
 
 /**
@@ -18,143 +20,74 @@ declare module 'hono' {
   interface ContextVariableMap {
     /** Entity data to cache (set by handler) */
     entityCacheData: Record<string, unknown> | null;
-    /** Whether entity is public (set by handler) */
-    entityCacheIsPublic: boolean;
-    /** Entity version (set by handler) */
-    entityCacheVersion: number;
+    /** Cache token from request (set by middleware) */
+    entityCacheToken: string | null;
     /** Whether response was from cache */
     entityCacheHit: boolean;
   }
 }
 
 export interface EntityCacheMiddlewareOptions {
-  /** Extract entity type from context (default: from route param 'entityType') */
-  getEntityType?: (c: Parameters<Parameters<typeof createMiddleware>[0]>[0]) => string | undefined;
-  /** Extract entity ID from context (default: from route param 'id') */
-  getEntityId?: (c: Parameters<Parameters<typeof createMiddleware>[0]>[0]) => string | undefined;
-  /** Extract version from context (default: from query param 'version' or X-Cache-Token) */
-  getVersion?: (c: Parameters<Parameters<typeof createMiddleware>[0]>[0]) => number;
-  /** Extract access token from context (default: from X-Cache-Token header or query param) */
-  getAccessToken?: (c: Parameters<Parameters<typeof createMiddleware>[0]>[0]) => string | undefined;
+  /** Extract cache token from context (default: from X-Cache-Token header) */
+  getCacheToken?: (c: Parameters<Parameters<typeof createMiddleware>[0]>[0]) => string | undefined;
 }
 
 /**
- * Create entity cache middleware with custom extractors.
+ * Create entity cache middleware.
  *
  * Usage:
  * ```typescript
- * app.get('/pages/:id', entityCacheMiddleware({ ... }), handler);
+ * app.get('/pages/:id', entityCacheMiddleware(), handler);
  * ```
- *
- * Clients can provide cache tokens in two ways:
- * 1. X-Cache-Token header (preferred, from SSE notification)
- * 2. accessToken query param (legacy fallback)
- *
- * The token includes version, so clients don't need to pass version separately.
- * If a token is provided, its embedded version is used for cache lookup.
  *
  * In handler, set cache data:
  * ```typescript
  * c.set('entityCacheData', enrichedData);
- * c.set('entityCacheIsPublic', page.visibility === 'public');
- * c.set('entityCacheVersion', page.version);
  * ```
  */
 export function createEntityCacheMiddleware(options: EntityCacheMiddlewareOptions = {}) {
-  const {
-    getEntityType = (c) => c.req.param('entityType'),
-    getEntityId = (c) => c.req.param('id'),
-    getVersion = (c) => {
-      // Try to get version from cache token first
-      const cacheToken = c.req.header('X-Cache-Token') ?? c.req.query('accessToken');
-      if (cacheToken) {
-        const payload = verifyCacheToken(cacheToken);
-        if (payload) return payload.version;
-      }
-      // Fallback to query param
-      return Number.parseInt(c.req.query('version') ?? '0', 10);
-    },
-    getAccessToken = (c) => c.req.header('X-Cache-Token') ?? c.req.query('accessToken'),
-  } = options;
+  const { getCacheToken = (c) => c.req.header('X-Cache-Token') } = options;
 
   return createMiddleware(async (c, next) => {
-    const entityType = getEntityType(c);
-    const entityId = getEntityId(c);
-    const accessToken = getAccessToken(c);
+    const cacheToken = getCacheToken(c);
 
-    // Extract version (from token or query param)
-    let version = getVersion(c);
+    // Store token in context for handler access
+    c.set('entityCacheToken', cacheToken ?? null);
 
-    // If we have a cache token, verify it grants access to this entity
-    if (accessToken) {
-      const payload = verifyCacheToken(accessToken);
-      if (payload) {
-        // Verify token is for this entity
-        if (payload.entityType !== entityType || payload.entityId !== entityId) {
-          // Token doesn't match this entity - skip cache
-          c.set('entityCacheHit', false);
-          c.header('X-Cache', 'SKIP');
-          await next();
-          return;
-        }
-        // Use version from token
-        version = payload.version;
-      }
-    }
-
-    // Skip if missing required params or version is 0 (unknown)
-    if (!entityType || !entityId || version === 0) {
+    // Skip if no token provided
+    if (!cacheToken) {
       c.set('entityCacheHit', false);
       await next();
       return;
     }
 
-    // Check cache
-    const cached = entityCache.get(entityType, entityId, version, accessToken);
+    // Check cache - returns enriched data, null (reserved), or undefined (miss)
+    const cached = entityCache.get(cacheToken);
 
-    if (cached) {
+    // If we have enriched data (not null/undefined and has 'id'), return it
+    if (cached !== undefined && cached !== null && 'id' in cached) {
       c.set('entityCacheHit', true);
       c.header('X-Cache', 'HIT');
       return c.json(cached);
     }
 
-    // Cache miss - proceed to handler
+    // Cache miss or reserved - proceed to handler
     c.set('entityCacheHit', false);
-    c.header('X-Cache', 'MISS');
+    c.header('X-Cache', cached === null ? 'RESERVED' : 'MISS');
 
     await next();
 
     // After handler: cache the response if data was set
     const entityData = c.get('entityCacheData');
-    const isPublic = c.get('entityCacheIsPublic') ?? false;
-    const responseVersion = c.get('entityCacheVersion') ?? version;
 
-    if (entityData && responseVersion > 0) {
-      if (isPublic) {
-        entityCache.setPublic(entityType, entityId, responseVersion, entityData);
-      } else if (accessToken) {
-        entityCache.setWithToken(accessToken, entityType, entityId, responseVersion, entityData);
-      }
+    if (entityData && cacheToken) {
+      entityCache.set(cacheToken, entityData);
     }
   });
 }
 
 /**
  * Default entity cache middleware.
- * Uses standard param names: entityType, id, version, accessToken.
+ * Gets token from X-Cache-Token header.
  */
-export const entityCacheMiddleware = createEntityCacheMiddleware();
-
-/**
- * Create middleware for a specific entity type.
- *
- * @example
- * ```typescript
- * app.get('/pages/:id', entityCacheFor('page'), getPageHandler);
- * ```
- */
-export function entityCacheFor(entityType: string) {
-  return createEntityCacheMiddleware({
-    getEntityType: () => entityType,
-  });
-}
+export const entityCacheMiddleware = createEntityCacheMiddleware;

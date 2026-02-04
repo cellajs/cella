@@ -12,7 +12,7 @@
  * - Keep mutations in-memory only (not persisted)
  */
 import { create } from 'zustand';
-import type { AppStreamNotification } from './app-stream-types';
+import type { AppStreamNotification } from './types';
 
 // Tab coordination channel name
 const CHANNEL_NAME = 'cella-sync';

@@ -4,7 +4,7 @@ import { count } from 'drizzle-orm';
 import { register } from 'prom-client';
 import type { z } from 'zod';
 import { db } from '#/db/db';
-import { getCombinedCacheMetrics } from '#/lib/cache-metrics';
+import { getCacheMetrics } from '#/lib/cache-metrics';
 import type { Env } from '#/lib/context';
 import { entityCache } from '#/lib/entity-cache';
 import { metricsConfig } from '#/middlewares/observability/config';
@@ -177,23 +177,17 @@ const metricsRouteHandlers = app
    * Get entity cache statistics
    */
   .openapi(metricRoutes.getCacheStats, async (ctx) => {
-    const metrics = getCombinedCacheMetrics();
+    const metrics = getCacheMetrics();
     const cacheStats = entityCache.stats();
 
     const response: CacheStatsType = {
-      public: {
-        ...metrics.public,
-        size: cacheStats.public.size,
-        capacity: cacheStats.public.capacity,
-        utilization: cacheStats.public.utilization,
+      cache: {
+        ...metrics,
+        size: cacheStats.cacheSize,
+        indexSize: cacheStats.indexSize,
+        capacity: cacheStats.capacity,
+        utilization: cacheStats.utilization,
       },
-      token: {
-        ...metrics.token,
-        size: cacheStats.token.size,
-        capacity: cacheStats.token.capacity,
-        utilization: cacheStats.token.utilization,
-      },
-      combined: metrics.combined,
     };
 
     return ctx.json(response, 200);

@@ -2660,6 +2660,7 @@ export type GetPagesData = {
     order?: 'asc' | 'desc';
     offset?: string;
     limit?: string;
+    modifiedAfter?: string;
   };
   url: '/pages';
 };
@@ -3452,9 +3453,9 @@ export type GetCacheStatsResponses = {
    */
   200: {
     /**
-     * Public cache statistics (no auth required)
+     * Entity cache statistics
      */
-    public: {
+    cache: {
       /**
        * Number of cache hits
        */
@@ -3488,50 +3489,9 @@ export type GetCacheStatsResponses = {
        */
       size: number;
       /**
-       * Maximum cache capacity
+       * Current number of indexed entities
        */
-      capacity: number;
-      /**
-       * Cache utilization (0-1)
-       */
-      utilization: number;
-    };
-    /**
-     * Token cache statistics (membership required)
-     */
-    token: {
-      /**
-       * Number of cache hits
-       */
-      hits: number;
-      /**
-       * Number of cache misses
-       */
-      misses: number;
-      /**
-       * Hit rate percentage (0-100)
-       */
-      hitRate: number;
-      /**
-       * Number of cache invalidations
-       */
-      invalidations: number;
-      /**
-       * Number of coalesced requests (avoided duplicate fetches)
-       */
-      coalescedRequests: number;
-      /**
-       * Total requests (hits + misses)
-       */
-      totalRequests: number;
-      /**
-       * Seconds since metrics were last reset
-       */
-      uptimeSeconds: number;
-      /**
-       * Current number of cached entries
-       */
-      size: number;
+      indexSize?: number;
       /**
        * Maximum cache capacity
        */
@@ -3540,12 +3500,6 @@ export type GetCacheStatsResponses = {
        * Cache utilization (0-1)
        */
       utilization: number;
-    };
-    combined: {
-      totalHits: number;
-      totalMisses: number;
-      overallHitRate: number;
-      totalInvalidations: number;
     };
   };
 };
@@ -3692,6 +3646,7 @@ export type GetAttachmentsData = {
     order?: 'asc' | 'desc';
     offset?: string;
     limit?: string;
+    modifiedAfter?: string;
   };
   url: '/{orgIdOrSlug}/attachments';
 };

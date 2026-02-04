@@ -1,7 +1,7 @@
 /**
  * Realtime sync utilities.
  *
- * Provides SSE streaming and multi-tab coordination for RealtimeEntityType:
+ * Provides SSE streaming and multi-tab coordination for ProductEntityType:
  * - Live stream connection (SSE)
  * - Multi-tab leader election
  * - Sync state coordination
@@ -17,21 +17,17 @@ export type {
   StreamState,
   UseAppStreamOptions,
   UseAppStreamReturn,
-  UsePublicStreamOptions,
-  UsePublicStreamReturn,
-} from './app-stream-types';
-// Cache token utilities for LRU entity cache
+} from './types';
+// Cache token utilities for server-side entity cache
 export {
   clearCacheTokens,
   getCacheToken,
-  getCacheTokenEntry,
   getCacheTokenStats,
   removeCacheToken,
   storeCacheToken,
 } from './cache-token-store';
-export type { HydrateBarrier, UseHydrateBarrierOptions, UseHydrateBarrierReturn } from './hydrate-barrier';
-export { createHydrateBarrier, useHydrateBarrier } from './hydrate-barrier';
-export { default as PublicStream, usePublicStream } from './public-stream';
+export type { UsePublicStreamOptions, UsePublicStreamReturn } from './public-stream';
+export { default as PublicStream, getPageStreamCursor, usePublicStream } from './public-stream';
 export { handlePublicStreamMessage, type PublicStreamMessage } from './public-stream-handler';
 export {
   broadcastNotification,

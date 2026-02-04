@@ -7234,6 +7234,15 @@
             "required": false,
             "name": "limit",
             "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "required": false,
+            "name": "modifiedAfter",
+            "in": "query"
           }
         ],
         "responses": {
@@ -8569,7 +8578,7 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "public": {
+                    "cache": {
                       "type": "object",
                       "properties": {
                         "hits": {
@@ -8604,63 +8613,9 @@
                           "type": "number",
                           "description": "Current number of cached entries"
                         },
-                        "capacity": {
+                        "indexSize": {
                           "type": "number",
-                          "description": "Maximum cache capacity"
-                        },
-                        "utilization": {
-                          "type": "number",
-                          "description": "Cache utilization (0-1)"
-                        }
-                      },
-                      "required": [
-                        "hits",
-                        "misses",
-                        "hitRate",
-                        "invalidations",
-                        "coalescedRequests",
-                        "totalRequests",
-                        "uptimeSeconds",
-                        "size",
-                        "capacity",
-                        "utilization"
-                      ],
-                      "description": "Public cache statistics (no auth required)"
-                    },
-                    "token": {
-                      "type": "object",
-                      "properties": {
-                        "hits": {
-                          "type": "number",
-                          "description": "Number of cache hits"
-                        },
-                        "misses": {
-                          "type": "number",
-                          "description": "Number of cache misses"
-                        },
-                        "hitRate": {
-                          "type": "number",
-                          "description": "Hit rate percentage (0-100)"
-                        },
-                        "invalidations": {
-                          "type": "number",
-                          "description": "Number of cache invalidations"
-                        },
-                        "coalescedRequests": {
-                          "type": "number",
-                          "description": "Number of coalesced requests (avoided duplicate fetches)"
-                        },
-                        "totalRequests": {
-                          "type": "number",
-                          "description": "Total requests (hits + misses)"
-                        },
-                        "uptimeSeconds": {
-                          "type": "number",
-                          "description": "Seconds since metrics were last reset"
-                        },
-                        "size": {
-                          "type": "number",
-                          "description": "Current number of cached entries"
+                          "description": "Current number of indexed entities"
                         },
                         "capacity": {
                           "type": "number",
@@ -8683,36 +8638,11 @@
                         "capacity",
                         "utilization"
                       ],
-                      "description": "Token cache statistics (membership required)"
-                    },
-                    "combined": {
-                      "type": "object",
-                      "properties": {
-                        "totalHits": {
-                          "type": "number"
-                        },
-                        "totalMisses": {
-                          "type": "number"
-                        },
-                        "overallHitRate": {
-                          "type": "number"
-                        },
-                        "totalInvalidations": {
-                          "type": "number"
-                        }
-                      },
-                      "required": [
-                        "totalHits",
-                        "totalMisses",
-                        "overallHitRate",
-                        "totalInvalidations"
-                      ]
+                      "description": "Entity cache statistics"
                     }
                   },
                   "required": [
-                    "public",
-                    "token",
-                    "combined"
+                    "cache"
                   ]
                 }
               }
@@ -8911,6 +8841,15 @@
             },
             "required": false,
             "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "required": false,
+            "name": "modifiedAfter",
             "in": "query"
           }
         ],

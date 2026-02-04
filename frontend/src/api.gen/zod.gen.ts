@@ -1185,6 +1185,7 @@ export const zGetPagesData = z.object({
       order: z.optional(z.enum(['asc', 'desc'])),
       offset: z.optional(z.string()),
       limit: z.optional(z.string()),
+      modifiedAfter: z.optional(z.iso.datetime()),
     }),
   ),
 });
@@ -1467,7 +1468,7 @@ export const zGetCacheStatsData = z.object({
  * Cache statistics
  */
 export const zGetCacheStatsResponse = z.object({
-  public: z.object({
+  cache: z.object({
     hits: z.number(),
     misses: z.number(),
     hitRate: z.number(),
@@ -1476,26 +1477,9 @@ export const zGetCacheStatsResponse = z.object({
     totalRequests: z.number(),
     uptimeSeconds: z.number(),
     size: z.number(),
+    indexSize: z.optional(z.number()),
     capacity: z.number(),
     utilization: z.number(),
-  }),
-  token: z.object({
-    hits: z.number(),
-    misses: z.number(),
-    hitRate: z.number(),
-    invalidations: z.number(),
-    coalescedRequests: z.number(),
-    totalRequests: z.number(),
-    uptimeSeconds: z.number(),
-    size: z.number(),
-    capacity: z.number(),
-    utilization: z.number(),
-  }),
-  combined: z.object({
-    totalHits: z.number(),
-    totalMisses: z.number(),
-    overallHitRate: z.number(),
-    totalInvalidations: z.number(),
   }),
 });
 
@@ -1546,6 +1530,7 @@ export const zGetAttachmentsData = z.object({
       order: z.optional(z.enum(['asc', 'desc'])),
       offset: z.optional(z.string()),
       limit: z.optional(z.string()),
+      modifiedAfter: z.optional(z.iso.datetime()),
     }),
   ),
 });

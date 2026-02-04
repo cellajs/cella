@@ -1576,6 +1576,7 @@ export const deletePages = <ThrowOnError extends boolean = true>(options: Option
  * @param {enum=} options.query.order - `enum` (optional)
  * @param {string=} options.query.offset - `string` (optional)
  * @param {string=} options.query.limit - `string` (optional)
+ * @param {string=} options.query.modifiedafter - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getPages = <ThrowOnError extends boolean = true>(options?: Options<GetPagesData, ThrowOnError>) =>
@@ -2062,6 +2063,7 @@ export const deleteAttachments = <ThrowOnError extends boolean = true>(
  * @param {enum=} options.query.order - `enum` (optional)
  * @param {string=} options.query.offset - `string` (optional)
  * @param {string=} options.query.limit - `string` (optional)
+ * @param {string=} options.query.modifiedafter - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getAttachments = <ThrowOnError extends boolean = true>(

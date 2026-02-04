@@ -25,7 +25,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@types/node": "^24.10.9",
+    "@types/node": "^24.10.10",
     "@types/ws": "^8.18.1",
     "cross-env": "^7.0.3",
     "tsx": "^4.21.0",

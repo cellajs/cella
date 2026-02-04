@@ -69,6 +69,8 @@ export type ActivityEvent = Omit<ActivityModel, 'type' | 'action' | 'entityType'
 export interface ActivityEventWithEntity extends ActivityEvent {
   /** Full entity data from CDC Worker replication row. */
   entity?: unknown;
+  /** Cache token for server-side entity cache (realtime entities only). */
+  cacheToken?: string | null;
   /** Trace context for end-to-end correlation. */
   _trace?: SyncTraceContext;
 }

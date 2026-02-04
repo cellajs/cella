@@ -46,10 +46,7 @@ export const config = {
   /** Entity roles for memberships - derived from role registry */
   entityRoles: roles.all,
 
-  /** Entities that support offline transactions */
-  offlineEntityTypes: [] as const,
-  /** Entities with realtime sync and offline transactions */
-  realtimeEntityTypes: ['attachment', 'page'] as const,
+
 
   /** Maps entity types to their ID column names - must match entityTypes */
   entityIdColumnKeys: {

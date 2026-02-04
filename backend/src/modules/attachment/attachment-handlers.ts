@@ -1,6 +1,6 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { appConfig } from 'config';
-import { and, count, eq, getTableColumns, ilike, inArray, or, type SQL } from 'drizzle-orm';
+import { and, count, eq, getTableColumns, gte, ilike, inArray, or, type SQL } from 'drizzle-orm';
 import { html, raw } from 'hono/html';
 import { db } from '#/db/db';
 import { attachmentsTable } from '#/db/schema/attachments';
@@ -30,11 +30,16 @@ const attachmentRouteHandlers = app
    * Get list of attachments
    */
   .openapi(attachmentRoutes.getAttachments, async (ctx) => {
-    const { q, sort, order, limit, offset } = ctx.req.valid('query');
+    const { q, sort, order, limit, offset, modifiedAfter } = ctx.req.valid('query');
 
     const organization = getContextOrganization();
 
     const filters: SQL[] = [eq(attachmentsTable.organizationId, organization.id)];
+
+    // Delta sync filter: only return attachments modified at or after the given timestamp
+    if (modifiedAfter) {
+      filters.push(gte(attachmentsTable.modifiedAt, modifiedAfter));
+    }
 
     if (q?.trim()) {
       const queryToken = prepareStringForILikeFilter(q.trim());
