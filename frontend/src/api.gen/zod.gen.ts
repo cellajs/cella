@@ -1505,8 +1505,8 @@ export const zGetSyncMetricsData = z.object({
  * Sync metrics
  */
 export const zGetSyncMetricsResponse = z.object({
-  eventsReceived: z.number(),
-  eventsEmitted: z.number(),
+  messagesReceived: z.number(),
+  notificationsSent: z.number(),
   activeConnections: z.number(),
   pgNotifyFallbacks: z.number(),
   recentSpanCount: z.number(),

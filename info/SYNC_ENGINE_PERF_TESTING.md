@@ -10,19 +10,19 @@ Cella already has OTel infrastructure in place:
 |-----------|----------|---------|
 | **NodeSDK** | `backend/src/tracing.ts` | Trace and metric collection |
 | **HTTP spans** | `@hono/otel` middleware | Route-aware request tracing |
-| **Sync spans** | `backend/src/sync/sync-metrics.ts` | ActivityBus, SSE, CDC tracing |
-| **Sync metrics** | `sync-metrics.ts` counters/histograms | Event counts, connection counts, catch-up duration |
+| **Sync spans** | `backend/src/sync/sync-metrics.ts` | CDC messages, ActivityBus events, SSE notifications |
+| **Sync metrics** | `sync-metrics.ts` counters/histograms | Message/notification counts, connection counts, catch-up duration |
 | **Runtime metrics** | `RuntimeNodeInstrumentation` | Event loop, GC, heap |
 
 ### Existing sync metrics
 
 ```typescript
 // Already tracking in sync-metrics.ts:
-cdcEventsReceived      // Counter: events from CDC Worker
-sseEventsEmitted       // Counter: events to SSE streams
-sseActiveConnections   // UpDownCounter: active SSE connections
-sseCatchUpDuration     // Histogram: catch-up phase duration
-pgNotifyFallback       // Counter: pg_notify fallback usage
+cdcMessagesReceived     // Counter: messages from CDC Worker
+sseNotificationsSent    // Counter: notifications to SSE streams
+sseActiveConnections    // UpDownCounter: active SSE connections
+sseCatchUpDuration      // Histogram: catch-up phase duration
+pgNotifyFallback        // Counter: pg_notify fallback usage
 ```
 
 ---
@@ -65,8 +65,8 @@ Extend `/metrics` to expose sync-specific data:
 ```typescript
 // Add to metrics-handlers.ts response:
 sync: {
-  cdcEventsReceived: number,
-  sseEventsEmitted: number,
+  messagesReceived: number,    // CDC messages received
+  notificationsSent: number,   // SSE notifications sent
   sseActiveConnections: number,
   avgCatchUpDuration: number,
 }

@@ -1994,8 +1994,8 @@ export const getCacheStats = <ThrowOnError extends boolean = true>(
 /**
  * Get sync flow metrics
  *
- * Returns metrics for the sync flow: CDC Worker → ActivityBus → SSE streams.
- * Includes event counts, connection stats, and tracing span data.
+ * Returns metrics for the sync flow: CDC Worker (messages) → ActivityBus (events) → SSE (notifications).
+ * Includes message/notification counts, connection stats, and tracing span data.
  *
  * **GET /metrics/sync** ·· [getSyncMetrics](https://api.cellajs.com/docs#tag/metrics/get/metrics/sync) ·· _metrics_
  *

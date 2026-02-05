@@ -93,7 +93,7 @@ const metricRouteConfig = {
     },
   }),
   /**
-   * Get sync metrics (CDC, ActivityBus, SSE)
+   * Get sync metrics (CDC messages, ActivityBus events, SSE notifications)
    */
   getSyncMetrics: createXRoute({
     operationId: 'getSyncMetrics',
@@ -102,8 +102,8 @@ const metricRouteConfig = {
     xGuard: [isAuthenticated, hasSystemAccess],
     tags: ['metrics'],
     summary: 'Get sync flow metrics',
-    description: `Returns metrics for the sync flow: CDC Worker → ActivityBus → SSE streams.
-      Includes event counts, connection stats, and tracing span data.`,
+    description: `Returns metrics for the sync flow: CDC Worker (messages) → ActivityBus (events) → SSE (notifications).
+      Includes message/notification counts, connection stats, and tracing span data.`,
     responses: {
       200: {
         description: 'Sync metrics',

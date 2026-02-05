@@ -199,8 +199,8 @@ const metricsRouteHandlers = app
     const syncMetrics = getSyncMetrics();
 
     const response: SyncMetricsType = {
-      eventsReceived: syncMetrics.eventsReceived,
-      eventsEmitted: syncMetrics.eventsEmitted,
+      messagesReceived: syncMetrics.messagesReceived,
+      notificationsSent: syncMetrics.notificationsSent,
       activeConnections: syncMetrics.activeConnections,
       pgNotifyFallbacks: syncMetrics.pgNotifyFallbacks,
       recentSpanCount: syncMetrics.recentSpanCount,

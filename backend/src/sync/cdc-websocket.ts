@@ -131,7 +131,7 @@ class CdcWebSocketServer {
 
   /**
    * Handle incoming message from CDC Worker.
-   * Validates JSON schema and emits to ActivityBus.
+   * Validates JSON schema and transforms message into ActivityBus event.
    */
   private handleMessage(data: string): void {
     try {
@@ -161,14 +161,14 @@ class CdcWebSocketServer {
       const { type } = message.activity;
       if (!isValidEventType(type)) {
         this._parseErrors++;
-        logEvent('error', 'Unknown CDC event type - message dropped', {
+        logEvent('error', 'Unknown event type in CDC message - message dropped', {
           type,
           entityId: message.activity.entityId,
         });
         return;
       }
 
-      // Transform to ActivityEventWithEntity and emit
+      // Transform CDC message to ActivityBus event and emit
       const activityEvent: ActivityEventWithEntity = {
         ...message.activity,
         type,

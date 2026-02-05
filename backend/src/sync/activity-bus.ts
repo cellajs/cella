@@ -3,7 +3,7 @@ import { appConfig, type EntityType, type ResourceType } from 'shared';
 import type { ActivityModel } from '#/db/schema/activities';
 import { type TrackedModel, type TrackedType } from '#/table-config';
 import { logEvent } from '#/utils/logger';
-import { eventAttrs, recordEventReceived, type SyncTraceContext, startSyncSpan, syncSpanNames } from './sync-metrics';
+import { eventAttrs, recordMessageReceived, type SyncTraceContext, startSyncSpan, syncSpanNames } from './sync-metrics';
 
 /**
  * Activity actions aligned with HTTP methods (excluding 'read').
@@ -64,7 +64,8 @@ export type ActivityEvent = Omit<ActivityModel, 'type' | 'action' | 'entityType'
 };
 
 /**
- * Activity event with entity data from CDC Worker.
+ * Activity event with entity data, created from CDC message.
+ * This is the in-memory event format emitted by ActivityBus.
  */
 export interface ActivityEventWithEntity extends ActivityEvent {
   /** Full entity data from CDC Worker replication row. */
@@ -101,8 +102,13 @@ export function getTypedEntity<T extends TrackedType>(
 type EventHandler = (event: ActivityEventWithEntity) => void | Promise<void>;
 
 /**
- * ActivityBus receives activity events from CDC Worker via WebSocket
- * and distributes them to internal handlers and live stream subscribers.
+ * ActivityBus receives CDC messages via WebSocket, transforms them into
+ * in-memory events, and distributes to internal handlers and stream subscribers.
+ *
+ * Terminology:
+ * - CDC sends "messages" (JSON payloads via WebSocket)
+ * - ActivityBus emits "events" (in-memory, via EventEmitter)
+ * - SSE sends "notifications" (to clients)
  *
  * Requires CDC Worker to be running (DEV_MODE=full or production).
  * In basic/core mode, realtime features are not available.
@@ -183,21 +189,21 @@ class ActivityBus {
   }
 
   /**
-   * Emit an activity event received from CDC Worker via WebSocket.
-   * Called by the CDC WebSocket handler when events arrive.
+   * Emit an activity event transformed from a CDC message.
+   * Called by the CDC WebSocket handler when messages arrive.
    * @param event - The activity event with entity data
    */
   emit(event: ActivityEventWithEntity): void {
     if (!isValidEventType(event.type)) {
-      logEvent('warn', 'Unknown activity event type from CDC', { type: event.type });
+      logEvent('warn', 'Unknown activity event type from CDC message', { type: event.type });
       return;
     }
 
     // Start span for tracing
     const span = startSyncSpan(syncSpanNames.activityBusReceive, eventAttrs(event), event._trace?.traceId);
 
-    // Record metric
-    recordEventReceived(event.entityType || 'unknown');
+    // Record CDC message received metric
+    recordMessageReceived(event.entityType || 'unknown');
 
     this.emitter.emit(event.type, event);
     logEvent('debug', 'ActivityBus emitted event', { type: event.type, entityId: event.entityId });

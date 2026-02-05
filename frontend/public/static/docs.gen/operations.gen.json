@@ -1260,7 +1260,7 @@
     "path": "/metrics/sync",
     "tags": ["metrics"],
     "summary": "Get sync flow metrics",
-    "description": "Returns metrics for the sync flow: CDC Worker → ActivityBus → SSE streams.\n      Includes event counts, connection stats, and tracing span data.",
+    "description": "Returns metrics for the sync flow: CDC Worker (messages) → ActivityBus (events) → SSE (notifications).\n      Includes message/notification counts, connection stats, and tracing span data.",
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": false,

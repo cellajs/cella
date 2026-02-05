@@ -13,6 +13,27 @@ The **hybrid sync engine** extends Cella's **OpenAPI + React Query** infrastruct
 
 ---
 
+## Terminology
+
+The sync engine uses distinct terms for data at each layer:
+
+| Term | Layer | Description |
+|------|-------|-------------|
+| **Activity** | Database | Persisted record in `activitiesTable`. Source of truth for audit log. |
+| **Message** | CDC Worker | JSON payload sent from CDC Worker to API via WebSocket. |
+| **Event** | ActivityBus | In-memory event emitted to internal handlers (Node.js EventEmitter). |
+| **Notification** | SSE Stream | Lightweight payload sent to clients via Server-Sent Events. |
+
+```
+Postgres → CDC Worker → API Server → SSE → Client
+          (message)     (event)     (notification)
+                ↓
+         activitiesTable
+            (activity)
+```
+
+---
+
 ## Why a built-in sync engine?
 
 External sync solutions bypass REST endpoints, authorization, and caching patterns, forcing all-or-nothing adoption and resulting in poor DX. 
@@ -37,10 +58,11 @@ By internalizing the sync engine, cella can make unique combos: audit trail func
 - **Progressive enhancement** - REST for basic stuff; for daily-use stuff you upgrade module into → offline → realtime
 
 ### Architecture overview
-- **Logical replication** - A Change Data Capture (CDC) worker receives all changes and inserts them into `activitiesTable`
-- **Live stream** - SSE streaming backed by CDC Worker + WebSocket for realtime notifications
+- **Logical replication** - CDC Worker receives WAL changes, persists activities to `activitiesTable`, sends messages to API
+- **ActivityBus** - Receives CDC messages via WebSocket, emits events to internal handlers
+- **Live stream** - SSE sends lightweight notifications to clients (no entity data)
 - **Catchup-then-SSE pattern** - Catch-up via REST fetch, then SSE for live-only notifications
-- **Notify + fetch pattern** - SSE sends lightweight notifications; clients fetch entity data with priority-based scheduling; TTL cache enables efficient fan-out
+- **Notify + fetch pattern** - SSE notifications trigger priority-based entity fetches; TTL cache enables efficient fan-out
 - **React Query as merge point** - Initial/prefetch load and notification-triggered fetches feed into the same cache
 
 ### Realtime mechanics
@@ -75,9 +97,9 @@ This architecture uses a persistent WebSocket connection from CDC Worker to API 
 │  │    CDC Worker       │────>│  activitiesTable    │                        │
 │  │                     │     │  (INSERT)           │                        │
 │  │  After INSERT:      │     └─────────────────────┘                        │
-│  │  ws.send(           │                                                    │
-│  │   {activity, entity}│                                                    │
-│  │  )                  │                                                    │
+│  │  ws.send(message)   │   // CDC sends message to API                      │
+│  │  {activity, entity} │                                                    │
+│  │                     │                                                    │
 │  └──────────┬──────────┘                                                    │
 │             │ WebSocket (persistent, replication backpressure)              │
 │             ▼                                                               │
@@ -90,8 +112,8 @@ This architecture uses a persistent WebSocket connection from CDC Worker to API 
 │  │  └──────────┬──────────┘                                        │        │
 │  │             ▼                                                   │        │
 │  │  ┌─────────────────────┐                                        │        │
-│  │  │ ActivityBus         │ ───> Emit for internal API use         │        │
-│  │  │ Emits ActivityEvent │                                        │        │
+│  │  │ ActivityBus         │ ───> Emits events for internal handlers │        │
+│  │  │ (message → event)   │                                        │        │
 │  │  └──────────┬──────────┘                                        │        │
 │  │             ▼                                                   │        │
 │  │  ┌─────────────────────┐                                        │        │
@@ -487,9 +509,9 @@ When a realtime entity changes, the SSE stream notification includes a `cacheTok
 1. User subscribes to SSE stream (/me/stream)
    └── Server verifies membership → connection established
 
-2. CDC detects entity change → ActivityBus emits event
+2. CDC sends message → ActivityBus emits event → SSE sends notification
    └── Stream builds notification with cacheToken for each subscriber
-   └── SSE notification: { action, entityType, entityId, tx, cacheToken }
+   └── Notification: { action, entityType, entityId, tx, cacheToken }
 
 3. Client receives notification
    └── Stores cacheToken in cache-token-store (entityType:entityId → token)
@@ -528,9 +550,9 @@ export async function coalesce<T>(key: string, fetcher: () => Promise<T>): Promi
 }
 ```
 
-### Cache invalidation via CDC
+### Cache invalidation via ActivityBus
 
-CDC events invalidate cache; next request re-fetches with enriched data:
+ActivityBus events invalidate cache; next request re-fetches with enriched data:
 
 ```typescript
 activityBus.onAny((event) => {
@@ -560,7 +582,7 @@ Subsequent requests → Cache hit → Return cached enriched data
 | Thundering herd | Request coalescing (singleflight) |
 | Invalidation during fetch | Version in key prevents serving wrong version |
 | Token expiry mid-request | Different key, wasted entry naturally expires |
-| Concurrent updates | Each CDC event invalidates, final state correct |
+| Concurrent updates | Each ActivityBus event invalidates, final state correct |
 | Read-your-writes | Cache miss falls through to DB |
 
 ### Configuration

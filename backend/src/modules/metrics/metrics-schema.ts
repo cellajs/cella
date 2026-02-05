@@ -67,8 +67,8 @@ export const cacheStatsSchema = z.object({
 
 /** Schema for sync metrics response. */
 export const syncMetricsSchema = z.object({
-  eventsReceived: z.number().describe('Total CDC events received from worker'),
-  eventsEmitted: z.number().describe('Total events emitted to SSE streams'),
+  messagesReceived: z.number().describe('Total CDC messages received from worker'),
+  notificationsSent: z.number().describe('Total notifications sent via SSE streams'),
   activeConnections: z.number().describe('Current number of active SSE connections'),
   pgNotifyFallbacks: z.number().describe('Times pg_notify was used as fallback'),
   recentSpanCount: z.number().describe('Number of recent spans in memory'),

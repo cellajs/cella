@@ -378,15 +378,15 @@
         "schema": {
           "type": "object",
           "properties": {
-            "eventsReceived": {
+            "messagesReceived": {
               "type": "number",
               "required": true,
-              "description": "Total CDC events received from worker"
+              "description": "Total CDC messages received from worker"
             },
-            "eventsEmitted": {
+            "notificationsSent": {
               "type": "number",
               "required": true,
-              "description": "Total events emitted to SSE streams"
+              "description": "Total notifications sent via SSE streams"
             },
             "activeConnections": {
               "type": "number",

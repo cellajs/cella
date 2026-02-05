@@ -2,7 +2,12 @@
  * Backend sync metrics and tracing.
  *
  * Uses config/tracing for spans and adds OTel metrics integration.
- * Tracks ActivityBus events and SSE stream metrics.
+ * Tracks CDC messages, ActivityBus events, and SSE notifications.
+ *
+ * Terminology:
+ * - Messages: JSON payloads from CDC Worker via WebSocket
+ * - Events: In-memory events emitted by ActivityBus
+ * - Notifications: SSE payloads sent to clients
  */
 
 import {
@@ -29,12 +34,12 @@ export type SyncTraceContext = TraceContext;
 
 const meter = meterProvider.getMeter('cella-sync');
 
-export const cdcEventsReceived = meter.createCounter('sync.cdc.events_received', {
-  description: 'Events received from CDC Worker via WebSocket',
+export const cdcMessagesReceived = meter.createCounter('sync.cdc.messages_received', {
+  description: 'Messages received from CDC Worker via WebSocket',
 });
 
-export const sseEventsEmitted = meter.createCounter('sync.sse.events_emitted', {
-  description: 'Events emitted to SSE stream handlers',
+export const sseNotificationsSent = meter.createCounter('sync.sse.notifications_sent', {
+  description: 'Notifications sent to clients via SSE stream',
 });
 
 export const sseActiveConnections = meter.createUpDownCounter('sync.sse.active_connections', {
@@ -86,19 +91,21 @@ export function startSyncSpan(
 // Metric Recording
 // ================================
 
-let eventsReceivedCount = 0;
-let eventsEmittedCount = 0;
+let messagesReceivedCount = 0;
+let notificationsSentCount = 0;
 let activeConnectionsCount = 0;
 let pgNotifyFallbackCount = 0;
 
-export function recordEventReceived(entityType: string): void {
-  eventsReceivedCount++;
-  cdcEventsReceived.add(1, { entityType });
+/** Record a CDC message received from CDC Worker. */
+export function recordMessageReceived(entityType: string): void {
+  messagesReceivedCount++;
+  cdcMessagesReceived.add(1, { entityType });
 }
 
-export function recordEventEmitted(entityType: string): void {
-  eventsEmittedCount++;
-  sseEventsEmitted.add(1, { entityType });
+/** Record a notification sent to client via SSE. */
+export function recordNotificationSent(entityType: string): void {
+  notificationsSentCount++;
+  sseNotificationsSent.add(1, { entityType });
 }
 
 export function recordConnectionChange(delta: 1 | -1, streamType: string): void {
@@ -120,8 +127,8 @@ export function recordCatchUpDuration(durationMs: number, streamType: string): v
 // ================================
 
 interface SyncMetricsSnapshot {
-  eventsReceived: number;
-  eventsEmitted: number;
+  messagesReceived: number;
+  notificationsSent: number;
   activeConnections: number;
   pgNotifyFallbacks: number;
   recentSpanCount: number;
@@ -152,8 +159,8 @@ export function getSyncMetrics(): SyncMetricsSnapshot {
   }
 
   return {
-    eventsReceived: eventsReceivedCount,
-    eventsEmitted: eventsEmittedCount,
+    messagesReceived: messagesReceivedCount,
+    notificationsSent: notificationsSentCount,
     activeConnections: activeConnectionsCount,
     pgNotifyFallbacks: pgNotifyFallbackCount,
     recentSpanCount: spanStore.length,
@@ -169,8 +176,8 @@ export function getRecentSyncSpans(): SpanData[] {
 
 export function resetSyncMetrics(): void {
   spanStore.clear();
-  eventsReceivedCount = 0;
-  eventsEmittedCount = 0;
+  messagesReceivedCount = 0;
+  notificationsSentCount = 0;
   activeConnectionsCount = 0;
   pgNotifyFallbackCount = 0;
 }

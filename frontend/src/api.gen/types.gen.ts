@@ -3541,13 +3541,13 @@ export type GetSyncMetricsResponses = {
    */
   200: {
     /**
-     * Total CDC events received from worker
+     * Total CDC messages received from worker
      */
-    eventsReceived: number;
+    messagesReceived: number;
     /**
-     * Total events emitted to SSE streams
+     * Total notifications sent via SSE streams
      */
-    eventsEmitted: number;
+    notificationsSent: number;
     /**
      * Current number of active SSE connections
      */
