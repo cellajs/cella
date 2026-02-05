@@ -5,6 +5,7 @@ export { extractContextEntityIds, type ContextEntityIds } from './extract-contex
 export { extractRowData } from './extract-row-data';
 export { extractTxData } from './extract-tx-data';
 export { getChangedKeys } from './get-changed-keys';
+export { getNextSeq } from './get-next-seq';
 export { getRowValue } from './get-row-value';
 export { getSeqScope, type SeqScope } from './get-seq-scope';
 export { snakeToCamel } from './snake-to-camel';

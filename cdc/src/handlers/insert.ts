@@ -1,6 +1,5 @@
 import type { Pgoutput } from 'pg-logical-replication';
 import type { InsertActivityModel } from '#/db/schema/activities';
-import { nanoid } from '#/utils/nanoid';
 import { getTableName } from 'drizzle-orm';
 import { enrichMembershipData } from '../enrichment';
 import type { ProcessMessageResult } from '../process-message';
@@ -33,7 +32,6 @@ export async function handleInsert(
   }
 
   const activity: InsertActivityModel = {
-    id: nanoid(),
     userId: ctx.userId,
     entityType: ctx.entityType,
     resourceType: ctx.resourceType,
