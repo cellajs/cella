@@ -27,30 +27,31 @@ const OrganizationSettings = lazy(() => import('~/modules/organization/organizat
 
 /**
  * Layout route for organization-scoped pages.
- * Captures $idOrSlug param, fetches org, and provides context for all nested routes.
+ * Captures $orgIdOrSlug param, fetches org, and provides context for all nested routes.
  * Forks can nest additional routes (workspace, project, etc.) under this layout.
  */
 export const OrganizationLayoutRoute = createRoute({
-  path: '/$idOrSlug',
+  path: '/$orgIdOrSlug',
   staticData: { isAuth: true },
   getParentRoute: () => AppLayoutRoute,
   beforeLoad: async ({ params }) => {
-    const { idOrSlug } = params;
+    const { orgIdOrSlug } = params;
     const isOnline = onlineManager.isOnline();
 
     // Resolve slug to ID via list cache (from menu), or fetch if not cached
-    const cached = findOrganizationInListCache(idOrSlug);
+    const cached = findOrganizationInListCache(orgIdOrSlug);
     const orgId = cached?.id;
 
     // If we have the ID from cache, use ID-based query; otherwise fetch by slug first
     let organization: Organization | undefined;
 
+    // TODO - being called on every route change., including search params?
     if (orgId) {
       const orgOptions = organizationQueryOptions(orgId);
       organization = await queryClient.ensureQueryData({ ...orgOptions, revalidateIfStale: true });
     } else if (isOnline) {
       organization = await fetchSlugCacheId(
-        () => getOrganization({ path: { idOrSlug } }),
+        () => getOrganization({ path: { idOrSlug: orgIdOrSlug } }),
         organizationQueryKeys.detail.byId,
       );
     }
@@ -61,7 +62,7 @@ export const OrganizationLayoutRoute = createRoute({
     }
 
     // Rewrite URL to use slug if user navigated with ID
-    rewriteUrlToSlug(params, { idOrSlug: organization.slug }, OrganizationLayoutRoute.to);
+    rewriteUrlToSlug(params, { orgIdOrSlug: organization.slug }, OrganizationLayoutRoute.to);
 
     return { organization };
   },

@@ -4,8 +4,8 @@
  */
 
 import type { EntityType } from 'shared';
-import type { TxBase } from '#/db/utils/tx-columns';
 import { AppError } from '#/lib/error';
+import type { TxBase } from '#/schemas/tx-base-schema';
 
 interface FieldConflict {
   field: string;

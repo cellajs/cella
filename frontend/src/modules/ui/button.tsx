@@ -27,7 +27,7 @@ const buttonVariants = cva(
         link: 'text-primary underline-offset-4 hover:underline shadow-none',
         // Add more variants here
         darkSuccess: 'bg-green-700 text-white hover:bg-green-700/80',
-        cell: 'text-regular underline-offset-4 hover:underline focus-visible:ring-offset-transparent focus-visible:ring-transparent opacity-75 hover:opacity-100 shadow-none',
+        cell: 'text-regular underline-offset-4 hover:underline focus-visible:ring-offset-transparent focus-visible:ring-transparent opacity-75 hover:opacity-100 shadow-none w-full flex gap-2 justify-start',
         plain: 'text-primary bg-primary/5 border border-primary/30 hover:bg-primary/10 hover:border-primary/50',
         input: 'border border-input bg-background [&:not(.absolute)]:active:translate-y-0 hover:transparent',
         none: 'bg-transparent border-none shadow-none',
@@ -39,6 +39,7 @@ const buttonVariants = cva(
         sm: 'h-9 rounded-md px-3',
         lg: 'h-11 rounded-md px-4',
         icon: 'h-10 w-10',
+        cell: 'h-full px-0 py-0',
         xl: 'h-14 rounded-lg text-lg px-6',
         auto: 'h-auto',
       },
@@ -52,7 +53,7 @@ const buttonVariants = cva(
 
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
+  VariantProps<typeof buttonVariants> {
   loading?: boolean;
   asChild?: boolean;
 }

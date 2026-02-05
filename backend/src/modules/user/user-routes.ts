@@ -1,15 +1,9 @@
 import { createXRoute } from '#/docs/x-routes';
-import { hasSystemAccess, isAuthenticated } from '#/middlewares/guard';
+import { hasOrgAccess, isAuthenticated } from '#/middlewares/guard';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
 import { systemRoleBaseSchema } from '#/modules/system/system-schema';
-import { userListQuerySchema, userSchema, userUpdateBodySchema } from '#/modules/user/user-schema';
-import {
-  entityIdParamSchema,
-  errorResponseRefs,
-  idsBodySchema,
-  paginationSchema,
-  successWithRejectedItemsSchema,
-} from '#/schemas';
+import { userListQuerySchema, userSchema } from '#/modules/user/user-schema';
+import { entityIdOrSlugInOrgParamSchema, errorResponseRefs, inOrgParamSchema, paginationSchema } from '#/schemas';
 import { mockPaginatedUsersResponse, mockUserResponse } from '../../../mocks/mock-user';
 
 const userRoutes = {
@@ -20,11 +14,11 @@ const userRoutes = {
     operationId: 'getUsers',
     method: 'get',
     path: '/',
-    xGuard: isAuthenticated,
+    xGuard: [isAuthenticated, hasOrgAccess],
     tags: ['users'],
     summary: 'Get list of users',
-    description: 'Returns a list of *users*.',
-    request: { query: userListQuerySchema },
+    description: 'Returns a list of *users* in an organization context.',
+    request: { params: inOrgParamSchema, query: userListQuerySchema },
     responses: {
       200: {
         description: 'Users',
@@ -44,68 +38,17 @@ const userRoutes = {
     },
   }),
   /**
-   * Delete users
-   */
-  deleteUsers: createXRoute({
-    operationId: 'deleteUsers',
-    method: 'delete',
-    path: '/',
-    xGuard: [isAuthenticated, hasSystemAccess],
-    tags: ['users'],
-    summary: 'Delete users',
-    description:
-      "Deletes one or more *users* from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.",
-    request: {
-      body: {
-        required: true,
-        content: { 'application/json': { schema: idsBodySchema() } },
-      },
-    },
-    responses: {
-      200: {
-        description: 'Success',
-        content: { 'application/json': { schema: successWithRejectedItemsSchema } },
-      },
-      ...errorResponseRefs,
-    },
-  }),
-  /**
-   * Get a user
+   * Get a user by ID or slug
    */
   getUser: createXRoute({
     operationId: 'getUser',
     method: 'get',
-    path: '/{id}',
-    xGuard: isAuthenticated,
+    path: '/{idOrSlug}',
+    xGuard: [isAuthenticated, hasOrgAccess],
     tags: ['users'],
     summary: 'Get user',
-    description: 'Retrieves a *user* by ID.',
-    request: { params: entityIdParamSchema },
-    responses: {
-      200: {
-        description: 'User',
-        content: { 'application/json': { schema: userSchema, example: mockUserResponse() } },
-      },
-      ...errorResponseRefs,
-    },
-  }),
-  /**
-   * Update a user
-   */
-  updateUser: createXRoute({
-    operationId: 'updateUser',
-    method: 'put',
-    path: '/{id}',
-    xGuard: [isAuthenticated, hasSystemAccess],
-    tags: ['users'],
-    summary: 'Update user',
-    description: 'Updates a *user* identified by ID.',
-    request: {
-      params: entityIdParamSchema,
-      body: {
-        content: { 'application/json': { schema: userUpdateBodySchema } },
-      },
-    },
+    description: 'Retrieves a *user* by ID or slug in an organization context.',
+    request: { params: entityIdOrSlugInOrgParamSchema },
     responses: {
       200: {
         description: 'User',

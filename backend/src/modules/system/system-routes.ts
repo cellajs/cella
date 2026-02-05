@@ -1,10 +1,20 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/docs/x-routes';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
-import { presignedUrlLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
-import { inviteBodySchema, preasignedURLQuerySchema, sendNewsletterBodySchema } from '#/modules/system/system-schema';
-import { booleanTransformSchema, errorResponseRefs, successWithRejectedItemsSchema } from '#/schemas';
-import { mockPresignedUrlResponse, mockSystemInviteResponse } from '../../../mocks/mock-system';
+import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
+import { inviteBodySchema, sendNewsletterBodySchema, systemRoleBaseSchema } from '#/modules/system/system-schema';
+import {
+  booleanTransformSchema,
+  entityIdParamSchema,
+  errorResponseRefs,
+  idsBodySchema,
+  paginationSchema,
+  successWithRejectedItemsSchema,
+} from '#/schemas';
+import { mockSystemInviteResponse } from '../../../mocks/mock-system';
+import { mockPaginatedUsersResponse, mockUserResponse } from '../../../mocks/mock-user';
+import { membershipBaseSchema } from '../memberships/memberships-schema';
+import { userListQuerySchema, userSchema, userUpdateBodySchema } from '../user/user-schema';
 
 const systemRoutes = {
   /**
@@ -39,6 +49,87 @@ const systemRoutes = {
     },
   }),
   /**
+   * Get list of users
+   */
+  getUsers: createXRoute({
+    operationId: 'getUsers',
+    method: 'get',
+    path: '/',
+    xGuard: [isAuthenticated, hasSystemAccess],
+    tags: ['system'],
+    summary: 'Get list of users',
+    description: 'Returns a list of *users*.',
+    request: { query: userListQuerySchema },
+    responses: {
+      200: {
+        description: 'Users',
+        content: {
+          'application/json': {
+            schema: paginationSchema(
+              userSchema.extend({
+                memberships: membershipBaseSchema.array(),
+                role: systemRoleBaseSchema.shape.role.optional(),
+              }),
+            ),
+            example: mockPaginatedUsersResponse(),
+          },
+        },
+      },
+      ...errorResponseRefs,
+    },
+  }),
+  /**
+   * Delete users
+   */
+  deleteUsers: createXRoute({
+    operationId: 'deleteUsers',
+    method: 'delete',
+    path: '/',
+    xGuard: [isAuthenticated, hasSystemAccess],
+    tags: ['system'],
+    summary: 'Delete users',
+    description:
+      "Deletes one or more *users* from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.",
+    request: {
+      body: {
+        required: true,
+        content: { 'application/json': { schema: idsBodySchema() } },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Success',
+        content: { 'application/json': { schema: successWithRejectedItemsSchema } },
+      },
+      ...errorResponseRefs,
+    },
+  }),
+  /**
+   * Update a user
+   */
+  updateUser: createXRoute({
+    operationId: 'updateUser',
+    method: 'put',
+    path: '/{id}',
+    xGuard: [isAuthenticated, hasSystemAccess],
+    tags: ['system'],
+    summary: 'Update user',
+    description: 'Updates a *user* identified by ID.',
+    request: {
+      params: entityIdParamSchema,
+      body: {
+        content: { 'application/json': { schema: userUpdateBodySchema } },
+      },
+    },
+    responses: {
+      200: {
+        description: 'User',
+        content: { 'application/json': { schema: userSchema, example: mockUserResponse() } },
+      },
+      ...errorResponseRefs,
+    },
+  }),
+  /**
    * Send newsletter to members
    */
   sendNewsletter: createXRoute({
@@ -59,27 +150,6 @@ const systemRoutes = {
     responses: {
       204: {
         description: 'Newsletter sent',
-      },
-      ...errorResponseRefs,
-    },
-  }),
-  /**
-   * Get presigned URL
-   */
-  getPresignedUrl: createXRoute({
-    operationId: 'getPresignedUrl',
-    method: 'get',
-    path: '/presigned-url',
-    xGuard: isPublicAccess,
-    xRateLimiter: presignedUrlLimiter,
-    tags: ['system'],
-    summary: 'Get presigned URL',
-    description: 'Generates and returns a presigned URL for uploading files to an S3 bucket.',
-    request: { query: preasignedURLQuerySchema },
-    responses: {
-      200: {
-        description: 'Presigned URL',
-        content: { 'application/json': { schema: z.string(), example: mockPresignedUrlResponse() } },
       },
       ...errorResponseRefs,
     },

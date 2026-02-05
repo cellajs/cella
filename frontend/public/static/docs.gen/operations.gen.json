@@ -722,82 +722,6 @@
     }
   },
   {
-    "id": "getUsers",
-    "hash": "tag/users/GET/users",
-    "method": "get",
-    "path": "/users",
-    "tags": ["users"],
-    "summary": "Get list of users",
-    "description": "Returns a list of *users*.",
-    "deprecated": false,
-    "hasParams": true,
-    "hasRequestBody": false,
-    "hasResponseBody": true,
-    "hasExample": true,
-    "extensions": {
-      "xGuard": ["isAuthenticated"],
-      "xRateLimiter": [],
-      "xCache": []
-    }
-  },
-  {
-    "id": "deleteUsers",
-    "hash": "tag/users/DELETE/users",
-    "method": "delete",
-    "path": "/users",
-    "tags": ["users"],
-    "summary": "Delete users",
-    "description": "Deletes one or more *users* from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.",
-    "deprecated": false,
-    "hasParams": false,
-    "hasRequestBody": true,
-    "hasResponseBody": true,
-    "hasExample": true,
-    "extensions": {
-      "xGuard": ["isAuthenticated", "hasSystemAccess"],
-      "xRateLimiter": [],
-      "xCache": []
-    }
-  },
-  {
-    "id": "getUser",
-    "hash": "tag/users/GET/users/{id}",
-    "method": "get",
-    "path": "/users/{id}",
-    "tags": ["users"],
-    "summary": "Get user",
-    "description": "Retrieves a *user* by ID.",
-    "deprecated": false,
-    "hasParams": true,
-    "hasRequestBody": false,
-    "hasResponseBody": true,
-    "hasExample": true,
-    "extensions": {
-      "xGuard": ["isAuthenticated"],
-      "xRateLimiter": [],
-      "xCache": []
-    }
-  },
-  {
-    "id": "updateUser",
-    "hash": "tag/users/PUT/users/{id}",
-    "method": "put",
-    "path": "/users/{id}",
-    "tags": ["users"],
-    "summary": "Update user",
-    "description": "Updates a *user* identified by ID.",
-    "deprecated": false,
-    "hasParams": true,
-    "hasRequestBody": true,
-    "hasResponseBody": true,
-    "hasExample": true,
-    "extensions": {
-      "xGuard": ["isAuthenticated", "hasSystemAccess"],
-      "xRateLimiter": [],
-      "xCache": []
-    }
-  },
-  {
     "id": "createOrganizations",
     "hash": "tag/organizations/POST/organizations",
     "method": "post",
@@ -1064,21 +988,59 @@
     }
   },
   {
-    "id": "getPresignedUrl",
-    "hash": "tag/system/GET/system/presigned-url",
+    "id": "getUsers",
+    "hash": "tag/system/GET/system",
     "method": "get",
-    "path": "/system/presigned-url",
+    "path": "/system",
     "tags": ["system"],
-    "summary": "Get presigned URL",
-    "description": "Generates and returns a presigned URL for uploading files to an S3 bucket.",
+    "summary": "Get list of users",
+    "description": "Returns a list of *users*.",
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
-      "xRateLimiter": ["presignedUrlLimiter"],
+      "xGuard": ["isAuthenticated", "hasSystemAccess"],
+      "xRateLimiter": [],
+      "xCache": []
+    }
+  },
+  {
+    "id": "deleteUsers",
+    "hash": "tag/system/DELETE/system",
+    "method": "delete",
+    "path": "/system",
+    "tags": ["system"],
+    "summary": "Delete users",
+    "description": "Deletes one or more *users* from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.",
+    "deprecated": false,
+    "hasParams": false,
+    "hasRequestBody": true,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["isAuthenticated", "hasSystemAccess"],
+      "xRateLimiter": [],
+      "xCache": []
+    }
+  },
+  {
+    "id": "updateUser",
+    "hash": "tag/system/PUT/system/{id}",
+    "method": "put",
+    "path": "/system/{id}",
+    "tags": ["system"],
+    "summary": "Update user",
+    "description": "Updates a *user* identified by ID.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": true,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["isAuthenticated", "hasSystemAccess"],
+      "xRateLimiter": [],
       "xCache": []
     }
   },
@@ -1273,6 +1235,44 @@
     }
   },
   {
+    "id": "getUsers",
+    "hash": "tag/users/GET/{orgId}/users",
+    "method": "get",
+    "path": "/{orgId}/users",
+    "tags": ["users"],
+    "summary": "Get list of users",
+    "description": "Returns a list of *users* in an organization context.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["isAuthenticated", "hasOrgAccess"],
+      "xRateLimiter": [],
+      "xCache": []
+    }
+  },
+  {
+    "id": "getUser",
+    "hash": "tag/users/GET/{orgId}/users/{idOrSlug}",
+    "method": "get",
+    "path": "/{orgId}/users/{idOrSlug}",
+    "tags": ["users"],
+    "summary": "Get user",
+    "description": "Retrieves a *user* by ID or slug in an organization context.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["isAuthenticated", "hasOrgAccess"],
+      "xRateLimiter": [],
+      "xCache": []
+    }
+  },
+  {
     "id": "getAttachments",
     "hash": "tag/attachments/GET/{orgId}/attachments",
     "method": "get",
@@ -1383,6 +1383,25 @@
     "extensions": {
       "xGuard": ["isPublicAccess"],
       "xRateLimiter": ["tokenLimiter"],
+      "xCache": []
+    }
+  },
+  {
+    "id": "getPresignedUrl",
+    "hash": "tag/attachments/GET/{orgId}/attachments/presigned-url",
+    "method": "get",
+    "path": "/{orgId}/attachments/presigned-url",
+    "tags": ["attachments"],
+    "summary": "Get presigned URL",
+    "description": "Generates and returns a presigned URL for accessing a private file in S3. Public files should use the public CDN URL directly.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["isAuthenticated"],
+      "xRateLimiter": ["presignedUrlLimiter"],
       "xCache": []
     }
   },

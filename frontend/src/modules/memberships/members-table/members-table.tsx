@@ -14,6 +14,7 @@ import { useColumns } from '~/modules/memberships/members-table/members-columns'
 import { membersListQueryOptions } from '~/modules/memberships/query';
 import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
 import type { Member, MembersRouteSearchParams } from '~/modules/memberships/types';
+import { OrganizationLayoutRoute } from '~/routes/organization-routes';
 
 const LIMIT = appConfig.requestLimits.members;
 
@@ -32,10 +33,15 @@ function MembersTable({ entity, isSheet = false, children }: MembersTableWrapper
   const { t } = useTranslation();
   const { search, setSearch } = useSearchParams<MembersRouteSearchParams>({ saveDataInSearch: !isSheet });
 
+  // Get organization from route context - MembersTable is always rendered within OrganizationLayoutRoute
+  const { organization } = OrganizationLayoutRoute.useRouteContext();
+
   const updateMemberMembership = useMemberUpdateMutation();
 
+  const entityId = entity.id;
   const entityType = entity.entityType;
-  const organizationId = entity.organizationId || entity.id;
+  const orgId = organization.id;
+
   // TODO can should always be here? Use can.update if available for permission-based access control
   const canUpdate = entity.can?.update ?? false;
 
@@ -48,13 +54,7 @@ function MembersTable({ entity, isSheet = false, children }: MembersTableWrapper
   const [columns, setColumns] = useColumns(canUpdate, isSheet);
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
-  const queryOptions = membersListQueryOptions({
-    entityId: entity.id,
-    entityType,
-    orgId: organizationId,
-    ...search,
-    limit,
-  });
+  const queryOptions = membersListQueryOptions({ entityId, entityType, orgId, ...search, limit });
 
   const {
     data: rows,
@@ -82,16 +82,13 @@ function MembersTable({ entity, isSheet = false, children }: MembersTableWrapper
   const onRowsChange = (changedRows: Member[], { indexes, column }: RowsChangeData<Member>) => {
     if (column.key !== 'role') return;
 
-    const entityType = entity.entityType;
-    const organizationId = entity.organizationId || entity.id;
-
     // If role is changed, update membership
     for (const index of indexes) {
       const updatedMembership = {
         id: changedRows[index].membership.id,
         role: changedRows[index].membership.role,
-        orgId: organizationId,
-        entityId: entity.id,
+        orgId,
+        entityId,
         entityType,
       };
 

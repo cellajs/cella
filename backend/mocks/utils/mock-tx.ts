@@ -1,4 +1,4 @@
-import type { TxBase } from '#/db/utils/tx-columns';
+import type { TxBase } from '#/schemas/tx-base-schema';
 import { mockNanoid } from './mock-nanoid';
 
 /**

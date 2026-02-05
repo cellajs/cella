@@ -1,21 +1,18 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { and, count, eq, ilike, inArray, ne, or, sql } from 'drizzle-orm';
-import { alias } from 'drizzle-orm/pg-core';
+import { and, count, eq, ilike, inArray, or, sql } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import { db } from '#/db/db';
 import { lastSeenTable } from '#/db/schema/last-seen';
 import { membershipsTable } from '#/db/schema/memberships';
 import { systemRolesTable } from '#/db/schema/system-roles';
 import { usersTable } from '#/db/schema/users';
-import { type Env, getContextMemberships, getContextUser, getContextUserSystemRole } from '#/lib/context';
+import { type Env, getContextOrganization, getContextUser } from '#/lib/context';
+import { resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/error';
-import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import { userSelect } from '#/modules/user/helpers/select';
 import userRoutes from '#/modules/user/user-routes';
 import { defaultHook } from '#/utils/default-hook';
-import { getIsoDate } from '#/utils/iso-date';
-import { logEvent } from '#/utils/logger';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 
@@ -23,21 +20,16 @@ const app = new OpenAPIHono<Env>({ defaultHook });
 
 const userRouteHandlers = app
   /**
-   * Get list of users
+   * Get list of users in the organization
    */
   .openapi(userRoutes.getUsers, async (ctx) => {
     const { q, sort, order, offset, limit, role, targetEntityId, targetEntityType } = ctx.req.valid('query');
 
-    const user = getContextUser();
-    const userSystemRole = getContextUserSystemRole();
-    const isSystemAdmin = userSystemRole === 'admin' && !targetEntityId;
+    const organization = getContextOrganization();
 
     const filters = [
       // Filter by role if provided
       ...(role ? [eq(systemRolesTable.role, role)] : []),
-
-      // Exclude self when fetching shared memberships
-      ...(!isSystemAdmin ? [ne(usersTable.id, user.id)] : []),
 
       // Filter by search query if provided
       ...(q
@@ -61,25 +53,16 @@ const userRouteHandlers = app
       role: systemRolesTable.role,
     });
 
-    const targetMembership = alias(membershipsTable, 'targetMembership'); // memberships of users being queried
-    const requesterMembership = alias(membershipsTable, 'requesterMembership'); // memberships of requesting user
-
     const usersQuerySelect = { ...userSelect, role: systemRolesTable.role };
 
-    // If not system admin, only fetch users who share memberships with the requester
-    const baseUsersQuery = isSystemAdmin
-      ? db.select(usersQuerySelect).from(usersTable)
-      : db
-          .selectDistinct(usersQuerySelect)
-          .from(usersTable)
-          .innerJoin(targetMembership, and(eq(usersTable.id, targetMembership.userId)))
-          .innerJoin(
-            requesterMembership,
-            and(
-              eq(requesterMembership.organizationId, targetMembership.organizationId),
-              eq(requesterMembership.userId, user.id),
-            ),
-          );
+    // Get users who have membership in the current organization
+    const baseUsersQuery = db
+      .selectDistinct(usersQuerySelect)
+      .from(usersTable)
+      .innerJoin(
+        membershipsTable,
+        and(eq(usersTable.id, membershipsTable.userId), eq(membershipsTable.organizationId, organization.id)),
+      );
 
     const usersQuery = baseUsersQuery
       .leftJoin(systemRolesTable, eq(usersTable.id, systemRolesTable.userId))
@@ -96,8 +79,11 @@ const userRouteHandlers = app
 
     const userIds = users.map((u) => u.id);
 
-    // Fetch memberships for all these users
-    const membershipFilters = [inArray(membershipsTable.userId, userIds)];
+    // Fetch memberships for all these users within the organization
+    const membershipFilters = [
+      inArray(membershipsTable.userId, userIds),
+      eq(membershipsTable.organizationId, organization.id),
+    ];
     if (targetEntityId && targetEntityType) {
       const entityFieldId = appConfig.entityIdColumnKeys[targetEntityType];
       membershipFilters.push(
@@ -127,124 +113,39 @@ const userRouteHandlers = app
     return ctx.json({ items, total }, 200);
   })
   /**
-   * Delete users
-   */
-  .openapi(userRoutes.deleteUsers, async (ctx) => {
-    const { ids } = ctx.req.valid('json');
-    const { id: contextUserId } = getContextUser();
-    const contextUserRole = getContextUserSystemRole();
-
-    // Convert the user ids to an array
-    const toDeleteIds = Array.isArray(ids) ? ids : [ids];
-    if (!toDeleteIds.length) throw new AppError(400, 'invalid_request', 'error', { entityType: 'user' });
-
-    // Fetch users by IDs
-
-    const targets = await db.select(userSelect).from(usersTable).where(inArray(usersTable.id, toDeleteIds));
-
-    const foundIds = new Set(targets.map(({ id }) => id));
-    const allowedIds: string[] = [];
-    const rejectedItems: string[] = [];
-
-    for (const targetId of toDeleteIds) {
-      // Not found in DB
-      if (!foundIds.has(targetId)) {
-        rejectedItems.push(targetId);
-        continue; // Skip to next
-      }
-
-      const isAllowed = contextUserRole === 'admin' || contextUserId === targetId;
-      if (isAllowed) allowedIds.push(targetId);
-      else rejectedItems.push(targetId); // Found but not authorized
-    }
-
-    // Ifuser doesn't have permission to delete, return error
-    if (!allowedIds.length) throw new AppError(403, 'forbidden', 'warn', { entityType: 'user' });
-
-    // Delete allowed users
-    await db.delete(usersTable).where(inArray(usersTable.id, allowedIds));
-
-    logEvent('info', 'Users deleted', allowedIds);
-
-    return ctx.json({ success: true, rejectedItems }, 200);
-  })
-  /**
-   * Get a user by id or slug
+   * Get a user by id or slug within the organization context
    */
   .openapi(userRoutes.getUser, async (ctx) => {
-    const { id } = ctx.req.valid('param');
+    const { idOrSlug } = ctx.req.valid('param');
     const requestingUser = getContextUser();
-    const requesterMemberships = getContextMemberships();
-    const requstingUserSystemRole = getContextUserSystemRole();
+    const organization = getContextOrganization();
 
-    if (id === requestingUser.id) return ctx.json(requestingUser, 200);
+    // Check if requesting self (by id or slug)
+    if (idOrSlug === requestingUser.id || idOrSlug === requestingUser.slug) {
+      return ctx.json(requestingUser, 200);
+    }
 
-    const [targetUser] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, id)).limit(1);
+    // Resolve user by ID or slug
+    // TODO we should scan codebase for usage of resolveEntity in handlers directy.
+    // Perhaps we would do well to make it explicitly internal use only
+    // Since the permission wrapped is preferred getValidEntity
+    const targetUser = await resolveEntity('user', idOrSlug);
 
-    if (!targetUser) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { user: id } });
+    if (!targetUser) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { user: idOrSlug } });
 
-    const requesterOrgIds = requesterMemberships
-      .filter((m) => m.contextType === 'organization')
-      .map((m) => m.organizationId);
-
-    const [sharedMembership] = await db
+    // Verify target user has membership in the current organization
+    //
+    const [orgMembership] = await db
       .select({ id: membershipsTable.id })
       .from(membershipsTable)
-      .where(
-        and(
-          eq(membershipsTable.userId, targetUser.id),
-          eq(membershipsTable.contextType, 'organization'),
-          inArray(membershipsTable.organizationId, requesterOrgIds),
-        ),
-      )
+      .where(and(eq(membershipsTable.userId, targetUser.id), eq(membershipsTable.organizationId, organization.id)))
       .limit(1);
 
-    if (requstingUserSystemRole !== 'admin' && !sharedMembership) {
-      throw new AppError(403, 'forbidden', 'warn', { entityType: 'user', meta: { user: targetUser.id } });
+    if (!orgMembership) {
+      throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { user: targetUser.id } });
     }
 
     return ctx.json(targetUser, 200);
-  })
-  /**
-   * Update a user by id or slug
-   */
-  .openapi(userRoutes.updateUser, async (ctx) => {
-    const { id } = ctx.req.valid('param');
-
-    const user = getContextUser();
-
-    const [targetUser] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, id)).limit(1);
-
-    if (!targetUser) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { user: id } });
-
-    const { bannerUrl, firstName, lastName, language, newsletter, thumbnailUrl, slug } = ctx.req.valid('json');
-
-    // Check if slug is available
-    if (slug && slug !== targetUser.slug) {
-      const slugAvailable = await checkSlugAvailable(slug);
-      if (!slugAvailable) throw new AppError(409, 'slug_exists', 'warn', { entityType: 'user', meta: { slug } });
-    }
-
-    const [updatedUser] = await db
-      .update(usersTable)
-      .set({
-        bannerUrl,
-        firstName,
-        lastName,
-        language,
-        newsletter,
-        thumbnailUrl,
-        slug,
-        name: [firstName, lastName].filter(Boolean).join(' ') || slug,
-        modifiedAt: getIsoDate(),
-        modifiedBy: user.id,
-      })
-      .where(eq(usersTable.id, targetUser.id))
-      .returning();
-
-    logEvent('info', 'User updated', { userId: updatedUser.id });
-
-    return ctx.json(updatedUser, 200);
   });
 
 export default userRouteHandlers;

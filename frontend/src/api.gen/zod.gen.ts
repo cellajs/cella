@@ -938,87 +938,6 @@ export const zUnsubscribeMeData = z.object({
   }),
 });
 
-export const zDeleteUsersData = z.object({
-  body: z.object({
-    ids: z.array(z.string()).min(1).max(50),
-  }),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
-});
-
-/**
- * Success
- */
-export const zDeleteUsersResponse = zSuccessWithRejectedItems;
-
-export const zGetUsersData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.optional(
-    z.object({
-      q: z.optional(z.string()),
-      sort: z.optional(z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt'])),
-      order: z.optional(z.enum(['asc', 'desc'])),
-      offset: z.optional(z.string()),
-      limit: z.optional(z.string()),
-      role: z.optional(z.enum(['admin'])),
-      targetEntityType: z.optional(z.enum(['organization'])),
-      targetEntityId: z.optional(z.string()),
-    }),
-  ),
-});
-
-/**
- * Users
- */
-export const zGetUsersResponse = z.object({
-  items: z.array(
-    zUser.and(
-      z.object({
-        memberships: z.array(zMembershipBase),
-        role: z.optional(z.enum(['admin'])),
-      }),
-    ),
-  ),
-  total: z.number(),
-});
-
-export const zGetUserData = z.object({
-  body: z.optional(z.never()),
-  path: z.object({
-    id: z.string(),
-  }),
-  query: z.optional(z.never()),
-});
-
-/**
- * User
- */
-export const zGetUserResponse = zUser;
-
-export const zUpdateUserData = z.object({
-  body: z.optional(
-    z.object({
-      bannerUrl: z.optional(z.union([z.string(), z.null()])),
-      firstName: z.optional(z.union([z.string().min(2).max(100), z.null()])),
-      lastName: z.optional(z.union([z.string().min(2).max(100), z.null()])),
-      language: z.optional(z.enum(['en', 'nl'])),
-      newsletter: z.optional(z.boolean()),
-      thumbnailUrl: z.optional(z.union([z.string(), z.null()])),
-      slug: z.optional(z.string().min(2).max(100)),
-    }),
-  ),
-  path: z.object({
-    id: z.string(),
-  }),
-  query: z.optional(z.never()),
-});
-
-/**
- * User
- */
-export const zUpdateUserResponse = zUser;
-
 export const zDeleteOrganizationsData = z.object({
   body: z.object({
     ids: z.array(z.string()).min(1).max(50),
@@ -1302,19 +1221,73 @@ export const zSystemInviteResponse = zSuccessWithRejectedItems.and(
   }),
 );
 
-export const zGetPresignedUrlData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.object({
-    key: z.string(),
-    isPublic: z.optional(z.union([z.boolean(), z.string()])).default(false),
+export const zDeleteUsersData = z.object({
+  body: z.object({
+    ids: z.array(z.string()).min(1).max(50),
   }),
+  path: z.optional(z.never()),
+  query: z.optional(z.never()),
 });
 
 /**
- * Presigned URL
+ * Success
  */
-export const zGetPresignedUrlResponse = z.string();
+export const zDeleteUsersResponse = zSuccessWithRejectedItems;
+
+export const zGetUsersData = z.object({
+  body: z.optional(z.never()),
+  path: z.optional(z.never()),
+  query: z.optional(
+    z.object({
+      q: z.optional(z.string()),
+      sort: z.optional(z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt'])),
+      order: z.optional(z.enum(['asc', 'desc'])),
+      offset: z.optional(z.string()),
+      limit: z.optional(z.string()),
+      role: z.optional(z.enum(['admin'])),
+      targetEntityType: z.optional(z.enum(['organization'])),
+      targetEntityId: z.optional(z.string()),
+    }),
+  ),
+});
+
+/**
+ * Users
+ */
+export const zGetUsersResponse = z.object({
+  items: z.array(
+    zUser.and(
+      z.object({
+        memberships: z.array(zMembershipBase),
+        role: z.optional(z.enum(['admin'])),
+      }),
+    ),
+  ),
+  total: z.number(),
+});
+
+export const zUpdateUserData = z.object({
+  body: z.optional(
+    z.object({
+      bannerUrl: z.optional(z.union([z.string(), z.null()])),
+      firstName: z.optional(z.union([z.string().min(2).max(100), z.null()])),
+      lastName: z.optional(z.union([z.string().min(2).max(100), z.null()])),
+      language: z.optional(z.enum(['en', 'nl'])),
+      newsletter: z.optional(z.boolean()),
+      thumbnailUrl: z.optional(z.union([z.string(), z.null()])),
+      slug: z.optional(z.string().min(2).max(100)),
+    }),
+  ),
+  path: z.object({
+    id: z.string(),
+  }),
+  query: z.optional(z.never()),
+});
+
+/**
+ * User
+ */
+export const zUpdateUserResponse = zUser;
 
 export const zPaddleWebhookData = z.object({
   body: z.optional(z.unknown()),
@@ -1515,6 +1488,54 @@ export const zGetSyncMetricsResponse = z.object({
   errorCount: z.number(),
 });
 
+export const zGetUsers2Data = z.object({
+  body: z.optional(z.never()),
+  path: z.object({
+    orgId: z.string(),
+  }),
+  query: z.optional(
+    z.object({
+      q: z.optional(z.string()),
+      sort: z.optional(z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt'])),
+      order: z.optional(z.enum(['asc', 'desc'])),
+      offset: z.optional(z.string()),
+      limit: z.optional(z.string()),
+      role: z.optional(z.enum(['admin'])),
+      targetEntityType: z.optional(z.enum(['organization'])),
+      targetEntityId: z.optional(z.string()),
+    }),
+  ),
+});
+
+/**
+ * Users
+ */
+export const zGetUsers2Response = z.object({
+  items: z.array(
+    zUser.and(
+      z.object({
+        memberships: z.array(zMembershipBase),
+        role: z.optional(z.enum(['admin'])),
+      }),
+    ),
+  ),
+  total: z.number(),
+});
+
+export const zGetUserData = z.object({
+  body: z.optional(z.never()),
+  path: z.object({
+    idOrSlug: z.string(),
+    orgId: z.string(),
+  }),
+  query: z.optional(z.never()),
+});
+
+/**
+ * User
+ */
+export const zGetUserResponse = zUser;
+
 export const zDeleteAttachmentsData = z.object({
   body: z.object({
     ids: z.array(z.string()).min(1).max(50),
@@ -1642,6 +1663,19 @@ export const zRedirectToAttachmentData = z.object({
   }),
   query: z.optional(z.never()),
 });
+
+export const zGetPresignedUrlData = z.object({
+  body: z.optional(z.never()),
+  path: z.optional(z.never()),
+  query: z.object({
+    key: z.string(),
+  }),
+});
+
+/**
+ * Presigned URL
+ */
+export const zGetPresignedUrlResponse = z.string();
 
 export const zDeleteMembershipsData = z.object({
   body: z.object({

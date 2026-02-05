@@ -39,7 +39,7 @@ import {
   SystemRoute,
   UsersTableRoute,
 } from '~/routes/system-routes';
-import { UserAccountRoute, UserInOrganizationProfileRoute, UserProfileRoute } from '~/routes/user-routes';
+import { UserAccountRoute } from '~/routes/user-routes';
 import { BoundaryType } from './types';
 
 // Re-export layout routes and individual routes for fork extensions
@@ -57,8 +57,6 @@ export {
   HomeRoute,
   HomeAliasRoute,
   WelcomeRoute,
-  UserProfileRoute,
-  UserInOrganizationProfileRoute,
   UserAccountRoute,
 };
 

@@ -1,8 +1,8 @@
 import { z } from '@hono/zod-openapi';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { attachmentsTable } from '#/db/schema/attachments';
-import { txBaseSchema } from '#/db/utils/tx-columns';
 import { batchResponseSchema, entityCanSchema, paginationQuerySchema, txRequestSchema } from '#/schemas';
+import { txBaseSchema } from '#/schemas/tx-base-schema';
 import { mockAttachmentResponse } from '../../../mocks/mock-attachment';
 
 const attachmentInsertSchema = createInsertSchema(attachmentsTable);
@@ -58,4 +58,9 @@ export const attachmentListQuerySchema = paginationQuerySchema.extend({
   sort: attachmentSortKeys.default('createdAt').optional(),
   /** ISO timestamp filter for delta sync - returns attachments modified at or after this time */
   modifiedAfter: z.string().datetime().optional(),
+});
+
+/** Query schema for presigned URL endpoint - requires the file key to sign */
+export const presignedUrlKeySchema = z.object({
+  key: z.string(),
 });

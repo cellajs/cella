@@ -1,69 +1,15 @@
-import { createRoute, redirect, useParams } from '@tanstack/react-router';
+import { createRoute, redirect } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
-import ErrorNotice, { getErrorInfo } from '~/modules/common/error-notice';
+import { getErrorInfo } from '~/modules/common/error-notice';
 import Spinner from '~/modules/common/spinner';
 import { ToastSeverity } from '~/modules/common/toaster/service';
 import { meAuthQueryOptions } from '~/modules/me/query';
-import { userQueryOptions } from '~/modules/user/query';
 import { queryClient } from '~/query/query-client';
 import { AppLayoutRoute, errorSearchSchema } from '~/routes/base-routes';
 import { useToastStore } from '~/store/toast';
 import appTitle from '~/utils/app-title';
 
-const UserProfilePage = lazy(() => import('~/modules/user/profile-page'));
 const UserAccountPage = lazy(() => import('~/modules/me/account-page'));
-
-/**
- * User profile page displaying public user information.
- */
-export const UserProfileRoute = createRoute({
-  path: '/user/$idOrSlug',
-  staticData: { isAuth: true },
-  getParentRoute: () => AppLayoutRoute,
-  loader: async ({ params: { idOrSlug } }) => {
-    const userOptions = userQueryOptions(idOrSlug);
-    return queryClient.ensureQueryData({ ...userOptions });
-  },
-  head: (ctx) => {
-    const user = ctx.match.loaderData;
-    return { meta: [{ title: appTitle(user?.name) }] };
-  },
-  errorComponent: ({ error }) => <ErrorNotice boundary="app" error={error} />,
-  component: () => {
-    const { idOrSlug } = useParams({ from: '/appLayout/user/$idOrSlug' });
-    return (
-      <Suspense>
-        <UserProfilePage key={idOrSlug} idOrSlug={idOrSlug} />
-      </Suspense>
-    );
-  },
-});
-
-/**
- * User profile page within an organization context.
- */
-export const UserInOrganizationProfileRoute = createRoute({
-  path: '/$orgIdOrSlug/user/$idOrSlug',
-  staticData: { isAuth: true },
-  getParentRoute: () => AppLayoutRoute,
-  loader: async ({ params: { idOrSlug } }) => {
-    const userOptions = userQueryOptions(idOrSlug);
-    return queryClient.ensureQueryData({ ...userOptions });
-  },
-  head: (ctx) => {
-    const user = ctx.match.loaderData;
-    return { meta: [{ title: appTitle(user?.name) }] };
-  },
-  errorComponent: ({ error }) => <ErrorNotice boundary="app" error={error} />,
-  component: () => {
-    const { idOrSlug, orgIdOrSlug } = useParams({ from: '/appLayout/$orgIdOrSlug/user/$idOrSlug' });
-    return (
-      <Suspense>
-        <UserProfilePage key={idOrSlug} idOrSlug={idOrSlug} orgIdOrSlug={orgIdOrSlug} />
-      </Suspense>
-    );
-  },
-});
 
 /**
  * User account settings page for personal configuration.

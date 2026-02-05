@@ -11,6 +11,7 @@ import HeaderCell from '~/modules/common/data-table/header-cell';
 import { renderSelect } from '~/modules/common/data-table/select-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import UpdateRow from '~/modules/organization/table/update-row';
+import { buttonVariants } from '~/modules/ui/button';
 import { UserCellById } from '~/modules/user/user-cell';
 import { dateShort } from '~/utils/date-short';
 
@@ -30,11 +31,11 @@ export const useColumns = (isCompact: boolean) => {
         renderHeaderCell: HeaderCell,
         renderCell: ({ row, tabIndex }) => (
           <Link
-            to="/$idOrSlug/organization/members"
+            className={buttonVariants({ variant: 'cell', size: 'cell' })}
+            to="/$orgIdOrSlug/organization/members"
             draggable="false"
             tabIndex={tabIndex}
-            params={{ idOrSlug: row.slug }}
-            className="flex space-x-2 items-center outline-0 ring-0 group"
+            params={{ orgIdOrSlug: row.slug }}
           >
             <AvatarWrap
               type="organization"

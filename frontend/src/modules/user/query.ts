@@ -6,6 +6,7 @@ import type { ApiError } from '~/lib/api';
 import {
   baseInfiniteQueryOptions,
   createEntityKeys,
+  findInListCache,
   invalidateIfLastMutation,
   useMutateQueryData,
 } from '~/query/basic';
@@ -16,13 +17,19 @@ const keys = createEntityKeys<UserFilters>('user');
 
 export const userQueryKeys = keys;
 
+/** Find a user in the list cache by id or slug. */
+export const findUserInListCache = (idOrSlug: string) =>
+  findInListCache<User>(keys.list.base, (user) => user.id === idOrSlug || user.slug === idOrSlug);
+
 /**
- * Query options for fetching a user by ID.
+ * Query options for fetching a user by ID within an organization context.
+ * NOTE: Slug is only used on page load. All subsequent queries must use ID.
  */
-export const userQueryOptions = (id: string) =>
+export const userQueryOptions = (id: string, orgId: string) =>
   queryOptions({
     queryKey: keys.detail.byId(id),
-    queryFn: () => getUser({ path: { id } }),
+    queryFn: async () => getUser({ path: { idOrSlug: id, orgId } }),
+    placeholderData: () => findUserInListCache(id),
   });
 
 /**

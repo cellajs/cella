@@ -97,7 +97,7 @@ export const useUserStore = create<UserStoreState>()(
         },
       })),
       {
-        version: 4,
+        version: 6,
         name: `${appConfig.slug}-user`,
         partialize: (state) => ({
           user: state.user,

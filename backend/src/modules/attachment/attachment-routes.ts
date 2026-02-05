@@ -2,13 +2,14 @@ import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/docs/x-routes';
 import { appCache } from '#/middlewares/entity-cache';
 import { hasOrgAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
-import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
+import { presignedUrlLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   attachmentCreateManyTxBodySchema,
   attachmentCreateResponseSchema,
   attachmentListQuerySchema,
   attachmentSchema,
   attachmentUpdateTxBodySchema,
+  presignedUrlKeySchema,
 } from '#/modules/attachment/attachment-schema';
 import {
   errorResponseRefs,
@@ -183,6 +184,28 @@ const attachmentRoutes = {
     request: { params: z.object({ id: idSchema }) },
     responses: {
       200: { description: 'Success' },
+      ...errorResponseRefs,
+    },
+  }),
+  /**
+   * Get presigned URL for private attachment
+   */
+  getPresignedUrl: createXRoute({
+    operationId: 'getPresignedUrl',
+    method: 'get',
+    path: '/presigned-url',
+    xGuard: isAuthenticated,
+    xRateLimiter: presignedUrlLimiter,
+    tags: ['attachments'],
+    summary: 'Get presigned URL',
+    description:
+      'Generates and returns a presigned URL for accessing a private file in S3. Public files should use the public CDN URL directly.',
+    request: { query: presignedUrlKeySchema },
+    responses: {
+      200: {
+        description: 'Presigned URL',
+        content: { 'application/json': { schema: z.string() } },
+      },
       ...errorResponseRefs,
     },
   }),

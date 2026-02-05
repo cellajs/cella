@@ -1,5 +1,4 @@
 import { createReactInlineContentSpec, type DefaultReactGridSuggestionItem } from '@blocknote/react';
-import { Link } from '@tanstack/react-router';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import type { CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
 import type { Member } from '~/modules/memberships/types';
@@ -23,7 +22,7 @@ export const MentionSchema = createReactInlineContentSpec(
   },
   {
     render: (props) => {
-      const { name, slug } = props.inlineContent.props;
+      const { name } = props.inlineContent.props;
 
       const mentionContent = (
         <span
@@ -43,20 +42,6 @@ export const MentionSchema = createReactInlineContentSpec(
           @ {name}
         </span>
       );
-
-      // If slug is available, make it clickable to navigate to user profile
-      if (slug) {
-        return (
-          <Link
-            to="/user/$idOrSlug"
-            params={{ idOrSlug: slug }}
-            style={{ textDecoration: 'none', cursor: 'pointer' }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {mentionContent}
-          </Link>
-        );
-      }
 
       return mentionContent;
     },

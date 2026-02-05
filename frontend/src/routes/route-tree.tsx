@@ -18,8 +18,6 @@ import {
   RootRoute,
   SystemRoute,
   UserAccountRoute,
-  UserInOrganizationProfileRoute,
-  UserProfileRoute,
   WelcomeRoute,
 } from '~/routes/route-tree.base';
 
@@ -42,8 +40,6 @@ export const routeTree = RootRoute.addChildren([
     HomeAliasRoute,
     WelcomeRoute,
     SystemRoute.addChildren([...baseSystemChildren]),
-    UserProfileRoute,
-    UserInOrganizationProfileRoute,
     UserAccountRoute,
     OrganizationLayoutRoute.addChildren([
       OrganizationRoute.addChildren([

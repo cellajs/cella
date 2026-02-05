@@ -76,6 +76,9 @@ export const entityIdOrSlugParamSchema = z.object({ idOrSlug: idSchema });
 /** Schema for an organization identifier orgId */
 export const inOrgParamSchema = z.object({ orgId: idSchema });
 
+/** Schema for entity idOrSlug within an organization orgId */
+export const entityIdOrSlugInOrgParamSchema = z.object({ idOrSlug: idSchema, orgId: idSchema });
+
 /** Schema for entity id within an organization orgId */
 export const idInOrgParamSchema = z.object({ id: idSchema, orgId: idSchema });
 

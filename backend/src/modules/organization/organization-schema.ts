@@ -18,6 +18,7 @@ import {
 } from '#/schemas';
 import { mockOrganizationResponse } from '../../../mocks/mock-organization';
 
+// TODO these count schemas should eprahps go to src/schemas because they are used in multiple modules
 // Entity count schema should exclude 'user' and 'organization'
 type FilteredEntityType = Exclude<EntityType, 'user' | 'organization'>;
 
@@ -104,6 +105,7 @@ export const organizationListQuerySchema = paginationQuerySchema.extend({
   sort: z.enum(['id', 'name', 'createdAt']).default('createdAt').optional(),
   userId: z.string().optional(),
   role: z.enum(appConfig.entityRoles).optional(),
+  // TODO make common schema
   excludeArchived: z
     .enum(['true', 'false'])
     .optional()

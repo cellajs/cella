@@ -141,6 +141,9 @@ import type {
   GetUserData,
   GetUserErrors,
   GetUserResponses,
+  GetUsers2Data,
+  GetUsers2Errors,
+  GetUsers2Responses,
   GetUsersData,
   GetUsersErrors,
   GetUsersResponses,
@@ -1198,128 +1201,6 @@ export const unsubscribeMe = <ThrowOnError extends boolean = true>(options: Opti
   });
 
 /**
- * Delete users
- *
- * Deletes one or more *users* from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.
- *
- * **DELETE /users** ·· [deleteUsers](https://api.cellajs.com/docs#tag/users/delete/users) ·· _users_
- *
- * @param {deleteUsersData} options
- * @param {any[]=} options.body.ids - `any[]` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const deleteUsers = <ThrowOnError extends boolean = true>(options: Options<DeleteUsersData, ThrowOnError>) =>
-  (options.client ?? client).delete<DeleteUsersResponses, DeleteUsersErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/users',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
- * Get list of users
- *
- * Returns a list of *users*.
- *
- * **GET /users** ·· [getUsers](https://api.cellajs.com/docs#tag/users/get/users) ·· _users_
- *
- * @param {getUsersData} options
- * @param {string=} options.query.q - `string` (optional)
- * @param {enum=} options.query.sort - `enum` (optional)
- * @param {enum=} options.query.order - `enum` (optional)
- * @param {string=} options.query.offset - `string` (optional)
- * @param {string=} options.query.limit - `string` (optional)
- * @param {enum=} options.query.role - `enum` (optional)
- * @param {enum=} options.query.targetentitytype - `enum` (optional)
- * @param {string=} options.query.targetentityid - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const getUsers = <ThrowOnError extends boolean = true>(options?: Options<GetUsersData, ThrowOnError>) =>
-  (options?.client ?? client).get<GetUsersResponses, GetUsersErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/users',
-    ...options,
-  });
-
-/**
- * Get user
- *
- * Retrieves a *user* by ID.
- *
- * **GET /users/{id}** ·· [getUser](https://api.cellajs.com/docs#tag/users/get/users/{id}) ·· _users_
- *
- * @param {getUserData} options
- * @param {string} options.path.id - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const getUser = <ThrowOnError extends boolean = true>(options: Options<GetUserData, ThrowOnError>) =>
-  (options.client ?? client).get<GetUserResponses, GetUserErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/users/{id}',
-    ...options,
-  });
-
-/**
- * Update user
- *
- * Updates a *user* identified by ID.
- *
- * **PUT /users/{id}** ·· [updateUser](https://api.cellajs.com/docs#tag/users/put/users/{id}) ·· _users_
- *
- * @param {updateUserData} options
- * @param {string} options.path.id - `string`
- * @param {string | null=} options.body.bannerUrl - `string | null` (optional)
- * @param {string | null=} options.body.firstName - `string | null` (optional)
- * @param {string | null=} options.body.lastName - `string | null` (optional)
- * @param {enum=} options.body.language - `enum` (optional)
- * @param {boolean=} options.body.newsletter - `boolean` (optional)
- * @param {string | null=} options.body.thumbnailUrl - `string | null` (optional)
- * @param {string=} options.body.slug - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const updateUser = <ThrowOnError extends boolean = true>(options: Options<UpdateUserData, ThrowOnError>) =>
-  (options.client ?? client).put<UpdateUserResponses, UpdateUserErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/users/{id}',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
  * Delete organizations
  *
  * Deletes one or more *organizations* by ID.
@@ -1730,24 +1611,100 @@ export const systemInvite = <ThrowOnError extends boolean = true>(options: Optio
   });
 
 /**
- * Get presigned URL
+ * Delete users
  *
- * Generates and returns a presigned URL for uploading files to an S3 bucket.
+ * Deletes one or more *users* from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.
  *
- * **GET /system/presigned-url** ·· [getPresignedUrl](https://api.cellajs.com/docs#tag/system/get/system/presigned-url) ·· _system_
+ * **DELETE /system** ·· [deleteUsers](https://api.cellajs.com/docs#tag/system/delete/system) ·· _system_
  *
- * @param {getPresignedUrlData} options
- * @param {string} options.query.key - `string`
- * @param {boolean | string=} options.query.ispublic - `boolean | string` (optional)
+ * @param {deleteUsersData} options
+ * @param {any[]=} options.body.ids - `any[]` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const getPresignedUrl = <ThrowOnError extends boolean = true>(
-  options: Options<GetPresignedUrlData, ThrowOnError>,
-) =>
-  (options.client ?? client).get<GetPresignedUrlResponses, GetPresignedUrlErrors, ThrowOnError, 'data'>({
+export const deleteUsers = <ThrowOnError extends boolean = true>(options: Options<DeleteUsersData, ThrowOnError>) =>
+  (options.client ?? client).delete<DeleteUsersResponses, DeleteUsersErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
-    url: '/system/presigned-url',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/system',
     ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Get list of users
+ *
+ * Returns a list of *users*.
+ *
+ * **GET /system** ·· [getUsers](https://api.cellajs.com/docs#tag/system/get/system) ·· _system_
+ *
+ * @param {getUsersData} options
+ * @param {string=} options.query.q - `string` (optional)
+ * @param {enum=} options.query.sort - `enum` (optional)
+ * @param {enum=} options.query.order - `enum` (optional)
+ * @param {string=} options.query.offset - `string` (optional)
+ * @param {string=} options.query.limit - `string` (optional)
+ * @param {enum=} options.query.role - `enum` (optional)
+ * @param {enum=} options.query.targetentitytype - `enum` (optional)
+ * @param {string=} options.query.targetentityid - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const getUsers = <ThrowOnError extends boolean = true>(options?: Options<GetUsersData, ThrowOnError>) =>
+  (options?.client ?? client).get<GetUsersResponses, GetUsersErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/system',
+    ...options,
+  });
+
+/**
+ * Update user
+ *
+ * Updates a *user* identified by ID.
+ *
+ * **PUT /system/{id}** ·· [updateUser](https://api.cellajs.com/docs#tag/system/put/system/{id}) ·· _system_
+ *
+ * @param {updateUserData} options
+ * @param {string} options.path.id - `string`
+ * @param {string | null=} options.body.bannerUrl - `string | null` (optional)
+ * @param {string | null=} options.body.firstName - `string | null` (optional)
+ * @param {string | null=} options.body.lastName - `string | null` (optional)
+ * @param {enum=} options.body.language - `enum` (optional)
+ * @param {boolean=} options.body.newsletter - `boolean` (optional)
+ * @param {string | null=} options.body.thumbnailUrl - `string | null` (optional)
+ * @param {string=} options.body.slug - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const updateUser = <ThrowOnError extends boolean = true>(options: Options<UpdateUserData, ThrowOnError>) =>
+  (options.client ?? client).put<UpdateUserResponses, UpdateUserErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/system/{id}',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
   });
 
 /**
@@ -2019,6 +1976,65 @@ export const getSyncMetrics = <ThrowOnError extends boolean = true>(
   });
 
 /**
+ * Get list of users
+ *
+ * Returns a list of *users* in an organization context.
+ *
+ * **GET /{orgId}/users** ·· [getUsers2](https://api.cellajs.com/docs#tag/users/get/{orgId}/users) ·· _users_
+ *
+ * @param {getUsers2Data} options
+ * @param {string} options.path.orgid - `string`
+ * @param {string=} options.query.q - `string` (optional)
+ * @param {enum=} options.query.sort - `enum` (optional)
+ * @param {enum=} options.query.order - `enum` (optional)
+ * @param {string=} options.query.offset - `string` (optional)
+ * @param {string=} options.query.limit - `string` (optional)
+ * @param {enum=} options.query.role - `enum` (optional)
+ * @param {enum=} options.query.targetentitytype - `enum` (optional)
+ * @param {string=} options.query.targetentityid - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const getUsers2 = <ThrowOnError extends boolean = true>(options: Options<GetUsers2Data, ThrowOnError>) =>
+  (options.client ?? client).get<GetUsers2Responses, GetUsers2Errors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/{orgId}/users',
+    ...options,
+  });
+
+/**
+ * Get user
+ *
+ * Retrieves a *user* by ID or slug in an organization context.
+ *
+ * **GET /{orgId}/users/{idOrSlug}** ·· [getUser](https://api.cellajs.com/docs#tag/users/get/{orgId}/users/{idOrSlug}) ·· _users_
+ *
+ * @param {getUserData} options
+ * @param {string} options.path.idorslug - `string`
+ * @param {string} options.path.orgid - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const getUser = <ThrowOnError extends boolean = true>(options: Options<GetUserData, ThrowOnError>) =>
+  (options.client ?? client).get<GetUserResponses, GetUserErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/{orgId}/users/{idOrSlug}',
+    ...options,
+  });
+
+/**
  * Delete attachments
  *
  * Deletes one or more *attachment* records by ID. This does not delete the underlying file in storage.
@@ -2193,6 +2209,33 @@ export const redirectToAttachment = <ThrowOnError extends boolean = true>(
   (options.client ?? client).get<RedirectToAttachmentResponses, RedirectToAttachmentErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/{orgId}/attachments/{id}/link',
+    ...options,
+  });
+
+/**
+ * Get presigned URL
+ *
+ * Generates and returns a presigned URL for accessing a private file in S3. Public files should use the public CDN URL directly.
+ *
+ * **GET /{orgId}/attachments/presigned-url** ·· [getPresignedUrl](https://api.cellajs.com/docs#tag/attachments/get/{orgId}/attachments/presigned-url) ·· _attachments_
+ *
+ * @param {getPresignedUrlData} options
+ * @param {string} options.query.key - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const getPresignedUrl = <ThrowOnError extends boolean = true>(
+  options: Options<GetPresignedUrlData, ThrowOnError>,
+) =>
+  (options.client ?? client).get<GetPresignedUrlResponses, GetPresignedUrlErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/{orgId}/attachments/presigned-url',
     ...options,
   });
 

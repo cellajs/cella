@@ -5305,553 +5305,6 @@
         }
       }
     },
-    "/users": {
-      "get": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "getUsers",
-        "tags": [
-          "users"
-        ],
-        "summary": "Get list of users",
-        "description": "Returns a list of *users*.",
-        "x-guard": [
-          "isAuthenticated"
-        ],
-        "x-rate-limiter": [],
-        "x-cache": [],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string"
-            },
-            "required": false,
-            "name": "q",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": [
-                "id",
-                "name",
-                "email",
-                "role",
-                "createdAt",
-                "lastSeenAt"
-              ],
-              "default": "createdAt"
-            },
-            "required": false,
-            "name": "sort",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ],
-              "default": "asc"
-            },
-            "required": false,
-            "name": "order",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string"
-            },
-            "required": false,
-            "name": "offset",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string"
-            },
-            "required": false,
-            "name": "limit",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": [
-                "admin"
-              ]
-            },
-            "required": false,
-            "name": "role",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": [
-                "organization"
-              ]
-            },
-            "required": false,
-            "name": "targetEntityType",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string"
-            },
-            "required": false,
-            "name": "targetEntityId",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Users",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "items": {
-                      "type": "array",
-                      "items": {
-                        "allOf": [
-                          {
-                            "$ref": "#/components/schemas/User"
-                          },
-                          {
-                            "type": "object",
-                            "properties": {
-                              "memberships": {
-                                "type": "array",
-                                "items": {
-                                  "$ref": "#/components/schemas/MembershipBase"
-                                }
-                              },
-                              "role": {
-                                "type": "string",
-                                "enum": [
-                                  "admin"
-                                ]
-                              }
-                            },
-                            "required": [
-                              "memberships"
-                            ]
-                          }
-                        ],
-                        "example": {
-                          "id": "w6g7sfzetbhjls7m9dg1xzav",
-                          "entityType": "user",
-                          "name": "Franco Corwin",
-                          "firstName": "Franco",
-                          "lastName": "Corwin",
-                          "email": "franco_corwin@gmail.com",
-                          "slug": "francocorwin",
-                          "description": null,
-                          "thumbnailUrl": null,
-                          "bannerUrl": null,
-                          "language": "en",
-                          "newsletter": true,
-                          "mfaRequired": false,
-                          "userFlags": {},
-                          "createdAt": "2024-12-13T11:17:23.643Z",
-                          "modifiedAt": "2024-12-13T11:17:23.643Z",
-                          "modifiedBy": null,
-                          "lastStartedAt": "2024-12-13T11:17:23.643Z",
-                          "lastSignInAt": "2024-12-13T11:17:23.643Z",
-                          "lastSeenAt": "2024-12-13T11:17:23.643Z"
-                        }
-                      }
-                    },
-                    "total": {
-                      "type": "number"
-                    }
-                  },
-                  "required": [
-                    "items",
-                    "total"
-                  ]
-                },
-                "example": {
-                  "items": [
-                    {
-                      "id": "s6ymybas8856dxliw6zkuiov",
-                      "entityType": "user",
-                      "name": "Ciara Blanda",
-                      "firstName": "Ciara",
-                      "lastName": "Blanda",
-                      "email": "ciara.blanda30@yahoo.com",
-                      "slug": "ciarablanda",
-                      "description": null,
-                      "thumbnailUrl": null,
-                      "bannerUrl": null,
-                      "language": "en",
-                      "newsletter": false,
-                      "mfaRequired": false,
-                      "userFlags": {},
-                      "createdAt": "2024-11-11T02:15:51.916Z",
-                      "modifiedAt": "2024-11-11T02:15:51.916Z",
-                      "modifiedBy": null,
-                      "lastStartedAt": "2024-11-11T02:15:51.916Z",
-                      "lastSignInAt": "2024-11-11T02:15:51.916Z",
-                      "lastSeenAt": "2024-11-11T02:15:51.916Z",
-                      "memberships": [
-                        {
-                          "id": "300jor4orrvsgezqoyxfckg3",
-                          "contextType": "organization",
-                          "userId": "ifex0agu87zf240qkfh0faoq",
-                          "organizationId": "jip69qfpb1r33xdbp099f3xi",
-                          "role": "admin",
-                          "order": 2,
-                          "muted": false,
-                          "archived": false
-                        }
-                      ]
-                    },
-                    {
-                      "id": "8n0rfau2m1vkjc8nvp8e05me",
-                      "entityType": "user",
-                      "name": "Carlee Murray",
-                      "firstName": "Carlee",
-                      "lastName": "Murray",
-                      "email": "carlee.murray48@gmail.com",
-                      "slug": "carleemurray75",
-                      "description": null,
-                      "thumbnailUrl": null,
-                      "bannerUrl": null,
-                      "language": "en",
-                      "newsletter": true,
-                      "mfaRequired": false,
-                      "userFlags": {},
-                      "createdAt": "2024-05-19T00:16:13.149Z",
-                      "modifiedAt": "2024-05-19T00:16:13.149Z",
-                      "modifiedBy": null,
-                      "lastStartedAt": "2024-05-19T00:16:13.149Z",
-                      "lastSignInAt": "2024-05-19T00:16:13.149Z",
-                      "lastSeenAt": "2024-05-19T00:16:13.149Z",
-                      "memberships": [
-                        {
-                          "id": "1u44cckbz5av195r4h3wiruz",
-                          "contextType": "organization",
-                          "userId": "44b7wkilwj64zmkwsnsmrzo2",
-                          "organizationId": "zxd2hreylomg4p6xgvt4g11e",
-                          "role": "admin",
-                          "order": 50,
-                          "muted": false,
-                          "archived": false
-                        }
-                      ]
-                    }
-                  ],
-                  "total": 2
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      },
-      "delete": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "deleteUsers",
-        "tags": [
-          "users"
-        ],
-        "summary": "Delete users",
-        "description": "Deletes one or more *users* from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.",
-        "x-guard": [
-          "isAuthenticated",
-          "hasSystemAccess"
-        ],
-        "x-rate-limiter": [],
-        "x-cache": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "ids": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    },
-                    "minItems": 1,
-                    "maxItems": 50
-                  }
-                },
-                "required": [
-                  "ids"
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SuccessWithRejectedItems"
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      }
-    },
-    "/users/{id}": {
-      "get": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "getUser",
-        "tags": [
-          "users"
-        ],
-        "summary": "Get user",
-        "description": "Retrieves a *user* by ID.",
-        "x-guard": [
-          "isAuthenticated"
-        ],
-        "x-rate-limiter": [],
-        "x-cache": [],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string"
-            },
-            "required": true,
-            "name": "id",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "User",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/User"
-                },
-                "example": {
-                  "id": "w6g7sfzetbhjls7m9dg1xzav",
-                  "entityType": "user",
-                  "name": "Franco Corwin",
-                  "firstName": "Franco",
-                  "lastName": "Corwin",
-                  "email": "franco_corwin@gmail.com",
-                  "slug": "francocorwin",
-                  "description": null,
-                  "thumbnailUrl": null,
-                  "bannerUrl": null,
-                  "language": "en",
-                  "newsletter": true,
-                  "mfaRequired": false,
-                  "userFlags": {},
-                  "createdAt": "2024-12-13T11:17:23.643Z",
-                  "modifiedAt": "2024-12-13T11:17:23.643Z",
-                  "modifiedBy": null,
-                  "lastStartedAt": "2024-12-13T11:17:23.643Z",
-                  "lastSignInAt": "2024-12-13T11:17:23.643Z",
-                  "lastSeenAt": "2024-12-13T11:17:23.643Z"
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      },
-      "put": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "updateUser",
-        "tags": [
-          "users"
-        ],
-        "summary": "Update user",
-        "description": "Updates a *user* identified by ID.",
-        "x-guard": [
-          "isAuthenticated",
-          "hasSystemAccess"
-        ],
-        "x-rate-limiter": [],
-        "x-cache": [],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string"
-            },
-            "required": true,
-            "name": "id",
-            "in": "path"
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "bannerUrl": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
-                  },
-                  "firstName": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
-                    "minLength": 2,
-                    "maxLength": 100
-                  },
-                  "lastName": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
-                    "minLength": 2,
-                    "maxLength": 100
-                  },
-                  "language": {
-                    "type": "string",
-                    "enum": [
-                      "en",
-                      "nl"
-                    ]
-                  },
-                  "newsletter": {
-                    "type": "boolean"
-                  },
-                  "thumbnailUrl": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
-                  },
-                  "slug": {
-                    "type": "string",
-                    "minLength": 2,
-                    "maxLength": 100
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "User",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/User"
-                },
-                "example": {
-                  "id": "w6g7sfzetbhjls7m9dg1xzav",
-                  "entityType": "user",
-                  "name": "Franco Corwin",
-                  "firstName": "Franco",
-                  "lastName": "Corwin",
-                  "email": "franco_corwin@gmail.com",
-                  "slug": "francocorwin",
-                  "description": null,
-                  "thumbnailUrl": null,
-                  "bannerUrl": null,
-                  "language": "en",
-                  "newsletter": true,
-                  "mfaRequired": false,
-                  "userFlags": {},
-                  "createdAt": "2024-12-13T11:17:23.643Z",
-                  "modifiedAt": "2024-12-13T11:17:23.643Z",
-                  "modifiedBy": null,
-                  "lastStartedAt": "2024-12-13T11:17:23.643Z",
-                  "lastSignInAt": "2024-12-13T11:17:23.643Z",
-                  "lastSeenAt": "2024-12-13T11:17:23.643Z"
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      }
-    },
     "/organizations": {
       "post": {
         "security": [
@@ -7866,21 +7319,361 @@
         }
       }
     },
-    "/system/presigned-url": {
+    "/system": {
       "get": {
-        "security": [],
-        "operationId": "getPresignedUrl",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getUsers",
         "tags": [
           "system"
         ],
-        "summary": "Get presigned URL",
-        "description": "Generates and returns a presigned URL for uploading files to an S3 bucket.",
+        "summary": "Get list of users",
+        "description": "Returns a list of *users*.",
         "x-guard": [
-          "isPublicAccess"
+          "isAuthenticated",
+          "hasSystemAccess"
         ],
-        "x-rate-limiter": [
-          "presignedUrlLimiter"
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "q",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "id",
+                "name",
+                "email",
+                "role",
+                "createdAt",
+                "lastSeenAt"
+              ],
+              "default": "createdAt"
+            },
+            "required": false,
+            "name": "sort",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "asc"
+            },
+            "required": false,
+            "name": "order",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "admin"
+              ]
+            },
+            "required": false,
+            "name": "role",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "organization"
+              ]
+            },
+            "required": false,
+            "name": "targetEntityType",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "targetEntityId",
+            "in": "query"
+          }
         ],
+        "responses": {
+          "200": {
+            "description": "Users",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "allOf": [
+                          {
+                            "$ref": "#/components/schemas/User"
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "memberships": {
+                                "type": "array",
+                                "items": {
+                                  "$ref": "#/components/schemas/MembershipBase"
+                                }
+                              },
+                              "role": {
+                                "type": "string",
+                                "enum": [
+                                  "admin"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "memberships"
+                            ]
+                          }
+                        ],
+                        "example": {
+                          "id": "w6g7sfzetbhjls7m9dg1xzav",
+                          "entityType": "user",
+                          "name": "Franco Corwin",
+                          "firstName": "Franco",
+                          "lastName": "Corwin",
+                          "email": "franco_corwin@gmail.com",
+                          "slug": "francocorwin",
+                          "description": null,
+                          "thumbnailUrl": null,
+                          "bannerUrl": null,
+                          "language": "en",
+                          "newsletter": true,
+                          "mfaRequired": false,
+                          "userFlags": {},
+                          "createdAt": "2024-12-13T11:17:23.643Z",
+                          "modifiedAt": "2024-12-13T11:17:23.643Z",
+                          "modifiedBy": null,
+                          "lastStartedAt": "2024-12-13T11:17:23.643Z",
+                          "lastSignInAt": "2024-12-13T11:17:23.643Z",
+                          "lastSeenAt": "2024-12-13T11:17:23.643Z"
+                        }
+                      }
+                    },
+                    "total": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "items",
+                    "total"
+                  ]
+                },
+                "example": {
+                  "items": [
+                    {
+                      "id": "s6ymybas8856dxliw6zkuiov",
+                      "entityType": "user",
+                      "name": "Ciara Blanda",
+                      "firstName": "Ciara",
+                      "lastName": "Blanda",
+                      "email": "ciara.blanda30@yahoo.com",
+                      "slug": "ciarablanda",
+                      "description": null,
+                      "thumbnailUrl": null,
+                      "bannerUrl": null,
+                      "language": "en",
+                      "newsletter": false,
+                      "mfaRequired": false,
+                      "userFlags": {},
+                      "createdAt": "2024-11-11T02:15:51.916Z",
+                      "modifiedAt": "2024-11-11T02:15:51.916Z",
+                      "modifiedBy": null,
+                      "lastStartedAt": "2024-11-11T02:15:51.916Z",
+                      "lastSignInAt": "2024-11-11T02:15:51.916Z",
+                      "lastSeenAt": "2024-11-11T02:15:51.916Z",
+                      "memberships": [
+                        {
+                          "id": "300jor4orrvsgezqoyxfckg3",
+                          "contextType": "organization",
+                          "userId": "ifex0agu87zf240qkfh0faoq",
+                          "organizationId": "jip69qfpb1r33xdbp099f3xi",
+                          "role": "admin",
+                          "order": 2,
+                          "muted": false,
+                          "archived": false
+                        }
+                      ]
+                    },
+                    {
+                      "id": "8n0rfau2m1vkjc8nvp8e05me",
+                      "entityType": "user",
+                      "name": "Carlee Murray",
+                      "firstName": "Carlee",
+                      "lastName": "Murray",
+                      "email": "carlee.murray48@gmail.com",
+                      "slug": "carleemurray75",
+                      "description": null,
+                      "thumbnailUrl": null,
+                      "bannerUrl": null,
+                      "language": "en",
+                      "newsletter": true,
+                      "mfaRequired": false,
+                      "userFlags": {},
+                      "createdAt": "2024-05-19T00:16:13.149Z",
+                      "modifiedAt": "2024-05-19T00:16:13.149Z",
+                      "modifiedBy": null,
+                      "lastStartedAt": "2024-05-19T00:16:13.149Z",
+                      "lastSignInAt": "2024-05-19T00:16:13.149Z",
+                      "lastSeenAt": "2024-05-19T00:16:13.149Z",
+                      "memberships": [
+                        {
+                          "id": "1u44cckbz5av195r4h3wiruz",
+                          "contextType": "organization",
+                          "userId": "44b7wkilwj64zmkwsnsmrzo2",
+                          "organizationId": "zxd2hreylomg4p6xgvt4g11e",
+                          "role": "admin",
+                          "order": 50,
+                          "muted": false,
+                          "archived": false
+                        }
+                      ]
+                    }
+                  ],
+                  "total": 2
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      },
+      "delete": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "deleteUsers",
+        "tags": [
+          "system"
+        ],
+        "summary": "Delete users",
+        "description": "Deletes one or more *users* from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.",
+        "x-guard": [
+          "isAuthenticated",
+          "hasSystemAccess"
+        ],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "minItems": 1,
+                    "maxItems": 50
+                  }
+                },
+                "required": [
+                  "ids"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessWithRejectedItems"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/system/{id}": {
+      "put": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "updateUser",
+        "tags": [
+          "system"
+        ],
+        "summary": "Update user",
+        "description": "Updates a *user* identified by ID.",
+        "x-guard": [
+          "isAuthenticated",
+          "hasSystemAccess"
+        ],
+        "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
           {
@@ -7888,35 +7681,94 @@
               "type": "string"
             },
             "required": true,
-            "name": "key",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string"
-                }
-              ],
-              "default": false
-            },
-            "required": false,
-            "name": "isPublic",
-            "in": "query"
+            "name": "id",
+            "in": "path"
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "bannerUrl": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "firstName": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 2,
+                    "maxLength": 100
+                  },
+                  "lastName": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 2,
+                    "maxLength": 100
+                  },
+                  "language": {
+                    "type": "string",
+                    "enum": [
+                      "en",
+                      "nl"
+                    ]
+                  },
+                  "newsletter": {
+                    "type": "boolean"
+                  },
+                  "thumbnailUrl": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "slug": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 100
+                  }
+                }
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
-            "description": "Presigned URL",
+            "description": "User",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "string"
+                  "$ref": "#/components/schemas/User"
                 },
-                "example": "https://s3.amazonaws.com/bucket/uploads/lgiwmb008oicrnov90vfyg5s?X-Amz-Signature=y6Osv8Aux8OzYRD80WpVgzOEyivrH99LUayD8R60gihmFy74ZLvXyfck7snD3jom"
+                "example": {
+                  "id": "w6g7sfzetbhjls7m9dg1xzav",
+                  "entityType": "user",
+                  "name": "Franco Corwin",
+                  "firstName": "Franco",
+                  "lastName": "Corwin",
+                  "email": "franco_corwin@gmail.com",
+                  "slug": "francocorwin",
+                  "description": null,
+                  "thumbnailUrl": null,
+                  "bannerUrl": null,
+                  "language": "en",
+                  "newsletter": true,
+                  "mfaRequired": false,
+                  "userFlags": {},
+                  "createdAt": "2024-12-13T11:17:23.643Z",
+                  "modifiedAt": "2024-12-13T11:17:23.643Z",
+                  "modifiedBy": null,
+                  "lastStartedAt": "2024-12-13T11:17:23.643Z",
+                  "lastSignInAt": "2024-12-13T11:17:23.643Z",
+                  "lastSeenAt": "2024-12-13T11:17:23.643Z"
+                }
               }
             }
           },
@@ -8889,6 +8741,370 @@
         }
       }
     },
+    "/{orgId}/users": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getUsers",
+        "tags": [
+          "users"
+        ],
+        "summary": "Get list of users",
+        "description": "Returns a list of *users* in an organization context.",
+        "x-guard": [
+          "isAuthenticated",
+          "hasOrgAccess"
+        ],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "orgId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "q",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "id",
+                "name",
+                "email",
+                "role",
+                "createdAt",
+                "lastSeenAt"
+              ],
+              "default": "createdAt"
+            },
+            "required": false,
+            "name": "sort",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "asc"
+            },
+            "required": false,
+            "name": "order",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "admin"
+              ]
+            },
+            "required": false,
+            "name": "role",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "organization"
+              ]
+            },
+            "required": false,
+            "name": "targetEntityType",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "targetEntityId",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Users",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "allOf": [
+                          {
+                            "$ref": "#/components/schemas/User"
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "memberships": {
+                                "type": "array",
+                                "items": {
+                                  "$ref": "#/components/schemas/MembershipBase"
+                                }
+                              },
+                              "role": {
+                                "type": "string",
+                                "enum": [
+                                  "admin"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "memberships"
+                            ]
+                          }
+                        ],
+                        "example": {
+                          "id": "w6g7sfzetbhjls7m9dg1xzav",
+                          "entityType": "user",
+                          "name": "Franco Corwin",
+                          "firstName": "Franco",
+                          "lastName": "Corwin",
+                          "email": "franco_corwin@gmail.com",
+                          "slug": "francocorwin",
+                          "description": null,
+                          "thumbnailUrl": null,
+                          "bannerUrl": null,
+                          "language": "en",
+                          "newsletter": true,
+                          "mfaRequired": false,
+                          "userFlags": {},
+                          "createdAt": "2024-12-13T11:17:23.643Z",
+                          "modifiedAt": "2024-12-13T11:17:23.643Z",
+                          "modifiedBy": null,
+                          "lastStartedAt": "2024-12-13T11:17:23.643Z",
+                          "lastSignInAt": "2024-12-13T11:17:23.643Z",
+                          "lastSeenAt": "2024-12-13T11:17:23.643Z"
+                        }
+                      }
+                    },
+                    "total": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "items",
+                    "total"
+                  ]
+                },
+                "example": {
+                  "items": [
+                    {
+                      "id": "s6ymybas8856dxliw6zkuiov",
+                      "entityType": "user",
+                      "name": "Ciara Blanda",
+                      "firstName": "Ciara",
+                      "lastName": "Blanda",
+                      "email": "ciara.blanda30@yahoo.com",
+                      "slug": "ciarablanda",
+                      "description": null,
+                      "thumbnailUrl": null,
+                      "bannerUrl": null,
+                      "language": "en",
+                      "newsletter": false,
+                      "mfaRequired": false,
+                      "userFlags": {},
+                      "createdAt": "2024-11-11T02:15:51.916Z",
+                      "modifiedAt": "2024-11-11T02:15:51.916Z",
+                      "modifiedBy": null,
+                      "lastStartedAt": "2024-11-11T02:15:51.916Z",
+                      "lastSignInAt": "2024-11-11T02:15:51.916Z",
+                      "lastSeenAt": "2024-11-11T02:15:51.916Z",
+                      "memberships": [
+                        {
+                          "id": "300jor4orrvsgezqoyxfckg3",
+                          "contextType": "organization",
+                          "userId": "ifex0agu87zf240qkfh0faoq",
+                          "organizationId": "jip69qfpb1r33xdbp099f3xi",
+                          "role": "admin",
+                          "order": 2,
+                          "muted": false,
+                          "archived": false
+                        }
+                      ]
+                    },
+                    {
+                      "id": "8n0rfau2m1vkjc8nvp8e05me",
+                      "entityType": "user",
+                      "name": "Carlee Murray",
+                      "firstName": "Carlee",
+                      "lastName": "Murray",
+                      "email": "carlee.murray48@gmail.com",
+                      "slug": "carleemurray75",
+                      "description": null,
+                      "thumbnailUrl": null,
+                      "bannerUrl": null,
+                      "language": "en",
+                      "newsletter": true,
+                      "mfaRequired": false,
+                      "userFlags": {},
+                      "createdAt": "2024-05-19T00:16:13.149Z",
+                      "modifiedAt": "2024-05-19T00:16:13.149Z",
+                      "modifiedBy": null,
+                      "lastStartedAt": "2024-05-19T00:16:13.149Z",
+                      "lastSignInAt": "2024-05-19T00:16:13.149Z",
+                      "lastSeenAt": "2024-05-19T00:16:13.149Z",
+                      "memberships": [
+                        {
+                          "id": "1u44cckbz5av195r4h3wiruz",
+                          "contextType": "organization",
+                          "userId": "44b7wkilwj64zmkwsnsmrzo2",
+                          "organizationId": "zxd2hreylomg4p6xgvt4g11e",
+                          "role": "admin",
+                          "order": 50,
+                          "muted": false,
+                          "archived": false
+                        }
+                      ]
+                    }
+                  ],
+                  "total": 2
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/{orgId}/users/{idOrSlug}": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getUser",
+        "tags": [
+          "users"
+        ],
+        "summary": "Get user",
+        "description": "Retrieves a *user* by ID or slug in an organization context.",
+        "x-guard": [
+          "isAuthenticated",
+          "hasOrgAccess"
+        ],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "idOrSlug",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "orgId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                },
+                "example": {
+                  "id": "w6g7sfzetbhjls7m9dg1xzav",
+                  "entityType": "user",
+                  "name": "Franco Corwin",
+                  "firstName": "Franco",
+                  "lastName": "Corwin",
+                  "email": "franco_corwin@gmail.com",
+                  "slug": "francocorwin",
+                  "description": null,
+                  "thumbnailUrl": null,
+                  "bannerUrl": null,
+                  "language": "en",
+                  "newsletter": true,
+                  "mfaRequired": false,
+                  "userFlags": {},
+                  "createdAt": "2024-12-13T11:17:23.643Z",
+                  "modifiedAt": "2024-12-13T11:17:23.643Z",
+                  "modifiedBy": null,
+                  "lastStartedAt": "2024-12-13T11:17:23.643Z",
+                  "lastSignInAt": "2024-12-13T11:17:23.643Z",
+                  "lastSeenAt": "2024-12-13T11:17:23.643Z"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
     "/{orgId}/attachments": {
       "get": {
         "security": [
@@ -9744,6 +9960,65 @@
         "responses": {
           "200": {
             "description": "Success"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/{orgId}/attachments/presigned-url": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getPresignedUrl",
+        "tags": [
+          "attachments"
+        ],
+        "summary": "Get presigned URL",
+        "description": "Generates and returns a presigned URL for accessing a private file in S3. Public files should use the public CDN URL directly.",
+        "x-guard": [
+          "isAuthenticated"
+        ],
+        "x-rate-limiter": [
+          "presignedUrlLimiter"
+        ],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "key",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Presigned URL",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "400": {
             "$ref": "#/components/responses/BadRequestError"

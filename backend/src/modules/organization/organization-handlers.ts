@@ -221,7 +221,7 @@ const organizationRouteHandlers = app
     return ctx.json(data, 200);
   })
   /**
-   * Update an organization by id or slug
+   * Update an organization by id
    */
   .openapi(organizationRoutes.updateOrganization, async (ctx) => {
     const { id } = ctx.req.valid('param');

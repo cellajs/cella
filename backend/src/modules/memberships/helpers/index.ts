@@ -184,15 +184,9 @@ export const insertMemberships = async <T extends BaseEntityModel>(
       : Promise.resolve(),
   ]);
 
-  // Emit a log for each inserted membership (keeps your original semantics)
-  for (const row of insertedTarget) {
-    const entityType = row.contextType;
-    const entityIdColumnKey = appConfig.entityIdColumnKeys[entityType];
-    const entityId = row[entityIdColumnKey];
-    // Event emitted via CDC -> activities table -> activityBus ('membership.created')
-    logEvent('info', `User added to ${entityType}`, { userId: row.userId, [entityIdColumnKey]: entityId });
+  if (insertedTarget.length) {
+    logEvent('info', `${insertedTarget.length} memberships have been created`);
   }
 
-  // Return inserted target rows to the caller
   return insertedTarget;
 };

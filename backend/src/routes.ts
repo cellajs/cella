@@ -25,13 +25,13 @@ const app = baseApp
   .route('/auth/', authPasskeysRouteHandlers)
   .route('/auth/', authOAuthRouteHandlers)
   .route('/me', meRouteHandlers)
-  .route('/users', userRouteHandlers)
   .route('/organizations', organizationRouteHandlers)
   .route('/pages', pageRouteHandlers)
   .route('/entities', entitiesRouteHandlers)
   .route('/system', systemRouteHandlers)
   .route('/requests', requestsRouteHandlers)
   .route('/metrics', metricsRouteHandlers)
+  .route('/:orgId/users', userRouteHandlers)
   .route('/:orgId/attachments', attachmentRouteHandlers)
   .route('/:orgId/memberships', membershipsRouteHandlers);
 

@@ -2,6 +2,5 @@
  * Set entity paths so we can dynamically use them in the app
  */
 export const baseEntityRoutes = {
-  user: '/user/$idOrSlug',
-  organization: '/$idOrSlug/organization',
+  organization: '/$orgIdOrSlug/organization',
 } as const;

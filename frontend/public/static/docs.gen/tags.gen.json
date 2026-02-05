@@ -7,7 +7,7 @@
   {
     "name": "users",
     "description": "Endpoints for managing *users* at the system level. Unlike context entities (such as\n        `organizations`), a `user` is a \"global\" entity and not scoped to a specific context. These endpoints\n        are intended for administrative operations on any user in the system.",
-    "count": 4
+    "count": 2
   },
   {
     "name": "memberships",
@@ -32,7 +32,7 @@
   {
     "name": "system",
     "description": "*System level* endpoints for administrative actions and platform wide functionality. These endpoints\n        support operations such as user invitations, file uploads, and webhook handling.",
-    "count": 4
+    "count": 6
   },
   {
     "name": "auth",
@@ -42,7 +42,7 @@
   {
     "name": "attachments",
     "description": "Endpoints for managing file based *attachments* (e.g. images, PDFs, documents) linked to\n        entities such as organizations or users. Files are uploaded directly by the client; the API handles\n        metadata registration, linking, access, and preview utilities.",
-    "count": 6
+    "count": 7
   },
   {
     "name": "pages",

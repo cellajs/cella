@@ -5,7 +5,7 @@ import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import type { ContextEntityData } from '~/modules/entities/types';
 import { Badge } from '~/modules/ui/badge';
 import { Card, CardContent, CardFooter } from '~/modules/ui/card';
-import { getEntityRoute } from '~/routes-resolver';
+import { getContextEntityRoute } from '~/routes-resolver';
 import { dateShort } from '~/utils/date-short';
 import { numberToColorClass } from '~/utils/number-to-color-class';
 
@@ -13,7 +13,7 @@ import { numberToColorClass } from '~/utils/number-to-color-class';
  * Tile component to display an entity in a grid layout.
  */
 export const EntityGridTile = ({ entity }: { entity: ContextEntityData }) => {
-  const { to, params, search } = getEntityRoute(entity);
+  const { to, params, search } = getContextEntityRoute(entity);
   return (
     <Card className="overflow-hidden px-0 sm:px-0 pt-0 sm:pt-0 transition [&:has(.tile-link:hover)]:shadow-sm shadow-xs [&:has(.tile-link:focus-visible)]:ring-2 [&:has(.tile-link:active)]:translate-y-[.05rem] [&:has(.tile-link:focus-visible)]:ring-ring [&:has(.tile-link:focus-visible)]:ring-offset-2 [&:has(.tile-link:focus-visible)]:ring-offset-background">
       <CardContent className="p-0 sm:p-0">

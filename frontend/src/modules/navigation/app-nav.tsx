@@ -2,16 +2,13 @@ import { useNavigate } from '@tanstack/react-router';
 import { useEffect } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useHotkeys } from '~/hooks/use-hot-keys';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import BottomBarNav from '~/modules/navigation/bottom-bar-nav';
 import FloatingNav from '~/modules/navigation/floating-nav/floating-nav';
 import SidebarNav from '~/modules/navigation/sidebar-nav';
 import type { NavItem, TriggerNavItemFn } from '~/modules/navigation/types';
 import { navItems } from '~/nav-config';
-import router from '~/routes/router';
 import { useNavigationStore } from '~/store/navigation';
-import { useUIStore } from '~/store/ui';
 
 // Sheet class for nav sheets - positioned next to sidebar icon bar on sm+, pushes content when keepMenuOpen
 export const navSheetClassName =
@@ -21,7 +18,6 @@ export const navSheetClassName =
  * - Renders floating, sidebar, or bottom bar nav.
  * - Manages navigation item triggering, including routing and sheet handling.
  * - Sets up hotkeys for quick navigation access.
- * - Listens to route changes to close dialogs and sheets.
  */
 function AppNav() {
   const navigate = useNavigate();
@@ -32,8 +28,6 @@ function AppNav() {
 
   const navSheetOpen = useNavigationStore((state) => state.navSheetOpen);
   const keepOpenPreference = useNavigationStore((state) => state.keepOpenPreference);
-  const setFocusView = useUIStore((state) => state.setFocusView);
-  const setNavLoading = useNavigationStore((state) => state.setNavLoading);
   const setNavSheetOpen = useNavigationStore((state) => state.setNavSheetOpen);
 
   const triggerNavItem: TriggerNavItemFn = (id, ref, options) => {
@@ -95,23 +89,6 @@ function AppNav() {
     if (isDesktop && keepOpenPreference && !navSheetOpen) {
       triggerNavItem('menu', undefined, { skipAnimation: true });
     }
-  }, []);
-
-  // Listen to route changes to close dialogs and reset focus view
-  useEffect(() => {
-    router.subscribe('onBeforeLoad', ({ pathChanged }) => {
-      if (!pathChanged) return;
-
-      const uiState = useUIStore.getState();
-      if (uiState.focusView) setFocusView(false);
-
-      useDialoger.getState().remove();
-      // Note: Sheet cleanup handled by Sheeter provider (respects keepMenuOpen)
-
-      // Set nav bar loading state
-      setNavLoading(true);
-    });
-    router.subscribe('onLoad', () => setNavLoading(false));
   }, []);
 
   return (

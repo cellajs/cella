@@ -1,5 +1,5 @@
 import { onlineManager } from '@tanstack/react-query';
-import { Link, useNavigate } from '@tanstack/react-router';
+import { useNavigate } from '@tanstack/react-router';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { UserBase } from '~/api.gen';
@@ -8,32 +8,32 @@ import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster/service';
 import { useFindInListCache } from '~/query/basic';
 import { cn } from '~/utils/cn';
+import { Button } from '../ui/button';
 
 interface BaseProps {
   tabIndex: number;
   compactable?: boolean;
-  orgIdOrSlug?: string;
   className?: string;
 }
 
 /**
  * Render a user cell with avatar and name, wrapped in a link to open user sheet.
  */
-export const UserCell = ({ user, tabIndex, compactable, orgIdOrSlug, className }: BaseProps & { user: UserBase }) => {
+export const UserCell = ({ user, tabIndex, compactable, className }: BaseProps & { user: UserBase }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const cellRef = useRef<HTMLAnchorElement | null>(null);
+  const cellRef = useRef<HTMLButtonElement | null>(null);
 
   const setTriggerRef = useSheeter.getState().setTriggerRef;
 
   return (
-    <Link
+    <Button
       ref={cellRef}
-      to={orgIdOrSlug ? '/$orgIdOrSlug/user/$idOrSlug' : '/user/$idOrSlug'}
+      variant="cell"
+      size="cell"
+      className={className}
       tabIndex={tabIndex}
       draggable="false"
-      params={{ idOrSlug: user.slug, ...(orgIdOrSlug ? { orgIdOrSlug } : {}) }}
-      className={cn('flex space-x-2 items-center outline-0 ring-0 group truncate py-0.5', className)}
       onClick={(e) => {
         if (!onlineManager.isOnline()) {
           e.preventDefault();
@@ -68,7 +68,7 @@ export const UserCell = ({ user, tabIndex, compactable, orgIdOrSlug, className }
       >
         {user.name || '-'}
       </span>
-    </Link>
+    </Button>
   );
 };
 

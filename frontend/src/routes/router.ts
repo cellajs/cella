@@ -1,5 +1,8 @@
 import { createRouter } from '@tanstack/react-router';
+import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { routeTree } from '~/routes/route-tree';
+import { useNavigationStore } from '~/store/navigation';
+import { useUIStore } from '~/store/ui';
 
 /**
  * Our Router instance
@@ -14,6 +17,21 @@ const router = createRouter({
   defaultPreload: false,
   context: {},
   defaultPendingMinMs: 0,
+});
+
+// Router lifecycle subscriptions
+router.subscribe('onBeforeLoad', ({ pathChanged }) => {
+  if (!pathChanged) return;
+
+  if (useUIStore.getState().focusView) useUIStore.getState().setFocusView(false);
+  useDialoger.getState().remove();
+  // Note: Sheet cleanup handled by Sheeter provider (respects keepMenuOpen)
+
+  useNavigationStore.getState().setNavLoading(true);
+});
+
+router.subscribe('onLoad', () => {
+  useNavigationStore.getState().setNavLoading(false);
 });
 
 // Register the router instance for type inference

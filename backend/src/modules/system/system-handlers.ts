@@ -1,32 +1,35 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
-import { and, eq, inArray, isNull, or } from 'drizzle-orm';
+import { and, count, eq, ilike, inArray, isNull, or, sql } from 'drizzle-orm';
 import i18n from 'i18next';
 import { appConfig } from 'shared';
 import { db } from '#/db/db';
-import { attachmentsTable } from '#/db/schema/attachments';
 import { emailsTable } from '#/db/schema/emails';
+import { lastSeenTable } from '#/db/schema/last-seen';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 import { requestsTable } from '#/db/schema/requests';
+import { systemRolesTable } from '#/db/schema/system-roles';
 import { tokensTable } from '#/db/schema/tokens';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { usersTable } from '#/db/schema/users';
 import { env } from '#/env';
-import { type Env, getContextUser, getContextUserSystemRole } from '#/lib/context';
+import { type Env, getContextUser } from '#/lib/context';
 import { AppError } from '#/lib/error';
 import { mailer } from '#/lib/mailer';
-import { getSignedUrlFromKey } from '#/lib/signed-url';
-import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/helpers/session';
+import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import { replaceSignedSrcs } from '#/modules/system/helpers/get-signed-src';
 import systemRoutes from '#/modules/system/system-routes';
-import { checkPermission } from '#/permissions';
+import { userSelect } from '#/modules/user/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
+import { getIsoDate } from '#/utils/iso-date';
 import { logError, logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
+import { getOrderColumn } from '#/utils/order-column';
 import { encodeLowerCased } from '#/utils/oslo';
 import { slugFromEmail } from '#/utils/slug-from-email';
+import { prepareStringForILikeFilter } from '#/utils/sql';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { NewsletterEmail, SystemInviteEmail } from '../../../emails';
 
@@ -163,56 +166,152 @@ const systemRouteHandlers = app
     return ctx.json({ success: true, rejectedItemIds, invitesSentCount: recipients.length }, 200);
   })
   /**
-   * Get presigned URL
+   * Get list of users (system admin only)
    */
-  .openapi(systemRoutes.getPresignedUrl, async (ctx) => {
-    const { key, isPublic: queryPublic } = ctx.req.valid('query');
+  .openapi(systemRoutes.getUsers, async (ctx) => {
+    const { q, sort, order, offset, limit, role, targetEntityId, targetEntityType } = ctx.req.valid('query');
 
-    // TODO-017: can this tight coupling with attachments module be prevented?
-    // TODO-017b: perhaps revisit the whole process with uploadtoken and presigned urls into a more dynamic flow
-    // and embed into attachments
-    // Or move this handler to attachments module?
-    const [attachment] = await db
-      .select()
-      .from(attachmentsTable)
-      .where(
-        or(
-          eq(attachmentsTable.originalKey, key),
-          eq(attachmentsTable.thumbnailKey, key),
-          eq(attachmentsTable.convertedKey, key),
-        ),
-      )
-      .limit(1);
+    const filters = [
+      // Filter by role if provided
+      ...(role ? [eq(systemRolesTable.role, role)] : []),
 
-    // Use attachment record if found, otherwise use query param (defaults to false for privacy)
-    const { bucketName, public: isPublic } = attachment ?? {
-      public: queryPublic,
-      bucketName: queryPublic ? appConfig.s3.publicBucket : appConfig.s3.privateBucket,
-    };
+      // Filter by search query if provided
+      ...(q
+        ? [
+            or(
+              ilike(usersTable.name, prepareStringForILikeFilter(q)),
+              ilike(usersTable.email, prepareStringForILikeFilter(q)),
+            ),
+          ]
+        : []),
+    ];
 
-    if (!isPublic) {
-      // Get session id from cookie
-      const { sessionToken } = await getParsedSessionCookie(ctx);
-      const { user } = await validateSession(sessionToken);
-      const userSystemRole = getContextUserSystemRole();
+    // Base user query with ordering
+    // Note: lastSeenAt requires subquery since it's in user_activity table
+    const orderColumn = getOrderColumn(sort, usersTable.id, order, {
+      id: usersTable.id,
+      name: usersTable.name,
+      email: usersTable.email,
+      createdAt: usersTable.createdAt,
+      lastSeenAt: sql`(SELECT ${lastSeenTable.lastSeenAt} FROM ${lastSeenTable} WHERE ${lastSeenTable.userId} = ${usersTable.id})`,
+      role: systemRolesTable.role,
+    });
 
-      if (attachment) {
-        const memberships = await db
-          .select(membershipBaseSelect)
-          .from(membershipsTable)
-          .where(eq(membershipsTable.userId, user.id));
+    const usersQuerySelect = { ...userSelect, role: systemRolesTable.role };
 
-        const isSystemAdmin = userSystemRole === 'admin';
-        const { isAllowed } = checkPermission(memberships, 'read', attachment);
+    const usersQuery = db
+      .select(usersQuerySelect)
+      .from(usersTable)
+      .leftJoin(systemRolesTable, eq(usersTable.id, systemRolesTable.userId))
+      .where(and(...filters))
+      .orderBy(orderColumn);
 
-        if (!isSystemAdmin && !isAllowed)
-          throw new AppError(403, 'forbidden', 'warn', { entityType: attachment.entityType });
-      }
+    // Total count
+    const [{ total }] = await db.select({ total: count() }).from(usersQuery.as('users'));
+
+    const users = await usersQuery.limit(limit).offset(offset);
+
+    // If no users, return empty result early
+    if (!users.length) return ctx.json({ items: [], total }, 200);
+
+    const userIds = users.map((u) => u.id);
+
+    // Fetch memberships for all these users
+    const membershipFilters = [inArray(membershipsTable.userId, userIds)];
+    if (targetEntityId && targetEntityType) {
+      const entityFieldId = appConfig.entityIdColumnKeys[targetEntityType];
+      membershipFilters.push(
+        eq(membershipsTable.contextType, targetEntityType),
+        eq(membershipsTable[entityFieldId], targetEntityId),
+      );
     }
 
-    const url = await getSignedUrlFromKey(key, { bucketName, isPublic });
+    const memberships = await db
+      .select(membershipBaseSelect)
+      .from(membershipsTable)
+      .where(and(...membershipFilters));
 
-    return ctx.json(url, 200);
+    // Group memberships by userId in a type-safe way
+    const membershipsByUser = memberships.reduce<Record<string, typeof memberships>>((acc, m) => {
+      if (!acc[m.userId]) acc[m.userId] = [];
+      acc[m.userId].push(m);
+      return acc;
+    }, {});
+
+    // Attach memberships to users
+    const items = users.map((user) => ({
+      ...user,
+      memberships: membershipsByUser[user.id] ?? [],
+    }));
+
+    return ctx.json({ items, total }, 200);
+  })
+  /**
+   * Delete users (system admin only)
+   */
+  .openapi(systemRoutes.deleteUsers, async (ctx) => {
+    const { ids } = ctx.req.valid('json');
+
+    // Convert the user ids to an array
+    const toDeleteIds = Array.isArray(ids) ? ids : [ids];
+    if (!toDeleteIds.length) throw new AppError(400, 'invalid_request', 'error', { entityType: 'user' });
+
+    // Fetch users by IDs to verify they exist
+    const targets = await db.select({ id: usersTable.id }).from(usersTable).where(inArray(usersTable.id, toDeleteIds));
+
+    const foundIds = targets.map(({ id }) => id);
+    const rejectedItems = toDeleteIds.filter((id) => !foundIds.includes(id));
+
+    // If no valid users found, return error
+    if (!foundIds.length) throw new AppError(404, 'not_found', 'warn', { entityType: 'user' });
+
+    // Delete users
+    await db.delete(usersTable).where(inArray(usersTable.id, foundIds));
+
+    logEvent('info', 'Users deleted', foundIds);
+
+    return ctx.json({ success: true, rejectedItems }, 200);
+  })
+  /**
+   * Update a user by id
+   */
+  .openapi(systemRoutes.updateUser, async (ctx) => {
+    const { id } = ctx.req.valid('param');
+
+    const user = getContextUser();
+
+    const [targetUser] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, id)).limit(1);
+
+    if (!targetUser) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { user: id } });
+
+    const { bannerUrl, firstName, lastName, language, newsletter, thumbnailUrl, slug } = ctx.req.valid('json');
+
+    // Check if slug is available
+    if (slug && slug !== targetUser.slug) {
+      const slugAvailable = await checkSlugAvailable(slug);
+      if (!slugAvailable) throw new AppError(409, 'slug_exists', 'warn', { entityType: 'user', meta: { slug } });
+    }
+
+    const [updatedUser] = await db
+      .update(usersTable)
+      .set({
+        bannerUrl,
+        firstName,
+        lastName,
+        language,
+        newsletter,
+        thumbnailUrl,
+        slug,
+        name: [firstName, lastName].filter(Boolean).join(' ') || slug,
+        modifiedAt: getIsoDate(),
+        modifiedBy: user.id,
+      })
+      .where(eq(usersTable.id, targetUser.id))
+      .returning();
+
+    logEvent('info', 'User updated', { userId: updatedUser.id });
+
+    return ctx.json(updatedUser, 200);
   })
   /**
    * Paddle webhook

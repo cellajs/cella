@@ -2036,201 +2036,6 @@ export type UnsubscribeMeErrors = {
 
 export type UnsubscribeMeError = UnsubscribeMeErrors[keyof UnsubscribeMeErrors];
 
-export type DeleteUsersData = {
-  body: {
-    ids: Array<string>;
-  };
-  path?: never;
-  query?: never;
-  url: '/users';
-};
-
-export type DeleteUsersErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type DeleteUsersError = DeleteUsersErrors[keyof DeleteUsersErrors];
-
-export type DeleteUsersResponses = {
-  /**
-   * Success
-   */
-  200: SuccessWithRejectedItems;
-};
-
-export type DeleteUsersResponse = DeleteUsersResponses[keyof DeleteUsersResponses];
-
-export type GetUsersData = {
-  body?: never;
-  path?: never;
-  query?: {
-    q?: string;
-    sort?: 'id' | 'name' | 'email' | 'role' | 'createdAt' | 'lastSeenAt';
-    order?: 'asc' | 'desc';
-    offset?: string;
-    limit?: string;
-    role?: 'admin';
-    targetEntityType?: 'organization';
-    targetEntityId?: string;
-  };
-  url: '/users';
-};
-
-export type GetUsersErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type GetUsersError = GetUsersErrors[keyof GetUsersErrors];
-
-export type GetUsersResponses = {
-  /**
-   * Users
-   */
-  200: {
-    items: Array<
-      User & {
-        memberships: Array<MembershipBase>;
-        role?: 'admin';
-      }
-    >;
-    total: number;
-  };
-};
-
-export type GetUsersResponse = GetUsersResponses[keyof GetUsersResponses];
-
-export type GetUserData = {
-  body?: never;
-  path: {
-    id: string;
-  };
-  query?: never;
-  url: '/users/{id}';
-};
-
-export type GetUserErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type GetUserError = GetUserErrors[keyof GetUserErrors];
-
-export type GetUserResponses = {
-  /**
-   * User
-   */
-  200: User;
-};
-
-export type GetUserResponse = GetUserResponses[keyof GetUserResponses];
-
-export type UpdateUserData = {
-  body?: {
-    bannerUrl?: string | null;
-    firstName?: string | null;
-    lastName?: string | null;
-    language?: 'en' | 'nl';
-    newsletter?: boolean;
-    thumbnailUrl?: string | null;
-    slug?: string;
-  };
-  path: {
-    id: string;
-  };
-  query?: never;
-  url: '/users/{id}';
-};
-
-export type UpdateUserErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type UpdateUserError = UpdateUserErrors[keyof UpdateUserErrors];
-
-export type UpdateUserResponses = {
-  /**
-   * User
-   */
-  200: User;
-};
-
-export type UpdateUserResponse = UpdateUserResponses[keyof UpdateUserResponses];
-
 export type DeleteOrganizationsData = {
   body: {
     ids: Array<string>;
@@ -2954,17 +2759,16 @@ export type SystemInviteResponses = {
 
 export type SystemInviteResponse = SystemInviteResponses[keyof SystemInviteResponses];
 
-export type GetPresignedUrlData = {
-  body?: never;
-  path?: never;
-  query: {
-    key: string;
-    isPublic?: boolean | string;
+export type DeleteUsersData = {
+  body: {
+    ids: Array<string>;
   };
-  url: '/system/presigned-url';
+  path?: never;
+  query?: never;
+  url: '/system';
 };
 
-export type GetPresignedUrlErrors = {
+export type DeleteUsersErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -2987,16 +2791,125 @@ export type GetPresignedUrlErrors = {
   429: TooManyRequestsError;
 };
 
-export type GetPresignedUrlError = GetPresignedUrlErrors[keyof GetPresignedUrlErrors];
+export type DeleteUsersError = DeleteUsersErrors[keyof DeleteUsersErrors];
 
-export type GetPresignedUrlResponses = {
+export type DeleteUsersResponses = {
   /**
-   * Presigned URL
+   * Success
    */
-  200: string;
+  200: SuccessWithRejectedItems;
 };
 
-export type GetPresignedUrlResponse = GetPresignedUrlResponses[keyof GetPresignedUrlResponses];
+export type DeleteUsersResponse = DeleteUsersResponses[keyof DeleteUsersResponses];
+
+export type GetUsersData = {
+  body?: never;
+  path?: never;
+  query?: {
+    q?: string;
+    sort?: 'id' | 'name' | 'email' | 'role' | 'createdAt' | 'lastSeenAt';
+    order?: 'asc' | 'desc';
+    offset?: string;
+    limit?: string;
+    role?: 'admin';
+    targetEntityType?: 'organization';
+    targetEntityId?: string;
+  };
+  url: '/system';
+};
+
+export type GetUsersErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetUsersError = GetUsersErrors[keyof GetUsersErrors];
+
+export type GetUsersResponses = {
+  /**
+   * Users
+   */
+  200: {
+    items: Array<
+      User & {
+        memberships: Array<MembershipBase>;
+        role?: 'admin';
+      }
+    >;
+    total: number;
+  };
+};
+
+export type GetUsersResponse = GetUsersResponses[keyof GetUsersResponses];
+
+export type UpdateUserData = {
+  body?: {
+    bannerUrl?: string | null;
+    firstName?: string | null;
+    lastName?: string | null;
+    language?: 'en' | 'nl';
+    newsletter?: boolean;
+    thumbnailUrl?: string | null;
+    slug?: string;
+  };
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/system/{id}';
+};
+
+export type UpdateUserErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type UpdateUserError = UpdateUserErrors[keyof UpdateUserErrors];
+
+export type UpdateUserResponses = {
+  /**
+   * User
+   */
+  200: User;
+};
+
+export type UpdateUserResponse = UpdateUserResponses[keyof UpdateUserResponses];
 
 export type PaddleWebhookData = {
   body?: unknown;
@@ -3581,6 +3494,110 @@ export type GetSyncMetricsResponses = {
 
 export type GetSyncMetricsResponse = GetSyncMetricsResponses[keyof GetSyncMetricsResponses];
 
+export type GetUsers2Data = {
+  body?: never;
+  path: {
+    orgId: string;
+  };
+  query?: {
+    q?: string;
+    sort?: 'id' | 'name' | 'email' | 'role' | 'createdAt' | 'lastSeenAt';
+    order?: 'asc' | 'desc';
+    offset?: string;
+    limit?: string;
+    role?: 'admin';
+    targetEntityType?: 'organization';
+    targetEntityId?: string;
+  };
+  url: '/{orgId}/users';
+};
+
+export type GetUsers2Errors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetUsers2Error = GetUsers2Errors[keyof GetUsers2Errors];
+
+export type GetUsers2Responses = {
+  /**
+   * Users
+   */
+  200: {
+    items: Array<
+      User & {
+        memberships: Array<MembershipBase>;
+        role?: 'admin';
+      }
+    >;
+    total: number;
+  };
+};
+
+export type GetUsers2Response = GetUsers2Responses[keyof GetUsers2Responses];
+
+export type GetUserData = {
+  body?: never;
+  path: {
+    idOrSlug: string;
+    orgId: string;
+  };
+  query?: never;
+  url: '/{orgId}/users/{idOrSlug}';
+};
+
+export type GetUserErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetUserError = GetUserErrors[keyof GetUserErrors];
+
+export type GetUserResponses = {
+  /**
+   * User
+   */
+  200: User;
+};
+
+export type GetUserResponse = GetUserResponses[keyof GetUserResponses];
+
 export type DeleteAttachmentsData = {
   body: {
     ids: Array<string>;
@@ -3902,6 +3919,49 @@ export type RedirectToAttachmentResponses = {
    */
   200: unknown;
 };
+
+export type GetPresignedUrlData = {
+  body?: never;
+  path?: never;
+  query: {
+    key: string;
+  };
+  url: '/{orgId}/attachments/presigned-url';
+};
+
+export type GetPresignedUrlErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetPresignedUrlError = GetPresignedUrlErrors[keyof GetPresignedUrlErrors];
+
+export type GetPresignedUrlResponses = {
+  /**
+   * Presigned URL
+   */
+  200: string;
+};
+
+export type GetPresignedUrlResponse = GetPresignedUrlResponses[keyof GetPresignedUrlResponses];
 
 export type DeleteMembershipsData = {
   body: {

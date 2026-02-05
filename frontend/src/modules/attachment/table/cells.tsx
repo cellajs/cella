@@ -5,10 +5,11 @@ import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import useDownloader from 'react-use-downloader';
 import { appConfig } from 'shared';
-import { type Attachment, getPresignedUrl } from '~/api.gen';
+import type { Attachment } from '~/api.gen';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import AttachmentPreview from '~/modules/attachment/attachment-preview';
 import DeleteAttachments from '~/modules/attachment/delete-attachments';
+import { getFileUrl } from '~/modules/attachment/helpers';
 import { useAttachmentUrl } from '~/modules/attachment/hooks/use-attachment-url';
 import { useBlobUploadStatus } from '~/modules/attachment/hooks/use-blob-sync-status';
 import type { EllipsisOption } from '~/modules/common/data-table/table-ellipsis';
@@ -144,11 +145,7 @@ export const DownloadCell = ({ row, tabIndex }: DownloadCellProps) => {
       aria-label="Download"
       data-tooltip="true"
       data-tooltip-content={t('common:download')}
-      onClick={() =>
-        getPresignedUrl({ query: { key: row.originalKey, isPublic: row.public } }).then((url) =>
-          download(url, row.filename),
-        )
-      }
+      onClick={() => getFileUrl(row.originalKey, row.public).then((url) => download(url, row.filename))}
     >
       {isInProgress ? <Spinner className="size-4 text-foreground/80" noDelay /> : <DownloadIcon size={16} />}
     </Button>

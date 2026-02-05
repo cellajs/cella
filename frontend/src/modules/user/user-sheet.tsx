@@ -1,16 +1,11 @@
-import { WifiOffIcon } from 'lucide-react';
-import { useOnlineManager } from '~/hooks/use-online-manager';
-import ContentPlaceholder from '~/modules/common/content-placeholder';
-import UserProfilePage from '~/modules/user/profile-page';
+import { UserBase } from '~/api.gen';
+import UserProfile from './user-profile';
 
-function UserSheet({ idOrSlug, orgIdOrSlug }: { idOrSlug: string; orgIdOrSlug?: string }) {
-  const { isOnline } = useOnlineManager();
-
-  return isOnline ? (
-    <UserProfilePage idOrSlug={idOrSlug} orgIdOrSlug={orgIdOrSlug} isSheet />
-  ) : (
-    <ContentPlaceholder icon={WifiOffIcon} title="common:offline.text" />
-  );
+/**
+ * Sheet wrapper for user profile.
+ */
+function UserSheet({ user }: { user: UserBase }) {
+  return <UserProfile user={user} isSheet />;
 }
 
 export default UserSheet;

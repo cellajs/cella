@@ -21,8 +21,7 @@ export type AttachmentDialogItem = Partial<CarouselItemData> & { id: string };
  */
 function AttachmentDialog() {
   const removeDialog = useDialoger((state) => state.remove);
-  const { orgIdOrSlug: baseOrgIdOrSlug, idOrSlug } = useParams({ strict: false });
-  const orgIdOrSlug = baseOrgIdOrSlug || idOrSlug;
+  const { orgIdOrSlug } = useParams({ strict: false });
 
   // Only subscribe to groupId changes - this determines which attachments to show
   const groupId = useSearch({ strict: false, select: (s) => (s as { groupId?: string }).groupId });

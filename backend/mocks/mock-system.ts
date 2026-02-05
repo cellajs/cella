@@ -46,13 +46,3 @@ export const mockSystemInviteResponse = (key = 'system-invite:default') =>
     rejectedItemIds: [] as string[],
     invitesSentCount: 2,
   }));
-
-/**
- * Generates a mock presigned URL response.
- * Used for getPresignedUrl endpoint example.
- */
-export const mockPresignedUrlResponse = (key = 'presigned-url:default') =>
-  withFakerSeed(
-    key,
-    () => `https://s3.amazonaws.com/bucket/uploads/${mockNanoid()}?X-Amz-Signature=${faker.string.alphanumeric(64)}`,
-  );

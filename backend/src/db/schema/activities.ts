@@ -8,7 +8,7 @@ import {
   generateActivityContextIndexes,
 } from '#/db/utils/generate-activity-context-columns';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
-import type { TxBase } from '#/db/utils/tx-columns';
+import type { TxBase } from '#/schemas/tx-base-schema';
 import { activityActions } from '#/sync/activity-bus';
 import { nanoid } from '#/utils/nanoid';
 import { usersTable } from './users';

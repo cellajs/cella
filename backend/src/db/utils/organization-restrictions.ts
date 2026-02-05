@@ -2,6 +2,9 @@ import { appConfig, type EntityType } from 'shared';
 
 export type Restrictions = Record<Exclude<EntityType, 'organization'>, number>;
 
+/**
+ * Generates default restrictions for all entity types except 'organization' based on the appConfig.
+ */
 export const defaultRestrictions = (): Restrictions => {
   const defaultConfig: Partial<Restrictions> = appConfig.defaultOrganizationRestrictions;
 

@@ -3,8 +3,8 @@ import { createSelectSchema } from 'drizzle-zod';
 import { appConfig } from 'shared';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { membershipsTable } from '#/db/schema/memberships';
-import { userBaseSchema } from '#/modules/user/user-schema-base';
 import { contextEntityTypeSchema, idSchema, paginationQuerySchema, validEmailSchema } from '#/schemas';
+import { userBaseSchema } from '#/schemas/user-schema-base';
 import {
   mockInactiveMembershipResponse,
   mockMembershipBase,

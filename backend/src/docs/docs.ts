@@ -2,16 +2,16 @@ import fs from 'node:fs/promises';
 import type { OpenAPIHono } from '@hono/zod-openapi';
 import { Scalar } from '@scalar/hono-api-reference';
 import { appConfig } from 'shared';
-import { txBaseSchema } from '#/db/utils/tx-columns';
 import { buildExtensionRegistry } from '#/docs/openapi-extensions';
 import { openapiTags, registerAppSchema } from '#/docs/tags-config';
 import { getExtensionValueDescriptions } from '#/docs/x-middleware';
 import type { Env } from '#/lib/context';
 import { contextEntityBaseSchema } from '#/modules/entities/entities-schema-base';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
-import { userBaseSchema } from '#/modules/user/user-schema-base';
 import { errorResponses, registerAllErrorResponses } from '#/schemas';
 import { publicStreamActivitySchema, streamNotificationSchema } from '#/schemas/stream-schemas';
+import { txBaseSchema } from '#/schemas/tx-base-schema';
+import { userBaseSchema } from '#/schemas/user-schema-base';
 import { checkMark } from '#/utils/console';
 
 /**

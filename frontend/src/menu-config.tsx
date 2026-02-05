@@ -16,7 +16,7 @@ function createOrganizationAction(triggerRef: RefObject<HTMLButtonElement | null
   const callback = (args: CallbackArgs<Organization>) => {
     useDialoger.getState().remove('create-organization');
     if (args.status === 'success')
-      router.navigate({ to: '/$idOrSlug/organization/members', params: { idOrSlug: args.data.slug } });
+      router.navigate({ to: '/$orgIdOrSlug/organization/members', params: { orgIdOrSlug: args.data.slug } });
   };
 
   return useDialoger.getState().create(<CreateOrganizationForm dialog callback={callback} />, {

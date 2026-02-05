@@ -14,7 +14,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { usersListQueryOptions } from '~/modules/user/query';
 import { getContextEntityTypeToListQueries } from '~/offline-config';
-import { getEntityRoute } from '~/routes-resolver';
+import { getContextEntityRoute } from '~/routes-resolver';
 import { useNavigationStore } from '~/store/navigation';
 
 // Define searchable entity types
@@ -100,8 +100,13 @@ export const AppSearch = () => {
     // Update recent searches with the search value
     updateRecentSearches(searchValue);
 
-    const { to, params, search } = getEntityRoute(item);
-    navigate({ to, params, search, resetScroll: false });
+    // For users, open sheet
+    if (item.entityType === 'user') {
+      navigate({ to: '.', search: (prev) => ({ ...prev, userSheetId: item.id }), resetScroll: false });
+    } else {
+      const { to, params, search } = getContextEntityRoute(item);
+      navigate({ to, params, search, resetScroll: false });
+    }
 
     useDialoger.getState().remove();
   };

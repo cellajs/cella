@@ -305,6 +305,7 @@
   "nl": "Nederlands",
   "no_deployments_yet": "No deployments have been made yet",
   "no_domains_yet": "No custom domains configured yet",
+  "no_organization_context": "Visit an organization first to view user profiles.",
   "no_resource_found": "No {{resource}} found",
   "no_resource_yet": "No {{resource}} yet",
   "no_repositories": "No repositories connected",

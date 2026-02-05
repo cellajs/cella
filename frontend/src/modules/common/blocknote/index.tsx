@@ -20,9 +20,9 @@ import {
 } from 'react';
 import { WebrtcProvider } from 'y-webrtc';
 import * as Y from 'yjs';
-import { getPresignedUrl } from '~/api.gen';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
+import { getFileUrl } from '~/modules/attachment/helpers';
 import { customSchema } from '~/modules/common/blocknote/blocknote-config';
 import { Mention } from '~/modules/common/blocknote/custom-elements/mention';
 import { CustomFilePanel } from '~/modules/common/blocknote/custom-file-panel';
@@ -161,10 +161,10 @@ function BlockNote({
         }
       }
 
-      // Fall back to presigned URL from cloud
-      // Use publicFiles prop if set, otherwise let backend infer from attachment record
-      const isPublic = publicFiles ?? baseFilePanelProps?.isPublic;
-      return getPresignedUrl({ query: { key, isPublic } });
+      // Fall back to cloud URL
+      // Use publicFiles prop if set, otherwise default to private
+      const isPublic = publicFiles ?? baseFilePanelProps?.isPublic ?? false;
+      return getFileUrl(key, isPublic);
     },
   });
 

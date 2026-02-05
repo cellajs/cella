@@ -17,7 +17,7 @@ import {
   BreadcrumbSeparator,
 } from '~/modules/ui/breadcrumb';
 import { useFindInListCache } from '~/query/basic';
-import { baseEntityRoutes } from '~/routes-config';
+import { getContextEntityRoute } from '~/routes-resolver';
 
 type PageHeaderProps = Omit<PageCoverProps, 'id' | 'url'> & {
   entity: ContextEntityData | UserBase;
@@ -31,12 +31,15 @@ function PageHeader({ entity, panel, parent, disableScroll, ...coverProps }: Pag
   const scrollToRef = useRef<HTMLDivElement>(null);
 
   // Find parent entity from cache
-  const parentData = useFindInListCache<ContextEntityBase | UserBase>(parent ? [parent.entityType] : [], (item) =>
+  const parentData = useFindInListCache<ContextEntityBase>(parent ? [parent.entityType] : [], (item) =>
     parent ? item.id === parent.idOrSlug || item.slug === parent.idOrSlug : false,
   );
 
   // Scroll to page header on load
   if (!disableScroll) useScrollTo(scrollToRef);
+
+  // Get parent route using app-specific resolver (handles hierarchy differences per fork)
+  const parentRoute = parentData ? getContextEntityRoute(parentData) : null;
 
   return (
     <div className="w-full relative">
@@ -81,11 +84,11 @@ function PageHeader({ entity, panel, parent, disableScroll, ...coverProps }: Pag
                 <BreadcrumbSeparator className="text-foreground/50">
                   <ChevronRightIcon size={12} />
                 </BreadcrumbSeparator>
-                {parentData && (
+                {parentData && parentRoute && (
                   <>
                     <BreadcrumbItem>
                       <BreadcrumbLink className="flex items-center text-foreground/70" asChild>
-                        <Link to={baseEntityRoutes[parentData.entityType]} params={{ idOrSlug: parentData.slug }}>
+                        <Link to={parentRoute.to} params={parentRoute.params}>
                           <span className="truncate max-sm:max-w-24">{parentData.name}</span>
                         </Link>
                       </BreadcrumbLink>

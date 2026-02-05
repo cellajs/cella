@@ -8,6 +8,8 @@ export {
   cookieSchema,
   emailOrTokenIdQuerySchema,
   entityCanSchema,
+  entityIdOrSlugInOrgParamSchema,
+  entityIdOrSlugParamSchema,
   entityIdParamSchema,
   entityTypeSchema,
   entityWithTypeQuerySchema,

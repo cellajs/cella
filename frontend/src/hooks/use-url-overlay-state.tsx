@@ -33,6 +33,7 @@ export function useUrlOverlayState(searchParamKey: string, options: UseUrlOverla
 
   const navigate = useNavigate();
   const searchParams = useSearch({ strict: false }) as Record<string, string | undefined>;
+  // @ts-ignore // TODO
   const { orgIdOrSlug: baseOrgIdOrSlug, idOrSlug } = useParams({ strict: false });
 
   const orgIdOrSlug = baseOrgIdOrSlug || idOrSlug;

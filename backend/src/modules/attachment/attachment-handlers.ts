@@ -4,10 +4,20 @@ import { html, raw } from 'hono/html';
 import { appConfig } from 'shared';
 import { db } from '#/db/db';
 import { attachmentsTable } from '#/db/schema/attachments';
+import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
-import { type Env, getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
+import {
+  type Env,
+  getContextMemberships,
+  getContextOrganization,
+  getContextUser,
+  getContextUserSystemRole,
+} from '#/lib/context';
 import { AppError } from '#/lib/error';
+import { getSignedUrlFromKey } from '#/lib/signed-url';
 import attachmentRoutes from '#/modules/attachment/attachment-routes';
+import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
+import { checkPermission } from '#/permissions';
 import { getValidProductEntity } from '#/permissions/get-product-entity';
 import { splitByPermission } from '#/permissions/split-by-permission';
 import { isTransactionProcessed } from '#/sync';
@@ -275,6 +285,49 @@ const attachmentRouteHandlers = app
       </script>
       </html>
     `);
+  })
+  /**
+   * Get presigned URL for private attachment
+   */
+  .openapi(attachmentRoutes.getPresignedUrl, async (ctx) => {
+    const { key } = ctx.req.valid('query');
+
+    const [attachment] = await db
+      .select()
+      .from(attachmentsTable)
+      .where(
+        or(
+          eq(attachmentsTable.originalKey, key),
+          eq(attachmentsTable.thumbnailKey, key),
+          eq(attachmentsTable.convertedKey, key),
+        ),
+      )
+      .limit(1);
+
+    // Determine bucket - use attachment record if found, otherwise assume private
+    const bucketName = attachment?.bucketName ?? appConfig.s3.privateBucket;
+
+    // Permission check: verify user has access to this attachment
+    if (attachment) {
+      const user = getContextUser();
+      const userSystemRole = getContextUserSystemRole();
+
+      const memberships = await db
+        .select(membershipBaseSelect)
+        .from(membershipsTable)
+        .where(eq(membershipsTable.userId, user.id));
+
+      const isSystemAdmin = userSystemRole === 'admin';
+      const { isAllowed } = checkPermission(memberships, 'read', attachment);
+
+      if (!isSystemAdmin && !isAllowed) {
+        throw new AppError(403, 'forbidden', 'warn', { entityType: attachment.entityType });
+      }
+    }
+
+    const url = await getSignedUrlFromKey(key, { bucketName, isPublic: false });
+
+    return ctx.json(url, 200);
   });
 
 export default attachmentRouteHandlers;

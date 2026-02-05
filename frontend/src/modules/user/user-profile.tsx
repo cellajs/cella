@@ -1,45 +1,32 @@
-import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { FlameKindlingIcon, ServerCrashIcon, UserRoundCogIcon } from 'lucide-react';
+import { FlameKindlingIcon, UserRoundCogIcon } from 'lucide-react';
 import { lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
+import { UserBase } from '~/api.gen';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { FocusViewContainer } from '~/modules/common/focus-view';
 import { PageHeader } from '~/modules/common/page/header';
-import Spinner from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/service';
 import { useUpdateSelfMutation } from '~/modules/me/query';
-import { userQueryOptions, useUserUpdateMutation } from '~/modules/user/query';
+import { useUserUpdateMutation } from '~/modules/user/query';
 import { useUserStore } from '~/store/user';
 
-const ProfilePageContent = lazy(() => import('~/modules/user/profile-page-content'));
+const ProfilePageContent = lazy(() => import('~/modules/user/user-profile-content'));
 
 interface Props {
-  idOrSlug: string;
+  user: UserBase;
   isSheet?: boolean;
-  orgIdOrSlug?: string;
 }
 
 /**
  * Profile page for a user
  */
-function UserProfilePage({ idOrSlug, isSheet, orgIdOrSlug }: Props) {
+function UserProfilePage({ user, isSheet }: Props) {
   const { t } = useTranslation();
   const { user: currentUser } = useUserStore();
 
   // Determine if this is current user's profile
-  const isSelf = !!currentUser && (currentUser.id === idOrSlug || currentUser.slug === idOrSlug);
-
-  // Fetch user data (skip if self, use store data instead)
-  const {
-    data: user,
-    isLoading,
-    isError,
-  } = useQuery({
-    ...userQueryOptions(idOrSlug),
-    enabled: !isSelf,
-    initialData: isSelf ? currentUser : undefined,
-  });
+  const isSelf = !!currentUser && currentUser.id === user.id;
 
   // Pick correct mutation hook
   const useMutationHook = isSelf ? useUpdateSelfMutation : useUserUpdateMutation;
@@ -55,14 +42,6 @@ function UserProfilePage({ idOrSlug, isSheet, orgIdOrSlug }: Props) {
     );
   };
 
-  if (isLoading)
-    return (
-      <div className="block">
-        <Spinner className="mt-[45vh] h-10 w-10" />
-      </div>
-    );
-
-  if (isError) return <ContentPlaceholder icon={ServerCrashIcon} title="error:request_failed" />;
   if (!user) return <ContentPlaceholder icon={FlameKindlingIcon} title="error:no_user_found" />;
 
   return (
@@ -90,7 +69,7 @@ function UserProfilePage({ idOrSlug, isSheet, orgIdOrSlug }: Props) {
       />
       <Suspense>
         <FocusViewContainer className="container min-h-screen">
-          <ProfilePageContent orgIdOrSlug={orgIdOrSlug} userId={user.id} isSheet={isSheet} />
+          <ProfilePageContent user={user} isSheet={isSheet} />
         </FocusViewContainer>
       </Suspense>
     </>

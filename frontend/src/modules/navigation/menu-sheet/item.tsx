@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { toaster } from '~/modules/common/toaster/service';
 import type { UserMenuItem } from '~/modules/me/types';
-import { getEntityRoute } from '~/routes-resolver';
+import { getContextEntityRoute } from '~/routes-resolver';
 import { useUIStore } from '~/store/ui';
 import { cn } from '~/utils/cn';
 
@@ -26,7 +26,7 @@ export const MenuSheetItem = ({ item, icon: Icon, className, searchResults }: Me
   const isSubitem = !searchResults && !item.submenu;
 
   // Build route path for the entity
-  const { to, params, search } = getEntityRoute(item, isSubitem);
+  const { to, params, search } = getContextEntityRoute(item, isSubitem);
 
   return (
     <Link

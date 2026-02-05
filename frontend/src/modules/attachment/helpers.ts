@@ -1,3 +1,4 @@
+import { appConfig } from 'shared';
 import { uploadTemplates } from 'shared/upload-templates';
 import type { Attachment } from '~/api.gen';
 import { getPresignedUrl } from '~/api.gen/sdk.gen';
@@ -9,6 +10,25 @@ import { findAttachmentInListCache } from '~/modules/attachment/query';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
 import { createOptimisticEntity } from '~/query/basic';
 import { nanoid } from '~/utils/nanoid';
+
+/**
+ * Constructs a public CDN URL for a file key.
+ * Use for public files to avoid the presigned URL endpoint.
+ */
+export function getPublicFileUrl(key: string): string {
+  return `${appConfig.s3.publicCDNUrl}/${key}`;
+}
+
+/**
+ * Gets the URL for a file based on its public/private status.
+ * Public files use direct CDN URL, private files use presigned URL endpoint.
+ */
+export async function getFileUrl(key: string, isPublic: boolean): Promise<string> {
+  if (isPublic) {
+    return getPublicFileUrl(key);
+  }
+  return getPresignedUrl({ query: { key } });
+}
 
 /** Result of resolving an attachment URL */
 export interface ResolvedUrl {
@@ -59,7 +79,7 @@ export async function resolveAttachmentUrl(
 
   if (!cloudKey) return null;
 
-  const presignedUrl = await getPresignedUrl({ query: { key: cloudKey, isPublic: meta.public } });
+  const fileUrl = await getFileUrl(cloudKey, meta.public);
 
   // 4. Queue for background download
   if (queueDownload) {
@@ -67,7 +87,7 @@ export async function resolveAttachmentUrl(
     if (fullAttachment) downloadService.queueForDownload([fullAttachment]);
   }
 
-  return { url: presignedUrl, isLocal: false, variant: null };
+  return { url: fileUrl, isLocal: false, variant: null };
 }
 
 export const parseUploadedAttachments = (

@@ -16,9 +16,9 @@
 import { onlineManager } from '@tanstack/react-query';
 import { appConfig } from 'shared';
 import type { Attachment } from '~/api.gen';
-import { getPresignedUrl } from '~/api.gen/sdk.gen';
 import { attachmentsDb, type BlobVariant } from '~/modules/attachment/dexie/attachments-db';
 import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
+import { getFileUrl } from '~/modules/attachment/helpers';
 import { attachmentQueryKeys } from '~/modules/attachment/query';
 import { findInListCache } from '~/query/basic';
 import { flattenInfiniteData } from '~/query/basic/flatten';
@@ -229,9 +229,7 @@ class AttachmentDownloadService {
         if (existingVariant === variant) continue;
 
         try {
-          const url = await getPresignedUrl({
-            query: { key, isPublic: attachment.public },
-          });
+          const url = await getFileUrl(key, attachment.public);
 
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 30000);
@@ -313,13 +311,8 @@ class AttachmentDownloadService {
       const existingVariant = await attachmentStorage.hasAnyVariant(attachment.id);
       if (existingVariant === 'original') return true;
 
-      // Get presigned URL for original
-      const url = await getPresignedUrl({
-        query: {
-          key: attachment.originalKey,
-          isPublic: attachment.public,
-        },
-      });
+      // Get URL for original
+      const url = await getFileUrl(attachment.originalKey, attachment.public);
 
       // Download with timeout
       const controller = new AbortController();

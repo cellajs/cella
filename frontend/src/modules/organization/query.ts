@@ -34,9 +34,9 @@ registerEntityQueryKeys('organization', keys);
  */
 export const organizationQueryKeys = keys;
 
-/** Find an organization in the list cache by id or slug. */
-export const findOrganizationInListCache = (idOrSlug: string) =>
-  findInListCache<Organization>(keys.list.base, (org) => org.id === idOrSlug || org.slug === idOrSlug);
+/** Find an organization in the list cache by id. */
+export const findOrganizationInListCache = (id: string) =>
+  findInListCache<Organization>(keys.list.base, (org) => org.id === id);
 
 /**
  * Query options for a single organization by ID.

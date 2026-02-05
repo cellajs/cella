@@ -1,8 +1,8 @@
 import { z } from '@hono/zod-openapi';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { pagesTable } from '#/db/schema/pages';
-import { txBaseSchema } from '#/db/utils/tx-columns';
 import { batchResponseSchema, paginationQuerySchema, txRequestSchema } from '#/schemas';
+import { txBaseSchema } from '#/schemas/tx-base-schema';
 import { mockPageResponse } from '../../../mocks/mock-page';
 
 const pageInsertSchema = createInsertSchema(pagesTable);
