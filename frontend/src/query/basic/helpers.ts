@@ -35,7 +35,7 @@ export const isArbitraryQueryData = (data: unknown): data is ArbitraryEntityQuer
  *
  * @param queryKey - Query key.
  * @param items - items to update.
- * @param action - `"create" | "update" | "remove" | "updateMembership"`
+ * @param action - `"create" | "update" | "remove"`
  */
 export const changeInfiniteQueryData = (queryKey: QueryKey, items: ItemData[], action: QueryDataActions) => {
   const { sort, order: insertOrder } = getQueryKeySortOrder(queryKey);
@@ -66,7 +66,7 @@ export const changeInfiniteQueryData = (queryKey: QueryKey, items: ItemData[], a
  *
  * @param queryKey - Query key.
  * @param items - items to update.
- * @param action - `"create" | "update" | "remove" | "updateMembership"`
+ * @param action - `"create" | "update" | "remove"`
  */
 export const changeQueryData = (queryKey: QueryKey, items: ItemData[], action: QueryDataActions) => {
   queryClient.setQueryData<EntityQueryData>(queryKey, (data) => {
@@ -88,7 +88,7 @@ export const changeQueryData = (queryKey: QueryKey, items: ItemData[], action: Q
  *
  * @param queryKey - Query key.
  * @param items - items to update.
- * @param action - `"create" | "update" | "remove" | "updateMembership"`
+ * @param action - `"create" | "update" | "remove"`
  * @param entityType - Entity type to update the data for.
  * @param keyToOperateIn - Optional key to specify which part of the data to update.
  */
@@ -135,7 +135,7 @@ export const changeArbitraryQueryData = (
  *
  * @param items - Current items to update.
  * @param dataItems - Items to merge into current items.
- * @param action - `"create" | "update" | "remove" | "updateMembership"`
+ * @param action - `"create" | "update" | "remove"`
  * @returns The updated array of items.
  */
 const updateArrayItems = <T extends ItemData>(
@@ -164,16 +164,6 @@ const updateArrayItems = <T extends ItemData>(
       return items.filter((item) => !deleteIds.includes(item.id));
     }
 
-    case 'updateMembership': {
-      // Update the membership field if it exists
-      return items.map((item) => {
-        if (item.membership) {
-          const updatedMembership = dataItems.find((i) => i.id === item.membership?.id);
-          return updatedMembership ? { ...item, membership: { ...item.membership, ...updatedMembership } } : item;
-        }
-        return item; // Return unchanged if no membership exists
-      });
-    }
     default:
       // Return items unchanged if action is unrecognized
       return items;
@@ -185,7 +175,7 @@ const updateArrayItems = <T extends ItemData>(
  *
  * @param prevItem - Previous item to update.
  * @param newItem - New item to merge.
- * @param action - `"create" | "update" | "remove" | "updateMembership"`
+ * @param action - `"create" | "update" | "remove"`
  * @returns The updated item.
  */
 const updateItem = <T extends ItemData>(prevItem: T, newItem: T, action: QueryDataActions) => {
@@ -194,13 +184,6 @@ const updateItem = <T extends ItemData>(prevItem: T, newItem: T, action: QueryDa
     case 'update':
       return { ...prevItem, ...newItem };
 
-    case 'updateMembership': {
-      // update the membership field in dataItems
-      return {
-        ...prevItem,
-        membership: { ...prevItem.membership, ...newItem },
-      };
-    }
     default:
       return prevItem;
   }

@@ -8,14 +8,14 @@ import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 
 interface Props {
   attachments: Attachment[];
-  organizationSlug: string;
   dialog?: boolean;
   callback?: (args: CallbackArgs<Attachment[]>) => void;
 }
 
-function DeleteAttachments({ attachments, organizationSlug, callback, dialog: isDialog }: Props) {
+function DeleteAttachments({ attachments, callback, dialog: isDialog }: Props) {
   const removeDialog = useDialoger((state) => state.remove);
-  const deleteAttachments = useAttachmentDeleteMutation(organizationSlug);
+  // Use organizationId from first attachment - all attachments belong to same org
+  const deleteAttachments = useAttachmentDeleteMutation(attachments[0].organizationId);
 
   const [isPending, setIsPending] = React.useState(false);
 

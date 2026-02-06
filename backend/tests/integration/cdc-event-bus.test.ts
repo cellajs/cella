@@ -138,7 +138,7 @@ describe.skipIf(!process.env.CDC_WORKER_RUNNING)('Full CDC Flow', () => {
       organizationId: testOrg.id,
       contextType: 'organization',
       role: 'member',
-      order: 1,
+      displayOrder: 1,
       createdBy: testUser.id,
       uniqueKey: `${testUser.id}-${testOrg.id}`,
     });

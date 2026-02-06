@@ -10,14 +10,15 @@ import {
   uploadTokenQuerySchema,
   uploadTokenSchema,
 } from '#/modules/me/me-schema';
+import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
 import { userFlagsSchema, userSchema, userUpdateBodySchema } from '#/modules/user/user-schema';
 import {
+  batchResponseSchema,
   entityWithTypeQuerySchema,
   errorResponseRefs,
   idsBodySchema,
   locationSchema,
   paginationSchema,
-  successWithRejectedItemsSchema,
 } from '#/schemas';
 import {
   mockMeAuthDataResponse,
@@ -163,7 +164,7 @@ const meRoutes = {
     responses: {
       200: {
         description: 'Success',
-        content: { 'application/json': { schema: successWithRejectedItemsSchema } },
+        content: { 'application/json': { schema: batchResponseSchema() } },
       },
       ...errorResponseRefs,
     },
@@ -249,6 +250,29 @@ const meRoutes = {
       200: {
         description: 'User',
         content: { 'application/json': { schema: userSchema, example: mockUserResponse() } },
+      },
+      ...errorResponseRefs,
+    },
+  }),
+  /**
+   * Get my memberships
+   */
+  getMyMemberships: createXRoute({
+    operationId: 'getMyMemberships',
+    method: 'get',
+    path: '/memberships',
+    xGuard: isAuthenticated,
+    tags: ['me'],
+    summary: 'Get my memberships',
+    description: 'Returns all memberships for the *current user* across all context entities.',
+    responses: {
+      200: {
+        description: 'User memberships',
+        content: {
+          'application/json': {
+            schema: z.object({ items: z.array(membershipBaseSchema) }),
+          },
+        },
       },
       ...errorResponseRefs,
     },

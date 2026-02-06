@@ -76,12 +76,12 @@ export const MenuSheet = () => {
             edge,
           );
 
-          // Exit early if order remains the same
-          if (newOrder === sourceItem.membership.order) return;
+          // Exit early if displayOrder remains the same
+          if (newOrder === sourceItem.membership.displayOrder) return;
 
           await mutateAsync({
             id: sourceItem.membership.id,
-            order: newOrder,
+            displayOrder: newOrder,
             orgId: sourceItem.membership.organizationId || sourceItem.id,
             entityId: sourceItem.id,
             entityType: sourceItem.entityType,

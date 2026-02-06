@@ -1,5 +1,4 @@
 import { z } from '@hono/zod-openapi';
-import { mockSuccessWithRejectedItems } from '../../mocks/mock-common';
 
 /**
  * Schema for a response with paginated data
@@ -13,33 +12,52 @@ export const paginationSchema = <O, I>(schema: z.ZodType<O, I>) =>
   });
 
 /**
- * Schema for a successful response with disallowed IDs.
- * Use for delete operations where you don't need the entities back.
+ * Factory to create a batch response schema for create/update/delete operations.
+ * Provides a unified response format with optional data items and rejected items.
+ *
+ * - For creates/updates: pass item schema to get `data: T[]` with created/updated items
+ * - For deletes: omit item schema to get `data: []` (empty array)
+ *
+ * @example
+ * // For create operations - returns created items
+ * const pagesResponseSchema = batchResponseSchema(pageSchema);
+ * // Result: { data: Page[], rejectedItemIds: string[], rejectionReasons?: Record<string, string> }
+ *
+ * @example
+ * // For delete operations - returns empty data
+ * const deleteResponseSchema = batchResponseSchema();
+ * // Result: { data: [], rejectedItemIds: string[], rejectionReasons?: Record<string, string> }
+ */
+export const batchResponseSchema = <T extends z.ZodTypeAny>(itemSchema?: T) =>
+  z.object({
+    data: itemSchema ? z.array(itemSchema) : z.tuple([]).rest(z.never()),
+    rejectedItemIds: z.array(z.string()).describe('Identifiers of items that could not be processed'),
+    rejectionReasons: z.record(z.string(), z.string()).optional().describe('Map of rejected item ID to reason code'),
+  });
+
+/** BatchResponse type for delete operations (no data items) */
+export interface BatchResponseEmpty {
+  data: [];
+  rejectedItemIds: string[];
+  rejectionReasons?: Record<string, string>;
+}
+
+/**
+ * @deprecated Use `batchResponseSchema()` instead. This will be removed in a future version.
+ * Schema for a successful response with rejected IDs (legacy format).
  */
 export const successWithRejectedItemsSchema = z
   .object({
     success: z.boolean(),
     rejectedItemIds: z.array(z.string()),
   })
-  .openapi('SuccessWithRejectedItems', { example: mockSuccessWithRejectedItems() });
+  .openapi('SuccessWithRejectedItems');
 
-/** SuccessWithRejectedItems response type */
+/**
+ * @deprecated Use `BatchResponseEmpty` instead.
+ * SuccessWithRejectedItems response type (legacy format)
+ */
 export interface SuccessWithRejectedItemsResponse {
   success: boolean;
   rejectedItemIds: string[];
 }
-
-/**
- * Factory to create a batch response schema with data items and rejected items.
- * Use for batch create operations where you need the created entities back.
- *
- * @example
- * const pagesResponseSchema = batchResponseSchema(pageSchema);
- * // Result: { data: Page[], rejectedItemIds: string[], rejectionReasons?: Record<string, string> }
- */
-export const batchResponseSchema = <T extends z.ZodTypeAny>(itemSchema: T) =>
-  z.object({
-    data: z.array(itemSchema),
-    rejectedItemIds: z.array(z.string()).describe('Identifiers of items that could not be processed'),
-    rejectionReasons: z.record(z.string(), z.string()).optional().describe('Map of rejected item ID to reason code'),
-  });

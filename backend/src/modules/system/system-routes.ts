@@ -4,12 +4,12 @@ import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { inviteBodySchema, sendNewsletterBodySchema, systemRoleBaseSchema } from '#/modules/system/system-schema';
 import {
+  batchResponseSchema,
   booleanTransformSchema,
   entityIdParamSchema,
   errorResponseRefs,
   idsBodySchema,
   paginationSchema,
-  successWithRejectedItemsSchema,
 } from '#/schemas';
 import { mockSystemInviteResponse } from '../../../mocks/mock-system';
 import { mockPaginatedUsersResponse, mockUserResponse } from '../../../mocks/mock-user';
@@ -40,7 +40,7 @@ const systemRoutes = {
         description: 'Invitations are sent',
         content: {
           'application/json': {
-            schema: successWithRejectedItemsSchema.extend({ invitesSentCount: z.number() }),
+            schema: batchResponseSchema().extend({ invitesSentCount: z.number() }),
             example: mockSystemInviteResponse(),
           },
         },
@@ -99,7 +99,7 @@ const systemRoutes = {
     responses: {
       200: {
         description: 'Success',
-        content: { 'application/json': { schema: successWithRejectedItemsSchema } },
+        content: { 'application/json': { schema: batchResponseSchema() } },
       },
       ...errorResponseRefs,
     },

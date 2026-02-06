@@ -145,7 +145,9 @@ export const DownloadCell = ({ row, tabIndex }: DownloadCellProps) => {
       aria-label="Download"
       data-tooltip="true"
       data-tooltip-content={t('common:download')}
-      onClick={() => getFileUrl(row.originalKey, row.public).then((url) => download(url, row.filename))}
+      onClick={() =>
+        getFileUrl(row.originalKey, row.public, row.organizationId).then((url) => download(url, row.filename))
+      }
     >
       {isInProgress ? <Spinner className="size-4 text-foreground/80" noDelay /> : <DownloadIcon size={16} />}
     </Button>
@@ -155,10 +157,9 @@ export const DownloadCell = ({ row, tabIndex }: DownloadCellProps) => {
 interface EllipsisCellProps {
   row: Attachment;
   tabIndex: number;
-  organizationSlug: string;
 }
 
-export const EllipsisCell = ({ row, tabIndex, organizationSlug }: EllipsisCellProps) => {
+export const EllipsisCell = ({ row, tabIndex }: EllipsisCellProps) => {
   const { t } = useTranslation();
   const { copyToClipboard } = useCopyToClipboard();
 
@@ -178,7 +179,7 @@ export const EllipsisCell = ({ row, tabIndex, organizationSlug }: EllipsisCellPr
         update({
           content: (
             <PopConfirm title={i18n.t('common:delete_confirm.text', { name: row.name })}>
-              <DeleteAttachments attachments={[row]} organizationSlug={organizationSlug} callback={callback} />
+              <DeleteAttachments attachments={[row]} callback={callback} />
             </PopConfirm>
           ),
         });

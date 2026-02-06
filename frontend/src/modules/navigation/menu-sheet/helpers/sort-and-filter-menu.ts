@@ -21,9 +21,9 @@ export const sortAndFilterMenu = (
       //filter by type and archive state
       .filter((el) => el.entityType === entityType && el.membership.archived === archived)
       .sort((a, b) => {
-        // sort items by order
-        const orderA = a.membership?.order ?? 0; // Fallback to 0 if order is missing
-        const orderB = b.membership?.order ?? 0;
+        // sort items by displayOrder
+        const orderA = a.membership?.displayOrder ?? 0; // Fallback to 0 if displayOrder is missing
+        const orderB = b.membership?.displayOrder ?? 0;
         return reverse ? orderB - orderA : orderA - orderB;
       })
   );

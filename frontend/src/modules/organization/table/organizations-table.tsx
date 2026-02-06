@@ -3,25 +3,27 @@ import { BirdIcon } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
-import { membershipInvite, type Organization } from '~/api.gen';
+import { membershipInvite } from '~/api.gen';
 import useSearchParams from '~/hooks/use-search-params';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import type { RowsChangeData } from '~/modules/common/data-grid';
 import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { toaster } from '~/modules/common/toaster/service';
+import { meKeys } from '~/modules/me/query';
 import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
 import { organizationQueryKeys, organizationsListQueryOptions } from '~/modules/organization/query';
 import { OrganizationsTableBar } from '~/modules/organization/table/organizations-bar';
 import { useColumns } from '~/modules/organization/table/organizations-columns';
-import type { OrganizationsRouteSearchParams } from '~/modules/organization/types';
+import type { OrganizationsRouteSearchParams, OrganizationWithMembership } from '~/modules/organization/types';
 import { useMutateQueryData } from '~/query/basic';
+import { queryClient } from '~/query/query-client';
 import { useUserStore } from '~/store/user';
 
 const LIMIT = appConfig.requestLimits.organizations;
 
 /** Stable row key getter function - defined outside component to prevent re-renders */
-function rowKeyGetter(row: Organization) {
+function rowKeyGetter(row: OrganizationWithMembership) {
   return row.id;
 }
 
@@ -42,7 +44,7 @@ function OrganizationsTable() {
   const [isCompact, setIsCompact] = useState(false);
 
   // Build columns
-  const [selected, setSelected] = useState<Organization[]>([]);
+  const [selected, setSelected] = useState<OrganizationWithMembership[]>([]);
   const [columns, setColumns] = useColumns(isCompact);
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
@@ -60,7 +62,10 @@ function OrganizationsTable() {
     select: ({ pages }) => pages.flatMap(({ items }) => items),
   });
 
-  const onRowsChange = async (changedRows: Organization[], { column, indexes }: RowsChangeData<Organization>) => {
+  const onRowsChange = async (
+    changedRows: OrganizationWithMembership[],
+    { column, indexes }: RowsChangeData<OrganizationWithMembership>,
+  ) => {
     if (column.key !== 'role') return;
     if (!onlineManager.isOnline()) {
       toaster(t('common:action.offline.text'), 'warning');
@@ -87,11 +92,27 @@ function OrganizationsTable() {
           const updatedOrganization = { ...organization, membership: { ...membership, role: newRole } };
           mutateOrganizationsCache.update([updatedOrganization]);
         } else {
-          await membershipInvite({
+          const result = await membershipInvite({
             query: mutationVariables,
             path: { orgId },
             body: { emails: [user.email], role: newRole },
           });
+
+          // Add returned membership to cache directly (result is the response body)
+          const createdMemberships = result.data;
+          if (createdMemberships?.length) {
+            const newMembership = createdMemberships[0];
+
+            // Update memberships cache with the new membership
+            queryClient.setQueryData<{ items: Array<typeof newMembership> }>(meKeys.memberships, (oldData) => {
+              if (!oldData) return { items: [newMembership] };
+              return { ...oldData, items: [...oldData.items, newMembership] };
+            });
+
+            // Update organizations cache with the new membership
+            const updatedOrganization = { ...organization, membership: newMembership };
+            mutateOrganizationsCache.update([updatedOrganization]);
+          }
 
           toaster(t('common:success.role_updated'), 'success');
         }
@@ -132,9 +153,9 @@ function OrganizationsTable() {
         isCompact={isCompact}
         setIsCompact={setIsCompact}
       />
-      <DataTable<Organization>
+      <DataTable<OrganizationWithMembership>
         {...{
-          rows,
+          rows: rows as OrganizationWithMembership[] | undefined,
           rowHeight: 52,
           onRowsChange,
           rowKeyGetter,

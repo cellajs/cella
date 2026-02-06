@@ -29,7 +29,7 @@ export const membershipsTable = pgTable(
     modifiedBy: varchar().references(() => usersTable.id, { onDelete: 'set null' }),
     archived: boolean().default(false).notNull(),
     muted: boolean().default(false).notNull(),
-    order: doublePrecision().notNull(),
+    displayOrder: doublePrecision().notNull(),
     // Context entity columns
     organizationId: organizationId.notNull(),
     ...otherEntityIdColumns,

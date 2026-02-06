@@ -4,4 +4,5 @@ import type { organizationsRouteSearchParamsSchema } from '~/modules/organizatio
 
 export type OrganizationsRouteSearchParams = z.infer<typeof organizationsRouteSearchParamsSchema>;
 
-export type OrganizationWithMembership = Organization & { membership: NonNullable<MembershipBase> };
+/** Organization with membership added via cache enrichment */
+export type OrganizationWithMembership = Organization & { membership?: MembershipBase };

@@ -6,6 +6,7 @@ import { uploadService } from '~/modules/attachment/upload-service';
 import type { UserMenuItem } from '~/modules/me/types';
 import { getMenuData } from '~/modules/navigation/menu-sheet/helpers/get-menu-data';
 import { entityToPrefetchQueries } from '~/offline-config';
+import { setupMembershipEnrichment } from '~/query/membership-enrichment';
 import { initMutationDefaults } from '~/query/mutation-registry';
 // Import query modules AFTER mutation-registry to ensure registrars is initialized.
 // These modules call addMutationRegistrar() at module load time.
@@ -22,6 +23,9 @@ import { useUserStore } from '~/store/user';
 // This registers mutationFn for each entity type so that paused mutations
 // can resume after page reload (mutationFn cannot be serialized to IndexedDB).
 initMutationDefaults(queryClient);
+
+// Setup membership enrichment to auto-attach membership data to context entities
+setupMembershipEnrichment();
 
 // Start offline services for background blob caching and upload sync
 downloadService.start();

@@ -45,7 +45,7 @@ export const MenuSheetItem = ({ item, icon: Icon, className, searchResults }: Me
       activeProps={{ 'data-link-active': true }}
       className={cn(
         'relative group/menuItem h-12 w-full flex items-start justify-start space-x-1 rounded-sm p-0 focus:outline-hidden ring-2 ring-inset ring-transparent focus-visible:ring-foreground sm:hover:bg-accent/30 sm:hover:text-accent-foreground data-[subitem=true]:h-10 ',
-        'data-[link-active=true]:ring-transparent active:translate-y-[.05rem]',
+        'data-[link-active=true]:ring-transparent sm:opacity-80 data-[link-active=true]:opacity-100',
         className,
       )}
     >

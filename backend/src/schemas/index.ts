@@ -60,6 +60,7 @@ export {
 
 // Success response schemas
 export {
+  type BatchResponseEmpty,
   batchResponseSchema,
   paginationSchema,
   type SuccessWithRejectedItemsResponse,

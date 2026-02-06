@@ -11,15 +11,15 @@ import { queryClient } from '~/query/query-client';
 const maxNumberOfFiles = 20;
 const maxTotalFileSize = maxNumberOfFiles * appConfig.uppy.defaultRestrictions.maxFileSize; // for maxNumberOfFiles files at 10MB max each
 
-export const useAttachmentsUploadDialog = (organizationSlug: string) => {
+export const useAttachmentsUploadDialog = (organizationId: string) => {
   const open = () => {
     const onComplete = async (result: UploadedUppyFile<'attachment'>) => {
-      const attachments = parseUploadedAttachments(result, organizationSlug);
+      const attachments = parseUploadedAttachments(result, organizationId);
 
       // Create attachments via API with transaction metadata (tx embedded in each item)
       const tx = createTxForCreate();
       const body = attachments.map((att) => ({ ...att, tx }));
-      await createAttachments({ path: { orgId: organizationSlug }, body });
+      await createAttachments({ path: { orgId: organizationId }, body });
 
       // Invalidate the cache to refresh the table
       queryClient.invalidateQueries({ queryKey: attachmentQueryKeys.list.base });
@@ -31,7 +31,7 @@ export const useAttachmentsUploadDialog = (organizationSlug: string) => {
       id: 'upload-attachment',
       isPublic: false,
       personalUpload: false,
-      organizationId: organizationSlug,
+      organizationId,
       templateId: 'attachment',
       restrictions: {
         maxNumberOfFiles,

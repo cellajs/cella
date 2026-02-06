@@ -142,7 +142,7 @@ const addAdminMembership = (
 
   // Adjust the admin membership
   membership.archived = faker.datatype.boolean(0.5);
-  membership.order = 1 + adminMemberships.length * 10;
+  membership.displayOrder = 1 + adminMemberships.length * 10;
 
   // Add admin membership to the list
   adminMemberships.push(membership);

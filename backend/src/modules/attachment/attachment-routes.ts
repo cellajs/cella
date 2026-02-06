@@ -12,13 +12,13 @@ import {
   presignedUrlKeySchema,
 } from '#/modules/attachment/attachment-schema';
 import {
+  batchResponseSchema,
   errorResponseRefs,
   idInOrgParamSchema,
   idSchema,
   idsWithTxBodySchema,
   inOrgParamSchema,
   paginationSchema,
-  successWithRejectedItemsSchema,
 } from '#/schemas';
 import {
   mockAttachmentResponse,
@@ -162,7 +162,7 @@ const attachmentRoutes = {
         description: 'Success',
         content: {
           'application/json': {
-            schema: successWithRejectedItemsSchema,
+            schema: batchResponseSchema(),
           },
         },
       },
@@ -194,13 +194,13 @@ const attachmentRoutes = {
     operationId: 'getPresignedUrl',
     method: 'get',
     path: '/presigned-url',
-    xGuard: isAuthenticated,
+    xGuard: [isAuthenticated, hasOrgAccess],
     xRateLimiter: presignedUrlLimiter,
     tags: ['attachments'],
     summary: 'Get presigned URL',
     description:
-      'Generates and returns a presigned URL for accessing a private file in S3. Public files should use the public CDN URL directly.',
-    request: { query: presignedUrlKeySchema },
+      'Generates and returns a presigned URL for accessing a private attachment file in S3. Public files should use the public CDN URL directly. Requires organization context.',
+    request: { params: inOrgParamSchema, query: presignedUrlKeySchema },
     responses: {
       200: {
         description: 'Presigned URL',

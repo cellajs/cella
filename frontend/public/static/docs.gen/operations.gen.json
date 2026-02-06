@@ -657,7 +657,7 @@
     "hasParams": false,
     "hasRequestBody": true,
     "hasResponseBody": true,
-    "hasExample": true,
+    "hasExample": false,
     "extensions": {
       "xGuard": ["isAuthenticated"],
       "xRateLimiter": [],
@@ -722,6 +722,25 @@
     }
   },
   {
+    "id": "getMyMemberships",
+    "hash": "tag/me/GET/me/memberships",
+    "method": "get",
+    "path": "/me/memberships",
+    "tags": ["me"],
+    "summary": "Get my memberships",
+    "description": "Returns all memberships for the *current user* across all context entities.",
+    "deprecated": false,
+    "hasParams": false,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["isAuthenticated"],
+      "xRateLimiter": [],
+      "xCache": []
+    }
+  },
+  {
     "id": "createOrganizations",
     "hash": "tag/organizations/POST/organizations",
     "method": "post",
@@ -771,7 +790,7 @@
     "hasParams": false,
     "hasRequestBody": true,
     "hasResponseBody": true,
-    "hasExample": true,
+    "hasExample": false,
     "extensions": {
       "xGuard": ["isAuthenticated"],
       "xRateLimiter": [],
@@ -1018,7 +1037,7 @@
     "hasParams": false,
     "hasRequestBody": true,
     "hasResponseBody": true,
-    "hasExample": true,
+    "hasExample": false,
     "extensions": {
       "xGuard": ["isAuthenticated", "hasSystemAccess"],
       "xRateLimiter": [],
@@ -1322,10 +1341,29 @@
     "hasParams": true,
     "hasRequestBody": true,
     "hasResponseBody": true,
-    "hasExample": true,
+    "hasExample": false,
     "extensions": {
       "xGuard": ["isAuthenticated", "hasOrgAccess"],
       "xRateLimiter": [],
+      "xCache": []
+    }
+  },
+  {
+    "id": "getPresignedUrl",
+    "hash": "tag/attachments/GET/{orgId}/attachments/presigned-url",
+    "method": "get",
+    "path": "/{orgId}/attachments/presigned-url",
+    "tags": ["attachments"],
+    "summary": "Get presigned URL",
+    "description": "Generates and returns a presigned URL for accessing a private attachment file in S3. Public files should use the public CDN URL directly. Requires organization context.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["isAuthenticated", "hasOrgAccess"],
+      "xRateLimiter": ["presignedUrlLimiter"],
       "xCache": []
     }
   },
@@ -1387,25 +1425,6 @@
     }
   },
   {
-    "id": "getPresignedUrl",
-    "hash": "tag/attachments/GET/{orgId}/attachments/presigned-url",
-    "method": "get",
-    "path": "/{orgId}/attachments/presigned-url",
-    "tags": ["attachments"],
-    "summary": "Get presigned URL",
-    "description": "Generates and returns a presigned URL for accessing a private file in S3. Public files should use the public CDN URL directly.",
-    "deprecated": false,
-    "hasParams": true,
-    "hasRequestBody": false,
-    "hasResponseBody": true,
-    "hasExample": false,
-    "extensions": {
-      "xGuard": ["isAuthenticated"],
-      "xRateLimiter": ["presignedUrlLimiter"],
-      "xCache": []
-    }
-  },
-  {
     "id": "membershipInvite",
     "hash": "tag/memberships/POST/{orgId}/memberships",
     "method": "post",
@@ -1436,7 +1455,7 @@
     "hasParams": true,
     "hasRequestBody": true,
     "hasResponseBody": true,
-    "hasExample": true,
+    "hasExample": false,
     "extensions": {
       "xGuard": ["isAuthenticated", "hasOrgAccess"],
       "xRateLimiter": [],

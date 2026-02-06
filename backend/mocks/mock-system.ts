@@ -42,7 +42,7 @@ export const mockSystemRoleResponse = (key = 'system-role:default'): SystemRoleM
  */
 export const mockSystemInviteResponse = (key = 'system-invite:default') =>
   withFakerSeed(key, () => ({
-    success: true,
+    data: [] as never[],
     rejectedItemIds: [] as string[],
     invitesSentCount: 2,
   }));

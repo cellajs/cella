@@ -56,7 +56,7 @@ export const MenuItemEditWrapper = ({
   useEffect(() => {
     const element = dragRef.current;
     if (!element) return;
-    const data = getDraggableItemData(item, item.membership.order, 'menuItem', item.entityType);
+    const data = getDraggableItemData(item, item.membership.displayOrder, 'menuItem', item.entityType);
     return combine(
       draggable({
         element,

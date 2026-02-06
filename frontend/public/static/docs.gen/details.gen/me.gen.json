@@ -914,25 +914,24 @@
       {
         "status": 200,
         "description": "Success",
-        "name": "SuccessWithRejectedItems",
-        "ref": "#/components/schemas/SuccessWithRejectedItems",
         "contentType": "application/json",
         "schema": {
           "type": "object",
           "properties": {
-            "success": { "type": "boolean", "required": true },
+            "data": { "type": "array", "required": true },
             "rejectedItemIds": {
               "type": "array",
               "required": true,
+              "description": "Identifiers of items that could not be processed",
               "itemType": "string"
+            },
+            "rejectionReasons": {
+              "type": "object",
+              "required": false,
+              "description": "Map of rejected item ID to reason code"
             }
           },
-          "ref": "#/components/schemas/SuccessWithRejectedItems",
           "contentType": "application/json"
-        },
-        "example": {
-          "success": true,
-          "rejectedItemIds": []
         }
       },
       {
@@ -1188,5 +1187,89 @@
         }
       }
     }
+  },
+  {
+    "operationId": "getMyMemberships",
+    "responses": [
+      {
+        "status": 200,
+        "description": "User memberships",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "items": {
+              "type": "array",
+              "required": true,
+              "itemType": "object",
+              "ref": "#/components/schemas/MembershipBase",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": { "type": "string", "required": true },
+                  "contextType": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["organization"]
+                  },
+                  "userId": { "type": "string", "required": true },
+                  "role": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["admin", "member"]
+                  },
+                  "archived": { "type": "boolean", "required": true },
+                  "muted": { "type": "boolean", "required": true },
+                  "displayOrder": {
+                    "type": "number",
+                    "required": true,
+                    "minimum": -140737488355328,
+                    "maximum": 140737488355327
+                  },
+                  "organizationId": { "type": "string", "required": true }
+                },
+                "ref": "#/components/schemas/MembershipBase"
+              }
+            }
+          },
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ]
   }
 ]

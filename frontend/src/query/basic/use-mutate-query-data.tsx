@@ -20,10 +20,10 @@ export function useMutateQueryData(
 export function useMutateQueryData(passedQueryKey: QueryKey): UseMutateQueryDataReturn;
 
 /**
- * Custom hook for mutating query data in the cache (create, update, updateMembership, and remove actions).
+ * Custom hook for mutating query data in the cache (create, update, and remove actions).
  *
  * This hook provides functions to perform mutations on data associated with a query.
- * The create, update, updateMembership, and remove actions actions modify the cache
+ * The create, update, and remove actions modify the cache
  * and can invalidate other queries based on the provided `invalidateKeyGetter`.
  *
  * @param passedQueryKey - Key of the query whose data will be mutated
@@ -95,16 +95,6 @@ export function useMutateQueryData(
     dataMutation(items, 'update', entity, keyToOperateIn);
   }
 
-  function updateMembership(items: ItemData[]): void;
-  function updateMembership(items: ContextEntityBase[], entityType: ContextEntityType, keyToOperateIn?: string): void;
-  function updateMembership(
-    items: ItemData[] | ContextEntityBase[],
-    entity?: ProductEntityType | ContextEntityType,
-    keyToOperateIn?: string,
-  ) {
-    dataMutation(items, 'updateMembership', entity, keyToOperateIn);
-  }
-
   function remove(items: ItemData[]): void;
   function remove(items: ContextEntityBase[], entityType: ContextEntityType, keyToOperateIn?: string): void;
   function remove(items: EntityIdAndType[], entityType: ProductEntityType, keyToOperateIn: string): void;
@@ -116,5 +106,5 @@ export function useMutateQueryData(
     dataMutation(items, 'remove', entity, keyToOperateIn);
   }
 
-  return { create, update, updateMembership, remove };
+  return { create, update, remove };
 }

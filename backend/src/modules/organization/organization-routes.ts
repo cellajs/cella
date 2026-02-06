@@ -13,7 +13,6 @@ import {
   errorResponseRefs,
   idsBodySchema,
   paginationSchema,
-  successWithRejectedItemsSchema,
 } from '#/schemas';
 import { entityIdOrSlugParamSchema } from '#/schemas/common-schemas';
 import {
@@ -145,7 +144,7 @@ const organizationRoutes = {
         description: 'Success',
         content: {
           'application/json': {
-            schema: successWithRejectedItemsSchema,
+            schema: batchResponseSchema(),
           },
         },
       },

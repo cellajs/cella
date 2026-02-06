@@ -9,7 +9,7 @@ import { AuthStrategy, sessionsTable } from '#/db/schema/sessions';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { usersTable } from '#/db/schema/users';
 import { env } from '#/env';
-import { type Env, getContextUser, getContextUserSystemRole } from '#/lib/context';
+import { type Env, getContextMemberships, getContextUser, getContextUserSystemRole } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/error';
 import { getParams, getSignature } from '#/lib/transloadit';
@@ -169,11 +169,11 @@ const meRouteHandlers = app
         .returning({ id: sessionsTable.id });
 
       const deletedIds = deleted.map((s) => s.id);
-      const rejectedItems = sessionIds.filter((id) => !deletedIds.includes(id));
+      const rejectedItemIds = sessionIds.filter((id) => !deletedIds.includes(id));
 
-      return ctx.json({ success: true, rejectedItems }, 200);
+      return ctx.json({ data: [] as never[], rejectedItemIds }, 200);
     } catch {
-      return ctx.json({ success: false, rejectedItems: sessionIds }, 200);
+      return ctx.json({ data: [] as never[], rejectedItemIds: sessionIds }, 200);
     }
   })
   /**
@@ -304,6 +304,26 @@ const meRouteHandlers = app
 
     const redirectUrl = new URL('/auth/unsubscribed', appConfig.frontendUrl);
     return ctx.redirect(redirectUrl, 302);
+  })
+  /**
+   * Get all memberships for the current user
+   */
+  .openapi(meRoutes.getMyMemberships, async (ctx) => {
+    const memberships = getContextMemberships();
+
+    // Map to base schema fields only
+    const items = memberships.map((m) => ({
+      id: m.id,
+      contextType: m.contextType,
+      userId: m.userId,
+      role: m.role,
+      displayOrder: m.displayOrder,
+      muted: m.muted,
+      archived: m.archived,
+      organizationId: m.organizationId,
+    }));
+
+    return ctx.json({ items }, 200);
   });
 
 export default meRouteHandlers;

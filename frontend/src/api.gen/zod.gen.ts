@@ -37,7 +37,7 @@ export const zMembershipBase = z.object({
   role: z.enum(['admin', 'member']),
   archived: z.boolean(),
   muted: z.boolean(),
-  order: z.number().gte(-140737488355328).lte(140737488355327),
+  displayOrder: z.number().gte(-140737488355328).lte(140737488355327),
   organizationId: z.string(),
 });
 
@@ -244,11 +244,6 @@ export const zInactiveMembership = z.object({
   uniqueKey: z.string(),
 });
 
-export const zSuccessWithRejectedItems = z.object({
-  success: z.boolean(),
-  rejectedItemIds: z.array(z.string()),
-});
-
 export const zUploadToken = z.object({
   public: z.boolean(),
   sub: z.string(),
@@ -260,6 +255,24 @@ export const zUploadToken = z.object({
       expires: z.optional(z.string()),
     }),
   }),
+});
+
+export const zOrganizationIncluded = z.object({
+  membership: z.optional(zMembershipBase),
+  counts: z.optional(
+    z.object({
+      membership: z.object({
+        admin: z.number(),
+        member: z.number(),
+        pending: z.number(),
+        total: z.number(),
+      }),
+      entities: z.object({
+        attachment: z.number(),
+        page: z.number(),
+      }),
+    }),
+  ),
 });
 
 export const zOrganization = z.object({
@@ -287,21 +300,7 @@ export const zOrganization = z.object({
   welcomeText: z.union([z.string(), z.null()]),
   authStrategies: z.array(z.enum(['github', 'google', 'microsoft', 'password', 'passkey', 'totp', 'email'])),
   chatSupport: z.boolean(),
-  membership: z.union([zMembershipBase, z.null()]),
-  counts: z.optional(
-    z.object({
-      membership: z.object({
-        admin: z.number(),
-        member: z.number(),
-        pending: z.number(),
-        total: z.number(),
-      }),
-      entities: z.object({
-        attachment: z.number(),
-        page: z.number(),
-      }),
-    }),
-  ),
+  included: z.optional(zOrganizationIncluded),
   can: z.optional(
     z.object({
       create: z.boolean(),
@@ -388,7 +387,7 @@ export const zMembership = z.object({
   modifiedBy: z.union([z.string(), z.null()]),
   archived: z.boolean(),
   muted: z.boolean(),
-  order: z.number().gte(-140737488355328).lte(140737488355327),
+  displayOrder: z.number().gte(-140737488355328).lte(140737488355327),
   organizationId: z.string(),
   uniqueKey: z.string(),
 });
@@ -899,7 +898,11 @@ export const zDeleteMySessionsData = z.object({
 /**
  * Success
  */
-export const zDeleteMySessionsResponse = zSuccessWithRejectedItems;
+export const zDeleteMySessionsResponse = z.object({
+  data: z.array(z.unknown()),
+  rejectedItemIds: z.array(z.string()),
+  rejectionReasons: z.optional(z.record(z.string(), z.string())),
+});
 
 export const zDeleteMyMembershipData = z.object({
   body: z.optional(z.never()),
@@ -938,6 +941,19 @@ export const zUnsubscribeMeData = z.object({
   }),
 });
 
+export const zGetMyMembershipsData = z.object({
+  body: z.optional(z.never()),
+  path: z.optional(z.never()),
+  query: z.optional(z.never()),
+});
+
+/**
+ * User memberships
+ */
+export const zGetMyMembershipsResponse = z.object({
+  items: z.array(zMembershipBase),
+});
+
 export const zDeleteOrganizationsData = z.object({
   body: z.object({
     ids: z.array(z.string()).min(1).max(50),
@@ -949,7 +965,11 @@ export const zDeleteOrganizationsData = z.object({
 /**
  * Success
  */
-export const zDeleteOrganizationsResponse = zSuccessWithRejectedItems;
+export const zDeleteOrganizationsResponse = z.object({
+  data: z.array(z.unknown()),
+  rejectedItemIds: z.array(z.string()),
+  rejectionReasons: z.optional(z.record(z.string(), z.string())),
+});
 
 export const zGetOrganizationsData = z.object({
   body: z.optional(z.never()),
@@ -999,7 +1019,7 @@ export const zCreateOrganizationsResponse = z.object({
   data: z.array(
     zOrganization.and(
       z.object({
-        membership: z.optional(zMembershipBase),
+        included: zOrganizationIncluded.and(z.record(z.string(), z.unknown())),
       }),
     ),
   ),
@@ -1215,11 +1235,12 @@ export const zSystemInviteData = z.object({
 /**
  * Invitations are sent
  */
-export const zSystemInviteResponse = zSuccessWithRejectedItems.and(
-  z.object({
-    invitesSentCount: z.number(),
-  }),
-);
+export const zSystemInviteResponse = z.object({
+  data: z.array(z.unknown()),
+  rejectedItemIds: z.array(z.string()),
+  rejectionReasons: z.optional(z.record(z.string(), z.string())),
+  invitesSentCount: z.number(),
+});
 
 export const zDeleteUsersData = z.object({
   body: z.object({
@@ -1232,7 +1253,11 @@ export const zDeleteUsersData = z.object({
 /**
  * Success
  */
-export const zDeleteUsersResponse = zSuccessWithRejectedItems;
+export const zDeleteUsersResponse = z.object({
+  data: z.array(z.unknown()),
+  rejectedItemIds: z.array(z.string()),
+  rejectionReasons: z.optional(z.record(z.string(), z.string())),
+});
 
 export const zGetUsersData = z.object({
   body: z.optional(z.never()),
@@ -1555,7 +1580,11 @@ export const zDeleteAttachmentsData = z.object({
 /**
  * Success
  */
-export const zDeleteAttachmentsResponse = zSuccessWithRejectedItems;
+export const zDeleteAttachmentsResponse = z.object({
+  data: z.array(z.unknown()),
+  rejectedItemIds: z.array(z.string()),
+  rejectionReasons: z.optional(z.record(z.string(), z.string())),
+});
 
 export const zGetAttachmentsData = z.object({
   body: z.optional(z.never()),
@@ -1624,6 +1653,21 @@ export const zCreateAttachmentsResponse = z.union([
   }),
 ]);
 
+export const zGetPresignedUrlData = z.object({
+  body: z.optional(z.never()),
+  path: z.object({
+    orgId: z.string(),
+  }),
+  query: z.object({
+    key: z.string(),
+  }),
+});
+
+/**
+ * Presigned URL
+ */
+export const zGetPresignedUrlResponse = z.string();
+
 export const zGetAttachmentData = z.object({
   body: z.optional(z.never()),
   path: z.object({
@@ -1664,19 +1708,6 @@ export const zRedirectToAttachmentData = z.object({
   query: z.optional(z.never()),
 });
 
-export const zGetPresignedUrlData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.object({
-    key: z.string(),
-  }),
-});
-
-/**
- * Presigned URL
- */
-export const zGetPresignedUrlResponse = z.string();
-
 export const zDeleteMembershipsData = z.object({
   body: z.object({
     ids: z.array(z.string()).min(1).max(50),
@@ -1693,7 +1724,11 @@ export const zDeleteMembershipsData = z.object({
 /**
  * Success
  */
-export const zDeleteMembershipsResponse = zSuccessWithRejectedItems;
+export const zDeleteMembershipsResponse = z.object({
+  data: z.array(z.unknown()),
+  rejectedItemIds: z.array(z.string()),
+  rejectionReasons: z.optional(z.record(z.string(), z.string())),
+});
 
 export const zMembershipInviteData = z.object({
   body: z.object({
@@ -1710,13 +1745,14 @@ export const zMembershipInviteData = z.object({
 });
 
 /**
- * Number of sent invitations
+ * Created memberships and invite count
  */
-export const zMembershipInviteResponse = zSuccessWithRejectedItems.and(
-  z.object({
-    invitesSentCount: z.number(),
-  }),
-);
+export const zMembershipInviteResponse = z.object({
+  data: z.array(zMembershipBase),
+  rejectedItemIds: z.array(z.string()),
+  rejectionReasons: z.optional(z.record(z.string(), z.string())),
+  invitesSentCount: z.number(),
+});
 
 export const zUpdateMembershipData = z.object({
   body: z.optional(
@@ -1724,7 +1760,7 @@ export const zUpdateMembershipData = z.object({
       role: z.optional(z.enum(['admin', 'member'])),
       muted: z.optional(z.boolean()),
       archived: z.optional(z.boolean()),
-      order: z.optional(z.number()),
+      displayOrder: z.optional(z.number()),
     }),
   ),
   path: z.object({

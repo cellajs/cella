@@ -39,7 +39,7 @@ export type MembershipBase = {
   role: 'admin' | 'member';
   archived: boolean;
   muted: boolean;
-  order: number;
+  displayOrder: number;
   organizationId: string;
 };
 
@@ -236,11 +236,6 @@ export type InactiveMembership = {
   uniqueKey: string;
 };
 
-export type SuccessWithRejectedItems = {
-  success: boolean;
-  rejectedItemIds: Array<string>;
-};
-
 export type UploadToken = {
   public: boolean;
   sub: string;
@@ -257,6 +252,22 @@ export type UploadToken = {
           key: string;
           expires?: string;
         };
+  };
+};
+
+export type OrganizationIncluded = {
+  membership?: MembershipBase;
+  counts?: {
+    membership: {
+      admin: number;
+      member: number;
+      pending: number;
+      total: number;
+    };
+    entities: {
+      attachment: number;
+      page: number;
+    };
   };
 };
 
@@ -285,19 +296,7 @@ export type Organization = {
   welcomeText: string | null;
   authStrategies: Array<'github' | 'google' | 'microsoft' | 'password' | 'passkey' | 'totp' | 'email'>;
   chatSupport: boolean;
-  membership: MembershipBase | null;
-  counts?: {
-    membership: {
-      admin: number;
-      member: number;
-      pending: number;
-      total: number;
-    };
-    entities: {
-      attachment: number;
-      page: number;
-    };
-  };
+  included?: OrganizationIncluded;
   can?: {
     create: boolean;
     read: boolean;
@@ -389,7 +388,7 @@ export type Membership = {
   modifiedBy: string | null;
   archived: boolean;
   muted: boolean;
-  order: number;
+  displayOrder: number;
   organizationId: string;
   uniqueKey: string;
 };
@@ -1908,7 +1907,19 @@ export type DeleteMySessionsResponses = {
   /**
    * Success
    */
-  200: SuccessWithRejectedItems;
+  200: {
+    data: Array<unknown>;
+    /**
+     * Identifiers of items that could not be processed
+     */
+    rejectedItemIds: Array<string>;
+    /**
+     * Map of rejected item ID to reason code
+     */
+    rejectionReasons?: {
+      [key: string]: string;
+    };
+  };
 };
 
 export type DeleteMySessionsResponse = DeleteMySessionsResponses[keyof DeleteMySessionsResponses];
@@ -2036,6 +2047,49 @@ export type UnsubscribeMeErrors = {
 
 export type UnsubscribeMeError = UnsubscribeMeErrors[keyof UnsubscribeMeErrors];
 
+export type GetMyMembershipsData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/me/memberships';
+};
+
+export type GetMyMembershipsErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetMyMembershipsError = GetMyMembershipsErrors[keyof GetMyMembershipsErrors];
+
+export type GetMyMembershipsResponses = {
+  /**
+   * User memberships
+   */
+  200: {
+    items: Array<MembershipBase>;
+  };
+};
+
+export type GetMyMembershipsResponse = GetMyMembershipsResponses[keyof GetMyMembershipsResponses];
+
 export type DeleteOrganizationsData = {
   body: {
     ids: Array<string>;
@@ -2074,7 +2128,19 @@ export type DeleteOrganizationsResponses = {
   /**
    * Success
    */
-  200: SuccessWithRejectedItems;
+  200: {
+    data: Array<unknown>;
+    /**
+     * Identifiers of items that could not be processed
+     */
+    rejectedItemIds: Array<string>;
+    /**
+     * Map of rejected item ID to reason code
+     */
+    rejectionReasons?: {
+      [key: string]: string;
+    };
+  };
 };
 
 export type DeleteOrganizationsResponse = DeleteOrganizationsResponses[keyof DeleteOrganizationsResponses];
@@ -2176,7 +2242,9 @@ export type CreateOrganizationsResponses = {
   201: {
     data: Array<
       Organization & {
-        membership?: MembershipBase;
+        included: OrganizationIncluded & {
+          [key: string]: unknown;
+        };
       }
     >;
     /**
@@ -2752,7 +2820,18 @@ export type SystemInviteResponses = {
   /**
    * Invitations are sent
    */
-  200: SuccessWithRejectedItems & {
+  200: {
+    data: Array<unknown>;
+    /**
+     * Identifiers of items that could not be processed
+     */
+    rejectedItemIds: Array<string>;
+    /**
+     * Map of rejected item ID to reason code
+     */
+    rejectionReasons?: {
+      [key: string]: string;
+    };
     invitesSentCount: number;
   };
 };
@@ -2797,7 +2876,19 @@ export type DeleteUsersResponses = {
   /**
    * Success
    */
-  200: SuccessWithRejectedItems;
+  200: {
+    data: Array<unknown>;
+    /**
+     * Identifiers of items that could not be processed
+     */
+    rejectedItemIds: Array<string>;
+    /**
+     * Map of rejected item ID to reason code
+     */
+    rejectionReasons?: {
+      [key: string]: string;
+    };
+  };
 };
 
 export type DeleteUsersResponse = DeleteUsersResponses[keyof DeleteUsersResponses];
@@ -3642,7 +3733,19 @@ export type DeleteAttachmentsResponses = {
   /**
    * Success
    */
-  200: SuccessWithRejectedItems;
+  200: {
+    data: Array<unknown>;
+    /**
+     * Identifiers of items that could not be processed
+     */
+    rejectedItemIds: Array<string>;
+    /**
+     * Map of rejected item ID to reason code
+     */
+    rejectionReasons?: {
+      [key: string]: string;
+    };
+  };
 };
 
 export type DeleteAttachmentsResponse = DeleteAttachmentsResponses[keyof DeleteAttachmentsResponses];
@@ -3787,6 +3890,51 @@ export type CreateAttachmentsResponses = {
 
 export type CreateAttachmentsResponse = CreateAttachmentsResponses[keyof CreateAttachmentsResponses];
 
+export type GetPresignedUrlData = {
+  body?: never;
+  path: {
+    orgId: string;
+  };
+  query: {
+    key: string;
+  };
+  url: '/{orgId}/attachments/presigned-url';
+};
+
+export type GetPresignedUrlErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetPresignedUrlError = GetPresignedUrlErrors[keyof GetPresignedUrlErrors];
+
+export type GetPresignedUrlResponses = {
+  /**
+   * Presigned URL
+   */
+  200: string;
+};
+
+export type GetPresignedUrlResponse = GetPresignedUrlResponses[keyof GetPresignedUrlResponses];
+
 export type GetAttachmentData = {
   body?: never;
   path: {
@@ -3920,49 +4068,6 @@ export type RedirectToAttachmentResponses = {
   200: unknown;
 };
 
-export type GetPresignedUrlData = {
-  body?: never;
-  path?: never;
-  query: {
-    key: string;
-  };
-  url: '/{orgId}/attachments/presigned-url';
-};
-
-export type GetPresignedUrlErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type GetPresignedUrlError = GetPresignedUrlErrors[keyof GetPresignedUrlErrors];
-
-export type GetPresignedUrlResponses = {
-  /**
-   * Presigned URL
-   */
-  200: string;
-};
-
-export type GetPresignedUrlResponse = GetPresignedUrlResponses[keyof GetPresignedUrlResponses];
-
 export type DeleteMembershipsData = {
   body: {
     ids: Array<string>;
@@ -4006,7 +4111,19 @@ export type DeleteMembershipsResponses = {
   /**
    * Success
    */
-  200: SuccessWithRejectedItems;
+  200: {
+    data: Array<unknown>;
+    /**
+     * Identifiers of items that could not be processed
+     */
+    rejectedItemIds: Array<string>;
+    /**
+     * Map of rejected item ID to reason code
+     */
+    rejectionReasons?: {
+      [key: string]: string;
+    };
+  };
 };
 
 export type DeleteMembershipsResponse = DeleteMembershipsResponses[keyof DeleteMembershipsResponses];
@@ -4053,9 +4170,20 @@ export type MembershipInviteError = MembershipInviteErrors[keyof MembershipInvit
 
 export type MembershipInviteResponses = {
   /**
-   * Number of sent invitations
+   * Created memberships and invite count
    */
-  200: SuccessWithRejectedItems & {
+  200: {
+    data: Array<MembershipBase>;
+    /**
+     * Identifiers of items that could not be processed
+     */
+    rejectedItemIds: Array<string>;
+    /**
+     * Map of rejected item ID to reason code
+     */
+    rejectionReasons?: {
+      [key: string]: string;
+    };
     invitesSentCount: number;
   };
 };
@@ -4067,7 +4195,7 @@ export type UpdateMembershipData = {
     role?: 'admin' | 'member';
     muted?: boolean;
     archived?: boolean;
-    order?: number;
+    displayOrder?: number;
   };
   path: {
     id: string;

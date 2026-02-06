@@ -78,15 +78,17 @@ export const mockOrganization = (): InsertOrganizationModel => {
 
 /**
  * Generates a mock organization API response with deterministic seeding.
- * Adds API-only fields (membership, counts) to the base mock.
+ * Adds API-only fields (included.membership, included.counts) to the base mock.
  */
 export const mockOrganizationResponse = (
   key = 'organization:default',
 ): OrganizationModel & {
-  membership: MembershipBaseModel;
-  counts: {
-    membership: MockMembershipCounts;
-    entities: MockEntityCounts;
+  included: {
+    membership: MembershipBaseModel;
+    counts: {
+      membership: MockMembershipCounts;
+      entities: MockEntityCounts;
+    };
   };
 } =>
   withFakerSeed(key, () => {
@@ -104,8 +106,10 @@ export const mockOrganizationResponse = (
     return {
       ...base,
       restrictions: defaultRestrictions(),
-      membership,
-      counts: generateMockFullCounts(`${key}:counts`),
+      included: {
+        membership,
+        counts: generateMockFullCounts(`${key}:counts`),
+      },
     };
   });
 /**

@@ -229,7 +229,7 @@ class AttachmentDownloadService {
         if (existingVariant === variant) continue;
 
         try {
-          const url = await getFileUrl(key, attachment.public);
+          const url = await getFileUrl(key, attachment.public, attachment.organizationId);
 
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 30000);
@@ -312,7 +312,7 @@ class AttachmentDownloadService {
       if (existingVariant === 'original') return true;
 
       // Get URL for original
-      const url = await getFileUrl(attachment.originalKey, attachment.public);
+      const url = await getFileUrl(attachment.originalKey, attachment.public, attachment.organizationId);
 
       // Download with timeout
       const controller = new AbortController();

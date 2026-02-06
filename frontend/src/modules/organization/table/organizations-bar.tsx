@@ -2,7 +2,7 @@ import { MailboxIcon, PlusIcon, TrashIcon, XSquareIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
-import { getOrganizations, type Organization } from '~/api.gen';
+import { getOrganizations } from '~/api.gen';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
@@ -19,12 +19,12 @@ import { toaster } from '~/modules/common/toaster/service';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import CreateOrganizationForm from '~/modules/organization/create-organization-form';
 import DeleteOrganizations from '~/modules/organization/delete-organizations';
-import type { OrganizationsRouteSearchParams } from '~/modules/organization/types';
+import type { OrganizationsRouteSearchParams, OrganizationWithMembership } from '~/modules/organization/types';
 import CreateNewsletterForm from '~/modules/system/create-newsletter-form';
 import NewsletterPreview from '~/modules/system/newsletter-preview';
 import { useInfiniteQueryTotal } from '~/query/basic';
 
-type OrganizationsTableBarProps = BaseTableBarProps<Organization, OrganizationsRouteSearchParams> & {
+type OrganizationsTableBarProps = BaseTableBarProps<OrganizationWithMembership, OrganizationsRouteSearchParams> & {
   isCompact: boolean;
   setIsCompact: (isCompact: boolean) => void;
 };
@@ -70,7 +70,7 @@ export const OrganizationsTableBar = ({
   };
 
   const openDeleteDialog = () => {
-    const callback = (args: CallbackArgs<Organization[]>) => {
+    const callback = (args: CallbackArgs<OrganizationWithMembership[]>) => {
       if (args.status === 'success') {
         const message =
           args.data.length === 1

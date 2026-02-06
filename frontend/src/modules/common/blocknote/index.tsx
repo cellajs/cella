@@ -23,6 +23,7 @@ import * as Y from 'yjs';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
 import { getFileUrl } from '~/modules/attachment/helpers';
+import { findAttachmentInListCache } from '~/modules/attachment/query';
 import { customSchema } from '~/modules/common/blocknote/blocknote-config';
 import { Mention } from '~/modules/common/blocknote/custom-elements/mention';
 import { CustomFilePanel } from '~/modules/common/blocknote/custom-file-panel';
@@ -164,7 +165,17 @@ function BlockNote({
       // Fall back to cloud URL
       // Use publicFiles prop if set, otherwise default to private
       const isPublic = publicFiles ?? baseFilePanelProps?.isPublic ?? false;
-      return getFileUrl(key, isPublic);
+
+      // Get organizationId from cache (if key is attachment ID) or from props
+      const cachedAttachment = isAttachmentId ? findAttachmentInListCache(key) : null;
+      const organizationId = cachedAttachment?.organizationId ?? baseFilePanelProps?.organizationId;
+
+      if (!organizationId) {
+        console.error('[BlockNote] Cannot resolve private file URL: no organizationId available for key:', key);
+        return '';
+      }
+
+      return getFileUrl(key, isPublic, organizationId);
     },
   });
 

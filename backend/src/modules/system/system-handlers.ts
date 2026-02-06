@@ -122,7 +122,7 @@ const systemRouteHandlers = app
     }
 
     if (recipientEmails.length === 0) {
-      return ctx.json({ success: false, rejectedItemIds, invitesSentCount: 0 }, 200);
+      return ctx.json({ data: [] as never[], rejectedItemIds, invitesSentCount: 0 }, 200);
     }
 
     // Generate token and store hashed
@@ -163,7 +163,7 @@ const systemRouteHandlers = app
 
     logEvent('info', 'Users invited on system level', { count: recipients.length });
 
-    return ctx.json({ success: true, rejectedItemIds, invitesSentCount: recipients.length }, 200);
+    return ctx.json({ data: [] as never[], rejectedItemIds, invitesSentCount: recipients.length }, 200);
   })
   /**
    * Get list of users (system admin only)
@@ -260,7 +260,7 @@ const systemRouteHandlers = app
     const targets = await db.select({ id: usersTable.id }).from(usersTable).where(inArray(usersTable.id, toDeleteIds));
 
     const foundIds = targets.map(({ id }) => id);
-    const rejectedItems = toDeleteIds.filter((id) => !foundIds.includes(id));
+    const rejectedItemIds = toDeleteIds.filter((id) => !foundIds.includes(id));
 
     // If no valid users found, return error
     if (!foundIds.length) throw new AppError(404, 'not_found', 'warn', { entityType: 'user' });
@@ -270,7 +270,7 @@ const systemRouteHandlers = app
 
     logEvent('info', 'Users deleted', foundIds);
 
-    return ctx.json({ success: true, rejectedItems }, 200);
+    return ctx.json({ data: [] as never[], rejectedItemIds }, 200);
   })
   /**
    * Update a user by id

@@ -209,6 +209,7 @@ const membershipsRouteHandlers = app
     }
 
     // For Scenario 2b (existing users to directly add)
+    let createdMemberships: Awaited<ReturnType<typeof insertMemberships>> = [];
     if (existingUsersToDirectAdd.length > 0) {
       const membershipsToInsert = existingUsersToDirectAdd.map(({ userId }) => ({
         userId,
@@ -217,7 +218,7 @@ const membershipsRouteHandlers = app
         createdBy: user.id,
       }));
 
-      await insertMemberships(membershipsToInsert);
+      createdMemberships = await insertMemberships(membershipsToInsert);
     }
 
     // Step 3: Prepare no-token recipients (Scenario 1b + Scenario 2)
@@ -372,7 +373,7 @@ const membershipsRouteHandlers = app
       [targetEntityIdField]: entityId,
     });
 
-    return ctx.json({ success: invitesSentCount > 0, rejectedItemIds, invitesSentCount }, 200);
+    return ctx.json({ data: createdMemberships, rejectedItemIds, invitesSentCount }, 200);
   })
 
   /**
@@ -404,7 +405,7 @@ const membershipsRouteHandlers = app
     }
 
     // If the user doesn't have permission to delete any of the memberships, return an error
-    if (targets.length === 0) return ctx.json({ success: false, rejectedItemIds }, 200);
+    if (targets.length === 0) return ctx.json({ data: [] as never[], rejectedItemIds }, 200);
 
     // Delete the memberships
     await db.delete(membershipsTable).where(
@@ -421,20 +422,20 @@ const membershipsRouteHandlers = app
       targets.map((t) => t.userId),
     );
 
-    return ctx.json({ success: true, rejectedItemIds }, 200);
+    return ctx.json({ data: [] as never[], rejectedItemIds }, 200);
   })
   /**
    * Update user membership
    */
   .openapi(membershipRoutes.updateMembership, async (ctx) => {
     const { id: membershipId } = ctx.req.valid('param');
-    const { role, archived, muted, order } = ctx.req.valid('json');
+    const { role, archived, muted, displayOrder } = ctx.req.valid('json');
 
     const user = getContextUser();
     const memberships = getContextMemberships();
     const organization = getContextOrganization();
 
-    let orderToUpdate = order;
+    let orderToUpdate = displayOrder;
 
     // Get the membership in valid organization
     const [membershipToUpdate] = await db
@@ -465,9 +466,9 @@ const membershipsRouteHandlers = app
         (membership) => membership.contextType === updatedType && membership.archived === archived,
       );
 
-      const lastOrderMembership = relevantMemberships.sort((a, b) => b.order - a.order)[0];
+      const lastOrderMembership = relevantMemberships.sort((a, b) => b.displayOrder - a.displayOrder)[0];
 
-      const ceilOrder = lastOrderMembership ? Math.ceil(lastOrderMembership.order) : 0;
+      const ceilOrder = lastOrderMembership ? Math.ceil(lastOrderMembership.displayOrder) : 0;
 
       orderToUpdate = ceilOrder + 10;
     }
@@ -476,7 +477,7 @@ const membershipsRouteHandlers = app
       .update(membershipsTable)
       .set({
         ...(role !== undefined && { role }),
-        ...(orderToUpdate !== undefined && { order: orderToUpdate }),
+        ...(orderToUpdate !== undefined && { displayOrder: orderToUpdate }),
         ...(muted !== undefined && { muted }),
         ...(archived !== undefined && { archived }),
         modifiedBy: user.id,

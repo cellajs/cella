@@ -9,20 +9,26 @@
         "schema": {
           "type": "object",
           "properties": {
-            "success": { "type": "boolean", "required": true },
+            "data": { "type": "array", "required": true },
             "rejectedItemIds": {
               "type": "array",
               "required": true,
+              "description": "Identifiers of items that could not be processed",
               "itemType": "string"
+            },
+            "rejectionReasons": {
+              "type": "object",
+              "required": false,
+              "description": "Map of rejected item ID to reason code"
             },
             "invitesSentCount": { "type": "number", "required": true }
           },
-          "extendsRef": "#/components/schemas/SuccessWithRejectedItems",
           "contentType": "application/json"
         },
         "example": {
-          "success": true,
-          "rejectedItemIds": []
+          "data": [],
+          "rejectedItemIds": [],
+          "invitesSentCount": 2
         }
       },
       {
@@ -189,7 +195,7 @@
                         },
                         "archived": { "type": "boolean", "required": true },
                         "muted": { "type": "boolean", "required": true },
-                        "order": {
+                        "displayOrder": {
                           "type": "number",
                           "required": true,
                           "minimum": -140737488355328,
@@ -243,7 +249,7 @@
                   "userId": "ifex0agu87zf240qkfh0faoq",
                   "organizationId": "jip69qfpb1r33xdbp099f3xi",
                   "role": "admin",
-                  "order": 2,
+                  "displayOrder": 2,
                   "muted": false,
                   "archived": false
                 }
@@ -277,7 +283,7 @@
                   "userId": "44b7wkilwj64zmkwsnsmrzo2",
                   "organizationId": "zxd2hreylomg4p6xgvt4g11e",
                   "role": "admin",
-                  "order": 50,
+                  "displayOrder": 50,
                   "muted": false,
                   "archived": false
                 }
@@ -360,25 +366,24 @@
       {
         "status": 200,
         "description": "Success",
-        "name": "SuccessWithRejectedItems",
-        "ref": "#/components/schemas/SuccessWithRejectedItems",
         "contentType": "application/json",
         "schema": {
           "type": "object",
           "properties": {
-            "success": { "type": "boolean", "required": true },
+            "data": { "type": "array", "required": true },
             "rejectedItemIds": {
               "type": "array",
               "required": true,
+              "description": "Identifiers of items that could not be processed",
               "itemType": "string"
+            },
+            "rejectionReasons": {
+              "type": "object",
+              "required": false,
+              "description": "Map of rejected item ID to reason code"
             }
           },
-          "ref": "#/components/schemas/SuccessWithRejectedItems",
           "contentType": "application/json"
-        },
-        "example": {
-          "success": true,
-          "rejectedItemIds": []
         }
       },
       {

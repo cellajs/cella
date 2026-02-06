@@ -1,10 +1,17 @@
 import { useMutation } from '@tanstack/react-query';
 import { t } from 'i18next';
 import { appConfig } from 'shared';
-import { deleteMemberships, type MembershipInviteResponse, membershipInvite, updateMembership } from '~/api.gen';
+import {
+  deleteMemberships,
+  type MembershipBase,
+  type MembershipInviteResponse,
+  membershipInvite,
+  updateMembership,
+} from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import { toaster } from '~/modules/common/toaster/service';
 import type { ContextEntityData } from '~/modules/entities/types';
+import { meKeys } from '~/modules/me/query';
 import { memberQueryKeys } from '~/modules/memberships/query';
 import type {
   DeleteMembership,
@@ -24,11 +31,24 @@ import {
   getQueryItems,
   getSimilarQueries,
   invalidateOnMembershipChange,
-  useMutateQueryData,
 } from '~/query/basic';
 import { queryClient } from '~/query/query-client';
 
 const limit = appConfig.requestLimits.members;
+
+/**
+ * Update a membership in the myMemberships cache.
+ * This is the single source of truth for current user's memberships.
+ */
+const updateMyMembershipCache = (updatedMembership: Partial<MembershipBase> & { id: string }) => {
+  queryClient.setQueryData<{ items: MembershipBase[] }>(meKeys.memberships, (oldData) => {
+    if (!oldData) return oldData;
+    return {
+      ...oldData,
+      items: oldData.items.map((m) => (m.id === updatedMembership.id ? { ...m, ...updatedMembership } : m)),
+    };
+  });
+};
 
 const onError = (
   _: ApiError,
@@ -59,7 +79,7 @@ export const useInviteMemberMutation = () =>
           if (orgKeys) {
             const orgDetailQueryKey = orgKeys.detail.byId(organizationId);
             queryClient.setQueryData<ContextEntityData>(orgDetailQueryKey, (oldOrg) => {
-              if (!oldOrg || !oldOrg.counts) return oldOrg;
+              if (!oldOrg?.included?.counts) return oldOrg;
               return updateMembershipCounts(oldOrg, invitesSentCount);
             });
           }
@@ -76,7 +96,7 @@ export const useInviteMemberMutation = () =>
         if (entityKeys) {
           const detailQueryKey = entityKeys.detail.byId(entityId);
           queryClient.setQueryData<ContextEntityData>(detailQueryKey, (oldEntity) => {
-            if (!oldEntity || !oldEntity.counts) return oldEntity;
+            if (!oldEntity?.included?.counts) return oldEntity;
             return updateMembershipCounts(oldEntity, invitesSentCount);
           });
         }
@@ -96,7 +116,7 @@ export const useMemberUpdateMutation = () =>
     },
     onMutate: async (variables) => {
       const { entityId, entityType, orgId, ...membershipInfo } = variables;
-      const { archived, muted, role, order } = membershipInfo;
+      const { archived, muted, role, displayOrder } = membershipInfo;
 
       // Store previous query data for rollback if an Apierror occurs
       const context = {
@@ -115,17 +135,11 @@ export const useMemberUpdateMutation = () =>
         });
       } else if (role) {
         context.toastMessage = t('common:success.update_item', { item: t('common:role') });
-      } else if (order !== undefined)
+      } else if (displayOrder !== undefined)
         context.toastMessage = t('common:success.update_item', { item: t('common:order') });
 
-      // Update membership in member queries
-      const { updateMembership } = useMutateQueryData(memberQueryKeys.list.base);
-      updateMembership([membershipInfo], entityType);
-
-      // Update membership in entity cache (for menu)
-      const entityQueryKey = [entityType];
-      const { updateMembership: updateEntityMembership } = useMutateQueryData(entityQueryKey);
-      updateEntityMembership([membershipInfo], entityType);
+      // Update membership in the separate myMemberships cache
+      updateMyMembershipCache(membershipInfo);
 
       // Get affected queries
       const similarKey = memberQueryKeys.list.similarMembers({ entityId, entityType, orgId });
@@ -152,14 +166,8 @@ export const useMemberUpdateMutation = () =>
       return context;
     },
     onSuccess: async (updatedMembership, { entityId, entityType, orgId }, { toastMessage }) => {
-      // Update membership of ContextEntityType query that was fetched after success
-      const { updateMembership } = useMutateQueryData(memberQueryKeys.list.base);
-      updateMembership([updatedMembership], entityType);
-
-      // Update membership in entity cache (for menu)
-      const entityQueryKey = [entityType];
-      const { updateMembership: updateEntityMembership } = useMutateQueryData(entityQueryKey);
-      updateEntityMembership([updatedMembership], entityType);
+      // Update membership in the separate myMemberships cache with server response
+      updateMyMembershipCache(updatedMembership);
 
       // Get affected queries
       const similarKey = memberQueryKeys.list.similarMembers({ entityId, entityType, orgId });
@@ -270,15 +278,18 @@ const updateMembershipCounts = (
   oldEntity: ContextEntityData | undefined,
   updateCount: number,
 ): ContextEntityData | undefined => {
-  if (!oldEntity || !oldEntity.counts) return oldEntity;
+  if (!oldEntity?.included?.counts) return oldEntity;
 
   return {
     ...oldEntity,
-    counts: {
-      ...oldEntity.counts,
-      membership: {
-        ...oldEntity.counts.membership,
-        pending: (oldEntity.counts.membership.pending ?? 0) + updateCount,
+    included: {
+      ...oldEntity.included,
+      counts: {
+        ...oldEntity.included.counts,
+        membership: {
+          ...oldEntity.included.counts.membership,
+          pending: (oldEntity.included.counts.membership.pending ?? 0) + updateCount,
+        },
       },
     },
   };

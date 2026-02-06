@@ -105,57 +105,64 @@
                     "enum": ["github", "google", "microsoft", "password", "passkey", "totp", "email"]
                   },
                   "chatSupport": { "type": "boolean", "required": true },
-                  "membership": {
+                  "included": {
                     "type": "object",
                     "required": true,
-                    "properties": {
-                      "id": { "type": "string", "required": true },
-                      "contextType": {
-                        "type": "string",
-                        "required": true,
-                        "enum": ["organization"]
-                      },
-                      "userId": { "type": "string", "required": true },
-                      "role": {
-                        "type": "string",
-                        "required": true,
-                        "enum": ["admin", "member"]
-                      },
-                      "archived": { "type": "boolean", "required": true },
-                      "muted": { "type": "boolean", "required": true },
-                      "order": {
-                        "type": "number",
-                        "required": true,
-                        "minimum": -140737488355328,
-                        "maximum": 140737488355327
-                      },
-                      "organizationId": { "type": "string", "required": true }
-                    },
-                    "ref": "#/components/schemas/MembershipBase"
-                  },
-                  "counts": {
-                    "type": "object",
-                    "required": false,
                     "properties": {
                       "membership": {
                         "type": "object",
                         "required": true,
                         "properties": {
-                          "admin": { "type": "number", "required": true },
-                          "member": { "type": "number", "required": true },
-                          "pending": { "type": "number", "required": true },
-                          "total": { "type": "number", "required": true }
-                        }
+                          "id": { "type": "string", "required": true },
+                          "contextType": {
+                            "type": "string",
+                            "required": true,
+                            "enum": ["organization"]
+                          },
+                          "userId": { "type": "string", "required": true },
+                          "role": {
+                            "type": "string",
+                            "required": true,
+                            "enum": ["admin", "member"]
+                          },
+                          "archived": { "type": "boolean", "required": true },
+                          "muted": { "type": "boolean", "required": true },
+                          "displayOrder": {
+                            "type": "number",
+                            "required": true,
+                            "minimum": -140737488355328,
+                            "maximum": 140737488355327
+                          },
+                          "organizationId": { "type": "string", "required": true }
+                        },
+                        "ref": "#/components/schemas/MembershipBase"
                       },
-                      "entities": {
+                      "counts": {
                         "type": "object",
-                        "required": true,
+                        "required": false,
                         "properties": {
-                          "attachment": { "type": "number", "required": true },
-                          "page": { "type": "number", "required": true }
+                          "membership": {
+                            "type": "object",
+                            "required": true,
+                            "properties": {
+                              "admin": { "type": "number", "required": true },
+                              "member": { "type": "number", "required": true },
+                              "pending": { "type": "number", "required": true },
+                              "total": { "type": "number", "required": true }
+                            }
+                          },
+                          "entities": {
+                            "type": "object",
+                            "required": true,
+                            "properties": {
+                              "attachment": { "type": "number", "required": true },
+                              "page": { "type": "number", "required": true }
+                            }
+                          }
                         }
                       }
-                    }
+                    },
+                    "extendsRef": "#/components/schemas/OrganizationIncluded"
                   },
                   "can": {
                     "type": "object",
@@ -218,24 +225,26 @@
                 "attachment": 100,
                 "page": 0
               },
-              "membership": {
-                "id": "3y6ee6h5lc8sjfv4trxwe3yb",
-                "contextType": "organization",
-                "userId": "89fjn21t4n7coocr6ixfzcb6",
-                "organizationId": "kzmv5qbhdcqeiuvwlosan0fc",
-                "role": "admin",
-                "order": 56,
-                "muted": false,
-                "archived": false
-              },
-              "counts": {
+              "included": {
                 "membership": {
-                  "admin": 43,
-                  "member": 58,
-                  "pending": 47,
-                  "total": 101
+                  "id": "3y6ee6h5lc8sjfv4trxwe3yb",
+                  "contextType": "organization",
+                  "userId": "89fjn21t4n7coocr6ixfzcb6",
+                  "organizationId": "kzmv5qbhdcqeiuvwlosan0fc",
+                  "role": "admin",
+                  "displayOrder": 56,
+                  "muted": false,
+                  "archived": false
                 },
-                "entities": { "attachment": 294, "page": 327 }
+                "counts": {
+                  "membership": {
+                    "admin": 43,
+                    "member": 58,
+                    "pending": 47,
+                    "total": 101
+                  },
+                  "entities": { "attachment": 294, "page": 327 }
+                }
               }
             },
             {
@@ -268,24 +277,26 @@
                 "attachment": 100,
                 "page": 0
               },
-              "membership": {
-                "id": "ry5f7szmj5jhp0ad93klgj3e",
-                "contextType": "organization",
-                "userId": "j6ly81u4oy2u1m55abgsmrl1",
-                "organizationId": "p3t0ygxx0aa83en3sk1fs1we",
-                "role": "admin",
-                "order": 1,
-                "muted": false,
-                "archived": false
-              },
-              "counts": {
+              "included": {
                 "membership": {
-                  "admin": 22,
-                  "member": 122,
-                  "pending": 44,
-                  "total": 144
+                  "id": "ry5f7szmj5jhp0ad93klgj3e",
+                  "contextType": "organization",
+                  "userId": "j6ly81u4oy2u1m55abgsmrl1",
+                  "organizationId": "p3t0ygxx0aa83en3sk1fs1we",
+                  "role": "admin",
+                  "displayOrder": 1,
+                  "muted": false,
+                  "archived": false
                 },
-                "entities": { "attachment": 321, "page": 94 }
+                "counts": {
+                  "membership": {
+                    "admin": 22,
+                    "member": 122,
+                    "pending": 44,
+                    "total": 144
+                  },
+                  "entities": { "attachment": 321, "page": 94 }
+                }
               }
             }
           ],
@@ -465,10 +476,11 @@
                     "enum": ["github", "google", "microsoft", "password", "passkey", "totp", "email"]
                   },
                   "chatSupport": { "type": "boolean", "required": true },
-                  "membership": {
-                    "required": true,
-                    "anyOf": [
-                      {
+                  "included": {
+                    "type": "object",
+                    "required": false,
+                    "properties": {
+                      "membership": {
                         "type": "object",
                         "required": false,
                         "properties": {
@@ -486,7 +498,7 @@
                           },
                           "archived": { "type": "boolean", "required": true },
                           "muted": { "type": "boolean", "required": true },
-                          "order": {
+                          "displayOrder": {
                             "type": "number",
                             "required": true,
                             "minimum": -140737488355328,
@@ -496,32 +508,32 @@
                         },
                         "ref": "#/components/schemas/MembershipBase"
                       },
-                      { "type": "null", "required": false }
-                    ]
-                  },
-                  "counts": {
-                    "type": "object",
-                    "required": false,
-                    "properties": {
-                      "membership": {
+                      "counts": {
                         "type": "object",
-                        "required": true,
+                        "required": false,
                         "properties": {
-                          "admin": { "type": "number", "required": true },
-                          "member": { "type": "number", "required": true },
-                          "pending": { "type": "number", "required": true },
-                          "total": { "type": "number", "required": true }
-                        }
-                      },
-                      "entities": {
-                        "type": "object",
-                        "required": true,
-                        "properties": {
-                          "attachment": { "type": "number", "required": true },
-                          "page": { "type": "number", "required": true }
+                          "membership": {
+                            "type": "object",
+                            "required": true,
+                            "properties": {
+                              "admin": { "type": "number", "required": true },
+                              "member": { "type": "number", "required": true },
+                              "pending": { "type": "number", "required": true },
+                              "total": { "type": "number", "required": true }
+                            }
+                          },
+                          "entities": {
+                            "type": "object",
+                            "required": true,
+                            "properties": {
+                              "attachment": { "type": "number", "required": true },
+                              "page": { "type": "number", "required": true }
+                            }
+                          }
                         }
                       }
-                    }
+                    },
+                    "ref": "#/components/schemas/OrganizationIncluded"
                   },
                   "can": {
                     "type": "object",
@@ -574,24 +586,26 @@
                 "attachment": 100,
                 "page": 0
               },
-              "membership": {
-                "id": "300jor4orrvsgezqoyxfckg3",
-                "contextType": "organization",
-                "userId": "ifex0agu87zf240qkfh0faoq",
-                "organizationId": "qqp8d07imsvjbtqtl3rtjgxd",
-                "role": "admin",
-                "order": 2,
-                "muted": false,
-                "archived": false
-              },
-              "counts": {
+              "included": {
                 "membership": {
-                  "admin": 30,
-                  "member": 20,
-                  "pending": 27,
-                  "total": 50
+                  "id": "300jor4orrvsgezqoyxfckg3",
+                  "contextType": "organization",
+                  "userId": "ifex0agu87zf240qkfh0faoq",
+                  "organizationId": "qqp8d07imsvjbtqtl3rtjgxd",
+                  "role": "admin",
+                  "displayOrder": 2,
+                  "muted": false,
+                  "archived": false
                 },
-                "entities": { "attachment": 188, "page": 390 }
+                "counts": {
+                  "membership": {
+                    "admin": 30,
+                    "member": 20,
+                    "pending": 27,
+                    "total": 50
+                  },
+                  "entities": { "attachment": 188, "page": 390 }
+                }
               }
             },
             {
@@ -624,24 +638,26 @@
                 "attachment": 100,
                 "page": 0
               },
-              "membership": {
-                "id": "1u44cckbz5av195r4h3wiruz",
-                "contextType": "organization",
-                "userId": "44b7wkilwj64zmkwsnsmrzo2",
-                "organizationId": "hg5ogh3yr2b2dbwf7b9eckaj",
-                "role": "admin",
-                "order": 50,
-                "muted": false,
-                "archived": false
-              },
-              "counts": {
+              "included": {
                 "membership": {
-                  "admin": 7,
-                  "member": 150,
-                  "pending": 18,
-                  "total": 157
+                  "id": "1u44cckbz5av195r4h3wiruz",
+                  "contextType": "organization",
+                  "userId": "44b7wkilwj64zmkwsnsmrzo2",
+                  "organizationId": "hg5ogh3yr2b2dbwf7b9eckaj",
+                  "role": "admin",
+                  "displayOrder": 50,
+                  "muted": false,
+                  "archived": false
                 },
-                "entities": { "attachment": 1, "page": 272 }
+                "counts": {
+                  "membership": {
+                    "admin": 7,
+                    "member": 150,
+                    "pending": 18,
+                    "total": 157
+                  },
+                  "entities": { "attachment": 1, "page": 272 }
+                }
               }
             }
           ],
@@ -722,25 +738,24 @@
       {
         "status": 200,
         "description": "Success",
-        "name": "SuccessWithRejectedItems",
-        "ref": "#/components/schemas/SuccessWithRejectedItems",
         "contentType": "application/json",
         "schema": {
           "type": "object",
           "properties": {
-            "success": { "type": "boolean", "required": true },
+            "data": { "type": "array", "required": true },
             "rejectedItemIds": {
               "type": "array",
               "required": true,
+              "description": "Identifiers of items that could not be processed",
               "itemType": "string"
+            },
+            "rejectionReasons": {
+              "type": "object",
+              "required": false,
+              "description": "Map of rejected item ID to reason code"
             }
           },
-          "ref": "#/components/schemas/SuccessWithRejectedItems",
           "contentType": "application/json"
-        },
-        "example": {
-          "success": true,
-          "rejectedItemIds": []
         }
       },
       {
@@ -897,10 +912,11 @@
               "enum": ["github", "google", "microsoft", "password", "passkey", "totp", "email"]
             },
             "chatSupport": { "type": "boolean", "required": true },
-            "membership": {
-              "required": true,
-              "anyOf": [
-                {
+            "included": {
+              "type": "object",
+              "required": false,
+              "properties": {
+                "membership": {
                   "type": "object",
                   "required": false,
                   "properties": {
@@ -918,7 +934,7 @@
                     },
                     "archived": { "type": "boolean", "required": true },
                     "muted": { "type": "boolean", "required": true },
-                    "order": {
+                    "displayOrder": {
                       "type": "number",
                       "required": true,
                       "minimum": -140737488355328,
@@ -928,32 +944,32 @@
                   },
                   "ref": "#/components/schemas/MembershipBase"
                 },
-                { "type": "null", "required": false }
-              ]
-            },
-            "counts": {
-              "type": "object",
-              "required": false,
-              "properties": {
-                "membership": {
+                "counts": {
                   "type": "object",
-                  "required": true,
+                  "required": false,
                   "properties": {
-                    "admin": { "type": "number", "required": true },
-                    "member": { "type": "number", "required": true },
-                    "pending": { "type": "number", "required": true },
-                    "total": { "type": "number", "required": true }
-                  }
-                },
-                "entities": {
-                  "type": "object",
-                  "required": true,
-                  "properties": {
-                    "attachment": { "type": "number", "required": true },
-                    "page": { "type": "number", "required": true }
+                    "membership": {
+                      "type": "object",
+                      "required": true,
+                      "properties": {
+                        "admin": { "type": "number", "required": true },
+                        "member": { "type": "number", "required": true },
+                        "pending": { "type": "number", "required": true },
+                        "total": { "type": "number", "required": true }
+                      }
+                    },
+                    "entities": {
+                      "type": "object",
+                      "required": true,
+                      "properties": {
+                        "attachment": { "type": "number", "required": true },
+                        "page": { "type": "number", "required": true }
+                      }
+                    }
                   }
                 }
-              }
+              },
+              "ref": "#/components/schemas/OrganizationIncluded"
             },
             "can": {
               "type": "object",
@@ -1000,24 +1016,26 @@
             "attachment": 100,
             "page": 0
           },
-          "membership": {
-            "id": "kaba9fpc90mgtzmtjipw2v8s",
-            "contextType": "organization",
-            "userId": "w4hg4036vxzq0rzt4pucveps",
-            "organizationId": "hmo9fwr239kqavr3yur671kl",
-            "role": "member",
-            "order": 38,
-            "muted": false,
-            "archived": false
-          },
-          "counts": {
+          "included": {
             "membership": {
-              "admin": 30,
-              "member": 63,
-              "pending": 13,
-              "total": 93
+              "id": "kaba9fpc90mgtzmtjipw2v8s",
+              "contextType": "organization",
+              "userId": "w4hg4036vxzq0rzt4pucveps",
+              "organizationId": "hmo9fwr239kqavr3yur671kl",
+              "role": "member",
+              "displayOrder": 38,
+              "muted": false,
+              "archived": false
             },
-            "entities": { "attachment": 178, "page": 257 }
+            "counts": {
+              "membership": {
+                "admin": 30,
+                "member": 63,
+                "pending": 13,
+                "total": 93
+              },
+              "entities": { "attachment": 178, "page": 257 }
+            }
           }
         }
       },
@@ -1166,10 +1184,11 @@
               "enum": ["github", "google", "microsoft", "password", "passkey", "totp", "email"]
             },
             "chatSupport": { "type": "boolean", "required": true },
-            "membership": {
-              "required": true,
-              "anyOf": [
-                {
+            "included": {
+              "type": "object",
+              "required": false,
+              "properties": {
+                "membership": {
                   "type": "object",
                   "required": false,
                   "properties": {
@@ -1187,7 +1206,7 @@
                     },
                     "archived": { "type": "boolean", "required": true },
                     "muted": { "type": "boolean", "required": true },
-                    "order": {
+                    "displayOrder": {
                       "type": "number",
                       "required": true,
                       "minimum": -140737488355328,
@@ -1197,32 +1216,32 @@
                   },
                   "ref": "#/components/schemas/MembershipBase"
                 },
-                { "type": "null", "required": false }
-              ]
-            },
-            "counts": {
-              "type": "object",
-              "required": false,
-              "properties": {
-                "membership": {
+                "counts": {
                   "type": "object",
-                  "required": true,
+                  "required": false,
                   "properties": {
-                    "admin": { "type": "number", "required": true },
-                    "member": { "type": "number", "required": true },
-                    "pending": { "type": "number", "required": true },
-                    "total": { "type": "number", "required": true }
-                  }
-                },
-                "entities": {
-                  "type": "object",
-                  "required": true,
-                  "properties": {
-                    "attachment": { "type": "number", "required": true },
-                    "page": { "type": "number", "required": true }
+                    "membership": {
+                      "type": "object",
+                      "required": true,
+                      "properties": {
+                        "admin": { "type": "number", "required": true },
+                        "member": { "type": "number", "required": true },
+                        "pending": { "type": "number", "required": true },
+                        "total": { "type": "number", "required": true }
+                      }
+                    },
+                    "entities": {
+                      "type": "object",
+                      "required": true,
+                      "properties": {
+                        "attachment": { "type": "number", "required": true },
+                        "page": { "type": "number", "required": true }
+                      }
+                    }
                   }
                 }
-              }
+              },
+              "ref": "#/components/schemas/OrganizationIncluded"
             },
             "can": {
               "type": "object",
@@ -1269,24 +1288,26 @@
             "attachment": 100,
             "page": 0
           },
-          "membership": {
-            "id": "kaba9fpc90mgtzmtjipw2v8s",
-            "contextType": "organization",
-            "userId": "w4hg4036vxzq0rzt4pucveps",
-            "organizationId": "hmo9fwr239kqavr3yur671kl",
-            "role": "member",
-            "order": 38,
-            "muted": false,
-            "archived": false
-          },
-          "counts": {
+          "included": {
             "membership": {
-              "admin": 30,
-              "member": 63,
-              "pending": 13,
-              "total": 93
+              "id": "kaba9fpc90mgtzmtjipw2v8s",
+              "contextType": "organization",
+              "userId": "w4hg4036vxzq0rzt4pucveps",
+              "organizationId": "hmo9fwr239kqavr3yur671kl",
+              "role": "member",
+              "displayOrder": 38,
+              "muted": false,
+              "archived": false
             },
-            "entities": { "attachment": 178, "page": 257 }
+            "counts": {
+              "membership": {
+                "admin": 30,
+                "member": 63,
+                "pending": 13,
+                "total": 93
+              },
+              "entities": { "attachment": 178, "page": 257 }
+            }
           }
         }
       },

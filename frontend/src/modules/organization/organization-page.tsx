@@ -7,6 +7,7 @@ import { PageHeader } from '~/modules/common/page/header';
 import { PageTabNav } from '~/modules/common/page/tab-nav';
 import { toaster } from '~/modules/common/toaster/service';
 import { organizationQueryOptions, useOrganizationUpdateMutation } from '~/modules/organization/query';
+import type { OrganizationWithMembership } from '~/modules/organization/types';
 import { OrganizationRoute } from '~/routes/organization-routes';
 
 const LeaveOrgButton = lazy(() => import('~/modules/organization/leave-organization'));
@@ -15,7 +16,8 @@ function OrganizationPage({ organizationId }: { organizationId: string }) {
   const { t } = useTranslation();
 
   const orgQueryOptions = organizationQueryOptions(organizationId);
-  const { data: organization } = useSuspenseQuery(orgQueryOptions);
+  // Organization is enriched with membership via cache subscription
+  const { data: organization } = useSuspenseQuery(orgQueryOptions) as { data: OrganizationWithMembership };
 
   const canUpdate = organization.can?.update ?? false;
 

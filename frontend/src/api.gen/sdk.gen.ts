@@ -102,6 +102,9 @@ import type {
   GetMyInvitationsData,
   GetMyInvitationsErrors,
   GetMyInvitationsResponses,
+  GetMyMembershipsData,
+  GetMyMembershipsErrors,
+  GetMyMembershipsResponses,
   GetOrganizationData,
   GetOrganizationErrors,
   GetOrganizationResponses,
@@ -1201,6 +1204,32 @@ export const unsubscribeMe = <ThrowOnError extends boolean = true>(options: Opti
   });
 
 /**
+ * Get my memberships
+ *
+ * Returns all memberships for the *current user* across all context entities.
+ *
+ * **GET /me/memberships** ·· [getMyMemberships](https://api.cellajs.com/docs#tag/me/get/me/memberships) ·· _me_
+ *
+ * @param {getMyMembershipsData} options
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const getMyMemberships = <ThrowOnError extends boolean = true>(
+  options?: Options<GetMyMembershipsData, ThrowOnError>,
+) =>
+  (options?.client ?? client).get<GetMyMembershipsResponses, GetMyMembershipsErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/me/memberships',
+    ...options,
+  });
+
+/**
  * Delete organizations
  *
  * Deletes one or more *organizations* by ID.
@@ -2132,6 +2161,34 @@ export const createAttachments = <ThrowOnError extends boolean = true>(
   });
 
 /**
+ * Get presigned URL
+ *
+ * Generates and returns a presigned URL for accessing a private attachment file in S3. Public files should use the public CDN URL directly. Requires organization context.
+ *
+ * **GET /{orgId}/attachments/presigned-url** ·· [getPresignedUrl](https://api.cellajs.com/docs#tag/attachments/get/{orgId}/attachments/presigned-url) ·· _attachments_
+ *
+ * @param {getPresignedUrlData} options
+ * @param {string} options.path.orgid - `string`
+ * @param {string} options.query.key - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const getPresignedUrl = <ThrowOnError extends boolean = true>(
+  options: Options<GetPresignedUrlData, ThrowOnError>,
+) =>
+  (options.client ?? client).get<GetPresignedUrlResponses, GetPresignedUrlErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/{orgId}/attachments/presigned-url',
+    ...options,
+  });
+
+/**
  * Get attachment
  *
  * Returns a single *attachment* by ID. Supports CDC cache via X-Cache-Token header.
@@ -2209,33 +2266,6 @@ export const redirectToAttachment = <ThrowOnError extends boolean = true>(
   (options.client ?? client).get<RedirectToAttachmentResponses, RedirectToAttachmentErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/{orgId}/attachments/{id}/link',
-    ...options,
-  });
-
-/**
- * Get presigned URL
- *
- * Generates and returns a presigned URL for accessing a private file in S3. Public files should use the public CDN URL directly.
- *
- * **GET /{orgId}/attachments/presigned-url** ·· [getPresignedUrl](https://api.cellajs.com/docs#tag/attachments/get/{orgId}/attachments/presigned-url) ·· _attachments_
- *
- * @param {getPresignedUrlData} options
- * @param {string} options.query.key - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const getPresignedUrl = <ThrowOnError extends boolean = true>(
-  options: Options<GetPresignedUrlData, ThrowOnError>,
-) =>
-  (options.client ?? client).get<GetPresignedUrlResponses, GetPresignedUrlErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/{orgId}/attachments/presigned-url',
     ...options,
   });
 
@@ -2321,7 +2351,7 @@ export const membershipInvite = <ThrowOnError extends boolean = true>(
  * @param {enum=} options.body.role - `enum` (optional)
  * @param {boolean=} options.body.muted - `boolean` (optional)
  * @param {boolean=} options.body.archived - `boolean` (optional)
- * @param {number=} options.body.order - `number` (optional)
+ * @param {number=} options.body.displayOrder - `number` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const updateMembership = <ThrowOnError extends boolean = true>(

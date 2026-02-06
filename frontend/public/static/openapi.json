@@ -360,7 +360,7 @@
           "muted": {
             "type": "boolean"
           },
-          "order": {
+          "displayOrder": {
             "type": "number",
             "minimum": -140737488355328,
             "maximum": 140737488355327
@@ -376,7 +376,7 @@
           "role",
           "archived",
           "muted",
-          "order",
+          "displayOrder",
           "organizationId"
         ],
         "example": {
@@ -385,7 +385,7 @@
           "userId": "gmpj3uavw3f7pkm7vsxl2157",
           "organizationId": "n34cen80754cxm7om1aq3bat",
           "role": "member",
-          "order": 9,
+          "displayOrder": 9,
           "muted": false,
           "archived": false
         }
@@ -1471,28 +1471,6 @@
           "uniqueKey": "ne0c1n1xatbgsj5m94fa2zfj-9angnio9zojjlzk3croh621f"
         }
       },
-      "SuccessWithRejectedItems": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "rejectedItemIds": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "required": [
-          "success",
-          "rejectedItemIds"
-        ],
-        "example": {
-          "success": true,
-          "rejectedItemIds": []
-        }
-      },
       "UploadToken": {
         "type": "object",
         "properties": {
@@ -1549,6 +1527,61 @@
               "key": "uploads/kx5n7c1cush46z5cnizlmyd8",
               "expires": "2025-01-01T04:15:50.483Z"
             }
+          }
+        }
+      },
+      "OrganizationIncluded": {
+        "type": "object",
+        "properties": {
+          "membership": {
+            "$ref": "#/components/schemas/MembershipBase"
+          },
+          "counts": {
+            "type": "object",
+            "properties": {
+              "membership": {
+                "type": "object",
+                "properties": {
+                  "admin": {
+                    "type": "number"
+                  },
+                  "member": {
+                    "type": "number"
+                  },
+                  "pending": {
+                    "type": "number"
+                  },
+                  "total": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "admin",
+                  "member",
+                  "pending",
+                  "total"
+                ]
+              },
+              "entities": {
+                "type": "object",
+                "properties": {
+                  "attachment": {
+                    "type": "number"
+                  },
+                  "page": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "attachment",
+                  "page"
+                ]
+              }
+            },
+            "required": [
+              "membership",
+              "entities"
+            ]
           }
         }
       },
@@ -1699,62 +1732,8 @@
           "chatSupport": {
             "type": "boolean"
           },
-          "membership": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/MembershipBase"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "counts": {
-            "type": "object",
-            "properties": {
-              "membership": {
-                "type": "object",
-                "properties": {
-                  "admin": {
-                    "type": "number"
-                  },
-                  "member": {
-                    "type": "number"
-                  },
-                  "pending": {
-                    "type": "number"
-                  },
-                  "total": {
-                    "type": "number"
-                  }
-                },
-                "required": [
-                  "admin",
-                  "member",
-                  "pending",
-                  "total"
-                ]
-              },
-              "entities": {
-                "type": "object",
-                "properties": {
-                  "attachment": {
-                    "type": "number"
-                  },
-                  "page": {
-                    "type": "number"
-                  }
-                },
-                "required": [
-                  "attachment",
-                  "page"
-                ]
-              }
-            },
-            "required": [
-              "membership",
-              "entities"
-            ]
+          "included": {
+            "$ref": "#/components/schemas/OrganizationIncluded"
           },
           "can": {
             "type": "object",
@@ -1808,8 +1787,7 @@
           "websiteUrl",
           "welcomeText",
           "authStrategies",
-          "chatSupport",
-          "membership"
+          "chatSupport"
         ],
         "example": {
           "id": "hmo9fwr239kqavr3yur671kl",
@@ -1845,26 +1823,28 @@
             "attachment": 100,
             "page": 0
           },
-          "membership": {
-            "id": "kaba9fpc90mgtzmtjipw2v8s",
-            "contextType": "organization",
-            "userId": "w4hg4036vxzq0rzt4pucveps",
-            "organizationId": "hmo9fwr239kqavr3yur671kl",
-            "role": "member",
-            "order": 38,
-            "muted": false,
-            "archived": false
-          },
-          "counts": {
+          "included": {
             "membership": {
-              "admin": 30,
-              "member": 63,
-              "pending": 13,
-              "total": 93
+              "id": "kaba9fpc90mgtzmtjipw2v8s",
+              "contextType": "organization",
+              "userId": "w4hg4036vxzq0rzt4pucveps",
+              "organizationId": "hmo9fwr239kqavr3yur671kl",
+              "role": "member",
+              "displayOrder": 38,
+              "muted": false,
+              "archived": false
             },
-            "entities": {
-              "attachment": 178,
-              "page": 257
+            "counts": {
+              "membership": {
+                "admin": 30,
+                "member": 63,
+                "pending": 13,
+                "total": 93
+              },
+              "entities": {
+                "attachment": 178,
+                "page": 257
+              }
             }
           }
         }
@@ -2269,7 +2249,7 @@
           "muted": {
             "type": "boolean"
           },
-          "order": {
+          "displayOrder": {
             "type": "number",
             "minimum": -140737488355328,
             "maximum": 140737488355327
@@ -2292,7 +2272,7 @@
           "modifiedBy",
           "archived",
           "muted",
-          "order",
+          "displayOrder",
           "organizationId",
           "uniqueKey"
         ],
@@ -2302,7 +2282,7 @@
           "userId": "xg7596t8jiy8d0v8irrljzhy",
           "organizationId": "7ul53b62aw5h7k6x44nbu2r5",
           "role": "admin",
-          "order": 49,
+          "displayOrder": 49,
           "muted": false,
           "archived": false,
           "createdAt": "2024-10-28T14:52:59.502Z",
@@ -5067,7 +5047,31 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SuccessWithRejectedItems"
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "prefixItems": []
+                    },
+                    "rejectedItemIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Identifiers of items that could not be processed"
+                    },
+                    "rejectionReasons": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "description": "Map of rejected item ID to reason code"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "rejectedItemIds"
+                  ]
                 }
               }
             }
@@ -5305,6 +5309,64 @@
         }
       }
     },
+    "/me/memberships": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getMyMemberships",
+        "tags": [
+          "me"
+        ],
+        "summary": "Get my memberships",
+        "description": "Returns all memberships for the *current user* across all context entities.",
+        "x-guard": [
+          "isAuthenticated"
+        ],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "responses": {
+          "200": {
+            "description": "User memberships",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/MembershipBase"
+                      }
+                    }
+                  },
+                  "required": [
+                    "items"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
     "/organizations": {
       "post": {
         "security": [
@@ -5377,10 +5439,24 @@
                           {
                             "type": "object",
                             "properties": {
-                              "membership": {
-                                "$ref": "#/components/schemas/MembershipBase"
+                              "included": {
+                                "allOf": [
+                                  {
+                                    "$ref": "#/components/schemas/OrganizationIncluded"
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {},
+                                    "required": [
+                                      "membership"
+                                    ]
+                                  }
+                                ]
                               }
-                            }
+                            },
+                            "required": [
+                              "included"
+                            ]
                           }
                         ],
                         "example": {
@@ -5417,26 +5493,28 @@
                             "attachment": 100,
                             "page": 0
                           },
-                          "membership": {
-                            "id": "kaba9fpc90mgtzmtjipw2v8s",
-                            "contextType": "organization",
-                            "userId": "w4hg4036vxzq0rzt4pucveps",
-                            "organizationId": "hmo9fwr239kqavr3yur671kl",
-                            "role": "member",
-                            "order": 38,
-                            "muted": false,
-                            "archived": false
-                          },
-                          "counts": {
+                          "included": {
                             "membership": {
-                              "admin": 30,
-                              "member": 63,
-                              "pending": 13,
-                              "total": 93
+                              "id": "kaba9fpc90mgtzmtjipw2v8s",
+                              "contextType": "organization",
+                              "userId": "w4hg4036vxzq0rzt4pucveps",
+                              "organizationId": "hmo9fwr239kqavr3yur671kl",
+                              "role": "member",
+                              "displayOrder": 38,
+                              "muted": false,
+                              "archived": false
                             },
-                            "entities": {
-                              "attachment": 178,
-                              "page": 257
+                            "counts": {
+                              "membership": {
+                                "admin": 30,
+                                "member": 63,
+                                "pending": 13,
+                                "total": 93
+                              },
+                              "entities": {
+                                "attachment": 178,
+                                "page": 257
+                              }
                             }
                           }
                         }
@@ -5498,26 +5576,28 @@
                         "attachment": 100,
                         "page": 0
                       },
-                      "membership": {
-                        "id": "3y6ee6h5lc8sjfv4trxwe3yb",
-                        "contextType": "organization",
-                        "userId": "89fjn21t4n7coocr6ixfzcb6",
-                        "organizationId": "kzmv5qbhdcqeiuvwlosan0fc",
-                        "role": "admin",
-                        "order": 56,
-                        "muted": false,
-                        "archived": false
-                      },
-                      "counts": {
+                      "included": {
                         "membership": {
-                          "admin": 43,
-                          "member": 58,
-                          "pending": 47,
-                          "total": 101
+                          "id": "3y6ee6h5lc8sjfv4trxwe3yb",
+                          "contextType": "organization",
+                          "userId": "89fjn21t4n7coocr6ixfzcb6",
+                          "organizationId": "kzmv5qbhdcqeiuvwlosan0fc",
+                          "role": "admin",
+                          "displayOrder": 56,
+                          "muted": false,
+                          "archived": false
                         },
-                        "entities": {
-                          "attachment": 294,
-                          "page": 327
+                        "counts": {
+                          "membership": {
+                            "admin": 43,
+                            "member": 58,
+                            "pending": 47,
+                            "total": 101
+                          },
+                          "entities": {
+                            "attachment": 294,
+                            "page": 327
+                          }
                         }
                       }
                     },
@@ -5555,26 +5635,28 @@
                         "attachment": 100,
                         "page": 0
                       },
-                      "membership": {
-                        "id": "ry5f7szmj5jhp0ad93klgj3e",
-                        "contextType": "organization",
-                        "userId": "j6ly81u4oy2u1m55abgsmrl1",
-                        "organizationId": "p3t0ygxx0aa83en3sk1fs1we",
-                        "role": "admin",
-                        "order": 1,
-                        "muted": false,
-                        "archived": false
-                      },
-                      "counts": {
+                      "included": {
                         "membership": {
-                          "admin": 22,
-                          "member": 122,
-                          "pending": 44,
-                          "total": 144
+                          "id": "ry5f7szmj5jhp0ad93klgj3e",
+                          "contextType": "organization",
+                          "userId": "j6ly81u4oy2u1m55abgsmrl1",
+                          "organizationId": "p3t0ygxx0aa83en3sk1fs1we",
+                          "role": "admin",
+                          "displayOrder": 1,
+                          "muted": false,
+                          "archived": false
                         },
-                        "entities": {
-                          "attachment": 321,
-                          "page": 94
+                        "counts": {
+                          "membership": {
+                            "admin": 22,
+                            "member": 122,
+                            "pending": 44,
+                            "total": 144
+                          },
+                          "entities": {
+                            "attachment": 321,
+                            "page": 94
+                          }
                         }
                       }
                     }
@@ -5770,26 +5852,28 @@
                         "attachment": 100,
                         "page": 0
                       },
-                      "membership": {
-                        "id": "300jor4orrvsgezqoyxfckg3",
-                        "contextType": "organization",
-                        "userId": "ifex0agu87zf240qkfh0faoq",
-                        "organizationId": "qqp8d07imsvjbtqtl3rtjgxd",
-                        "role": "admin",
-                        "order": 2,
-                        "muted": false,
-                        "archived": false
-                      },
-                      "counts": {
+                      "included": {
                         "membership": {
-                          "admin": 30,
-                          "member": 20,
-                          "pending": 27,
-                          "total": 50
+                          "id": "300jor4orrvsgezqoyxfckg3",
+                          "contextType": "organization",
+                          "userId": "ifex0agu87zf240qkfh0faoq",
+                          "organizationId": "qqp8d07imsvjbtqtl3rtjgxd",
+                          "role": "admin",
+                          "displayOrder": 2,
+                          "muted": false,
+                          "archived": false
                         },
-                        "entities": {
-                          "attachment": 188,
-                          "page": 390
+                        "counts": {
+                          "membership": {
+                            "admin": 30,
+                            "member": 20,
+                            "pending": 27,
+                            "total": 50
+                          },
+                          "entities": {
+                            "attachment": 188,
+                            "page": 390
+                          }
                         }
                       }
                     },
@@ -5827,26 +5911,28 @@
                         "attachment": 100,
                         "page": 0
                       },
-                      "membership": {
-                        "id": "1u44cckbz5av195r4h3wiruz",
-                        "contextType": "organization",
-                        "userId": "44b7wkilwj64zmkwsnsmrzo2",
-                        "organizationId": "hg5ogh3yr2b2dbwf7b9eckaj",
-                        "role": "admin",
-                        "order": 50,
-                        "muted": false,
-                        "archived": false
-                      },
-                      "counts": {
+                      "included": {
                         "membership": {
-                          "admin": 7,
-                          "member": 150,
-                          "pending": 18,
-                          "total": 157
+                          "id": "1u44cckbz5av195r4h3wiruz",
+                          "contextType": "organization",
+                          "userId": "44b7wkilwj64zmkwsnsmrzo2",
+                          "organizationId": "hg5ogh3yr2b2dbwf7b9eckaj",
+                          "role": "admin",
+                          "displayOrder": 50,
+                          "muted": false,
+                          "archived": false
                         },
-                        "entities": {
-                          "attachment": 1,
-                          "page": 272
+                        "counts": {
+                          "membership": {
+                            "admin": 7,
+                            "member": 150,
+                            "pending": 18,
+                            "total": 157
+                          },
+                          "entities": {
+                            "attachment": 1,
+                            "page": 272
+                          }
                         }
                       }
                     }
@@ -5919,7 +6005,31 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SuccessWithRejectedItems"
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "prefixItems": []
+                    },
+                    "rejectedItemIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Identifiers of items that could not be processed"
+                    },
+                    "rejectionReasons": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "description": "Map of rejected item ID to reason code"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "rejectedItemIds"
+                  ]
                 }
               }
             }
@@ -6012,26 +6122,28 @@
                     "attachment": 100,
                     "page": 0
                   },
-                  "membership": {
-                    "id": "kaba9fpc90mgtzmtjipw2v8s",
-                    "contextType": "organization",
-                    "userId": "w4hg4036vxzq0rzt4pucveps",
-                    "organizationId": "hmo9fwr239kqavr3yur671kl",
-                    "role": "member",
-                    "order": 38,
-                    "muted": false,
-                    "archived": false
-                  },
-                  "counts": {
+                  "included": {
                     "membership": {
-                      "admin": 30,
-                      "member": 63,
-                      "pending": 13,
-                      "total": 93
+                      "id": "kaba9fpc90mgtzmtjipw2v8s",
+                      "contextType": "organization",
+                      "userId": "w4hg4036vxzq0rzt4pucveps",
+                      "organizationId": "hmo9fwr239kqavr3yur671kl",
+                      "role": "member",
+                      "displayOrder": 38,
+                      "muted": false,
+                      "archived": false
                     },
-                    "entities": {
-                      "attachment": 178,
-                      "page": 257
+                    "counts": {
+                      "membership": {
+                        "admin": 30,
+                        "member": 63,
+                        "pending": 13,
+                        "total": 93
+                      },
+                      "entities": {
+                        "attachment": 178,
+                        "page": 257
+                      }
                     }
                   }
                 }
@@ -6253,26 +6365,28 @@
                     "attachment": 100,
                     "page": 0
                   },
-                  "membership": {
-                    "id": "kaba9fpc90mgtzmtjipw2v8s",
-                    "contextType": "organization",
-                    "userId": "w4hg4036vxzq0rzt4pucveps",
-                    "organizationId": "hmo9fwr239kqavr3yur671kl",
-                    "role": "member",
-                    "order": 38,
-                    "muted": false,
-                    "archived": false
-                  },
-                  "counts": {
+                  "included": {
                     "membership": {
-                      "admin": 30,
-                      "member": 63,
-                      "pending": 13,
-                      "total": 93
+                      "id": "kaba9fpc90mgtzmtjipw2v8s",
+                      "contextType": "organization",
+                      "userId": "w4hg4036vxzq0rzt4pucveps",
+                      "organizationId": "hmo9fwr239kqavr3yur671kl",
+                      "role": "member",
+                      "displayOrder": 38,
+                      "muted": false,
+                      "archived": false
                     },
-                    "entities": {
-                      "attachment": 178,
-                      "page": 257
+                    "counts": {
+                      "membership": {
+                        "admin": 30,
+                        "member": 63,
+                        "pending": 13,
+                        "total": 93
+                      },
+                      "entities": {
+                        "attachment": 178,
+                        "page": 257
+                      }
                     }
                   }
                 }
@@ -7272,29 +7386,38 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SuccessWithRejectedItems"
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "prefixItems": []
                     },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "invitesSentCount": {
-                          "type": "number"
-                        }
+                    "rejectedItemIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
                       },
-                      "required": [
-                        "invitesSentCount"
-                      ]
+                      "description": "Identifiers of items that could not be processed"
+                    },
+                    "rejectionReasons": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "description": "Map of rejected item ID to reason code"
+                    },
+                    "invitesSentCount": {
+                      "type": "number"
                     }
-                  ],
-                  "example": {
-                    "success": true,
-                    "rejectedItemIds": []
-                  }
+                  },
+                  "required": [
+                    "data",
+                    "rejectedItemIds",
+                    "invitesSentCount"
+                  ]
                 },
                 "example": {
-                  "success": true,
+                  "data": [],
                   "rejectedItemIds": [],
                   "invitesSentCount": 2
                 }
@@ -7523,7 +7646,7 @@
                           "userId": "ifex0agu87zf240qkfh0faoq",
                           "organizationId": "jip69qfpb1r33xdbp099f3xi",
                           "role": "admin",
-                          "order": 2,
+                          "displayOrder": 2,
                           "muted": false,
                           "archived": false
                         }
@@ -7557,7 +7680,7 @@
                           "userId": "44b7wkilwj64zmkwsnsmrzo2",
                           "organizationId": "zxd2hreylomg4p6xgvt4g11e",
                           "role": "admin",
-                          "order": 50,
+                          "displayOrder": 50,
                           "muted": false,
                           "archived": false
                         }
@@ -7633,7 +7756,31 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SuccessWithRejectedItems"
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "prefixItems": []
+                    },
+                    "rejectedItemIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Identifiers of items that could not be processed"
+                    },
+                    "rejectionReasons": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "description": "Map of rejected item ID to reason code"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "rejectedItemIds"
+                  ]
                 }
               }
             }
@@ -8953,7 +9100,7 @@
                           "userId": "ifex0agu87zf240qkfh0faoq",
                           "organizationId": "jip69qfpb1r33xdbp099f3xi",
                           "role": "admin",
-                          "order": 2,
+                          "displayOrder": 2,
                           "muted": false,
                           "archived": false
                         }
@@ -8987,7 +9134,7 @@
                           "userId": "44b7wkilwj64zmkwsnsmrzo2",
                           "organizationId": "zxd2hreylomg4p6xgvt4g11e",
                           "role": "admin",
-                          "order": 50,
+                          "displayOrder": 50,
                           "muted": false,
                           "archived": false
                         }
@@ -9696,7 +9843,99 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SuccessWithRejectedItems"
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "prefixItems": []
+                    },
+                    "rejectedItemIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Identifiers of items that could not be processed"
+                    },
+                    "rejectionReasons": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "description": "Map of rejected item ID to reason code"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "rejectedItemIds"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/{orgId}/attachments/presigned-url": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getPresignedUrl",
+        "tags": [
+          "attachments"
+        ],
+        "summary": "Get presigned URL",
+        "description": "Generates and returns a presigned URL for accessing a private attachment file in S3. Public files should use the public CDN URL directly. Requires organization context.",
+        "x-guard": [
+          "isAuthenticated",
+          "hasOrgAccess"
+        ],
+        "x-rate-limiter": [
+          "presignedUrlLimiter"
+        ],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "orgId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "key",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Presigned URL",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -9979,65 +10218,6 @@
         }
       }
     },
-    "/{orgId}/attachments/presigned-url": {
-      "get": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "getPresignedUrl",
-        "tags": [
-          "attachments"
-        ],
-        "summary": "Get presigned URL",
-        "description": "Generates and returns a presigned URL for accessing a private file in S3. Public files should use the public CDN URL directly.",
-        "x-guard": [
-          "isAuthenticated"
-        ],
-        "x-rate-limiter": [
-          "presignedUrlLimiter"
-        ],
-        "x-cache": [],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string"
-            },
-            "required": true,
-            "name": "key",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Presigned URL",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      }
-    },
     "/{orgId}/memberships": {
       "post": {
         "security": [
@@ -10122,35 +10302,57 @@
         },
         "responses": {
           "200": {
-            "description": "Number of sent invitations",
+            "description": "Created memberships and invite count",
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SuccessWithRejectedItems"
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/MembershipBase"
+                      }
                     },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "invitesSentCount": {
-                          "type": "number"
-                        }
+                    "rejectedItemIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
                       },
-                      "required": [
-                        "invitesSentCount"
-                      ]
+                      "description": "Identifiers of items that could not be processed"
+                    },
+                    "rejectionReasons": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "description": "Map of rejected item ID to reason code"
+                    },
+                    "invitesSentCount": {
+                      "type": "number"
                     }
-                  ],
-                  "example": {
-                    "success": true,
-                    "rejectedItemIds": []
-                  }
+                  },
+                  "required": [
+                    "data",
+                    "rejectedItemIds",
+                    "invitesSentCount"
+                  ]
                 },
                 "example": {
-                  "success": true,
+                  "data": [
+                    {
+                      "id": "vn86f6g3ci8ybeh37sz3gscf",
+                      "contextType": "organization",
+                      "userId": "gmpj3uavw3f7pkm7vsxl2157",
+                      "organizationId": "n34cen80754cxm7om1aq3bat",
+                      "role": "member",
+                      "displayOrder": 9,
+                      "muted": false,
+                      "archived": false
+                    }
+                  ],
                   "rejectedItemIds": [],
-                  "invitesSentCount": 2
+                  "invitesSentCount": 1
                 }
               }
             }
@@ -10248,7 +10450,31 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SuccessWithRejectedItems"
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "prefixItems": []
+                    },
+                    "rejectedItemIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Identifiers of items that could not be processed"
+                    },
+                    "rejectionReasons": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "description": "Map of rejected item ID to reason code"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "rejectedItemIds"
+                  ]
                 }
               }
             }
@@ -10327,7 +10553,7 @@
                   "archived": {
                     "type": "boolean"
                   },
-                  "order": {
+                  "displayOrder": {
                     "type": "number"
                   }
                 }
@@ -10349,7 +10575,7 @@
                   "userId": "xg7596t8jiy8d0v8irrljzhy",
                   "organizationId": "7ul53b62aw5h7k6x44nbu2r5",
                   "role": "admin",
-                  "order": 49,
+                  "displayOrder": 49,
                   "muted": false,
                   "archived": false,
                   "createdAt": "2024-10-28T14:52:59.502Z",
@@ -10753,7 +10979,7 @@
                         "userId": "ifex0agu87zf240qkfh0faoq",
                         "organizationId": "jip69qfpb1r33xdbp099f3xi",
                         "role": "admin",
-                        "order": 2,
+                        "displayOrder": 2,
                         "muted": false,
                         "archived": false
                       }
@@ -10783,7 +11009,7 @@
                         "userId": "44b7wkilwj64zmkwsnsmrzo2",
                         "organizationId": "zxd2hreylomg4p6xgvt4g11e",
                         "role": "admin",
-                        "order": 50,
+                        "displayOrder": 50,
                         "muted": false,
                         "archived": false
                       }

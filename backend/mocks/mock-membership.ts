@@ -19,7 +19,7 @@ type MembershipBase = {
   contextType: ContextEntityType;
   userId: string;
   role: EntityRole;
-  order: number;
+  displayOrder: number;
   muted: boolean;
   archived: boolean;
 } & MockContextEntityIdColumns;
@@ -72,7 +72,7 @@ export const mockContextMembership = <T extends ContextEntityType>(
     [contextIdColumnKey]: contextEntity.id, // Set the correct context entity ID
     ...overrideIds,
     role: faker.helpers.arrayElement(appConfig.entityRoles),
-    order: getMembershipOrderOffset(contextEntity.id) * 10,
+    displayOrder: getMembershipOrderOffset(contextEntity.id) * 10,
     createdAt: pastIsoDate(),
     createdBy: userId,
     uniqueKey: `${userId}-${contextEntity.id}`,
@@ -91,7 +91,7 @@ export const mockMembershipBase = (key = 'membership-base:default'): MembershipB
     userId: mockNanoid(),
     ...generateMockContextEntityIdColumns(),
     role: faker.helpers.arrayElement(appConfig.entityRoles),
-    order: faker.number.int({ min: 1, max: 100 }),
+    displayOrder: faker.number.int({ min: 1, max: 100 }),
     muted: false,
     archived: false,
   }));
@@ -114,7 +114,7 @@ export const mockMembership = (key = 'membership:default'): MembershipModel =>
       userId,
       ...contextEntityColumns,
       role: faker.helpers.arrayElement(appConfig.entityRoles),
-      order: faker.number.int({ min: 1, max: 100 }),
+      displayOrder: faker.number.int({ min: 1, max: 100 }),
       muted: false,
       archived: false,
       createdAt,
@@ -209,7 +209,7 @@ export const mockPaginatedMembersResponse = (count = 2) => mockPaginated(mockMem
  */
 export const mockMembershipInviteResponse = (key = 'membership-invite:default') =>
   withFakerSeed(key, () => ({
-    success: true,
+    data: [mockMembershipBase()],
     rejectedItemIds: [] as string[],
-    invitesSentCount: 2,
+    invitesSentCount: 1,
   }));

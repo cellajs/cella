@@ -1,4 +1,6 @@
 import { appConfig, ContextEntityType } from 'shared';
+import type { MembershipBase } from '~/api.gen';
+import { myMembershipsQueryOptions } from '~/modules/me/query';
 import { ContextEntityDataWithMembership } from '~/modules/me/types';
 import { buildMenu } from '~/modules/navigation/menu-sheet/helpers/build-menu';
 import { getContextEntityTypeToListQueries } from '~/offline-config';
@@ -8,11 +10,28 @@ import { useUserStore } from '~/store/user';
 
 /**
  * Retrieves user menu data and stores it in react query cache.
+ * Fetches memberships first to enable entity enrichment.
  *
  * @returns The menu data.
  */
 export async function getMenuData(opts?: { detailedMenu?: boolean }) {
   const userId = useUserStore.getState().user.id;
+
+  // Fetch memberships first - this populates the memberships cache
+  const membershipsData = await queryClient.ensureQueryData({
+    ...myMembershipsQueryOptions(),
+    revalidateIfStale: true,
+  });
+
+  // Create a map for quick membership lookup by entity
+  const membershipsByEntity = new Map<string, MembershipBase>();
+  for (const m of membershipsData.items) {
+    // Use organizationId as the key (extend for other context types as needed)
+    if (m.organizationId) {
+      membershipsByEntity.set(m.organizationId, m);
+    }
+  }
+
   const byType = new Map<ContextEntityType, ContextEntityDataWithMembership[]>();
 
   await Promise.all(
@@ -23,7 +42,19 @@ export async function getMenuData(opts?: { detailedMenu?: boolean }) {
       const queryOpts = { ...factory({ userId }) };
 
       const data = await queryClient.ensureInfiniteQueryData({ ...queryOpts, revalidateIfStale: true });
-      byType.set(entityType, flattenInfiniteData<ContextEntityDataWithMembership>(data));
+      const items = flattenInfiniteData<any>(data);
+
+      // Enrich entities with membership from the memberships cache
+      const enrichedItems = items
+        .map((item: any) => {
+          // Look up membership from cache, fallback to included.membership
+          const membership = membershipsByEntity.get(item.id) ?? item.included?.membership;
+          if (!membership) return null; // Skip entities without membership
+          return { ...item, membership };
+        })
+        .filter((item: any): item is ContextEntityDataWithMembership => item !== null);
+
+      byType.set(entityType, enrichedItems);
     }),
   );
 

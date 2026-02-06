@@ -674,25 +674,24 @@
       {
         "status": 200,
         "description": "Success",
-        "name": "SuccessWithRejectedItems",
-        "ref": "#/components/schemas/SuccessWithRejectedItems",
         "contentType": "application/json",
         "schema": {
           "type": "object",
           "properties": {
-            "success": { "type": "boolean", "required": true },
+            "data": { "type": "array", "required": true },
             "rejectedItemIds": {
               "type": "array",
               "required": true,
+              "description": "Identifiers of items that could not be processed",
               "itemType": "string"
+            },
+            "rejectionReasons": {
+              "type": "object",
+              "required": false,
+              "description": "Map of rejected item ID to reason code"
             }
           },
-          "ref": "#/components/schemas/SuccessWithRejectedItems",
           "contentType": "application/json"
-        },
-        "example": {
-          "success": true,
-          "rejectedItemIds": []
         }
       },
       {
@@ -758,6 +757,64 @@
         },
         "required": true,
         "contentType": "application/json"
+      }
+    }
+  },
+  {
+    "operationId": "getPresignedUrl",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Presigned URL",
+        "contentType": "application/json",
+        "schema": { "type": "string", "contentType": "application/json" }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "orgId": { "type": "string", "required": true }
+        }
+      },
+      "query": {
+        "properties": {
+          "key": { "type": "string", "required": true }
+        }
       }
     }
   },
@@ -1159,59 +1216,6 @@
       "path": {
         "properties": {
           "id": { "type": "string", "required": true }
-        }
-      }
-    }
-  },
-  {
-    "operationId": "getPresignedUrl",
-    "responses": [
-      {
-        "status": 200,
-        "description": "Presigned URL",
-        "contentType": "application/json",
-        "schema": { "type": "string", "contentType": "application/json" }
-      },
-      {
-        "status": 400,
-        "description": "Bad request: problem processing request.",
-        "name": "BadRequestError",
-        "ref": "#/components/responses/BadRequestError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 401,
-        "description": "Unauthorized: authentication required.",
-        "name": "UnauthorizedError",
-        "ref": "#/components/responses/UnauthorizedError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 403,
-        "description": "Forbidden: insufficient permissions.",
-        "name": "ForbiddenError",
-        "ref": "#/components/responses/ForbiddenError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 404,
-        "description": "Not found: resource does not exist.",
-        "name": "NotFoundError",
-        "ref": "#/components/responses/NotFoundError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 429,
-        "description": "Rate limit: too many requests.",
-        "name": "TooManyRequestsError",
-        "ref": "#/components/responses/TooManyRequestsError",
-        "contentType": "application/json"
-      }
-    ],
-    "request": {
-      "query": {
-        "properties": {
-          "key": { "type": "string", "required": true }
         }
       }
     }

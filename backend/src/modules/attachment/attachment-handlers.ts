@@ -81,6 +81,50 @@ const attachmentRouteHandlers = app
     return ctx.json({ items, total }, 200);
   })
   /**
+   * Get presigned URL for private attachment.
+   * IMPORTANT: Must be registered before /{id} routes to avoid path conflict.
+   */
+  .openapi(attachmentRoutes.getPresignedUrl, async (ctx) => {
+    const { key } = ctx.req.valid('query');
+
+    const [attachment] = await db
+      .select()
+      .from(attachmentsTable)
+      .where(
+        or(
+          eq(attachmentsTable.originalKey, key),
+          eq(attachmentsTable.thumbnailKey, key),
+          eq(attachmentsTable.convertedKey, key),
+        ),
+      )
+      .limit(1);
+
+    // Determine bucket - use attachment record if found, otherwise assume private
+    const bucketName = attachment?.bucketName ?? appConfig.s3.privateBucket;
+
+    // Permission check: verify user has access to this attachment
+    if (attachment) {
+      const user = getContextUser();
+      const userSystemRole = getContextUserSystemRole();
+
+      const memberships = await db
+        .select(membershipBaseSelect)
+        .from(membershipsTable)
+        .where(eq(membershipsTable.userId, user.id));
+
+      const isSystemAdmin = userSystemRole === 'admin';
+      const { isAllowed } = checkPermission(memberships, 'read', attachment);
+
+      if (!isSystemAdmin && !isAllowed) {
+        throw new AppError(403, 'forbidden', 'warn', { entityType: attachment.entityType });
+      }
+    }
+
+    const url = await getSignedUrlFromKey(key, { bucketName, isPublic: false });
+
+    return ctx.json(url, 200);
+  })
+  /**
    * Get single attachment by ID
    */
   .openapi(attachmentRoutes.getAttachment, async (ctx) => {
@@ -238,7 +282,7 @@ const attachmentRouteHandlers = app
 
     logEvent('info', 'Attachments deleted', allowedIds);
 
-    return ctx.json({ success: true, rejectedItemIds }, 200);
+    return ctx.json({ data: [] as never[], rejectedItemIds }, 200);
   })
   /**
    * Redirect to attachment
@@ -285,49 +329,6 @@ const attachmentRouteHandlers = app
       </script>
       </html>
     `);
-  })
-  /**
-   * Get presigned URL for private attachment
-   */
-  .openapi(attachmentRoutes.getPresignedUrl, async (ctx) => {
-    const { key } = ctx.req.valid('query');
-
-    const [attachment] = await db
-      .select()
-      .from(attachmentsTable)
-      .where(
-        or(
-          eq(attachmentsTable.originalKey, key),
-          eq(attachmentsTable.thumbnailKey, key),
-          eq(attachmentsTable.convertedKey, key),
-        ),
-      )
-      .limit(1);
-
-    // Determine bucket - use attachment record if found, otherwise assume private
-    const bucketName = attachment?.bucketName ?? appConfig.s3.privateBucket;
-
-    // Permission check: verify user has access to this attachment
-    if (attachment) {
-      const user = getContextUser();
-      const userSystemRole = getContextUserSystemRole();
-
-      const memberships = await db
-        .select(membershipBaseSelect)
-        .from(membershipsTable)
-        .where(eq(membershipsTable.userId, user.id));
-
-      const isSystemAdmin = userSystemRole === 'admin';
-      const { isAllowed } = checkPermission(memberships, 'read', attachment);
-
-      if (!isSystemAdmin && !isAllowed) {
-        throw new AppError(403, 'forbidden', 'warn', { entityType: attachment.entityType });
-      }
-    }
-
-    const url = await getSignedUrlFromKey(key, { bucketName, isPublic: false });
-
-    return ctx.json(url, 200);
   });
 
 export default attachmentRouteHandlers;

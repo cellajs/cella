@@ -3,7 +3,6 @@ import { ShieldIcon, UserRoundIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
-import type { Organization } from '~/api.gen';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
@@ -11,6 +10,7 @@ import HeaderCell from '~/modules/common/data-table/header-cell';
 import { renderSelect } from '~/modules/common/data-table/select-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import UpdateRow from '~/modules/organization/table/update-row';
+import type { OrganizationWithMembership } from '~/modules/organization/types';
 import { buttonVariants } from '~/modules/ui/button';
 import { UserCellById } from '~/modules/user/user-cell';
 import { dateShort } from '~/utils/date-short';
@@ -20,7 +20,7 @@ export const useColumns = (isCompact: boolean) => {
   const isMobile = useBreakpoints('max', 'sm', false);
 
   const columns = useMemo(() => {
-    const cols: ColumnOrColumnGroup<Organization>[] = [
+    const cols: ColumnOrColumnGroup<OrganizationWithMembership>[] = [
       CheckboxColumn,
       {
         key: 'name',
@@ -56,7 +56,7 @@ export const useColumns = (isCompact: boolean) => {
         visible: true,
         width: 32,
         renderCell: ({ row, tabIndex }) => {
-          if ((row.counts?.membership.admin ?? 0) > 0 || (row.counts?.membership.member ?? 0) > 0)
+          if ((row.included?.counts?.membership.admin ?? 0) > 0 || (row.included?.counts?.membership.member ?? 0) > 0)
             return <UpdateRow organization={row} tabIndex={tabIndex} />;
         },
       },
@@ -124,7 +124,7 @@ export const useColumns = (isCompact: boolean) => {
         renderCell: ({ row }) => (
           <>
             <UserRoundIcon className="mr-2 opacity-50" size={16} />
-            {row.counts?.membership.member ?? '-'}
+            {row.included?.counts?.membership.member ?? '-'}
           </>
         ),
       },
@@ -138,7 +138,7 @@ export const useColumns = (isCompact: boolean) => {
         renderCell: ({ row }) => (
           <>
             <ShieldIcon className="mr-2 opacity-50" size={16} />
-            {row.counts?.membership.admin ?? '-'}
+            {row.included?.counts?.membership.admin ?? '-'}
           </>
         ),
       },
@@ -147,5 +147,5 @@ export const useColumns = (isCompact: boolean) => {
     return cols;
   }, [isCompact]);
 
-  return useState<ColumnOrColumnGroup<Organization>[]>(columns);
+  return useState<ColumnOrColumnGroup<OrganizationWithMembership>[]>(columns);
 };

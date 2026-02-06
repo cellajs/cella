@@ -41,7 +41,7 @@ export const MenuSheetItems = ({ data, type, isArchived, options, className }: M
   const renderItems = () => {
     const filteredItems = data
       .filter((item) => (isArchived ? item.membership.archived : !item.membership.archived))
-      .sort((a, b) => a.membership.order - b.membership.order);
+      .sort((a, b) => a.membership.displayOrder - b.membership.displayOrder);
     return (
       <>
         {filteredItems.map((item) => (

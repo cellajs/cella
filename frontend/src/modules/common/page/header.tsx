@@ -17,6 +17,7 @@ import {
   BreadcrumbSeparator,
 } from '~/modules/ui/breadcrumb';
 import { useFindInListCache } from '~/query/basic';
+import { useMembershipForEntity } from '~/query/membership-enrichment';
 import { getContextEntityRoute } from '~/routes-resolver';
 
 type PageHeaderProps = Omit<PageCoverProps, 'id' | 'url'> & {
@@ -29,6 +30,10 @@ type PageHeaderProps = Omit<PageCoverProps, 'id' | 'url'> & {
 function PageHeader({ entity, panel, parent, disableScroll, ...coverProps }: PageHeaderProps) {
   const { t } = useTranslation();
   const scrollToRef = useRef<HTMLDivElement>(null);
+
+  // Get membership from cache (for context entities)
+  const entityId = entity.entityType !== 'user' ? entity.id : undefined;
+  const membership = useMembershipForEntity(entityId);
 
   // Find parent entity from cache
   const parentData = useFindInListCache<ContextEntityBase>(parent ? [parent.entityType] : [], (item) =>
@@ -64,9 +69,9 @@ function PageHeader({ entity, panel, parent, disableScroll, ...coverProps }: Pag
 
           <div className="flex items-center gap-2 text-sm">
             {/* Role */}
-            {'membership' in entity && entity.membership && (
+            {membership && (
               <>
-                <Badge variant="plain">{t(entity.membership.role, { ns: ['app', 'common'] })}</Badge>
+                <Badge variant="plain">{t(membership.role, { ns: ['app', 'common'] })}</Badge>
                 <div className="opacity-70 max-sm:hidden">&middot;</div>
               </>
             )}

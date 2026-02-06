@@ -38,19 +38,28 @@ export const membershipCountSchema = z.object({
 
 export const fullCountsSchema = z.object({ membership: membershipCountSchema, entities: entityCountSchema });
 
+/** Schema for optional included data (requested via include query param) */
+export const organizationIncludedSchema = z
+  .object({
+    membership: membershipBaseSchema.optional(),
+    counts: fullCountsSchema.optional(),
+  })
+  .openapi('OrganizationIncluded');
+
 export const organizationSchema = z
   .object({
     ...createSelectSchema(organizationsTable).omit({ restrictions: true }).shape,
     languages: z.array(languageSchema).min(1),
     emailDomains: z.array(z.string()),
     authStrategies: z.array(z.enum(authStrategiesEnum)),
-    membership: z.union([membershipBaseSchema, z.null()]),
-    counts: fullCountsSchema.optional(),
+    included: organizationIncludedSchema.optional(),
     can: entityCanSchema.optional(),
   })
   .openapi('Organization', { example: mockOrganizationResponse() });
 
-export const organizationWithMembershipSchema = organizationSchema.extend({ membership: membershipBaseSchema });
+export const organizationWithMembershipSchema = organizationSchema.extend({
+  included: organizationIncludedSchema.extend({ membership: membershipBaseSchema }),
+});
 
 const organizationCreateItemSchema = z.object({
   id: validTempIdSchema,

@@ -24,7 +24,10 @@ export interface UseAttachmentUrlOptions extends ResolveOptions {
  * Checks local IndexedDB blob storage first, falls back to cloud presigned URL.
  */
 export function useAttachmentUrl(
-  attachment: Pick<Attachment, 'id' | 'originalKey' | 'convertedKey' | 'thumbnailKey' | 'public'> | null | undefined,
+  attachment:
+    | Pick<Attachment, 'id' | 'originalKey' | 'convertedKey' | 'thumbnailKey' | 'public' | 'organizationId'>
+    | null
+    | undefined,
   options: UseAttachmentUrlOptions = {},
 ): UseAttachmentUrlResult {
   const { skip = false, ...resolveOptions } = options;

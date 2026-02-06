@@ -121,7 +121,7 @@
         },
         "archived": { "type": "boolean", "required": true },
         "muted": { "type": "boolean", "required": true },
-        "order": {
+        "displayOrder": {
           "type": "number",
           "required": true,
           "minimum": -140737488355328,
@@ -137,7 +137,7 @@
       "userId": "gmpj3uavw3f7pkm7vsxl2157",
       "organizationId": "n34cen80754cxm7om1aq3bat",
       "role": "member",
-      "order": 9,
+      "displayOrder": 9,
       "muted": false,
       "archived": false
     }
@@ -1093,27 +1093,6 @@
     }
   },
   {
-    "name": "SuccessWithRejectedItems",
-    "ref": "#/components/schemas/SuccessWithRejectedItems",
-    "type": "object",
-    "schema": {
-      "type": "object",
-      "properties": {
-        "success": { "type": "boolean", "required": true },
-        "rejectedItemIds": {
-          "type": "array",
-          "required": true,
-          "itemType": "string"
-        }
-      }
-    },
-    "schemaTag": "data",
-    "example": {
-      "success": true,
-      "rejectedItemIds": []
-    }
-  },
-  {
     "name": "UploadToken",
     "ref": "#/components/schemas/UploadToken",
     "type": "object",
@@ -1150,6 +1129,69 @@
         "auth": { "key": "uploads/kx5n7c1cush46z5cnizlmyd8", "expires": "2025-01-01T04:15:50.483Z" }
       }
     }
+  },
+  {
+    "name": "OrganizationIncluded",
+    "ref": "#/components/schemas/OrganizationIncluded",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "membership": {
+          "type": "object",
+          "required": false,
+          "properties": {
+            "id": { "type": "string", "required": true },
+            "contextType": {
+              "type": "string",
+              "required": true,
+              "enum": ["organization"]
+            },
+            "userId": { "type": "string", "required": true },
+            "role": {
+              "type": "string",
+              "required": true,
+              "enum": ["admin", "member"]
+            },
+            "archived": { "type": "boolean", "required": true },
+            "muted": { "type": "boolean", "required": true },
+            "displayOrder": {
+              "type": "number",
+              "required": true,
+              "minimum": -140737488355328,
+              "maximum": 140737488355327
+            },
+            "organizationId": { "type": "string", "required": true }
+          },
+          "ref": "#/components/schemas/MembershipBase"
+        },
+        "counts": {
+          "type": "object",
+          "required": false,
+          "properties": {
+            "membership": {
+              "type": "object",
+              "required": true,
+              "properties": {
+                "admin": { "type": "number", "required": true },
+                "member": { "type": "number", "required": true },
+                "pending": { "type": "number", "required": true },
+                "total": { "type": "number", "required": true }
+              }
+            },
+            "entities": {
+              "type": "object",
+              "required": true,
+              "properties": {
+                "attachment": { "type": "number", "required": true },
+                "page": { "type": "number", "required": true }
+              }
+            }
+          }
+        }
+      }
+    },
+    "schemaTag": "data"
   },
   {
     "name": "Organization",
@@ -1247,10 +1289,11 @@
           "enum": ["github", "google", "microsoft", "password", "passkey", "totp", "email"]
         },
         "chatSupport": { "type": "boolean", "required": true },
-        "membership": {
-          "required": true,
-          "anyOf": [
-            {
+        "included": {
+          "type": "object",
+          "required": false,
+          "properties": {
+            "membership": {
               "type": "object",
               "required": false,
               "properties": {
@@ -1268,7 +1311,7 @@
                 },
                 "archived": { "type": "boolean", "required": true },
                 "muted": { "type": "boolean", "required": true },
-                "order": {
+                "displayOrder": {
                   "type": "number",
                   "required": true,
                   "minimum": -140737488355328,
@@ -1278,32 +1321,32 @@
               },
               "ref": "#/components/schemas/MembershipBase"
             },
-            { "type": "null", "required": false }
-          ]
-        },
-        "counts": {
-          "type": "object",
-          "required": false,
-          "properties": {
-            "membership": {
+            "counts": {
               "type": "object",
-              "required": true,
+              "required": false,
               "properties": {
-                "admin": { "type": "number", "required": true },
-                "member": { "type": "number", "required": true },
-                "pending": { "type": "number", "required": true },
-                "total": { "type": "number", "required": true }
-              }
-            },
-            "entities": {
-              "type": "object",
-              "required": true,
-              "properties": {
-                "attachment": { "type": "number", "required": true },
-                "page": { "type": "number", "required": true }
+                "membership": {
+                  "type": "object",
+                  "required": true,
+                  "properties": {
+                    "admin": { "type": "number", "required": true },
+                    "member": { "type": "number", "required": true },
+                    "pending": { "type": "number", "required": true },
+                    "total": { "type": "number", "required": true }
+                  }
+                },
+                "entities": {
+                  "type": "object",
+                  "required": true,
+                  "properties": {
+                    "attachment": { "type": "number", "required": true },
+                    "page": { "type": "number", "required": true }
+                  }
+                }
               }
             }
-          }
+          },
+          "ref": "#/components/schemas/OrganizationIncluded"
         },
         "can": {
           "type": "object",
@@ -1349,24 +1392,26 @@
         "attachment": 100,
         "page": 0
       },
-      "membership": {
-        "id": "kaba9fpc90mgtzmtjipw2v8s",
-        "contextType": "organization",
-        "userId": "w4hg4036vxzq0rzt4pucveps",
-        "organizationId": "hmo9fwr239kqavr3yur671kl",
-        "role": "member",
-        "order": 38,
-        "muted": false,
-        "archived": false
-      },
-      "counts": {
+      "included": {
         "membership": {
-          "admin": 30,
-          "member": 63,
-          "pending": 13,
-          "total": 93
+          "id": "kaba9fpc90mgtzmtjipw2v8s",
+          "contextType": "organization",
+          "userId": "w4hg4036vxzq0rzt4pucveps",
+          "organizationId": "hmo9fwr239kqavr3yur671kl",
+          "role": "member",
+          "displayOrder": 38,
+          "muted": false,
+          "archived": false
         },
-        "entities": { "attachment": 178, "page": 257 }
+        "counts": {
+          "membership": {
+            "admin": 30,
+            "member": 63,
+            "pending": 13,
+            "total": 93
+          },
+          "entities": { "attachment": 178, "page": 257 }
+        }
       }
     }
   },
@@ -1658,7 +1703,7 @@
         },
         "archived": { "type": "boolean", "required": true },
         "muted": { "type": "boolean", "required": true },
-        "order": {
+        "displayOrder": {
           "type": "number",
           "required": true,
           "minimum": -140737488355328,
@@ -1675,7 +1720,7 @@
       "userId": "xg7596t8jiy8d0v8irrljzhy",
       "organizationId": "7ul53b62aw5h7k6x44nbu2r5",
       "role": "admin",
-      "order": 49,
+      "displayOrder": 49,
       "muted": false,
       "archived": false,
       "createdAt": "2024-10-28T14:52:59.502Z",

@@ -6,6 +6,7 @@ import {
   deletePasskey,
   deleteTotp,
   getMyInvitations,
+  getMyMemberships,
   toggleMfa,
   type UpdateMeData,
   updateMe,
@@ -28,6 +29,7 @@ export const meKeys = {
   menu: ['me', 'menu'],
   auth: ['me', 'auth'],
   invites: ['me', 'invites'],
+  memberships: ['me', 'memberships'],
   register: {
     passkey: ['me', 'register', 'passkey'],
   },
@@ -192,3 +194,14 @@ const updateOnSuccesses = (updatedUser: User) => {
   queryClient.setQueryData(userQueryKeys.detail.byId(updatedUser.id), updatedUser);
   updateUser(updatedUser);
 };
+
+/**
+ * Query options to fetch all memberships for the current user.
+ * This is the source of truth for user memberships in the frontend.
+ */
+export const myMembershipsQueryOptions = () =>
+  queryOptions({
+    queryKey: meKeys.memberships,
+    queryFn: async ({ signal }) => getMyMemberships({ signal }),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });

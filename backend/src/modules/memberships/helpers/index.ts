@@ -74,9 +74,9 @@ export const insertMemberships = async <T extends BaseEntityModel>(
   // Collect the distinct userIds appearing in this batch (for order calc)
   const userIds = Array.from(new Set(items.map((i) => i.userId)));
 
-  // Fetch per-user max(order) in one query to determine the next order baseline
+  // Fetch per-user max(displayOrder) in one query to determine the next displayOrder baseline
   const maxOrderRows = await db
-    .select({ userId: membershipsTable.userId, maxOrder: max(membershipsTable.order) })
+    .select({ userId: membershipsTable.userId, maxOrder: max(membershipsTable.displayOrder) })
     .from(membershipsTable)
     .where(inArray(membershipsTable.userId, userIds))
     .groupBy(membershipsTable.userId);
@@ -109,7 +109,7 @@ export const insertMemberships = async <T extends BaseEntityModel>(
       userId,
       role,
       createdBy,
-      order: nextOrder,
+      displayOrder: nextOrder,
     } as const;
 
     return { targetEntitiesIdColumnKeys, baseMembership, entity };

@@ -8,7 +8,7 @@ export interface ItemData {
 }
 
 export type EntityIdAndType = { id: string; entityType: EntityType };
-export type QueryDataActions = 'create' | 'update' | 'remove' | 'updateMembership';
+export type QueryDataActions = 'create' | 'update' | 'remove';
 
 export type EntityQueryData = QueryData<ItemData>;
 export type InfiniteEntityQueryData = InfiniteQueryData<ItemData>;
@@ -55,30 +55,6 @@ export interface UseMutateQueryDataReturn {
     (items: ItemData[]): void;
     (items: ContextEntityBase[], entityType: ContextEntityType, keyToOperateIn?: string): void;
     (items: EntityIdAndType[], entityType: ProductEntityType, keyToOperateIn: string): void;
-  };
-
-  /**
-   * Updates membership-related items in an Infinite or Regular query. For arbitrary queries,
-   * it sets the entity to operate with and ensures the key within the data to operate on is provided.
-   *
-   * This function manages updates to membership-related data, supporting two types of item data:
-   * ItemData and ContextEntityBase. Optionally, you can specify an entity and the key to operate on.
-   *
-   * - For Infinite or Regular queries: Updates the membership items directly in the query data.
-   * - For Arbitrary queries: Sets the entity to operate with. If multiple different entities returns ensure passing keyToOperateIn
-   *
-   * @param items - The list of items to update. Can be of types ItemData[] or ContextEntityBase[].
-   * @param entity - The optional entity to apply the operation to (required for ContextEntityBase).
-   * @param keyToOperateIn - The optional key within the entity to operate on (required for ContextEntityBase).
-   */
-  updateMembership: {
-    (items: ItemData[]): void;
-    (items: ContextEntityBase[], entityType: ContextEntityType, keyToOperateIn?: string): void;
-    (
-      items: ItemData[] | ContextEntityBase[],
-      entity?: ProductEntityType | ContextEntityType,
-      keyToOperateIn?: string,
-    ): void;
   };
 
   /**

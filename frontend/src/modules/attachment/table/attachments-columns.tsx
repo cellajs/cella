@@ -77,9 +77,7 @@ export const useColumns = (entity: ContextEntityData, isSheet: boolean, isCompac
         visible: isMobile,
         sortable: false,
         width: 32,
-        renderCell: ({ row, tabIndex }) => (
-          <EllipsisCell row={row} tabIndex={tabIndex} organizationSlug={entity.slug} />
-        ),
+        renderCell: ({ row, tabIndex }) => <EllipsisCell row={row} tabIndex={tabIndex} />,
       },
       {
         key: 'filename',

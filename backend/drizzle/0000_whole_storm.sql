@@ -12,6 +12,7 @@ CREATE TABLE "activities" (
 	"changed_keys" jsonb,
 	"tx" jsonb,
 	"seq" integer,
+	"error" jsonb,
 	CONSTRAINT "activities_id_created_at_pk" PRIMARY KEY("id","created_at")
 );
 --> statement-breakpoint
@@ -37,6 +38,15 @@ CREATE TABLE "attachments" (
 	"converted_key" varchar,
 	"thumbnail_key" varchar,
 	"organization_id" varchar NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "counters" (
+	"namespace" varchar NOT NULL,
+	"scope" varchar NOT NULL,
+	"key" varchar DEFAULT '' NOT NULL,
+	"value" bigint DEFAULT 0 NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "counters_namespace_scope_key_pk" PRIMARY KEY("namespace","scope","key")
 );
 --> statement-breakpoint
 CREATE TABLE "emails" (
@@ -81,7 +91,7 @@ CREATE TABLE "memberships" (
 	"modified_by" varchar,
 	"archived" boolean DEFAULT false NOT NULL,
 	"muted" boolean DEFAULT false NOT NULL,
-	"order" double precision NOT NULL,
+	"display_order" double precision NOT NULL,
 	"organization_id" varchar NOT NULL,
 	"unique_key" varchar NOT NULL,
 	CONSTRAINT "memberships_uniqueKey_unique" UNIQUE("unique_key")
@@ -165,6 +175,12 @@ CREATE TABLE "passwords" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"modified_at" timestamp,
 	CONSTRAINT "passwords_userId_unique" UNIQUE("user_id")
+);
+--> statement-breakpoint
+CREATE TABLE "rate_limits" (
+	"key" text PRIMARY KEY NOT NULL,
+	"points" integer NOT NULL,
+	"expire" timestamp
 );
 --> statement-breakpoint
 CREATE TABLE "requests" (
@@ -291,9 +307,11 @@ CREATE INDEX "activities_user_id_index" ON "activities" USING btree ("user_id");
 CREATE INDEX "activities_entity_id_index" ON "activities" USING btree ("entity_id");--> statement-breakpoint
 CREATE INDEX "activities_table_name_index" ON "activities" USING btree ("table_name");--> statement-breakpoint
 CREATE INDEX "activities_tx_id_index" ON "activities" USING btree ((tx->>'id'));--> statement-breakpoint
+CREATE INDEX "activities_error_lsn_index" ON "activities" USING btree ((error->>'lsn')) WHERE error IS NOT NULL;--> statement-breakpoint
 CREATE INDEX "activities_organization_id_index" ON "activities" USING btree ("organization_id");--> statement-breakpoint
 CREATE INDEX "activities_organization_id_seq_index" ON "activities" USING btree ("organization_id","seq" desc);--> statement-breakpoint
 CREATE INDEX "attachments_organization_id_index" ON "attachments" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX "counters_scope_idx" ON "counters" USING btree ("scope");--> statement-breakpoint
 CREATE INDEX "inactive_memberships_user_id_idx" ON "inactive_memberships" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "inactive_memberships_organization_id_idx" ON "inactive_memberships" USING btree ("organization_id");--> statement-breakpoint
 CREATE INDEX "inactive_memberships_email_idx" ON "inactive_memberships" USING btree ("email");--> statement-breakpoint

@@ -109,7 +109,7 @@ export async function createOrganizationAdminUser(
     organizationId,
     contextType: 'organization' as const,
     role,
-    order: 1,
+    displayOrder: 1,
     createdAt: pastIsoDate(),
     createdBy: user.id,
     uniqueKey: `${user.id}-${organizationId}`,

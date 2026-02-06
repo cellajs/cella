@@ -53,12 +53,12 @@ export const EntityGridTile = ({ entity }: { entity: ContextEntityData }) => {
           )}
         </Link>
       </CardContent>
-      {entity.counts && (
+      {entity.included?.counts && (
         <CardFooter>
           <div className="w-full flex items-center justify-end gap-3 text-sm opacity-80">
             <div className="flex items-center gap-1">
               <UserIcon size={16} />
-              {entity.counts.membership.total}
+              {entity.included.counts.membership.total}
             </div>
           </div>
         </CardFooter>

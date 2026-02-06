@@ -109,7 +109,7 @@
                         },
                         "archived": { "type": "boolean", "required": true },
                         "muted": { "type": "boolean", "required": true },
-                        "order": {
+                        "displayOrder": {
                           "type": "number",
                           "required": true,
                           "minimum": -140737488355328,
@@ -163,7 +163,7 @@
                   "userId": "ifex0agu87zf240qkfh0faoq",
                   "organizationId": "jip69qfpb1r33xdbp099f3xi",
                   "role": "admin",
-                  "order": 2,
+                  "displayOrder": 2,
                   "muted": false,
                   "archived": false
                 }
@@ -197,7 +197,7 @@
                   "userId": "44b7wkilwj64zmkwsnsmrzo2",
                   "organizationId": "zxd2hreylomg4p6xgvt4g11e",
                   "role": "admin",
-                  "order": 50,
+                  "displayOrder": 50,
                   "muted": false,
                   "archived": false
                 }

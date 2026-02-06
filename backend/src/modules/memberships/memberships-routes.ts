@@ -4,6 +4,7 @@ import { hasOrgAccess, isAuthenticated } from '#/middlewares/guard';
 import { contextEntityBaseSchema } from '#/modules/entities/entities-schema-base';
 import {
   memberListQuerySchema,
+  membershipBaseSchema,
   membershipCreateBodySchema,
   membershipSchema,
   membershipUpdateBodySchema,
@@ -12,6 +13,7 @@ import {
 } from '#/modules/memberships/memberships-schema';
 import { memberSchema } from '#/modules/user/user-schema';
 import {
+  batchResponseSchema,
   entityWithTypeQuerySchema,
   errorResponseRefs,
   idInOrgParamSchema,
@@ -19,7 +21,6 @@ import {
   idsBodySchema,
   inOrgParamSchema,
   paginationSchema,
-  successWithRejectedItemsSchema,
 } from '#/schemas';
 import { mockContextEntityBase } from '../../../mocks/mock-entity-base';
 import {
@@ -52,10 +53,10 @@ const membershipRoutes = {
     },
     responses: {
       200: {
-        description: 'Number of sent invitations',
+        description: 'Created memberships and invite count',
         content: {
           'application/json': {
-            schema: successWithRejectedItemsSchema.extend({ invitesSentCount: z.number() }),
+            schema: batchResponseSchema(membershipBaseSchema).extend({ invitesSentCount: z.number() }),
             example: mockMembershipInviteResponse(),
           },
         },
@@ -88,7 +89,7 @@ const membershipRoutes = {
         description: 'Success',
         content: {
           'application/json': {
-            schema: successWithRejectedItemsSchema,
+            schema: batchResponseSchema(),
           },
         },
       },

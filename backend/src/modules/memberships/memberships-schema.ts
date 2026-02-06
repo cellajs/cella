@@ -38,7 +38,7 @@ export const membershipUpdateBodySchema = z.object({
   role: membershipSchema.shape.role.optional(),
   muted: z.boolean().optional(),
   archived: z.boolean().optional(),
-  order: z.number().optional(),
+  displayOrder: z.number().optional(),
 });
 
 export const memberListQuerySchema = paginationQuerySchema.extend({

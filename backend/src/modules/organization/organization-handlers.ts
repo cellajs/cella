@@ -10,7 +10,7 @@ import { filterWithRejection, takeWithRestriction } from '#/lib/rejection-utils'
 import { checkSlugAvailable, checkSlugsAvailable } from '#/modules/entities/helpers/check-slug';
 import { getEntityCounts, getEntityCountsSelect } from '#/modules/entities/helpers/get-entity-counts';
 import { insertMemberships } from '#/modules/memberships/helpers';
-import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
+import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import organizationRoutes from '#/modules/organization/organization-routes';
 import { addPermission, getValidContextEntity } from '#/permissions';
 import { splitByPermission } from '#/permissions/split-by-permission';
@@ -112,12 +112,28 @@ const organizationRouteHandlers = app
     // Map memberships by organizationId
     const membershipByOrgId = new Map(createdMemberships.map((m) => [m.organizationId, m]));
 
-    const data = createdOrganizations.map((org) => ({
-      ...org,
-      membership: membershipByOrgId.get(org.id),
-      counts: { membership: memberCounts, entities: entitiesCounts },
-      can,
-    }));
+    const data = createdOrganizations.map((org) => {
+      const membership = membershipByOrgId.get(org.id);
+      return {
+        ...org,
+        included: {
+          membership: membership
+            ? {
+                id: membership.id,
+                contextType: membership.contextType,
+                userId: membership.userId,
+                role: membership.role,
+                displayOrder: membership.displayOrder,
+                muted: membership.muted,
+                archived: membership.archived,
+                organizationId: membership.organizationId,
+              }
+            : undefined,
+          counts: { membership: memberCounts, entities: entitiesCounts },
+        },
+        can,
+      };
+    });
 
     return ctx.json({ data, ...rejectionState }, 201);
   })
@@ -131,10 +147,15 @@ const organizationRouteHandlers = app
 
     const user = getContextUser();
     const userSystemRole = getContextUserSystemRole();
+    const memberships = getContextMemberships();
     const isSystemAdmin = userSystemRole === 'admin' && !userId;
 
     // TODO We should only allow this if you have a relationship to the target user
     const targetUserId = userId ?? user.id;
+
+    // Determine what to include
+    const includeCounts = include.includes('counts');
+    const includeMembership = include.includes('membership');
 
     // Base membership join key (who we're attaching membership for)
     const membershipKeyOn = and(
@@ -156,7 +177,6 @@ const organizationRouteHandlers = app
     const orgWhere: SQL[] = [...(q ? [ilike(organizationsTable.name, prepareStringForILikeFilter(q))] : [])];
 
     // Get reusable count subqueries and select shape (only when requested)
-    const includeCounts = include.includes('counts');
     const countData = includeCounts ? getEntityCountsSelect(entityType) : null;
 
     // System admin can see all orgs (no join needed), others need membership
@@ -178,9 +198,9 @@ const organizationRouteHandlers = app
       userRole: membershipsTable.role,
     });
 
+    // Select shape without membership - we'll add it via included wrapper if requested
     const selectShape = {
       ...getTableColumns(organizationsTable),
-      membership: membershipBaseSelect,
       ...(countData && { counts: countData.countsSelect }),
     } as const;
 
@@ -201,10 +221,44 @@ const organizationRouteHandlers = app
       .limit(limit)
       .offset(offset);
 
-    // Enrich organizations with can object using batch permission check
-    const organizationsWithCan = addPermission('read', organizations);
+    // Build response with included wrapper for optional data
+    const items = organizations.map((org) => {
+      const { counts, ...orgData } = org;
 
-    return ctx.json({ items: organizationsWithCan, total }, 200);
+      // Build included object based on what was requested
+      const included: { membership?: MembershipBaseModel; counts?: typeof counts } = {};
+
+      if (includeMembership) {
+        // Find membership from context memberships
+        const membership = memberships.find((m) => m.contextType === entityType && m.organizationId === org.id);
+        if (membership) {
+          included.membership = {
+            id: membership.id,
+            contextType: membership.contextType,
+            userId: membership.userId,
+            role: membership.role,
+            displayOrder: membership.displayOrder,
+            muted: membership.muted,
+            archived: membership.archived,
+            organizationId: membership.organizationId,
+          };
+        }
+      }
+
+      if (includeCounts && counts) {
+        included.counts = counts;
+      }
+
+      return {
+        ...orgData,
+        ...(Object.keys(included).length > 0 && { included }),
+      };
+    });
+
+    // Enrich organizations with can object using batch permission check
+    const itemsWithCan = addPermission('read', items);
+
+    return ctx.json({ items: itemsWithCan, total }, 200);
   })
 
   /**
@@ -216,7 +270,25 @@ const organizationRouteHandlers = app
     const { entity: organization, membership, can } = await getValidContextEntity(idOrSlug, 'organization', 'read');
 
     const counts = await getEntityCounts(organization.entityType, organization.id);
-    const data = { ...organization, membership, counts, can };
+
+    // Build included object with membership and counts
+    const included = {
+      ...(membership && {
+        membership: {
+          id: membership.id,
+          contextType: membership.contextType,
+          userId: membership.userId,
+          role: membership.role,
+          displayOrder: membership.displayOrder,
+          muted: membership.muted,
+          archived: membership.archived,
+          organizationId: membership.organizationId,
+        },
+      }),
+      counts,
+    };
+
+    const data = { ...organization, included, can };
 
     return ctx.json(data, 200);
   })
@@ -253,7 +325,25 @@ const organizationRouteHandlers = app
     logEvent('info', 'Organization updated', { organizationId: updatedOrganization.id });
 
     const counts = await getEntityCounts(organization.entityType, organization.id);
-    const data = { ...updatedOrganization, membership, counts, can };
+
+    // Build included object with membership and counts
+    const included = {
+      ...(membership && {
+        membership: {
+          id: membership.id,
+          contextType: membership.contextType,
+          userId: membership.userId,
+          role: membership.role,
+          displayOrder: membership.displayOrder,
+          muted: membership.muted,
+          archived: membership.archived,
+          organizationId: membership.organizationId,
+        },
+      }),
+      counts,
+    };
+
+    const data = { ...updatedOrganization, included, can };
 
     return ctx.json(data, 200);
   })
@@ -280,7 +370,7 @@ const organizationRouteHandlers = app
 
     logEvent('info', 'Organizations deleted', allowedIds);
 
-    return ctx.json({ success: true, rejectedItemIds }, 200);
+    return ctx.json({ data: [] as never[], rejectedItemIds }, 200);
   });
 
 export default organizationRouteHandlers;

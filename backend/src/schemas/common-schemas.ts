@@ -113,12 +113,12 @@ export const paginationQuerySchema = z.object({
 });
 
 /** Valid options for include query param */
-export const includeOptions = ['counts'] as const;
+export const includeOptions = ['counts', 'membership'] as const;
 export type IncludeOption = (typeof includeOptions)[number];
 
 /**
  * Schema for comma-separated include query param.
- * Usage: ?include=counts or ?include=counts,stats
+ * Usage: ?include=counts or ?include=counts,membership
  * Transforms to array of validated options.
  */
 export const includeQuerySchema = z

@@ -41,18 +41,19 @@ export const PendingMembershipsCount = ({ entity }: PendingMembershipsTableProps
     );
   };
 
-  if (!entity.counts) return null;
+  if (!entity.included?.counts) return null;
 
   return (
     <Button
       ref={buttonRef}
-      disabled={entity.counts.membership.pending < 1}
+      disabled={entity.included.counts.membership.pending < 1}
       variant="ghost"
       size="xs"
       className="font-light"
       onClick={openSheet}
     >
-      {new Intl.NumberFormat('de-DE').format(entity.counts.membership.pending)} {t('common:pending').toLowerCase()}
+      {new Intl.NumberFormat('de-DE').format(entity.included.counts.membership.pending)}{' '}
+      {t('common:pending').toLowerCase()}
     </Button>
   );
 };
