@@ -6,13 +6,7 @@ import { db } from '#/db/db';
 import { attachmentsTable } from '#/db/schema/attachments';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
-import {
-  type Env,
-  getContextMemberships,
-  getContextOrganization,
-  getContextUser,
-  getContextUserSystemRole,
-} from '#/lib/context';
+import { type Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
 import { getSignedUrlFromKey } from '#/lib/signed-url';
 import attachmentRoutes from '#/modules/attachment/attachment-routes';
@@ -42,7 +36,7 @@ const attachmentRouteHandlers = app
   .openapi(attachmentRoutes.getAttachments, async (ctx) => {
     const { q, sort, order, limit, offset, modifiedAfter } = ctx.req.valid('query');
 
-    const organization = getContextOrganization();
+    const organization = ctx.var.organization;
 
     const filters: SQL[] = [eq(attachmentsTable.organizationId, organization.id)];
 
@@ -104,8 +98,8 @@ const attachmentRouteHandlers = app
 
     // Permission check: verify user has access to this attachment
     if (attachment) {
-      const user = getContextUser();
-      const userSystemRole = getContextUserSystemRole();
+      const user = ctx.var.user;
+      const userSystemRole = ctx.var.userRole;
 
       const memberships = await db
         .select(membershipBaseSelect)
@@ -129,10 +123,10 @@ const attachmentRouteHandlers = app
    */
   .openapi(attachmentRoutes.getAttachment, async (ctx) => {
     const { id } = ctx.req.valid('param');
-    const organization = getContextOrganization();
+    const organization = ctx.var.organization;
 
     // Get attachment with permission check
-    const { entity: attachment } = await getValidProductEntity(id, 'attachment', 'read');
+    const { entity: attachment } = await getValidProductEntity(ctx, id, 'attachment', 'read');
 
     // Verify attachment belongs to the organization context
     if (attachment.organizationId !== organization.id) {
@@ -163,8 +157,8 @@ const attachmentRouteHandlers = app
       }
     }
 
-    const organization = getContextOrganization();
-    const user = getContextUser();
+    const organization = ctx.var.organization;
+    const user = ctx.var.user;
     const attachmentRestrictions = organization.restrictions.attachment;
 
     // Check restriction limits
@@ -214,9 +208,9 @@ const attachmentRouteHandlers = app
     const { id } = ctx.req.valid('param');
     const { tx, ...updatedFields } = ctx.req.valid('json');
 
-    const { entity, can } = await getValidProductEntity(id, 'attachment', 'update');
+    const { entity, can } = await getValidProductEntity(ctx, id, 'attachment', 'update');
 
-    const user = getContextUser();
+    const user = ctx.var.user;
 
     // Get all tracked fields that are being updated
     const trackedFields = ['name', 'filename', 'contentType'] as const;
@@ -256,7 +250,7 @@ const attachmentRouteHandlers = app
   .openapi(attachmentRoutes.deleteAttachments, async (ctx) => {
     const { ids, tx } = ctx.req.valid('json');
 
-    const memberships = getContextMemberships();
+    const memberships = ctx.var.memberships;
 
     // tx is available for CDC echo prevention (sourceId tracking)
     // CDC will read tx from the deleted row's old data
@@ -269,6 +263,7 @@ const attachmentRouteHandlers = app
     if (!toDeleteIds.length) throw new AppError(400, 'invalid_request', 'warn', { entityType: 'attachment' });
 
     const { allowedIds, disallowedIds: rejectedItemIds } = await splitByPermission(
+      ctx,
       'delete',
       'attachment',
       toDeleteIds,

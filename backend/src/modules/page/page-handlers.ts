@@ -4,7 +4,7 @@ import { db } from '#/db/db';
 import type { PageModel } from '#/db/schema/pages';
 import { pagesTable } from '#/db/schema/pages';
 import { usersTable } from '#/db/schema/users';
-import { type Env, getContextUser } from '#/lib/context';
+import { type Env } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/error';
 import pagesRoutes from '#/modules/page/page-routes';
@@ -45,7 +45,7 @@ const pageRouteHandlers = app
       }
     }
 
-    const user = getContextUser();
+    const user = ctx.var.user;
 
     // Prepare pages with tx metadata for CDC
     // TODO not finished here
@@ -163,10 +163,10 @@ const pageRouteHandlers = app
   .openapi(pagesRoutes.updatePage, async (ctx) => {
     const { id } = ctx.req.valid('param');
 
-    const { entity } = await getValidProductEntity(id, 'page', 'update');
+    const { entity } = await getValidProductEntity(ctx, id, 'page', 'update');
 
     const { tx, ...pageData } = ctx.req.valid('json');
-    const user = getContextUser();
+    const user = ctx.var.user;
 
     // Get all tracked fields that are being updated
     const trackedFields = ['name', 'content', 'status'] as const;

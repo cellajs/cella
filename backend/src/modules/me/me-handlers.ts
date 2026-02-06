@@ -9,7 +9,7 @@ import { AuthStrategy, sessionsTable } from '#/db/schema/sessions';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { usersTable } from '#/db/schema/users';
 import { env } from '#/env';
-import { type Env, getContextMemberships, getContextUser, getContextUserSystemRole } from '#/lib/context';
+import { type Env } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/error';
 import { getParams, getSignature } from '#/lib/transloadit';
@@ -39,8 +39,8 @@ const meRouteHandlers = app
    * Get me
    */
   .openapi(meRoutes.getMe, async (ctx) => {
-    const user = getContextUser();
-    const systemRole = getContextUserSystemRole();
+    const user = ctx.var.user;
+    const systemRole = ctx.var.userRole;
 
     // Update last visit date
     await db.update(usersTable).set({ lastStartedAt: getIsoDate() }).where(eq(usersTable.id, user.id));
@@ -52,7 +52,7 @@ const meRouteHandlers = app
    */
   .openapi(meRoutes.toggleMfa, async (ctx) => {
     const { mfaRequired, passkeyData, totpCode } = ctx.req.valid('json');
-    const user = getContextUser();
+    const user = ctx.var.user;
 
     // Determine which MFA strategy user is using
     const strategy: Extract<AuthStrategy, 'passkey' | 'totp'> = passkeyData ? 'passkey' : 'totp';
@@ -97,7 +97,7 @@ const meRouteHandlers = app
    * Get my auth data
    */
   .openapi(meRoutes.getMyAuth, async (ctx) => {
-    const user = getContextUser();
+    const user = ctx.var.user;
 
     // Get auth info + sessions in parallel
     const [authInfo, sessions] = await Promise.all([getAuthInfo(user.id), getUserSessions(ctx, user.id)]);
@@ -116,7 +116,7 @@ const meRouteHandlers = app
    * Get my invitations - a list with a combination of pending membership and entity data
    */
   .openapi(meRoutes.getMyInvitations, async (ctx) => {
-    const user = getContextUser();
+    const user = ctx.var.user;
 
     const pendingInvites = await Promise.all(
       appConfig.contextEntityTypes.map((entityType) => {
@@ -153,7 +153,7 @@ const meRouteHandlers = app
    */
   .openapi(meRoutes.deleteMySessions, async (ctx) => {
     const { ids } = ctx.req.valid('json');
-    const user = getContextUser();
+    const user = ctx.var.user;
 
     const sessionIds = Array.isArray(ids) ? ids : [ids];
     const { sessionToken } = await getParsedSessionCookie(ctx);
@@ -180,7 +180,7 @@ const meRouteHandlers = app
    * Update current user (me)
    */
   .openapi(meRoutes.updateMe, async (ctx) => {
-    const user = getContextUser();
+    const user = ctx.var.user;
 
     if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { user: 'self' } });
 
@@ -211,7 +211,7 @@ const meRouteHandlers = app
    * Delete current user (me)
    */
   .openapi(meRoutes.deleteMe, async (ctx) => {
-    const user = getContextUser();
+    const user = ctx.var.user;
 
     // Check if user exists
     if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { user: 'self' } });
@@ -228,7 +228,7 @@ const meRouteHandlers = app
    * Delete one of my entity memberships
    */
   .openapi(meRoutes.deleteMyMembership, async (ctx) => {
-    const user = getContextUser();
+    const user = ctx.var.user;
 
     const { entityType, entityId } = ctx.req.valid('query');
 
@@ -251,7 +251,7 @@ const meRouteHandlers = app
    */
   .openapi(meRoutes.getUploadToken, async (ctx) => {
     const { public: isPublic, organizationId, templateId } = ctx.req.valid('query');
-    const user = getContextUser();
+    const user = ctx.var.user;
 
     // This will be used to as first part of S3 key
     const sub = [appConfig.s3.bucketPrefix, organizationId, user.id]
@@ -309,7 +309,7 @@ const meRouteHandlers = app
    * Get all memberships for the current user
    */
   .openapi(meRoutes.getMyMemberships, async (ctx) => {
-    const memberships = getContextMemberships();
+    const memberships = ctx.var.memberships;
 
     // Map to base schema fields only
     const items = memberships.map((m) => ({

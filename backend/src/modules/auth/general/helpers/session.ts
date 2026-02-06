@@ -6,7 +6,7 @@ import { type AuthStrategy, type SessionModel, type SessionTypes, sessionsTable 
 import { systemRolesTable } from '#/db/schema/system-roles';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { env } from '#/env';
-import { Env, getContextUser } from '#/lib/context';
+import type { Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { deviceInfo } from '#/modules/auth/general/helpers/device-info';
@@ -71,7 +71,7 @@ export const setUserSession = async (
   // Insert session
   await db.insert(sessionsTable).values(session);
 
-  const adminUser = getContextUser();
+  const adminUser = ctx.var.user;
   const cookieContent = `${hashedSessionToken}.${type === 'impersonation' ? adminUser.id : ''}`;
 
   // Set session cookie with the unhashed version

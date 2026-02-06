@@ -3,13 +3,7 @@ import { streamSSE } from 'hono/streaming';
 import { nanoid } from 'nanoid';
 import { appConfig } from 'shared';
 import { signCacheToken } from '#/lib/cache-token-signer';
-import {
-  type Env,
-  getContextMemberships,
-  getContextSessionToken,
-  getContextUser,
-  getContextUserSystemRole,
-} from '#/lib/context';
+import { type Env } from '#/lib/context';
 import { publicEntityCache } from '#/middlewares/entity-cache';
 import {
   type AppStreamSubscriber,
@@ -192,10 +186,10 @@ const entitiesRouteHandlers = app
    */
   .openapi(entityRoutes.appStream, async (ctx) => {
     const { offset, live } = ctx.req.valid('query');
-    const user = getContextUser();
-    const memberships = getContextMemberships();
-    const userSystemRole = getContextUserSystemRole();
-    const sessionToken = getContextSessionToken();
+    const user = ctx.var.user;
+    const memberships = ctx.var.memberships;
+    const userSystemRole = ctx.var.userRole;
+    const sessionToken = ctx.var.sessionToken;
     const orgIds = new Set(memberships.map((m) => m.organizationId));
 
     // Resolve cursor from offset parameter

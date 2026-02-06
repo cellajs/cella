@@ -1,5 +1,4 @@
 import { xMiddleware } from '#/docs/x-middleware';
-import { getContextUser, getContextUserSystemRole } from '#/lib/context';
 import { AppError } from '#/lib/error';
 
 /**
@@ -10,9 +9,9 @@ import { AppError } from '#/lib/error';
  * @param next - The next middleware or route handler to call if the check passes.
  * @returns Error response or undefined if the user is allowed to proceed.
  */
-export const isSystemAdmin = xMiddleware('isSystemAdmin', 'x-guard', async (_, next) => {
-  const user = getContextUser();
-  const userSystemRole = getContextUserSystemRole();
+export const isSystemAdmin = xMiddleware('isSystemAdmin', 'x-guard', async (ctx, next) => {
+  const user = ctx.var.user;
+  const userSystemRole = ctx.var.userRole;
 
   if (userSystemRole !== 'admin') throw new AppError(403, 'no_sysadmin', 'warn', { meta: { user: user.id } });
 

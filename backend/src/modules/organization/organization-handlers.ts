@@ -4,7 +4,7 @@ import { appConfig, hierarchy, recordFromKeys } from 'shared';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
-import { type Env, getContextMemberships, getContextUser, getContextUserSystemRole } from '#/lib/context';
+import { type Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
 import { filterWithRejection, takeWithRestriction } from '#/lib/rejection-utils';
 import { checkSlugAvailable, checkSlugsAvailable } from '#/modules/entities/helpers/check-slug';
@@ -30,8 +30,8 @@ const organizationRouteHandlers = app
   .openapi(organizationRoutes.createOrganizations, async (ctx) => {
     const items = ctx.req.valid('json');
 
-    const user = getContextUser();
-    const memberships = getContextMemberships();
+    const user = ctx.var.user;
+    const memberships = ctx.var.memberships;
 
     // Count user's existing created orgs
     const createdOrgsCount = memberships.reduce((cnt, m) => {
@@ -145,9 +145,9 @@ const organizationRouteHandlers = app
 
     const entityType = 'organization';
 
-    const user = getContextUser();
-    const userSystemRole = getContextUserSystemRole();
-    const memberships = getContextMemberships();
+    const user = ctx.var.user;
+    const userSystemRole = ctx.var.userRole;
+    const memberships = ctx.var.memberships;
     const isSystemAdmin = userSystemRole === 'admin' && !userId;
 
     // TODO We should only allow this if you have a relationship to the target user
@@ -256,7 +256,7 @@ const organizationRouteHandlers = app
     });
 
     // Enrich organizations with can object using batch permission check
-    const itemsWithCan = addPermission('read', items);
+    const itemsWithCan = addPermission(ctx, 'read', items);
 
     return ctx.json({ items: itemsWithCan, total }, 200);
   })
@@ -267,7 +267,11 @@ const organizationRouteHandlers = app
   .openapi(organizationRoutes.getOrganization, async (ctx) => {
     const { idOrSlug } = ctx.req.valid('param');
 
-    const { entity: organization, membership, can } = await getValidContextEntity(idOrSlug, 'organization', 'read');
+    const {
+      entity: organization,
+      membership,
+      can,
+    } = await getValidContextEntity(ctx, idOrSlug, 'organization', 'read');
 
     const counts = await getEntityCounts(organization.entityType, organization.id);
 
@@ -298,8 +302,8 @@ const organizationRouteHandlers = app
   .openapi(organizationRoutes.updateOrganization, async (ctx) => {
     const { id } = ctx.req.valid('param');
 
-    const { entity: organization, membership, can } = await getValidContextEntity(id, 'organization', 'update');
-    const user = getContextUser();
+    const { entity: organization, membership, can } = await getValidContextEntity(ctx, id, 'organization', 'update');
+    const user = ctx.var.user;
 
     const updatedFields = ctx.req.valid('json');
     const slug = updatedFields.slug;
@@ -353,14 +357,14 @@ const organizationRouteHandlers = app
   .openapi(organizationRoutes.deleteOrganizations, async (ctx) => {
     const { ids } = ctx.req.valid('json');
 
-    const memberships = getContextMemberships();
+    const memberships = ctx.var.memberships;
 
     // Convert the ids to an array
     const toDeleteIds = Array.isArray(ids) ? ids : [ids];
     if (!toDeleteIds.length) throw new AppError(400, 'invalid_request', 'error', { entityType: 'organization' });
 
     // Split ids into allowed and disallowed
-    const result = await splitByPermission('delete', 'organization', toDeleteIds, memberships);
+    const result = await splitByPermission(ctx, 'delete', 'organization', toDeleteIds, memberships);
     const { allowedIds, disallowedIds: rejectedItemIds } = result;
 
     if (!allowedIds.length) throw new AppError(403, 'forbidden', 'warn', { entityType: 'organization' });

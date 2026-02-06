@@ -14,7 +14,7 @@ import { tokensTable } from '#/db/schema/tokens';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { usersTable } from '#/db/schema/users';
 import { env } from '#/env';
-import { type Env, getContextUser } from '#/lib/context';
+import { type Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
 import { mailer } from '#/lib/mailer';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
@@ -47,7 +47,7 @@ const systemRouteHandlers = app
    */
   .openapi(systemRoutes.createInvite, async (ctx) => {
     const { emails } = ctx.req.valid('json');
-    const user = getContextUser();
+    const user = ctx.var.user;
 
     const lng = user.language;
     const senderName = user.name;
@@ -278,7 +278,7 @@ const systemRouteHandlers = app
   .openapi(systemRoutes.updateUser, async (ctx) => {
     const { id } = ctx.req.valid('param');
 
-    const user = getContextUser();
+    const user = ctx.var.user;
 
     const [targetUser] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, id)).limit(1);
 
@@ -344,7 +344,7 @@ const systemRouteHandlers = app
     const { organizationIds, subject, content, roles } = ctx.req.valid('json');
     const { toSelf } = ctx.req.valid('query');
 
-    const user = getContextUser();
+    const user = ctx.var.user;
 
     // Get members from organizations
     const recipientsRecords = await db

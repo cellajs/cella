@@ -3,7 +3,6 @@ import { eq } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { organizationsTable } from '#/db/schema/organizations';
 import { xMiddleware } from '#/docs/x-middleware';
-import { getContextMemberships, getContextUserSystemRole } from '#/lib/context';
 import { AppError } from '#/lib/error';
 
 /**
@@ -18,8 +17,8 @@ export const hasOrgAccess = xMiddleware('hasOrgAccess', 'x-guard', async (ctx, n
   const orgId = ctx.req.param('orgId');
   if (!orgId) throw new AppError(400, 'invalid_request', 'error');
 
-  const memberships = getContextMemberships();
-  const userSystemRole = getContextUserSystemRole();
+  const memberships = ctx.var.memberships;
+  const userSystemRole = ctx.var.userRole;
 
   // Guard: isAuthenticated must run before hasOrgAccess to populate memberships
   if (memberships === undefined) {

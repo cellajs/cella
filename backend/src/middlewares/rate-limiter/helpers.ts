@@ -3,7 +3,7 @@ import { RateLimiterDrizzle, RateLimiterMemory, type RateLimiterRes } from 'rate
 import { db } from '#/db/db';
 import { rateLimitsTable } from '#/db/schema/rate-limits';
 import { env } from '#/env';
-import { Env, getContextUser } from '#/lib/context';
+import type { Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
 import { defaultOptions, slowOptions } from '#/middlewares/rate-limiter/core';
 import { Identifiers, RateLimitIdentifier } from '#/middlewares/rate-limiter/types';
@@ -112,7 +112,7 @@ export const extractIdentifiers = async (
         break;
       }
       case 'userId': {
-        const user = getContextUser();
+        const user = ctx.var.user;
         if (user) results.userId = user.id;
         break;
       }

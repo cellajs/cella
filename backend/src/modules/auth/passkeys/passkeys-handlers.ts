@@ -8,7 +8,7 @@ import { emailsTable } from '#/db/schema/emails';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { totpsTable } from '#/db/schema/totps';
 import { type UserModel, usersTable } from '#/db/schema/users';
-import { type Env, getContextUser } from '#/lib/context';
+import { type Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { deviceInfo } from '#/modules/auth/general/helpers/device-info';
@@ -28,7 +28,7 @@ const authPasskeysRouteHandlers = app
    */
   .openapi(authPasskeysRoutes.createPasskey, async (ctx) => {
     const { attestationObject, clientDataJSON, nameOnDevice } = ctx.req.valid('json');
-    const user = getContextUser();
+    const user = ctx.var.user;
 
     const challengeFromCookie = await getAuthCookie(ctx, 'passkey-challenge');
     deleteAuthCookie(ctx, 'passkey-challenge');
@@ -65,7 +65,7 @@ const authPasskeysRouteHandlers = app
    */
   .openapi(authPasskeysRoutes.deletePasskey, async (ctx) => {
     const { id } = ctx.req.valid('param');
-    const user = getContextUser();
+    const user = ctx.var.user;
 
     // Remove all passkeys linked to this user's email
     await db.delete(passkeysTable).where(and(eq(passkeysTable.userId, user.id), eq(passkeysTable.id, id)));

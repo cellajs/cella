@@ -6,7 +6,7 @@ import { lastSeenTable } from '#/db/schema/last-seen';
 import { membershipsTable } from '#/db/schema/memberships';
 import { systemRolesTable } from '#/db/schema/system-roles';
 import { usersTable } from '#/db/schema/users';
-import { type Env, getContextOrganization, getContextUser } from '#/lib/context';
+import { type Env } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/error';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
@@ -25,7 +25,7 @@ const userRouteHandlers = app
   .openapi(userRoutes.getUsers, async (ctx) => {
     const { q, sort, order, offset, limit, role, targetEntityId, targetEntityType } = ctx.req.valid('query');
 
-    const organization = getContextOrganization();
+    const organization = ctx.var.organization;
 
     const filters = [
       // Filter by role if provided
@@ -117,8 +117,8 @@ const userRouteHandlers = app
    */
   .openapi(userRoutes.getUser, async (ctx) => {
     const { idOrSlug } = ctx.req.valid('param');
-    const requestingUser = getContextUser();
-    const organization = getContextOrganization();
+    const requestingUser = ctx.var.user;
+    const organization = ctx.var.organization;
 
     // Check if requesting self (by id or slug)
     if (idOrSlug === requestingUser.id || idOrSlug === requestingUser.slug) {

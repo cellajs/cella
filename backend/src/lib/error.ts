@@ -4,7 +4,7 @@ import type { ErrorHandler } from 'hono';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import i18n from 'i18next';
 import { appConfig } from 'shared';
-import { type Env, getContextOrganization, getContextUser } from '#/lib/context';
+import type { Env } from '#/lib/context';
 import type locales from '#/lib/i18n-locales';
 import { eventLogger } from '#/pino';
 import type { apiErrorSchema } from '#/schemas';
@@ -73,8 +73,8 @@ export const appErrorHandler: ErrorHandler<Env> = (err, ctx) => {
   const meta = isAppError ? err.meta : undefined;
   const willRedirect = isAppError ? err.willRedirect : false;
 
-  const user = getContextUser();
-  const organization = getContextOrganization();
+  const user = ctx.get('user');
+  const organization = ctx.get('organization');
   const detailsRequired = severitiesRequiringDetails.has(severity);
 
   const includeStack = severity === 'error' || severity === 'fatal';

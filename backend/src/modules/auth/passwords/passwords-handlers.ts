@@ -7,7 +7,7 @@ import { emailsTable } from '#/db/schema/emails';
 import { passwordsTable } from '#/db/schema/passwords';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
-import { type Env, getContextToken } from '#/lib/context';
+import { type Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
 import { mailer } from '#/lib/mailer';
 import { checkRateLimitStatus } from '#/middlewares/rate-limiter/helpers';
@@ -70,7 +70,7 @@ const authPasswordsRouteHandlers = app
   .openapi(authPasswordsRoutes.signUpWithToken, async (ctx) => {
     const { password } = ctx.req.valid('json');
 
-    const validToken = getContextToken();
+    const validToken = ctx.var.token;
     if (!validToken) throw new AppError(400, 'invalid_request', 'error');
 
     // Verify if strategy allowed
@@ -154,7 +154,7 @@ const authPasswordsRouteHandlers = app
    */
   .openapi(authPasswordsRoutes.createPasswordWithToken, async (ctx) => {
     const { password } = ctx.req.valid('json');
-    const token = getContextToken();
+    const token = ctx.var.token;
 
     // Verify if strategy allowed
     const strategy = 'password';

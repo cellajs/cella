@@ -7,7 +7,7 @@ import { db } from '#/db/db';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { totpsTable } from '#/db/schema/totps';
 import { usersTable } from '#/db/schema/users';
-import { type Env, getContextUser } from '#/lib/context';
+import { type Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { validateConfirmMfaToken } from '#/modules/auth/general/helpers/mfa';
@@ -24,7 +24,7 @@ const authTotpsRouteHandlers = app
    * Create TOTP key
    */
   .openapi(authTotpsRoutes.generateTotpKey, async (ctx) => {
-    const user = getContextUser();
+    const user = ctx.var.user;
 
     // Generate a 20-byte random secret and encode it as Base32
     const secretBytes = crypto.getRandomValues(new Uint8Array(20));
@@ -51,7 +51,7 @@ const authTotpsRouteHandlers = app
    */
   .openapi(authTotpsRoutes.createTotp, async (ctx) => {
     const { code } = ctx.req.valid('json');
-    const user = getContextUser();
+    const user = ctx.var.user;
 
     // Retrieve the encoded totp secret from cookie
     const encodedSecret = await getAuthCookie(ctx, 'totp-challenge');
@@ -78,7 +78,7 @@ const authTotpsRouteHandlers = app
    * Unlink TOTP
    */
   .openapi(authTotpsRoutes.deleteTotp, async (ctx) => {
-    const user = getContextUser();
+    const user = ctx.var.user;
 
     // Remove all totps linked to this user's email
     await db.delete(totpsTable).where(eq(totpsTable.userId, user.id));

@@ -1,8 +1,7 @@
 import type { HttpBindings } from '@hono/node-server';
 import type * as Sentry from '@sentry/node';
-import { getContext } from 'hono/context-storage';
 import type { OrganizationModel } from '#/db/schema/organizations';
-import { SystemRoleModel } from '#/db/schema/system-roles';
+import type { SystemRoleModel } from '#/db/schema/system-roles';
 import type { TokenModel } from '#/db/schema/tokens';
 import type { UserModel } from '#/db/schema/users';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
@@ -18,8 +17,7 @@ type Bindings = HttpBindings & {
 
 /**
  * Define the context environment.
- *
- * @link https://hono.dev/docs/middleware/builtin/context-storage#usage
+ * NOTE: Only direct ctx.var. Pattern with contextStorage() / getContext should not be used to avoid indirection and uncertainties.
  */
 export type Env = {
   Variables: {
@@ -34,59 +32,4 @@ export type Env = {
     sentrySpan?: ReturnType<typeof Sentry.startSpan>;
   };
   Bindings: Bindings;
-};
-
-/**
- * Access the current user's system role from the request context.
- *
- * @returns The system role of the current user.
- */
-export const getContextUserSystemRole = () => {
-  return getContext<Env>().var.userRole;
-};
-
-/**
- * Access the current user from the request context.
- *
- * @returns The `UserModel` object of the currently authenticated user.
- */
-export const getContextUser = () => {
-  return getContext<Env>().var.user;
-};
-
-/**
- * Access the current organization that the request is scoped to.
- * This includes both the organization and the membership of current user.
- *
- * @returns The `OrganizationModel` along with its associated `MembershipModel`.
- */
-export const getContextOrganization = () => {
-  return getContext<Env>().var.organization;
-};
-
-/**
- * Access all memberships for the current user.
- *
- * @returns An array of `MembershipModel` objects for the current user.
- */
-export const getContextMemberships = () => {
-  return getContext<Env>().var.memberships;
-};
-
-/**
- * Access authentication token associated with the current user.
- *
- * @returns The `TokenModel` object that represents the user's authentication token.
- */
-export const getContextToken = () => {
-  return getContext<Env>().var.token;
-};
-
-/**
- * Access the current session token (hashed) for cache token signing.
- *
- * @returns The hashed session token string.
- */
-export const getContextSessionToken = () => {
-  return getContext<Env>().var.sessionToken;
 };

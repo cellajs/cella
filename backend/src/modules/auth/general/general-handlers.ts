@@ -8,7 +8,7 @@ import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { sessionsTable } from '#/db/schema/sessions';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
-import { type Env, getContextUser } from '#/lib/context';
+import { type Env } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { AppError, type ErrorKey } from '#/lib/error';
 import { mailer } from '#/lib/mailer';
@@ -157,7 +157,7 @@ const authGeneralRouteHandlers = app
 
     if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { targetUserId } });
 
-    const adminUser = getContextUser();
+    const adminUser = ctx.var.user;
     await setUserSession(ctx, user, 'password', 'impersonation');
 
     logEvent('info', 'Started impersonation', { adminId: adminUser.id, targetUserId });

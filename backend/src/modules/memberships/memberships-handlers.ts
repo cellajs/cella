@@ -11,13 +11,7 @@ import { membershipsTable } from '#/db/schema/memberships';
 import { requestsTable } from '#/db/schema/requests';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
-import {
-  type Env,
-  getContextMemberships,
-  getContextOrganization,
-  getContextUser,
-  getContextUserSystemRole,
-} from '#/lib/context';
+import { type Env } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/error';
 
@@ -67,16 +61,16 @@ const membershipsRouteHandlers = app
     if (!normalizedEmails.length) throw new AppError(400, 'no_recipients', 'warn');
 
     // Step 0: Validate target entity and caller permission (update)
-    const { entity } = await getValidContextEntity(entityId, entityType, 'update');
+    const { entity } = await getValidContextEntity(ctx, entityId, entityType, 'update');
 
     // Step 0: Extract entity context
     const { slug: entitySlug, name: entityName } = entity;
     const targetEntityIdField = appConfig.entityIdColumnKeys[entityType];
 
     // Step 0: Contextual user and organization
-    const user = getContextUser();
-    const userSystemRole = getContextUserSystemRole();
-    const organization = getContextOrganization();
+    const user = ctx.var.user;
+    const userSystemRole = ctx.var.userRole;
+    const organization = ctx.var.organization;
 
     // Step 0: Scenario buckets
     const rejectedItemIds: string[] = []; // Scenario 1: already active members
@@ -384,7 +378,7 @@ const membershipsRouteHandlers = app
     const { entityType, entityId } = ctx.req.valid('query');
     const { ids } = ctx.req.valid('json');
 
-    const { entity } = await getValidContextEntity(entityId, entityType, 'delete');
+    const { entity } = await getValidContextEntity(ctx, entityId, entityType, 'delete');
 
     const entityIdColumnKey = appConfig.entityIdColumnKeys[entityType];
 
@@ -431,9 +425,9 @@ const membershipsRouteHandlers = app
     const { id: membershipId } = ctx.req.valid('param');
     const { role, archived, muted, displayOrder } = ctx.req.valid('json');
 
-    const user = getContextUser();
-    const memberships = getContextMemberships();
-    const organization = getContextOrganization();
+    const user = ctx.var.user;
+    const memberships = ctx.var.memberships;
+    const organization = ctx.var.organization;
 
     let orderToUpdate = displayOrder;
 
@@ -458,7 +452,7 @@ const membershipsRouteHandlers = app
     if (!membershipContext) throw new AppError(404, 'not_found', 'warn', { entityType: updatedType });
 
     // Check if user has permission to update someone elses membership role
-    if (role) await getValidContextEntity(membershipContextId, updatedType, 'update');
+    if (role) await getValidContextEntity(ctx, membershipContextId, updatedType, 'update');
 
     // If archived changed, set lowest order in relevant memberships
     if (archived !== undefined && archived !== membershipToUpdate.archived) {
@@ -497,7 +491,7 @@ const membershipsRouteHandlers = app
   .openapi(membershipRoutes.handleMembershipInvitation, async (ctx) => {
     const { id: inactiveMembershipId, acceptOrReject } = ctx.req.valid('param');
 
-    const user = getContextUser();
+    const user = ctx.var.user;
 
     const [inactiveMembership] = await db
       .select()
@@ -546,10 +540,10 @@ const membershipsRouteHandlers = app
   .openapi(membershipRoutes.getMembers, async (ctx) => {
     const { entityId, entityType, q, sort, order, offset, limit, role } = ctx.req.valid('query');
 
-    const organization = getContextOrganization();
+    const organization = ctx.var.organization;
 
     // Validate entity existence and check read permission
-    const { entity } = await getValidContextEntity(entityId, entityType, 'read');
+    const { entity } = await getValidContextEntity(ctx, entityId, entityType, 'read');
 
     const entityIdColumnKey = appConfig.entityIdColumnKeys[entity.entityType];
 
@@ -599,8 +593,8 @@ const membershipsRouteHandlers = app
   .openapi(membershipRoutes.getPendingMemberships, async (ctx) => {
     const { entityId, entityType, sort, order, offset, limit } = ctx.req.valid('query');
 
-    const organization = getContextOrganization();
-    const { entity } = await getValidContextEntity(entityId, entityType, 'read');
+    const organization = ctx.var.organization;
+    const { entity } = await getValidContextEntity(ctx, entityId, entityType, 'read');
     const entityIdColumnKey = appConfig.entityIdColumnKeys[entity.entityType];
 
     const table = inactiveMembershipsTable;
