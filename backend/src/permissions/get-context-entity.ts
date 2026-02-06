@@ -1,5 +1,6 @@
+import type { Context } from 'hono';
 import type { ContextEntityType, EntityActionType } from 'shared';
-import { getContextMemberships, getContextUserSystemRole } from '#/lib/context';
+import type { Env } from '#/lib/context';
 import { type EntityModel, resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/error';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
@@ -31,13 +32,14 @@ export interface ValidContextEntityResult<T extends ContextEntityType> {
  * @returns An object containing resolved entity, associated membership (or `null`), and can object.
  */
 export const getValidContextEntity = async <T extends ContextEntityType>(
+  ctx: Context<Env>,
   idOrSlug: string,
   entityType: T,
   action: Exclude<EntityActionType, 'create'>,
 ): Promise<ValidContextEntityResult<T>> => {
   // Get current user role and memberships from request context
-  const userSystemRole = getContextUserSystemRole();
-  const memberships = getContextMemberships();
+  const userSystemRole = ctx.var.userRole;
+  const memberships = ctx.var.memberships;
 
   // Step 1: Resolve target entity by ID or slug
   const entity = await resolveEntity(entityType, idOrSlug);

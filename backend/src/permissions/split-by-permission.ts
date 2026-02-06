@@ -1,5 +1,6 @@
+import type { Context } from 'hono';
 import type { ContextEntityType, EntityActionType, ProductEntityType } from 'shared';
-import { getContextUserSystemRole } from '#/lib/context';
+import type { Env } from '#/lib/context';
 import { resolveEntities } from '#/lib/entity';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { checkPermission } from '#/permissions';
@@ -18,12 +19,13 @@ import { checkPermission } from '#/permissions';
  * @returns An object with `allowedIds` and `disallowedIds` arrays.
  */
 export const splitByPermission = async (
+  ctx: Context<Env>,
   action: EntityActionType,
   entityType: ContextEntityType | ProductEntityType,
   ids: string[],
   memberships: MembershipBaseModel[],
 ) => {
-  const userSystemRole = getContextUserSystemRole();
+  const userSystemRole = ctx.var.userRole;
 
   // Resolve entities
   const entities = await resolveEntities(entityType, ids);

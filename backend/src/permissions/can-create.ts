@@ -1,5 +1,6 @@
+import type { Context } from 'hono';
 import type { ContextEntityType, ProductEntityType } from 'shared';
-import { getContextMemberships, getContextOrganization, getContextUserSystemRole } from '#/lib/context';
+import type { Env } from '#/lib/context';
 import type { EntityModel } from '#/lib/entity';
 import { AppError } from '#/lib/error';
 import { checkPermission } from '#/permissions';
@@ -11,10 +12,11 @@ import { checkPermission } from '#/permissions';
  * @param entity - Entity that user wants to create.
  */
 export const canCreateEntity = <K extends Exclude<ContextEntityType, 'organization'> | ProductEntityType>(
+  ctx: Context<Env>,
   entity: EntityModel<K>,
 ) => {
-  const userSystemRole = getContextUserSystemRole();
-  const memberships = getContextMemberships();
+  const userSystemRole = ctx.var.userRole;
+  const memberships = ctx.var.memberships;
 
   const { entityType } = entity;
 
@@ -26,7 +28,7 @@ export const canCreateEntity = <K extends Exclude<ContextEntityType, 'organizati
     throw new AppError(403, 'forbidden', 'warn', { entityType });
   }
 
-  const org = getContextOrganization();
+  const org = ctx.var.organization;
 
   // Defense in depth check: it must match context organization
   if (org && 'organizationId' in entity && entity.organizationId !== org.id) {

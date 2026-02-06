@@ -1,5 +1,6 @@
+import type { Context } from 'hono';
 import type { EntityActionType } from 'shared';
-import { getContextMemberships, getContextUserSystemRole } from '#/lib/context';
+import type { Env } from '#/lib/context';
 import type { PermissionResult } from './check-permission';
 import { checkPermission } from './check-permission';
 import type { SubjectForPermission } from './permission-manager';
@@ -18,11 +19,12 @@ export type WithAllowance<T> = T & {
  * @returns Entities with `can` object added
  */
 export const addPermission = <T extends SubjectForPermission>(
+  ctx: Context<Env>,
   action: EntityActionType,
   entities: T[],
 ): WithAllowance<T>[] => {
-  const memberships = getContextMemberships();
-  const userSystemRole = getContextUserSystemRole();
+  const memberships = ctx.var.memberships;
+  const userSystemRole = ctx.var.userRole;
 
   const { results } = checkPermission(memberships, action, entities, {
     systemRole: userSystemRole,

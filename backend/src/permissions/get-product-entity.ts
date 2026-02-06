@@ -1,5 +1,6 @@
+import type { Context } from 'hono';
 import type { EntityActionType, ProductEntityType } from 'shared';
-import { getContextMemberships, getContextUserSystemRole } from '#/lib/context';
+import type { Env } from '#/lib/context';
 import { type EntityModel, resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/error';
 import { checkPermission, type PermissionResult } from '#/permissions';
@@ -27,13 +28,14 @@ export interface ValidProductEntityResult<K extends ProductEntityType> {
  * @returns An object containing resolved entity and can object.
  */
 export const getValidProductEntity = async <K extends ProductEntityType>(
+  ctx: Context<Env>,
   id: string,
   entityType: K,
   action: Exclude<EntityActionType, 'create'>,
 ): Promise<ValidProductEntityResult<K>> => {
   // Get current user role and memberships from request context
-  const userSystemRole = getContextUserSystemRole();
-  const memberships = getContextMemberships();
+  const userSystemRole = ctx.var.userRole;
+  const memberships = ctx.var.memberships;
 
   // Step 1: Resolve target entity by ID or slug
   const entity = await resolveEntity(entityType, id);
