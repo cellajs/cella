@@ -4,7 +4,8 @@ import type { GenerateScript } from './types';
 export const generateScripts: GenerateScript[] = [
   {
     name: 'Drizzle migrations',
-    command: 'drizzle-kit generate --config drizzle.config.ts',
+    // Use tsx to run drizzle-kit so path aliases (#/) are resolved
+    command: 'tsx node_modules/drizzle-kit/bin.cjs generate --config drizzle.config.ts',
     type: 'drizzle',
   },
   {

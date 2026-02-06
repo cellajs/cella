@@ -163,7 +163,7 @@ export type TokenType = (typeof appConfig.tokenTypes)[number];
 /**
  * System roles available in the app
  */
-export type SystemRole = (typeof appConfig.systemRoles)[number];
+export type SystemRole = (typeof appConfig.systemRoles)[number] | null;
 
 /******************************************************************************
  * ENTITY HIERARCHY HELPERS (delegating to hierarchy instance)
@@ -208,14 +208,13 @@ const mode = (process.env.NODE_ENV || 'development') as Config['mode'];
 
 /**
  * Merged app configuration which combines default config with environment-specific overrides.
+ * Type is preserved from _default to maintain literal types for Drizzle v1 strict enum typing.
  */
-export const appConfig = mergeDeep(_default, configModes[mode]);
+export const appConfig: Config = mergeDeep(_default, configModes[mode]);
 
-// Compile-time validation that appConfig satisfies RequiredConfig.
-// This ensures forks get TypeScript errors when critical config is missing.
-// Using a separate const preserves the full inferred type of appConfig.
-const _configCheck: RequiredConfig = appConfig;
-void _configCheck; // Prevent unused variable warning
+// Compile-time validation that Config satisfies RequiredConfig.
+// If Config doesn't extend RequiredConfig, this will cause a type error.
+((_: RequiredConfig) => {})(null as unknown as Config);
 
 /******************************************************************************
  * COMPILE-TIME VALIDATION

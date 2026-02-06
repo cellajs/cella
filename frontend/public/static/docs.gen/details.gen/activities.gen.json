@@ -202,18 +202,18 @@
             "required": false
           },
           "entityType": {
-            "type": ["string", "null"],
+            "type": "string",
             "required": false,
-            "enum": ["user", "organization", "attachment", "page", null]
+            "enum": ["user", "organization", "attachment", "page"]
           },
           "resourceType": {
-            "type": ["string", "null"],
+            "type": "string",
             "required": false,
-            "enum": ["request", "membership", null]
+            "enum": ["request", "membership"]
           },
           "action": {
             "type": "string",
-            "required": true,
+            "required": false,
             "enum": ["create", "update", "delete"]
           },
           "tableName": { "type": "string", "required": false },

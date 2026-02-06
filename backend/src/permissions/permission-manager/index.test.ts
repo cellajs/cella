@@ -1,8 +1,40 @@
-import { appConfig, getContextRoles, hierarchy, isContextEntity, isProductEntity } from 'shared';
+import {
+  appConfig,
+  type ContextEntityType,
+  type EntityRole,
+  getContextRoles,
+  hierarchy,
+  isContextEntity,
+  isProductEntity,
+} from 'shared';
 import { describe, expect, it } from 'vitest';
 import { configureAccessPolicies } from './access-policies';
 import { getAllDecisions } from './check';
-import type { MembershipForPermission, SubjectForPermission } from './types';
+import type { SubjectForPermission } from './types';
+
+/** Minimal test membership matching MembershipBaseModel structure */
+type TestMembership = {
+  id: string;
+  contextType: ContextEntityType;
+  userId: string;
+  role: EntityRole;
+  displayOrder: number;
+  muted: boolean;
+  archived: boolean;
+  organizationId: string;
+};
+
+/** Creates a test membership with required fields */
+const createTestMembership = (
+  overrides: { contextType: ContextEntityType; role: EntityRole; organizationId: string } & Partial<TestMembership>,
+): TestMembership => ({
+  id: 'mem-test',
+  userId: 'user-test',
+  displayOrder: 0,
+  muted: false,
+  archived: false,
+  ...overrides,
+});
 
 /**
  * These tests use appConfig.hierarchy which defines:
@@ -104,8 +136,8 @@ describe('checkPermission', () => {
   });
 
   it('grants full permissions for admin on organization', () => {
-    const memberships: MembershipForPermission[] = [
-      { contextType: 'organization', organizationId: 'org1', role: 'admin' },
+    const memberships: TestMembership[] = [
+      createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'admin' }),
     ];
     const subject: SubjectForPermission = { entityType: 'organization', id: 'org1', organizationId: 'org1' };
     const { can } = getAllDecisions(policies, memberships, subject);
@@ -117,8 +149,8 @@ describe('checkPermission', () => {
   });
 
   it('grants limited permissions for member on organization', () => {
-    const memberships: MembershipForPermission[] = [
-      { contextType: 'organization', organizationId: 'org1', role: 'member' },
+    const memberships: TestMembership[] = [
+      createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'member' }),
     ];
     const subject: SubjectForPermission = { entityType: 'organization', id: 'org1', organizationId: 'org1' };
     const { can } = getAllDecisions(policies, memberships, subject);
@@ -130,8 +162,8 @@ describe('checkPermission', () => {
   });
 
   it('grants create permission for member on attachment', () => {
-    const memberships: MembershipForPermission[] = [
-      { contextType: 'organization', organizationId: 'org1', role: 'member' },
+    const memberships: TestMembership[] = [
+      createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'member' }),
     ];
     const subject: SubjectForPermission = { entityType: 'attachment', id: 'att1', organizationId: 'org1' };
     const { can } = getAllDecisions(policies, memberships, subject);
@@ -143,8 +175,8 @@ describe('checkPermission', () => {
   });
 
   it('denies access when no matching membership', () => {
-    const memberships: MembershipForPermission[] = [
-      { contextType: 'organization', organizationId: 'org2', role: 'member' },
+    const memberships: TestMembership[] = [
+      createTestMembership({ contextType: 'organization', organizationId: 'org2', role: 'member' }),
     ];
     const subject: SubjectForPermission = { entityType: 'attachment', id: 'att1', organizationId: 'org1' };
     const { can } = getAllDecisions(policies, memberships, subject);
@@ -167,8 +199,8 @@ describe('permission inheritance from organization context', () => {
   });
 
   it('admin can delete attachments', () => {
-    const memberships: MembershipForPermission[] = [
-      { contextType: 'organization', organizationId: 'org1', role: 'admin' },
+    const memberships: TestMembership[] = [
+      createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'admin' }),
     ];
     const subject: SubjectForPermission = { entityType: 'attachment', id: 'att1', organizationId: 'org1' };
     const { can } = getAllDecisions(policies, memberships, subject);
@@ -177,8 +209,8 @@ describe('permission inheritance from organization context', () => {
   });
 
   it('member cannot delete attachments', () => {
-    const memberships: MembershipForPermission[] = [
-      { contextType: 'organization', organizationId: 'org1', role: 'member' },
+    const memberships: TestMembership[] = [
+      createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'member' }),
     ];
     const subject: SubjectForPermission = { entityType: 'attachment', id: 'att1', organizationId: 'org1' };
     const { can } = getAllDecisions(policies, memberships, subject);
@@ -198,8 +230,8 @@ describe('PermissionDecision action attribution', () => {
   });
 
   it('returns action attribution with grantedBy details', () => {
-    const memberships: MembershipForPermission[] = [
-      { contextType: 'organization', organizationId: 'org1', role: 'member' },
+    const memberships: TestMembership[] = [
+      createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'member' }),
     ];
     const subject: SubjectForPermission = { entityType: 'attachment', id: 'att1', organizationId: 'org1' };
     const decision = getAllDecisions(policies, memberships, subject);
@@ -224,8 +256,8 @@ describe('PermissionDecision action attribution', () => {
   });
 
   it('returns subject context IDs for debugging', () => {
-    const memberships: MembershipForPermission[] = [
-      { contextType: 'organization', organizationId: 'org1', role: 'member' },
+    const memberships: TestMembership[] = [
+      createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'member' }),
     ];
     const subject: SubjectForPermission = { entityType: 'attachment', id: 'att1', organizationId: 'org1' };
     const decision = getAllDecisions(policies, memberships, subject);
@@ -236,8 +268,8 @@ describe('PermissionDecision action attribution', () => {
   });
 
   it('returns orderedContexts and primaryContext', () => {
-    const memberships: MembershipForPermission[] = [
-      { contextType: 'organization', organizationId: 'org1', role: 'member' },
+    const memberships: TestMembership[] = [
+      createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'member' }),
     ];
     const subject: SubjectForPermission = { entityType: 'attachment', id: 'att1', organizationId: 'org1' };
     const decision = getAllDecisions(policies, memberships, subject);
@@ -247,9 +279,9 @@ describe('PermissionDecision action attribution', () => {
   });
 
   it('accumulates multiple grants for same action from different roles', () => {
-    const memberships: MembershipForPermission[] = [
-      { contextType: 'organization', organizationId: 'org1', role: 'admin' },
-      { contextType: 'organization', organizationId: 'org1', role: 'member' },
+    const memberships: TestMembership[] = [
+      createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'admin' }),
+      createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'member' }),
     ];
     const subject: SubjectForPermission = { entityType: 'attachment', id: 'att1', organizationId: 'org1' };
     const decision = getAllDecisions(policies, memberships, subject);

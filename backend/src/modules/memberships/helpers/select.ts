@@ -1,5 +1,5 @@
 import type { z } from '@hono/zod-openapi';
-import { getTableColumns } from 'drizzle-orm/utils';
+import { getColumns } from 'drizzle-orm';
 import { membershipsTable } from '#/db/schema/memberships';
 import { pickColumns } from '#/db/utils/pick-columns';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
@@ -15,7 +15,7 @@ type MembershipBaseSelect = Pick<TableColumns, MembershipBaseKeys>;
  * Membership select for base data only.
  */
 export const membershipBaseSelect: MembershipBaseSelect = (() => {
-  const cols = getTableColumns(membershipsTable);
+  const cols = getColumns(membershipsTable);
   const keys = Object.keys(membershipBaseSchema.shape) as MembershipBaseKeys[];
   return pickColumns(cols, keys);
 })();

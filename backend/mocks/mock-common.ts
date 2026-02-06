@@ -5,16 +5,7 @@
  * NOTE: Uses `import type` to avoid circular dependencies with schema files.
  */
 
-import type { BatchResponseEmpty, SuccessWithRejectedItemsResponse } from '#/schemas';
-
-/**
- * @deprecated Use `mockBatchResponseEmpty` instead.
- * Generates a mock SuccessWithRejectedItems response (legacy format).
- */
-export const mockSuccessWithRejectedItems = (): SuccessWithRejectedItemsResponse => ({
-  success: true,
-  rejectedItemIds: [],
-});
+import type { BatchResponseEmpty } from '#/schemas';
 
 /**
  * Generates a mock empty batch response for delete operations.

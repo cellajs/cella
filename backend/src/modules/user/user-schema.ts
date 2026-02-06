@@ -1,10 +1,11 @@
 import { z } from '@hono/zod-openapi';
-import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { appConfig, type EnabledOAuthProvider, type UserFlags } from 'shared';
 import { usersTable } from '#/db/schema/users';
+import { createInsertSchema, createSelectSchema } from '#/lib/drizzle-schema';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
 import {
   contextEntityTypeSchema,
+  languageSchema,
   paginationQuerySchema,
   validCDNUrlSchema,
   validNameSchema,
@@ -26,6 +27,7 @@ export const userFlagsSchema = z.object(
 
 export const userSchema = createSelectSchema(usersTable, {
   email: z.email(),
+  language: languageSchema,
   userFlags: userFlagsSchema,
 })
   .extend({
@@ -47,6 +49,7 @@ export const userUpdateBodySchema = createInsertSchema(usersTable, {
   slug: validSlugSchema,
   thumbnailUrl: validCDNUrlSchema.nullable(),
   bannerUrl: validCDNUrlSchema.nullable(),
+  language: languageSchema,
 })
   .pick({
     bannerUrl: true,

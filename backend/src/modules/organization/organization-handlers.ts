@@ -1,12 +1,11 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { and, count, eq, getTableColumns, ilike, inArray, type SQL } from 'drizzle-orm';
+import { and, count, eq, getColumns, ilike, inArray, type SQL } from 'drizzle-orm';
 import { appConfig, hierarchy, recordFromKeys } from 'shared';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 import { type Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
-import { filterWithRejection, takeWithRestriction } from '#/lib/rejection-utils';
 import { checkSlugAvailable, checkSlugsAvailable } from '#/modules/entities/helpers/check-slug';
 import { getEntityCounts, getEntityCountsSelect } from '#/modules/entities/helpers/get-entity-counts';
 import { insertMemberships } from '#/modules/memberships/helpers';
@@ -18,6 +17,7 @@ import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
 import { getOrderColumn } from '#/utils/order-column';
+import { filterWithRejection, takeWithRestriction } from '#/utils/rejection-utils';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { defaultWelcomeText } from '#json/text-blocks.json';
 
@@ -200,7 +200,7 @@ const organizationRouteHandlers = app
 
     // Select shape without membership - we'll add it via included wrapper if requested
     const selectShape = {
-      ...getTableColumns(organizationsTable),
+      ...getColumns(organizationsTable),
       ...(countData && { counts: countData.countsSelect }),
     } as const;
 

@@ -1,5 +1,6 @@
 import { appConfig, isContextEntity, isProductEntity } from 'shared';
-import type { MembershipForPermission, SubjectForPermission } from './types';
+import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
+import type { SubjectForPermission } from './types';
 
 /** Validates a subject has required fields for permission checking. */
 export const validateSubject = (subject: SubjectForPermission, index?: number): void => {
@@ -19,7 +20,7 @@ export const validateSubject = (subject: SubjectForPermission, index?: number): 
 };
 
 /** Validates a membership has required fields. */
-export const validateMembership = <T extends MembershipForPermission>(membership: T, index: number): void => {
+export const validateMembership = <T extends MembershipBaseModel>(membership: T, index: number): void => {
   if (!membership.contextType) {
     throw new Error(`[Permission] Membership[${index}] missing contextType`);
   }

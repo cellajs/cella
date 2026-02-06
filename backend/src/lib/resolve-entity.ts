@@ -1,10 +1,13 @@
-import { eq, inArray, or, type TableConfig } from 'drizzle-orm';
-import type { PgTableWithColumns } from 'drizzle-orm/pg-core';
+import { eq, inArray, or } from 'drizzle-orm';
+import type { PgTable } from 'drizzle-orm/pg-core';
 import type { EntityType } from 'shared';
 import { db } from '#/db/db';
 import { entityTables } from '#/table-config';
 
 export type EntityModel<T extends EntityType> = (typeof entityTables)[T]['$inferSelect'];
+
+// Helper type for entity tables with common columns
+type EntityTable = PgTable & { id: unknown; slug?: unknown };
 
 /**
  * Resolves entity based on `id`.
@@ -17,15 +20,16 @@ export async function resolveEntity<T extends EntityType>(
   idOrSlug: string,
 ): Promise<EntityModel<T> | undefined>;
 export async function resolveEntity<T extends EntityType>(entityType: T, idOrSlug: string) {
-  const table = entityTables[entityType] as unknown as PgTableWithColumns<TableConfig>;
+  const table = entityTables[entityType] as EntityTable;
 
   // Return early if table is not available
   if (!table) throw new Error(`Invalid entityType: ${entityType}`);
 
+  // biome-ignore lint/suspicious/noExplicitAny: Dynamic table access requires type assertion
   const [entity] = await db
     .select()
-    .from(table)
-    .where(or(eq(table.id, idOrSlug), eq(table.slug, idOrSlug)));
+    .from(table as any)
+    .where(or(eq((table as any).id, idOrSlug), eq((table as any).slug, idOrSlug)));
 
   return entity;
 }
@@ -41,7 +45,7 @@ export async function resolveEntities<T extends EntityType>(
   ids: Array<string>,
 ): Promise<Array<EntityModel<T>>> {
   // Get the corresponding table for the entity type
-  const table = entityTables[entityType] as unknown as PgTableWithColumns<TableConfig>;
+  const table = entityTables[entityType] as EntityTable;
 
   // Return early if table is not available
   if (!table) throw new Error(`Invalid entityType: ${entityType}`);
@@ -51,7 +55,11 @@ export async function resolveEntities<T extends EntityType>(
     throw new Error(`Missing or invalid query identifiers for entityType: ${entityType}`);
 
   // Query for multiple entities by IDs
-  const entities = await db.select().from(table).where(inArray(table.id, ids));
+  // biome-ignore lint/suspicious/noExplicitAny: Dynamic table access requires type assertion
+  const entities = await db
+    .select()
+    .from(table as any)
+    .where(inArray((table as any).id, ids));
 
   return entities as Array<EntityModel<T>>;
 }

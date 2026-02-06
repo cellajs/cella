@@ -41,23 +41,3 @@ export interface BatchResponseEmpty {
   rejectedItemIds: string[];
   rejectionReasons?: Record<string, string>;
 }
-
-/**
- * @deprecated Use `batchResponseSchema()` instead. This will be removed in a future version.
- * Schema for a successful response with rejected IDs (legacy format).
- */
-export const successWithRejectedItemsSchema = z
-  .object({
-    success: z.boolean(),
-    rejectedItemIds: z.array(z.string()),
-  })
-  .openapi('SuccessWithRejectedItems');
-
-/**
- * @deprecated Use `BatchResponseEmpty` instead.
- * SuccessWithRejectedItems response type (legacy format)
- */
-export interface SuccessWithRejectedItemsResponse {
-  success: boolean;
-  rejectedItemIds: string[];
-}

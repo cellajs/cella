@@ -1,19 +1,12 @@
-import { type PgVarcharBuilderInitial, varchar } from 'drizzle-orm/pg-core';
-import { appConfig, type ContextEntityType, type RelatableContextEntityType } from 'shared';
+import { varchar } from 'drizzle-orm/pg-core';
+import { appConfig, type RelatableContextEntityType } from 'shared';
 import { allContextEntityTables, relatableContextEntityTables } from '#/relatable-config';
 
 /**
- * Type representing the column names used to identify an entity using other entities' IDs' as foreign keys.
+ * Type for dynamically generated context entity ID columns.
+ * Each column is a varchar with string data type.
  */
-type ContextEntityTypeIdColumnNames = {
-  [K in keyof typeof appConfig.entityIdColumnKeys]: K extends ContextEntityType
-    ? (typeof appConfig.entityIdColumnKeys)[K]
-    : never;
-}[keyof typeof appConfig.entityIdColumnKeys];
-
-export type ContextEntityTypeColumns = {
-  [K in ContextEntityTypeIdColumnNames]: PgVarcharBuilderInitial<'', [string, ...string[]], undefined>;
-};
+export type ContextEntityTypeColumns = Record<string, ReturnType<typeof varchar>>;
 
 /** All relatable context entity types (keys of relatableContextEntityTables). */
 const relatableContextEntityTypes = Object.keys(relatableContextEntityTables) as RelatableContextEntityType[];

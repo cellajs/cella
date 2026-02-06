@@ -22,7 +22,7 @@ type Bindings = HttpBindings & {
 export type Env = {
   Variables: {
     user: UserModel;
-    userRole: SystemRoleModel['role'] | 'user';
+    userRole: SystemRoleModel['role'] | null;
     organization: OrganizationModel & { membership: MembershipBaseModel | null };
     memberships: (MembershipBaseModel & { createdBy: string | null })[];
     token: TokenModel;

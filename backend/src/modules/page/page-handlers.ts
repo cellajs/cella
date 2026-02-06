@@ -1,12 +1,12 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { and, count, eq, getTableColumns, gte, ilike, inArray, or, SQL } from 'drizzle-orm';
+import { and, count, eq, getColumns, gte, ilike, inArray, or, SQL } from 'drizzle-orm';
 import { db } from '#/db/db';
 import type { PageModel } from '#/db/schema/pages';
 import { pagesTable } from '#/db/schema/pages';
 import { usersTable } from '#/db/schema/users';
 import { type Env } from '#/lib/context';
-import { resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/error';
+import { resolveEntity } from '#/lib/resolve-entity';
 import pagesRoutes from '#/modules/page/page-routes';
 import { getValidProductEntity } from '#/permissions/get-product-entity';
 import { getEntityByTransaction, isTransactionProcessed } from '#/sync';
@@ -124,7 +124,7 @@ const pageRouteHandlers = app
     });
 
     const pagesQuery = db
-      .select(getTableColumns(pagesTable))
+      .select(getColumns(pagesTable))
       .from(pagesTable)
       .leftJoin(usersTable, eq(usersTable.id, pagesTable.createdBy))
       .where(and(or(...filters)));

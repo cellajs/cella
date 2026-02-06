@@ -1,14 +1,13 @@
 import { appConfig, type EntityActionType } from 'shared';
+import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { createActionRecord } from './action-helpers';
-import type { MembershipForPermission, PermissionDecision } from './types';
+import type { PermissionDecision } from './types';
 
 /**
  * Formats a PermissionDecision for debug logging.
  * Output shows the full decision tree: subject, contexts, and per-action attribution.
  */
-export const formatPermissionDecision = <T extends MembershipForPermission>(
-  decision: PermissionDecision<T>,
-): string => {
+export const formatPermissionDecision = <T extends MembershipBaseModel>(decision: PermissionDecision<T>): string => {
   const lines = [
     `[Permission Check] entity=${decision.subject.entityType} id=${decision.subject.id}`,
     `├─ Context IDs: ${JSON.stringify(decision.subject.contextIds)}`,
@@ -39,7 +38,7 @@ export const formatPermissionDecision = <T extends MembershipForPermission>(
  * Formats a batch permission check summary for debug logging.
  * Output shows aggregated counts per entity type and action.
  */
-export const formatBatchPermissionSummary = <T extends MembershipForPermission>(
+export const formatBatchPermissionSummary = <T extends MembershipBaseModel>(
   decisions: Map<string, PermissionDecision<T>>,
 ): string => {
   if (decisions.size === 0) return '[Batch Permission] No subjects checked';

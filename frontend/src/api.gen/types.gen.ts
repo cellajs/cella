@@ -396,16 +396,16 @@ export type Membership = {
 export type GetActivitiesData = {
   body?: never;
   path?: never;
-  query: {
+  query?: {
     q?: string;
     sort?: 'createdAt' | 'type' | 'tableName';
     order?: 'asc' | 'desc';
     offset?: string;
     limit?: string;
     userId?: string | null;
-    entityType?: 'user' | 'organization' | 'attachment' | 'page' | null;
-    resourceType?: 'request' | 'membership' | null;
-    action: 'create' | 'update' | 'delete';
+    entityType?: 'user' | 'organization' | 'attachment' | 'page';
+    resourceType?: 'request' | 'membership';
+    action?: 'create' | 'update' | 'delete';
     tableName?: string;
     type?: string;
     entityId?: string | null;

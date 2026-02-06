@@ -1,5 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { and, count, eq, getTableColumns, ilike, inArray, type SQL, sql } from 'drizzle-orm';
+import { and, count, eq, getColumns, ilike, inArray, type SQL, sql } from 'drizzle-orm';
 import i18n from 'i18next';
 import { appConfig } from 'shared';
 import { db } from '#/db/db';
@@ -27,7 +27,9 @@ const requestsRouteHandlers = app
    *  Create request
    */
   .openapi(requestRoutes.createRequest, async (ctx) => {
-    const { email, type, message } = ctx.req.valid('json');
+    const { email, type: requestType, message } = ctx.req.valid('json');
+    // Cast type to proper literal union for Drizzle v1 strict types
+    const type = requestType as RequestModel['type'];
 
     const normalizedEmail = email.toLowerCase().trim();
 
@@ -50,7 +52,7 @@ const requestsRouteHandlers = app
         .where(and(eq(requestsTable.email, normalizedEmail), inArray(requestsTable.type, uniqueRequests)));
       if (existingRequest?.type === type) throw new AppError(409, 'request_exists', 'info');
     }
-    const { tokenId, ...requestsSelect } = getTableColumns(requestsTable);
+    const { tokenId, ...requestsSelect } = getColumns(requestsTable);
 
     const [createdRequest] = await db
       .insert(requestsTable)
@@ -74,6 +76,9 @@ const requestsRouteHandlers = app
         textMessage = `Contact Request\nMessage: "${message}"\nEmail: ${normalizedEmail}`;
         title = `Request for contact with message: "${message}"`;
         break;
+      default:
+        textMessage = `Request\nEmail: ${normalizedEmail}`;
+        title = 'Request received';
     }
 
     // Send message to Matrix
@@ -106,7 +111,7 @@ const requestsRouteHandlers = app
 
     const filter: SQL | undefined = q ? ilike(requestsTable.email, prepareStringForILikeFilter(q)) : undefined;
 
-    const { tokenId, ...requestsSelect } = getTableColumns(requestsTable);
+    const { tokenId, ...requestsSelect } = getColumns(requestsTable);
 
     const requestsQuery = db
       .select({

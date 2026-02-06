@@ -1,8 +1,8 @@
 import { z } from '@hono/zod-openapi';
-import { createSelectSchema } from 'drizzle-zod';
 import { appConfig } from 'shared';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { membershipsTable } from '#/db/schema/memberships';
+import { createSelectSchema } from '#/lib/drizzle-schema';
 import { contextEntityTypeSchema, idSchema, paginationQuerySchema, validEmailSchema } from '#/schemas';
 import { userBaseSchema } from '#/schemas/user-schema-base';
 import {
@@ -11,12 +11,25 @@ import {
   mockMembershipResponse,
 } from '../../../mocks/mock-membership';
 
+/** Schema for entity roles enum - uses literal types from appConfig */
+export const entityRoleSchema = z.enum(appConfig.entityRoles);
+
 export const membershipSchema = z
-  .object(createSelectSchema(membershipsTable).shape)
+  .object({
+    ...createSelectSchema(membershipsTable).shape,
+    // Override enum columns with explicit schemas to preserve literal types
+    role: entityRoleSchema,
+    contextType: contextEntityTypeSchema,
+  })
   .openapi('Membership', { example: mockMembershipResponse() });
 
 export const inactiveMembershipSchema = z
-  .object(createSelectSchema(inactiveMembershipsTable).shape)
+  .object({
+    ...createSelectSchema(inactiveMembershipsTable).shape,
+    // Override enum columns with explicit schemas to preserve literal types
+    role: entityRoleSchema,
+    contextType: contextEntityTypeSchema,
+  })
   .openapi('InactiveMembership', { example: mockInactiveMembershipResponse() });
 
 export const membershipBaseSchema = membershipSchema

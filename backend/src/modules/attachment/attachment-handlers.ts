@@ -1,5 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { and, count, eq, getTableColumns, gte, ilike, inArray, or, type SQL, sql } from 'drizzle-orm';
+import { and, count, eq, getColumns, gte, ilike, inArray, or, type SQL, sql } from 'drizzle-orm';
 import { html, raw } from 'hono/html';
 import { appConfig } from 'shared';
 import { db } from '#/db/db';
@@ -63,7 +63,7 @@ const attachmentRouteHandlers = app
     });
 
     const attachmentsQuery = db
-      .select(getTableColumns(attachmentsTable))
+      .select(getColumns(attachmentsTable))
       .from(attachmentsTable)
       .where(and(...filters));
 

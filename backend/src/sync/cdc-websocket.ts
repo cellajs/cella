@@ -169,14 +169,14 @@ class CdcWebSocketServer {
       }
 
       // Transform CDC message to ActivityBus event and emit
-      const activityEvent: ActivityEventWithEntity = {
+      const activityEvent = {
         ...message.activity,
         type,
         seq: message.activity.seq ?? null,
         entity: message.entity,
         cacheToken: message.cacheToken,
         _trace: message._trace,
-      };
+      } as ActivityEventWithEntity;
 
       activityBus.emit(activityEvent);
 

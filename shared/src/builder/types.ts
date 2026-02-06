@@ -117,31 +117,65 @@ export interface MenuStructureItem {
 }
 
 /******************************************************************************
- * REQUIRED CONFIG
- * Complete config type that forks must satisfy.
- * Use `satisfies RequiredConfig` in fork's default.ts for type enforcement.
+ * CONFIG STRING ARRAYS
+ * Type for all readonly string array properties in config.
+ * Used as a single generic parameter to preserve literal types.
  ******************************************************************************/
 
-export interface RequiredConfig {
-  // Entity data model
+export interface ConfigStringArrays {
   entityTypes: readonly string[];
   contextEntityTypes: readonly string[];
   productEntityTypes: readonly string[];
+  publicProductEntityTypes: readonly string[];
+  relatableContextEntityTypes: readonly string[];
+  entityRoles: readonly string[];
+  entityActions: readonly string[];
+  resourceTypes: readonly string[];
+  systemRoles: readonly string[];
+  tokenTypes: readonly string[];
+  languages: readonly string[];
+  uploadTemplateIds: readonly string[];
+}
+
+/******************************************************************************
+ * REQUIRED CONFIG
+ * Complete config type that forks must satisfy.
+ * Use `satisfies RequiredConfig` in fork's default.ts for type enforcement.
+ *
+ * Generic parameter preserves literal types for Drizzle v1 strict enum typing.
+ * When accessed via appConfig, arrays remain as literal tuples like ['organization']
+ * instead of being widened to readonly string[].
+ ******************************************************************************/
+
+export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArrays> {
+  // Entity data model - use T['key'] to preserve literal types
+  entityTypes: T['entityTypes'];
+  contextEntityTypes: T['contextEntityTypes'];
+  productEntityTypes: T['productEntityTypes'];
   /**
    * Product entities with parent: null MUST be declared here.
    * Type is inferred from hierarchy.parentlessProductTypes to enforce compile-time validation.
    */
-  publicProductEntityTypes: readonly string[];
-  relatableContextEntityTypes: readonly string[];
-  entityRoles: readonly string[];
+  publicProductEntityTypes: T['publicProductEntityTypes'];
+  relatableContextEntityTypes: T['relatableContextEntityTypes'];
+  entityRoles: T['entityRoles'];
   entityIdColumnKeys: Record<string, string>;
-  entityActions: readonly string[];
-  resourceTypes: readonly string[];
+  entityActions: T['entityActions'];
+  resourceTypes: T['resourceTypes'];
   menuStructure: readonly MenuStructureItem[];
   defaultOrganizationRestrictions: Record<string, number>;
 
   // System roles
-  systemRoles: readonly string[];
+  systemRoles: T['systemRoles'];
+
+  // Authentication
+  tokenTypes: T['tokenTypes'];
+
+  // Localization
+  languages: T['languages'];
+
+  // Storage & uploads
+  uploadTemplateIds: T['uploadTemplateIds'];
 
   // App identity
   name: string;
@@ -176,7 +210,6 @@ export interface RequiredConfig {
   // Authentication
   enabledAuthStrategies: readonly BaseAuthStrategies[];
   enabledOAuthProviders: readonly BaseOAuthProviders[];
-  tokenTypes: readonly string[];
   totpConfig: TotpConfig;
 
   // API configuration
@@ -191,7 +224,6 @@ export interface RequiredConfig {
 
   // Storage & uploads
   s3: S3Config;
-  uploadTemplateIds: readonly string[];
   uppy: { defaultRestrictions: UppyRestrictionsConfig };
   localBlobStorage: LocalBlobStorageConfig;
 
@@ -211,7 +243,6 @@ export interface RequiredConfig {
 
   // Localization
   defaultLanguage: string;
-  languages: readonly string[];
   common: { countries: readonly string[]; timezones: readonly string[] };
 
   // Company details
@@ -220,3 +251,9 @@ export interface RequiredConfig {
   // User defaults
   defaultUserFlags: Record<string, boolean>;
 }
+
+/**
+ * Shorthand for RequiredConfig with all defaults.
+ * Use this when you don't need to preserve specific literal types.
+ */
+export type BaseRequiredConfig = RequiredConfig;

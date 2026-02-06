@@ -7,6 +7,7 @@ import type {
   ProductEntityType,
   SystemRole,
 } from 'shared';
+import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 
 /**
  * Permission value: 1 = allowed, 0 = denied.
@@ -47,17 +48,6 @@ export type ContextEntityIdColumns = {
 };
 
 /**
- * Membership data required for permission checks.
- * Aligned with MembershipBaseModel to avoid adapters.
- */
-export type MembershipForPermission = {
-  /** The context entity type (e.g., 'organization') */
-  contextType: ContextEntityType;
-  /** The user's role in this context (string to match DB type) */
-  role: string;
-} & ContextEntityIdColumns;
-
-/**
  * Subject (entity) data required for permission checks.
  * Represents the entity being accessed and its context relationships.
  * Note: Only context and product entities are supported - user access uses separate logic.
@@ -87,7 +77,7 @@ export interface ActionAttribution {
  * Full permission decision with action attribution for debugging and auditing.
  * Provides complete traceability: for each action, shows exactly which memberships granted it.
  */
-export interface PermissionDecision<T extends MembershipForPermission> {
+export interface PermissionDecision<T extends MembershipBaseModel = MembershipBaseModel> {
   /** The subject being checked with resolved context IDs */
   subject: {
     entityType: ContextEntityType | ProductEntityType;
@@ -131,6 +121,6 @@ export type AccessPolicyCallback = (config: AccessPolicyConfiguration) => void;
  * Options for permission checking.
  */
 export interface PermissionCheckOptions {
-  /** System role of the user (e.g., 'admin'). System admins get all permissions. */
-  systemRole?: SystemRole | 'user';
+  /** System role of the user. Only pass when user has elevated role (e.g., 'admin'). System admins get all permissions. */
+  systemRole?: SystemRole | null;
 }

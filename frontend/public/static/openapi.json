@@ -1043,7 +1043,7 @@
             "lastSignInAt": "2024-07-14T22:49:14.651Z",
             "lastSeenAt": "2024-07-14T22:49:14.651Z"
           },
-          "systemRole": "user"
+          "systemRole": null
         }
       },
       "User": {
@@ -2380,16 +2380,12 @@
           },
           {
             "schema": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": "string",
               "enum": [
                 "user",
                 "organization",
                 "attachment",
-                "page",
-                null
+                "page"
               ]
             },
             "required": false,
@@ -2398,14 +2394,10 @@
           },
           {
             "schema": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": "string",
               "enum": [
                 "request",
-                "membership",
-                null
+                "membership"
               ]
             },
             "required": false,
@@ -2421,7 +2413,7 @@
                 "delete"
               ]
             },
-            "required": true,
+            "required": false,
             "name": "action",
             "in": "query"
           },
@@ -4496,7 +4488,7 @@
                     "lastSignInAt": "2024-07-14T22:49:14.651Z",
                     "lastSeenAt": "2024-07-14T22:49:14.651Z"
                   },
-                  "systemRole": "user"
+                  "systemRole": null
                 }
               }
             }
@@ -6994,7 +6986,8 @@
                       "unpublished",
                       "published",
                       "archived"
-                    ]
+                    ],
+                    "default": "unpublished"
                   },
                   "parentId": {
                     "type": [

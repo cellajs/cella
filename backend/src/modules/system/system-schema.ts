@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
-import { createSelectSchema } from 'drizzle-zod';
 import { appConfig } from 'shared';
 import { systemRolesTable } from '#/db/schema/system-roles';
+import { createSelectSchema } from '#/lib/drizzle-schema';
 import { userSchema } from '#/modules/user/user-schema';
 import { mockSystemRoleBase, mockSystemRoleResponse } from '../../../mocks/mock-system';
 

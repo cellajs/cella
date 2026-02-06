@@ -11,7 +11,7 @@ import type { UserModel } from '#/db/schema/users';
 /** Me response type */
 export interface MeResponse {
   user: UserModel;
-  systemRole: SystemRole | 'user';
+  systemRole: SystemRole;
 }
 
 /** Session for auth data response (token already omitted by SessionModel) */

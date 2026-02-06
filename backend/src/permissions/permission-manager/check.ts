@@ -7,13 +7,13 @@ import {
   type ProductEntityType,
 } from 'shared';
 import { env } from '#/env';
+import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { allActionsAllowed, createActionRecord } from './action-helpers';
 import { formatBatchPermissionSummary, formatPermissionDecision } from './format';
 import type {
   AccessPolicies,
   ActionAttribution,
   EntityActionPermissions,
-  MembershipForPermission,
   PermissionCheckOptions,
   PermissionDecision,
   SubjectForPermission,
@@ -21,13 +21,13 @@ import type {
 import { validateMembership, validateSubject } from './validation';
 
 /** Membership index: Map from `${contextType}:${contextId}` to memberships */
-type MembershipIndex<T extends MembershipForPermission> = Map<string, T[]>;
+type MembershipIndex<T extends MembershipBaseModel> = Map<string, T[]>;
 
 /** Policy index: Map from `${contextType}:${role}` to permissions */
 type PolicyIndex = Map<string, EntityActionPermissions>;
 
 /** Builds a Map indexing memberships by `${contextType}:${contextId}` for O(1) lookup. */
-const buildMembershipIndex = <T extends MembershipForPermission>(memberships: T[]): MembershipIndex<T> => {
+const buildMembershipIndex = <T extends MembershipBaseModel>(memberships: T[]): MembershipIndex<T> => {
   const index: MembershipIndex<T> = new Map();
   for (const m of memberships) {
     const contextIdKey = appConfig.entityIdColumnKeys[m.contextType];
@@ -85,7 +85,7 @@ const getSubjectContextId = (subject: SubjectForPermission, contextType: Context
  * Internal function to check permissions for a single subject using pre-built indices.
  * This is the core logic shared by both single and batch permission checks.
  */
-const checkWithIndices = <T extends MembershipForPermission>(
+const checkWithIndices = <T extends MembershipBaseModel>(
   membershipIndex: MembershipIndex<T>,
   policyIndex: PolicyIndex,
   subject: SubjectForPermission,
@@ -216,19 +216,19 @@ const checkWithIndices = <T extends MembershipForPermission>(
  * 4. For each membership, look up permissions and attribute each granted action
  * 5. Derive `can` from actions, capture first membership
  */
-export function getAllDecisions<T extends MembershipForPermission>(
+export function getAllDecisions<T extends MembershipBaseModel>(
   policies: AccessPolicies,
   memberships: T[],
   subjects: SubjectForPermission,
   options?: PermissionCheckOptions,
 ): PermissionDecision<T>;
-export function getAllDecisions<T extends MembershipForPermission>(
+export function getAllDecisions<T extends MembershipBaseModel>(
   policies: AccessPolicies,
   memberships: T[],
   subjects: SubjectForPermission[],
   options?: PermissionCheckOptions,
 ): Map<string, PermissionDecision<T>>;
-export function getAllDecisions<T extends MembershipForPermission>(
+export function getAllDecisions<T extends MembershipBaseModel>(
   policies: AccessPolicies,
   memberships: T[],
   subjects: SubjectForPermission | SubjectForPermission[],

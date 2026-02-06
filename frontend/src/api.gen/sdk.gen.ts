@@ -273,14 +273,16 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
  * @param {string | null=} options.query.userid - `string | null` (optional)
  * @param {enum=} options.query.entitytype - `enum` (optional)
  * @param {enum=} options.query.resourcetype - `enum` (optional)
- * @param {enum} options.query.action - `enum`
+ * @param {enum=} options.query.action - `enum` (optional)
  * @param {string=} options.query.tablename - `string` (optional)
  * @param {string=} options.query.type - `string` (optional)
  * @param {string | null=} options.query.entityid - `string | null` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const getActivities = <ThrowOnError extends boolean = true>(options: Options<GetActivitiesData, ThrowOnError>) =>
-  (options.client ?? client).get<GetActivitiesResponses, GetActivitiesErrors, ThrowOnError, 'data'>({
+export const getActivities = <ThrowOnError extends boolean = true>(
+  options?: Options<GetActivitiesData, ThrowOnError>,
+) =>
+  (options?.client ?? client).get<GetActivitiesResponses, GetActivitiesErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {

@@ -17,7 +17,6 @@ export type {
   ContextEntityIdColumns,
   ContextPolicyBuilder,
   EntityActionPermissions,
-  MembershipForPermission,
   PermissionCheckOptions,
   PermissionDecision,
   PermissionValue,

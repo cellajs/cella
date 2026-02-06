@@ -13,8 +13,8 @@ export interface AppStreamSubscriber extends CursoredSubscriber {
   sessionToken: string;
   /** Set of org IDs user belongs to (for filtering org events) */
   orgIds: Set<string>;
-  /** User's system role for permission bypass */
-  userSystemRole: SystemRole | 'user';
+  /** User's system role for permission bypass (null if no elevated role) */
+  userSystemRole: SystemRole | null;
   /** User's memberships for permission checks on product entities */
   memberships: MembershipBaseModel[];
 }

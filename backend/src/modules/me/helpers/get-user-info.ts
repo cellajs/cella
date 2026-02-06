@@ -1,5 +1,5 @@
 import type { z } from '@hono/zod-openapi';
-import { and, desc, eq, getTableColumns } from 'drizzle-orm';
+import { and, desc, eq, getColumns } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
@@ -24,7 +24,7 @@ import type { sessionSchema } from '#/modules/me/me-schema';
  * @returns An object containing arrays of passkeys, password, TOTP entries, and OAuth providers
  */
 export const getAuthInfo = async (userId: string) => {
-  const { credentialId, publicKey, ...passkeySelect } = getTableColumns(passkeysTable);
+  const { credentialId, publicKey, ...passkeySelect } = getColumns(passkeysTable);
   const getPasskeys = db.select(passkeySelect).from(passkeysTable).where(eq(passkeysTable.userId, userId));
 
   const getPassword = db.select().from(passwordsTable).where(eq(passwordsTable.userId, userId)).limit(1);

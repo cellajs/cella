@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
-import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { attachmentsTable } from '#/db/schema/attachments';
+import { createInsertSchema, createSelectSchema } from '#/lib/drizzle-schema';
 import { batchResponseSchema, entityCanSchema, paginationQuerySchema, txRequestSchema } from '#/schemas';
 import { txBaseSchema } from '#/schemas/tx-base-schema';
 import { mockAttachmentResponse } from '../../../mocks/mock-attachment';

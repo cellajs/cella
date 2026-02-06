@@ -96,9 +96,6 @@ class CacheMetrics {
 /** Singleton metrics instance for entity cache */
 export const entityCacheMetrics = new CacheMetrics();
 
-/** @deprecated Use entityCacheMetrics instead */
-export const publicCacheMetrics = entityCacheMetrics;
-
 /** Get cache metrics */
 export function getCacheMetrics(): ReturnType<CacheMetrics['getStats']> {
   return entityCacheMetrics.getStats();

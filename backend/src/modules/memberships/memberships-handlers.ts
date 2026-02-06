@@ -12,10 +12,9 @@ import { requestsTable } from '#/db/schema/requests';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
 import { type Env } from '#/lib/context';
-import { resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/error';
-
 import { mailer } from '#/lib/mailer';
+import { resolveEntity } from '#/lib/resolve-entity';
 import { getBaseMembershipEntityId, insertMemberships } from '#/modules/memberships/helpers';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import membershipRoutes from '#/modules/memberships/memberships-routes';
@@ -138,8 +137,9 @@ const membershipsRouteHandlers = app
       .where(and(inArray(emailsTable.email, normalizedEmails)));
 
     // Step 1b: Index rows by email in emailsTable (handle potential duplicates defensively)
-    const rowsByEmail = new Map<string, typeof membershipAwareRows>();
-    for (const e of normalizedEmails) rowsByEmail.set(e, [] as any);
+    type MembershipAwareRow = (typeof membershipAwareRows)[number];
+    const rowsByEmail = new Map<string, MembershipAwareRow[]>();
+    for (const e of normalizedEmails) rowsByEmail.set(e, []);
     for (const r of membershipAwareRows) rowsByEmail.get(r.email)!.push(r);
 
     // Step 1c: Bucket by scenarios using the pre-fetched data

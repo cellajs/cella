@@ -1,17 +1,20 @@
 import { z } from '@hono/zod-openapi';
-import { createSelectSchema } from 'drizzle-zod';
 import { appConfig } from 'shared';
 import { activitiesTable } from '#/db/schema/activities';
 import { activityErrorSchema } from '#/db/utils/activity-error-schema';
+import { createSelectSchema } from '#/lib/drizzle-schema';
 import { paginationQuerySchema } from '#/schemas';
 import { txBaseSchema } from '#/schemas/tx-base-schema';
 import { activityActions } from '#/sync/activity-bus';
 import { mockActivityResponse } from '../../../mocks/mock-activity';
 
-/** Schema for activity actions enum */
+/** Schema for activity actions enum - uses literal types from activityActions */
 export const activityActionSchema = z.enum(activityActions);
 
-/** Schema for resource types enum */
+/** Schema for entity types enum - uses literal types from appConfig */
+export const entityTypeSchema = z.enum(appConfig.entityTypes);
+
+/** Schema for resource types enum - uses literal types from appConfig */
 export const resourceTypeSchema = z.enum(appConfig.resourceTypes);
 
 // Re-export for convenience
@@ -21,6 +24,10 @@ export { activityErrorSchema } from '#/db/utils/activity-error-schema';
 export const activitySchema = z
   .object({
     ...createSelectSchema(activitiesTable).shape,
+    // Override enum columns with explicit schemas to preserve literal types for OpenAPI/Drizzle compatibility
+    entityType: entityTypeSchema.nullable(),
+    resourceType: resourceTypeSchema.nullable(),
+    action: activityActionSchema,
     // Override jsonb columns with properly typed schemas to avoid generic types in OpenAPI
     changedKeys: z.array(z.string()).nullable(),
     // Use union instead of .nullable() to generate proper anyOf in OpenAPI (avoids allOf intersection issue)
@@ -33,9 +40,9 @@ export const activitySchema = z
 export const activityListQuerySchema = paginationQuerySchema.extend({
   sort: z.enum(['createdAt', 'type', 'tableName']).default('createdAt').optional(),
   userId: activitySchema.shape.userId,
-  entityType: activitySchema.shape.entityType,
-  resourceType: activitySchema.shape.resourceType,
-  action: activitySchema.shape.action,
+  entityType: entityTypeSchema.optional(),
+  resourceType: resourceTypeSchema.optional(),
+  action: activityActionSchema.optional(),
   tableName: activitySchema.shape.tableName.optional(),
   type: activitySchema.shape.type.optional(),
   entityId: activitySchema.shape.entityId,

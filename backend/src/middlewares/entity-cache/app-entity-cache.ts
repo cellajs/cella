@@ -11,9 +11,9 @@
  * 3. Subsequent users get cache hit
  */
 
-import { publicCacheMetrics } from '#/lib/cache-metrics';
-import { coalesce, isInFlight } from '#/lib/request-coalescing';
+import { entityCacheMetrics } from '#/lib/cache-metrics';
 import { TTLCache } from '#/lib/ttl-cache';
+import { coalesce, isInFlight } from '#/sync/request-coalescing';
 
 /** Cache TTL: 10 minutes */
 const cacheTtl = 10 * 60 * 1000;
@@ -108,17 +108,17 @@ export const entityCache = {
     const data = cache.get(token);
 
     if (data === undefined) {
-      publicCacheMetrics.recordMiss();
+      entityCacheMetrics.recordMiss();
       return undefined;
     }
 
     if (data === null) {
       // Reserved but not enriched - treat as miss for metrics
-      publicCacheMetrics.recordMiss();
+      entityCacheMetrics.recordMiss();
       return null;
     }
 
-    publicCacheMetrics.recordHit();
+    entityCacheMetrics.recordHit();
     return data;
   },
 
@@ -149,7 +149,7 @@ export const entityCache = {
     if (token) {
       cache.delete(token);
       entityIndex.delete(key);
-      publicCacheMetrics.recordInvalidation(1);
+      entityCacheMetrics.recordInvalidation(1);
       return true;
     }
 
@@ -199,7 +199,7 @@ export const entityCache = {
     const data = await coalesce(token, fetcher);
 
     if (wasInFlight) {
-      publicCacheMetrics.recordCoalesced();
+      entityCacheMetrics.recordCoalesced();
     }
 
     // Cache the result if fetched successfully

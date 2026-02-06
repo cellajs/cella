@@ -1,59 +1,64 @@
 /**
- * Drizzle Migration Utilities
+ * Drizzle Migration Utilities (v1 format)
  *
  * Shared utilities for programmatically managing Drizzle migrations.
  * Used by scripts that generate SQL migrations (CDC setup, triggers, etc.).
+ *
+ * Drizzle v1 uses folder-based migrations: <timestamp>_<tag>/migration.sql
  */
 
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { checkMark } from '#/utils/console';
 
 const drizzleDir = join(process.cwd(), 'drizzle');
-const journalPath = join(drizzleDir, 'meta/_journal.json');
-
-interface JournalEntry {
-  idx: number;
-  version: string;
-  when: number;
-  tag: string;
-  breakpoints: boolean;
-}
-
-interface Journal {
-  version: string;
-  dialect: string;
-  entries: JournalEntry[];
-}
 
 interface MigrationResult {
-  filename: string;
+  folderName: string;
   path: string;
   tag: string;
   updated: boolean;
 }
 
 /**
- * Read the Drizzle migration journal.
+ * Generate a timestamp in Drizzle v1 format (YYYYMMDDHHmmss).
  */
-export function readJournal(): Journal {
-  return JSON.parse(readFileSync(journalPath, 'utf-8')) as Journal;
+function generateTimestamp(): string {
+  const now = new Date();
+  return now.toISOString().replace(/[-:T]/g, '').slice(0, 14);
 }
 
 /**
- * Write the Drizzle migration journal.
+ * Get all migration folders sorted by timestamp.
  */
-export function writeJournal(journal: Journal): void {
-  writeFileSync(journalPath, JSON.stringify(journal, null, 2));
+export function getMigrationFolders(): string[] {
+  if (!existsSync(drizzleDir)) return [];
+  return readdirSync(drizzleDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && /^\d{14}_/.test(entry.name))
+    .map((entry) => entry.name)
+    .sort();
 }
 
 /**
- * Find an existing migration entry by tag suffix.
- * @param journal - The migration journal
+ * Find a migration folder by tag suffix.
  * @param tagSuffix - The tag suffix to search for (e.g., 'cdc_setup')
  */
-export function findMigrationByTag(journal: Journal, tagSuffix: string): JournalEntry | undefined {
-  return journal.entries.find((e) => e.tag.endsWith(tagSuffix));
+export function findMigrationByTag(tagSuffix: string): string | undefined {
+  return getMigrationFolders().find((folder) => folder.endsWith(`_${tagSuffix}`));
+}
+
+/**
+ * Get the latest snapshot from existing migrations.
+ */
+export function getLatestSnapshot(): object | null {
+  const folders = getMigrationFolders();
+  for (let i = folders.length - 1; i >= 0; i--) {
+    const snapshotPath = join(drizzleDir, folders[i], 'snapshot.json');
+    if (existsSync(snapshotPath)) {
+      return JSON.parse(readFileSync(snapshotPath, 'utf-8'));
+    }
+  }
+  return null;
 }
 
 /**
@@ -69,52 +74,43 @@ export function resolveSqlContent(sqlOrPath: string): string {
 }
 
 /**
- * Add or update a SQL migration in the Drizzle migrations folder.
+ * Add or update a SQL migration in the Drizzle migrations folder (v1 format).
  *
  * @param tag - Unique identifier for the migration (e.g., 'cdc_setup')
  * @param sql - SQL content (not a file path - use resolveSqlContent first if needed)
- * @returns Object containing the filename, path, tag, and whether it was an update
+ * @returns Object containing the folder name, path, tag, and whether it was an update
  */
 export function upsertMigration(tag: string, sql: string): MigrationResult {
-  // Normalize tag (remove leading numbers/underscores if present)
+  // Normalize tag (remove leading timestamps/underscores if present)
   const normalizedTag = tag.replace(/^\d+_/, '');
 
-  const journal = readJournal();
-
   // Check if migration with this tag already exists
-  const existingEntry = findMigrationByTag(journal, normalizedTag);
+  const existingFolder = findMigrationByTag(normalizedTag);
 
-  if (existingEntry) {
+  if (existingFolder) {
     // Update existing migration file
-    const filename = `${existingEntry.tag}.sql`;
-    const path = join(drizzleDir, filename);
-
-    writeFileSync(path, sql);
-
-    return { filename, path, tag: existingEntry.tag, updated: true };
+    const folderPath = join(drizzleDir, existingFolder);
+    const migrationPath = join(folderPath, 'migration.sql');
+    writeFileSync(migrationPath, sql);
+    return { folderName: existingFolder, path: folderPath, tag: normalizedTag, updated: true };
   }
 
-  // Create new migration with Drizzle naming convention
-  const nextIdx = journal.entries.length;
-  const fullTag = `${String(nextIdx).padStart(4, '0')}_${normalizedTag}`;
-  const filename = `${fullTag}.sql`;
-  const path = join(drizzleDir, filename);
+  // Create new migration folder with Drizzle v1 naming convention
+  const timestamp = generateTimestamp();
+  const folderName = `${timestamp}_${normalizedTag}`;
+  const folderPath = join(drizzleDir, folderName);
 
-  // Write the migration file
-  writeFileSync(path, sql);
+  // Create folder and write migration file
+  mkdirSync(folderPath, { recursive: true });
+  writeFileSync(join(folderPath, 'migration.sql'), sql);
 
-  // Add entry to journal
-  journal.entries.push({
-    idx: nextIdx,
-    version: journal.version,
-    when: Date.now(),
-    tag: fullTag,
-    breakpoints: true,
-  });
+  // Copy snapshot from latest migration (manual SQL migrations don't change Drizzle schema)
+  const latestSnapshot = getLatestSnapshot();
+  if (latestSnapshot) {
+    writeFileSync(join(folderPath, 'snapshot.json'), JSON.stringify(latestSnapshot, null, 2));
+  }
 
-  writeJournal(journal);
-
-  return { filename, path, tag: fullTag, updated: false };
+  return { folderName, path: folderPath, tag: normalizedTag, updated: false };
 }
 
 /**
@@ -124,5 +120,5 @@ export function logMigrationResult(result: MigrationResult, context?: string): v
   console.info('');
   const action = result.updated ? 'updated' : 'created';
   const contextStr = context ? ` (${context})` : '';
-  console.info(`${checkMark} Migration ${action}${contextStr}: drizzle/${result.filename}`);
+  console.info(`${checkMark} Migration ${action}${contextStr}: drizzle/${result.folderName}/migration.sql`);
 }

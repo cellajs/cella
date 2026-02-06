@@ -1,8 +1,20 @@
-import { appConfig } from 'shared';
+import { appConfig, type ContextEntityType, type EntityRole } from 'shared';
 import { describe, expect, it } from 'vitest';
 import { configureAccessPolicies } from './access-policies';
 import { getAllDecisions } from './check';
-import type { MembershipForPermission, SubjectForPermission } from './types';
+import type { SubjectForPermission } from './types';
+
+/** Minimal test membership matching MembershipBaseModel structure */
+type TestMembership = {
+  id: string;
+  contextType: ContextEntityType;
+  userId: string;
+  role: EntityRole;
+  displayOrder: number;
+  muted: boolean;
+  archived: boolean;
+  organizationId: string;
+};
 
 /**
  * Performance regression tests for permission checking.
@@ -33,11 +45,16 @@ const policies = configureAccessPolicies(appConfig.entityTypes, ({ subject, cont
 });
 
 // Helper to create memberships
-const createMemberships = (count: number): MembershipForPermission[] =>
+const createMemberships = (count: number): TestMembership[] =>
   Array.from({ length: count }, (_, i) => ({
+    id: `mem${i}`,
     contextType: 'organization' as const,
+    userId: `user${i}`,
     organizationId: `org${i}`,
     role: i % 3 === 0 ? ('admin' as const) : ('member' as const),
+    displayOrder: 0,
+    muted: false,
+    archived: false,
   }));
 
 // Helper to create subjects

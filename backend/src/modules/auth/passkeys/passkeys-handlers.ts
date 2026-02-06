@@ -1,7 +1,7 @@
 import { getRandomValues } from 'node:crypto';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { encodeBase64 } from '@oslojs/encoding';
-import { and, eq, getTableColumns } from 'drizzle-orm';
+import { and, eq, getColumns } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
@@ -53,7 +53,7 @@ const authPasskeysRouteHandlers = app
       browser: device.browser,
     };
 
-    const { credentialId: _, publicKey: __, ...passkeySelect } = getTableColumns(passkeysTable);
+    const { credentialId: _, publicKey: __, ...passkeySelect } = getColumns(passkeysTable);
 
     // Save public key in database
     const [newPasskey] = await db.insert(passkeysTable).values(passkeyValue).returning(passkeySelect);

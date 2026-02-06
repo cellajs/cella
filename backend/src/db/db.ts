@@ -1,7 +1,7 @@
 import type { PGlite } from '@electric-sql/pglite';
 import { type DrizzleConfig } from 'drizzle-orm';
 import { type NodePgClient, drizzle as pgDrizzle } from 'drizzle-orm/node-postgres';
-import type { PgDatabase } from 'drizzle-orm/pg-core';
+import type { PgAsyncDatabase } from 'drizzle-orm/pg-core';
 import { drizzle as pgliteDrizzle } from 'drizzle-orm/pglite';
 import { appConfig } from 'shared';
 import { env } from '../env';
@@ -39,7 +39,7 @@ const connection = (() => {
 })();
 
 // biome-ignore lint/suspicious/noExplicitAny: Can be two different types
-type DB = PgDatabase<any> & { $client: PGlite | NodePgClient };
+type DB = PgAsyncDatabase<any> & { $client: PGlite | NodePgClient };
 
 /**
  * The database client.

@@ -63,8 +63,6 @@ export {
   type BatchResponseEmpty,
   batchResponseSchema,
   paginationSchema,
-  type SuccessWithRejectedItemsResponse,
-  successWithRejectedItemsSchema,
 } from './success-response-schemas';
 
 // Transaction schemas (request wrapper only - responses return entities directly)

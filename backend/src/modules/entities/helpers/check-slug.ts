@@ -1,5 +1,5 @@
 import { appConfig, type ContextEntityType } from 'shared';
-import { resolveEntity } from '#/lib/entity';
+import { resolveEntity } from '#/lib/resolve-entity';
 
 type EntityTypeWithSlug = ContextEntityType | 'user';
 

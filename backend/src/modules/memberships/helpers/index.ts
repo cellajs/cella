@@ -2,7 +2,7 @@ import { inArray, max } from 'drizzle-orm';
 import { appConfig, type ContextEntityType } from 'shared';
 import { db } from '#/db/db';
 import { InsertMembershipModel, type MembershipModel, membershipsTable } from '#/db/schema/memberships';
-import type { EntityModel } from '#/lib/entity';
+import type { EntityModel } from '#/lib/resolve-entity';
 
 import { MembershipBaseModel, membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import { logEvent } from '#/utils/logger';

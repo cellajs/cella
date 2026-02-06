@@ -1,4 +1,4 @@
-import { getTableColumns, sql } from 'drizzle-orm';
+import { getColumns, sql } from 'drizzle-orm';
 import { appConfig, type UserFlags } from 'shared';
 import { lastSeenTable } from '#/db/schema/last-seen';
 import { type UserModel, usersTable } from '#/db/schema/users';
@@ -18,7 +18,7 @@ export type UserWithActivity = UserModel & {
  * lastSeenAt is fetched via subquery from last_seen table to avoid CDC noise.
  */
 export const userSelect = (() => {
-  const { userFlags: _uf, ...safeUserSelect } = getTableColumns(usersTable);
+  const { userFlags: _uf, ...safeUserSelect } = getColumns(usersTable);
 
   return {
     ...safeUserSelect,
@@ -48,7 +48,7 @@ type UserBaseSelect = Pick<TableColumns, UserBaseKeys>;
  * User select for base data only.
  */
 export const userBaseSelect: UserBaseSelect = (() => {
-  const cols = getTableColumns(usersTable);
+  const cols = getColumns(usersTable);
   const keys = Object.keys(userBaseSchema.shape) as UserBaseKeys[];
   return pickColumns(cols, keys);
 })();

@@ -62,7 +62,7 @@ export const config = {
    ******************************************************************************/
   
   /**
-   * System-wide roles stored in DB. Base role 'user' is implicit default.
+   * System-wide roles stored in DB.
    * Must include 'admin' for system administration access.
    */
   systemRoles: ['admin'] as const,

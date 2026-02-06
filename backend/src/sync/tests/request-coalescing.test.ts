@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { clearInFlight, coalesce, inFlightCount, isInFlight } from '#/lib/request-coalescing';
+import { clearInFlight, coalesce, inFlightCount, isInFlight } from '#/sync/request-coalescing';
 
 describe('request-coalescing', () => {
   beforeEach(() => {

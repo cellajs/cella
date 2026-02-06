@@ -54,7 +54,7 @@ export const isAuthenticated = xMiddleware(
 
       // Store values in context for downstream use
       ctx.set('memberships', memberships);
-      ctx.set('userRole', userRoleRecord?.role || 'user'); // Fallback to 'user' if no system role is assigned
+      ctx.set('userRole', userRoleRecord?.role ?? null); // null if no system role is assigned
     } catch (err) {
       // If session validation fails, remove cookie
       if (err instanceof AppError) deleteAuthCookie(ctx, 'session');

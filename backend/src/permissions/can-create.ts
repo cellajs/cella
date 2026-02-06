@@ -1,8 +1,8 @@
 import type { Context } from 'hono';
 import type { ContextEntityType, ProductEntityType } from 'shared';
 import type { Env } from '#/lib/context';
-import type { EntityModel } from '#/lib/entity';
 import { AppError } from '#/lib/error';
+import type { EntityModel } from '#/lib/resolve-entity';
 import { checkPermission } from '#/permissions';
 
 /**
