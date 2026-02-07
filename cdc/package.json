@@ -8,7 +8,8 @@
   "scripts": {
     "start": "tsx src/index.ts",
     "dev": "cross-env NODE_ENV=development wait-on -i 2000 -t 60000 http://localhost:4000/ping && tsx watch --env-file=../backend/.env src/index.ts",
-    "ts": "tsc --pretty",
+    "ts": "tsgo --pretty",
+    "ts:old": "tsc --pretty",
     "test": "vitest run",
     "test:watch": "vitest"
   },
