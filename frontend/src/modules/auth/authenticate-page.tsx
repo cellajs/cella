@@ -4,8 +4,8 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { getAuthHealth } from '~/api.gen';
-import OAuthProviders from '~/modules/auth/oauth-providers';
-import PasskeyStrategy from '~/modules/auth/passkey-strategy';
+import { OAuthProviders } from '~/modules/auth/oauth-providers';
+import { PasskeyStrategy } from '~/modules/auth/passkey-strategy';
 import { CheckEmailStep } from '~/modules/auth/steps/check-email';
 import { InviteOnlyStep } from '~/modules/auth/steps/invite-only';
 import { SignInStep } from '~/modules/auth/steps/sign-in';
@@ -13,7 +13,7 @@ import { SignUpStep } from '~/modules/auth/steps/sign-up';
 import { WaitlistStep } from '~/modules/auth/steps/waitlist';
 import type { AuthStep } from '~/modules/auth/types';
 import { useGetTokenData } from '~/modules/auth/use-get-token-data';
-import Spinner from '~/modules/common/spinner';
+import { Spinner } from '~/modules/common/spinner';
 import { useAuthStore } from '~/store/auth';
 import { useUserStore } from '~/store/user';
 
@@ -37,7 +37,7 @@ export interface StepBaseProp {
   emailEnabled: boolean;
 }
 
-function AuthenticatePage() {
+export function AuthenticatePage() {
   const { t } = useTranslation();
 
   const { tokenId } = useSearch({ from: '/publicLayout/authLayout/auth/authenticate' });
@@ -110,5 +110,3 @@ function AuthenticatePage() {
     </>
   );
 }
-
-export default AuthenticatePage;

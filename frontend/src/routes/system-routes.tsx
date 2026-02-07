@@ -1,9 +1,9 @@
 import { createRoute } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
-import ErrorNotice from '~/modules/common/error-notice';
+import { ErrorNotice } from '~/modules/common/error-notice';
 import { organizationsRouteSearchParamsSchema } from '~/modules/organization/search-params-schemas';
 import { requestsRouteSearchParamsSchema } from '~/modules/requests/search-params-schemas';
-import SystemPage from '~/modules/system/system-page';
+import { SystemPage } from '~/modules/system/system-page';
 import { usersRouteSearchParamsSchema } from '~/modules/user/search-params-schemas';
 import { AppLayoutRoute } from '~/routes/base-routes';
 import appTitle from '~/utils/app-title';

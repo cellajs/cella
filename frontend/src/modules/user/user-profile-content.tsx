@@ -1,7 +1,7 @@
 import { useParams } from '@tanstack/react-router';
 import { SquirrelIcon } from 'lucide-react';
 import { UserBase } from '~/api.gen';
-import ContentPlaceholder from '~/modules/common/content-placeholder';
+import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { OrganizationsGrid } from '~/modules/organization/organizations-grid';
 
 interface Props {

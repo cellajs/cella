@@ -11,7 +11,7 @@ interface HelpTextProps {
   type?: 'popover';
 }
 
-function HelpText({ content, children, className, type }: HelpTextProps) {
+export function HelpText({ content, children, className, type }: HelpTextProps) {
   const [collapsed, setCollapsed] = useState(true);
 
   if (type === 'popover') {
@@ -51,5 +51,3 @@ function HelpText({ content, children, className, type }: HelpTextProps) {
     </div>
   );
 }
-
-export default HelpText;

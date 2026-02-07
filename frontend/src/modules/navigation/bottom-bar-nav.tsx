@@ -1,5 +1,5 @@
 import { Fragment } from 'react/jsx-runtime';
-import useMountedState from '~/hooks/use-mounted-state';
+import { useMountedState } from '~/hooks/use-mounted-state';
 import { BottomBarNavButton } from '~/modules/navigation/nav-buttons';
 import type { NavItem, TriggerNavItemFn } from '~/modules/navigation/types';
 import { navItems } from '~/nav-config';
@@ -57,5 +57,3 @@ export function BottomBarNav({ triggerNavItem }: BottomBarNavProps) {
     </nav>
   );
 }
-
-export default BottomBarNav;

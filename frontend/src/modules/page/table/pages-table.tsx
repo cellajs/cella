@@ -1,10 +1,10 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { BirdIcon } from 'lucide-react';
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Page } from '~/api.gen';
-import useSearchParams from '~/hooks/use-search-params';
-import ContentPlaceholder from '~/modules/common/content-placeholder';
+import { useSearchParams } from '~/hooks/use-search-params';
+import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { FocusViewContainer } from '~/modules/common/focus-view';
@@ -52,21 +52,18 @@ function PagesTable() {
   });
 
   // Fetch more on scroll
-  const fetchMore = useCallback(async () => {
+  const fetchMore = async () => {
     if (!hasNextPage || isLoading || isFetching) return;
     await fetchNextPage();
-  }, [hasNextPage, isLoading, isFetching, fetchNextPage]);
+  };
 
   // Handle row selection
-  const onSelectedRowsChange = useCallback(
-    (selectedIds: Set<string>) => {
-      if (rows) {
-        const selectedRows = rows.filter((row) => selectedIds.has(row.id));
-        setSelected(selectedRows);
-      }
-    },
-    [rows],
-  );
+  const onSelectedRowsChange = (selectedIds: Set<string>) => {
+    if (rows) {
+      const selectedRows = rows.filter((row) => selectedIds.has(row.id));
+      setSelected(selectedRows);
+    }
+  };
 
   const selectedRowIds = useMemo(() => new Set(selected.map((row) => row.id)), [selected]);
 

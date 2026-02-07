@@ -4,20 +4,20 @@ This document describes how to develop your own app based on Cella.
 
 Also read the [architecture](./ARCHITECTURE.md) info.
 
-## Run with [pglite](https://pglite.dev/)
-
-```bash
-pnpm install
-pnpm quick
-```
-
-## Run it with full postgres and CDC worker
+## Recommended: run with full postgres and CDC worker
 
 ```bash
 pnpm install
 pnpm docker
 pnpm seed
 pnpm dev
+```
+
+## Quick alternative: run with [pglite](https://pglite.dev/)
+
+```bash
+pnpm install
+pnpm quick
 ```
 
 ## Development modes

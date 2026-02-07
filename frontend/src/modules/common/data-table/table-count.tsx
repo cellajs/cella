@@ -15,7 +15,7 @@ interface TableCountProps {
 /**
  * Displays the count of items in a table
  */
-function TableCount({ count, label, className, isFiltered, children, onResetFilters }: TableCountProps) {
+export function TableCount({ count, label, className, isFiltered, children, onResetFilters }: TableCountProps) {
   const { t } = useTranslation();
 
   return (
@@ -39,5 +39,3 @@ function TableCount({ count, label, className, isFiltered, children, onResetFilt
     </div>
   );
 }
-
-export default TableCount;

@@ -10,7 +10,7 @@ interface Props {
   callback?: (args: CallbackArgs<Request[]>) => void;
 }
 
-function DeleteRequests({ requests, callback, dialog: isDialog }: Props) {
+export function DeleteRequests({ requests, callback, dialog: isDialog }: Props) {
   const removeDialog = useDialoger((state) => state.remove);
 
   const { mutate: deleteRequests, isPending } = useDeleteRequestMutation();
@@ -26,5 +26,3 @@ function DeleteRequests({ requests, callback, dialog: isDialog }: Props) {
 
   return <DeleteForm onDelete={onDelete} onCancel={() => removeDialog()} pending={isPending} />;
 }
-
-export default DeleteRequests;

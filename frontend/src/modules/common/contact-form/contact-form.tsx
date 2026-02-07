@@ -8,7 +8,7 @@ import { zCreateRequestData } from '~/api.gen/zod.gen';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import InputFormField from '~/modules/common/form-fields/input';
+import { InputFormField } from '~/modules/common/form-fields/input';
 import { toaster } from '~/modules/common/toaster/service';
 import { useCreateRequestMutation } from '~/modules/requests/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
@@ -18,7 +18,7 @@ import { useUserStore } from '~/store/user';
 const ContactFormMap = lazy(() => import('~/modules/common/contact-form/contact-form-map'));
 
 // Main contact form map component
-function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
+export function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
   const { t } = useTranslation();
   const { user } = useUserStore();
   const isMediumScreen = useBreakpoints('min', 'md');
@@ -106,5 +106,3 @@ function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
     </div>
   );
 }
-
-export default ContactForm;

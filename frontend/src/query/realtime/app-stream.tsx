@@ -86,7 +86,7 @@ export function useAppStream(options: UseAppStreamOptions = {}): UseAppStreamRet
  * Handles membership, organization, and product entity events via CDC → ActivityBus pipeline.
  * Use in AppLayout for app-wide real-time sync.
  */
-export default function AppStream() {
+export function AppStream() {
   useAppStream({
     onNotification: handleAppStreamNotification,
     onStateChange: (state) => {

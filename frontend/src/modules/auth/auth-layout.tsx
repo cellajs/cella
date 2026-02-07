@@ -1,8 +1,8 @@
 import { Link, Outlet } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
-import useMountedState from '~/hooks/use-mounted-state';
+import { useMountedState } from '~/hooks/use-mounted-state';
 import { type FooterLinkProps, FooterLinks } from '~/modules/common/app/app-footer';
-import Logo from '~/modules/common/logo';
+import { Logo } from '~/modules/common/logo';
 
 // Auth footer links
 const authFooterLinks: FooterLinkProps[] = [
@@ -13,7 +13,7 @@ const authFooterLinks: FooterLinkProps[] = [
 // Lazy load bg animation
 const BgAnimation = lazy(() => import('~/modules/common/bg-animation'));
 
-function AuthLayout() {
+export function AuthLayout() {
   const { hasStarted, hasWaited } = useMountedState();
 
   return (
@@ -43,5 +43,3 @@ function AuthLayout() {
     </div>
   );
 }
-
-export default AuthLayout;

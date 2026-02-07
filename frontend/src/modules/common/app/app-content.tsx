@@ -1,7 +1,7 @@
 import { Outlet } from '@tanstack/react-router';
 import { ErrorBoundary } from 'react-error-boundary';
-import Alerter from '~/modules/common/alerter';
-import ErrorNotice, { type ErrorNoticeError } from '~/modules/common/error-notice';
+import { Alerter } from '~/modules/common/alerter';
+import { ErrorNotice, type ErrorNoticeError } from '~/modules/common/error-notice';
 
 export const AppContent = () => {
   return (

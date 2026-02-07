@@ -1,4 +1,4 @@
-import useMountedState from '~/hooks/use-mounted-state';
+import { useMountedState } from '~/hooks/use-mounted-state';
 import { Skeleton } from '~/modules/ui/skeleton';
 
 /**

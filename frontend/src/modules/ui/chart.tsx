@@ -64,7 +64,7 @@ function useChart() {
   return context;
 }
 
-function ChartContainer({
+export function ChartContainer({
   id,
   className,
   children,
@@ -95,7 +95,7 @@ function ChartContainer({
   );
 }
 
-function ChartStyle({ id, config }: { id: string; config: ChartConfig }) {
+export function ChartStyle({ id, config }: { id: string; config: ChartConfig }) {
   const colorConfig = Object.entries(config).filter(([, config]) => config.theme || config.color);
 
   if (!colorConfig.length) {
@@ -125,9 +125,9 @@ function ChartStyle({ id, config }: { id: string; config: ChartConfig }) {
   );
 }
 
-const ChartTooltip = RechartsPrimitive.Tooltip;
+export const ChartTooltip = RechartsPrimitive.Tooltip;
 
-function ChartTooltipContent({
+export function ChartTooltipContent({
   active,
   payload,
   label,
@@ -247,9 +247,9 @@ function ChartTooltipContent({
   );
 }
 
-const ChartLegend = RechartsPrimitive.Legend;
+export const ChartLegend = RechartsPrimitive.Legend;
 
-function ChartLegendContent({
+export function ChartLegendContent({
   className,
   hideIcon = false,
   payload,
@@ -316,5 +316,3 @@ function getPayloadConfigFromPayload(config: ChartConfig, payload: unknown, key:
 
   return configLabelKey in config ? config[configLabelKey] : config[key as keyof typeof config];
 }
-
-export { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent, ChartStyle };

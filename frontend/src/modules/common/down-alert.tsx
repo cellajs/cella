@@ -5,7 +5,7 @@ import { Trans } from 'react-i18next';
 import { appConfig } from 'shared';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { healthCheck } from '~/lib/health-check';
-import CloseButton from '~/modules/common/close-button';
+import { CloseButton } from '~/modules/common/close-button';
 import { Alert, AlertDescription } from '~/modules/ui/alert';
 import { useAlertStore } from '~/store/alert';
 import { useUIStore } from '~/store/ui';

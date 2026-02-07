@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import Spinner from '~/modules/common/spinner';
+import { Spinner } from '~/modules/common/spinner';
 
 // Lazy-loaded components
 const ReactPanZoom = lazy(() => import('~/modules/attachment/render/image'));

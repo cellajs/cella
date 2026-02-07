@@ -1,6 +1,6 @@
 import { memo, useMemo } from 'react';
 import { SELECT_COLUMN_KEY } from './columns';
-import GroupCell from './group-cell';
+import { GroupCell } from './group-cell';
 import { RowSelectionContext, type RowSelectionContextValue } from './hooks';
 import { rowClassname, rowSelectedClassname } from './style/row';
 import type { BaseRenderRowProps, GroupRow } from './types';
@@ -79,4 +79,5 @@ function GroupedRow<R, SR>({
   );
 }
 
-export default memo(GroupedRow) as <R, SR>(props: GroupRowRendererProps<R, SR>) => React.JSX.Element;
+const GroupedRowMemo = memo(GroupedRow) as <R, SR>(props: GroupRowRendererProps<R, SR>) => React.JSX.Element;
+export { GroupedRowMemo as GroupedRow };

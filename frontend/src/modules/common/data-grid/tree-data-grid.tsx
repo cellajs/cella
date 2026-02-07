@@ -5,7 +5,7 @@ import { SELECT_COLUMN_KEY } from './columns';
 import type { DataGridProps } from './data-grid';
 import { DataGrid } from './data-grid';
 import { useDefaultRenderers } from './data-grid-default-renderers-context';
-import GroupedRow from './group-row';
+import { GroupedRow } from './group-row';
 import { useLatestFunc } from './hooks';
 import { defaultRenderRow } from './row';
 import type {

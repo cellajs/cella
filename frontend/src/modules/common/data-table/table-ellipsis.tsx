@@ -17,7 +17,7 @@ interface Props<T> {
   options: EllipsisOption<T>[];
 }
 
-function TableEllipsis<T extends { id: string }>({ row, tabIndex, options }: Props<T>) {
+export function TableEllipsis<T extends { id: string }>({ row, tabIndex, options }: Props<T>) {
   const triggerRef = useRef<HTMLButtonElement | null>(null);
 
   const openDropdown = () => {
@@ -62,5 +62,3 @@ function TableEllipsis<T extends { id: string }>({ row, tabIndex, options }: Pro
     </Button>
   );
 }
-
-export default TableEllipsis;

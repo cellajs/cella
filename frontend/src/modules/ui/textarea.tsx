@@ -6,7 +6,7 @@ export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextArea
   autoResize?: boolean;
 }
 
-function Textarea({
+export function Textarea({
   className,
   autoResize = false,
   ...props
@@ -26,5 +26,3 @@ function Textarea({
     />
   );
 }
-
-export { Textarea };

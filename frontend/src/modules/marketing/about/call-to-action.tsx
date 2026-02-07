@@ -4,7 +4,7 @@ import { appConfig } from 'shared';
 import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
 import { Button } from '~/modules/ui/button';
 
-function CallToAction() {
+export function CallToAction() {
   const { t } = useTranslation();
 
   const ref = useRef(null);
@@ -45,5 +45,3 @@ function CallToAction() {
     </div>
   );
 }
-
-export default CallToAction;

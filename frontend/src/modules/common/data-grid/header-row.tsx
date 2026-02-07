@@ -1,6 +1,6 @@
 import { memo, useState } from 'react';
 import type { DataGridProps } from './data-grid';
-import HeaderCell from './header-cell';
+import { HeaderCell } from './header-cell';
 import { rowSelectedClassname } from './style/row';
 import type { CalculatedColumn, Direction, Maybe, Position, ResizedWidth } from './types';
 import { classnames, getColSpan } from './utils';
@@ -88,4 +88,7 @@ function HeaderRow<R, SR, K extends React.Key>({
   );
 }
 
-export default memo(HeaderRow) as <R, SR, K extends React.Key>(props: HeaderRowProps<R, SR, K>) => React.JSX.Element;
+const HeaderRowMemo = memo(HeaderRow) as <R, SR, K extends React.Key>(
+  props: HeaderRowProps<R, SR, K>,
+) => React.JSX.Element;
+export { HeaderRowMemo as HeaderRow };

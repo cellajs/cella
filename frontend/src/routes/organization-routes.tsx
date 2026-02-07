@@ -4,7 +4,7 @@ import i18n from 'i18next';
 import { lazy, Suspense } from 'react';
 import { getOrganization, type Organization } from '~/api.gen';
 import { attachmentsRouteSearchParamsSchema } from '~/modules/attachment/search-params-schemas';
-import ErrorNotice from '~/modules/common/error-notice';
+import { ErrorNotice } from '~/modules/common/error-notice';
 import { membersRouteSearchParamsSchema } from '~/modules/memberships/search-params-schemas';
 import {
   findOrganizationInListCache,

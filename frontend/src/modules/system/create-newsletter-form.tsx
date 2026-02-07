@@ -15,8 +15,8 @@ import { AlertWrap } from '~/modules/common/alert-wrap';
 import { blocksToHTML } from '~/modules/common/blocknote/helpers';
 import { CallbackArgs } from '~/modules/common/data-table/types';
 import BlockNoteContentField from '~/modules/common/form-fields/blocknote-content';
-import InputFormField from '~/modules/common/form-fields/input';
-import SelectRoles from '~/modules/common/form-fields/select-roles';
+import { InputFormField } from '~/modules/common/form-fields/input';
+import { SelectRoles } from '~/modules/common/form-fields/select-roles';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster/service';
 import { Button, SubmitButton } from '~/modules/ui/button';
@@ -32,7 +32,7 @@ interface CreateNewsletterFormProps {
   callback?: (args: CallbackArgs) => void;
 }
 
-function CreateNewsletterForm({ organizationIds, callback }: CreateNewsletterFormProps) {
+export function CreateNewsletterForm({ organizationIds, callback }: CreateNewsletterFormProps) {
   const { t } = useTranslation();
 
   const [testOnly, setTestOnly] = useState<CheckedState>(false);
@@ -174,5 +174,3 @@ function CreateNewsletterForm({ organizationIds, callback }: CreateNewsletterFor
     </Form>
   );
 }
-
-export default CreateNewsletterForm;

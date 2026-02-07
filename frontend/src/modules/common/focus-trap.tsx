@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 
-function FocusTrap({
+export function FocusTrap({
   children,
   mainElementId,
   active = true,
@@ -75,5 +75,3 @@ function FocusTrap({
     </div>
   );
 }
-
-export default FocusTrap;

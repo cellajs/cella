@@ -1,6 +1,6 @@
 import { memo, useEffect, useRef } from 'react';
 import { useUrlOverlayState } from '~/hooks/use-url-overlay-state';
-import AttachmentDialog from '~/modules/attachment/dialog';
+import { AttachmentDialog } from '~/modules/attachment/dialog';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 
 const instanceId = 'attachment-dialog';
@@ -45,6 +45,4 @@ function AttachmentDialogHandlerBase() {
   return null;
 }
 
-const AttachmentDialogHandler = memo(AttachmentDialogHandlerBase);
-
-export default AttachmentDialogHandler;
+export const AttachmentDialogHandler = memo(AttachmentDialogHandlerBase);

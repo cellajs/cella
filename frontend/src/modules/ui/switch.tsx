@@ -6,7 +6,7 @@ interface SwitchProps extends React.ComponentProps<typeof SwitchPrimitive.Root> 
   thumb?: React.ReactElement<{ className?: string }>;
 }
 
-function Switch({ className, thumb, ...props }: SwitchProps) {
+export function Switch({ className, thumb, ...props }: SwitchProps) {
   return (
     <SwitchPrimitive.Root
       data-slot="switch"
@@ -37,5 +37,3 @@ function Switch({ className, thumb, ...props }: SwitchProps) {
     </SwitchPrimitive.Root>
   );
 }
-
-export { Switch };

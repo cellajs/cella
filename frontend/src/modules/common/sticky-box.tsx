@@ -85,7 +85,6 @@ sticky
 - nodeHeight (onResize)
 - offset (onResize)
 
-
 Fns
 ===
 reLayout() (also called on init)
@@ -441,7 +440,7 @@ export function useStickyBox({
 
 export type StickyBoxCompProps = StickyBoxConfig & Pick<ComponentProps<'div'>, 'children' | 'className' | 'style'>;
 
-function StickyBox(props: StickyBoxCompProps) {
+export function StickyBox(props: StickyBoxCompProps) {
   const { enabled = true, offsetTop, offsetBottom, bottom, children, className, style } = props;
 
   const ref = useRef<HTMLDivElement>(null);
@@ -457,9 +456,6 @@ function StickyBox(props: StickyBoxCompProps) {
     </div>
   );
 }
-
-export default StickyBox;
-
 // ISC License
 
 // Copyright (c) 2022, Daniel Berndt

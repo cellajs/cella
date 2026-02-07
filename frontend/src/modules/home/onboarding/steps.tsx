@@ -3,17 +3,17 @@ import { XIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Organization } from '~/api.gen';
-import useMountedState from '~/hooks/use-mounted-state';
+import { useMountedState } from '~/hooks/use-mounted-state';
 import { CallbackArgs } from '~/modules/common/data-table/types';
 import { Step, Stepper } from '~/modules/common/stepper';
-import StepperFooter from '~/modules/home/onboarding/footer';
+import { StepperFooter } from '~/modules/home/onboarding/footer';
 import { onboardingSteps } from '~/modules/home/onboarding/onboarding-config';
 import { WelcomeText } from '~/modules/home/onboarding/welcome-text';
-import CreateOrganizationForm from '~/modules/organization/create-organization-form';
+import { CreateOrganizationForm } from '~/modules/organization/create-organization-form';
 import { organizationsListQueryOptions } from '~/modules/organization/query';
 import { Card, CardContent, CardDescription, CardHeader } from '~/modules/ui/card';
-import InviteUsers from '~/modules/user/invite-users';
-import UpdateUserForm from '~/modules/user/update-user-form';
+import { InviteUsers } from '~/modules/user/invite-users';
+import { UpdateUserForm } from '~/modules/user/update-user-form';
 import { flattenInfiniteData } from '~/query/basic';
 import { useUserStore } from '~/store/user';
 import { cn } from '~/utils/cn';
@@ -25,7 +25,7 @@ interface OnboardingProps {
   setOnboardingState: (newState: Exclude<OnboardingStates, 'start'>) => void;
 }
 
-function Onboarding({ onboarding = 'start', setOnboardingState }: OnboardingProps) {
+export function Onboarding({ onboarding = 'start', setOnboardingState }: OnboardingProps) {
   const { user } = useUserStore();
   const { hasStarted } = useMountedState();
   const { t } = useTranslation();
@@ -117,5 +117,3 @@ function Onboarding({ onboarding = 'start', setOnboardingState }: OnboardingProp
     </div>
   );
 }
-
-export default Onboarding;

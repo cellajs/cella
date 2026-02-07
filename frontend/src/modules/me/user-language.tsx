@@ -3,7 +3,7 @@ import i18n from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { appConfig, type Language } from 'shared';
 import { updateMe } from '~/api.gen';
-import CountryFlag from '~/modules/common/country-flag';
+import { CountryFlag } from '~/modules/common/country-flag';
 import { toaster } from '~/modules/common/toaster/service';
 import { Button } from '~/modules/ui/button';
 import {
@@ -22,7 +22,7 @@ interface Props {
   contentClassName?: string;
 }
 
-function UserLanguage({ align = 'end', triggerClassName = '', contentClassName = '' }: Props) {
+export function UserLanguage({ align = 'end', triggerClassName = '', contentClassName = '' }: Props) {
   const { t } = useTranslation();
 
   const { user, updateUser } = useUserStore();
@@ -65,5 +65,3 @@ function UserLanguage({ align = 'end', triggerClassName = '', contentClassName =
     </DropdownMenu>
   );
 }
-
-export default UserLanguage;

@@ -12,7 +12,7 @@ import { Button } from '~/modules/ui/button';
 
 import { useUIStore } from '~/store/ui';
 
-function PasskeyStrategy({
+export function PasskeyStrategy({
   email,
   type,
 }: Omit<PasskeyCredentialProps, 'type'> & {
@@ -62,5 +62,3 @@ function PasskeyStrategy({
     </div>
   );
 }
-
-export default PasskeyStrategy;

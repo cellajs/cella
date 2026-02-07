@@ -18,7 +18,7 @@ interface StopImpersonationProps {
 /**
  * Button to stop impersonation, styled consistently with nav buttons.
  */
-function StopImpersonation({ isCollapsed }: StopImpersonationProps) {
+export function StopImpersonation({ isCollapsed }: StopImpersonationProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -64,5 +64,3 @@ function StopImpersonation({ isCollapsed }: StopImpersonationProps) {
     </SidebarMenuItem>
   );
 }
-
-export default StopImpersonation;

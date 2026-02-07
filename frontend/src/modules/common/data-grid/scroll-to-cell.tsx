@@ -7,7 +7,7 @@ export interface PartialPosition {
   readonly rowIdx?: number | undefined;
 }
 
-export default function ScrollToCell({
+export function ScrollToCell({
   scrollToPosition: { idx, rowIdx },
   gridRef,
   setScrollToCellPosition,

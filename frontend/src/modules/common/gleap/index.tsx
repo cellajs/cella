@@ -39,7 +39,7 @@ function setGleapUser(user: User) {
   }
 }
 
-function GleapSupport() {
+export function GleapSupport() {
   const { user } = useUserStore();
   const { isOnline } = useOnlineManager();
 
@@ -73,5 +73,4 @@ function GleapSupport() {
 
   return null;
 }
-
 export default GleapSupport;

@@ -2,7 +2,7 @@ import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
-import AppNavLoader from '~/modules/navigation/app-nav-loader';
+import { AppNavLoader } from '~/modules/navigation/app-nav-loader';
 import type { NavItem, TriggerNavItemFn } from '~/modules/navigation/types';
 import { SidebarMenuButton, SidebarMenuItem } from '~/modules/ui/sidebar';
 import { useUIStore } from '~/store/ui';

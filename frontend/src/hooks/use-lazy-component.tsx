@@ -8,7 +8,7 @@ import { type ComponentType, type LazyExoticComponent, lazy, useEffect, useState
  * @returns Lazily loaded component.
  */
 // biome-ignore lint/suspicious/noExplicitAny: Any component can be included
-function useLazyComponent<T extends ComponentType<any>>(
+export function useLazyComponent<T extends ComponentType<any>>(
   importFunc: () => Promise<{ default: T }>,
   delay: number,
 ): LazyExoticComponent<T> | null {
@@ -27,5 +27,3 @@ function useLazyComponent<T extends ComponentType<any>>(
 
   return Component;
 }
-
-export default useLazyComponent;

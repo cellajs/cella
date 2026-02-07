@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { systemInvite as baseSystemInvite } from '~/api.gen';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { SelectEmails } from '~/modules/common/form-fields/select-emails';
-import SelectRoleRadio from '~/modules/common/form-fields/select-role-radio';
+import { SelectRoleRadio } from '~/modules/common/form-fields/select-role-radio';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
 import { toaster } from '~/modules/common/toaster/service';
 import type { ContextEntityData } from '~/modules/entities/types';
@@ -24,7 +24,7 @@ interface Props {
 /**
  * Form for inviting users by email.
  */
-function InviteEmailForm({ entity, dialog: isDialog, children }: Props) {
+export function InviteEmailForm({ entity, dialog: isDialog, children }: Props) {
   const { t } = useTranslation();
 
   const { nextStep } = useStepper();
@@ -118,5 +118,3 @@ function InviteEmailForm({ entity, dialog: isDialog, children }: Props) {
     </Form>
   );
 }
-
-export default InviteEmailForm;

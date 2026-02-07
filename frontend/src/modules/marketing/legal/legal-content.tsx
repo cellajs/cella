@@ -5,7 +5,7 @@ import { appConfig } from 'shared';
 import { usePreloadLazyComponents } from '~/hooks/use-preload-lazy-components';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { SimpleHeader } from '~/modules/common/simple-header';
-import StickyBox from '~/modules/common/sticky-box';
+import { StickyBox } from '~/modules/common/sticky-box';
 import { LegalAside } from '~/modules/marketing/legal/legal-aside';
 import { type LegalSubject, legalConfig } from '~/modules/marketing/legal/legal-config';
 import { objectEntries } from '~/utils/object';

@@ -71,6 +71,4 @@ function PageCoverBase({ id, canUpdate, organizationId, url, coverUpdateCallback
   );
 }
 
-const PageCover = memo(PageCoverBase);
-
-export { PageCover };
+export const PageCover = memo(PageCoverBase);

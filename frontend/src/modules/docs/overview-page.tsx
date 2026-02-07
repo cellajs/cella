@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { SimpleHeader } from '~/modules/common/simple-header';
-import OpenApiSpecViewer from './openapi-spec-viewer';
-import OverviewTable from './overview-table';
+import { OpenApiSpecViewer } from './openapi-spec-viewer';
+import { OverviewTable } from './overview-table';
 
 /**
  * Overview page component displaying OpenAPI specification details.

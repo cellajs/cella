@@ -7,7 +7,7 @@ type StepButtonContainerProps = StepSharedProps & {
   children?: React.ReactNode;
 };
 
-function StepButtonContainer({
+export function StepButtonContainer({
   isCurrentStep,
   isCompletedStep,
   children,
@@ -64,5 +64,3 @@ function StepButtonContainer({
     </Button>
   );
 }
-
-export { StepButtonContainer };

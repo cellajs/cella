@@ -8,7 +8,7 @@ import type { GenOperationSummary } from '~/modules/docs/types';
 import { Badge } from '~/modules/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import { cn } from '~/utils/cn';
-import Spinner from '../../common/spinner';
+import { Spinner } from '../../common/spinner';
 import { getMethodColor } from '../helpers/get-method-color';
 
 interface OperationDetailProps {

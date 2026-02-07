@@ -132,10 +132,7 @@ function Cell<R, SR>({
   );
 }
 
-const CellComponent = memo(Cell) as <R, SR>(props: CellRendererProps<R, SR>) => React.JSX.Element;
-
-export default CellComponent;
-
+export const CellComponent = memo(Cell) as <R, SR>(props: CellRendererProps<R, SR>) => React.JSX.Element;
 export function defaultRenderCell<R, SR>(key: React.Key, props: CellRendererProps<R, SR>) {
   return <CellComponent key={key} {...props} />;
 }

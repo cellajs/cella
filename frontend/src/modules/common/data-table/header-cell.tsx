@@ -1,7 +1,7 @@
 import { ArrowDownIcon, ArrowUpIcon, ChevronsUpDownIcon } from 'lucide-react';
 import type { RenderHeaderCellProps } from '~/modules/common/data-grid';
 
-function HeaderCell<TData>({ column, sortDirection }: RenderHeaderCellProps<TData>) {
+export function HeaderCell<TData>({ column, sortDirection }: RenderHeaderCellProps<TData>) {
   if (!column.sortable) {
     return <div>{column.name}</div>;
   }
@@ -19,5 +19,3 @@ function HeaderCell<TData>({ column, sortDirection }: RenderHeaderCellProps<TDat
     </div>
   );
 }
-
-export default HeaderCell;

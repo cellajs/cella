@@ -8,7 +8,7 @@ import type { Organization } from '~/api.gen';
 import { zCreateOrganizationsData } from '~/api.gen/zod.gen';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { CallbackArgs } from '~/modules/common/data-table/types';
-import InputFormField from '~/modules/common/form-fields/input';
+import { InputFormField } from '~/modules/common/form-fields/input';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
 import { useStepper } from '~/modules/common/stepper';
 import { toaster } from '~/modules/common/toaster/service';
@@ -28,7 +28,7 @@ interface Props {
 const formSchema = zCreateOrganizationsData.shape.body.element.omit({ id: true });
 type FormValues = z.infer<typeof formSchema>;
 
-function CreateOrganizationForm({ labelDirection = 'top', children, callback }: Props) {
+export function CreateOrganizationForm({ labelDirection = 'top', children, callback }: Props) {
   const { t } = useTranslation();
 
   const { nextStep } = useStepper();
@@ -99,5 +99,3 @@ function CreateOrganizationForm({ labelDirection = 'top', children, callback }: 
     </Form>
   );
 }
-
-export default CreateOrganizationForm;

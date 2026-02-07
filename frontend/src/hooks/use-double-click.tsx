@@ -19,7 +19,7 @@ interface UseDoubleClickOptions {
  * @param allowedTargets - Set a Lover case element name that allow to be tracked by hook
  * @param excludeIds - Set a element id that excluded from tracking by hook
  */
-function useDoubleClick({
+export function useDoubleClick({
   ref,
   latency = 300,
   excludeIds = [],
@@ -74,5 +74,3 @@ function useDoubleClick({
     };
   });
 }
-
-export default useDoubleClick;

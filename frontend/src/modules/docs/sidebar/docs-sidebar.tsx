@@ -5,7 +5,7 @@ import { lazy, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import Logo from '~/modules/common/logo';
+import { Logo } from '~/modules/common/logo';
 import { JsonActions } from '~/modules/docs/json-actions';
 import { operationsQueryOptions, schemasQueryOptions, tagsQueryOptions } from '~/modules/docs/query';
 import { OperationsSidebar } from '~/modules/docs/sidebar/operations-sidebar';
@@ -26,7 +26,7 @@ import { queryClient } from '~/query/query-client';
 import { useUserStore } from '~/store/user';
 import { cn } from '~/utils/cn';
 import { useSheeter } from '../../common/sheeter/use-sheeter';
-import UserTheme from '../../me/user-theme';
+import { UserTheme } from '../../me/user-theme';
 import { openApiSpecQueryOptions, openApiUrl } from '../query';
 
 const DebugDropdown =

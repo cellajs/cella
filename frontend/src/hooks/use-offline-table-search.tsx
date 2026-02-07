@@ -12,7 +12,11 @@ type OfflineTableSearchParams<T> = {
 /**
  * Hook to filter table data offline based on search params when offline.
  */
-function useOfflineTableSearch<T>({ data, filterFn, onFilterCallback }: OfflineTableSearchParams<T>): T[] | undefined {
+export function useOfflineTableSearch<T>({
+  data,
+  filterFn,
+  onFilterCallback,
+}: OfflineTableSearchParams<T>): T[] | undefined {
   const searchParams = useSearch({ strict: false });
   const { isOnline } = useOnlineManager();
 
@@ -25,5 +29,3 @@ function useOfflineTableSearch<T>({ data, filterFn, onFilterCallback }: OfflineT
 
   return filteredData;
 }
-
-export default useOfflineTableSearch;

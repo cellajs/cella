@@ -56,7 +56,7 @@ interface EditCellProps<R, SR>
   onKeyDown: Maybe<(args: EditCellKeyDownArgs<R, SR>, event: CellKeyboardEvent) => void>;
 }
 
-export default function EditCell<R, SR>({
+export function EditCell<R, SR>({
   column,
   colSpan,
   row,

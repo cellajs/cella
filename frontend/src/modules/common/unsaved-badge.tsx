@@ -5,7 +5,7 @@ import { Badge } from '~/modules/ui/badge';
 /**
  * A badge to indicate that there are unsaved changes.
  */
-function UnsavedBadge({ title }: { title?: string | React.ReactNode }) {
+export function UnsavedBadge({ title }: { title?: string | React.ReactNode }) {
   const { t } = useTranslation();
   return (
     <>
@@ -17,5 +17,3 @@ function UnsavedBadge({ title }: { title?: string | React.ReactNode }) {
     </>
   );
 }
-
-export default UnsavedBadge;

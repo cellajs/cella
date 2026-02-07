@@ -1,10 +1,10 @@
 import { lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
-import Spinner from '~/modules/common/spinner';
+import { Spinner } from '~/modules/common/spinner';
 import { whyDarkSlides, whyItems, whyLightSlides } from '~/modules/marketing/marketing-config';
 
 const DeviceMockup = lazy(() => import('~/modules/marketing/device-mockup'));
-function Why() {
+export function Why() {
   const { t } = useTranslation();
 
   return (
@@ -44,5 +44,3 @@ function Why() {
     </div>
   );
 }
-
-export default Why;

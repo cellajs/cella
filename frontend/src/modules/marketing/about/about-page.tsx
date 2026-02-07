@@ -2,17 +2,17 @@ import { ArrowDownIcon, CheckIcon, CopyIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
-import CallToAction from '~/modules/marketing/about/call-to-action';
-import AboutCards from '~/modules/marketing/about/cards';
-// import Counters from '~/modules/marketing/about/counters';
-// import FAQ from '~/modules/marketing/about/faq';
-import Features from '~/modules/marketing/about/features';
+import { CallToAction } from '~/modules/marketing/about/call-to-action';
+import { AboutCards } from '~/modules/marketing/about/cards';
+// import { Counters } from '~/modules/marketing/about/counters';
+// import { FAQ } from '~/modules/marketing/about/faq';
+import { Features } from '~/modules/marketing/about/features';
 import { Hero } from '~/modules/marketing/about/hero';
-// import Pricing from '~/modules/marketing/about/pricing';
-import Showcase from '~/modules/marketing/about/showcase';
+// import { Pricing } from '~/modules/marketing/about/pricing';
+import { Showcase } from '~/modules/marketing/about/showcase';
 import '~/modules/marketing/about/glow-button.css';
 import { AboutSection } from '~/modules/marketing/about/section';
-import Why from '~/modules/marketing/about/why';
+import { Why } from '~/modules/marketing/about/why';
 import { MarketingFooter } from '~/modules/marketing/footer';
 import { MarketingNav } from '~/modules/marketing/nav';
 import { Button, buttonVariants } from '~/modules/ui/button';
@@ -23,7 +23,7 @@ export type AboutSectionId = (typeof aboutSectionIds)[number];
 
 const aboutSectionIds = ['hero', 'why', 'features', 'integrations', 'showcase', 'call-to-action'];
 
-function AboutPage() {
+export function AboutPage() {
   const { t } = useTranslation();
 
   const { copyToClipboard, copied } = useCopyToClipboard();
@@ -121,5 +121,3 @@ function AboutPage() {
     </>
   );
 }
-
-export default AboutPage;

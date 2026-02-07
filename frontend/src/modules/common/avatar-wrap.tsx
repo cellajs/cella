@@ -53,6 +53,4 @@ function AvatarWrapBase({ type, id, name, icon: Icon, url, className, ...props }
   );
 }
 
-const AvatarWrap = memo(AvatarWrapBase);
-
-export { AvatarWrap };
+export const AvatarWrap = memo(AvatarWrapBase);

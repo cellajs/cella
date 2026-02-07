@@ -102,6 +102,4 @@ function StepIconBase(props: StepIconProps, ref: React.ForwardedRef<HTMLDivEleme
   return iconContent;
 }
 
-const StepIcon = React.forwardRef<HTMLDivElement, StepIconProps>(StepIconBase);
-
-export { StepIcon };
+export const StepIcon = React.forwardRef<HTMLDivElement, StepIconProps>(StepIconBase);

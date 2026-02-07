@@ -1,5 +1,5 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
-import useSearchParams from '~/hooks/use-search-params';
+import { useSearchParams } from '~/hooks/use-search-params';
 import { BaseEntityGrid, EntityGridBar, EntityGridTile } from '~/modules/entities/entity-grid';
 import { organizationsListQueryOptions } from './query';
 

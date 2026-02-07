@@ -1,10 +1,10 @@
 import type { FieldValues } from 'react-hook-form';
 import timezones from '#json/timezones.json';
 import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
-import Combobox from '~/modules/ui/combobox';
+import { Combobox } from '~/modules/ui/combobox';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 
-const SelectTimezone = <TFieldValues extends FieldValues>({
+export const SelectTimezone = <TFieldValues extends FieldValues>({
   control,
   name,
   disabled,
@@ -45,5 +45,3 @@ const SelectTimezone = <TFieldValues extends FieldValues>({
     />
   );
 };
-
-export default SelectTimezone;

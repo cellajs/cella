@@ -1,7 +1,7 @@
 import subprocessors from '#json/subprocessors.json';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~/modules/ui/table';
 
-function Subprocessors() {
+export function Subprocessors() {
   return (
     <Table title="Subprocessors" className="mt-2">
       <TableHeader>
@@ -33,5 +33,3 @@ function Subprocessors() {
     </Table>
   );
 }
-
-export default Subprocessors;

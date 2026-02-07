@@ -9,7 +9,7 @@ import {
 } from '~/api.gen';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
-import HeaderCell from '~/modules/common/data-table/header-cell';
+import { HeaderCell } from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { toaster } from '~/modules/common/toaster/service';
 import { meKeys } from '~/modules/me/query';

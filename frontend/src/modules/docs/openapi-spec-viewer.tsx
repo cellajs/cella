@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SearchSpinner } from '~/modules/common/search-spinner';
-import Spinner from '~/modules/common/spinner';
+import { Spinner } from '~/modules/common/spinner';
 import { JsonActions } from '~/modules/docs/json-actions';
 import { JsonViewer } from '~/modules/docs/json-viewer';
 import { getPathToNthMatch } from '~/modules/docs/json-viewer/utils';
@@ -49,7 +49,7 @@ function countSearchMatches(value: unknown, searchText: string): number {
  * Displays the full OpenAPI specification JSON with collapsible sections.
  * Uses custom json-viewer with 'openapi' mode for $ref click-to-scroll navigation.
  */
-function OpenApiSpecViewer() {
+export function OpenApiSpecViewer() {
   const { t } = useTranslation();
 
   const [searchText, setSearchText] = useState('');
@@ -239,5 +239,3 @@ function OpenApiSpecViewer() {
     </>
   );
 }
-
-export default OpenApiSpecViewer;

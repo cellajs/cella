@@ -4,7 +4,7 @@ import { memo, useEffect, useRef } from 'react';
 import { UserBase } from '~/api.gen/types.gen';
 import { useUrlOverlayState } from '~/hooks/use-url-overlay-state';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
-import UserSheet from '~/modules/user/user-sheet';
+import { UserSheet } from '~/modules/user/user-sheet';
 import { useFindInListCache } from '~/query/basic/find-in-list-cache';
 import { toaster } from '../common/toaster/service';
 
@@ -56,6 +56,4 @@ function UserSheetHandlerBase() {
   return null;
 }
 
-const UserSheetHandler = memo(UserSheetHandlerBase);
-
-export default UserSheetHandler;
+export const UserSheetHandler = memo(UserSheetHandlerBase);

@@ -2,7 +2,7 @@ import type { RenderSortIconProps, RenderSortPriorityProps, RenderSortStatusProp
 
 const arrowClassname = 'rdg-sort-arrow';
 
-export default function renderSortStatus({ sortDirection, priority }: RenderSortStatusProps) {
+export function renderSortStatus({ sortDirection, priority }: RenderSortStatusProps) {
   return (
     <>
       {renderSortIcon({ sortDirection })}

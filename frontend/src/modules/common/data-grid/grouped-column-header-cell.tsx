@@ -11,7 +11,7 @@ interface GroupedColumnHeaderCellProps<R, SR> extends SharedGroupedColumnHeaderR
   isCellSelected: boolean;
 }
 
-export default function GroupedColumnHeaderCell<R, SR>({
+export function GroupedColumnHeaderCell<R, SR>({
   column,
   rowIdx,
   isCellSelected,

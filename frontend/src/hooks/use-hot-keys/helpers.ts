@@ -65,7 +65,7 @@ function isExactHotkey(hotkey: Hotkey, event: KeyboardEvent): boolean {
 }
 
 // check if a KeyboardEvent matches the specified hotkey string
-function getHotkeyMatcher(hotkey: string): CheckHotkeyMatch {
+export function getHotkeyMatcher(hotkey: string): CheckHotkeyMatch {
   return (event) => isExactHotkey(parseHotkey(hotkey), event);
 }
 
@@ -76,7 +76,7 @@ interface HotkeyItemOptions {
 type HotkeyItem = [string, (event: KeyboardEvent) => void, HotkeyItemOptions?];
 
 // Determines whether the event should trigger the hotkey handler based on the target element and settings
-function shouldFireEvent(event: KeyboardEvent, tagsToIgnore: string[], triggerOnContentEditable = false) {
+export function shouldFireEvent(event: KeyboardEvent, tagsToIgnore: string[], triggerOnContentEditable = false) {
   if (event.target instanceof HTMLElement) {
     if (triggerOnContentEditable) {
       return !tagsToIgnore.includes(event.target.tagName);
@@ -85,6 +85,4 @@ function shouldFireEvent(event: KeyboardEvent, tagsToIgnore: string[], triggerOn
   }
   return true;
 }
-
-export { getHotkeyMatcher, shouldFireEvent };
 export type { HotkeyItem };

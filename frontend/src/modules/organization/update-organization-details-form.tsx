@@ -10,7 +10,7 @@ import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { CallbackArgs } from '~/modules/common/data-table/types';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
-import Spinner from '~/modules/common/spinner';
+import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/service';
 import { useOrganizationUpdateMutation } from '~/modules/organization/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
@@ -28,7 +28,7 @@ interface Props {
   callback?: (args: CallbackArgs<Organization>) => void;
 }
 
-function UpdateOrganizationDetailsForm({ organization, callback, sheet: isSheet }: Props) {
+export function UpdateOrganizationDetailsForm({ organization, callback, sheet: isSheet }: Props) {
   const { t } = useTranslation();
   const { mutate, isPending } = useOrganizationUpdateMutation();
 
@@ -102,5 +102,3 @@ function UpdateOrganizationDetailsForm({ organization, callback, sheet: isSheet 
     </Form>
   );
 }
-
-export default UpdateOrganizationDetailsForm;

@@ -1,7 +1,7 @@
 import { Link, useSearch } from '@tanstack/react-router';
 import { LogInIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import ErrorNotice from '~/modules/common/error-notice';
+import { ErrorNotice } from '~/modules/common/error-notice';
 import { ResendInvitationButton } from '~/modules/memberships/resend-invitation-button';
 import { buttonVariants } from '~/modules/ui/button';
 import { useAuthStore } from '~/store/auth';
@@ -9,7 +9,7 @@ import { useAuthStore } from '~/store/auth';
 /**
  * Displays an error notice in authentication layout.
  */
-function AuthErrorPage() {
+export function AuthErrorPage() {
   const { t } = useTranslation();
 
   const { error: errorType, tokenId } = useSearch({ from: '/publicLayout/authLayout/auth/error' });
@@ -35,5 +35,3 @@ function AuthErrorPage() {
     </ErrorNotice>
   );
 }
-
-export default AuthErrorPage;

@@ -24,7 +24,9 @@
     "stop": "tsx vite/stop-vite.ts",
     "generate-client": "tsx vite/generate-client.ts",
     "storybook": "cross-env STORYBOOK=true storybook dev -p 6006 --quiet --no-open",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "fix-exports": "tsx scripts/fix-exports.ts",
+    "fix-exports:dry": "tsx scripts/fix-exports.ts --dry-run"
   },
   "dependencies": {
     "@atlaskit/pragmatic-drag-and-drop": "^1.7.7",

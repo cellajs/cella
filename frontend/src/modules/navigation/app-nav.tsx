@@ -3,9 +3,9 @@ import { useEffect } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
-import BottomBarNav from '~/modules/navigation/bottom-bar-nav';
-import FloatingNav from '~/modules/navigation/floating-nav/floating-nav';
-import SidebarNav from '~/modules/navigation/sidebar-nav';
+import { BottomBarNav } from '~/modules/navigation/bottom-bar-nav';
+import { FloatingNav } from '~/modules/navigation/floating-nav/floating-nav';
+import { SidebarNav } from '~/modules/navigation/sidebar-nav';
 import type { NavItem, TriggerNavItemFn } from '~/modules/navigation/types';
 import { navItems } from '~/nav-config';
 import { useNavigationStore } from '~/store/navigation';
@@ -19,7 +19,7 @@ export const navSheetClassName =
  * - Manages navigation item triggering, including routing and sheet handling.
  * - Sets up hotkeys for quick navigation access.
  */
-function AppNav() {
+export function AppNav() {
   const navigate = useNavigate();
   const isMobile = useBreakpoints('max', 'sm');
   const isDesktop = useBreakpoints('min', 'xl', true);
@@ -98,5 +98,3 @@ function AppNav() {
     </>
   );
 }
-
-export default AppNav;

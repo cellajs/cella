@@ -1,6 +1,6 @@
 import { useRouterState } from '@tanstack/react-router';
 import { type RefObject, useEffect, useRef } from 'react';
-import useBodyClass from '~/hooks/use-body-class';
+import { useBodyClass } from '~/hooks/use-body-class';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useScrollVisibility } from '~/hooks/use-scroll-visibility';
 import { FloatingNavButton, type FloatingNavItem } from '~/modules/navigation/floating-nav/button';
@@ -27,7 +27,7 @@ interface FloatingNavProps {
  * - Shows/hides buttons based on scroll direction.
  * - Supports custom items or route-based nav items from staticData.
  */
-function FloatingNav({
+export function FloatingNav({
   items: customItems,
   triggerNavItem,
   scrollContainerRef,
@@ -137,6 +137,4 @@ function FloatingNav({
     </nav>
   );
 }
-
-export default FloatingNav;
 export { FloatingNavButton, type FloatingNavItem } from '~/modules/navigation/floating-nav/button';

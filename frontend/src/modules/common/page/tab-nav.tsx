@@ -4,10 +4,10 @@ import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import useMountedState from '~/hooks/use-mounted-state';
+import { useMountedState } from '~/hooks/use-mounted-state';
 import { useNavTabs } from '~/hooks/use-nav-tabs';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
-import StickyBox from '~/modules/common/sticky-box';
+import { StickyBox } from '~/modules/common/sticky-box';
 import { cn } from '~/utils/cn';
 import { nanoid } from '~/utils/nanoid';
 

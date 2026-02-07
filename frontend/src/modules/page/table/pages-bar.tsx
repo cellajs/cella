@@ -3,20 +3,20 @@ import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { getPages, type Page } from '~/api.gen';
-import ColumnsView from '~/modules/common/data-table/columns-view';
-import Export from '~/modules/common/data-table/export';
+import { ColumnsView } from '~/modules/common/data-table/columns-view';
+import { Export } from '~/modules/common/data-table/export';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
 import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
-import TableCount from '~/modules/common/data-table/table-count';
+import { TableCount } from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarSearch, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
-import TableSearch from '~/modules/common/data-table/table-search';
+import { TableSearch } from '~/modules/common/data-table/table-search';
 import type { BaseTableBarProps } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
-import UnsavedBadge from '~/modules/common/unsaved-badge';
+import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import type { PagesRouteSearchParams } from '~/modules/page/types';
 import { CreatePageForm } from '../create-page-form';
-import DeletePages from '../delete-pages';
+import { DeletePages } from '../delete-pages';
 
 interface PagesTableBarProps extends Omit<BaseTableBarProps<Page, PagesRouteSearchParams>, 'queryKey'> {
   isCompact: boolean;

@@ -2,25 +2,25 @@ import { MailIcon, TrashIcon, XSquareIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { User } from '~/api.gen';
-import ColumnsView from '~/modules/common/data-table/columns-view';
+import { ColumnsView } from '~/modules/common/data-table/columns-view';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
 import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
-import TableCount from '~/modules/common/data-table/table-count';
+import { TableCount } from '~/modules/common/data-table/table-count';
 import {
   FilterBarActions,
   FilterBarFilters,
   FilterBarSearch,
   TableFilterBar,
 } from '~/modules/common/data-table/table-filter-bar';
-import TableSearch from '~/modules/common/data-table/table-search';
+import { TableSearch } from '~/modules/common/data-table/table-search';
 import type { BaseTableBarProps, CallbackArgs } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
-import SelectRole from '~/modules/common/form-fields/select-role';
+import { SelectRole } from '~/modules/common/form-fields/select-role';
 import { toaster } from '~/modules/common/toaster/service';
-import UnsavedBadge from '~/modules/common/unsaved-badge';
-import DeleteUsers from '~/modules/user/delete-users';
-import InviteUsers from '~/modules/user/invite-users';
+import { UnsavedBadge } from '~/modules/common/unsaved-badge';
+import { DeleteUsers } from '~/modules/user/delete-users';
+import { InviteUsers } from '~/modules/user/invite-users';
 import type { UsersRouteSearchParams, UserWithRoleAndMemberships } from '~/modules/user/types';
 import { useInfiniteQueryTotal } from '~/query/basic';
 

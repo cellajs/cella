@@ -8,7 +8,7 @@ import { toaster } from '~/modules/common/toaster/service';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { cn } from '~/utils/cn';
 
-const buttonVariants = cva(
+export const buttonVariants = cva(
   'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-effect disabled:pointer-events-none [&:not(.absolute)]:active:translate-y-[.05rem] disabled:opacity-50 shadow-xs',
   {
     variants: {
@@ -58,7 +58,7 @@ export interface ButtonProps
   asChild?: boolean;
 }
 
-function Button({
+export function Button({
   className,
   variant,
   size,
@@ -77,7 +77,7 @@ type SubmitButtonProps = Omit<ButtonProps, 'type'> & {
 /**
  * Submit button for forms that warns when offline.
  */
-function SubmitButton({
+export function SubmitButton({
   onClick,
   children,
   allowOfflineDelete = false,
@@ -118,5 +118,3 @@ function SubmitButton({
     buttonContent
   );
 }
-
-export { Button, buttonVariants, SubmitButton };

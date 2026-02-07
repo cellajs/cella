@@ -1,9 +1,3 @@
-/**
- * OpenAPI Parser Plugin for API Documentation
- *
- * Main entry point - re-exports the plugin and helpers.
- */
-
 export type { SchemaTag } from './categorize';
 
 // Categorization

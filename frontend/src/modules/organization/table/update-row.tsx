@@ -3,8 +3,8 @@ import { PencilIcon } from 'lucide-react';
 import { type RefObject, useRef } from 'react';
 import type { Organization } from '~/api.gen';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
-import UnsavedBadge from '~/modules/common/unsaved-badge';
-import UpdateOrganizationForm from '~/modules/organization/update-organization-form';
+import { UnsavedBadge } from '~/modules/common/unsaved-badge';
+import { UpdateOrganizationForm } from '~/modules/organization/update-organization-form';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
 
@@ -37,7 +37,7 @@ function openUpdateSheet(organization: Organization | Organization, buttonRef: R
   );
 }
 
-function UpdateRow({ organization, tabIndex }: Props) {
+export function UpdateRow({ organization, tabIndex }: Props) {
   const buttonRef = useRef(null);
 
   return (
@@ -56,5 +56,3 @@ function UpdateRow({ organization, tabIndex }: Props) {
     </Button>
   );
 }
-
-export default UpdateRow;

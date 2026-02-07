@@ -45,4 +45,5 @@ function SummaryCell<R, SR>({ column, colSpan, row, rowIdx, isCellSelected, sele
   );
 }
 
-export default memo(SummaryCell) as <R, SR>(props: SummaryCellProps<R, SR>) => React.JSX.Element;
+const SummaryCellMemo = memo(SummaryCell) as <R, SR>(props: SummaryCellProps<R, SR>) => React.JSX.Element;
+export { SummaryCellMemo as SummaryCell };

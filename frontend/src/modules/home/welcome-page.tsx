@@ -3,7 +3,7 @@ import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { useState } from 'react';
 import { OnboardingCompleted } from '~/modules/home/onboarding/completed';
 import type { OnboardingStates } from '~/modules/home/onboarding/steps';
-import Onboarding from '~/modules/home/onboarding/steps';
+import { Onboarding } from '~/modules/home/onboarding/steps';
 import { Dialog, DialogContent } from '~/modules/ui/dialog';
 import { useUserStore } from '~/store/user';
 import { isElementInteractive } from '~/utils/is-el-interactive';

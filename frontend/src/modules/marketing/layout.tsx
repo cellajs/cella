@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
-import Spinner from '~/modules/common/spinner';
+import { Spinner } from '~/modules/common/spinner';
 import { MarketingFooter } from '~/modules/marketing/footer';
 import { MarketingNav } from '~/modules/marketing/nav';
 
@@ -9,7 +9,7 @@ interface MarketingLayoutProps {
   children?: React.ReactNode;
 }
 
-function MarketingLayout({ title, children }: MarketingLayoutProps) {
+export function MarketingLayout({ title, children }: MarketingLayoutProps) {
   const { t } = useTranslation();
 
   return (
@@ -28,5 +28,3 @@ function MarketingLayout({ title, children }: MarketingLayoutProps) {
     </div>
   );
 }
-
-export default MarketingLayout;

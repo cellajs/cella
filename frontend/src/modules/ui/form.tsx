@@ -30,7 +30,7 @@ type FormProps<
   labelDirection?: LabelDirectionType;
 };
 
-const Form = <
+export const Form = <
   TFieldValues extends FieldValues,
   TContext = unknown,
   TTransformedValues extends FieldValues = TFieldValues,
@@ -58,7 +58,7 @@ type FormFieldContextValue<
 
 const FormFieldContext = React.createContext<FormFieldContextValue>({} as FormFieldContextValue);
 
-function FormField<
+export function FormField<
   TFieldValues extends FieldValues = FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
 >({ ...props }: ControllerProps<TFieldValues, TName>) {
@@ -69,7 +69,7 @@ function FormField<
   );
 }
 
-function useFormField() {
+export function useFormField() {
   const fieldContext = React.useContext(FormFieldContext);
   const itemContext = React.useContext(FormItemContext);
 
@@ -100,7 +100,7 @@ type FormItemContextValue = { id: string };
 const FormItemContext = React.createContext<FormItemContextValue>({} as FormItemContextValue);
 
 // INFO: added to support targeting the entire form item (for example to hide)
-function FormItem({ className, name, ...props }: React.ComponentProps<'div'> & { name?: string }) {
+export function FormItem({ className, name, ...props }: React.ComponentProps<'div'> & { name?: string }) {
   const id = React.useId();
   const labelDirection = React.useContext(LabelDirectionContext);
 
@@ -116,14 +116,14 @@ function FormItem({ className, name, ...props }: React.ComponentProps<'div'> & {
   );
 }
 
-function FormLabel({ className, ...props }: React.ComponentProps<typeof LabelPrimitive.Root>) {
+export function FormLabel({ className, ...props }: React.ComponentProps<typeof LabelPrimitive.Root>) {
   const { error, formItemId } = useFormField();
   return (
     <Label data-slot="form-label" data-error={!!error} className={cn('', className)} htmlFor={formItemId} {...props} />
   );
 }
 
-function FormControl({ ...props }: React.ComponentProps<typeof Slot>) {
+export function FormControl({ ...props }: React.ComponentProps<typeof Slot>) {
   const { error, formItemId, formDescriptionId, formMessageId } = useFormField();
   return (
     <Slot
@@ -136,7 +136,7 @@ function FormControl({ ...props }: React.ComponentProps<typeof Slot>) {
   );
 }
 
-function FormDescription({ className, children, ...props }: React.ComponentProps<'p'>) {
+export function FormDescription({ className, children, ...props }: React.ComponentProps<'p'>) {
   const { formDescriptionId } = useFormField();
   const [collapsed, setCollapsed] = React.useState(true);
 
@@ -169,7 +169,7 @@ function FormDescription({ className, children, ...props }: React.ComponentProps
   );
 }
 
-function FormMessage({ className, ...props }: React.ComponentProps<'p'>) {
+export function FormMessage({ className, ...props }: React.ComponentProps<'p'>) {
   const { error, formMessageId, invalid } = useFormField();
   const body = error ? String(error?.message ?? '') : props.children;
   // const body = error ? String(Array.isArray(error) ? error.find((err) => err?.message)?.message : error?.message) : props.children;
@@ -182,5 +182,3 @@ function FormMessage({ className, ...props }: React.ComponentProps<'p'>) {
     </p>
   );
 }
-
-export { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage, useFormField };

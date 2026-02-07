@@ -10,7 +10,7 @@ type Props = {
   callback?: (args: CallbackArgs<Page[]>) => void;
 };
 
-function DeletePages({ pages, callback, isDialog }: Props) {
+export function DeletePages({ pages, callback, isDialog }: Props) {
   const removeDialog = useDialoger((state) => state.remove);
   const deletePage = usePageDeleteMutation();
 
@@ -22,5 +22,3 @@ function DeletePages({ pages, callback, isDialog }: Props) {
 
   return <DeleteForm onDelete={handleDelete} onCancel={() => removeDialog()} pending={deletePage.isPending} />;
 }
-
-export default DeletePages;

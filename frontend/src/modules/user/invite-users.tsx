@@ -9,11 +9,11 @@ import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { AlertWrap } from '~/modules/common/alert-wrap';
 import { AnimatedArrow } from '~/modules/common/animated-arrow';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import UnsavedBadge from '~/modules/common/unsaved-badge';
+import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import type { ContextEntityData } from '~/modules/entities/types';
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
-import InviteEmailForm from '~/modules/user/invite-email-form';
-import InviteSearchForm from '~/modules/user/invite-search-form';
+import { InviteEmailForm } from '~/modules/user/invite-email-form';
+import { InviteSearchForm } from '~/modules/user/invite-search-form';
 
 const InviteFormSchema = zMembershipInviteData.shape.body;
 export type InviteFormValues = z.infer<typeof InviteFormSchema>;
@@ -39,7 +39,7 @@ interface InviteUsersProps {
 }
 
 // When no entity type, it's a system invite
-function InviteUsers({ entity, dialog: isDialog, mode: baseMode, children }: InviteUsersProps) {
+export function InviteUsers({ entity, dialog: isDialog, mode: baseMode, children }: InviteUsersProps) {
   const { t } = useTranslation();
 
   const [inviteMode, setInviteMode] = useState(baseMode);
@@ -148,5 +148,3 @@ function InviteUsers({ entity, dialog: isDialog, mode: baseMode, children }: Inv
     </MotionConfig>
   );
 }
-
-export default InviteUsers;

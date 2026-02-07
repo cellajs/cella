@@ -2,7 +2,7 @@ import type { VariantProps } from 'class-variance-authority';
 import type { LucideProps } from 'lucide-react';
 import type React from 'react';
 import { useTranslation } from 'react-i18next';
-import CloseButton from '~/modules/common/close-button';
+import { CloseButton } from '~/modules/common/close-button';
 import type { alertVariants } from '~/modules/ui/alert';
 import { Alert, AlertDescription, AlertTitle } from '~/modules/ui/alert';
 import { useAlertStore } from '~/store/alert';

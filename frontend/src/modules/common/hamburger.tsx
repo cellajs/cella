@@ -18,7 +18,7 @@ function HamburgerLine({ className, lineColor }: { className: string; lineColor:
   );
 }
 
-function HamburgerButton({ isOpen, toggle, className, ref }: HamburgerButtonProps) {
+export function HamburgerButton({ isOpen, toggle, className, ref }: HamburgerButtonProps) {
   const mode = useUIStore((state) => state.mode);
   const lineColor = mode === 'dark' ? 'white' : 'black';
 
@@ -49,5 +49,3 @@ function HamburgerButton({ isOpen, toggle, className, ref }: HamburgerButtonProp
     </Button>
   );
 }
-
-export default HamburgerButton;

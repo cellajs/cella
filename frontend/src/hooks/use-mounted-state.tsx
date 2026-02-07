@@ -36,5 +36,3 @@ export const useMountedState = () => {
     hasLoaded,
   };
 };
-
-export default useMountedState;

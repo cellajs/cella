@@ -1,4 +1,4 @@
-export { default as AppStream, useAppStream } from './app-stream';
+export { AppStream, useAppStream } from './app-stream';
 export { handleAppStreamNotification } from './app-stream-handler';
 export {
   clearCacheTokens,
@@ -8,7 +8,7 @@ export {
   storeCacheToken,
 } from './cache-token-store';
 export type { UsePublicStreamOptions, UsePublicStreamReturn } from './public-stream';
-export { default as PublicStream, usePublicStream } from './public-stream';
+export { PublicStream, usePublicStream } from './public-stream';
 export { handlePublicStreamMessage } from './public-stream-handler';
 export {
   broadcastNotification,

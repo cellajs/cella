@@ -1,8 +1,8 @@
 import { Loader2Icon } from 'lucide-react';
-import useMountedState from '~/hooks/use-mounted-state';
+import { useMountedState } from '~/hooks/use-mounted-state';
 import { cn } from '~/utils/cn';
 
-function Spinner({ className = '', noDelay = false }) {
+export function Spinner({ className = '', noDelay = false }) {
   const { hasStarted } = useMountedState();
 
   return (
@@ -15,5 +15,3 @@ function Spinner({ className = '', noDelay = false }) {
     </div>
   );
 }
-
-export default Spinner;

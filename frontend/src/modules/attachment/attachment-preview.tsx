@@ -1,4 +1,4 @@
-import FilePlaceholder from '~/modules/attachment/file-placeholder';
+import { FilePlaceholder } from '~/modules/attachment/file-placeholder';
 
 interface Props {
   contentType: string;
@@ -6,7 +6,7 @@ interface Props {
   url?: string;
 }
 
-function AttachmentPreview({ url, contentType, name }: Props) {
+export function AttachmentPreview({ url, contentType, name }: Props) {
   if (!url || !contentType.startsWith('image/')) return <FilePlaceholder contentType={contentType} />;
 
   return (
@@ -20,5 +20,3 @@ function AttachmentPreview({ url, contentType, name }: Props) {
     />
   );
 }
-
-export default AttachmentPreview;

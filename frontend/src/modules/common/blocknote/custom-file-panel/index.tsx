@@ -1,6 +1,6 @@
 import { FilePanelController, type FilePanelProps } from '@blocknote/react';
 import { appConfig } from 'shared';
-import UppyFilePanel from '~/modules/common/blocknote/custom-file-panel/uppy-upload-panel';
+import { UppyFilePanel } from '~/modules/common/blocknote/custom-file-panel/uppy-upload-panel';
 import type { BaseUppyFilePanelProps } from '~/modules/common/blocknote/types';
 
 type CustomFilePanelProps = {

@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
-import MarketingLayout from '~/modules/marketing/layout';
+import { MarketingLayout } from '~/modules/marketing/layout';
 
-function AccessibilityPage() {
+export function AccessibilityPage() {
   const { t } = useTranslation();
 
   return (
@@ -14,5 +14,3 @@ function AccessibilityPage() {
     </MarketingLayout>
   );
 }
-
-export default AccessibilityPage;
