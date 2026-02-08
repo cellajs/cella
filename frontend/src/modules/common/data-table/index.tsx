@@ -1,4 +1,4 @@
-import { type Key, type ReactNode, useCallback, useRef } from 'react';
+import { type Key, type ReactNode, useRef } from 'react';
 import {
   type CellMouseArgs,
   type CellMouseEvent,
@@ -83,34 +83,31 @@ export const DataTable = <TData,>({
   useTableTooltip(gridRef, !isLoading);
 
   // Handle infinite scroll - guards against multiple calls while fetching
-  const handleRowsEndApproaching = useCallback(() => {
+  const handleRowsEndApproaching = () => {
     if (!fetchMore || isFetching || !hasNextPage) return;
     fetchMore();
-  }, [fetchMore, isFetching, hasNextPage]);
+  };
 
   // Wrap selection handler to enforce max selection limit
-  const handleSelectedRowsChange = useCallback(
-    (newSelectedRows: Set<string>) => {
-      if (!onSelectedRowsChange) return;
+  const handleSelectedRowsChange = (newSelectedRows: Set<string>) => {
+    if (!onSelectedRowsChange) return;
 
-      const currentSize = selectedRows?.size ?? 0;
-      const newSize = newSelectedRows.size;
+    const currentSize = selectedRows?.size ?? 0;
+    const newSize = newSelectedRows.size;
 
-      // Check if trying to select more than the limit
-      if (newSize > MAX_SELECTABLE_ROWS) {
-        // If this is a "select all" attempt (large jump in selection)
-        if (newSize - currentSize > 1) {
-          toaster(t('common:selection_limit_all', { max: MAX_SELECTABLE_ROWS }), 'warning');
-        } else {
-          toaster(t('common:selection_limit', { max: MAX_SELECTABLE_ROWS }), 'warning');
-        }
-        return;
+    // Check if trying to select more than the limit
+    if (newSize > MAX_SELECTABLE_ROWS) {
+      // If this is a "select all" attempt (large jump in selection)
+      if (newSize - currentSize > 1) {
+        toaster(t('common:selection_limit_all', { max: MAX_SELECTABLE_ROWS }), 'warning');
+      } else {
+        toaster(t('common:selection_limit', { max: MAX_SELECTABLE_ROWS }), 'warning');
       }
+      return;
+    }
 
-      onSelectedRowsChange(newSelectedRows);
-    },
-    [onSelectedRowsChange, selectedRows?.size, t],
-  );
+    onSelectedRowsChange(newSelectedRows);
+  };
 
   return (
     <div className={cn('w-full h-full mb-4 md:mb-8 focus-view-scroll', className)}>

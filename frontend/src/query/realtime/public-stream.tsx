@@ -82,7 +82,7 @@ export function usePublicStream(options: UsePublicStreamOptions = {}): UsePublic
  * Syncs public entities (e.g., pages) via the `/entities/public/stream` endpoint.
  * No tab coordination - each tab maintains its own connection.
  */
-export default function PublicStream() {
+export function PublicStream() {
   usePublicStream({
     onStateChange: (state) => {
       if (state === 'live') console.debug(`[${debugLabel}] Connected and live`);

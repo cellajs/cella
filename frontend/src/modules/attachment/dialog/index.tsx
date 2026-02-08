@@ -2,13 +2,13 @@ import { useParams, useSearch } from '@tanstack/react-router';
 import { t } from 'i18next';
 import { FlameKindlingIcon } from 'lucide-react';
 import { useRef } from 'react';
-import AttachmentsCarousel, { type CarouselItemData } from '~/modules/attachment/carousel';
+import { AttachmentsCarousel, type CarouselItemData } from '~/modules/attachment/carousel';
 import { useResolvedAttachments } from '~/modules/attachment/hooks/use-resolved-attachments';
 import { findAttachmentInListCache, useGroupAttachments } from '~/modules/attachment/query';
-import CloseButton from '~/modules/common/close-button';
-import ContentPlaceholder from '~/modules/common/content-placeholder';
+import { CloseButton } from '~/modules/common/close-button';
+import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import Spinner from '~/modules/common/spinner';
+import { Spinner } from '~/modules/common/spinner';
 import { Button } from '~/modules/ui/button';
 
 /** Input type for dialog - url is optional since it may need resolution */
@@ -19,7 +19,7 @@ export type AttachmentDialogItem = Partial<CarouselItemData> & { id: string };
  * Uses selective URL subscriptions to prevent re-renders during carousel navigation.
  * Uses reactive query subscription for group attachments to handle post-upload timing.
  */
-function AttachmentDialog() {
+export function AttachmentDialog() {
   const removeDialog = useDialoger((state) => state.remove);
   const { orgIdOrSlug } = useParams({ strict: false });
 
@@ -82,5 +82,3 @@ function AttachmentDialog() {
     </div>
   );
 }
-
-export default AttachmentDialog;

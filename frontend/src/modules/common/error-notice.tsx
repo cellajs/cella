@@ -78,7 +78,7 @@ export const getErrorInfo = ({ error, errorFromQuery }: { error?: ErrorNoticeErr
  * app: no footer required
  * public: show footer
  */
-function ErrorNotice({ error, children, resetErrorBoundary, boundary, homePath = '/' }: ErrorNoticeProps) {
+export function ErrorNotice({ error, children, resetErrorBoundary, boundary, homePath = '/' }: ErrorNoticeProps) {
   const { t } = useTranslation();
   const { location } = useRouterState();
   const contactButtonRef = useRef<HTMLButtonElement>(null);
@@ -210,5 +210,3 @@ function ErrorNotice({ error, children, resetErrorBoundary, boundary, homePath =
     </>
   );
 }
-
-export default ErrorNotice;

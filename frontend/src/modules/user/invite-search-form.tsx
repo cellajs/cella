@@ -1,7 +1,7 @@
 import { SendIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import SelectRoleRadio from '~/modules/common/form-fields/select-role-radio';
+import { SelectRoleRadio } from '~/modules/common/form-fields/select-role-radio';
 import { toaster } from '~/modules/common/toaster/service';
 import type { ContextEntityData } from '~/modules/entities/types';
 import { useInviteMemberMutation } from '~/modules/memberships/query-mutations';
@@ -19,7 +19,7 @@ interface Props {
 /**
  * Invite members by searching for users which are already in the system
  */
-function InviteSearchForm({ entity, dialog: isDialog }: Props) {
+export function InviteSearchForm({ entity, dialog: isDialog }: Props) {
   const { t } = useTranslation();
   if (!entity) return null;
 
@@ -94,5 +94,3 @@ function InviteSearchForm({ entity, dialog: isDialog }: Props) {
     </Form>
   );
 }
-
-export default InviteSearchForm;

@@ -3,7 +3,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { Separator } from '~/modules/ui/separator';
 import { cn } from '~/utils/cn';
 
-const buttonGroupVariants = cva(
+export const buttonGroupVariants = cva(
   "flex w-fit items-stretch [&>*]:focus-visible:z-10 [&>*]:focus-visible:relative [&>[data-slot=select-trigger]:not([class*='w-'])]:w-fit [&>input]:flex-1 has-[select[aria-hidden=true]:last-child]:[&>[data-slot=select-trigger]:last-of-type]:rounded-r-md has-[>[data-slot=button-group]]:gap-2",
   {
     variants: {
@@ -20,7 +20,7 @@ const buttonGroupVariants = cva(
   },
 );
 
-function ButtonGroup({
+export function ButtonGroup({
   className,
   orientation,
   ...props
@@ -36,7 +36,7 @@ function ButtonGroup({
   );
 }
 
-function ButtonGroupText({
+export function ButtonGroupText({
   className,
   asChild = false,
   ...props
@@ -56,7 +56,7 @@ function ButtonGroupText({
   );
 }
 
-function ButtonGroupSeparator({
+export function ButtonGroupSeparator({
   className,
   orientation = 'vertical',
   ...props
@@ -70,5 +70,3 @@ function ButtonGroupSeparator({
     />
   );
 }
-
-export { ButtonGroup, ButtonGroupSeparator, ButtonGroupText, buttonGroupVariants };

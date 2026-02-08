@@ -110,7 +110,7 @@ function StepperBase(props: StepperProps, ref: React.Ref<HTMLDivElement>) {
   );
 }
 
-const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(StepperBase);
+export const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(StepperBase);
 
 function VerticalContent({ children }: { children: React.ReactNode }) {
   const { activeStep } = useStepper();
@@ -165,5 +165,5 @@ function HorizontalContent({ children }: { children: React.ReactNode }) {
   );
 }
 
-export { Step, Stepper, useStepper };
+export { Step, useStepper };
 export type { StepItem, StepProps, StepperProps };

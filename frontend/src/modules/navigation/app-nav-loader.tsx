@@ -3,8 +3,8 @@ import { HomeIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useDebounce } from '~/hooks/use-debounce';
 import { useMountedState } from '~/hooks/use-mounted-state';
-import Logo from '~/modules/common/logo';
-import Spinner from '~/modules/common/spinner';
+import { Logo } from '~/modules/common/logo';
+import { Spinner } from '~/modules/common/spinner';
 import { useNavigationStore } from '~/store/navigation';
 import { cn } from '~/utils/cn';
 
@@ -15,7 +15,7 @@ import { cn } from '~/utils/cn';
  * Skips the initial logo animation if the menu sheet is already open.
  * Uses debounced loading state to avoid flickering for quick loads.
  */
-function AppNavLoader({ className }: { className?: string }) {
+export function AppNavLoader({ className }: { className?: string }) {
   const { hasLoaded } = useMountedState();
   const navSheetOpen = useNavigationStore((state) => state.navSheetOpen);
 
@@ -94,5 +94,3 @@ function AppNavLoader({ className }: { className?: string }) {
     </div>
   );
 }
-
-export default AppNavLoader;

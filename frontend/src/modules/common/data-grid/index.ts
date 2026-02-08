@@ -1,7 +1,7 @@
 import './css-properties.d';
 import './style/data-grid.css';
 
-export { default as Cell } from './cell';
+export { CellComponent as Cell } from './cell';
 export * from './cellRenderers';
 export * from './columns';
 export {
@@ -12,7 +12,7 @@ export {
   type RowsEndApproachingArgs,
 } from './data-grid';
 export { DataGridDefaultRenderersContext } from './data-grid-default-renderers-context';
-export { default as renderTextEditor } from './editors/render-text-editor';
+export { textTextEditor as renderTextEditor } from './editors/render-text-editor';
 export {
   useCopyPaste,
   useExpandableRows,
@@ -40,8 +40,8 @@ export type {
   ResponsiveColumnsResult,
 } from './hooks/use-responsive-columns';
 export { MobileExpandToggle, MobileSubRow } from './mobile-sub-row';
-export { default as renderHeaderCell } from './render-header-cell';
-export { default as Row } from './row';
+export { renderHeaderCell } from './render-header-cell';
+export { RowComponent as Row } from './row';
 export { renderSortIcon, renderSortPriority } from './sort-status';
 export { TreeDataGrid, type TreeDataGridProps } from './tree-data-grid';
 export type {

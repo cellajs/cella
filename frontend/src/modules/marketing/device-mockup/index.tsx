@@ -1,7 +1,7 @@
 import { useInView } from 'react-intersection-observer';
 
-import AttachmentsCarousel, { type CarouselItemData } from '~/modules/attachment/carousel';
-import DeviceFrame from '~/modules/marketing/device-mockup/frame';
+import { AttachmentsCarousel, type CarouselItemData } from '~/modules/attachment/carousel';
+import { DeviceFrame } from '~/modules/marketing/device-mockup/frame';
 import { useUIStore } from '~/store/ui';
 import { cn } from '~/utils/cn';
 

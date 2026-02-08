@@ -1,5 +1,5 @@
-import { useCallback, useEffect } from 'react';
-import useBodyClass from '~/hooks/use-body-class';
+import { useEffect } from 'react';
+import { useBodyClass } from '~/hooks/use-body-class';
 import { useBoundaryCleanup } from '~/hooks/use-boundary-cleanup';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { SheeterDrawer } from '~/modules/common/sheeter/drawer';
@@ -8,6 +8,15 @@ import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import router from '~/routes/router';
 import { useNavigationStore } from '~/store/navigation';
 import { useUIStore } from '~/store/ui';
+
+// Static callbacks for boundary cleanup - no deps, call store directly
+const getItemsToCloseOnResize = () =>
+  useSheeter
+    .getState()
+    .sheets.filter((s) => !s.container)
+    .map((s) => s.id);
+const closeAll = () => useSheeter.getState().remove(undefined, { isCleanup: true });
+const closeById = (id: string | number) => useSheeter.getState().remove(String(id), { isCleanup: true });
 
 /**
  * Sheeter provider to render drawers on mobile, sheets on desktop.
@@ -28,21 +37,6 @@ export const Sheeter = () => {
       return () => unlockUI('sheeter');
     }
   }, [sheets.length > 0]);
-
-  // Close sheets that morph between drawer/sheet (no container) on resize
-  const getItemsToCloseOnResize = useCallback(
-    () =>
-      useSheeter
-        .getState()
-        .sheets.filter((s) => !s.container)
-        .map((s) => s.id),
-    [],
-  );
-  const closeAll = useCallback(() => useSheeter.getState().remove(undefined, { isCleanup: true }), []);
-  const closeById = useCallback(
-    (id: string | number) => useSheeter.getState().remove(String(id), { isCleanup: true }),
-    [],
-  );
 
   useBoundaryCleanup(getItemsToCloseOnResize, closeAll, closeById);
 

@@ -1,11 +1,11 @@
 import { onlineManager, useInfiniteQuery } from '@tanstack/react-query';
 import { BirdIcon } from 'lucide-react';
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { membershipInvite } from '~/api.gen';
-import useSearchParams from '~/hooks/use-search-params';
-import ContentPlaceholder from '~/modules/common/content-placeholder';
+import { useSearchParams } from '~/hooks/use-search-params';
+import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import type { RowsChangeData } from '~/modules/common/data-grid';
 import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
@@ -123,18 +123,14 @@ function OrganizationsTable() {
   };
 
   // isFetching already includes next page fetch scenario
-  const fetchMore = useCallback(async () => {
+  const fetchMore = async () => {
     if (!hasNextPage || isLoading || isFetching) return;
     await fetchNextPage();
-  }, [hasNextPage, isLoading, isFetching]);
+  };
 
-  // Memoize callback to prevent unnecessary re-renders
-  const onSelectedRowsChange = useCallback(
-    (value: Set<string>) => {
-      if (rows) setSelected(rows.filter((row) => value.has(row.id)));
-    },
-    [rows],
-  );
+  const onSelectedRowsChange = (value: Set<string>) => {
+    if (rows) setSelected(rows.filter((row) => value.has(row.id)));
+  };
 
   const selectedRowIds = useMemo(() => new Set(selected.map((s) => s.id)), [selected]);
 

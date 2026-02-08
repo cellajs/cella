@@ -22,7 +22,7 @@ interface SelectSortProps<T extends readonly SortOptionBase[]> {
   iconOnly?: boolean;
 }
 
-function SelectSort<T extends readonly SortOptionBase[]>({
+export function SelectSort<T extends readonly SortOptionBase[]>({
   sortOptions,
   onChange,
   value,
@@ -52,5 +52,3 @@ function SelectSort<T extends readonly SortOptionBase[]>({
     </Select>
   );
 }
-
-export default SelectSort;

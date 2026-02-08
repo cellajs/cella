@@ -9,7 +9,7 @@ import { useEffect, useRef } from 'react';
  *
  * @param classMappings - An object where keys are class names and values are booleans indicating whether the class should be applied or not.
  */
-function useBodyClass(classMappings: { [key: string]: boolean }) {
+export function useBodyClass(classMappings: { [key: string]: boolean }) {
   // Use ref to track which classes this hook instance has added
   const addedClassesRef = useRef<Set<string>>(new Set());
 
@@ -40,5 +40,3 @@ function useBodyClass(classMappings: { [key: string]: boolean }) {
     };
   }, [serialized]);
 }
-
-export default useBodyClass;

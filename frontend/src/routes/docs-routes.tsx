@@ -1,6 +1,6 @@
 import { createRoute, useParams } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
-import ErrorNotice from '~/modules/common/error-notice';
+import { ErrorNotice } from '~/modules/common/error-notice';
 import {
   infoQueryOptions,
   openApiSpecQueryOptions,

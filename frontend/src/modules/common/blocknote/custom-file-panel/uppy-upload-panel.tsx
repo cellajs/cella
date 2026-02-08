@@ -47,7 +47,7 @@ const basicBlockTypes = {
   },
 };
 
-function UppyFilePanel({
+export function UppyFilePanel({
   onComplete,
   onError,
   organizationId,
@@ -184,5 +184,3 @@ function UppyFilePanel({
     </Dialog>
   );
 }
-
-export default UppyFilePanel;

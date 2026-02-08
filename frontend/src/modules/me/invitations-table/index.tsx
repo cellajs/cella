@@ -14,7 +14,7 @@ function rowKeyGetter(row: Invitation) {
   return row.inactiveMembership.id;
 }
 
-function InvitationsTable() {
+export function InvitationsTable() {
   const { t } = useTranslation();
 
   // Build columns
@@ -71,5 +71,3 @@ function InvitationsTable() {
     </div>
   );
 }
-
-export default InvitationsTable;

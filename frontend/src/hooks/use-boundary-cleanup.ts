@@ -6,6 +6,7 @@ import type { BoundaryType } from '~/routes/types';
 /**
  * Hook to close overlays when crossing mobile/desktop boundary or switching route boundaries.
  * Uses TanStack Router's reactive state and useBreakpoints for cleaner reactivity.
+ * Callbacks are expected to be stable (defined outside component or module-level).
  */
 export function useBoundaryCleanup(
   getItemsToCloseOnResize: () => (string | number)[],
@@ -26,7 +27,7 @@ export function useBoundaryCleanup(
       for (const id of getItemsToCloseOnResize()) closeById(id);
     }
     prevIsMobileRef.current = isMobile;
-  }, [isMobile, getItemsToCloseOnResize, closeById]);
+  }, [isMobile]);
 
   // Handle boundary switching (app <-> public)
   useEffect(() => {
@@ -34,5 +35,5 @@ export function useBoundaryCleanup(
       closeAll();
     }
     prevBoundaryRef.current = currentBoundary;
-  }, [currentBoundary, closeAll]);
+  }, [currentBoundary]);
 }

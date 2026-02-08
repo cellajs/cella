@@ -9,8 +9,8 @@ import { zUpdateUserData } from '~/api.gen/zod.gen';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { CallbackArgs } from '~/modules/common/data-table/types';
-import AvatarFormField from '~/modules/common/form-fields/avatar';
-import InputFormField from '~/modules/common/form-fields/input';
+import { AvatarFormField } from '~/modules/common/form-fields/avatar';
+import { InputFormField } from '~/modules/common/form-fields/input';
 import { SelectLanguage } from '~/modules/common/form-fields/select-language';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
@@ -37,7 +37,7 @@ interface UpdateUserFormProps {
   callback?: (args: CallbackArgs<User>) => void;
 }
 
-function UpdateUserForm({ user, callback, sheet: isSheet, compact, children }: UpdateUserFormProps) {
+export function UpdateUserForm({ user, callback, sheet: isSheet, compact, children }: UpdateUserFormProps) {
   const { t } = useTranslation();
   const { user: currentUser } = useUserStore();
   const isSelf = currentUser.id === user.id;
@@ -187,5 +187,3 @@ function UpdateUserForm({ user, callback, sheet: isSheet, compact, children }: U
     </Form>
   );
 }
-
-export default UpdateUserForm;

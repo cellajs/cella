@@ -2,7 +2,7 @@ import { ChevronDown, PlusIcon, Settings2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { type RefObject, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import StickyBox from '~/modules/common/sticky-box';
+import { StickyBox } from '~/modules/common/sticky-box';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import type { UserMenuItem } from '~/modules/me/types';
 import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';

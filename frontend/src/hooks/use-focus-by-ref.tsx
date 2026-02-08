@@ -13,7 +13,7 @@ interface UseFocusByRefOptions {
  * Without options: focuses on mount.
  * With trigger: focuses when trigger becomes true.
  */
-function useFocusByRef(options?: UseFocusByRefOptions) {
+export function useFocusByRef(options?: UseFocusByRefOptions) {
   const { trigger, delay = 0 } = options ?? {};
   const focusRef = useRef<HTMLInputElement | null>(null);
 
@@ -39,5 +39,3 @@ function useFocusByRef(options?: UseFocusByRefOptions) {
 
   return { focusRef, setFocus };
 }
-
-export default useFocusByRef;

@@ -1,9 +1,8 @@
 import { t } from 'i18next';
 import { BirdIcon, SearchIcon } from 'lucide-react';
 import type { ComponentType } from 'react';
-import { useCallback } from 'react';
 
-import ContentPlaceholder from '~/modules/common/content-placeholder';
+import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { InfiniteLoader } from '~/modules/common/data-table/infinite-loader';
 import { EntityGridSkeleton } from '~/modules/entities/entity-grid';
 
@@ -41,10 +40,10 @@ export function BaseEntityGrid<TEntity extends { id: string }>({
   fetchNextPage,
   isFiltered,
 }: BaseEntityGridProps<TEntity>) {
-  const fetchMore = useCallback(async () => {
+  const fetchMore = async () => {
     if (!hasNextPage || isLoading || isFetching) return;
     await fetchNextPage();
-  }, [hasNextPage, isLoading, isFetching, fetchNextPage]);
+  };
 
   if (isLoading || !entities) return <EntityGridSkeleton />;
 

@@ -1,11 +1,11 @@
 import { lazy, Suspense } from 'react';
 import { appConfig } from 'shared';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
-import Spinner from '~/modules/common/spinner';
+import { Spinner } from '~/modules/common/spinner';
 
 const BlockNote = lazy(() => import('~/modules/common/blocknote'));
 
-function NewsletterPreview() {
+export function NewsletterPreview() {
   const form = useFormWithDraft('create-newsletter');
 
   return (
@@ -27,4 +27,3 @@ function NewsletterPreview() {
     </div>
   );
 }
-export default NewsletterPreview;

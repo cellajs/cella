@@ -1,7 +1,7 @@
 import { type Column, SelectColumn } from '~/modules/common/data-grid';
 
 // biome-ignore lint/suspicious/noExplicitAny: any is used for compatibility with react-data-grid
-const CheckboxColumn: Column<any> & {
+export const CheckboxColumn: Column<any> & {
   visible: boolean;
 } = {
   ...SelectColumn,
@@ -11,5 +11,3 @@ const CheckboxColumn: Column<any> & {
   cellClass: 'flex items-center justify-center',
   visible: window.innerWidth >= 640,
 };
-
-export default CheckboxColumn;

@@ -1,15 +1,15 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { PaperclipIcon } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import type { Attachment } from '~/api.gen';
-import useSearchParams from '~/hooks/use-search-params';
+import { useSearchParams } from '~/hooks/use-search-params';
 import { attachmentsListQueryOptions, useAttachmentUpdateMutation } from '~/modules/attachment/query';
 import { AttachmentsTableBar } from '~/modules/attachment/table/attachments-bar';
 import { useColumns } from '~/modules/attachment/table/attachments-columns';
 import type { AttachmentsRouteSearchParams } from '~/modules/attachment/types';
-import ContentPlaceholder from '~/modules/common/content-placeholder';
+import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import type { RowsChangeData } from '~/modules/common/data-grid';
 import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
@@ -71,30 +71,24 @@ function AttachmentsTable({ entity, canUpload = true, isSheet = false }: Attachm
   });
 
   // Update rows with mutation
-  const onRowsChange = useCallback(
-    (changedRows: Attachment[], { indexes, column }: RowsChangeData<Attachment>) => {
-      if (column.key !== 'name') return;
+  const onRowsChange = (changedRows: Attachment[], { indexes, column }: RowsChangeData<Attachment>) => {
+    if (column.key !== 'name') return;
 
-      // If name is changed, update the attachment
-      for (const index of indexes) {
-        const attachment = changedRows[index];
-        updateAttachment.mutate({ id: attachment.id, data: { name: attachment.name } });
-      }
-    },
-    [updateAttachment, t],
-  );
+    // If name is changed, update the attachment
+    for (const index of indexes) {
+      const attachment = changedRows[index];
+      updateAttachment.mutate({ id: attachment.id, data: { name: attachment.name } });
+    }
+  };
 
-  const fetchMore = useCallback(async () => {
+  const fetchMore = async () => {
     if (!hasNextPage || isLoading || isFetching) return;
     await fetchNextPage();
-  }, [hasNextPage, isLoading, isFetching, fetchNextPage]);
+  };
 
-  const onSelectedRowsChange = useCallback(
-    (value: Set<string>) => {
-      if (rows) setSelected(rows.filter((row) => value.has(row.id)));
-    },
-    [rows],
-  );
+  const onSelectedRowsChange = (value: Set<string>) => {
+    if (rows) setSelected(rows.filter((row) => value.has(row.id)));
+  };
 
   const selectedRowIds = useMemo(() => new Set(selected.map((s) => s.id)), [selected]);
 

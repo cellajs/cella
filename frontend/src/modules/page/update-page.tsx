@@ -1,7 +1,7 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
-import Spinner from '~/modules/common/spinner';
+import { Spinner } from '~/modules/common/spinner';
 import { pageQueryOptions } from '~/modules/page/query';
-import UpdatePageForm from '~/modules/page/update-page-form';
+import { UpdatePageForm } from '~/modules/page/update-page-form';
 
 interface UpdatePageProps {
   pageId: string;

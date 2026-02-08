@@ -23,7 +23,7 @@ export interface PricingPlan {
 
 const isFlexLayout = pricingPlans.length < 3;
 
-function Pricing() {
+export function Pricing() {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -123,5 +123,3 @@ function Pricing() {
     </div>
   );
 }
-
-export default Pricing;

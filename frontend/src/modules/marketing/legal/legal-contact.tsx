@@ -1,6 +1,6 @@
 import { appConfig } from 'shared';
 
-function LegalContact() {
+export function LegalContact() {
   const companyFull = appConfig.company.name;
   const streetAddress = appConfig.company.streetAddress;
   const postcode = appConfig.company.postcode;
@@ -30,5 +30,3 @@ function LegalContact() {
     </ul>
   );
 }
-
-export default LegalContact;

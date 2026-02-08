@@ -43,7 +43,7 @@ export interface HeaderCellProps<R, SR> extends SharedHeaderRowProps<R, SR> {
   setDraggedColumnKey: (draggedColumnKey: string | undefined) => void;
 }
 
-export default function HeaderCell<R, SR>({
+export function HeaderCell<R, SR>({
   column,
   colSpan,
   rowIdx,

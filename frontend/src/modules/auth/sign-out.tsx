@@ -4,7 +4,7 @@ import { HeartIcon } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { signOut } from '~/api.gen';
-import ContentPlaceholder from '~/modules/common/content-placeholder';
+import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { toaster } from '~/modules/common/toaster/service';
 import { flushStores } from '~/utils/flush-stores';
 

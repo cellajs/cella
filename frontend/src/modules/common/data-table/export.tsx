@@ -19,7 +19,7 @@ interface Props<TData> {
 }
 
 // biome-ignore lint/suspicious/noExplicitAny: any is required here
-const Export = <R extends Record<string, any>>({
+export const Export = <R extends Record<string, any>>({
   filename,
   columns,
   selectedRows,
@@ -99,5 +99,3 @@ const Export = <R extends Record<string, any>>({
     </DropdownMenu>
   );
 };
-
-export default Export;

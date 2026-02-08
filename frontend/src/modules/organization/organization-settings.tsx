@@ -9,12 +9,12 @@ import { AsideAnchor } from '~/modules/common/aside-anchor';
 import { CallbackArgs } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { PageAside } from '~/modules/common/page/aside';
-import StickyBox from '~/modules/common/sticky-box';
+import { StickyBox } from '~/modules/common/sticky-box';
 import { toaster } from '~/modules/common/toaster/service';
-import UnsavedBadge from '~/modules/common/unsaved-badge';
-import DeleteOrganizations from '~/modules/organization/delete-organizations';
-import UpdateOrganizationDetailsForm from '~/modules/organization/update-organization-details-form';
-import UpdateOrganizationForm from '~/modules/organization/update-organization-form';
+import { UnsavedBadge } from '~/modules/common/unsaved-badge';
+import { DeleteOrganizations } from '~/modules/organization/delete-organizations';
+import { UpdateOrganizationDetailsForm } from '~/modules/organization/update-organization-details-form';
+import { UpdateOrganizationForm } from '~/modules/organization/update-organization-form';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 

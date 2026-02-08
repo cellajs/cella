@@ -3,7 +3,7 @@ import type { FieldValues } from 'react-hook-form';
 import type { ContextEntityType } from 'shared';
 import { ContextEntityBase } from '~/api.gen';
 import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
-import Combobox, { type ComboboxProps } from '~/modules/ui/combobox';
+import { Combobox, type ComboboxProps } from '~/modules/ui/combobox';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { getContextEntityTypeToListQueries } from '~/offline-config';
 import { flattenInfiniteData } from '~/query/basic';
@@ -17,7 +17,7 @@ type SelectParentProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TF
 /**
  * Form field for selecting a parent entity.
  */
-const SelectParentFormField = <TFieldValues extends FieldValues>({
+export const SelectParentFormField = <TFieldValues extends FieldValues>({
   parentType,
   control,
   name,
@@ -74,5 +74,3 @@ const SelectParentFormField = <TFieldValues extends FieldValues>({
     />
   );
 };
-
-export default SelectParentFormField;

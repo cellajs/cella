@@ -4,11 +4,11 @@ import { DownloadIcon, ExternalLinkIcon } from 'lucide-react';
 import { useRef, useState } from 'react';
 import useDownloader from 'react-use-downloader';
 import { clearAttachmentDialogSearchParams, openAttachmentDialog } from '~/modules/attachment/dialog/lib';
-import FilePlaceholder from '~/modules/attachment/file-placeholder';
+import { FilePlaceholder } from '~/modules/attachment/file-placeholder';
 import { AttachmentRender } from '~/modules/attachment/render';
-import CloseButton from '~/modules/common/close-button';
+import { CloseButton } from '~/modules/common/close-button';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import Spinner from '~/modules/common/spinner';
+import { Spinner } from '~/modules/common/spinner';
 import { Button } from '~/modules/ui/button';
 import {
   Carousel as BaseCarousel,
@@ -47,7 +47,7 @@ type CarouselProps =
       saveInSearchParams?: never; // Disallowed when isDialog is false
     });
 
-function AttachmentsCarousel({
+export function AttachmentsCarousel({
   items,
   isDialog = false,
   itemIndex = 0,
@@ -197,5 +197,3 @@ function AttachmentsCarousel({
     </BaseCarousel>
   );
 }
-
-export default AttachmentsCarousel;

@@ -2,7 +2,7 @@ import { alertsConfig } from '~/alert-config';
 import { type AlertContextMode, AlertWrap } from '~/modules/common/alert-wrap';
 import { useAlertStore } from '~/store/alert';
 
-function Alerter({ mode }: { mode: AlertContextMode }) {
+export function Alerter({ mode }: { mode: AlertContextMode }) {
   const { alertsSeen } = useAlertStore();
 
   return (
@@ -21,5 +21,3 @@ function Alerter({ mode }: { mode: AlertContextMode }) {
     </>
   );
 }
-
-export default Alerter;

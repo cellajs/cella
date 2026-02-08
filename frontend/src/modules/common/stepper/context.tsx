@@ -17,7 +17,7 @@ type StepperContextProviderProps = {
   children: React.ReactNode;
 };
 
-const StepperContext = React.createContext<
+export const StepperContext = React.createContext<
   StepperContextValue & {
     nextStep: () => void;
     prevStep: () => void;
@@ -34,7 +34,7 @@ const StepperContext = React.createContext<
   setStep: () => {},
 });
 
-function StepperProvider({ value, children }: StepperContextProviderProps) {
+export function StepperProvider({ value, children }: StepperContextProviderProps) {
   const isError = value.state === 'error';
   const isLoading = value.state === 'loading';
 
@@ -73,5 +73,3 @@ function StepperProvider({ value, children }: StepperContextProviderProps) {
     </StepperContext.Provider>
   );
 }
-
-export { StepperContext, StepperProvider };

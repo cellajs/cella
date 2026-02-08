@@ -33,7 +33,7 @@ function Feature({ id, invertClassName }: FeatureProps) {
   );
 }
 
-function Features() {
+export function Features() {
   const mode = useUIStore((state) => state.mode);
   const invertClass = mode === 'dark' ? 'invert' : '';
   const isMediumScreen = useBreakpoints('min', 'sm');
@@ -50,5 +50,3 @@ function Features() {
     </div>
   );
 }
-
-export default Features;

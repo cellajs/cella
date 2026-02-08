@@ -8,7 +8,7 @@ import { meAuthQueryOptions, useCreatePasskeyMutation, useDeletePasskeyMutation 
 import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
 
-function PasskeysList() {
+export function PasskeysList() {
   const { t } = useTranslation();
 
   const { user, hasPasskey } = useUserStore.getState();
@@ -56,5 +56,3 @@ function PasskeysList() {
     </div>
   );
 }
-
-export default PasskeysList;

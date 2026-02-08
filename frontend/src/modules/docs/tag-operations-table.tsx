@@ -2,7 +2,7 @@ import { Link, useNavigate } from '@tanstack/react-router';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { DataTable } from '~/modules/common/data-table';
-import HeaderCell from '~/modules/common/data-table/header-cell';
+import { HeaderCell } from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import type { GenOperationSummary } from '~/modules/docs/types';
 import { Badge } from '~/modules/ui/badge';

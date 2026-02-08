@@ -3,7 +3,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { EditIcon } from 'lucide-react';
 import { lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
-import Spinner from '~/modules/common/spinner';
+import { Spinner } from '~/modules/common/spinner';
 import { pageQueryOptions } from '~/modules/page/query';
 import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';

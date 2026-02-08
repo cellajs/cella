@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig, type Language } from 'shared';
 import { useMeasure } from '~/hooks/use-measure';
-import CountryFlag from '~/modules/common/country-flag';
+import { CountryFlag } from '~/modules/common/country-flag';
 import { Button } from '~/modules/ui/button';
 import { Command, CommandGroup, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';

@@ -12,8 +12,8 @@ import { zUpdatePageData } from '~/api.gen/zod.gen';
 import { useAutoSave } from '~/hooks/use-auto-save';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
-import InputFormField from '~/modules/common/form-fields/input';
-import Spinner from '~/modules/common/spinner';
+import { InputFormField } from '~/modules/common/form-fields/input';
+import { Spinner } from '~/modules/common/spinner';
 import { usePageUpdateMutation } from '~/modules/page/query';
 import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
@@ -29,7 +29,7 @@ interface Props {
   page: Page;
 }
 
-function UpdatePageForm({ page }: Props) {
+export function UpdatePageForm({ page }: Props) {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -171,5 +171,3 @@ function UpdatePageForm({ page }: Props) {
     </>
   );
 }
-
-export default UpdatePageForm;

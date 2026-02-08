@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
-import Combobox from '~/modules/ui/combobox';
+import { Combobox } from '~/modules/ui/combobox';
 
 /**
  * A searchable dropdown component with virtualization support for large option lists.

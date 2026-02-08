@@ -3,10 +3,10 @@ import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 
-import Logo from '~/modules/common/logo';
+import { Logo } from '~/modules/common/logo';
 import { BackgroundCurve } from '~/modules/marketing/about/hero';
 import { footerSections, legalLinks } from '~/modules/marketing/marketing-config';
-import SubscribeNewsletterForm from '~/modules/marketing/subscribe-newsletter-form';
+import { SubscribeNewsletterForm } from '~/modules/marketing/subscribe-newsletter-form';
 import { isCDNUrl } from '~/utils/is-cdn-url';
 
 const currentYear = new Date().getFullYear();

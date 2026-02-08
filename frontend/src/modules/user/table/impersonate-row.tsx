@@ -28,7 +28,7 @@ async function handleStartImpersonation(targetUserId: string) {
   }
 }
 
-function ImpersonateRow({ user, tabIndex }: Props) {
+export function ImpersonateRow({ user, tabIndex }: Props) {
   return (
     <Button
       variant="cell"
@@ -43,5 +43,3 @@ function ImpersonateRow({ user, tabIndex }: Props) {
     </Button>
   );
 }
-
-export default ImpersonateRow;

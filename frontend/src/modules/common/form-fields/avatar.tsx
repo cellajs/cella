@@ -21,7 +21,7 @@ interface Props {
   type: AvatarWrapProps['type'];
 }
 
-function AvatarFormField({ form, label, name, entity, type }: Props) {
+export function AvatarFormField({ form, label, name, entity, type }: Props) {
   const { t } = useTranslation();
   const uploadButtonRef = useRef(null);
   const upload = useUploader();
@@ -97,5 +97,3 @@ function AvatarFormField({ form, label, name, entity, type }: Props) {
     />
   );
 }
-
-export default AvatarFormField;

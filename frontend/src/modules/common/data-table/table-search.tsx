@@ -3,7 +3,7 @@ import { XCircleIcon } from 'lucide-react';
 import { useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDebounce } from '~/hooks/use-debounce';
-import useFocusByRef from '~/hooks/use-focus-by-ref';
+import { useFocusByRef } from '~/hooks/use-focus-by-ref';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { TableFilterBarContext } from '~/modules/common/data-table/table-filter-bar';
 import { SearchSpinner } from '~/modules/common/search-spinner';
@@ -17,7 +17,7 @@ interface TableSearchProps {
   setQuery: (value: string) => void;
 }
 
-function TableSearch({ name, value = '', allowOfflineSearch = false, setQuery }: TableSearchProps) {
+export function TableSearch({ name, value = '', allowOfflineSearch = false, setQuery }: TableSearchProps) {
   const { t } = useTranslation();
   const { isOnline } = useOnlineManager();
   const { isFilterActive } = useContext(TableFilterBarContext);
@@ -72,5 +72,3 @@ function TableSearch({ name, value = '', allowOfflineSearch = false, setQuery }:
     </InputGroup>
   );
 }
-
-export default TableSearch;

@@ -6,7 +6,7 @@ import { toaster } from '~/modules/common/toaster/service';
 import { useCreateRequestMutation } from '~/modules/requests/query';
 import { SubmitButton } from '~/modules/ui/button';
 
-function SubscribeNewsletterForm() {
+export function SubscribeNewsletterForm() {
   const { t } = useTranslation();
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -56,5 +56,3 @@ function SubscribeNewsletterForm() {
     </form>
   );
 }
-
-export default SubscribeNewsletterForm;

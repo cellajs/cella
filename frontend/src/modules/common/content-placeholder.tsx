@@ -13,7 +13,7 @@ interface Props {
   titleProps?: TOptions & { returnObjects?: false };
 }
 
-function ContentPlaceholder({ title, icon: Icon, className = '', children, titleProps = {} }: Props) {
+export function ContentPlaceholder({ title, icon: Icon, className = '', children, titleProps = {} }: Props) {
   const { t } = useTranslation();
 
   const titleText = t(title, { ...titleProps, returnObjects: false });
@@ -26,5 +26,3 @@ function ContentPlaceholder({ title, icon: Icon, className = '', children, title
     </div>
   );
 }
-
-export default ContentPlaceholder;

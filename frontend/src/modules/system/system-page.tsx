@@ -5,7 +5,7 @@ import { PageTabNav } from '~/modules/common/page/tab-nav';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import { SystemRoute } from '~/routes/system-routes';
 
-function SystemPage() {
+export function SystemPage() {
   const { t } = useTranslation();
 
   return (
@@ -26,5 +26,3 @@ function SystemPage() {
     </>
   );
 }
-
-export default SystemPage;

@@ -11,8 +11,8 @@ import { type CreatePasswordData, type CreatePasswordResponse, createPassword } 
 import type { ApiError } from '~/lib/api';
 import { RequestPasswordDialog } from '~/modules/auth/request-password-dialog';
 import { useGetTokenData } from '~/modules/auth/use-get-token-data';
-import ErrorNotice from '~/modules/common/error-notice';
-import Spinner from '~/modules/common/spinner';
+import { ErrorNotice } from '~/modules/common/error-notice';
+import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/service';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
@@ -25,7 +25,7 @@ const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
 const formSchema = z.object({ password: z.string().min(8).max(100) });
 type FormValues = z.infer<typeof formSchema>;
 
-function CreatePasswordPage() {
+export function CreatePasswordPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -117,5 +117,3 @@ function CreatePasswordPage() {
     </Form>
   );
 }
-
-export default CreatePasswordPage;

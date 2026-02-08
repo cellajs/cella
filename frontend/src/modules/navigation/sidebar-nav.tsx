@@ -1,12 +1,12 @@
 import type { CSSProperties } from 'react';
 import { lazy, Suspense } from 'react';
 import { appConfig } from 'shared';
-import useBodyClass from '~/hooks/use-body-class';
+import { useBodyClass } from '~/hooks/use-body-class';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import useMountedState from '~/hooks/use-mounted-state';
+import { useMountedState } from '~/hooks/use-mounted-state';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { NavButton } from '~/modules/navigation/nav-buttons';
-import StopImpersonation from '~/modules/navigation/stop-impersonation';
+import { StopImpersonation } from '~/modules/navigation/stop-impersonation';
 import type { NavItem, TriggerNavItemFn } from '~/modules/navigation/types';
 import {
   Sidebar,
@@ -146,5 +146,3 @@ export function SidebarNav({ triggerNavItem }: SidebarNavProps) {
     </div>
   );
 }
-
-export default SidebarNav;

@@ -12,7 +12,6 @@
     "composite": false,
     "skipLibCheck": true,
     "types": ["node"],
-    "baseUrl": ".",
     "paths": {
       "#/*": ["./src/*"]
     }

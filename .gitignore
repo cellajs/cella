@@ -35,6 +35,7 @@ dist-ssr
 .db
 .rendered
 backend/openapi.cache.json
+backend/.openapi-manifest.json
 frontend/vite/temp-api-gen-*
 frontend/vite/temp-docs-gen-*
 frontend/vite/.generate-client.lock

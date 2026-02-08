@@ -5,7 +5,7 @@ import {
   type Edge,
   extractClosestEdge,
 } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { EntityType } from 'shared';
 import { DropIndicator } from '~/modules/common/drop-indicator';
 import type { UserMenuItem } from '~/modules/me/types';
@@ -40,17 +40,14 @@ export const MenuItemEditWrapper = ({
   const dragRef = useRef(null);
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
 
-  const handleCanDrop = useCallback(
-    (sourceData: DragDropData) => {
-      return (
-        isPageData(sourceData) &&
-        sourceData.item.id !== item.id &&
-        sourceData.itemType === item.entityType &&
-        unarchiveItems.some((i) => i.id === sourceData.item.id)
-      );
-    },
-    [unarchiveItems],
-  );
+  const handleCanDrop = (sourceData: DragDropData) => {
+    return (
+      isPageData(sourceData) &&
+      sourceData.item.id !== item.id &&
+      sourceData.itemType === item.entityType &&
+      unarchiveItems.some((i) => i.id === sourceData.item.id)
+    );
+  };
 
   // create draggable & dropTarget elements and auto scroll
   useEffect(() => {

@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { bottomSummaryRowClassname, rowClassname, rowSelectedClassname, topSummaryRowClassname } from './style/row';
-import SummaryCell from './summary-cell';
+import { SummaryCell } from './summary-cell';
 import type { RenderRowProps } from './types';
 import { classnames, getColSpan, getRowStyle } from './utils';
 
@@ -78,4 +78,5 @@ function SummaryRow<R, SR>({
   );
 }
 
-export default memo(SummaryRow) as <R, SR>(props: SummaryRowProps<R, SR>) => React.JSX.Element;
+const SummaryRowMemo = memo(SummaryRow) as <R, SR>(props: SummaryRowProps<R, SR>) => React.JSX.Element;
+export { SummaryRowMemo as SummaryRow };

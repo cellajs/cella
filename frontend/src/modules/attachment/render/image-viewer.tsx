@@ -33,7 +33,7 @@ export interface ImageViewerProps {
   children?: React.ReactNode;
 }
 
-export default class ImageViewer extends React.PureComponent<ImageViewerProps, ImageViewerStateType> {
+export class ImageViewer extends React.PureComponent<ImageViewerProps, ImageViewerStateType> {
   private panWrapper: HTMLElement | null = null;
   private panContainer: HTMLElement | null = null;
 

@@ -22,7 +22,7 @@ type InputFieldProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TFie
   autocomplete?: string;
 };
 
-const InputFormField = <TFieldValues extends FieldValues>({
+export const InputFormField = <TFieldValues extends FieldValues>({
   control,
   name,
   label,
@@ -94,5 +94,3 @@ const InputFormField = <TFieldValues extends FieldValues>({
     />
   );
 };
-
-export default InputFormField;

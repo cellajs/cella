@@ -1,12 +1,12 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { BirdIcon } from 'lucide-react';
-import { useCallback, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import type { z } from 'zod';
 import { zGetPendingMembershipsData } from '~/api.gen/zod.gen';
-import useSearchParams from '~/hooks/use-search-params';
-import ContentPlaceholder from '~/modules/common/content-placeholder';
+import { useSearchParams } from '~/hooks/use-search-params';
+import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { ContextEntityData } from '~/modules/entities/types';
@@ -69,10 +69,10 @@ export function PendingMembershipsTable({ entity }: PendingMembershipsTableProps
   });
 
   // isFetching already includes next page fetch scenario
-  const fetchMore = useCallback(async () => {
+  const fetchMore = async () => {
     if (!hasNextPage || isLoading || isFetching) return;
     await fetchNextPage();
-  }, [hasNextPage, isLoading, isFetching]);
+  };
 
   return (
     <div className="flex flex-col gap-4 h-full">

@@ -31,7 +31,7 @@ const debugOptions: DebugItem[] = [
   { id: 'sync-devtools', icon: '⚡' },
 ];
 
-function DebugToolbars({ className }: DebugToolbarsProps) {
+export function DebugToolbars({ className }: DebugToolbarsProps) {
   const [syncDevtoolsOpen, setSyncDevtoolsOpen] = useState(false);
 
   // Function to handle toggling debug options in different ways
@@ -94,5 +94,3 @@ function DebugToolbars({ className }: DebugToolbarsProps) {
     </>
   );
 }
-
-export default DebugToolbars;

@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '~/modules/ui/card';
 
 const countsLength = counts.length;
 
-function Counters() {
+export function Counters() {
   const { t } = useTranslation();
   const { ref, inView } = useInView({ triggerOnce: true, threshold: 0 });
 
@@ -58,5 +58,3 @@ function Counters() {
     </div>
   );
 }
-
-export default Counters;

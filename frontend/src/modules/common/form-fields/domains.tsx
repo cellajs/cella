@@ -8,7 +8,7 @@ import { TagInput } from '~/modules/ui/tag-input';
 type DomainsFieldProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TFieldValues> & {
   description?: string;
 };
-const DomainsFormField = <TFieldValues extends FieldValues>({
+export const DomainsFormField = <TFieldValues extends FieldValues>({
   control,
   name,
   label,
@@ -78,5 +78,3 @@ const DomainsFormField = <TFieldValues extends FieldValues>({
     />
   );
 };
-
-export default DomainsFormField;

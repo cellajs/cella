@@ -14,7 +14,7 @@ interface Props {
   callback?: (user: CallbackArgs<User>) => void;
 }
 
-function DeleteSelf({ callback, dialog: isDialog }: Props) {
+export function DeleteSelf({ callback, dialog: isDialog }: Props) {
   const navigate = useNavigate();
   const removeDialog = useDialoger((state) => state.remove);
 
@@ -40,5 +40,3 @@ function DeleteSelf({ callback, dialog: isDialog }: Props) {
 
   return <DeleteForm onDelete={onDelete} onCancel={() => removeDialog()} pending={isPending} />;
 }
-
-export default DeleteSelf;

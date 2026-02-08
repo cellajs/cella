@@ -4,7 +4,7 @@ import type { RenderHeaderCellProps } from './types';
 const headerSortCellClassname = 'rdg-header-sort-cell';
 const headerSortNameClassname = 'rdg-header-sort-name';
 
-export default function renderHeaderCell<R, SR>({ column, sortDirection, priority }: RenderHeaderCellProps<R, SR>) {
+export function renderHeaderCell<R, SR>({ column, sortDirection, priority }: RenderHeaderCellProps<R, SR>) {
   if (!column.sortable) return column.name;
 
   return (

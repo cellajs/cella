@@ -13,7 +13,7 @@ interface Props {
   callback?: (args: CallbackArgs<User[]>) => void;
 }
 
-function DeleteUsers({ users, callback, dialog: isDialog }: Props) {
+export function DeleteUsers({ users, callback, dialog: isDialog }: Props) {
   const { t } = useTranslation();
   const removeDialog = useDialoger((state) => state.remove);
 
@@ -37,5 +37,3 @@ function DeleteUsers({ users, callback, dialog: isDialog }: Props) {
 
   return <DeleteForm onDelete={onDelete} onCancel={onCancel} pending={isPending} />;
 }
-
-export default DeleteUsers;

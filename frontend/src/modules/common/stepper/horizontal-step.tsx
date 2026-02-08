@@ -100,6 +100,4 @@ function HorizontalStepBase(props: StepSharedProps, ref: React.ForwardedRef<HTML
   );
 }
 
-const HorizontalStep = React.forwardRef<HTMLDivElement, StepSharedProps>(HorizontalStepBase);
-
-export { HorizontalStep };
+export const HorizontalStep = React.forwardRef<HTMLDivElement, StepSharedProps>(HorizontalStepBase);

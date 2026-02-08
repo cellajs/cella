@@ -4,7 +4,7 @@ import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig, ContextEntityType } from 'shared';
 import type { ContextEntityBase, UserBase } from '~/api.gen';
-import useScrollTo from '~/hooks/use-scroll-to';
+import { useScrollTo } from '~/hooks/use-scroll-to';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { PageCover, type PageCoverProps } from '~/modules/common/page/cover';
 import type { ContextEntityData } from '~/modules/entities/types';
@@ -27,7 +27,7 @@ type PageHeaderProps = Omit<PageCoverProps, 'id' | 'url'> & {
   disableScroll?: boolean;
 };
 
-function PageHeader({ entity, panel, parent, disableScroll, ...coverProps }: PageHeaderProps) {
+export function PageHeader({ entity, panel, parent, disableScroll, ...coverProps }: PageHeaderProps) {
   const { t } = useTranslation();
   const scrollToRef = useRef<HTMLDivElement>(null);
 
@@ -118,5 +118,3 @@ function PageHeader({ entity, panel, parent, disableScroll, ...coverProps }: Pag
     </div>
   );
 }
-
-export { PageHeader };

@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import { zCreatePagesData } from '~/api.gen/zod.gen';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
-import InputFormField from '~/modules/common/form-fields/input';
+import { InputFormField } from '~/modules/common/form-fields/input';
 import { usePageCreateMutation } from '~/modules/page/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';

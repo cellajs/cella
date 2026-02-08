@@ -2,9 +2,9 @@ import { type RefObject, Suspense, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import Spinner from '~/modules/common/spinner';
+import { Spinner } from '~/modules/common/spinner';
 import type { LegalSubject } from '~/modules/marketing/legal/legal-config';
-import LegalText from '~/modules/marketing/legal/legal-text';
+import { LegalText } from '~/modules/marketing/legal/legal-text';
 import { Button } from '~/modules/ui/button';
 
 export const LegalNotice = ({

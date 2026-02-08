@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { renderValue } from '../cellRenderers';
 import { SELECT_COLUMN_KEY } from '../columns';
 import type { DataGridProps } from '../data-grid';
-import renderHeaderCell from '../render-header-cell';
+import { renderHeaderCell } from '../render-header-cell';
 import type { BreakpointKey, CalculatedColumn, CalculatedColumnParent, ColumnOrColumnGroup, Omit } from '../types';
 import { clampColumnWidth, isColumnVisible, max, min } from '../utils';
 

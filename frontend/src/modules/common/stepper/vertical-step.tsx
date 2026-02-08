@@ -171,6 +171,4 @@ function VerticalStepBase(props: VerticalStepProps, ref: React.ForwardedRef<HTML
   );
 }
 
-const VerticalStep = React.forwardRef<HTMLDivElement, VerticalStepProps>(VerticalStepBase);
-
-export { VerticalStep };
+export const VerticalStep = React.forwardRef<HTMLDivElement, VerticalStepProps>(VerticalStepBase);

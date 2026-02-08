@@ -1,6 +1,6 @@
 import { ArrowUpRightIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import CountryFlag from '~/modules/common/country-flag';
+import { CountryFlag } from '~/modules/common/country-flag';
 import { cards } from '~/modules/marketing/marketing-config';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
 import { useUIStore } from '~/store/ui';
@@ -13,7 +13,7 @@ export interface AboutCard {
   country: string;
 }
 
-function AboutCards() {
+export function AboutCards() {
   const { t } = useTranslation();
   const mode = useUIStore((state) => state.mode);
 
@@ -63,5 +63,3 @@ function AboutCards() {
     </ScrollArea>
   );
 }
-
-export default AboutCards;

@@ -4,9 +4,9 @@ import { flushSync } from 'react-dom';
 import { defaultRenderCell } from './cell';
 import { renderCheckbox as defaultRenderCheckbox } from './cellRenderers';
 import { DataGridDefaultRenderersContext, useDefaultRenderers } from './data-grid-default-renderers-context';
-import EditCell from './edit-cell';
-import GroupedColumnHeaderRow from './grouped-column-header-row';
-import HeaderRow from './header-row';
+import { EditCell } from './edit-cell';
+import { GroupedColumnHeaderRow } from './grouped-column-header-row';
+import { HeaderRow } from './header-row';
 import {
   HeaderRowSelectionChangeContext,
   HeaderRowSelectionContext,
@@ -22,8 +22,8 @@ import {
 } from './hooks';
 import { defaultRenderRow } from './row';
 import type { PartialPosition } from './scroll-to-cell';
-import ScrollToCell from './scroll-to-cell';
-import { default as defaultRenderSortStatus } from './sort-status';
+import { ScrollToCell } from './scroll-to-cell';
+import { renderSortStatus as defaultRenderSortStatus } from './sort-status';
 import { cellDragHandleClassname, cellDragHandleFrozenClassname } from './style/cell';
 import {
   focusSinkClassname,
@@ -32,7 +32,7 @@ import {
   viewportDraggingClassname,
 } from './style/core';
 import { rowSelected, rowSelectedWithFrozenCell } from './style/row';
-import SummaryRow from './summary-row';
+import { SummaryRow } from './summary-row';
 import type {
   CalculatedColumn,
   CellClipboardEvent,

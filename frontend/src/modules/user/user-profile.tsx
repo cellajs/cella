@@ -3,7 +3,7 @@ import { FlameKindlingIcon, UserRoundCogIcon } from 'lucide-react';
 import { lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { UserBase } from '~/api.gen';
-import ContentPlaceholder from '~/modules/common/content-placeholder';
+import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { FocusViewContainer } from '~/modules/common/focus-view';
 import { PageHeader } from '~/modules/common/page/header';
 import { toaster } from '~/modules/common/toaster/service';
@@ -21,7 +21,7 @@ interface Props {
 /**
  * Profile page for a user
  */
-function UserProfilePage({ user, isSheet }: Props) {
+export function UserProfilePage({ user, isSheet }: Props) {
   const { t } = useTranslation();
   const { user: currentUser } = useUserStore();
 
@@ -75,5 +75,3 @@ function UserProfilePage({ user, isSheet }: Props) {
     </>
   );
 }
-
-export default UserProfilePage;
