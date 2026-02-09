@@ -49,6 +49,11 @@
                     "type": ["string", "null"],
                     "required": true
                   },
+                  "tenantId": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 6
+                  },
                   "shortName": {
                     "type": ["string", "null"],
                     "required": true
@@ -114,6 +119,11 @@
                         "required": true,
                         "properties": {
                           "id": { "type": "string", "required": true },
+                          "tenantId": {
+                            "type": "string",
+                            "required": true,
+                            "maxLength": 6
+                          },
                           "contextType": {
                             "type": "string",
                             "required": true,
@@ -197,23 +207,24 @@
           "data": [
             {
               "id": "kzmv5qbhdcqeiuvwlosan0fc",
+              "tenantId": "wgpaj0",
               "entityType": "organization",
-              "name": "Koss, Price and Greenfelder",
-              "slug": "koss-price-and-greenfelder",
-              "description": "Organic 24 hour firmware",
-              "shortName": "Koss,",
-              "country": "Israel",
-              "timezone": "Pacific/Kanton",
+              "name": "Kessler and Sons",
+              "slug": "kessler-and-sons",
+              "description": "Future-proofed contextually-based moderator",
+              "shortName": "Kessler",
+              "country": "Azerbaijan",
+              "timezone": "Europe/Kyiv",
               "defaultLanguage": "en",
               "languages": ["en"],
-              "notificationEmail": "notifications@koss-price-and-greenfelder.example",
+              "notificationEmail": "notifications@kessler-and-sons.example",
               "emailDomains": [],
-              "color": "#74e1bc",
+              "color": "#ce39f9",
               "thumbnailUrl": null,
               "logoUrl": null,
               "bannerUrl": null,
-              "websiteUrl": "https://koss-price-and-greenfelder.example",
-              "welcomeText": "Welcome to Koss, Price and Greenfelder!",
+              "websiteUrl": "https://kessler-and-sons.example",
+              "welcomeText": "Welcome to Kessler and Sons!",
               "authStrategies": ["password"],
               "chatSupport": false,
               "createdAt": "2024-04-19T14:04:35.773Z",
@@ -228,11 +239,12 @@
               "included": {
                 "membership": {
                   "id": "3y6ee6h5lc8sjfv4trxwe3yb",
+                  "tenantId": "89fjn2",
                   "contextType": "organization",
-                  "userId": "89fjn21t4n7coocr6ixfzcb6",
+                  "userId": "1t4n7coocr6ixfzcb6x5wab0",
                   "organizationId": "kzmv5qbhdcqeiuvwlosan0fc",
-                  "role": "admin",
-                  "displayOrder": 56,
+                  "role": "member",
+                  "displayOrder": 95,
                   "muted": false,
                   "archived": false
                 },
@@ -249,23 +261,24 @@
             },
             {
               "id": "p3t0ygxx0aa83en3sk1fs1we",
+              "tenantId": "74l758",
               "entityType": "organization",
-              "name": "Collins - Mitchell",
-              "slug": "collins-mitchell",
-              "description": "Diverse cloud-native concept",
-              "shortName": "Collins",
-              "country": "Australia",
-              "timezone": "America/Phoenix",
+              "name": "Howell - Ullrich",
+              "slug": "howell-ullrich",
+              "description": "Quality-focused uniform throughput",
+              "shortName": "Howell",
+              "country": "French Polynesia",
+              "timezone": "Australia/Brisbane",
               "defaultLanguage": "en",
               "languages": ["en"],
-              "notificationEmail": "notifications@collins-mitchell.example",
+              "notificationEmail": "notifications@howell-ullrich.example",
               "emailDomains": [],
-              "color": "#dfee6f",
+              "color": "#88b531",
               "thumbnailUrl": null,
               "logoUrl": null,
               "bannerUrl": null,
-              "websiteUrl": "https://collins-mitchell.example",
-              "welcomeText": "Welcome to Collins - Mitchell!",
+              "websiteUrl": "https://howell-ullrich.example",
+              "welcomeText": "Welcome to Howell - Ullrich!",
               "authStrategies": ["password"],
               "chatSupport": true,
               "createdAt": "2024-02-25T13:01:35.301Z",
@@ -280,11 +293,12 @@
               "included": {
                 "membership": {
                   "id": "ry5f7szmj5jhp0ad93klgj3e",
+                  "tenantId": "j6ly81",
                   "contextType": "organization",
-                  "userId": "j6ly81u4oy2u1m55abgsmrl1",
+                  "userId": "u4oy2u1m55abgsmrl1zezeoj",
                   "organizationId": "p3t0ygxx0aa83en3sk1fs1we",
                   "role": "admin",
-                  "displayOrder": 1,
+                  "displayOrder": 20,
                   "muted": false,
                   "archived": false
                 },
@@ -420,6 +434,11 @@
                     "type": ["string", "null"],
                     "required": true
                   },
+                  "tenantId": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 6
+                  },
                   "shortName": {
                     "type": ["string", "null"],
                     "required": true
@@ -485,6 +504,11 @@
                         "required": false,
                         "properties": {
                           "id": { "type": "string", "required": true },
+                          "tenantId": {
+                            "type": "string",
+                            "required": true,
+                            "maxLength": 6
+                          },
                           "contextType": {
                             "type": "string",
                             "required": true,
@@ -558,25 +582,26 @@
           "items": [
             {
               "id": "qqp8d07imsvjbtqtl3rtjgxd",
+              "tenantId": "9xn03u",
               "entityType": "organization",
-              "name": "Walsh - Nitzsche",
-              "slug": "walsh-nitzsche",
-              "description": "AI-driven bottom-line software",
-              "shortName": "Walsh",
-              "country": "Costa Rica",
-              "timezone": "America/Bogota",
+              "name": "Dicki - Jacobi",
+              "slug": "dicki-jacobi",
+              "description": "Public-key context-sensitive website",
+              "shortName": "Dicki",
+              "country": "Comoros",
+              "timezone": "Africa/Conakry",
               "defaultLanguage": "en",
               "languages": ["en"],
-              "notificationEmail": "notifications@walsh-nitzsche.example",
+              "notificationEmail": "notifications@dicki-jacobi.example",
               "emailDomains": [],
-              "color": "#8f4f40",
+              "color": "#f40655",
               "thumbnailUrl": null,
               "logoUrl": null,
               "bannerUrl": null,
-              "websiteUrl": "https://walsh-nitzsche.example",
-              "welcomeText": "Welcome to Walsh - Nitzsche!",
+              "websiteUrl": "https://dicki-jacobi.example",
+              "welcomeText": "Welcome to Dicki - Jacobi!",
               "authStrategies": ["password"],
-              "chatSupport": false,
+              "chatSupport": true,
               "createdAt": "2024-11-21T04:00:59.122Z",
               "createdBy": null,
               "modifiedAt": "2024-11-21T04:00:59.122Z",
@@ -589,11 +614,12 @@
               "included": {
                 "membership": {
                   "id": "300jor4orrvsgezqoyxfckg3",
+                  "tenantId": "ifex0a",
                   "contextType": "organization",
-                  "userId": "ifex0agu87zf240qkfh0faoq",
+                  "userId": "gu87zf240qkfh0faoqjip69q",
                   "organizationId": "qqp8d07imsvjbtqtl3rtjgxd",
-                  "role": "admin",
-                  "displayOrder": 2,
+                  "role": "member",
+                  "displayOrder": 38,
                   "muted": false,
                   "archived": false
                 },
@@ -610,25 +636,26 @@
             },
             {
               "id": "hg5ogh3yr2b2dbwf7b9eckaj",
+              "tenantId": "clxs8v",
               "entityType": "organization",
-              "name": "Mohr and Sons",
-              "slug": "mohr-and-sons",
-              "description": "Secured data-driven strategy",
-              "shortName": "Mohr",
-              "country": "Finland",
-              "timezone": "Pacific/Noumea",
+              "name": "Witting - Wuckert",
+              "slug": "witting-wuckert",
+              "description": "Reverse-engineered sustainable matrix",
+              "shortName": "Witting",
+              "country": "Costa Rica",
+              "timezone": "Europe/Ulyanovsk",
               "defaultLanguage": "en",
               "languages": ["en"],
-              "notificationEmail": "notifications@mohr-and-sons.example",
+              "notificationEmail": "notifications@witting-wuckert.example",
               "emailDomains": [],
-              "color": "#facd4c",
+              "color": "#d9e6a7",
               "thumbnailUrl": null,
               "logoUrl": null,
               "bannerUrl": null,
-              "websiteUrl": "https://mohr-and-sons.example",
-              "welcomeText": "Welcome to Mohr and Sons!",
+              "websiteUrl": "https://witting-wuckert.example",
+              "welcomeText": "Welcome to Witting - Wuckert!",
               "authStrategies": ["password"],
-              "chatSupport": false,
+              "chatSupport": true,
               "createdAt": "2024-10-29T08:46:20.790Z",
               "createdBy": null,
               "modifiedAt": "2024-10-29T08:46:20.790Z",
@@ -641,11 +668,12 @@
               "included": {
                 "membership": {
                   "id": "1u44cckbz5av195r4h3wiruz",
+                  "tenantId": "44b7wk",
                   "contextType": "organization",
-                  "userId": "44b7wkilwj64zmkwsnsmrzo2",
+                  "userId": "ilwj64zmkwsnsmrzo2zxd2hr",
                   "organizationId": "hg5ogh3yr2b2dbwf7b9eckaj",
                   "role": "admin",
-                  "displayOrder": 50,
+                  "displayOrder": 7,
                   "muted": false,
                   "archived": false
                 },
@@ -856,6 +884,11 @@
               "type": ["string", "null"],
               "required": true
             },
+            "tenantId": {
+              "type": "string",
+              "required": true,
+              "maxLength": 6
+            },
             "shortName": {
               "type": ["string", "null"],
               "required": true
@@ -921,6 +954,11 @@
                   "required": false,
                   "properties": {
                     "id": { "type": "string", "required": true },
+                    "tenantId": {
+                      "type": "string",
+                      "required": true,
+                      "maxLength": 6
+                    },
                     "contextType": {
                       "type": "string",
                       "required": true,
@@ -988,25 +1026,26 @@
         },
         "example": {
           "id": "hmo9fwr239kqavr3yur671kl",
+          "tenantId": "vk6xht",
           "entityType": "organization",
-          "name": "McClure, Dicki and Waters",
-          "slug": "mcclure-dicki-and-waters",
-          "description": "Open-source static website",
-          "shortName": "McClure,",
-          "country": "Guatemala",
-          "timezone": "Africa/Dar_es_Salaam",
+          "name": "Hills, Bauch and Monahan",
+          "slug": "hills-bauch-and-monahan",
+          "description": "Multi-tiered zero trust firmware",
+          "shortName": "Hills,",
+          "country": "Turks and Caicos Islands",
+          "timezone": "America/Argentina/Buenos_Aires",
           "defaultLanguage": "en",
           "languages": ["en"],
-          "notificationEmail": "notifications@mcclure-dicki-and-waters.example",
+          "notificationEmail": "notifications@hills-bauch-and-monahan.example",
           "emailDomains": [],
-          "color": "#daf7e3",
+          "color": "#ecfdfe",
           "thumbnailUrl": null,
           "logoUrl": null,
           "bannerUrl": null,
-          "websiteUrl": "https://mcclure-dicki-and-waters.example",
-          "welcomeText": "Welcome to McClure, Dicki and Waters!",
+          "websiteUrl": "https://hills-bauch-and-monahan.example",
+          "welcomeText": "Welcome to Hills, Bauch and Monahan!",
           "authStrategies": ["password"],
-          "chatSupport": false,
+          "chatSupport": true,
           "createdAt": "2024-12-25T15:29:47.111Z",
           "createdBy": null,
           "modifiedAt": "2024-12-25T15:29:47.111Z",
@@ -1019,11 +1058,12 @@
           "included": {
             "membership": {
               "id": "kaba9fpc90mgtzmtjipw2v8s",
+              "tenantId": "w4hg40",
               "contextType": "organization",
-              "userId": "w4hg4036vxzq0rzt4pucveps",
+              "userId": "36vxzq0rzt4pucvepsu63uw1",
               "organizationId": "hmo9fwr239kqavr3yur671kl",
-              "role": "member",
-              "displayOrder": 38,
+              "role": "admin",
+              "displayOrder": 69,
               "muted": false,
               "archived": false
             },
@@ -1128,6 +1168,11 @@
               "type": ["string", "null"],
               "required": true
             },
+            "tenantId": {
+              "type": "string",
+              "required": true,
+              "maxLength": 6
+            },
             "shortName": {
               "type": ["string", "null"],
               "required": true
@@ -1193,6 +1238,11 @@
                   "required": false,
                   "properties": {
                     "id": { "type": "string", "required": true },
+                    "tenantId": {
+                      "type": "string",
+                      "required": true,
+                      "maxLength": 6
+                    },
                     "contextType": {
                       "type": "string",
                       "required": true,
@@ -1260,25 +1310,26 @@
         },
         "example": {
           "id": "hmo9fwr239kqavr3yur671kl",
+          "tenantId": "vk6xht",
           "entityType": "organization",
-          "name": "McClure, Dicki and Waters",
-          "slug": "mcclure-dicki-and-waters",
-          "description": "Open-source static website",
-          "shortName": "McClure,",
-          "country": "Guatemala",
-          "timezone": "Africa/Dar_es_Salaam",
+          "name": "Hills, Bauch and Monahan",
+          "slug": "hills-bauch-and-monahan",
+          "description": "Multi-tiered zero trust firmware",
+          "shortName": "Hills,",
+          "country": "Turks and Caicos Islands",
+          "timezone": "America/Argentina/Buenos_Aires",
           "defaultLanguage": "en",
           "languages": ["en"],
-          "notificationEmail": "notifications@mcclure-dicki-and-waters.example",
+          "notificationEmail": "notifications@hills-bauch-and-monahan.example",
           "emailDomains": [],
-          "color": "#daf7e3",
+          "color": "#ecfdfe",
           "thumbnailUrl": null,
           "logoUrl": null,
           "bannerUrl": null,
-          "websiteUrl": "https://mcclure-dicki-and-waters.example",
-          "welcomeText": "Welcome to McClure, Dicki and Waters!",
+          "websiteUrl": "https://hills-bauch-and-monahan.example",
+          "welcomeText": "Welcome to Hills, Bauch and Monahan!",
           "authStrategies": ["password"],
-          "chatSupport": false,
+          "chatSupport": true,
           "createdAt": "2024-12-25T15:29:47.111Z",
           "createdBy": null,
           "modifiedAt": "2024-12-25T15:29:47.111Z",
@@ -1291,11 +1342,12 @@
           "included": {
             "membership": {
               "id": "kaba9fpc90mgtzmtjipw2v8s",
+              "tenantId": "w4hg40",
               "contextType": "organization",
-              "userId": "w4hg4036vxzq0rzt4pucveps",
+              "userId": "36vxzq0rzt4pucvepsu63uw1",
               "organizationId": "hmo9fwr239kqavr3yur671kl",
-              "role": "member",
-              "displayOrder": 38,
+              "role": "admin",
+              "displayOrder": 69,
               "muted": false,
               "archived": false
             },

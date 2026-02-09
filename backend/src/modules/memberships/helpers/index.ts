@@ -9,6 +9,7 @@ import { logEvent } from '#/utils/logger';
 
 type BaseEntityModel = EntityModel<ContextEntityType> & {
   organizationId?: string;
+  tenantId: string; // Required for RLS
 };
 
 interface InsertMultipleProps<T> {
@@ -122,15 +123,15 @@ export const insertMemberships = async <T extends BaseEntityModel>(
    */
   const orgRows: InsertMembershipModel[] = prepared
     .filter(({ entity }) => entity.entityType !== 'organization')
-    .map(({ baseMembership, targetEntitiesIdColumnKeys }) => {
+    .map(({ baseMembership, targetEntitiesIdColumnKeys, entity }) => {
       // Extract only organizationId (ignore other entity IDs)
       const { organizationId } = targetEntitiesIdColumnKeys;
       return {
         ...baseMembership,
+        tenantId: entity.tenantId,
         role: 'member', // parent org membership is always 'member'
         organizationId,
         contextType: 'organization',
-        uniqueKey: `${baseMembership.userId}-${organizationId}`,
       } satisfies InsertMembershipModel;
     });
 
@@ -154,11 +155,11 @@ export const insertMemberships = async <T extends BaseEntityModel>(
 
       return {
         ...baseMembership,
+        tenantId: entity.tenantId,
         role: 'member', // parent/associated membership is always 'member'
         organizationId,
         ...otherIdColumnKeys,
         contextType: associatedType,
-        uniqueKey: `${baseMembership.userId}-${associatedField}`,
       } satisfies InsertMembershipModel;
     })
     .filter((row): row is NonNullable<typeof row> => row !== null);
@@ -167,9 +168,9 @@ export const insertMemberships = async <T extends BaseEntityModel>(
   const targetRows: InsertMembershipModel[] = prepared.map(
     ({ baseMembership, targetEntitiesIdColumnKeys, entity }) => ({
       ...baseMembership,
+      tenantId: entity.tenantId,
       contextType: entity.entityType,
       ...targetEntitiesIdColumnKeys,
-      uniqueKey: `${baseMembership.userId}-${targetEntitiesIdColumnKeys[appConfig.entityIdColumnKeys[entity.entityType]]}`,
     }),
   );
 

@@ -43,7 +43,7 @@ export const isAuthenticated = xMiddleware(
       });
 
       // Fetch the user's memberships and system role in parallel
-      const [memberships, [userRoleRecord]] = await Promise.all([
+      const [memberships, [userSystemRoleRecord]] = await Promise.all([
         db.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id)),
         db
           .select({ role: systemRolesTable.role })
@@ -54,7 +54,7 @@ export const isAuthenticated = xMiddleware(
 
       // Store values in context for downstream use
       ctx.set('memberships', memberships);
-      ctx.set('userRole', userRoleRecord?.role ?? null); // null if no system role is assigned
+      ctx.set('userSystemRole', userSystemRoleRecord?.role ?? null); // null if no system role is assigned
     } catch (err) {
       // If session validation fails, remove cookie
       if (err instanceof AppError) deleteAuthCookie(ctx, 'session');

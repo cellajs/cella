@@ -68,7 +68,7 @@ const membershipsRouteHandlers = app
 
     // Step 0: Contextual user and organization
     const user = ctx.var.user;
-    const userSystemRole = ctx.var.userRole;
+    const userSystemRole = ctx.var.userSystemRole;
     const organization = ctx.var.organization;
 
     // Step 0: Scenario buckets
@@ -195,7 +195,7 @@ const membershipsRouteHandlers = app
         entity,
         createdBy: user.id,
         contextType: entityType,
-        uniqueKey: `${userId}-${entityId}`,
+        tenantId: entity.tenantId,
         ...getBaseMembershipEntityId(entity),
       }));
 
@@ -242,7 +242,7 @@ const membershipsRouteHandlers = app
       rawTokens.push({ email, raw });
 
       return {
-        token: hashed,
+        secret: hashed,
         type: 'invitation' as const,
         email,
         createdBy: user.id,
@@ -255,12 +255,12 @@ const membershipsRouteHandlers = app
     });
 
     // Step 5: Insert tokens in bulk (Scenario 3)
-    let insertedTokens: Array<{ id: string; email: string; token: string; type: string }> = [];
+    let insertedTokens: Array<{ id: string; email: string; secret: string; type: string }> = [];
     if (tokensToInsert.length > 0) {
       insertedTokens = await db.insert(tokensTable).values(tokensToInsert).returning({
         id: tokensTable.id,
         email: tokensTable.email,
-        token: tokensTable.token,
+        secret: tokensTable.secret,
         type: tokensTable.type,
       });
 
@@ -290,7 +290,7 @@ const membershipsRouteHandlers = app
         createdBy: user.id,
         contextType: entityType,
         tokenId: tokensByEmail.get(email)!, // link inactive membership → token
-        uniqueKey: `${email}-${entityId}`,
+        tenantId: entity.tenantId,
         ...getBaseMembershipEntityId(entity),
       }));
 

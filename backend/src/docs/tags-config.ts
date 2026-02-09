@@ -16,6 +16,7 @@ export const openapiTagIds = [
   'pages',
   'metrics',
   'activities',
+  'tenants',
 ] as const;
 
 export type OpenApiTagId = (typeof openapiTagIds)[number];
@@ -70,6 +71,9 @@ const tagDescriptions: Record<OpenApiTagId, string> = {
   activities: `Endpoints for retrieving *activities* (audit log entries). Activities track create, update, and
         delete operations across all resources. This serves as an audit trail and can be extended for webhook
         delivery.`,
+
+  tenants: `System-level endpoints for managing *tenants*. Tenants are top-level isolation boundaries used by
+        Row-Level Security (RLS) to partition data. Only system administrators can manage tenants.`,
 };
 
 /**

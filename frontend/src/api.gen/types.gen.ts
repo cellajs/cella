@@ -34,6 +34,7 @@ export type ContextEntityBase = {
 
 export type MembershipBase = {
   id: string;
+  tenantId: string;
   contextType: 'organization';
   userId: string;
   role: 'admin' | 'member';
@@ -55,7 +56,7 @@ export type TxBase = {
 export type StreamNotification = {
   action: 'create' | 'update' | 'delete';
   entityType: 'attachment' | 'page' | null;
-  resourceType: 'request' | 'membership' | null;
+  resourceType: 'request' | 'membership' | 'inactive_membership' | 'tenant' | null;
   entityId: string;
   organizationId: string | null;
   contextType: 'organization' | null;
@@ -134,9 +135,10 @@ export type TooManyRequestsError = ApiError & {
 
 export type Activity = {
   id: string;
+  tenantId: string | null;
   userId: string | null;
   entityType: 'user' | 'organization' | 'attachment' | 'page' | null;
-  resourceType: 'request' | 'membership' | null;
+  resourceType: 'request' | 'membership' | 'inactive_membership' | 'tenant' | null;
   action: 'create' | 'update' | 'delete';
   tableName: string;
   type: string;
@@ -225,6 +227,7 @@ export type MeAuthData = {
 export type InactiveMembership = {
   createdAt: string;
   id: string;
+  tenantId: string;
   contextType: 'organization';
   email: string;
   userId: string | null;
@@ -233,7 +236,6 @@ export type InactiveMembership = {
   rejectedAt: string | null;
   createdBy: string;
   organizationId: string;
-  uniqueKey: string;
 };
 
 export type UploadToken = {
@@ -283,6 +285,7 @@ export type Organization = {
   bannerUrl: string | null;
   createdBy: string | null;
   modifiedBy: string | null;
+  tenantId: string;
   shortName: string | null;
   country: string | null;
   timezone: string | null;
@@ -316,8 +319,10 @@ export type Page = {
   keywords: string;
   createdBy: string | null;
   modifiedBy: string | null;
+  tenantId: string;
   tx: TxBase;
   status: 'unpublished' | 'published' | 'archived';
+  publicAccess: boolean;
   parentId: string | null;
   displayOrder: number;
 };
@@ -335,6 +340,35 @@ export type TxRequest = {
    * Entity version when read (for conflict detection)
    */
   baseVersion: number;
+};
+
+export type Tenant = {
+  /**
+   * 6-character lowercase alphanumeric tenant ID
+   */
+  id: string;
+  /**
+   * Tenant display name
+   */
+  name: string;
+  status: TenantStatus;
+  createdAt: string;
+  modifiedAt: string | null;
+};
+
+export type TenantStatus = 'active' | 'suspended' | 'archived';
+
+export type CreateTenantBody = {
+  /**
+   * Tenant display name
+   */
+  name: string;
+  status?: TenantStatus;
+};
+
+export type UpdateTenantBody = {
+  name?: string;
+  status?: TenantStatus;
 };
 
 export type Request = {
@@ -356,6 +390,7 @@ export type Attachment = {
   keywords: string;
   createdBy: string | null;
   modifiedBy: string | null;
+  tenantId: string;
   tx: TxBase;
   public: boolean;
   bucketName: string;
@@ -380,6 +415,7 @@ export type Attachment = {
 export type Membership = {
   createdAt: string;
   id: string;
+  tenantId: string;
   contextType: 'organization';
   userId: string;
   role: 'admin' | 'member';
@@ -390,7 +426,6 @@ export type Membership = {
   muted: boolean;
   displayOrder: number;
   organizationId: string;
-  uniqueKey: string;
 };
 
 export type GetActivitiesData = {
@@ -404,7 +439,7 @@ export type GetActivitiesData = {
     limit?: string;
     userId?: string | null;
     entityType?: 'user' | 'organization' | 'attachment' | 'page';
-    resourceType?: 'request' | 'membership';
+    resourceType?: 'request' | 'membership' | 'inactive_membership' | 'tenant';
     action?: 'create' | 'update' | 'delete';
     tableName?: string;
     type?: string;
@@ -3091,6 +3126,244 @@ export type SendNewsletterResponses = {
 
 export type SendNewsletterResponse = SendNewsletterResponses[keyof SendNewsletterResponses];
 
+export type GetTenantsData = {
+  body?: never;
+  path?: never;
+  query?: {
+    /**
+     * Search query
+     */
+    q?: string;
+    /**
+     * Filter by status
+     */
+    status?: TenantStatus & unknown;
+    limit?: string;
+    offset?: string;
+    sort?: 'createdAt' | 'name';
+    order?: 'asc' | 'desc';
+  };
+  url: '/tenants';
+};
+
+export type GetTenantsErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetTenantsError = GetTenantsErrors[keyof GetTenantsErrors];
+
+export type GetTenantsResponses = {
+  /**
+   * Tenants list
+   */
+  200: {
+    items: Array<Tenant>;
+    total: number;
+  };
+};
+
+export type GetTenantsResponse = GetTenantsResponses[keyof GetTenantsResponses];
+
+export type CreateTenantData = {
+  body: CreateTenantBody;
+  path?: never;
+  query?: never;
+  url: '/tenants';
+};
+
+export type CreateTenantErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type CreateTenantError = CreateTenantErrors[keyof CreateTenantErrors];
+
+export type CreateTenantResponses = {
+  /**
+   * Created tenant
+   */
+  200: Tenant;
+};
+
+export type CreateTenantResponse = CreateTenantResponses[keyof CreateTenantResponses];
+
+export type ArchiveTenantData = {
+  body?: never;
+  path: {
+    /**
+     * 6-character tenant ID
+     */
+    tenantId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}';
+};
+
+export type ArchiveTenantErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type ArchiveTenantError = ArchiveTenantErrors[keyof ArchiveTenantErrors];
+
+export type ArchiveTenantResponses = {
+  /**
+   * Archived tenant
+   */
+  200: {
+    success: boolean;
+  };
+};
+
+export type ArchiveTenantResponse = ArchiveTenantResponses[keyof ArchiveTenantResponses];
+
+export type GetTenantByIdData = {
+  body?: never;
+  path: {
+    /**
+     * 6-character tenant ID
+     */
+    tenantId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}';
+};
+
+export type GetTenantByIdErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetTenantByIdError = GetTenantByIdErrors[keyof GetTenantByIdErrors];
+
+export type GetTenantByIdResponses = {
+  /**
+   * Tenant
+   */
+  200: Tenant;
+};
+
+export type GetTenantByIdResponse = GetTenantByIdResponses[keyof GetTenantByIdResponses];
+
+export type UpdateTenantData = {
+  body: UpdateTenantBody;
+  path: {
+    /**
+     * 6-character tenant ID
+     */
+    tenantId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}';
+};
+
+export type UpdateTenantErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type UpdateTenantError = UpdateTenantErrors[keyof UpdateTenantErrors];
+
+export type UpdateTenantResponses = {
+  /**
+   * Updated tenant
+   */
+  200: Tenant;
+};
+
+export type UpdateTenantResponse = UpdateTenantResponses[keyof UpdateTenantResponses];
+
 export type DeleteRequestsData = {
   body: {
     ids: Array<string>;
@@ -3588,7 +3861,8 @@ export type GetSyncMetricsResponse = GetSyncMetricsResponses[keyof GetSyncMetric
 export type GetUsers2Data = {
   body?: never;
   path: {
-    orgId: string;
+    tenantId: string;
+    orgIdOrSlug: string;
   };
   query?: {
     q?: string;
@@ -3600,7 +3874,7 @@ export type GetUsers2Data = {
     targetEntityType?: 'organization';
     targetEntityId?: string;
   };
-  url: '/{orgId}/users';
+  url: '/{tenantId}/{orgIdOrSlug}/users';
 };
 
 export type GetUsers2Errors = {
@@ -3648,11 +3922,12 @@ export type GetUsers2Response = GetUsers2Responses[keyof GetUsers2Responses];
 export type GetUserData = {
   body?: never;
   path: {
+    tenantId: string;
+    orgIdOrSlug: string;
     idOrSlug: string;
-    orgId: string;
   };
   query?: never;
-  url: '/{orgId}/users/{idOrSlug}';
+  url: '/{tenantId}/{orgIdOrSlug}/users/{idOrSlug}';
 };
 
 export type GetUserErrors = {
@@ -3698,10 +3973,11 @@ export type DeleteAttachmentsData = {
     };
   };
   path: {
-    orgId: string;
+    tenantId: string;
+    orgIdOrSlug: string;
   };
   query?: never;
-  url: '/{orgId}/attachments';
+  url: '/{tenantId}/{orgIdOrSlug}/attachments';
 };
 
 export type DeleteAttachmentsErrors = {
@@ -3753,7 +4029,8 @@ export type DeleteAttachmentsResponse = DeleteAttachmentsResponses[keyof DeleteA
 export type GetAttachmentsData = {
   body?: never;
   path: {
-    orgId: string;
+    tenantId: string;
+    orgIdOrSlug: string;
   };
   query?: {
     q?: string;
@@ -3763,7 +4040,7 @@ export type GetAttachmentsData = {
     limit?: string;
     modifiedAfter?: string;
   };
-  url: '/{orgId}/attachments';
+  url: '/{tenantId}/{orgIdOrSlug}/attachments';
 };
 
 export type GetAttachmentsErrors = {
@@ -3822,10 +4099,11 @@ export type CreateAttachmentsData = {
     tx: TxRequest;
   }>;
   path: {
-    orgId: string;
+    tenantId: string;
+    orgIdOrSlug: string;
   };
   query?: never;
-  url: '/{orgId}/attachments';
+  url: '/{tenantId}/{orgIdOrSlug}/attachments';
 };
 
 export type CreateAttachmentsErrors = {
@@ -3893,12 +4171,13 @@ export type CreateAttachmentsResponse = CreateAttachmentsResponses[keyof CreateA
 export type GetPresignedUrlData = {
   body?: never;
   path: {
-    orgId: string;
+    tenantId: string;
+    orgIdOrSlug: string;
   };
   query: {
     key: string;
   };
-  url: '/{orgId}/attachments/presigned-url';
+  url: '/{tenantId}/{orgIdOrSlug}/attachments/presigned-url';
 };
 
 export type GetPresignedUrlErrors = {
@@ -3938,11 +4217,12 @@ export type GetPresignedUrlResponse = GetPresignedUrlResponses[keyof GetPresigne
 export type GetAttachmentData = {
   body?: never;
   path: {
+    tenantId: string;
+    orgIdOrSlug: string;
     id: string;
-    orgId: string;
   };
   query?: never;
-  url: '/{orgId}/attachments/{id}';
+  url: '/{tenantId}/{orgIdOrSlug}/attachments/{id}';
 };
 
 export type GetAttachmentErrors = {
@@ -3986,11 +4266,12 @@ export type UpdateAttachmentData = {
     tx: TxRequest;
   };
   path: {
+    tenantId: string;
+    orgIdOrSlug: string;
     id: string;
-    orgId: string;
   };
   query?: never;
-  url: '/{orgId}/attachments/{id}';
+  url: '/{tenantId}/{orgIdOrSlug}/attachments/{id}';
 };
 
 export type UpdateAttachmentErrors = {
@@ -4033,7 +4314,7 @@ export type RedirectToAttachmentData = {
     id: string;
   };
   query?: never;
-  url: '/{orgId}/attachments/{id}/link';
+  url: '/{tenantId}/{orgIdOrSlug}/attachments/{id}/link';
 };
 
 export type RedirectToAttachmentErrors = {
@@ -4073,13 +4354,14 @@ export type DeleteMembershipsData = {
     ids: Array<string>;
   };
   path: {
-    orgId: string;
+    tenantId: string;
+    orgIdOrSlug: string;
   };
   query: {
     entityId: string;
     entityType: 'organization';
   };
-  url: '/{orgId}/memberships';
+  url: '/{tenantId}/{orgIdOrSlug}/memberships';
 };
 
 export type DeleteMembershipsErrors = {
@@ -4134,13 +4416,14 @@ export type MembershipInviteData = {
     role: 'admin' | 'member';
   };
   path: {
-    orgId: string;
+    tenantId: string;
+    orgIdOrSlug: string;
   };
   query: {
     entityId: string;
     entityType: 'organization';
   };
-  url: '/{orgId}/memberships';
+  url: '/{tenantId}/{orgIdOrSlug}/memberships';
 };
 
 export type MembershipInviteErrors = {
@@ -4198,11 +4481,12 @@ export type UpdateMembershipData = {
     displayOrder?: number;
   };
   path: {
+    tenantId: string;
+    orgIdOrSlug: string;
     id: string;
-    orgId: string;
   };
   query?: never;
-  url: '/{orgId}/memberships/{id}';
+  url: '/{tenantId}/{orgIdOrSlug}/memberships/{id}';
 };
 
 export type UpdateMembershipErrors = {
@@ -4244,10 +4528,9 @@ export type HandleMembershipInvitationData = {
   path: {
     id: string;
     acceptOrReject: 'accept' | 'reject';
-    orgId: string;
   };
   query?: never;
-  url: '/{orgId}/memberships/{id}/{acceptOrReject}';
+  url: '/{tenantId}/{orgIdOrSlug}/memberships/{id}/{acceptOrReject}';
 };
 
 export type HandleMembershipInvitationErrors = {
@@ -4288,7 +4571,8 @@ export type HandleMembershipInvitationResponse =
 export type GetMembersData = {
   body?: never;
   path: {
-    orgId: string;
+    tenantId: string;
+    orgIdOrSlug: string;
   };
   query: {
     q?: string;
@@ -4300,7 +4584,7 @@ export type GetMembersData = {
     entityType: 'organization';
     role?: 'admin' | 'member';
   };
-  url: '/{orgId}/memberships/members';
+  url: '/{tenantId}/{orgIdOrSlug}/memberships/members';
 };
 
 export type GetMembersErrors = {
@@ -4363,7 +4647,8 @@ export type GetMembersResponse = GetMembersResponses[keyof GetMembersResponses];
 export type GetPendingMembershipsData = {
   body?: never;
   path: {
-    orgId: string;
+    tenantId: string;
+    orgIdOrSlug: string;
   };
   query: {
     q?: string;
@@ -4374,7 +4659,7 @@ export type GetPendingMembershipsData = {
     entityId: string;
     entityType: 'organization';
   };
-  url: '/{orgId}/memberships/pending';
+  url: '/{tenantId}/{orgIdOrSlug}/memberships/pending';
 };
 
 export type GetPendingMembershipsErrors = {

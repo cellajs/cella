@@ -1,7 +1,14 @@
 import { faker } from '@faker-js/faker';
 import type { AttachmentModel } from '#/db/schema/attachments';
 import { mockBatchResponse } from './mock-common';
-import { generateMockContextEntityIdColumns, mockNanoid, mockPaginated, mockTx, withFakerSeed } from './utils';
+import {
+  generateMockContextEntityIdColumns,
+  mockNanoid,
+  mockPaginated,
+  mockTenantId,
+  mockTx,
+  withFakerSeed,
+} from './utils';
 
 /**
  * Generates a mock attachment with all fields populated.
@@ -17,6 +24,7 @@ export const mockAttachment = (key = 'attachment:default'): AttachmentModel =>
 
     return {
       id: mockNanoid(),
+      tenantId: mockTenantId(),
       entityType: 'attachment' as const,
       name: filename,
       description: null,

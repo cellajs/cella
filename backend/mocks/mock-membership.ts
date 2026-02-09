@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { appConfig, type ContextEntityType, type EntityRole } from 'shared';
+import { appConfig, type ContextEntityType, type EntityRole, roles } from 'shared';
 import type { InactiveMembershipModel } from '#/db/schema/inactive-memberships';
 import type { InsertMembershipModel, MembershipModel } from '#/db/schema/memberships';
 import type { UserModel } from '#/db/schema/users';
@@ -9,6 +9,7 @@ import {
   type MockContextEntityIdColumns,
   mockNanoid,
   mockPaginated,
+  mockTenantId,
   pastIsoDate,
   withFakerSeed,
 } from './utils';
@@ -16,6 +17,7 @@ import {
 /** MembershipBase type defined here to avoid circular dependency with memberships-schema */
 type MembershipBase = {
   id: string;
+  tenantId: string;
   contextType: ContextEntityType;
   userId: string;
   role: EntityRole;
@@ -39,7 +41,7 @@ export const getMembershipOrderOffset = (contextId: string): number => {
 };
 
 /** Minimal context entity interface for membership creation */
-type ContextEntity = { id: string };
+type ContextEntity = { id: string; tenantId: string };
 
 /** Override IDs for context entity columns (organizationId, workspaceId, etc.) */
 type ContextEntityIdOverrides = Partial<MockContextEntityIdColumns>;
@@ -67,15 +69,15 @@ export const mockContextMembership = <T extends ContextEntityType>(
   return {
     id: nanoid(),
     userId,
+    tenantId: contextEntity.tenantId, // Use context entity's tenant for RLS isolation
     contextType,
     ...contextEntityColumns,
     [contextIdColumnKey]: contextEntity.id, // Set the correct context entity ID
     ...overrideIds,
-    role: faker.helpers.arrayElement(appConfig.entityRoles),
+    role: faker.helpers.arrayElement(roles.all),
     displayOrder: getMembershipOrderOffset(contextEntity.id) * 10,
     createdAt: pastIsoDate(),
     createdBy: userId,
-    uniqueKey: `${userId}-${contextEntity.id}`,
   } as InsertMembershipModel;
 };
 
@@ -87,10 +89,11 @@ export const mockContextMembership = <T extends ContextEntityType>(
 export const mockMembershipBase = (key = 'membership-base:default'): MembershipBase =>
   withFakerSeed(key, () => ({
     id: mockNanoid(),
+    tenantId: mockTenantId(),
     contextType: 'organization' as const,
     userId: mockNanoid(),
     ...generateMockContextEntityIdColumns(),
-    role: faker.helpers.arrayElement(appConfig.entityRoles),
+    role: faker.helpers.arrayElement(roles.all),
     displayOrder: faker.number.int({ min: 1, max: 100 }),
     muted: false,
     archived: false,
@@ -113,7 +116,7 @@ export const mockMembership = (key = 'membership:default'): MembershipModel =>
       contextType: 'organization' as const,
       userId,
       ...contextEntityColumns,
-      role: faker.helpers.arrayElement(appConfig.entityRoles),
+      role: faker.helpers.arrayElement(roles.all),
       displayOrder: faker.number.int({ min: 1, max: 100 }),
       muted: false,
       archived: false,
@@ -121,7 +124,7 @@ export const mockMembership = (key = 'membership:default'): MembershipModel =>
       createdBy: userId,
       modifiedAt: createdAt,
       modifiedBy: null,
-      uniqueKey: `${userId}-${contextEntityColumns.organizationId}`,
+      tenantId: 'test01', // Default test tenant
     };
   });
 
@@ -147,12 +150,12 @@ export const mockInactiveMembership = (key = 'inactive-membership:default'): Ina
       email: faker.internet.email().toLowerCase(),
       userId,
       tokenId,
-      role: faker.helpers.arrayElement(appConfig.entityRoles),
+      role: faker.helpers.arrayElement(roles.all),
       rejectedAt: null,
       createdAt,
       createdBy: mockNanoid(),
       ...contextEntityColumns,
-      uniqueKey: `${userId}-${contextEntityColumns.organizationId}`,
+      tenantId: 'test01', // Default test tenant
     };
   });
 

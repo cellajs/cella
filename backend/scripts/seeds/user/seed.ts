@@ -1,13 +1,14 @@
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { passwordsTable } from '#/db/schema/passwords';
+import { tenantsTable } from '#/db/schema/tenants';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { usersTable } from '#/db/schema/users';
 import { hashPassword } from '#/modules/auth/passwords/helpers/argon2id';
 import pc from 'picocolors';
 import { appConfig } from 'shared';
 import { mockAdmin, mockEmail, mockPassword, mockUnsubscribeToken } from '../../../mocks/mock-user';
-import { defaultAdminUser } from '../fixtures';
+import { defaultAdminUser, systemTenant } from '../fixtures';
 import { systemRolesTable } from '#/db/schema/system-roles';
 import { checkMark } from '#/utils/console';
 
@@ -31,6 +32,9 @@ export const userSeed = async () => {
 
   // Records already exist → skip seeding
   if (await isUserSeeded()) return console.warn('Users table is not empty → skip seeding');
+
+  // Create system tenant (needed for pages and other platform-wide content)
+  await db.insert(tenantsTable).values({ id: systemTenant.id, name: systemTenant.name }).onConflictDoNothing();
 
   // Hash default admin password
   const hashed = await hashPassword(defaultAdminUser.password);

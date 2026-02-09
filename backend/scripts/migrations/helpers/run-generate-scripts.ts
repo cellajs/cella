@@ -30,11 +30,20 @@ function runCommand(command: string, cwd: string): Promise<void> {
 }
 
 /**
+ * Sleep for a given number of milliseconds.
+ */
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
  * Run all generation scripts from the backend directory.
  *
  * Scripts are executed in order:
  * 1. 'drizzle' type scripts run first (schema → SQL generation)
  * 2. 'migration' type scripts run after (custom migrations that upsert to drizzle folder)
+ *
+ * A 1-second delay is added between migration scripts to ensure unique timestamps.
  *
  * Note: Scripts must be invoked from the backend directory (e.g., via pnpm generate).
  */
@@ -52,7 +61,15 @@ export async function runGenerateScripts(scripts: GenerateScript[]): Promise<voi
   console.info(pc.bold(`Running ${sortedScripts.length} generation scripts...`));
   console.info('');
 
+  let lastWasDrizzle = false;
+  let lastWasMigration = false;
+
   for (const script of sortedScripts) {
+    // Add 1-second delay before first migration (after Drizzle) and between migrations
+    if (script.type === 'migration' && (lastWasDrizzle || lastWasMigration)) {
+      await sleep(1000);
+    }
+
     const typeLabel = script.type === 'drizzle' ? 'drizzle' : 'migration';
     const label = pc.cyan(`[${script.name}]`);
     const tagInfo = script.migrationTag ? pc.dim(` → ${script.migrationTag}`) : '';
@@ -66,6 +83,9 @@ export async function runGenerateScripts(scripts: GenerateScript[]): Promise<voi
       console.error(`${label} ${pc.red('Failed')}`);
       throw err;
     }
+
+    lastWasDrizzle = script.type === 'drizzle';
+    lastWasMigration = script.type === 'migration';
   }
 
   console.info(`${checkMark} ${pc.bold('All generation scripts completed')}`);

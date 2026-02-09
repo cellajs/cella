@@ -1,5 +1,5 @@
 import { count, eq, isNull, sql } from 'drizzle-orm';
-import { appConfig, type ContextEntityType } from 'shared';
+import { appConfig, type ContextEntityType, roles } from 'shared';
 import { db } from '#/db/db';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -38,10 +38,7 @@ export const getMemberCountsSubquery = (entityType: ContextEntityType) => {
 
   // Build dynamic role count columns from config
   const roleCountColumns = Object.fromEntries(
-    appConfig.entityRoles.map((role) => [
-      role,
-      count(sql`CASE WHEN ${membershipsTable.role} = ${role} THEN 1 END`).as(role),
-    ]),
+    roles.all.map((role) => [role, count(sql`CASE WHEN ${membershipsTable.role} = ${role} THEN 1 END`).as(role)]),
   );
 
   return db

@@ -57,7 +57,7 @@ export const sendOAuthVerificationEmail = async ({ userId, oauthAccountId, redir
   const [tokenRecord] = await db
     .insert(tokensTable)
     .values({
-      token: hashedToken,
+      secret: hashedToken,
       type: 'oauth-verification',
       userId: user.id,
       email,

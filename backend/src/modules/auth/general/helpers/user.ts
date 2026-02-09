@@ -1,4 +1,4 @@
-import { and, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNotNull, isNull } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
@@ -48,7 +48,7 @@ export const handleCreateUser = async ({ newUser, emailVerified }: HandleCreateU
 
     await db
       .insert(unsubscribeTokensTable)
-      .values({ token: generateUnsubscribeToken(normalizedEmail), userId: user.id });
+      .values({ secret: generateUnsubscribeToken(normalizedEmail), userId: user.id });
 
     // If user has invitation tokens, find the inactive membership from it
     const existingTokens = await db
@@ -103,11 +103,7 @@ export const handleCreateUser = async ({ newUser, emailVerified }: HandleCreateU
 export const handleSetUserOnInactiveMemberships = async (userId: string, inactiveMembershipIds: string[]) => {
   await db
     .update(inactiveMembershipsTable)
-    .set({
-      userId,
-      uniqueKey: sql`concat(${userId}, '-', ${inactiveMembershipsTable.contextType})`,
-      // Postgres string concatenation
-    })
+    .set({ userId })
     .where(inArray(inactiveMembershipsTable.id, inactiveMembershipIds));
 
   // Delete associated tokens

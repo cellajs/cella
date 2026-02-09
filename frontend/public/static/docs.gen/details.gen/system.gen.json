@@ -182,6 +182,11 @@
                       "type": "object",
                       "properties": {
                         "id": { "type": "string", "required": true },
+                        "tenantId": {
+                          "type": "string",
+                          "required": true,
+                          "maxLength": 6
+                        },
                         "contextType": {
                           "type": "string",
                           "required": true,
@@ -245,11 +250,12 @@
               "memberships": [
                 {
                   "id": "300jor4orrvsgezqoyxfckg3",
+                  "tenantId": "ifex0a",
                   "contextType": "organization",
-                  "userId": "ifex0agu87zf240qkfh0faoq",
-                  "organizationId": "jip69qfpb1r33xdbp099f3xi",
-                  "role": "admin",
-                  "displayOrder": 2,
+                  "userId": "gu87zf240qkfh0faoqjip69q",
+                  "organizationId": "fpb1r33xdbp099f3xi8028r0",
+                  "role": "member",
+                  "displayOrder": 38,
                   "muted": false,
                   "archived": false
                 }
@@ -279,11 +285,12 @@
               "memberships": [
                 {
                   "id": "1u44cckbz5av195r4h3wiruz",
+                  "tenantId": "44b7wk",
                   "contextType": "organization",
-                  "userId": "44b7wkilwj64zmkwsnsmrzo2",
-                  "organizationId": "zxd2hreylomg4p6xgvt4g11e",
+                  "userId": "ilwj64zmkwsnsmrzo2zxd2hr",
+                  "organizationId": "eylomg4p6xgvt4g11e2hqqxx",
                   "role": "admin",
-                  "displayOrder": 50,
+                  "displayOrder": 7,
                   "muted": false,
                   "archived": false
                 }

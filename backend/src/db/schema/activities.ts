@@ -11,6 +11,8 @@ import { timestampColumns } from '#/db/utils/timestamp-columns';
 import type { TxBase } from '#/schemas/tx-base-schema';
 import { activityActions } from '#/sync/activity-bus';
 import { nanoid } from '#/utils/nanoid';
+import { organizationsTable } from './organizations';
+import { tenantsTable } from './tenants';
 import { usersTable } from './users';
 
 /**
@@ -27,12 +29,20 @@ import { usersTable } from './users';
  * - Drizzle sees regular table; PostgreSQL has partitioned table
  * - Standard ALTERs (ADD/DROP COLUMN, ADD INDEX) work normally
  *
+ * RLS: This table uses privilege-based protection instead of RLS policies.
+ * - runtime_role has SELECT only (app filters by membership)
+ * - cdc_role has INSERT only (append-only audit log)
+ * - No UPDATE/DELETE ever
+ *
  * @link http://localhost:4000/docs#tag/activities
  */
 export const activitiesTable = pgTable(
   'activities',
   {
     id: varchar().notNull().$defaultFn(nanoid),
+    // Tenant isolation - nullable for cross-tenant entities like users
+    // Queries MUST filter by tenantId OR userId explicitly
+    tenantId: varchar('tenant_id', { length: 6 }).references(() => tenantsTable.id),
     userId: varchar(), // User who performed the action (nullable for system actions)
     entityType: varchar({ enum: appConfig.entityTypes }), // Entity type if applicable
     resourceType: varchar({ enum: appConfig.resourceTypes }), // Resource type if not an entity
@@ -61,6 +71,7 @@ export const activitiesTable = pgTable(
     index('activities_user_id_index').on(table.userId),
     index('activities_entity_id_index').on(table.entityId),
     index('activities_table_name_index').on(table.tableName),
+    index('activities_tenant_id_index').on(table.tenantId),
     index('activities_tx_id_index').on(sql`(tx->>'id')`),
     // Index for querying dead letters (failed activities with error field)
     index('activities_error_lsn_index').on(sql`(error->>'lsn')`).where(sql`error IS NOT NULL`),
@@ -68,6 +79,11 @@ export const activitiesTable = pgTable(
       columns: [table.userId],
       foreignColumns: [usersTable.id],
     }).onDelete('set null'),
+    // Composite FK to organization (when organizationId is set - NULL skips FK check)
+    foreignKey({
+      columns: [table.tenantId, table.organizationId],
+      foreignColumns: [organizationsTable.tenantId, organizationsTable.id],
+    }).onDelete('cascade'),
     // Dynamic context entity indexes and foreign keys
     ...generateActivityContextIndexes(table),
     ...generateActivityContextForeignKeys(table),

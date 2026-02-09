@@ -50,7 +50,8 @@ export function PendingMembershipsTable({ entity }: PendingMembershipsTableProps
   const queryOptions = pendingMembershipsQueryOptions({
     entityId: entity.id,
     entityType: entity.entityType,
-    orgId: entity.organizationId || entity.id,
+    tenantId: entity.tenantId,
+    orgIdOrSlug: entity.organizationId || entity.id,
     ...search,
     limit,
   });

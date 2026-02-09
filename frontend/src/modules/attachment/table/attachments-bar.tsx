@@ -41,7 +41,7 @@ export const AttachmentsTableBar = ({
 }: AttachmentsTableBarProps) => {
   const { t } = useTranslation();
   const createDialog = useDialoger((state) => state.create);
-  const { open } = useAttachmentsUploadDialog(entity.id);
+  const { open } = useAttachmentsUploadDialog(entity.tenantId, entity.id);
 
   const deleteButtonRef = useRef(null);
 

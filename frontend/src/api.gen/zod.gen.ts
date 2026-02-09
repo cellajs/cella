@@ -32,6 +32,7 @@ export const zContextEntityBase = z.object({
 
 export const zMembershipBase = z.object({
   id: z.string(),
+  tenantId: z.string().max(6),
   contextType: z.enum(['organization']),
   userId: z.string(),
   role: z.enum(['admin', 'member']),
@@ -61,7 +62,7 @@ export const zTxStreamMessage = z.union([
 export const zStreamNotification = z.object({
   action: z.enum(['create', 'update', 'delete']),
   entityType: z.nullable(z.enum(['attachment', 'page'])),
-  resourceType: z.nullable(z.enum(['request', 'membership'])),
+  resourceType: z.nullable(z.enum(['request', 'membership', 'inactive_membership', 'tenant'])),
   entityId: z.string(),
   organizationId: z.union([z.string(), z.null()]),
   contextType: z.nullable(z.enum(['organization'])),
@@ -152,9 +153,10 @@ export const zActivityError = z.object({
 
 export const zActivity = z.object({
   id: z.string(),
+  tenantId: z.union([z.string().max(6), z.null()]),
   userId: z.union([z.string(), z.null()]),
   entityType: z.nullable(z.enum(['user', 'organization', 'attachment', 'page'])),
-  resourceType: z.nullable(z.enum(['request', 'membership'])),
+  resourceType: z.nullable(z.enum(['request', 'membership', 'inactive_membership', 'tenant'])),
   action: z.enum(['create', 'update', 'delete']),
   tableName: z.string(),
   type: z.string(),
@@ -233,6 +235,7 @@ export const zMeAuthData = z.object({
 export const zInactiveMembership = z.object({
   createdAt: z.string(),
   id: z.string(),
+  tenantId: z.string().max(6),
   contextType: z.enum(['organization']),
   email: z.string(),
   userId: z.union([z.string(), z.null()]),
@@ -241,7 +244,6 @@ export const zInactiveMembership = z.object({
   rejectedAt: z.union([z.string(), z.null()]),
   createdBy: z.string(),
   organizationId: z.string(),
-  uniqueKey: z.string(),
 });
 
 export const zUploadToken = z.object({
@@ -287,6 +289,7 @@ export const zOrganization = z.object({
   bannerUrl: z.union([z.string(), z.null()]),
   createdBy: z.union([z.string(), z.null()]),
   modifiedBy: z.union([z.string(), z.null()]),
+  tenantId: z.string().max(6),
   shortName: z.union([z.string(), z.null()]),
   country: z.union([z.string(), z.null()]),
   timezone: z.union([z.string(), z.null()]),
@@ -322,8 +325,10 @@ export const zPage = z.object({
   keywords: z.string(),
   createdBy: z.union([z.string(), z.null()]),
   modifiedBy: z.union([z.string(), z.null()]),
+  tenantId: z.string().max(6),
   tx: zTxBase,
   status: z.enum(['unpublished', 'published', 'archived']),
+  publicAccess: z.boolean(),
   parentId: z.union([z.string(), z.null()]),
   displayOrder: z.number().gte(-140737488355328).lte(140737488355327),
 });
@@ -332,6 +337,26 @@ export const zTxRequest = z.object({
   id: z.string().max(32),
   sourceId: z.string().max(64),
   baseVersion: z.int().gte(0),
+});
+
+export const zTenantStatus = z.enum(['active', 'suspended', 'archived']);
+
+export const zTenant = z.object({
+  id: z.string().max(6),
+  name: z.string(),
+  status: zTenantStatus,
+  createdAt: z.string(),
+  modifiedAt: z.union([z.string(), z.null()]),
+});
+
+export const zCreateTenantBody = z.object({
+  name: z.string().min(1).max(255),
+  status: z.optional(zTenantStatus),
+});
+
+export const zUpdateTenantBody = z.object({
+  name: z.optional(z.string().min(1).max(255)),
+  status: z.optional(zTenantStatus),
 });
 
 export const zRequest = z.object({
@@ -353,6 +378,7 @@ export const zAttachment = z.object({
   keywords: z.string(),
   createdBy: z.union([z.string(), z.null()]),
   modifiedBy: z.union([z.string(), z.null()]),
+  tenantId: z.string().max(6),
   tx: zTxBase,
   public: z.boolean(),
   bucketName: z.string(),
@@ -379,6 +405,7 @@ export const zAttachment = z.object({
 export const zMembership = z.object({
   createdAt: z.string(),
   id: z.string(),
+  tenantId: z.string().max(6),
   contextType: z.enum(['organization']),
   userId: z.string(),
   role: z.enum(['admin', 'member']),
@@ -389,7 +416,6 @@ export const zMembership = z.object({
   muted: z.boolean(),
   displayOrder: z.number().gte(-140737488355328).lte(140737488355327),
   organizationId: z.string(),
-  uniqueKey: z.string(),
 });
 
 export const zGetActivitiesData = z.object({
@@ -404,7 +430,7 @@ export const zGetActivitiesData = z.object({
       limit: z.optional(z.string()),
       userId: z.optional(z.union([z.string(), z.null()])),
       entityType: z.optional(z.enum(['user', 'organization', 'attachment', 'page'])),
-      resourceType: z.optional(z.enum(['request', 'membership'])),
+      resourceType: z.optional(z.enum(['request', 'membership', 'inactive_membership', 'tenant'])),
       action: z.optional(z.enum(['create', 'update', 'delete'])),
       tableName: z.optional(z.string()),
       type: z.optional(z.string()),
@@ -1347,6 +1373,81 @@ export const zSendNewsletterData = z.object({
  */
 export const zSendNewsletterResponse = z.void();
 
+export const zGetTenantsData = z.object({
+  body: z.optional(z.never()),
+  path: z.optional(z.never()),
+  query: z.optional(
+    z.object({
+      q: z.optional(z.string()),
+      status: z.optional(zTenantStatus.and(z.unknown())),
+      limit: z.optional(z.string()).default('50'),
+      offset: z.optional(z.string()).default('0'),
+      sort: z.optional(z.enum(['createdAt', 'name'])),
+      order: z.optional(z.enum(['asc', 'desc'])),
+    }),
+  ),
+});
+
+/**
+ * Tenants list
+ */
+export const zGetTenantsResponse = z.object({
+  items: z.array(zTenant),
+  total: z.number(),
+});
+
+export const zCreateTenantData = z.object({
+  body: zCreateTenantBody,
+  path: z.optional(z.never()),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Created tenant
+ */
+export const zCreateTenantResponse = zTenant;
+
+export const zArchiveTenantData = z.object({
+  body: z.optional(z.never()),
+  path: z.object({
+    tenantId: z.string().max(6),
+  }),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Archived tenant
+ */
+export const zArchiveTenantResponse = z.object({
+  success: z.boolean(),
+});
+
+export const zGetTenantByIdData = z.object({
+  body: z.optional(z.never()),
+  path: z.object({
+    tenantId: z.string().max(6),
+  }),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Tenant
+ */
+export const zGetTenantByIdResponse = zTenant;
+
+export const zUpdateTenantData = z.object({
+  body: zUpdateTenantBody,
+  path: z.object({
+    tenantId: z.string().max(6),
+  }),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Updated tenant
+ */
+export const zUpdateTenantResponse = zTenant;
+
 export const zDeleteRequestsData = z.object({
   body: z.object({
     ids: z.array(z.string()).min(1).max(50),
@@ -1518,7 +1619,8 @@ export const zGetSyncMetricsResponse = z.object({
 export const zGetUsers2Data = z.object({
   body: z.optional(z.never()),
   path: z.object({
-    orgId: z.string(),
+    tenantId: z.string().regex(/^[a-z0-9]{6}$/),
+    orgIdOrSlug: z.string(),
   }),
   query: z.optional(
     z.object({
@@ -1552,8 +1654,9 @@ export const zGetUsers2Response = z.object({
 export const zGetUserData = z.object({
   body: z.optional(z.never()),
   path: z.object({
+    tenantId: z.string().regex(/^[a-z0-9]{6}$/),
+    orgIdOrSlug: z.string(),
     idOrSlug: z.string(),
-    orgId: z.string(),
   }),
   query: z.optional(z.never()),
 });
@@ -1574,7 +1677,8 @@ export const zDeleteAttachmentsData = z.object({
     ),
   }),
   path: z.object({
-    orgId: z.string(),
+    tenantId: z.string().regex(/^[a-z0-9]{6}$/),
+    orgIdOrSlug: z.string(),
   }),
   query: z.optional(z.never()),
 });
@@ -1591,7 +1695,8 @@ export const zDeleteAttachmentsResponse = z.object({
 export const zGetAttachmentsData = z.object({
   body: z.optional(z.never()),
   path: z.object({
-    orgId: z.string(),
+    tenantId: z.string().regex(/^[a-z0-9]{6}$/),
+    orgIdOrSlug: z.string(),
   }),
   query: z.optional(
     z.object({
@@ -1637,7 +1742,8 @@ export const zCreateAttachmentsData = z.object({
     .min(1)
     .max(50),
   path: z.object({
-    orgId: z.string(),
+    tenantId: z.string().regex(/^[a-z0-9]{6}$/),
+    orgIdOrSlug: z.string(),
   }),
   query: z.optional(z.never()),
 });
@@ -1658,7 +1764,8 @@ export const zCreateAttachmentsResponse = z.union([
 export const zGetPresignedUrlData = z.object({
   body: z.optional(z.never()),
   path: z.object({
-    orgId: z.string(),
+    tenantId: z.string().regex(/^[a-z0-9]{6}$/),
+    orgIdOrSlug: z.string(),
   }),
   query: z.object({
     key: z.string(),
@@ -1673,8 +1780,9 @@ export const zGetPresignedUrlResponse = z.string();
 export const zGetAttachmentData = z.object({
   body: z.optional(z.never()),
   path: z.object({
+    tenantId: z.string().regex(/^[a-z0-9]{6}$/),
+    orgIdOrSlug: z.string(),
     id: z.string(),
-    orgId: z.string(),
   }),
   query: z.optional(z.never()),
 });
@@ -1691,8 +1799,9 @@ export const zUpdateAttachmentData = z.object({
     tx: zTxRequest,
   }),
   path: z.object({
+    tenantId: z.string().regex(/^[a-z0-9]{6}$/),
+    orgIdOrSlug: z.string(),
     id: z.string(),
-    orgId: z.string(),
   }),
   query: z.optional(z.never()),
 });
@@ -1715,7 +1824,8 @@ export const zDeleteMembershipsData = z.object({
     ids: z.array(z.string()).min(1).max(50),
   }),
   path: z.object({
-    orgId: z.string(),
+    tenantId: z.string().regex(/^[a-z0-9]{6}$/),
+    orgIdOrSlug: z.string(),
   }),
   query: z.object({
     entityId: z.string(),
@@ -1738,7 +1848,8 @@ export const zMembershipInviteData = z.object({
     role: z.enum(['admin', 'member']),
   }),
   path: z.object({
-    orgId: z.string(),
+    tenantId: z.string().regex(/^[a-z0-9]{6}$/),
+    orgIdOrSlug: z.string(),
   }),
   query: z.object({
     entityId: z.string(),
@@ -1766,8 +1877,9 @@ export const zUpdateMembershipData = z.object({
     }),
   ),
   path: z.object({
+    tenantId: z.string().regex(/^[a-z0-9]{6}$/),
+    orgIdOrSlug: z.string(),
     id: z.string(),
-    orgId: z.string(),
   }),
   query: z.optional(z.never()),
 });
@@ -1782,7 +1894,6 @@ export const zHandleMembershipInvitationData = z.object({
   path: z.object({
     id: z.string(),
     acceptOrReject: z.enum(['accept', 'reject']),
-    orgId: z.string(),
   }),
   query: z.optional(z.never()),
 });
@@ -1795,7 +1906,8 @@ export const zHandleMembershipInvitationResponse = zContextEntityBase;
 export const zGetMembersData = z.object({
   body: z.optional(z.never()),
   path: z.object({
-    orgId: z.string(),
+    tenantId: z.string().regex(/^[a-z0-9]{6}$/),
+    orgIdOrSlug: z.string(),
   }),
   query: z.object({
     q: z.optional(z.string()),
@@ -1842,7 +1954,8 @@ export const zGetMembersResponse = z.object({
 export const zGetPendingMembershipsData = z.object({
   body: z.optional(z.never()),
   path: z.object({
-    orgId: z.string(),
+    tenantId: z.string().regex(/^[a-z0-9]{6}$/),
+    orgIdOrSlug: z.string(),
   }),
   query: z.object({
     q: z.optional(z.string()),

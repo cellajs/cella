@@ -1,5 +1,5 @@
 import { eq, sql } from 'drizzle-orm';
-import { appConfig, type ContextEntityType, hierarchy } from 'shared';
+import { type ContextEntityType, hierarchy, roles } from 'shared';
 import type z from 'zod';
 import { db } from '#/db/db';
 import { getMemberCountsSubquery } from '#/modules/entities/helpers/get-member-counts';
@@ -27,9 +27,7 @@ export const getEntityCountsSelect = (entityType: ContextEntityType) => {
     .join(', ');
 
   // Build dynamic role JSON pairs from config
-  const roleJsonPairs = appConfig.entityRoles
-    .map((role) => `'${role}', COALESCE("membership_counts"."${role}", 0)`)
-    .join(', ');
+  const roleJsonPairs = roles.all.map((role) => `'${role}', COALESCE("membership_counts"."${role}", 0)`).join(', ');
 
   const countsSelect = {
     membership: sql<z.infer<typeof membershipCountSchema>>`

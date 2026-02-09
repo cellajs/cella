@@ -193,6 +193,9 @@ importers:
       node-html-parser:
         specifier: ^7.0.2
         version: 7.0.2
+      ora:
+        specifier: ^9.2.0
+        version: 9.2.0
       pg:
         specifier: ^8.18.0
         version: 8.18.0

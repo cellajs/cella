@@ -13,6 +13,7 @@ import organizationRouteHandlers from '#/modules/organization/organization-handl
 import pageRouteHandlers from '#/modules/page/page-handlers';
 import requestsRouteHandlers from '#/modules/requests/requests-handlers';
 import systemRouteHandlers from '#/modules/system/system-handlers';
+import tenantRouteHandlers from '#/modules/tenants/tenants-handlers';
 import userRouteHandlers from '#/modules/user/user-handlers';
 import baseApp from '#/server';
 
@@ -29,10 +30,12 @@ const app = baseApp
   .route('/pages', pageRouteHandlers)
   .route('/entities', entitiesRouteHandlers)
   .route('/system', systemRouteHandlers)
+  .route('/tenants', tenantRouteHandlers)
   .route('/requests', requestsRouteHandlers)
   .route('/metrics', metricsRouteHandlers)
-  .route('/:orgId/users', userRouteHandlers)
-  .route('/:orgId/attachments', attachmentRouteHandlers)
-  .route('/:orgId/memberships', membershipsRouteHandlers);
+  // Tenant-scoped routes: /:tenantId/:orgIdOrSlug/...
+  .route('/:tenantId/:orgIdOrSlug/users', userRouteHandlers)
+  .route('/:tenantId/:orgIdOrSlug/attachments', attachmentRouteHandlers)
+  .route('/:tenantId/:orgIdOrSlug/memberships', membershipsRouteHandlers);
 
 export default app;

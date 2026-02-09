@@ -24,7 +24,7 @@ export const tokensTable = pgTable(
   'tokens',
   {
     id: varchar().notNull().$defaultFn(nanoid),
-    token: varchar().notNull(),
+    secret: varchar().notNull(),
     singleUseToken: varchar(),
     type: varchar({ enum: tokenTypeEnum }).notNull(),
     email: varchar().notNull(),
@@ -38,14 +38,14 @@ export const tokensTable = pgTable(
   },
   (table) => [
     primaryKey({ columns: [table.id, table.expiresAt] }),
-    index('tokens_token_type_idx').on(table.token, table.type),
+    index('tokens_secret_type_idx').on(table.secret, table.type),
     index('tokens_user_id_idx').on(table.userId),
   ],
 );
 
-/** Includes sensitive token field - use only in auth internals */
+/** Includes sensitive secret field - use only in auth internals */
 export type UnsafeTokenModel = typeof tokensTable.$inferSelect;
 export type InsertTokenModel = typeof tokensTable.$inferInsert;
 
 /** Safe token type with sensitive field omitted */
-export type TokenModel = Omit<UnsafeTokenModel, 'token'>;
+export type TokenModel = Omit<UnsafeTokenModel, 'secret'>;

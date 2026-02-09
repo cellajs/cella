@@ -47,13 +47,19 @@ export const getContextEntityTypeToListQueries = () =>
  * When menu is done and offline access is enabled, this mapping function will execute
  * for each entity type defined in the menu.
  */
-export const entityToPrefetchQueries = (entityId: string, entityType: EntityType, _organizationId?: string) => {
+export const entityToPrefetchQueries = (
+  entityId: string,
+  entityType: EntityType,
+  tenantId: string,
+  _organizationId?: string,
+) => {
   switch (entityType) {
     case 'organization':
       return [
         membersListQueryOptions({
           entityId: entityId,
-          orgId: entityId,
+          tenantId: tenantId,
+          orgIdOrSlug: entityId,
           entityType: entityType,
         }),
       ];

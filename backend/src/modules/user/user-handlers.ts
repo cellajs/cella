@@ -1,7 +1,6 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { and, count, eq, ilike, inArray, or, sql } from 'drizzle-orm';
 import { appConfig } from 'shared';
-import { db } from '#/db/db';
 import { lastSeenTable } from '#/db/schema/last-seen';
 import { membershipsTable } from '#/db/schema/memberships';
 import { systemRolesTable } from '#/db/schema/system-roles';
@@ -26,6 +25,7 @@ const userRouteHandlers = app
     const { q, sort, order, offset, limit, role, targetEntityId, targetEntityType } = ctx.req.valid('query');
 
     const organization = ctx.var.organization;
+    const db = ctx.var.db; // Use tenant-scoped transaction
 
     const filters = [
       // Filter by role if provided
@@ -119,6 +119,7 @@ const userRouteHandlers = app
     const { idOrSlug } = ctx.req.valid('param');
     const requestingUser = ctx.var.user;
     const organization = ctx.var.organization;
+    const db = ctx.var.db; // Use tenant-scoped transaction
 
     // Check if requesting self (by id or slug)
     if (idOrSlug === requestingUser.id || idOrSlug === requestingUser.slug) {
@@ -134,7 +135,6 @@ const userRouteHandlers = app
     if (!targetUser) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { user: idOrSlug } });
 
     // Verify target user has membership in the current organization
-    //
     const [orgMembership] = await db
       .select({ id: membershipsTable.id })
       .from(membershipsTable)

@@ -777,6 +777,11 @@
                     "properties": {
                       "createdAt": { "type": "string", "required": true },
                       "id": { "type": "string", "required": true },
+                      "tenantId": {
+                        "type": "string",
+                        "required": true,
+                        "maxLength": 6
+                      },
                       "contextType": {
                         "type": "string",
                         "required": true,
@@ -801,8 +806,7 @@
                         "required": true
                       },
                       "createdBy": { "type": "string", "required": true },
-                      "organizationId": { "type": "string", "required": true },
-                      "uniqueKey": { "type": "string", "required": true }
+                      "organizationId": { "type": "string", "required": true }
                     },
                     "ref": "#/components/schemas/InactiveMembership"
                   }
@@ -838,7 +842,7 @@
                 "createdAt": "2024-11-13T18:39:21.444Z",
                 "createdBy": "6385w1ul2bx3ld4na8k0ts70",
                 "organizationId": "ft7nt6w77qphfz9detwtt178",
-                "uniqueKey": "ezumc4icc5vmduw22tjoaw74-ft7nt6w77qphfz9detwtt178"
+                "tenantId": "test01"
               }
             },
             {
@@ -864,7 +868,7 @@
                 "createdAt": "2024-04-12T10:35:38.557Z",
                 "createdBy": "r95gtt9htxwawq5tdvqh553o",
                 "organizationId": "okmsol2r5n4cy72j57t1tgy0",
-                "uniqueKey": "gbc099sv1n33rsaavdzvrv0a-okmsol2r5n4cy72j57t1tgy0"
+                "tenantId": "test01"
               }
             }
           ],
@@ -1207,6 +1211,11 @@
                 "type": "object",
                 "properties": {
                   "id": { "type": "string", "required": true },
+                  "tenantId": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 6
+                  },
                   "contextType": {
                     "type": "string",
                     "required": true,

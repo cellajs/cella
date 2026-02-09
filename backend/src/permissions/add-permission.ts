@@ -24,7 +24,7 @@ export const addPermission = <T extends SubjectForPermission>(
   entities: T[],
 ): WithAllowance<T>[] => {
   const memberships = ctx.var.memberships;
-  const userSystemRole = ctx.var.userRole;
+  const userSystemRole = ctx.var.userSystemRole;
 
   const { results } = checkPermission(memberships, action, entities, {
     systemRole: userSystemRole,

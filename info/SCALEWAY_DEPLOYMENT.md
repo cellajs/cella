@@ -233,7 +233,7 @@ If CDC fails to connect:
 SELECT * FROM pg_replication_slots;
 
 # Drop orphaned slot if needed
-SELECT pg_drop_replication_slot('cella_cdc_slot');
+SELECT pg_drop_replication_slot('cdc_slot');
 ```
 
 ## Cost estimates

@@ -19,11 +19,17 @@
           "isPublicAccess": {
             "description": "No authentication required"
           },
+          "hasPublicTenantAccess": {
+            "description": "Validates tenant ID and wraps handler in public tenant context"
+          },
           "hasSystemAccess": {
             "description": "Requires system admin + IP whitelist"
           },
           "isAuthenticated": {
             "description": "Requires valid session"
+          },
+          "tenantGuard": {
+            "description": "Validates tenant access and wraps handler in RLS-enabled transaction"
           }
         }
       },
@@ -123,6 +129,10 @@
     {
       "name": "activities",
       "description": "Endpoints for retrieving *activities* (audit log entries). Activities track create, update, and\n        delete operations across all resources. This serves as an audit trail and can be extended for webhook\n        delivery."
+    },
+    {
+      "name": "tenants",
+      "description": "System-level endpoints for managing *tenants*. Tenants are top-level isolation boundaries used by\n        Row-Level Security (RLS) to partition data. Only system administrators can manage tenants."
     }
   ],
   "components": {
@@ -338,6 +348,10 @@
           "id": {
             "type": "string"
           },
+          "tenantId": {
+            "type": "string",
+            "maxLength": 6
+          },
           "contextType": {
             "type": "string",
             "enum": [
@@ -371,6 +385,7 @@
         },
         "required": [
           "id",
+          "tenantId",
           "contextType",
           "userId",
           "role",
@@ -381,11 +396,12 @@
         ],
         "example": {
           "id": "vn86f6g3ci8ybeh37sz3gscf",
+          "tenantId": "gmpj3u",
           "contextType": "organization",
-          "userId": "gmpj3uavw3f7pkm7vsxl2157",
-          "organizationId": "n34cen80754cxm7om1aq3bat",
-          "role": "member",
-          "displayOrder": 9,
+          "userId": "avw3f7pkm7vsxl2157n34cen",
+          "organizationId": "80754cxm7om1aq3batq3hdpx",
+          "role": "admin",
+          "displayOrder": 32,
           "muted": false,
           "archived": false
         }
@@ -455,6 +471,8 @@
             "enum": [
               "request",
               "membership",
+              "inactive_membership",
+              "tenant",
               null
             ]
           },
@@ -830,6 +848,13 @@
           "id": {
             "type": "string"
           },
+          "tenantId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 6
+          },
           "userId": {
             "type": [
               "string",
@@ -857,6 +882,8 @@
             "enum": [
               "request",
               "membership",
+              "inactive_membership",
+              "tenant",
               null
             ]
           },
@@ -929,6 +956,7 @@
         },
         "required": [
           "id",
+          "tenantId",
           "userId",
           "entityType",
           "resourceType",
@@ -945,24 +973,24 @@
         ],
         "example": {
           "id": "s933zhzgm8axl572xlcja86p",
-          "userId": "qc8osclgd1300kpvq3dotk41",
-          "entityType": "user",
+          "tenantId": "qc8osc",
+          "userId": "lgd1300kpvq3dotk41121rs6",
+          "entityType": "page",
           "resourceType": null,
           "action": "update",
           "tableName": "pages",
           "type": "page.updated",
-          "entityId": "21rs6psa9stclacdgtonoqr1",
+          "entityId": "sa9stclacdgtonoqr1t2j8om",
           "createdAt": "2024-10-11T19:21:02.239Z",
           "changedKeys": [
-            "slug",
             "description",
-            "email",
-            "name"
+            "name",
+            "email"
           ],
           "tx": null,
-          "seq": 668,
+          "seq": 66,
           "error": null,
-          "organizationId": "mleaz2pg8iwtnhw3666j3aif"
+          "organizationId": "pg8iwtnhw3666j3aifuxshox"
         }
       },
       "ActivityError": {
@@ -1400,6 +1428,10 @@
           "id": {
             "type": "string"
           },
+          "tenantId": {
+            "type": "string",
+            "maxLength": 6
+          },
           "contextType": {
             "type": "string",
             "enum": [
@@ -1439,14 +1471,12 @@
           },
           "organizationId": {
             "type": "string"
-          },
-          "uniqueKey": {
-            "type": "string"
           }
         },
         "required": [
           "createdAt",
           "id",
+          "tenantId",
           "contextType",
           "email",
           "userId",
@@ -1454,8 +1484,7 @@
           "role",
           "rejectedAt",
           "createdBy",
-          "organizationId",
-          "uniqueKey"
+          "organizationId"
         ],
         "example": {
           "id": "ukxfca4ddim4bvuklzn5bszg",
@@ -1468,7 +1497,7 @@
           "createdAt": "2024-02-08T11:19:07.168Z",
           "createdBy": "9v2n0dfrh6s450ooxn5tb992",
           "organizationId": "9angnio9zojjlzk3croh621f",
-          "uniqueKey": "ne0c1n1xatbgsj5m94fa2zfj-9angnio9zojjlzk3croh621f"
+          "tenantId": "test01"
         }
       },
       "UploadToken": {
@@ -1642,6 +1671,10 @@
               "null"
             ]
           },
+          "tenantId": {
+            "type": "string",
+            "maxLength": 6
+          },
           "shortName": {
             "type": [
               "string",
@@ -1775,6 +1808,7 @@
           "bannerUrl",
           "createdBy",
           "modifiedBy",
+          "tenantId",
           "shortName",
           "country",
           "timezone",
@@ -1791,29 +1825,30 @@
         ],
         "example": {
           "id": "hmo9fwr239kqavr3yur671kl",
+          "tenantId": "vk6xht",
           "entityType": "organization",
-          "name": "McClure, Dicki and Waters",
-          "slug": "mcclure-dicki-and-waters",
-          "description": "Open-source static website",
-          "shortName": "McClure,",
-          "country": "Guatemala",
-          "timezone": "Africa/Dar_es_Salaam",
+          "name": "Hills, Bauch and Monahan",
+          "slug": "hills-bauch-and-monahan",
+          "description": "Multi-tiered zero trust firmware",
+          "shortName": "Hills,",
+          "country": "Turks and Caicos Islands",
+          "timezone": "America/Argentina/Buenos_Aires",
           "defaultLanguage": "en",
           "languages": [
             "en"
           ],
-          "notificationEmail": "notifications@mcclure-dicki-and-waters.example",
+          "notificationEmail": "notifications@hills-bauch-and-monahan.example",
           "emailDomains": [],
-          "color": "#daf7e3",
+          "color": "#ecfdfe",
           "thumbnailUrl": null,
           "logoUrl": null,
           "bannerUrl": null,
-          "websiteUrl": "https://mcclure-dicki-and-waters.example",
-          "welcomeText": "Welcome to McClure, Dicki and Waters!",
+          "websiteUrl": "https://hills-bauch-and-monahan.example",
+          "welcomeText": "Welcome to Hills, Bauch and Monahan!",
           "authStrategies": [
             "password"
           ],
-          "chatSupport": false,
+          "chatSupport": true,
           "createdAt": "2024-12-25T15:29:47.111Z",
           "createdBy": null,
           "modifiedAt": "2024-12-25T15:29:47.111Z",
@@ -1826,11 +1861,12 @@
           "included": {
             "membership": {
               "id": "kaba9fpc90mgtzmtjipw2v8s",
+              "tenantId": "w4hg40",
               "contextType": "organization",
-              "userId": "w4hg4036vxzq0rzt4pucveps",
+              "userId": "36vxzq0rzt4pucvepsu63uw1",
               "organizationId": "hmo9fwr239kqavr3yur671kl",
-              "role": "member",
-              "displayOrder": 38,
+              "role": "admin",
+              "displayOrder": 69,
               "muted": false,
               "archived": false
             },
@@ -1894,6 +1930,10 @@
               "null"
             ]
           },
+          "tenantId": {
+            "type": "string",
+            "maxLength": 6
+          },
           "tx": {
             "$ref": "#/components/schemas/TxBase"
           },
@@ -1904,6 +1944,9 @@
               "published",
               "archived"
             ]
+          },
+          "publicAccess": {
+            "type": "boolean"
           },
           "parentId": {
             "type": [
@@ -1927,18 +1970,22 @@
           "keywords",
           "createdBy",
           "modifiedBy",
+          "tenantId",
           "tx",
           "status",
+          "publicAccess",
           "parentId",
           "displayOrder"
         ],
         "example": {
           "id": "co96vrmic3wbowmxzbqa1e9f",
+          "tenantId": "ijllhz",
           "entityType": "page",
-          "name": "Infit pauci optio demo.",
-          "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Adhaero torrens adfectus incidunt voluptates cornu tempus eaque universe volubilis. Cubo sponte utpote crux pecco. Cunctatio dolorum vallum ut adimpleo summa valde strenuus attonbitus eligendi.\\nVel cado vitae cibus dolores decet surgo. Accusamus praesentium cibus subito. Vox nemo ipsa video tremo molestias charisma clam ipsa suscipit.\",\"styles\":{}}],\"children\":[]}]",
+          "name": "Torrens adfectus.",
+          "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Voluptates cornu tempus eaque universe volubilis conturbo. Sponte utpote crux pecco vulticulus cunctatio. Vallum ut adimpleo summa valde strenuus attonbitus.\\nMollitia vel cado vitae cibus dolores decet. Aptus accusamus praesentium cibus subito viscus vox nemo. Video tremo molestias charisma clam ipsa suscipit.\",\"styles\":{}}],\"children\":[]}]",
           "keywords": "solvo atrox tendo",
           "status": "unpublished",
+          "publicAccess": false,
           "parentId": null,
           "displayOrder": 32.69,
           "createdAt": "2024-08-06T10:28:33.226Z",
@@ -1981,6 +2028,77 @@
           "id": "uoobg3gmzvie508npzus4h2j",
           "sourceId": "q0fso83v5i0v5s1hl5zutg31",
           "baseVersion": 0
+        }
+      },
+      "Tenant": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 6,
+            "description": "6-character lowercase alphanumeric tenant ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "Tenant display name"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TenantStatus"
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "modifiedAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "status",
+          "createdAt",
+          "modifiedAt"
+        ]
+      },
+      "TenantStatus": {
+        "type": "string",
+        "enum": [
+          "active",
+          "suspended",
+          "archived"
+        ]
+      },
+      "CreateTenantBody": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "Tenant display name"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TenantStatus"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "UpdateTenantBody": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "status": {
+            "$ref": "#/components/schemas/TenantStatus"
+          }
         }
       },
       "Request": {
@@ -2075,6 +2193,10 @@
               "null"
             ]
           },
+          "tenantId": {
+            "type": "string",
+            "maxLength": 6
+          },
           "tx": {
             "$ref": "#/components/schemas/TxBase"
           },
@@ -2161,6 +2283,7 @@
           "keywords",
           "createdBy",
           "modifiedBy",
+          "tenantId",
           "tx",
           "public",
           "bucketName",
@@ -2176,18 +2299,19 @@
         ],
         "example": {
           "id": "og9ynkm3vp2mdgi3oeicogxv",
+          "tenantId": "lphxlo",
           "entityType": "attachment",
           "name": "yet_rightfully_lest.ogx",
           "description": null,
-          "keywords": "pectus subvenio depromo",
+          "keywords": "damno tenax arx",
           "public": false,
           "bucketName": "attachments",
           "groupId": null,
           "filename": "yet_rightfully_lest.ogx",
-          "contentType": "video/mp2t",
+          "contentType": "application/vnd.ms-fontobject",
           "convertedContentType": null,
-          "size": "6046908",
-          "originalKey": "uploads/ofr579y6bqnt152wowxrfkyy/yet_rightfully_lest.ogx",
+          "size": "2524242",
+          "originalKey": "uploads/y6bqnt152wowxrfkyy8dwkbm/yet_rightfully_lest.ogx",
           "convertedKey": null,
           "thumbnailKey": null,
           "createdAt": "2024-10-12T17:43:05.360Z",
@@ -2195,12 +2319,12 @@
           "modifiedAt": "2024-10-12T17:43:05.360Z",
           "modifiedBy": "0uwim8y2tppz7th9tol75wjz",
           "tx": {
-            "id": "8dwkbmpkeuemouu8t58r8fuj",
-            "sourceId": "src_3tlenhqurk6hu54pnfytf99m",
+            "id": "pkeuemouu8t58r8fuj3tlenh",
+            "sourceId": "src_qurk6hu54pnfytf99mpmuhw0",
             "version": 1,
             "fieldVersions": {}
           },
-          "organizationId": "pmuhw07eswx7d6csd6xo4nqw"
+          "organizationId": "7eswx7d6csd6xo4nqwl7k09e"
         }
       },
       "Membership": {
@@ -2211,6 +2335,10 @@
           },
           "id": {
             "type": "string"
+          },
+          "tenantId": {
+            "type": "string",
+            "maxLength": 6
           },
           "contextType": {
             "type": "string",
@@ -2256,14 +2384,12 @@
           },
           "organizationId": {
             "type": "string"
-          },
-          "uniqueKey": {
-            "type": "string"
           }
         },
         "required": [
           "createdAt",
           "id",
+          "tenantId",
           "contextType",
           "userId",
           "role",
@@ -2273,8 +2399,7 @@
           "archived",
           "muted",
           "displayOrder",
-          "organizationId",
-          "uniqueKey"
+          "organizationId"
         ],
         "example": {
           "id": "575b0vreys30k2k4z795uufw",
@@ -2289,7 +2414,7 @@
           "createdBy": "xg7596t8jiy8d0v8irrljzhy",
           "modifiedAt": "2024-10-28T14:52:59.502Z",
           "modifiedBy": null,
-          "uniqueKey": "xg7596t8jiy8d0v8irrljzhy-7ul53b62aw5h7k6x44nbu2r5"
+          "tenantId": "test01"
         }
       }
     },
@@ -2397,7 +2522,9 @@
               "type": "string",
               "enum": [
                 "request",
-                "membership"
+                "membership",
+                "inactive_membership",
+                "tenant"
               ]
             },
             "required": false,
@@ -2472,38 +2599,41 @@
                   "items": [
                     {
                       "id": "p8d07imsvjbtqtl3rtjgxd9x",
-                      "userId": "n03u76eo7z71y60a882cwpxt",
-                      "entityType": "organization",
+                      "tenantId": "n03u76",
+                      "userId": "eo7z71y60a882cwpxtanaxns",
+                      "entityType": "page",
                       "resourceType": null,
                       "action": "delete",
                       "tableName": "attachments",
                       "type": "attachment.deleted",
-                      "entityId": "naxnsp9nes1yx645yb0gleyv",
+                      "entityId": "9nes1yx645yb0gleyvjbbm5p",
                       "createdAt": "2024-11-21T04:00:59.122Z",
                       "changedKeys": null,
                       "tx": null,
-                      "seq": 547,
+                      "seq": 511,
                       "error": null,
-                      "organizationId": "bbm5piweg2q4gqa3vx9cfyey"
+                      "organizationId": "weg2q4gqa3vx9cfyey6mqh9h"
                     },
                     {
                       "id": "5ogh3yr2b2dbwf7b9eckajcl",
-                      "userId": "xs8vayzrul7vmeyahbgyu01s",
+                      "tenantId": "xs8vay",
+                      "userId": "zrul7vmeyahbgyu01sr6utec",
                       "entityType": "page",
                       "resourceType": null,
                       "action": "update",
                       "tableName": "organizations",
                       "type": "organization.updated",
-                      "entityId": "6utecq3o02wpa56tpd77kpi3",
+                      "entityId": "3o02wpa56tpd77kpi37syiav",
                       "createdAt": "2024-10-29T08:46:20.790Z",
                       "changedKeys": [
                         "slug",
-                        "description"
+                        "name",
+                        "email"
                       ],
                       "tx": null,
-                      "seq": 521,
+                      "seq": 810,
                       "error": null,
-                      "organizationId": "avgc67t5nr6k4huj5qv4k6bw"
+                      "organizationId": "5nr6k4huj5qv4k6bwmvl0e44"
                     }
                   ],
                   "total": 2
@@ -4940,7 +5070,7 @@
                         "createdAt": "2024-11-13T18:39:21.444Z",
                         "createdBy": "6385w1ul2bx3ld4na8k0ts70",
                         "organizationId": "ft7nt6w77qphfz9detwtt178",
-                        "uniqueKey": "ezumc4icc5vmduw22tjoaw74-ft7nt6w77qphfz9detwtt178"
+                        "tenantId": "test01"
                       }
                     },
                     {
@@ -4966,7 +5096,7 @@
                         "createdAt": "2024-04-12T10:35:38.557Z",
                         "createdBy": "r95gtt9htxwawq5tdvqh553o",
                         "organizationId": "okmsol2r5n4cy72j57t1tgy0",
-                        "uniqueKey": "gbc099sv1n33rsaavdzvrv0a-okmsol2r5n4cy72j57t1tgy0"
+                        "tenantId": "test01"
                       }
                     }
                   ],
@@ -5453,29 +5583,30 @@
                         ],
                         "example": {
                           "id": "hmo9fwr239kqavr3yur671kl",
+                          "tenantId": "vk6xht",
                           "entityType": "organization",
-                          "name": "McClure, Dicki and Waters",
-                          "slug": "mcclure-dicki-and-waters",
-                          "description": "Open-source static website",
-                          "shortName": "McClure,",
-                          "country": "Guatemala",
-                          "timezone": "Africa/Dar_es_Salaam",
+                          "name": "Hills, Bauch and Monahan",
+                          "slug": "hills-bauch-and-monahan",
+                          "description": "Multi-tiered zero trust firmware",
+                          "shortName": "Hills,",
+                          "country": "Turks and Caicos Islands",
+                          "timezone": "America/Argentina/Buenos_Aires",
                           "defaultLanguage": "en",
                           "languages": [
                             "en"
                           ],
-                          "notificationEmail": "notifications@mcclure-dicki-and-waters.example",
+                          "notificationEmail": "notifications@hills-bauch-and-monahan.example",
                           "emailDomains": [],
-                          "color": "#daf7e3",
+                          "color": "#ecfdfe",
                           "thumbnailUrl": null,
                           "logoUrl": null,
                           "bannerUrl": null,
-                          "websiteUrl": "https://mcclure-dicki-and-waters.example",
-                          "welcomeText": "Welcome to McClure, Dicki and Waters!",
+                          "websiteUrl": "https://hills-bauch-and-monahan.example",
+                          "welcomeText": "Welcome to Hills, Bauch and Monahan!",
                           "authStrategies": [
                             "password"
                           ],
-                          "chatSupport": false,
+                          "chatSupport": true,
                           "createdAt": "2024-12-25T15:29:47.111Z",
                           "createdBy": null,
                           "modifiedAt": "2024-12-25T15:29:47.111Z",
@@ -5488,11 +5619,12 @@
                           "included": {
                             "membership": {
                               "id": "kaba9fpc90mgtzmtjipw2v8s",
+                              "tenantId": "w4hg40",
                               "contextType": "organization",
-                              "userId": "w4hg4036vxzq0rzt4pucveps",
+                              "userId": "36vxzq0rzt4pucvepsu63uw1",
                               "organizationId": "hmo9fwr239kqavr3yur671kl",
-                              "role": "member",
-                              "displayOrder": 38,
+                              "role": "admin",
+                              "displayOrder": 69,
                               "muted": false,
                               "archived": false
                             },
@@ -5536,25 +5668,26 @@
                   "data": [
                     {
                       "id": "kzmv5qbhdcqeiuvwlosan0fc",
+                      "tenantId": "wgpaj0",
                       "entityType": "organization",
-                      "name": "Koss, Price and Greenfelder",
-                      "slug": "koss-price-and-greenfelder",
-                      "description": "Organic 24 hour firmware",
-                      "shortName": "Koss,",
-                      "country": "Israel",
-                      "timezone": "Pacific/Kanton",
+                      "name": "Kessler and Sons",
+                      "slug": "kessler-and-sons",
+                      "description": "Future-proofed contextually-based moderator",
+                      "shortName": "Kessler",
+                      "country": "Azerbaijan",
+                      "timezone": "Europe/Kyiv",
                       "defaultLanguage": "en",
                       "languages": [
                         "en"
                       ],
-                      "notificationEmail": "notifications@koss-price-and-greenfelder.example",
+                      "notificationEmail": "notifications@kessler-and-sons.example",
                       "emailDomains": [],
-                      "color": "#74e1bc",
+                      "color": "#ce39f9",
                       "thumbnailUrl": null,
                       "logoUrl": null,
                       "bannerUrl": null,
-                      "websiteUrl": "https://koss-price-and-greenfelder.example",
-                      "welcomeText": "Welcome to Koss, Price and Greenfelder!",
+                      "websiteUrl": "https://kessler-and-sons.example",
+                      "welcomeText": "Welcome to Kessler and Sons!",
                       "authStrategies": [
                         "password"
                       ],
@@ -5571,11 +5704,12 @@
                       "included": {
                         "membership": {
                           "id": "3y6ee6h5lc8sjfv4trxwe3yb",
+                          "tenantId": "89fjn2",
                           "contextType": "organization",
-                          "userId": "89fjn21t4n7coocr6ixfzcb6",
+                          "userId": "1t4n7coocr6ixfzcb6x5wab0",
                           "organizationId": "kzmv5qbhdcqeiuvwlosan0fc",
-                          "role": "admin",
-                          "displayOrder": 56,
+                          "role": "member",
+                          "displayOrder": 95,
                           "muted": false,
                           "archived": false
                         },
@@ -5595,25 +5729,26 @@
                     },
                     {
                       "id": "p3t0ygxx0aa83en3sk1fs1we",
+                      "tenantId": "74l758",
                       "entityType": "organization",
-                      "name": "Collins - Mitchell",
-                      "slug": "collins-mitchell",
-                      "description": "Diverse cloud-native concept",
-                      "shortName": "Collins",
-                      "country": "Australia",
-                      "timezone": "America/Phoenix",
+                      "name": "Howell - Ullrich",
+                      "slug": "howell-ullrich",
+                      "description": "Quality-focused uniform throughput",
+                      "shortName": "Howell",
+                      "country": "French Polynesia",
+                      "timezone": "Australia/Brisbane",
                       "defaultLanguage": "en",
                       "languages": [
                         "en"
                       ],
-                      "notificationEmail": "notifications@collins-mitchell.example",
+                      "notificationEmail": "notifications@howell-ullrich.example",
                       "emailDomains": [],
-                      "color": "#dfee6f",
+                      "color": "#88b531",
                       "thumbnailUrl": null,
                       "logoUrl": null,
                       "bannerUrl": null,
-                      "websiteUrl": "https://collins-mitchell.example",
-                      "welcomeText": "Welcome to Collins - Mitchell!",
+                      "websiteUrl": "https://howell-ullrich.example",
+                      "welcomeText": "Welcome to Howell - Ullrich!",
                       "authStrategies": [
                         "password"
                       ],
@@ -5630,11 +5765,12 @@
                       "included": {
                         "membership": {
                           "id": "ry5f7szmj5jhp0ad93klgj3e",
+                          "tenantId": "j6ly81",
                           "contextType": "organization",
-                          "userId": "j6ly81u4oy2u1m55abgsmrl1",
+                          "userId": "u4oy2u1m55abgsmrl1zezeoj",
                           "organizationId": "p3t0ygxx0aa83en3sk1fs1we",
                           "role": "admin",
-                          "displayOrder": 1,
+                          "displayOrder": 20,
                           "muted": false,
                           "archived": false
                         },
@@ -5812,29 +5948,30 @@
                   "items": [
                     {
                       "id": "qqp8d07imsvjbtqtl3rtjgxd",
+                      "tenantId": "9xn03u",
                       "entityType": "organization",
-                      "name": "Walsh - Nitzsche",
-                      "slug": "walsh-nitzsche",
-                      "description": "AI-driven bottom-line software",
-                      "shortName": "Walsh",
-                      "country": "Costa Rica",
-                      "timezone": "America/Bogota",
+                      "name": "Dicki - Jacobi",
+                      "slug": "dicki-jacobi",
+                      "description": "Public-key context-sensitive website",
+                      "shortName": "Dicki",
+                      "country": "Comoros",
+                      "timezone": "Africa/Conakry",
                       "defaultLanguage": "en",
                       "languages": [
                         "en"
                       ],
-                      "notificationEmail": "notifications@walsh-nitzsche.example",
+                      "notificationEmail": "notifications@dicki-jacobi.example",
                       "emailDomains": [],
-                      "color": "#8f4f40",
+                      "color": "#f40655",
                       "thumbnailUrl": null,
                       "logoUrl": null,
                       "bannerUrl": null,
-                      "websiteUrl": "https://walsh-nitzsche.example",
-                      "welcomeText": "Welcome to Walsh - Nitzsche!",
+                      "websiteUrl": "https://dicki-jacobi.example",
+                      "welcomeText": "Welcome to Dicki - Jacobi!",
                       "authStrategies": [
                         "password"
                       ],
-                      "chatSupport": false,
+                      "chatSupport": true,
                       "createdAt": "2024-11-21T04:00:59.122Z",
                       "createdBy": null,
                       "modifiedAt": "2024-11-21T04:00:59.122Z",
@@ -5847,11 +5984,12 @@
                       "included": {
                         "membership": {
                           "id": "300jor4orrvsgezqoyxfckg3",
+                          "tenantId": "ifex0a",
                           "contextType": "organization",
-                          "userId": "ifex0agu87zf240qkfh0faoq",
+                          "userId": "gu87zf240qkfh0faoqjip69q",
                           "organizationId": "qqp8d07imsvjbtqtl3rtjgxd",
-                          "role": "admin",
-                          "displayOrder": 2,
+                          "role": "member",
+                          "displayOrder": 38,
                           "muted": false,
                           "archived": false
                         },
@@ -5871,29 +6009,30 @@
                     },
                     {
                       "id": "hg5ogh3yr2b2dbwf7b9eckaj",
+                      "tenantId": "clxs8v",
                       "entityType": "organization",
-                      "name": "Mohr and Sons",
-                      "slug": "mohr-and-sons",
-                      "description": "Secured data-driven strategy",
-                      "shortName": "Mohr",
-                      "country": "Finland",
-                      "timezone": "Pacific/Noumea",
+                      "name": "Witting - Wuckert",
+                      "slug": "witting-wuckert",
+                      "description": "Reverse-engineered sustainable matrix",
+                      "shortName": "Witting",
+                      "country": "Costa Rica",
+                      "timezone": "Europe/Ulyanovsk",
                       "defaultLanguage": "en",
                       "languages": [
                         "en"
                       ],
-                      "notificationEmail": "notifications@mohr-and-sons.example",
+                      "notificationEmail": "notifications@witting-wuckert.example",
                       "emailDomains": [],
-                      "color": "#facd4c",
+                      "color": "#d9e6a7",
                       "thumbnailUrl": null,
                       "logoUrl": null,
                       "bannerUrl": null,
-                      "websiteUrl": "https://mohr-and-sons.example",
-                      "welcomeText": "Welcome to Mohr and Sons!",
+                      "websiteUrl": "https://witting-wuckert.example",
+                      "welcomeText": "Welcome to Witting - Wuckert!",
                       "authStrategies": [
                         "password"
                       ],
-                      "chatSupport": false,
+                      "chatSupport": true,
                       "createdAt": "2024-10-29T08:46:20.790Z",
                       "createdBy": null,
                       "modifiedAt": "2024-10-29T08:46:20.790Z",
@@ -5906,11 +6045,12 @@
                       "included": {
                         "membership": {
                           "id": "1u44cckbz5av195r4h3wiruz",
+                          "tenantId": "44b7wk",
                           "contextType": "organization",
-                          "userId": "44b7wkilwj64zmkwsnsmrzo2",
+                          "userId": "ilwj64zmkwsnsmrzo2zxd2hr",
                           "organizationId": "hg5ogh3yr2b2dbwf7b9eckaj",
                           "role": "admin",
-                          "displayOrder": 50,
+                          "displayOrder": 7,
                           "muted": false,
                           "archived": false
                         },
@@ -6082,29 +6222,30 @@
                 },
                 "example": {
                   "id": "hmo9fwr239kqavr3yur671kl",
+                  "tenantId": "vk6xht",
                   "entityType": "organization",
-                  "name": "McClure, Dicki and Waters",
-                  "slug": "mcclure-dicki-and-waters",
-                  "description": "Open-source static website",
-                  "shortName": "McClure,",
-                  "country": "Guatemala",
-                  "timezone": "Africa/Dar_es_Salaam",
+                  "name": "Hills, Bauch and Monahan",
+                  "slug": "hills-bauch-and-monahan",
+                  "description": "Multi-tiered zero trust firmware",
+                  "shortName": "Hills,",
+                  "country": "Turks and Caicos Islands",
+                  "timezone": "America/Argentina/Buenos_Aires",
                   "defaultLanguage": "en",
                   "languages": [
                     "en"
                   ],
-                  "notificationEmail": "notifications@mcclure-dicki-and-waters.example",
+                  "notificationEmail": "notifications@hills-bauch-and-monahan.example",
                   "emailDomains": [],
-                  "color": "#daf7e3",
+                  "color": "#ecfdfe",
                   "thumbnailUrl": null,
                   "logoUrl": null,
                   "bannerUrl": null,
-                  "websiteUrl": "https://mcclure-dicki-and-waters.example",
-                  "welcomeText": "Welcome to McClure, Dicki and Waters!",
+                  "websiteUrl": "https://hills-bauch-and-monahan.example",
+                  "welcomeText": "Welcome to Hills, Bauch and Monahan!",
                   "authStrategies": [
                     "password"
                   ],
-                  "chatSupport": false,
+                  "chatSupport": true,
                   "createdAt": "2024-12-25T15:29:47.111Z",
                   "createdBy": null,
                   "modifiedAt": "2024-12-25T15:29:47.111Z",
@@ -6117,11 +6258,12 @@
                   "included": {
                     "membership": {
                       "id": "kaba9fpc90mgtzmtjipw2v8s",
+                      "tenantId": "w4hg40",
                       "contextType": "organization",
-                      "userId": "w4hg4036vxzq0rzt4pucveps",
+                      "userId": "36vxzq0rzt4pucvepsu63uw1",
                       "organizationId": "hmo9fwr239kqavr3yur671kl",
-                      "role": "member",
-                      "displayOrder": 38,
+                      "role": "admin",
+                      "displayOrder": 69,
                       "muted": false,
                       "archived": false
                     },
@@ -6325,29 +6467,30 @@
                 },
                 "example": {
                   "id": "hmo9fwr239kqavr3yur671kl",
+                  "tenantId": "vk6xht",
                   "entityType": "organization",
-                  "name": "McClure, Dicki and Waters",
-                  "slug": "mcclure-dicki-and-waters",
-                  "description": "Open-source static website",
-                  "shortName": "McClure,",
-                  "country": "Guatemala",
-                  "timezone": "Africa/Dar_es_Salaam",
+                  "name": "Hills, Bauch and Monahan",
+                  "slug": "hills-bauch-and-monahan",
+                  "description": "Multi-tiered zero trust firmware",
+                  "shortName": "Hills,",
+                  "country": "Turks and Caicos Islands",
+                  "timezone": "America/Argentina/Buenos_Aires",
                   "defaultLanguage": "en",
                   "languages": [
                     "en"
                   ],
-                  "notificationEmail": "notifications@mcclure-dicki-and-waters.example",
+                  "notificationEmail": "notifications@hills-bauch-and-monahan.example",
                   "emailDomains": [],
-                  "color": "#daf7e3",
+                  "color": "#ecfdfe",
                   "thumbnailUrl": null,
                   "logoUrl": null,
                   "bannerUrl": null,
-                  "websiteUrl": "https://mcclure-dicki-and-waters.example",
-                  "welcomeText": "Welcome to McClure, Dicki and Waters!",
+                  "websiteUrl": "https://hills-bauch-and-monahan.example",
+                  "welcomeText": "Welcome to Hills, Bauch and Monahan!",
                   "authStrategies": [
                     "password"
                   ],
-                  "chatSupport": false,
+                  "chatSupport": true,
                   "createdAt": "2024-12-25T15:29:47.111Z",
                   "createdBy": null,
                   "modifiedAt": "2024-12-25T15:29:47.111Z",
@@ -6360,11 +6503,12 @@
                   "included": {
                     "membership": {
                       "id": "kaba9fpc90mgtzmtjipw2v8s",
+                      "tenantId": "w4hg40",
                       "contextType": "organization",
-                      "userId": "w4hg4036vxzq0rzt4pucveps",
+                      "userId": "36vxzq0rzt4pucvepsu63uw1",
                       "organizationId": "hmo9fwr239kqavr3yur671kl",
-                      "role": "member",
-                      "displayOrder": 38,
+                      "role": "admin",
+                      "displayOrder": 69,
                       "muted": false,
                       "archived": false
                     },
@@ -6418,7 +6562,7 @@
         "description": "Insert one or more new *pages*. Returns created pages and any rejected items.",
         "x-guard": [
           "isAuthenticated",
-          "isSystemAdmin"
+          "sysAdminGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -6486,11 +6630,13 @@
                   "data": [
                     {
                       "id": "wgpaj0cfyc7n2sjn5fpfkbrs",
+                      "tenantId": "lwtksu",
                       "entityType": "page",
-                      "name": "Velociter torqueo nihil texo.",
-                      "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Alii voluntarius contra consequuntur tergo crepusculum certe desparatus depromo. Dolor somnus vobis atavus tergiversatio tersus suadeo colo. Id abduco supplanto asporto.\\nCuratio xiphias auxilium teneo claudeo unde vulgo. Atavus vorax vergo deputo deprimo statim eos vulnero subito eligendi. Exercitationem somnus cattus cilicium textilis cervus alo tactus.\",\"styles\":{}}],\"children\":[]}]",
+                      "name": "Voluntarius contra.",
+                      "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Tergo crepusculum certe desparatus depromo. Dolor somnus vobis atavus tergiversatio tersus suadeo colo. Id abduco supplanto asporto.\\nCuratio xiphias auxilium teneo claudeo unde vulgo. Atavus vorax vergo deputo deprimo statim eos vulnero subito eligendi. Exercitationem somnus cattus cilicium textilis cervus alo tactus.\",\"styles\":{}}],\"children\":[]}]",
                       "keywords": "confido colligo audio",
                       "status": "unpublished",
+                      "publicAccess": false,
                       "parentId": null,
                       "displayOrder": 70.17,
                       "createdAt": "2024-04-19T14:04:35.773Z",
@@ -6506,20 +6652,22 @@
                     },
                     {
                       "id": "74l7581dwpxxbqdej8622zpg",
+                      "tenantId": "o54qw5",
                       "entityType": "page",
-                      "name": "Aspernatur angustus suus ver.",
-                      "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Debilito taedium spargo cetera. Vehemens deprecator ventus ascit denique tum candidus curvo perspiciatis defendo. Carpo verecundia cometes.\\nSortitus colligo ceno terra cado temptatio carmen arx sequi cicuta. Attollo autem adipisci vinitor comminor odit. Virga aptus corrupti utpote.\",\"styles\":{}}],\"children\":[]}]",
-                      "keywords": "vulnus subseco vomica",
+                      "name": "Taedium spargo cetera.",
+                      "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Vehemens deprecator ventus ascit denique tum candidus curvo perspiciatis defendo. Carpo verecundia cometes. Sortitus colligo ceno terra cado temptatio carmen arx sequi cicuta.\\nAttollo autem adipisci vinitor comminor odit. Virga aptus corrupti utpote. Subseco vomica auxilium ascit cuppedia abbas amo patior credo tenus.\",\"styles\":{}}],\"children\":[]}]",
+                      "keywords": "aestus degero cicuta",
                       "status": "unpublished",
+                      "publicAccess": false,
                       "parentId": null,
-                      "displayOrder": 19.64,
+                      "displayOrder": 14.28,
                       "createdAt": "2024-02-25T13:01:35.301Z",
                       "createdBy": "p3t0ygxx0aa83en3sk1fs1we",
                       "modifiedAt": "2024-02-25T13:01:35.301Z",
                       "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
                       "tx": {
-                        "id": "5e03ldr2ga54hj92yzr7v1it",
-                        "sourceId": "src_pc9wztvbcy21q04oq81k5rbz",
+                        "id": "4hj92yzr7v1itpc9wztvbcy2",
+                        "sourceId": "src_1q04oq81k5rbzt4yq63pob5r",
                         "version": 1,
                         "fieldVersions": {}
                       }
@@ -6567,11 +6715,13 @@
                   "data": [
                     {
                       "id": "wgpaj0cfyc7n2sjn5fpfkbrs",
+                      "tenantId": "lwtksu",
                       "entityType": "page",
-                      "name": "Velociter torqueo nihil texo.",
-                      "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Alii voluntarius contra consequuntur tergo crepusculum certe desparatus depromo. Dolor somnus vobis atavus tergiversatio tersus suadeo colo. Id abduco supplanto asporto.\\nCuratio xiphias auxilium teneo claudeo unde vulgo. Atavus vorax vergo deputo deprimo statim eos vulnero subito eligendi. Exercitationem somnus cattus cilicium textilis cervus alo tactus.\",\"styles\":{}}],\"children\":[]}]",
+                      "name": "Voluntarius contra.",
+                      "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Tergo crepusculum certe desparatus depromo. Dolor somnus vobis atavus tergiversatio tersus suadeo colo. Id abduco supplanto asporto.\\nCuratio xiphias auxilium teneo claudeo unde vulgo. Atavus vorax vergo deputo deprimo statim eos vulnero subito eligendi. Exercitationem somnus cattus cilicium textilis cervus alo tactus.\",\"styles\":{}}],\"children\":[]}]",
                       "keywords": "confido colligo audio",
                       "status": "unpublished",
+                      "publicAccess": false,
                       "parentId": null,
                       "displayOrder": 70.17,
                       "createdAt": "2024-04-19T14:04:35.773Z",
@@ -6587,20 +6737,22 @@
                     },
                     {
                       "id": "74l7581dwpxxbqdej8622zpg",
+                      "tenantId": "o54qw5",
                       "entityType": "page",
-                      "name": "Aspernatur angustus suus ver.",
-                      "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Debilito taedium spargo cetera. Vehemens deprecator ventus ascit denique tum candidus curvo perspiciatis defendo. Carpo verecundia cometes.\\nSortitus colligo ceno terra cado temptatio carmen arx sequi cicuta. Attollo autem adipisci vinitor comminor odit. Virga aptus corrupti utpote.\",\"styles\":{}}],\"children\":[]}]",
-                      "keywords": "vulnus subseco vomica",
+                      "name": "Taedium spargo cetera.",
+                      "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Vehemens deprecator ventus ascit denique tum candidus curvo perspiciatis defendo. Carpo verecundia cometes. Sortitus colligo ceno terra cado temptatio carmen arx sequi cicuta.\\nAttollo autem adipisci vinitor comminor odit. Virga aptus corrupti utpote. Subseco vomica auxilium ascit cuppedia abbas amo patior credo tenus.\",\"styles\":{}}],\"children\":[]}]",
+                      "keywords": "aestus degero cicuta",
                       "status": "unpublished",
+                      "publicAccess": false,
                       "parentId": null,
-                      "displayOrder": 19.64,
+                      "displayOrder": 14.28,
                       "createdAt": "2024-02-25T13:01:35.301Z",
                       "createdBy": "p3t0ygxx0aa83en3sk1fs1we",
                       "modifiedAt": "2024-02-25T13:01:35.301Z",
                       "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
                       "tx": {
-                        "id": "5e03ldr2ga54hj92yzr7v1it",
-                        "sourceId": "src_pc9wztvbcy21q04oq81k5rbz",
+                        "id": "4hj92yzr7v1itpc9wztvbcy2",
+                        "sourceId": "src_1q04oq81k5rbzt4yq63pob5r",
                         "version": 1,
                         "fieldVersions": {}
                       }
@@ -6730,40 +6882,44 @@
                   "items": [
                     {
                       "id": "9xn03u76eo7z71y60a882cwp",
+                      "tenantId": "xtanax",
                       "entityType": "page",
-                      "name": "Tot clarus sequi cimentarius vesco.",
-                      "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Tersus summa caterva socius cultura tergo adhuc virtus. Audentia angustus articulus voco commodi abduco deduco occaecati cubicularis volo. In comminor concedo quae arca sumptus dolorem varius crudelis deduco.\\nSurgo angulus demens. Clibanus alioqui valens vester cavus contego debeo volubilis. Vindico audacia perspiciatis supra derideo chirographum.\",\"styles\":{}}],\"children\":[]}]",
-                      "keywords": "depraedor rem dolorum",
+                      "name": "Tersus summa caterva socius.",
+                      "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Tergo adhuc virtus vesco audentia angustus. Voco commodi abduco deduco. Cubicularis volo utroque in comminor concedo quae.\\nSumptus dolorem varius crudelis. Advoco surgo angulus demens tabella clibanus. Valens vester cavus.\",\"styles\":{}}],\"children\":[]}]",
+                      "keywords": "contego debeo volubilis",
                       "status": "unpublished",
+                      "publicAccess": false,
                       "parentId": null,
-                      "displayOrder": 56.42,
+                      "displayOrder": 40.67,
                       "createdAt": "2024-11-21T04:00:59.122Z",
                       "createdBy": "qqp8d07imsvjbtqtl3rtjgxd",
                       "modifiedAt": "2024-11-21T04:00:59.122Z",
                       "modifiedBy": "qqp8d07imsvjbtqtl3rtjgxd",
                       "tx": {
-                        "id": "gme3gy3a9lhe0ctrmzc53x7z",
-                        "sourceId": "src_222ydtq57iu31mz5oaqf10oe",
+                        "id": "y6mqh9hmikgme3gy3a9lhe0c",
+                        "sourceId": "src_trmzc53x7z222ydtq57iu31m",
                         "version": 1,
                         "fieldVersions": {}
                       }
                     },
                     {
                       "id": "clxs8vayzrul7vmeyahbgyu0",
+                      "tenantId": "1sr6ut",
                       "entityType": "page",
-                      "name": "Tergo tardus.",
-                      "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Tum timidus cultellus conitor. Aiunt speculum acidus advoco ventus sub cogito argentum. Trans summa crapula bestia.\\nNon sui desino amor. Tersus vitiosus eligendi clementia. Demens conor auctor basium tolero aspernatur soluta temporibus aut.\",\"styles\":{}}],\"children\":[]}]",
-                      "keywords": "labore appello depono",
+                      "name": "Conitor suspendo aiunt.",
+                      "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Acidus advoco ventus sub cogito argentum attonbitus trans. Crapula bestia auxilium non sui desino amor barba. Vitiosus eligendi clementia usus demens conor auctor basium tolero.\\nSoluta temporibus aut labore. Depono ultio explicabo ascit. Utpote amplexus nihil aut concedo vel praesentium universe.\",\"styles\":{}}],\"children\":[]}]",
+                      "keywords": "pecus accusator cubitum",
                       "status": "unpublished",
+                      "publicAccess": false,
                       "parentId": null,
-                      "displayOrder": 85.3,
+                      "displayOrder": 11.43,
                       "createdAt": "2024-10-29T08:46:20.790Z",
                       "createdBy": "hg5ogh3yr2b2dbwf7b9eckaj",
                       "modifiedAt": "2024-10-29T08:46:20.790Z",
                       "modifiedBy": "hg5ogh3yr2b2dbwf7b9eckaj",
                       "tx": {
-                        "id": "j5qv4k6bwmvl0e44bpmhsyau",
-                        "sourceId": "src_xcwuwjsrzvzac8qx1h9s6vzh",
+                        "id": "4bpmhsyauxcwuwjsrzvzac8q",
+                        "sourceId": "src_x1h9s6vzhgvcj0rs3xtuk03g",
                         "version": 1,
                         "fieldVersions": {}
                       }
@@ -6805,7 +6961,7 @@
         "description": "Delete one or more *pages* by ID.",
         "x-guard": [
           "isAuthenticated",
-          "isSystemAdmin"
+          "sysAdminGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -6890,11 +7046,13 @@
                 },
                 "example": {
                   "id": "co96vrmic3wbowmxzbqa1e9f",
+                  "tenantId": "ijllhz",
                   "entityType": "page",
-                  "name": "Infit pauci optio demo.",
-                  "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Adhaero torrens adfectus incidunt voluptates cornu tempus eaque universe volubilis. Cubo sponte utpote crux pecco. Cunctatio dolorum vallum ut adimpleo summa valde strenuus attonbitus eligendi.\\nVel cado vitae cibus dolores decet surgo. Accusamus praesentium cibus subito. Vox nemo ipsa video tremo molestias charisma clam ipsa suscipit.\",\"styles\":{}}],\"children\":[]}]",
+                  "name": "Torrens adfectus.",
+                  "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Voluptates cornu tempus eaque universe volubilis conturbo. Sponte utpote crux pecco vulticulus cunctatio. Vallum ut adimpleo summa valde strenuus attonbitus.\\nMollitia vel cado vitae cibus dolores decet. Aptus accusamus praesentium cibus subito viscus vox nemo. Video tremo molestias charisma clam ipsa suscipit.\",\"styles\":{}}],\"children\":[]}]",
                   "keywords": "solvo atrox tendo",
                   "status": "unpublished",
+                  "publicAccess": false,
                   "parentId": null,
                   "displayOrder": 32.69,
                   "createdAt": "2024-08-06T10:28:33.226Z",
@@ -6942,7 +7100,7 @@
         "description": "Update a single *page* by ID.",
         "x-guard": [
           "isAuthenticated",
-          "isSystemAdmin"
+          "sysAdminGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -7016,11 +7174,13 @@
                 },
                 "example": {
                   "id": "co96vrmic3wbowmxzbqa1e9f",
+                  "tenantId": "ijllhz",
                   "entityType": "page",
-                  "name": "Infit pauci optio demo.",
-                  "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Adhaero torrens adfectus incidunt voluptates cornu tempus eaque universe volubilis. Cubo sponte utpote crux pecco. Cunctatio dolorum vallum ut adimpleo summa valde strenuus attonbitus eligendi.\\nVel cado vitae cibus dolores decet surgo. Accusamus praesentium cibus subito. Vox nemo ipsa video tremo molestias charisma clam ipsa suscipit.\",\"styles\":{}}],\"children\":[]}]",
+                  "name": "Torrens adfectus.",
+                  "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Voluptates cornu tempus eaque universe volubilis conturbo. Sponte utpote crux pecco vulticulus cunctatio. Vallum ut adimpleo summa valde strenuus attonbitus.\\nMollitia vel cado vitae cibus dolores decet. Aptus accusamus praesentium cibus subito viscus vox nemo. Video tremo molestias charisma clam ipsa suscipit.\",\"styles\":{}}],\"children\":[]}]",
                   "keywords": "solvo atrox tendo",
                   "status": "unpublished",
+                  "publicAccess": false,
                   "parentId": null,
                   "displayOrder": 32.69,
                   "createdAt": "2024-08-06T10:28:33.226Z",
@@ -7635,11 +7795,12 @@
                       "memberships": [
                         {
                           "id": "300jor4orrvsgezqoyxfckg3",
+                          "tenantId": "ifex0a",
                           "contextType": "organization",
-                          "userId": "ifex0agu87zf240qkfh0faoq",
-                          "organizationId": "jip69qfpb1r33xdbp099f3xi",
-                          "role": "admin",
-                          "displayOrder": 2,
+                          "userId": "gu87zf240qkfh0faoqjip69q",
+                          "organizationId": "fpb1r33xdbp099f3xi8028r0",
+                          "role": "member",
+                          "displayOrder": 38,
                           "muted": false,
                           "archived": false
                         }
@@ -7669,11 +7830,12 @@
                       "memberships": [
                         {
                           "id": "1u44cckbz5av195r4h3wiruz",
+                          "tenantId": "44b7wk",
                           "contextType": "organization",
-                          "userId": "44b7wkilwj64zmkwsnsmrzo2",
-                          "organizationId": "zxd2hreylomg4p6xgvt4g11e",
+                          "userId": "ilwj64zmkwsnsmrzo2zxd2hr",
+                          "organizationId": "eylomg4p6xgvt4g11e2hqqxx",
                           "role": "admin",
-                          "displayOrder": 50,
+                          "displayOrder": 7,
                           "muted": false,
                           "archived": false
                         }
@@ -8056,6 +8218,394 @@
         "responses": {
           "204": {
             "description": "Newsletter sent"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/tenants": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getTenants",
+        "tags": [
+          "tenants"
+        ],
+        "summary": "Get list of tenants",
+        "description": "Returns a paginated list of tenants. System admin access required.",
+        "x-guard": [
+          "isAuthenticated",
+          "hasSystemAccess"
+        ],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Search query"
+            },
+            "required": false,
+            "description": "Search query",
+            "name": "q",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/TenantStatus"
+                },
+                {
+                  "description": "Filter by status"
+                }
+              ]
+            },
+            "required": false,
+            "description": "Filter by status",
+            "name": "status",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "default": "50"
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "default": "0"
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "createdAt",
+                "name"
+              ],
+              "default": "createdAt"
+            },
+            "required": false,
+            "name": "sort",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "desc"
+            },
+            "required": false,
+            "name": "order",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tenants list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Tenant"
+                      }
+                    },
+                    "total": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "items",
+                    "total"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      },
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "createTenant",
+        "tags": [
+          "tenants"
+        ],
+        "summary": "Create a new tenant",
+        "description": "Creates a new tenant. System admin access required.",
+        "x-guard": [
+          "isAuthenticated",
+          "hasSystemAccess"
+        ],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTenantBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Created tenant",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Tenant"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getTenantById",
+        "tags": [
+          "tenants"
+        ],
+        "summary": "Get tenant by ID",
+        "description": "Returns a single tenant by its ID. System admin access required.",
+        "x-guard": [
+          "isAuthenticated",
+          "hasSystemAccess"
+        ],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 6,
+              "description": "6-character tenant ID"
+            },
+            "required": true,
+            "description": "6-character tenant ID",
+            "name": "tenantId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tenant",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Tenant"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      },
+      "patch": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "updateTenant",
+        "tags": [
+          "tenants"
+        ],
+        "summary": "Update a tenant",
+        "description": "Updates a tenant by ID. System admin access required.",
+        "x-guard": [
+          "isAuthenticated",
+          "hasSystemAccess"
+        ],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 6,
+              "description": "6-character tenant ID"
+            },
+            "required": true,
+            "description": "6-character tenant ID",
+            "name": "tenantId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTenantBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated tenant",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Tenant"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      },
+      "delete": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "archiveTenant",
+        "tags": [
+          "tenants"
+        ],
+        "summary": "Archive a tenant",
+        "description": "Archives a tenant (soft delete). Sets status to \"archived\". System admin access required. Data retention period applies before permanent deletion.",
+        "x-guard": [
+          "isAuthenticated",
+          "hasSystemAccess"
+        ],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 6,
+              "description": "6-character tenant ID"
+            },
+            "required": true,
+            "description": "6-character tenant ID",
+            "name": "tenantId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Archived tenant",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ]
+                }
+              }
+            }
           },
           "400": {
             "$ref": "#/components/responses/BadRequestError"
@@ -8881,7 +9431,7 @@
         }
       }
     },
-    "/{orgId}/users": {
+    "/{tenantId}/{orgIdOrSlug}/users": {
       "get": {
         "security": [
           {
@@ -8896,17 +9446,26 @@
         "description": "Returns a list of *users* in an organization context.",
         "x-guard": [
           "isAuthenticated",
-          "hasOrgAccess"
+          "tenantGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
           {
             "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9]{6}$"
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
               "type": "string"
             },
             "required": true,
-            "name": "orgId",
+            "name": "orgIdOrSlug",
             "in": "path"
           },
           {
@@ -9089,11 +9648,12 @@
                       "memberships": [
                         {
                           "id": "300jor4orrvsgezqoyxfckg3",
+                          "tenantId": "ifex0a",
                           "contextType": "organization",
-                          "userId": "ifex0agu87zf240qkfh0faoq",
-                          "organizationId": "jip69qfpb1r33xdbp099f3xi",
-                          "role": "admin",
-                          "displayOrder": 2,
+                          "userId": "gu87zf240qkfh0faoqjip69q",
+                          "organizationId": "fpb1r33xdbp099f3xi8028r0",
+                          "role": "member",
+                          "displayOrder": 38,
                           "muted": false,
                           "archived": false
                         }
@@ -9123,11 +9683,12 @@
                       "memberships": [
                         {
                           "id": "1u44cckbz5av195r4h3wiruz",
+                          "tenantId": "44b7wk",
                           "contextType": "organization",
-                          "userId": "44b7wkilwj64zmkwsnsmrzo2",
-                          "organizationId": "zxd2hreylomg4p6xgvt4g11e",
+                          "userId": "ilwj64zmkwsnsmrzo2zxd2hr",
+                          "organizationId": "eylomg4p6xgvt4g11e2hqqxx",
                           "role": "admin",
-                          "displayOrder": 50,
+                          "displayOrder": 7,
                           "muted": false,
                           "archived": false
                         }
@@ -9157,7 +9718,7 @@
         }
       }
     },
-    "/{orgId}/users/{idOrSlug}": {
+    "/{tenantId}/{orgIdOrSlug}/users/{idOrSlug}": {
       "get": {
         "security": [
           {
@@ -9172,17 +9733,18 @@
         "description": "Retrieves a *user* by ID or slug in an organization context.",
         "x-guard": [
           "isAuthenticated",
-          "hasOrgAccess"
+          "tenantGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "pattern": "^[a-z0-9]{6}$"
             },
             "required": true,
-            "name": "idOrSlug",
+            "name": "tenantId",
             "in": "path"
           },
           {
@@ -9190,7 +9752,15 @@
               "type": "string"
             },
             "required": true,
-            "name": "orgId",
+            "name": "orgIdOrSlug",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "idOrSlug",
             "in": "path"
           }
         ],
@@ -9245,7 +9815,7 @@
         }
       }
     },
-    "/{orgId}/attachments": {
+    "/{tenantId}/{orgIdOrSlug}/attachments": {
       "get": {
         "security": [
           {
@@ -9260,17 +9830,27 @@
         "description": "Returns a paginated list of *attachments* for the organization.",
         "x-guard": [
           "isAuthenticated",
-          "hasOrgAccess"
+          "tenantGuard",
+          "orgGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
           {
             "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9]{6}$"
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
               "type": "string"
             },
             "required": true,
-            "name": "orgId",
+            "name": "orgIdOrSlug",
             "in": "path"
           },
           {
@@ -9361,18 +9941,19 @@
                   "items": [
                     {
                       "id": "o7z71y60a882cwpxtanaxnsp",
+                      "tenantId": "9nes1y",
                       "entityType": "attachment",
                       "name": "elegantly.vst",
                       "description": null,
-                      "keywords": "caterva socius cultura",
+                      "keywords": "vesco audentia angustus",
                       "public": false,
                       "bucketName": "attachments",
                       "groupId": null,
                       "filename": "elegantly.vst",
-                      "contentType": "image/vnd.microsoft.icon",
+                      "contentType": "application/vnd.apple.installer+xml",
                       "convertedContentType": null,
-                      "size": "419263",
-                      "originalKey": "uploads/yx645yb0gleyvjbbm5piweg2/elegantly.vst",
+                      "size": "9665489",
+                      "originalKey": "uploads/b0gleyvjbbm5piweg2q4gqa3/elegantly.vst",
                       "convertedKey": null,
                       "thumbnailKey": null,
                       "createdAt": "2024-11-21T04:00:59.122Z",
@@ -9380,27 +9961,28 @@
                       "modifiedAt": "2024-11-21T04:00:59.122Z",
                       "modifiedBy": "qqp8d07imsvjbtqtl3rtjgxd",
                       "tx": {
-                        "id": "q4gqa3vx9cfyey6mqh9hmikg",
-                        "sourceId": "src_me3gy3a9lhe0ctrmzc53x7z2",
+                        "id": "vx9cfyey6mqh9hmikgme3gy3",
+                        "sourceId": "src_a9lhe0ctrmzc53x7z222ydtq",
                         "version": 1,
                         "fieldVersions": {}
                       },
-                      "organizationId": "22ydtq57iu31mz5oaqf10oe7"
+                      "organizationId": "57iu31mz5oaqf10oe7y51pr5"
                     },
                     {
                       "id": "yahbgyu01sr6utecq3o02wpa",
+                      "tenantId": "56tpd7",
                       "entityType": "attachment",
                       "name": "woefully_bah.vsw",
                       "description": null,
-                      "keywords": "argentum attonbitus trans",
+                      "keywords": "auxilium non sui",
                       "public": false,
                       "bucketName": "attachments",
                       "groupId": null,
                       "filename": "woefully_bah.vsw",
-                      "contentType": "image/gif",
+                      "contentType": "audio/3gpp",
                       "convertedContentType": null,
-                      "size": "3774704",
-                      "originalKey": "uploads/77kpi37syiavgc67t5nr6k4h/woefully_bah.vsw",
+                      "size": "1107841",
+                      "originalKey": "uploads/7syiavgc67t5nr6k4huj5qv4/woefully_bah.vsw",
                       "convertedKey": null,
                       "thumbnailKey": null,
                       "createdAt": "2024-10-29T08:46:20.790Z",
@@ -9408,12 +9990,12 @@
                       "modifiedAt": "2024-10-29T08:46:20.790Z",
                       "modifiedBy": "hg5ogh3yr2b2dbwf7b9eckaj",
                       "tx": {
-                        "id": "uj5qv4k6bwmvl0e44bpmhsya",
-                        "sourceId": "src_uxcwuwjsrzvzac8qx1h9s6vz",
+                        "id": "k6bwmvl0e44bpmhsyauxcwuw",
+                        "sourceId": "src_jsrzvzac8qx1h9s6vzhgvcj0",
                         "version": 1,
                         "fieldVersions": {}
                       },
-                      "organizationId": "hgvcj0rs3xtuk03gxco9kzp2"
+                      "organizationId": "rs3xtuk03gxco9kzp2r8sr1z"
                     }
                   ],
                   "total": 2
@@ -9452,17 +10034,27 @@
         "description": "Registers one or more new *attachments* after client side upload. Includes metadata like name, type, and linked entity.",
         "x-guard": [
           "isAuthenticated",
-          "hasOrgAccess"
+          "tenantGuard",
+          "orgGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
           {
             "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9]{6}$"
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
               "type": "string"
             },
             "required": true,
-            "name": "orgId",
+            "name": "orgIdOrSlug",
             "in": "path"
           }
         ],
@@ -9590,18 +10182,19 @@
                   "data": [
                     {
                       "id": "slwtksu3yccsd9ihoiny6rso",
+                      "tenantId": "b7j0p6",
                       "entityType": "attachment",
                       "name": "excluding_ugh_besides.svgz",
                       "description": null,
-                      "keywords": "colo benigne id",
+                      "keywords": "nam curatio xiphias",
                       "public": false,
                       "bucketName": "attachments",
                       "groupId": null,
                       "filename": "excluding_ugh_besides.svgz",
-                      "contentType": "application/epub+zip",
+                      "contentType": "application/vnd.ms-fontobject",
                       "convertedContentType": null,
-                      "size": "7211145",
-                      "originalKey": "uploads/6kfz7rauzy6zwhhoizpinjn9/excluding_ugh_besides.svgz",
+                      "size": "7651256",
+                      "originalKey": "uploads/auzy6zwhhoizpinjn9as93qc/excluding_ugh_besides.svgz",
                       "convertedKey": null,
                       "thumbnailKey": null,
                       "createdAt": "2024-04-19T14:04:35.773Z",
@@ -9609,27 +10202,28 @@
                       "modifiedAt": "2024-04-19T14:04:35.773Z",
                       "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
                       "tx": {
-                        "id": "as93qcb6pakf4ovzm1ne3h55",
-                        "sourceId": "src_lgj31d63n9apx99a5auvr5cy",
+                        "id": "b6pakf4ovzm1ne3h55lgj31d",
+                        "sourceId": "src_63n9apx99a5auvr5cyj5s37i",
                         "version": 1,
                         "fieldVersions": {}
                       },
-                      "organizationId": "j5s37irnjjhhc4mupuqz0iqm"
+                      "organizationId": "rnjjhhc4mupuqz0iqmny8wdl"
                     },
                     {
                       "id": "pxxbqdej8622zpgo54qw5fqo",
+                      "tenantId": "9wwhw5",
                       "entityType": "attachment",
                       "name": "gown.ini",
                       "description": null,
-                      "keywords": "cetera velociter vehemens",
+                      "keywords": "denique tum candidus",
                       "public": false,
                       "bucketName": "attachments",
                       "groupId": null,
                       "filename": "gown.ini",
-                      "contentType": "application/zip",
+                      "contentType": "application/x-sh",
                       "convertedContentType": null,
-                      "size": "9066537",
-                      "originalKey": "uploads/5hu8fmg18wbwob9s8r85nah6/gown.ini",
+                      "size": "6125227",
+                      "originalKey": "uploads/g18wbwob9s8r85nah671ybl6/gown.ini",
                       "convertedKey": null,
                       "thumbnailKey": null,
                       "createdAt": "2024-02-25T13:01:35.301Z",
@@ -9637,12 +10231,12 @@
                       "modifiedAt": "2024-02-25T13:01:35.301Z",
                       "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
                       "tx": {
-                        "id": "71ybl6y4dvzpz75e03ldr2ga",
-                        "sourceId": "src_54hj92yzr7v1itpc9wztvbcy",
+                        "id": "y4dvzpz75e03ldr2ga54hj92",
+                        "sourceId": "src_yzr7v1itpc9wztvbcy21q04o",
                         "version": 1,
                         "fieldVersions": {}
                       },
-                      "organizationId": "21q04oq81k5rbzt4yq63pob5"
+                      "organizationId": "q81k5rbzt4yq63pob5r5tp1l"
                     }
                   ],
                   "rejectedItemIds": []
@@ -9687,18 +10281,19 @@
                   "data": [
                     {
                       "id": "slwtksu3yccsd9ihoiny6rso",
+                      "tenantId": "b7j0p6",
                       "entityType": "attachment",
                       "name": "excluding_ugh_besides.svgz",
                       "description": null,
-                      "keywords": "colo benigne id",
+                      "keywords": "nam curatio xiphias",
                       "public": false,
                       "bucketName": "attachments",
                       "groupId": null,
                       "filename": "excluding_ugh_besides.svgz",
-                      "contentType": "application/epub+zip",
+                      "contentType": "application/vnd.ms-fontobject",
                       "convertedContentType": null,
-                      "size": "7211145",
-                      "originalKey": "uploads/6kfz7rauzy6zwhhoizpinjn9/excluding_ugh_besides.svgz",
+                      "size": "7651256",
+                      "originalKey": "uploads/auzy6zwhhoizpinjn9as93qc/excluding_ugh_besides.svgz",
                       "convertedKey": null,
                       "thumbnailKey": null,
                       "createdAt": "2024-04-19T14:04:35.773Z",
@@ -9706,27 +10301,28 @@
                       "modifiedAt": "2024-04-19T14:04:35.773Z",
                       "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
                       "tx": {
-                        "id": "as93qcb6pakf4ovzm1ne3h55",
-                        "sourceId": "src_lgj31d63n9apx99a5auvr5cy",
+                        "id": "b6pakf4ovzm1ne3h55lgj31d",
+                        "sourceId": "src_63n9apx99a5auvr5cyj5s37i",
                         "version": 1,
                         "fieldVersions": {}
                       },
-                      "organizationId": "j5s37irnjjhhc4mupuqz0iqm"
+                      "organizationId": "rnjjhhc4mupuqz0iqmny8wdl"
                     },
                     {
                       "id": "pxxbqdej8622zpgo54qw5fqo",
+                      "tenantId": "9wwhw5",
                       "entityType": "attachment",
                       "name": "gown.ini",
                       "description": null,
-                      "keywords": "cetera velociter vehemens",
+                      "keywords": "denique tum candidus",
                       "public": false,
                       "bucketName": "attachments",
                       "groupId": null,
                       "filename": "gown.ini",
-                      "contentType": "application/zip",
+                      "contentType": "application/x-sh",
                       "convertedContentType": null,
-                      "size": "9066537",
-                      "originalKey": "uploads/5hu8fmg18wbwob9s8r85nah6/gown.ini",
+                      "size": "6125227",
+                      "originalKey": "uploads/g18wbwob9s8r85nah671ybl6/gown.ini",
                       "convertedKey": null,
                       "thumbnailKey": null,
                       "createdAt": "2024-02-25T13:01:35.301Z",
@@ -9734,12 +10330,12 @@
                       "modifiedAt": "2024-02-25T13:01:35.301Z",
                       "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
                       "tx": {
-                        "id": "71ybl6y4dvzpz75e03ldr2ga",
-                        "sourceId": "src_54hj92yzr7v1itpc9wztvbcy",
+                        "id": "y4dvzpz75e03ldr2ga54hj92",
+                        "sourceId": "src_yzr7v1itpc9wztvbcy21q04o",
                         "version": 1,
                         "fieldVersions": {}
                       },
-                      "organizationId": "21q04oq81k5rbzt4yq63pob5"
+                      "organizationId": "q81k5rbzt4yq63pob5r5tp1l"
                     }
                   ],
                   "rejectedItemIds": []
@@ -9778,17 +10374,27 @@
         "description": "Deletes one or more *attachment* records by ID. This does not delete the underlying file in storage.",
         "x-guard": [
           "isAuthenticated",
-          "hasOrgAccess"
+          "tenantGuard",
+          "orgGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
           {
             "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9]{6}$"
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
               "type": "string"
             },
             "required": true,
-            "name": "orgId",
+            "name": "orgIdOrSlug",
             "in": "path"
           }
         ],
@@ -9883,7 +10489,7 @@
         }
       }
     },
-    "/{orgId}/attachments/presigned-url": {
+    "/{tenantId}/{orgIdOrSlug}/attachments/presigned-url": {
       "get": {
         "security": [
           {
@@ -9898,7 +10504,8 @@
         "description": "Generates and returns a presigned URL for accessing a private attachment file in S3. Public files should use the public CDN URL directly. Requires organization context.",
         "x-guard": [
           "isAuthenticated",
-          "hasOrgAccess"
+          "tenantGuard",
+          "orgGuard"
         ],
         "x-rate-limiter": [
           "presignedUrlLimiter"
@@ -9907,10 +10514,19 @@
         "parameters": [
           {
             "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9]{6}$"
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
               "type": "string"
             },
             "required": true,
-            "name": "orgId",
+            "name": "orgIdOrSlug",
             "in": "path"
           },
           {
@@ -9951,7 +10567,7 @@
         }
       }
     },
-    "/{orgId}/attachments/{id}": {
+    "/{tenantId}/{orgIdOrSlug}/attachments/{id}": {
       "get": {
         "security": [
           {
@@ -9966,7 +10582,8 @@
         "description": "Returns a single *attachment* by ID. Supports CDC cache via X-Cache-Token header.",
         "x-guard": [
           "isAuthenticated",
-          "hasOrgAccess"
+          "tenantGuard",
+          "orgGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [
@@ -9975,10 +10592,11 @@
         "parameters": [
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "pattern": "^[a-z0-9]{6}$"
             },
             "required": true,
-            "name": "id",
+            "name": "tenantId",
             "in": "path"
           },
           {
@@ -9986,7 +10604,15 @@
               "type": "string"
             },
             "required": true,
-            "name": "orgId",
+            "name": "orgIdOrSlug",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
             "in": "path"
           }
         ],
@@ -10000,18 +10626,19 @@
                 },
                 "example": {
                   "id": "og9ynkm3vp2mdgi3oeicogxv",
+                  "tenantId": "lphxlo",
                   "entityType": "attachment",
                   "name": "yet_rightfully_lest.ogx",
                   "description": null,
-                  "keywords": "pectus subvenio depromo",
+                  "keywords": "damno tenax arx",
                   "public": false,
                   "bucketName": "attachments",
                   "groupId": null,
                   "filename": "yet_rightfully_lest.ogx",
-                  "contentType": "video/mp2t",
+                  "contentType": "application/vnd.ms-fontobject",
                   "convertedContentType": null,
-                  "size": "6046908",
-                  "originalKey": "uploads/ofr579y6bqnt152wowxrfkyy/yet_rightfully_lest.ogx",
+                  "size": "2524242",
+                  "originalKey": "uploads/y6bqnt152wowxrfkyy8dwkbm/yet_rightfully_lest.ogx",
                   "convertedKey": null,
                   "thumbnailKey": null,
                   "createdAt": "2024-10-12T17:43:05.360Z",
@@ -10019,12 +10646,12 @@
                   "modifiedAt": "2024-10-12T17:43:05.360Z",
                   "modifiedBy": "0uwim8y2tppz7th9tol75wjz",
                   "tx": {
-                    "id": "8dwkbmpkeuemouu8t58r8fuj",
-                    "sourceId": "src_3tlenhqurk6hu54pnfytf99m",
+                    "id": "pkeuemouu8t58r8fuj3tlenh",
+                    "sourceId": "src_qurk6hu54pnfytf99mpmuhw0",
                     "version": 1,
                     "fieldVersions": {}
                   },
-                  "organizationId": "pmuhw07eswx7d6csd6xo4nqw"
+                  "organizationId": "7eswx7d6csd6xo4nqwl7k09e"
                 }
               }
             }
@@ -10060,17 +10687,19 @@
         "description": "Updates metadata of an *attachment*, such as its name or associated entity.",
         "x-guard": [
           "isAuthenticated",
-          "hasOrgAccess"
+          "tenantGuard",
+          "orgGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "pattern": "^[a-z0-9]{6}$"
             },
             "required": true,
-            "name": "id",
+            "name": "tenantId",
             "in": "path"
           },
           {
@@ -10078,7 +10707,15 @@
               "type": "string"
             },
             "required": true,
-            "name": "orgId",
+            "name": "orgIdOrSlug",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
             "in": "path"
           }
         ],
@@ -10116,18 +10753,19 @@
                 },
                 "example": {
                   "id": "og9ynkm3vp2mdgi3oeicogxv",
+                  "tenantId": "lphxlo",
                   "entityType": "attachment",
                   "name": "yet_rightfully_lest.ogx",
                   "description": null,
-                  "keywords": "pectus subvenio depromo",
+                  "keywords": "damno tenax arx",
                   "public": false,
                   "bucketName": "attachments",
                   "groupId": null,
                   "filename": "yet_rightfully_lest.ogx",
-                  "contentType": "video/mp2t",
+                  "contentType": "application/vnd.ms-fontobject",
                   "convertedContentType": null,
-                  "size": "6046908",
-                  "originalKey": "uploads/ofr579y6bqnt152wowxrfkyy/yet_rightfully_lest.ogx",
+                  "size": "2524242",
+                  "originalKey": "uploads/y6bqnt152wowxrfkyy8dwkbm/yet_rightfully_lest.ogx",
                   "convertedKey": null,
                   "thumbnailKey": null,
                   "createdAt": "2024-10-12T17:43:05.360Z",
@@ -10135,12 +10773,12 @@
                   "modifiedAt": "2024-10-12T17:43:05.360Z",
                   "modifiedBy": "0uwim8y2tppz7th9tol75wjz",
                   "tx": {
-                    "id": "8dwkbmpkeuemouu8t58r8fuj",
-                    "sourceId": "src_3tlenhqurk6hu54pnfytf99m",
+                    "id": "pkeuemouu8t58r8fuj3tlenh",
+                    "sourceId": "src_qurk6hu54pnfytf99mpmuhw0",
                     "version": 1,
                     "fieldVersions": {}
                   },
-                  "organizationId": "pmuhw07eswx7d6csd6xo4nqw"
+                  "organizationId": "7eswx7d6csd6xo4nqwl7k09e"
                 }
               }
             }
@@ -10163,7 +10801,7 @@
         }
       }
     },
-    "/{orgId}/attachments/{id}/link": {
+    "/{tenantId}/{orgIdOrSlug}/attachments/{id}/link": {
       "get": {
         "security": [],
         "operationId": "redirectToAttachment",
@@ -10211,7 +10849,7 @@
         }
       }
     },
-    "/{orgId}/memberships": {
+    "/{tenantId}/{orgIdOrSlug}/memberships": {
       "post": {
         "security": [
           {
@@ -10226,17 +10864,27 @@
         "description": "Creates one or more *memberships*, inviting users (existing or new) to a context entity such as an organization.",
         "x-guard": [
           "isAuthenticated",
-          "hasOrgAccess"
+          "tenantGuard",
+          "orgGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
           {
             "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9]{6}$"
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
               "type": "string"
             },
             "required": true,
-            "name": "orgId",
+            "name": "orgIdOrSlug",
             "in": "path"
           },
           {
@@ -10335,11 +10983,12 @@
                   "data": [
                     {
                       "id": "vn86f6g3ci8ybeh37sz3gscf",
+                      "tenantId": "gmpj3u",
                       "contextType": "organization",
-                      "userId": "gmpj3uavw3f7pkm7vsxl2157",
-                      "organizationId": "n34cen80754cxm7om1aq3bat",
-                      "role": "member",
-                      "displayOrder": 9,
+                      "userId": "avw3f7pkm7vsxl2157n34cen",
+                      "organizationId": "80754cxm7om1aq3batq3hdpx",
+                      "role": "admin",
+                      "displayOrder": 32,
                       "muted": false,
                       "archived": false
                     }
@@ -10381,17 +11030,27 @@
         "description": "Deletes one or more *memberships* by ID. This removes the membership but does not delete the associated user(s).",
         "x-guard": [
           "isAuthenticated",
-          "hasOrgAccess"
+          "tenantGuard",
+          "orgGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
           {
             "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9]{6}$"
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
               "type": "string"
             },
             "required": true,
-            "name": "orgId",
+            "name": "orgIdOrSlug",
             "in": "path"
           },
           {
@@ -10490,7 +11149,7 @@
         }
       }
     },
-    "/{orgId}/memberships/{id}": {
+    "/{tenantId}/{orgIdOrSlug}/memberships/{id}": {
       "put": {
         "security": [
           {
@@ -10505,17 +11164,19 @@
         "description": "Updates the *membership* metadata, such as role, `muted`, or `archived` status.",
         "x-guard": [
           "isAuthenticated",
-          "hasOrgAccess"
+          "tenantGuard",
+          "orgGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "pattern": "^[a-z0-9]{6}$"
             },
             "required": true,
-            "name": "id",
+            "name": "tenantId",
             "in": "path"
           },
           {
@@ -10523,7 +11184,15 @@
               "type": "string"
             },
             "required": true,
-            "name": "orgId",
+            "name": "orgIdOrSlug",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
             "in": "path"
           }
         ],
@@ -10575,7 +11244,7 @@
                   "createdBy": "xg7596t8jiy8d0v8irrljzhy",
                   "modifiedAt": "2024-10-28T14:52:59.502Z",
                   "modifiedBy": null,
-                  "uniqueKey": "xg7596t8jiy8d0v8irrljzhy-7ul53b62aw5h7k6x44nbu2r5"
+                  "tenantId": "test01"
                 }
               }
             }
@@ -10598,7 +11267,7 @@
         }
       }
     },
-    "/{orgId}/memberships/{id}/{acceptOrReject}": {
+    "/{tenantId}/{orgIdOrSlug}/memberships/{id}/{acceptOrReject}": {
       "post": {
         "security": [
           {
@@ -10635,14 +11304,6 @@
             },
             "required": true,
             "name": "acceptOrReject",
-            "in": "path"
-          },
-          {
-            "schema": {
-              "type": "string"
-            },
-            "required": true,
-            "name": "orgId",
             "in": "path"
           }
         ],
@@ -10686,7 +11347,7 @@
         }
       }
     },
-    "/{orgId}/memberships/members": {
+    "/{tenantId}/{orgIdOrSlug}/memberships/members": {
       "get": {
         "security": [
           {
@@ -10701,17 +11362,27 @@
         "description": "Retrieves members (users) of a context entity by ID, including their associated *membership* data.",
         "x-guard": [
           "isAuthenticated",
-          "hasOrgAccess"
+          "tenantGuard",
+          "orgGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
           {
             "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9]{6}$"
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
               "type": "string"
             },
             "required": true,
-            "name": "orgId",
+            "name": "orgIdOrSlug",
             "in": "path"
           },
           {
@@ -10968,11 +11639,12 @@
                       "lastSeenAt": "2024-11-21T04:00:59.122Z",
                       "membership": {
                         "id": "300jor4orrvsgezqoyxfckg3",
+                        "tenantId": "ifex0a",
                         "contextType": "organization",
-                        "userId": "ifex0agu87zf240qkfh0faoq",
-                        "organizationId": "jip69qfpb1r33xdbp099f3xi",
-                        "role": "admin",
-                        "displayOrder": 2,
+                        "userId": "gu87zf240qkfh0faoqjip69q",
+                        "organizationId": "fpb1r33xdbp099f3xi8028r0",
+                        "role": "member",
+                        "displayOrder": 38,
                         "muted": false,
                         "archived": false
                       }
@@ -10998,11 +11670,12 @@
                       "lastSeenAt": "2024-10-29T08:46:20.790Z",
                       "membership": {
                         "id": "1u44cckbz5av195r4h3wiruz",
+                        "tenantId": "44b7wk",
                         "contextType": "organization",
-                        "userId": "44b7wkilwj64zmkwsnsmrzo2",
-                        "organizationId": "zxd2hreylomg4p6xgvt4g11e",
+                        "userId": "ilwj64zmkwsnsmrzo2zxd2hr",
+                        "organizationId": "eylomg4p6xgvt4g11e2hqqxx",
                         "role": "admin",
-                        "displayOrder": 50,
+                        "displayOrder": 7,
                         "muted": false,
                         "archived": false
                       }
@@ -11031,7 +11704,7 @@
         }
       }
     },
-    "/{orgId}/memberships/pending": {
+    "/{tenantId}/{orgIdOrSlug}/memberships/pending": {
       "get": {
         "security": [
           {
@@ -11046,17 +11719,27 @@
         "description": "Returns pending memberships for a context entity, identified by ID. This does not include pending invitations for non-existing users.",
         "x-guard": [
           "isAuthenticated",
-          "hasOrgAccess"
+          "tenantGuard",
+          "orgGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
           {
             "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9]{6}$"
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
               "type": "string"
             },
             "required": true,
-            "name": "orgId",
+            "name": "orgIdOrSlug",
             "in": "path"
           },
           {
@@ -11207,7 +11890,7 @@
                       "createdAt": "2024-11-21T04:00:59.122Z",
                       "createdBy": "9hmikgme3gy3a9lhe0ctrmzc",
                       "organizationId": "9xn03u76eo7z71y60a882cwp",
-                      "uniqueKey": "qqp8d07imsvjbtqtl3rtjgxd-9xn03u76eo7z71y60a882cwp"
+                      "tenantId": "test01"
                     },
                     {
                       "id": "pi37syiavgc67t5nr6k4huj5",
@@ -11220,7 +11903,7 @@
                       "createdAt": "2024-10-29T08:46:20.790Z",
                       "createdBy": "vl0e44bpmhsyauxcwuwjsrzv",
                       "organizationId": "clxs8vayzrul7vmeyahbgyu0",
-                      "uniqueKey": "hg5ogh3yr2b2dbwf7b9eckaj-clxs8vayzrul7vmeyahbgyu0"
+                      "tenantId": "test01"
                     }
                   ],
                   "total": 2

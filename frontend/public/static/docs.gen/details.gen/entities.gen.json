@@ -189,7 +189,7 @@
                   "resourceType": {
                     "type": ["string", "null"],
                     "required": true,
-                    "enum": ["request", "membership", null]
+                    "enum": ["request", "membership", "inactive_membership", "tenant", null]
                   },
                   "entityId": { "type": "string", "required": true },
                   "organizationId": {

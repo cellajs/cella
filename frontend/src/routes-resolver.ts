@@ -12,11 +12,11 @@ import { baseEntityRoutes } from '~/routes-config';
  * When adding new context entity types, update baseEntityRoutes and add corresponding param handling.
  */
 export const getContextEntityRoute = (item: ContextEntityData, _isSubitem?: boolean): EntityRoute => {
-  const { entityType, id, slug } = item;
+  const { entityType, id, slug, tenantId } = item;
 
   const to = baseEntityRoutes[entityType];
 
-  // Organization routes use orgIdOrSlug param
+  // Organization routes use tenantId and orgIdOrSlug params
   // Currently cella only has organization as context entity type
-  return { to, params: { orgIdOrSlug: slug || id }, search: {} };
+  return { to, params: { tenantId, orgIdOrSlug: slug || id }, search: {} };
 };

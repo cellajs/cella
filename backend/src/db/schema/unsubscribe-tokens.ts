@@ -20,12 +20,12 @@ export const unsubscribeTokensTable = pgTable(
     userId: varchar()
       .notNull()
       .references(() => usersTable.id, { onDelete: 'cascade' }),
-    token: varchar().notNull(),
+    secret: varchar().notNull(),
     createdAt: timestampColumns.createdAt,
   },
   (table) => [
     primaryKey({ columns: [table.id, table.createdAt] }),
-    index('unsubscribe_tokens_token_idx').on(table.token),
+    index('unsubscribe_tokens_secret_idx').on(table.secret),
     index('unsubscribe_tokens_user_id_idx').on(table.userId),
   ],
 );

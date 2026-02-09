@@ -25,7 +25,10 @@ export interface UseAttachmentUrlOptions extends ResolveOptions {
  */
 export function useAttachmentUrl(
   attachment:
-    | Pick<Attachment, 'id' | 'originalKey' | 'convertedKey' | 'thumbnailKey' | 'public' | 'organizationId'>
+    | Pick<
+        Attachment,
+        'id' | 'originalKey' | 'convertedKey' | 'thumbnailKey' | 'public' | 'tenantId' | 'organizationId'
+      >
     | null
     | undefined,
   options: UseAttachmentUrlOptions = {},

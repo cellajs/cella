@@ -1,12 +1,13 @@
 import { faker } from '@faker-js/faker';
 import { eq } from 'drizzle-orm';
-import { checkMark,loadingMark } from '#/utils/console';
+import { startSpinner, succeedSpinner, warnSpinner } from '#/utils/console';
 
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { InsertMembershipModel, membershipsTable } from '#/db/schema/memberships';
 import { OrganizationModel, organizationsTable } from '#/db/schema/organizations';
 import { passwordsTable } from '#/db/schema/passwords';
+import { tenantsTable } from '#/db/schema/tenants';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { UserModel, usersTable } from '#/db/schema/users';
 import { hashPassword } from '#/modules/auth/passwords/helpers/argon2id';
@@ -36,20 +37,36 @@ const isOrganizationSeeded = async () => {
 export const organizationsSeed = async () => {
   if (isProduction) return console.error('Not allowed in production.');
 
-  console.info(` \n${loadingMark} Seeding organizations...`);
+  const spinner = startSpinner('Seeding organizations...');
 
   // Records already exist → skip seeding
-  if (await isOrganizationSeeded()) return console.warn('Organizations table not empty → skip seeding');
+  if (await isOrganizationSeeded()) {
+    warnSpinner('Organizations table not empty → skip seeding');
+    return;
+  }
+
+  // Create tenants first (one per organization for seed data)
+  const tenantRecords = Array.from({ length: ORGANIZATIONS_COUNT }, (_, i) => ({
+    name: `Tenant ${i + 1}`,
+  }));
+  const tenants = await db
+    .insert(tenantsTable)
+    .values(tenantRecords)
+    .returning()
+    .onConflictDoNothing();
 
   // Make many organizations → Insert into the database
-  const organizationRecords = mockMany(mockOrganization, ORGANIZATIONS_COUNT);
+  const organizationRecords = mockMany(mockOrganization, ORGANIZATIONS_COUNT).map((org, i) => ({
+    ...org,
+    tenantId: tenants[i].id, // Override the random tenantId with actual tenant
+  }));
   const organizations = await db
     .insert(organizationsTable)
     .values(organizationRecords)
     .returning()
     .onConflictDoNothing();
 
-  console.info(` \n${loadingMark} Seeding members and memberships, this can take a while...`);
+  spinner.text = 'Seeding members and memberships...';
 
   // Fetch the default admin user
   const [adminUser] = await db
@@ -111,7 +128,7 @@ export const organizationsSeed = async () => {
       .onConflictDoNothing();
   }
 
-  console.info(` \n${checkMark} Created ${ORGANIZATIONS_COUNT} organizations with ${MEMBERS_COUNT} members each\n `);
+  succeedSpinner(`Created ${ORGANIZATIONS_COUNT} organizations with ${MEMBERS_COUNT} members each`);
 };
 
 /**

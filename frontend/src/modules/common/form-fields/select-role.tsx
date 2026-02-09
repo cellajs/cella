@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { appConfig } from 'shared';
+import { appConfig, roles } from 'shared';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
 import { cn } from '~/utils/cn';
@@ -15,7 +15,7 @@ export function SelectRole({ entity = false, onChange, value, className }: Selec
   const { t } = useTranslation();
   const { isOnline } = useOnlineManager();
 
-  const roles = entity ? appConfig.entityRoles : appConfig.systemRoles;
+  const roleOptions = entity ? roles.all : appConfig.systemRoles;
 
   return (
     <Select
@@ -27,7 +27,7 @@ export function SelectRole({ entity = false, onChange, value, className }: Selec
       </SelectTrigger>
       <SelectContent>
         <SelectItem value={'all'}> {t('common:all')}</SelectItem>
-        {roles.map((role) => (
+        {roleOptions.map((role) => (
           <SelectItem key={role} value={role}>
             {t(role, { ns: ['app', 'common'] })}
           </SelectItem>

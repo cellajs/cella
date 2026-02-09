@@ -3,10 +3,8 @@ import { testClient } from 'hono/testing';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { db } from '#/db/db';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
-import { organizationsTable } from '#/db/schema/organizations';
-import { mockOrganization } from '../../mocks/mock-organization';
 import { defaultHeaders } from '../fixtures';
-import { createOrganizationAdminUser, createPasswordUser, parseResponse } from '../helpers';
+import { createOrganizationAdminUser, createPasswordUser, createTestOrganization, parseResponse } from '../helpers';
 import { clearDatabase, mockFetchRequest, mockRateLimiter, setTestConfig } from '../test-utils';
 
 setTestConfig({
@@ -37,9 +35,15 @@ describe('Membership Invitation', async () => {
   const client = testClient(app) as any;
 
   const createOrgAndAdmin = async () => {
-    const organizationData = mockOrganization();
-    const [organization] = await db.insert(organizationsTable).values(organizationData).returning();
-    await createOrganizationAdminUser('admin@cella.com', 'adminPassword123!', organization.id);
+    const organization = await createTestOrganization();
+    await createOrganizationAdminUser(
+      'admin@cella.com',
+      'adminPassword123!',
+      organization.id,
+      'admin',
+      true,
+      organization.tenantId,
+    );
 
     const signInRes = await client['auth']['sign-in'].$post(
       { json: { email: 'admin@cella.com', password: 'adminPassword123!' } },
@@ -178,8 +182,7 @@ describe('Membership Invitation', async () => {
   });
 
   it('should reject invitations without authentication', async () => {
-    const organizationData = mockOrganization();
-    const [organization] = await db.insert(organizationsTable).values(organizationData).returning();
+    const organization = await createTestOrganization();
 
     const res = await client[organization.id]['memberships'].$post(
       { json: { emails: ['user@cella.com'], role: 'member' }, query: { entityType: 'organization' } },
@@ -190,8 +193,7 @@ describe('Membership Invitation', async () => {
   });
 
   it('should reject invitations from non-org members', async () => {
-    const organizationData = mockOrganization();
-    const [organization] = await db.insert(organizationsTable).values(organizationData).returning();
+    const organization = await createTestOrganization();
 
     await createPasswordUser('user@cella.com', 'password123!');
     const signInRes = await client['auth']['sign-in'].$post(

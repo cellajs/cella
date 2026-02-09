@@ -22,6 +22,7 @@ import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
+import { SYSTEM_TENANT_ID } from '../../../scripts/seeds/fixtures';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -47,10 +48,14 @@ const pageRouteHandlers = app
 
     const user = ctx.var.user;
 
+    // Pages always belong to system tenant (platform-wide content)
+    const tenantId = SYSTEM_TENANT_ID;
+
     // Prepare pages with tx metadata for CDC
     // TODO not finished here
     const pagesToInsert = newPages.map(({ tx, ...pageData }) => ({
       ...pageData,
+      tenantId,
       id: nanoid(),
       entityType: 'page' as const,
       createdAt: getIsoDate(),

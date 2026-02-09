@@ -39,11 +39,13 @@ export function isProductEntity<TProducts extends string>(
 }
 
 /**
- * Check if entity type is a public product entity (no parent context).
+ * Check if entity type has public access configured in hierarchy.
+ * This checks whether the entity CAN be public (has publicAccess config),
+ * not whether a specific row IS public (that requires checking the entity's publicAccess flag).
  */
-export function isPublicProductEntity<TParentless extends string>(
-  hierarchy: EntityHierarchy<{ all: readonly string[] }, string, string, TParentless>,
+export function isPublicProductEntity(
+  hierarchy: EntityHierarchy<{ all: readonly string[] }, string, string, string>,
   entityType: string,
-): entityType is TParentless {
-  return (hierarchy.parentlessProductTypes as readonly string[]).includes(entityType);
+): boolean {
+  return hierarchy.canBePublic(entityType);
 }

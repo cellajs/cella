@@ -1,24 +1,24 @@
-import { appConfig, type PublicProductEntityType } from 'shared';
+import { isPublicProductEntity } from 'shared';
 import type { PublicStreamActivity } from '~/api.gen';
 import { pageQueryKeys } from '~/modules/page/query';
 import { queryClient } from '~/query/query-client';
 
+type QueryKeyHandler = {
+  listBase: readonly unknown[];
+  detailById: (id: string) => readonly unknown[];
+};
+
 /**
  * Query key handlers for each public entity type.
  * Maps entity types to their query key generators.
+ * Note: Only entities with publicAccess configured in hierarchy need handlers here.
  */
-const entityQueryKeyHandlers: Record<
-  PublicProductEntityType,
-  {
-    listBase: readonly unknown[];
-    detailById: (id: string) => readonly unknown[];
-  }
-> = {
+const entityQueryKeyHandlers: Record<string, QueryKeyHandler> = {
   page: {
     listBase: pageQueryKeys.list.base,
     detailById: (id) => pageQueryKeys.detail.byId(id),
   },
-  // Add more public entity types here when they are added to config
+  // Add more public entity types here when they are added to hierarchy
 };
 
 /**
@@ -33,11 +33,11 @@ export function handlePublicStreamMessage(message: PublicStreamActivity): void {
   const { entityType, entityId, action } = message;
 
   // Only handle configured public entity types
-  if (!entityType || !appConfig.publicProductEntityTypes.includes(entityType as PublicProductEntityType)) {
+  if (!entityType || !isPublicProductEntity(entityType)) {
     return;
   }
 
-  const handler = entityQueryKeyHandlers[entityType as PublicProductEntityType];
+  const handler = entityQueryKeyHandlers[entityType];
   if (!handler) {
     console.debug(`[PublicStreamHandler] No handler for entity type: ${entityType}`);
     return;

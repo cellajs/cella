@@ -1,9 +1,11 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { and, count, eq, getColumns, ilike, inArray, type SQL } from 'drizzle-orm';
-import { appConfig, hierarchy, recordFromKeys } from 'shared';
-import { db } from '#/db/db';
+import { appConfig, hierarchy, recordFromKeys, roles } from 'shared';
+import { db, unsafeInternalAdminDb } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
+import { tenantsTable } from '#/db/schema/tenants';
+import { setUserRlsContext } from '#/db/tenant-context';
 import { type Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
 import { checkSlugAvailable, checkSlugsAvailable } from '#/modules/entities/helpers/check-slug';
@@ -68,14 +70,25 @@ const organizationRouteHandlers = app
       return ctx.json({ data: [], ...rejectionState }, 201);
     }
 
-    // Batch insert organizations
-    const createdOrganizations = await db
-      .insert(organizationsTable)
+    // Create tenants first (one per organization for now)
+    const createdTenants = await db
+      .insert(tenantsTable)
       .values(
         itemsToCreate.map((item) => ({
           name: item.name,
+        })),
+      )
+      .returning();
+
+    // Batch insert organizations with tenant references
+    const createdOrganizations = await db
+      .insert(organizationsTable)
+      .values(
+        itemsToCreate.map((item, index) => ({
+          name: item.name,
           shortName: item.name,
           slug: item.slug,
+          tenantId: createdTenants[index].id,
           languages: [appConfig.defaultLanguage],
           welcomeText: defaultWelcomeText,
           defaultLanguage: appConfig.defaultLanguage,
@@ -103,7 +116,7 @@ const organizationRouteHandlers = app
     // Build counts
     const validEntities = hierarchy.getChildren('organization');
     const entitiesCounts = recordFromKeys(validEntities, () => 0);
-    const entityRoleCounts = recordFromKeys(appConfig.entityRoles, (role) => (role === 'admin' ? 1 : 0));
+    const entityRoleCounts = recordFromKeys(roles.all, (role) => (role === 'admin' ? 1 : 0));
     const memberCounts = { ...entityRoleCounts, pending: 0, total: 1 };
 
     // Creator is admin, grant all permissions
@@ -146,7 +159,7 @@ const organizationRouteHandlers = app
     const entityType = 'organization';
 
     const user = ctx.var.user;
-    const userSystemRole = ctx.var.userRole;
+    const userSystemRole = ctx.var.userSystemRole;
     const memberships = ctx.var.memberships;
     const isSystemAdmin = userSystemRole === 'admin' && !userId;
 
@@ -179,23 +192,11 @@ const organizationRouteHandlers = app
     // Get reusable count subqueries and select shape (only when requested)
     const countData = includeCounts ? getEntityCountsSelect(entityType) : null;
 
-    // System admin can see all orgs (no join needed), others need membership
-    const baseQuery = db.select({ orgId: organizationsTable.id }).from(organizationsTable);
-
-    const totalQuery = isSystemAdmin
-      ? baseQuery.where(and(...orgWhere)).as('base')
-      : baseQuery
-          .innerJoin(membershipsTable, membershipOn)
-          .where(and(...orgWhere))
-          .as('base');
-
-    const [{ total }] = await db.select({ total: count() }).from(totalQuery);
-
     const orderColumn = getOrderColumn(sort, organizationsTable.id, order, {
       id: organizationsTable.id,
       name: organizationsTable.name,
       createdAt: organizationsTable.createdAt,
-      userRole: membershipsTable.role,
+      userSystemRole: membershipsTable.role,
     });
 
     // Select shape without membership - we'll add it via included wrapper if requested
@@ -204,22 +205,51 @@ const organizationRouteHandlers = app
       ...(countData && { counts: countData.countsSelect }),
     } as const;
 
-    // Build query - system admin sees all orgs (leftJoin), others only their memberships (innerJoin)
-    let query = isSystemAdmin
-      ? db.select(selectShape).from(organizationsTable).leftJoin(membershipsTable, membershipOn)
-      : db.select(selectShape).from(organizationsTable).innerJoin(membershipsTable, membershipOn);
+    // System admin uses unsafeInternalAdminDb to bypass RLS (they have no membership in all orgs)
+    // Regular users use setUserRlsContext for cross-tenant membership-based access
+    const { total, organizations } = isSystemAdmin
+      ? await (async () => {
+          // System admins bypass RLS entirely
+          const adminDb = unsafeInternalAdminDb ?? db;
+          const baseQuery = adminDb.select({ orgId: organizationsTable.id }).from(organizationsTable);
+          const totalQuery = baseQuery.where(and(...orgWhere)).as('base');
+          const [{ total }] = await adminDb.select({ total: count() }).from(totalQuery);
 
-    if (countData) {
-      query = query
-        .leftJoin(countData.memberCountsSubquery, eq(organizationsTable.id, countData.memberCountsSubquery.id))
-        .leftJoin(countData.relatedCountsSubquery, eq(organizationsTable.id, countData.relatedCountsSubquery.id));
-    }
+          let query = adminDb.select(selectShape).from(organizationsTable).leftJoin(membershipsTable, membershipOn);
+          if (countData) {
+            query = query
+              .leftJoin(countData.memberCountsSubquery, eq(organizationsTable.id, countData.memberCountsSubquery.id))
+              .leftJoin(countData.relatedCountsSubquery, eq(organizationsTable.id, countData.relatedCountsSubquery.id));
+          }
+          const organizations = await query
+            .where(and(...orgWhere))
+            .orderBy(orderColumn)
+            .limit(limit)
+            .offset(offset);
+          return { total, organizations };
+        })()
+      : await setUserRlsContext({ userId: user.id }, async (tx) => {
+          // Regular users: RLS allows cross-tenant SELECT via membership check
+          const baseQuery = tx.select({ orgId: organizationsTable.id }).from(organizationsTable);
+          const totalQuery = baseQuery
+            .innerJoin(membershipsTable, membershipOn)
+            .where(and(...orgWhere))
+            .as('base');
+          const [{ total }] = await tx.select({ total: count() }).from(totalQuery);
 
-    const organizations = await query
-      .where(and(...orgWhere))
-      .orderBy(orderColumn)
-      .limit(limit)
-      .offset(offset);
+          let query = tx.select(selectShape).from(organizationsTable).innerJoin(membershipsTable, membershipOn);
+          if (countData) {
+            query = query
+              .leftJoin(countData.memberCountsSubquery, eq(organizationsTable.id, countData.memberCountsSubquery.id))
+              .leftJoin(countData.relatedCountsSubquery, eq(organizationsTable.id, countData.relatedCountsSubquery.id));
+          }
+          const organizations = await query
+            .where(and(...orgWhere))
+            .orderBy(orderColumn)
+            .limit(limit)
+            .offset(offset);
+          return { total, organizations };
+        });
 
     // Build response with included wrapper for optional data
     const items = organizations.map((org) => {
@@ -234,6 +264,7 @@ const organizationRouteHandlers = app
         if (membership) {
           included.membership = {
             id: membership.id,
+            tenantId: membership.tenantId,
             contextType: membership.contextType,
             userId: membership.userId,
             role: membership.role,

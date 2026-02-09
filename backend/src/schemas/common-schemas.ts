@@ -67,6 +67,11 @@ export const languageSchema = z.enum(appConfig.languages);
  * Common param schemas
  ************************************************************************************************/
 
+// TODO apply regex in other places?
+// TODO is limiting size better done using zod for readability also in openapi?
+/** Tenant ID schema: 6-char lowercase alphanumeric */
+export const tenantIdSchema = z.string().regex(/^[a-z0-9]{6}$/, 'Invalid tenant ID format');
+
 /** Schema for entity identifier id */
 export const entityIdParamSchema = z.object({ id: idSchema });
 
@@ -81,6 +86,30 @@ export const entityIdOrSlugInOrgParamSchema = z.object({ idOrSlug: idSchema, org
 
 /** Schema for entity id within an organization orgId */
 export const idInOrgParamSchema = z.object({ id: idSchema, orgId: idSchema });
+
+/*************************************************************************************************
+ * Tenant-scoped param schemas (for RLS-enabled routes)
+ ************************************************************************************************/
+
+/** Schema for tenant-scoped routes: tenantId + orgIdOrSlug */
+export const tenantOrgParamSchema = z.object({
+  tenantId: tenantIdSchema,
+  orgIdOrSlug: idSchema,
+});
+
+/** Schema for entity id within tenant + org context */
+export const idInTenantOrgParamSchema = z.object({
+  tenantId: tenantIdSchema,
+  orgIdOrSlug: idSchema,
+  id: idSchema,
+});
+
+/** Schema for entity idOrSlug within tenant + org context */
+export const idOrSlugInTenantOrgParamSchema = z.object({
+  tenantId: tenantIdSchema,
+  orgIdOrSlug: idSchema,
+  idOrSlug: idSchema,
+});
 
 /*************************************************************************************************
  * Common query schemas

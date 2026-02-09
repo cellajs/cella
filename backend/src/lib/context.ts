@@ -1,10 +1,14 @@
 import type { HttpBindings } from '@hono/node-server';
 import type * as Sentry from '@sentry/node';
+import type { db as Database } from '#/db/db';
 import type { OrganizationModel } from '#/db/schema/organizations';
 import type { SystemRoleModel } from '#/db/schema/system-roles';
 import type { TokenModel } from '#/db/schema/tokens';
 import type { UserModel } from '#/db/schema/users';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
+
+/** Transaction type inferred from db.transaction callback */
+type Tx = Parameters<Parameters<typeof Database.transaction>[0]>[0];
 
 /**
  * Set node server bindings.
@@ -22,14 +26,18 @@ type Bindings = HttpBindings & {
 export type Env = {
   Variables: {
     user: UserModel;
-    userRole: SystemRoleModel['role'] | null;
+    userSystemRole: SystemRoleModel['role'] | null;
     organization: OrganizationModel & { membership: MembershipBaseModel | null };
     memberships: (MembershipBaseModel & { createdBy: string | null })[];
     token: TokenModel;
     sessionToken: string;
-    logId: string;
+    requestId: string;
     sentry: typeof Sentry;
     sentrySpan?: ReturnType<typeof Sentry.startSpan>;
+    /** Tenant-scoped database transaction (set by tenantGuard or hasPublicTenantAccess) */
+    db: Tx;
+    /** Current tenant ID (set by tenantGuard or hasPublicTenantAccess) */
+    tenantId: string;
   };
   Bindings: Bindings;
 };

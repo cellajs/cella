@@ -15,6 +15,7 @@ import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
+import { tenantsTable } from '#/db/schema/tenants';
 import { usersTable } from '#/db/schema/users';
 import type { ActivityEvent } from '#/sync/activity-bus';
 import { activityBus } from '#/sync/activity-bus';
@@ -36,6 +37,7 @@ describe('EventBus Integration', () => {
 
       const mockEvent: ActivityEvent = {
         id: nanoid(),
+        tenantId: 'test01',
         type: 'user.created',
         action: 'create',
         tableName: 'users',
@@ -64,6 +66,7 @@ describe('EventBus Integration', () => {
 
       const mockEvent: ActivityEvent = {
         id: nanoid(),
+        tenantId: 'test01',
         type: 'organization.updated',
         action: 'update',
         tableName: 'organizations',
@@ -104,18 +107,21 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('CDC Setup Verification', () =
  * Skip in CI unless CDC is available.
  */
 describe.skipIf(!process.env.CDC_WORKER_RUNNING)('Full CDC Flow', () => {
-  let testOrg: { id: string; slug: string };
+  let testOrg: { id: string; slug: string; tenantId: string };
   let testUser: { id: string; email: string };
 
   beforeAll(async () => {
     await clearDatabase();
 
-    // Create test organization
+    // Create tenant first (orgs require tenant FK)
+    const [tenant] = await db.insert(tenantsTable).values({ name: 'Test Tenant' }).returning({ id: tenantsTable.id });
+
+    // Create test organization with tenant reference
     const orgData = mockOrganization();
     [testOrg] = await db
       .insert(organizationsTable)
-      .values(orgData)
-      .returning({ id: organizationsTable.id, slug: organizationsTable.slug });
+      .values({ ...orgData, tenantId: tenant.id })
+      .returning({ id: organizationsTable.id, slug: organizationsTable.slug, tenantId: organizationsTable.tenantId });
 
     // Create test user
     const userData = mockUser();
@@ -136,11 +142,11 @@ describe.skipIf(!process.env.CDC_WORKER_RUNNING)('Full CDC Flow', () => {
       id: membershipId,
       userId: testUser.id,
       organizationId: testOrg.id,
+      tenantId: testOrg.tenantId,
       contextType: 'organization',
       role: 'member',
       displayOrder: 1,
       createdBy: testUser.id,
-      uniqueKey: `${testUser.id}-${testOrg.id}`,
     });
 
     // Wait for: INSERT → CDC → activities INSERT → trigger → NOTIFY → activityBus

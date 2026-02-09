@@ -77,7 +77,8 @@ export const MembersTableBar = ({
   const openDeleteDialog = () => {
     createDialog(
       <DeleteMemberships
-        organizationId={entity.organizationId || entity.id}
+        tenantId={entity.tenantId}
+        orgIdOrSlug={entity.organizationId || entity.id}
         entityId={entity.id}
         entityType={entity.entityType}
         dialog
@@ -130,7 +131,7 @@ export const MembersTableBar = ({
         entityId: entity.id,
         entityType: entity.entityType,
       },
-      path: { orgId: entity.organizationId || entity.id },
+      path: { tenantId: entity.tenantId, orgIdOrSlug: entity.organizationId || entity.id },
     });
     return items;
   };

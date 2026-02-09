@@ -26,17 +26,21 @@ const AttachmentsTable = lazy(() => import('~/modules/attachment/table/attachmen
 const OrganizationSettings = lazy(() => import('~/modules/organization/organization-settings'));
 
 /**
- * Layout route for organization-scoped pages.
- * Captures $orgIdOrSlug param, fetches org, and provides context for all nested routes.
+ * Layout route for tenant and organization-scoped pages.
+ * Captures $tenantId and $orgIdOrSlug params, validates tenant access,
+ * fetches org, and provides context for all nested routes.
  * Forks can nest additional routes (workspace, project, etc.) under this layout.
  */
 export const OrganizationLayoutRoute = createRoute({
-  path: '/$orgIdOrSlug',
+  path: '/$tenantId/$orgIdOrSlug',
   staticData: { isAuth: true },
   getParentRoute: () => AppLayoutRoute,
   beforeLoad: async ({ params }) => {
-    const { orgIdOrSlug } = params;
+    const { tenantId, orgIdOrSlug } = params;
     const isOnline = onlineManager.isOnline();
+
+    // TODO: Validate tenantId format (6-char lowercase alphanumeric)
+    // TODO: Validate user has membership in this tenant
 
     // Resolve slug to ID via list cache (from menu), or fetch if not cached
     const cached = findOrganizationInListCache(orgIdOrSlug);
@@ -45,7 +49,7 @@ export const OrganizationLayoutRoute = createRoute({
     // If we have the ID from cache, use ID-based query; otherwise fetch by slug first
     let organization: Organization | undefined;
 
-    // TODO - being called on every route change., including search params?
+    // TODO - being called on every route change., including search params changes?
     if (orgId) {
       const orgOptions = organizationQueryOptions(orgId);
       organization = await queryClient.ensureQueryData({ ...orgOptions, revalidateIfStale: true });
@@ -62,9 +66,9 @@ export const OrganizationLayoutRoute = createRoute({
     }
 
     // Rewrite URL to use slug if user navigated with ID
-    rewriteUrlToSlug(params, { orgIdOrSlug: organization.slug }, OrganizationLayoutRoute.to);
+    rewriteUrlToSlug(params, { tenantId, orgIdOrSlug: organization.slug }, OrganizationLayoutRoute.to);
 
-    return { organization };
+    return { organization, tenantId };
   },
   component: () => <Outlet />,
 });
@@ -75,8 +79,11 @@ export const OrganizationLayoutRoute = createRoute({
 export const OrganizationRoute = createRoute({
   path: '/organization',
   staticData: { isAuth: true, floatingNavButtons: { left: 'menu' } },
-  beforeLoad: ({ context: { organization } }) =>
-    noDirectAccess(`/${organization.slug}/organization`, `/${organization.slug}/organization/members`),
+  beforeLoad: ({ context: { organization, tenantId } }) =>
+    noDirectAccess(
+      `/${tenantId}/${organization.slug}/organization`,
+      `/${tenantId}/${organization.slug}/organization/members`,
+    ),
   head: ({ match }) => ({ meta: [{ title: appTitle(match.context.organization?.name) }] }),
   getParentRoute: () => OrganizationLayoutRoute,
   errorComponent: ({ error }) => <ErrorNotice boundary="app" error={error} />,

@@ -36,7 +36,7 @@ export const useColumns = () => {
     ApiError,
     HandleMembershipInvitationData['path']
   >({
-    mutationFn: ({ id, acceptOrReject, orgId }) => handleMembershipInvitation({ path: { id, acceptOrReject, orgId } }),
+    mutationFn: ({ id, acceptOrReject }) => handleMembershipInvitation({ path: { id, acceptOrReject } }),
     onSuccess: async (settledEntity, { acceptOrReject }) => {
       await getMenuData();
 
@@ -141,7 +141,6 @@ export const useColumns = () => {
                 handleInvitation({
                   id: row.inactiveMembership.id,
                   acceptOrReject: action,
-                  orgId: row.inactiveMembership.organizationId,
                 })
               }
             >

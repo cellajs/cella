@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/docs/x-routes';
 import { publicCache } from '#/middlewares/entity-cache';
-import { isAuthenticated, isPublicAccess, isSystemAdmin } from '#/middlewares/guard';
+import { isAuthenticated, isPublicAccess, sysAdminGuard } from '#/middlewares/guard';
 import { errorResponseRefs, idsBodySchema, paginationSchema } from '#/schemas';
 import { mockBatchPagesResponse, mockPageResponse, mockPaginatedPagesResponse } from '../../../mocks/mock-page';
 import {
@@ -22,7 +22,7 @@ const pagesRoutes = {
     operationId: 'createPages',
     method: 'post',
     path: '/',
-    xGuard: [isAuthenticated, isSystemAdmin],
+    xGuard: [isAuthenticated, sysAdminGuard],
     tags: ['pages'],
     summary: 'Create pages',
     description: 'Insert one or more new *pages*. Returns created pages and any rejected items.',
@@ -110,7 +110,7 @@ const pagesRoutes = {
     operationId: 'updatePage',
     method: 'put',
     path: '/{id}',
-    xGuard: [isAuthenticated, isSystemAdmin],
+    xGuard: [isAuthenticated, sysAdminGuard],
     tags: ['pages'],
     summary: 'Update page',
     description: 'Update a single *page* by ID.',
@@ -138,7 +138,7 @@ const pagesRoutes = {
     operationId: 'deletePages',
     method: 'delete',
     path: '/',
-    xGuard: [isAuthenticated, isSystemAdmin],
+    xGuard: [isAuthenticated, sysAdminGuard],
     tags: ['pages'],
     summary: 'Delete pages',
     description: 'Delete one or more *pages* by ID.',

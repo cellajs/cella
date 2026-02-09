@@ -49,7 +49,7 @@ export const sendVerificationEmail = async ({ userId, redirectPath }: Props) => 
   const [tokenRecord] = await db
     .insert(tokensTable)
     .values({
-      token: hashedToken,
+      secret: hashedToken,
       type: 'email-verification',
       userId: user.id,
       email,

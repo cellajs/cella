@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/docs/x-routes';
-import { hasOrgAccess, isAuthenticated } from '#/middlewares/guard';
+import { isAuthenticated, orgGuard, tenantGuard } from '#/middlewares/guard';
 import { contextEntityBaseSchema } from '#/modules/entities/entities-schema-base';
 import {
   memberListQuerySchema,
@@ -16,11 +16,11 @@ import {
   batchResponseSchema,
   entityWithTypeQuerySchema,
   errorResponseRefs,
-  idInOrgParamSchema,
+  idInTenantOrgParamSchema,
   idSchema,
   idsBodySchema,
-  inOrgParamSchema,
   paginationSchema,
+  tenantOrgParamSchema,
 } from '#/schemas';
 import { mockContextEntityBase } from '../../../mocks/mock-entity-base';
 import {
@@ -38,13 +38,13 @@ const membershipRoutes = {
     operationId: 'membershipInvite',
     method: 'post',
     path: '/',
-    xGuard: [isAuthenticated, hasOrgAccess],
+    xGuard: [isAuthenticated, tenantGuard, orgGuard],
     tags: ['memberships'],
     summary: 'Create memberships',
     description:
       'Creates one or more *memberships*, inviting users (existing or new) to a context entity such as an organization.',
     request: {
-      params: inOrgParamSchema,
+      params: tenantOrgParamSchema,
       query: entityWithTypeQuerySchema,
       body: {
         required: true,
@@ -71,13 +71,13 @@ const membershipRoutes = {
     operationId: 'deleteMemberships',
     method: 'delete',
     path: '/',
-    xGuard: [isAuthenticated, hasOrgAccess],
+    xGuard: [isAuthenticated, tenantGuard, orgGuard],
     tags: ['memberships'],
     summary: 'Delete memberships',
     description:
       'Deletes one or more *memberships* by ID. This removes the membership but does not delete the associated user(s).',
     request: {
-      params: inOrgParamSchema,
+      params: tenantOrgParamSchema,
       query: entityWithTypeQuerySchema,
       body: {
         required: true,
@@ -103,12 +103,12 @@ const membershipRoutes = {
     operationId: 'updateMembership',
     method: 'put',
     path: '/{id}',
-    xGuard: [isAuthenticated, hasOrgAccess],
+    xGuard: [isAuthenticated, tenantGuard, orgGuard],
     tags: ['memberships'],
     summary: 'Update membership',
     description: 'Updates the *membership* metadata, such as role, `muted`, or `archived` status.',
     request: {
-      params: idInOrgParamSchema,
+      params: idInTenantOrgParamSchema,
       body: {
         content: { 'application/json': { schema: membershipUpdateBodySchema } },
       },
@@ -133,7 +133,7 @@ const membershipRoutes = {
     summary: 'Respond to membership invitation',
     description: 'Accepting activates the associated membership. Rejecting simply removes the invitation token.',
     request: {
-      params: z.object({ id: idSchema, acceptOrReject: z.enum(['accept', 'reject']), orgId: idSchema }),
+      params: z.object({ id: idSchema, acceptOrReject: z.enum(['accept', 'reject']) }),
     },
     responses: {
       200: {
@@ -150,12 +150,12 @@ const membershipRoutes = {
     operationId: 'getMembers',
     method: 'get',
     path: '/members',
-    xGuard: [isAuthenticated, hasOrgAccess],
+    xGuard: [isAuthenticated, tenantGuard, orgGuard],
     tags: ['memberships'],
     summary: 'Get list of members',
     description: 'Retrieves members (users) of a context entity by ID, including their associated *membership* data.',
     request: {
-      params: inOrgParamSchema,
+      params: tenantOrgParamSchema,
       query: memberListQuerySchema,
     },
     responses: {
@@ -178,13 +178,13 @@ const membershipRoutes = {
     operationId: 'getPendingMemberships',
     method: 'get',
     path: '/pending',
-    xGuard: [isAuthenticated, hasOrgAccess],
+    xGuard: [isAuthenticated, tenantGuard, orgGuard],
     tags: ['memberships'],
     summary: 'Get list of pending memberships',
     description:
       'Returns pending memberships for a context entity, identified by ID. This does not include pending invitations for non-existing users.',
     request: {
-      params: inOrgParamSchema,
+      params: tenantOrgParamSchema,
       query: pendingMembershipListQuerySchema,
     },
     responses: {

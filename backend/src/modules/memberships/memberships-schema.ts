@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { appConfig } from 'shared';
+import { roles } from 'shared';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { membershipsTable } from '#/db/schema/memberships';
 import { createSelectSchema } from '#/lib/drizzle-schema';
@@ -12,7 +12,7 @@ import {
 } from '../../../mocks/mock-membership';
 
 /** Schema for entity roles enum - uses literal types from appConfig */
-export const entityRoleSchema = z.enum(appConfig.entityRoles);
+export const entityRoleSchema = z.enum(roles.all);
 
 export const membershipSchema = z
   .object({
@@ -38,7 +38,6 @@ export const membershipBaseSchema = membershipSchema
     createdBy: true,
     modifiedAt: true,
     modifiedBy: true,
-    uniqueKey: true,
   })
   .openapi('MembershipBase', { example: mockMembershipBase() });
 
@@ -58,7 +57,7 @@ export const memberListQuerySchema = paginationQuerySchema.extend({
   entityId: idSchema,
   entityType: contextEntityTypeSchema,
   sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt']).default('createdAt').optional(),
-  role: z.enum(appConfig.entityRoles).optional(),
+  role: z.enum(roles.all).optional(),
 });
 
 export const pendingMembershipListQuerySchema = paginationQuerySchema.extend({

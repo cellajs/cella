@@ -12,11 +12,11 @@ BEGIN
   END IF;
 
   -- Create publication for tracked tables (excludes 'activities' to prevent loops)
-  IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'cella_development_cdc_pub') THEN
-    CREATE PUBLICATION cella_development_cdc_pub FOR TABLE users, organizations, attachments, pages, requests, memberships;
-    RAISE NOTICE 'Created publication cella_development_cdc_pub';
+  IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'cdc_pub') THEN
+    CREATE PUBLICATION cdc_pub FOR TABLE users, organizations, attachments, pages, requests, memberships;
+    RAISE NOTICE 'Created publication cdc_pub';
   ELSE
-    RAISE NOTICE 'Publication cella_development_cdc_pub already exists';
+    RAISE NOTICE 'Publication cdc_pub already exists';
   END IF;
 
   -- Set REPLICA IDENTITY FULL to get old row values on UPDATE/DELETE

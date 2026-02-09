@@ -12,6 +12,7 @@ export {
   getMockContext,
   type MockContext,
   mockNanoid,
+  mockTenantId,
   SCRIPT_ID_PREFIX,
   setMockContext,
   TEST_ID_PREFIX,

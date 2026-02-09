@@ -9,7 +9,7 @@ import { env as dotenv } from '@dotenv-run/core';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import pg from 'pg';
-import { checkMark, crossMark, loadingMark } from '#/utils/console';
+import { crossMark, startSpinner, succeedSpinner } from '#/utils/console';
 
 // Get directory path for ESM
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -47,7 +47,7 @@ export default async function globalSetup() {
   }
 
   // Run migrations once for all tests
-  console.info(`\n${loadingMark} Running database migrations...`);
+  const spinner = startSpinner('Running database migrations...');
 
   const pool = new pg.Pool({ connectionString: DATABASE_URL });
   const db = drizzle({ client: pool, casing: 'snake_case' });
@@ -56,9 +56,10 @@ export default async function globalSetup() {
 
   try {
     await migrate(db, { migrationsFolder, migrationsSchema: 'drizzle-backend' });
-    console.info(`${checkMark} Migrations complete\n`);
+    succeedSpinner('Migrations complete');
   } catch (error) {
-    console.error(`${crossMark} Migration failed:`, error);
+    spinner.fail('Migration failed');
+    console.error(error);
     process.exit(1);
   } finally {
     await pool.end();

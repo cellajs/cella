@@ -1,10 +1,10 @@
 /**
  * Data fetching utilities for public stream catch-up.
- * Entity-agnostic: uses config.publicProductEntityTypes dynamically.
+ * Entity-agnostic: uses hierarchy.publicAccessTypes dynamically.
  */
 
 import { and, desc, gt, inArray } from 'drizzle-orm';
-import { appConfig, type PublicProductEntityType } from 'shared';
+import { hierarchy, type PublicProductEntityType } from 'shared';
 import { db } from '#/db/db';
 import { activitiesTable } from '#/db/schema/activities';
 
@@ -25,7 +25,7 @@ export interface PublicCatchUpActivity {
  * Only returns .deleted activities since the cursor for public entity types.
  */
 export async function fetchPublicDeleteCatchUp(cursor: string | null, limit = 100): Promise<PublicCatchUpActivity[]> {
-  const publicTypes = appConfig.publicProductEntityTypes as readonly string[];
+  const publicTypes = hierarchy.publicAccessTypes as readonly string[];
 
   if (publicTypes.length === 0) return [];
 
@@ -65,7 +65,7 @@ export async function fetchPublicDeleteCatchUp(cursor: string | null, limit = 10
  * Get latest public entity activity ID (for 'now' offset).
  */
 export async function getLatestPublicActivityId(): Promise<string | null> {
-  const publicTypes = [...appConfig.publicProductEntityTypes];
+  const publicTypes = [...hierarchy.publicAccessTypes];
 
   if (publicTypes.length === 0) return null;
 

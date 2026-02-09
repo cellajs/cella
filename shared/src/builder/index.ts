@@ -16,7 +16,6 @@ export type {
 export {
   createEntityHierarchy,
   createRoleRegistry,
-  validatePublicProductEntities,
 } from './entity-hierarchy';
 
 // Entity type guards

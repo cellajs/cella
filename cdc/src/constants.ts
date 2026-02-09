@@ -1,4 +1,3 @@
-import { appConfig } from 'shared';
 import type { ActivityAction } from '#/sync/activity-bus';
 
 /**
@@ -10,18 +9,15 @@ export const cdcOperationToAction: Record<string, ActivityAction> = {
   delete: 'delete',
 };
 
-// Sanitize slug for use in PostgreSQL
-const sanitizedSlug = appConfig.slug.replace(/-/g, '_');
-
 /**
  * Publication name for CDC.
  */
-export const CDC_PUBLICATION_NAME = `${sanitizedSlug}_cdc_pub`;
+export const CDC_PUBLICATION_NAME = 'cdc_pub';
 
 /**
  * Replication slot name for CDC.
  */
-export const CDC_SLOT_NAME = `${sanitizedSlug}_cdc_slot`;
+export const CDC_SLOT_NAME = 'cdc_slot';
 
 /**
  * CDC Resource Limits and Thresholds

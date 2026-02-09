@@ -86,6 +86,7 @@
     "lru-cache": "^11.2.5",
     "nanoid": "^5.1.6",
     "node-html-parser": "^7.0.2",
+    "ora": "^9.2.0",
     "pg": "^8.18.0",
     "pg-logical-replication": "^2.3.0",
     "pino": "^10.3.0",

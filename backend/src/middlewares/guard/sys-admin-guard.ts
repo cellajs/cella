@@ -9,9 +9,9 @@ import { AppError } from '#/lib/error';
  * @param next - The next middleware or route handler to call if the check passes.
  * @returns Error response or undefined if the user is allowed to proceed.
  */
-export const isSystemAdmin = xMiddleware('isSystemAdmin', 'x-guard', async (ctx, next) => {
+export const sysAdminGuard = xMiddleware('sysAdminGuard', 'x-guard', async (ctx, next) => {
   const user = ctx.var.user;
-  const userSystemRole = ctx.var.userRole;
+  const userSystemRole = ctx.var.userSystemRole;
 
   if (userSystemRole !== 'admin') throw new AppError(403, 'no_sysadmin', 'warn', { meta: { user: user.id } });
 

@@ -22,7 +22,7 @@ export const sessionsTable = pgTable(
   'sessions',
   {
     id: varchar().notNull().$defaultFn(nanoid),
-    token: varchar().notNull(),
+    secret: varchar().notNull(),
     type: varchar({ enum: sessionTypeEnum }).notNull().default('regular'),
     userId: varchar()
       .notNull()
@@ -39,15 +39,15 @@ export const sessionsTable = pgTable(
   },
   (table) => [
     primaryKey({ columns: [table.id, table.expiresAt] }),
-    index('sessions_token_idx').on(table.token),
+    index('sessions_secret_idx').on(table.secret),
     index('sessions_user_id_idx').on(table.userId),
   ],
 );
 
-/** Raw session model including sensitive token field - use only when token access is required. */
+/** Raw session model including sensitive secret field - use only when secret access is required. */
 export type UnsafeSessionModel = typeof sessionsTable.$inferSelect;
 
-/** Safe session model with token omitted for general use. */
-export type SessionModel = Omit<UnsafeSessionModel, 'token'>;
+/** Safe session model with secret omitted for general use. */
+export type SessionModel = Omit<UnsafeSessionModel, 'secret'>;
 
 export type InsertSessionModel = typeof sessionsTable.$inferInsert;

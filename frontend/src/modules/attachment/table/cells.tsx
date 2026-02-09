@@ -146,7 +146,9 @@ export const DownloadCell = ({ row, tabIndex }: DownloadCellProps) => {
       data-tooltip="true"
       data-tooltip-content={t('common:download')}
       onClick={() =>
-        getFileUrl(row.originalKey, row.public, row.organizationId).then((url) => download(url, row.filename))
+        getFileUrl(row.originalKey, row.public, row.tenantId, row.organizationId).then((url) =>
+          download(url, row.filename),
+        )
       }
     >
       {isInProgress ? <Spinner className="size-4 text-foreground/80" noDelay /> : <DownloadIcon size={16} />}

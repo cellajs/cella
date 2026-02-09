@@ -6,6 +6,7 @@ import { getRowValue } from './get-row-value';
 export interface ActivityContext extends ContextEntityIds {
   entityId: string | null;
   userId: string | null;
+  tenantId: string | null;
   entityType: EntityType | null;
   resourceType: ResourceType | null;
 }
@@ -36,9 +37,13 @@ export function extractActivityContext(
   // Dynamically extract all relatable context entity IDs
   const contextEntityIds = extractContextEntityIds(row);
 
+  // Extract tenant ID (nullable for cross-tenant entities like users)
+  const tenantId = getRowValue(row, 'tenantId') ?? null;
+
   return {
     entityId,
     userId,
+    tenantId,
     ...contextEntityIds,
     entityType: entityType as EntityType | null,
     resourceType: resourceType as ResourceType | null,

@@ -15,7 +15,7 @@ export const canCreateEntity = <K extends Exclude<ContextEntityType, 'organizati
   ctx: Context<Env>,
   entity: EntityModel<K>,
 ) => {
-  const userSystemRole = ctx.var.userRole;
+  const userSystemRole = ctx.var.userSystemRole;
   const memberships = ctx.var.memberships;
 
   const { entityType } = entity;

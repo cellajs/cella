@@ -36,14 +36,14 @@ export const initiateMfa = async (ctx: Context<Env>, user: UserModel) => {
   await db
     .insert(tokensTable)
     .values({
-      token: hashedToken,
+      secret: hashedToken,
       type: 'confirm-mfa',
       userId: user.id,
       email: user.email,
       createdBy: user.id,
       expiresAt: createDate(timespan), // token expires in 10 minutes
     })
-    .returning({ token: tokensTable.token });
+    .returning({ secret: tokensTable.secret });
 
   // Set a temporary auth cookie to track confirm MFA session
   await setAuthCookie(ctx, 'confirm-mfa', newToken, timespan);

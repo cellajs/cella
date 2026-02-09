@@ -42,6 +42,11 @@
                     "type": ["string", "null"],
                     "required": true
                   },
+                  "tenantId": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 6
+                  },
                   "tx": {
                     "type": "object",
                     "required": true,
@@ -99,18 +104,19 @@
           "items": [
             {
               "id": "o7z71y60a882cwpxtanaxnsp",
+              "tenantId": "9nes1y",
               "entityType": "attachment",
               "name": "elegantly.vst",
               "description": null,
-              "keywords": "caterva socius cultura",
+              "keywords": "vesco audentia angustus",
               "public": false,
               "bucketName": "attachments",
               "groupId": null,
               "filename": "elegantly.vst",
-              "contentType": "image/vnd.microsoft.icon",
+              "contentType": "application/vnd.apple.installer+xml",
               "convertedContentType": null,
-              "size": "419263",
-              "originalKey": "uploads/yx645yb0gleyvjbbm5piweg2/elegantly.vst",
+              "size": "9665489",
+              "originalKey": "uploads/b0gleyvjbbm5piweg2q4gqa3/elegantly.vst",
               "convertedKey": null,
               "thumbnailKey": null,
               "createdAt": "2024-11-21T04:00:59.122Z",
@@ -118,27 +124,28 @@
               "modifiedAt": "2024-11-21T04:00:59.122Z",
               "modifiedBy": "qqp8d07imsvjbtqtl3rtjgxd",
               "tx": {
-                "id": "q4gqa3vx9cfyey6mqh9hmikg",
-                "sourceId": "src_me3gy3a9lhe0ctrmzc53x7z2",
+                "id": "vx9cfyey6mqh9hmikgme3gy3",
+                "sourceId": "src_a9lhe0ctrmzc53x7z222ydtq",
                 "version": 1,
                 "fieldVersions": {}
               },
-              "organizationId": "22ydtq57iu31mz5oaqf10oe7"
+              "organizationId": "57iu31mz5oaqf10oe7y51pr5"
             },
             {
               "id": "yahbgyu01sr6utecq3o02wpa",
+              "tenantId": "56tpd7",
               "entityType": "attachment",
               "name": "woefully_bah.vsw",
               "description": null,
-              "keywords": "argentum attonbitus trans",
+              "keywords": "auxilium non sui",
               "public": false,
               "bucketName": "attachments",
               "groupId": null,
               "filename": "woefully_bah.vsw",
-              "contentType": "image/gif",
+              "contentType": "audio/3gpp",
               "convertedContentType": null,
-              "size": "3774704",
-              "originalKey": "uploads/77kpi37syiavgc67t5nr6k4h/woefully_bah.vsw",
+              "size": "1107841",
+              "originalKey": "uploads/7syiavgc67t5nr6k4huj5qv4/woefully_bah.vsw",
               "convertedKey": null,
               "thumbnailKey": null,
               "createdAt": "2024-10-29T08:46:20.790Z",
@@ -146,12 +153,12 @@
               "modifiedAt": "2024-10-29T08:46:20.790Z",
               "modifiedBy": "hg5ogh3yr2b2dbwf7b9eckaj",
               "tx": {
-                "id": "uj5qv4k6bwmvl0e44bpmhsya",
-                "sourceId": "src_uxcwuwjsrzvzac8qx1h9s6vz",
+                "id": "k6bwmvl0e44bpmhsyauxcwuw",
+                "sourceId": "src_jsrzvzac8qx1h9s6vzhgvcj0",
                 "version": 1,
                 "fieldVersions": {}
               },
-              "organizationId": "hgvcj0rs3xtuk03gxco9kzp2"
+              "organizationId": "rs3xtuk03gxco9kzp2r8sr1z"
             }
           ],
           "total": 2
@@ -196,7 +203,8 @@
     "request": {
       "path": {
         "properties": {
-          "orgId": { "type": "string", "required": true }
+          "tenantId": { "type": "string", "required": true },
+          "orgIdOrSlug": { "type": "string", "required": true }
         }
       },
       "query": {
@@ -266,6 +274,11 @@
                     "type": ["string", "null"],
                     "required": true
                   },
+                  "tenantId": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 6
+                  },
                   "tx": {
                     "type": "object",
                     "required": true,
@@ -333,18 +346,19 @@
           "data": [
             {
               "id": "slwtksu3yccsd9ihoiny6rso",
+              "tenantId": "b7j0p6",
               "entityType": "attachment",
               "name": "excluding_ugh_besides.svgz",
               "description": null,
-              "keywords": "colo benigne id",
+              "keywords": "nam curatio xiphias",
               "public": false,
               "bucketName": "attachments",
               "groupId": null,
               "filename": "excluding_ugh_besides.svgz",
-              "contentType": "application/epub+zip",
+              "contentType": "application/vnd.ms-fontobject",
               "convertedContentType": null,
-              "size": "7211145",
-              "originalKey": "uploads/6kfz7rauzy6zwhhoizpinjn9/excluding_ugh_besides.svgz",
+              "size": "7651256",
+              "originalKey": "uploads/auzy6zwhhoizpinjn9as93qc/excluding_ugh_besides.svgz",
               "convertedKey": null,
               "thumbnailKey": null,
               "createdAt": "2024-04-19T14:04:35.773Z",
@@ -352,27 +366,28 @@
               "modifiedAt": "2024-04-19T14:04:35.773Z",
               "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
               "tx": {
-                "id": "as93qcb6pakf4ovzm1ne3h55",
-                "sourceId": "src_lgj31d63n9apx99a5auvr5cy",
+                "id": "b6pakf4ovzm1ne3h55lgj31d",
+                "sourceId": "src_63n9apx99a5auvr5cyj5s37i",
                 "version": 1,
                 "fieldVersions": {}
               },
-              "organizationId": "j5s37irnjjhhc4mupuqz0iqm"
+              "organizationId": "rnjjhhc4mupuqz0iqmny8wdl"
             },
             {
               "id": "pxxbqdej8622zpgo54qw5fqo",
+              "tenantId": "9wwhw5",
               "entityType": "attachment",
               "name": "gown.ini",
               "description": null,
-              "keywords": "cetera velociter vehemens",
+              "keywords": "denique tum candidus",
               "public": false,
               "bucketName": "attachments",
               "groupId": null,
               "filename": "gown.ini",
-              "contentType": "application/zip",
+              "contentType": "application/x-sh",
               "convertedContentType": null,
-              "size": "9066537",
-              "originalKey": "uploads/5hu8fmg18wbwob9s8r85nah6/gown.ini",
+              "size": "6125227",
+              "originalKey": "uploads/g18wbwob9s8r85nah671ybl6/gown.ini",
               "convertedKey": null,
               "thumbnailKey": null,
               "createdAt": "2024-02-25T13:01:35.301Z",
@@ -380,12 +395,12 @@
               "modifiedAt": "2024-02-25T13:01:35.301Z",
               "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
               "tx": {
-                "id": "71ybl6y4dvzpz75e03ldr2ga",
-                "sourceId": "src_54hj92yzr7v1itpc9wztvbcy",
+                "id": "y4dvzpz75e03ldr2ga54hj92",
+                "sourceId": "src_yzr7v1itpc9wztvbcy21q04o",
                 "version": 1,
                 "fieldVersions": {}
               },
-              "organizationId": "21q04oq81k5rbzt4yq63pob5"
+              "organizationId": "q81k5rbzt4yq63pob5r5tp1l"
             }
           ],
           "rejectedItemIds": []
@@ -431,6 +446,11 @@
                     "type": ["string", "null"],
                     "required": true
                   },
+                  "tenantId": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 6
+                  },
                   "tx": {
                     "type": "object",
                     "required": true,
@@ -498,18 +518,19 @@
           "data": [
             {
               "id": "slwtksu3yccsd9ihoiny6rso",
+              "tenantId": "b7j0p6",
               "entityType": "attachment",
               "name": "excluding_ugh_besides.svgz",
               "description": null,
-              "keywords": "colo benigne id",
+              "keywords": "nam curatio xiphias",
               "public": false,
               "bucketName": "attachments",
               "groupId": null,
               "filename": "excluding_ugh_besides.svgz",
-              "contentType": "application/epub+zip",
+              "contentType": "application/vnd.ms-fontobject",
               "convertedContentType": null,
-              "size": "7211145",
-              "originalKey": "uploads/6kfz7rauzy6zwhhoizpinjn9/excluding_ugh_besides.svgz",
+              "size": "7651256",
+              "originalKey": "uploads/auzy6zwhhoizpinjn9as93qc/excluding_ugh_besides.svgz",
               "convertedKey": null,
               "thumbnailKey": null,
               "createdAt": "2024-04-19T14:04:35.773Z",
@@ -517,27 +538,28 @@
               "modifiedAt": "2024-04-19T14:04:35.773Z",
               "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
               "tx": {
-                "id": "as93qcb6pakf4ovzm1ne3h55",
-                "sourceId": "src_lgj31d63n9apx99a5auvr5cy",
+                "id": "b6pakf4ovzm1ne3h55lgj31d",
+                "sourceId": "src_63n9apx99a5auvr5cyj5s37i",
                 "version": 1,
                 "fieldVersions": {}
               },
-              "organizationId": "j5s37irnjjhhc4mupuqz0iqm"
+              "organizationId": "rnjjhhc4mupuqz0iqmny8wdl"
             },
             {
               "id": "pxxbqdej8622zpgo54qw5fqo",
+              "tenantId": "9wwhw5",
               "entityType": "attachment",
               "name": "gown.ini",
               "description": null,
-              "keywords": "cetera velociter vehemens",
+              "keywords": "denique tum candidus",
               "public": false,
               "bucketName": "attachments",
               "groupId": null,
               "filename": "gown.ini",
-              "contentType": "application/zip",
+              "contentType": "application/x-sh",
               "convertedContentType": null,
-              "size": "9066537",
-              "originalKey": "uploads/5hu8fmg18wbwob9s8r85nah6/gown.ini",
+              "size": "6125227",
+              "originalKey": "uploads/g18wbwob9s8r85nah671ybl6/gown.ini",
               "convertedKey": null,
               "thumbnailKey": null,
               "createdAt": "2024-02-25T13:01:35.301Z",
@@ -545,12 +567,12 @@
               "modifiedAt": "2024-02-25T13:01:35.301Z",
               "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
               "tx": {
-                "id": "71ybl6y4dvzpz75e03ldr2ga",
-                "sourceId": "src_54hj92yzr7v1itpc9wztvbcy",
+                "id": "y4dvzpz75e03ldr2ga54hj92",
+                "sourceId": "src_yzr7v1itpc9wztvbcy21q04o",
                 "version": 1,
                 "fieldVersions": {}
               },
-              "organizationId": "21q04oq81k5rbzt4yq63pob5"
+              "organizationId": "q81k5rbzt4yq63pob5r5tp1l"
             }
           ],
           "rejectedItemIds": []
@@ -595,7 +617,8 @@
     "request": {
       "path": {
         "properties": {
-          "orgId": { "type": "string", "required": true }
+          "tenantId": { "type": "string", "required": true },
+          "orgIdOrSlug": { "type": "string", "required": true }
         }
       },
       "body": {
@@ -733,7 +756,8 @@
     "request": {
       "path": {
         "properties": {
-          "orgId": { "type": "string", "required": true }
+          "tenantId": { "type": "string", "required": true },
+          "orgIdOrSlug": { "type": "string", "required": true }
         }
       },
       "body": {
@@ -808,7 +832,8 @@
     "request": {
       "path": {
         "properties": {
-          "orgId": { "type": "string", "required": true }
+          "tenantId": { "type": "string", "required": true },
+          "orgIdOrSlug": { "type": "string", "required": true }
         }
       },
       "query": {
@@ -855,6 +880,11 @@
               "type": ["string", "null"],
               "required": true
             },
+            "tenantId": {
+              "type": "string",
+              "required": true,
+              "maxLength": 6
+            },
             "tx": {
               "type": "object",
               "required": true,
@@ -906,18 +936,19 @@
         },
         "example": {
           "id": "og9ynkm3vp2mdgi3oeicogxv",
+          "tenantId": "lphxlo",
           "entityType": "attachment",
           "name": "yet_rightfully_lest.ogx",
           "description": null,
-          "keywords": "pectus subvenio depromo",
+          "keywords": "damno tenax arx",
           "public": false,
           "bucketName": "attachments",
           "groupId": null,
           "filename": "yet_rightfully_lest.ogx",
-          "contentType": "video/mp2t",
+          "contentType": "application/vnd.ms-fontobject",
           "convertedContentType": null,
-          "size": "6046908",
-          "originalKey": "uploads/ofr579y6bqnt152wowxrfkyy/yet_rightfully_lest.ogx",
+          "size": "2524242",
+          "originalKey": "uploads/y6bqnt152wowxrfkyy8dwkbm/yet_rightfully_lest.ogx",
           "convertedKey": null,
           "thumbnailKey": null,
           "createdAt": "2024-10-12T17:43:05.360Z",
@@ -925,12 +956,12 @@
           "modifiedAt": "2024-10-12T17:43:05.360Z",
           "modifiedBy": "0uwim8y2tppz7th9tol75wjz",
           "tx": {
-            "id": "8dwkbmpkeuemouu8t58r8fuj",
-            "sourceId": "src_3tlenhqurk6hu54pnfytf99m",
+            "id": "pkeuemouu8t58r8fuj3tlenh",
+            "sourceId": "src_qurk6hu54pnfytf99mpmuhw0",
             "version": 1,
             "fieldVersions": {}
           },
-          "organizationId": "pmuhw07eswx7d6csd6xo4nqw"
+          "organizationId": "7eswx7d6csd6xo4nqwl7k09e"
         }
       },
       {
@@ -972,8 +1003,9 @@
     "request": {
       "path": {
         "properties": {
-          "id": { "type": "string", "required": true },
-          "orgId": { "type": "string", "required": true }
+          "tenantId": { "type": "string", "required": true },
+          "orgIdOrSlug": { "type": "string", "required": true },
+          "id": { "type": "string", "required": true }
         }
       }
     }
@@ -1015,6 +1047,11 @@
               "type": ["string", "null"],
               "required": true
             },
+            "tenantId": {
+              "type": "string",
+              "required": true,
+              "maxLength": 6
+            },
             "tx": {
               "type": "object",
               "required": true,
@@ -1066,18 +1103,19 @@
         },
         "example": {
           "id": "og9ynkm3vp2mdgi3oeicogxv",
+          "tenantId": "lphxlo",
           "entityType": "attachment",
           "name": "yet_rightfully_lest.ogx",
           "description": null,
-          "keywords": "pectus subvenio depromo",
+          "keywords": "damno tenax arx",
           "public": false,
           "bucketName": "attachments",
           "groupId": null,
           "filename": "yet_rightfully_lest.ogx",
-          "contentType": "video/mp2t",
+          "contentType": "application/vnd.ms-fontobject",
           "convertedContentType": null,
-          "size": "6046908",
-          "originalKey": "uploads/ofr579y6bqnt152wowxrfkyy/yet_rightfully_lest.ogx",
+          "size": "2524242",
+          "originalKey": "uploads/y6bqnt152wowxrfkyy8dwkbm/yet_rightfully_lest.ogx",
           "convertedKey": null,
           "thumbnailKey": null,
           "createdAt": "2024-10-12T17:43:05.360Z",
@@ -1085,12 +1123,12 @@
           "modifiedAt": "2024-10-12T17:43:05.360Z",
           "modifiedBy": "0uwim8y2tppz7th9tol75wjz",
           "tx": {
-            "id": "8dwkbmpkeuemouu8t58r8fuj",
-            "sourceId": "src_3tlenhqurk6hu54pnfytf99m",
+            "id": "pkeuemouu8t58r8fuj3tlenh",
+            "sourceId": "src_qurk6hu54pnfytf99mpmuhw0",
             "version": 1,
             "fieldVersions": {}
           },
-          "organizationId": "pmuhw07eswx7d6csd6xo4nqw"
+          "organizationId": "7eswx7d6csd6xo4nqwl7k09e"
         }
       },
       {
@@ -1132,8 +1170,9 @@
     "request": {
       "path": {
         "properties": {
-          "id": { "type": "string", "required": true },
-          "orgId": { "type": "string", "required": true }
+          "tenantId": { "type": "string", "required": true },
+          "orgIdOrSlug": { "type": "string", "required": true },
+          "id": { "type": "string", "required": true }
         }
       },
       "body": {

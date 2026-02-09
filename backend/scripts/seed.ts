@@ -1,7 +1,8 @@
 import { execSync } from 'node:child_process';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
-import { db, migrateConfig } from '#/db/db';
+import { migrateConfig, migrationDb } from '#/db/db';
 import { env } from '#/env';
+import { setupRoles } from './db/setup-roles';
 
 if (env.DEV_MODE === 'basic') {
   console.info(' ');
@@ -10,8 +11,16 @@ if (env.DEV_MODE === 'basic') {
   process.exit(0);
 }
 
-// Migrate db
-await migrate(db, migrateConfig);
+if (!migrationDb) {
+  console.error('DATABASE_ADMIN_URL required for migrations');
+  process.exit(1);
+}
+
+// Setup roles first (dev only, skipped if already exist)
+await setupRoles();
+
+// Migrate db using admin connection (applies RLS grants)
+await migrate(migrationDb, migrateConfig);
 
 import { seedScripts } from './scripts-config';
 

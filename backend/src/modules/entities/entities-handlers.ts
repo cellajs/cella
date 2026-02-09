@@ -1,7 +1,7 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { streamSSE } from 'hono/streaming';
 import { nanoid } from 'nanoid';
-import { appConfig } from 'shared';
+import { appConfig, hierarchy } from 'shared';
 import { signCacheToken } from '#/lib/cache-token-signer';
 import { type Env } from '#/lib/context';
 import { publicEntityCache } from '#/middlewares/entity-cache';
@@ -33,7 +33,7 @@ const app = new OpenAPIHono<Env>({ defaultHook });
 // ============================================
 
 // Register listeners dynamically for all public product entity types
-for (const entityType of appConfig.publicProductEntityTypes) {
+for (const entityType of hierarchy.publicAccessTypes) {
   const eventTypes = [`${entityType}.created`, `${entityType}.updated`, `${entityType}.deleted`] as const;
 
   for (const eventType of eventTypes) {
@@ -159,7 +159,7 @@ const entitiesRouteHandlers = app
       await writeOffset(stream, cursor);
 
       // Register subscriber on all public entity channels
-      const channels = appConfig.publicProductEntityTypes.map((t) => publicChannel(t));
+      const channels = hierarchy.publicAccessTypes.map((t) => publicChannel(t));
       const subscriber: PublicStreamSubscriber = {
         id: nanoid(),
         channel: channels[0] ?? 'public:default',
@@ -188,7 +188,7 @@ const entitiesRouteHandlers = app
     const { offset, live } = ctx.req.valid('query');
     const user = ctx.var.user;
     const memberships = ctx.var.memberships;
-    const userSystemRole = ctx.var.userRole;
+    const userSystemRole = ctx.var.userSystemRole;
     const sessionToken = ctx.var.sessionToken;
     const orgIds = new Set(memberships.map((m) => m.organizationId));
 

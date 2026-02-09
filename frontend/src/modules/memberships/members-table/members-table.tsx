@@ -40,7 +40,8 @@ function MembersTable({ entity, isSheet = false, children }: MembersTableWrapper
 
   const entityId = entity.id;
   const entityType = entity.entityType;
-  const orgId = organization.id;
+  const tenantId = organization.tenantId;
+  const orgIdOrSlug = organization.id;
 
   // TODO can should always be here? Use can.update if available for permission-based access control
   const canUpdate = entity.can?.update ?? false;
@@ -54,7 +55,7 @@ function MembersTable({ entity, isSheet = false, children }: MembersTableWrapper
   const [columns, setColumns] = useColumns(canUpdate, isSheet);
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
-  const queryOptions = membersListQueryOptions({ entityId, entityType, orgId, ...search, limit });
+  const queryOptions = membersListQueryOptions({ entityId, entityType, tenantId, orgIdOrSlug, ...search, limit });
 
   const {
     data: rows,
@@ -87,7 +88,8 @@ function MembersTable({ entity, isSheet = false, children }: MembersTableWrapper
       const updatedMembership = {
         id: changedRows[index].membership.id,
         role: changedRows[index].membership.role,
-        orgId,
+        tenantId,
+        orgIdOrSlug,
         entityId,
         entityType,
       };

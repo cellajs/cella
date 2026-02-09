@@ -10,7 +10,9 @@ import { enabledOAuthProvidersEnum, userSchema } from '#/modules/user/user-schem
 import { booleanTransformSchema } from '#/schemas';
 import { mockMeAuthDataResponse, mockMeResponse, mockUploadTokenResponse } from '../../../mocks/mock-me';
 
-export const sessionSchema = createSelectSchema(sessionsTable).omit({ token: true }).extend({ isCurrent: z.boolean() });
+export const sessionSchema = createSelectSchema(sessionsTable)
+  .omit({ secret: true })
+  .extend({ isCurrent: z.boolean() });
 
 export const meSchema = z
   .object({

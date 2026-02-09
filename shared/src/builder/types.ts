@@ -126,9 +126,6 @@ export interface ConfigStringArrays {
   entityTypes: readonly string[];
   contextEntityTypes: readonly string[];
   productEntityTypes: readonly string[];
-  publicProductEntityTypes: readonly string[];
-  relatableContextEntityTypes: readonly string[];
-  entityRoles: readonly string[];
   entityActions: readonly string[];
   resourceTypes: readonly string[];
   systemRoles: readonly string[];
@@ -152,13 +149,6 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   entityTypes: T['entityTypes'];
   contextEntityTypes: T['contextEntityTypes'];
   productEntityTypes: T['productEntityTypes'];
-  /**
-   * Product entities with parent: null MUST be declared here.
-   * Type is inferred from hierarchy.parentlessProductTypes to enforce compile-time validation.
-   */
-  publicProductEntityTypes: T['publicProductEntityTypes'];
-  relatableContextEntityTypes: T['relatableContextEntityTypes'];
-  entityRoles: T['entityRoles'];
   entityIdColumnKeys: Record<string, string>;
   entityActions: T['entityActions'];
   resourceTypes: T['resourceTypes'];

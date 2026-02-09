@@ -42,6 +42,11 @@
                     "type": ["string", "null"],
                     "required": true
                   },
+                  "tenantId": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 6
+                  },
                   "tx": {
                     "type": "object",
                     "required": true,
@@ -58,6 +63,7 @@
                     "required": true,
                     "enum": ["unpublished", "published", "archived"]
                   },
+                  "publicAccess": { "type": "boolean", "required": true },
                   "parentId": {
                     "type": ["string", "null"],
                     "required": true
@@ -90,11 +96,13 @@
           "data": [
             {
               "id": "wgpaj0cfyc7n2sjn5fpfkbrs",
+              "tenantId": "lwtksu",
               "entityType": "page",
-              "name": "Velociter torqueo nihil texo.",
-              "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Alii voluntarius contra consequuntur tergo crepusculum certe desparatus depromo. Dolor somnus vobis atavus tergiversatio tersus suadeo colo. Id abduco supplanto asporto.\\nCuratio xiphias auxilium teneo claudeo unde vulgo. Atavus vorax vergo deputo deprimo statim eos vulnero subito eligendi. Exercitationem somnus cattus cilicium textilis cervus alo tactus.\",\"styles\":{}}],\"children\":[]}]",
+              "name": "Voluntarius contra.",
+              "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Tergo crepusculum certe desparatus depromo. Dolor somnus vobis atavus tergiversatio tersus suadeo colo. Id abduco supplanto asporto.\\nCuratio xiphias auxilium teneo claudeo unde vulgo. Atavus vorax vergo deputo deprimo statim eos vulnero subito eligendi. Exercitationem somnus cattus cilicium textilis cervus alo tactus.\",\"styles\":{}}],\"children\":[]}]",
               "keywords": "confido colligo audio",
               "status": "unpublished",
+              "publicAccess": false,
               "parentId": null,
               "displayOrder": 70.17,
               "createdAt": "2024-04-19T14:04:35.773Z",
@@ -110,20 +118,22 @@
             },
             {
               "id": "74l7581dwpxxbqdej8622zpg",
+              "tenantId": "o54qw5",
               "entityType": "page",
-              "name": "Aspernatur angustus suus ver.",
-              "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Debilito taedium spargo cetera. Vehemens deprecator ventus ascit denique tum candidus curvo perspiciatis defendo. Carpo verecundia cometes.\\nSortitus colligo ceno terra cado temptatio carmen arx sequi cicuta. Attollo autem adipisci vinitor comminor odit. Virga aptus corrupti utpote.\",\"styles\":{}}],\"children\":[]}]",
-              "keywords": "vulnus subseco vomica",
+              "name": "Taedium spargo cetera.",
+              "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Vehemens deprecator ventus ascit denique tum candidus curvo perspiciatis defendo. Carpo verecundia cometes. Sortitus colligo ceno terra cado temptatio carmen arx sequi cicuta.\\nAttollo autem adipisci vinitor comminor odit. Virga aptus corrupti utpote. Subseco vomica auxilium ascit cuppedia abbas amo patior credo tenus.\",\"styles\":{}}],\"children\":[]}]",
+              "keywords": "aestus degero cicuta",
               "status": "unpublished",
+              "publicAccess": false,
               "parentId": null,
-              "displayOrder": 19.64,
+              "displayOrder": 14.28,
               "createdAt": "2024-02-25T13:01:35.301Z",
               "createdBy": "p3t0ygxx0aa83en3sk1fs1we",
               "modifiedAt": "2024-02-25T13:01:35.301Z",
               "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
               "tx": {
-                "id": "5e03ldr2ga54hj92yzr7v1it",
-                "sourceId": "src_pc9wztvbcy21q04oq81k5rbz",
+                "id": "4hj92yzr7v1itpc9wztvbcy2",
+                "sourceId": "src_1q04oq81k5rbzt4yq63pob5r",
                 "version": 1,
                 "fieldVersions": {}
               }
@@ -172,6 +182,11 @@
                     "type": ["string", "null"],
                     "required": true
                   },
+                  "tenantId": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 6
+                  },
                   "tx": {
                     "type": "object",
                     "required": true,
@@ -188,6 +203,7 @@
                     "required": true,
                     "enum": ["unpublished", "published", "archived"]
                   },
+                  "publicAccess": { "type": "boolean", "required": true },
                   "parentId": {
                     "type": ["string", "null"],
                     "required": true
@@ -220,11 +236,13 @@
           "data": [
             {
               "id": "wgpaj0cfyc7n2sjn5fpfkbrs",
+              "tenantId": "lwtksu",
               "entityType": "page",
-              "name": "Velociter torqueo nihil texo.",
-              "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Alii voluntarius contra consequuntur tergo crepusculum certe desparatus depromo. Dolor somnus vobis atavus tergiversatio tersus suadeo colo. Id abduco supplanto asporto.\\nCuratio xiphias auxilium teneo claudeo unde vulgo. Atavus vorax vergo deputo deprimo statim eos vulnero subito eligendi. Exercitationem somnus cattus cilicium textilis cervus alo tactus.\",\"styles\":{}}],\"children\":[]}]",
+              "name": "Voluntarius contra.",
+              "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Tergo crepusculum certe desparatus depromo. Dolor somnus vobis atavus tergiversatio tersus suadeo colo. Id abduco supplanto asporto.\\nCuratio xiphias auxilium teneo claudeo unde vulgo. Atavus vorax vergo deputo deprimo statim eos vulnero subito eligendi. Exercitationem somnus cattus cilicium textilis cervus alo tactus.\",\"styles\":{}}],\"children\":[]}]",
               "keywords": "confido colligo audio",
               "status": "unpublished",
+              "publicAccess": false,
               "parentId": null,
               "displayOrder": 70.17,
               "createdAt": "2024-04-19T14:04:35.773Z",
@@ -240,20 +258,22 @@
             },
             {
               "id": "74l7581dwpxxbqdej8622zpg",
+              "tenantId": "o54qw5",
               "entityType": "page",
-              "name": "Aspernatur angustus suus ver.",
-              "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Debilito taedium spargo cetera. Vehemens deprecator ventus ascit denique tum candidus curvo perspiciatis defendo. Carpo verecundia cometes.\\nSortitus colligo ceno terra cado temptatio carmen arx sequi cicuta. Attollo autem adipisci vinitor comminor odit. Virga aptus corrupti utpote.\",\"styles\":{}}],\"children\":[]}]",
-              "keywords": "vulnus subseco vomica",
+              "name": "Taedium spargo cetera.",
+              "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Vehemens deprecator ventus ascit denique tum candidus curvo perspiciatis defendo. Carpo verecundia cometes. Sortitus colligo ceno terra cado temptatio carmen arx sequi cicuta.\\nAttollo autem adipisci vinitor comminor odit. Virga aptus corrupti utpote. Subseco vomica auxilium ascit cuppedia abbas amo patior credo tenus.\",\"styles\":{}}],\"children\":[]}]",
+              "keywords": "aestus degero cicuta",
               "status": "unpublished",
+              "publicAccess": false,
               "parentId": null,
-              "displayOrder": 19.64,
+              "displayOrder": 14.28,
               "createdAt": "2024-02-25T13:01:35.301Z",
               "createdBy": "p3t0ygxx0aa83en3sk1fs1we",
               "modifiedAt": "2024-02-25T13:01:35.301Z",
               "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
               "tx": {
-                "id": "5e03ldr2ga54hj92yzr7v1it",
-                "sourceId": "src_pc9wztvbcy21q04oq81k5rbz",
+                "id": "4hj92yzr7v1itpc9wztvbcy2",
+                "sourceId": "src_1q04oq81k5rbzt4yq63pob5r",
                 "version": 1,
                 "fieldVersions": {}
               }
@@ -384,6 +404,11 @@
                     "type": ["string", "null"],
                     "required": true
                   },
+                  "tenantId": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 6
+                  },
                   "tx": {
                     "type": "object",
                     "required": true,
@@ -400,6 +425,7 @@
                     "required": true,
                     "enum": ["unpublished", "published", "archived"]
                   },
+                  "publicAccess": { "type": "boolean", "required": true },
                   "parentId": {
                     "type": ["string", "null"],
                     "required": true
@@ -422,40 +448,44 @@
           "items": [
             {
               "id": "9xn03u76eo7z71y60a882cwp",
+              "tenantId": "xtanax",
               "entityType": "page",
-              "name": "Tot clarus sequi cimentarius vesco.",
-              "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Tersus summa caterva socius cultura tergo adhuc virtus. Audentia angustus articulus voco commodi abduco deduco occaecati cubicularis volo. In comminor concedo quae arca sumptus dolorem varius crudelis deduco.\\nSurgo angulus demens. Clibanus alioqui valens vester cavus contego debeo volubilis. Vindico audacia perspiciatis supra derideo chirographum.\",\"styles\":{}}],\"children\":[]}]",
-              "keywords": "depraedor rem dolorum",
+              "name": "Tersus summa caterva socius.",
+              "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Tergo adhuc virtus vesco audentia angustus. Voco commodi abduco deduco. Cubicularis volo utroque in comminor concedo quae.\\nSumptus dolorem varius crudelis. Advoco surgo angulus demens tabella clibanus. Valens vester cavus.\",\"styles\":{}}],\"children\":[]}]",
+              "keywords": "contego debeo volubilis",
               "status": "unpublished",
+              "publicAccess": false,
               "parentId": null,
-              "displayOrder": 56.42,
+              "displayOrder": 40.67,
               "createdAt": "2024-11-21T04:00:59.122Z",
               "createdBy": "qqp8d07imsvjbtqtl3rtjgxd",
               "modifiedAt": "2024-11-21T04:00:59.122Z",
               "modifiedBy": "qqp8d07imsvjbtqtl3rtjgxd",
               "tx": {
-                "id": "gme3gy3a9lhe0ctrmzc53x7z",
-                "sourceId": "src_222ydtq57iu31mz5oaqf10oe",
+                "id": "y6mqh9hmikgme3gy3a9lhe0c",
+                "sourceId": "src_trmzc53x7z222ydtq57iu31m",
                 "version": 1,
                 "fieldVersions": {}
               }
             },
             {
               "id": "clxs8vayzrul7vmeyahbgyu0",
+              "tenantId": "1sr6ut",
               "entityType": "page",
-              "name": "Tergo tardus.",
-              "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Tum timidus cultellus conitor. Aiunt speculum acidus advoco ventus sub cogito argentum. Trans summa crapula bestia.\\nNon sui desino amor. Tersus vitiosus eligendi clementia. Demens conor auctor basium tolero aspernatur soluta temporibus aut.\",\"styles\":{}}],\"children\":[]}]",
-              "keywords": "labore appello depono",
+              "name": "Conitor suspendo aiunt.",
+              "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Acidus advoco ventus sub cogito argentum attonbitus trans. Crapula bestia auxilium non sui desino amor barba. Vitiosus eligendi clementia usus demens conor auctor basium tolero.\\nSoluta temporibus aut labore. Depono ultio explicabo ascit. Utpote amplexus nihil aut concedo vel praesentium universe.\",\"styles\":{}}],\"children\":[]}]",
+              "keywords": "pecus accusator cubitum",
               "status": "unpublished",
+              "publicAccess": false,
               "parentId": null,
-              "displayOrder": 85.3,
+              "displayOrder": 11.43,
               "createdAt": "2024-10-29T08:46:20.790Z",
               "createdBy": "hg5ogh3yr2b2dbwf7b9eckaj",
               "modifiedAt": "2024-10-29T08:46:20.790Z",
               "modifiedBy": "hg5ogh3yr2b2dbwf7b9eckaj",
               "tx": {
-                "id": "j5qv4k6bwmvl0e44bpmhsyau",
-                "sourceId": "src_xcwuwjsrzvzac8qx1h9s6vzh",
+                "id": "4bpmhsyauxcwuwjsrzvzac8q",
+                "sourceId": "src_x1h9s6vzhgvcj0rs3xtuk03g",
                 "version": 1,
                 "fieldVersions": {}
               }
@@ -619,6 +649,11 @@
               "type": ["string", "null"],
               "required": true
             },
+            "tenantId": {
+              "type": "string",
+              "required": true,
+              "maxLength": 6
+            },
             "tx": {
               "type": "object",
               "required": true,
@@ -635,6 +670,7 @@
               "required": true,
               "enum": ["unpublished", "published", "archived"]
             },
+            "publicAccess": { "type": "boolean", "required": true },
             "parentId": {
               "type": ["string", "null"],
               "required": true
@@ -651,11 +687,13 @@
         },
         "example": {
           "id": "co96vrmic3wbowmxzbqa1e9f",
+          "tenantId": "ijllhz",
           "entityType": "page",
-          "name": "Infit pauci optio demo.",
-          "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Adhaero torrens adfectus incidunt voluptates cornu tempus eaque universe volubilis. Cubo sponte utpote crux pecco. Cunctatio dolorum vallum ut adimpleo summa valde strenuus attonbitus eligendi.\\nVel cado vitae cibus dolores decet surgo. Accusamus praesentium cibus subito. Vox nemo ipsa video tremo molestias charisma clam ipsa suscipit.\",\"styles\":{}}],\"children\":[]}]",
+          "name": "Torrens adfectus.",
+          "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Voluptates cornu tempus eaque universe volubilis conturbo. Sponte utpote crux pecco vulticulus cunctatio. Vallum ut adimpleo summa valde strenuus attonbitus.\\nMollitia vel cado vitae cibus dolores decet. Aptus accusamus praesentium cibus subito viscus vox nemo. Video tremo molestias charisma clam ipsa suscipit.\",\"styles\":{}}],\"children\":[]}]",
           "keywords": "solvo atrox tendo",
           "status": "unpublished",
+          "publicAccess": false,
           "parentId": null,
           "displayOrder": 32.69,
           "createdAt": "2024-08-06T10:28:33.226Z",
@@ -751,6 +789,11 @@
               "type": ["string", "null"],
               "required": true
             },
+            "tenantId": {
+              "type": "string",
+              "required": true,
+              "maxLength": 6
+            },
             "tx": {
               "type": "object",
               "required": true,
@@ -767,6 +810,7 @@
               "required": true,
               "enum": ["unpublished", "published", "archived"]
             },
+            "publicAccess": { "type": "boolean", "required": true },
             "parentId": {
               "type": ["string", "null"],
               "required": true
@@ -783,11 +827,13 @@
         },
         "example": {
           "id": "co96vrmic3wbowmxzbqa1e9f",
+          "tenantId": "ijllhz",
           "entityType": "page",
-          "name": "Infit pauci optio demo.",
-          "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Adhaero torrens adfectus incidunt voluptates cornu tempus eaque universe volubilis. Cubo sponte utpote crux pecco. Cunctatio dolorum vallum ut adimpleo summa valde strenuus attonbitus eligendi.\\nVel cado vitae cibus dolores decet surgo. Accusamus praesentium cibus subito. Vox nemo ipsa video tremo molestias charisma clam ipsa suscipit.\",\"styles\":{}}],\"children\":[]}]",
+          "name": "Torrens adfectus.",
+          "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Voluptates cornu tempus eaque universe volubilis conturbo. Sponte utpote crux pecco vulticulus cunctatio. Vallum ut adimpleo summa valde strenuus attonbitus.\\nMollitia vel cado vitae cibus dolores decet. Aptus accusamus praesentium cibus subito viscus vox nemo. Video tremo molestias charisma clam ipsa suscipit.\",\"styles\":{}}],\"children\":[]}]",
           "keywords": "solvo atrox tendo",
           "status": "unpublished",
+          "publicAccess": false,
           "parentId": null,
           "displayOrder": 32.69,
           "createdAt": "2024-08-06T10:28:33.226Z",

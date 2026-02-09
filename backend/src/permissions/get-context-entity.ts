@@ -38,7 +38,7 @@ export const getValidContextEntity = async <T extends ContextEntityType>(
   action: Exclude<EntityActionType, 'create'>,
 ): Promise<ValidContextEntityResult<T>> => {
   // Get current user role and memberships from request context
-  const userSystemRole = ctx.var.userRole;
+  const userSystemRole = ctx.var.userSystemRole;
   const memberships = ctx.var.memberships;
 
   // Step 1: Resolve target entity by ID or slug

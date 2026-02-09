@@ -58,5 +58,10 @@
     "name": "activities",
     "description": "Endpoints for retrieving *activities* (audit log entries). Activities track create, update, and\n        delete operations across all resources. This serves as an audit trail and can be extended for webhook\n        delivery.",
     "count": 1
+  },
+  {
+    "name": "tenants",
+    "description": "System-level endpoints for managing *tenants*. Tenants are top-level isolation boundaries used by\n        Row-Level Security (RLS) to partition data. Only system administrators can manage tenants.",
+    "count": 5
   }
 ]

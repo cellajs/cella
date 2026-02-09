@@ -14,8 +14,8 @@ interface Props {
 
 export function DeleteAttachments({ attachments, callback, dialog: isDialog }: Props) {
   const removeDialog = useDialoger((state) => state.remove);
-  // Use organizationId from first attachment - all attachments belong to same org
-  const deleteAttachments = useAttachmentDeleteMutation(attachments[0].organizationId);
+  // Use tenantId and organizationId from first attachment - all attachments belong to same org
+  const deleteAttachments = useAttachmentDeleteMutation(attachments[0].tenantId, attachments[0].organizationId);
 
   const [isPending, setIsPending] = React.useState(false);
 

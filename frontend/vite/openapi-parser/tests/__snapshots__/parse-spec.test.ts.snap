@@ -1693,7 +1693,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "xCache": [],
           "xGuard": [
             "isAuthenticated",
-            "hasOrgAccess",
+            "orgGuard",
           ],
           "xRateLimiter": [],
         },
@@ -1717,7 +1717,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "xCache": [],
           "xGuard": [
             "isAuthenticated",
-            "hasOrgAccess",
+            "orgGuard",
           ],
           "xRateLimiter": [],
         },
@@ -1741,7 +1741,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "xCache": [],
           "xGuard": [
             "isAuthenticated",
-            "hasOrgAccess",
+            "orgGuard",
           ],
           "xRateLimiter": [],
         },
@@ -1767,7 +1767,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           ],
           "xGuard": [
             "isAuthenticated",
-            "hasOrgAccess",
+            "orgGuard",
           ],
           "xRateLimiter": [],
         },
@@ -1791,7 +1791,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "xCache": [],
           "xGuard": [
             "isAuthenticated",
-            "hasOrgAccess",
+            "orgGuard",
           ],
           "xRateLimiter": [],
         },
@@ -1840,7 +1840,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "xCache": [],
           "xGuard": [
             "isAuthenticated",
-            "hasOrgAccess",
+            "orgGuard",
           ],
           "xRateLimiter": [],
         },
@@ -1864,7 +1864,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "xCache": [],
           "xGuard": [
             "isAuthenticated",
-            "hasOrgAccess",
+            "orgGuard",
           ],
           "xRateLimiter": [],
         },
@@ -1888,7 +1888,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "xCache": [],
           "xGuard": [
             "isAuthenticated",
-            "hasOrgAccess",
+            "orgGuard",
           ],
           "xRateLimiter": [],
         },
@@ -1935,7 +1935,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "xCache": [],
           "xGuard": [
             "isAuthenticated",
-            "hasOrgAccess",
+            "orgGuard",
           ],
           "xRateLimiter": [],
         },
@@ -1959,7 +1959,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "xCache": [],
           "xGuard": [
             "isAuthenticated",
-            "hasOrgAccess",
+            "orgGuard",
           ],
           "xRateLimiter": [],
         },

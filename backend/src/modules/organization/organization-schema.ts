@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { appConfig, type EntityType, recordFromKeys } from 'shared';
+import { appConfig, type EntityType, recordFromKeys, roles } from 'shared';
 import { organizationsTable } from '#/db/schema/organizations';
 import { authStrategiesEnum } from '#/db/schema/sessions';
 import { createInsertSchema, createSelectSchema } from '#/lib/drizzle-schema';
@@ -31,7 +31,7 @@ const entityCountSchema = z.object(
 );
 
 export const membershipCountSchema = z.object({
-  ...recordFromKeys(appConfig.entityRoles, () => z.number()),
+  ...recordFromKeys(roles.all, () => z.number()),
   pending: z.number(),
   total: z.number(),
 });
@@ -113,7 +113,7 @@ export const organizationUpdateBodySchema = createInsertSchema(organizationsTabl
 export const organizationListQuerySchema = paginationQuerySchema.extend({
   sort: z.enum(['id', 'name', 'createdAt']).default('createdAt').optional(),
   userId: z.string().optional(),
-  role: z.enum(appConfig.entityRoles).optional(),
+  role: z.enum(roles.all).optional(),
   // TODO make common schema
   excludeArchived: z
     .enum(['true', 'false'])

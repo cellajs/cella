@@ -122,14 +122,17 @@ export function QueryClientProvider({ children }: { children: React.ReactNode })
           if (item.membership.archived) continue; // Skip archived items
 
           // Prefetch data (e.g., members as a react query, attachments as a collection, etc.)
-          const prefetchPromises = entityToPrefetchQueries(item.id, item.entityType, item.organizationId).map(
-            (source) => {
-              const options = { ...source, ...offlineQueryConfig };
-              // Use ensureInfiniteQueryData for infinite queries (have getNextPageParam)
-              if ('getNextPageParam' in options) return queryClient.ensureInfiniteQueryData(options);
-              return queryClient.ensureQueryData(options);
-            },
-          );
+          const prefetchPromises = entityToPrefetchQueries(
+            item.id,
+            item.entityType,
+            item.tenantId,
+            item.organizationId,
+          ).map((source) => {
+            const options = { ...source, ...offlineQueryConfig };
+            // Use ensureInfiniteQueryData for infinite queries (have getNextPageParam)
+            if ('getNextPageParam' in options) return queryClient.ensureInfiniteQueryData(options);
+            return queryClient.ensureQueryData(options);
+          });
           await Promise.allSettled(prefetchPromises);
 
           await waitFor(500); // Avoid overloading server

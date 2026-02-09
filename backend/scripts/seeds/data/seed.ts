@@ -1,10 +1,11 @@
 import { appConfig } from 'shared';
-import { checkMark, loadingMark } from '#/utils/console';
+import { startSpinner, succeedSpinner, warnSpinner } from '#/utils/console';
 import { db } from '#/db/db';
 import { pagesTable } from '#/db/schema/pages';
+import { tenantsTable } from '#/db/schema/tenants';
 import { mockPage } from '../../../mocks/mock-page';
 import { mockMany, setMockContext } from '../../../mocks/utils';
-import { defaultAdminUser } from '../fixtures';
+import { defaultAdminUser, SYSTEM_TENANT_ID, systemTenant } from '../fixtures';
 
 // Set mock context for seed script - IDs will get 'gen-' prefix
 setMockContext('script');
@@ -24,21 +25,32 @@ const isPageSeeded = async () => {
  * Seeds the database with sample pages.
  */
 export const dataSeed = async () => {
-  console.info(` \n${loadingMark} Seeding pages...`);
+  const spinner = startSpinner('Seeding pages...');
 
   // Case: Production mode → skip seeding
-  if (isProduction) return console.error('Not allowed in production.');
+  if (isProduction) {
+    spinner.fail('Not allowed in production.');
+    return;
+  }
 
   // Case: Records already exist → skip seeding
-  if (await isPageSeeded()) return console.warn('Pages table not empty → skip seeding');
+  if (await isPageSeeded()) {
+    warnSpinner('Pages table not empty → skip seeding');
+    return;
+  }
+
+  // Ensure system tenant exists (needed for pages)
+  await db.insert(tenantsTable).values({ id: systemTenant.id, name: systemTenant.name }).onConflictDoNothing();
 
   // Make many pages and assign to the seeded admin user
+  // Pages use SYSTEM_TENANT_ID (platform-wide content, not org-scoped)
   const pageRecords = mockMany(mockPage, PAGES_COUNT).map((page) => ({
     ...page,
+    tenantId: SYSTEM_TENANT_ID,
     createdBy: defaultAdminUser.id,
     modifiedBy: defaultAdminUser.id,
   }));
   await db.insert(pagesTable).values(pageRecords).onConflictDoNothing();
 
-  console.info(` \n${checkMark} Created ${PAGES_COUNT} pages\n `);
+  succeedSpinner(`Created ${PAGES_COUNT} pages`);
 };

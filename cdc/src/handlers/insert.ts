@@ -1,14 +1,12 @@
 import type { Pgoutput } from 'pg-logical-replication';
 import type { InsertActivityModel } from '#/db/schema/activities';
 import { getTableName } from 'drizzle-orm';
-import { enrichMembershipData } from '../enrichment';
 import type { ProcessMessageResult } from '../process-message';
 import type { TableRegistryEntry } from '../types';
 import { actionToVerb, convertRowKeys, extractActivityContext, extractRowData, extractTxData } from '../utils';
 
 /**
  * Handle an INSERT message and create an activity with entity data.
- * For membership inserts, enriches with user and entity info.
  */
 export async function handleInsert(
   entry: TableRegistryEntry,
@@ -24,14 +22,8 @@ export async function handleInsert(
   // Extract tx data from realtime entities
   const tx = extractTxData(row);
 
-  // Enrich membership data with user and entity info
-  let enrichedData: Record<string, unknown> = row;
-  if (entry.kind === 'resource' && entry.type === 'membership') {
-    const enrichment = await enrichMembershipData(row);
-    enrichedData = { ...row, ...enrichment };
-  }
-
   const activity: InsertActivityModel = {
+    tenantId: ctx.tenantId,
     userId: ctx.userId,
     entityType: ctx.entityType,
     resourceType: ctx.resourceType,
@@ -44,5 +36,5 @@ export async function handleInsert(
     tx,
   };
 
-  return { activity, entityData: enrichedData, entry };
+  return { activity, entityData: row, entry };
 }

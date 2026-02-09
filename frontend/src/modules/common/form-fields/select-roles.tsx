@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { appConfig } from 'shared';
+import { roles } from 'shared';
 import { Checkbox } from '~/modules/ui/checkbox';
 import { cn } from '~/utils/cn';
 
@@ -21,7 +21,7 @@ export function SelectRoles({ onChange, value = [], className }: SelectRoleProps
 
   return (
     <div className={cn('inline-flex gap-2 items-center', className)}>
-      {appConfig.entityRoles.map((role) => (
+      {roles.all.map((role) => (
         // biome-ignore lint/a11y/noLabelWithoutControl: label is for visual grouping only, no input needed
         <label key={role} className="inline-flex gap-2 items-center cursor-pointer ">
           <Checkbox

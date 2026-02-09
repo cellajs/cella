@@ -1,6 +1,7 @@
 import type { ContextEntityBase, MembershipBase, Organization } from '~/api.gen';
 
 export type ContextEntityData = ContextEntityBase & {
+  tenantId: string;
   organizationId?: string;
   /** Membership data - populated via cache enrichment from myMemberships */
   membership?: MembershipBase | null;

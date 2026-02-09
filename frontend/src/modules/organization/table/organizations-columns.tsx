@@ -2,7 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { ShieldIcon, UserRoundIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { appConfig } from 'shared';
+import { roles } from 'shared';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
@@ -32,10 +32,10 @@ export const useColumns = (isCompact: boolean) => {
         renderCell: ({ row, tabIndex }) => (
           <Link
             className={buttonVariants({ variant: 'cell', size: 'cell' })}
-            to="/$orgIdOrSlug/organization/members"
+            to="/$tenantId/$orgIdOrSlug/organization/members"
             draggable="false"
             tabIndex={tabIndex}
-            params={{ orgIdOrSlug: row.slug }}
+            params={{ tenantId: row.tenantId, orgIdOrSlug: row.slug }}
           >
             <AvatarWrap
               type="organization"
@@ -78,7 +78,7 @@ export const useColumns = (isCompact: boolean) => {
           renderSelect({
             row,
             onRowChange,
-            options: appConfig.entityRoles,
+            options: roles.all,
           }),
       },
       {

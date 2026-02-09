@@ -20,8 +20,8 @@ Guard is a subcategory of per route middleware. The help you protect and secure 
 
 - isPublicAccess: placeholder for public access. It is recommended to cache, throttle and/or rate limit these requests.
 - isAuthenticated: user exists and has session. User and memberships are added to `getContext`.
-- hasOrgAccess: A safeguard to ensure that 1. user belongs to organization and 2. the request is scoped to that organization.
-- hasSystemAccess: additional security checks (isSystemAdmin & ipRestriction) to secure system level activity.
+- orgGuard: A safeguard to ensure that 1. user belongs to organization and 2. the request is scoped to that organization.
+- hasSystemAccess: additional security checks (sysAdminGuard & ipRestriction) to secure system level activity.
 
 ### Rate limiter
 

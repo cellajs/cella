@@ -4,7 +4,7 @@
  * Re-exports configuration, entity hierarchy, and utility functions.
  */
 import type { RequiredConfig } from './src/builder/types';
-import _default, { hierarchy } from './default-config';
+import _default, { hierarchy, roles } from './default-config';
 import development from './development-config';
 import production from './production-config';
 import staging from './staging-config';
@@ -25,11 +25,14 @@ export type {
   ProductEntityView,
   RoleFromRegistry,
   UserEntityView,
+  PublicAction,
+  PublicAccessConfig,
+  PublicAccessSource,
+  PublicAccessInherited,
 } from './src/builder/entity-hierarchy';
 export {
   createEntityHierarchy,
   createRoleRegistry,
-  validatePublicProductEntities,
 } from './src/builder/entity-hierarchy';
 
 // Config types
@@ -73,8 +76,12 @@ export function isProductEntity(entityType: string | null | undefined): entityTy
   return _isProductEntity(hierarchy, entityType);
 }
 
-/** Check if entity type is a public product entity (no parent context). */
-export function isPublicProductEntity(entityType: string): entityType is PublicProductEntityType {
+/**
+ * Check if entity type has public access configured in hierarchy.
+ * This checks whether the entity CAN be public (has publicAccess config),
+ * not whether a specific row IS public.
+ */
+export function isPublicProductEntity(entityType: string): boolean {
   return _isPublicProductEntity(hierarchy, entityType);
 }
 
@@ -106,13 +113,13 @@ export type ProductEntityType = (typeof appConfig.productEntityTypes)[number];
 /**
  * Public product entities (parent: null) - accessible without authentication
  */
-export type PublicProductEntityType = (typeof appConfig.publicProductEntityTypes)[number];
+export type PublicProductEntityType = (typeof hierarchy.publicAccessTypes)[number];
 
 /**
  * Relatable context entities - context entities that appear as parents of product entities.
  * Used for activities table columns and CDC context extraction.
  */
-export type RelatableContextEntityType = (typeof appConfig.relatableContextEntityTypes)[number];
+export type RelatableContextEntityType = (typeof hierarchy.relatableContextTypes)[number];
 
 /**
  * Resource types that are not entities but have activities logged
@@ -172,7 +179,7 @@ export type SystemRole = (typeof appConfig.systemRoles)[number] | null;
 /**
  * Entity roles type - union of all roles from the role registry.
  */
-export type EntityRole = (typeof appConfig.entityRoles)[number];
+export type EntityRole = (typeof roles.all)[number];
 
 /**
  * Expected shape for entityIdColumnKeys - must have all entity types as keys.

@@ -15,8 +15,13 @@ import router from '~/routes/router';
 function createOrganizationAction(triggerRef: RefObject<HTMLButtonElement | null>) {
   const callback = (args: CallbackArgs<Organization>) => {
     useDialoger.getState().remove('create-organization');
-    if (args.status === 'success')
-      router.navigate({ to: '/$orgIdOrSlug/organization/members', params: { orgIdOrSlug: args.data.slug } });
+    if (args.status === 'success') {
+      // Navigate using the tenant ID and slug from the created organization
+      router.navigate({
+        to: '/$tenantId/$orgIdOrSlug/organization/members',
+        params: { tenantId: args.data.tenantId, orgIdOrSlug: args.data.slug },
+      });
+    }
   };
 
   return useDialoger.getState().create(<CreateOrganizationForm dialog callback={callback} />, {

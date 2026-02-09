@@ -1,9 +1,9 @@
 import { createXRoute } from '#/docs/x-routes';
-import { hasOrgAccess, isAuthenticated } from '#/middlewares/guard';
+import { isAuthenticated, tenantGuard } from '#/middlewares/guard';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
 import { systemRoleBaseSchema } from '#/modules/system/system-schema';
 import { userListQuerySchema, userSchema } from '#/modules/user/user-schema';
-import { entityIdOrSlugInOrgParamSchema, errorResponseRefs, inOrgParamSchema, paginationSchema } from '#/schemas';
+import { errorResponseRefs, idOrSlugInTenantOrgParamSchema, paginationSchema, tenantOrgParamSchema } from '#/schemas';
 import { mockPaginatedUsersResponse, mockUserResponse } from '../../../mocks/mock-user';
 
 const userRoutes = {
@@ -14,11 +14,11 @@ const userRoutes = {
     operationId: 'getUsers',
     method: 'get',
     path: '/',
-    xGuard: [isAuthenticated, hasOrgAccess],
+    xGuard: [isAuthenticated, tenantGuard],
     tags: ['users'],
     summary: 'Get list of users',
     description: 'Returns a list of *users* in an organization context.',
-    request: { params: inOrgParamSchema, query: userListQuerySchema },
+    request: { params: tenantOrgParamSchema, query: userListQuerySchema },
     responses: {
       200: {
         description: 'Users',
@@ -44,11 +44,11 @@ const userRoutes = {
     operationId: 'getUser',
     method: 'get',
     path: '/{idOrSlug}',
-    xGuard: [isAuthenticated, hasOrgAccess],
+    xGuard: [isAuthenticated, tenantGuard],
     tags: ['users'],
     summary: 'Get user',
     description: 'Retrieves a *user* by ID or slug in an organization context.',
-    request: { params: entityIdOrSlugInOrgParamSchema },
+    request: { params: idOrSlugInTenantOrgParamSchema },
     responses: {
       200: {
         description: 'User',

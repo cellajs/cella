@@ -25,7 +25,7 @@ export const splitByPermission = async (
   ids: string[],
   memberships: MembershipBaseModel[],
 ) => {
-  const userSystemRole = ctx.var.userRole;
+  const userSystemRole = ctx.var.userSystemRole;
 
   // Resolve entities
   const entities = await resolveEntities(entityType, ids);

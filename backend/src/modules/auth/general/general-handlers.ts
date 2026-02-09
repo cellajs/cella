@@ -184,7 +184,7 @@ const authGeneralRouteHandlers = app
     if (isExpiredDate(adminsLastSession.expiresAt)) throw new AppError(401, 'unauthorized', 'warn');
 
     const expireTimeSpan = new TimeSpan(new Date(adminsLastSession.expiresAt).getTime() - Date.now(), 'ms');
-    const cookieContent = `${adminsLastSession.token}.${adminsLastSession.userId ?? ''}`;
+    const cookieContent = `${adminsLastSession.secret}.${adminsLastSession.userId ?? ''}`;
 
     await setAuthCookie(ctx, 'session', cookieContent, expireTimeSpan);
 
@@ -225,7 +225,7 @@ const authGeneralRouteHandlers = app
     // Insert token first
     await db.insert(tokensTable).values({
       ...oldToken,
-      token: hashedToken,
+      secret: hashedToken,
       expiresAt: createDate(new TimeSpan(7, 'd')),
       invokedAt: null,
       singleUseToken: null,

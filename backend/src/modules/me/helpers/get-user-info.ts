@@ -56,6 +56,6 @@ export const getUserSessions = async (ctx: Context<Env>, userId: string): Promis
     .orderBy(desc(sessionsTable.createdAt));
   const { sessionToken } = await getParsedSessionCookie(ctx);
 
-  // Destructure/remove token from response
-  return sessions.map(({ token, ...session }) => ({ ...session, isCurrent: sessionToken === token }));
+  // Destructure/remove secret from response
+  return sessions.map(({ secret, ...session }) => ({ ...session, isCurrent: sessionToken === secret }));
 };

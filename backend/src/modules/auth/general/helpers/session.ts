@@ -56,7 +56,7 @@ export const setUserSession = async (
   const timeSpan = type === 'impersonation' ? new TimeSpan(1, 'h') : new TimeSpan(1, 'w');
 
   const session = {
-    token: hashedSessionToken,
+    secret: hashedSessionToken,
     userId: user.id,
     type,
     deviceName: device.name,
@@ -98,7 +98,7 @@ export const validateSession = async (
   const [result] = await db
     .select({ session: sessionsTable, user: userSelect })
     .from(sessionsTable)
-    .where(eq(sessionsTable.token, hashedSessionToken))
+    .where(eq(sessionsTable.secret, hashedSessionToken))
     .innerJoin(usersTable, eq(sessionsTable.userId, usersTable.id));
 
   // If no result is found throw no session
@@ -109,8 +109,8 @@ export const validateSession = async (
   // Check if the session has expired and invalidate it if so
   if (isExpiredDate(session.expiresAt)) throw new AppError(401, 'session_expired', 'warn');
 
-  // Strip token from session before returning
-  const { token: _, ...safeSession } = session;
+  // Strip secret from session before returning
+  const { secret: _, ...safeSession } = session;
   return { session: safeSession, user };
 };
 

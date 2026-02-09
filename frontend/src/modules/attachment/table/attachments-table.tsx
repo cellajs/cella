@@ -32,7 +32,7 @@ function AttachmentsTable({ entity, canUpload = true, isSheet = false }: Attachm
   const { t } = useTranslation();
   const { search, setSearch } = useSearchParams<AttachmentsRouteSearchParams>({ saveDataInSearch: !isSheet });
 
-  const updateAttachment = useAttachmentUpdateMutation(entity.slug);
+  const updateAttachment = useAttachmentUpdateMutation(entity.tenantId, entity.id);
 
   // Table state
   const { q, sort, order } = search;
@@ -56,7 +56,14 @@ function AttachmentsTable({ entity, canUpload = true, isSheet = false }: Attachm
     );
   }, [isCompact]);
 
-  const queryOptions = attachmentsListQueryOptions({ orgId: entity.id, q, sort, order, limit });
+  const queryOptions = attachmentsListQueryOptions({
+    tenantId: entity.tenantId,
+    orgIdOrSlug: entity.id,
+    q,
+    sort,
+    order,
+    limit,
+  });
 
   const {
     data: rows,

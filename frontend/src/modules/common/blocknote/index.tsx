@@ -166,16 +166,20 @@ function BlockNote({
       // Use publicFiles prop if set, otherwise default to private
       const isPublic = publicFiles ?? baseFilePanelProps?.isPublic ?? false;
 
-      // Get organizationId from cache (if key is attachment ID) or from props
+      // Get organizationId and tenantId from cache (if key is attachment ID) or from props
       const cachedAttachment = isAttachmentId ? findAttachmentInListCache(key) : null;
+      const tenantId = cachedAttachment?.tenantId ?? baseFilePanelProps?.tenantId;
       const organizationId = cachedAttachment?.organizationId ?? baseFilePanelProps?.organizationId;
 
-      if (!organizationId) {
-        console.error('[BlockNote] Cannot resolve private file URL: no organizationId available for key:', key);
+      if (!tenantId || !organizationId) {
+        console.error(
+          '[BlockNote] Cannot resolve private file URL: no tenantId/organizationId available for key:',
+          key,
+        );
         return '';
       }
 
-      return getFileUrl(key, isPublic, organizationId);
+      return getFileUrl(key, isPublic, tenantId, organizationId);
     },
   });
 

@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker';
 import type { PageModel } from '#/db/schema/pages';
 import { mockBatchResponse } from './mock-common';
-import { mockNanoid, mockPaginated, mockTx, withFakerSeed } from './utils';
+import { mockNanoid, mockPaginated, mockTenantId, mockTx, withFakerSeed } from './utils';
 
 /**
  * Generates a mock page with all fields populated.
@@ -16,6 +16,7 @@ export const mockPage = (key = 'page:default'): PageModel =>
 
     return {
       id: mockNanoid(),
+      tenantId: mockTenantId(),
       entityType: 'page' as const,
       name: faker.lorem.sentence({ min: 2, max: 5 }),
       description: JSON.stringify([
@@ -26,6 +27,7 @@ export const mockPage = (key = 'page:default'): PageModel =>
       ]),
       keywords: faker.lorem.words(3),
       status: 'unpublished' as const,
+      publicAccess: false,
       parentId: null,
       displayOrder: faker.number.float({ min: 0, max: 100, fractionDigits: 2 }),
       createdAt,

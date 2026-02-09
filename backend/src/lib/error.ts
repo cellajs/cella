@@ -87,7 +87,7 @@ export const appErrorHandler: ErrorHandler<Env> = (err, ctx) => {
     severity,
     entityType,
     cause: err.cause,
-    logId: ctx.get('logId'),
+    logId: ctx.get('requestId'),
     ...(includeStack && { stack: err.stack }),
     path: ctx.req.path,
     method: ctx.req.method,

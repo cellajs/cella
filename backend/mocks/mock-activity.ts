@@ -3,7 +3,7 @@ import { appConfig } from 'shared';
 import type { ActivityModel } from '#/db/schema/activities';
 import { activityActions } from '#/sync/activity-bus';
 import { entityTableNames } from '#/table-config';
-import { generateMockContextEntityIdColumns, mockNanoid, mockPaginated, withFakerSeed } from './utils';
+import { generateMockContextEntityIdColumns, mockNanoid, mockPaginated, mockTenantId, withFakerSeed } from './utils';
 
 /**
  * Generates a mock activity with all fields populated. Currently hardcoded
@@ -24,6 +24,7 @@ export const mockActivity = (key = 'activity:default'): ActivityModel =>
 
     return {
       id: mockNanoid(),
+      tenantId: mockTenantId(),
       userId: mockNanoid(),
       entityType: faker.helpers.arrayElement([...appConfig.entityTypes, null]),
       resourceType: null,

@@ -37,6 +37,7 @@ import {
   OrganizationsTableRoute,
   RequestsTableRoute,
   SystemRoute,
+  TenantsTableRoute,
   UsersTableRoute,
 } from '~/routes/system-routes';
 import { UserAccountRoute } from '~/routes/user-routes';
@@ -101,7 +102,13 @@ export const baseOrganizationChildren = [
 ] as const;
 
 /** Base system children (inside SystemRoute) */
-export const baseSystemChildren = [UsersTableRoute, OrganizationsTableRoute, RequestsTableRoute, MetricsRoute] as const;
+export const baseSystemChildren = [
+  UsersTableRoute,
+  OrganizationsTableRoute,
+  RequestsTableRoute,
+  MetricsRoute,
+  TenantsTableRoute,
+] as const;
 
 declare module '@tanstack/react-router' {
   interface StaticDataRouteOption {

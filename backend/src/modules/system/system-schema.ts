@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { appConfig } from 'shared';
+import { roles } from 'shared';
 import { systemRolesTable } from '#/db/schema/system-roles';
 import { createSelectSchema } from '#/lib/drizzle-schema';
 import { userSchema } from '#/modules/user/user-schema';
@@ -11,7 +11,7 @@ export const inviteBodySchema = z.object({
 
 export const sendNewsletterBodySchema = z.object({
   organizationIds: z.array(z.string()),
-  roles: z.array(z.enum(appConfig.entityRoles)).min(1, { message: 'Role selection is required' }),
+  roles: z.array(z.enum(roles.all)).min(1, { message: 'Role selection is required' }),
   subject: z.string(),
   content: z.string(),
 });

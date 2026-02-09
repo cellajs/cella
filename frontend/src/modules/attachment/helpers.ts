@@ -23,11 +23,16 @@ export function getPublicFileUrl(key: string): string {
  * Gets the URL for a file based on its public/private status.
  * Public files use direct CDN URL, private files use presigned URL endpoint.
  */
-export async function getFileUrl(key: string, isPublic: boolean, organizationId: string): Promise<string> {
+export async function getFileUrl(
+  key: string,
+  isPublic: boolean,
+  tenantId: string,
+  orgIdOrSlug: string,
+): Promise<string> {
   if (isPublic) {
     return getPublicFileUrl(key);
   }
-  return getPresignedUrl({ path: { orgId: organizationId }, query: { key } });
+  return getPresignedUrl({ path: { tenantId, orgIdOrSlug }, query: { key } });
 }
 
 /** Result of resolving an attachment URL */
@@ -52,7 +57,10 @@ export interface ResolveOptions {
  */
 export async function resolveAttachmentUrl(
   attachmentId: string,
-  attachment: Pick<Attachment, 'originalKey' | 'convertedKey' | 'thumbnailKey' | 'public' | 'organizationId'> | null,
+  attachment: Pick<
+    Attachment,
+    'originalKey' | 'convertedKey' | 'thumbnailKey' | 'public' | 'organizationId' | 'tenantId'
+  > | null,
   options: ResolveOptions = {},
 ): Promise<ResolvedUrl | null> {
   const { preferredVariant = 'original', useFallback = true, preferCloud = false, queueDownload = true } = options;
@@ -79,7 +87,7 @@ export async function resolveAttachmentUrl(
 
   if (!cloudKey) return null;
 
-  const fileUrl = await getFileUrl(cloudKey, meta.public, meta.organizationId);
+  const fileUrl = await getFileUrl(cloudKey, meta.public, meta.tenantId, meta.organizationId);
 
   // 4. Queue for background download
   if (queueDownload) {

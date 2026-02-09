@@ -425,7 +425,7 @@ describe('Passkey Authentication', async () => {
       const mfaToken = nanoid(40);
       const hashedMfaToken = encodeLowerCased(mfaToken);
       await db.insert(tokensTable).values({
-        token: hashedMfaToken,
+        secret: hashedMfaToken,
         type: 'confirm-mfa',
         userId: user.id,
         email: user.email,

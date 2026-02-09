@@ -28,7 +28,8 @@ export const MenuItemEdit = ({ item, icon: Icon }: MenuItemEditProps) => {
 
     const updatedMembership: MutationUpdateMembership = {
       id: item.membership.id,
-      orgId: item.membership.organizationId,
+      tenantId: item.tenantId,
+      orgIdOrSlug: item.membership.organizationId,
       entityId: item.id,
       entityType: item.entityType,
     };

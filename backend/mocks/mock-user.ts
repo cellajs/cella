@@ -158,7 +158,7 @@ export const mockPassword = (user: UserModel, hashedPassword: string): InsertPas
  */
 export const mockUnsubscribeToken = (user: UserModel): InsertUnsubscribeTokenModel => {
   return {
-    token: generateUnsubscribeToken(user.email),
+    secret: generateUnsubscribeToken(user.email),
     userId: user.id,
     createdAt: pastIsoDate(),
   };

@@ -1,4 +1,4 @@
-import { db, migrateConfig } from '#/db/db';
+import { db, migrateConfig, migrationDb } from '#/db/db';
 import docs from '#/docs/docs';
 import '#/lib/i18n';
 import { serve } from '@hono/node-server';
@@ -8,7 +8,7 @@ import { migrate as pgMigrate } from 'drizzle-orm/node-postgres/migrator';
 import type { PgliteDatabase } from 'drizzle-orm/pglite';
 import { migrate as pgliteMigrate } from 'drizzle-orm/pglite/migrator';
 import pc from 'picocolors';
-import { appConfig, hierarchy, validatePublicProductEntities } from 'shared';
+import { appConfig } from 'shared';
 import app from '#/routes';
 import { registerCacheInvalidation } from '#/sync/cache-invalidation';
 import { cdcWebSocketServer } from '#/sync/cdc-websocket';
@@ -40,14 +40,14 @@ Sentry.init({
 });
 
 const main = async () => {
-  // Validate public product entity configuration (security check)
-  validatePublicProductEntities(hierarchy, appConfig.publicProductEntityTypes);
-
-  // Migrate db
+  // Migrate db using admin connection (bypasses RLS, creates roles)
   if (isPGliteDatabase(db)) {
     await pgliteMigrate(db, migrateConfig);
+  } else if (migrationDb) {
+    await pgMigrate(migrationDb, migrateConfig);
   } else {
-    await pgMigrate(db, migrateConfig);
+    console.error('DATABASE_ADMIN_URL required for migrations');
+    process.exit(1);
   }
 
   // Register entity cache invalidation hook

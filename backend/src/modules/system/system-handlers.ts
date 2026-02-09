@@ -131,7 +131,7 @@ const systemRouteHandlers = app
 
     // 5) Create new tokens for recipients
     const tokens = recipientEmails.map((email) => ({
-      token: hashedToken,
+      secret: hashedToken,
       type: 'invitation' as const,
       email,
       createdBy: user.id,
@@ -351,7 +351,7 @@ const systemRouteHandlers = app
       .selectDistinct({
         email: usersTable.email,
         name: usersTable.name,
-        unsubscribeToken: unsubscribeTokensTable.token,
+        unsubscribeToken: unsubscribeTokensTable.secret,
         newsletter: usersTable.newsletter,
         orgName: organizationsTable.name,
       })

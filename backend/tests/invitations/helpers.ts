@@ -12,6 +12,7 @@ export async function createMembershipInvitationToken(
   user: UserModel,
   organizationId: string,
   role: 'admin' | 'member' = 'member',
+  tenantId: string = 'test01', // Default test tenant
 ) {
   // Create inactive membership first
   const inactiveMembership = {
@@ -19,9 +20,9 @@ export async function createMembershipInvitationToken(
     userId: user.id,
     email: user.email,
     organizationId,
+    tenantId,
     contextType: 'organization' as const,
     role,
-    uniqueKey: `${user.id}-${organizationId}`,
     createdAt: pastIsoDate(),
     createdBy: user.id,
   };
@@ -31,7 +32,7 @@ export async function createMembershipInvitationToken(
   // Create token linked to inactive membership
   const tokenRecord = {
     id: nanoid(),
-    token: nanoid(),
+    secret: nanoid(),
     type: 'invitation' as const,
     email: user.email,
     userId: user.id,

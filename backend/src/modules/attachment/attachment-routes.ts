@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/docs/x-routes';
 import { appCache } from '#/middlewares/entity-cache';
-import { hasOrgAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
+import { isAuthenticated, isPublicAccess, orgGuard, tenantGuard } from '#/middlewares/guard';
 import { presignedUrlLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   attachmentCreateManyTxBodySchema,
@@ -14,11 +14,11 @@ import {
 import {
   batchResponseSchema,
   errorResponseRefs,
-  idInOrgParamSchema,
+  idInTenantOrgParamSchema,
   idSchema,
   idsWithTxBodySchema,
-  inOrgParamSchema,
   paginationSchema,
+  tenantOrgParamSchema,
 } from '#/schemas';
 import {
   mockAttachmentResponse,
@@ -34,12 +34,12 @@ const attachmentRoutes = {
     operationId: 'getAttachments',
     method: 'get',
     path: '/',
-    xGuard: [isAuthenticated, hasOrgAccess],
+    xGuard: [isAuthenticated, tenantGuard, orgGuard],
     tags: ['attachments'],
     summary: 'Get attachments',
     description: 'Returns a paginated list of *attachments* for the organization.',
     request: {
-      params: inOrgParamSchema,
+      params: tenantOrgParamSchema,
       query: attachmentListQuerySchema,
     },
     responses: {
@@ -62,13 +62,13 @@ const attachmentRoutes = {
     operationId: 'createAttachments',
     method: 'post',
     path: '/',
-    xGuard: [isAuthenticated, hasOrgAccess],
+    xGuard: [isAuthenticated, tenantGuard, orgGuard],
     tags: ['attachments'],
     summary: 'Create attachments',
     description:
       'Registers one or more new *attachments* after client side upload. Includes metadata like name, type, and linked entity.',
     request: {
-      params: inOrgParamSchema,
+      params: tenantOrgParamSchema,
       body: {
         required: true,
         content: { 'application/json': { schema: attachmentCreateManyTxBodySchema } },
@@ -97,13 +97,13 @@ const attachmentRoutes = {
     operationId: 'getAttachment',
     method: 'get',
     path: '/{id}',
-    xGuard: [isAuthenticated, hasOrgAccess],
+    xGuard: [isAuthenticated, tenantGuard, orgGuard],
     xCache: appCache(),
     tags: ['attachments'],
     summary: 'Get attachment',
     description: 'Returns a single *attachment* by ID. Supports CDC cache via X-Cache-Token header.',
     request: {
-      params: idInOrgParamSchema,
+      params: idInTenantOrgParamSchema,
     },
     responses: {
       200: {
@@ -120,12 +120,12 @@ const attachmentRoutes = {
     operationId: 'updateAttachment',
     method: 'put',
     path: '/{id}',
-    xGuard: [isAuthenticated, hasOrgAccess],
+    xGuard: [isAuthenticated, tenantGuard, orgGuard],
     tags: ['attachments'],
     summary: 'Update attachment',
     description: 'Updates metadata of an *attachment*, such as its name or associated entity.',
     request: {
-      params: idInOrgParamSchema,
+      params: idInTenantOrgParamSchema,
       body: {
         required: true,
         content: { 'application/json': { schema: attachmentUpdateTxBodySchema } },
@@ -146,12 +146,12 @@ const attachmentRoutes = {
     operationId: 'deleteAttachments',
     method: 'delete',
     path: '/',
-    xGuard: [isAuthenticated, hasOrgAccess],
+    xGuard: [isAuthenticated, tenantGuard, orgGuard],
     tags: ['attachments'],
     summary: 'Delete attachments',
     description: 'Deletes one or more *attachment* records by ID. This does not delete the underlying file in storage.',
     request: {
-      params: inOrgParamSchema,
+      params: tenantOrgParamSchema,
       body: {
         required: true,
         content: { 'application/json': { schema: idsWithTxBodySchema() } },
@@ -194,13 +194,13 @@ const attachmentRoutes = {
     operationId: 'getPresignedUrl',
     method: 'get',
     path: '/presigned-url',
-    xGuard: [isAuthenticated, hasOrgAccess],
+    xGuard: [isAuthenticated, tenantGuard, orgGuard],
     xRateLimiter: presignedUrlLimiter,
     tags: ['attachments'],
     summary: 'Get presigned URL',
     description:
       'Generates and returns a presigned URL for accessing a private attachment file in S3. Public files should use the public CDN URL directly. Requires organization context.',
-    request: { params: inOrgParamSchema, query: presignedUrlKeySchema },
+    request: { params: tenantOrgParamSchema, query: presignedUrlKeySchema },
     responses: {
       200: {
         description: 'Presigned URL',

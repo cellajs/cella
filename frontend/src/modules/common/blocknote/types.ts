@@ -54,6 +54,7 @@ export type IconType = (
 ) => React.ReactElement;
 
 export type BaseUppyFilePanelProps = {
+  tenantId: string;
   organizationId: string;
   isPublic?: boolean;
   onComplete?: (result: UploadedUppyFile<'attachment'>) => void;

@@ -108,6 +108,11 @@
       "type": "object",
       "properties": {
         "id": { "type": "string", "required": true },
+        "tenantId": {
+          "type": "string",
+          "required": true,
+          "maxLength": 6
+        },
         "contextType": {
           "type": "string",
           "required": true,
@@ -133,11 +138,12 @@
     "schemaTag": "base",
     "example": {
       "id": "vn86f6g3ci8ybeh37sz3gscf",
+      "tenantId": "gmpj3u",
       "contextType": "organization",
-      "userId": "gmpj3uavw3f7pkm7vsxl2157",
-      "organizationId": "n34cen80754cxm7om1aq3bat",
-      "role": "member",
-      "displayOrder": 9,
+      "userId": "avw3f7pkm7vsxl2157n34cen",
+      "organizationId": "80754cxm7om1aq3batq3hdpx",
+      "role": "admin",
+      "displayOrder": 32,
       "muted": false,
       "archived": false
     }
@@ -183,7 +189,7 @@
         "resourceType": {
           "type": ["string", "null"],
           "required": true,
-          "enum": ["request", "membership", null]
+          "enum": ["request", "membership", "inactive_membership", "tenant", null]
         },
         "entityId": { "type": "string", "required": true },
         "organizationId": {
@@ -575,6 +581,11 @@
       "type": "object",
       "properties": {
         "id": { "type": "string", "required": true },
+        "tenantId": {
+          "type": ["string", "null"],
+          "required": true,
+          "maxLength": 6
+        },
         "userId": {
           "type": ["string", "null"],
           "required": true
@@ -587,7 +598,7 @@
         "resourceType": {
           "type": ["string", "null"],
           "required": true,
-          "enum": ["request", "membership", null]
+          "enum": ["request", "membership", "inactive_membership", "tenant", null]
         },
         "action": {
           "type": "string",
@@ -661,19 +672,20 @@
     "schemaTag": "data",
     "example": {
       "id": "s933zhzgm8axl572xlcja86p",
-      "userId": "qc8osclgd1300kpvq3dotk41",
-      "entityType": "user",
+      "tenantId": "qc8osc",
+      "userId": "lgd1300kpvq3dotk41121rs6",
+      "entityType": "page",
       "resourceType": null,
       "action": "update",
       "tableName": "pages",
       "type": "page.updated",
-      "entityId": "21rs6psa9stclacdgtonoqr1",
+      "entityId": "sa9stclacdgtonoqr1t2j8om",
       "createdAt": "2024-10-11T19:21:02.239Z",
-      "changedKeys": ["slug", "description", "email", "name"],
+      "changedKeys": ["description", "name", "email"],
       "tx": null,
-      "seq": 668,
+      "seq": 66,
       "error": null,
-      "organizationId": "mleaz2pg8iwtnhw3666j3aif"
+      "organizationId": "pg8iwtnhw3666j3aifuxshox"
     }
   },
   {
@@ -1049,6 +1061,11 @@
       "properties": {
         "createdAt": { "type": "string", "required": true },
         "id": { "type": "string", "required": true },
+        "tenantId": {
+          "type": "string",
+          "required": true,
+          "maxLength": 6
+        },
         "contextType": {
           "type": "string",
           "required": true,
@@ -1073,8 +1090,7 @@
           "required": true
         },
         "createdBy": { "type": "string", "required": true },
-        "organizationId": { "type": "string", "required": true },
-        "uniqueKey": { "type": "string", "required": true }
+        "organizationId": { "type": "string", "required": true }
       }
     },
     "schemaTag": "data",
@@ -1089,7 +1105,7 @@
       "createdAt": "2024-02-08T11:19:07.168Z",
       "createdBy": "9v2n0dfrh6s450ooxn5tb992",
       "organizationId": "9angnio9zojjlzk3croh621f",
-      "uniqueKey": "ne0c1n1xatbgsj5m94fa2zfj-9angnio9zojjlzk3croh621f"
+      "tenantId": "test01"
     }
   },
   {
@@ -1142,6 +1158,11 @@
           "required": false,
           "properties": {
             "id": { "type": "string", "required": true },
+            "tenantId": {
+              "type": "string",
+              "required": true,
+              "maxLength": 6
+            },
             "contextType": {
               "type": "string",
               "required": true,
@@ -1233,6 +1254,11 @@
           "type": ["string", "null"],
           "required": true
         },
+        "tenantId": {
+          "type": "string",
+          "required": true,
+          "maxLength": 6
+        },
         "shortName": {
           "type": ["string", "null"],
           "required": true
@@ -1298,6 +1324,11 @@
               "required": false,
               "properties": {
                 "id": { "type": "string", "required": true },
+                "tenantId": {
+                  "type": "string",
+                  "required": true,
+                  "maxLength": 6
+                },
                 "contextType": {
                   "type": "string",
                   "required": true,
@@ -1364,25 +1395,26 @@
     "schemaTag": "data",
     "example": {
       "id": "hmo9fwr239kqavr3yur671kl",
+      "tenantId": "vk6xht",
       "entityType": "organization",
-      "name": "McClure, Dicki and Waters",
-      "slug": "mcclure-dicki-and-waters",
-      "description": "Open-source static website",
-      "shortName": "McClure,",
-      "country": "Guatemala",
-      "timezone": "Africa/Dar_es_Salaam",
+      "name": "Hills, Bauch and Monahan",
+      "slug": "hills-bauch-and-monahan",
+      "description": "Multi-tiered zero trust firmware",
+      "shortName": "Hills,",
+      "country": "Turks and Caicos Islands",
+      "timezone": "America/Argentina/Buenos_Aires",
       "defaultLanguage": "en",
       "languages": ["en"],
-      "notificationEmail": "notifications@mcclure-dicki-and-waters.example",
+      "notificationEmail": "notifications@hills-bauch-and-monahan.example",
       "emailDomains": [],
-      "color": "#daf7e3",
+      "color": "#ecfdfe",
       "thumbnailUrl": null,
       "logoUrl": null,
       "bannerUrl": null,
-      "websiteUrl": "https://mcclure-dicki-and-waters.example",
-      "welcomeText": "Welcome to McClure, Dicki and Waters!",
+      "websiteUrl": "https://hills-bauch-and-monahan.example",
+      "welcomeText": "Welcome to Hills, Bauch and Monahan!",
       "authStrategies": ["password"],
-      "chatSupport": false,
+      "chatSupport": true,
       "createdAt": "2024-12-25T15:29:47.111Z",
       "createdBy": null,
       "modifiedAt": "2024-12-25T15:29:47.111Z",
@@ -1395,11 +1427,12 @@
       "included": {
         "membership": {
           "id": "kaba9fpc90mgtzmtjipw2v8s",
+          "tenantId": "w4hg40",
           "contextType": "organization",
-          "userId": "w4hg4036vxzq0rzt4pucveps",
+          "userId": "36vxzq0rzt4pucvepsu63uw1",
           "organizationId": "hmo9fwr239kqavr3yur671kl",
-          "role": "member",
-          "displayOrder": 38,
+          "role": "admin",
+          "displayOrder": 69,
           "muted": false,
           "archived": false
         },
@@ -1447,6 +1480,11 @@
           "type": ["string", "null"],
           "required": true
         },
+        "tenantId": {
+          "type": "string",
+          "required": true,
+          "maxLength": 6
+        },
         "tx": {
           "type": "object",
           "required": true,
@@ -1463,6 +1501,7 @@
           "required": true,
           "enum": ["unpublished", "published", "archived"]
         },
+        "publicAccess": { "type": "boolean", "required": true },
         "parentId": {
           "type": ["string", "null"],
           "required": true
@@ -1478,11 +1517,13 @@
     "schemaTag": "data",
     "example": {
       "id": "co96vrmic3wbowmxzbqa1e9f",
+      "tenantId": "ijllhz",
       "entityType": "page",
-      "name": "Infit pauci optio demo.",
-      "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Adhaero torrens adfectus incidunt voluptates cornu tempus eaque universe volubilis. Cubo sponte utpote crux pecco. Cunctatio dolorum vallum ut adimpleo summa valde strenuus attonbitus eligendi.\\nVel cado vitae cibus dolores decet surgo. Accusamus praesentium cibus subito. Vox nemo ipsa video tremo molestias charisma clam ipsa suscipit.\",\"styles\":{}}],\"children\":[]}]",
+      "name": "Torrens adfectus.",
+      "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Voluptates cornu tempus eaque universe volubilis conturbo. Sponte utpote crux pecco vulticulus cunctatio. Vallum ut adimpleo summa valde strenuus attonbitus.\\nMollitia vel cado vitae cibus dolores decet. Aptus accusamus praesentium cibus subito viscus vox nemo. Video tremo molestias charisma clam ipsa suscipit.\",\"styles\":{}}],\"children\":[]}]",
       "keywords": "solvo atrox tendo",
       "status": "unpublished",
+      "publicAccess": false,
       "parentId": null,
       "displayOrder": 32.69,
       "createdAt": "2024-08-06T10:28:33.226Z",
@@ -1530,6 +1571,96 @@
       "sourceId": "q0fso83v5i0v5s1hl5zutg31",
       "baseVersion": 0
     }
+  },
+  {
+    "name": "Tenant",
+    "ref": "#/components/schemas/Tenant",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "required": true,
+          "description": "6-character lowercase alphanumeric tenant ID",
+          "maxLength": 6
+        },
+        "name": {
+          "type": "string",
+          "required": true,
+          "description": "Tenant display name"
+        },
+        "status": {
+          "type": "string",
+          "required": true,
+          "enum": ["active", "suspended", "archived"],
+          "ref": "#/components/schemas/TenantStatus"
+        },
+        "createdAt": { "type": "string", "required": true },
+        "modifiedAt": {
+          "type": ["string", "null"],
+          "required": true
+        }
+      }
+    },
+    "schemaTag": "data"
+  },
+  {
+    "name": "TenantStatus",
+    "ref": "#/components/schemas/TenantStatus",
+    "type": "string",
+    "schema": {
+      "type": "string",
+      "enum": ["active", "suspended", "archived"]
+    },
+    "schemaTag": "data"
+  },
+  {
+    "name": "CreateTenantBody",
+    "ref": "#/components/schemas/CreateTenantBody",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "required": true,
+          "description": "Tenant display name",
+          "minLength": 1,
+          "maxLength": 255
+        },
+        "status": {
+          "type": "string",
+          "required": false,
+          "enum": ["active", "suspended", "archived"],
+          "ref": "#/components/schemas/TenantStatus"
+        }
+      }
+    },
+    "schemaTag": "data"
+  },
+  {
+    "name": "UpdateTenantBody",
+    "ref": "#/components/schemas/UpdateTenantBody",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "required": false,
+          "minLength": 1,
+          "maxLength": 255
+        },
+        "status": {
+          "type": "string",
+          "required": false,
+          "enum": ["active", "suspended", "archived"],
+          "ref": "#/components/schemas/TenantStatus"
+        }
+      }
+    },
+    "schemaTag": "data"
   },
   {
     "name": "Request",
@@ -1595,6 +1726,11 @@
           "type": ["string", "null"],
           "required": true
         },
+        "tenantId": {
+          "type": "string",
+          "required": true,
+          "maxLength": 6
+        },
         "tx": {
           "type": "object",
           "required": true,
@@ -1645,18 +1781,19 @@
     "schemaTag": "data",
     "example": {
       "id": "og9ynkm3vp2mdgi3oeicogxv",
+      "tenantId": "lphxlo",
       "entityType": "attachment",
       "name": "yet_rightfully_lest.ogx",
       "description": null,
-      "keywords": "pectus subvenio depromo",
+      "keywords": "damno tenax arx",
       "public": false,
       "bucketName": "attachments",
       "groupId": null,
       "filename": "yet_rightfully_lest.ogx",
-      "contentType": "video/mp2t",
+      "contentType": "application/vnd.ms-fontobject",
       "convertedContentType": null,
-      "size": "6046908",
-      "originalKey": "uploads/ofr579y6bqnt152wowxrfkyy/yet_rightfully_lest.ogx",
+      "size": "2524242",
+      "originalKey": "uploads/y6bqnt152wowxrfkyy8dwkbm/yet_rightfully_lest.ogx",
       "convertedKey": null,
       "thumbnailKey": null,
       "createdAt": "2024-10-12T17:43:05.360Z",
@@ -1664,12 +1801,12 @@
       "modifiedAt": "2024-10-12T17:43:05.360Z",
       "modifiedBy": "0uwim8y2tppz7th9tol75wjz",
       "tx": {
-        "id": "8dwkbmpkeuemouu8t58r8fuj",
-        "sourceId": "src_3tlenhqurk6hu54pnfytf99m",
+        "id": "pkeuemouu8t58r8fuj3tlenh",
+        "sourceId": "src_qurk6hu54pnfytf99mpmuhw0",
         "version": 1,
         "fieldVersions": {}
       },
-      "organizationId": "pmuhw07eswx7d6csd6xo4nqw"
+      "organizationId": "7eswx7d6csd6xo4nqwl7k09e"
     }
   },
   {
@@ -1681,6 +1818,11 @@
       "properties": {
         "createdAt": { "type": "string", "required": true },
         "id": { "type": "string", "required": true },
+        "tenantId": {
+          "type": "string",
+          "required": true,
+          "maxLength": 6
+        },
         "contextType": {
           "type": "string",
           "required": true,
@@ -1709,8 +1851,7 @@
           "minimum": -140737488355328,
           "maximum": 140737488355327
         },
-        "organizationId": { "type": "string", "required": true },
-        "uniqueKey": { "type": "string", "required": true }
+        "organizationId": { "type": "string", "required": true }
       }
     },
     "schemaTag": "data",
@@ -1727,7 +1868,7 @@
       "createdBy": "xg7596t8jiy8d0v8irrljzhy",
       "modifiedAt": "2024-10-28T14:52:59.502Z",
       "modifiedBy": null,
-      "uniqueKey": "xg7596t8jiy8d0v8irrljzhy-7ul53b62aw5h7k6x44nbu2r5"
+      "tenantId": "test01"
     }
   }
 ]

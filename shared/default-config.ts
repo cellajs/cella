@@ -1,8 +1,7 @@
 import type { BaseAuthStrategies, BaseOAuthProviders, ConfigMode, RequiredConfig, S3Config } from './src/builder/types';
-import { roles, hierarchy, type ValidatePublicProducts } from './hierarchy';
 
 // Re-export for external consumers
-export { roles, hierarchy } from './hierarchy';
+export { roles, hierarchy } from './hierarchy-config';
 
 export const config = {
 
@@ -19,16 +18,6 @@ export const config = {
   /** Product/content entities - must match hierarchy.productTypes. Explicit tuple for Drizzle compatibility. */
   productEntityTypes: ['attachment', 'page'] as const,
 
-  /** Public product entities with no parent context (parent: null). Must be explicitly declared for security. */
-  publicProductEntityTypes: ['page'] as const,
-
-  /** Context entities that are parents of product entities - derived from hierarchy */
-  relatableContextEntityTypes: hierarchy.relatableContextTypes,
-
-  /** Entity roles for memberships - derived from role registry */
-  entityRoles: roles.all,
-
-
   /** Maps entity types to their ID column names - must match entityTypes */
   entityIdColumnKeys: {
     user: 'userId',
@@ -41,7 +30,7 @@ export const config = {
   entityActions: ['create', 'read', 'update', 'delete', 'search'] as const,
 
   /** Resource types that are not entities but have activities logged */
-  resourceTypes: ['request', 'membership'] as const,
+  resourceTypes: ['request', 'membership', 'inactive_membership', 'tenant'] as const,
 
   /**
    * User menu structure of context entities with optional nested subentities.
@@ -378,16 +367,6 @@ export const config = {
     finishedOnboarding: false,
   },
 } satisfies RequiredConfig;
-
-/******************************************************************************
- * COMPILE-TIME VALIDATION
- * Ensures publicProductEntityTypes includes all parentless product types.
- ******************************************************************************/
-
-// Type assertion that validates publicProductEntityTypes contains all required parentless products.
-// This will error at compile time if any parentless product is missing from publicProductEntityTypes.
-const _validatePublicProducts: ValidatePublicProducts<typeof config.publicProductEntityTypes> = config.publicProductEntityTypes;
-void _validatePublicProducts; // Suppress unused variable warning
 
 export default config;
 

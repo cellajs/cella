@@ -127,7 +127,7 @@ const authPasswordsRouteHandlers = app
     const [tokenRecord] = await db
       .insert(tokensTable)
       .values({
-        token: hashedToken,
+        secret: hashedToken,
         type: 'password-reset',
         userId: user.id,
         email,

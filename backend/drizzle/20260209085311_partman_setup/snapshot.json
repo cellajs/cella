@@ -1,11 +1,21 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "a4cee161-480c-4a59-9fd0-ad761e33dc37",
+  "id": "90a785f9-e343-4af7-8727-f3bd1c0afa2a",
   "prevIds": [
     "00000000-0000-0000-0000-000000000000"
   ],
   "ddl": [
+    {
+      "values": [
+        "active",
+        "suspended",
+        "archived"
+      ],
+      "name": "tenant_status",
+      "entityType": "enums",
+      "schema": "public"
+    },
     {
       "isRlsEnabled": false,
       "name": "activities",
@@ -13,7 +23,7 @@
       "schema": "public"
     },
     {
-      "isRlsEnabled": false,
+      "isRlsEnabled": true,
       "name": "attachments",
       "entityType": "tables",
       "schema": "public"
@@ -31,7 +41,7 @@
       "schema": "public"
     },
     {
-      "isRlsEnabled": false,
+      "isRlsEnabled": true,
       "name": "inactive_memberships",
       "entityType": "tables",
       "schema": "public"
@@ -43,7 +53,7 @@
       "schema": "public"
     },
     {
-      "isRlsEnabled": false,
+      "isRlsEnabled": true,
       "name": "memberships",
       "entityType": "tables",
       "schema": "public"
@@ -55,13 +65,13 @@
       "schema": "public"
     },
     {
-      "isRlsEnabled": false,
+      "isRlsEnabled": true,
       "name": "organizations",
       "entityType": "tables",
       "schema": "public"
     },
     {
-      "isRlsEnabled": false,
+      "isRlsEnabled": true,
       "name": "pages",
       "entityType": "tables",
       "schema": "public"
@@ -104,6 +114,12 @@
     },
     {
       "isRlsEnabled": false,
+      "name": "tenants",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
       "name": "tokens",
       "entityType": "tables",
       "schema": "public"
@@ -135,6 +151,19 @@
       "generated": null,
       "identity": null,
       "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "activities"
+    },
+    {
+      "type": "varchar(6)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "tenant_id",
       "entityType": "columns",
       "schema": "public",
       "table": "activities"
@@ -421,6 +450,19 @@
       "generated": null,
       "identity": null,
       "name": "modified_by",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "attachments"
+    },
+    {
+      "type": "varchar(6)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "tenant_id",
       "entityType": "columns",
       "schema": "public",
       "table": "attachments"
@@ -764,6 +806,19 @@
       "table": "inactive_memberships"
     },
     {
+      "type": "varchar(6)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "tenant_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "inactive_memberships"
+    },
+    {
       "type": "varchar",
       "typeSchema": null,
       "notNull": true,
@@ -875,19 +930,6 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "unique_key",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "inactive_memberships"
-    },
-    {
-      "type": "varchar",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
       "name": "user_id",
       "entityType": "columns",
       "schema": "public",
@@ -928,6 +970,19 @@
       "generated": null,
       "identity": null,
       "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "memberships"
+    },
+    {
+      "type": "varchar(6)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "tenant_id",
       "entityType": "columns",
       "schema": "public",
       "table": "memberships"
@@ -1058,19 +1113,6 @@
       "generated": null,
       "identity": null,
       "name": "organization_id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "memberships"
-    },
-    {
-      "type": "varchar",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "unique_key",
       "entityType": "columns",
       "schema": "public",
       "table": "memberships"
@@ -1318,6 +1360,19 @@
       "generated": null,
       "identity": null,
       "name": "modified_by",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "organizations"
+    },
+    {
+      "type": "varchar(6)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "tenant_id",
       "entityType": "columns",
       "schema": "public",
       "table": "organizations"
@@ -1622,6 +1677,19 @@
       "table": "pages"
     },
     {
+      "type": "varchar(6)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "tenant_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "pages"
+    },
+    {
       "type": "jsonb",
       "typeSchema": null,
       "notNull": true,
@@ -1643,6 +1711,19 @@
       "generated": null,
       "identity": null,
       "name": "status",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "pages"
+    },
+    {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "false",
+      "generated": null,
+      "identity": null,
+      "name": "public_access",
       "entityType": "columns",
       "schema": "public",
       "table": "pages"
@@ -2006,7 +2087,7 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "token",
+      "name": "secret",
       "entityType": "columns",
       "schema": "public",
       "table": "sessions"
@@ -2194,6 +2275,71 @@
       "table": "system_roles"
     },
     {
+      "type": "varchar(6)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tenants"
+    },
+    {
+      "type": "varchar",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "name",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tenants"
+    },
+    {
+      "type": "tenant_status",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'active'",
+      "generated": null,
+      "identity": null,
+      "name": "status",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tenants"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tenants"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "modified_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tenants"
+    },
+    {
       "type": "varchar",
       "typeSchema": null,
       "notNull": true,
@@ -2214,7 +2360,7 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "token",
+      "name": "secret",
       "entityType": "columns",
       "schema": "public",
       "table": "tokens"
@@ -2435,7 +2581,7 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "token",
+      "name": "secret",
       "entityType": "columns",
       "schema": "public",
       "table": "unsubscribe_tokens"
@@ -2809,6 +2955,27 @@
       "nameExplicit": true,
       "columns": [
         {
+          "value": "tenant_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "activities_tenant_id_index",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "activities"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
           "value": "(tx->>'id')",
           "isExpression": true,
           "asc": true,
@@ -2921,6 +3088,27 @@
       "nameExplicit": true,
       "columns": [
         {
+          "value": "tenant_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "attachments_tenant_id_index",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "attachments"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
           "value": "scope",
           "isExpression": false,
           "asc": true,
@@ -2976,6 +3164,27 @@
       "method": "btree",
       "concurrently": false,
       "name": "inactive_memberships_organization_id_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "inactive_memberships"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "tenant_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "inactive_memberships_tenant_id_idx",
       "entityType": "indexes",
       "schema": "public",
       "table": "inactive_memberships"
@@ -3075,6 +3284,27 @@
       "nameExplicit": true,
       "columns": [
         {
+          "value": "tenant_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "memberships_tenant_id_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "memberships"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
           "value": "context_type",
           "isExpression": false,
           "asc": true,
@@ -3152,6 +3382,48 @@
       "nameExplicit": true,
       "columns": [
         {
+          "value": "tenant_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "organizations_tenant_id_index",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "organizations"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "tenant_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "pages_tenant_id_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "pages"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
           "value": "email",
           "isExpression": false,
           "asc": false,
@@ -3194,7 +3466,7 @@
       "nameExplicit": true,
       "columns": [
         {
-          "value": "token",
+          "value": "secret",
           "isExpression": false,
           "asc": true,
           "nullsFirst": false,
@@ -3206,7 +3478,7 @@
       "with": "",
       "method": "btree",
       "concurrently": false,
-      "name": "sessions_token_idx",
+      "name": "sessions_secret_idx",
       "entityType": "indexes",
       "schema": "public",
       "table": "sessions"
@@ -3236,7 +3508,49 @@
       "nameExplicit": true,
       "columns": [
         {
-          "value": "token",
+          "value": "status",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "tenants_status_index",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "tenants"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "created_at",
+          "isExpression": false,
+          "asc": false,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "tenants_created_at_index",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "tenants"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "secret",
           "isExpression": false,
           "asc": true,
           "nullsFirst": false,
@@ -3255,7 +3569,7 @@
       "with": "",
       "method": "btree",
       "concurrently": false,
-      "name": "tokens_token_type_idx",
+      "name": "tokens_secret_type_idx",
       "entityType": "indexes",
       "schema": "public",
       "table": "tokens"
@@ -3285,7 +3599,7 @@
       "nameExplicit": true,
       "columns": [
         {
-          "value": "token",
+          "value": "secret",
           "isExpression": false,
           "asc": true,
           "nullsFirst": false,
@@ -3297,7 +3611,7 @@
       "with": "",
       "method": "btree",
       "concurrently": false,
-      "name": "unsubscribe_tokens_token_idx",
+      "name": "unsubscribe_tokens_secret_idx",
       "entityType": "indexes",
       "schema": "public",
       "table": "unsubscribe_tokens"
@@ -3389,6 +3703,23 @@
     {
       "nameExplicit": false,
       "columns": [
+        "tenant_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "tenants",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "activities_tenant_id_tenants_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "activities"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
         "user_id"
       ],
       "schemaTo": "public",
@@ -3399,6 +3730,25 @@
       "onUpdate": "NO ACTION",
       "onDelete": "SET NULL",
       "name": "activities_user_id_users_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "activities"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "tenant_id",
+        "organization_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "organizations",
+      "columnsTo": [
+        "tenant_id",
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "activities_mcflvig2gMS8_fkey",
       "entityType": "fks",
       "schema": "public",
       "table": "activities"
@@ -3457,6 +3807,23 @@
     {
       "nameExplicit": false,
       "columns": [
+        "tenant_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "tenants",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "attachments_tenant_id_tenants_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "attachments"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
         "organization_id"
       ],
       "schemaTo": "public",
@@ -3467,6 +3834,25 @@
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "name": "attachments_organization_id_organizations_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "attachments"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "tenant_id",
+        "organization_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "organizations",
+      "columnsTo": [
+        "tenant_id",
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "attachments_Ytb3N4m0pWsH_fkey",
       "entityType": "fks",
       "schema": "public",
       "table": "attachments"
@@ -3487,6 +3873,23 @@
       "entityType": "fks",
       "schema": "public",
       "table": "emails"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "tenant_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "tenants",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "inactive_memberships_tenant_id_tenants_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "inactive_memberships"
     },
     {
       "nameExplicit": false,
@@ -3542,6 +3945,25 @@
     {
       "nameExplicit": false,
       "columns": [
+        "tenant_id",
+        "organization_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "organizations",
+      "columnsTo": [
+        "tenant_id",
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "inactive_memberships_gmmCA2ACknk4_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "inactive_memberships"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
         "user_id"
       ],
       "schemaTo": "public",
@@ -3555,6 +3977,23 @@
       "entityType": "fks",
       "schema": "public",
       "table": "last_seen"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "tenant_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "tenants",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "memberships_tenant_id_tenants_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "memberships"
     },
     {
       "nameExplicit": false,
@@ -3627,6 +4066,25 @@
     {
       "nameExplicit": false,
       "columns": [
+        "tenant_id",
+        "organization_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "organizations",
+      "columnsTo": [
+        "tenant_id",
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "memberships_Yta3VHtyCTj4_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "memberships"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
         "user_id"
       ],
       "schemaTo": "public",
@@ -3678,6 +4136,23 @@
     {
       "nameExplicit": false,
       "columns": [
+        "tenant_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "tenants",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "organizations_tenant_id_tenants_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "organizations"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
         "created_by"
       ],
       "schemaTo": "public",
@@ -3705,6 +4180,23 @@
       "onUpdate": "NO ACTION",
       "onDelete": "SET NULL",
       "name": "pages_modified_by_users_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "pages"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "tenant_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "tenants",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "pages_tenant_id_tenants_id_fkey",
       "entityType": "fks",
       "schema": "public",
       "table": "pages"
@@ -4087,6 +4579,16 @@
         "id"
       ],
       "nameExplicit": false,
+      "name": "tenants_pkey",
+      "schema": "public",
+      "table": "tenants",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
       "name": "totps_pkey",
       "schema": "public",
       "table": "totps",
@@ -4101,6 +4603,32 @@
       "schema": "public",
       "table": "users",
       "entityType": "pks"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        "tenant_id",
+        "email",
+        "organization_id"
+      ],
+      "nullsNotDistinct": false,
+      "name": "inactive_memberships_tenant_email_org",
+      "entityType": "uniques",
+      "schema": "public",
+      "table": "inactive_memberships"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        "tenant_id",
+        "user_id",
+        "organization_id"
+      ],
+      "nullsNotDistinct": false,
+      "name": "memberships_tenant_user_org",
+      "entityType": "uniques",
+      "schema": "public",
+      "table": "memberships"
     },
     {
       "nameExplicit": false,
@@ -4118,11 +4646,23 @@
     {
       "nameExplicit": true,
       "columns": [
+        "tenant_id",
+        "id"
+      ],
+      "nullsNotDistinct": false,
+      "name": "organizations_tenant_id_unique",
+      "entityType": "uniques",
+      "schema": "public",
+      "table": "organizations"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
         "parent_id",
         "display_order"
       ],
       "nullsNotDistinct": false,
-      "name": "group_order",
+      "name": "pages_group_order",
       "entityType": "uniques",
       "schema": "public",
       "table": "pages"
@@ -4136,28 +4676,6 @@
       "name": "emails_email_key",
       "schema": "public",
       "table": "emails",
-      "entityType": "uniques"
-    },
-    {
-      "nameExplicit": false,
-      "columns": [
-        "unique_key"
-      ],
-      "nullsNotDistinct": false,
-      "name": "inactive_memberships_unique_key_key",
-      "schema": "public",
-      "table": "inactive_memberships",
-      "entityType": "uniques"
-    },
-    {
-      "nameExplicit": false,
-      "columns": [
-        "unique_key"
-      ],
-      "nullsNotDistinct": false,
-      "name": "memberships_unique_key_key",
-      "schema": "public",
-      "table": "memberships",
       "entityType": "uniques"
     },
     {
@@ -4214,6 +4732,279 @@
       "schema": "public",
       "table": "users",
       "entityType": "uniques"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "SELECT",
+      "roles": [
+        "public"
+      ],
+      "using": "\n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"attachments\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n AND current_setting('app.is_authenticated', true)::boolean = true AND \n  COALESCE(current_setting('app.user_id', true), '') != ''\n  AND EXISTS (\n    SELECT 1 FROM memberships m\n    WHERE m.organization_id = \"attachments\".\"organization_id\"\n    AND m.user_id = current_setting('app.user_id', true)::text\n    AND m.tenant_id = \"attachments\".\"tenant_id\"\n  )\n",
+      "withCheck": null,
+      "name": "attachments_select_policy",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "attachments"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "INSERT",
+      "roles": [
+        "public"
+      ],
+      "using": null,
+      "withCheck": "\n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"attachments\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n AND current_setting('app.is_authenticated', true)::boolean = true AND \n  COALESCE(current_setting('app.user_id', true), '') != ''\n  AND EXISTS (\n    SELECT 1 FROM memberships m\n    WHERE m.organization_id = \"attachments\".\"organization_id\"\n    AND m.user_id = current_setting('app.user_id', true)::text\n    AND m.tenant_id = \"attachments\".\"tenant_id\"\n  )\n",
+      "name": "attachments_insert_policy",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "attachments"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "UPDATE",
+      "roles": [
+        "public"
+      ],
+      "using": "\n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"attachments\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n AND current_setting('app.is_authenticated', true)::boolean = true AND \n  COALESCE(current_setting('app.user_id', true), '') != ''\n  AND EXISTS (\n    SELECT 1 FROM memberships m\n    WHERE m.organization_id = \"attachments\".\"organization_id\"\n    AND m.user_id = current_setting('app.user_id', true)::text\n    AND m.tenant_id = \"attachments\".\"tenant_id\"\n  )\n",
+      "withCheck": "\n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"attachments\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n AND current_setting('app.is_authenticated', true)::boolean = true AND \n  COALESCE(current_setting('app.user_id', true), '') != ''\n  AND EXISTS (\n    SELECT 1 FROM memberships m\n    WHERE m.organization_id = \"attachments\".\"organization_id\"\n    AND m.user_id = current_setting('app.user_id', true)::text\n    AND m.tenant_id = \"attachments\".\"tenant_id\"\n  )\n",
+      "name": "attachments_update_policy",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "attachments"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "DELETE",
+      "roles": [
+        "public"
+      ],
+      "using": "\n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"attachments\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n AND current_setting('app.is_authenticated', true)::boolean = true AND \n  COALESCE(current_setting('app.user_id', true), '') != ''\n  AND EXISTS (\n    SELECT 1 FROM memberships m\n    WHERE m.organization_id = \"attachments\".\"organization_id\"\n    AND m.user_id = current_setting('app.user_id', true)::text\n    AND m.tenant_id = \"attachments\".\"tenant_id\"\n  )\n",
+      "withCheck": null,
+      "name": "attachments_delete_policy",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "attachments"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "SELECT",
+      "roles": [
+        "public"
+      ],
+      "using": "\n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"inactive_memberships\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n AND current_setting('app.is_authenticated', true)::boolean = true AND \n  COALESCE(current_setting('app.user_id', true), '') != ''\n  AND EXISTS (\n    SELECT 1 FROM memberships m\n    WHERE m.organization_id = \"inactive_memberships\".\"organization_id\"\n    AND m.user_id = current_setting('app.user_id', true)::text\n    AND m.tenant_id = \"inactive_memberships\".\"tenant_id\"\n  )\n",
+      "withCheck": null,
+      "name": "inactive_memberships_select_policy",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "inactive_memberships"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "INSERT",
+      "roles": [
+        "public"
+      ],
+      "using": null,
+      "withCheck": "\n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"inactive_memberships\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n AND current_setting('app.is_authenticated', true)::boolean = true AND \n  COALESCE(current_setting('app.user_id', true), '') != ''\n  AND EXISTS (\n    SELECT 1 FROM memberships m\n    WHERE m.organization_id = \"inactive_memberships\".\"organization_id\"\n    AND m.user_id = current_setting('app.user_id', true)::text\n    AND m.tenant_id = \"inactive_memberships\".\"tenant_id\"\n  )\n",
+      "name": "inactive_memberships_insert_policy",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "inactive_memberships"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "UPDATE",
+      "roles": [
+        "public"
+      ],
+      "using": "\n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"inactive_memberships\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n AND current_setting('app.is_authenticated', true)::boolean = true AND \n  COALESCE(current_setting('app.user_id', true), '') != ''\n  AND EXISTS (\n    SELECT 1 FROM memberships m\n    WHERE m.organization_id = \"inactive_memberships\".\"organization_id\"\n    AND m.user_id = current_setting('app.user_id', true)::text\n    AND m.tenant_id = \"inactive_memberships\".\"tenant_id\"\n  )\n",
+      "withCheck": "\n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"inactive_memberships\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n AND current_setting('app.is_authenticated', true)::boolean = true AND \n  COALESCE(current_setting('app.user_id', true), '') != ''\n  AND EXISTS (\n    SELECT 1 FROM memberships m\n    WHERE m.organization_id = \"inactive_memberships\".\"organization_id\"\n    AND m.user_id = current_setting('app.user_id', true)::text\n    AND m.tenant_id = \"inactive_memberships\".\"tenant_id\"\n  )\n",
+      "name": "inactive_memberships_update_policy",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "inactive_memberships"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "DELETE",
+      "roles": [
+        "public"
+      ],
+      "using": "\n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"inactive_memberships\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n AND current_setting('app.is_authenticated', true)::boolean = true AND \n  COALESCE(current_setting('app.user_id', true), '') != ''\n  AND EXISTS (\n    SELECT 1 FROM memberships m\n    WHERE m.organization_id = \"inactive_memberships\".\"organization_id\"\n    AND m.user_id = current_setting('app.user_id', true)::text\n    AND m.tenant_id = \"inactive_memberships\".\"tenant_id\"\n  )\n",
+      "withCheck": null,
+      "name": "inactive_memberships_delete_policy",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "inactive_memberships"
+    },
+    {
+      "as": "RESTRICTIVE",
+      "for": "SELECT",
+      "roles": [
+        "public"
+      ],
+      "using": "COALESCE(current_setting('app.tenant_id', true), '') != '' OR COALESCE(current_setting('app.user_id', true), '') != ''",
+      "withCheck": null,
+      "name": "memberships_context_guard",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "memberships"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "SELECT",
+      "roles": [
+        "public"
+      ],
+      "using": "\n        current_setting('app.is_authenticated', true)::boolean = true\n        AND (\n          \n  COALESCE(current_setting('app.user_id', true), '') != ''\n  AND \"memberships\".\"user_id\" = current_setting('app.user_id', true)::text\n\n          OR (\n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"memberships\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n AND \n  COALESCE(current_setting('app.user_id', true), '') != ''\n  AND EXISTS (\n    SELECT 1 FROM memberships m\n    WHERE m.organization_id = \"memberships\".\"organization_id\"\n    AND m.user_id = current_setting('app.user_id', true)::text\n    AND m.tenant_id = \"memberships\".\"tenant_id\"\n  )\n)\n        )\n      ",
+      "withCheck": null,
+      "name": "memberships_select_policy",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "memberships"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "INSERT",
+      "roles": [
+        "public"
+      ],
+      "using": null,
+      "withCheck": "\n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"memberships\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n AND current_setting('app.is_authenticated', true)::boolean = true",
+      "name": "memberships_insert_policy",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "memberships"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "UPDATE",
+      "roles": [
+        "public"
+      ],
+      "using": "\n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"memberships\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n AND current_setting('app.is_authenticated', true)::boolean = true",
+      "withCheck": "\n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"memberships\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n AND current_setting('app.is_authenticated', true)::boolean = true",
+      "name": "memberships_update_policy",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "memberships"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "DELETE",
+      "roles": [
+        "public"
+      ],
+      "using": "\n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"memberships\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n AND current_setting('app.is_authenticated', true)::boolean = true",
+      "withCheck": null,
+      "name": "memberships_delete_policy",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "memberships"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "SELECT",
+      "roles": [
+        "public"
+      ],
+      "using": "\n        current_setting('app.is_authenticated', true)::boolean = true\n        AND COALESCE(current_setting('app.user_id', true), '') != ''\n        AND EXISTS (\n          SELECT 1 FROM memberships m\n          WHERE m.organization_id = \"organizations\".\"id\"\n          AND m.user_id = current_setting('app.user_id', true)::text\n          AND m.tenant_id = \"organizations\".\"tenant_id\"\n        )\n      ",
+      "withCheck": null,
+      "name": "organizations_select_policy",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "organizations"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "INSERT",
+      "roles": [
+        "public"
+      ],
+      "using": null,
+      "withCheck": "\n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"organizations\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n AND current_setting('app.is_authenticated', true)::boolean = true",
+      "name": "organizations_insert_policy",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "organizations"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "UPDATE",
+      "roles": [
+        "public"
+      ],
+      "using": "\n        current_setting('app.is_authenticated', true)::boolean = true\n        AND COALESCE(current_setting('app.user_id', true), '') != ''\n        AND EXISTS (\n          SELECT 1 FROM memberships m\n          WHERE m.organization_id = \"organizations\".\"id\"\n          AND m.user_id = current_setting('app.user_id', true)::text\n          AND m.tenant_id = \"organizations\".\"tenant_id\"\n        )\n      ",
+      "withCheck": "\n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"organizations\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n AND current_setting('app.is_authenticated', true)::boolean = true",
+      "name": "organizations_update_policy",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "organizations"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "DELETE",
+      "roles": [
+        "public"
+      ],
+      "using": "\n        current_setting('app.is_authenticated', true)::boolean = true\n        AND COALESCE(current_setting('app.user_id', true), '') != ''\n        AND EXISTS (\n          SELECT 1 FROM memberships m\n          WHERE m.organization_id = \"organizations\".\"id\"\n          AND m.user_id = current_setting('app.user_id', true)::text\n          AND m.tenant_id = \"organizations\".\"tenant_id\"\n        )\n      ",
+      "withCheck": null,
+      "name": "organizations_delete_policy",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "organizations"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "SELECT",
+      "roles": [
+        "public"
+      ],
+      "using": "\n  \n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"pages\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n\n  AND \n  current_setting('app.is_authenticated', true)::boolean = true OR \"pages\".\"public_access\" = true\n\n",
+      "withCheck": null,
+      "name": "pages_select_policy",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "pages"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "INSERT",
+      "roles": [
+        "public"
+      ],
+      "using": null,
+      "withCheck": "\n  \n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"pages\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n\n  AND current_setting('app.is_authenticated', true)::boolean = true\n",
+      "name": "pages_insert_policy",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "pages"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "UPDATE",
+      "roles": [
+        "public"
+      ],
+      "using": "\n  \n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"pages\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n\n  AND current_setting('app.is_authenticated', true)::boolean = true\n",
+      "withCheck": "\n  \n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"pages\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n\n  AND current_setting('app.is_authenticated', true)::boolean = true\n",
+      "name": "pages_update_policy",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "pages"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "DELETE",
+      "roles": [
+        "public"
+      ],
+      "using": "\n  \n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"pages\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n\n  AND current_setting('app.is_authenticated', true)::boolean = true\n",
+      "withCheck": null,
+      "name": "pages_delete_policy",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "pages"
     }
   ],
   "renames": []

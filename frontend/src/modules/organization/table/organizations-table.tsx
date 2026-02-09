@@ -82,19 +82,20 @@ function OrganizationsTable() {
       const newRole = membership.role;
       const partOfOrganization = !!membership.id;
       const mutationVariables = { id: membership.id, entityId: organization.id, entityType: organization.entityType };
-      const orgId = organization.id;
+      const tenantId = organization.tenantId;
+      const orgIdOrSlug = organization.id;
 
       try {
         // TODO review if we can move some of this logic to query.ts / mutation itself.
         if (partOfOrganization) {
-          await updateMember.mutateAsync({ role: newRole, orgId, ...mutationVariables });
+          await updateMember.mutateAsync({ role: newRole, tenantId, orgIdOrSlug, ...mutationVariables });
           // Update organizations cache to reflect membership change
           const updatedOrganization = { ...organization, membership: { ...membership, role: newRole } };
           mutateOrganizationsCache.update([updatedOrganization]);
         } else {
           const result = await membershipInvite({
             query: mutationVariables,
-            path: { orgId },
+            path: { tenantId, orgIdOrSlug },
             body: { emails: [user.email], role: newRole },
           });
 

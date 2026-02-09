@@ -22,6 +22,8 @@ export const env = createEnv({
       .default('false')
       .transform((v) => v === 'true'),
     DATABASE_URL: z.url(),
+    /** Admin database URL (superuser). Used for migrations and seeds only. */
+    DATABASE_ADMIN_URL: z.url(),
     NODE_ENV: z.union([
       z.literal('development'),
       z.literal('production'),

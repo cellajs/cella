@@ -18,6 +18,11 @@
                 "type": "object",
                 "properties": {
                   "id": { "type": "string", "required": true },
+                  "tenantId": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 6
+                  },
                   "userId": {
                     "type": ["string", "null"],
                     "required": true
@@ -30,7 +35,7 @@
                   "resourceType": {
                     "type": ["string", "null"],
                     "required": true,
-                    "enum": ["request", "membership", null]
+                    "enum": ["request", "membership", "inactive_membership", "tenant", null]
                   },
                   "action": {
                     "type": "string",
@@ -111,35 +116,37 @@
           "items": [
             {
               "id": "p8d07imsvjbtqtl3rtjgxd9x",
-              "userId": "n03u76eo7z71y60a882cwpxt",
-              "entityType": "organization",
+              "tenantId": "n03u76",
+              "userId": "eo7z71y60a882cwpxtanaxns",
+              "entityType": "page",
               "resourceType": null,
               "action": "delete",
               "tableName": "attachments",
               "type": "attachment.deleted",
-              "entityId": "naxnsp9nes1yx645yb0gleyv",
+              "entityId": "9nes1yx645yb0gleyvjbbm5p",
               "createdAt": "2024-11-21T04:00:59.122Z",
               "changedKeys": null,
               "tx": null,
-              "seq": 547,
+              "seq": 511,
               "error": null,
-              "organizationId": "bbm5piweg2q4gqa3vx9cfyey"
+              "organizationId": "weg2q4gqa3vx9cfyey6mqh9h"
             },
             {
               "id": "5ogh3yr2b2dbwf7b9eckajcl",
-              "userId": "xs8vayzrul7vmeyahbgyu01s",
+              "tenantId": "xs8vay",
+              "userId": "zrul7vmeyahbgyu01sr6utec",
               "entityType": "page",
               "resourceType": null,
               "action": "update",
               "tableName": "organizations",
               "type": "organization.updated",
-              "entityId": "6utecq3o02wpa56tpd77kpi3",
+              "entityId": "3o02wpa56tpd77kpi37syiav",
               "createdAt": "2024-10-29T08:46:20.790Z",
-              "changedKeys": ["slug", "description"],
+              "changedKeys": ["slug", "name", "email"],
               "tx": null,
-              "seq": 521,
+              "seq": 810,
               "error": null,
-              "organizationId": "avgc67t5nr6k4huj5qv4k6bw"
+              "organizationId": "5nr6k4huj5qv4k6bwmvl0e44"
             }
           ],
           "total": 2
@@ -209,7 +216,7 @@
           "resourceType": {
             "type": "string",
             "required": false,
-            "enum": ["request", "membership"]
+            "enum": ["request", "membership", "inactive_membership", "tenant"]
           },
           "action": {
             "type": "string",

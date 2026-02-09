@@ -20,6 +20,18 @@ export const generateScripts: GenerateScript[] = [
     type: 'migration',
     migrationTag: 'partman_setup',
   },
+  {
+    name: 'RLS setup migration',
+    command: 'tsx scripts/migrations/rls-migration.ts',
+    type: 'migration',
+    migrationTag: 'rls_setup',
+  },
+  {
+    name: 'Immutability triggers migration',
+    command: 'tsx scripts/migrations/immutability-migration.ts',
+    type: 'migration',
+    migrationTag: 'immutability_setup',
+  },
 ];
 
 /** Seed scripts run during `pnpm seed` */

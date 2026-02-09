@@ -10,7 +10,7 @@
  * 2. On miss: fetch from DB, cache result
  * 3. On entity change: ActivityBus event invalidates cache entry
  *
- * Public entities are determined by config.publicProductEntityTypes (entities with parent: null).
+ * Public entities are determined by hierarchy.publicAccessTypes (entities with publicAccess configured).
  */
 
 import { LRUCache } from '#/lib/lru-cache';

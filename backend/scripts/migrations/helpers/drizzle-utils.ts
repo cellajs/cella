@@ -5,6 +5,9 @@
  * Used by scripts that generate SQL migrations (CDC setup, triggers, etc.).
  *
  * Drizzle v1 uses folder-based migrations: <timestamp>_<tag>/migration.sql
+ *
+ * Custom migrations are generated with 1-second delays between them to ensure
+ * unique timestamps and correct ordering after Drizzle's schema migrations.
  */
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';

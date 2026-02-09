@@ -2,14 +2,11 @@ import pino from 'pino';
 import { appConfig } from 'shared';
 import { env } from './env';
 
-// TODO consider changing these keys to all inlcude 'secret' for clarity
+// Sensitive fields to redact from logs (auth tokens, credentials, hashes)
 const redactedFields = [
-  'passwords.hashedPassword',
-  'unsubscribeTokensTable.token',
-  'session.token',
-  'token.token',
-  'totps.secret',
-  'passkeys.credentialId',
+  '**.secret', // Session secrets, token secrets, TOTP secrets
+  '**.hashedPassword', // Password hashes
+  '**.credentialId', // Passkey credentials
 ];
 
 // In production, we use the default pino logger

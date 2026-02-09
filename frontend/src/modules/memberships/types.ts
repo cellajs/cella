@@ -29,7 +29,12 @@ type UpdateMembershipProp = NonNullable<UpdateMembershipData['body']> & UpdateMe
 export type MutationUpdateMembership = {
   entityId: string;
   entityType: ContextEntityType;
-  orgId: string;
 } & UpdateMembershipProp;
 
-export type DeleteMembership = { entityId: string; entityType: ContextEntityType; orgId: string; members: Member[] };
+export type DeleteMembership = {
+  entityId: string;
+  entityType: ContextEntityType;
+  tenantId: string;
+  orgIdOrSlug: string;
+  members: Member[];
+};

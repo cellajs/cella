@@ -36,7 +36,7 @@ export const getValidToken = async ({ ctx, token, tokenType, invokeToken = true 
   let [tokenRecord] = await db
     .select()
     .from(tokensTable)
-    .where(and(eq(tokensTable.token, hashedToken), eq(tokensTable.type, tokenType)))
+    .where(and(eq(tokensTable.secret, hashedToken), eq(tokensTable.type, tokenType)))
     .limit(1);
 
   if (!tokenRecord) throw new AppError(401, `${tokenType}_not_found`, 'warn');

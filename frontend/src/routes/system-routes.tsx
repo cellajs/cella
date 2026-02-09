@@ -4,6 +4,7 @@ import { ErrorNotice } from '~/modules/common/error-notice';
 import { organizationsRouteSearchParamsSchema } from '~/modules/organization/search-params-schemas';
 import { requestsRouteSearchParamsSchema } from '~/modules/requests/search-params-schemas';
 import { SystemPage } from '~/modules/system/system-page';
+import { tenantsRouteSearchParamsSchema } from '~/modules/tenants/search-params-schema';
 import { usersRouteSearchParamsSchema } from '~/modules/user/search-params-schemas';
 import { AppLayoutRoute } from '~/routes/base-routes';
 import appTitle from '~/utils/app-title';
@@ -14,6 +15,7 @@ const OrganizationsTable = lazy(() => import('~/modules/organization/table/organ
 const UsersTable = lazy(() => import('~/modules/user/table/users-table'));
 const RequestsTable = lazy(() => import('~/modules/requests/table/requests-table'));
 const RequestsPerMinute = lazy(() => import('~/modules/metrics/requests-per-minute'));
+const TenantsTable = lazy(() => import('~/modules/tenants/table/tenants-table'));
 
 /**
  * System admin panel for platform-wide management.
@@ -88,6 +90,22 @@ export const MetricsRoute = createRoute({
   component: () => (
     <Suspense>
       <RequestsPerMinute />
+    </Suspense>
+  ),
+});
+
+/**
+ * System tenants table for managing multi-tenant isolation.
+ */
+export const TenantsTableRoute = createRoute({
+  path: '/tenants',
+  validateSearch: tenantsRouteSearchParamsSchema,
+  staticData: { isAuth: true, navTab: { id: 'tenants', label: 'common:tenants' } },
+  head: () => ({ meta: [{ title: appTitle('Tenants') }] }),
+  getParentRoute: () => SystemRoute,
+  component: () => (
+    <Suspense>
+      <TenantsTable />
     </Suspense>
   ),
 });

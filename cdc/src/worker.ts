@@ -40,17 +40,31 @@ export function getCdcHealthState(): CdcHealthState {
 
 /**
  * Ensure the replication slot exists, creating it if necessary.
- * This must be done outside of a transaction, so we do it in the worker.
+ * If the slot exists but is invalid, recreate it.
  */
-async function ensureReplicationSlot(): Promise<void> {
-  const result = await db.execute<{ slot_name: string }>(
-    sql`SELECT slot_name FROM pg_replication_slots WHERE slot_name = ${CDC_SLOT_NAME}`,
+async function ensureReplicationSlot(forceRecreate = false): Promise<void> {
+  const result = await db.execute<{ slot_name: string; plugin: string }>(
+    sql`SELECT slot_name, plugin FROM pg_replication_slots WHERE slot_name = ${CDC_SLOT_NAME}`,
   );
 
-  if (result.rows.length === 0) {
+  const slotExists = result.rows.length > 0;
+  const isValid = slotExists && result.rows[0].plugin === 'pgoutput';
+
+  if (forceRecreate && slotExists) {
+    logEvent('info', `${LOG_PREFIX} Dropping invalid replication slot...`, { slotName: CDC_SLOT_NAME });
+    await db.execute(sql`SELECT pg_drop_replication_slot(${CDC_SLOT_NAME})`);
+  }
+
+  if (!slotExists || forceRecreate) {
     logEvent('info', `${LOG_PREFIX} Creating replication slot...`, { slotName: CDC_SLOT_NAME });
     await db.execute(sql`SELECT pg_create_logical_replication_slot(${CDC_SLOT_NAME}, 'pgoutput')`);
     logEvent('info', `${LOG_PREFIX} Replication slot created`, { slotName: CDC_SLOT_NAME });
+  } else if (!isValid) {
+    logEvent('warn', `${LOG_PREFIX} Slot exists with wrong plugin, recreating...`, {
+      slotName: CDC_SLOT_NAME,
+      plugin: result.rows[0].plugin,
+    });
+    await ensureReplicationSlot(true);
   } else {
     logEvent('info', `${LOG_PREFIX} Replication slot already exists`, { slotName: CDC_SLOT_NAME });
   }
@@ -162,11 +176,33 @@ export async function startCdcWorker(): Promise<void> {
   await configureWalLimits();
   await ensureReplicationSlot();
 
+  // Verify publication exists before attempting to subscribe
+  const pubCheck = await db.execute<{ pubname: string }>(
+    sql`SELECT pubname FROM pg_publication WHERE pubname = ${CDC_PUBLICATION_NAME}`,
+  );
+  if (pubCheck.rows.length === 0) {
+    logEvent('error', `${LOG_PREFIX} Publication '${CDC_PUBLICATION_NAME}' not found in database. Run CDC migration first.`, {
+      databaseUrl: env.DATABASE_URL.replace(/:[^:@]+@/, ':****@'), // mask password
+    });
+    throw new Error(`Publication '${CDC_PUBLICATION_NAME}' does not exist`);
+  }
+  logEvent('info', `${LOG_PREFIX} Publication verified`, { publicationName: CDC_PUBLICATION_NAME });
+
   // Build replication connection string
   const replicationUrl = new URL(env.DATABASE_URL);
   if (!replicationUrl.searchParams.has('replication')) {
     replicationUrl.searchParams.set('replication', 'database');
   }
+
+  // Log connection details for debugging (mask password)
+  const maskedUrl = new URL(replicationUrl.toString());
+  maskedUrl.password = '****';
+  logEvent('info', `${LOG_PREFIX} Replication connection`, {
+    url: maskedUrl.toString(),
+    host: replicationUrl.hostname,
+    port: replicationUrl.port,
+    database: replicationUrl.pathname.slice(1),
+  });
 
   const service = new LogicalReplicationService(
     {
@@ -217,15 +253,37 @@ export async function startCdcWorker(): Promise<void> {
   });
 
   // Subscribe with reconnection loop
+  let consecutiveFailures = 0;
+  const MAX_FAILURES_BEFORE_RECREATE = 3;
+
   while (true) {
     try {
       logEvent('info', `${LOG_PREFIX} Subscribing to replication slot...`);
       replicationState.replicationState = wsClient.isConnected() ? 'active' : 'paused';
       await service.subscribe(plugin, CDC_SLOT_NAME);
+      consecutiveFailures = 0; // Reset on success
     } catch (error) {
+      consecutiveFailures++;
       const errorMessage = error instanceof Error ? error.message : String(error);
-      logEvent('warn', `${LOG_PREFIX} CDC subscription error, retrying in 5s...`, { error: errorMessage });
+      logEvent('warn', `${LOG_PREFIX} CDC subscription error, retrying in 5s...`, {
+        error: errorMessage,
+        consecutiveFailures,
+      });
       replicationState.markStopped();
+
+      // If we have persistent failures, try recreating the slot
+      if (consecutiveFailures >= MAX_FAILURES_BEFORE_RECREATE) {
+        logEvent('warn', `${LOG_PREFIX} Too many failures, attempting to recreate replication slot...`);
+        try {
+          await ensureReplicationSlot(true);
+          consecutiveFailures = 0;
+        } catch (recreateError) {
+          logEvent('error', `${LOG_PREFIX} Failed to recreate slot`, {
+            error: recreateError instanceof Error ? recreateError.message : String(recreateError),
+          });
+        }
+      }
+
       await new Promise((resolve) => setTimeout(resolve, 5000));
     }
   }

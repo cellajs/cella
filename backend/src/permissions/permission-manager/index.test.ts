@@ -15,6 +15,7 @@ import type { SubjectForPermission } from './types';
 /** Minimal test membership matching MembershipBaseModel structure */
 type TestMembership = {
   id: string;
+  tenantId: string;
   contextType: ContextEntityType;
   userId: string;
   role: EntityRole;
@@ -29,6 +30,7 @@ const createTestMembership = (
   overrides: { contextType: ContextEntityType; role: EntityRole; organizationId: string } & Partial<TestMembership>,
 ): TestMembership => ({
   id: 'mem-test',
+  tenantId: 'test01',
   userId: 'user-test',
   displayOrder: 0,
   muted: false,

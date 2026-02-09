@@ -116,7 +116,7 @@ export function CreateNewsletterForm({ organizationIds, callback }: CreateNewsle
             trailingBlock: false,
             className:
               'min-h-20 pl-10 pr-6 p-3 border-input ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring max-focus-visible:ring-transparent max-focus-visible:ring-offset-0 flex w-full rounded-md border text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-effect disabled:cursor-not-allowed disabled:opacity-50',
-            baseFilePanelProps: { isPublic: true, organizationId: 'adminPreview' },
+            baseFilePanelProps: { isPublic: true, tenantId: 'public', organizationId: 'adminPreview' },
             excludeFileBlockTypes: ['video', 'audio', 'file'],
           }}
         />

@@ -40,7 +40,7 @@ const meRouteHandlers = app
    */
   .openapi(meRoutes.getMe, async (ctx) => {
     const user = ctx.var.user;
-    const systemRole = ctx.var.userRole;
+    const systemRole = ctx.var.userSystemRole;
 
     // Update last visit date
     await db.update(usersTable).set({ lastStartedAt: getIsoDate() }).where(eq(usersTable.id, user.id));
@@ -290,7 +290,7 @@ const meRouteHandlers = app
       .select(userSelect)
       .from(usersTable)
       .innerJoin(unsubscribeTokensTable, eq(usersTable.id, unsubscribeTokensTable.userId))
-      .where(eq(unsubscribeTokensTable.token, token))
+      .where(eq(unsubscribeTokensTable.secret, token))
       .limit(1);
 
     if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user' });

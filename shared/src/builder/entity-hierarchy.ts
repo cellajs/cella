@@ -1,92 +1,78 @@
-/**
- * Entity hierarchy builder with compile-time validation.
- *
- * Provides a fluent API to define entity relationships with:
- * - Single-parent inheritance (parent chain traversal for ordered ancestors)
- * - Typed role validation against a role registry
- * - Import-time validation of parent references
- * - Cached ordered ancestor computation
- */
+/** Entity hierarchy builder with compile-time validation, parent inheritance, and public access config. */
 
-/******************************************************************************
- * ROLE REGISTRY
- ******************************************************************************/
+export type PublicAction = 'read' | 'search';
 
-/**
- * Builds a map of role names to themselves for type-safe access.
- * Isolates the single unavoidable assertion for dynamic property creation.
- */
+/** Context entities that can be set public. */
+export interface PublicAccessSource {
+  actions: readonly PublicAction[];
+}
+
+/** Entities inheriting public access from a parent context. */
+export interface PublicAccessInherited {
+  inherits: string;
+  actions: readonly PublicAction[];
+}
+
+export type PublicAccessConfig = PublicAccessSource | PublicAccessInherited;
+
+function isInheritedAccess(config: PublicAccessConfig): config is PublicAccessInherited {
+  return 'inherits' in config;
+}
+
+// Role Registry
 function buildRoleMap<T extends readonly string[]>(roleNames: T): { readonly [K in T[number]]: K } {
   return Object.fromEntries(roleNames.map((r) => [r, r])) as { readonly [K in T[number]]: K };
 }
 
+/** Create frozen role registry with type-safe role name access. */
+// role = entityRole
 export function createRoleRegistry<const T extends readonly string[]>(
   roleNames: T,
 ): { readonly all: T } & { readonly [K in T[number]]: K } {
-  // Object.assign merges the tuple with role map; assertion needed as
-  // Object.freeze returns Readonly<T> which TS doesn't unify with our intersection
   const registry = Object.assign({ all: roleNames }, buildRoleMap(roleNames));
   return Object.freeze(registry) as { readonly all: T } & { readonly [K in T[number]]: K };
 }
 
-/** Type helper to extract role union from a role registry */
 export type RoleFromRegistry<R extends { all: readonly string[] }> = R['all'][number];
 
-/******************************************************************************
- * HIERARCHY TYPES
- ******************************************************************************/
+// Hierarchy Types
 
-/** Entity kinds in the system */
 export type EntityKind = 'user' | 'context' | 'product';
 
-/** Internal representation of user entity */
-interface UserEntry {
-  kind: 'user';
-}
-
-/** Internal representation of context entity */
+interface UserEntry { kind: 'user' }
 interface ContextEntry<R extends string = string> {
   kind: 'context';
   parent: string | null;
   roles: readonly R[];
+  publicAccess?: PublicAccessSource;
 }
-
-/** Internal representation of product entity */
 interface ProductEntry {
   kind: 'product';
   parent: string | null;
+  publicAccess?: PublicAccessConfig;
 }
-
 type EntityEntry = UserEntry | ContextEntry | ProductEntry;
 
-/** Public readonly view of a context entity config */
 export interface ContextEntityView<R extends string = string> {
   readonly kind: 'context';
   readonly parent: string | null;
   readonly roles: readonly R[];
+  readonly publicAccess?: PublicAccessSource;
 }
 
-/** Public readonly view of a product entity config */
 export interface ProductEntityView {
   readonly kind: 'product';
   readonly parent: string | null;
+  readonly publicAccess?: PublicAccessConfig;
 }
 
-/** Public readonly view of user entity config */
-export interface UserEntityView {
-  readonly kind: 'user';
-}
+export interface UserEntityView { readonly kind: 'user' }
 
 export type EntityView = UserEntityView | ContextEntityView | ProductEntityView;
 
-/******************************************************************************
- * HIERARCHY BUILDER
- ******************************************************************************/
+// Hierarchy Builder
 
-/**
- * Builder for entity hierarchy with validation.
- * Chain calls to define entities, then call build() to get the frozen hierarchy.
- */
+/** Builder for entity hierarchy. Chain calls to define entities, then call build(). */
 export class EntityHierarchyBuilder<
   TRoles extends { all: readonly string[] },
   TContexts extends string = never,
@@ -101,81 +87,42 @@ export class EntityHierarchyBuilder<
     this.roles = roles;
   }
 
-  /**
-   * Add the user entity (required, can only be called once).
-   */
+  /** Add user entity (required, once). */
   user(): EntityHierarchyBuilder<TRoles, TContexts, TProducts, TParentlessProducts> {
-    if (this.hasUser) {
-      throw new Error('EntityHierarchy: user() can only be called once');
-    }
+    if (this.hasUser) throw new Error('EntityHierarchy: user() can only be called once');
     this.hasUser = true;
     this.entities.set('user', { kind: 'user' });
     return this;
   }
 
-  /**
-   * Add a context entity with optional parent and required roles.
-   *
-   * @param name - Entity type name (e.g., 'organization', 'project')
-   * @param options - Configuration with parent reference and roles array
-   */
+  /** Add a context entity with parent reference and roles. */
   context<N extends string>(
     name: N,
-    options: {
-      parent: TContexts | null;
-      roles: readonly RoleFromRegistry<TRoles>[];
-    },
+    options: { parent: TContexts | null; roles: readonly RoleFromRegistry<TRoles>[]; publicAccess?: PublicAccessSource },
   ): EntityHierarchyBuilder<TRoles, TContexts | N, TProducts, TParentlessProducts> {
     this.validateName(name);
     this.validateParent(name, options.parent, 'context');
     this.validateRoles(name, options.roles);
-
-    this.entities.set(name, {
-      kind: 'context',
-      parent: options.parent,
-      roles: options.roles,
-    });
-
+    this.entities.set(name, { kind: 'context', parent: options.parent, roles: options.roles, publicAccess: options.publicAccess });
     return this as EntityHierarchyBuilder<TRoles, TContexts | N, TProducts, TParentlessProducts>;
   }
 
-  /**
-   * Add a product entity with optional parent.
-   * Products with parent: null are tracked at compile time as TParentlessProducts.
-   *
-   * @param name - Entity type name (e.g., 'attachment', 'task')
-   * @param options - Configuration with parent reference (context entity or null)
-   */
+  /** Add a product entity with parent reference. Products with parent: null tracked as TParentlessProducts. */
   product<N extends string, P extends TContexts | null>(
     name: N,
-    options: { parent: P },
+    options: { parent: P; publicAccess?: PublicAccessConfig },
   ): EntityHierarchyBuilder<TRoles, TContexts, TProducts | N, P extends null ? TParentlessProducts | N : TParentlessProducts> {
     this.validateName(name);
     this.validateParent(name, options.parent, 'product');
-
-    this.entities.set(name, {
-      kind: 'product',
-      parent: options.parent,
-    });
-
-    // Type assertion required: conditional return type cannot be proven by TS without runtime check
+    this.validatePublicAccess(name, options.publicAccess);
+    this.entities.set(name, { kind: 'product', parent: options.parent, publicAccess: options.publicAccess });
     return this as unknown as EntityHierarchyBuilder<TRoles, TContexts, TProducts | N, P extends null ? TParentlessProducts | N : TParentlessProducts>;
   }
 
-  /**
-   * Build and freeze the hierarchy.
-   * Returns an EntityHierarchy instance with query methods.
-   */
+  /** Build and freeze the hierarchy. */
   build(): EntityHierarchy<TRoles, TContexts, TProducts, TParentlessProducts> {
-    if (!this.hasUser) {
-      throw new Error('EntityHierarchy: user() must be called before build()');
-    }
-
-    // Validate organization exists (required context)
-    if (!this.entities.has('organization')) {
-      throw new Error('EntityHierarchy: organization context is required');
-    }
-
+    if (!this.hasUser) throw new Error('EntityHierarchy: user() must be called before build()');
+    if (!this.entities.has('organization')) throw new Error('EntityHierarchy: organization context is required');
     return new EntityHierarchy(this.roles, this.entities);
   }
 
@@ -221,16 +168,44 @@ export class EntityHierarchyBuilder<
       }
     }
   }
+
+  private validatePublicAccess(name: string, publicAccess?: PublicAccessConfig): void {
+    if (!publicAccess) return;
+
+    // Validate inherited access references an existing entity
+    if (isInheritedAccess(publicAccess)) {
+      const sourceEntry = this.entities.get(publicAccess.inherits);
+      if (!sourceEntry) {
+        throw new Error(
+          `EntityHierarchy: product "${name}" public access inherits from unknown entity "${publicAccess.inherits}". ` +
+            'The source entity must be defined before the inheriting entity.',
+        );
+      }
+      // Source must be a context entity with publicAccess configured
+      if (sourceEntry.kind !== 'context') {
+        throw new Error(
+          `EntityHierarchy: product "${name}" public access inherits from "${publicAccess.inherits}", ` +
+            `but it is a ${sourceEntry.kind} entity. Only context entities can be public access sources.`,
+        );
+      }
+      if (!sourceEntry.publicAccess) {
+        throw new Error(
+          `EntityHierarchy: product "${name}" public access inherits from "${publicAccess.inherits}", ` +
+            'but that context has no publicAccess configured.',
+        );
+      }
+    }
+
+    // Validate actions array is not empty
+    if (publicAccess.actions.length === 0) {
+      throw new Error(`EntityHierarchy: product "${name}" publicAccess must have at least one action`);
+    }
+  }
 }
 
-/******************************************************************************
- * ENTITY HIERARCHY (FROZEN RESULT)
- ******************************************************************************/
+// Entity Hierarchy (Frozen Result)
 
-/**
- * Frozen entity hierarchy with query methods.
- * Created by EntityHierarchyBuilder.build().
- */
+/** Frozen entity hierarchy with query methods. Created by EntityHierarchyBuilder.build(). */
 export class EntityHierarchy<
   TRoles extends { all: readonly string[] },
   TContexts extends string = string,
@@ -243,124 +218,94 @@ export class EntityHierarchy<
   private readonly childrenCache = new Map<string, readonly (TContexts | TProducts)[]>();
   private readonly descendantsCache = new Map<string, readonly (TContexts | TProducts)[]>();
 
-  /** All context entity type names */
   readonly contextTypes: readonly TContexts[];
-  /** All product entity type names */
   readonly productTypes: readonly TProducts[];
-  /** All entity type names including 'user' */
   readonly allTypes: readonly ('user' | TContexts | TProducts)[];
-  /** Context entities that are parents of product entities */
   readonly relatableContextTypes: readonly TContexts[];
-  /** Product entities with no parent context (parent: null) - compile-time tracked for type safety */
   readonly parentlessProductTypes: readonly TParentlessProducts[];
+  readonly publicAccessSourceTypes: readonly TContexts[];
+  readonly publicAccessTypes: readonly (TContexts | TProducts)[];
 
   constructor(roles: TRoles, entities: Map<string, EntityEntry>) {
     this.roleRegistry = roles;
     this.entities = new Map(entities);
 
-    // Compute type arrays
+    // Single-pass computation of all type arrays
     const contexts: TContexts[] = [];
     const products: TProducts[] = [];
     const all: ('user' | TContexts | TProducts)[] = [];
+    const parentlessProducts: TParentlessProducts[] = [];
+    const relatableContexts = new Set<TContexts>();
+    const publicSources: TContexts[] = [];
+    const publicAccessTypes: (TContexts | TProducts)[] = [];
 
     for (const [name, entry] of entities) {
       all.push(name as 'user' | TContexts | TProducts);
-      if (entry.kind === 'context') contexts.push(name as TContexts);
-      if (entry.kind === 'product') products.push(name as TProducts);
+
+      if (entry.kind === 'context') {
+        contexts.push(name as TContexts);
+        if (entry.publicAccess) {
+          publicSources.push(name as TContexts);
+          publicAccessTypes.push(name as TContexts);
+        }
+      } else if (entry.kind === 'product') {
+        products.push(name as TProducts);
+        if (entry.parent === null) {
+          parentlessProducts.push(name as unknown as TParentlessProducts);
+        } else {
+          relatableContexts.add(entry.parent as TContexts);
+        }
+        if (entry.publicAccess) {
+          publicAccessTypes.push(name as TProducts);
+        }
+      }
     }
 
     this.contextTypes = Object.freeze(contexts);
     this.productTypes = Object.freeze(products);
     this.allTypes = Object.freeze(all);
-
-    // Compute parentless product types (candidates for public access)
-    // Runtime computation matches compile-time TParentlessProducts tracking
-    const parentlessProducts = products.filter((p) => {
-      const entry = entities.get(p);
-      return entry?.kind === 'product' && entry.parent === null;
-    }) as unknown as TParentlessProducts[];
     this.parentlessProductTypes = Object.freeze(parentlessProducts);
-
-    // Compute relatable context types (context entities that are parents of products)
-    const relatableContexts = new Set<TContexts>();
-    for (const product of products) {
-      const productEntry = entities.get(product);
-      if (productEntry?.kind === 'product' && productEntry.parent) {
-        const parentEntry = entities.get(productEntry.parent);
-        if (parentEntry?.kind === 'context') {
-          relatableContexts.add(productEntry.parent as TContexts);
-        }
-      }
-    }
     this.relatableContextTypes = Object.freeze([...relatableContexts]);
-
+    this.publicAccessSourceTypes = Object.freeze(publicSources);
+    this.publicAccessTypes = Object.freeze(publicAccessTypes);
     Object.freeze(this);
   }
 
-  /**
-   * Get the kind of an entity ('user', 'context', or 'product').
-   */
   getKind(entityType: string): EntityKind | undefined {
     return this.entities.get(entityType)?.kind;
   }
 
-  /**
-   * Check if entity type is a context entity.
-   */
   isContext(entityType: string): entityType is TContexts {
     return this.getKind(entityType) === 'context';
   }
 
-  /**
-   * Check if entity type is a product entity.
-   */
   isProduct(entityType: string): entityType is TProducts {
     return this.getKind(entityType) === 'product';
   }
 
-  /**
-   * Get roles for a context entity.
-   * Returns empty array for non-context entities.
-   */
+  /** Get roles for a context entity. Returns empty array for non-context. */
   getRoles(contextType: string): readonly RoleFromRegistry<TRoles>[] {
     const entry = this.entities.get(contextType);
-    if (!entry || entry.kind !== 'context') return [];
-    return entry.roles as readonly RoleFromRegistry<TRoles>[];
+    return entry?.kind === 'context' ? (entry.roles as readonly RoleFromRegistry<TRoles>[]) : [];
   }
 
-  /**
-   * Get the direct parent of an entity.
-   * Returns null for root entities or user.
-   */
+  /** Get the direct parent. Returns null for root entities or user. */
   getParent(entityType: string): string | null {
     const entry = this.entities.get(entityType);
-    if (!entry || entry.kind === 'user') return null;
-    return entry.parent;
+    return entry && entry.kind !== 'user' ? entry.parent : null;
   }
 
-  /**
-   * Get ordered ancestors for an entity (most-specific → root).
-   * Walks the parent chain and returns only context entities.
-   *
-   * @example
-   * // Given: task → project → organization
-   * hierarchy.getOrderedAncestors('task') // ['project', 'organization']
-   */
+  /** Get ordered ancestors (most-specific → root). Example: task → ['project', 'organization'] */
   getOrderedAncestors(entityType: string): readonly TContexts[] {
     const cached = this.ancestorCache.get(entityType);
     if (cached) return cached as readonly TContexts[];
 
     const ancestors: TContexts[] = [];
     let current = this.getParent(entityType);
-
     while (current !== null) {
       const entry = this.entities.get(current);
       if (!entry) break;
-
-      if (entry.kind === 'context') {
-        ancestors.push(current as TContexts);
-      }
-
+      if (entry.kind === 'context') ancestors.push(current as TContexts);
       current = entry.kind === 'user' ? null : entry.parent;
     }
 
@@ -369,67 +314,41 @@ export class EntityHierarchy<
     return frozen;
   }
 
-  /**
-   * Get product entity view with parent info.
-   * Returns undefined for non-product entities.
-   */
-  getProductConfig(entityType: string): ProductEntityView | undefined {
-    const entry = this.entities.get(entityType);
-    if (!entry || entry.kind !== 'product') return undefined;
-    return { kind: 'product', parent: entry.parent };
-  }
-
-  /**
-   * Get context entity view with parent and roles.
-   * Returns undefined for non-context entities.
-   */
-  getContextConfig(entityType: string): ContextEntityView<RoleFromRegistry<TRoles>> | undefined {
-    const entry = this.entities.get(entityType);
-    if (!entry || entry.kind !== 'context') return undefined;
-    return {
-      kind: 'context',
-      parent: entry.parent,
-      roles: entry.roles as readonly RoleFromRegistry<TRoles>[],
-    };
-  }
-
-  /**
-   * Get entity view (kind + parent + roles if context).
-   */
+  /** Get entity view (kind + parent + roles if context). */
   getConfig(entityType: string): EntityView | undefined {
     const entry = this.entities.get(entityType);
     if (!entry) return undefined;
-
     if (entry.kind === 'user') return { kind: 'user' };
     if (entry.kind === 'context') {
-      return { kind: 'context', parent: entry.parent, roles: entry.roles };
+      return { kind: 'context', parent: entry.parent, roles: entry.roles, publicAccess: entry.publicAccess };
     }
-    return { kind: 'product', parent: entry.parent };
+    return { kind: 'product', parent: entry.parent, publicAccess: entry.publicAccess };
   }
 
-  /**
-   * Check if an entity has a specific ancestor in its chain.
-   */
+  /** Get product entity view. */
+  getProductConfig(entityType: string): ProductEntityView | undefined {
+    const config = this.getConfig(entityType);
+    return config?.kind === 'product' ? config : undefined;
+  }
+
+  /** Get context entity view. */
+  getContextConfig(entityType: string): ContextEntityView<RoleFromRegistry<TRoles>> | undefined {
+    const config = this.getConfig(entityType);
+    return config?.kind === 'context' ? (config as ContextEntityView<RoleFromRegistry<TRoles>>) : undefined;
+  }
+
   hasAncestor(entityType: string, ancestor: string): boolean {
     return this.getOrderedAncestors(entityType).includes(ancestor as TContexts);
   }
 
-  /**
-   * Get direct children of a context entity (entities where parent === contextType).
-   * Returns both context and product entities. Cached for performance.
-   *
-   * @example
-   * // Given: organization → project, organization → attachment
-   * hierarchy.getChildren('organization') // ['project', 'attachment']
-   */
+  /** Get direct children. Cached. */
   getChildren(contextType: string): readonly (TContexts | TProducts)[] {
     const cached = this.childrenCache.get(contextType);
     if (cached) return cached;
 
     const children: (TContexts | TProducts)[] = [];
     for (const [name, entry] of this.entities) {
-      if (entry.kind === 'user') continue;
-      if (entry.parent === contextType) {
+      if (entry.kind !== 'user' && entry.parent === contextType) {
         children.push(name as TContexts | TProducts);
       }
     }
@@ -439,30 +358,18 @@ export class EntityHierarchy<
     return frozen;
   }
 
-  /**
-   * Get all descendants of a context entity (breadth-first traversal).
-   * Returns entities level by level: direct children first, then grandchildren, etc.
-   * Cached for performance.
-   *
-   * @example
-   * // Given: organization → project → task, organization → attachment
-   * hierarchy.getOrderedDescendants('organization') // ['project', 'attachment', 'task']
-   */
+  /** Get all descendants (breadth-first). Cached. */
   getOrderedDescendants(contextType: string): readonly (TContexts | TProducts)[] {
     const cached = this.descendantsCache.get(contextType);
     if (cached) return cached;
 
     const descendants: (TContexts | TProducts)[] = [];
     const queue = [...this.getChildren(contextType)];
-    let index = 0;
-
-    while (index < queue.length) {
-      const current = queue[index++];
+    let i = 0;
+    while (i < queue.length) {
+      const current = queue[i++];
       descendants.push(current);
-      // Only context entities can have children
-      if (this.isContext(current)) {
-        queue.push(...this.getChildren(current));
-      }
+      if (this.isContext(current)) queue.push(...this.getChildren(current));
     }
 
     const frozen = Object.freeze(descendants);
@@ -470,73 +377,45 @@ export class EntityHierarchy<
     return frozen;
   }
 
-  /**
-   * Get the role registry.
-   */
   get roles(): TRoles {
     return this.roleRegistry;
   }
+
+  // Public Access Methods
+
+  /** Get public access config. Returns undefined if not configured. */
+  getPublicAccessConfig(entityType: string): PublicAccessConfig | undefined {
+    const entry = this.entities.get(entityType);
+    return entry && entry.kind !== 'user' ? entry.publicAccess : undefined;
+  }
+
+  /** Check if entity can be public (has publicAccess configured). */
+  canBePublic(entityType: string): boolean {
+    return this.getPublicAccessConfig(entityType) !== undefined;
+  }
+
+  /** Get allowed public actions. Returns empty array if not configured. */
+  getPublicActions(entityType: string): readonly PublicAction[] {
+    return this.getPublicAccessConfig(entityType)?.actions ?? [];
+  }
+
+  /** Get entity type from which public access is inherited. Returns null if source or none. */
+  getPublicInheritanceSource(entityType: string): string | null {
+    const config = this.getPublicAccessConfig(entityType);
+    return config && isInheritedAccess(config) ? config.inherits : null;
+  }
+
+  /** Check if entity is a public access source (context with publicAccess). */
+  isPublicAccessSource(entityType: string): boolean {
+    return this.publicAccessSourceTypes.includes(entityType as TContexts);
+  }
 }
 
-/******************************************************************************
- * FACTORY FUNCTION
- ******************************************************************************/
-
-/**
- * Create a new entity hierarchy builder with a role registry.
- *
- * @example
- * const roles = createRoleRegistry(['admin', 'member'] as const);
- * const hierarchy = createEntityHierarchy(roles)
- *   .user()
- *   .context('organization', { parent: null, roles: roles.all })
- *   .product('attachment', { parent: 'organization' })
- *   .build();
- */
+/** Create a new entity hierarchy builder with a role registry. */
 export function createEntityHierarchy<R extends { all: readonly string[] }>(
   roles: R,
 ): EntityHierarchyBuilder<R, never, never, never> {
   return new EntityHierarchyBuilder(roles);
 }
 
-/******************************************************************************
- * PUBLIC ENTITY VALIDATION
- ******************************************************************************/
 
-/**
- * Validates that all product entities with parent: null are explicitly declared in publicProductEntityTypes.
- * This provides security-by-design: public entities must be intentionally configured.
- *
- * Call this at app startup (e.g., in server initialization) to catch misconfigurations early.
- *
- * @param hierarchy - The built entity hierarchy
- * @param publicProductEntityTypes - Explicitly declared public product entity types from config
- * @throws Error if any parentless product entity is not in publicProductEntityTypes, or vice versa
- */
-export function validatePublicProductEntities<TProducts extends string, TParentless extends string>(
-  hierarchy: EntityHierarchy<{ all: readonly string[] }, string, TProducts, TParentless>,
-  publicProductEntityTypes: readonly string[],
-): void {
-  const parentlessFromHierarchy = new Set<string>(hierarchy.parentlessProductTypes);
-  const declaredPublic = new Set(publicProductEntityTypes);
-
-  // Check for parentless products not declared as public (security risk if unintentional)
-  const undeclaredPublic = [...parentlessFromHierarchy].filter((t) => !declaredPublic.has(t));
-  if (undeclaredPublic.length > 0) {
-    throw new Error(
-      `EntityHierarchy: Product entities with parent: null must be declared in publicProductEntityTypes. ` +
-        `Missing: ${undeclaredPublic.join(', ')}. ` +
-        `Either add them to publicProductEntityTypes or set a parent context for these entities.`,
-    );
-  }
-
-  // Check for declared public types that actually have a parent (misconfiguration)
-  const invalidPublic = [...declaredPublic].filter((t) => !parentlessFromHierarchy.has(t));
-  if (invalidPublic.length > 0) {
-    throw new Error(
-      `EntityHierarchy: publicProductEntityTypes contains entities with a parent context. ` +
-        `Invalid: ${invalidPublic.join(', ')}. ` +
-        `Public product entities must have parent: null in the hierarchy.`,
-    );
-  }
-}

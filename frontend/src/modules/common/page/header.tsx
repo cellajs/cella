@@ -3,7 +3,7 @@ import { ChevronRightIcon, HomeIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig, ContextEntityType } from 'shared';
-import type { ContextEntityBase, UserBase } from '~/api.gen';
+import type { UserBase } from '~/api.gen';
 import { useScrollTo } from '~/hooks/use-scroll-to';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { PageCover, type PageCoverProps } from '~/modules/common/page/cover';
@@ -36,7 +36,7 @@ export function PageHeader({ entity, panel, parent, disableScroll, ...coverProps
   const membership = useMembershipForEntity(entityId);
 
   // Find parent entity from cache
-  const parentData = useFindInListCache<ContextEntityBase>(parent ? [parent.entityType] : [], (item) =>
+  const parentData = useFindInListCache<ContextEntityData>(parent ? [parent.entityType] : [], (item) =>
     parent ? item.id === parent.idOrSlug || item.slug === parent.idOrSlug : false,
   );
 

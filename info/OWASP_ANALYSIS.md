@@ -35,7 +35,7 @@ Cella implements a well-designed, multi-layered access control system with centr
 | Practice | Location | Description |
 |----------|----------|-------------|
 | Centralized permission system | [backend/src/permissions/](backend/src/permissions/) | Hierarchical permission manager with action-based policies (create, read, update, delete) |
-| Route guards | [backend/src/middlewares/guard/](backend/src/middlewares/guard/) | Guards enforced via OpenAPI route definitions (`isAuthenticated`, `hasOrgAccess`, `hasSystemAccess`) |
+| Route guards | [backend/src/middlewares/guard/](backend/src/middlewares/guard/) | Guards enforced via OpenAPI route definitions (`isAuthenticated`, `orgGuard`, `hasSystemAccess`) |
 | Session security | [backend/src/modules/auth/session.ts](backend/src/modules/auth/session.ts) | Tokens hashed before storage, HttpOnly/Secure cookies, proper expiration |
 | CORS protection | [backend/src/server.ts](backend/src/server.ts) | Single origin (not wildcard), credentials enabled properly |
 | CSRF protection | [backend/src/server.ts](backend/src/server.ts) | Hono CSRF middleware enabled |

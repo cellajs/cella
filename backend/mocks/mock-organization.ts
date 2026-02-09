@@ -15,6 +15,7 @@ import {
   type MockMembershipCounts,
   mockNanoid,
   mockPaginated,
+  mockTenantId,
   pastIsoDate,
   withFakerSeed,
 } from './utils';
@@ -32,14 +33,16 @@ export const resetOrganizationMockEnforcers = () => {
 /**
  * Generates base organization fields shared between insert and response mocks.
  * @param id - Organization ID
+ * @param tenantId - Tenant ID
  * @param name - Organization name
  * @param createdAt - Creation timestamp
  */
-const generateOrganizationBase = (id: string, name: string, createdAt: string) => {
+const generateOrganizationBase = (id: string, tenantId: string, name: string, createdAt: string) => {
   const slug = slugify(name, { lower: true, strict: true });
 
   return {
     id,
+    tenantId,
     entityType: 'organization' as const,
     name,
     slug,
@@ -73,7 +76,7 @@ const generateOrganizationBase = (id: string, name: string, createdAt: string) =
  */
 export const mockOrganization = (): InsertOrganizationModel => {
   const name = organizationName.enforce(() => faker.company.name());
-  return generateOrganizationBase(nanoid(), name, pastIsoDate());
+  return generateOrganizationBase(nanoid(), mockTenantId(), name, pastIsoDate());
 };
 
 /**
@@ -95,9 +98,10 @@ export const mockOrganizationResponse = (
     const refDate = new Date('2025-01-01T00:00:00.000Z');
     const createdAt = faker.date.past({ refDate }).toISOString();
     const orgId = mockNanoid();
+    const tenantId = mockTenantId();
 
     // Generate base organization fields
-    const base = generateOrganizationBase(orgId, faker.company.name(), createdAt);
+    const base = generateOrganizationBase(orgId, tenantId, faker.company.name(), createdAt);
 
     // Generate membership base with the organization ID
     const membership = mockMembershipBase(`${key}:membership`);

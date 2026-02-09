@@ -13,7 +13,6 @@ export const cdcSpanNames = {
   processWal: 'cdc.wal.process',
   createActivity: 'cdc.activity.create',
   sendWs: 'cdc.ws.send',
-  enrichMembership: 'cdc.enrich.membership',
   heartbeat: 'cdc.heartbeat',
   reconnect: 'cdc.ws.reconnect',
 } as const;

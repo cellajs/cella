@@ -25,10 +25,10 @@ export const findUserInListCache = (idOrSlug: string) =>
  * Query options for fetching a user by ID within an organization context.
  * NOTE: Slug is only used on page load. All subsequent queries must use ID.
  */
-export const userQueryOptions = (id: string, orgId: string) =>
+export const userQueryOptions = (id: string, tenantId: string, orgIdOrSlug: string) =>
   queryOptions({
     queryKey: keys.detail.byId(id),
-    queryFn: async () => getUser({ path: { idOrSlug: id, orgId } }),
+    queryFn: async () => getUser({ path: { idOrSlug: id, tenantId, orgIdOrSlug } }),
     placeholderData: () => findUserInListCache(id),
   });
 

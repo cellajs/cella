@@ -99,7 +99,7 @@ const attachmentRouteHandlers = app
     // Permission check: verify user has access to this attachment
     if (attachment) {
       const user = ctx.var.user;
-      const userSystemRole = ctx.var.userRole;
+      const userSystemRole = ctx.var.userSystemRole;
 
       const memberships = await db
         .select(membershipBaseSelect)
@@ -178,6 +178,8 @@ const attachmentRouteHandlers = app
     // Prepare attachments with tx metadata for CDC
     const attachmentsToInsert = newAttachments.map(({ tx, ...att }) => ({
       ...att,
+      tenantId: organization.tenantId,
+      organizationId: organization.id,
       entityType: 'attachment' as const,
       createdAt: getIsoDate(),
       createdBy: user.id,

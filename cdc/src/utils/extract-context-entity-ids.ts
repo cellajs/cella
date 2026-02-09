@@ -1,4 +1,4 @@
-import { appConfig, type RelatableContextEntityType } from 'shared';
+import { appConfig, hierarchy, type RelatableContextEntityType } from 'shared';
 import { getRowValue } from './get-row-value';
 
 /**
@@ -19,7 +19,7 @@ export type ContextEntityIds = {
 export function extractContextEntityIds(row: Record<string, unknown>): ContextEntityIds {
   const contextEntityIds: ContextEntityIds = {};
 
-  for (const contextEntityType of appConfig.relatableContextEntityTypes) {
+  for (const contextEntityType of hierarchy.relatableContextTypes) {
     const columnKey = appConfig.entityIdColumnKeys[contextEntityType];
     contextEntityIds[columnKey] = getRowValue(row, columnKey) ?? null;
   }

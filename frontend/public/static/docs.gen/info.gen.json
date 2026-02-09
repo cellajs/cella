@@ -12,8 +12,10 @@
       "required": true,
       "values": {
         "isPublicAccess": { "description": "No authentication required" },
+        "hasPublicTenantAccess": { "description": "Validates tenant ID and wraps handler in public tenant context" },
         "hasSystemAccess": { "description": "Requires system admin + IP whitelist" },
-        "isAuthenticated": { "description": "Requires valid session" }
+        "isAuthenticated": { "description": "Requires valid session" },
+        "tenantGuard": { "description": "Validates tenant access and wraps handler in RLS-enabled transaction" }
       }
     },
     {

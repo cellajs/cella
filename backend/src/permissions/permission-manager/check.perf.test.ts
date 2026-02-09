@@ -7,6 +7,7 @@ import type { SubjectForPermission } from './types';
 /** Minimal test membership matching MembershipBaseModel structure */
 type TestMembership = {
   id: string;
+  tenantId: string;
   contextType: ContextEntityType;
   userId: string;
   role: EntityRole;
@@ -48,6 +49,7 @@ const policies = configureAccessPolicies(appConfig.entityTypes, ({ subject, cont
 const createMemberships = (count: number): TestMembership[] =>
   Array.from({ length: count }, (_, i) => ({
     id: `mem${i}`,
+    tenantId: 'test01',
     contextType: 'organization' as const,
     userId: `user${i}`,
     organizationId: `org${i}`,
