@@ -1,7 +1,7 @@
 import type { z } from '@hono/zod-openapi';
 import { and, eq } from 'drizzle-orm';
 import type { Context } from 'hono';
-import { db } from '#/db/db';
+import { unsafeInternalDb as db } from '#/db/db';
 import { type AuthStrategy, type SessionModel, type SessionTypes, sessionsTable } from '#/db/schema/sessions';
 import { systemRolesTable } from '#/db/schema/system-roles';
 import { type UserModel, usersTable } from '#/db/schema/users';

@@ -1,6 +1,6 @@
 import { and, eq, inArray, isNotNull, isNull } from 'drizzle-orm';
 import { appConfig } from 'shared';
-import { db } from '#/db/db';
+import { unsafeInternalDb as db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { tokensTable } from '#/db/schema/tokens';
@@ -29,7 +29,7 @@ interface HandleCreateUserProps {
  */
 export const handleCreateUser = async ({ newUser, emailVerified }: HandleCreateUserProps): Promise<UserModel> => {
   // Check if slug is available
-  const slugAvailable = await checkSlugAvailable(newUser.slug);
+  const slugAvailable = await checkSlugAvailable(newUser.slug, db);
 
   // Insert new user into database
   try {

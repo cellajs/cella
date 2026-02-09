@@ -36,9 +36,10 @@ export const getValidProductEntity = async <K extends ProductEntityType>(
   // Get current user role and memberships from request context
   const userSystemRole = ctx.var.userSystemRole;
   const memberships = ctx.var.memberships;
+  const db = ctx.var.db;
 
   // Step 1: Resolve target entity by ID or slug
-  const entity = await resolveEntity(entityType, id);
+  const entity = await resolveEntity(entityType, id, db);
   if (!entity) throw new AppError(404, 'not_found', 'warn', { entityType });
 
   // Step 2: Check permission for the requested action (system admin bypass is handled inside)

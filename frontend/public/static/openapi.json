@@ -1556,6 +1556,124 @@
           }
         }
       },
+      "Tenant": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 24,
+            "description": "Lowercase alphanumeric tenant ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "Tenant display name"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TenantStatus"
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "modifiedAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "status",
+          "createdAt",
+          "modifiedAt"
+        ]
+      },
+      "TenantStatus": {
+        "type": "string",
+        "enum": [
+          "active",
+          "suspended",
+          "archived"
+        ]
+      },
+      "CreateTenantBody": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "Tenant display name"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TenantStatus"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "UpdateTenantBody": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "status": {
+            "$ref": "#/components/schemas/TenantStatus"
+          }
+        }
+      },
+      "Request": {
+        "type": "object",
+        "properties": {
+          "createdAt": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "message": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "email": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "waitlist",
+              "newsletter",
+              "contact"
+            ]
+          },
+          "wasInvited": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "createdAt",
+          "id",
+          "message",
+          "email",
+          "type",
+          "wasInvited"
+        ],
+        "example": {
+          "id": "wejsiq864y0sbytrzsnlr9a0",
+          "email": "anderson.pfannerstill23@yahoo.com",
+          "type": "contact",
+          "message": "Suggero accusator demens terreo amiculum comitatus necessitatibus candidus.",
+          "createdAt": "2024-06-05T15:03:46.141Z",
+          "wasInvited": false
+        }
+      },
       "OrganizationIncluded": {
         "type": "object",
         "properties": {
@@ -2025,124 +2143,6 @@
           "id": "uoobg3gmzvie508npzus4h2j",
           "sourceId": "q0fso83v5i0v5s1hl5zutg31",
           "baseVersion": 0
-        }
-      },
-      "Tenant": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "maxLength": 24,
-            "description": "Lowercase alphanumeric tenant ID"
-          },
-          "name": {
-            "type": "string",
-            "description": "Tenant display name"
-          },
-          "status": {
-            "$ref": "#/components/schemas/TenantStatus"
-          },
-          "createdAt": {
-            "type": "string"
-          },
-          "modifiedAt": {
-            "type": [
-              "string",
-              "null"
-            ]
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "status",
-          "createdAt",
-          "modifiedAt"
-        ]
-      },
-      "TenantStatus": {
-        "type": "string",
-        "enum": [
-          "active",
-          "suspended",
-          "archived"
-        ]
-      },
-      "CreateTenantBody": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 255,
-            "description": "Tenant display name"
-          },
-          "status": {
-            "$ref": "#/components/schemas/TenantStatus"
-          }
-        },
-        "required": [
-          "name"
-        ]
-      },
-      "UpdateTenantBody": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 255
-          },
-          "status": {
-            "$ref": "#/components/schemas/TenantStatus"
-          }
-        }
-      },
-      "Request": {
-        "type": "object",
-        "properties": {
-          "createdAt": {
-            "type": "string"
-          },
-          "id": {
-            "type": "string"
-          },
-          "message": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "email": {
-            "type": "string"
-          },
-          "type": {
-            "type": "string",
-            "enum": [
-              "waitlist",
-              "newsletter",
-              "contact"
-            ]
-          },
-          "wasInvited": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "createdAt",
-          "id",
-          "message",
-          "email",
-          "type",
-          "wasInvited"
-        ],
-        "example": {
-          "id": "wejsiq864y0sbytrzsnlr9a0",
-          "email": "anderson.pfannerstill23@yahoo.com",
-          "type": "contact",
-          "message": "Suggero accusator demens terreo amiculum comitatus necessitatibus candidus.",
-          "createdAt": "2024-06-05T15:03:46.141Z",
-          "wasInvited": false
         }
       },
       "Attachment": {
@@ -5486,1807 +5486,6 @@
         }
       }
     },
-    "/organizations": {
-      "post": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "createOrganizations",
-        "tags": [
-          "organizations"
-        ],
-        "summary": "Create organizations",
-        "description": "Creates one or more new *organizations*.",
-        "x-guard": [
-          "authGuard"
-        ],
-        "x-rate-limiter": [],
-        "x-cache": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string",
-                      "pattern": "^temp-"
-                    },
-                    "name": {
-                      "type": "string",
-                      "minLength": 2,
-                      "maxLength": 100
-                    },
-                    "slug": {
-                      "type": "string",
-                      "minLength": 2,
-                      "maxLength": 100
-                    }
-                  },
-                  "required": [
-                    "id",
-                    "name",
-                    "slug"
-                  ]
-                },
-                "minItems": 1,
-                "maxItems": 10
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Organizations were created",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "allOf": [
-                          {
-                            "$ref": "#/components/schemas/Organization"
-                          },
-                          {
-                            "type": "object",
-                            "properties": {
-                              "included": {
-                                "allOf": [
-                                  {
-                                    "$ref": "#/components/schemas/OrganizationIncluded"
-                                  },
-                                  {
-                                    "type": "object",
-                                    "properties": {},
-                                    "required": [
-                                      "membership"
-                                    ]
-                                  }
-                                ]
-                              }
-                            },
-                            "required": [
-                              "included"
-                            ]
-                          }
-                        ],
-                        "example": {
-                          "id": "hmo9fwr239kqavr3yur671kl",
-                          "tenantId": "vk6xht",
-                          "entityType": "organization",
-                          "name": "Hills, Bauch and Monahan",
-                          "slug": "hills-bauch-and-monahan",
-                          "description": "Multi-tiered zero trust firmware",
-                          "shortName": "Hills,",
-                          "country": "Turks and Caicos Islands",
-                          "timezone": "America/Argentina/Buenos_Aires",
-                          "defaultLanguage": "en",
-                          "languages": [
-                            "en"
-                          ],
-                          "notificationEmail": "notifications@hills-bauch-and-monahan.example",
-                          "emailDomains": [],
-                          "color": "#ecfdfe",
-                          "thumbnailUrl": null,
-                          "logoUrl": null,
-                          "bannerUrl": null,
-                          "websiteUrl": "https://hills-bauch-and-monahan.example",
-                          "welcomeText": "Welcome to Hills, Bauch and Monahan!",
-                          "authStrategies": [
-                            "password"
-                          ],
-                          "chatSupport": true,
-                          "createdAt": "2024-12-25T15:29:47.111Z",
-                          "createdBy": null,
-                          "modifiedAt": "2024-12-25T15:29:47.111Z",
-                          "modifiedBy": null,
-                          "restrictions": {
-                            "user": 1000,
-                            "attachment": 100,
-                            "page": 0
-                          },
-                          "included": {
-                            "membership": {
-                              "id": "kaba9fpc90mgtzmtjipw2v8s",
-                              "tenantId": "w4hg40",
-                              "contextType": "organization",
-                              "userId": "36vxzq0rzt4pucvepsu63uw1",
-                              "organizationId": "hmo9fwr239kqavr3yur671kl",
-                              "role": "admin",
-                              "displayOrder": 69,
-                              "muted": false,
-                              "archived": false
-                            },
-                            "counts": {
-                              "membership": {
-                                "admin": 30,
-                                "member": 63,
-                                "pending": 13,
-                                "total": 93
-                              },
-                              "entities": {
-                                "attachment": 178,
-                                "page": 257
-                              }
-                            }
-                          }
-                        }
-                      }
-                    },
-                    "rejectedItemIds": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "description": "Identifiers of items that could not be processed"
-                    },
-                    "rejectionReasons": {
-                      "type": "object",
-                      "additionalProperties": {
-                        "type": "string"
-                      },
-                      "description": "Map of rejected item ID to reason code"
-                    }
-                  },
-                  "required": [
-                    "data",
-                    "rejectedItemIds"
-                  ]
-                },
-                "example": {
-                  "data": [
-                    {
-                      "id": "kzmv5qbhdcqeiuvwlosan0fc",
-                      "tenantId": "wgpaj0",
-                      "entityType": "organization",
-                      "name": "Kessler and Sons",
-                      "slug": "kessler-and-sons",
-                      "description": "Future-proofed contextually-based moderator",
-                      "shortName": "Kessler",
-                      "country": "Azerbaijan",
-                      "timezone": "Europe/Kyiv",
-                      "defaultLanguage": "en",
-                      "languages": [
-                        "en"
-                      ],
-                      "notificationEmail": "notifications@kessler-and-sons.example",
-                      "emailDomains": [],
-                      "color": "#ce39f9",
-                      "thumbnailUrl": null,
-                      "logoUrl": null,
-                      "bannerUrl": null,
-                      "websiteUrl": "https://kessler-and-sons.example",
-                      "welcomeText": "Welcome to Kessler and Sons!",
-                      "authStrategies": [
-                        "password"
-                      ],
-                      "chatSupport": false,
-                      "createdAt": "2024-04-19T14:04:35.773Z",
-                      "createdBy": null,
-                      "modifiedAt": "2024-04-19T14:04:35.773Z",
-                      "modifiedBy": null,
-                      "restrictions": {
-                        "user": 1000,
-                        "attachment": 100,
-                        "page": 0
-                      },
-                      "included": {
-                        "membership": {
-                          "id": "3y6ee6h5lc8sjfv4trxwe3yb",
-                          "tenantId": "89fjn2",
-                          "contextType": "organization",
-                          "userId": "1t4n7coocr6ixfzcb6x5wab0",
-                          "organizationId": "kzmv5qbhdcqeiuvwlosan0fc",
-                          "role": "member",
-                          "displayOrder": 95,
-                          "muted": false,
-                          "archived": false
-                        },
-                        "counts": {
-                          "membership": {
-                            "admin": 43,
-                            "member": 58,
-                            "pending": 47,
-                            "total": 101
-                          },
-                          "entities": {
-                            "attachment": 294,
-                            "page": 327
-                          }
-                        }
-                      }
-                    },
-                    {
-                      "id": "p3t0ygxx0aa83en3sk1fs1we",
-                      "tenantId": "74l758",
-                      "entityType": "organization",
-                      "name": "Howell - Ullrich",
-                      "slug": "howell-ullrich",
-                      "description": "Quality-focused uniform throughput",
-                      "shortName": "Howell",
-                      "country": "French Polynesia",
-                      "timezone": "Australia/Brisbane",
-                      "defaultLanguage": "en",
-                      "languages": [
-                        "en"
-                      ],
-                      "notificationEmail": "notifications@howell-ullrich.example",
-                      "emailDomains": [],
-                      "color": "#88b531",
-                      "thumbnailUrl": null,
-                      "logoUrl": null,
-                      "bannerUrl": null,
-                      "websiteUrl": "https://howell-ullrich.example",
-                      "welcomeText": "Welcome to Howell - Ullrich!",
-                      "authStrategies": [
-                        "password"
-                      ],
-                      "chatSupport": true,
-                      "createdAt": "2024-02-25T13:01:35.301Z",
-                      "createdBy": null,
-                      "modifiedAt": "2024-02-25T13:01:35.301Z",
-                      "modifiedBy": null,
-                      "restrictions": {
-                        "user": 1000,
-                        "attachment": 100,
-                        "page": 0
-                      },
-                      "included": {
-                        "membership": {
-                          "id": "ry5f7szmj5jhp0ad93klgj3e",
-                          "tenantId": "j6ly81",
-                          "contextType": "organization",
-                          "userId": "u4oy2u1m55abgsmrl1zezeoj",
-                          "organizationId": "p3t0ygxx0aa83en3sk1fs1we",
-                          "role": "admin",
-                          "displayOrder": 20,
-                          "muted": false,
-                          "archived": false
-                        },
-                        "counts": {
-                          "membership": {
-                            "admin": 22,
-                            "member": 122,
-                            "pending": 44,
-                            "total": 144
-                          },
-                          "entities": {
-                            "attachment": 321,
-                            "page": 94
-                          }
-                        }
-                      }
-                    }
-                  ],
-                  "rejectedItemIds": []
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      },
-      "get": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "getOrganizations",
-        "tags": [
-          "organizations"
-        ],
-        "summary": "Get list of organizations",
-        "description": "Returns a list of *organizations*.",
-        "x-guard": [
-          "authGuard"
-        ],
-        "x-rate-limiter": [],
-        "x-cache": [],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string"
-            },
-            "required": false,
-            "name": "q",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": [
-                "id",
-                "name",
-                "createdAt"
-              ],
-              "default": "createdAt"
-            },
-            "required": false,
-            "name": "sort",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ],
-              "default": "asc"
-            },
-            "required": false,
-            "name": "order",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string"
-            },
-            "required": false,
-            "name": "offset",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string"
-            },
-            "required": false,
-            "name": "limit",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string"
-            },
-            "required": false,
-            "name": "userId",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": [
-                "admin",
-                "member"
-              ]
-            },
-            "required": false,
-            "name": "role",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": [
-                "true",
-                "false"
-              ]
-            },
-            "required": false,
-            "name": "excludeArchived",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string"
-            },
-            "required": false,
-            "name": "include",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Organizations",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "items": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/Organization"
-                      }
-                    },
-                    "total": {
-                      "type": "number"
-                    }
-                  },
-                  "required": [
-                    "items",
-                    "total"
-                  ]
-                },
-                "example": {
-                  "items": [
-                    {
-                      "id": "qqp8d07imsvjbtqtl3rtjgxd",
-                      "tenantId": "9xn03u",
-                      "entityType": "organization",
-                      "name": "Dicki - Jacobi",
-                      "slug": "dicki-jacobi",
-                      "description": "Public-key context-sensitive website",
-                      "shortName": "Dicki",
-                      "country": "Comoros",
-                      "timezone": "Africa/Conakry",
-                      "defaultLanguage": "en",
-                      "languages": [
-                        "en"
-                      ],
-                      "notificationEmail": "notifications@dicki-jacobi.example",
-                      "emailDomains": [],
-                      "color": "#f40655",
-                      "thumbnailUrl": null,
-                      "logoUrl": null,
-                      "bannerUrl": null,
-                      "websiteUrl": "https://dicki-jacobi.example",
-                      "welcomeText": "Welcome to Dicki - Jacobi!",
-                      "authStrategies": [
-                        "password"
-                      ],
-                      "chatSupport": true,
-                      "createdAt": "2024-11-21T04:00:59.122Z",
-                      "createdBy": null,
-                      "modifiedAt": "2024-11-21T04:00:59.122Z",
-                      "modifiedBy": null,
-                      "restrictions": {
-                        "user": 1000,
-                        "attachment": 100,
-                        "page": 0
-                      },
-                      "included": {
-                        "membership": {
-                          "id": "300jor4orrvsgezqoyxfckg3",
-                          "tenantId": "ifex0a",
-                          "contextType": "organization",
-                          "userId": "gu87zf240qkfh0faoqjip69q",
-                          "organizationId": "qqp8d07imsvjbtqtl3rtjgxd",
-                          "role": "member",
-                          "displayOrder": 38,
-                          "muted": false,
-                          "archived": false
-                        },
-                        "counts": {
-                          "membership": {
-                            "admin": 30,
-                            "member": 20,
-                            "pending": 27,
-                            "total": 50
-                          },
-                          "entities": {
-                            "attachment": 188,
-                            "page": 390
-                          }
-                        }
-                      }
-                    },
-                    {
-                      "id": "hg5ogh3yr2b2dbwf7b9eckaj",
-                      "tenantId": "clxs8v",
-                      "entityType": "organization",
-                      "name": "Witting - Wuckert",
-                      "slug": "witting-wuckert",
-                      "description": "Reverse-engineered sustainable matrix",
-                      "shortName": "Witting",
-                      "country": "Costa Rica",
-                      "timezone": "Europe/Ulyanovsk",
-                      "defaultLanguage": "en",
-                      "languages": [
-                        "en"
-                      ],
-                      "notificationEmail": "notifications@witting-wuckert.example",
-                      "emailDomains": [],
-                      "color": "#d9e6a7",
-                      "thumbnailUrl": null,
-                      "logoUrl": null,
-                      "bannerUrl": null,
-                      "websiteUrl": "https://witting-wuckert.example",
-                      "welcomeText": "Welcome to Witting - Wuckert!",
-                      "authStrategies": [
-                        "password"
-                      ],
-                      "chatSupport": true,
-                      "createdAt": "2024-10-29T08:46:20.790Z",
-                      "createdBy": null,
-                      "modifiedAt": "2024-10-29T08:46:20.790Z",
-                      "modifiedBy": null,
-                      "restrictions": {
-                        "user": 1000,
-                        "attachment": 100,
-                        "page": 0
-                      },
-                      "included": {
-                        "membership": {
-                          "id": "1u44cckbz5av195r4h3wiruz",
-                          "tenantId": "44b7wk",
-                          "contextType": "organization",
-                          "userId": "ilwj64zmkwsnsmrzo2zxd2hr",
-                          "organizationId": "hg5ogh3yr2b2dbwf7b9eckaj",
-                          "role": "admin",
-                          "displayOrder": 7,
-                          "muted": false,
-                          "archived": false
-                        },
-                        "counts": {
-                          "membership": {
-                            "admin": 7,
-                            "member": 150,
-                            "pending": 18,
-                            "total": 157
-                          },
-                          "entities": {
-                            "attachment": 1,
-                            "page": 272
-                          }
-                        }
-                      }
-                    }
-                  ],
-                  "total": 2
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      }
-    },
-    "/{tenantId}/organizations/{idOrSlug}": {
-      "get": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "getOrganization",
-        "tags": [
-          "organizations"
-        ],
-        "summary": "Get organization",
-        "description": "Retrieves an *organization* by ID or slug within a tenant.",
-        "x-guard": [
-          "authGuard"
-        ],
-        "x-rate-limiter": [],
-        "x-cache": [],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 24,
-              "pattern": "^[a-z0-9]+$"
-            },
-            "required": true,
-            "name": "tenantId",
-            "in": "path"
-          },
-          {
-            "schema": {
-              "type": "string"
-            },
-            "required": true,
-            "name": "idOrSlug",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Organization",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Organization"
-                },
-                "example": {
-                  "id": "hmo9fwr239kqavr3yur671kl",
-                  "tenantId": "vk6xht",
-                  "entityType": "organization",
-                  "name": "Hills, Bauch and Monahan",
-                  "slug": "hills-bauch-and-monahan",
-                  "description": "Multi-tiered zero trust firmware",
-                  "shortName": "Hills,",
-                  "country": "Turks and Caicos Islands",
-                  "timezone": "America/Argentina/Buenos_Aires",
-                  "defaultLanguage": "en",
-                  "languages": [
-                    "en"
-                  ],
-                  "notificationEmail": "notifications@hills-bauch-and-monahan.example",
-                  "emailDomains": [],
-                  "color": "#ecfdfe",
-                  "thumbnailUrl": null,
-                  "logoUrl": null,
-                  "bannerUrl": null,
-                  "websiteUrl": "https://hills-bauch-and-monahan.example",
-                  "welcomeText": "Welcome to Hills, Bauch and Monahan!",
-                  "authStrategies": [
-                    "password"
-                  ],
-                  "chatSupport": true,
-                  "createdAt": "2024-12-25T15:29:47.111Z",
-                  "createdBy": null,
-                  "modifiedAt": "2024-12-25T15:29:47.111Z",
-                  "modifiedBy": null,
-                  "restrictions": {
-                    "user": 1000,
-                    "attachment": 100,
-                    "page": 0
-                  },
-                  "included": {
-                    "membership": {
-                      "id": "kaba9fpc90mgtzmtjipw2v8s",
-                      "tenantId": "w4hg40",
-                      "contextType": "organization",
-                      "userId": "36vxzq0rzt4pucvepsu63uw1",
-                      "organizationId": "hmo9fwr239kqavr3yur671kl",
-                      "role": "admin",
-                      "displayOrder": 69,
-                      "muted": false,
-                      "archived": false
-                    },
-                    "counts": {
-                      "membership": {
-                        "admin": 30,
-                        "member": 63,
-                        "pending": 13,
-                        "total": 93
-                      },
-                      "entities": {
-                        "attachment": 178,
-                        "page": 257
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      }
-    },
-    "/{tenantId}/organizations/{id}": {
-      "put": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "updateOrganization",
-        "tags": [
-          "organizations"
-        ],
-        "summary": "Update organization",
-        "description": "Updates an *organization* within a tenant.",
-        "x-guard": [
-          "authGuard"
-        ],
-        "x-rate-limiter": [],
-        "x-cache": [],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 24,
-              "pattern": "^[a-z0-9]+$"
-            },
-            "required": true,
-            "name": "tenantId",
-            "in": "path"
-          },
-          {
-            "schema": {
-              "type": "string"
-            },
-            "required": true,
-            "name": "id",
-            "in": "path"
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "slug": {
-                    "type": "string",
-                    "minLength": 2,
-                    "maxLength": 100
-                  },
-                  "name": {
-                    "type": "string",
-                    "minLength": 2,
-                    "maxLength": 100
-                  },
-                  "shortName": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
-                    "minLength": 2,
-                    "maxLength": 100
-                  },
-                  "country": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
-                  },
-                  "timezone": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
-                  },
-                  "defaultLanguage": {
-                    "type": "string",
-                    "enum": [
-                      "en",
-                      "nl"
-                    ]
-                  },
-                  "languages": {
-                    "type": "array",
-                    "items": {
-                      "type": "string",
-                      "enum": [
-                        "en",
-                        "nl"
-                      ]
-                    },
-                    "minItems": 1
-                  },
-                  "notificationEmail": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
-                  },
-                  "emailDomains": {
-                    "type": "array",
-                    "items": {
-                      "type": "string",
-                      "minLength": 4,
-                      "maxLength": 100
-                    }
-                  },
-                  "color": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
-                  },
-                  "thumbnailUrl": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
-                  },
-                  "logoUrl": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
-                  },
-                  "bannerUrl": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
-                  },
-                  "websiteUrl": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
-                  },
-                  "welcomeText": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
-                  },
-                  "authStrategies": {
-                    "type": "array",
-                    "items": {
-                      "type": "string",
-                      "enum": [
-                        "github",
-                        "google",
-                        "microsoft",
-                        "password",
-                        "passkey",
-                        "totp",
-                        "email"
-                      ]
-                    }
-                  },
-                  "chatSupport": {
-                    "type": "boolean"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Organization was updated",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Organization"
-                },
-                "example": {
-                  "id": "hmo9fwr239kqavr3yur671kl",
-                  "tenantId": "vk6xht",
-                  "entityType": "organization",
-                  "name": "Hills, Bauch and Monahan",
-                  "slug": "hills-bauch-and-monahan",
-                  "description": "Multi-tiered zero trust firmware",
-                  "shortName": "Hills,",
-                  "country": "Turks and Caicos Islands",
-                  "timezone": "America/Argentina/Buenos_Aires",
-                  "defaultLanguage": "en",
-                  "languages": [
-                    "en"
-                  ],
-                  "notificationEmail": "notifications@hills-bauch-and-monahan.example",
-                  "emailDomains": [],
-                  "color": "#ecfdfe",
-                  "thumbnailUrl": null,
-                  "logoUrl": null,
-                  "bannerUrl": null,
-                  "websiteUrl": "https://hills-bauch-and-monahan.example",
-                  "welcomeText": "Welcome to Hills, Bauch and Monahan!",
-                  "authStrategies": [
-                    "password"
-                  ],
-                  "chatSupport": true,
-                  "createdAt": "2024-12-25T15:29:47.111Z",
-                  "createdBy": null,
-                  "modifiedAt": "2024-12-25T15:29:47.111Z",
-                  "modifiedBy": null,
-                  "restrictions": {
-                    "user": 1000,
-                    "attachment": 100,
-                    "page": 0
-                  },
-                  "included": {
-                    "membership": {
-                      "id": "kaba9fpc90mgtzmtjipw2v8s",
-                      "tenantId": "w4hg40",
-                      "contextType": "organization",
-                      "userId": "36vxzq0rzt4pucvepsu63uw1",
-                      "organizationId": "hmo9fwr239kqavr3yur671kl",
-                      "role": "admin",
-                      "displayOrder": 69,
-                      "muted": false,
-                      "archived": false
-                    },
-                    "counts": {
-                      "membership": {
-                        "admin": 30,
-                        "member": 63,
-                        "pending": 13,
-                        "total": 93
-                      },
-                      "entities": {
-                        "attachment": 178,
-                        "page": 257
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      }
-    },
-    "/{tenantId}/organizations": {
-      "delete": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "deleteOrganizations",
-        "tags": [
-          "organizations"
-        ],
-        "summary": "Delete organizations",
-        "description": "Deletes one or more *organizations* by ID within a tenant.",
-        "x-guard": [
-          "authGuard"
-        ],
-        "x-rate-limiter": [],
-        "x-cache": [],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 24,
-              "pattern": "^[a-z0-9]+$"
-            },
-            "required": true,
-            "name": "tenantId",
-            "in": "path"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "ids": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    },
-                    "minItems": 1,
-                    "maxItems": 50
-                  }
-                },
-                "required": [
-                  "ids"
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "prefixItems": []
-                    },
-                    "rejectedItemIds": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "description": "Identifiers of items that could not be processed"
-                    },
-                    "rejectionReasons": {
-                      "type": "object",
-                      "additionalProperties": {
-                        "type": "string"
-                      },
-                      "description": "Map of rejected item ID to reason code"
-                    }
-                  },
-                  "required": [
-                    "data",
-                    "rejectedItemIds"
-                  ]
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      }
-    },
-    "/pages": {
-      "get": {
-        "security": [],
-        "operationId": "getPages",
-        "tags": [
-          "pages"
-        ],
-        "summary": "Get pages",
-        "description": "Get all matching *pages*.",
-        "x-guard": [
-          "publicGuard"
-        ],
-        "x-rate-limiter": [],
-        "x-cache": [],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string"
-            },
-            "required": false,
-            "name": "q",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": [
-                "name",
-                "status",
-                "createdAt"
-              ],
-              "default": "createdAt"
-            },
-            "required": false,
-            "name": "sort",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ],
-              "default": "asc"
-            },
-            "required": false,
-            "name": "order",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string"
-            },
-            "required": false,
-            "name": "offset",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string"
-            },
-            "required": false,
-            "name": "limit",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "format": "date-time"
-            },
-            "required": false,
-            "name": "modifiedAfter",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Pages",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "items": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/Page"
-                      }
-                    },
-                    "total": {
-                      "type": "number"
-                    }
-                  },
-                  "required": [
-                    "items",
-                    "total"
-                  ]
-                },
-                "example": {
-                  "items": [
-                    {
-                      "id": "9xn03u76eo7z71y60a882cwp",
-                      "tenantId": "xtanax",
-                      "entityType": "page",
-                      "name": "Tersus summa caterva socius.",
-                      "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Tergo adhuc virtus vesco audentia angustus. Voco commodi abduco deduco. Cubicularis volo utroque in comminor concedo quae.\\nSumptus dolorem varius crudelis. Advoco surgo angulus demens tabella clibanus. Valens vester cavus.\",\"styles\":{}}],\"children\":[]}]",
-                      "keywords": "contego debeo volubilis",
-                      "status": "unpublished",
-                      "publicAccess": true,
-                      "parentId": null,
-                      "displayOrder": 40.67,
-                      "createdAt": "2024-11-21T04:00:59.122Z",
-                      "createdBy": "qqp8d07imsvjbtqtl3rtjgxd",
-                      "modifiedAt": "2024-11-21T04:00:59.122Z",
-                      "modifiedBy": "qqp8d07imsvjbtqtl3rtjgxd",
-                      "tx": {
-                        "id": "y6mqh9hmikgme3gy3a9lhe0c",
-                        "sourceId": "src_trmzc53x7z222ydtq57iu31m",
-                        "version": 1,
-                        "fieldVersions": {}
-                      }
-                    },
-                    {
-                      "id": "clxs8vayzrul7vmeyahbgyu0",
-                      "tenantId": "1sr6ut",
-                      "entityType": "page",
-                      "name": "Conitor suspendo aiunt.",
-                      "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Acidus advoco ventus sub cogito argentum attonbitus trans. Crapula bestia auxilium non sui desino amor barba. Vitiosus eligendi clementia usus demens conor auctor basium tolero.\\nSoluta temporibus aut labore. Depono ultio explicabo ascit. Utpote amplexus nihil aut concedo vel praesentium universe.\",\"styles\":{}}],\"children\":[]}]",
-                      "keywords": "pecus accusator cubitum",
-                      "status": "unpublished",
-                      "publicAccess": true,
-                      "parentId": null,
-                      "displayOrder": 11.43,
-                      "createdAt": "2024-10-29T08:46:20.790Z",
-                      "createdBy": "hg5ogh3yr2b2dbwf7b9eckaj",
-                      "modifiedAt": "2024-10-29T08:46:20.790Z",
-                      "modifiedBy": "hg5ogh3yr2b2dbwf7b9eckaj",
-                      "tx": {
-                        "id": "4bpmhsyauxcwuwjsrzvzac8q",
-                        "sourceId": "src_x1h9s6vzhgvcj0rs3xtuk03g",
-                        "version": 1,
-                        "fieldVersions": {}
-                      }
-                    }
-                  ],
-                  "total": 2
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      }
-    },
-    "/pages/{id}": {
-      "get": {
-        "security": [],
-        "operationId": "getPage",
-        "tags": [
-          "pages"
-        ],
-        "summary": "Get page",
-        "description": "Get a single *page* by ID. Cached using LRU - first request warms cache.",
-        "x-guard": [
-          "publicGuard"
-        ],
-        "x-rate-limiter": [],
-        "x-cache": [
-          "publicCache"
-        ],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string"
-            },
-            "required": true,
-            "name": "id",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Page",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Page"
-                },
-                "example": {
-                  "id": "co96vrmic3wbowmxzbqa1e9f",
-                  "tenantId": "ijllhz",
-                  "entityType": "page",
-                  "name": "Torrens adfectus.",
-                  "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Voluptates cornu tempus eaque universe volubilis conturbo. Sponte utpote crux pecco vulticulus cunctatio. Vallum ut adimpleo summa valde strenuus attonbitus.\\nMollitia vel cado vitae cibus dolores decet. Aptus accusamus praesentium cibus subito viscus vox nemo. Video tremo molestias charisma clam ipsa suscipit.\",\"styles\":{}}],\"children\":[]}]",
-                  "keywords": "solvo atrox tendo",
-                  "status": "unpublished",
-                  "publicAccess": true,
-                  "parentId": null,
-                  "displayOrder": 32.69,
-                  "createdAt": "2024-08-06T10:28:33.226Z",
-                  "createdBy": "0f0ak5vkrrl687pmkwpa1vju",
-                  "modifiedAt": "2024-08-06T10:28:33.226Z",
-                  "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju",
-                  "tx": {
-                    "id": "4tufkeho7gg1xwx21e333ngq",
-                    "sourceId": "src_ujcbpukfple60p8h3tnk9zpo",
-                    "version": 1,
-                    "fieldVersions": {}
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      }
-    },
-    "/{tenantId}/pages": {
-      "post": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "createPages",
-        "tags": [
-          "pages"
-        ],
-        "summary": "Create pages",
-        "description": "Insert one or more new *pages*. Returns created pages and any rejected items.",
-        "x-guard": [
-          "authGuard",
-          "tenantGuard",
-          "sysAdminGuard"
-        ],
-        "x-rate-limiter": [],
-        "x-cache": [],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 24,
-              "pattern": "^[a-z0-9]+$"
-            },
-            "required": true,
-            "name": "tenantId",
-            "in": "path"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "name": {
-                      "type": "string"
-                    },
-                    "tx": {
-                      "$ref": "#/components/schemas/TxRequest"
-                    }
-                  },
-                  "required": [
-                    "tx"
-                  ]
-                },
-                "minItems": 1,
-                "maxItems": 50
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Pages already created (idempotent)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/Page"
-                      }
-                    },
-                    "rejectedItemIds": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "description": "Identifiers of items that could not be processed"
-                    },
-                    "rejectionReasons": {
-                      "type": "object",
-                      "additionalProperties": {
-                        "type": "string"
-                      },
-                      "description": "Map of rejected item ID to reason code"
-                    }
-                  },
-                  "required": [
-                    "data",
-                    "rejectedItemIds"
-                  ]
-                },
-                "example": {
-                  "data": [
-                    {
-                      "id": "wgpaj0cfyc7n2sjn5fpfkbrs",
-                      "tenantId": "lwtksu",
-                      "entityType": "page",
-                      "name": "Voluntarius contra.",
-                      "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Tergo crepusculum certe desparatus depromo. Dolor somnus vobis atavus tergiversatio tersus suadeo colo. Id abduco supplanto asporto.\\nCuratio xiphias auxilium teneo claudeo unde vulgo. Atavus vorax vergo deputo deprimo statim eos vulnero subito eligendi. Exercitationem somnus cattus cilicium textilis cervus alo tactus.\",\"styles\":{}}],\"children\":[]}]",
-                      "keywords": "confido colligo audio",
-                      "status": "unpublished",
-                      "publicAccess": true,
-                      "parentId": null,
-                      "displayOrder": 70.17,
-                      "createdAt": "2024-04-19T14:04:35.773Z",
-                      "createdBy": "kzmv5qbhdcqeiuvwlosan0fc",
-                      "modifiedAt": "2024-04-19T14:04:35.773Z",
-                      "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
-                      "tx": {
-                        "id": "akf4ovzm1ne3h55lgj31d63n",
-                        "sourceId": "src_9apx99a5auvr5cyj5s37irnj",
-                        "version": 1,
-                        "fieldVersions": {}
-                      }
-                    },
-                    {
-                      "id": "74l7581dwpxxbqdej8622zpg",
-                      "tenantId": "o54qw5",
-                      "entityType": "page",
-                      "name": "Taedium spargo cetera.",
-                      "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Vehemens deprecator ventus ascit denique tum candidus curvo perspiciatis defendo. Carpo verecundia cometes. Sortitus colligo ceno terra cado temptatio carmen arx sequi cicuta.\\nAttollo autem adipisci vinitor comminor odit. Virga aptus corrupti utpote. Subseco vomica auxilium ascit cuppedia abbas amo patior credo tenus.\",\"styles\":{}}],\"children\":[]}]",
-                      "keywords": "aestus degero cicuta",
-                      "status": "unpublished",
-                      "publicAccess": true,
-                      "parentId": null,
-                      "displayOrder": 14.28,
-                      "createdAt": "2024-02-25T13:01:35.301Z",
-                      "createdBy": "p3t0ygxx0aa83en3sk1fs1we",
-                      "modifiedAt": "2024-02-25T13:01:35.301Z",
-                      "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
-                      "tx": {
-                        "id": "4hj92yzr7v1itpc9wztvbcy2",
-                        "sourceId": "src_1q04oq81k5rbzt4yq63pob5r",
-                        "version": 1,
-                        "fieldVersions": {}
-                      }
-                    }
-                  ],
-                  "rejectedItemIds": []
-                }
-              }
-            }
-          },
-          "201": {
-            "description": "Pages created",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/Page"
-                      }
-                    },
-                    "rejectedItemIds": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "description": "Identifiers of items that could not be processed"
-                    },
-                    "rejectionReasons": {
-                      "type": "object",
-                      "additionalProperties": {
-                        "type": "string"
-                      },
-                      "description": "Map of rejected item ID to reason code"
-                    }
-                  },
-                  "required": [
-                    "data",
-                    "rejectedItemIds"
-                  ]
-                },
-                "example": {
-                  "data": [
-                    {
-                      "id": "wgpaj0cfyc7n2sjn5fpfkbrs",
-                      "tenantId": "lwtksu",
-                      "entityType": "page",
-                      "name": "Voluntarius contra.",
-                      "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Tergo crepusculum certe desparatus depromo. Dolor somnus vobis atavus tergiversatio tersus suadeo colo. Id abduco supplanto asporto.\\nCuratio xiphias auxilium teneo claudeo unde vulgo. Atavus vorax vergo deputo deprimo statim eos vulnero subito eligendi. Exercitationem somnus cattus cilicium textilis cervus alo tactus.\",\"styles\":{}}],\"children\":[]}]",
-                      "keywords": "confido colligo audio",
-                      "status": "unpublished",
-                      "publicAccess": true,
-                      "parentId": null,
-                      "displayOrder": 70.17,
-                      "createdAt": "2024-04-19T14:04:35.773Z",
-                      "createdBy": "kzmv5qbhdcqeiuvwlosan0fc",
-                      "modifiedAt": "2024-04-19T14:04:35.773Z",
-                      "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
-                      "tx": {
-                        "id": "akf4ovzm1ne3h55lgj31d63n",
-                        "sourceId": "src_9apx99a5auvr5cyj5s37irnj",
-                        "version": 1,
-                        "fieldVersions": {}
-                      }
-                    },
-                    {
-                      "id": "74l7581dwpxxbqdej8622zpg",
-                      "tenantId": "o54qw5",
-                      "entityType": "page",
-                      "name": "Taedium spargo cetera.",
-                      "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Vehemens deprecator ventus ascit denique tum candidus curvo perspiciatis defendo. Carpo verecundia cometes. Sortitus colligo ceno terra cado temptatio carmen arx sequi cicuta.\\nAttollo autem adipisci vinitor comminor odit. Virga aptus corrupti utpote. Subseco vomica auxilium ascit cuppedia abbas amo patior credo tenus.\",\"styles\":{}}],\"children\":[]}]",
-                      "keywords": "aestus degero cicuta",
-                      "status": "unpublished",
-                      "publicAccess": true,
-                      "parentId": null,
-                      "displayOrder": 14.28,
-                      "createdAt": "2024-02-25T13:01:35.301Z",
-                      "createdBy": "p3t0ygxx0aa83en3sk1fs1we",
-                      "modifiedAt": "2024-02-25T13:01:35.301Z",
-                      "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
-                      "tx": {
-                        "id": "4hj92yzr7v1itpc9wztvbcy2",
-                        "sourceId": "src_1q04oq81k5rbzt4yq63pob5r",
-                        "version": 1,
-                        "fieldVersions": {}
-                      }
-                    }
-                  ],
-                  "rejectedItemIds": []
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      },
-      "delete": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "deletePages",
-        "tags": [
-          "pages"
-        ],
-        "summary": "Delete pages",
-        "description": "Delete one or more *pages* by ID.",
-        "x-guard": [
-          "authGuard",
-          "tenantGuard",
-          "sysAdminGuard"
-        ],
-        "x-rate-limiter": [],
-        "x-cache": [],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 24,
-              "pattern": "^[a-z0-9]+$"
-            },
-            "required": true,
-            "name": "tenantId",
-            "in": "path"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "ids": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    },
-                    "minItems": 1,
-                    "maxItems": 50
-                  }
-                },
-                "required": [
-                  "ids"
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "204": {
-            "description": "Page(s) deleted"
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      }
-    },
-    "/{tenantId}/pages/{id}": {
-      "put": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "updatePage",
-        "tags": [
-          "pages"
-        ],
-        "summary": "Update page",
-        "description": "Update a single *page* by ID.",
-        "x-guard": [
-          "authGuard",
-          "tenantGuard",
-          "sysAdminGuard"
-        ],
-        "x-rate-limiter": [],
-        "x-cache": [],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 24,
-              "pattern": "^[a-z0-9]+$"
-            },
-            "required": true,
-            "name": "tenantId",
-            "in": "path"
-          },
-          {
-            "schema": {
-              "type": "string"
-            },
-            "required": true,
-            "name": "id",
-            "in": "path"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "name": {
-                    "type": "string"
-                  },
-                  "description": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
-                  },
-                  "keywords": {
-                    "type": "string"
-                  },
-                  "displayOrder": {
-                    "type": "number",
-                    "minimum": -140737488355328,
-                    "maximum": 140737488355327
-                  },
-                  "status": {
-                    "type": "string",
-                    "enum": [
-                      "unpublished",
-                      "published",
-                      "archived"
-                    ],
-                    "default": "unpublished"
-                  },
-                  "parentId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
-                  },
-                  "tx": {
-                    "$ref": "#/components/schemas/TxRequest"
-                  }
-                },
-                "required": [
-                  "tx"
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Page updated",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Page"
-                },
-                "example": {
-                  "id": "co96vrmic3wbowmxzbqa1e9f",
-                  "tenantId": "ijllhz",
-                  "entityType": "page",
-                  "name": "Torrens adfectus.",
-                  "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Voluptates cornu tempus eaque universe volubilis conturbo. Sponte utpote crux pecco vulticulus cunctatio. Vallum ut adimpleo summa valde strenuus attonbitus.\\nMollitia vel cado vitae cibus dolores decet. Aptus accusamus praesentium cibus subito viscus vox nemo. Video tremo molestias charisma clam ipsa suscipit.\",\"styles\":{}}],\"children\":[]}]",
-                  "keywords": "solvo atrox tendo",
-                  "status": "unpublished",
-                  "publicAccess": true,
-                  "parentId": null,
-                  "displayOrder": 32.69,
-                  "createdAt": "2024-08-06T10:28:33.226Z",
-                  "createdBy": "0f0ak5vkrrl687pmkwpa1vju",
-                  "modifiedAt": "2024-08-06T10:28:33.226Z",
-                  "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju",
-                  "tx": {
-                    "id": "4tufkeho7gg1xwx21e333ngq",
-                    "sourceId": "src_ujcbpukfple60p8h3tnk9zpo",
-                    "version": 1,
-                    "fieldVersions": {}
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      }
-    },
     "/entities/check-slug": {
       "post": {
         "security": [
@@ -9481,6 +7680,1807 @@
                     "avgDurationByName",
                     "errorCount"
                   ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/organizations": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "createOrganizations",
+        "tags": [
+          "organizations"
+        ],
+        "summary": "Create organizations",
+        "description": "Creates one or more new *organizations*.",
+        "x-guard": [
+          "authGuard"
+        ],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^temp-"
+                    },
+                    "name": {
+                      "type": "string",
+                      "minLength": 2,
+                      "maxLength": 100
+                    },
+                    "slug": {
+                      "type": "string",
+                      "minLength": 2,
+                      "maxLength": 100
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "slug"
+                  ]
+                },
+                "minItems": 1,
+                "maxItems": 10
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Organizations were created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "allOf": [
+                          {
+                            "$ref": "#/components/schemas/Organization"
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "included": {
+                                "allOf": [
+                                  {
+                                    "$ref": "#/components/schemas/OrganizationIncluded"
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {},
+                                    "required": [
+                                      "membership"
+                                    ]
+                                  }
+                                ]
+                              }
+                            },
+                            "required": [
+                              "included"
+                            ]
+                          }
+                        ],
+                        "example": {
+                          "id": "hmo9fwr239kqavr3yur671kl",
+                          "tenantId": "vk6xht",
+                          "entityType": "organization",
+                          "name": "Hills, Bauch and Monahan",
+                          "slug": "hills-bauch-and-monahan",
+                          "description": "Multi-tiered zero trust firmware",
+                          "shortName": "Hills,",
+                          "country": "Turks and Caicos Islands",
+                          "timezone": "America/Argentina/Buenos_Aires",
+                          "defaultLanguage": "en",
+                          "languages": [
+                            "en"
+                          ],
+                          "notificationEmail": "notifications@hills-bauch-and-monahan.example",
+                          "emailDomains": [],
+                          "color": "#ecfdfe",
+                          "thumbnailUrl": null,
+                          "logoUrl": null,
+                          "bannerUrl": null,
+                          "websiteUrl": "https://hills-bauch-and-monahan.example",
+                          "welcomeText": "Welcome to Hills, Bauch and Monahan!",
+                          "authStrategies": [
+                            "password"
+                          ],
+                          "chatSupport": true,
+                          "createdAt": "2024-12-25T15:29:47.111Z",
+                          "createdBy": null,
+                          "modifiedAt": "2024-12-25T15:29:47.111Z",
+                          "modifiedBy": null,
+                          "restrictions": {
+                            "user": 1000,
+                            "attachment": 100,
+                            "page": 0
+                          },
+                          "included": {
+                            "membership": {
+                              "id": "kaba9fpc90mgtzmtjipw2v8s",
+                              "tenantId": "w4hg40",
+                              "contextType": "organization",
+                              "userId": "36vxzq0rzt4pucvepsu63uw1",
+                              "organizationId": "hmo9fwr239kqavr3yur671kl",
+                              "role": "admin",
+                              "displayOrder": 69,
+                              "muted": false,
+                              "archived": false
+                            },
+                            "counts": {
+                              "membership": {
+                                "admin": 30,
+                                "member": 63,
+                                "pending": 13,
+                                "total": 93
+                              },
+                              "entities": {
+                                "attachment": 178,
+                                "page": 257
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "rejectedItemIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Identifiers of items that could not be processed"
+                    },
+                    "rejectionReasons": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "description": "Map of rejected item ID to reason code"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "rejectedItemIds"
+                  ]
+                },
+                "example": {
+                  "data": [
+                    {
+                      "id": "kzmv5qbhdcqeiuvwlosan0fc",
+                      "tenantId": "wgpaj0",
+                      "entityType": "organization",
+                      "name": "Kessler and Sons",
+                      "slug": "kessler-and-sons",
+                      "description": "Future-proofed contextually-based moderator",
+                      "shortName": "Kessler",
+                      "country": "Azerbaijan",
+                      "timezone": "Europe/Kyiv",
+                      "defaultLanguage": "en",
+                      "languages": [
+                        "en"
+                      ],
+                      "notificationEmail": "notifications@kessler-and-sons.example",
+                      "emailDomains": [],
+                      "color": "#ce39f9",
+                      "thumbnailUrl": null,
+                      "logoUrl": null,
+                      "bannerUrl": null,
+                      "websiteUrl": "https://kessler-and-sons.example",
+                      "welcomeText": "Welcome to Kessler and Sons!",
+                      "authStrategies": [
+                        "password"
+                      ],
+                      "chatSupport": false,
+                      "createdAt": "2024-04-19T14:04:35.773Z",
+                      "createdBy": null,
+                      "modifiedAt": "2024-04-19T14:04:35.773Z",
+                      "modifiedBy": null,
+                      "restrictions": {
+                        "user": 1000,
+                        "attachment": 100,
+                        "page": 0
+                      },
+                      "included": {
+                        "membership": {
+                          "id": "3y6ee6h5lc8sjfv4trxwe3yb",
+                          "tenantId": "89fjn2",
+                          "contextType": "organization",
+                          "userId": "1t4n7coocr6ixfzcb6x5wab0",
+                          "organizationId": "kzmv5qbhdcqeiuvwlosan0fc",
+                          "role": "member",
+                          "displayOrder": 95,
+                          "muted": false,
+                          "archived": false
+                        },
+                        "counts": {
+                          "membership": {
+                            "admin": 43,
+                            "member": 58,
+                            "pending": 47,
+                            "total": 101
+                          },
+                          "entities": {
+                            "attachment": 294,
+                            "page": 327
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "id": "p3t0ygxx0aa83en3sk1fs1we",
+                      "tenantId": "74l758",
+                      "entityType": "organization",
+                      "name": "Howell - Ullrich",
+                      "slug": "howell-ullrich",
+                      "description": "Quality-focused uniform throughput",
+                      "shortName": "Howell",
+                      "country": "French Polynesia",
+                      "timezone": "Australia/Brisbane",
+                      "defaultLanguage": "en",
+                      "languages": [
+                        "en"
+                      ],
+                      "notificationEmail": "notifications@howell-ullrich.example",
+                      "emailDomains": [],
+                      "color": "#88b531",
+                      "thumbnailUrl": null,
+                      "logoUrl": null,
+                      "bannerUrl": null,
+                      "websiteUrl": "https://howell-ullrich.example",
+                      "welcomeText": "Welcome to Howell - Ullrich!",
+                      "authStrategies": [
+                        "password"
+                      ],
+                      "chatSupport": true,
+                      "createdAt": "2024-02-25T13:01:35.301Z",
+                      "createdBy": null,
+                      "modifiedAt": "2024-02-25T13:01:35.301Z",
+                      "modifiedBy": null,
+                      "restrictions": {
+                        "user": 1000,
+                        "attachment": 100,
+                        "page": 0
+                      },
+                      "included": {
+                        "membership": {
+                          "id": "ry5f7szmj5jhp0ad93klgj3e",
+                          "tenantId": "j6ly81",
+                          "contextType": "organization",
+                          "userId": "u4oy2u1m55abgsmrl1zezeoj",
+                          "organizationId": "p3t0ygxx0aa83en3sk1fs1we",
+                          "role": "admin",
+                          "displayOrder": 20,
+                          "muted": false,
+                          "archived": false
+                        },
+                        "counts": {
+                          "membership": {
+                            "admin": 22,
+                            "member": 122,
+                            "pending": 44,
+                            "total": 144
+                          },
+                          "entities": {
+                            "attachment": 321,
+                            "page": 94
+                          }
+                        }
+                      }
+                    }
+                  ],
+                  "rejectedItemIds": []
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      },
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getOrganizations",
+        "tags": [
+          "organizations"
+        ],
+        "summary": "Get list of organizations",
+        "description": "Returns a list of *organizations*.",
+        "x-guard": [
+          "authGuard"
+        ],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "q",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "id",
+                "name",
+                "createdAt"
+              ],
+              "default": "createdAt"
+            },
+            "required": false,
+            "name": "sort",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "asc"
+            },
+            "required": false,
+            "name": "order",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "userId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "admin",
+                "member"
+              ]
+            },
+            "required": false,
+            "name": "role",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            },
+            "required": false,
+            "name": "excludeArchived",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "include",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Organizations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Organization"
+                      }
+                    },
+                    "total": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "items",
+                    "total"
+                  ]
+                },
+                "example": {
+                  "items": [
+                    {
+                      "id": "qqp8d07imsvjbtqtl3rtjgxd",
+                      "tenantId": "9xn03u",
+                      "entityType": "organization",
+                      "name": "Dicki - Jacobi",
+                      "slug": "dicki-jacobi",
+                      "description": "Public-key context-sensitive website",
+                      "shortName": "Dicki",
+                      "country": "Comoros",
+                      "timezone": "Africa/Conakry",
+                      "defaultLanguage": "en",
+                      "languages": [
+                        "en"
+                      ],
+                      "notificationEmail": "notifications@dicki-jacobi.example",
+                      "emailDomains": [],
+                      "color": "#f40655",
+                      "thumbnailUrl": null,
+                      "logoUrl": null,
+                      "bannerUrl": null,
+                      "websiteUrl": "https://dicki-jacobi.example",
+                      "welcomeText": "Welcome to Dicki - Jacobi!",
+                      "authStrategies": [
+                        "password"
+                      ],
+                      "chatSupport": true,
+                      "createdAt": "2024-11-21T04:00:59.122Z",
+                      "createdBy": null,
+                      "modifiedAt": "2024-11-21T04:00:59.122Z",
+                      "modifiedBy": null,
+                      "restrictions": {
+                        "user": 1000,
+                        "attachment": 100,
+                        "page": 0
+                      },
+                      "included": {
+                        "membership": {
+                          "id": "300jor4orrvsgezqoyxfckg3",
+                          "tenantId": "ifex0a",
+                          "contextType": "organization",
+                          "userId": "gu87zf240qkfh0faoqjip69q",
+                          "organizationId": "qqp8d07imsvjbtqtl3rtjgxd",
+                          "role": "member",
+                          "displayOrder": 38,
+                          "muted": false,
+                          "archived": false
+                        },
+                        "counts": {
+                          "membership": {
+                            "admin": 30,
+                            "member": 20,
+                            "pending": 27,
+                            "total": 50
+                          },
+                          "entities": {
+                            "attachment": 188,
+                            "page": 390
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "id": "hg5ogh3yr2b2dbwf7b9eckaj",
+                      "tenantId": "clxs8v",
+                      "entityType": "organization",
+                      "name": "Witting - Wuckert",
+                      "slug": "witting-wuckert",
+                      "description": "Reverse-engineered sustainable matrix",
+                      "shortName": "Witting",
+                      "country": "Costa Rica",
+                      "timezone": "Europe/Ulyanovsk",
+                      "defaultLanguage": "en",
+                      "languages": [
+                        "en"
+                      ],
+                      "notificationEmail": "notifications@witting-wuckert.example",
+                      "emailDomains": [],
+                      "color": "#d9e6a7",
+                      "thumbnailUrl": null,
+                      "logoUrl": null,
+                      "bannerUrl": null,
+                      "websiteUrl": "https://witting-wuckert.example",
+                      "welcomeText": "Welcome to Witting - Wuckert!",
+                      "authStrategies": [
+                        "password"
+                      ],
+                      "chatSupport": true,
+                      "createdAt": "2024-10-29T08:46:20.790Z",
+                      "createdBy": null,
+                      "modifiedAt": "2024-10-29T08:46:20.790Z",
+                      "modifiedBy": null,
+                      "restrictions": {
+                        "user": 1000,
+                        "attachment": 100,
+                        "page": 0
+                      },
+                      "included": {
+                        "membership": {
+                          "id": "1u44cckbz5av195r4h3wiruz",
+                          "tenantId": "44b7wk",
+                          "contextType": "organization",
+                          "userId": "ilwj64zmkwsnsmrzo2zxd2hr",
+                          "organizationId": "hg5ogh3yr2b2dbwf7b9eckaj",
+                          "role": "admin",
+                          "displayOrder": 7,
+                          "muted": false,
+                          "archived": false
+                        },
+                        "counts": {
+                          "membership": {
+                            "admin": 7,
+                            "member": 150,
+                            "pending": 18,
+                            "total": 157
+                          },
+                          "entities": {
+                            "attachment": 1,
+                            "page": 272
+                          }
+                        }
+                      }
+                    }
+                  ],
+                  "total": 2
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/{tenantId}/organizations/{idOrSlug}": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getOrganization",
+        "tags": [
+          "organizations"
+        ],
+        "summary": "Get organization",
+        "description": "Retrieves an *organization* by ID or slug within a tenant.",
+        "x-guard": [
+          "authGuard"
+        ],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 24,
+              "pattern": "^[a-z0-9]+$"
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "idOrSlug",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Organization"
+                },
+                "example": {
+                  "id": "hmo9fwr239kqavr3yur671kl",
+                  "tenantId": "vk6xht",
+                  "entityType": "organization",
+                  "name": "Hills, Bauch and Monahan",
+                  "slug": "hills-bauch-and-monahan",
+                  "description": "Multi-tiered zero trust firmware",
+                  "shortName": "Hills,",
+                  "country": "Turks and Caicos Islands",
+                  "timezone": "America/Argentina/Buenos_Aires",
+                  "defaultLanguage": "en",
+                  "languages": [
+                    "en"
+                  ],
+                  "notificationEmail": "notifications@hills-bauch-and-monahan.example",
+                  "emailDomains": [],
+                  "color": "#ecfdfe",
+                  "thumbnailUrl": null,
+                  "logoUrl": null,
+                  "bannerUrl": null,
+                  "websiteUrl": "https://hills-bauch-and-monahan.example",
+                  "welcomeText": "Welcome to Hills, Bauch and Monahan!",
+                  "authStrategies": [
+                    "password"
+                  ],
+                  "chatSupport": true,
+                  "createdAt": "2024-12-25T15:29:47.111Z",
+                  "createdBy": null,
+                  "modifiedAt": "2024-12-25T15:29:47.111Z",
+                  "modifiedBy": null,
+                  "restrictions": {
+                    "user": 1000,
+                    "attachment": 100,
+                    "page": 0
+                  },
+                  "included": {
+                    "membership": {
+                      "id": "kaba9fpc90mgtzmtjipw2v8s",
+                      "tenantId": "w4hg40",
+                      "contextType": "organization",
+                      "userId": "36vxzq0rzt4pucvepsu63uw1",
+                      "organizationId": "hmo9fwr239kqavr3yur671kl",
+                      "role": "admin",
+                      "displayOrder": 69,
+                      "muted": false,
+                      "archived": false
+                    },
+                    "counts": {
+                      "membership": {
+                        "admin": 30,
+                        "member": 63,
+                        "pending": 13,
+                        "total": 93
+                      },
+                      "entities": {
+                        "attachment": 178,
+                        "page": 257
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/{tenantId}/organizations/{id}": {
+      "put": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "updateOrganization",
+        "tags": [
+          "organizations"
+        ],
+        "summary": "Update organization",
+        "description": "Updates an *organization* within a tenant.",
+        "x-guard": [
+          "authGuard"
+        ],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 24,
+              "pattern": "^[a-z0-9]+$"
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "slug": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 100
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 100
+                  },
+                  "shortName": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 2,
+                    "maxLength": 100
+                  },
+                  "country": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "timezone": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "defaultLanguage": {
+                    "type": "string",
+                    "enum": [
+                      "en",
+                      "nl"
+                    ]
+                  },
+                  "languages": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "en",
+                        "nl"
+                      ]
+                    },
+                    "minItems": 1
+                  },
+                  "notificationEmail": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "emailDomains": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 4,
+                      "maxLength": 100
+                    }
+                  },
+                  "color": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "thumbnailUrl": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "logoUrl": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "bannerUrl": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "websiteUrl": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "welcomeText": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "authStrategies": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "github",
+                        "google",
+                        "microsoft",
+                        "password",
+                        "passkey",
+                        "totp",
+                        "email"
+                      ]
+                    }
+                  },
+                  "chatSupport": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Organization was updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Organization"
+                },
+                "example": {
+                  "id": "hmo9fwr239kqavr3yur671kl",
+                  "tenantId": "vk6xht",
+                  "entityType": "organization",
+                  "name": "Hills, Bauch and Monahan",
+                  "slug": "hills-bauch-and-monahan",
+                  "description": "Multi-tiered zero trust firmware",
+                  "shortName": "Hills,",
+                  "country": "Turks and Caicos Islands",
+                  "timezone": "America/Argentina/Buenos_Aires",
+                  "defaultLanguage": "en",
+                  "languages": [
+                    "en"
+                  ],
+                  "notificationEmail": "notifications@hills-bauch-and-monahan.example",
+                  "emailDomains": [],
+                  "color": "#ecfdfe",
+                  "thumbnailUrl": null,
+                  "logoUrl": null,
+                  "bannerUrl": null,
+                  "websiteUrl": "https://hills-bauch-and-monahan.example",
+                  "welcomeText": "Welcome to Hills, Bauch and Monahan!",
+                  "authStrategies": [
+                    "password"
+                  ],
+                  "chatSupport": true,
+                  "createdAt": "2024-12-25T15:29:47.111Z",
+                  "createdBy": null,
+                  "modifiedAt": "2024-12-25T15:29:47.111Z",
+                  "modifiedBy": null,
+                  "restrictions": {
+                    "user": 1000,
+                    "attachment": 100,
+                    "page": 0
+                  },
+                  "included": {
+                    "membership": {
+                      "id": "kaba9fpc90mgtzmtjipw2v8s",
+                      "tenantId": "w4hg40",
+                      "contextType": "organization",
+                      "userId": "36vxzq0rzt4pucvepsu63uw1",
+                      "organizationId": "hmo9fwr239kqavr3yur671kl",
+                      "role": "admin",
+                      "displayOrder": 69,
+                      "muted": false,
+                      "archived": false
+                    },
+                    "counts": {
+                      "membership": {
+                        "admin": 30,
+                        "member": 63,
+                        "pending": 13,
+                        "total": 93
+                      },
+                      "entities": {
+                        "attachment": 178,
+                        "page": 257
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/{tenantId}/organizations": {
+      "delete": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "deleteOrganizations",
+        "tags": [
+          "organizations"
+        ],
+        "summary": "Delete organizations",
+        "description": "Deletes one or more *organizations* by ID within a tenant.",
+        "x-guard": [
+          "authGuard"
+        ],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 24,
+              "pattern": "^[a-z0-9]+$"
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "minItems": 1,
+                    "maxItems": 50
+                  }
+                },
+                "required": [
+                  "ids"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "prefixItems": []
+                    },
+                    "rejectedItemIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Identifiers of items that could not be processed"
+                    },
+                    "rejectionReasons": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "description": "Map of rejected item ID to reason code"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "rejectedItemIds"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/pages": {
+      "get": {
+        "security": [],
+        "operationId": "getPages",
+        "tags": [
+          "pages"
+        ],
+        "summary": "Get pages",
+        "description": "Get all matching *pages*.",
+        "x-guard": [
+          "publicGuard"
+        ],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "q",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "name",
+                "status",
+                "createdAt"
+              ],
+              "default": "createdAt"
+            },
+            "required": false,
+            "name": "sort",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "asc"
+            },
+            "required": false,
+            "name": "order",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "required": false,
+            "name": "modifiedAfter",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pages",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Page"
+                      }
+                    },
+                    "total": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "items",
+                    "total"
+                  ]
+                },
+                "example": {
+                  "items": [
+                    {
+                      "id": "9xn03u76eo7z71y60a882cwp",
+                      "tenantId": "xtanax",
+                      "entityType": "page",
+                      "name": "Tersus summa caterva socius.",
+                      "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Tergo adhuc virtus vesco audentia angustus. Voco commodi abduco deduco. Cubicularis volo utroque in comminor concedo quae.\\nSumptus dolorem varius crudelis. Advoco surgo angulus demens tabella clibanus. Valens vester cavus.\",\"styles\":{}}],\"children\":[]}]",
+                      "keywords": "contego debeo volubilis",
+                      "status": "unpublished",
+                      "publicAccess": true,
+                      "parentId": null,
+                      "displayOrder": 40.67,
+                      "createdAt": "2024-11-21T04:00:59.122Z",
+                      "createdBy": "qqp8d07imsvjbtqtl3rtjgxd",
+                      "modifiedAt": "2024-11-21T04:00:59.122Z",
+                      "modifiedBy": "qqp8d07imsvjbtqtl3rtjgxd",
+                      "tx": {
+                        "id": "y6mqh9hmikgme3gy3a9lhe0c",
+                        "sourceId": "src_trmzc53x7z222ydtq57iu31m",
+                        "version": 1,
+                        "fieldVersions": {}
+                      }
+                    },
+                    {
+                      "id": "clxs8vayzrul7vmeyahbgyu0",
+                      "tenantId": "1sr6ut",
+                      "entityType": "page",
+                      "name": "Conitor suspendo aiunt.",
+                      "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Acidus advoco ventus sub cogito argentum attonbitus trans. Crapula bestia auxilium non sui desino amor barba. Vitiosus eligendi clementia usus demens conor auctor basium tolero.\\nSoluta temporibus aut labore. Depono ultio explicabo ascit. Utpote amplexus nihil aut concedo vel praesentium universe.\",\"styles\":{}}],\"children\":[]}]",
+                      "keywords": "pecus accusator cubitum",
+                      "status": "unpublished",
+                      "publicAccess": true,
+                      "parentId": null,
+                      "displayOrder": 11.43,
+                      "createdAt": "2024-10-29T08:46:20.790Z",
+                      "createdBy": "hg5ogh3yr2b2dbwf7b9eckaj",
+                      "modifiedAt": "2024-10-29T08:46:20.790Z",
+                      "modifiedBy": "hg5ogh3yr2b2dbwf7b9eckaj",
+                      "tx": {
+                        "id": "4bpmhsyauxcwuwjsrzvzac8q",
+                        "sourceId": "src_x1h9s6vzhgvcj0rs3xtuk03g",
+                        "version": 1,
+                        "fieldVersions": {}
+                      }
+                    }
+                  ],
+                  "total": 2
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/pages/{id}": {
+      "get": {
+        "security": [],
+        "operationId": "getPage",
+        "tags": [
+          "pages"
+        ],
+        "summary": "Get page",
+        "description": "Get a single *page* by ID. Cached using LRU - first request warms cache.",
+        "x-guard": [
+          "publicGuard"
+        ],
+        "x-rate-limiter": [],
+        "x-cache": [
+          "publicCache"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page"
+                },
+                "example": {
+                  "id": "co96vrmic3wbowmxzbqa1e9f",
+                  "tenantId": "ijllhz",
+                  "entityType": "page",
+                  "name": "Torrens adfectus.",
+                  "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Voluptates cornu tempus eaque universe volubilis conturbo. Sponte utpote crux pecco vulticulus cunctatio. Vallum ut adimpleo summa valde strenuus attonbitus.\\nMollitia vel cado vitae cibus dolores decet. Aptus accusamus praesentium cibus subito viscus vox nemo. Video tremo molestias charisma clam ipsa suscipit.\",\"styles\":{}}],\"children\":[]}]",
+                  "keywords": "solvo atrox tendo",
+                  "status": "unpublished",
+                  "publicAccess": true,
+                  "parentId": null,
+                  "displayOrder": 32.69,
+                  "createdAt": "2024-08-06T10:28:33.226Z",
+                  "createdBy": "0f0ak5vkrrl687pmkwpa1vju",
+                  "modifiedAt": "2024-08-06T10:28:33.226Z",
+                  "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju",
+                  "tx": {
+                    "id": "4tufkeho7gg1xwx21e333ngq",
+                    "sourceId": "src_ujcbpukfple60p8h3tnk9zpo",
+                    "version": 1,
+                    "fieldVersions": {}
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/{tenantId}/pages": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "createPages",
+        "tags": [
+          "pages"
+        ],
+        "summary": "Create pages",
+        "description": "Insert one or more new *pages*. Returns created pages and any rejected items.",
+        "x-guard": [
+          "authGuard",
+          "tenantGuard",
+          "sysAdminGuard"
+        ],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 24,
+              "pattern": "^[a-z0-9]+$"
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "tx": {
+                      "$ref": "#/components/schemas/TxRequest"
+                    }
+                  },
+                  "required": [
+                    "tx"
+                  ]
+                },
+                "minItems": 1,
+                "maxItems": 50
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Pages already created (idempotent)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Page"
+                      }
+                    },
+                    "rejectedItemIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Identifiers of items that could not be processed"
+                    },
+                    "rejectionReasons": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "description": "Map of rejected item ID to reason code"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "rejectedItemIds"
+                  ]
+                },
+                "example": {
+                  "data": [
+                    {
+                      "id": "wgpaj0cfyc7n2sjn5fpfkbrs",
+                      "tenantId": "lwtksu",
+                      "entityType": "page",
+                      "name": "Voluntarius contra.",
+                      "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Tergo crepusculum certe desparatus depromo. Dolor somnus vobis atavus tergiversatio tersus suadeo colo. Id abduco supplanto asporto.\\nCuratio xiphias auxilium teneo claudeo unde vulgo. Atavus vorax vergo deputo deprimo statim eos vulnero subito eligendi. Exercitationem somnus cattus cilicium textilis cervus alo tactus.\",\"styles\":{}}],\"children\":[]}]",
+                      "keywords": "confido colligo audio",
+                      "status": "unpublished",
+                      "publicAccess": true,
+                      "parentId": null,
+                      "displayOrder": 70.17,
+                      "createdAt": "2024-04-19T14:04:35.773Z",
+                      "createdBy": "kzmv5qbhdcqeiuvwlosan0fc",
+                      "modifiedAt": "2024-04-19T14:04:35.773Z",
+                      "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
+                      "tx": {
+                        "id": "akf4ovzm1ne3h55lgj31d63n",
+                        "sourceId": "src_9apx99a5auvr5cyj5s37irnj",
+                        "version": 1,
+                        "fieldVersions": {}
+                      }
+                    },
+                    {
+                      "id": "74l7581dwpxxbqdej8622zpg",
+                      "tenantId": "o54qw5",
+                      "entityType": "page",
+                      "name": "Taedium spargo cetera.",
+                      "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Vehemens deprecator ventus ascit denique tum candidus curvo perspiciatis defendo. Carpo verecundia cometes. Sortitus colligo ceno terra cado temptatio carmen arx sequi cicuta.\\nAttollo autem adipisci vinitor comminor odit. Virga aptus corrupti utpote. Subseco vomica auxilium ascit cuppedia abbas amo patior credo tenus.\",\"styles\":{}}],\"children\":[]}]",
+                      "keywords": "aestus degero cicuta",
+                      "status": "unpublished",
+                      "publicAccess": true,
+                      "parentId": null,
+                      "displayOrder": 14.28,
+                      "createdAt": "2024-02-25T13:01:35.301Z",
+                      "createdBy": "p3t0ygxx0aa83en3sk1fs1we",
+                      "modifiedAt": "2024-02-25T13:01:35.301Z",
+                      "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
+                      "tx": {
+                        "id": "4hj92yzr7v1itpc9wztvbcy2",
+                        "sourceId": "src_1q04oq81k5rbzt4yq63pob5r",
+                        "version": 1,
+                        "fieldVersions": {}
+                      }
+                    }
+                  ],
+                  "rejectedItemIds": []
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Pages created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Page"
+                      }
+                    },
+                    "rejectedItemIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Identifiers of items that could not be processed"
+                    },
+                    "rejectionReasons": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "description": "Map of rejected item ID to reason code"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "rejectedItemIds"
+                  ]
+                },
+                "example": {
+                  "data": [
+                    {
+                      "id": "wgpaj0cfyc7n2sjn5fpfkbrs",
+                      "tenantId": "lwtksu",
+                      "entityType": "page",
+                      "name": "Voluntarius contra.",
+                      "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Tergo crepusculum certe desparatus depromo. Dolor somnus vobis atavus tergiversatio tersus suadeo colo. Id abduco supplanto asporto.\\nCuratio xiphias auxilium teneo claudeo unde vulgo. Atavus vorax vergo deputo deprimo statim eos vulnero subito eligendi. Exercitationem somnus cattus cilicium textilis cervus alo tactus.\",\"styles\":{}}],\"children\":[]}]",
+                      "keywords": "confido colligo audio",
+                      "status": "unpublished",
+                      "publicAccess": true,
+                      "parentId": null,
+                      "displayOrder": 70.17,
+                      "createdAt": "2024-04-19T14:04:35.773Z",
+                      "createdBy": "kzmv5qbhdcqeiuvwlosan0fc",
+                      "modifiedAt": "2024-04-19T14:04:35.773Z",
+                      "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
+                      "tx": {
+                        "id": "akf4ovzm1ne3h55lgj31d63n",
+                        "sourceId": "src_9apx99a5auvr5cyj5s37irnj",
+                        "version": 1,
+                        "fieldVersions": {}
+                      }
+                    },
+                    {
+                      "id": "74l7581dwpxxbqdej8622zpg",
+                      "tenantId": "o54qw5",
+                      "entityType": "page",
+                      "name": "Taedium spargo cetera.",
+                      "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Vehemens deprecator ventus ascit denique tum candidus curvo perspiciatis defendo. Carpo verecundia cometes. Sortitus colligo ceno terra cado temptatio carmen arx sequi cicuta.\\nAttollo autem adipisci vinitor comminor odit. Virga aptus corrupti utpote. Subseco vomica auxilium ascit cuppedia abbas amo patior credo tenus.\",\"styles\":{}}],\"children\":[]}]",
+                      "keywords": "aestus degero cicuta",
+                      "status": "unpublished",
+                      "publicAccess": true,
+                      "parentId": null,
+                      "displayOrder": 14.28,
+                      "createdAt": "2024-02-25T13:01:35.301Z",
+                      "createdBy": "p3t0ygxx0aa83en3sk1fs1we",
+                      "modifiedAt": "2024-02-25T13:01:35.301Z",
+                      "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
+                      "tx": {
+                        "id": "4hj92yzr7v1itpc9wztvbcy2",
+                        "sourceId": "src_1q04oq81k5rbzt4yq63pob5r",
+                        "version": 1,
+                        "fieldVersions": {}
+                      }
+                    }
+                  ],
+                  "rejectedItemIds": []
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      },
+      "delete": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "deletePages",
+        "tags": [
+          "pages"
+        ],
+        "summary": "Delete pages",
+        "description": "Delete one or more *pages* by ID.",
+        "x-guard": [
+          "authGuard",
+          "tenantGuard",
+          "sysAdminGuard"
+        ],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 24,
+              "pattern": "^[a-z0-9]+$"
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "minItems": 1,
+                    "maxItems": 50
+                  }
+                },
+                "required": [
+                  "ids"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Page(s) deleted"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/{tenantId}/pages/{id}": {
+      "put": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "updatePage",
+        "tags": [
+          "pages"
+        ],
+        "summary": "Update page",
+        "description": "Update a single *page* by ID.",
+        "x-guard": [
+          "authGuard",
+          "tenantGuard",
+          "sysAdminGuard"
+        ],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 24,
+              "pattern": "^[a-z0-9]+$"
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "keywords": {
+                    "type": "string"
+                  },
+                  "displayOrder": {
+                    "type": "number",
+                    "minimum": -140737488355328,
+                    "maximum": 140737488355327
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "unpublished",
+                      "published",
+                      "archived"
+                    ],
+                    "default": "unpublished"
+                  },
+                  "parentId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "tx": {
+                    "$ref": "#/components/schemas/TxRequest"
+                  }
+                },
+                "required": [
+                  "tx"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Page updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page"
+                },
+                "example": {
+                  "id": "co96vrmic3wbowmxzbqa1e9f",
+                  "tenantId": "ijllhz",
+                  "entityType": "page",
+                  "name": "Torrens adfectus.",
+                  "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Voluptates cornu tempus eaque universe volubilis conturbo. Sponte utpote crux pecco vulticulus cunctatio. Vallum ut adimpleo summa valde strenuus attonbitus.\\nMollitia vel cado vitae cibus dolores decet. Aptus accusamus praesentium cibus subito viscus vox nemo. Video tremo molestias charisma clam ipsa suscipit.\",\"styles\":{}}],\"children\":[]}]",
+                  "keywords": "solvo atrox tendo",
+                  "status": "unpublished",
+                  "publicAccess": true,
+                  "parentId": null,
+                  "displayOrder": 32.69,
+                  "createdAt": "2024-08-06T10:28:33.226Z",
+                  "createdBy": "0f0ak5vkrrl687pmkwpa1vju",
+                  "modifiedAt": "2024-08-06T10:28:33.226Z",
+                  "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju",
+                  "tx": {
+                    "id": "4tufkeho7gg1xwx21e333ngq",
+                    "sourceId": "src_ujcbpukfple60p8h3tnk9zpo",
+                    "version": 1,
+                    "fieldVersions": {}
+                  }
                 }
               }
             }

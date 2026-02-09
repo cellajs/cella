@@ -1,7 +1,7 @@
 import { count, eq, type SelectedFields, type SQL, sql } from 'drizzle-orm';
 import type { PgColumn, SubqueryWithSelection } from 'drizzle-orm/pg-core';
 import { appConfig, type ContextEntityType, hierarchy } from 'shared';
-import { db } from '#/db/db';
+import { unsafeInternalDb as db } from '#/db/db';
 import { organizationsTable } from '#/db/schema/organizations';
 import { entityTables } from '#/table-config';
 

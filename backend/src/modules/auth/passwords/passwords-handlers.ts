@@ -2,7 +2,7 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { and, eq } from 'drizzle-orm';
 import i18n from 'i18next';
 import { appConfig } from 'shared';
-import { db } from '#/db/db';
+import { unsafeInternalDb as db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { passwordsTable } from '#/db/schema/passwords';
 import { tokensTable } from '#/db/schema/tokens';

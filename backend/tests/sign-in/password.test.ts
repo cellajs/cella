@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import { testClient } from 'hono/testing';
 import { appConfig } from 'shared';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { db } from '#/db/db';
+import { unsafeInternalDb as db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { passwordsTable } from '#/db/schema/passwords';
 import { usersTable } from '#/db/schema/users';

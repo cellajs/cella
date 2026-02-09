@@ -1,4 +1,4 @@
-import { db } from '#/db/db';
+import { unsafeInternalDb as db } from '#/db/db';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { tokensTable } from '#/db/schema/tokens';
 import type { UserModel } from '#/db/schema/users';

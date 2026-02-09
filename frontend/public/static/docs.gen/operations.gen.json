@@ -741,196 +741,6 @@
     }
   },
   {
-    "id": "createOrganizations",
-    "hash": "tag/organizations/POST/organizations",
-    "method": "post",
-    "path": "/organizations",
-    "tags": ["organizations"],
-    "summary": "Create organizations",
-    "description": "Creates one or more new *organizations*.",
-    "deprecated": false,
-    "hasParams": false,
-    "hasRequestBody": true,
-    "hasResponseBody": true,
-    "hasExample": true,
-    "extensions": {
-      "xGuard": ["authGuard"],
-      "xRateLimiter": [],
-      "xCache": []
-    }
-  },
-  {
-    "id": "getOrganizations",
-    "hash": "tag/organizations/GET/organizations",
-    "method": "get",
-    "path": "/organizations",
-    "tags": ["organizations"],
-    "summary": "Get list of organizations",
-    "description": "Returns a list of *organizations*.",
-    "deprecated": false,
-    "hasParams": true,
-    "hasRequestBody": false,
-    "hasResponseBody": true,
-    "hasExample": true,
-    "extensions": {
-      "xGuard": ["authGuard"],
-      "xRateLimiter": [],
-      "xCache": []
-    }
-  },
-  {
-    "id": "getOrganization",
-    "hash": "tag/organizations/GET/{tenantId}/organizations/{idOrSlug}",
-    "method": "get",
-    "path": "/{tenantId}/organizations/{idOrSlug}",
-    "tags": ["organizations"],
-    "summary": "Get organization",
-    "description": "Retrieves an *organization* by ID or slug within a tenant.",
-    "deprecated": false,
-    "hasParams": true,
-    "hasRequestBody": false,
-    "hasResponseBody": true,
-    "hasExample": true,
-    "extensions": {
-      "xGuard": ["authGuard"],
-      "xRateLimiter": [],
-      "xCache": []
-    }
-  },
-  {
-    "id": "updateOrganization",
-    "hash": "tag/organizations/PUT/{tenantId}/organizations/{id}",
-    "method": "put",
-    "path": "/{tenantId}/organizations/{id}",
-    "tags": ["organizations"],
-    "summary": "Update organization",
-    "description": "Updates an *organization* within a tenant.",
-    "deprecated": false,
-    "hasParams": true,
-    "hasRequestBody": true,
-    "hasResponseBody": true,
-    "hasExample": true,
-    "extensions": {
-      "xGuard": ["authGuard"],
-      "xRateLimiter": [],
-      "xCache": []
-    }
-  },
-  {
-    "id": "deleteOrganizations",
-    "hash": "tag/organizations/DELETE/{tenantId}/organizations",
-    "method": "delete",
-    "path": "/{tenantId}/organizations",
-    "tags": ["organizations"],
-    "summary": "Delete organizations",
-    "description": "Deletes one or more *organizations* by ID within a tenant.",
-    "deprecated": false,
-    "hasParams": true,
-    "hasRequestBody": true,
-    "hasResponseBody": true,
-    "hasExample": false,
-    "extensions": {
-      "xGuard": ["authGuard"],
-      "xRateLimiter": [],
-      "xCache": []
-    }
-  },
-  {
-    "id": "getPages",
-    "hash": "tag/pages/GET/pages",
-    "method": "get",
-    "path": "/pages",
-    "tags": ["pages"],
-    "summary": "Get pages",
-    "description": "Get all matching *pages*.",
-    "deprecated": false,
-    "hasParams": true,
-    "hasRequestBody": false,
-    "hasResponseBody": true,
-    "hasExample": true,
-    "extensions": {
-      "xGuard": ["publicGuard"],
-      "xRateLimiter": [],
-      "xCache": []
-    }
-  },
-  {
-    "id": "getPage",
-    "hash": "tag/pages/GET/pages/{id}",
-    "method": "get",
-    "path": "/pages/{id}",
-    "tags": ["pages"],
-    "summary": "Get page",
-    "description": "Get a single *page* by ID. Cached using LRU - first request warms cache.",
-    "deprecated": false,
-    "hasParams": true,
-    "hasRequestBody": false,
-    "hasResponseBody": true,
-    "hasExample": true,
-    "extensions": {
-      "xGuard": ["publicGuard"],
-      "xRateLimiter": [],
-      "xCache": ["publicCache"]
-    }
-  },
-  {
-    "id": "createPages",
-    "hash": "tag/pages/POST/{tenantId}/pages",
-    "method": "post",
-    "path": "/{tenantId}/pages",
-    "tags": ["pages"],
-    "summary": "Create pages",
-    "description": "Insert one or more new *pages*. Returns created pages and any rejected items.",
-    "deprecated": false,
-    "hasParams": true,
-    "hasRequestBody": true,
-    "hasResponseBody": true,
-    "hasExample": true,
-    "extensions": {
-      "xGuard": ["authGuard", "tenantGuard", "sysAdminGuard"],
-      "xRateLimiter": [],
-      "xCache": []
-    }
-  },
-  {
-    "id": "deletePages",
-    "hash": "tag/pages/DELETE/{tenantId}/pages",
-    "method": "delete",
-    "path": "/{tenantId}/pages",
-    "tags": ["pages"],
-    "summary": "Delete pages",
-    "description": "Delete one or more *pages* by ID.",
-    "deprecated": false,
-    "hasParams": true,
-    "hasRequestBody": true,
-    "hasResponseBody": false,
-    "hasExample": false,
-    "extensions": {
-      "xGuard": ["authGuard", "tenantGuard", "sysAdminGuard"],
-      "xRateLimiter": [],
-      "xCache": []
-    }
-  },
-  {
-    "id": "updatePage",
-    "hash": "tag/pages/PUT/{tenantId}/pages/{id}",
-    "method": "put",
-    "path": "/{tenantId}/pages/{id}",
-    "tags": ["pages"],
-    "summary": "Update page",
-    "description": "Update a single *page* by ID.",
-    "deprecated": false,
-    "hasParams": true,
-    "hasRequestBody": true,
-    "hasResponseBody": true,
-    "hasExample": true,
-    "extensions": {
-      "xGuard": ["authGuard", "tenantGuard", "sysAdminGuard"],
-      "xRateLimiter": [],
-      "xCache": []
-    }
-  },
-  {
     "id": "checkSlug",
     "hash": "tag/entities/POST/entities/check-slug",
     "method": "post",
@@ -1344,6 +1154,196 @@
     "hasExample": false,
     "extensions": {
       "xGuard": ["authGuard", "sysAdminGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    }
+  },
+  {
+    "id": "createOrganizations",
+    "hash": "tag/organizations/POST/organizations",
+    "method": "post",
+    "path": "/organizations",
+    "tags": ["organizations"],
+    "summary": "Create organizations",
+    "description": "Creates one or more new *organizations*.",
+    "deprecated": false,
+    "hasParams": false,
+    "hasRequestBody": true,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["authGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    }
+  },
+  {
+    "id": "getOrganizations",
+    "hash": "tag/organizations/GET/organizations",
+    "method": "get",
+    "path": "/organizations",
+    "tags": ["organizations"],
+    "summary": "Get list of organizations",
+    "description": "Returns a list of *organizations*.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["authGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    }
+  },
+  {
+    "id": "getOrganization",
+    "hash": "tag/organizations/GET/{tenantId}/organizations/{idOrSlug}",
+    "method": "get",
+    "path": "/{tenantId}/organizations/{idOrSlug}",
+    "tags": ["organizations"],
+    "summary": "Get organization",
+    "description": "Retrieves an *organization* by ID or slug within a tenant.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["authGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    }
+  },
+  {
+    "id": "updateOrganization",
+    "hash": "tag/organizations/PUT/{tenantId}/organizations/{id}",
+    "method": "put",
+    "path": "/{tenantId}/organizations/{id}",
+    "tags": ["organizations"],
+    "summary": "Update organization",
+    "description": "Updates an *organization* within a tenant.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": true,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["authGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    }
+  },
+  {
+    "id": "deleteOrganizations",
+    "hash": "tag/organizations/DELETE/{tenantId}/organizations",
+    "method": "delete",
+    "path": "/{tenantId}/organizations",
+    "tags": ["organizations"],
+    "summary": "Delete organizations",
+    "description": "Deletes one or more *organizations* by ID within a tenant.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": true,
+    "hasResponseBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["authGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    }
+  },
+  {
+    "id": "getPages",
+    "hash": "tag/pages/GET/pages",
+    "method": "get",
+    "path": "/pages",
+    "tags": ["pages"],
+    "summary": "Get pages",
+    "description": "Get all matching *pages*.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["publicGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    }
+  },
+  {
+    "id": "getPage",
+    "hash": "tag/pages/GET/pages/{id}",
+    "method": "get",
+    "path": "/pages/{id}",
+    "tags": ["pages"],
+    "summary": "Get page",
+    "description": "Get a single *page* by ID. Cached using LRU - first request warms cache.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["publicGuard"],
+      "xRateLimiter": [],
+      "xCache": ["publicCache"]
+    }
+  },
+  {
+    "id": "createPages",
+    "hash": "tag/pages/POST/{tenantId}/pages",
+    "method": "post",
+    "path": "/{tenantId}/pages",
+    "tags": ["pages"],
+    "summary": "Create pages",
+    "description": "Insert one or more new *pages*. Returns created pages and any rejected items.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": true,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["authGuard", "tenantGuard", "sysAdminGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    }
+  },
+  {
+    "id": "deletePages",
+    "hash": "tag/pages/DELETE/{tenantId}/pages",
+    "method": "delete",
+    "path": "/{tenantId}/pages",
+    "tags": ["pages"],
+    "summary": "Delete pages",
+    "description": "Delete one or more *pages* by ID.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": true,
+    "hasResponseBody": false,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["authGuard", "tenantGuard", "sysAdminGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    }
+  },
+  {
+    "id": "updatePage",
+    "hash": "tag/pages/PUT/{tenantId}/pages/{id}",
+    "method": "put",
+    "path": "/{tenantId}/pages/{id}",
+    "tags": ["pages"],
+    "summary": "Update page",
+    "description": "Update a single *page* by ID.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": true,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["authGuard", "tenantGuard", "sysAdminGuard"],
       "xRateLimiter": [],
       "xCache": []
     }

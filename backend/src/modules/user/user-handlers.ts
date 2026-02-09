@@ -130,7 +130,7 @@ const userRouteHandlers = app
     // TODO we should scan codebase for usage of resolveEntity in handlers directy.
     // Perhaps we would do well to make it explicitly internal use only
     // Since the permission wrapped is preferred getValidEntity
-    const targetUser = await resolveEntity('user', idOrSlug);
+    const targetUser = await resolveEntity('user', idOrSlug, db);
 
     if (!targetUser) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { user: idOrSlug } });
 

@@ -20,7 +20,13 @@ export const dbConfig: DrizzleConfig = {
 export const migrateConfig = { migrationsFolder: 'drizzle', migrationsSchema: 'drizzle-backend' };
 
 // biome-ignore lint/suspicious/noExplicitAny: Can be two different types
-type DB = PgAsyncDatabase<any> & { $client: PGlite | NodePgClient };
+export type DB = PgAsyncDatabase<any> & { $client: PGlite | NodePgClient };
+
+/** Transaction type inferred from db.transaction callback */
+export type Tx = Parameters<Parameters<DB['transaction']>[0]>[0];
+
+/** Union type for functions that accept either raw db or transaction */
+export type DbOrTx = DB | Tx;
 
 /** Helper to create a Postgres connection with standard config. */
 const createPgConnection = (connectionString: string) =>
@@ -60,9 +66,14 @@ const connections = initConnections();
 
 /**
  * Primary database client (runtime_role, subject to RLS).
- * Public access is handled via session variables and RLS policies, not a separate connection.
+ *
+ * ⚠️ UNSAFE for direct use in handlers: Use ctx.var.db instead, which is set
+ * by guard middleware with proper RLS context. Direct usage bypasses tenant isolation.
+ *
+ * Legitimate uses: tenant-context.ts (creates RLS transactions), scripts, tests, seeds.
+ * The 'unsafeInternal' prefix makes it greppable for security audits.
  */
-export const db: DB = connections.db;
+export const unsafeInternalDb: DB = connections.db;
 
 /**
  * Admin database connection for migrations only.

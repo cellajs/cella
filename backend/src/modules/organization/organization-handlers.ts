@@ -1,7 +1,7 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { and, count, eq, getColumns, ilike, inArray, type SQL } from 'drizzle-orm';
 import { appConfig, hierarchy, recordFromKeys, roles } from 'shared';
-import { db, unsafeInternalAdminDb } from '#/db/db';
+import { unsafeInternalDb as db, unsafeInternalAdminDb } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 import { tenantsTable } from '#/db/schema/tenants';
@@ -34,6 +34,8 @@ const organizationRouteHandlers = app
 
     const user = ctx.var.user;
     const memberships = ctx.var.memberships;
+    const userSystemRole = ctx.var.userSystemRole;
+    const isSystemAdmin = userSystemRole === 'admin';
 
     // Count user's existing created orgs
     const createdOrgsCount = memberships.reduce((cnt, m) => {
@@ -43,12 +45,12 @@ const organizationRouteHandlers = app
     // Organization restriction is hardcoded to max 5 for now
     const availableSlots = 5 - createdOrgsCount;
 
-    // No slots
-    if (availableSlots <= 0) throw new AppError(403, 'restrict_by_app', 'warn', { entityType: 'organization' });
+    // No slots - system admins can bypass this restriction
+    if (!isSystemAdmin && availableSlots <= 0) throw new AppError(403, 'restrict_by_app', 'warn', { entityType: 'organization' });
 
     // Check slug availability in database
     const slugs = items.map((item) => item.slug);
-    const slugAvailability = slugs.length > 0 ? await checkSlugsAvailable(slugs) : new Map();
+    const slugAvailability = slugs.length > 0 ? await checkSlugsAvailable(slugs, db) : new Map();
 
     // Filter by slug availability, track rejections
     const slugFiltered = filterWithRejection(items, (item) => slugAvailability.get(item.slug) === true, 'slug_exists');
@@ -361,7 +363,7 @@ const organizationRouteHandlers = app
     const slug = updatedFields.slug;
 
     if (slug && slug !== organization.slug) {
-      const slugAvailable = await checkSlugAvailable(slug);
+      const slugAvailable = await checkSlugAvailable(slug, db);
       if (!slugAvailable)
         throw new AppError(409, 'slug_exists', 'warn', { entityType: 'organization', meta: { slug } });
     }

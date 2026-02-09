@@ -1,6 +1,6 @@
 import { and, desc, eq, gt, inArray, or } from 'drizzle-orm';
 import { appConfig, type ContextEntityType, isProductEntity } from 'shared';
-import { db } from '#/db/db';
+import { unsafeInternalDb as db } from '#/db/db';
 import { activitiesTable } from '#/db/schema/activities';
 import type { StreamNotification } from '#/schemas';
 import { type ActivityEventWithEntity, getTypedEntity } from '#/sync/activity-bus';

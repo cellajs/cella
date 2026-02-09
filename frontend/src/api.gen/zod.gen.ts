@@ -259,6 +259,35 @@ export const zUploadToken = z.object({
   }),
 });
 
+export const zTenantStatus = z.enum(['active', 'suspended', 'archived']);
+
+export const zTenant = z.object({
+  id: z.string().max(24),
+  name: z.string(),
+  status: zTenantStatus,
+  createdAt: z.string(),
+  modifiedAt: z.union([z.string(), z.null()]),
+});
+
+export const zCreateTenantBody = z.object({
+  name: z.string().min(1).max(255),
+  status: z.optional(zTenantStatus),
+});
+
+export const zUpdateTenantBody = z.object({
+  name: z.optional(z.string().min(1).max(255)),
+  status: z.optional(zTenantStatus),
+});
+
+export const zRequest = z.object({
+  createdAt: z.string(),
+  id: z.string(),
+  message: z.union([z.string(), z.null()]),
+  email: z.string(),
+  type: z.enum(['waitlist', 'newsletter', 'contact']),
+  wasInvited: z.boolean(),
+});
+
 export const zOrganizationIncluded = z.object({
   membership: z.optional(zMembershipBase),
   counts: z.optional(
@@ -337,35 +366,6 @@ export const zTxRequest = z.object({
   id: z.string().max(32),
   sourceId: z.string().max(64),
   baseVersion: z.int().gte(0),
-});
-
-export const zTenantStatus = z.enum(['active', 'suspended', 'archived']);
-
-export const zTenant = z.object({
-  id: z.string().max(24),
-  name: z.string(),
-  status: zTenantStatus,
-  createdAt: z.string(),
-  modifiedAt: z.union([z.string(), z.null()]),
-});
-
-export const zCreateTenantBody = z.object({
-  name: z.string().min(1).max(255),
-  status: z.optional(zTenantStatus),
-});
-
-export const zUpdateTenantBody = z.object({
-  name: z.optional(z.string().min(1).max(255)),
-  status: z.optional(zTenantStatus),
-});
-
-export const zRequest = z.object({
-  createdAt: z.string(),
-  id: z.string(),
-  message: z.union([z.string(), z.null()]),
-  email: z.string(),
-  type: z.enum(['waitlist', 'newsletter', 'contact']),
-  wasInvited: z.boolean(),
 });
 
 export const zAttachment = z.object({
@@ -982,251 +982,6 @@ export const zGetMyMembershipsResponse = z.object({
   items: z.array(zMembershipBase),
 });
 
-export const zGetOrganizationsData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.optional(
-    z.object({
-      q: z.optional(z.string()),
-      sort: z.optional(z.enum(['id', 'name', 'createdAt'])),
-      order: z.optional(z.enum(['asc', 'desc'])),
-      offset: z.optional(z.string()),
-      limit: z.optional(z.string()),
-      userId: z.optional(z.string()),
-      role: z.optional(z.enum(['admin', 'member'])),
-      excludeArchived: z.optional(z.enum(['true', 'false'])),
-      include: z.optional(z.string()),
-    }),
-  ),
-});
-
-/**
- * Organizations
- */
-export const zGetOrganizationsResponse = z.object({
-  items: z.array(zOrganization),
-  total: z.number(),
-});
-
-export const zCreateOrganizationsData = z.object({
-  body: z
-    .array(
-      z.object({
-        id: z.string().regex(/^temp-/),
-        name: z.string().min(2).max(100),
-        slug: z.string().min(2).max(100),
-      }),
-    )
-    .min(1)
-    .max(10),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
-});
-
-/**
- * Organizations were created
- */
-export const zCreateOrganizationsResponse = z.object({
-  data: z.array(
-    zOrganization.and(
-      z.object({
-        included: zOrganizationIncluded.and(z.record(z.string(), z.unknown())),
-      }),
-    ),
-  ),
-  rejectedItemIds: z.array(z.string()),
-  rejectionReasons: z.optional(z.record(z.string(), z.string())),
-});
-
-export const zGetOrganizationData = z.object({
-  body: z.optional(z.never()),
-  path: z.object({
-    tenantId: z
-      .string()
-      .max(24)
-      .regex(/^[a-z0-9]+$/),
-    idOrSlug: z.string(),
-  }),
-  query: z.optional(z.never()),
-});
-
-/**
- * Organization
- */
-export const zGetOrganizationResponse = zOrganization;
-
-export const zUpdateOrganizationData = z.object({
-  body: z.optional(
-    z.object({
-      slug: z.optional(z.string().min(2).max(100)),
-      name: z.optional(z.string().min(2).max(100)),
-      shortName: z.optional(z.union([z.string().min(2).max(100), z.null()])),
-      country: z.optional(z.union([z.string(), z.null()])),
-      timezone: z.optional(z.union([z.string(), z.null()])),
-      defaultLanguage: z.optional(z.enum(['en', 'nl'])),
-      languages: z.optional(z.array(z.enum(['en', 'nl'])).min(1)),
-      notificationEmail: z.optional(z.union([z.string(), z.null()])),
-      emailDomains: z.optional(z.array(z.string().min(4).max(100))),
-      color: z.optional(z.union([z.string(), z.null()])),
-      thumbnailUrl: z.optional(z.union([z.string(), z.null()])),
-      logoUrl: z.optional(z.union([z.string(), z.null()])),
-      bannerUrl: z.optional(z.union([z.string(), z.null()])),
-      websiteUrl: z.optional(z.union([z.string(), z.null()])),
-      welcomeText: z.optional(z.union([z.string(), z.null()])),
-      authStrategies: z.optional(
-        z.array(z.enum(['github', 'google', 'microsoft', 'password', 'passkey', 'totp', 'email'])),
-      ),
-      chatSupport: z.optional(z.boolean()),
-    }),
-  ),
-  path: z.object({
-    tenantId: z
-      .string()
-      .max(24)
-      .regex(/^[a-z0-9]+$/),
-    id: z.string(),
-  }),
-  query: z.optional(z.never()),
-});
-
-/**
- * Organization was updated
- */
-export const zUpdateOrganizationResponse = zOrganization;
-
-export const zDeleteOrganizationsData = z.object({
-  body: z.object({
-    ids: z.array(z.string()).min(1).max(50),
-  }),
-  path: z.object({
-    tenantId: z
-      .string()
-      .max(24)
-      .regex(/^[a-z0-9]+$/),
-  }),
-  query: z.optional(z.never()),
-});
-
-/**
- * Success
- */
-export const zDeleteOrganizationsResponse = z.object({
-  data: z.array(z.unknown()),
-  rejectedItemIds: z.array(z.string()),
-  rejectionReasons: z.optional(z.record(z.string(), z.string())),
-});
-
-export const zGetPagesData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.optional(
-    z.object({
-      q: z.optional(z.string()),
-      sort: z.optional(z.enum(['name', 'status', 'createdAt'])),
-      order: z.optional(z.enum(['asc', 'desc'])),
-      offset: z.optional(z.string()),
-      limit: z.optional(z.string()),
-      modifiedAfter: z.optional(z.iso.datetime()),
-    }),
-  ),
-});
-
-/**
- * Pages
- */
-export const zGetPagesResponse = z.object({
-  items: z.array(zPage),
-  total: z.number(),
-});
-
-export const zGetPageData = z.object({
-  body: z.optional(z.never()),
-  path: z.object({
-    id: z.string(),
-  }),
-  query: z.optional(z.never()),
-});
-
-/**
- * Page
- */
-export const zGetPageResponse = zPage;
-
-export const zDeletePagesData = z.object({
-  body: z.object({
-    ids: z.array(z.string()).min(1).max(50),
-  }),
-  path: z.object({
-    tenantId: z
-      .string()
-      .max(24)
-      .regex(/^[a-z0-9]+$/),
-  }),
-  query: z.optional(z.never()),
-});
-
-/**
- * Page(s) deleted
- */
-export const zDeletePagesResponse = z.void();
-
-export const zCreatePagesData = z.object({
-  body: z
-    .array(
-      z.object({
-        name: z.optional(z.string()),
-        tx: zTxRequest,
-      }),
-    )
-    .min(1)
-    .max(50),
-  path: z.object({
-    tenantId: z
-      .string()
-      .max(24)
-      .regex(/^[a-z0-9]+$/),
-  }),
-  query: z.optional(z.never()),
-});
-
-export const zCreatePagesResponse = z.union([
-  z.object({
-    data: z.array(zPage),
-    rejectedItemIds: z.array(z.string()),
-    rejectionReasons: z.optional(z.record(z.string(), z.string())),
-  }),
-  z.object({
-    data: z.array(zPage),
-    rejectedItemIds: z.array(z.string()),
-    rejectionReasons: z.optional(z.record(z.string(), z.string())),
-  }),
-]);
-
-export const zUpdatePageData = z.object({
-  body: z.object({
-    name: z.optional(z.string()),
-    description: z.optional(z.union([z.string(), z.null()])),
-    keywords: z.optional(z.string()),
-    displayOrder: z.optional(z.number().gte(-140737488355328).lte(140737488355327)),
-    status: z.optional(z.enum(['unpublished', 'published', 'archived'])),
-    parentId: z.optional(z.union([z.string(), z.null()])),
-    tx: zTxRequest,
-  }),
-  path: z.object({
-    tenantId: z
-      .string()
-      .max(24)
-      .regex(/^[a-z0-9]+$/),
-    id: z.string(),
-  }),
-  query: z.optional(z.never()),
-});
-
-/**
- * Page updated
- */
-export const zUpdatePageResponse = zPage;
-
 export const zCheckSlugData = z.object({
   body: z.object({
     slug: z.string(),
@@ -1642,6 +1397,251 @@ export const zGetSyncMetricsResponse = z.object({
   avgDurationByName: z.record(z.string(), z.number()),
   errorCount: z.number(),
 });
+
+export const zGetOrganizationsData = z.object({
+  body: z.optional(z.never()),
+  path: z.optional(z.never()),
+  query: z.optional(
+    z.object({
+      q: z.optional(z.string()),
+      sort: z.optional(z.enum(['id', 'name', 'createdAt'])),
+      order: z.optional(z.enum(['asc', 'desc'])),
+      offset: z.optional(z.string()),
+      limit: z.optional(z.string()),
+      userId: z.optional(z.string()),
+      role: z.optional(z.enum(['admin', 'member'])),
+      excludeArchived: z.optional(z.enum(['true', 'false'])),
+      include: z.optional(z.string()),
+    }),
+  ),
+});
+
+/**
+ * Organizations
+ */
+export const zGetOrganizationsResponse = z.object({
+  items: z.array(zOrganization),
+  total: z.number(),
+});
+
+export const zCreateOrganizationsData = z.object({
+  body: z
+    .array(
+      z.object({
+        id: z.string().regex(/^temp-/),
+        name: z.string().min(2).max(100),
+        slug: z.string().min(2).max(100),
+      }),
+    )
+    .min(1)
+    .max(10),
+  path: z.optional(z.never()),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Organizations were created
+ */
+export const zCreateOrganizationsResponse = z.object({
+  data: z.array(
+    zOrganization.and(
+      z.object({
+        included: zOrganizationIncluded.and(z.record(z.string(), z.unknown())),
+      }),
+    ),
+  ),
+  rejectedItemIds: z.array(z.string()),
+  rejectionReasons: z.optional(z.record(z.string(), z.string())),
+});
+
+export const zGetOrganizationData = z.object({
+  body: z.optional(z.never()),
+  path: z.object({
+    tenantId: z
+      .string()
+      .max(24)
+      .regex(/^[a-z0-9]+$/),
+    idOrSlug: z.string(),
+  }),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Organization
+ */
+export const zGetOrganizationResponse = zOrganization;
+
+export const zUpdateOrganizationData = z.object({
+  body: z.optional(
+    z.object({
+      slug: z.optional(z.string().min(2).max(100)),
+      name: z.optional(z.string().min(2).max(100)),
+      shortName: z.optional(z.union([z.string().min(2).max(100), z.null()])),
+      country: z.optional(z.union([z.string(), z.null()])),
+      timezone: z.optional(z.union([z.string(), z.null()])),
+      defaultLanguage: z.optional(z.enum(['en', 'nl'])),
+      languages: z.optional(z.array(z.enum(['en', 'nl'])).min(1)),
+      notificationEmail: z.optional(z.union([z.string(), z.null()])),
+      emailDomains: z.optional(z.array(z.string().min(4).max(100))),
+      color: z.optional(z.union([z.string(), z.null()])),
+      thumbnailUrl: z.optional(z.union([z.string(), z.null()])),
+      logoUrl: z.optional(z.union([z.string(), z.null()])),
+      bannerUrl: z.optional(z.union([z.string(), z.null()])),
+      websiteUrl: z.optional(z.union([z.string(), z.null()])),
+      welcomeText: z.optional(z.union([z.string(), z.null()])),
+      authStrategies: z.optional(
+        z.array(z.enum(['github', 'google', 'microsoft', 'password', 'passkey', 'totp', 'email'])),
+      ),
+      chatSupport: z.optional(z.boolean()),
+    }),
+  ),
+  path: z.object({
+    tenantId: z
+      .string()
+      .max(24)
+      .regex(/^[a-z0-9]+$/),
+    id: z.string(),
+  }),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Organization was updated
+ */
+export const zUpdateOrganizationResponse = zOrganization;
+
+export const zDeleteOrganizationsData = z.object({
+  body: z.object({
+    ids: z.array(z.string()).min(1).max(50),
+  }),
+  path: z.object({
+    tenantId: z
+      .string()
+      .max(24)
+      .regex(/^[a-z0-9]+$/),
+  }),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Success
+ */
+export const zDeleteOrganizationsResponse = z.object({
+  data: z.array(z.unknown()),
+  rejectedItemIds: z.array(z.string()),
+  rejectionReasons: z.optional(z.record(z.string(), z.string())),
+});
+
+export const zGetPagesData = z.object({
+  body: z.optional(z.never()),
+  path: z.optional(z.never()),
+  query: z.optional(
+    z.object({
+      q: z.optional(z.string()),
+      sort: z.optional(z.enum(['name', 'status', 'createdAt'])),
+      order: z.optional(z.enum(['asc', 'desc'])),
+      offset: z.optional(z.string()),
+      limit: z.optional(z.string()),
+      modifiedAfter: z.optional(z.iso.datetime()),
+    }),
+  ),
+});
+
+/**
+ * Pages
+ */
+export const zGetPagesResponse = z.object({
+  items: z.array(zPage),
+  total: z.number(),
+});
+
+export const zGetPageData = z.object({
+  body: z.optional(z.never()),
+  path: z.object({
+    id: z.string(),
+  }),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Page
+ */
+export const zGetPageResponse = zPage;
+
+export const zDeletePagesData = z.object({
+  body: z.object({
+    ids: z.array(z.string()).min(1).max(50),
+  }),
+  path: z.object({
+    tenantId: z
+      .string()
+      .max(24)
+      .regex(/^[a-z0-9]+$/),
+  }),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Page(s) deleted
+ */
+export const zDeletePagesResponse = z.void();
+
+export const zCreatePagesData = z.object({
+  body: z
+    .array(
+      z.object({
+        name: z.optional(z.string()),
+        tx: zTxRequest,
+      }),
+    )
+    .min(1)
+    .max(50),
+  path: z.object({
+    tenantId: z
+      .string()
+      .max(24)
+      .regex(/^[a-z0-9]+$/),
+  }),
+  query: z.optional(z.never()),
+});
+
+export const zCreatePagesResponse = z.union([
+  z.object({
+    data: z.array(zPage),
+    rejectedItemIds: z.array(z.string()),
+    rejectionReasons: z.optional(z.record(z.string(), z.string())),
+  }),
+  z.object({
+    data: z.array(zPage),
+    rejectedItemIds: z.array(z.string()),
+    rejectionReasons: z.optional(z.record(z.string(), z.string())),
+  }),
+]);
+
+export const zUpdatePageData = z.object({
+  body: z.object({
+    name: z.optional(z.string()),
+    description: z.optional(z.union([z.string(), z.null()])),
+    keywords: z.optional(z.string()),
+    displayOrder: z.optional(z.number().gte(-140737488355328).lte(140737488355327)),
+    status: z.optional(z.enum(['unpublished', 'published', 'archived'])),
+    parentId: z.optional(z.union([z.string(), z.null()])),
+    tx: zTxRequest,
+  }),
+  path: z.object({
+    tenantId: z
+      .string()
+      .max(24)
+      .regex(/^[a-z0-9]+$/),
+    id: z.string(),
+  }),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Page updated
+ */
+export const zUpdatePageResponse = zPage;
 
 export const zGetUsers2Data = z.object({
   body: z.optional(z.never()),

@@ -1,14 +1,11 @@
 import type { HttpBindings } from '@hono/node-server';
 import type * as Sentry from '@sentry/node';
-import type { db as Database } from '#/db/db';
+import type { DbOrTx } from '#/db/db';
 import type { OrganizationModel } from '#/db/schema/organizations';
 import type { SystemRoleModel } from '#/db/schema/system-roles';
 import type { TokenModel } from '#/db/schema/tokens';
 import type { UserModel } from '#/db/schema/users';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
-
-/** Transaction type inferred from db.transaction callback */
-type Tx = Parameters<Parameters<typeof Database.transaction>[0]>[0];
 
 /**
  * Set node server bindings.
@@ -34,8 +31,8 @@ export type Env = {
     requestId: string;
     sentry: typeof Sentry;
     sentrySpan?: ReturnType<typeof Sentry.startSpan>;
-    db: Tx;
-    /** TODO ideally this is not needed because the miuddkeware has set db and thats it? */
+    /** Database connection - either raw db (non-RLS routes) or RLS-scoped transaction (tenant routes) */
+    db: DbOrTx;
     tenantId: string;
   };
   Bindings: Bindings;

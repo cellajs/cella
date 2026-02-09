@@ -2,7 +2,7 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { and, desc, eq } from 'drizzle-orm';
 import i18n from 'i18next';
 import { appConfig } from 'shared';
-import { db } from '#/db/db';
+import { unsafeInternalDb as db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { sessionsTable } from '#/db/schema/sessions';
@@ -266,9 +266,15 @@ const authGeneralRouteHandlers = app
         .from(inactiveMembershipsTable)
         .where(eq(inactiveMembershipsTable.id, oldToken.inactiveMembershipId));
 
-      const entityIdColumnKey = appConfig.entityIdColumnKeys[inactiveMembership.contextType];
+      const entityIdColumnKey = appConfig.entityIdColumnKeys[
+        inactiveMembership.contextType
+      ] as keyof typeof inactiveMembership;
       if (!inactiveMembership[entityIdColumnKey]) throw new AppError(400, 'invalid_request', 'error');
-      const entity = await resolveEntity(inactiveMembership.contextType, inactiveMembership[entityIdColumnKey]);
+      const entity = await resolveEntity(
+        inactiveMembership.contextType,
+        inactiveMembership[entityIdColumnKey] as string,
+        db,
+      );
 
       if (!entity) throw new AppError(400, 'invalid_request', 'error');
 

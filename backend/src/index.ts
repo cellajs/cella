@@ -1,4 +1,4 @@
-import { db, migrateConfig, migrationDb } from '#/db/db';
+import { unsafeInternalDb as db, migrateConfig, migrationDb } from '#/db/db';
 import docs from '#/docs/docs';
 import '#/lib/i18n';
 import { serve } from '@hono/node-server';

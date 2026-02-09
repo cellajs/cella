@@ -1247,317 +1247,6 @@ export const getMyMemberships = <ThrowOnError extends boolean = true>(
   });
 
 /**
- * Get list of organizations
- *
- * Returns a list of *organizations*.
- *
- * **GET /organizations** ·· [getOrganizations](https://api.cellajs.com/docs#tag/organizations/get/organizations) ·· _organizations_
- *
- * @param {getOrganizationsData} options
- * @param {string=} options.query.q - `string` (optional)
- * @param {enum=} options.query.sort - `enum` (optional)
- * @param {enum=} options.query.order - `enum` (optional)
- * @param {string=} options.query.offset - `string` (optional)
- * @param {string=} options.query.limit - `string` (optional)
- * @param {string=} options.query.userid - `string` (optional)
- * @param {enum=} options.query.role - `enum` (optional)
- * @param {enum=} options.query.excludearchived - `enum` (optional)
- * @param {string=} options.query.include - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const getOrganizations = <ThrowOnError extends boolean = true>(
-  options?: Options<GetOrganizationsData, ThrowOnError>,
-) =>
-  (options?.client ?? client).get<GetOrganizationsResponses, GetOrganizationsErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/organizations',
-    ...options,
-  });
-
-/**
- * Create organizations
- *
- * Creates one or more new *organizations*.
- *
- * **POST /organizations** ·· [createOrganizations](https://api.cellajs.com/docs#tag/organizations/post/organizations) ·· _organizations_
- *
- * @param {createOrganizationsData} options
- * @returns Possible status codes: 201, 400, 401, 403, 404, 429
- */
-export const createOrganizations = <ThrowOnError extends boolean = true>(
-  options: Options<CreateOrganizationsData, ThrowOnError>,
-) =>
-  (options.client ?? client).post<CreateOrganizationsResponses, CreateOrganizationsErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/organizations',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
- * Get organization
- *
- * Retrieves an *organization* by ID or slug within a tenant.
- *
- * **GET /{tenantId}/organizations/{idOrSlug}** ·· [getOrganization](https://api.cellajs.com/docs#tag/organizations/get/{tenantId}/organizations/{idOrSlug}) ·· _organizations_
- *
- * @param {getOrganizationData} options
- * @param {string} options.path.tenantid - `string`
- * @param {string} options.path.idorslug - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const getOrganization = <ThrowOnError extends boolean = true>(
-  options: Options<GetOrganizationData, ThrowOnError>,
-) =>
-  (options.client ?? client).get<GetOrganizationResponses, GetOrganizationErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/{tenantId}/organizations/{idOrSlug}',
-    ...options,
-  });
-
-/**
- * Update organization
- *
- * Updates an *organization* within a tenant.
- *
- * **PUT /{tenantId}/organizations/{id}** ·· [updateOrganization](https://api.cellajs.com/docs#tag/organizations/put/{tenantId}/organizations/{id}) ·· _organizations_
- *
- * @param {updateOrganizationData} options
- * @param {string} options.path.tenantid - `string`
- * @param {string} options.path.id - `string`
- * @param {string=} options.body.slug - `string` (optional)
- * @param {string=} options.body.name - `string` (optional)
- * @param {string | null=} options.body.shortName - `string | null` (optional)
- * @param {string | null=} options.body.country - `string | null` (optional)
- * @param {string | null=} options.body.timezone - `string | null` (optional)
- * @param {enum=} options.body.defaultLanguage - `enum` (optional)
- * @param {any[]=} options.body.languages - `any[]` (optional)
- * @param {string | null=} options.body.notificationEmail - `string | null` (optional)
- * @param {any[]=} options.body.emailDomains - `any[]` (optional)
- * @param {string | null=} options.body.color - `string | null` (optional)
- * @param {string | null=} options.body.thumbnailUrl - `string | null` (optional)
- * @param {string | null=} options.body.logoUrl - `string | null` (optional)
- * @param {string | null=} options.body.bannerUrl - `string | null` (optional)
- * @param {string | null=} options.body.websiteUrl - `string | null` (optional)
- * @param {string | null=} options.body.welcomeText - `string | null` (optional)
- * @param {any[]=} options.body.authStrategies - `any[]` (optional)
- * @param {boolean=} options.body.chatSupport - `boolean` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const updateOrganization = <ThrowOnError extends boolean = true>(
-  options: Options<UpdateOrganizationData, ThrowOnError>,
-) =>
-  (options.client ?? client).put<UpdateOrganizationResponses, UpdateOrganizationErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/{tenantId}/organizations/{id}',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
- * Delete organizations
- *
- * Deletes one or more *organizations* by ID within a tenant.
- *
- * **DELETE /{tenantId}/organizations** ·· [deleteOrganizations](https://api.cellajs.com/docs#tag/organizations/delete/{tenantId}/organizations) ·· _organizations_
- *
- * @param {deleteOrganizationsData} options
- * @param {string} options.path.tenantid - `string`
- * @param {any[]=} options.body.ids - `any[]` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const deleteOrganizations = <ThrowOnError extends boolean = true>(
-  options: Options<DeleteOrganizationsData, ThrowOnError>,
-) =>
-  (options.client ?? client).delete<DeleteOrganizationsResponses, DeleteOrganizationsErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/{tenantId}/organizations',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
- * Get pages
- *
- * Get all matching *pages*.
- *
- * **GET /pages** ·· [getPages](https://api.cellajs.com/docs#tag/pages/get/pages) ·· _pages_
- *
- * @param {getPagesData} options
- * @param {string=} options.query.q - `string` (optional)
- * @param {enum=} options.query.sort - `enum` (optional)
- * @param {enum=} options.query.order - `enum` (optional)
- * @param {string=} options.query.offset - `string` (optional)
- * @param {string=} options.query.limit - `string` (optional)
- * @param {string=} options.query.modifiedafter - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const getPages = <ThrowOnError extends boolean = true>(options?: Options<GetPagesData, ThrowOnError>) =>
-  (options?.client ?? client).get<GetPagesResponses, GetPagesErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/pages',
-    ...options,
-  });
-
-/**
- * Get page
- *
- * Get a single *page* by ID. Cached using LRU - first request warms cache.
- *
- * **GET /pages/{id}** ·· [getPage](https://api.cellajs.com/docs#tag/pages/get/pages/{id}) ·· _pages_
- *
- * @param {getPageData} options
- * @param {string} options.path.id - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const getPage = <ThrowOnError extends boolean = true>(options: Options<GetPageData, ThrowOnError>) =>
-  (options.client ?? client).get<GetPageResponses, GetPageErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/pages/{id}',
-    ...options,
-  });
-
-/**
- * Delete pages
- *
- * Delete one or more *pages* by ID.
- *
- * **DELETE /{tenantId}/pages** ·· [deletePages](https://api.cellajs.com/docs#tag/pages/delete/{tenantId}/pages) ·· _pages_
- *
- * @param {deletePagesData} options
- * @param {string} options.path.tenantid - `string`
- * @param {any[]=} options.body.ids - `any[]` (optional)
- * @returns Possible status codes: 204, 400, 401, 403, 404, 429
- */
-export const deletePages = <ThrowOnError extends boolean = true>(options: Options<DeletePagesData, ThrowOnError>) =>
-  (options.client ?? client).delete<DeletePagesResponses, DeletePagesErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/{tenantId}/pages',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
- * Create pages
- *
- * Insert one or more new *pages*. Returns created pages and any rejected items.
- *
- * **POST /{tenantId}/pages** ·· [createPages](https://api.cellajs.com/docs#tag/pages/post/{tenantId}/pages) ·· _pages_
- *
- * @param {createPagesData} options
- * @param {string} options.path.tenantid - `string`
- * @returns Possible status codes: 200, 201, 400, 401, 403, 404, 429
- */
-export const createPages = <ThrowOnError extends boolean = true>(options: Options<CreatePagesData, ThrowOnError>) =>
-  (options.client ?? client).post<CreatePagesResponses, CreatePagesErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/{tenantId}/pages',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
- * Update page
- *
- * Update a single *page* by ID.
- *
- * **PUT /{tenantId}/pages/{id}** ·· [updatePage](https://api.cellajs.com/docs#tag/pages/put/{tenantId}/pages/{id}) ·· _pages_
- *
- * @param {updatePageData} options
- * @param {string} options.path.tenantid - `string`
- * @param {string} options.path.id - `string`
- * @param {string=} options.body.name - `string` (optional)
- * @param {string | null=} options.body.description - `string | null` (optional)
- * @param {string=} options.body.keywords - `string` (optional)
- * @param {number=} options.body.displayOrder - `number` (optional)
- * @param {enum=} options.body.status - `enum` (optional)
- * @param {string | null=} options.body.parentId - `string | null` (optional)
- * @param {any=} options.body.tx - `any` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const updatePage = <ThrowOnError extends boolean = true>(options: Options<UpdatePageData, ThrowOnError>) =>
-  (options.client ?? client).put<UpdatePageResponses, UpdatePageErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/{tenantId}/pages/{id}',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
  * Check slug availability
  *
  * Checks whether a given slug is available across all entity types (e.g. *organizations*, *users*).
@@ -2162,6 +1851,317 @@ export const getSyncMetrics = <ThrowOnError extends boolean = true>(
     ],
     url: '/metrics/sync',
     ...options,
+  });
+
+/**
+ * Get list of organizations
+ *
+ * Returns a list of *organizations*.
+ *
+ * **GET /organizations** ·· [getOrganizations](https://api.cellajs.com/docs#tag/organizations/get/organizations) ·· _organizations_
+ *
+ * @param {getOrganizationsData} options
+ * @param {string=} options.query.q - `string` (optional)
+ * @param {enum=} options.query.sort - `enum` (optional)
+ * @param {enum=} options.query.order - `enum` (optional)
+ * @param {string=} options.query.offset - `string` (optional)
+ * @param {string=} options.query.limit - `string` (optional)
+ * @param {string=} options.query.userid - `string` (optional)
+ * @param {enum=} options.query.role - `enum` (optional)
+ * @param {enum=} options.query.excludearchived - `enum` (optional)
+ * @param {string=} options.query.include - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const getOrganizations = <ThrowOnError extends boolean = true>(
+  options?: Options<GetOrganizationsData, ThrowOnError>,
+) =>
+  (options?.client ?? client).get<GetOrganizationsResponses, GetOrganizationsErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/organizations',
+    ...options,
+  });
+
+/**
+ * Create organizations
+ *
+ * Creates one or more new *organizations*.
+ *
+ * **POST /organizations** ·· [createOrganizations](https://api.cellajs.com/docs#tag/organizations/post/organizations) ·· _organizations_
+ *
+ * @param {createOrganizationsData} options
+ * @returns Possible status codes: 201, 400, 401, 403, 404, 429
+ */
+export const createOrganizations = <ThrowOnError extends boolean = true>(
+  options: Options<CreateOrganizationsData, ThrowOnError>,
+) =>
+  (options.client ?? client).post<CreateOrganizationsResponses, CreateOrganizationsErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/organizations',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Get organization
+ *
+ * Retrieves an *organization* by ID or slug within a tenant.
+ *
+ * **GET /{tenantId}/organizations/{idOrSlug}** ·· [getOrganization](https://api.cellajs.com/docs#tag/organizations/get/{tenantId}/organizations/{idOrSlug}) ·· _organizations_
+ *
+ * @param {getOrganizationData} options
+ * @param {string} options.path.tenantid - `string`
+ * @param {string} options.path.idorslug - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const getOrganization = <ThrowOnError extends boolean = true>(
+  options: Options<GetOrganizationData, ThrowOnError>,
+) =>
+  (options.client ?? client).get<GetOrganizationResponses, GetOrganizationErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/{tenantId}/organizations/{idOrSlug}',
+    ...options,
+  });
+
+/**
+ * Update organization
+ *
+ * Updates an *organization* within a tenant.
+ *
+ * **PUT /{tenantId}/organizations/{id}** ·· [updateOrganization](https://api.cellajs.com/docs#tag/organizations/put/{tenantId}/organizations/{id}) ·· _organizations_
+ *
+ * @param {updateOrganizationData} options
+ * @param {string} options.path.tenantid - `string`
+ * @param {string} options.path.id - `string`
+ * @param {string=} options.body.slug - `string` (optional)
+ * @param {string=} options.body.name - `string` (optional)
+ * @param {string | null=} options.body.shortName - `string | null` (optional)
+ * @param {string | null=} options.body.country - `string | null` (optional)
+ * @param {string | null=} options.body.timezone - `string | null` (optional)
+ * @param {enum=} options.body.defaultLanguage - `enum` (optional)
+ * @param {any[]=} options.body.languages - `any[]` (optional)
+ * @param {string | null=} options.body.notificationEmail - `string | null` (optional)
+ * @param {any[]=} options.body.emailDomains - `any[]` (optional)
+ * @param {string | null=} options.body.color - `string | null` (optional)
+ * @param {string | null=} options.body.thumbnailUrl - `string | null` (optional)
+ * @param {string | null=} options.body.logoUrl - `string | null` (optional)
+ * @param {string | null=} options.body.bannerUrl - `string | null` (optional)
+ * @param {string | null=} options.body.websiteUrl - `string | null` (optional)
+ * @param {string | null=} options.body.welcomeText - `string | null` (optional)
+ * @param {any[]=} options.body.authStrategies - `any[]` (optional)
+ * @param {boolean=} options.body.chatSupport - `boolean` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const updateOrganization = <ThrowOnError extends boolean = true>(
+  options: Options<UpdateOrganizationData, ThrowOnError>,
+) =>
+  (options.client ?? client).put<UpdateOrganizationResponses, UpdateOrganizationErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/{tenantId}/organizations/{id}',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Delete organizations
+ *
+ * Deletes one or more *organizations* by ID within a tenant.
+ *
+ * **DELETE /{tenantId}/organizations** ·· [deleteOrganizations](https://api.cellajs.com/docs#tag/organizations/delete/{tenantId}/organizations) ·· _organizations_
+ *
+ * @param {deleteOrganizationsData} options
+ * @param {string} options.path.tenantid - `string`
+ * @param {any[]=} options.body.ids - `any[]` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const deleteOrganizations = <ThrowOnError extends boolean = true>(
+  options: Options<DeleteOrganizationsData, ThrowOnError>,
+) =>
+  (options.client ?? client).delete<DeleteOrganizationsResponses, DeleteOrganizationsErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/{tenantId}/organizations',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Get pages
+ *
+ * Get all matching *pages*.
+ *
+ * **GET /pages** ·· [getPages](https://api.cellajs.com/docs#tag/pages/get/pages) ·· _pages_
+ *
+ * @param {getPagesData} options
+ * @param {string=} options.query.q - `string` (optional)
+ * @param {enum=} options.query.sort - `enum` (optional)
+ * @param {enum=} options.query.order - `enum` (optional)
+ * @param {string=} options.query.offset - `string` (optional)
+ * @param {string=} options.query.limit - `string` (optional)
+ * @param {string=} options.query.modifiedafter - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const getPages = <ThrowOnError extends boolean = true>(options?: Options<GetPagesData, ThrowOnError>) =>
+  (options?.client ?? client).get<GetPagesResponses, GetPagesErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/pages',
+    ...options,
+  });
+
+/**
+ * Get page
+ *
+ * Get a single *page* by ID. Cached using LRU - first request warms cache.
+ *
+ * **GET /pages/{id}** ·· [getPage](https://api.cellajs.com/docs#tag/pages/get/pages/{id}) ·· _pages_
+ *
+ * @param {getPageData} options
+ * @param {string} options.path.id - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const getPage = <ThrowOnError extends boolean = true>(options: Options<GetPageData, ThrowOnError>) =>
+  (options.client ?? client).get<GetPageResponses, GetPageErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/pages/{id}',
+    ...options,
+  });
+
+/**
+ * Delete pages
+ *
+ * Delete one or more *pages* by ID.
+ *
+ * **DELETE /{tenantId}/pages** ·· [deletePages](https://api.cellajs.com/docs#tag/pages/delete/{tenantId}/pages) ·· _pages_
+ *
+ * @param {deletePagesData} options
+ * @param {string} options.path.tenantid - `string`
+ * @param {any[]=} options.body.ids - `any[]` (optional)
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 429
+ */
+export const deletePages = <ThrowOnError extends boolean = true>(options: Options<DeletePagesData, ThrowOnError>) =>
+  (options.client ?? client).delete<DeletePagesResponses, DeletePagesErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/{tenantId}/pages',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Create pages
+ *
+ * Insert one or more new *pages*. Returns created pages and any rejected items.
+ *
+ * **POST /{tenantId}/pages** ·· [createPages](https://api.cellajs.com/docs#tag/pages/post/{tenantId}/pages) ·· _pages_
+ *
+ * @param {createPagesData} options
+ * @param {string} options.path.tenantid - `string`
+ * @returns Possible status codes: 200, 201, 400, 401, 403, 404, 429
+ */
+export const createPages = <ThrowOnError extends boolean = true>(options: Options<CreatePagesData, ThrowOnError>) =>
+  (options.client ?? client).post<CreatePagesResponses, CreatePagesErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/{tenantId}/pages',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Update page
+ *
+ * Update a single *page* by ID.
+ *
+ * **PUT /{tenantId}/pages/{id}** ·· [updatePage](https://api.cellajs.com/docs#tag/pages/put/{tenantId}/pages/{id}) ·· _pages_
+ *
+ * @param {updatePageData} options
+ * @param {string} options.path.tenantid - `string`
+ * @param {string} options.path.id - `string`
+ * @param {string=} options.body.name - `string` (optional)
+ * @param {string | null=} options.body.description - `string | null` (optional)
+ * @param {string=} options.body.keywords - `string` (optional)
+ * @param {number=} options.body.displayOrder - `number` (optional)
+ * @param {enum=} options.body.status - `enum` (optional)
+ * @param {string | null=} options.body.parentId - `string | null` (optional)
+ * @param {any=} options.body.tx - `any` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const updatePage = <ThrowOnError extends boolean = true>(options: Options<UpdatePageData, ThrowOnError>) =>
+  (options.client ?? client).put<UpdatePageResponses, UpdatePageErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/{tenantId}/pages/{id}',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
   });
 
 /**

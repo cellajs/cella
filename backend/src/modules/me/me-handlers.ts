@@ -2,7 +2,7 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
 import type { EnabledOAuthProvider } from 'shared';
 import { appConfig } from 'shared';
-import { db } from '#/db/db';
+import { unsafeInternalDb as db } from '#/db/db';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { membershipsTable } from '#/db/schema/memberships';
 import { AuthStrategy, sessionsTable } from '#/db/schema/sessions';
@@ -189,7 +189,7 @@ const meRouteHandlers = app
     const { slug, firstName, lastName } = passedUpdates;
 
     if (slug && slug !== user.slug) {
-      const slugAvailable = await checkSlugAvailable(slug);
+      const slugAvailable = await checkSlugAvailable(slug, db);
       if (!slugAvailable) throw new AppError(409, 'slug_exists', 'warn', { entityType: 'user', meta: { slug } });
     }
     // if userFlags is provided, merge it
@@ -232,7 +232,7 @@ const meRouteHandlers = app
 
     const { entityType, entityId } = ctx.req.valid('query');
 
-    const entity = await resolveEntity(entityType, entityId);
+    const entity = await resolveEntity(entityType, entityId, db);
     if (!entity) throw new AppError(404, 'not_found', 'warn', { entityType });
 
     const entityIdColumnKey = appConfig.entityIdColumnKeys[entityType];

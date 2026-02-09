@@ -12,7 +12,7 @@
 
 import { sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { db } from '#/db/db';
+import { unsafeInternalDb as db } from '#/db/db';
 import { setPublicRlsContext, setTenantRlsContext, setUserRlsContext } from '#/db/tenant-context';
 import { nanoidTenant } from '#/utils/nanoid';
 

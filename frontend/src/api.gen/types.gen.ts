@@ -257,6 +257,44 @@ export type UploadToken = {
   };
 };
 
+export type Tenant = {
+  /**
+   * Lowercase alphanumeric tenant ID
+   */
+  id: string;
+  /**
+   * Tenant display name
+   */
+  name: string;
+  status: TenantStatus;
+  createdAt: string;
+  modifiedAt: string | null;
+};
+
+export type TenantStatus = 'active' | 'suspended' | 'archived';
+
+export type CreateTenantBody = {
+  /**
+   * Tenant display name
+   */
+  name: string;
+  status?: TenantStatus;
+};
+
+export type UpdateTenantBody = {
+  name?: string;
+  status?: TenantStatus;
+};
+
+export type Request = {
+  createdAt: string;
+  id: string;
+  message: string | null;
+  email: string;
+  type: 'waitlist' | 'newsletter' | 'contact';
+  wasInvited: boolean;
+};
+
 export type OrganizationIncluded = {
   membership?: MembershipBase;
   counts?: {
@@ -340,44 +378,6 @@ export type TxRequest = {
    * Entity version when read (for conflict detection)
    */
   baseVersion: number;
-};
-
-export type Tenant = {
-  /**
-   * Lowercase alphanumeric tenant ID
-   */
-  id: string;
-  /**
-   * Tenant display name
-   */
-  name: string;
-  status: TenantStatus;
-  createdAt: string;
-  modifiedAt: string | null;
-};
-
-export type TenantStatus = 'active' | 'suspended' | 'archived';
-
-export type CreateTenantBody = {
-  /**
-   * Tenant display name
-   */
-  name: string;
-  status?: TenantStatus;
-};
-
-export type UpdateTenantBody = {
-  name?: string;
-  status?: TenantStatus;
-};
-
-export type Request = {
-  createdAt: string;
-  id: string;
-  message: string | null;
-  email: string;
-  type: 'waitlist' | 'newsletter' | 'contact';
-  wasInvited: boolean;
 };
 
 export type Attachment = {
@@ -2125,551 +2125,6 @@ export type GetMyMembershipsResponses = {
 
 export type GetMyMembershipsResponse = GetMyMembershipsResponses[keyof GetMyMembershipsResponses];
 
-export type GetOrganizationsData = {
-  body?: never;
-  path?: never;
-  query?: {
-    q?: string;
-    sort?: 'id' | 'name' | 'createdAt';
-    order?: 'asc' | 'desc';
-    offset?: string;
-    limit?: string;
-    userId?: string;
-    role?: 'admin' | 'member';
-    excludeArchived?: 'true' | 'false';
-    include?: string;
-  };
-  url: '/organizations';
-};
-
-export type GetOrganizationsErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type GetOrganizationsError = GetOrganizationsErrors[keyof GetOrganizationsErrors];
-
-export type GetOrganizationsResponses = {
-  /**
-   * Organizations
-   */
-  200: {
-    items: Array<Organization>;
-    total: number;
-  };
-};
-
-export type GetOrganizationsResponse = GetOrganizationsResponses[keyof GetOrganizationsResponses];
-
-export type CreateOrganizationsData = {
-  body: Array<{
-    id: string;
-    name: string;
-    slug: string;
-  }>;
-  path?: never;
-  query?: never;
-  url: '/organizations';
-};
-
-export type CreateOrganizationsErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type CreateOrganizationsError = CreateOrganizationsErrors[keyof CreateOrganizationsErrors];
-
-export type CreateOrganizationsResponses = {
-  /**
-   * Organizations were created
-   */
-  201: {
-    data: Array<
-      Organization & {
-        included: OrganizationIncluded & {
-          [key: string]: unknown;
-        };
-      }
-    >;
-    /**
-     * Identifiers of items that could not be processed
-     */
-    rejectedItemIds: Array<string>;
-    /**
-     * Map of rejected item ID to reason code
-     */
-    rejectionReasons?: {
-      [key: string]: string;
-    };
-  };
-};
-
-export type CreateOrganizationsResponse = CreateOrganizationsResponses[keyof CreateOrganizationsResponses];
-
-export type GetOrganizationData = {
-  body?: never;
-  path: {
-    tenantId: string;
-    idOrSlug: string;
-  };
-  query?: never;
-  url: '/{tenantId}/organizations/{idOrSlug}';
-};
-
-export type GetOrganizationErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type GetOrganizationError = GetOrganizationErrors[keyof GetOrganizationErrors];
-
-export type GetOrganizationResponses = {
-  /**
-   * Organization
-   */
-  200: Organization;
-};
-
-export type GetOrganizationResponse = GetOrganizationResponses[keyof GetOrganizationResponses];
-
-export type UpdateOrganizationData = {
-  body?: {
-    slug?: string;
-    name?: string;
-    shortName?: string | null;
-    country?: string | null;
-    timezone?: string | null;
-    defaultLanguage?: 'en' | 'nl';
-    languages?: Array<'en' | 'nl'>;
-    notificationEmail?: string | null;
-    emailDomains?: Array<string>;
-    color?: string | null;
-    thumbnailUrl?: string | null;
-    logoUrl?: string | null;
-    bannerUrl?: string | null;
-    websiteUrl?: string | null;
-    welcomeText?: string | null;
-    authStrategies?: Array<'github' | 'google' | 'microsoft' | 'password' | 'passkey' | 'totp' | 'email'>;
-    chatSupport?: boolean;
-  };
-  path: {
-    tenantId: string;
-    id: string;
-  };
-  query?: never;
-  url: '/{tenantId}/organizations/{id}';
-};
-
-export type UpdateOrganizationErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type UpdateOrganizationError = UpdateOrganizationErrors[keyof UpdateOrganizationErrors];
-
-export type UpdateOrganizationResponses = {
-  /**
-   * Organization was updated
-   */
-  200: Organization;
-};
-
-export type UpdateOrganizationResponse = UpdateOrganizationResponses[keyof UpdateOrganizationResponses];
-
-export type DeleteOrganizationsData = {
-  body: {
-    ids: Array<string>;
-  };
-  path: {
-    tenantId: string;
-  };
-  query?: never;
-  url: '/{tenantId}/organizations';
-};
-
-export type DeleteOrganizationsErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type DeleteOrganizationsError = DeleteOrganizationsErrors[keyof DeleteOrganizationsErrors];
-
-export type DeleteOrganizationsResponses = {
-  /**
-   * Success
-   */
-  200: {
-    data: Array<unknown>;
-    /**
-     * Identifiers of items that could not be processed
-     */
-    rejectedItemIds: Array<string>;
-    /**
-     * Map of rejected item ID to reason code
-     */
-    rejectionReasons?: {
-      [key: string]: string;
-    };
-  };
-};
-
-export type DeleteOrganizationsResponse = DeleteOrganizationsResponses[keyof DeleteOrganizationsResponses];
-
-export type GetPagesData = {
-  body?: never;
-  path?: never;
-  query?: {
-    q?: string;
-    sort?: 'name' | 'status' | 'createdAt';
-    order?: 'asc' | 'desc';
-    offset?: string;
-    limit?: string;
-    modifiedAfter?: string;
-  };
-  url: '/pages';
-};
-
-export type GetPagesErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type GetPagesError = GetPagesErrors[keyof GetPagesErrors];
-
-export type GetPagesResponses = {
-  /**
-   * Pages
-   */
-  200: {
-    items: Array<Page>;
-    total: number;
-  };
-};
-
-export type GetPagesResponse = GetPagesResponses[keyof GetPagesResponses];
-
-export type GetPageData = {
-  body?: never;
-  path: {
-    id: string;
-  };
-  query?: never;
-  url: '/pages/{id}';
-};
-
-export type GetPageErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type GetPageError = GetPageErrors[keyof GetPageErrors];
-
-export type GetPageResponses = {
-  /**
-   * Page
-   */
-  200: Page;
-};
-
-export type GetPageResponse = GetPageResponses[keyof GetPageResponses];
-
-export type DeletePagesData = {
-  body: {
-    ids: Array<string>;
-  };
-  path: {
-    tenantId: string;
-  };
-  query?: never;
-  url: '/{tenantId}/pages';
-};
-
-export type DeletePagesErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type DeletePagesError = DeletePagesErrors[keyof DeletePagesErrors];
-
-export type DeletePagesResponses = {
-  /**
-   * Page(s) deleted
-   */
-  204: void;
-};
-
-export type DeletePagesResponse = DeletePagesResponses[keyof DeletePagesResponses];
-
-export type CreatePagesData = {
-  body: Array<{
-    name?: string;
-    tx: TxRequest;
-  }>;
-  path: {
-    tenantId: string;
-  };
-  query?: never;
-  url: '/{tenantId}/pages';
-};
-
-export type CreatePagesErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type CreatePagesError = CreatePagesErrors[keyof CreatePagesErrors];
-
-export type CreatePagesResponses = {
-  /**
-   * Pages already created (idempotent)
-   */
-  200: {
-    data: Array<Page>;
-    /**
-     * Identifiers of items that could not be processed
-     */
-    rejectedItemIds: Array<string>;
-    /**
-     * Map of rejected item ID to reason code
-     */
-    rejectionReasons?: {
-      [key: string]: string;
-    };
-  };
-  /**
-   * Pages created
-   */
-  201: {
-    data: Array<Page>;
-    /**
-     * Identifiers of items that could not be processed
-     */
-    rejectedItemIds: Array<string>;
-    /**
-     * Map of rejected item ID to reason code
-     */
-    rejectionReasons?: {
-      [key: string]: string;
-    };
-  };
-};
-
-export type CreatePagesResponse = CreatePagesResponses[keyof CreatePagesResponses];
-
-export type UpdatePageData = {
-  body: {
-    name?: string;
-    description?: string | null;
-    keywords?: string;
-    displayOrder?: number;
-    status?: 'unpublished' | 'published' | 'archived';
-    parentId?: string | null;
-    tx: TxRequest;
-  };
-  path: {
-    tenantId: string;
-    id: string;
-  };
-  query?: never;
-  url: '/{tenantId}/pages/{id}';
-};
-
-export type UpdatePageErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type UpdatePageError = UpdatePageErrors[keyof UpdatePageErrors];
-
-export type UpdatePageResponses = {
-  /**
-   * Page updated
-   */
-  200: Page;
-};
-
-export type UpdatePageResponse = UpdatePageResponses[keyof UpdatePageResponses];
-
 export type CheckSlugData = {
   body: {
     slug: string;
@@ -3866,6 +3321,551 @@ export type GetSyncMetricsResponses = {
 };
 
 export type GetSyncMetricsResponse = GetSyncMetricsResponses[keyof GetSyncMetricsResponses];
+
+export type GetOrganizationsData = {
+  body?: never;
+  path?: never;
+  query?: {
+    q?: string;
+    sort?: 'id' | 'name' | 'createdAt';
+    order?: 'asc' | 'desc';
+    offset?: string;
+    limit?: string;
+    userId?: string;
+    role?: 'admin' | 'member';
+    excludeArchived?: 'true' | 'false';
+    include?: string;
+  };
+  url: '/organizations';
+};
+
+export type GetOrganizationsErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetOrganizationsError = GetOrganizationsErrors[keyof GetOrganizationsErrors];
+
+export type GetOrganizationsResponses = {
+  /**
+   * Organizations
+   */
+  200: {
+    items: Array<Organization>;
+    total: number;
+  };
+};
+
+export type GetOrganizationsResponse = GetOrganizationsResponses[keyof GetOrganizationsResponses];
+
+export type CreateOrganizationsData = {
+  body: Array<{
+    id: string;
+    name: string;
+    slug: string;
+  }>;
+  path?: never;
+  query?: never;
+  url: '/organizations';
+};
+
+export type CreateOrganizationsErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type CreateOrganizationsError = CreateOrganizationsErrors[keyof CreateOrganizationsErrors];
+
+export type CreateOrganizationsResponses = {
+  /**
+   * Organizations were created
+   */
+  201: {
+    data: Array<
+      Organization & {
+        included: OrganizationIncluded & {
+          [key: string]: unknown;
+        };
+      }
+    >;
+    /**
+     * Identifiers of items that could not be processed
+     */
+    rejectedItemIds: Array<string>;
+    /**
+     * Map of rejected item ID to reason code
+     */
+    rejectionReasons?: {
+      [key: string]: string;
+    };
+  };
+};
+
+export type CreateOrganizationsResponse = CreateOrganizationsResponses[keyof CreateOrganizationsResponses];
+
+export type GetOrganizationData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    idOrSlug: string;
+  };
+  query?: never;
+  url: '/{tenantId}/organizations/{idOrSlug}';
+};
+
+export type GetOrganizationErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetOrganizationError = GetOrganizationErrors[keyof GetOrganizationErrors];
+
+export type GetOrganizationResponses = {
+  /**
+   * Organization
+   */
+  200: Organization;
+};
+
+export type GetOrganizationResponse = GetOrganizationResponses[keyof GetOrganizationResponses];
+
+export type UpdateOrganizationData = {
+  body?: {
+    slug?: string;
+    name?: string;
+    shortName?: string | null;
+    country?: string | null;
+    timezone?: string | null;
+    defaultLanguage?: 'en' | 'nl';
+    languages?: Array<'en' | 'nl'>;
+    notificationEmail?: string | null;
+    emailDomains?: Array<string>;
+    color?: string | null;
+    thumbnailUrl?: string | null;
+    logoUrl?: string | null;
+    bannerUrl?: string | null;
+    websiteUrl?: string | null;
+    welcomeText?: string | null;
+    authStrategies?: Array<'github' | 'google' | 'microsoft' | 'password' | 'passkey' | 'totp' | 'email'>;
+    chatSupport?: boolean;
+  };
+  path: {
+    tenantId: string;
+    id: string;
+  };
+  query?: never;
+  url: '/{tenantId}/organizations/{id}';
+};
+
+export type UpdateOrganizationErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type UpdateOrganizationError = UpdateOrganizationErrors[keyof UpdateOrganizationErrors];
+
+export type UpdateOrganizationResponses = {
+  /**
+   * Organization was updated
+   */
+  200: Organization;
+};
+
+export type UpdateOrganizationResponse = UpdateOrganizationResponses[keyof UpdateOrganizationResponses];
+
+export type DeleteOrganizationsData = {
+  body: {
+    ids: Array<string>;
+  };
+  path: {
+    tenantId: string;
+  };
+  query?: never;
+  url: '/{tenantId}/organizations';
+};
+
+export type DeleteOrganizationsErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type DeleteOrganizationsError = DeleteOrganizationsErrors[keyof DeleteOrganizationsErrors];
+
+export type DeleteOrganizationsResponses = {
+  /**
+   * Success
+   */
+  200: {
+    data: Array<unknown>;
+    /**
+     * Identifiers of items that could not be processed
+     */
+    rejectedItemIds: Array<string>;
+    /**
+     * Map of rejected item ID to reason code
+     */
+    rejectionReasons?: {
+      [key: string]: string;
+    };
+  };
+};
+
+export type DeleteOrganizationsResponse = DeleteOrganizationsResponses[keyof DeleteOrganizationsResponses];
+
+export type GetPagesData = {
+  body?: never;
+  path?: never;
+  query?: {
+    q?: string;
+    sort?: 'name' | 'status' | 'createdAt';
+    order?: 'asc' | 'desc';
+    offset?: string;
+    limit?: string;
+    modifiedAfter?: string;
+  };
+  url: '/pages';
+};
+
+export type GetPagesErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetPagesError = GetPagesErrors[keyof GetPagesErrors];
+
+export type GetPagesResponses = {
+  /**
+   * Pages
+   */
+  200: {
+    items: Array<Page>;
+    total: number;
+  };
+};
+
+export type GetPagesResponse = GetPagesResponses[keyof GetPagesResponses];
+
+export type GetPageData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/pages/{id}';
+};
+
+export type GetPageErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetPageError = GetPageErrors[keyof GetPageErrors];
+
+export type GetPageResponses = {
+  /**
+   * Page
+   */
+  200: Page;
+};
+
+export type GetPageResponse = GetPageResponses[keyof GetPageResponses];
+
+export type DeletePagesData = {
+  body: {
+    ids: Array<string>;
+  };
+  path: {
+    tenantId: string;
+  };
+  query?: never;
+  url: '/{tenantId}/pages';
+};
+
+export type DeletePagesErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type DeletePagesError = DeletePagesErrors[keyof DeletePagesErrors];
+
+export type DeletePagesResponses = {
+  /**
+   * Page(s) deleted
+   */
+  204: void;
+};
+
+export type DeletePagesResponse = DeletePagesResponses[keyof DeletePagesResponses];
+
+export type CreatePagesData = {
+  body: Array<{
+    name?: string;
+    tx: TxRequest;
+  }>;
+  path: {
+    tenantId: string;
+  };
+  query?: never;
+  url: '/{tenantId}/pages';
+};
+
+export type CreatePagesErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type CreatePagesError = CreatePagesErrors[keyof CreatePagesErrors];
+
+export type CreatePagesResponses = {
+  /**
+   * Pages already created (idempotent)
+   */
+  200: {
+    data: Array<Page>;
+    /**
+     * Identifiers of items that could not be processed
+     */
+    rejectedItemIds: Array<string>;
+    /**
+     * Map of rejected item ID to reason code
+     */
+    rejectionReasons?: {
+      [key: string]: string;
+    };
+  };
+  /**
+   * Pages created
+   */
+  201: {
+    data: Array<Page>;
+    /**
+     * Identifiers of items that could not be processed
+     */
+    rejectedItemIds: Array<string>;
+    /**
+     * Map of rejected item ID to reason code
+     */
+    rejectionReasons?: {
+      [key: string]: string;
+    };
+  };
+};
+
+export type CreatePagesResponse = CreatePagesResponses[keyof CreatePagesResponses];
+
+export type UpdatePageData = {
+  body: {
+    name?: string;
+    description?: string | null;
+    keywords?: string;
+    displayOrder?: number;
+    status?: 'unpublished' | 'published' | 'archived';
+    parentId?: string | null;
+    tx: TxRequest;
+  };
+  path: {
+    tenantId: string;
+    id: string;
+  };
+  query?: never;
+  url: '/{tenantId}/pages/{id}';
+};
+
+export type UpdatePageErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type UpdatePageError = UpdatePageErrors[keyof UpdatePageErrors];
+
+export type UpdatePageResponses = {
+  /**
+   * Page updated
+   */
+  200: Page;
+};
+
+export type UpdatePageResponse = UpdatePageResponses[keyof UpdatePageResponses];
 
 export type GetUsers2Data = {
   body?: never;

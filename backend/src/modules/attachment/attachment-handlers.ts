@@ -2,7 +2,7 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { and, count, eq, getColumns, gte, ilike, inArray, or, type SQL, sql } from 'drizzle-orm';
 import { html, raw } from 'hono/html';
 import { appConfig } from 'shared';
-import { db } from '#/db/db';
+import { unsafeInternalDb as db } from '#/db/db';
 import { attachmentsTable } from '#/db/schema/attachments';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
@@ -148,12 +148,13 @@ const attachmentRouteHandlers = app
    */
   .openapi(attachmentRoutes.createAttachments, async (ctx) => {
     const newAttachments = ctx.req.valid('json');
+    const tenantDb = ctx.var.db;
 
     // Idempotency check - use first item's tx.id to check entire batch
     const batchTxId = newAttachments[0].tx.id;
-    if (await isTransactionProcessed(batchTxId)) {
+    if (await isTransactionProcessed(batchTxId, tenantDb)) {
       // Fetch all items from same batch by querying tx.id in JSONB column
-      const existingBatch = await db
+      const existingBatch = await tenantDb
         .select()
         .from(attachmentsTable)
         .where(sql`${attachmentsTable.tx}->>'id' = ${batchTxId}`);
@@ -171,7 +172,7 @@ const attachmentRouteHandlers = app
       throw new AppError(403, 'restrict_by_org', 'warn', { entityType: 'attachment' });
     }
 
-    const [{ currentAttachments }] = await db
+    const [{ currentAttachments }] = await tenantDb
       .select({ currentAttachments: count() })
       .from(attachmentsTable)
       .where(eq(attachmentsTable.organizationId, organization.id));
@@ -201,8 +202,7 @@ const attachmentRouteHandlers = app
       },
     }));
 
-    // Use tenant-scoped db from tenantGuard middleware (RLS context already set)
-    const tenantDb = ctx.var.db;
+    // Insert using tenant-scoped db (RLS context already set)
     const createdAttachments = await tenantDb.insert(attachmentsTable).values(attachmentsToInsert).returning();
 
     logEvent('info', `${createdAttachments.length} attachments have been created`);

@@ -1,7 +1,7 @@
 import { and, eq } from 'drizzle-orm';
 import { Context } from 'hono';
 import { TokenType } from 'shared';
-import { db } from '#/db/db';
+import { unsafeInternalDb as db } from '#/db/db';
 import { type TokenModel, tokensTable } from '#/db/schema/tokens';
 import { AppError } from '#/lib/error';
 import { getAuthCookie } from '#/modules/auth/general/helpers/cookie';

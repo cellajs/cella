@@ -1,6 +1,6 @@
 import { count, eq, isNull, sql } from 'drizzle-orm';
 import { appConfig, type ContextEntityType, roles } from 'shared';
-import { db } from '#/db/db';
+import { unsafeInternalDb as db } from '#/db/db';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { membershipsTable } from '#/db/schema/memberships';
 

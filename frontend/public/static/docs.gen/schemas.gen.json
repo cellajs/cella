@@ -1147,6 +1147,128 @@
     }
   },
   {
+    "name": "Tenant",
+    "ref": "#/components/schemas/Tenant",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "required": true,
+          "description": "Lowercase alphanumeric tenant ID",
+          "maxLength": 24
+        },
+        "name": {
+          "type": "string",
+          "required": true,
+          "description": "Tenant display name"
+        },
+        "status": {
+          "type": "string",
+          "required": true,
+          "enum": ["active", "suspended", "archived"],
+          "ref": "#/components/schemas/TenantStatus"
+        },
+        "createdAt": { "type": "string", "required": true },
+        "modifiedAt": {
+          "type": ["string", "null"],
+          "required": true
+        }
+      }
+    },
+    "schemaTag": "data"
+  },
+  {
+    "name": "TenantStatus",
+    "ref": "#/components/schemas/TenantStatus",
+    "type": "string",
+    "schema": {
+      "type": "string",
+      "enum": ["active", "suspended", "archived"]
+    },
+    "schemaTag": "data"
+  },
+  {
+    "name": "CreateTenantBody",
+    "ref": "#/components/schemas/CreateTenantBody",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "required": true,
+          "description": "Tenant display name",
+          "minLength": 1,
+          "maxLength": 255
+        },
+        "status": {
+          "type": "string",
+          "required": false,
+          "enum": ["active", "suspended", "archived"],
+          "ref": "#/components/schemas/TenantStatus"
+        }
+      }
+    },
+    "schemaTag": "data"
+  },
+  {
+    "name": "UpdateTenantBody",
+    "ref": "#/components/schemas/UpdateTenantBody",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "required": false,
+          "minLength": 1,
+          "maxLength": 255
+        },
+        "status": {
+          "type": "string",
+          "required": false,
+          "enum": ["active", "suspended", "archived"],
+          "ref": "#/components/schemas/TenantStatus"
+        }
+      }
+    },
+    "schemaTag": "data"
+  },
+  {
+    "name": "Request",
+    "ref": "#/components/schemas/Request",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "createdAt": { "type": "string", "required": true },
+        "id": { "type": "string", "required": true },
+        "message": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "email": { "type": "string", "required": true },
+        "type": {
+          "type": "string",
+          "required": true,
+          "enum": ["waitlist", "newsletter", "contact"]
+        },
+        "wasInvited": { "type": "boolean", "required": true }
+      }
+    },
+    "schemaTag": "data",
+    "example": {
+      "id": "wejsiq864y0sbytrzsnlr9a0",
+      "email": "anderson.pfannerstill23@yahoo.com",
+      "type": "contact",
+      "message": "Suggero accusator demens terreo amiculum comitatus necessitatibus candidus.",
+      "createdAt": "2024-06-05T15:03:46.141Z",
+      "wasInvited": false
+    }
+  },
+  {
     "name": "OrganizationIncluded",
     "ref": "#/components/schemas/OrganizationIncluded",
     "type": "object",
@@ -1570,128 +1692,6 @@
       "id": "uoobg3gmzvie508npzus4h2j",
       "sourceId": "q0fso83v5i0v5s1hl5zutg31",
       "baseVersion": 0
-    }
-  },
-  {
-    "name": "Tenant",
-    "ref": "#/components/schemas/Tenant",
-    "type": "object",
-    "schema": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string",
-          "required": true,
-          "description": "Lowercase alphanumeric tenant ID",
-          "maxLength": 24
-        },
-        "name": {
-          "type": "string",
-          "required": true,
-          "description": "Tenant display name"
-        },
-        "status": {
-          "type": "string",
-          "required": true,
-          "enum": ["active", "suspended", "archived"],
-          "ref": "#/components/schemas/TenantStatus"
-        },
-        "createdAt": { "type": "string", "required": true },
-        "modifiedAt": {
-          "type": ["string", "null"],
-          "required": true
-        }
-      }
-    },
-    "schemaTag": "data"
-  },
-  {
-    "name": "TenantStatus",
-    "ref": "#/components/schemas/TenantStatus",
-    "type": "string",
-    "schema": {
-      "type": "string",
-      "enum": ["active", "suspended", "archived"]
-    },
-    "schemaTag": "data"
-  },
-  {
-    "name": "CreateTenantBody",
-    "ref": "#/components/schemas/CreateTenantBody",
-    "type": "object",
-    "schema": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string",
-          "required": true,
-          "description": "Tenant display name",
-          "minLength": 1,
-          "maxLength": 255
-        },
-        "status": {
-          "type": "string",
-          "required": false,
-          "enum": ["active", "suspended", "archived"],
-          "ref": "#/components/schemas/TenantStatus"
-        }
-      }
-    },
-    "schemaTag": "data"
-  },
-  {
-    "name": "UpdateTenantBody",
-    "ref": "#/components/schemas/UpdateTenantBody",
-    "type": "object",
-    "schema": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string",
-          "required": false,
-          "minLength": 1,
-          "maxLength": 255
-        },
-        "status": {
-          "type": "string",
-          "required": false,
-          "enum": ["active", "suspended", "archived"],
-          "ref": "#/components/schemas/TenantStatus"
-        }
-      }
-    },
-    "schemaTag": "data"
-  },
-  {
-    "name": "Request",
-    "ref": "#/components/schemas/Request",
-    "type": "object",
-    "schema": {
-      "type": "object",
-      "properties": {
-        "createdAt": { "type": "string", "required": true },
-        "id": { "type": "string", "required": true },
-        "message": {
-          "type": ["string", "null"],
-          "required": true
-        },
-        "email": { "type": "string", "required": true },
-        "type": {
-          "type": "string",
-          "required": true,
-          "enum": ["waitlist", "newsletter", "contact"]
-        },
-        "wasInvited": { "type": "boolean", "required": true }
-      }
-    },
-    "schemaTag": "data",
-    "example": {
-      "id": "wejsiq864y0sbytrzsnlr9a0",
-      "email": "anderson.pfannerstill23@yahoo.com",
-      "type": "contact",
-      "message": "Suggero accusator demens terreo amiculum comitatus necessitatibus candidus.",
-      "createdAt": "2024-06-05T15:03:46.141Z",
-      "wasInvited": false
     }
   },
   {

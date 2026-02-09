@@ -9,7 +9,7 @@
 
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { and, asc, count, desc, eq, ilike } from 'drizzle-orm';
-import { db } from '#/db/db';
+import { unsafeInternalDb as db } from '#/db/db';
 import { tenantsTable } from '#/db/schema/tenants';
 import { type Env } from '#/lib/context';
 import { AppError } from '#/lib/error';

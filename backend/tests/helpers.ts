@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { eq } from 'drizzle-orm';
-import { db } from '#/db/db';
+import { unsafeInternalDb as db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
 import { type OrganizationModel, organizationsTable } from '#/db/schema/organizations';

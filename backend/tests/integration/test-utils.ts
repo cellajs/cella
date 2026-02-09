@@ -15,7 +15,7 @@
 import path from 'node:path';
 import { sql } from 'drizzle-orm';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
-import { db } from '#/db/db';
+import { unsafeInternalDb as db } from '#/db/db';
 import { activitiesTable } from '#/db/schema/activities';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';

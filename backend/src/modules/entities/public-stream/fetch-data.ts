@@ -5,7 +5,7 @@
 
 import { and, desc, gt, inArray } from 'drizzle-orm';
 import { hierarchy, type PublicProductEntityType } from 'shared';
-import { db } from '#/db/db';
+import { unsafeInternalDb as db } from '#/db/db';
 import { activitiesTable } from '#/db/schema/activities';
 
 /**

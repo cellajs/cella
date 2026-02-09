@@ -1,6 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { and, count, eq, getColumns, gte, ilike, inArray, or, SQL } from 'drizzle-orm';
-import { db } from '#/db/db';
 import type { PageModel } from '#/db/schema/pages';
 import { pagesTable } from '#/db/schema/pages';
 import { usersTable } from '#/db/schema/users';
@@ -118,14 +117,15 @@ const pageRouteHandlers = app
    */
   .openapi(pagesRoutes.createPages, async (ctx) => {
     const newPages = ctx.req.valid('json');
+    const tenantDb = ctx.var.db;
 
     // Idempotency check - use first item's tx.id
     const firstTx = newPages[0].tx;
-    if (await isTransactionProcessed(firstTx.id)) {
-      const ref = await getEntityByTransaction(firstTx.id);
+    if (await isTransactionProcessed(firstTx.id, tenantDb)) {
+      const ref = await getEntityByTransaction(firstTx.id, tenantDb);
       if (ref) {
         // For batch create, the first page ID is stored - fetch all from that batch
-        const existing = await db.select().from(pagesTable).where(eq(pagesTable.id, ref.entityId));
+        const existing = await tenantDb.select().from(pagesTable).where(eq(pagesTable.id, ref.entityId));
         if (existing.length > 0) {
           return ctx.json({ data: existing, rejectedItems: [] }, 200);
         }
@@ -158,8 +158,7 @@ const pageRouteHandlers = app
       },
     }));
 
-    // Use tenant-scoped db from tenantGuard middleware (RLS context already set)
-    const tenantDb = ctx.var.db;
+    // Insert using tenant-scoped db (RLS context already set)
     const createdPages = await tenantDb.insert(pagesTable).values(pagesToInsert).returning();
 
     logEvent('info', `${createdPages.length} pages have been created`);

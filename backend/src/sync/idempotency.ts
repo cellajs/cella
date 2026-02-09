@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { db } from '#/db/db';
+import type { DbOrTx } from '#/db/db';
 import { activitiesTable } from '#/db/schema/activities';
 
 /**
@@ -7,9 +7,10 @@ import { activitiesTable } from '#/db/schema/activities';
  * Used for idempotency - ensures replayed mutations don't create duplicates.
  *
  * @param txId - The client-generated mutation ID (nanoid)
+ * @param db - Database or transaction to use (from ctx.var.db).
  * @returns true if transaction exists in activities, false otherwise
  */
-export async function isTransactionProcessed(txId: string): Promise<boolean> {
+export async function isTransactionProcessed(txId: string, db: DbOrTx): Promise<boolean> {
   const existing = await db
     .select({ id: activitiesTable.id })
     .from(activitiesTable)
@@ -29,9 +30,10 @@ interface EntityReference {
  * Used to return existing entity for idempotent responses.
  *
  * @param txId - The client-generated mutation ID (nanoid)
+ * @param db - Database or transaction to use (from ctx.var.db).
  * @returns Entity reference if found, null otherwise
  */
-export async function getEntityByTransaction(txId: string): Promise<EntityReference | null> {
+export async function getEntityByTransaction(txId: string, db: DbOrTx): Promise<EntityReference | null> {
   const [activity] = await db
     .select({
       entityType: activitiesTable.entityType,

@@ -111,8 +111,9 @@ const entitiesRouteHandlers = app
    */
   .openapi(entityRoutes.checkSlug, async (ctx) => {
     const { slug, entityType } = ctx.req.valid('json');
+    const db = ctx.var.db;
 
-    const slugAvailable = await checkSlugAvailable(slug, entityType);
+    const slugAvailable = await checkSlugAvailable(slug, db, entityType);
 
     return slugAvailable ? ctx.body(null, 204) : ctx.body(null, 409);
   })

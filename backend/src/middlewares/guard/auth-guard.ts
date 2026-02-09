@@ -1,6 +1,6 @@
 import * as Sentry from '@sentry/node';
 import { eq } from 'drizzle-orm';
-import { db } from '#/db/db';
+import { unsafeInternalDb } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { systemRolesTable } from '#/db/schema/system-roles';
 import { setUserRlsContext } from '#/db/tenant-context';
@@ -49,7 +49,7 @@ export const authGuard = xMiddleware(
         setUserRlsContext({ userId: user.id }, (tx) =>
           tx.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id)),
         ),
-        db
+        unsafeInternalDb
           .select({ role: systemRolesTable.role })
           .from(systemRolesTable)
           .where(eq(systemRolesTable.userId, user.id))
@@ -59,6 +59,10 @@ export const authGuard = xMiddleware(
       // Store values in context for downstream use
       ctx.set('memberships', memberships);
       ctx.set('userSystemRole', userSystemRoleRecord?.role ?? null); // null if no system role is assigned
+
+      // Set db in context (raw db, no RLS transaction needed for auth-only routes)
+      // Tenant-scoped routes will override this via tenantGuard with RLS transaction
+      ctx.set('db', unsafeInternalDb);
     } catch (err) {
       // If session validation fails, remove cookie
       if (err instanceof AppError) deleteAuthCookie(ctx, 'session');

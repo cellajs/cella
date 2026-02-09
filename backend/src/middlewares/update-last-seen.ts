@@ -1,4 +1,4 @@
-import { db } from '#/db/db';
+import { unsafeInternalDb as db } from '#/db/db';
 import { lastSeenTable } from '#/db/schema/last-seen';
 import { getIsoDate } from '#/utils/iso-date';
 import { TimeSpan } from '#/utils/time-span';

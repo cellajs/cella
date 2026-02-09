@@ -71,6 +71,7 @@ export function createTxForUpdate(cachedEntity?: EntityWithTx | null): TxMetadat
  * Create transaction metadata for a delete mutation.
  * Deletes use version 0 (no conflict detection needed).
  */
+// TODO tx should become stx to prevent confusiong with postgres transaction.
 export function createTxForDelete(): TxMetadata {
   return {
     id: nanoid(),

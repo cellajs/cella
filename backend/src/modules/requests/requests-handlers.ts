@@ -2,7 +2,7 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { and, count, eq, getColumns, ilike, inArray, type SQL, sql } from 'drizzle-orm';
 import i18n from 'i18next';
 import { appConfig } from 'shared';
-import { db } from '#/db/db';
+import { unsafeInternalDb as db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { type RequestModel, requestsTable } from '#/db/schema/requests';
 import { usersTable } from '#/db/schema/users';

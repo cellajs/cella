@@ -1,6 +1,6 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { and, count, eq, ilike } from 'drizzle-orm';
-import { db } from '#/db/db';
+import { unsafeInternalDb as db } from '#/db/db';
 import { activitiesTable } from '#/db/schema/activities';
 import type { Env } from '#/lib/context';
 import activityRoutes from '#/modules/activities/activities-routes';

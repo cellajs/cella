@@ -1,5 +1,5 @@
 import { and, eq, sql } from 'drizzle-orm';
-import { db } from '#/db/db';
+import { unsafeInternalDb as db } from '#/db/db';
 import { countersTable } from '#/db/schema/counters';
 
 /**

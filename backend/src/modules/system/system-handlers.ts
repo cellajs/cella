@@ -3,7 +3,7 @@ import { EventName, Paddle } from '@paddle/paddle-node-sdk';
 import { and, count, eq, ilike, inArray, isNull, or, sql } from 'drizzle-orm';
 import i18n from 'i18next';
 import { appConfig } from 'shared';
-import { db } from '#/db/db';
+import { unsafeInternalDb as db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { lastSeenTable } from '#/db/schema/last-seen';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -288,7 +288,7 @@ const systemRouteHandlers = app
 
     // Check if slug is available
     if (slug && slug !== targetUser.slug) {
-      const slugAvailable = await checkSlugAvailable(slug);
+      const slugAvailable = await checkSlugAvailable(slug, db);
       if (!slugAvailable) throw new AppError(409, 'slug_exists', 'warn', { entityType: 'user', meta: { slug } });
     }
 

@@ -3,7 +3,7 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { encodeBase64 } from '@oslojs/encoding';
 import { and, eq, getColumns } from 'drizzle-orm';
 import { appConfig } from 'shared';
-import { db } from '#/db/db';
+import { unsafeInternalDb as db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { totpsTable } from '#/db/schema/totps';

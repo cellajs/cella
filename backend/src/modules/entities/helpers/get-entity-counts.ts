@@ -1,7 +1,7 @@
 import { eq, sql } from 'drizzle-orm';
 import { type ContextEntityType, hierarchy, roles } from 'shared';
 import type z from 'zod';
-import { db } from '#/db/db';
+import { unsafeInternalDb as db } from '#/db/db';
 import { getMemberCountsSubquery } from '#/modules/entities/helpers/get-member-counts';
 import { getRelatedCountsSubquery } from '#/modules/entities/helpers/get-related-entity-counts';
 import type { membershipCountSchema } from '#/modules/organization/organization-schema';

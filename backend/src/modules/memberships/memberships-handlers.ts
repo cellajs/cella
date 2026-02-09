@@ -3,7 +3,7 @@ import { and, count, eq, ilike, inArray, or, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import i18n from 'i18next';
 import { appConfig } from 'shared';
-import { db } from '#/db/db';
+import { unsafeInternalDb as db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { lastSeenTable } from '#/db/schema/last-seen';
@@ -448,7 +448,7 @@ const membershipsRouteHandlers = app
     const membershipContextId = membershipToUpdate[updatedEntityIdField];
     if (!membershipContextId) throw new AppError(500, 'server_error', 'error', { entityType: updatedType });
 
-    const membershipContext = await resolveEntity(updatedType, membershipContextId);
+    const membershipContext = await resolveEntity(updatedType, membershipContextId, db);
     if (!membershipContext) throw new AppError(404, 'not_found', 'warn', { entityType: updatedType });
 
     // Check if user has permission to update someone elses membership role
@@ -508,7 +508,7 @@ const membershipsRouteHandlers = app
       if (!entityFieldId)
         throw new AppError(500, 'server_error', 'error', { entityType: inactiveMembership.contextType });
 
-      const entity = await resolveEntity(inactiveMembership.contextType, entityFieldId);
+      const entity = await resolveEntity(inactiveMembership.contextType, entityFieldId, db);
       if (!entity) throw new AppError(404, 'not_found', 'error', { entityType: inactiveMembership.contextType });
 
       const activatedMemberships = await insertMemberships([
@@ -529,7 +529,7 @@ const membershipsRouteHandlers = app
         .where(and(eq(inactiveMembershipsTable.id, inactiveMembership.id)));
     }
 
-    const entity = await resolveEntity('organization', inactiveMembership.organizationId);
+    const entity = await resolveEntity('organization', inactiveMembership.organizationId, db);
     if (!entity) throw new AppError(404, 'not_found', 'error', { entityType: 'organization' });
 
     return ctx.json(entity, 200);

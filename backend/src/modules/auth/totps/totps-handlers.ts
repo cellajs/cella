@@ -3,7 +3,7 @@ import { encodeBase32UpperCase } from '@oslojs/encoding';
 import { createTOTPKeyURI } from '@oslojs/otp';
 import { eq } from 'drizzle-orm';
 import { appConfig } from 'shared';
-import { db } from '#/db/db';
+import { unsafeInternalDb as db } from '#/db/db';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { totpsTable } from '#/db/schema/totps';
 import { usersTable } from '#/db/schema/users';

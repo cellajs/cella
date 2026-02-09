@@ -1,7 +1,7 @@
 import { execSync } from 'node:child_process';
 import { sql } from 'drizzle-orm';
 import { migrate } from 'drizzle-orm/pglite/migrator';
-import { db, migrateConfig } from '#/db/db';
+import { unsafeInternalDb as db, migrateConfig } from '#/db/db';
 import { checkMark } from '#/utils/console';
 
 // Migrate the database
