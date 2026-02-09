@@ -111,6 +111,11 @@ export type ContextEntityType = (typeof appConfig.contextEntityTypes)[number];
 export type ProductEntityType = (typeof appConfig.productEntityTypes)[number];
 
 /**
+ * Parentless product entities (no organization_id) - tenant-scoped only
+ */
+export type ParentlessProductEntityType = (typeof appConfig.parentlessProductEntityTypes)[number];
+
+/**
  * Public product entities (parent: null) - accessible without authentication
  */
 export type PublicProductEntityType = (typeof hierarchy.publicAccessTypes)[number];
@@ -253,3 +258,14 @@ const _productTypesMatch1: ProductEntityType extends HierarchyProductType ? true
 const _productTypesMatch2: HierarchyProductType extends ProductEntityType ? true : false = true;
 void _productTypesMatch1;
 void _productTypesMatch2;
+
+// Validate parentlessProductEntityTypes matches hierarchy.parentlessProductTypes
+type HierarchyParentlessProductType = (typeof hierarchy.parentlessProductTypes)[number];
+const _parentlessProductTypesMatch1: ParentlessProductEntityType extends HierarchyParentlessProductType
+  ? true
+  : false = true;
+const _parentlessProductTypesMatch2: HierarchyParentlessProductType extends ParentlessProductEntityType
+  ? true
+  : false = true;
+void _parentlessProductTypesMatch1;
+void _parentlessProductTypesMatch2;

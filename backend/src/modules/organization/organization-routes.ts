@@ -1,5 +1,5 @@
 import { createXRoute } from '#/docs/x-routes';
-import { isAuthenticated } from '#/middlewares/guard';
+import { authGuard } from '#/middlewares/guard';
 import {
   organizationCreateBodySchema,
   organizationListQuerySchema,
@@ -30,7 +30,7 @@ const organizationRoutes = {
     operationId: 'createOrganizations',
     method: 'post',
     path: '/organizations',
-    xGuard: isAuthenticated,
+    xGuard: authGuard,
     tags: ['organizations'],
     summary: 'Create organizations',
     description: 'Creates one or more new *organizations*.',
@@ -60,7 +60,7 @@ const organizationRoutes = {
     operationId: 'getOrganizations',
     method: 'get',
     path: '/organizations',
-    xGuard: [isAuthenticated],
+    xGuard: [authGuard],
     tags: ['organizations'],
     summary: 'Get list of organizations',
     description: 'Returns a list of *organizations*.',
@@ -85,7 +85,7 @@ const organizationRoutes = {
     operationId: 'getOrganization',
     method: 'get',
     path: '/{tenantId}/organizations/{idOrSlug}',
-    xGuard: [isAuthenticated],
+    xGuard: [authGuard],
     tags: ['organizations'],
     summary: 'Get organization',
     description: 'Retrieves an *organization* by ID or slug within a tenant.',
@@ -105,7 +105,7 @@ const organizationRoutes = {
     operationId: 'updateOrganization',
     method: 'put',
     path: '/{tenantId}/organizations/{id}',
-    xGuard: [isAuthenticated],
+    xGuard: [authGuard],
     tags: ['organizations'],
     summary: 'Update organization',
     description: 'Updates an *organization* within a tenant.',
@@ -130,7 +130,7 @@ const organizationRoutes = {
     operationId: 'deleteOrganizations',
     method: 'delete',
     path: '/{tenantId}/organizations',
-    xGuard: [isAuthenticated],
+    xGuard: [authGuard],
     tags: ['organizations'],
     summary: 'Delete organizations',
     description: 'Deletes one or more *organizations* by ID within a tenant.',

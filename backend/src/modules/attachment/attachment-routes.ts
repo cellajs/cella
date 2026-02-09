@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/docs/x-routes';
 import { appCache } from '#/middlewares/entity-cache';
-import { isAuthenticated, isPublicAccess, orgGuard, tenantGuard } from '#/middlewares/guard';
+import { authGuard, orgGuard, publicGuard, tenantGuard } from '#/middlewares/guard';
 import { presignedUrlLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   attachmentCreateManyTxBodySchema,
@@ -34,7 +34,7 @@ const attachmentRoutes = {
     operationId: 'getAttachments',
     method: 'get',
     path: '/',
-    xGuard: [isAuthenticated, tenantGuard, orgGuard],
+    xGuard: [authGuard, tenantGuard, orgGuard],
     tags: ['attachments'],
     summary: 'Get attachments',
     description: 'Returns a paginated list of *attachments* for the organization.',
@@ -62,7 +62,7 @@ const attachmentRoutes = {
     operationId: 'createAttachments',
     method: 'post',
     path: '/',
-    xGuard: [isAuthenticated, tenantGuard, orgGuard],
+    xGuard: [authGuard, tenantGuard, orgGuard],
     tags: ['attachments'],
     summary: 'Create attachments',
     description:
@@ -97,7 +97,7 @@ const attachmentRoutes = {
     operationId: 'getAttachment',
     method: 'get',
     path: '/{id}',
-    xGuard: [isAuthenticated, tenantGuard, orgGuard],
+    xGuard: [authGuard, tenantGuard, orgGuard],
     xCache: appCache(),
     tags: ['attachments'],
     summary: 'Get attachment',
@@ -120,7 +120,7 @@ const attachmentRoutes = {
     operationId: 'updateAttachment',
     method: 'put',
     path: '/{id}',
-    xGuard: [isAuthenticated, tenantGuard, orgGuard],
+    xGuard: [authGuard, tenantGuard, orgGuard],
     tags: ['attachments'],
     summary: 'Update attachment',
     description: 'Updates metadata of an *attachment*, such as its name or associated entity.',
@@ -146,7 +146,7 @@ const attachmentRoutes = {
     operationId: 'deleteAttachments',
     method: 'delete',
     path: '/',
-    xGuard: [isAuthenticated, tenantGuard, orgGuard],
+    xGuard: [authGuard, tenantGuard, orgGuard],
     tags: ['attachments'],
     summary: 'Delete attachments',
     description: 'Deletes one or more *attachment* records by ID. This does not delete the underlying file in storage.',
@@ -176,7 +176,7 @@ const attachmentRoutes = {
     operationId: 'redirectToAttachment',
     method: 'get',
     path: '/{id}/link',
-    xGuard: isPublicAccess,
+    xGuard: publicGuard,
     xRateLimiter: tokenLimiter('attachment_redirect'),
     tags: ['attachments'],
     summary: 'Redirect to attachment',
@@ -194,7 +194,7 @@ const attachmentRoutes = {
     operationId: 'getPresignedUrl',
     method: 'get',
     path: '/presigned-url',
-    xGuard: [isAuthenticated, tenantGuard, orgGuard],
+    xGuard: [authGuard, tenantGuard, orgGuard],
     xRateLimiter: presignedUrlLimiter,
     tags: ['attachments'],
     summary: 'Get presigned URL',

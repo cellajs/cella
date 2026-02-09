@@ -9,7 +9,7 @@ import pc from 'picocolors';
 import { appConfig } from 'shared';
 import { mockAdmin, mockEmail, mockPassword, mockUnsubscribeToken } from '../../../mocks/mock-user';
 import { setMockContext } from '../../../mocks/utils';
-import { defaultAdminUser, systemTenant } from '../fixtures';
+import { defaultAdminUser, publicTenant } from '../fixtures';
 import { systemRolesTable } from '#/db/schema/system-roles';
 import { checkMark } from '#/utils/console';
 
@@ -44,8 +44,8 @@ export const userSeed = async () => {
   // Records already exist → skip seeding
   if (await isUserSeeded()) return console.warn('Users table is not empty → skip seeding');
 
-  // Create system tenant (needed for pages and other platform-wide content)
-  await db.insert(tenantsTable).values({ id: systemTenant.id, name: systemTenant.name }).onConflictDoNothing();
+  // Create public tenant (needed for pages and other platform-wide content)
+  await db.insert(tenantsTable).values({ id: publicTenant.id, name: publicTenant.name }).onConflictDoNothing();
 
   // Hash default admin password
   const hashed = await hashPassword(defaultAdminUser.password);

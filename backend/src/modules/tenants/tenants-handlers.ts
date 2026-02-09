@@ -16,7 +16,7 @@ import { AppError } from '#/lib/error';
 import { defaultHook } from '#/utils/default-hook';
 import { logEvent } from '#/utils/logger';
 import { prepareStringForILikeFilter } from '#/utils/sql';
-import { SYSTEM_TENANT_ID } from '../../../scripts/seeds/fixtures';
+import { PUBLIC_TENANT_ID } from '../../../scripts/seeds/fixtures';
 import tenantRoutes from './tenants-routes';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
@@ -132,9 +132,9 @@ const tenantHandlers = app
     const { tenantId } = ctx.req.valid('param');
     const user = ctx.var.user;
 
-    // Protect system tenant from archival
-    if (tenantId === SYSTEM_TENANT_ID) {
-      throw new AppError(403, 'forbidden', 'warn', { meta: { reason: 'Cannot archive system tenant' } });
+    // Protect public tenant from archival
+    if (tenantId === PUBLIC_TENANT_ID) {
+      throw new AppError(403, 'forbidden', 'warn', { meta: { reason: 'Cannot archive public tenant' } });
     }
 
     // Check tenant exists

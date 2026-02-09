@@ -5,8 +5,18 @@ import { customAlphabet } from 'nanoid';
  */
 export const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz0123456789', 24);
 
+/** Reserved tenant ID for public/platform-wide content */
+const RESERVED_TENANT_ID = 'public';
+
 /**
- * Generate a 6-character lowercase alphanumeric ID for tenant IDs.
- * Short for URL-friendliness while maintaining sufficient entropy for collision resistance.
+ * Generate a 24-character lowercase alphanumeric ID for tenant IDs.
+ * Includes collision check against reserved 'public' tenant ID.
  */
-export const nanoidLowercase = customAlphabet('abcdefghijklmnopqrstuvwxyz0123456789', 6);
+export function nanoidTenant(): string {
+  let id = customAlphabet('abcdefghijklmnopqrstuvwxyz0123456789', 24)();
+  // Extremely unlikely but prevent reserved ID collision
+  while (id === RESERVED_TENANT_ID) {
+    id = customAlphabet('abcdefghijklmnopqrstuvwxyz0123456789', 24)();
+  }
+  return id;
+}

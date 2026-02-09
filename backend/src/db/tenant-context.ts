@@ -23,7 +23,7 @@ type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
  * Tenant context options for authenticated routes.
  */
 export interface TenantRlsOptions {
-  /** Tenant ID from URL path (6-char lowercase alphanumeric) */
+  /** Tenant ID from URL path (up to 24-char lowercase alphanumeric) */
   tenantId: string;
   /** Authenticated user ID */
   userId: string;
@@ -119,35 +119,4 @@ export async function setPublicRlsContext<T>(tenantId: string, fn: (tx: Tx) => P
     await tx.execute(sql`SELECT set_config('app.is_authenticated', 'false', true)`);
     return fn(tx);
   });
-}
-
-// ============================================================================
-// Tenant ID Validation
-// ============================================================================
-
-/** Regex for valid tenant IDs: 6-character lowercase alphanumeric */
-const TENANT_ID_REGEX = /^[a-z0-9]{6}$/;
-
-/**
- * Validates tenant ID format.
- * Tenant IDs must be exactly 6 lowercase alphanumeric characters.
- *
- * @param id - Tenant ID to validate
- * @throws Error if format is invalid
- */
-export function validateTenantId(id: string): void {
-  if (!TENANT_ID_REGEX.test(id)) {
-    throw new Error('Invalid tenant ID format');
-  }
-}
-
-/**
- * Normalizes tenant ID to lowercase.
- * Call this before validation and storage to prevent case-sensitivity issues.
- *
- * @param id - Tenant ID to normalize
- * @returns Lowercased tenant ID
- */
-export function normalizeTenantId(id: string): string {
-  return id.toLowerCase();
 }

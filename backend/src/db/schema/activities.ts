@@ -42,7 +42,7 @@ export const activitiesTable = pgTable(
     id: varchar().notNull().$defaultFn(nanoid),
     // Tenant isolation - nullable for cross-tenant entities like users
     // Queries MUST filter by tenantId OR userId explicitly
-    tenantId: varchar('tenant_id', { length: 6 }).references(() => tenantsTable.id),
+    tenantId: varchar('tenant_id', { length: 24 }).references(() => tenantsTable.id),
     userId: varchar(), // User who performed the action (nullable for system actions)
     entityType: varchar({ enum: appConfig.entityTypes }), // Entity type if applicable
     resourceType: varchar({ enum: appConfig.resourceTypes }), // Resource type if not an entity

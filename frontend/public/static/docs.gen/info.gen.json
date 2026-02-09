@@ -11,10 +11,9 @@
       "description": "Authorization middleware applied to the endpoint",
       "required": true,
       "values": {
-        "isPublicAccess": { "description": "No authentication required" },
-        "hasPublicTenantAccess": { "description": "Validates tenant ID and wraps handler in public tenant context" },
-        "hasSystemAccess": { "description": "Requires system admin + IP whitelist" },
-        "isAuthenticated": { "description": "Requires valid session" },
+        "publicGuard": { "description": "No authentication required" },
+        "authGuard": { "description": "Requires valid session" },
+        "sysAdminGuard": { "description": "Requires system admin + IP whitelist" },
         "tenantGuard": { "description": "Validates tenant access and wraps handler in RLS-enabled transaction" }
       }
     },

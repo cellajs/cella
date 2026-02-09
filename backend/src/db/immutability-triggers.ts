@@ -15,24 +15,26 @@ import { entityTables } from '#/table-config';
 // Immutable Column Sets by Entity Category
 // ============================================================================
 
-/** Columns that should never change after creation for context entities (e.g., organizations) */
-export const contextEntityImmutableColumns = ['id', 'tenant_id', 'entity_type', 'created_at', 'created_by'] as const;
+/** Base immutable columns shared by all entity types */
+const baseEntityImmutableColumns = ['id', 'tenant_id', 'entity_type', 'created_at', 'created_by'] as const;
 
-/** Columns that should never change after creation for product entities (e.g., pages, attachments) */
-export const productEntityImmutableColumns = [
-  'id',
-  'tenant_id',
-  'organization_id',
-  'entity_type',
-  'created_at',
-  'created_by',
-] as const;
+/** Base immutable columns for membership tables */
+const baseMembershipImmutableColumns = ['tenant_id', 'organization_id'] as const;
 
-/** Columns that should never change after creation for memberships */
-export const membershipImmutableColumns = ['tenant_id', 'organization_id', 'user_id'] as const;
+/** Context entities (e.g., organizations) - use base columns */
+export const contextEntityImmutableColumns = baseEntityImmutableColumns;
 
-/** Columns that should never change after creation for inactive memberships */
-export const inactiveMembershipImmutableColumns = ['tenant_id', 'organization_id'] as const;
+/** Product entities with parent (e.g., attachments) - base + organization_id */
+export const productEntityImmutableColumns = [...baseEntityImmutableColumns, 'organization_id'] as const;
+
+/** Parentless product entities (e.g., pages) - same as context (no organization_id) */
+export const parentlessProductEntityImmutableColumns = baseEntityImmutableColumns;
+
+/** Memberships - base membership + user_id */
+export const membershipImmutableColumns = [...baseMembershipImmutableColumns, 'user_id'] as const;
+
+/** Inactive memberships - base membership columns only */
+export const inactiveMembershipImmutableColumns = baseMembershipImmutableColumns;
 
 // ============================================================================
 // Generic Trigger SQL Builders
@@ -73,13 +75,16 @@ CREATE TRIGGER ${triggerName}
 // Pre-built Functions for Each Entity Category
 // ============================================================================
 
-/** Immutability function for context entities (organizations, etc.) */
-export const contextEntityImmutabilityFunctionSQL = buildImmutabilityFunctionSQL(
-  'context_entity_immutable_keys',
-  contextEntityImmutableColumns,
+/**
+ * Immutability function for base entity types (context entities + parentless products).
+ * Both share the same columns: id, tenant_id, entity_type, created_at, created_by.
+ */
+export const baseEntityImmutabilityFunctionSQL = buildImmutabilityFunctionSQL(
+  'base_entity_immutable_keys',
+  baseEntityImmutableColumns,
 );
 
-/** Immutability function for product entities (pages, attachments, etc.) */
+/** Immutability function for product entities with parent (attachments, etc.) - adds organization_id */
 export const productEntityImmutabilityFunctionSQL = buildImmutabilityFunctionSQL(
   'product_entity_immutable_keys',
   productEntityImmutableColumns,
@@ -107,17 +112,30 @@ interface TableImmutabilityConfig {
   functionName: string;
 }
 
-/** Context entity tables - derived from appConfig.contextEntityTypes */
+/** Parentless product types (from hierarchy config) */
+const parentlessProductTypes = new Set<string>(appConfig.parentlessProductEntityTypes);
+
+/** Context entity tables - use base_entity function */
 const contextEntityTableConfigs: TableImmutabilityConfig[] = appConfig.contextEntityTypes.map((entityType) => ({
   tableName: getTableName(entityTables[entityType]),
-  functionName: 'context_entity_immutable_keys',
+  functionName: 'base_entity_immutable_keys',
 }));
 
-/** Product entity tables - derived from appConfig.productEntityTypes */
-const productEntityTableConfigs: TableImmutabilityConfig[] = appConfig.productEntityTypes.map((entityType) => ({
-  tableName: getTableName(entityTables[entityType]),
-  functionName: 'product_entity_immutable_keys',
-}));
+/** Parentless product entity tables - also use base_entity function (same columns) */
+const parentlessProductEntityTableConfigs: TableImmutabilityConfig[] = appConfig.parentlessProductEntityTypes.map(
+  (entityType) => ({
+    tableName: getTableName(entityTables[entityType]),
+    functionName: 'base_entity_immutable_keys',
+  }),
+);
+
+/** Product entity tables with parent (have organization_id) */
+const productEntityTableConfigs: TableImmutabilityConfig[] = appConfig.productEntityTypes
+  .filter((entityType) => !parentlessProductTypes.has(entityType))
+  .map((entityType) => ({
+    tableName: getTableName(entityTables[entityType]),
+    functionName: 'product_entity_immutable_keys',
+  }));
 
 /** Membership tables - these are fixed (not entity types) */
 const membershipTableConfigs: TableImmutabilityConfig[] = [
@@ -128,6 +146,7 @@ const membershipTableConfigs: TableImmutabilityConfig[] = [
 /** All tables with immutability triggers */
 export const allImmutabilityTables = [
   ...contextEntityTableConfigs,
+  ...parentlessProductEntityTableConfigs,
   ...productEntityTableConfigs,
   ...membershipTableConfigs,
 ];
@@ -136,19 +155,25 @@ export const allImmutabilityTables = [
 // Combined SQL for All Triggers
 // ============================================================================
 
+/** Tables using base entity function (context + parentless products) */
+const baseEntityTables = [...contextEntityTableConfigs, ...parentlessProductEntityTableConfigs];
+
+/** Tables using product entity function (with organization_id) */
+const productWithParentTables = productEntityTableConfigs;
+
 /**
  * Complete SQL to create all immutability functions and triggers.
  * Run this after migrations to ensure protection is in place.
  */
 export const immutabilityTriggersSQL = `
 -- ==========================================================================
--- Immutability Trigger Functions
+-- Immutability Trigger Functions (${3 + membershipTableConfigs.length} functions)
 -- ==========================================================================
 
--- Context entities (${appConfig.contextEntityTypes.join(', ')})
-${contextEntityImmutabilityFunctionSQL}
+-- Base entities: context + parentless products (${baseEntityTables.map((t) => t.tableName).join(', ')})
+${baseEntityImmutabilityFunctionSQL}
 
--- Product entities (${appConfig.productEntityTypes.join(', ')})
+-- Product entities with parent (${productWithParentTables.map((t) => t.tableName).join(', ') || 'none'})
 ${productEntityImmutabilityFunctionSQL}
 
 -- Memberships
@@ -158,17 +183,10 @@ ${membershipImmutabilityFunctionSQL}
 ${inactiveMembershipImmutabilityFunctionSQL}
 
 -- ==========================================================================
--- Apply Triggers to Tables
+-- Apply Triggers to Tables (${allImmutabilityTables.length} tables)
 -- ==========================================================================
 
--- Context entity tables
-${contextEntityTableConfigs.map((t) => buildImmutabilityTriggerSQL(t.tableName, t.functionName)).join('\n')}
-
--- Product entity tables
-${productEntityTableConfigs.map((t) => buildImmutabilityTriggerSQL(t.tableName, t.functionName)).join('\n')}
-
--- Membership tables
-${membershipTableConfigs.map((t) => buildImmutabilityTriggerSQL(t.tableName, t.functionName)).join('\n')}
+${allImmutabilityTables.map((t) => buildImmutabilityTriggerSQL(t.tableName, t.functionName)).join('\n')}
 `;
 
 // ============================================================================

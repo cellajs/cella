@@ -1,7 +1,7 @@
 CREATE TYPE "tenant_status" AS ENUM('active', 'suspended', 'archived');--> statement-breakpoint
 CREATE TABLE "activities" (
 	"id" varchar,
-	"tenant_id" varchar(6),
+	"tenant_id" varchar(24),
 	"user_id" varchar,
 	"entity_type" varchar,
 	"resource_type" varchar,
@@ -28,7 +28,7 @@ CREATE TABLE "attachments" (
 	"keywords" varchar NOT NULL,
 	"created_by" varchar,
 	"modified_by" varchar,
-	"tenant_id" varchar(6) NOT NULL,
+	"tenant_id" varchar(24) NOT NULL,
 	"tx" jsonb NOT NULL,
 	"public" boolean DEFAULT false NOT NULL,
 	"bucket_name" varchar NOT NULL,
@@ -66,7 +66,7 @@ CREATE TABLE "emails" (
 CREATE TABLE "inactive_memberships" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"id" varchar PRIMARY KEY,
-	"tenant_id" varchar(6) NOT NULL,
+	"tenant_id" varchar(24) NOT NULL,
 	"context_type" varchar NOT NULL,
 	"email" varchar NOT NULL,
 	"user_id" varchar,
@@ -87,7 +87,7 @@ CREATE TABLE "last_seen" (
 CREATE TABLE "memberships" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"id" varchar PRIMARY KEY,
-	"tenant_id" varchar(6) NOT NULL,
+	"tenant_id" varchar(24) NOT NULL,
 	"context_type" varchar NOT NULL,
 	"user_id" varchar NOT NULL,
 	"role" varchar DEFAULT 'member' NOT NULL,
@@ -126,7 +126,7 @@ CREATE TABLE "organizations" (
 	"banner_url" varchar,
 	"created_by" varchar,
 	"modified_by" varchar,
-	"tenant_id" varchar(6) NOT NULL,
+	"tenant_id" varchar(24) NOT NULL,
 	"short_name" varchar,
 	"country" varchar,
 	"timezone" varchar,
@@ -155,7 +155,7 @@ CREATE TABLE "pages" (
 	"keywords" varchar NOT NULL,
 	"created_by" varchar,
 	"modified_by" varchar,
-	"tenant_id" varchar(6) NOT NULL,
+	"tenant_id" varchar(24) NOT NULL,
 	"tx" jsonb NOT NULL,
 	"status" varchar DEFAULT 'unpublished' NOT NULL,
 	"public_access" boolean DEFAULT false NOT NULL,
@@ -225,7 +225,7 @@ CREATE TABLE "system_roles" (
 );
 --> statement-breakpoint
 CREATE TABLE "tenants" (
-	"id" varchar(6) PRIMARY KEY,
+	"id" varchar(24) PRIMARY KEY,
 	"name" varchar NOT NULL,
 	"status" "tenant_status" DEFAULT 'active'::"tenant_status" NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,

@@ -74,6 +74,7 @@ function AttachmentsTable({ entity, canUpload = true, isSheet = false }: Attachm
     hasNextPage,
   } = useInfiniteQuery({
     ...queryOptions,
+    refetchOnMount: true,
     select: ({ pages }) => pages.flatMap(({ items }) => items),
   });
 

@@ -99,7 +99,7 @@
                         "tenantId": {
                           "type": "string",
                           "required": true,
-                          "maxLength": 6
+                          "maxLength": 24
                         },
                         "contextType": {
                           "type": "string",
@@ -253,7 +253,11 @@
     "request": {
       "path": {
         "properties": {
-          "tenantId": { "type": "string", "required": true },
+          "tenantId": {
+            "type": "string",
+            "required": true,
+            "maxLength": 24
+          },
           "orgIdOrSlug": { "type": "string", "required": true }
         }
       },
@@ -436,7 +440,11 @@
     "request": {
       "path": {
         "properties": {
-          "tenantId": { "type": "string", "required": true },
+          "tenantId": {
+            "type": "string",
+            "required": true,
+            "maxLength": 24
+          },
           "orgIdOrSlug": { "type": "string", "required": true },
           "idOrSlug": { "type": "string", "required": true }
         }

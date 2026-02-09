@@ -8,7 +8,7 @@ import {
 import { getSpecificationExtensions } from '#/docs/openapi-describer';
 import type { OpenApiTagId } from '#/docs/tags-config';
 import { toMiddlewareArray } from '#/docs/utils';
-import { isPublicAccess } from '#/middlewares/guard/is-public-access';
+import { publicGuard } from '#/middlewares/guard/public-guard';
 
 /** Route options with typed tags restricted to OpenApiTagId values. */
 type RouteOptions = Omit<Parameters<typeof createRoute>[0], 'tags'> &
@@ -36,7 +36,7 @@ export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'pat
   const specificationExtensions = getSpecificationExtensions(middleware);
 
   // Public routes have no security, authenticated routes require cookie auth
-  const security = extensionMiddleware.includes(isPublicAccess) ? [] : [{ cookieAuth: [] }];
+  const security = extensionMiddleware.includes(publicGuard) ? [] : [{ cookieAuth: [] }];
 
   // Strip extension props to prevent them leaking as null in OpenAPI
   const extensionPropIds = getExtensionPropIds();

@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/docs/x-routes';
-import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
+import { authGuard, publicGuard, sysAdminGuard } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { inviteBodySchema, sendNewsletterBodySchema, systemRoleBaseSchema } from '#/modules/system/system-schema';
 import {
@@ -24,7 +24,7 @@ const systemRoutes = {
     operationId: 'systemInvite',
     method: 'post',
     path: '/invite',
-    xGuard: [isAuthenticated, hasSystemAccess],
+    xGuard: [authGuard, sysAdminGuard],
     tags: ['system'],
     summary: 'Invite to system',
     description:
@@ -55,7 +55,7 @@ const systemRoutes = {
     operationId: 'getUsers',
     method: 'get',
     path: '/',
-    xGuard: [isAuthenticated, hasSystemAccess],
+    xGuard: [authGuard, sysAdminGuard],
     tags: ['system'],
     summary: 'Get list of users',
     description: 'Returns a list of *users*.',
@@ -85,7 +85,7 @@ const systemRoutes = {
     operationId: 'deleteUsers',
     method: 'delete',
     path: '/',
-    xGuard: [isAuthenticated, hasSystemAccess],
+    xGuard: [authGuard, sysAdminGuard],
     tags: ['system'],
     summary: 'Delete users',
     description:
@@ -111,7 +111,7 @@ const systemRoutes = {
     operationId: 'updateUser',
     method: 'put',
     path: '/{id}',
-    xGuard: [isAuthenticated, hasSystemAccess],
+    xGuard: [authGuard, sysAdminGuard],
     tags: ['system'],
     summary: 'Update user',
     description: 'Updates a *user* identified by ID.',
@@ -136,7 +136,7 @@ const systemRoutes = {
     operationId: 'sendNewsletter',
     method: 'post',
     path: '/newsletter',
-    xGuard: [isAuthenticated, hasSystemAccess],
+    xGuard: [authGuard, sysAdminGuard],
     tags: ['system'],
     summary: 'Newsletter to members',
     description: 'Sends a newsletter to members of one or more specified organizations.',
@@ -161,7 +161,7 @@ const systemRoutes = {
     operationId: 'paddleWebhook',
     method: 'post',
     path: '/paddle-webhook',
-    xGuard: isPublicAccess,
+    xGuard: publicGuard,
     xRateLimiter: tokenLimiter('paddle'),
     tags: ['system'],
     summary: 'Paddle webhook (WIP)',

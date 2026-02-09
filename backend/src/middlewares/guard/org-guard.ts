@@ -51,6 +51,7 @@ export const orgGuard = xMiddleware('orgGuard', 'x-guard', async (ctx, next) => 
 
   // Set organization with membership (can be null for system admins!) in context
   ctx.set('organization', orgWithMembership);
+
   Sentry.setTag('organization_id', orgWithMembership.id);
   Sentry.setTag('organization_slug', orgWithMembership.slug);
 

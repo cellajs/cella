@@ -23,7 +23,7 @@ export const membershipsTable = pgTable(
     createdAt: timestampColumns.createdAt,
     id: varchar().primaryKey().$defaultFn(nanoid),
     // Tenant isolation
-    tenantId: varchar('tenant_id', { length: 6 })
+    tenantId: varchar('tenant_id', { length: 24 })
       .notNull()
       .references(() => tenantsTable.id),
     contextType: varchar({ enum: appConfig.contextEntityTypes }).notNull(),

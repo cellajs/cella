@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/docs/x-routes';
-import { isAuthenticated, isPublicAccess } from '#/middlewares/guard';
+import { authGuard, publicGuard } from '#/middlewares/guard';
 import { totpVerificationLimiter } from '#/middlewares/rate-limiter/limiters';
 import { totpCreateBodySchema } from '#/modules/auth/totps/totps-schema';
 import { cookieSchema, errorResponseRefs } from '#/schemas';
@@ -14,7 +14,7 @@ const authTotpsRoutes = {
     operationId: 'generateTotpKey',
     method: 'post',
     path: '/totp/generate-key',
-    xGuard: isAuthenticated,
+    xGuard: authGuard,
     tags: ['auth'],
     summary: 'Generate TOTP key',
     description: 'Generates a new TOTP key for current user and returns a provisioning URI and Base32 manual key.',
@@ -38,7 +38,7 @@ const authTotpsRoutes = {
     operationId: 'createTotp',
     method: 'post',
     path: '/totp',
-    xGuard: isAuthenticated,
+    xGuard: authGuard,
     tags: ['auth'],
     summary: 'Set TOTP',
     description:
@@ -64,7 +64,7 @@ const authTotpsRoutes = {
     operationId: 'deleteTotp',
     method: 'delete',
     path: '/totp',
-    xGuard: isAuthenticated,
+    xGuard: authGuard,
     tags: ['auth'],
     summary: 'Delete TOTP',
     description: 'Delete TOTP credential for current user.',
@@ -80,7 +80,7 @@ const authTotpsRoutes = {
     operationId: 'signInWithTotp',
     method: 'post',
     path: '/totp-verification',
-    xGuard: isPublicAccess,
+    xGuard: publicGuard,
     xRateLimiter: totpVerificationLimiter,
     tags: ['auth'],
     summary: 'Verify TOTP',

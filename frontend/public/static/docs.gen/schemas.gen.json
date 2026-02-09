@@ -111,7 +111,7 @@
         "tenantId": {
           "type": "string",
           "required": true,
-          "maxLength": 6
+          "maxLength": 24
         },
         "contextType": {
           "type": "string",
@@ -584,7 +584,7 @@
         "tenantId": {
           "type": ["string", "null"],
           "required": true,
-          "maxLength": 6
+          "maxLength": 24
         },
         "userId": {
           "type": ["string", "null"],
@@ -1064,7 +1064,7 @@
         "tenantId": {
           "type": "string",
           "required": true,
-          "maxLength": 6
+          "maxLength": 24
         },
         "contextType": {
           "type": "string",
@@ -1161,7 +1161,7 @@
             "tenantId": {
               "type": "string",
               "required": true,
-              "maxLength": 6
+              "maxLength": 24
             },
             "contextType": {
               "type": "string",
@@ -1257,7 +1257,7 @@
         "tenantId": {
           "type": "string",
           "required": true,
-          "maxLength": 6
+          "maxLength": 24
         },
         "shortName": {
           "type": ["string", "null"],
@@ -1327,7 +1327,7 @@
                 "tenantId": {
                   "type": "string",
                   "required": true,
-                  "maxLength": 6
+                  "maxLength": 24
                 },
                 "contextType": {
                   "type": "string",
@@ -1483,7 +1483,7 @@
         "tenantId": {
           "type": "string",
           "required": true,
-          "maxLength": 6
+          "maxLength": 24
         },
         "tx": {
           "type": "object",
@@ -1523,7 +1523,7 @@
       "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Voluptates cornu tempus eaque universe volubilis conturbo. Sponte utpote crux pecco vulticulus cunctatio. Vallum ut adimpleo summa valde strenuus attonbitus.\\nMollitia vel cado vitae cibus dolores decet. Aptus accusamus praesentium cibus subito viscus vox nemo. Video tremo molestias charisma clam ipsa suscipit.\",\"styles\":{}}],\"children\":[]}]",
       "keywords": "solvo atrox tendo",
       "status": "unpublished",
-      "publicAccess": false,
+      "publicAccess": true,
       "parentId": null,
       "displayOrder": 32.69,
       "createdAt": "2024-08-06T10:28:33.226Z",
@@ -1582,8 +1582,8 @@
         "id": {
           "type": "string",
           "required": true,
-          "description": "6-character lowercase alphanumeric tenant ID",
-          "maxLength": 6
+          "description": "Lowercase alphanumeric tenant ID",
+          "maxLength": 24
         },
         "name": {
           "type": "string",
@@ -1729,7 +1729,7 @@
         "tenantId": {
           "type": "string",
           "required": true,
-          "maxLength": 6
+          "maxLength": 24
         },
         "tx": {
           "type": "object",
@@ -1821,7 +1821,7 @@
         "tenantId": {
           "type": "string",
           "required": true,
-          "maxLength": 6
+          "maxLength": 24
         },
         "contextType": {
           "type": "string",

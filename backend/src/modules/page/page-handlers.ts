@@ -22,65 +22,13 @@ import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
-import { SYSTEM_TENANT_ID } from '../../../scripts/seeds/fixtures';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
+/**
+ * Page route handlers (mounted at /)
+ */
 const pageRouteHandlers = app
-  /**
-   * Create one or more pages
-   */
-  .openapi(pagesRoutes.createPages, async (ctx) => {
-    const newPages = ctx.req.valid('json');
-
-    // Idempotency check - use first item's tx.id
-    const firstTx = newPages[0].tx;
-    if (await isTransactionProcessed(firstTx.id)) {
-      const ref = await getEntityByTransaction(firstTx.id);
-      if (ref) {
-        // For batch create, the first page ID is stored - fetch all from that batch
-        const existing = await db.select().from(pagesTable).where(eq(pagesTable.id, ref.entityId));
-        if (existing.length > 0) {
-          return ctx.json({ data: existing, rejectedItems: [] }, 200);
-        }
-      }
-    }
-
-    const user = ctx.var.user;
-
-    // Pages always belong to system tenant (platform-wide content)
-    const tenantId = SYSTEM_TENANT_ID;
-
-    // Prepare pages with tx metadata for CDC
-    // TODO not finished here
-    const pagesToInsert = newPages.map(({ tx, ...pageData }) => ({
-      ...pageData,
-      tenantId,
-      id: nanoid(),
-      entityType: 'page' as const,
-      createdAt: getIsoDate(),
-      createdBy: user.id,
-      description: '',
-      displayOrder: 3,
-      keywords: '',
-      modifiedAt: null,
-      modifiedBy: null,
-      // Sync: write transient tx metadata for CDC Worker
-      tx: {
-        id: tx.id,
-        sourceId: tx.sourceId,
-        version: 1,
-        fieldVersions: {},
-      },
-    }));
-
-    const createdPages = await db.insert(pagesTable).values(pagesToInsert).returning();
-
-    logEvent('info', `${createdPages.length} pages have been created`);
-
-    // Return with tx on each item (for client-side tracking)
-    return ctx.json({ data: createdPages, rejectedItems: [] }, 201);
-  })
   /**
    * Get Pages
    */
@@ -128,7 +76,9 @@ const pageRouteHandlers = app
       name: pagesTable.name,
     });
 
-    const pagesQuery = db
+    // Use tenant-scoped db from publicGuard middleware (RLS context already set)
+    const tenantDb = ctx.var.db;
+    const pagesQuery = tenantDb
       .select(getColumns(pagesTable))
       .from(pagesTable)
       .leftJoin(usersTable, eq(usersTable.id, pagesTable.createdBy))
@@ -136,7 +86,7 @@ const pageRouteHandlers = app
 
     const promises: [Promise<PageModel[]>, Promise<number>] = [
       pagesQuery.orderBy(orderColumn).limit(limit).offset(offset),
-      db
+      tenantDb
         .select({ total: count() })
         .from(pagesQuery.as('pages'))
         .then(([{ total }]) => total),
@@ -153,14 +103,69 @@ const pageRouteHandlers = app
   .openapi(pagesRoutes.getPage, async (ctx) => {
     const { id } = ctx.req.valid('param');
 
-    // Fetch from DB (enrichment could be added here if needed)
-    const page = await resolveEntity('page', id);
+    // Use tenant-scoped db from publicGuard middleware (RLS context already set)
+    const tenantDb = ctx.var.db;
+    const page = await resolveEntity('page', id, tenantDb);
     if (!page) throw new AppError(404, 'not_found', 'warn', { entityType: 'page' });
 
     // Set data for cache middleware to store
     ctx.set('entityCacheData', page);
 
     return ctx.json(page, 200);
+  })
+  /**
+   * Create one or more pages
+   */
+  .openapi(pagesRoutes.createPages, async (ctx) => {
+    const newPages = ctx.req.valid('json');
+
+    // Idempotency check - use first item's tx.id
+    const firstTx = newPages[0].tx;
+    if (await isTransactionProcessed(firstTx.id)) {
+      const ref = await getEntityByTransaction(firstTx.id);
+      if (ref) {
+        // For batch create, the first page ID is stored - fetch all from that batch
+        const existing = await db.select().from(pagesTable).where(eq(pagesTable.id, ref.entityId));
+        if (existing.length > 0) {
+          return ctx.json({ data: existing, rejectedItems: [] }, 200);
+        }
+      }
+    }
+
+    const user = ctx.var.user;
+    const tenantId = ctx.var.tenantId;
+
+    // Prepare pages with tx metadata for CDC
+    const pagesToInsert = newPages.map(({ tx, ...pageData }) => ({
+      ...pageData,
+      tenantId,
+      id: nanoid(),
+      entityType: 'page' as const,
+      createdAt: getIsoDate(),
+      createdBy: user.id,
+      description: '',
+      displayOrder: 3,
+      keywords: '',
+      modifiedAt: null,
+      modifiedBy: null,
+      publicAccess: true, // Pages are publicly readable by default
+      // Sync: write transient tx metadata for CDC Worker
+      tx: {
+        id: tx.id,
+        sourceId: tx.sourceId,
+        version: 1,
+        fieldVersions: {},
+      },
+    }));
+
+    // Use tenant-scoped db from tenantGuard middleware (RLS context already set)
+    const tenantDb = ctx.var.db;
+    const createdPages = await tenantDb.insert(pagesTable).values(pagesToInsert).returning();
+
+    logEvent('info', `${createdPages.length} pages have been created`);
+
+    // Return with tx on each item (for client-side tracking)
+    return ctx.json({ data: createdPages, rejectedItems: [] }, 201);
   })
   /**
    * Update page by id
@@ -183,7 +188,9 @@ const pageRouteHandlers = app
 
     const newVersion = (entity.tx?.version ?? 0) + 1;
 
-    const [page] = await db
+    // Use tenant-scoped db from tenantGuard middleware (RLS context already set)
+    const tenantDb = ctx.var.db;
+    const [page] = await tenantDb
       .update(pagesTable)
       .set({
         ...pageData,
@@ -212,7 +219,9 @@ const pageRouteHandlers = app
     const { ids } = ctx.req.valid('json');
     if (!ids.length) throw new AppError(400, 'invalid_request', 'warn', { entityType: 'page' });
 
-    await db.delete(pagesTable).where(inArray(pagesTable.id, ids));
+    // Use tenant-scoped db from tenantGuard middleware (RLS context already set)
+    const tenantDb = ctx.var.db;
+    await tenantDb.delete(pagesTable).where(inArray(pagesTable.id, ids));
 
     logEvent('info', 'Page(s) deleted', ids);
 

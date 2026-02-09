@@ -228,11 +228,11 @@ describe('EntityHierarchyBuilder', () => {
       expect(publicHierarchy.getPublicInheritanceSource('attachment')).toBe(null);
     });
 
-    it('isPublicAccessSource returns true only for context sources', () => {
-      expect(publicHierarchy.isPublicAccessSource('project')).toBe(true);
-      expect(publicHierarchy.isPublicAccessSource('organization')).toBe(false);
-      expect(publicHierarchy.isPublicAccessSource('task')).toBe(false); // Product, not source
-      expect(publicHierarchy.isPublicAccessSource('page')).toBe(false); // Product, not context
+    it('publicGuardSource returns true only for context sources', () => {
+      expect(publicHierarchy.publicGuardSource('project')).toBe(true);
+      expect(publicHierarchy.publicGuardSource('organization')).toBe(false);
+      expect(publicHierarchy.publicGuardSource('task')).toBe(false); // Product, not source
+      expect(publicHierarchy.publicGuardSource('page')).toBe(false); // Product, not context
     });
 
     it('publicAccessSourceTypes contains only context sources', () => {

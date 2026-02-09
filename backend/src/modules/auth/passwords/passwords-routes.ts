@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/docs/x-routes';
-import { isPublicAccess } from '#/middlewares/guard';
+import { publicGuard } from '#/middlewares/guard';
 import { hasValidSingleUseToken } from '#/middlewares/has-valid-single-use-token';
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { emailEnumLimiter, passwordLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
@@ -21,7 +21,7 @@ const authPasswordsRoutes = {
     operationId: 'signUp',
     method: 'post',
     path: '/sign-up',
-    xGuard: isPublicAccess,
+    xGuard: publicGuard,
     xRateLimiter: [spamLimiter, emailEnumLimiter],
     middleware: [isNoBot],
     tags: ['auth'],
@@ -52,7 +52,7 @@ const authPasswordsRoutes = {
     operationId: 'signUpWithToken',
     method: 'post',
     path: '/sign-up/{tokenId}',
-    xGuard: isPublicAccess,
+    xGuard: publicGuard,
     xRateLimiter: [tokenLimiter('signup_invitation'), emailEnumLimiter],
     middleware: [hasValidSingleUseToken('invitation')],
     tags: ['auth'],
@@ -86,7 +86,7 @@ const authPasswordsRoutes = {
     operationId: 'requestPassword',
     method: 'post',
     path: '/request-password',
-    xGuard: isPublicAccess,
+    xGuard: publicGuard,
     xRateLimiter: [spamLimiter, emailEnumLimiter],
     tags: ['auth'],
     summary: 'Request new password',
@@ -111,7 +111,7 @@ const authPasswordsRoutes = {
     operationId: 'createPassword',
     method: 'post',
     path: '/create-password/{tokenId}',
-    xGuard: isPublicAccess,
+    xGuard: publicGuard,
     xRateLimiter: tokenLimiter('password-reset'),
     middleware: [hasValidSingleUseToken('password-reset')],
     tags: ['auth'],
@@ -142,7 +142,7 @@ const authPasswordsRoutes = {
     operationId: 'signIn',
     method: 'post',
     path: '/sign-in',
-    xGuard: isPublicAccess,
+    xGuard: publicGuard,
     xRateLimiter: passwordLimiter,
     tags: ['auth'],
     summary: 'Sign in with password',

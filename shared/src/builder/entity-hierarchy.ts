@@ -406,7 +406,7 @@ export class EntityHierarchy<
   }
 
   /** Check if entity is a public access source (context with publicAccess). */
-  isPublicAccessSource(entityType: string): boolean {
+  publicGuardSource(entityType: string): boolean {
     return this.publicAccessSourceTypes.includes(entityType as TContexts);
   }
 }

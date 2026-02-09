@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/docs/x-routes';
-import { isAuthenticated, orgGuard, tenantGuard } from '#/middlewares/guard';
+import { authGuard, orgGuard, tenantGuard } from '#/middlewares/guard';
 import { contextEntityBaseSchema } from '#/modules/entities/entities-schema-base';
 import {
   memberListQuerySchema,
@@ -38,7 +38,7 @@ const membershipRoutes = {
     operationId: 'membershipInvite',
     method: 'post',
     path: '/',
-    xGuard: [isAuthenticated, tenantGuard, orgGuard],
+    xGuard: [authGuard, tenantGuard, orgGuard],
     tags: ['memberships'],
     summary: 'Create memberships',
     description:
@@ -71,7 +71,7 @@ const membershipRoutes = {
     operationId: 'deleteMemberships',
     method: 'delete',
     path: '/',
-    xGuard: [isAuthenticated, tenantGuard, orgGuard],
+    xGuard: [authGuard, tenantGuard, orgGuard],
     tags: ['memberships'],
     summary: 'Delete memberships',
     description:
@@ -103,7 +103,7 @@ const membershipRoutes = {
     operationId: 'updateMembership',
     method: 'put',
     path: '/{id}',
-    xGuard: [isAuthenticated, tenantGuard, orgGuard],
+    xGuard: [authGuard, tenantGuard, orgGuard],
     tags: ['memberships'],
     summary: 'Update membership',
     description: 'Updates the *membership* metadata, such as role, `muted`, or `archived` status.',
@@ -128,7 +128,7 @@ const membershipRoutes = {
     operationId: 'handleMembershipInvitation',
     method: 'post',
     path: '/{id}/{acceptOrReject}',
-    xGuard: [isAuthenticated],
+    xGuard: [authGuard],
     tags: ['memberships'],
     summary: 'Respond to membership invitation',
     description: 'Accepting activates the associated membership. Rejecting simply removes the invitation token.',
@@ -150,7 +150,7 @@ const membershipRoutes = {
     operationId: 'getMembers',
     method: 'get',
     path: '/members',
-    xGuard: [isAuthenticated, tenantGuard, orgGuard],
+    xGuard: [authGuard, tenantGuard, orgGuard],
     tags: ['memberships'],
     summary: 'Get list of members',
     description: 'Retrieves members (users) of a context entity by ID, including their associated *membership* data.',
@@ -178,7 +178,7 @@ const membershipRoutes = {
     operationId: 'getPendingMemberships',
     method: 'get',
     path: '/pending',
-    xGuard: [isAuthenticated, tenantGuard, orgGuard],
+    xGuard: [authGuard, tenantGuard, orgGuard],
     tags: ['memberships'],
     summary: 'Get list of pending memberships',
     description:

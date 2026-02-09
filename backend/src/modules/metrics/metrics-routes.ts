@@ -1,5 +1,5 @@
 import { createXRoute } from '#/docs/x-routes';
-import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
+import { authGuard, publicGuard, sysAdminGuard } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
 import {
   cacheStatsSchema,
@@ -18,7 +18,7 @@ const metricRouteConfig = {
     operationId: 'getMetrics',
     method: 'get',
     path: '/',
-    xGuard: [isAuthenticated, hasSystemAccess],
+    xGuard: [authGuard, sysAdminGuard],
     tags: ['metrics'],
     summary: 'Get metrics',
     description: `EXPERIMENTAL. Returns raw system observability data (e.g. node level statistics or runtime insights).
@@ -38,7 +38,7 @@ const metricRouteConfig = {
     operationId: 'getRuntimeMetrics',
     method: 'get',
     path: '/runtime',
-    xGuard: [isAuthenticated, hasSystemAccess],
+    xGuard: [authGuard, sysAdminGuard],
     tags: ['metrics'],
     summary: 'Get runtime metrics',
     description: `Returns Node.js process health metrics and OpenTelemetry runtime instrumentation data.
@@ -58,7 +58,7 @@ const metricRouteConfig = {
     operationId: 'getPublicCounts',
     method: 'get',
     path: '/public',
-    xGuard: isPublicAccess,
+    xGuard: publicGuard,
     middleware: isNoBot,
     tags: ['metrics'],
     summary: 'Get public counts',
@@ -79,7 +79,7 @@ const metricRouteConfig = {
     operationId: 'getCacheStats',
     method: 'get',
     path: '/cache',
-    xGuard: [isAuthenticated, hasSystemAccess],
+    xGuard: [authGuard, sysAdminGuard],
     tags: ['metrics'],
     summary: 'Get entity cache statistics',
     description: `Returns entity cache statistics including hit rates, sizes, and invalidations.
@@ -99,7 +99,7 @@ const metricRouteConfig = {
     operationId: 'getSyncMetrics',
     method: 'get',
     path: '/sync',
-    xGuard: [isAuthenticated, hasSystemAccess],
+    xGuard: [authGuard, sysAdminGuard],
     tags: ['metrics'],
     summary: 'Get sync flow metrics',
     description: `Returns metrics for the sync flow: CDC Worker (messages) → ActivityBus (events) → SSE (notifications).

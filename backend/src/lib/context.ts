@@ -34,9 +34,8 @@ export type Env = {
     requestId: string;
     sentry: typeof Sentry;
     sentrySpan?: ReturnType<typeof Sentry.startSpan>;
-    /** Tenant-scoped database transaction (set by tenantGuard or hasPublicTenantAccess) */
     db: Tx;
-    /** Current tenant ID (set by tenantGuard or hasPublicTenantAccess) */
+    /** TODO ideally this is not needed because the miuddkeware has set db and thats it? */
     tenantId: string;
   };
   Bindings: Bindings;

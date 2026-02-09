@@ -13,8 +13,8 @@
 import { sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { db } from '#/db/db';
-import { setPublicRlsContext, setTenantRlsContext, setUserRlsContext, validateTenantId } from '#/db/tenant-context';
-import { nanoidLowercase } from '#/utils/nanoid';
+import { setPublicRlsContext, setTenantRlsContext, setUserRlsContext } from '#/db/tenant-context';
+import { nanoidTenant } from '#/utils/nanoid';
 
 // Test tenant and user IDs
 const TEST_TENANT_A_ID = 'tsttn1';
@@ -52,27 +52,6 @@ async function cleanupTestData() {
 }
 
 describe('RLS Security Tests', () => {
-  describe('Tenant ID Validation', () => {
-    it('should accept valid 6-char lowercase alphanumeric IDs', () => {
-      expect(() => validateTenantId('abc123')).not.toThrow();
-      expect(() => validateTenantId('x7kp2m')).not.toThrow();
-      expect(() => validateTenantId('000000')).not.toThrow();
-    });
-
-    it('should reject invalid tenant ID formats', () => {
-      // Too short
-      expect(() => validateTenantId('abc12')).toThrow('Invalid tenant ID format');
-      // Too long
-      expect(() => validateTenantId('abc1234')).toThrow('Invalid tenant ID format');
-      // Uppercase
-      expect(() => validateTenantId('ABC123')).toThrow('Invalid tenant ID format');
-      // Special chars
-      expect(() => validateTenantId('abc-12')).toThrow('Invalid tenant ID format');
-      // Empty
-      expect(() => validateTenantId('')).toThrow('Invalid tenant ID format');
-    });
-  });
-
   describe('Tenant Context Helpers', () => {
     beforeAll(async () => {
       await setupTestTenants();
@@ -132,14 +111,14 @@ describe('RLS Security Tests', () => {
   });
 
   describe('Tenant Nanoid Generation', () => {
-    it('should generate 6-character lowercase IDs', () => {
-      const id = nanoidLowercase();
-      expect(id).toHaveLength(6);
+    it('should generate 24-character lowercase IDs', () => {
+      const id = nanoidTenant();
+      expect(id).toHaveLength(24);
       expect(/^[a-z0-9]+$/.test(id)).toBe(true);
     });
 
     it('should generate unique IDs', () => {
-      const ids = new Set(Array.from({ length: 100 }, () => nanoidLowercase()));
+      const ids = new Set(Array.from({ length: 100 }, () => nanoidTenant()));
       expect(ids.size).toBe(100);
     });
   });

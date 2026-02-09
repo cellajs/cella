@@ -27,7 +27,7 @@ export const mockPage = (key = 'page:default'): PageModel =>
       ]),
       keywords: faker.lorem.words(3),
       status: 'unpublished' as const,
-      publicAccess: false,
+      publicAccess: true,
       parentId: null,
       displayOrder: faker.number.float({ min: 0, max: 100, fractionDigits: 2 }),
       createdAt,

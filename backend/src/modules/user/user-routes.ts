@@ -1,5 +1,5 @@
 import { createXRoute } from '#/docs/x-routes';
-import { isAuthenticated, tenantGuard } from '#/middlewares/guard';
+import { authGuard, tenantGuard } from '#/middlewares/guard';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
 import { systemRoleBaseSchema } from '#/modules/system/system-schema';
 import { userListQuerySchema, userSchema } from '#/modules/user/user-schema';
@@ -14,7 +14,7 @@ const userRoutes = {
     operationId: 'getUsers',
     method: 'get',
     path: '/',
-    xGuard: [isAuthenticated, tenantGuard],
+    xGuard: [authGuard, tenantGuard],
     tags: ['users'],
     summary: 'Get list of users',
     description: 'Returns a list of *users* in an organization context.',
@@ -44,7 +44,7 @@ const userRoutes = {
     operationId: 'getUser',
     method: 'get',
     path: '/{idOrSlug}',
-    xGuard: [isAuthenticated, tenantGuard],
+    xGuard: [authGuard, tenantGuard],
     tags: ['users'],
     summary: 'Get user',
     description: 'Retrieves a *user* by ID or slug in an organization context.',

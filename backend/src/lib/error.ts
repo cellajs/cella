@@ -59,19 +59,53 @@ export class AppError extends Error {
   }
 }
 
+/** PostgreSQL error codes to user-friendly error mappings */
+const PG_ERROR_MAP: Record<string, { status: number; type: ErrorKey; message: string }> = {
+  // Foreign key violations
+  '23503': { status: 400, type: 'invalid_request', message: 'Referenced resource does not exist' },
+  // Unique constraint violations
+  '23505': { status: 409, type: 'duplicate_creation', message: 'Resource already exists' },
+  // Not null violations
+  '23502': { status: 400, type: 'invalid_request', message: 'Required field is missing' },
+  // Check constraint violations
+  '23514': { status: 400, type: 'invalid_request', message: 'Value violates constraint' },
+  // RLS policy violations (insufficient_privilege)
+  '42501': { status: 403, type: 'forbidden', message: 'Access denied by security policy' },
+  // Serialization failure (concurrent update)
+  '40001': { status: 409, type: 'server_error', message: 'Concurrent update conflict, please retry' },
+  // Deadlock detected
+  '40P01': { status: 409, type: 'server_error', message: 'Operation conflict, please retry' },
+};
+
+/**
+ * Checks if error is a PostgreSQL database error with a code.
+ */
+function isPostgresError(err: unknown): err is Error & { code: string; detail?: string; constraint?: string } {
+  return err instanceof Error && 'code' in err && typeof (err as { code: unknown }).code === 'string';
+}
+
 /**
  * Global error handler for Hono API routes.
  */
 export const appErrorHandler: ErrorHandler<Env> = (err, ctx) => {
   const isAppError = err instanceof AppError;
 
-  const severity = isAppError ? err.severity : 'error';
-  const type = isAppError ? err.type : 'server_error';
-  const status = isAppError ? err.status : 500;
+  // Check if this is a PostgreSQL error we can map to a friendlier message
+  let pgMappedError: { status: number; type: ErrorKey; message: string } | undefined;
+  if (!isAppError && isPostgresError(err)) {
+    pgMappedError = PG_ERROR_MAP[err.code];
+  }
+
+  const severity = isAppError ? err.severity : pgMappedError ? 'warn' : 'error';
+  const type = isAppError ? err.type : (pgMappedError?.type ?? 'server_error');
+  const status = isAppError ? err.status : (pgMappedError?.status ?? 500);
   const name = err.name ?? 'ApiError';
   const entityType = isAppError ? err.entityType : undefined;
   const meta = isAppError ? err.meta : undefined;
   const willRedirect = isAppError ? err.willRedirect : false;
+
+  // Use mapped message for PG errors, otherwise original
+  const message = pgMappedError?.message ?? err.message;
 
   const user = ctx.get('user');
   const organization = ctx.get('organization');
@@ -80,7 +114,7 @@ export const appErrorHandler: ErrorHandler<Env> = (err, ctx) => {
   const includeStack = severity === 'error' || severity === 'fatal';
 
   const detailedError = {
-    message: err.message,
+    message,
     name,
     status,
     type,

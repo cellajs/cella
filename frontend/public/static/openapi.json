@@ -16,17 +16,14 @@
         "description": "Authorization middleware applied to the endpoint",
         "required": true,
         "values": {
-          "isPublicAccess": {
+          "publicGuard": {
             "description": "No authentication required"
           },
-          "hasPublicTenantAccess": {
-            "description": "Validates tenant ID and wraps handler in public tenant context"
-          },
-          "hasSystemAccess": {
-            "description": "Requires system admin + IP whitelist"
-          },
-          "isAuthenticated": {
+          "authGuard": {
             "description": "Requires valid session"
+          },
+          "sysAdminGuard": {
+            "description": "Requires system admin + IP whitelist"
           },
           "tenantGuard": {
             "description": "Validates tenant access and wraps handler in RLS-enabled transaction"
@@ -350,7 +347,7 @@
           },
           "tenantId": {
             "type": "string",
-            "maxLength": 6
+            "maxLength": 24
           },
           "contextType": {
             "type": "string",
@@ -853,7 +850,7 @@
               "string",
               "null"
             ],
-            "maxLength": 6
+            "maxLength": 24
           },
           "userId": {
             "type": [
@@ -1430,7 +1427,7 @@
           },
           "tenantId": {
             "type": "string",
-            "maxLength": 6
+            "maxLength": 24
           },
           "contextType": {
             "type": "string",
@@ -1673,7 +1670,7 @@
           },
           "tenantId": {
             "type": "string",
-            "maxLength": 6
+            "maxLength": 24
           },
           "shortName": {
             "type": [
@@ -1932,7 +1929,7 @@
           },
           "tenantId": {
             "type": "string",
-            "maxLength": 6
+            "maxLength": 24
           },
           "tx": {
             "$ref": "#/components/schemas/TxBase"
@@ -1985,7 +1982,7 @@
           "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Voluptates cornu tempus eaque universe volubilis conturbo. Sponte utpote crux pecco vulticulus cunctatio. Vallum ut adimpleo summa valde strenuus attonbitus.\\nMollitia vel cado vitae cibus dolores decet. Aptus accusamus praesentium cibus subito viscus vox nemo. Video tremo molestias charisma clam ipsa suscipit.\",\"styles\":{}}],\"children\":[]}]",
           "keywords": "solvo atrox tendo",
           "status": "unpublished",
-          "publicAccess": false,
+          "publicAccess": true,
           "parentId": null,
           "displayOrder": 32.69,
           "createdAt": "2024-08-06T10:28:33.226Z",
@@ -2035,8 +2032,8 @@
         "properties": {
           "id": {
             "type": "string",
-            "maxLength": 6,
-            "description": "6-character lowercase alphanumeric tenant ID"
+            "maxLength": 24,
+            "description": "Lowercase alphanumeric tenant ID"
           },
           "name": {
             "type": "string",
@@ -2195,7 +2192,7 @@
           },
           "tenantId": {
             "type": "string",
-            "maxLength": 6
+            "maxLength": 24
           },
           "tx": {
             "$ref": "#/components/schemas/TxBase"
@@ -2338,7 +2335,7 @@
           },
           "tenantId": {
             "type": "string",
-            "maxLength": 6
+            "maxLength": 24
           },
           "contextType": {
             "type": "string",
@@ -2435,8 +2432,8 @@
         "summary": "Get list of activities",
         "description": "Returns a paginated list of *activities* (audit log entries). Activities track create, update, and delete operations across all resources.",
         "x-guard": [
-          "isAuthenticated",
-          "hasSystemAccess"
+          "authGuard",
+          "sysAdminGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -2669,7 +2666,7 @@
         "summary": "Auth health check",
         "description": "Returns auth health status including whether the client IP is rate-limited for email enumeration protection.",
         "x-guard": [
-          "isPublicAccess"
+          "publicGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -2723,7 +2720,7 @@
         "summary": "Check if email exists",
         "description": "Checks if a user with the specified email address exists in the system.",
         "x-guard": [
-          "isPublicAccess"
+          "publicGuard"
         ],
         "x-rate-limiter": [
           "emailEnumLimiter"
@@ -2780,7 +2777,7 @@
         "summary": "Invoke token session",
         "description": "Validates and invokes a token (for password reset, email verification, invitations, mfa) and redirects user to backend with a one-purpose, single-use token session in a cookie.",
         "x-guard": [
-          "isPublicAccess"
+          "publicGuard"
         ],
         "x-rate-limiter": [
           "tokenLimiter"
@@ -2851,7 +2848,7 @@
         "summary": "Get token data",
         "description": "Get basic token data from single-use token session, It returns basic data if the session is still valid.",
         "x-guard": [
-          "isPublicAccess"
+          "publicGuard"
         ],
         "x-rate-limiter": [
           "tokenLimiter"
@@ -2944,8 +2941,8 @@
         "summary": "Start impersonating",
         "description": "Allows a system admin to impersonate a specific user by ID, returning a temporary impersonation session.",
         "x-guard": [
-          "isAuthenticated",
-          "hasSystemAccess"
+          "authGuard",
+          "sysAdminGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -3003,7 +3000,7 @@
         "summary": "Stop impersonating",
         "description": "Ends impersonation by clearing the current impersonation session and restoring the admin context.",
         "x-guard": [
-          "isAuthenticated"
+          "authGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -3039,7 +3036,7 @@
         "summary": "Resend invitation",
         "description": "Resends an invitation email with token to a new user using the provided email address and token ID.",
         "x-guard": [
-          "isPublicAccess"
+          "publicGuard"
         ],
         "x-rate-limiter": [
           "spamLimiter"
@@ -3118,7 +3115,7 @@
         "summary": "Sign out",
         "description": "Signs out the *current user* and clears the active session.",
         "x-guard": [
-          "isPublicAccess"
+          "publicGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -3158,7 +3155,7 @@
         "summary": "Generate TOTP key",
         "description": "Generates a new TOTP key for current user and returns a provisioning URI and Base32 manual key.",
         "x-guard": [
-          "isAuthenticated"
+          "authGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -3221,7 +3218,7 @@
         "summary": "Set TOTP",
         "description": "Confirms TOTP setup by verifying a code from the authenticator app for the first time. On success, TOTP is registered for current user.",
         "x-guard": [
-          "isAuthenticated"
+          "authGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -3278,7 +3275,7 @@
         "summary": "Delete TOTP",
         "description": "Delete TOTP credential for current user.",
         "x-guard": [
-          "isAuthenticated"
+          "authGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -3314,7 +3311,7 @@
         "summary": "Verify TOTP",
         "description": "Validates the TOTP code and completes TOTP based authentication.",
         "x-guard": [
-          "isPublicAccess"
+          "publicGuard"
         ],
         "x-rate-limiter": [
           "totpVerificationLimiter"
@@ -3379,7 +3376,7 @@
         "summary": "Sign up with password",
         "description": "Registers a new user using an email and password. Sends a verification email upon successful sign up.",
         "x-guard": [
-          "isPublicAccess"
+          "publicGuard"
         ],
         "x-rate-limiter": [
           "spamLimiter",
@@ -3461,7 +3458,7 @@
         "summary": "Sign up to accept invite",
         "description": "Registers a user using an email and password in response to a system or organization invitation.",
         "x-guard": [
-          "isPublicAccess"
+          "publicGuard"
         ],
         "x-rate-limiter": [
           "tokenLimiter",
@@ -3561,7 +3558,7 @@
         "summary": "Request new password",
         "description": "Sends an email with a link to reset the user's password.",
         "x-guard": [
-          "isPublicAccess"
+          "publicGuard"
         ],
         "x-rate-limiter": [
           "spamLimiter",
@@ -3619,7 +3616,7 @@
         "summary": "Create password",
         "description": "Sets a new password using a single-use session token in cookie and grants a session immediately upon success.",
         "x-guard": [
-          "isPublicAccess"
+          "publicGuard"
         ],
         "x-rate-limiter": [
           "tokenLimiter"
@@ -3705,7 +3702,7 @@
         "summary": "Sign in with password",
         "description": "Authenticates an existing user using their email and password.",
         "x-guard": [
-          "isPublicAccess"
+          "publicGuard"
         ],
         "x-rate-limiter": [
           "passwordLimiter"
@@ -3802,7 +3799,7 @@
         "summary": "Create passkey",
         "description": "Register a passkey for passwordless authentication by verifying a signed challenge and linking it to the *current user*. Multiple passkeys can be created for different devices/browsers.",
         "x-guard": [
-          "isAuthenticated"
+          "authGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -3931,7 +3928,7 @@
         "summary": "Delete passkey",
         "description": "Delete a passkey by id from the *current user*.",
         "x-guard": [
-          "isAuthenticated"
+          "authGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -3977,7 +3974,7 @@
         "summary": "Generate passkey challenge",
         "description": "Initiates the passkey registration or authentication flow by generating a device bound challenge.",
         "x-guard": [
-          "isPublicAccess"
+          "publicGuard"
         ],
         "x-rate-limiter": [
           "passkeyChallengeLimiter"
@@ -4069,7 +4066,7 @@
         "summary": "Verify passkey",
         "description": "Validates the signed challenge and completes passkey based authentication.",
         "x-guard": [
-          "isPublicAccess"
+          "publicGuard"
         ],
         "x-rate-limiter": [
           "tokenLimiter"
@@ -4156,7 +4153,7 @@
         "summary": "Authenticate with GitHub",
         "description": "Starts OAuth authentication with GitHub. Can be used for account connection, email verification, invitation process, defaults to authentication.",
         "x-guard": [
-          "isPublicAccess"
+          "publicGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -4225,7 +4222,7 @@
         "summary": "Authenticate with Google",
         "description": "Starts OAuth authentication with Google. Can be used for account connection, email verification, invitation process, defaults to authentication.",
         "x-guard": [
-          "isPublicAccess"
+          "publicGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -4294,7 +4291,7 @@
         "summary": "Authenticate with Microsoft",
         "description": "Starts OAuth authentication with Microsoft. Can be used for account connection, email verification, invitation process, defaults to authentication.",
         "x-guard": [
-          "isPublicAccess"
+          "publicGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -4363,7 +4360,7 @@
         "summary": "Callback for GitHub",
         "description": "Handles GitHub OAuth callback, retrieves user identity, and establishes a session or links account.",
         "x-guard": [
-          "isPublicAccess"
+          "publicGuard"
         ],
         "x-rate-limiter": [
           "tokenLimiter"
@@ -4451,7 +4448,7 @@
         "summary": "Callback for Google",
         "description": "Handles Google OAuth callback, retrieves user identity, and establishes a session or links account.",
         "x-guard": [
-          "isPublicAccess"
+          "publicGuard"
         ],
         "x-rate-limiter": [
           "tokenLimiter"
@@ -4515,7 +4512,7 @@
         "summary": "Callback for Microsoft",
         "description": "Handles Microsoft OAuth callback, retrieves user identity, and establishes a session or links account.",
         "x-guard": [
-          "isPublicAccess"
+          "publicGuard"
         ],
         "x-rate-limiter": [
           "tokenLimiter"
@@ -4583,7 +4580,7 @@
         "summary": "Get self",
         "description": "Returns the *current user*.",
         "x-guard": [
-          "isAuthenticated"
+          "authGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -4653,7 +4650,7 @@
         "summary": "Update self",
         "description": "Updates the *current user*.",
         "x-guard": [
-          "isAuthenticated"
+          "authGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -4783,7 +4780,7 @@
         "summary": "Delete self",
         "description": "Deletes the *current user*. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.",
         "x-guard": [
-          "isAuthenticated"
+          "authGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -4823,7 +4820,7 @@
         "summary": "Toggle MFA",
         "description": "Enable or disable multifactor authentication for the *current user*. Always requires passkey or TOTP reauthentication.",
         "x-guard": [
-          "isAuthenticated"
+          "authGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -4936,7 +4933,7 @@
         "summary": "Get auth data",
         "description": "Returns authentication related data of *current user*, including sessions, OAuth accounts, and sign in options.",
         "x-guard": [
-          "isAuthenticated"
+          "authGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -5006,7 +5003,7 @@
         "summary": "Get list of invitations",
         "description": "Returns a list of pending memberships with entity data.",
         "x-guard": [
-          "isAuthenticated"
+          "authGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -5137,7 +5134,7 @@
         "summary": "Terminate sessions",
         "description": "Ends one or more sessions for the *current user* based on provided session IDs.",
         "x-guard": [
-          "isAuthenticated"
+          "authGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -5230,7 +5227,7 @@
         "summary": "Leave entity",
         "description": "Removes the *current user* from an entity they are a member of.",
         "x-guard": [
-          "isAuthenticated"
+          "authGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -5291,7 +5288,7 @@
         "summary": "Get upload token",
         "description": "Generates and returns an upload token for uploading files or images to a private S3 bucket, scoped to the *current user* and organization",
         "x-guard": [
-          "isAuthenticated"
+          "authGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -5385,7 +5382,7 @@
         "summary": "Unsubscribe",
         "description": "Unsubscribes the user from email notifications using a personal unsubscribe token. No authentication is required, as the token implicitly identifies the *current user*.",
         "x-guard": [
-          "isPublicAccess"
+          "publicGuard"
         ],
         "x-rate-limiter": [
           "tokenLimiter"
@@ -5445,7 +5442,7 @@
         "summary": "Get my memberships",
         "description": "Returns all memberships for the *current user* across all context entities.",
         "x-guard": [
-          "isAuthenticated"
+          "authGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -5503,7 +5500,7 @@
         "summary": "Create organizations",
         "description": "Creates one or more new *organizations*.",
         "x-guard": [
-          "isAuthenticated"
+          "authGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -5824,7 +5821,7 @@
         "summary": "Get list of organizations",
         "description": "Returns a list of *organizations*.",
         "x-guard": [
-          "isAuthenticated"
+          "authGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -6106,7 +6103,7 @@
         "summary": "Get organization",
         "description": "Retrieves an *organization* by ID or slug within a tenant.",
         "x-guard": [
-          "isAuthenticated"
+          "authGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -6114,7 +6111,8 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^[a-z0-9]{6}$"
+              "maxLength": 24,
+              "pattern": "^[a-z0-9]+$"
             },
             "required": true,
             "name": "tenantId",
@@ -6233,7 +6231,7 @@
         "summary": "Update organization",
         "description": "Updates an *organization* within a tenant.",
         "x-guard": [
-          "isAuthenticated"
+          "authGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -6241,7 +6239,8 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^[a-z0-9]{6}$"
+              "maxLength": 24,
+              "pattern": "^[a-z0-9]+$"
             },
             "required": true,
             "name": "tenantId",
@@ -6487,7 +6486,7 @@
         "summary": "Delete organizations",
         "description": "Deletes one or more *organizations* by ID within a tenant.",
         "x-guard": [
-          "isAuthenticated"
+          "authGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -6495,7 +6494,8 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^[a-z0-9]{6}$"
+              "maxLength": 24,
+              "pattern": "^[a-z0-9]+$"
             },
             "required": true,
             "name": "tenantId",
@@ -6579,238 +6579,6 @@
       }
     },
     "/pages": {
-      "post": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "createPages",
-        "tags": [
-          "pages"
-        ],
-        "summary": "Create pages",
-        "description": "Insert one or more new *pages*. Returns created pages and any rejected items.",
-        "x-guard": [
-          "isAuthenticated",
-          "sysAdminGuard"
-        ],
-        "x-rate-limiter": [],
-        "x-cache": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "name": {
-                      "type": "string"
-                    },
-                    "tx": {
-                      "$ref": "#/components/schemas/TxRequest"
-                    }
-                  },
-                  "required": [
-                    "tx"
-                  ]
-                },
-                "minItems": 1,
-                "maxItems": 50
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Pages already created (idempotent)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/Page"
-                      }
-                    },
-                    "rejectedItemIds": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "description": "Identifiers of items that could not be processed"
-                    },
-                    "rejectionReasons": {
-                      "type": "object",
-                      "additionalProperties": {
-                        "type": "string"
-                      },
-                      "description": "Map of rejected item ID to reason code"
-                    }
-                  },
-                  "required": [
-                    "data",
-                    "rejectedItemIds"
-                  ]
-                },
-                "example": {
-                  "data": [
-                    {
-                      "id": "wgpaj0cfyc7n2sjn5fpfkbrs",
-                      "tenantId": "lwtksu",
-                      "entityType": "page",
-                      "name": "Voluntarius contra.",
-                      "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Tergo crepusculum certe desparatus depromo. Dolor somnus vobis atavus tergiversatio tersus suadeo colo. Id abduco supplanto asporto.\\nCuratio xiphias auxilium teneo claudeo unde vulgo. Atavus vorax vergo deputo deprimo statim eos vulnero subito eligendi. Exercitationem somnus cattus cilicium textilis cervus alo tactus.\",\"styles\":{}}],\"children\":[]}]",
-                      "keywords": "confido colligo audio",
-                      "status": "unpublished",
-                      "publicAccess": false,
-                      "parentId": null,
-                      "displayOrder": 70.17,
-                      "createdAt": "2024-04-19T14:04:35.773Z",
-                      "createdBy": "kzmv5qbhdcqeiuvwlosan0fc",
-                      "modifiedAt": "2024-04-19T14:04:35.773Z",
-                      "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
-                      "tx": {
-                        "id": "akf4ovzm1ne3h55lgj31d63n",
-                        "sourceId": "src_9apx99a5auvr5cyj5s37irnj",
-                        "version": 1,
-                        "fieldVersions": {}
-                      }
-                    },
-                    {
-                      "id": "74l7581dwpxxbqdej8622zpg",
-                      "tenantId": "o54qw5",
-                      "entityType": "page",
-                      "name": "Taedium spargo cetera.",
-                      "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Vehemens deprecator ventus ascit denique tum candidus curvo perspiciatis defendo. Carpo verecundia cometes. Sortitus colligo ceno terra cado temptatio carmen arx sequi cicuta.\\nAttollo autem adipisci vinitor comminor odit. Virga aptus corrupti utpote. Subseco vomica auxilium ascit cuppedia abbas amo patior credo tenus.\",\"styles\":{}}],\"children\":[]}]",
-                      "keywords": "aestus degero cicuta",
-                      "status": "unpublished",
-                      "publicAccess": false,
-                      "parentId": null,
-                      "displayOrder": 14.28,
-                      "createdAt": "2024-02-25T13:01:35.301Z",
-                      "createdBy": "p3t0ygxx0aa83en3sk1fs1we",
-                      "modifiedAt": "2024-02-25T13:01:35.301Z",
-                      "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
-                      "tx": {
-                        "id": "4hj92yzr7v1itpc9wztvbcy2",
-                        "sourceId": "src_1q04oq81k5rbzt4yq63pob5r",
-                        "version": 1,
-                        "fieldVersions": {}
-                      }
-                    }
-                  ],
-                  "rejectedItemIds": []
-                }
-              }
-            }
-          },
-          "201": {
-            "description": "Pages created",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/Page"
-                      }
-                    },
-                    "rejectedItemIds": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "description": "Identifiers of items that could not be processed"
-                    },
-                    "rejectionReasons": {
-                      "type": "object",
-                      "additionalProperties": {
-                        "type": "string"
-                      },
-                      "description": "Map of rejected item ID to reason code"
-                    }
-                  },
-                  "required": [
-                    "data",
-                    "rejectedItemIds"
-                  ]
-                },
-                "example": {
-                  "data": [
-                    {
-                      "id": "wgpaj0cfyc7n2sjn5fpfkbrs",
-                      "tenantId": "lwtksu",
-                      "entityType": "page",
-                      "name": "Voluntarius contra.",
-                      "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Tergo crepusculum certe desparatus depromo. Dolor somnus vobis atavus tergiversatio tersus suadeo colo. Id abduco supplanto asporto.\\nCuratio xiphias auxilium teneo claudeo unde vulgo. Atavus vorax vergo deputo deprimo statim eos vulnero subito eligendi. Exercitationem somnus cattus cilicium textilis cervus alo tactus.\",\"styles\":{}}],\"children\":[]}]",
-                      "keywords": "confido colligo audio",
-                      "status": "unpublished",
-                      "publicAccess": false,
-                      "parentId": null,
-                      "displayOrder": 70.17,
-                      "createdAt": "2024-04-19T14:04:35.773Z",
-                      "createdBy": "kzmv5qbhdcqeiuvwlosan0fc",
-                      "modifiedAt": "2024-04-19T14:04:35.773Z",
-                      "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
-                      "tx": {
-                        "id": "akf4ovzm1ne3h55lgj31d63n",
-                        "sourceId": "src_9apx99a5auvr5cyj5s37irnj",
-                        "version": 1,
-                        "fieldVersions": {}
-                      }
-                    },
-                    {
-                      "id": "74l7581dwpxxbqdej8622zpg",
-                      "tenantId": "o54qw5",
-                      "entityType": "page",
-                      "name": "Taedium spargo cetera.",
-                      "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Vehemens deprecator ventus ascit denique tum candidus curvo perspiciatis defendo. Carpo verecundia cometes. Sortitus colligo ceno terra cado temptatio carmen arx sequi cicuta.\\nAttollo autem adipisci vinitor comminor odit. Virga aptus corrupti utpote. Subseco vomica auxilium ascit cuppedia abbas amo patior credo tenus.\",\"styles\":{}}],\"children\":[]}]",
-                      "keywords": "aestus degero cicuta",
-                      "status": "unpublished",
-                      "publicAccess": false,
-                      "parentId": null,
-                      "displayOrder": 14.28,
-                      "createdAt": "2024-02-25T13:01:35.301Z",
-                      "createdBy": "p3t0ygxx0aa83en3sk1fs1we",
-                      "modifiedAt": "2024-02-25T13:01:35.301Z",
-                      "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
-                      "tx": {
-                        "id": "4hj92yzr7v1itpc9wztvbcy2",
-                        "sourceId": "src_1q04oq81k5rbzt4yq63pob5r",
-                        "version": 1,
-                        "fieldVersions": {}
-                      }
-                    }
-                  ],
-                  "rejectedItemIds": []
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      },
       "get": {
         "security": [],
         "operationId": "getPages",
@@ -6820,7 +6588,7 @@
         "summary": "Get pages",
         "description": "Get all matching *pages*.",
         "x-guard": [
-          "isPublicAccess"
+          "publicGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -6919,7 +6687,7 @@
                       "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Tergo adhuc virtus vesco audentia angustus. Voco commodi abduco deduco. Cubicularis volo utroque in comminor concedo quae.\\nSumptus dolorem varius crudelis. Advoco surgo angulus demens tabella clibanus. Valens vester cavus.\",\"styles\":{}}],\"children\":[]}]",
                       "keywords": "contego debeo volubilis",
                       "status": "unpublished",
-                      "publicAccess": false,
+                      "publicAccess": true,
                       "parentId": null,
                       "displayOrder": 40.67,
                       "createdAt": "2024-11-21T04:00:59.122Z",
@@ -6941,7 +6709,7 @@
                       "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Acidus advoco ventus sub cogito argentum attonbitus trans. Crapula bestia auxilium non sui desino amor barba. Vitiosus eligendi clementia usus demens conor auctor basium tolero.\\nSoluta temporibus aut labore. Depono ultio explicabo ascit. Utpote amplexus nihil aut concedo vel praesentium universe.\",\"styles\":{}}],\"children\":[]}]",
                       "keywords": "pecus accusator cubitum",
                       "status": "unpublished",
-                      "publicAccess": false,
+                      "publicAccess": true,
                       "parentId": null,
                       "displayOrder": 11.43,
                       "createdAt": "2024-10-29T08:46:20.790Z",
@@ -6977,6 +6745,330 @@
             "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
+      }
+    },
+    "/pages/{id}": {
+      "get": {
+        "security": [],
+        "operationId": "getPage",
+        "tags": [
+          "pages"
+        ],
+        "summary": "Get page",
+        "description": "Get a single *page* by ID. Cached using LRU - first request warms cache.",
+        "x-guard": [
+          "publicGuard"
+        ],
+        "x-rate-limiter": [],
+        "x-cache": [
+          "publicCache"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page"
+                },
+                "example": {
+                  "id": "co96vrmic3wbowmxzbqa1e9f",
+                  "tenantId": "ijllhz",
+                  "entityType": "page",
+                  "name": "Torrens adfectus.",
+                  "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Voluptates cornu tempus eaque universe volubilis conturbo. Sponte utpote crux pecco vulticulus cunctatio. Vallum ut adimpleo summa valde strenuus attonbitus.\\nMollitia vel cado vitae cibus dolores decet. Aptus accusamus praesentium cibus subito viscus vox nemo. Video tremo molestias charisma clam ipsa suscipit.\",\"styles\":{}}],\"children\":[]}]",
+                  "keywords": "solvo atrox tendo",
+                  "status": "unpublished",
+                  "publicAccess": true,
+                  "parentId": null,
+                  "displayOrder": 32.69,
+                  "createdAt": "2024-08-06T10:28:33.226Z",
+                  "createdBy": "0f0ak5vkrrl687pmkwpa1vju",
+                  "modifiedAt": "2024-08-06T10:28:33.226Z",
+                  "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju",
+                  "tx": {
+                    "id": "4tufkeho7gg1xwx21e333ngq",
+                    "sourceId": "src_ujcbpukfple60p8h3tnk9zpo",
+                    "version": 1,
+                    "fieldVersions": {}
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/{tenantId}/pages": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "createPages",
+        "tags": [
+          "pages"
+        ],
+        "summary": "Create pages",
+        "description": "Insert one or more new *pages*. Returns created pages and any rejected items.",
+        "x-guard": [
+          "authGuard",
+          "tenantGuard",
+          "sysAdminGuard"
+        ],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 24,
+              "pattern": "^[a-z0-9]+$"
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "tx": {
+                      "$ref": "#/components/schemas/TxRequest"
+                    }
+                  },
+                  "required": [
+                    "tx"
+                  ]
+                },
+                "minItems": 1,
+                "maxItems": 50
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Pages already created (idempotent)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Page"
+                      }
+                    },
+                    "rejectedItemIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Identifiers of items that could not be processed"
+                    },
+                    "rejectionReasons": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "description": "Map of rejected item ID to reason code"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "rejectedItemIds"
+                  ]
+                },
+                "example": {
+                  "data": [
+                    {
+                      "id": "wgpaj0cfyc7n2sjn5fpfkbrs",
+                      "tenantId": "lwtksu",
+                      "entityType": "page",
+                      "name": "Voluntarius contra.",
+                      "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Tergo crepusculum certe desparatus depromo. Dolor somnus vobis atavus tergiversatio tersus suadeo colo. Id abduco supplanto asporto.\\nCuratio xiphias auxilium teneo claudeo unde vulgo. Atavus vorax vergo deputo deprimo statim eos vulnero subito eligendi. Exercitationem somnus cattus cilicium textilis cervus alo tactus.\",\"styles\":{}}],\"children\":[]}]",
+                      "keywords": "confido colligo audio",
+                      "status": "unpublished",
+                      "publicAccess": true,
+                      "parentId": null,
+                      "displayOrder": 70.17,
+                      "createdAt": "2024-04-19T14:04:35.773Z",
+                      "createdBy": "kzmv5qbhdcqeiuvwlosan0fc",
+                      "modifiedAt": "2024-04-19T14:04:35.773Z",
+                      "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
+                      "tx": {
+                        "id": "akf4ovzm1ne3h55lgj31d63n",
+                        "sourceId": "src_9apx99a5auvr5cyj5s37irnj",
+                        "version": 1,
+                        "fieldVersions": {}
+                      }
+                    },
+                    {
+                      "id": "74l7581dwpxxbqdej8622zpg",
+                      "tenantId": "o54qw5",
+                      "entityType": "page",
+                      "name": "Taedium spargo cetera.",
+                      "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Vehemens deprecator ventus ascit denique tum candidus curvo perspiciatis defendo. Carpo verecundia cometes. Sortitus colligo ceno terra cado temptatio carmen arx sequi cicuta.\\nAttollo autem adipisci vinitor comminor odit. Virga aptus corrupti utpote. Subseco vomica auxilium ascit cuppedia abbas amo patior credo tenus.\",\"styles\":{}}],\"children\":[]}]",
+                      "keywords": "aestus degero cicuta",
+                      "status": "unpublished",
+                      "publicAccess": true,
+                      "parentId": null,
+                      "displayOrder": 14.28,
+                      "createdAt": "2024-02-25T13:01:35.301Z",
+                      "createdBy": "p3t0ygxx0aa83en3sk1fs1we",
+                      "modifiedAt": "2024-02-25T13:01:35.301Z",
+                      "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
+                      "tx": {
+                        "id": "4hj92yzr7v1itpc9wztvbcy2",
+                        "sourceId": "src_1q04oq81k5rbzt4yq63pob5r",
+                        "version": 1,
+                        "fieldVersions": {}
+                      }
+                    }
+                  ],
+                  "rejectedItemIds": []
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Pages created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Page"
+                      }
+                    },
+                    "rejectedItemIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Identifiers of items that could not be processed"
+                    },
+                    "rejectionReasons": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "description": "Map of rejected item ID to reason code"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "rejectedItemIds"
+                  ]
+                },
+                "example": {
+                  "data": [
+                    {
+                      "id": "wgpaj0cfyc7n2sjn5fpfkbrs",
+                      "tenantId": "lwtksu",
+                      "entityType": "page",
+                      "name": "Voluntarius contra.",
+                      "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Tergo crepusculum certe desparatus depromo. Dolor somnus vobis atavus tergiversatio tersus suadeo colo. Id abduco supplanto asporto.\\nCuratio xiphias auxilium teneo claudeo unde vulgo. Atavus vorax vergo deputo deprimo statim eos vulnero subito eligendi. Exercitationem somnus cattus cilicium textilis cervus alo tactus.\",\"styles\":{}}],\"children\":[]}]",
+                      "keywords": "confido colligo audio",
+                      "status": "unpublished",
+                      "publicAccess": true,
+                      "parentId": null,
+                      "displayOrder": 70.17,
+                      "createdAt": "2024-04-19T14:04:35.773Z",
+                      "createdBy": "kzmv5qbhdcqeiuvwlosan0fc",
+                      "modifiedAt": "2024-04-19T14:04:35.773Z",
+                      "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
+                      "tx": {
+                        "id": "akf4ovzm1ne3h55lgj31d63n",
+                        "sourceId": "src_9apx99a5auvr5cyj5s37irnj",
+                        "version": 1,
+                        "fieldVersions": {}
+                      }
+                    },
+                    {
+                      "id": "74l7581dwpxxbqdej8622zpg",
+                      "tenantId": "o54qw5",
+                      "entityType": "page",
+                      "name": "Taedium spargo cetera.",
+                      "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Vehemens deprecator ventus ascit denique tum candidus curvo perspiciatis defendo. Carpo verecundia cometes. Sortitus colligo ceno terra cado temptatio carmen arx sequi cicuta.\\nAttollo autem adipisci vinitor comminor odit. Virga aptus corrupti utpote. Subseco vomica auxilium ascit cuppedia abbas amo patior credo tenus.\",\"styles\":{}}],\"children\":[]}]",
+                      "keywords": "aestus degero cicuta",
+                      "status": "unpublished",
+                      "publicAccess": true,
+                      "parentId": null,
+                      "displayOrder": 14.28,
+                      "createdAt": "2024-02-25T13:01:35.301Z",
+                      "createdBy": "p3t0ygxx0aa83en3sk1fs1we",
+                      "modifiedAt": "2024-02-25T13:01:35.301Z",
+                      "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
+                      "tx": {
+                        "id": "4hj92yzr7v1itpc9wztvbcy2",
+                        "sourceId": "src_1q04oq81k5rbzt4yq63pob5r",
+                        "version": 1,
+                        "fieldVersions": {}
+                      }
+                    }
+                  ],
+                  "rejectedItemIds": []
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
       },
       "delete": {
         "security": [
@@ -6991,11 +7083,24 @@
         "summary": "Delete pages",
         "description": "Delete one or more *pages* by ID.",
         "x-guard": [
-          "isAuthenticated",
+          "authGuard",
+          "tenantGuard",
           "sysAdminGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 24,
+              "pattern": "^[a-z0-9]+$"
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -7041,82 +7146,7 @@
         }
       }
     },
-    "/pages/{id}": {
-      "get": {
-        "security": [],
-        "operationId": "getPage",
-        "tags": [
-          "pages"
-        ],
-        "summary": "Get page",
-        "description": "Get a single *page* by ID. Cached using LRU - first request warms cache.",
-        "x-guard": [
-          "isPublicAccess"
-        ],
-        "x-rate-limiter": [],
-        "x-cache": [
-          "publicCache"
-        ],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string"
-            },
-            "required": true,
-            "name": "id",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Page",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Page"
-                },
-                "example": {
-                  "id": "co96vrmic3wbowmxzbqa1e9f",
-                  "tenantId": "ijllhz",
-                  "entityType": "page",
-                  "name": "Torrens adfectus.",
-                  "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Voluptates cornu tempus eaque universe volubilis conturbo. Sponte utpote crux pecco vulticulus cunctatio. Vallum ut adimpleo summa valde strenuus attonbitus.\\nMollitia vel cado vitae cibus dolores decet. Aptus accusamus praesentium cibus subito viscus vox nemo. Video tremo molestias charisma clam ipsa suscipit.\",\"styles\":{}}],\"children\":[]}]",
-                  "keywords": "solvo atrox tendo",
-                  "status": "unpublished",
-                  "publicAccess": false,
-                  "parentId": null,
-                  "displayOrder": 32.69,
-                  "createdAt": "2024-08-06T10:28:33.226Z",
-                  "createdBy": "0f0ak5vkrrl687pmkwpa1vju",
-                  "modifiedAt": "2024-08-06T10:28:33.226Z",
-                  "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju",
-                  "tx": {
-                    "id": "4tufkeho7gg1xwx21e333ngq",
-                    "sourceId": "src_ujcbpukfple60p8h3tnk9zpo",
-                    "version": 1,
-                    "fieldVersions": {}
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      },
+    "/{tenantId}/pages/{id}": {
       "put": {
         "security": [
           {
@@ -7130,12 +7160,23 @@
         "summary": "Update page",
         "description": "Update a single *page* by ID.",
         "x-guard": [
-          "isAuthenticated",
+          "authGuard",
+          "tenantGuard",
           "sysAdminGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 24,
+              "pattern": "^[a-z0-9]+$"
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
           {
             "schema": {
               "type": "string"
@@ -7211,7 +7252,7 @@
                   "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Voluptates cornu tempus eaque universe volubilis conturbo. Sponte utpote crux pecco vulticulus cunctatio. Vallum ut adimpleo summa valde strenuus attonbitus.\\nMollitia vel cado vitae cibus dolores decet. Aptus accusamus praesentium cibus subito viscus vox nemo. Video tremo molestias charisma clam ipsa suscipit.\",\"styles\":{}}],\"children\":[]}]",
                   "keywords": "solvo atrox tendo",
                   "status": "unpublished",
-                  "publicAccess": false,
+                  "publicAccess": true,
                   "parentId": null,
                   "displayOrder": 32.69,
                   "createdAt": "2024-08-06T10:28:33.226Z",
@@ -7260,7 +7301,7 @@
         "summary": "Check slug availability",
         "description": "Checks whether a given slug is available across all entity types (e.g. *organizations*, *users*).\n      Primarily used to prevent slug collisions before creating or updating an entity.",
         "x-guard": [
-          "isAuthenticated"
+          "authGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -7322,7 +7363,7 @@
         "summary": "Public entity stream",
         "description": "Stream real-time changes for public entities (entities with no parent context). No authentication required. Use offset for catch-up, live=sse for SSE streaming.",
         "x-guard": [
-          "isPublicAccess"
+          "publicGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -7415,7 +7456,7 @@
         "summary": "App event stream",
         "description": "SSE stream for membership and entity notifications affecting the *current user*. Sends lightweight notifications - client fetches entity data via API.",
         "x-guard": [
-          "isAuthenticated"
+          "authGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -7535,8 +7576,8 @@
         "summary": "Invite to system",
         "description": "Invites one or more users to the system via email. Can be used to onboard system level users or admins.",
         "x-guard": [
-          "isAuthenticated",
-          "hasSystemAccess"
+          "authGuard",
+          "sysAdminGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -7640,8 +7681,8 @@
         "summary": "Get list of users",
         "description": "Returns a list of *users*.",
         "x-guard": [
-          "isAuthenticated",
-          "hasSystemAccess"
+          "authGuard",
+          "sysAdminGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -7908,8 +7949,8 @@
         "summary": "Delete users",
         "description": "Deletes one or more *users* from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.",
         "x-guard": [
-          "isAuthenticated",
-          "hasSystemAccess"
+          "authGuard",
+          "sysAdminGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -8003,8 +8044,8 @@
         "summary": "Update user",
         "description": "Updates a *user* identified by ID.",
         "x-guard": [
-          "isAuthenticated",
-          "hasSystemAccess"
+          "authGuard",
+          "sysAdminGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -8133,7 +8174,7 @@
         "summary": "Paddle webhook (WIP)",
         "description": "Receives and handles Paddle subscription events such as purchases, renewals, and cancellations.",
         "x-guard": [
-          "isPublicAccess"
+          "publicGuard"
         ],
         "x-rate-limiter": [
           "tokenLimiter"
@@ -8182,8 +8223,8 @@
         "summary": "Newsletter to members",
         "description": "Sends a newsletter to members of one or more specified organizations.",
         "x-guard": [
-          "isAuthenticated",
-          "hasSystemAccess"
+          "authGuard",
+          "sysAdminGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -8282,8 +8323,8 @@
         "summary": "Get list of tenants",
         "description": "Returns a paginated list of tenants. System admin access required.",
         "x-guard": [
-          "isAuthenticated",
-          "hasSystemAccess"
+          "authGuard",
+          "sysAdminGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -8415,8 +8456,8 @@
         "summary": "Create a new tenant",
         "description": "Creates a new tenant. System admin access required.",
         "x-guard": [
-          "isAuthenticated",
-          "hasSystemAccess"
+          "authGuard",
+          "sysAdminGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -8473,8 +8514,8 @@
         "summary": "Get tenant by ID",
         "description": "Returns a single tenant by its ID. System admin access required.",
         "x-guard": [
-          "isAuthenticated",
-          "hasSystemAccess"
+          "authGuard",
+          "sysAdminGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -8482,11 +8523,11 @@
           {
             "schema": {
               "type": "string",
-              "maxLength": 6,
-              "description": "6-character tenant ID"
+              "maxLength": 24,
+              "description": "Tenant ID"
             },
             "required": true,
-            "description": "6-character tenant ID",
+            "description": "Tenant ID",
             "name": "tenantId",
             "in": "path"
           }
@@ -8532,8 +8573,8 @@
         "summary": "Update a tenant",
         "description": "Updates a tenant by ID. System admin access required.",
         "x-guard": [
-          "isAuthenticated",
-          "hasSystemAccess"
+          "authGuard",
+          "sysAdminGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -8541,11 +8582,11 @@
           {
             "schema": {
               "type": "string",
-              "maxLength": 6,
-              "description": "6-character tenant ID"
+              "maxLength": 24,
+              "description": "Tenant ID"
             },
             "required": true,
-            "description": "6-character tenant ID",
+            "description": "Tenant ID",
             "name": "tenantId",
             "in": "path"
           }
@@ -8601,8 +8642,8 @@
         "summary": "Archive a tenant",
         "description": "Archives a tenant (soft delete). Sets status to \"archived\". System admin access required. Data retention period applies before permanent deletion.",
         "x-guard": [
-          "isAuthenticated",
-          "hasSystemAccess"
+          "authGuard",
+          "sysAdminGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -8610,11 +8651,11 @@
           {
             "schema": {
               "type": "string",
-              "maxLength": 6,
-              "description": "6-character tenant ID"
+              "maxLength": 24,
+              "description": "Tenant ID"
             },
             "required": true,
-            "description": "6-character tenant ID",
+            "description": "Tenant ID",
             "name": "tenantId",
             "in": "path"
           }
@@ -8666,7 +8707,7 @@
         "summary": "Create request",
         "description": "Submits a new *request* to the system. Supported types include contact form, newsletter signup, and waitlist entry.",
         "x-guard": [
-          "isPublicAccess"
+          "publicGuard"
         ],
         "x-rate-limiter": [
           "emailEnumLimiter",
@@ -8757,8 +8798,8 @@
         "summary": "Get list of requests",
         "description": "Returns a list of submitted *requests* across all types: contact form, newsletter, and waitlist.",
         "x-guard": [
-          "isAuthenticated",
-          "hasSystemAccess"
+          "authGuard",
+          "sysAdminGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -8893,8 +8934,8 @@
         "summary": "Delete requests",
         "description": "Deletes one or more *requests* from the system by their IDs.",
         "x-guard": [
-          "isAuthenticated",
-          "hasSystemAccess"
+          "authGuard",
+          "sysAdminGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -8957,8 +8998,8 @@
         "summary": "Get metrics",
         "description": "EXPERIMENTAL. Returns raw system observability data (e.g. node level statistics or runtime insights).\n      Primarily intended for internal monitoring and diagnostics.",
         "x-guard": [
-          "isAuthenticated",
-          "hasSystemAccess"
+          "authGuard",
+          "sysAdminGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -9020,8 +9061,8 @@
         "summary": "Get runtime metrics",
         "description": "Returns Node.js process health metrics and OpenTelemetry runtime instrumentation data.\n      Includes memory usage, CPU time, uptime, and event loop utilization.",
         "x-guard": [
-          "isAuthenticated",
-          "hasSystemAccess"
+          "authGuard",
+          "sysAdminGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -9196,7 +9237,7 @@
         "summary": "Get public counts",
         "description": "Returns basic count metrics for entity types such as `users` and `organizations`.\n      This endpoint is public and uses a 1 minute in memory cache for performance.",
         "x-guard": [
-          "isPublicAccess"
+          "publicGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -9263,8 +9304,8 @@
         "summary": "Get entity cache statistics",
         "description": "Returns entity cache statistics including hit rates, sizes, and invalidations.\n      Useful for monitoring cache performance and tuning.",
         "x-guard": [
-          "isAuthenticated",
-          "hasSystemAccess"
+          "authGuard",
+          "sysAdminGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -9378,8 +9419,8 @@
         "summary": "Get sync flow metrics",
         "description": "Returns metrics for the sync flow: CDC Worker (messages) → ActivityBus (events) → SSE (notifications).\n      Includes message/notification counts, connection stats, and tracing span data.",
         "x-guard": [
-          "isAuthenticated",
-          "hasSystemAccess"
+          "authGuard",
+          "sysAdminGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -9476,7 +9517,7 @@
         "summary": "Get list of users",
         "description": "Returns a list of *users* in an organization context.",
         "x-guard": [
-          "isAuthenticated",
+          "authGuard",
           "tenantGuard"
         ],
         "x-rate-limiter": [],
@@ -9485,7 +9526,8 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^[a-z0-9]{6}$"
+              "maxLength": 24,
+              "pattern": "^[a-z0-9]+$"
             },
             "required": true,
             "name": "tenantId",
@@ -9763,7 +9805,7 @@
         "summary": "Get user",
         "description": "Retrieves a *user* by ID or slug in an organization context.",
         "x-guard": [
-          "isAuthenticated",
+          "authGuard",
           "tenantGuard"
         ],
         "x-rate-limiter": [],
@@ -9772,7 +9814,8 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^[a-z0-9]{6}$"
+              "maxLength": 24,
+              "pattern": "^[a-z0-9]+$"
             },
             "required": true,
             "name": "tenantId",
@@ -9860,7 +9903,7 @@
         "summary": "Get attachments",
         "description": "Returns a paginated list of *attachments* for the organization.",
         "x-guard": [
-          "isAuthenticated",
+          "authGuard",
           "tenantGuard",
           "orgGuard"
         ],
@@ -9870,7 +9913,8 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^[a-z0-9]{6}$"
+              "maxLength": 24,
+              "pattern": "^[a-z0-9]+$"
             },
             "required": true,
             "name": "tenantId",
@@ -10064,7 +10108,7 @@
         "summary": "Create attachments",
         "description": "Registers one or more new *attachments* after client side upload. Includes metadata like name, type, and linked entity.",
         "x-guard": [
-          "isAuthenticated",
+          "authGuard",
           "tenantGuard",
           "orgGuard"
         ],
@@ -10074,7 +10118,8 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^[a-z0-9]{6}$"
+              "maxLength": 24,
+              "pattern": "^[a-z0-9]+$"
             },
             "required": true,
             "name": "tenantId",
@@ -10404,7 +10449,7 @@
         "summary": "Delete attachments",
         "description": "Deletes one or more *attachment* records by ID. This does not delete the underlying file in storage.",
         "x-guard": [
-          "isAuthenticated",
+          "authGuard",
           "tenantGuard",
           "orgGuard"
         ],
@@ -10414,7 +10459,8 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^[a-z0-9]{6}$"
+              "maxLength": 24,
+              "pattern": "^[a-z0-9]+$"
             },
             "required": true,
             "name": "tenantId",
@@ -10534,7 +10580,7 @@
         "summary": "Get presigned URL",
         "description": "Generates and returns a presigned URL for accessing a private attachment file in S3. Public files should use the public CDN URL directly. Requires organization context.",
         "x-guard": [
-          "isAuthenticated",
+          "authGuard",
           "tenantGuard",
           "orgGuard"
         ],
@@ -10546,7 +10592,8 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^[a-z0-9]{6}$"
+              "maxLength": 24,
+              "pattern": "^[a-z0-9]+$"
             },
             "required": true,
             "name": "tenantId",
@@ -10612,7 +10659,7 @@
         "summary": "Get attachment",
         "description": "Returns a single *attachment* by ID. Supports CDC cache via X-Cache-Token header.",
         "x-guard": [
-          "isAuthenticated",
+          "authGuard",
           "tenantGuard",
           "orgGuard"
         ],
@@ -10624,7 +10671,8 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^[a-z0-9]{6}$"
+              "maxLength": 24,
+              "pattern": "^[a-z0-9]+$"
             },
             "required": true,
             "name": "tenantId",
@@ -10717,7 +10765,7 @@
         "summary": "Update attachment",
         "description": "Updates metadata of an *attachment*, such as its name or associated entity.",
         "x-guard": [
-          "isAuthenticated",
+          "authGuard",
           "tenantGuard",
           "orgGuard"
         ],
@@ -10727,7 +10775,8 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^[a-z0-9]{6}$"
+              "maxLength": 24,
+              "pattern": "^[a-z0-9]+$"
             },
             "required": true,
             "name": "tenantId",
@@ -10842,7 +10891,7 @@
         "summary": "Redirect to attachment",
         "description": "Redirects to the file's public or presigned URL, depending on storage visibility.",
         "x-guard": [
-          "isPublicAccess"
+          "publicGuard"
         ],
         "x-rate-limiter": [
           "tokenLimiter"
@@ -10894,7 +10943,7 @@
         "summary": "Create memberships",
         "description": "Creates one or more *memberships*, inviting users (existing or new) to a context entity such as an organization.",
         "x-guard": [
-          "isAuthenticated",
+          "authGuard",
           "tenantGuard",
           "orgGuard"
         ],
@@ -10904,7 +10953,8 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^[a-z0-9]{6}$"
+              "maxLength": 24,
+              "pattern": "^[a-z0-9]+$"
             },
             "required": true,
             "name": "tenantId",
@@ -11060,7 +11110,7 @@
         "summary": "Delete memberships",
         "description": "Deletes one or more *memberships* by ID. This removes the membership but does not delete the associated user(s).",
         "x-guard": [
-          "isAuthenticated",
+          "authGuard",
           "tenantGuard",
           "orgGuard"
         ],
@@ -11070,7 +11120,8 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^[a-z0-9]{6}$"
+              "maxLength": 24,
+              "pattern": "^[a-z0-9]+$"
             },
             "required": true,
             "name": "tenantId",
@@ -11194,7 +11245,7 @@
         "summary": "Update membership",
         "description": "Updates the *membership* metadata, such as role, `muted`, or `archived` status.",
         "x-guard": [
-          "isAuthenticated",
+          "authGuard",
           "tenantGuard",
           "orgGuard"
         ],
@@ -11204,7 +11255,8 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^[a-z0-9]{6}$"
+              "maxLength": 24,
+              "pattern": "^[a-z0-9]+$"
             },
             "required": true,
             "name": "tenantId",
@@ -11312,7 +11364,7 @@
         "summary": "Respond to membership invitation",
         "description": "Accepting activates the associated membership. Rejecting simply removes the invitation token.",
         "x-guard": [
-          "isAuthenticated"
+          "authGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -11392,7 +11444,7 @@
         "summary": "Get list of members",
         "description": "Retrieves members (users) of a context entity by ID, including their associated *membership* data.",
         "x-guard": [
-          "isAuthenticated",
+          "authGuard",
           "tenantGuard",
           "orgGuard"
         ],
@@ -11402,7 +11454,8 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^[a-z0-9]{6}$"
+              "maxLength": 24,
+              "pattern": "^[a-z0-9]+$"
             },
             "required": true,
             "name": "tenantId",
@@ -11749,7 +11802,7 @@
         "summary": "Get list of pending memberships",
         "description": "Returns pending memberships for a context entity, identified by ID. This does not include pending invitations for non-existing users.",
         "x-guard": [
-          "isAuthenticated",
+          "authGuard",
           "tenantGuard",
           "orgGuard"
         ],
@@ -11759,7 +11812,8 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^[a-z0-9]{6}$"
+              "maxLength": 24,
+              "pattern": "^[a-z0-9]+$"
             },
             "required": true,
             "name": "tenantId",

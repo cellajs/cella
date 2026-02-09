@@ -131,7 +131,7 @@ export const usePageCreateMutation = () => {
     mutationFn: async (data: CreatePageInput) => {
       const tx = createTxForCreate();
       // Body is array with tx embedded in each item
-      const result = await createPages({ body: [{ ...data, tx }] });
+      const result = await createPages({ path: { tenantId: 'public' }, body: [{ ...data, tx }] });
       // Return created page (has tx embedded)
       return result.data[0];
     },
@@ -193,7 +193,7 @@ export const usePageUpdateMutation = () => {
       const cachedEntity = findPageInListCache(id);
       const tx = createTxForUpdate(cachedEntity);
       // Body has tx embedded directly
-      const result = await updatePage({ path: { id }, body: { ...data, tx } });
+      const result = await updatePage({ path: { tenantId: 'public', id }, body: { ...data, tx } });
       return result;
     },
 
@@ -254,7 +254,7 @@ export const usePageDeleteMutation = () => {
     // Execute batch delete API call
     mutationFn: async (pages: Page[]) => {
       const ids = pages.map((p) => p.id);
-      await deletePages({ body: { ids } });
+      await deletePages({ path: { tenantId: 'public' }, body: { ids } });
     },
 
     // Runs BEFORE mutationFn - remove items immediately from UI
@@ -300,7 +300,7 @@ addMutationRegistrar((queryClient: QueryClient) => {
     mutationFn: async (data: CreatePageInput) => {
       const tx = createTxForCreate();
       // Body is array with tx embedded in each item
-      const result = await createPages({ body: [{ ...data, tx }] });
+      const result = await createPages({ path: { tenantId: 'public' }, body: [{ ...data, tx }] });
       return result.data[0]; // Return entity with tx embedded
     },
   });
@@ -312,7 +312,7 @@ addMutationRegistrar((queryClient: QueryClient) => {
       const cachedEntity = findPageInListCache(id);
       const tx = createTxForUpdate(cachedEntity);
       // Body has tx embedded directly
-      return updatePage({ path: { id }, body: { ...data, tx } });
+      return updatePage({ path: { tenantId: 'public', id }, body: { ...data, tx } });
     },
   });
 
@@ -320,7 +320,7 @@ addMutationRegistrar((queryClient: QueryClient) => {
   queryClient.setMutationDefaults(keys.delete, {
     mutationFn: async (pages: Page[]) => {
       const ids = pages.map((p) => p.id);
-      await deletePages({ body: { ids } });
+      await deletePages({ path: { tenantId: 'public' }, body: { ids } });
     },
   });
 });

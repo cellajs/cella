@@ -32,7 +32,7 @@ export const zContextEntityBase = z.object({
 
 export const zMembershipBase = z.object({
   id: z.string(),
-  tenantId: z.string().max(6),
+  tenantId: z.string().max(24),
   contextType: z.enum(['organization']),
   userId: z.string(),
   role: z.enum(['admin', 'member']),
@@ -153,7 +153,7 @@ export const zActivityError = z.object({
 
 export const zActivity = z.object({
   id: z.string(),
-  tenantId: z.union([z.string().max(6), z.null()]),
+  tenantId: z.union([z.string().max(24), z.null()]),
   userId: z.union([z.string(), z.null()]),
   entityType: z.nullable(z.enum(['user', 'organization', 'attachment', 'page'])),
   resourceType: z.nullable(z.enum(['request', 'membership', 'inactive_membership', 'tenant'])),
@@ -235,7 +235,7 @@ export const zMeAuthData = z.object({
 export const zInactiveMembership = z.object({
   createdAt: z.string(),
   id: z.string(),
-  tenantId: z.string().max(6),
+  tenantId: z.string().max(24),
   contextType: z.enum(['organization']),
   email: z.string(),
   userId: z.union([z.string(), z.null()]),
@@ -289,7 +289,7 @@ export const zOrganization = z.object({
   bannerUrl: z.union([z.string(), z.null()]),
   createdBy: z.union([z.string(), z.null()]),
   modifiedBy: z.union([z.string(), z.null()]),
-  tenantId: z.string().max(6),
+  tenantId: z.string().max(24),
   shortName: z.union([z.string(), z.null()]),
   country: z.union([z.string(), z.null()]),
   timezone: z.union([z.string(), z.null()]),
@@ -325,7 +325,7 @@ export const zPage = z.object({
   keywords: z.string(),
   createdBy: z.union([z.string(), z.null()]),
   modifiedBy: z.union([z.string(), z.null()]),
-  tenantId: z.string().max(6),
+  tenantId: z.string().max(24),
   tx: zTxBase,
   status: z.enum(['unpublished', 'published', 'archived']),
   publicAccess: z.boolean(),
@@ -342,7 +342,7 @@ export const zTxRequest = z.object({
 export const zTenantStatus = z.enum(['active', 'suspended', 'archived']);
 
 export const zTenant = z.object({
-  id: z.string().max(6),
+  id: z.string().max(24),
   name: z.string(),
   status: zTenantStatus,
   createdAt: z.string(),
@@ -378,7 +378,7 @@ export const zAttachment = z.object({
   keywords: z.string(),
   createdBy: z.union([z.string(), z.null()]),
   modifiedBy: z.union([z.string(), z.null()]),
-  tenantId: z.string().max(6),
+  tenantId: z.string().max(24),
   tx: zTxBase,
   public: z.boolean(),
   bucketName: z.string(),
@@ -405,7 +405,7 @@ export const zAttachment = z.object({
 export const zMembership = z.object({
   createdAt: z.string(),
   id: z.string(),
-  tenantId: z.string().max(6),
+  tenantId: z.string().max(24),
   contextType: z.enum(['organization']),
   userId: z.string(),
   role: z.enum(['admin', 'member']),
@@ -1041,7 +1041,10 @@ export const zCreateOrganizationsResponse = z.object({
 export const zGetOrganizationData = z.object({
   body: z.optional(z.never()),
   path: z.object({
-    tenantId: z.string().regex(/^[a-z0-9]{6}$/),
+    tenantId: z
+      .string()
+      .max(24)
+      .regex(/^[a-z0-9]+$/),
     idOrSlug: z.string(),
   }),
   query: z.optional(z.never()),
@@ -1077,7 +1080,10 @@ export const zUpdateOrganizationData = z.object({
     }),
   ),
   path: z.object({
-    tenantId: z.string().regex(/^[a-z0-9]{6}$/),
+    tenantId: z
+      .string()
+      .max(24)
+      .regex(/^[a-z0-9]+$/),
     id: z.string(),
   }),
   query: z.optional(z.never()),
@@ -1093,7 +1099,10 @@ export const zDeleteOrganizationsData = z.object({
     ids: z.array(z.string()).min(1).max(50),
   }),
   path: z.object({
-    tenantId: z.string().regex(/^[a-z0-9]{6}$/),
+    tenantId: z
+      .string()
+      .max(24)
+      .regex(/^[a-z0-9]+$/),
   }),
   query: z.optional(z.never()),
 });
@@ -1106,19 +1115,6 @@ export const zDeleteOrganizationsResponse = z.object({
   rejectedItemIds: z.array(z.string()),
   rejectionReasons: z.optional(z.record(z.string(), z.string())),
 });
-
-export const zDeletePagesData = z.object({
-  body: z.object({
-    ids: z.array(z.string()).min(1).max(50),
-  }),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
-});
-
-/**
- * Page(s) deleted
- */
-export const zDeletePagesResponse = z.void();
 
 export const zGetPagesData = z.object({
   body: z.optional(z.never()),
@@ -1143,6 +1139,37 @@ export const zGetPagesResponse = z.object({
   total: z.number(),
 });
 
+export const zGetPageData = z.object({
+  body: z.optional(z.never()),
+  path: z.object({
+    id: z.string(),
+  }),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Page
+ */
+export const zGetPageResponse = zPage;
+
+export const zDeletePagesData = z.object({
+  body: z.object({
+    ids: z.array(z.string()).min(1).max(50),
+  }),
+  path: z.object({
+    tenantId: z
+      .string()
+      .max(24)
+      .regex(/^[a-z0-9]+$/),
+  }),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Page(s) deleted
+ */
+export const zDeletePagesResponse = z.void();
+
 export const zCreatePagesData = z.object({
   body: z
     .array(
@@ -1153,7 +1180,12 @@ export const zCreatePagesData = z.object({
     )
     .min(1)
     .max(50),
-  path: z.optional(z.never()),
+  path: z.object({
+    tenantId: z
+      .string()
+      .max(24)
+      .regex(/^[a-z0-9]+$/),
+  }),
   query: z.optional(z.never()),
 });
 
@@ -1170,19 +1202,6 @@ export const zCreatePagesResponse = z.union([
   }),
 ]);
 
-export const zGetPageData = z.object({
-  body: z.optional(z.never()),
-  path: z.object({
-    id: z.string(),
-  }),
-  query: z.optional(z.never()),
-});
-
-/**
- * Page
- */
-export const zGetPageResponse = zPage;
-
 export const zUpdatePageData = z.object({
   body: z.object({
     name: z.optional(z.string()),
@@ -1194,6 +1213,10 @@ export const zUpdatePageData = z.object({
     tx: zTxRequest,
   }),
   path: z.object({
+    tenantId: z
+      .string()
+      .max(24)
+      .regex(/^[a-z0-9]+$/),
     id: z.string(),
   }),
   query: z.optional(z.never()),
@@ -1414,7 +1437,7 @@ export const zCreateTenantResponse = zTenant;
 export const zArchiveTenantData = z.object({
   body: z.optional(z.never()),
   path: z.object({
-    tenantId: z.string().max(6),
+    tenantId: z.string().max(24),
   }),
   query: z.optional(z.never()),
 });
@@ -1429,7 +1452,7 @@ export const zArchiveTenantResponse = z.object({
 export const zGetTenantByIdData = z.object({
   body: z.optional(z.never()),
   path: z.object({
-    tenantId: z.string().max(6),
+    tenantId: z.string().max(24),
   }),
   query: z.optional(z.never()),
 });
@@ -1442,7 +1465,7 @@ export const zGetTenantByIdResponse = zTenant;
 export const zUpdateTenantData = z.object({
   body: zUpdateTenantBody,
   path: z.object({
-    tenantId: z.string().max(6),
+    tenantId: z.string().max(24),
   }),
   query: z.optional(z.never()),
 });
@@ -1623,7 +1646,10 @@ export const zGetSyncMetricsResponse = z.object({
 export const zGetUsers2Data = z.object({
   body: z.optional(z.never()),
   path: z.object({
-    tenantId: z.string().regex(/^[a-z0-9]{6}$/),
+    tenantId: z
+      .string()
+      .max(24)
+      .regex(/^[a-z0-9]+$/),
     orgIdOrSlug: z.string(),
   }),
   query: z.optional(
@@ -1658,7 +1684,10 @@ export const zGetUsers2Response = z.object({
 export const zGetUserData = z.object({
   body: z.optional(z.never()),
   path: z.object({
-    tenantId: z.string().regex(/^[a-z0-9]{6}$/),
+    tenantId: z
+      .string()
+      .max(24)
+      .regex(/^[a-z0-9]+$/),
     orgIdOrSlug: z.string(),
     idOrSlug: z.string(),
   }),
@@ -1681,7 +1710,10 @@ export const zDeleteAttachmentsData = z.object({
     ),
   }),
   path: z.object({
-    tenantId: z.string().regex(/^[a-z0-9]{6}$/),
+    tenantId: z
+      .string()
+      .max(24)
+      .regex(/^[a-z0-9]+$/),
     orgIdOrSlug: z.string(),
   }),
   query: z.optional(z.never()),
@@ -1699,7 +1731,10 @@ export const zDeleteAttachmentsResponse = z.object({
 export const zGetAttachmentsData = z.object({
   body: z.optional(z.never()),
   path: z.object({
-    tenantId: z.string().regex(/^[a-z0-9]{6}$/),
+    tenantId: z
+      .string()
+      .max(24)
+      .regex(/^[a-z0-9]+$/),
     orgIdOrSlug: z.string(),
   }),
   query: z.optional(
@@ -1746,7 +1781,10 @@ export const zCreateAttachmentsData = z.object({
     .min(1)
     .max(50),
   path: z.object({
-    tenantId: z.string().regex(/^[a-z0-9]{6}$/),
+    tenantId: z
+      .string()
+      .max(24)
+      .regex(/^[a-z0-9]+$/),
     orgIdOrSlug: z.string(),
   }),
   query: z.optional(z.never()),
@@ -1768,7 +1806,10 @@ export const zCreateAttachmentsResponse = z.union([
 export const zGetPresignedUrlData = z.object({
   body: z.optional(z.never()),
   path: z.object({
-    tenantId: z.string().regex(/^[a-z0-9]{6}$/),
+    tenantId: z
+      .string()
+      .max(24)
+      .regex(/^[a-z0-9]+$/),
     orgIdOrSlug: z.string(),
   }),
   query: z.object({
@@ -1784,7 +1825,10 @@ export const zGetPresignedUrlResponse = z.string();
 export const zGetAttachmentData = z.object({
   body: z.optional(z.never()),
   path: z.object({
-    tenantId: z.string().regex(/^[a-z0-9]{6}$/),
+    tenantId: z
+      .string()
+      .max(24)
+      .regex(/^[a-z0-9]+$/),
     orgIdOrSlug: z.string(),
     id: z.string(),
   }),
@@ -1803,7 +1847,10 @@ export const zUpdateAttachmentData = z.object({
     tx: zTxRequest,
   }),
   path: z.object({
-    tenantId: z.string().regex(/^[a-z0-9]{6}$/),
+    tenantId: z
+      .string()
+      .max(24)
+      .regex(/^[a-z0-9]+$/),
     orgIdOrSlug: z.string(),
     id: z.string(),
   }),
@@ -1828,7 +1875,10 @@ export const zDeleteMembershipsData = z.object({
     ids: z.array(z.string()).min(1).max(50),
   }),
   path: z.object({
-    tenantId: z.string().regex(/^[a-z0-9]{6}$/),
+    tenantId: z
+      .string()
+      .max(24)
+      .regex(/^[a-z0-9]+$/),
     orgIdOrSlug: z.string(),
   }),
   query: z.object({
@@ -1852,7 +1902,10 @@ export const zMembershipInviteData = z.object({
     role: z.enum(['admin', 'member']),
   }),
   path: z.object({
-    tenantId: z.string().regex(/^[a-z0-9]{6}$/),
+    tenantId: z
+      .string()
+      .max(24)
+      .regex(/^[a-z0-9]+$/),
     orgIdOrSlug: z.string(),
   }),
   query: z.object({
@@ -1881,7 +1934,10 @@ export const zUpdateMembershipData = z.object({
     }),
   ),
   path: z.object({
-    tenantId: z.string().regex(/^[a-z0-9]{6}$/),
+    tenantId: z
+      .string()
+      .max(24)
+      .regex(/^[a-z0-9]+$/),
     orgIdOrSlug: z.string(),
     id: z.string(),
   }),
@@ -1910,7 +1966,10 @@ export const zHandleMembershipInvitationResponse = zContextEntityBase;
 export const zGetMembersData = z.object({
   body: z.optional(z.never()),
   path: z.object({
-    tenantId: z.string().regex(/^[a-z0-9]{6}$/),
+    tenantId: z
+      .string()
+      .max(24)
+      .regex(/^[a-z0-9]+$/),
     orgIdOrSlug: z.string(),
   }),
   query: z.object({
@@ -1958,7 +2017,10 @@ export const zGetMembersResponse = z.object({
 export const zGetPendingMembershipsData = z.object({
   body: z.optional(z.never()),
   path: z.object({
-    tenantId: z.string().regex(/^[a-z0-9]{6}$/),
+    tenantId: z
+      .string()
+      .max(24)
+      .regex(/^[a-z0-9]+$/),
     orgIdOrSlug: z.string(),
   }),
   query: z.object({

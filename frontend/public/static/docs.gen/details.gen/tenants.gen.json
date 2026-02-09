@@ -20,8 +20,8 @@
                   "id": {
                     "type": "string",
                     "required": true,
-                    "description": "6-character lowercase alphanumeric tenant ID",
-                    "maxLength": 6
+                    "description": "Lowercase alphanumeric tenant ID",
+                    "maxLength": 24
                   },
                   "name": {
                     "type": "string",
@@ -129,8 +129,8 @@
             "id": {
               "type": "string",
               "required": true,
-              "description": "6-character lowercase alphanumeric tenant ID",
-              "maxLength": 6
+              "description": "Lowercase alphanumeric tenant ID",
+              "maxLength": 24
             },
             "name": {
               "type": "string",
@@ -228,8 +228,8 @@
             "id": {
               "type": "string",
               "required": true,
-              "description": "6-character lowercase alphanumeric tenant ID",
-              "maxLength": 6
+              "description": "Lowercase alphanumeric tenant ID",
+              "maxLength": 24
             },
             "name": {
               "type": "string",
@@ -294,8 +294,8 @@
           "tenantId": {
             "type": "string",
             "required": true,
-            "description": "6-character tenant ID",
-            "maxLength": 6
+            "description": "Tenant ID",
+            "maxLength": 24
           }
         }
       }
@@ -316,8 +316,8 @@
             "id": {
               "type": "string",
               "required": true,
-              "description": "6-character lowercase alphanumeric tenant ID",
-              "maxLength": 6
+              "description": "Lowercase alphanumeric tenant ID",
+              "maxLength": 24
             },
             "name": {
               "type": "string",
@@ -382,8 +382,8 @@
           "tenantId": {
             "type": "string",
             "required": true,
-            "description": "6-character tenant ID",
-            "maxLength": 6
+            "description": "Tenant ID",
+            "maxLength": 24
           }
         }
       },
@@ -466,8 +466,8 @@
           "tenantId": {
             "type": "string",
             "required": true,
-            "description": "6-character tenant ID",
-            "maxLength": 6
+            "description": "Tenant ID",
+            "maxLength": 24
           }
         }
       }

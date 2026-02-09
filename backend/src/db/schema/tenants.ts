@@ -1,6 +1,6 @@
 import { index, pgEnum, pgTable, varchar } from 'drizzle-orm/pg-core';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
-import { nanoidLowercase } from '#/utils/nanoid';
+import { nanoidTenant } from '#/utils/nanoid';
 
 /**
  * Tenant status enum for lifecycle management.
@@ -21,8 +21,8 @@ export const tenantStatusEnum = pgEnum('tenant_status', ['active', 'suspended', 
 export const tenantsTable = pgTable(
   'tenants',
   {
-    // 6-character lowercase alphanumeric ID for URL-friendliness
-    id: varchar({ length: 6 }).primaryKey().$defaultFn(nanoidLowercase),
+    // 24-character lowercase alphanumeric ID
+    id: varchar({ length: 24 }).primaryKey().$defaultFn(nanoidTenant),
     name: varchar().notNull(),
     status: tenantStatusEnum().notNull().default('active'),
     // Timestamps

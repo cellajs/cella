@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "855d71ae-abe3-4e35-ac01-92b0a5de913c",
+  "id": "32724639-9a57-4962-bc3f-9c877614db09",
   "prevIds": [
     "00000000-0000-0000-0000-000000000000"
   ],
@@ -156,7 +156,7 @@
       "table": "activities"
     },
     {
-      "type": "varchar(6)",
+      "type": "varchar(24)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -455,7 +455,7 @@
       "table": "attachments"
     },
     {
-      "type": "varchar(6)",
+      "type": "varchar(24)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -806,7 +806,7 @@
       "table": "inactive_memberships"
     },
     {
-      "type": "varchar(6)",
+      "type": "varchar(24)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -975,7 +975,7 @@
       "table": "memberships"
     },
     {
-      "type": "varchar(6)",
+      "type": "varchar(24)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -1365,7 +1365,7 @@
       "table": "organizations"
     },
     {
-      "type": "varchar(6)",
+      "type": "varchar(24)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -1677,7 +1677,7 @@
       "table": "pages"
     },
     {
-      "type": "varchar(6)",
+      "type": "varchar(24)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -2275,7 +2275,7 @@
       "table": "system_roles"
     },
     {
-      "type": "varchar(6)",
+      "type": "varchar(24)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,

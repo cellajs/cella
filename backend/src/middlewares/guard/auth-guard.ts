@@ -19,8 +19,8 @@ import { updateLastSeenAt } from '../update-last-seen';
  * @param next - The next middleware or route handler to call if authentication succeeds.
  * @returns Error response or undefined if the user is allowed to proceed.
  */
-export const isAuthenticated = xMiddleware(
-  'isAuthenticated',
+export const authGuard = xMiddleware(
+  'authGuard',
   'x-guard',
   async (ctx, next) => {
     // Validate session

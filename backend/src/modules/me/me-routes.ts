@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/docs/x-routes';
-import { isAuthenticated, isPublicAccess } from '#/middlewares/guard';
+import { authGuard, publicGuard } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   meAuthDataSchema,
@@ -36,7 +36,7 @@ const meRoutes = {
     operationId: 'getMe',
     method: 'get',
     path: '/',
-    xGuard: isAuthenticated,
+    xGuard: authGuard,
     tags: ['me'],
     summary: 'Get self',
     description: 'Returns the *current user*.',
@@ -60,7 +60,7 @@ const meRoutes = {
     operationId: 'getMyInvitations',
     method: 'get',
     path: '/invitations',
-    xGuard: isAuthenticated,
+    xGuard: authGuard,
     tags: ['me'],
     summary: 'Get list of invitations',
     description: 'Returns a list of pending memberships with entity data.',
@@ -84,7 +84,7 @@ const meRoutes = {
     operationId: 'updateMe',
     method: 'put',
     path: '/',
-    xGuard: isAuthenticated,
+    xGuard: authGuard,
     tags: ['me'],
     summary: 'Update self',
     description: 'Updates the *current user*.',
@@ -113,7 +113,7 @@ const meRoutes = {
     operationId: 'deleteMe',
     method: 'delete',
     path: '/',
-    xGuard: isAuthenticated,
+    xGuard: authGuard,
     tags: ['me'],
     summary: 'Delete self',
     description:
@@ -130,7 +130,7 @@ const meRoutes = {
     operationId: 'getMyAuth',
     method: 'get',
     path: '/auth',
-    xGuard: isAuthenticated,
+    xGuard: authGuard,
     tags: ['me'],
     summary: 'Get auth data',
     description:
@@ -150,7 +150,7 @@ const meRoutes = {
     operationId: 'deleteMySessions',
     method: 'delete',
     path: '/sessions',
-    xGuard: isAuthenticated,
+    xGuard: authGuard,
     tags: ['me'],
     summary: 'Terminate sessions',
     description: 'Ends one or more sessions for the *current user* based on provided session IDs.',
@@ -176,7 +176,7 @@ const meRoutes = {
     operationId: 'deleteMyMembership',
     method: 'delete',
     path: '/leave',
-    xGuard: isAuthenticated,
+    xGuard: authGuard,
     tags: ['me'],
     summary: 'Leave entity',
     description: 'Removes the *current user* from an entity they are a member of.',
@@ -195,7 +195,7 @@ const meRoutes = {
     operationId: 'unsubscribeMe',
     method: 'get',
     path: '/unsubscribe',
-    xGuard: isPublicAccess,
+    xGuard: publicGuard,
     xRateLimiter: tokenLimiter('unsubscribe'),
     tags: ['me'],
     summary: 'Unsubscribe',
@@ -217,7 +217,7 @@ const meRoutes = {
     operationId: 'getUploadToken',
     method: 'get',
     path: '/upload-token',
-    xGuard: isAuthenticated,
+    xGuard: authGuard,
     tags: ['me'],
     summary: 'Get upload token',
     description:
@@ -238,7 +238,7 @@ const meRoutes = {
     operationId: 'toggleMfa',
     method: 'put',
     path: '/mfa',
-    xGuard: isAuthenticated,
+    xGuard: authGuard,
     tags: ['me'],
     summary: 'Toggle MFA',
     description:
@@ -261,7 +261,7 @@ const meRoutes = {
     operationId: 'getMyMemberships',
     method: 'get',
     path: '/memberships',
-    xGuard: isAuthenticated,
+    xGuard: authGuard,
     tags: ['me'],
     summary: 'Get my memberships',
     description: 'Returns all memberships for the *current user* across all context entities.',

@@ -780,7 +780,7 @@
                       "tenantId": {
                         "type": "string",
                         "required": true,
-                        "maxLength": 6
+                        "maxLength": 24
                       },
                       "contextType": {
                         "type": "string",
@@ -1214,7 +1214,7 @@
                   "tenantId": {
                     "type": "string",
                     "required": true,
-                    "maxLength": 6
+                    "maxLength": 24
                   },
                   "contextType": {
                     "type": "string",

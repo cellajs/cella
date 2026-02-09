@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/docs/x-routes';
-import { isPublicAccess } from '#/middlewares/guard';
+import { publicGuard } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { oauthCallbackQuerySchema, oauthQuerySchema } from '#/modules/auth/oauth/oauth-schema';
 import { errorResponseRefs, locationSchema } from '#/schemas';
@@ -13,7 +13,7 @@ const authOAuthRoutes = {
     operationId: 'github',
     method: 'get',
     path: '/github',
-    xGuard: isPublicAccess,
+    xGuard: publicGuard,
     tags: ['auth'],
     summary: 'Authenticate with GitHub',
     description:
@@ -34,7 +34,7 @@ const authOAuthRoutes = {
     operationId: 'githubCallback',
     method: 'get',
     path: '/github/callback',
-    xGuard: isPublicAccess,
+    xGuard: publicGuard,
     xRateLimiter: tokenLimiter('github'),
     tags: ['auth'],
     summary: 'Callback for GitHub',
@@ -61,7 +61,7 @@ const authOAuthRoutes = {
     operationId: 'google',
     method: 'get',
     path: '/google',
-    xGuard: isPublicAccess,
+    xGuard: publicGuard,
     tags: ['auth'],
     summary: 'Authenticate with Google',
     description:
@@ -82,7 +82,7 @@ const authOAuthRoutes = {
     operationId: 'googleCallback',
     method: 'get',
     path: '/google/callback',
-    xGuard: isPublicAccess,
+    xGuard: publicGuard,
     xRateLimiter: tokenLimiter('google'),
     tags: ['auth'],
     summary: 'Callback for Google',
@@ -103,7 +103,7 @@ const authOAuthRoutes = {
     operationId: 'microsoft',
     method: 'get',
     path: '/microsoft',
-    xGuard: isPublicAccess,
+    xGuard: publicGuard,
     tags: ['auth'],
     summary: 'Authenticate with Microsoft',
     description:
@@ -124,7 +124,7 @@ const authOAuthRoutes = {
     operationId: 'microsoftCallback',
     method: 'get',
     path: '/microsoft/callback',
-    xGuard: isPublicAccess,
+    xGuard: publicGuard,
     xRateLimiter: tokenLimiter('microsoft'),
     tags: ['auth'],
     summary: 'Callback for Microsoft',

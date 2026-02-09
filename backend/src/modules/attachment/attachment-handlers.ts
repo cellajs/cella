@@ -62,14 +62,16 @@ const attachmentRouteHandlers = app
       contentType: attachmentsTable.contentType,
     });
 
-    const attachmentsQuery = db
+    // Use tenant-scoped db from tenantGuard middleware (RLS context already set)
+    const tenantDb = ctx.var.db;
+    const attachmentsQuery = tenantDb
       .select(getColumns(attachmentsTable))
       .from(attachmentsTable)
       .where(and(...filters));
 
     const [items, [{ total }]] = await Promise.all([
       attachmentsQuery.orderBy(orderColumn).limit(limit).offset(offset),
-      db.select({ total: count() }).from(attachmentsQuery.as('attachments')),
+      tenantDb.select({ total: count() }).from(attachmentsQuery.as('attachments')),
     ]);
 
     return ctx.json({ items, total }, 200);
@@ -81,7 +83,10 @@ const attachmentRouteHandlers = app
   .openapi(attachmentRoutes.getPresignedUrl, async (ctx) => {
     const { key } = ctx.req.valid('query');
 
-    const [attachment] = await db
+    // Use tenant-scoped db from tenantGuard middleware (RLS context already set)
+    const tenantDb = ctx.var.db;
+
+    const [attachment] = await tenantDb
       .select()
       .from(attachmentsTable)
       .where(
@@ -101,7 +106,7 @@ const attachmentRouteHandlers = app
       const user = ctx.var.user;
       const userSystemRole = ctx.var.userSystemRole;
 
-      const memberships = await db
+      const memberships = await tenantDb
         .select(membershipBaseSelect)
         .from(membershipsTable)
         .where(eq(membershipsTable.userId, user.id));
@@ -196,7 +201,9 @@ const attachmentRouteHandlers = app
       },
     }));
 
-    const createdAttachments = await db.insert(attachmentsTable).values(attachmentsToInsert).returning();
+    // Use tenant-scoped db from tenantGuard middleware (RLS context already set)
+    const tenantDb = ctx.var.db;
+    const createdAttachments = await tenantDb.insert(attachmentsTable).values(attachmentsToInsert).returning();
 
     logEvent('info', `${createdAttachments.length} attachments have been created`);
 
@@ -224,7 +231,9 @@ const attachmentRouteHandlers = app
 
     const newVersion = (entity.tx?.version ?? 0) + 1;
 
-    const [updatedAttachment] = await db
+    // Use tenant-scoped db from tenantGuard middleware (RLS context already set)
+    const tenantDb = ctx.var.db;
+    const [updatedAttachment] = await tenantDb
       .update(attachmentsTable)
       .set({
         ...updatedFields,
@@ -274,8 +283,9 @@ const attachmentRouteHandlers = app
 
     if (!allowedIds.length) throw new AppError(403, 'forbidden', 'warn', { entityType: 'attachment' });
 
-    // Delete the attachments
-    await db.delete(attachmentsTable).where(inArray(attachmentsTable.id, allowedIds));
+    // Use tenant-scoped db from tenantGuard middleware (RLS context already set)
+    const tenantDb = ctx.var.db;
+    await tenantDb.delete(attachmentsTable).where(inArray(attachmentsTable.id, allowedIds));
 
     logEvent('info', 'Attachments deleted', allowedIds);
 

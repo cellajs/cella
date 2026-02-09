@@ -52,7 +52,7 @@
                   "tenantId": {
                     "type": "string",
                     "required": true,
-                    "maxLength": 6
+                    "maxLength": 24
                   },
                   "shortName": {
                     "type": ["string", "null"],
@@ -122,7 +122,7 @@
                           "tenantId": {
                             "type": "string",
                             "required": true,
-                            "maxLength": 6
+                            "maxLength": 24
                           },
                           "contextType": {
                             "type": "string",
@@ -437,7 +437,7 @@
                   "tenantId": {
                     "type": "string",
                     "required": true,
-                    "maxLength": 6
+                    "maxLength": 24
                   },
                   "shortName": {
                     "type": ["string", "null"],
@@ -507,7 +507,7 @@
                           "tenantId": {
                             "type": "string",
                             "required": true,
-                            "maxLength": 6
+                            "maxLength": 24
                           },
                           "contextType": {
                             "type": "string",
@@ -808,7 +808,7 @@
             "tenantId": {
               "type": "string",
               "required": true,
-              "maxLength": 6
+              "maxLength": 24
             },
             "shortName": {
               "type": ["string", "null"],
@@ -878,7 +878,7 @@
                     "tenantId": {
                       "type": "string",
                       "required": true,
-                      "maxLength": 6
+                      "maxLength": 24
                     },
                     "contextType": {
                       "type": "string",
@@ -1039,7 +1039,11 @@
     "request": {
       "path": {
         "properties": {
-          "tenantId": { "type": "string", "required": true },
+          "tenantId": {
+            "type": "string",
+            "required": true,
+            "maxLength": 24
+          },
           "idOrSlug": { "type": "string", "required": true }
         }
       }
@@ -1093,7 +1097,7 @@
             "tenantId": {
               "type": "string",
               "required": true,
-              "maxLength": 6
+              "maxLength": 24
             },
             "shortName": {
               "type": ["string", "null"],
@@ -1163,7 +1167,7 @@
                     "tenantId": {
                       "type": "string",
                       "required": true,
-                      "maxLength": 6
+                      "maxLength": 24
                     },
                     "contextType": {
                       "type": "string",
@@ -1324,7 +1328,11 @@
     "request": {
       "path": {
         "properties": {
-          "tenantId": { "type": "string", "required": true },
+          "tenantId": {
+            "type": "string",
+            "required": true,
+            "maxLength": 24
+          },
           "id": { "type": "string", "required": true }
         }
       },
@@ -1482,7 +1490,11 @@
     "request": {
       "path": {
         "properties": {
-          "tenantId": { "type": "string", "required": true }
+          "tenantId": {
+            "type": "string",
+            "required": true,
+            "maxLength": 24
+          }
         }
       },
       "body": {

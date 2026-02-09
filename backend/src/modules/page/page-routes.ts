@@ -1,8 +1,14 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/docs/x-routes';
 import { publicCache } from '#/middlewares/entity-cache';
-import { isAuthenticated, isPublicAccess, sysAdminGuard } from '#/middlewares/guard';
-import { errorResponseRefs, idsBodySchema, paginationSchema } from '#/schemas';
+import { authGuard, publicGuard, sysAdminGuard, tenantGuard } from '#/middlewares/guard';
+import {
+  errorResponseRefs,
+  idsBodySchema,
+  paginationSchema,
+  tenantIdParamSchema,
+  tenantOnlyParamSchema,
+} from '#/schemas';
 import { mockBatchPagesResponse, mockPageResponse, mockPaginatedPagesResponse } from '../../../mocks/mock-page';
 import {
   pageCreateManyTxBodySchema,
@@ -21,12 +27,13 @@ const pagesRoutes = {
   createPages: createXRoute({
     operationId: 'createPages',
     method: 'post',
-    path: '/',
-    xGuard: [isAuthenticated, sysAdminGuard],
+    path: '/{tenantId}/pages',
+    xGuard: [authGuard, tenantGuard, sysAdminGuard],
     tags: ['pages'],
     summary: 'Create pages',
     description: 'Insert one or more new *pages*. Returns created pages and any rejected items.',
     request: {
+      params: tenantOnlyParamSchema,
       body: {
         required: true,
         content: { 'application/json': { schema: pageCreateManyTxBodySchema } },
@@ -60,8 +67,8 @@ const pagesRoutes = {
   getPages: createXRoute({
     operationId: 'getPages',
     method: 'get',
-    path: '/',
-    xGuard: [isPublicAccess],
+    path: '/pages',
+    xGuard: [publicGuard],
     tags: ['pages'],
     summary: 'Get pages',
     description: 'Get all matching *pages*.',
@@ -84,8 +91,8 @@ const pagesRoutes = {
   getPage: createXRoute({
     operationId: 'getPage',
     method: 'get',
-    path: '/{id}',
-    xGuard: [isPublicAccess],
+    path: '/pages/{id}',
+    xGuard: [publicGuard],
     xCache: publicCache('page'),
     tags: ['pages'],
     summary: 'Get page',
@@ -109,15 +116,13 @@ const pagesRoutes = {
   updatePage: createXRoute({
     operationId: 'updatePage',
     method: 'put',
-    path: '/{id}',
-    xGuard: [isAuthenticated, sysAdminGuard],
+    path: '/{tenantId}/pages/{id}',
+    xGuard: [authGuard, tenantGuard, sysAdminGuard],
     tags: ['pages'],
     summary: 'Update page',
     description: 'Update a single *page* by ID.',
     request: {
-      params: z.object({
-        id: z.string(),
-      }),
+      params: tenantIdParamSchema,
       body: {
         required: true,
         content: { 'application/json': { schema: pageUpdateTxBodySchema } },
@@ -137,12 +142,13 @@ const pagesRoutes = {
   deletePages: createXRoute({
     operationId: 'deletePages',
     method: 'delete',
-    path: '/',
-    xGuard: [isAuthenticated, sysAdminGuard],
+    path: '/{tenantId}/pages',
+    xGuard: [authGuard, tenantGuard, sysAdminGuard],
     tags: ['pages'],
     summary: 'Delete pages',
     description: 'Delete one or more *pages* by ID.',
     request: {
+      params: tenantOnlyParamSchema,
       body: {
         required: true,
         content: { 'application/json': { schema: idsBodySchema() } },

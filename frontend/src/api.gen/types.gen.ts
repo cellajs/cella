@@ -344,7 +344,7 @@ export type TxRequest = {
 
 export type Tenant = {
   /**
-   * 6-character lowercase alphanumeric tenant ID
+   * Lowercase alphanumeric tenant ID
    */
   id: string;
   /**
@@ -2405,49 +2405,6 @@ export type DeleteOrganizationsResponses = {
 
 export type DeleteOrganizationsResponse = DeleteOrganizationsResponses[keyof DeleteOrganizationsResponses];
 
-export type DeletePagesData = {
-  body: {
-    ids: Array<string>;
-  };
-  path?: never;
-  query?: never;
-  url: '/pages';
-};
-
-export type DeletePagesErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type DeletePagesError = DeletePagesErrors[keyof DeletePagesErrors];
-
-export type DeletePagesResponses = {
-  /**
-   * Page(s) deleted
-   */
-  204: void;
-};
-
-export type DeletePagesResponse = DeletePagesResponses[keyof DeletePagesResponses];
-
 export type GetPagesData = {
   body?: never;
   path?: never;
@@ -2499,14 +2456,104 @@ export type GetPagesResponses = {
 
 export type GetPagesResponse = GetPagesResponses[keyof GetPagesResponses];
 
+export type GetPageData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/pages/{id}';
+};
+
+export type GetPageErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetPageError = GetPageErrors[keyof GetPageErrors];
+
+export type GetPageResponses = {
+  /**
+   * Page
+   */
+  200: Page;
+};
+
+export type GetPageResponse = GetPageResponses[keyof GetPageResponses];
+
+export type DeletePagesData = {
+  body: {
+    ids: Array<string>;
+  };
+  path: {
+    tenantId: string;
+  };
+  query?: never;
+  url: '/{tenantId}/pages';
+};
+
+export type DeletePagesErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type DeletePagesError = DeletePagesErrors[keyof DeletePagesErrors];
+
+export type DeletePagesResponses = {
+  /**
+   * Page(s) deleted
+   */
+  204: void;
+};
+
+export type DeletePagesResponse = DeletePagesResponses[keyof DeletePagesResponses];
+
 export type CreatePagesData = {
   body: Array<{
     name?: string;
     tx: TxRequest;
   }>;
-  path?: never;
+  path: {
+    tenantId: string;
+  };
   query?: never;
-  url: '/pages';
+  url: '/{tenantId}/pages';
 };
 
 export type CreatePagesErrors = {
@@ -2571,49 +2618,6 @@ export type CreatePagesResponses = {
 
 export type CreatePagesResponse = CreatePagesResponses[keyof CreatePagesResponses];
 
-export type GetPageData = {
-  body?: never;
-  path: {
-    id: string;
-  };
-  query?: never;
-  url: '/pages/{id}';
-};
-
-export type GetPageErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type GetPageError = GetPageErrors[keyof GetPageErrors];
-
-export type GetPageResponses = {
-  /**
-   * Page
-   */
-  200: Page;
-};
-
-export type GetPageResponse = GetPageResponses[keyof GetPageResponses];
-
 export type UpdatePageData = {
   body: {
     name?: string;
@@ -2625,10 +2629,11 @@ export type UpdatePageData = {
     tx: TxRequest;
   };
   path: {
+    tenantId: string;
     id: string;
   };
   query?: never;
-  url: '/pages/{id}';
+  url: '/{tenantId}/pages/{id}';
 };
 
 export type UpdatePageErrors = {
@@ -3232,7 +3237,7 @@ export type ArchiveTenantData = {
   body?: never;
   path: {
     /**
-     * 6-character tenant ID
+     * Tenant ID
      */
     tenantId: string;
   };
@@ -3280,7 +3285,7 @@ export type GetTenantByIdData = {
   body?: never;
   path: {
     /**
-     * 6-character tenant ID
+     * Tenant ID
      */
     tenantId: string;
   };
@@ -3326,7 +3331,7 @@ export type UpdateTenantData = {
   body: UpdateTenantBody;
   path: {
     /**
-     * 6-character tenant ID
+     * Tenant ID
      */
     tenantId: string;
   };

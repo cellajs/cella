@@ -69,8 +69,12 @@ export const languageSchema = z.enum(appConfig.languages);
 
 // TODO apply regex in other places?
 // TODO is limiting size better done using zod for readability also in openapi?
-/** Tenant ID schema: 6-char lowercase alphanumeric */
-export const tenantIdSchema = z.string().regex(/^[a-z0-9]{6}$/, 'Invalid tenant ID format');
+/** Tenant ID schema: 1-24 char lowercase alphanumeric */
+export const tenantIdSchema = z
+  .string()
+  .max(24)
+  .regex(/^[a-z0-9]+$/, 'Tenant ID must be lowercase alphanumeric')
+  .transform((v) => v.toLowerCase());
 
 /** Schema for entity identifier id */
 export const entityIdParamSchema = z.object({ id: idSchema });

@@ -21,7 +21,7 @@ export const tenantStatusSchema = z.enum(tenantStatusValues).openapi('TenantStat
  */
 export const tenantSchema = z
   .object({
-    id: z.string().max(6).describe('6-character lowercase alphanumeric tenant ID'),
+    id: z.string().max(24).describe('Lowercase alphanumeric tenant ID'),
     name: z.string().describe('Tenant display name'),
     status: tenantStatusSchema,
     createdAt: z.string(),
@@ -67,5 +67,5 @@ export const tenantListQuerySchema = z
  * Tenant ID path parameter.
  */
 export const tenantIdParamSchema = z.object({
-  tenantId: z.string().max(6).describe('6-character tenant ID'),
+  tenantId: z.string().max(24).describe('Tenant ID'),
 });

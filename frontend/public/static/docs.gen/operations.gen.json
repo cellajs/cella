@@ -13,7 +13,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["isAuthenticated", "hasSystemAccess"],
+      "xGuard": ["authGuard", "sysAdminGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -32,7 +32,7 @@
     "hasResponseBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
+      "xGuard": ["publicGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -51,7 +51,7 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
+      "xGuard": ["publicGuard"],
       "xRateLimiter": ["emailEnumLimiter"],
       "xCache": []
     }
@@ -70,7 +70,7 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
+      "xGuard": ["publicGuard"],
       "xRateLimiter": ["tokenLimiter"],
       "xCache": []
     }
@@ -89,7 +89,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
+      "xGuard": ["publicGuard"],
       "xRateLimiter": ["tokenLimiter"],
       "xCache": []
     }
@@ -108,7 +108,7 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isAuthenticated", "hasSystemAccess"],
+      "xGuard": ["authGuard", "sysAdminGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -127,7 +127,7 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isAuthenticated"],
+      "xGuard": ["authGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -146,7 +146,7 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
+      "xGuard": ["publicGuard"],
       "xRateLimiter": ["spamLimiter"],
       "xCache": []
     }
@@ -165,7 +165,7 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
+      "xGuard": ["publicGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -184,7 +184,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["isAuthenticated"],
+      "xGuard": ["authGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -203,7 +203,7 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isAuthenticated"],
+      "xGuard": ["authGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -222,7 +222,7 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isAuthenticated"],
+      "xGuard": ["authGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -241,7 +241,7 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
+      "xGuard": ["publicGuard"],
       "xRateLimiter": ["totpVerificationLimiter"],
       "xCache": []
     }
@@ -260,7 +260,7 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
+      "xGuard": ["publicGuard"],
       "xRateLimiter": ["spamLimiter", "emailEnumLimiter"],
       "xCache": []
     }
@@ -279,7 +279,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
+      "xGuard": ["publicGuard"],
       "xRateLimiter": ["tokenLimiter", "emailEnumLimiter"],
       "xCache": []
     }
@@ -298,7 +298,7 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
+      "xGuard": ["publicGuard"],
       "xRateLimiter": ["spamLimiter", "emailEnumLimiter"],
       "xCache": []
     }
@@ -317,7 +317,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
+      "xGuard": ["publicGuard"],
       "xRateLimiter": ["tokenLimiter"],
       "xCache": []
     }
@@ -336,7 +336,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
+      "xGuard": ["publicGuard"],
       "xRateLimiter": ["passwordLimiter"],
       "xCache": []
     }
@@ -355,7 +355,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["isAuthenticated"],
+      "xGuard": ["authGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -374,7 +374,7 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isAuthenticated"],
+      "xGuard": ["authGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -393,7 +393,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
+      "xGuard": ["publicGuard"],
       "xRateLimiter": ["passkeyChallengeLimiter"],
       "xCache": []
     }
@@ -412,7 +412,7 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
+      "xGuard": ["publicGuard"],
       "xRateLimiter": ["tokenLimiter"],
       "xCache": []
     }
@@ -431,7 +431,7 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
+      "xGuard": ["publicGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -450,7 +450,7 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
+      "xGuard": ["publicGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -469,7 +469,7 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
+      "xGuard": ["publicGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -488,7 +488,7 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
+      "xGuard": ["publicGuard"],
       "xRateLimiter": ["tokenLimiter"],
       "xCache": []
     }
@@ -507,7 +507,7 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
+      "xGuard": ["publicGuard"],
       "xRateLimiter": ["tokenLimiter"],
       "xCache": []
     }
@@ -526,7 +526,7 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
+      "xGuard": ["publicGuard"],
       "xRateLimiter": ["tokenLimiter"],
       "xCache": []
     }
@@ -545,7 +545,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["isAuthenticated"],
+      "xGuard": ["authGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -564,7 +564,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["isAuthenticated"],
+      "xGuard": ["authGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -583,7 +583,7 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isAuthenticated"],
+      "xGuard": ["authGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -602,7 +602,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["isAuthenticated"],
+      "xGuard": ["authGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -621,7 +621,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["isAuthenticated"],
+      "xGuard": ["authGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -640,7 +640,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["isAuthenticated"],
+      "xGuard": ["authGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -659,7 +659,7 @@
     "hasResponseBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isAuthenticated"],
+      "xGuard": ["authGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -678,7 +678,7 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isAuthenticated"],
+      "xGuard": ["authGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -697,7 +697,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["isAuthenticated"],
+      "xGuard": ["authGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -716,7 +716,7 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
+      "xGuard": ["publicGuard"],
       "xRateLimiter": ["tokenLimiter"],
       "xCache": []
     }
@@ -735,7 +735,7 @@
     "hasResponseBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isAuthenticated"],
+      "xGuard": ["authGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -754,7 +754,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["isAuthenticated"],
+      "xGuard": ["authGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -773,7 +773,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["isAuthenticated"],
+      "xGuard": ["authGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -792,7 +792,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["isAuthenticated"],
+      "xGuard": ["authGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -811,7 +811,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["isAuthenticated"],
+      "xGuard": ["authGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -830,26 +830,7 @@
     "hasResponseBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isAuthenticated"],
-      "xRateLimiter": [],
-      "xCache": []
-    }
-  },
-  {
-    "id": "createPages",
-    "hash": "tag/pages/POST/pages",
-    "method": "post",
-    "path": "/pages",
-    "tags": ["pages"],
-    "summary": "Create pages",
-    "description": "Insert one or more new *pages*. Returns created pages and any rejected items.",
-    "deprecated": false,
-    "hasParams": false,
-    "hasRequestBody": true,
-    "hasResponseBody": true,
-    "hasExample": true,
-    "extensions": {
-      "xGuard": ["isAuthenticated", "sysAdminGuard"],
+      "xGuard": ["authGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -868,26 +849,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
-      "xRateLimiter": [],
-      "xCache": []
-    }
-  },
-  {
-    "id": "deletePages",
-    "hash": "tag/pages/DELETE/pages",
-    "method": "delete",
-    "path": "/pages",
-    "tags": ["pages"],
-    "summary": "Delete pages",
-    "description": "Delete one or more *pages* by ID.",
-    "deprecated": false,
-    "hasParams": false,
-    "hasRequestBody": true,
-    "hasResponseBody": false,
-    "hasExample": false,
-    "extensions": {
-      "xGuard": ["isAuthenticated", "sysAdminGuard"],
+      "xGuard": ["publicGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -906,16 +868,54 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
+      "xGuard": ["publicGuard"],
       "xRateLimiter": [],
       "xCache": ["publicCache"]
     }
   },
   {
+    "id": "createPages",
+    "hash": "tag/pages/POST/{tenantId}/pages",
+    "method": "post",
+    "path": "/{tenantId}/pages",
+    "tags": ["pages"],
+    "summary": "Create pages",
+    "description": "Insert one or more new *pages*. Returns created pages and any rejected items.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": true,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["authGuard", "tenantGuard", "sysAdminGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    }
+  },
+  {
+    "id": "deletePages",
+    "hash": "tag/pages/DELETE/{tenantId}/pages",
+    "method": "delete",
+    "path": "/{tenantId}/pages",
+    "tags": ["pages"],
+    "summary": "Delete pages",
+    "description": "Delete one or more *pages* by ID.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": true,
+    "hasResponseBody": false,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["authGuard", "tenantGuard", "sysAdminGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    }
+  },
+  {
     "id": "updatePage",
-    "hash": "tag/pages/PUT/pages/{id}",
+    "hash": "tag/pages/PUT/{tenantId}/pages/{id}",
     "method": "put",
-    "path": "/pages/{id}",
+    "path": "/{tenantId}/pages/{id}",
     "tags": ["pages"],
     "summary": "Update page",
     "description": "Update a single *page* by ID.",
@@ -925,7 +925,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["isAuthenticated", "sysAdminGuard"],
+      "xGuard": ["authGuard", "tenantGuard", "sysAdminGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -944,7 +944,7 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isAuthenticated"],
+      "xGuard": ["authGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -963,7 +963,7 @@
     "hasResponseBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
+      "xGuard": ["publicGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -982,7 +982,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["isAuthenticated"],
+      "xGuard": ["authGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -1001,7 +1001,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["isAuthenticated", "hasSystemAccess"],
+      "xGuard": ["authGuard", "sysAdminGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -1020,7 +1020,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["isAuthenticated", "hasSystemAccess"],
+      "xGuard": ["authGuard", "sysAdminGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -1039,7 +1039,7 @@
     "hasResponseBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isAuthenticated", "hasSystemAccess"],
+      "xGuard": ["authGuard", "sysAdminGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -1058,7 +1058,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["isAuthenticated", "hasSystemAccess"],
+      "xGuard": ["authGuard", "sysAdminGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -1077,7 +1077,7 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
+      "xGuard": ["publicGuard"],
       "xRateLimiter": ["tokenLimiter"],
       "xCache": []
     }
@@ -1096,7 +1096,7 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isAuthenticated", "hasSystemAccess"],
+      "xGuard": ["authGuard", "sysAdminGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -1115,7 +1115,7 @@
     "hasResponseBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isAuthenticated", "hasSystemAccess"],
+      "xGuard": ["authGuard", "sysAdminGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -1134,7 +1134,7 @@
     "hasResponseBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isAuthenticated", "hasSystemAccess"],
+      "xGuard": ["authGuard", "sysAdminGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -1153,7 +1153,7 @@
     "hasResponseBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isAuthenticated", "hasSystemAccess"],
+      "xGuard": ["authGuard", "sysAdminGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -1172,7 +1172,7 @@
     "hasResponseBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isAuthenticated", "hasSystemAccess"],
+      "xGuard": ["authGuard", "sysAdminGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -1191,7 +1191,7 @@
     "hasResponseBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isAuthenticated", "hasSystemAccess"],
+      "xGuard": ["authGuard", "sysAdminGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -1210,7 +1210,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
+      "xGuard": ["publicGuard"],
       "xRateLimiter": ["emailEnumLimiter", "spamLimiter"],
       "xCache": []
     }
@@ -1229,7 +1229,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["isAuthenticated", "hasSystemAccess"],
+      "xGuard": ["authGuard", "sysAdminGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -1248,7 +1248,7 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isAuthenticated", "hasSystemAccess"],
+      "xGuard": ["authGuard", "sysAdminGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -1267,7 +1267,7 @@
     "hasResponseBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isAuthenticated", "hasSystemAccess"],
+      "xGuard": ["authGuard", "sysAdminGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -1286,7 +1286,7 @@
     "hasResponseBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isAuthenticated", "hasSystemAccess"],
+      "xGuard": ["authGuard", "sysAdminGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -1305,7 +1305,7 @@
     "hasResponseBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
+      "xGuard": ["publicGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -1324,7 +1324,7 @@
     "hasResponseBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isAuthenticated", "hasSystemAccess"],
+      "xGuard": ["authGuard", "sysAdminGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -1343,7 +1343,7 @@
     "hasResponseBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isAuthenticated", "hasSystemAccess"],
+      "xGuard": ["authGuard", "sysAdminGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -1362,7 +1362,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["isAuthenticated", "tenantGuard"],
+      "xGuard": ["authGuard", "tenantGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -1381,7 +1381,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["isAuthenticated", "tenantGuard"],
+      "xGuard": ["authGuard", "tenantGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -1400,7 +1400,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["isAuthenticated", "tenantGuard", "orgGuard"],
+      "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -1419,7 +1419,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["isAuthenticated", "tenantGuard", "orgGuard"],
+      "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -1438,7 +1438,7 @@
     "hasResponseBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isAuthenticated", "tenantGuard", "orgGuard"],
+      "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -1457,7 +1457,7 @@
     "hasResponseBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isAuthenticated", "tenantGuard", "orgGuard"],
+      "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
       "xRateLimiter": ["presignedUrlLimiter"],
       "xCache": []
     }
@@ -1476,7 +1476,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["isAuthenticated", "tenantGuard", "orgGuard"],
+      "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
       "xRateLimiter": [],
       "xCache": ["appCache"]
     }
@@ -1495,7 +1495,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["isAuthenticated", "tenantGuard", "orgGuard"],
+      "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -1514,7 +1514,7 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
+      "xGuard": ["publicGuard"],
       "xRateLimiter": ["tokenLimiter"],
       "xCache": []
     }
@@ -1533,7 +1533,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["isAuthenticated", "tenantGuard", "orgGuard"],
+      "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -1552,7 +1552,7 @@
     "hasResponseBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isAuthenticated", "tenantGuard", "orgGuard"],
+      "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -1571,7 +1571,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["isAuthenticated", "tenantGuard", "orgGuard"],
+      "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -1590,7 +1590,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["isAuthenticated"],
+      "xGuard": ["authGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -1609,7 +1609,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["isAuthenticated", "tenantGuard", "orgGuard"],
+      "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -1628,7 +1628,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["isAuthenticated", "tenantGuard", "orgGuard"],
+      "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
       "xRateLimiter": [],
       "xCache": []
     }

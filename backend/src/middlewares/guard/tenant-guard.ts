@@ -3,7 +3,7 @@
  *
  * This middleware:
  * 1. Extracts tenantId and orgIdOrSlug from URL path
- * 2. Validates tenant format (6-char lowercase alphanumeric)
+ * 2. Normalizes tenant ID to lowercase
  * 3. Verifies user has membership in this tenant (or is system admin)
  * 4. Wraps the request in a transaction with RLS session variables set
  * 5. Resolves organization and verifies membership
@@ -12,7 +12,7 @@
  */
 
 import * as Sentry from '@sentry/node';
-import { normalizeTenantId, setTenantRlsContext, validateTenantId } from '#/db/tenant-context';
+import { setTenantRlsContext } from '#/db/tenant-context';
 import { xMiddleware } from '#/docs/x-middleware';
 import { AppError } from '#/lib/error';
 
@@ -35,15 +35,7 @@ export const tenantGuard = xMiddleware(
       throw new AppError(400, 'invalid_request', 'error', { meta: { reason: 'Missing tenantId parameter' } });
     }
 
-    // Normalize to lowercase
-    const tenantId = normalizeTenantId(rawTenantId);
-
-    // Validate format (6-char lowercase alphanumeric)
-    try {
-      validateTenantId(tenantId);
-    } catch {
-      throw new AppError(400, 'invalid_request', 'error', { meta: { reason: 'Invalid tenant ID format' } });
-    }
+    const tenantId = rawTenantId.toLowerCase();
 
     const user = ctx.var.user;
     const memberships = ctx.var.memberships;
@@ -52,7 +44,7 @@ export const tenantGuard = xMiddleware(
     // Require authenticated user (this middleware is for authenticated routes)
     if (!user || memberships === undefined) {
       throw new AppError(401, 'unauthorized', 'warn', {
-        message: 'tenantGuard requires isAuthenticated middleware',
+        message: 'tenantGuard requires authGuard middleware',
       });
     }
 
@@ -72,7 +64,6 @@ export const tenantGuard = xMiddleware(
         userId: user.id,
       },
       async (tx) => {
-        // Store tenant-scoped transaction and tenantId in context
         ctx.set('db', tx);
         ctx.set('tenantId', tenantId);
 

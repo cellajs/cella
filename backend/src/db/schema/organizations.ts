@@ -18,7 +18,7 @@ export const organizationsTable = pgTable(
   {
     ...contextEntityColumns('organization'),
     // Tenant isolation
-    tenantId: varchar('tenant_id', { length: 6 })
+    tenantId: varchar('tenant_id', { length: 24 })
       .notNull()
       .references(() => tenantsTable.id),
     // Specific columns

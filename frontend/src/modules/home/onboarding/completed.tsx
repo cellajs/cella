@@ -53,7 +53,7 @@ export const OnboardingCompleted = () => {
         <UndoIcon
           size={400}
           strokeWidth={0.1}
-          className="max-md:hidden scale-y-75 md:-translate-x-24 -mt-52 -mb-12  text-primary rotate-[30deg]"
+          className="max-md:hidden scale-y-75 md:-translate-x-24 -mt-52 -mb-12  text-primary rotate-30"
         />
       )}
       <h1 className="text-3xl font-bold">{t('common:onboarding_completed')}</h1>

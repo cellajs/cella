@@ -126,6 +126,7 @@ export interface ConfigStringArrays {
   entityTypes: readonly string[];
   contextEntityTypes: readonly string[];
   productEntityTypes: readonly string[];
+  parentlessProductEntityTypes: readonly string[];
   entityActions: readonly string[];
   resourceTypes: readonly string[];
   systemRoles: readonly string[];
@@ -149,6 +150,7 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   entityTypes: T['entityTypes'];
   contextEntityTypes: T['contextEntityTypes'];
   productEntityTypes: T['productEntityTypes'];
+  parentlessProductEntityTypes: T['parentlessProductEntityTypes'];
   entityIdColumnKeys: Record<string, string>;
   entityActions: T['entityActions'];
   resourceTypes: T['resourceTypes'];

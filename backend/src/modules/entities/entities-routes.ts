@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/docs/x-routes';
-import { isAuthenticated, isPublicAccess } from '#/middlewares/guard';
+import { authGuard, publicGuard } from '#/middlewares/guard';
 import { checkSlugBodySchema } from '#/modules/entities/entities-schema';
 import {
   appStreamResponseSchema,
@@ -19,7 +19,7 @@ const entityRoutes = {
     operationId: 'checkSlug',
     method: 'post',
     path: '/check-slug',
-    xGuard: isAuthenticated,
+    xGuard: authGuard,
     tags: ['entities'],
     summary: 'Check slug availability',
     description: `Checks whether a given slug is available across all entity types (e.g. *organizations*, *users*).
@@ -45,7 +45,7 @@ const entityRoutes = {
     operationId: 'publicStream',
     method: 'get',
     path: '/public/stream',
-    xGuard: isPublicAccess,
+    xGuard: publicGuard,
     tags: ['entities'],
     summary: 'Public entity stream',
     description:
@@ -71,7 +71,7 @@ const entityRoutes = {
     operationId: 'getAppStream',
     method: 'get',
     path: '/app/stream',
-    xGuard: isAuthenticated,
+    xGuard: authGuard,
     tags: ['entities'],
     summary: 'App event stream',
     description:

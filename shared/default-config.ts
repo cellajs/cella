@@ -18,6 +18,12 @@ export const config = {
   /** Product/content entities - must match hierarchy.productTypes. Explicit tuple for Drizzle compatibility. */
   productEntityTypes: ['attachment', 'page'] as const,
 
+  /**
+   * Parentless product entities (no organization_id) - must match hierarchy.parentlessProductTypes.
+   * Explicit tuple required for Drizzle compatibility. Compile-time validated in shared/index.ts.
+   */
+  parentlessProductEntityTypes: ['page'] as const,
+
   /** Maps entity types to their ID column names - must match entityTypes */
   entityIdColumnKeys: {
     user: 'userId',

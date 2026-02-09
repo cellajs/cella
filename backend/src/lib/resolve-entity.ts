@@ -30,11 +30,19 @@ export async function resolveEntity<T extends EntityType>(entityType: T, idOrSlu
   // Return early if table is not available
   if (!table) throw new Error(`Invalid entityType: ${entityType}`);
 
+  // Build where condition: always match by id, optionally by slug if column exists
+  // TODO review resolveEntity and resolveEntities. perahps
+  // biome-ignore lint/suspicious/noExplicitAny: Dynamic table access requires type assertion
+  const idCondition = eq((table as any).id, idOrSlug);
+  // biome-ignore lint/suspicious/noExplicitAny: Dynamic table access requires type assertion
+  const slugColumn = (table as any).slug;
+  const whereCondition = slugColumn ? or(idCondition, eq(slugColumn, idOrSlug)) : idCondition;
+
   // biome-ignore lint/suspicious/noExplicitAny: Dynamic table access requires type assertion
   const [entity] = await dbOrTx
     .select()
     .from(table as any)
-    .where(or(eq((table as any).id, idOrSlug), eq((table as any).slug, idOrSlug)));
+    .where(whereCondition);
 
   return entity;
 }

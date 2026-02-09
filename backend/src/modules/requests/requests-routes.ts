@@ -1,5 +1,5 @@
 import { createXRoute } from '#/docs/x-routes';
-import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
+import { authGuard, publicGuard, sysAdminGuard } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { emailEnumLimiter, spamLimiter } from '#/middlewares/rate-limiter/limiters';
 import { requestCreateBodySchema, requestListQuerySchema, requestSchema } from '#/modules/requests/requests-schema';
@@ -14,7 +14,7 @@ const requestRoutes = {
     operationId: 'createRequest',
     method: 'post',
     path: '/',
-    xGuard: isPublicAccess,
+    xGuard: publicGuard,
     xRateLimiter: [emailEnumLimiter, spamLimiter],
     middleware: [isNoBot],
     tags: ['requests'],
@@ -42,7 +42,7 @@ const requestRoutes = {
     operationId: 'getRequests',
     method: 'get',
     path: '/',
-    xGuard: [isAuthenticated, hasSystemAccess],
+    xGuard: [authGuard, sysAdminGuard],
     tags: ['requests'],
     summary: 'Get list of requests',
     description: 'Returns a list of submitted *requests* across all types: contact form, newsletter, and waitlist.',
@@ -67,7 +67,7 @@ const requestRoutes = {
     operationId: 'deleteRequests',
     method: 'delete',
     path: '/',
-    xGuard: [isAuthenticated, hasSystemAccess],
+    xGuard: [authGuard, sysAdminGuard],
     tags: ['requests'],
     summary: 'Delete requests',
     description: 'Deletes one or more *requests* from the system by their IDs.',

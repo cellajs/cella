@@ -1421,35 +1421,6 @@ export const deleteOrganizations = <ThrowOnError extends boolean = true>(
   });
 
 /**
- * Delete pages
- *
- * Delete one or more *pages* by ID.
- *
- * **DELETE /pages** ·· [deletePages](https://api.cellajs.com/docs#tag/pages/delete/pages) ·· _pages_
- *
- * @param {deletePagesData} options
- * @param {any[]=} options.body.ids - `any[]` (optional)
- * @returns Possible status codes: 204, 400, 401, 403, 404, 429
- */
-export const deletePages = <ThrowOnError extends boolean = true>(options: Options<DeletePagesData, ThrowOnError>) =>
-  (options.client ?? client).delete<DeletePagesResponses, DeletePagesErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/pages',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
  * Get pages
  *
  * Get all matching *pages*.
@@ -1473,34 +1444,6 @@ export const getPages = <ThrowOnError extends boolean = true>(options?: Options<
   });
 
 /**
- * Create pages
- *
- * Insert one or more new *pages*. Returns created pages and any rejected items.
- *
- * **POST /pages** ·· [createPages](https://api.cellajs.com/docs#tag/pages/post/pages) ·· _pages_
- *
- * @param {createPagesData} options
- * @returns Possible status codes: 200, 201, 400, 401, 403, 404, 429
- */
-export const createPages = <ThrowOnError extends boolean = true>(options: Options<CreatePagesData, ThrowOnError>) =>
-  (options.client ?? client).post<CreatePagesResponses, CreatePagesErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/pages',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
  * Get page
  *
  * Get a single *page* by ID. Cached using LRU - first request warms cache.
@@ -1519,13 +1462,73 @@ export const getPage = <ThrowOnError extends boolean = true>(options: Options<Ge
   });
 
 /**
+ * Delete pages
+ *
+ * Delete one or more *pages* by ID.
+ *
+ * **DELETE /{tenantId}/pages** ·· [deletePages](https://api.cellajs.com/docs#tag/pages/delete/{tenantId}/pages) ·· _pages_
+ *
+ * @param {deletePagesData} options
+ * @param {string} options.path.tenantid - `string`
+ * @param {any[]=} options.body.ids - `any[]` (optional)
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 429
+ */
+export const deletePages = <ThrowOnError extends boolean = true>(options: Options<DeletePagesData, ThrowOnError>) =>
+  (options.client ?? client).delete<DeletePagesResponses, DeletePagesErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/{tenantId}/pages',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Create pages
+ *
+ * Insert one or more new *pages*. Returns created pages and any rejected items.
+ *
+ * **POST /{tenantId}/pages** ·· [createPages](https://api.cellajs.com/docs#tag/pages/post/{tenantId}/pages) ·· _pages_
+ *
+ * @param {createPagesData} options
+ * @param {string} options.path.tenantid - `string`
+ * @returns Possible status codes: 200, 201, 400, 401, 403, 404, 429
+ */
+export const createPages = <ThrowOnError extends boolean = true>(options: Options<CreatePagesData, ThrowOnError>) =>
+  (options.client ?? client).post<CreatePagesResponses, CreatePagesErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/{tenantId}/pages',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
  * Update page
  *
  * Update a single *page* by ID.
  *
- * **PUT /pages/{id}** ·· [updatePage](https://api.cellajs.com/docs#tag/pages/put/pages/{id}) ·· _pages_
+ * **PUT /{tenantId}/pages/{id}** ·· [updatePage](https://api.cellajs.com/docs#tag/pages/put/{tenantId}/pages/{id}) ·· _pages_
  *
  * @param {updatePageData} options
+ * @param {string} options.path.tenantid - `string`
  * @param {string} options.path.id - `string`
  * @param {string=} options.body.name - `string` (optional)
  * @param {string | null=} options.body.description - `string | null` (optional)
@@ -1546,7 +1549,7 @@ export const updatePage = <ThrowOnError extends boolean = true>(options: Options
         type: 'apiKey',
       },
     ],
-    url: '/pages/{id}',
+    url: '/{tenantId}/pages/{id}',
     ...options,
     headers: {
       'Content-Type': 'application/json',

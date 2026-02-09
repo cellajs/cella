@@ -20,12 +20,12 @@ END $$;
 
 
 -- ==========================================================================
--- Immutability Trigger Functions
+-- Immutability Trigger Functions (5 functions)
 -- ==========================================================================
 
--- Context entities (organization)
+-- Base entities: context + parentless products (organizations, pages)
 
-CREATE OR REPLACE FUNCTION context_entity_immutable_keys() RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION base_entity_immutable_keys() RETURNS TRIGGER AS $$
 BEGIN
   IF NEW.id IS DISTINCT FROM OLD.id
        OR NEW.tenant_id IS DISTINCT FROM OLD.tenant_id
@@ -38,17 +38,17 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Product entities (attachment, page)
+-- Product entities with parent (attachments)
 
 CREATE OR REPLACE FUNCTION product_entity_immutable_keys() RETURNS TRIGGER AS $$
 BEGIN
   IF NEW.id IS DISTINCT FROM OLD.id
        OR NEW.tenant_id IS DISTINCT FROM OLD.tenant_id
-       OR NEW.organization_id IS DISTINCT FROM OLD.organization_id
        OR NEW.entity_type IS DISTINCT FROM OLD.entity_type
        OR NEW.created_at IS DISTINCT FROM OLD.created_at
-       OR NEW.created_by IS DISTINCT FROM OLD.created_by THEN
-    RAISE EXCEPTION 'Cannot modify immutable columns (%) on %', 'id, tenant_id, organization_id, entity_type, created_at, created_by', TG_TABLE_NAME;
+       OR NEW.created_by IS DISTINCT FROM OLD.created_by
+       OR NEW.organization_id IS DISTINCT FROM OLD.organization_id THEN
+    RAISE EXCEPTION 'Cannot modify immutable columns (%) on %', 'id, tenant_id, entity_type, created_at, created_by, organization_id', TG_TABLE_NAME;
   END IF;
   RETURN NEW;
 END;
@@ -80,29 +80,24 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- ==========================================================================
--- Apply Triggers to Tables
+-- Apply Triggers to Tables (5 tables)
 -- ==========================================================================
 
--- Context entity tables
 
 DROP TRIGGER IF EXISTS organizations_immutable_keys_trigger ON organizations;
 CREATE TRIGGER organizations_immutable_keys_trigger
   BEFORE UPDATE ON organizations
-  FOR EACH ROW EXECUTE FUNCTION context_entity_immutable_keys();
+  FOR EACH ROW EXECUTE FUNCTION base_entity_immutable_keys();
 
--- Product entity tables
+DROP TRIGGER IF EXISTS pages_immutable_keys_trigger ON pages;
+CREATE TRIGGER pages_immutable_keys_trigger
+  BEFORE UPDATE ON pages
+  FOR EACH ROW EXECUTE FUNCTION base_entity_immutable_keys();
 
 DROP TRIGGER IF EXISTS attachments_immutable_keys_trigger ON attachments;
 CREATE TRIGGER attachments_immutable_keys_trigger
   BEFORE UPDATE ON attachments
   FOR EACH ROW EXECUTE FUNCTION product_entity_immutable_keys();
-
-DROP TRIGGER IF EXISTS pages_immutable_keys_trigger ON pages;
-CREATE TRIGGER pages_immutable_keys_trigger
-  BEFORE UPDATE ON pages
-  FOR EACH ROW EXECUTE FUNCTION product_entity_immutable_keys();
-
--- Membership tables
 
 DROP TRIGGER IF EXISTS memberships_immutable_keys_trigger ON memberships;
 CREATE TRIGGER memberships_immutable_keys_trigger

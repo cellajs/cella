@@ -9,7 +9,7 @@
 
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/docs/x-routes';
-import { hasSystemAccess, isAuthenticated } from '#/middlewares/guard';
+import { authGuard, sysAdminGuard } from '#/middlewares/guard';
 import { errorResponseRefs, paginationSchema } from '#/schemas';
 import {
   createTenantBodySchema,
@@ -27,7 +27,7 @@ export const tenantRoutes = {
     operationId: 'getTenants',
     method: 'get',
     path: '/',
-    xGuard: [isAuthenticated, hasSystemAccess],
+    xGuard: [authGuard, sysAdminGuard],
     tags: ['tenants'],
     summary: 'Get list of tenants',
     description: 'Returns a paginated list of tenants. System admin access required.',
@@ -52,7 +52,7 @@ export const tenantRoutes = {
     operationId: 'getTenantById',
     method: 'get',
     path: '/{tenantId}',
-    xGuard: [isAuthenticated, hasSystemAccess],
+    xGuard: [authGuard, sysAdminGuard],
     tags: ['tenants'],
     summary: 'Get tenant by ID',
     description: 'Returns a single tenant by its ID. System admin access required.',
@@ -77,7 +77,7 @@ export const tenantRoutes = {
     operationId: 'createTenant',
     method: 'post',
     path: '/',
-    xGuard: [isAuthenticated, hasSystemAccess],
+    xGuard: [authGuard, sysAdminGuard],
     tags: ['tenants'],
     summary: 'Create a new tenant',
     description: 'Creates a new tenant. System admin access required.',
@@ -107,7 +107,7 @@ export const tenantRoutes = {
     operationId: 'updateTenant',
     method: 'patch',
     path: '/{tenantId}',
-    xGuard: [isAuthenticated, hasSystemAccess],
+    xGuard: [authGuard, sysAdminGuard],
     tags: ['tenants'],
     summary: 'Update a tenant',
     description: 'Updates a tenant by ID. System admin access required.',
@@ -139,7 +139,7 @@ export const tenantRoutes = {
     operationId: 'archiveTenant',
     method: 'delete',
     path: '/{tenantId}',
-    xGuard: [isAuthenticated, hasSystemAccess],
+    xGuard: [authGuard, sysAdminGuard],
     tags: ['tenants'],
     summary: 'Archive a tenant',
     description:

@@ -8,23 +8,23 @@ export const defaultAdminUser = {
 };
 
 /**
- * System tenant for platform-wide content (pages, docs, etc.).
+ * Public tenant for platform-wide content (pages, docs, etc.).
  * Reserved ID - protected from deletion at application layer.
- * Created in migration: 20260208100000_system_tenant_setup
+ * Created in migration: 20260209130053_classy_tarot
  */
-export const systemTenant = {
-  id: 'system',
-  name: 'System',
+export const publicTenant = {
+  id: 'public',
+  name: 'Public',
 };
 
 /**
- * System tenant ID constant for use in handlers.
+ * Public tenant ID constant for use in handlers.
  */
-export const SYSTEM_TENANT_ID = 'system';
+export const PUBLIC_TENANT_ID = 'public';
 
 /**
  * Default test tenant used for development/testing environments.
- * Matches the 6-char lowercase alphanumeric format required by RLS validation.
+ * Matches the lowercase alphanumeric format required by RLS validation.
  */
 export const defaultTestTenant = {
   id: 'test01',

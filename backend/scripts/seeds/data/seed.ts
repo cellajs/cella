@@ -5,7 +5,7 @@ import { pagesTable } from '#/db/schema/pages';
 import { tenantsTable } from '#/db/schema/tenants';
 import { mockPage } from '../../../mocks/mock-page';
 import { mockMany, setMockContext } from '../../../mocks/utils';
-import { defaultAdminUser, SYSTEM_TENANT_ID, systemTenant } from '../fixtures';
+import { defaultAdminUser, PUBLIC_TENANT_ID, publicTenant } from '../fixtures';
 
 // Seed scripts use admin connection (migrationDb) for privileged operations
 const db = migrationDb;
@@ -49,14 +49,14 @@ export const dataSeed = async () => {
     return;
   }
 
-  // Ensure system tenant exists (needed for pages)
-  await db.insert(tenantsTable).values({ id: systemTenant.id, name: systemTenant.name }).onConflictDoNothing();
+  // Ensure public tenant exists (needed for pages)
+  await db.insert(tenantsTable).values({ id: publicTenant.id, name: publicTenant.name }).onConflictDoNothing();
 
   // Make many pages and assign to the seeded admin user
-  // Pages use SYSTEM_TENANT_ID (platform-wide content, not org-scoped)
+  // Pages use PUBLIC_TENANT_ID (platform-wide content, not org-scoped)
   const pageRecords = mockMany(mockPage, PAGES_COUNT).map((page) => ({
     ...page,
-    tenantId: SYSTEM_TENANT_ID,
+    tenantId: PUBLIC_TENANT_ID,
     createdBy: defaultAdminUser.id,
     modifiedBy: defaultAdminUser.id,
   }));
