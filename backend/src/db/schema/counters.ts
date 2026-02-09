@@ -14,6 +14,11 @@ import { bigint, index, pgTable, primaryKey, timestamp, varchar } from 'drizzle-
  * - seq:org_abc:          → 1542 (activity sequence for org)
  * - count:org_abc:page    → 203  (page count in org)
  * - usage:org_abc:storage → 5GB  (storage bytes)
+ *
+ * NOTE: Currently only CDC sequence tracking is implemented (seq namespace).
+ * Membership and entity counts are calculated on-the-fly via SQL aggregations
+ * in get-member-counts.ts and get-entity-counts.ts. Counter-based counting
+ * becomes valuable at scale when COUNT queries become expensive.
  */
 export const countersTable = pgTable(
   'counters',

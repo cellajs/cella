@@ -1247,37 +1247,6 @@ export const getMyMemberships = <ThrowOnError extends boolean = true>(
   });
 
 /**
- * Delete organizations
- *
- * Deletes one or more *organizations* by ID.
- *
- * **DELETE /organizations** ·· [deleteOrganizations](https://api.cellajs.com/docs#tag/organizations/delete/organizations) ·· _organizations_
- *
- * @param {deleteOrganizationsData} options
- * @param {any[]=} options.body.ids - `any[]` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const deleteOrganizations = <ThrowOnError extends boolean = true>(
-  options: Options<DeleteOrganizationsData, ThrowOnError>,
-) =>
-  (options.client ?? client).delete<DeleteOrganizationsResponses, DeleteOrganizationsErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/organizations',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
  * Get list of organizations
  *
  * Returns a list of *organizations*.
@@ -1345,11 +1314,12 @@ export const createOrganizations = <ThrowOnError extends boolean = true>(
 /**
  * Get organization
  *
- * Retrieves an *organization* by ID or slug.
+ * Retrieves an *organization* by ID or slug within a tenant.
  *
- * **GET /organizations/{idOrSlug}** ·· [getOrganization](https://api.cellajs.com/docs#tag/organizations/get/organizations/{idOrSlug}) ·· _organizations_
+ * **GET /{tenantId}/organizations/{idOrSlug}** ·· [getOrganization](https://api.cellajs.com/docs#tag/organizations/get/{tenantId}/organizations/{idOrSlug}) ·· _organizations_
  *
  * @param {getOrganizationData} options
+ * @param {string} options.path.tenantid - `string`
  * @param {string} options.path.idorslug - `string`
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
@@ -1365,18 +1335,19 @@ export const getOrganization = <ThrowOnError extends boolean = true>(
         type: 'apiKey',
       },
     ],
-    url: '/organizations/{idOrSlug}',
+    url: '/{tenantId}/organizations/{idOrSlug}',
     ...options,
   });
 
 /**
  * Update organization
  *
- * Updates an *organization*.
+ * Updates an *organization* within a tenant.
  *
- * **PUT /organizations/{id}** ·· [updateOrganization](https://api.cellajs.com/docs#tag/organizations/put/organizations/{id}) ·· _organizations_
+ * **PUT /{tenantId}/organizations/{id}** ·· [updateOrganization](https://api.cellajs.com/docs#tag/organizations/put/{tenantId}/organizations/{id}) ·· _organizations_
  *
  * @param {updateOrganizationData} options
+ * @param {string} options.path.tenantid - `string`
  * @param {string} options.path.id - `string`
  * @param {string=} options.body.slug - `string` (optional)
  * @param {string=} options.body.name - `string` (optional)
@@ -1409,7 +1380,39 @@ export const updateOrganization = <ThrowOnError extends boolean = true>(
         type: 'apiKey',
       },
     ],
-    url: '/organizations/{id}',
+    url: '/{tenantId}/organizations/{id}',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Delete organizations
+ *
+ * Deletes one or more *organizations* by ID within a tenant.
+ *
+ * **DELETE /{tenantId}/organizations** ·· [deleteOrganizations](https://api.cellajs.com/docs#tag/organizations/delete/{tenantId}/organizations) ·· _organizations_
+ *
+ * @param {deleteOrganizationsData} options
+ * @param {string} options.path.tenantid - `string`
+ * @param {any[]=} options.body.ids - `any[]` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const deleteOrganizations = <ThrowOnError extends boolean = true>(
+  options: Options<DeleteOrganizationsData, ThrowOnError>,
+) =>
+  (options.client ?? client).delete<DeleteOrganizationsResponses, DeleteOrganizationsErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/{tenantId}/organizations',
     ...options,
     headers: {
       'Content-Type': 'application/json',

@@ -982,23 +982,6 @@ export const zGetMyMembershipsResponse = z.object({
   items: z.array(zMembershipBase),
 });
 
-export const zDeleteOrganizationsData = z.object({
-  body: z.object({
-    ids: z.array(z.string()).min(1).max(50),
-  }),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
-});
-
-/**
- * Success
- */
-export const zDeleteOrganizationsResponse = z.object({
-  data: z.array(z.unknown()),
-  rejectedItemIds: z.array(z.string()),
-  rejectionReasons: z.optional(z.record(z.string(), z.string())),
-});
-
 export const zGetOrganizationsData = z.object({
   body: z.optional(z.never()),
   path: z.optional(z.never()),
@@ -1058,6 +1041,7 @@ export const zCreateOrganizationsResponse = z.object({
 export const zGetOrganizationData = z.object({
   body: z.optional(z.never()),
   path: z.object({
+    tenantId: z.string().regex(/^[a-z0-9]{6}$/),
     idOrSlug: z.string(),
   }),
   query: z.optional(z.never()),
@@ -1093,6 +1077,7 @@ export const zUpdateOrganizationData = z.object({
     }),
   ),
   path: z.object({
+    tenantId: z.string().regex(/^[a-z0-9]{6}$/),
     id: z.string(),
   }),
   query: z.optional(z.never()),
@@ -1102,6 +1087,25 @@ export const zUpdateOrganizationData = z.object({
  * Organization was updated
  */
 export const zUpdateOrganizationResponse = zOrganization;
+
+export const zDeleteOrganizationsData = z.object({
+  body: z.object({
+    ids: z.array(z.string()).min(1).max(50),
+  }),
+  path: z.object({
+    tenantId: z.string().regex(/^[a-z0-9]{6}$/),
+  }),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Success
+ */
+export const zDeleteOrganizationsResponse = z.object({
+  data: z.array(z.unknown()),
+  rejectedItemIds: z.array(z.string()),
+  rejectionReasons: z.optional(z.record(z.string(), z.string())),
+});
 
 export const zDeletePagesData = z.object({
   body: z.object({

@@ -483,27 +483,10 @@ CREATE POLICY "inactive_memberships_delete_policy" ON "inactive_memberships" AS 
   )
 );--> statement-breakpoint
 CREATE POLICY "memberships_context_guard" ON "memberships" AS RESTRICTIVE FOR SELECT TO public USING (COALESCE(current_setting('app.tenant_id', true), '') != '' OR COALESCE(current_setting('app.user_id', true), '') != '');--> statement-breakpoint
-CREATE POLICY "memberships_select_policy" ON "memberships" AS PERMISSIVE FOR SELECT TO public USING (
-        current_setting('app.is_authenticated', true)::boolean = true
-        AND (
-          
+CREATE POLICY "memberships_select_policy" ON "memberships" AS PERMISSIVE FOR SELECT TO public USING (current_setting('app.is_authenticated', true)::boolean = true AND 
   COALESCE(current_setting('app.user_id', true), '') != ''
   AND "memberships"."user_id" = current_setting('app.user_id', true)::text
-
-          OR (
-  COALESCE(current_setting('app.tenant_id', true), '') != ''
-  AND "memberships"."tenant_id" = current_setting('app.tenant_id', true)::text
- AND 
-  COALESCE(current_setting('app.user_id', true), '') != ''
-  AND EXISTS (
-    SELECT 1 FROM memberships m
-    WHERE m.organization_id = "memberships"."organization_id"
-    AND m.user_id = current_setting('app.user_id', true)::text
-    AND m.tenant_id = "memberships"."tenant_id"
-  )
-)
-        )
-      );--> statement-breakpoint
+);--> statement-breakpoint
 CREATE POLICY "memberships_insert_policy" ON "memberships" AS PERMISSIVE FOR INSERT TO public WITH CHECK (
   COALESCE(current_setting('app.tenant_id', true), '') != ''
   AND "memberships"."tenant_id" = current_setting('app.tenant_id', true)::text

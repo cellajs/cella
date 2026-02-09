@@ -6090,101 +6090,9 @@
             "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
-      },
-      "delete": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "deleteOrganizations",
-        "tags": [
-          "organizations"
-        ],
-        "summary": "Delete organizations",
-        "description": "Deletes one or more *organizations* by ID.",
-        "x-guard": [
-          "isAuthenticated"
-        ],
-        "x-rate-limiter": [],
-        "x-cache": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "ids": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    },
-                    "minItems": 1,
-                    "maxItems": 50
-                  }
-                },
-                "required": [
-                  "ids"
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "prefixItems": []
-                    },
-                    "rejectedItemIds": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "description": "Identifiers of items that could not be processed"
-                    },
-                    "rejectionReasons": {
-                      "type": "object",
-                      "additionalProperties": {
-                        "type": "string"
-                      },
-                      "description": "Map of rejected item ID to reason code"
-                    }
-                  },
-                  "required": [
-                    "data",
-                    "rejectedItemIds"
-                  ]
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
       }
     },
-    "/organizations/{idOrSlug}": {
+    "/{tenantId}/organizations/{idOrSlug}": {
       "get": {
         "security": [
           {
@@ -6196,13 +6104,22 @@
           "organizations"
         ],
         "summary": "Get organization",
-        "description": "Retrieves an *organization* by ID or slug.",
+        "description": "Retrieves an *organization* by ID or slug within a tenant.",
         "x-guard": [
           "isAuthenticated"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9]{6}$"
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
           {
             "schema": {
               "type": "string"
@@ -6302,7 +6219,7 @@
         }
       }
     },
-    "/organizations/{id}": {
+    "/{tenantId}/organizations/{id}": {
       "put": {
         "security": [
           {
@@ -6314,13 +6231,22 @@
           "organizations"
         ],
         "summary": "Update organization",
-        "description": "Updates an *organization*.",
+        "description": "Updates an *organization* within a tenant.",
         "x-guard": [
           "isAuthenticated"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9]{6}$"
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
           {
             "schema": {
               "type": "string"
@@ -6525,6 +6451,111 @@
                       }
                     }
                   }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/{tenantId}/organizations": {
+      "delete": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "deleteOrganizations",
+        "tags": [
+          "organizations"
+        ],
+        "summary": "Delete organizations",
+        "description": "Deletes one or more *organizations* by ID within a tenant.",
+        "x-guard": [
+          "isAuthenticated"
+        ],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9]{6}$"
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "minItems": 1,
+                    "maxItems": 50
+                  }
+                },
+                "required": [
+                  "ids"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "prefixItems": []
+                    },
+                    "rejectedItemIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Identifiers of items that could not be processed"
+                    },
+                    "rejectionReasons": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "description": "Map of rejected item ID to reason code"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "rejectedItemIds"
+                  ]
                 }
               }
             }

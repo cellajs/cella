@@ -9,12 +9,13 @@ import {
 } from '#/modules/organization/organization-schema';
 import {
   batchResponseSchema,
-  entityIdParamSchema,
   errorResponseRefs,
   idsBodySchema,
   paginationSchema,
+  tenantIdOrSlugParamSchema,
+  tenantIdParamSchema,
+  tenantOnlyParamSchema,
 } from '#/schemas';
-import { entityIdOrSlugParamSchema } from '#/schemas/common-schemas';
 import {
   mockBatchOrganizationsResponse,
   mockOrganizationResponse,
@@ -23,12 +24,12 @@ import {
 
 const organizationRoutes = {
   /**
-   * Create one or more organizations
+   * Create one or more organizations (cross-tenant)
    */
   createOrganizations: createXRoute({
     operationId: 'createOrganizations',
     method: 'post',
-    path: '/',
+    path: '/organizations',
     xGuard: isAuthenticated,
     tags: ['organizations'],
     summary: 'Create organizations',
@@ -53,12 +54,12 @@ const organizationRoutes = {
     },
   }),
   /**
-   * Get list of organizations
+   * Get list of organizations (cross-tenant)
    */
   getOrganizations: createXRoute({
     operationId: 'getOrganizations',
     method: 'get',
-    path: '/',
+    path: '/organizations',
     xGuard: [isAuthenticated],
     tags: ['organizations'],
     summary: 'Get list of organizations',
@@ -78,18 +79,38 @@ const organizationRoutes = {
     },
   }),
   /**
-   * Update an organization
+   * Get an organization (tenant-scoped)
+   */
+  getOrganization: createXRoute({
+    operationId: 'getOrganization',
+    method: 'get',
+    path: '/{tenantId}/organizations/{idOrSlug}',
+    xGuard: [isAuthenticated],
+    tags: ['organizations'],
+    summary: 'Get organization',
+    description: 'Retrieves an *organization* by ID or slug within a tenant.',
+    request: { params: tenantIdOrSlugParamSchema },
+    responses: {
+      200: {
+        description: 'Organization',
+        content: { 'application/json': { schema: organizationSchema, example: mockOrganizationResponse() } },
+      },
+      ...errorResponseRefs,
+    },
+  }),
+  /**
+   * Update an organization (tenant-scoped)
    */
   updateOrganization: createXRoute({
     operationId: 'updateOrganization',
     method: 'put',
-    path: '/{id}',
+    path: '/{tenantId}/organizations/{id}',
     xGuard: [isAuthenticated],
     tags: ['organizations'],
     summary: 'Update organization',
-    description: 'Updates an *organization*.',
+    description: 'Updates an *organization* within a tenant.',
     request: {
-      params: entityIdParamSchema,
+      params: tenantIdParamSchema,
       body: {
         content: { 'application/json': { schema: organizationUpdateBodySchema } },
       },
@@ -103,37 +124,18 @@ const organizationRoutes = {
     },
   }),
   /**
-   * Get an organization
-   */
-  getOrganization: createXRoute({
-    operationId: 'getOrganization',
-    method: 'get',
-    path: '/{idOrSlug}',
-    xGuard: [isAuthenticated],
-    tags: ['organizations'],
-    summary: 'Get organization',
-    description: 'Retrieves an *organization* by ID or slug.',
-    request: { params: entityIdOrSlugParamSchema },
-    responses: {
-      200: {
-        description: 'Organization',
-        content: { 'application/json': { schema: organizationSchema, example: mockOrganizationResponse() } },
-      },
-      ...errorResponseRefs,
-    },
-  }),
-  /**
-   * Delete organizations
+   * Delete organizations (tenant-scoped)
    */
   deleteOrganizations: createXRoute({
     operationId: 'deleteOrganizations',
     method: 'delete',
-    path: '/',
+    path: '/{tenantId}/organizations',
     xGuard: [isAuthenticated],
     tags: ['organizations'],
     summary: 'Delete organizations',
-    description: 'Deletes one or more *organizations* by ID.',
+    description: 'Deletes one or more *organizations* by ID within a tenant.',
     request: {
+      params: tenantOnlyParamSchema,
       body: {
         required: true,
         content: { 'application/json': { schema: idsBodySchema() } },

@@ -1,6 +1,6 @@
 import { nanoid } from 'nanoid';
-import { db } from '#/db/db';
 import { activitiesTable, type InsertActivityModel } from '#/db/schema/activities';
+import { cdcDb } from '../db';
 import { isProductEntity } from 'shared';
 import { RESOURCE_LIMITS } from '../constants';
 import { logEvent } from '../pino';
@@ -94,7 +94,7 @@ export async function recordDeadLetter(
   error: Error,
 ): Promise<void> {
   try {
-    await db
+    await cdcDb
       .insert(activitiesTable)
       .values({
         ...activity,
@@ -134,7 +134,7 @@ export async function recordDeadLetter(
  * Returns true if inserted, false if already exists (replay scenario).
  */
 export async function insertActivity(activity: InsertActivityModel & { id: string; seq: number }): Promise<boolean> {
-  const result = await db.insert(activitiesTable).values(activity).onConflictDoNothing();
+  const result = await cdcDb.insert(activitiesTable).values(activity).onConflictDoNothing();
 
   // Check if row was actually inserted (rowCount > 0) or skipped due to conflict
   return (result.rowCount ?? 0) > 0;

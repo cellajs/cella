@@ -42,10 +42,10 @@ export const findOrganizationInListCache = (id: string) =>
  * Query options for a single organization by ID.
  * NOTE: Slug is only used on page load. All subsequent queries must use ID.
  */
-export const organizationQueryOptions = (id: string) =>
+export const organizationQueryOptions = (id: string, tenantId: string) =>
   queryOptions({
     queryKey: keys.detail.byId(id),
-    queryFn: async () => getOrganization({ path: { idOrSlug: id } }),
+    queryFn: async () => getOrganization({ path: { tenantId, idOrSlug: id } }),
     placeholderData: () => findOrganizationInListCache(id),
   });
 
@@ -123,9 +123,9 @@ export const useOrganizationUpdateMutation = () => {
   const queryClient = useQueryClient();
   const mutateCache = useMutateQueryData(keys.list.base, () => keys.detail.base, ['update']);
 
-  return useMutation<Organization, ApiError, { id: string; body: UpdateOrganizationData['body'] }>({
+  return useMutation<Organization, ApiError, { tenantId: string; id: string; body: UpdateOrganizationData['body'] }>({
     mutationKey: keys.update,
-    mutationFn: ({ id, body }) => updateOrganization({ body, path: { id } }),
+    mutationFn: ({ tenantId, id, body }) => updateOrganization({ body, path: { tenantId, id } }),
     onSuccess: (updatedOrganization) => {
       mutateCache.update([updatedOrganization]);
     },
@@ -142,13 +142,13 @@ export const useOrganizationDeleteMutation = () => {
   const queryClient = useQueryClient();
   const mutateCache = useMutateQueryData(keys.list.base, (org) => keys.detail.byId(org.id), ['remove']);
 
-  return useMutation<void, ApiError, Organization[]>({
+  return useMutation<void, ApiError, { tenantId: string; organizations: Organization[] }>({
     mutationKey: keys.delete,
-    mutationFn: async (organizations) => {
+    mutationFn: async ({ tenantId, organizations }) => {
       const ids = organizations.map(({ id }) => id);
-      await deleteOrganizations({ body: { ids } });
+      await deleteOrganizations({ body: { ids }, path: { tenantId } });
     },
-    onSuccess: (_, organizations) => {
+    onSuccess: (_, { organizations }) => {
       mutateCache.remove(organizations);
     },
     onSettled: () => {

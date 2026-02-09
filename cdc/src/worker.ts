@@ -1,9 +1,9 @@
 import { sql } from 'drizzle-orm';
 import { LogicalReplicationService, type Pgoutput, PgoutputPlugin } from 'pg-logical-replication';
 import { appConfig } from 'shared';
-import { db } from '#/db/db';
 import { activitiesTable } from '#/db/schema/activities';
 import { CDC_PUBLICATION_NAME, CDC_SLOT_NAME } from './constants';
+import { cdcDb } from './db';
 import { env } from './env';
 import { generateActivityId, recordDeadLetter, sendActivityToApi } from './lib/activity-service';
 import { replicationState, type CdcHealthState, type ReplicationState } from './lib/replication-state';
@@ -43,7 +43,7 @@ export function getCdcHealthState(): CdcHealthState {
  * If the slot exists but is invalid, recreate it.
  */
 async function ensureReplicationSlot(forceRecreate = false): Promise<void> {
-  const result = await db.execute<{ slot_name: string; plugin: string }>(
+  const result = await cdcDb.execute<{ slot_name: string; plugin: string }>(
     sql`SELECT slot_name, plugin FROM pg_replication_slots WHERE slot_name = ${CDC_SLOT_NAME}`,
   );
 
@@ -52,12 +52,12 @@ async function ensureReplicationSlot(forceRecreate = false): Promise<void> {
 
   if (forceRecreate && slotExists) {
     logEvent('info', `${LOG_PREFIX} Dropping invalid replication slot...`, { slotName: CDC_SLOT_NAME });
-    await db.execute(sql`SELECT pg_drop_replication_slot(${CDC_SLOT_NAME})`);
+    await cdcDb.execute(sql`SELECT pg_drop_replication_slot(${CDC_SLOT_NAME})`);
   }
 
   if (!slotExists || forceRecreate) {
     logEvent('info', `${LOG_PREFIX} Creating replication slot...`, { slotName: CDC_SLOT_NAME });
-    await db.execute(sql`SELECT pg_create_logical_replication_slot(${CDC_SLOT_NAME}, 'pgoutput')`);
+    await cdcDb.execute(sql`SELECT pg_create_logical_replication_slot(${CDC_SLOT_NAME}, 'pgoutput')`);
     logEvent('info', `${LOG_PREFIX} Replication slot created`, { slotName: CDC_SLOT_NAME });
   } else if (!isValid) {
     logEvent('warn', `${LOG_PREFIX} Slot exists with wrong plugin, recreating...`, {
@@ -109,7 +109,7 @@ async function handleDataMessage(lsn: string, message: unknown): Promise<void> {
           const seq = await getNextSeq(seqScope);
 
           const insertResult = await withRetry(async () => {
-            await db.insert(activitiesTable).values({ ...activityWithId, seq }).onConflictDoNothing();
+            await cdcDb.insert(activitiesTable).values({ ...activityWithId, seq }).onConflictDoNothing();
           }, 'insert activity');
 
           if (!insertResult.success) {
@@ -177,19 +177,19 @@ export async function startCdcWorker(): Promise<void> {
   await ensureReplicationSlot();
 
   // Verify publication exists before attempting to subscribe
-  const pubCheck = await db.execute<{ pubname: string }>(
+  const pubCheck = await cdcDb.execute<{ pubname: string }>(
     sql`SELECT pubname FROM pg_publication WHERE pubname = ${CDC_PUBLICATION_NAME}`,
   );
   if (pubCheck.rows.length === 0) {
     logEvent('error', `${LOG_PREFIX} Publication '${CDC_PUBLICATION_NAME}' not found in database. Run CDC migration first.`, {
-      databaseUrl: env.DATABASE_URL.replace(/:[^:@]+@/, ':****@'), // mask password
+      databaseUrl: env.DATABASE_CDC_URL.replace(/:[^:@]+@/, ':****@'), // mask password
     });
     throw new Error(`Publication '${CDC_PUBLICATION_NAME}' does not exist`);
   }
   logEvent('info', `${LOG_PREFIX} Publication verified`, { publicationName: CDC_PUBLICATION_NAME });
 
-  // Build replication connection string
-  const replicationUrl = new URL(env.DATABASE_URL);
+  // Build replication connection string from CDC URL
+  const replicationUrl = new URL(env.DATABASE_CDC_URL);
   if (!replicationUrl.searchParams.has('replication')) {
     replicationUrl.searchParams.set('replication', 'database');
   }

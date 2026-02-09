@@ -1,14 +1,7 @@
 import { sql } from 'drizzle-orm';
 import { boolean, doublePrecision, foreignKey, index, pgPolicy, pgTable, unique, varchar } from 'drizzle-orm/pg-core';
 import { appConfig, roles } from 'shared';
-import {
-  isAuthenticated,
-  membershipExists,
-  tenantContextSet,
-  tenantMatch,
-  userContextSet,
-  userMatch,
-} from '#/db/rls-helpers';
+import { isAuthenticated, tenantContextSet, tenantMatch, userContextSet, userMatch } from '#/db/rls-helpers';
 import { organizationsTable } from '#/db/schema/organizations';
 import { tenantsTable } from '#/db/schema/tenants';
 import { usersTable } from '#/db/schema/users';
@@ -71,16 +64,12 @@ export const membershipsTable = pgTable(
       for: 'select',
       using: sql`${tenantContextSet} OR ${userContextSet}`,
     }),
-    // SELECT: Own memberships (cross-tenant) OR org members (tenant-scoped)
+    // SELECT: Users can see their own memberships across tenants.
+    // Viewing other org members is handled at app layer (requires membership check there).
+    // This avoids infinite recursion that would occur if we checked membership here.
     pgPolicy('memberships_select_policy', {
       for: 'select',
-      using: sql`
-        ${isAuthenticated}
-        AND (
-          ${userMatch(table)}
-          OR (${tenantMatch(table)} AND ${membershipExists(table)})
-        )
-      `,
+      using: sql`${isAuthenticated} AND ${userMatch(table)}`,
     }),
     // INSERT: Strictly tenant-scoped
     pgPolicy('memberships_insert_policy', {

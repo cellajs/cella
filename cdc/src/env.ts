@@ -8,15 +8,13 @@ config({ path: '../backend/.env' });
  * Zod schema for CDC Worker environment variables.
  */
 const envSchema = z.object({
-  // Database connection - main URL for replication (requires REPLICATION privilege)
-  DATABASE_URL: z.string().url(),
-
-  // CDC-specific database URL with minimal privileges (INSERT on activities only)
-  // TODO: Use this for activity inserts to enforce append-only access
-  DATABASE_CDC_URL: z.string().url().optional(),
+  // CDC database URL (cdc_role with REPLICATION + INSERT on activities/counters)
+  // Used for both replication stream and activity writes
+  // Enforces append-only access - cdc_role cannot UPDATE/DELETE activities
+  DATABASE_CDC_URL: z.string().url(),
 
   // API WebSocket URL for sending activities (defaults to local)
-  API_WS_URL: z.string().url().default('ws://localhost:4000/internal/cdc'),
+  API_WS_URL: z.url().default('ws://localhost:4000/internal/cdc'),
 
   // Shared secret for WebSocket authentication (required for security)
   CDC_INTERNAL_SECRET: z.string().min(16, 'CDC_INTERNAL_SECRET must be at least 16 characters'),

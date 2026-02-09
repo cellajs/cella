@@ -78,6 +78,23 @@ export const entityIdParamSchema = z.object({ id: idSchema });
 /** Schema for entity identifier id or slug */
 export const entityIdOrSlugParamSchema = z.object({ idOrSlug: idSchema });
 
+/** Schema for tenant-scoped entity id or slug (for organization routes) */
+export const tenantIdOrSlugParamSchema = z.object({
+  tenantId: tenantIdSchema,
+  idOrSlug: idSchema,
+});
+
+/** Schema for tenant-scoped entity id (for organization routes) */
+export const tenantIdParamSchema = z.object({
+  tenantId: tenantIdSchema,
+  id: idSchema,
+});
+
+/** Schema for tenant-only param (no entity id) */
+export const tenantOnlyParamSchema = z.object({
+  tenantId: tenantIdSchema,
+});
+
 /** Schema for an organization identifier orgId */
 export const inOrgParamSchema = z.object({ orgId: idSchema });
 

@@ -69,3 +69,5 @@ console.info(`  ${pc.bold(pc.greenBright('Tracked tables:'))}`);
 for (const table of trackedTableNames) {
   console.info(`    - ${table}`);
 }
+console.info('');
+

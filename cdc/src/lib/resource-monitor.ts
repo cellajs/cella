@@ -1,7 +1,7 @@
 import { execSync } from 'node:child_process';
 import { sql } from 'drizzle-orm';
-import { db } from '#/db/db';
 import { CDC_SLOT_NAME, RESOURCE_LIMITS } from '../constants';
+import { cdcDb } from '../db';
 import { logEvent } from '../pino';
 
 const { wal: WAL, startup } = RESOURCE_LIMITS;
@@ -20,7 +20,7 @@ export function fmtBytes(b: number): string {
  */
 export async function getWalBytes(): Promise<number | null> {
   try {
-    const result = await db.execute<{
+    const result = await cdcDb.execute<{
       pg_wal_lsn_diff: bigint;
       confirmed_flush_lsn: string | null;
       restart_lsn: string | null;
@@ -91,11 +91,14 @@ export async function configureWalLimits(): Promise<void> {
   logEvent('info', `${LOG_PREFIX} Configuring WAL limits`, { free: fmtBytes(free), limit: fmtBytes(limit) });
 
   try {
-    await db.execute(sql`ALTER SYSTEM SET max_slot_wal_keep_size = ${limitGB}GB`);
-    await db.execute(sql`SELECT pg_reload_conf()`);
+    // Note: ALTER SYSTEM requires superuser. cdc_role may not have this privilege.
+    // In production, WAL limits should be pre-configured via infrastructure.
+    await cdcDb.execute(sql`ALTER SYSTEM SET max_slot_wal_keep_size = ${limitGB}GB`);
+    await cdcDb.execute(sql`SELECT pg_reload_conf()`);
     logEvent('info', `${LOG_PREFIX} WAL limits configured`, { max_slot_wal_keep_size: `${limitGB}GB` });
   } catch (err) {
-    logEvent('error', `${LOG_PREFIX} Failed to configure WAL limits`, {
+    // Expected to fail if cdc_role lacks superuser privilege - log and continue
+    logEvent('warn', `${LOG_PREFIX} Could not configure WAL limits (requires superuser)`, {
       error: err instanceof Error ? err.message : String(err),
     });
   }

@@ -5,22 +5,26 @@ import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useOrganizationDeleteMutation } from '~/modules/organization/query';
 
 interface Props {
+  tenantId: string;
   organizations: Organization[];
   dialog?: boolean;
   callback?: (args: CallbackArgs<Organization[]>) => void;
 }
 
-export function DeleteOrganizations({ organizations, callback, dialog: isDialog }: Props) {
+export function DeleteOrganizations({ tenantId, organizations, callback, dialog: isDialog }: Props) {
   const removeDialog = useDialoger((state) => state.remove);
   const { mutate: deleteOrganizations, isPending } = useOrganizationDeleteMutation();
 
   const onDelete = () => {
-    deleteOrganizations(organizations, {
-      onSuccess: (_, paasedOrganizations) => {
-        if (isDialog) removeDialog();
-        callback?.({ data: paasedOrganizations, status: 'success' });
+    deleteOrganizations(
+      { tenantId, organizations },
+      {
+        onSuccess: (_, { organizations: deletedOrgs }) => {
+          if (isDialog) removeDialog();
+          callback?.({ data: deletedOrgs, status: 'success' });
+        },
       },
-    });
+    );
   };
 
   return <DeleteForm onDelete={onDelete} onCancel={() => removeDialog()} pending={isPending} />;

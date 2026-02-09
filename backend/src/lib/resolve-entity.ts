@@ -9,24 +9,29 @@ export type EntityModel<T extends EntityType> = (typeof entityTables)[T]['$infer
 // Helper type for entity tables with common columns
 type EntityTable = PgTable & { id: unknown; slug?: unknown };
 
+/** Database or transaction type for optional db parameter */
+type DbOrTx = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
+
 /**
- * Resolves entity based on `id`.
+ * Resolves entity based on `id` or `slug`.
  *
  * @param entityType - The type of entity.
- * @param id - The unique identifier of entity.
+ * @param idOrSlug - The unique identifier or slug of entity.
+ * @param dbOrTx - Optional database or transaction to use (defaults to global db).
  */
 export async function resolveEntity<T extends EntityType>(
   entityType: T,
   idOrSlug: string,
+  dbOrTx?: DbOrTx,
 ): Promise<EntityModel<T> | undefined>;
-export async function resolveEntity<T extends EntityType>(entityType: T, idOrSlug: string) {
+export async function resolveEntity<T extends EntityType>(entityType: T, idOrSlug: string, dbOrTx: DbOrTx = db) {
   const table = entityTables[entityType] as EntityTable;
 
   // Return early if table is not available
   if (!table) throw new Error(`Invalid entityType: ${entityType}`);
 
   // biome-ignore lint/suspicious/noExplicitAny: Dynamic table access requires type assertion
-  const [entity] = await db
+  const [entity] = await dbOrTx
     .select()
     .from(table as any)
     .where(or(eq((table as any).id, idOrSlug), eq((table as any).slug, idOrSlug)));

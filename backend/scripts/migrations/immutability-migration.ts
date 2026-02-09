@@ -43,3 +43,4 @@ console.info(`  ${pc.bold(pc.greenBright('Protected tables:'))}`);
 for (const { tableName, functionName } of allImmutabilityTables) {
   console.info(`    - ${tableName} (${functionName})`);
 }
+console.info('');

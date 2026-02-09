@@ -314,4 +314,5 @@ console.info(`  ${pc.bold(pc.greenBright('Configured tables:'))}`);
 for (const config of partitionConfigs) {
   console.info(`    - ${config.name}: ${config.interval} partitions, ${config.retention} retention`);
 }
+console.info('');
 

@@ -2,7 +2,7 @@ import { faker } from '@faker-js/faker';
 import { eq } from 'drizzle-orm';
 import { startSpinner, succeedSpinner, warnSpinner } from '#/utils/console';
 
-import { db } from '#/db/db';
+import { migrationDb } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { InsertMembershipModel, membershipsTable } from '#/db/schema/memberships';
 import { OrganizationModel, organizationsTable } from '#/db/schema/organizations';
@@ -14,8 +14,14 @@ import { hashPassword } from '#/modules/auth/passwords/helpers/argon2id';
 import { getMembershipOrderOffset, mockContextMembership } from '../../../mocks/mock-membership';
 import { mockOrganization } from '../../../mocks/mock-organization';
 import { mockEmail, mockPassword, mockUnsubscribeToken, mockUser } from '../../../mocks/mock-user';
-import { mockMany } from '../../../mocks/utils';
+import { mockMany, setMockContext } from '../../../mocks/utils';
 import { defaultAdminUser } from '../fixtures';
+
+// Set mock context for seed script - IDs will get 'gen-' prefix (CDC worker skips these)
+setMockContext('script');
+
+// Seed scripts use admin connection (migrationDb) for privileged operations
+const db = migrationDb;
 
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -25,6 +31,7 @@ const SYSTEM_ADMIN_MEMBERSHIP_COUNT = 10;
 export const PLAIN_USER_PASSWORD = '12345678';
 
 const isOrganizationSeeded = async () => {
+  if (!db) return true; // Skip if no admin connection
   const organizationsInTable = await db
     .select()
     .from(organizationsTable)
@@ -36,6 +43,9 @@ const isOrganizationSeeded = async () => {
 // Seed organizations with data
 export const organizationsSeed = async () => {
   if (isProduction) return console.error('Not allowed in production.');
+
+  // Admin connection required
+  if (!db) return console.error('DATABASE_ADMIN_URL required for seeding');
 
   const spinner = startSpinner('Seeding organizations...');
 

@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { systemRolesTable } from '#/db/schema/system-roles';
+import { setUserRlsContext } from '#/db/tenant-context';
 import { xMiddleware } from '#/docs/x-middleware';
 import { AppError } from '#/lib/error';
 import { deleteAuthCookie } from '#/modules/auth/general/helpers/cookie';
@@ -43,8 +44,11 @@ export const isAuthenticated = xMiddleware(
       });
 
       // Fetch the user's memberships and system role in parallel
+      // Memberships require user RLS context for cross-tenant SELECT
       const [memberships, [userSystemRoleRecord]] = await Promise.all([
-        db.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id)),
+        setUserRlsContext({ userId: user.id }, (tx) =>
+          tx.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id)),
+        ),
         db
           .select({ role: systemRolesTable.role })
           .from(systemRolesTable)

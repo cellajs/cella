@@ -12,10 +12,10 @@ import { OrganizationRoute } from '~/routes/organization-routes';
 
 const LeaveOrgButton = lazy(() => import('~/modules/organization/leave-organization'));
 
-function OrganizationPage({ organizationId }: { organizationId: string }) {
+function OrganizationPage({ organizationId, tenantId }: { organizationId: string; tenantId: string }) {
   const { t } = useTranslation();
 
-  const orgQueryOptions = organizationQueryOptions(organizationId);
+  const orgQueryOptions = organizationQueryOptions(organizationId, tenantId);
   // Organization is enriched with membership via cache subscription
   const { data: organization } = useSuspenseQuery(orgQueryOptions) as { data: OrganizationWithMembership };
 
@@ -29,7 +29,7 @@ function OrganizationPage({ organizationId }: { organizationId: string }) {
   // TODO research alternative pattern
   const coverUpdateCallback = (bannerUrl: string) => {
     mutate(
-      { id: organization.id, body: { bannerUrl } },
+      { tenantId: organization.tenantId, id: organization.id, body: { bannerUrl } },
       {
         onSuccess: () => toaster(t('common:success.upload_cover'), 'success'),
         onError: () => toaster(t('error:image_upload_failed'), 'error'),

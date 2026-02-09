@@ -203,5 +203,4 @@ export const myMembershipsQueryOptions = () =>
   queryOptions({
     queryKey: meKeys.memberships,
     queryFn: async ({ signal }) => getMyMemberships({ signal }),
-    staleTime: 1000 * 60 * 5, // 5 minutes
   });

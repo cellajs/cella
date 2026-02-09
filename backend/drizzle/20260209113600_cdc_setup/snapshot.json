@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "90a785f9-e343-4af7-8727-f3bd1c0afa2a",
+  "id": "855d71ae-abe3-4e35-ac01-92b0a5de913c",
   "prevIds": [
     "00000000-0000-0000-0000-000000000000"
   ],
@@ -4856,7 +4856,7 @@
       "roles": [
         "public"
       ],
-      "using": "\n        current_setting('app.is_authenticated', true)::boolean = true\n        AND (\n          \n  COALESCE(current_setting('app.user_id', true), '') != ''\n  AND \"memberships\".\"user_id\" = current_setting('app.user_id', true)::text\n\n          OR (\n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"memberships\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n AND \n  COALESCE(current_setting('app.user_id', true), '') != ''\n  AND EXISTS (\n    SELECT 1 FROM memberships m\n    WHERE m.organization_id = \"memberships\".\"organization_id\"\n    AND m.user_id = current_setting('app.user_id', true)::text\n    AND m.tenant_id = \"memberships\".\"tenant_id\"\n  )\n)\n        )\n      ",
+      "using": "current_setting('app.is_authenticated', true)::boolean = true AND \n  COALESCE(current_setting('app.user_id', true), '') != ''\n  AND \"memberships\".\"user_id\" = current_setting('app.user_id', true)::text\n",
       "withCheck": null,
       "name": "memberships_select_policy",
       "entityType": "policies",

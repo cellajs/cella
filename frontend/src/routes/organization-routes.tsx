@@ -51,11 +51,11 @@ export const OrganizationLayoutRoute = createRoute({
 
     // TODO - being called on every route change., including search params changes?
     if (orgId) {
-      const orgOptions = organizationQueryOptions(orgId);
+      const orgOptions = organizationQueryOptions(orgId, tenantId);
       organization = await queryClient.ensureQueryData({ ...orgOptions, revalidateIfStale: true });
     } else if (isOnline) {
       organization = await fetchSlugCacheId(
-        () => getOrganization({ path: { idOrSlug: orgIdOrSlug } }),
+        () => getOrganization({ path: { tenantId, idOrSlug: orgIdOrSlug } }),
         organizationQueryKeys.detail.byId,
       );
     }
@@ -88,11 +88,11 @@ export const OrganizationRoute = createRoute({
   getParentRoute: () => OrganizationLayoutRoute,
   errorComponent: ({ error }) => <ErrorNotice boundary="app" error={error} />,
   component: () => {
-    const { organization } = OrganizationRoute.useRouteContext();
-    const { data } = useSuspenseQuery(organizationQueryOptions(organization.id));
+    const { organization, tenantId } = OrganizationRoute.useRouteContext();
+    const { data } = useSuspenseQuery(organizationQueryOptions(organization.id, tenantId));
     return (
       <Suspense>
-        <OrganizationPage key={data.slug} organizationId={data.id} />
+        <OrganizationPage key={data.slug} organizationId={data.id} tenantId={tenantId} />
       </Suspense>
     );
   },
@@ -107,8 +107,8 @@ export const OrganizationMembersRoute = createRoute({
   staticData: { isAuth: true, navTab: { id: 'members', label: 'common:members' } },
   getParentRoute: () => OrganizationRoute,
   component: () => {
-    const { organization } = OrganizationMembersRoute.useRouteContext();
-    const { data } = useSuspenseQuery(organizationQueryOptions(organization.id));
+    const { organization, tenantId } = OrganizationMembersRoute.useRouteContext();
+    const { data } = useSuspenseQuery(organizationQueryOptions(organization.id, tenantId));
     return (
       <Suspense>
         <MembersTable key={data.id} entity={data} />
@@ -126,8 +126,8 @@ export const OrganizationAttachmentsRoute = createRoute({
   staticData: { isAuth: true, navTab: { id: 'attachments', label: 'common:attachments' } },
   getParentRoute: () => OrganizationRoute,
   component: () => {
-    const { organization } = OrganizationAttachmentsRoute.useRouteContext();
-    const { data } = useSuspenseQuery(organizationQueryOptions(organization.id));
+    const { organization, tenantId } = OrganizationAttachmentsRoute.useRouteContext();
+    const { data } = useSuspenseQuery(organizationQueryOptions(organization.id, tenantId));
     return (
       <Suspense>
         <AttachmentsTable canUpload={true} key={data.id} entity={data} />
@@ -144,8 +144,8 @@ export const OrganizationSettingsRoute = createRoute({
   staticData: { isAuth: true, navTab: { id: 'settings', label: 'common:settings' } },
   getParentRoute: () => OrganizationRoute,
   component: () => {
-    const { organization } = OrganizationSettingsRoute.useRouteContext();
-    const { data } = useSuspenseQuery(organizationQueryOptions(organization.id));
+    const { organization, tenantId } = OrganizationSettingsRoute.useRouteContext();
+    const { data } = useSuspenseQuery(organizationQueryOptions(organization.id, tenantId));
     return (
       <Suspense>
         <OrganizationSettings organization={data} />

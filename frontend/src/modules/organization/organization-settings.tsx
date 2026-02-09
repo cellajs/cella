@@ -36,6 +36,7 @@ function OrganizationSettings({ organization }: { organization: Organization }) 
     useDialoger.getState().create(
       <DeleteOrganizations
         dialog
+        tenantId={tenantId}
         organizations={[organization]}
         callback={({ status }: CallbackArgs<Organization[]>) => {
           if (status === 'success') {

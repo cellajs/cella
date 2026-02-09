@@ -26,7 +26,7 @@ const app = baseApp
   .route('/auth/', authPasskeysRouteHandlers)
   .route('/auth/', authOAuthRouteHandlers)
   .route('/me', meRouteHandlers)
-  .route('/organizations', organizationRouteHandlers)
+  .route('/', organizationRouteHandlers)
   .route('/pages', pageRouteHandlers)
   .route('/entities', entitiesRouteHandlers)
   .route('/system', systemRouteHandlers)

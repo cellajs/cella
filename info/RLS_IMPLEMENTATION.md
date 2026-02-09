@@ -318,7 +318,7 @@ Three database roles with distinct privileges:
 | Role | Privileges | RLS Behavior | Use Case |
 |------|------------|--------------|----------|
 | `runtime_role` | `SELECT`, `INSERT`, `UPDATE`, `DELETE` on tables (except activities) | Subject to RLS policies | All requests (authenticated and public) |
-| `cdc_role` | `REPLICATION`, `INSERT` on activities only | N/A (activities has no RLS) | CDC Worker append-only writes |
+| `cdc_role` | `REPLICATION`, `INSERT` on activities, `SELECT/INSERT/UPDATE` on counters | N/A (activities, counters have no RLS) | CDC Worker append-only writes + sequence tracking |
 | `admin_role` | Table ownership, `BYPASSRLS` | Skips RLS | Ensures FORCE RLS applies to runtime_role |
 
 > **Note:** Superuser (`postgres`) is used for migrations via `migrationDb`. The `admin_role` exists to own tables (required for `FORCE ROW LEVEL SECURITY` to apply to other roles).
@@ -501,7 +501,9 @@ CREATE ROLE cdc_role WITH LOGIN REPLICATION PASSWORD '...';
 
 -- CDC can only INSERT activities (append-only)
 GRANT INSERT ON activities TO cdc_role;
--- No SELECT, UPDATE, DELETE - true append-only
+-- CDC needs counters for sequence tracking
+GRANT SELECT, INSERT, UPDATE ON counters TO cdc_role;
+-- No SELECT, UPDATE, DELETE on activities - true append-only
 
 -- Runtime can only SELECT (app-layer filters by membership)
 GRANT SELECT ON activities TO runtime_role;
@@ -521,18 +523,21 @@ GRANT SELECT ON activities TO runtime_role;
 | Blast radius | ❌ Admin can do anything | ✅ CDC can only append to activities |
 
 **Access pattern:**
-- CDC Worker → `cdcDb` (cdc_role with REPLICATION + INSERT activities only)
+- CDC Worker → `cdcDb` (cdc_role with REPLICATION + INSERT activities + counters access)
 - App runtime → `runtime_role` for SELECT only (app filters by membership)
-- No UPDATE/DELETE ever (append-only audit log)
+- No UPDATE/DELETE on activities ever (append-only audit log)
 
 **CDC Worker connection:**
 
 ```typescript
-// cdc/src/db/db.ts
+// cdc/src/db.ts
 export const cdcDb = drizzle({ connectionString: env.DATABASE_CDC_URL });
 
-// Insert activity (only operation CDC can do)
+// Insert activity (only operation CDC can do on activities)
 await cdcDb.insert(activitiesTable).values(activity);
+
+// Increment sequence counter
+await cdcDb.insert(countersTable).values(...).onConflictDoUpdate(...);
 ```
 
 The composite FK `(tenant_id, organization_id) → organizations(tenant_id, id)` still prevents franken-rows on INSERT.
@@ -1275,13 +1280,14 @@ Update seed script to create tenant hierarchy:
 - [x] Grant SELECT, INSERT, UPDATE, DELETE on tables to `runtime_role` (except activities)
 - [x] Grant SELECT only on `activities` to `runtime_role` (read-only for app)
 - [x] Grant INSERT only on `activities` to `cdc_role` (append-only for CDC)
+- [x] Grant SELECT, INSERT, UPDATE on `counters` to `cdc_role` (sequence tracking)
 - [x] Add `DATABASE_URL` and `DATABASE_ADMIN_URL` to config
 - [x] Create `db` export (runtime_role, subject to RLS)
 - [x] Create `migrationDb` export for migrations/seeds only (superuser)
 - ~~Create security-barrier views~~ — Removed: public access via RLS policies (`is_authenticated=false`) instead
 - ~~Create `public_read_role`~~ — Removed: public access via session variables, not separate role
 - ~~Create `publicReadDb` export~~ — Removed: single `db` connection with policy-based public access
-- [ ] Create `cdcDb` export in CDC Worker (uses DATABASE_CDC_URL with cdc_role)
+- [x] Create `cdcDb` export in CDC Worker (uses DATABASE_CDC_URL with cdc_role)
 - [ ] Apply privilege lockdown migration (revoke public schema access)
 - [ ] Add schema audit queries to CI (ownership check, FORCE RLS check)
 

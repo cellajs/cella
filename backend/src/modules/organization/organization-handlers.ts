@@ -293,16 +293,26 @@ const organizationRouteHandlers = app
   })
 
   /**
-   * Get organization by id or slug
+   * Get organization by id or slug (tenant-scoped)
    */
   .openapi(organizationRoutes.getOrganization, async (ctx) => {
-    const { idOrSlug } = ctx.req.valid('param');
+    const { tenantId, idOrSlug } = ctx.req.valid('param');
+
+    // Validate tenantId is provided (early explicit error)
+    if (!tenantId) {
+      throw new AppError(400, 'invalid_request', 'warn', { meta: { reason: 'Missing tenantId parameter' } });
+    }
 
     const {
       entity: organization,
       membership,
       can,
     } = await getValidContextEntity(ctx, idOrSlug, 'organization', 'read');
+
+    // Validate organization belongs to the specified tenant
+    if (organization.tenantId !== tenantId) {
+      throw new AppError(403, 'forbidden', 'warn', { entityType: 'organization', meta: { reason: 'Tenant mismatch' } });
+    }
 
     const counts = await getEntityCounts(organization.entityType, organization.id);
 
@@ -328,12 +338,23 @@ const organizationRouteHandlers = app
     return ctx.json(data, 200);
   })
   /**
-   * Update an organization by id
+   * Update an organization by id (tenant-scoped)
    */
   .openapi(organizationRoutes.updateOrganization, async (ctx) => {
-    const { id } = ctx.req.valid('param');
+    const { tenantId, id } = ctx.req.valid('param');
+
+    // Validate tenantId is provided (early explicit error)
+    if (!tenantId) {
+      throw new AppError(400, 'invalid_request', 'warn', { meta: { reason: 'Missing tenantId parameter' } });
+    }
 
     const { entity: organization, membership, can } = await getValidContextEntity(ctx, id, 'organization', 'update');
+
+    // Validate organization belongs to the specified tenant
+    if (organization.tenantId !== tenantId) {
+      throw new AppError(403, 'forbidden', 'warn', { entityType: 'organization', meta: { reason: 'Tenant mismatch' } });
+    }
+
     const user = ctx.var.user;
 
     const updatedFields = ctx.req.valid('json');
@@ -383,10 +404,16 @@ const organizationRouteHandlers = app
     return ctx.json(data, 200);
   })
   /**
-   * Delete organizations by ids
+   * Delete organizations by ids (tenant-scoped)
    */
   .openapi(organizationRoutes.deleteOrganizations, async (ctx) => {
+    const { tenantId } = ctx.req.valid('param');
     const { ids } = ctx.req.valid('json');
+
+    // Validate tenantId is provided (early explicit error)
+    if (!tenantId) {
+      throw new AppError(400, 'invalid_request', 'warn', { meta: { reason: 'Missing tenantId parameter' } });
+    }
 
     const memberships = ctx.var.memberships;
 
