@@ -8,7 +8,7 @@ import type { Member } from '~/modules/memberships/types';
 interface Props {
   entityId: string;
   tenantId: string;
-  orgIdOrSlug: string;
+  orgId: string;
   members: Member[];
   entityType: ContextEntityType;
   dialog?: boolean;
@@ -20,7 +20,7 @@ export function DeleteMemberships({
   entityId,
   entityType,
   tenantId,
-  orgIdOrSlug,
+  orgId,
   callback,
   dialog: isDialog,
 }: Props) {
@@ -28,7 +28,7 @@ export function DeleteMemberships({
   const { mutate: deleteMemberships, isPending } = useMembershipsDeleteMutation();
 
   const onDeleteMembers = () => {
-    deleteMemberships({ tenantId, orgIdOrSlug, entityId, entityType, members });
+    deleteMemberships({ tenantId, orgId, entityId, entityType, members });
 
     if (isDialog) removeDialog();
     callback?.({ data: members, status: 'success' });

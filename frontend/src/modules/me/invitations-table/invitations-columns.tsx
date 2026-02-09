@@ -30,7 +30,7 @@ export const useColumns = () => {
     { label: t('common:reject'), variant: 'destructive', action: 'reject' },
   ] as const;
 
-  // TODO Move this to query.ts for me module?
+  // TODO-040 Move this to query.ts for me module?
   const { mutate: handleInvitation } = useMutation<
     HandleMembershipInvitationResponse,
     ApiError,

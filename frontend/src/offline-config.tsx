@@ -59,7 +59,7 @@ export const entityToPrefetchQueries = (
         membersListQueryOptions({
           entityId: entityId,
           tenantId: tenantId,
-          orgIdOrSlug: entityId,
+          orgId: entityId,
           entityType: entityType,
         }),
       ];

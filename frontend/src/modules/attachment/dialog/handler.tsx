@@ -10,7 +10,7 @@ const instanceId = 'attachment-dialog';
  * Pure lifecycle manager - dialog content reads URL internally for reactivity.
  */
 function AttachmentDialogHandlerBase() {
-  const { isOpen, orgIdOrSlug, triggerRef, close } = useUrlOverlayState('attachmentDialogId', {
+  const { isOpen, orgId, triggerRef, close } = useUrlOverlayState('attachmentDialogId', {
     getStore: useDialoger.getState,
     additionalParamKeys: ['groupId'],
   });
@@ -22,7 +22,7 @@ function AttachmentDialogHandlerBase() {
   closeRef.current = close;
 
   useEffect(() => {
-    if (!isOpen || !orgIdOrSlug) return;
+    if (!isOpen || !orgId) return;
 
     // Skip if dialog already exists
     if (useDialoger.getState().get(instanceId)) return;
@@ -40,7 +40,7 @@ function AttachmentDialogHandlerBase() {
     });
 
     return () => useDialoger.getState().remove(instanceId, { isCleanup: true });
-  }, [isOpen, orgIdOrSlug]);
+  }, [isOpen, orgId]);
 
   return null;
 }

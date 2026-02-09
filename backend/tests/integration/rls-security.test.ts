@@ -129,27 +129,27 @@ describe('RLS Policy Verification', () => {
   // They require the database roles to be set up.
   // Skip if running in basic test mode without PostgreSQL.
 
-  it.skip('TODO: Add test for deny access without tenant context', () => {
+  it.skip('TODO-004: Add test for deny access without tenant context', () => {
     // When RLS policies are fully applied, queries without context should fail
   });
 
-  it.skip('TODO: Add test for cross-tenant read isolation', () => {
+  it.skip('TODO-004: Add test for cross-tenant read isolation', () => {
     // Tenant A user should not see Tenant B data
   });
 
-  it.skip('TODO: Add test for cross-tenant write isolation', () => {
+  it.skip('TODO-004: Add test for cross-tenant write isolation', () => {
     // Tenant A user should not be able to write to Tenant B
   });
 
-  it.skip('TODO: Add test for organization membership enforcement', () => {
+  it.skip('TODO-004: Add test for organization membership enforcement', () => {
     // User without org membership should not see org data
   });
 
-  it.skip('TODO: Add test for public content visibility', () => {
+  it.skip('TODO-004: Add test for public content visibility', () => {
     // Unauthenticated users should see is_public=true rows only
   });
 
-  it.skip('TODO: Add test for immutability triggers', () => {
+  it.skip('TODO-004: Add test for immutability triggers', () => {
     // tenant_id and organization_id should not be updatable
   });
 });

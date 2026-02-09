@@ -8,7 +8,7 @@ export function ReloadPrompt() {
   // replaced dynamically
   const buildDate = '__DATE__';
   // replaced dynamically
-  const reloadSW = '__RELOAD_SW__';
+  const reloadSW: string = '__RELOAD_SW__';
 
   const {
     needRefresh: [needRefresh, setNeedRefresh],
@@ -16,7 +16,6 @@ export function ReloadPrompt() {
   } = useRegisterSW({
     onRegisteredSW(swUrl, r) {
       console.debug(`[ServiceWorker] Registered at: ${swUrl}`);
-      // @ts-expect-error just ignore
       if (reloadSW === 'true') {
         r &&
           setInterval(() => {

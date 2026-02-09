@@ -258,7 +258,7 @@
             "required": true,
             "maxLength": 24
           },
-          "orgIdOrSlug": { "type": "string", "required": true }
+          "orgId": { "type": "string", "required": true }
         }
       },
       "query": {
@@ -445,8 +445,19 @@
             "required": true,
             "maxLength": 24
           },
-          "orgIdOrSlug": { "type": "string", "required": true },
-          "idOrSlug": { "type": "string", "required": true }
+          "orgId": { "type": "string", "required": true },
+          "userId": { "type": "string", "required": true }
+        }
+      },
+      "query": {
+        "properties": {
+          "slug": {
+            "required": false,
+            "anyOf": [
+              { "type": "string", "required": false },
+              { "type": "boolean", "required": false }
+            ]
+          }
         }
       }
     }

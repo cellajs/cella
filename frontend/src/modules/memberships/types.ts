@@ -35,6 +35,6 @@ export type DeleteMembership = {
   entityId: string;
   entityType: ContextEntityType;
   tenantId: string;
-  orgIdOrSlug: string;
+  orgId: string;
   members: Member[];
 };

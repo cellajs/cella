@@ -18,17 +18,17 @@ const keys = createEntityKeys<UserFilters>('user');
 export const userQueryKeys = keys;
 
 /** Find a user in the list cache by id or slug. */
-export const findUserInListCache = (idOrSlug: string) =>
-  findInListCache<User>(keys.list.base, (user) => user.id === idOrSlug || user.slug === idOrSlug);
+export const findUserInListCache = (entityId: string) =>
+  findInListCache<User>(keys.list.base, (user) => user.id === entityId || user.slug === entityId);
 
 /**
  * Query options for fetching a user by ID within an organization context.
  * NOTE: Slug is only used on page load. All subsequent queries must use ID.
  */
-export const userQueryOptions = (id: string, tenantId: string, orgIdOrSlug: string) =>
+export const userQueryOptions = (id: string, tenantId: string, orgId: string) =>
   queryOptions({
     queryKey: keys.detail.byId(id),
-    queryFn: async () => getUser({ path: { idOrSlug: id, tenantId, orgIdOrSlug } }),
+    queryFn: async () => getUser({ path: { userId: id, tenantId, orgId } }),
     placeholderData: () => findUserInListCache(id),
   });
 

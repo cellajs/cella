@@ -1954,13 +1954,14 @@ export const getOrganizations = <ThrowOnError extends boolean = true>(
 /**
  * Get organization
  *
- * Retrieves an *organization* by ID or slug within a tenant.
+ * Retrieves an *organization* by ID within a tenant. Pass `?slug=true` to resolve by slug instead.
  *
- * **GET /{tenantId}/organizations/{idOrSlug}** ·· [getOrganization](https://api.cellajs.com/docs#tag/organizations/get/{tenantId}/organizations/{idOrSlug}) ·· _organizations_
+ * **GET /{tenantId}/organizations/{organizationId}** ·· [getOrganization](https://api.cellajs.com/docs#tag/organizations/get/{tenantId}/organizations/{organizationId}) ·· _organizations_
  *
  * @param {getOrganizationData} options
  * @param {string} options.path.tenantid - `string`
- * @param {string} options.path.idorslug - `string`
+ * @param {string} options.path.organizationid - `string`
+ * @param {string | boolean=} options.query.slug - `string | boolean` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getOrganization = <ThrowOnError extends boolean = true>(
@@ -1975,7 +1976,7 @@ export const getOrganization = <ThrowOnError extends boolean = true>(
         type: 'apiKey',
       },
     ],
-    url: '/{tenantId}/organizations/{idOrSlug}',
+    url: '/{tenantId}/organizations/{organizationId}',
     ...options,
   });
 
@@ -2170,11 +2171,11 @@ export const updatePage = <ThrowOnError extends boolean = true>(options: Options
  *
  * Returns a list of *users* in an organization context.
  *
- * **GET /{tenantId}/{orgIdOrSlug}/users** ·· [getUsers2](https://api.cellajs.com/docs#tag/users/get/{tenantId}/{orgIdOrSlug}/users) ·· _users_
+ * **GET /{tenantId}/{orgId}/users** ·· [getUsers2](https://api.cellajs.com/docs#tag/users/get/{tenantId}/{orgId}/users) ·· _users_
  *
  * @param {getUsers2Data} options
  * @param {string} options.path.tenantid - `string`
- * @param {string} options.path.orgidorslug - `string`
+ * @param {string} options.path.orgid - `string`
  * @param {string=} options.query.q - `string` (optional)
  * @param {enum=} options.query.sort - `enum` (optional)
  * @param {enum=} options.query.order - `enum` (optional)
@@ -2195,21 +2196,22 @@ export const getUsers2 = <ThrowOnError extends boolean = true>(options: Options<
         type: 'apiKey',
       },
     ],
-    url: '/{tenantId}/{orgIdOrSlug}/users',
+    url: '/{tenantId}/{orgId}/users',
     ...options,
   });
 
 /**
  * Get user
  *
- * Retrieves a *user* by ID or slug in an organization context.
+ * Retrieves a *user* by ID in an organization context. Pass `?slug=true` to resolve by slug instead.
  *
- * **GET /{tenantId}/{orgIdOrSlug}/users/{idOrSlug}** ·· [getUser](https://api.cellajs.com/docs#tag/users/get/{tenantId}/{orgIdOrSlug}/users/{idOrSlug}) ·· _users_
+ * **GET /{tenantId}/{orgId}/users/{userId}** ·· [getUser](https://api.cellajs.com/docs#tag/users/get/{tenantId}/{orgId}/users/{userId}) ·· _users_
  *
  * @param {getUserData} options
  * @param {string} options.path.tenantid - `string`
- * @param {string} options.path.orgidorslug - `string`
- * @param {string} options.path.idorslug - `string`
+ * @param {string} options.path.orgid - `string`
+ * @param {string} options.path.userid - `string`
+ * @param {string | boolean=} options.query.slug - `string | boolean` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getUser = <ThrowOnError extends boolean = true>(options: Options<GetUserData, ThrowOnError>) =>
@@ -2222,7 +2224,7 @@ export const getUser = <ThrowOnError extends boolean = true>(options: Options<Ge
         type: 'apiKey',
       },
     ],
-    url: '/{tenantId}/{orgIdOrSlug}/users/{idOrSlug}',
+    url: '/{tenantId}/{orgId}/users/{userId}',
     ...options,
   });
 
@@ -2231,11 +2233,11 @@ export const getUser = <ThrowOnError extends boolean = true>(options: Options<Ge
  *
  * Deletes one or more *attachment* records by ID. This does not delete the underlying file in storage.
  *
- * **DELETE /{tenantId}/{orgIdOrSlug}/attachments** ·· [deleteAttachments](https://api.cellajs.com/docs#tag/attachments/delete/{tenantId}/{orgIdOrSlug}/attachments) ·· _attachments_
+ * **DELETE /{tenantId}/{orgId}/attachments** ·· [deleteAttachments](https://api.cellajs.com/docs#tag/attachments/delete/{tenantId}/{orgId}/attachments) ·· _attachments_
  *
  * @param {deleteAttachmentsData} options
  * @param {string} options.path.tenantid - `string`
- * @param {string} options.path.orgidorslug - `string`
+ * @param {string} options.path.orgid - `string`
  * @param {any[]=} options.body.ids - `any[]` (optional)
  * @param {object} options.body.tx - `object`
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
@@ -2252,7 +2254,7 @@ export const deleteAttachments = <ThrowOnError extends boolean = true>(
         type: 'apiKey',
       },
     ],
-    url: '/{tenantId}/{orgIdOrSlug}/attachments',
+    url: '/{tenantId}/{orgId}/attachments',
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -2265,11 +2267,11 @@ export const deleteAttachments = <ThrowOnError extends boolean = true>(
  *
  * Returns a paginated list of *attachments* for the organization.
  *
- * **GET /{tenantId}/{orgIdOrSlug}/attachments** ·· [getAttachments](https://api.cellajs.com/docs#tag/attachments/get/{tenantId}/{orgIdOrSlug}/attachments) ·· _attachments_
+ * **GET /{tenantId}/{orgId}/attachments** ·· [getAttachments](https://api.cellajs.com/docs#tag/attachments/get/{tenantId}/{orgId}/attachments) ·· _attachments_
  *
  * @param {getAttachmentsData} options
  * @param {string} options.path.tenantid - `string`
- * @param {string} options.path.orgidorslug - `string`
+ * @param {string} options.path.orgid - `string`
  * @param {string=} options.query.q - `string` (optional)
  * @param {enum=} options.query.sort - `enum` (optional)
  * @param {enum=} options.query.order - `enum` (optional)
@@ -2290,7 +2292,7 @@ export const getAttachments = <ThrowOnError extends boolean = true>(
         type: 'apiKey',
       },
     ],
-    url: '/{tenantId}/{orgIdOrSlug}/attachments',
+    url: '/{tenantId}/{orgId}/attachments',
     ...options,
   });
 
@@ -2299,11 +2301,11 @@ export const getAttachments = <ThrowOnError extends boolean = true>(
  *
  * Registers one or more new *attachments* after client side upload. Includes metadata like name, type, and linked entity.
  *
- * **POST /{tenantId}/{orgIdOrSlug}/attachments** ·· [createAttachments](https://api.cellajs.com/docs#tag/attachments/post/{tenantId}/{orgIdOrSlug}/attachments) ·· _attachments_
+ * **POST /{tenantId}/{orgId}/attachments** ·· [createAttachments](https://api.cellajs.com/docs#tag/attachments/post/{tenantId}/{orgId}/attachments) ·· _attachments_
  *
  * @param {createAttachmentsData} options
  * @param {string} options.path.tenantid - `string`
- * @param {string} options.path.orgidorslug - `string`
+ * @param {string} options.path.orgid - `string`
  * @returns Possible status codes: 200, 201, 400, 401, 403, 404, 429
  */
 export const createAttachments = <ThrowOnError extends boolean = true>(
@@ -2318,7 +2320,7 @@ export const createAttachments = <ThrowOnError extends boolean = true>(
         type: 'apiKey',
       },
     ],
-    url: '/{tenantId}/{orgIdOrSlug}/attachments',
+    url: '/{tenantId}/{orgId}/attachments',
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -2331,11 +2333,11 @@ export const createAttachments = <ThrowOnError extends boolean = true>(
  *
  * Generates and returns a presigned URL for accessing a private attachment file in S3. Public files should use the public CDN URL directly. Requires organization context.
  *
- * **GET /{tenantId}/{orgIdOrSlug}/attachments/presigned-url** ·· [getPresignedUrl](https://api.cellajs.com/docs#tag/attachments/get/{tenantId}/{orgIdOrSlug}/attachments/presigned-url) ·· _attachments_
+ * **GET /{tenantId}/{orgId}/attachments/presigned-url** ·· [getPresignedUrl](https://api.cellajs.com/docs#tag/attachments/get/{tenantId}/{orgId}/attachments/presigned-url) ·· _attachments_
  *
  * @param {getPresignedUrlData} options
  * @param {string} options.path.tenantid - `string`
- * @param {string} options.path.orgidorslug - `string`
+ * @param {string} options.path.orgid - `string`
  * @param {string} options.query.key - `string`
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
@@ -2351,7 +2353,7 @@ export const getPresignedUrl = <ThrowOnError extends boolean = true>(
         type: 'apiKey',
       },
     ],
-    url: '/{tenantId}/{orgIdOrSlug}/attachments/presigned-url',
+    url: '/{tenantId}/{orgId}/attachments/presigned-url',
     ...options,
   });
 
@@ -2360,11 +2362,11 @@ export const getPresignedUrl = <ThrowOnError extends boolean = true>(
  *
  * Returns a single *attachment* by ID. Supports CDC cache via X-Cache-Token header.
  *
- * **GET /{tenantId}/{orgIdOrSlug}/attachments/{id}** ·· [getAttachment](https://api.cellajs.com/docs#tag/attachments/get/{tenantId}/{orgIdOrSlug}/attachments/{id}) ·· _attachments_
+ * **GET /{tenantId}/{orgId}/attachments/{id}** ·· [getAttachment](https://api.cellajs.com/docs#tag/attachments/get/{tenantId}/{orgId}/attachments/{id}) ·· _attachments_
  *
  * @param {getAttachmentData} options
  * @param {string} options.path.tenantid - `string`
- * @param {string} options.path.orgidorslug - `string`
+ * @param {string} options.path.orgid - `string`
  * @param {string} options.path.id - `string`
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
@@ -2378,7 +2380,7 @@ export const getAttachment = <ThrowOnError extends boolean = true>(options: Opti
         type: 'apiKey',
       },
     ],
-    url: '/{tenantId}/{orgIdOrSlug}/attachments/{id}',
+    url: '/{tenantId}/{orgId}/attachments/{id}',
     ...options,
   });
 
@@ -2387,11 +2389,11 @@ export const getAttachment = <ThrowOnError extends boolean = true>(options: Opti
  *
  * Updates metadata of an *attachment*, such as its name or associated entity.
  *
- * **PUT /{tenantId}/{orgIdOrSlug}/attachments/{id}** ·· [updateAttachment](https://api.cellajs.com/docs#tag/attachments/put/{tenantId}/{orgIdOrSlug}/attachments/{id}) ·· _attachments_
+ * **PUT /{tenantId}/{orgId}/attachments/{id}** ·· [updateAttachment](https://api.cellajs.com/docs#tag/attachments/put/{tenantId}/{orgId}/attachments/{id}) ·· _attachments_
  *
  * @param {updateAttachmentData} options
  * @param {string} options.path.tenantid - `string`
- * @param {string} options.path.orgidorslug - `string`
+ * @param {string} options.path.orgid - `string`
  * @param {string} options.path.id - `string`
  * @param {string=} options.body.name - `string` (optional)
  * @param {string=} options.body.originalKey - `string` (optional)
@@ -2410,7 +2412,7 @@ export const updateAttachment = <ThrowOnError extends boolean = true>(
         type: 'apiKey',
       },
     ],
-    url: '/{tenantId}/{orgIdOrSlug}/attachments/{id}',
+    url: '/{tenantId}/{orgId}/attachments/{id}',
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -2423,7 +2425,7 @@ export const updateAttachment = <ThrowOnError extends boolean = true>(
  *
  * Redirects to the file's public or presigned URL, depending on storage visibility.
  *
- * **GET /{tenantId}/{orgIdOrSlug}/attachments/{id}/link** ·· [redirectToAttachment](https://api.cellajs.com/docs#tag/attachments/get/{tenantId}/{orgIdOrSlug}/attachments/{id}/link) ·· _attachments_
+ * **GET /{tenantId}/{orgId}/attachments/{id}/link** ·· [redirectToAttachment](https://api.cellajs.com/docs#tag/attachments/get/{tenantId}/{orgId}/attachments/{id}/link) ·· _attachments_
  *
  * @param {redirectToAttachmentData} options
  * @param {string} options.path.id - `string`
@@ -2434,7 +2436,7 @@ export const redirectToAttachment = <ThrowOnError extends boolean = true>(
 ) =>
   (options.client ?? client).get<RedirectToAttachmentResponses, RedirectToAttachmentErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
-    url: '/{tenantId}/{orgIdOrSlug}/attachments/{id}/link',
+    url: '/{tenantId}/{orgId}/attachments/{id}/link',
     ...options,
   });
 
@@ -2443,11 +2445,11 @@ export const redirectToAttachment = <ThrowOnError extends boolean = true>(
  *
  * Deletes one or more *memberships* by ID. This removes the membership but does not delete the associated user(s).
  *
- * **DELETE /{tenantId}/{orgIdOrSlug}/memberships** ·· [deleteMemberships](https://api.cellajs.com/docs#tag/memberships/delete/{tenantId}/{orgIdOrSlug}/memberships) ·· _memberships_
+ * **DELETE /{tenantId}/{orgId}/memberships** ·· [deleteMemberships](https://api.cellajs.com/docs#tag/memberships/delete/{tenantId}/{orgId}/memberships) ·· _memberships_
  *
  * @param {deleteMembershipsData} options
  * @param {string} options.path.tenantid - `string`
- * @param {string} options.path.orgidorslug - `string`
+ * @param {string} options.path.orgid - `string`
  * @param {string} options.query.entityid - `string`
  * @param {enum} options.query.entitytype - `enum`
  * @param {any[]=} options.body.ids - `any[]` (optional)
@@ -2465,7 +2467,7 @@ export const deleteMemberships = <ThrowOnError extends boolean = true>(
         type: 'apiKey',
       },
     ],
-    url: '/{tenantId}/{orgIdOrSlug}/memberships',
+    url: '/{tenantId}/{orgId}/memberships',
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -2478,11 +2480,11 @@ export const deleteMemberships = <ThrowOnError extends boolean = true>(
  *
  * Creates one or more *memberships*, inviting users (existing or new) to a context entity such as an organization.
  *
- * **POST /{tenantId}/{orgIdOrSlug}/memberships** ·· [membershipInvite](https://api.cellajs.com/docs#tag/memberships/post/{tenantId}/{orgIdOrSlug}/memberships) ·· _memberships_
+ * **POST /{tenantId}/{orgId}/memberships** ·· [membershipInvite](https://api.cellajs.com/docs#tag/memberships/post/{tenantId}/{orgId}/memberships) ·· _memberships_
  *
  * @param {membershipInviteData} options
  * @param {string} options.path.tenantid - `string`
- * @param {string} options.path.orgidorslug - `string`
+ * @param {string} options.path.orgid - `string`
  * @param {string} options.query.entityid - `string`
  * @param {enum} options.query.entitytype - `enum`
  * @param {any[]=} options.body.emails - `any[]` (optional)
@@ -2501,7 +2503,7 @@ export const membershipInvite = <ThrowOnError extends boolean = true>(
         type: 'apiKey',
       },
     ],
-    url: '/{tenantId}/{orgIdOrSlug}/memberships',
+    url: '/{tenantId}/{orgId}/memberships',
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -2514,11 +2516,11 @@ export const membershipInvite = <ThrowOnError extends boolean = true>(
  *
  * Updates the *membership* metadata, such as role, `muted`, or `archived` status.
  *
- * **PUT /{tenantId}/{orgIdOrSlug}/memberships/{id}** ·· [updateMembership](https://api.cellajs.com/docs#tag/memberships/put/{tenantId}/{orgIdOrSlug}/memberships/{id}) ·· _memberships_
+ * **PUT /{tenantId}/{orgId}/memberships/{id}** ·· [updateMembership](https://api.cellajs.com/docs#tag/memberships/put/{tenantId}/{orgId}/memberships/{id}) ·· _memberships_
  *
  * @param {updateMembershipData} options
  * @param {string} options.path.tenantid - `string`
- * @param {string} options.path.orgidorslug - `string`
+ * @param {string} options.path.orgid - `string`
  * @param {string} options.path.id - `string`
  * @param {enum=} options.body.role - `enum` (optional)
  * @param {boolean=} options.body.muted - `boolean` (optional)
@@ -2538,7 +2540,7 @@ export const updateMembership = <ThrowOnError extends boolean = true>(
         type: 'apiKey',
       },
     ],
-    url: '/{tenantId}/{orgIdOrSlug}/memberships/{id}',
+    url: '/{tenantId}/{orgId}/memberships/{id}',
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -2551,7 +2553,7 @@ export const updateMembership = <ThrowOnError extends boolean = true>(
  *
  * Accepting activates the associated membership. Rejecting simply removes the invitation token.
  *
- * **POST /{tenantId}/{orgIdOrSlug}/memberships/{id}/{acceptOrReject}** ·· [handleMembershipInvitation](https://api.cellajs.com/docs#tag/memberships/post/{tenantId}/{orgIdOrSlug}/memberships/{id}/{acceptOrReject}) ·· _memberships_
+ * **POST /{tenantId}/{orgId}/memberships/{id}/{acceptOrReject}** ·· [handleMembershipInvitation](https://api.cellajs.com/docs#tag/memberships/post/{tenantId}/{orgId}/memberships/{id}/{acceptOrReject}) ·· _memberships_
  *
  * @param {handleMembershipInvitationData} options
  * @param {string} options.path.id - `string`
@@ -2575,7 +2577,7 @@ export const handleMembershipInvitation = <ThrowOnError extends boolean = true>(
         type: 'apiKey',
       },
     ],
-    url: '/{tenantId}/{orgIdOrSlug}/memberships/{id}/{acceptOrReject}',
+    url: '/{tenantId}/{orgId}/memberships/{id}/{acceptOrReject}',
     ...options,
   });
 
@@ -2584,11 +2586,11 @@ export const handleMembershipInvitation = <ThrowOnError extends boolean = true>(
  *
  * Retrieves members (users) of a context entity by ID, including their associated *membership* data.
  *
- * **GET /{tenantId}/{orgIdOrSlug}/memberships/members** ·· [getMembers](https://api.cellajs.com/docs#tag/memberships/get/{tenantId}/{orgIdOrSlug}/memberships/members) ·· _memberships_
+ * **GET /{tenantId}/{orgId}/memberships/members** ·· [getMembers](https://api.cellajs.com/docs#tag/memberships/get/{tenantId}/{orgId}/memberships/members) ·· _memberships_
  *
  * @param {getMembersData} options
  * @param {string} options.path.tenantid - `string`
- * @param {string} options.path.orgidorslug - `string`
+ * @param {string} options.path.orgid - `string`
  * @param {string=} options.query.q - `string` (optional)
  * @param {enum=} options.query.sort - `enum` (optional)
  * @param {enum=} options.query.order - `enum` (optional)
@@ -2609,7 +2611,7 @@ export const getMembers = <ThrowOnError extends boolean = true>(options: Options
         type: 'apiKey',
       },
     ],
-    url: '/{tenantId}/{orgIdOrSlug}/memberships/members',
+    url: '/{tenantId}/{orgId}/memberships/members',
     ...options,
   });
 
@@ -2618,11 +2620,11 @@ export const getMembers = <ThrowOnError extends boolean = true>(options: Options
  *
  * Returns pending memberships for a context entity, identified by ID. This does not include pending invitations for non-existing users.
  *
- * **GET /{tenantId}/{orgIdOrSlug}/memberships/pending** ·· [getPendingMemberships](https://api.cellajs.com/docs#tag/memberships/get/{tenantId}/{orgIdOrSlug}/memberships/pending) ·· _memberships_
+ * **GET /{tenantId}/{orgId}/memberships/pending** ·· [getPendingMemberships](https://api.cellajs.com/docs#tag/memberships/get/{tenantId}/{orgId}/memberships/pending) ·· _memberships_
  *
  * @param {getPendingMembershipsData} options
  * @param {string} options.path.tenantid - `string`
- * @param {string} options.path.orgidorslug - `string`
+ * @param {string} options.path.orgid - `string`
  * @param {string=} options.query.q - `string` (optional)
  * @param {enum=} options.query.sort - `enum` (optional)
  * @param {enum=} options.query.order - `enum` (optional)
@@ -2644,6 +2646,6 @@ export const getPendingMemberships = <ThrowOnError extends boolean = true>(
         type: 'apiKey',
       },
     ],
-    url: '/{tenantId}/{orgIdOrSlug}/memberships/pending',
+    url: '/{tenantId}/{orgId}/memberships/pending',
     ...options,
   });

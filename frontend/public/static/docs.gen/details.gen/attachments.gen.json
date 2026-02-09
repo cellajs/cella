@@ -208,7 +208,7 @@
             "required": true,
             "maxLength": 24
           },
-          "orgIdOrSlug": { "type": "string", "required": true }
+          "orgId": { "type": "string", "required": true }
         }
       },
       "query": {
@@ -626,7 +626,7 @@
             "required": true,
             "maxLength": 24
           },
-          "orgIdOrSlug": { "type": "string", "required": true }
+          "orgId": { "type": "string", "required": true }
         }
       },
       "body": {
@@ -769,7 +769,7 @@
             "required": true,
             "maxLength": 24
           },
-          "orgIdOrSlug": { "type": "string", "required": true }
+          "orgId": { "type": "string", "required": true }
         }
       },
       "body": {
@@ -849,7 +849,7 @@
             "required": true,
             "maxLength": 24
           },
-          "orgIdOrSlug": { "type": "string", "required": true }
+          "orgId": { "type": "string", "required": true }
         }
       },
       "query": {
@@ -1024,7 +1024,7 @@
             "required": true,
             "maxLength": 24
           },
-          "orgIdOrSlug": { "type": "string", "required": true },
+          "orgId": { "type": "string", "required": true },
           "id": { "type": "string", "required": true }
         }
       }
@@ -1195,7 +1195,7 @@
             "required": true,
             "maxLength": 24
           },
-          "orgIdOrSlug": { "type": "string", "required": true },
+          "orgId": { "type": "string", "required": true },
           "id": { "type": "string", "required": true }
         }
       },

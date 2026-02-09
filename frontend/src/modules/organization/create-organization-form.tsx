@@ -27,7 +27,7 @@ interface Props {
 
 // Combine body item schema with tenantId from path
 const formSchema = zCreateOrganizationsData.shape.body.element.omit({ id: true }).extend({
-  tenantId: z.string().min(1),
+  tenantId: z.string().min(1, 'error:form.required'),
 });
 type FormValues = z.infer<typeof formSchema>;
 

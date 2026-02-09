@@ -16,7 +16,7 @@ import { useInfiniteQueryTotal } from '~/query/basic';
 
 type TenantsTableBarProps = BaseTableBarProps<Tenant, TenantsRouteSearchParams>;
 
-// TODO tenants table bar is somehow not on a single line. search input takes a second line. Check with other bars
+// TODO-036 tenants table bar is somehow not on a single line. search input takes a second line. Check with other bars
 export const TenantsTableBar = ({
   selected,
   queryKey,
@@ -63,7 +63,7 @@ export const TenantsTableBar = ({
   };
 
   const openCreateDialog = () => {
-    // TODO: Implement tenant creation dialog
+    // TODO-014: Implement tenant creation dialog
     toaster('Create tenant dialog not implemented yet', 'info');
   };
 

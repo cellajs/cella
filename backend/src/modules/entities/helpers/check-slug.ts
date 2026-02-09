@@ -17,7 +17,7 @@ const entitiesWithSlug = [...appConfig.contextEntityTypes, 'user'] satisfies Ent
 export const checkSlugAvailable = async (slug: string, db: DbOrTx, entityType?: EntityTypeWithSlug) => {
   const entities = entityType ? [entityType] : entitiesWithSlug;
 
-  const promises = entities.map((entity) => resolveEntity(entity, slug, db));
+  const promises = entities.map((entity) => resolveEntity(entity, slug, db, true));
   const results = await Promise.all(promises);
 
   // Check if any result is found, if so, slug is not available

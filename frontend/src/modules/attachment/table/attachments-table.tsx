@@ -58,7 +58,7 @@ function AttachmentsTable({ entity, canUpload = true, isSheet = false }: Attachm
 
   const queryOptions = attachmentsListQueryOptions({
     tenantId: entity.tenantId,
-    orgIdOrSlug: entity.id,
+    orgId: entity.id,
     q,
     sort,
     order,

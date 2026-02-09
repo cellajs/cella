@@ -42,7 +42,7 @@ export const attachmentsLimit = appConfig.requestLimits.attachments;
 
 type AttachmentFilters = Omit<GetAttachmentsData['query'], 'limit' | 'offset'> & {
   tenantId: string;
-  orgIdOrSlug: string;
+  orgId: string;
 };
 
 const keys = createEntityKeys<AttachmentFilters>('attachment');
@@ -60,7 +60,7 @@ const attachmentsMutationKeyBase = ['attachment'] as const;
 
 type AttachmentsListParams = Omit<NonNullable<GetAttachmentsData['query']>, 'limit' | 'offset'> & {
   tenantId: string;
-  orgIdOrSlug: string;
+  orgId: string;
   limit?: number;
 };
 
@@ -68,17 +68,10 @@ type AttachmentsListParams = Omit<NonNullable<GetAttachmentsData['query']>, 'lim
  * Infinite query options to get a paginated list of attachments for an organization.
  */
 export const attachmentsListQueryOptions = (params: AttachmentsListParams) => {
-  const {
-    tenantId,
-    orgIdOrSlug,
-    q = '',
-    sort = 'createdAt',
-    order = 'desc',
-    limit: baseLimit = attachmentsLimit,
-  } = params;
+  const { tenantId, orgId, q = '', sort = 'createdAt', order = 'desc', limit: baseLimit = attachmentsLimit } = params;
 
   const limit = String(baseLimit);
-  const keyFilters = { tenantId, orgIdOrSlug, q, sort, order };
+  const keyFilters = { tenantId, orgId, q, sort, order };
   const queryKey = keys.list.filtered(keyFilters);
   const baseQuery = { q, sort, order, limit };
 
@@ -88,7 +81,7 @@ export const attachmentsListQueryOptions = (params: AttachmentsListParams) => {
       const offset = String(_offset ?? (page ?? 0) * Number(limit));
 
       const result = await getAttachments({
-        path: { tenantId, orgIdOrSlug },
+        path: { tenantId, orgId },
         query: { ...baseQuery, offset },
         signal,
       });
@@ -104,17 +97,17 @@ export const attachmentsListQueryOptions = (params: AttachmentsListParams) => {
  * Uses cache token from SSE notification for efficient server-side cache hit.
  *
  * @param tenantId - Tenant ID
- * @param orgIdOrSlug - Organization ID or slug
+ * @param orgId - Organization ID or slug
  * @param id - Attachment ID
  */
-export const attachmentQueryOptions = (tenantId: string, orgIdOrSlug: string, id: string) => ({
+export const attachmentQueryOptions = (tenantId: string, orgId: string, id: string) => ({
   queryKey: keys.detail.byId(id),
   queryFn: async () => {
     // Check for cache token from SSE notification
     const cacheToken = getCacheToken('attachment', id);
 
     const result = await getAttachment({
-      path: { tenantId, orgIdOrSlug, id },
+      path: { tenantId, orgId, id },
       // Pass cache token header for server-side cache hit
       headers: cacheToken ? { 'X-Cache-Token': cacheToken } : undefined,
     });
@@ -135,17 +128,15 @@ export const findAttachmentInListCache = (id: string) => findInListCache<Attachm
  */
 export function useGroupAttachments(
   tenantId: string | undefined,
-  orgIdOrSlug: string | undefined,
+  orgId: string | undefined,
   groupId: string | undefined,
 ) {
   const queryOptions =
-    tenantId && orgIdOrSlug
-      ? attachmentsListQueryOptions({ tenantId, orgIdOrSlug, sort: 'createdAt', order: 'desc' })
-      : null;
+    tenantId && orgId ? attachmentsListQueryOptions({ tenantId, orgId, sort: 'createdAt', order: 'desc' }) : null;
 
   const { data } = useInfiniteQuery({
     ...queryOptions!,
-    enabled: !!tenantId && !!orgIdOrSlug && !!groupId,
+    enabled: !!tenantId && !!orgId && !!groupId,
     select: (data) => {
       if (!groupId) return null;
       const allItems = data.pages.flatMap((page) => page.items);
@@ -165,7 +156,7 @@ export function useGroupAttachments(
  * Custom hook to create one or more attachments with optimistic updates.
  * Uses sync utilities for transaction metadata.
  */
-export const useAttachmentCreateMutation = (tenantId: string, orgIdOrSlug: string) => {
+export const useAttachmentCreateMutation = (tenantId: string, orgId: string) => {
   const queryClient = useQueryClient();
   const mutateCache = useMutateQueryData(keys.list.base);
 
@@ -177,7 +168,7 @@ export const useAttachmentCreateMutation = (tenantId: string, orgIdOrSlug: strin
       const tx = createTxForCreate();
       // Body is array with tx embedded in each item
       const body = data.map((item) => ({ ...item, tx }));
-      const result = await createAttachments({ path: { tenantId, orgIdOrSlug }, body });
+      const result = await createAttachments({ path: { tenantId, orgId }, body });
       return result;
     },
 
@@ -233,7 +224,7 @@ export const useAttachmentCreateMutation = (tenantId: string, orgIdOrSlug: strin
  * Custom hook to update an existing attachment with optimistic updates.
  * Implements squashing: cancels pending same-field mutations.
  */
-export const useAttachmentUpdateMutation = (tenantId: string, orgIdOrSlug: string) => {
+export const useAttachmentUpdateMutation = (tenantId: string, orgId: string) => {
   const queryClient = useQueryClient();
   const mutateCache = useMutateQueryData(keys.list.base);
 
@@ -246,7 +237,7 @@ export const useAttachmentUpdateMutation = (tenantId: string, orgIdOrSlug: strin
       const cachedEntity = findAttachmentInListCache(id);
       const tx = createTxForUpdate(cachedEntity);
       // Body has tx embedded directly
-      const result = await updateAttachment({ path: { tenantId, orgIdOrSlug, id }, body: { ...data, tx } });
+      const result = await updateAttachment({ path: { tenantId, orgId, id }, body: { ...data, tx } });
       return result;
     },
 
@@ -297,7 +288,7 @@ export const useAttachmentUpdateMutation = (tenantId: string, orgIdOrSlug: strin
  * Custom hook to delete attachments with optimistic updates.
  * Accepts array of attachments for batch delete compatibility.
  */
-export const useAttachmentDeleteMutation = (tenantId: string, orgIdOrSlug: string) => {
+export const useAttachmentDeleteMutation = (tenantId: string, orgId: string) => {
   const queryClient = useQueryClient();
   const mutateCache = useMutateQueryData(keys.list.base);
 
@@ -308,7 +299,7 @@ export const useAttachmentDeleteMutation = (tenantId: string, orgIdOrSlug: strin
     mutationFn: async (attachments: Attachment[]) => {
       const ids = attachments.map((a) => a.id);
       const tx = createTxForDelete();
-      await deleteAttachments({ path: { tenantId, orgIdOrSlug }, body: { ids, tx } });
+      await deleteAttachments({ path: { tenantId, orgId }, body: { ids, tx } });
     },
 
     // Runs BEFORE mutationFn - remove items immediately from UI
@@ -345,25 +336,17 @@ export const useAttachmentDeleteMutation = (tenantId: string, orgIdOrSlug: strin
 
 /**
  * Register mutation defaults for attachments.
- * NOTE: Attachment mutations require tenantId and orgIdOrSlug which must be included in mutation variables
+ * NOTE: Attachment mutations require tenantId and orgId which must be included in mutation variables
  * for persistence to work. The hooks wrap this internally.
  */
 addMutationRegistrar((queryClient: QueryClient) => {
   // Create mutation - variables include path params for persistence
   queryClient.setMutationDefaults(keys.create, {
-    mutationFn: async ({
-      tenantId,
-      orgIdOrSlug,
-      data,
-    }: {
-      tenantId: string;
-      orgIdOrSlug: string;
-      data: CreateAttachmentInput;
-    }) => {
+    mutationFn: async ({ tenantId, orgId, data }: { tenantId: string; orgId: string; data: CreateAttachmentInput }) => {
       const tx = createTxForCreate();
       // Body is array with tx embedded in each item
       const body = data.map((item) => ({ ...item, tx }));
-      return createAttachments({ path: { tenantId, orgIdOrSlug }, body });
+      return createAttachments({ path: { tenantId, orgId }, body });
     },
   });
 
@@ -371,12 +354,12 @@ addMutationRegistrar((queryClient: QueryClient) => {
   queryClient.setMutationDefaults(keys.update, {
     mutationFn: async ({
       tenantId,
-      orgIdOrSlug,
+      orgId,
       id,
       data,
     }: {
       tenantId: string;
-      orgIdOrSlug: string;
+      orgId: string;
       id: string;
       data: UpdateAttachmentInput;
     }) => {
@@ -384,7 +367,7 @@ addMutationRegistrar((queryClient: QueryClient) => {
       const cachedEntity = findAttachmentInListCache(id);
       const tx = createTxForUpdate(cachedEntity);
       // Body has tx embedded directly
-      return updateAttachment({ path: { tenantId, orgIdOrSlug, id }, body: { ...data, tx } });
+      return updateAttachment({ path: { tenantId, orgId, id }, body: { ...data, tx } });
     },
   });
 
@@ -392,15 +375,15 @@ addMutationRegistrar((queryClient: QueryClient) => {
   queryClient.setMutationDefaults(keys.delete, {
     mutationFn: async ({
       tenantId,
-      orgIdOrSlug,
+      orgId,
       attachments,
     }: {
       tenantId: string;
-      orgIdOrSlug: string;
+      orgId: string;
       attachments: Attachment[];
     }) => {
       const ids = attachments.map((a) => a.id);
-      await deleteAttachments({ path: { tenantId, orgIdOrSlug }, body: { ids } });
+      await deleteAttachments({ path: { tenantId, orgId }, body: { ids } });
     },
   });
 });

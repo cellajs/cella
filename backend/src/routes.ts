@@ -33,9 +33,9 @@ const app = baseApp
   .route('/metrics', metricsRouteHandlers)
   .route('/', organizationRouteHandlers)
   .route('/', pageRouteHandlers)
-  // Tenant-scoped routes: /:tenantId/:orgIdOrSlug/...
-  .route('/:tenantId/:orgIdOrSlug/users', userRouteHandlers)
-  .route('/:tenantId/:orgIdOrSlug/attachments', attachmentRouteHandlers)
-  .route('/:tenantId/:orgIdOrSlug/memberships', membershipsRouteHandlers);
+  // Tenant-scoped routes: /:tenantId/:orgId/...
+  .route('/:tenantId/:orgId/users', userRouteHandlers)
+  .route('/:tenantId/:orgId/attachments', attachmentRouteHandlers)
+  .route('/:tenantId/:orgId/memberships', membershipsRouteHandlers);
 
 export default app;

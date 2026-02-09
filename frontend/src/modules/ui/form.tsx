@@ -12,6 +12,7 @@ import {
   useFormContext,
   useFormState,
 } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
 import { Label } from '~/modules/ui/label';
 import { cn } from '~/utils/cn';
@@ -170,9 +171,11 @@ export function FormDescription({ className, children, ...props }: React.Compone
 }
 
 export function FormMessage({ className, ...props }: React.ComponentProps<'p'>) {
+  const { t, i18n } = useTranslation();
   const { error, formMessageId, invalid } = useFormField();
-  const body = error ? String(error?.message ?? '') : props.children;
-  // const body = error ? String(Array.isArray(error) ? error.find((err) => err?.message)?.message : error?.message) : props.children;
+  const message = error?.message ?? '';
+  // Translate error messages that are i18n keys (e.g. 'error:form.required')
+  const body = error ? (message && i18n.exists(message) ? t(message) : message) : props.children;
 
   if (!body || !invalid) return null;
 

@@ -45,7 +45,7 @@ export const findOrganizationInListCache = (id: string) =>
 export const organizationQueryOptions = (id: string, tenantId: string) =>
   queryOptions({
     queryKey: keys.detail.byId(id),
-    queryFn: async () => getOrganization({ path: { tenantId, idOrSlug: id } }),
+    queryFn: async () => getOrganization({ path: { tenantId, organizationId: id } }),
     placeholderData: () => findOrganizationInListCache(id),
   });
 

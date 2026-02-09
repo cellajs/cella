@@ -84,7 +84,7 @@ export const OrganizationsTableBar = ({
       clearSelection();
     };
 
-    // TODO: Handle batch delete across different tenants - currently assumes all selected orgs are in same tenant
+    // TODO-021: Handle batch delete across different tenants - currently assumes all selected orgs are in same tenant
     const tenantId = selected[0]?.tenantId ?? '';
     createDialog(<DeleteOrganizations tenantId={tenantId} organizations={selected} dialog callback={callback} />, {
       id: 'delete-organizations',

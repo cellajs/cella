@@ -2,7 +2,7 @@
  * Middleware to ensure tenant-scoped access for authenticated routes.
  *
  * This middleware:
- * 1. Extracts tenantId and orgIdOrSlug from URL path
+ * 1. Extracts tenantId and orgId from URL path
  * 2. Normalizes tenant ID to lowercase
  * 3. Verifies user has membership in this tenant (or is system admin)
  * 4. Wraps the request in a transaction with RLS session variables set

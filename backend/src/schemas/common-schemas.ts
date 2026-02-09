@@ -67,8 +67,8 @@ export const languageSchema = z.enum(appConfig.languages);
  * Common param schemas
  ************************************************************************************************/
 
-// TODO apply regex in other places?
-// TODO is limiting size better done using zod for readability also in openapi?
+// TODO-030 apply regex in other places?
+// TODO-030 is limiting size better done using zod for readability also in openapi?
 /** Tenant ID schema: 1-24 char lowercase alphanumeric */
 export const tenantIdSchema = z
   .string()
@@ -79,13 +79,13 @@ export const tenantIdSchema = z
 /** Schema for entity identifier id */
 export const entityIdParamSchema = z.object({ id: idSchema });
 
-/** Schema for entity identifier id or slug */
-export const entityIdOrSlugParamSchema = z.object({ idOrSlug: idSchema });
+/** Schema for optional slug query flag — when true, resolve entity by slug instead of ID */
+export const slugQuerySchema = z.object({ slug: booleanTransformSchema.optional() });
 
-/** Schema for tenant-scoped entity id or slug (for organization routes) */
-export const tenantIdOrSlugParamSchema = z.object({
+/** Schema for tenant-scoped organization id (for getOrganization route) */
+export const tenantOrganizationIdParamSchema = z.object({
   tenantId: tenantIdSchema,
-  idOrSlug: idSchema,
+  organizationId: idSchema,
 });
 
 /** Schema for tenant-scoped entity id (for organization routes) */
@@ -102,9 +102,6 @@ export const tenantOnlyParamSchema = z.object({
 /** Schema for an organization identifier orgId */
 export const inOrgParamSchema = z.object({ orgId: idSchema });
 
-/** Schema for entity idOrSlug within an organization orgId */
-export const entityIdOrSlugInOrgParamSchema = z.object({ idOrSlug: idSchema, orgId: idSchema });
-
 /** Schema for entity id within an organization orgId */
 export const idInOrgParamSchema = z.object({ id: idSchema, orgId: idSchema });
 
@@ -112,24 +109,24 @@ export const idInOrgParamSchema = z.object({ id: idSchema, orgId: idSchema });
  * Tenant-scoped param schemas (for RLS-enabled routes)
  ************************************************************************************************/
 
-/** Schema for tenant-scoped routes: tenantId + orgIdOrSlug */
+/** Schema for tenant-scoped routes: tenantId + orgId */
 export const tenantOrgParamSchema = z.object({
   tenantId: tenantIdSchema,
-  orgIdOrSlug: idSchema,
+  orgId: idSchema,
 });
 
 /** Schema for entity id within tenant + org context */
 export const idInTenantOrgParamSchema = z.object({
   tenantId: tenantIdSchema,
-  orgIdOrSlug: idSchema,
+  orgId: idSchema,
   id: idSchema,
 });
 
-/** Schema for entity idOrSlug within tenant + org context */
-export const idOrSlugInTenantOrgParamSchema = z.object({
+/** Schema for user id within tenant + org context (for getUser route) */
+export const userIdInTenantOrgParamSchema = z.object({
   tenantId: tenantIdSchema,
-  orgIdOrSlug: idSchema,
-  idOrSlug: idSchema,
+  orgId: idSchema,
+  userId: idSchema,
 });
 
 /*************************************************************************************************

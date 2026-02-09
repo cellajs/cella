@@ -23,7 +23,7 @@ import { getContextEntityRoute } from '~/routes-resolver';
 type PageHeaderProps = Omit<PageCoverProps, 'id' | 'url'> & {
   entity: ContextEntityData | UserBase;
   panel?: React.ReactNode;
-  parent?: { idOrSlug: string; entityType: ContextEntityType | 'user' };
+  parent?: { entityId: string; entityType: ContextEntityType | 'user' };
   disableScroll?: boolean;
 };
 
@@ -37,7 +37,7 @@ export function PageHeader({ entity, panel, parent, disableScroll, ...coverProps
 
   // Find parent entity from cache
   const parentData = useFindInListCache<ContextEntityData>(parent ? [parent.entityType] : [], (item) =>
-    parent ? item.id === parent.idOrSlug || item.slug === parent.idOrSlug : false,
+    parent ? item.id === parent.entityId || item.slug === parent.entityId : false,
   );
 
   // Scroll to page header on load

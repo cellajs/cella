@@ -5,7 +5,7 @@ import { wsClient, type WsState } from '../websocket-client';
 export type ReplicationState = 'active' | 'paused' | 'stopped';
 
 
-// TODO review the value of having this vs inlining this at the call site. Write a report in md
+// TODO-045 review the value of having this vs inlining this at the call site
 
 /** Health state exposed for monitoring */
 export interface CdcHealthState {

@@ -3502,10 +3502,12 @@ export type GetOrganizationData = {
   body?: never;
   path: {
     tenantId: string;
-    idOrSlug: string;
+    organizationId: string;
   };
-  query?: never;
-  url: '/{tenantId}/organizations/{idOrSlug}';
+  query?: {
+    slug?: string | boolean;
+  };
+  url: '/{tenantId}/organizations/{organizationId}';
 };
 
 export type GetOrganizationErrors = {
@@ -3873,7 +3875,7 @@ export type GetUsers2Data = {
   body?: never;
   path: {
     tenantId: string;
-    orgIdOrSlug: string;
+    orgId: string;
   };
   query?: {
     q?: string;
@@ -3885,7 +3887,7 @@ export type GetUsers2Data = {
     targetEntityType?: 'organization';
     targetEntityId?: string;
   };
-  url: '/{tenantId}/{orgIdOrSlug}/users';
+  url: '/{tenantId}/{orgId}/users';
 };
 
 export type GetUsers2Errors = {
@@ -3934,11 +3936,13 @@ export type GetUserData = {
   body?: never;
   path: {
     tenantId: string;
-    orgIdOrSlug: string;
-    idOrSlug: string;
+    orgId: string;
+    userId: string;
   };
-  query?: never;
-  url: '/{tenantId}/{orgIdOrSlug}/users/{idOrSlug}';
+  query?: {
+    slug?: string | boolean;
+  };
+  url: '/{tenantId}/{orgId}/users/{userId}';
 };
 
 export type GetUserErrors = {
@@ -3985,10 +3989,10 @@ export type DeleteAttachmentsData = {
   };
   path: {
     tenantId: string;
-    orgIdOrSlug: string;
+    orgId: string;
   };
   query?: never;
-  url: '/{tenantId}/{orgIdOrSlug}/attachments';
+  url: '/{tenantId}/{orgId}/attachments';
 };
 
 export type DeleteAttachmentsErrors = {
@@ -4041,7 +4045,7 @@ export type GetAttachmentsData = {
   body?: never;
   path: {
     tenantId: string;
-    orgIdOrSlug: string;
+    orgId: string;
   };
   query?: {
     q?: string;
@@ -4051,7 +4055,7 @@ export type GetAttachmentsData = {
     limit?: string;
     modifiedAfter?: string;
   };
-  url: '/{tenantId}/{orgIdOrSlug}/attachments';
+  url: '/{tenantId}/{orgId}/attachments';
 };
 
 export type GetAttachmentsErrors = {
@@ -4111,10 +4115,10 @@ export type CreateAttachmentsData = {
   }>;
   path: {
     tenantId: string;
-    orgIdOrSlug: string;
+    orgId: string;
   };
   query?: never;
-  url: '/{tenantId}/{orgIdOrSlug}/attachments';
+  url: '/{tenantId}/{orgId}/attachments';
 };
 
 export type CreateAttachmentsErrors = {
@@ -4183,12 +4187,12 @@ export type GetPresignedUrlData = {
   body?: never;
   path: {
     tenantId: string;
-    orgIdOrSlug: string;
+    orgId: string;
   };
   query: {
     key: string;
   };
-  url: '/{tenantId}/{orgIdOrSlug}/attachments/presigned-url';
+  url: '/{tenantId}/{orgId}/attachments/presigned-url';
 };
 
 export type GetPresignedUrlErrors = {
@@ -4229,11 +4233,11 @@ export type GetAttachmentData = {
   body?: never;
   path: {
     tenantId: string;
-    orgIdOrSlug: string;
+    orgId: string;
     id: string;
   };
   query?: never;
-  url: '/{tenantId}/{orgIdOrSlug}/attachments/{id}';
+  url: '/{tenantId}/{orgId}/attachments/{id}';
 };
 
 export type GetAttachmentErrors = {
@@ -4278,11 +4282,11 @@ export type UpdateAttachmentData = {
   };
   path: {
     tenantId: string;
-    orgIdOrSlug: string;
+    orgId: string;
     id: string;
   };
   query?: never;
-  url: '/{tenantId}/{orgIdOrSlug}/attachments/{id}';
+  url: '/{tenantId}/{orgId}/attachments/{id}';
 };
 
 export type UpdateAttachmentErrors = {
@@ -4325,7 +4329,7 @@ export type RedirectToAttachmentData = {
     id: string;
   };
   query?: never;
-  url: '/{tenantId}/{orgIdOrSlug}/attachments/{id}/link';
+  url: '/{tenantId}/{orgId}/attachments/{id}/link';
 };
 
 export type RedirectToAttachmentErrors = {
@@ -4366,13 +4370,13 @@ export type DeleteMembershipsData = {
   };
   path: {
     tenantId: string;
-    orgIdOrSlug: string;
+    orgId: string;
   };
   query: {
     entityId: string;
     entityType: 'organization';
   };
-  url: '/{tenantId}/{orgIdOrSlug}/memberships';
+  url: '/{tenantId}/{orgId}/memberships';
 };
 
 export type DeleteMembershipsErrors = {
@@ -4428,13 +4432,13 @@ export type MembershipInviteData = {
   };
   path: {
     tenantId: string;
-    orgIdOrSlug: string;
+    orgId: string;
   };
   query: {
     entityId: string;
     entityType: 'organization';
   };
-  url: '/{tenantId}/{orgIdOrSlug}/memberships';
+  url: '/{tenantId}/{orgId}/memberships';
 };
 
 export type MembershipInviteErrors = {
@@ -4493,11 +4497,11 @@ export type UpdateMembershipData = {
   };
   path: {
     tenantId: string;
-    orgIdOrSlug: string;
+    orgId: string;
     id: string;
   };
   query?: never;
-  url: '/{tenantId}/{orgIdOrSlug}/memberships/{id}';
+  url: '/{tenantId}/{orgId}/memberships/{id}';
 };
 
 export type UpdateMembershipErrors = {
@@ -4541,7 +4545,7 @@ export type HandleMembershipInvitationData = {
     acceptOrReject: 'accept' | 'reject';
   };
   query?: never;
-  url: '/{tenantId}/{orgIdOrSlug}/memberships/{id}/{acceptOrReject}';
+  url: '/{tenantId}/{orgId}/memberships/{id}/{acceptOrReject}';
 };
 
 export type HandleMembershipInvitationErrors = {
@@ -4583,7 +4587,7 @@ export type GetMembersData = {
   body?: never;
   path: {
     tenantId: string;
-    orgIdOrSlug: string;
+    orgId: string;
   };
   query: {
     q?: string;
@@ -4595,7 +4599,7 @@ export type GetMembersData = {
     entityType: 'organization';
     role?: 'admin' | 'member';
   };
-  url: '/{tenantId}/{orgIdOrSlug}/memberships/members';
+  url: '/{tenantId}/{orgId}/memberships/members';
 };
 
 export type GetMembersErrors = {
@@ -4659,7 +4663,7 @@ export type GetPendingMembershipsData = {
   body?: never;
   path: {
     tenantId: string;
-    orgIdOrSlug: string;
+    orgId: string;
   };
   query: {
     q?: string;
@@ -4670,7 +4674,7 @@ export type GetPendingMembershipsData = {
     entityId: string;
     entityType: 'organization';
   };
-  url: '/{tenantId}/{orgIdOrSlug}/memberships/pending';
+  url: '/{tenantId}/{orgId}/memberships/pending';
 };
 
 export type GetPendingMembershipsErrors = {

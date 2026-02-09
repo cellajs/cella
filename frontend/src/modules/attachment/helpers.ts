@@ -23,16 +23,11 @@ export function getPublicFileUrl(key: string): string {
  * Gets the URL for a file based on its public/private status.
  * Public files use direct CDN URL, private files use presigned URL endpoint.
  */
-export async function getFileUrl(
-  key: string,
-  isPublic: boolean,
-  tenantId: string,
-  orgIdOrSlug: string,
-): Promise<string> {
+export async function getFileUrl(key: string, isPublic: boolean, tenantId: string, orgId: string): Promise<string> {
   if (isPublic) {
     return getPublicFileUrl(key);
   }
-  return getPresignedUrl({ path: { tenantId, orgIdOrSlug }, query: { key } });
+  return getPresignedUrl({ path: { tenantId, orgId }, query: { key } });
 }
 
 /** Result of resolving an attachment URL */

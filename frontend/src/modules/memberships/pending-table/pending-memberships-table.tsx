@@ -51,7 +51,7 @@ export function PendingMembershipsTable({ entity }: PendingMembershipsTableProps
     entityId: entity.id,
     entityType: entity.entityType,
     tenantId: entity.tenantId,
-    orgIdOrSlug: entity.organizationId || entity.id,
+    orgId: entity.organizationId || entity.id,
     ...search,
     limit,
   });

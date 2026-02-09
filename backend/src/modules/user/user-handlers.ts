@@ -113,26 +113,27 @@ const userRouteHandlers = app
     return ctx.json({ items, total }, 200);
   })
   /**
-   * Get a user by id or slug within the organization context
+   * Get a user by id within the organization context. Pass ?slug=true to resolve by slug.
    */
   .openapi(userRoutes.getUser, async (ctx) => {
-    const { idOrSlug } = ctx.req.valid('param');
+    const { userId } = ctx.req.valid('param');
+    const { slug: bySlug } = ctx.req.valid('query');
     const requestingUser = ctx.var.user;
     const organization = ctx.var.organization;
     const db = ctx.var.db; // Use tenant-scoped transaction
 
     // Check if requesting self (by id or slug)
-    if (idOrSlug === requestingUser.id || idOrSlug === requestingUser.slug) {
+    if (userId === requestingUser.id || (bySlug && userId === requestingUser.slug)) {
       return ctx.json(requestingUser, 200);
     }
 
-    // Resolve user by ID or slug
-    // TODO we should scan codebase for usage of resolveEntity in handlers directy.
+    // Resolve user by ID (or slug when bySlug is true)
+    // TODO-009 we should scan codebase for usage of resolveEntity in handlers directy.
     // Perhaps we would do well to make it explicitly internal use only
     // Since the permission wrapped is preferred getValidEntity
-    const targetUser = await resolveEntity('user', idOrSlug, db);
+    const targetUser = await resolveEntity('user', userId, db, bySlug);
 
-    if (!targetUser) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { user: idOrSlug } });
+    if (!targetUser) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { user: userId } });
 
     // Verify target user has membership in the current organization
     const [orgMembership] = await db

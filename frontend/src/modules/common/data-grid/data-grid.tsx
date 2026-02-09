@@ -91,7 +91,7 @@ interface EditCellState<R> extends Position {
   readonly originalRow: R;
 }
 
-// TODO seems to be heavy when resizing browser tab, please investigate
+// TODO-017 seems to be heavy when resizing browser tab, please investigate
 
 /** Arguments passed to onRowsEndApproaching callback */
 export interface RowsEndApproachingArgs {

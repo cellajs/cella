@@ -1488,9 +1488,13 @@ export const zGetOrganizationData = z.object({
       .string()
       .max(24)
       .regex(/^[a-z0-9]+$/),
-    idOrSlug: z.string(),
+    organizationId: z.string(),
   }),
-  query: z.optional(z.never()),
+  query: z.optional(
+    z.object({
+      slug: z.optional(z.union([z.string(), z.boolean()])).default('false'),
+    }),
+  ),
 });
 
 /**
@@ -1655,7 +1659,7 @@ export const zGetUsers2Data = z.object({
       .string()
       .max(24)
       .regex(/^[a-z0-9]+$/),
-    orgIdOrSlug: z.string(),
+    orgId: z.string(),
   }),
   query: z.optional(
     z.object({
@@ -1693,10 +1697,14 @@ export const zGetUserData = z.object({
       .string()
       .max(24)
       .regex(/^[a-z0-9]+$/),
-    orgIdOrSlug: z.string(),
-    idOrSlug: z.string(),
+    orgId: z.string(),
+    userId: z.string(),
   }),
-  query: z.optional(z.never()),
+  query: z.optional(
+    z.object({
+      slug: z.optional(z.union([z.string(), z.boolean()])).default('false'),
+    }),
+  ),
 });
 
 /**
@@ -1719,7 +1727,7 @@ export const zDeleteAttachmentsData = z.object({
       .string()
       .max(24)
       .regex(/^[a-z0-9]+$/),
-    orgIdOrSlug: z.string(),
+    orgId: z.string(),
   }),
   query: z.optional(z.never()),
 });
@@ -1740,7 +1748,7 @@ export const zGetAttachmentsData = z.object({
       .string()
       .max(24)
       .regex(/^[a-z0-9]+$/),
-    orgIdOrSlug: z.string(),
+    orgId: z.string(),
   }),
   query: z.optional(
     z.object({
@@ -1790,7 +1798,7 @@ export const zCreateAttachmentsData = z.object({
       .string()
       .max(24)
       .regex(/^[a-z0-9]+$/),
-    orgIdOrSlug: z.string(),
+    orgId: z.string(),
   }),
   query: z.optional(z.never()),
 });
@@ -1815,7 +1823,7 @@ export const zGetPresignedUrlData = z.object({
       .string()
       .max(24)
       .regex(/^[a-z0-9]+$/),
-    orgIdOrSlug: z.string(),
+    orgId: z.string(),
   }),
   query: z.object({
     key: z.string(),
@@ -1834,7 +1842,7 @@ export const zGetAttachmentData = z.object({
       .string()
       .max(24)
       .regex(/^[a-z0-9]+$/),
-    orgIdOrSlug: z.string(),
+    orgId: z.string(),
     id: z.string(),
   }),
   query: z.optional(z.never()),
@@ -1856,7 +1864,7 @@ export const zUpdateAttachmentData = z.object({
       .string()
       .max(24)
       .regex(/^[a-z0-9]+$/),
-    orgIdOrSlug: z.string(),
+    orgId: z.string(),
     id: z.string(),
   }),
   query: z.optional(z.never()),
@@ -1884,7 +1892,7 @@ export const zDeleteMembershipsData = z.object({
       .string()
       .max(24)
       .regex(/^[a-z0-9]+$/),
-    orgIdOrSlug: z.string(),
+    orgId: z.string(),
   }),
   query: z.object({
     entityId: z.string(),
@@ -1911,7 +1919,7 @@ export const zMembershipInviteData = z.object({
       .string()
       .max(24)
       .regex(/^[a-z0-9]+$/),
-    orgIdOrSlug: z.string(),
+    orgId: z.string(),
   }),
   query: z.object({
     entityId: z.string(),
@@ -1943,7 +1951,7 @@ export const zUpdateMembershipData = z.object({
       .string()
       .max(24)
       .regex(/^[a-z0-9]+$/),
-    orgIdOrSlug: z.string(),
+    orgId: z.string(),
     id: z.string(),
   }),
   query: z.optional(z.never()),
@@ -1975,7 +1983,7 @@ export const zGetMembersData = z.object({
       .string()
       .max(24)
       .regex(/^[a-z0-9]+$/),
-    orgIdOrSlug: z.string(),
+    orgId: z.string(),
   }),
   query: z.object({
     q: z.optional(z.string()),
@@ -2026,7 +2034,7 @@ export const zGetPendingMembershipsData = z.object({
       .string()
       .max(24)
       .regex(/^[a-z0-9]+$/),
-    orgIdOrSlug: z.string(),
+    orgId: z.string(),
   }),
   query: z.object({
     q: z.optional(z.string()),

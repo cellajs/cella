@@ -19,7 +19,7 @@ export default defineConfig({
     projects: [
       // Reference folders directly - Vitest picks up their vitest.config.ts
       'backend',
-      'config',
+      'shared',
       // Frontend: inline config for node tests only (Storybook tests run separately)
       {
         test: {

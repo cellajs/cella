@@ -1141,7 +1141,18 @@
             "required": true,
             "maxLength": 24
           },
-          "idOrSlug": { "type": "string", "required": true }
+          "organizationId": { "type": "string", "required": true }
+        }
+      },
+      "query": {
+        "properties": {
+          "slug": {
+            "required": false,
+            "anyOf": [
+              { "type": "string", "required": false },
+              { "type": "boolean", "required": false }
+            ]
+          }
         }
       }
     }

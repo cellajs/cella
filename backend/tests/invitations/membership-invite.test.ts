@@ -55,7 +55,7 @@ describe('Membership Invitation', async () => {
 
   const makeInviteRequest = async (organizationId: string, inviteData: any, sessionCookie: string | null) => {
     return await client[organizationId]['memberships'].$post(
-      { json: inviteData, query: { idOrSlug: organizationId, entityType: 'organization' } },
+      { json: inviteData, query: { entityId: organizationId, entityType: 'organization' } },
       {
         headers: {
           ...defaultHeaders,

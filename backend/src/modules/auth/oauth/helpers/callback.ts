@@ -248,7 +248,7 @@ const inviteCallbackFlow = async ({
     .where(eq(emailsTable.email, providerUser.email));
   if (users.length) throw new AppError(409, 'oauth_email_exists', 'error');
 
-  // TODO-018 User already signed up meanwhile?
+  // TODO-013 User already signed up meanwhile?
 
   // No user match → create a new user
   const user = await handleCreateUser({ newUser: providerUser, emailVerified: false });

@@ -462,7 +462,7 @@ When a user creates an entity offline and edits it before reconnecting, mutation
 - First tab to acquire Web Lock becomes leader
 - Automatic failover: when leader closes, a waiting follower is promoted
 
-**Why leader-only mutation persistence?** // TODO-025 review this
+**Why leader-only mutation persistence?** // TODO-015 review this
 
 All tabs share a single IndexedDB record for the React Query cache. Each persist operation overwrites the entire record. Without leader-only persistence:
 
@@ -562,7 +562,7 @@ activityBus.onAny((event) => {
 });
 ```
 
-// TODO-026 we need to consider a variant for a list of items because SSE could also trigger a lot of paginated requests.
+// TODO-016 we need to consider a variant for a list of items because SSE could also trigger a lot of paginated requests.
 
 **On delete:** Just invalidate. No tombstone needed — let DB return 404 if client missed SSE.
 

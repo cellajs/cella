@@ -78,7 +78,7 @@ export const MembersTableBar = ({
     createDialog(
       <DeleteMemberships
         tenantId={entity.tenantId}
-        orgIdOrSlug={entity.organizationId || entity.id}
+        orgId={entity.organizationId || entity.id}
         entityId={entity.id}
         entityType={entity.entityType}
         dialog
@@ -131,7 +131,7 @@ export const MembersTableBar = ({
         entityId: entity.id,
         entityType: entity.entityType,
       },
-      path: { tenantId: entity.tenantId, orgIdOrSlug: entity.organizationId || entity.id },
+      path: { tenantId: entity.tenantId, orgId: entity.organizationId || entity.id },
     });
     return items;
   };
@@ -179,7 +179,7 @@ export const MembersTableBar = ({
           <FilterBarSearch>
             <TableSearch name="memberSearch" value={q} setQuery={onSearch} />
           </FilterBarSearch>
-          {/* TODO allow dropdowner here or a variantion of of so it can be shown as drawer? perhaps combobox? */}
+          {/* TODO-033 allow dropdowner here or a variantion of so it can be shown as drawer? perhaps combobox? */}
           <FilterBarFilters>
             <SelectRole
               entity

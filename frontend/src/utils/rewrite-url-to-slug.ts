@@ -8,14 +8,14 @@ import { redirect } from '@tanstack/react-router';
  * the prettier slug-based URL without causing a re-render or extra fetch.
  *
  * @param params - Current route params
- * @param slugOverrides - Map of param names to their slug values (e.g., { idOrSlug: 'my-slug', orgIdOrSlug: 'my-org' })
+ * @param slugOverrides - Map of param names to their slug values (e.g., { orgId: 'my-org', tenantId: 'abc' })
  * @param routeTo - Target route path
  *
  * @example
  * beforeLoad: async ({ params }) => {
- *   const workspace = await queryClient.ensureQueryData(workspaceQueryOptions(params.idOrSlug));
+ *   const workspace = await queryClient.ensureQueryData(workspaceQueryOptions(params.orgId));
  *   const org = queryClient.getQueryData(organizationQueryKeys.detail.byId(workspace.organizationId));
- *   rewriteUrlToSlug(params, { idOrSlug: workspace.slug, orgIdOrSlug: org?.slug }, WorkspaceRoute.to);
+ *   rewriteUrlToSlug(params, { orgId: org?.slug, tenantId }, WorkspaceRoute.to);
  *   return { workspace };
  * }
  */

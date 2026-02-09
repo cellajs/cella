@@ -8429,7 +8429,7 @@
         }
       }
     },
-    "/{tenantId}/organizations/{idOrSlug}": {
+    "/{tenantId}/organizations/{organizationId}": {
       "get": {
         "security": [
           {
@@ -8441,7 +8441,7 @@
           "organizations"
         ],
         "summary": "Get organization",
-        "description": "Retrieves an *organization* by ID or slug within a tenant.",
+        "description": "Retrieves an *organization* by ID within a tenant. Pass `?slug=true` to resolve by slug instead.",
         "x-guard": [
           "authGuard",
           "tenantGuard"
@@ -8464,8 +8464,24 @@
               "type": "string"
             },
             "required": true,
-            "name": "idOrSlug",
+            "name": "organizationId",
             "in": "path"
+          },
+          {
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "boolean"
+                }
+              ],
+              "default": "false"
+            },
+            "required": false,
+            "name": "slug",
+            "in": "query"
           }
         ],
         "responses": {
@@ -9523,7 +9539,7 @@
         }
       }
     },
-    "/{tenantId}/{orgIdOrSlug}/users": {
+    "/{tenantId}/{orgId}/users": {
       "get": {
         "security": [
           {
@@ -9558,7 +9574,7 @@
               "type": "string"
             },
             "required": true,
-            "name": "orgIdOrSlug",
+            "name": "orgId",
             "in": "path"
           },
           {
@@ -9811,7 +9827,7 @@
         }
       }
     },
-    "/{tenantId}/{orgIdOrSlug}/users/{idOrSlug}": {
+    "/{tenantId}/{orgId}/users/{userId}": {
       "get": {
         "security": [
           {
@@ -9823,7 +9839,7 @@
           "users"
         ],
         "summary": "Get user",
-        "description": "Retrieves a *user* by ID or slug in an organization context.",
+        "description": "Retrieves a *user* by ID in an organization context. Pass `?slug=true` to resolve by slug instead.",
         "x-guard": [
           "authGuard",
           "tenantGuard"
@@ -9846,7 +9862,7 @@
               "type": "string"
             },
             "required": true,
-            "name": "orgIdOrSlug",
+            "name": "orgId",
             "in": "path"
           },
           {
@@ -9854,8 +9870,24 @@
               "type": "string"
             },
             "required": true,
-            "name": "idOrSlug",
+            "name": "userId",
             "in": "path"
+          },
+          {
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "boolean"
+                }
+              ],
+              "default": "false"
+            },
+            "required": false,
+            "name": "slug",
+            "in": "query"
           }
         ],
         "responses": {
@@ -9909,7 +9941,7 @@
         }
       }
     },
-    "/{tenantId}/{orgIdOrSlug}/attachments": {
+    "/{tenantId}/{orgId}/attachments": {
       "get": {
         "security": [
           {
@@ -9945,7 +9977,7 @@
               "type": "string"
             },
             "required": true,
-            "name": "orgIdOrSlug",
+            "name": "orgId",
             "in": "path"
           },
           {
@@ -10150,7 +10182,7 @@
               "type": "string"
             },
             "required": true,
-            "name": "orgIdOrSlug",
+            "name": "orgId",
             "in": "path"
           }
         ],
@@ -10491,7 +10523,7 @@
               "type": "string"
             },
             "required": true,
-            "name": "orgIdOrSlug",
+            "name": "orgId",
             "in": "path"
           }
         ],
@@ -10586,7 +10618,7 @@
         }
       }
     },
-    "/{tenantId}/{orgIdOrSlug}/attachments/presigned-url": {
+    "/{tenantId}/{orgId}/attachments/presigned-url": {
       "get": {
         "security": [
           {
@@ -10624,7 +10656,7 @@
               "type": "string"
             },
             "required": true,
-            "name": "orgIdOrSlug",
+            "name": "orgId",
             "in": "path"
           },
           {
@@ -10665,7 +10697,7 @@
         }
       }
     },
-    "/{tenantId}/{orgIdOrSlug}/attachments/{id}": {
+    "/{tenantId}/{orgId}/attachments/{id}": {
       "get": {
         "security": [
           {
@@ -10703,7 +10735,7 @@
               "type": "string"
             },
             "required": true,
-            "name": "orgIdOrSlug",
+            "name": "orgId",
             "in": "path"
           },
           {
@@ -10807,7 +10839,7 @@
               "type": "string"
             },
             "required": true,
-            "name": "orgIdOrSlug",
+            "name": "orgId",
             "in": "path"
           },
           {
@@ -10901,7 +10933,7 @@
         }
       }
     },
-    "/{tenantId}/{orgIdOrSlug}/attachments/{id}/link": {
+    "/{tenantId}/{orgId}/attachments/{id}/link": {
       "get": {
         "security": [],
         "operationId": "redirectToAttachment",
@@ -10949,7 +10981,7 @@
         }
       }
     },
-    "/{tenantId}/{orgIdOrSlug}/memberships": {
+    "/{tenantId}/{orgId}/memberships": {
       "post": {
         "security": [
           {
@@ -10985,7 +11017,7 @@
               "type": "string"
             },
             "required": true,
-            "name": "orgIdOrSlug",
+            "name": "orgId",
             "in": "path"
           },
           {
@@ -11152,7 +11184,7 @@
               "type": "string"
             },
             "required": true,
-            "name": "orgIdOrSlug",
+            "name": "orgId",
             "in": "path"
           },
           {
@@ -11251,7 +11283,7 @@
         }
       }
     },
-    "/{tenantId}/{orgIdOrSlug}/memberships/{id}": {
+    "/{tenantId}/{orgId}/memberships/{id}": {
       "put": {
         "security": [
           {
@@ -11287,7 +11319,7 @@
               "type": "string"
             },
             "required": true,
-            "name": "orgIdOrSlug",
+            "name": "orgId",
             "in": "path"
           },
           {
@@ -11370,7 +11402,7 @@
         }
       }
     },
-    "/{tenantId}/{orgIdOrSlug}/memberships/{id}/{acceptOrReject}": {
+    "/{tenantId}/{orgId}/memberships/{id}/{acceptOrReject}": {
       "post": {
         "security": [
           {
@@ -11450,7 +11482,7 @@
         }
       }
     },
-    "/{tenantId}/{orgIdOrSlug}/memberships/members": {
+    "/{tenantId}/{orgId}/memberships/members": {
       "get": {
         "security": [
           {
@@ -11486,7 +11518,7 @@
               "type": "string"
             },
             "required": true,
-            "name": "orgIdOrSlug",
+            "name": "orgId",
             "in": "path"
           },
           {
@@ -11808,7 +11840,7 @@
         }
       }
     },
-    "/{tenantId}/{orgIdOrSlug}/memberships/pending": {
+    "/{tenantId}/{orgId}/memberships/pending": {
       "get": {
         "security": [
           {
@@ -11844,7 +11876,7 @@
               "type": "string"
             },
             "required": true,
-            "name": "orgIdOrSlug",
+            "name": "orgId",
             "in": "path"
           },
           {

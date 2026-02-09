@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
-import { Combobox } from '~/modules/ui/combobox';
+import { Combobox, type ComboboxProps } from '~/modules/ui/combobox';
 
 /**
  * A searchable dropdown component with virtualization support for large option lists.
@@ -164,7 +164,7 @@ const placeholders = {
   trigger: 'Select from 1000 options...',
   search: 'Search options...',
   notFound: 'No options found',
-};
+} as ComboboxProps['placeholders'];
 
 /**
  * Combobox with large number of options to demonstrate virtualization.
@@ -184,7 +184,6 @@ export const LargeOptions: Story = {
           options={args.options}
           value={value}
           onChange={setValue}
-          // @ts-ignore
           placeholders={placeholders}
         />
       </div>
@@ -210,8 +209,7 @@ export const CustomPlaceholders: Story = {
           options={args.options}
           value={value}
           onChange={setValue}
-          // @ts-ignore
-          placeholders={{ trigger: 'Choose a person...', search: 'Search people...', notFound: 'No people found' }}
+          placeholders={{ trigger: 'Choose a person...', search: 'Search people...', notFound: 'No people found' } as ComboboxProps['placeholders']}
         />
       </div>
     );

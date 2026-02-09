@@ -41,9 +41,9 @@ function MembersTable({ entity, isSheet = false, children }: MembersTableWrapper
   const entityId = entity.id;
   const entityType = entity.entityType;
   const tenantId = organization.tenantId;
-  const orgIdOrSlug = organization.id;
+  const orgId = organization.id;
 
-  // TODO can should always be here? Use can.update if available for permission-based access control
+  // TODO-034 can should always be here? Use can.update if available for permission-based access control
   const canUpdate = entity.can?.update ?? false;
 
   // Table state
@@ -55,7 +55,7 @@ function MembersTable({ entity, isSheet = false, children }: MembersTableWrapper
   const [columns, setColumns] = useColumns(canUpdate, isSheet);
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
-  const queryOptions = membersListQueryOptions({ entityId, entityType, tenantId, orgIdOrSlug, ...search, limit });
+  const queryOptions = membersListQueryOptions({ entityId, entityType, tenantId, orgId, ...search, limit });
 
   const {
     data: rows,
@@ -67,7 +67,7 @@ function MembersTable({ entity, isSheet = false, children }: MembersTableWrapper
   } = useInfiniteQuery({
     ...queryOptions,
     select: ({ pages }) => pages.flatMap(({ items }) => items),
-    // TODO review Deduplicate by id to prevent React key warnings during filter transitions
+    // TODO-035 review Deduplicate by id to prevent React key warnings during filter transitions
     // select: ({ pages }) => {
     //   const allItems = pages.flatMap(({ items }) => items);
     //   const seen = new Set<string>();
@@ -89,7 +89,7 @@ function MembersTable({ entity, isSheet = false, children }: MembersTableWrapper
         id: changedRows[index].membership.id,
         role: changedRows[index].membership.role,
         tenantId,
-        orgIdOrSlug,
+        orgId,
         entityId,
         entityType,
       };

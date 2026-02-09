@@ -48,9 +48,9 @@ export const MenuItemEditWrapper = ({
       unarchiveItems.some((i) => i.id === sourceData.item.id)
     );
   };
-// TODO dragging not working the new display order is saved but the items are not reordered because the new data doesnt get here. 
-// this data should be reactive for react-query changes since that is where the changed data will come from.
-// Archiving alos doesnt show a visual changes until a refresh of the page
+  // TODO-006 dragging not working the new display order is saved but the items are not reordered because the new data doesnt get here.
+  // this data should be reactive for react-query changes since that is where the changed data will come from.
+  // Archiving alos doesnt show a visual changes until a refresh of the page
   useEffect(() => {
     const element = dragRef.current;
     if (!element) return;

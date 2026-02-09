@@ -12,9 +12,10 @@ import {
   errorResponseRefs,
   idsBodySchema,
   paginationSchema,
-  tenantIdOrSlugParamSchema,
+  slugQuerySchema,
   tenantIdParamSchema,
   tenantOnlyParamSchema,
+  tenantOrganizationIdParamSchema,
 } from '#/schemas';
 import {
   mockBatchOrganizationsResponse,
@@ -85,12 +86,12 @@ const organizationRoutes = {
   getOrganization: createXRoute({
     operationId: 'getOrganization',
     method: 'get',
-    path: '/{tenantId}/organizations/{idOrSlug}',
+    path: '/{tenantId}/organizations/{organizationId}',
     xGuard: [authGuard, tenantGuard],
     tags: ['organizations'],
     summary: 'Get organization',
-    description: 'Retrieves an *organization* by ID or slug within a tenant.',
-    request: { params: tenantIdOrSlugParamSchema },
+    description: 'Retrieves an *organization* by ID within a tenant. Pass `?slug=true` to resolve by slug instead.',
+    request: { params: tenantOrganizationIdParamSchema, query: slugQuerySchema },
     responses: {
       200: {
         description: 'Organization',

@@ -1,5 +1,5 @@
 // src/lib/resolve-entity.ts
-import { eq, inArray, or } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import type { DbOrTx } from '#/db/db';
 import { entityTables, hasSlug } from '#/table-config';
 
@@ -17,19 +17,19 @@ function getEntityTable<T extends EntityType>(entityType: T): (typeof entityTabl
 
 export async function resolveEntity<T extends EntityType>(
   entityType: T,
-  idOrSlug: string,
+  identifier: string,
   db: DbOrTx,
+  bySlug = false,
 ): Promise<EntityModel<T> | undefined> {
   const table = getEntityTable(entityType);
 
-  const idCondition = eq(table.id, idOrSlug);
-  const whereCondition = hasSlug(table) ? or(idCondition, eq(table.slug, idOrSlug)) : idCondition;
+  const condition = bySlug && hasSlug(table) ? eq(table.slug, identifier) : eq(table.id, identifier);
 
   // biome-ignore lint/suspicious/noExplicitAny: Drizzle v1 .from() rejects generic indexed-access union types
   const [entity] = await db
     .select()
     .from(table as any)
-    .where(whereCondition);
+    .where(condition);
   return entity as EntityModel<T> | undefined;
 }
 

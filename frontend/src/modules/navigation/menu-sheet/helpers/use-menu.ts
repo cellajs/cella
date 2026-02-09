@@ -26,7 +26,7 @@ export function useMenu(userId: string | undefined, opts?: { detailedMenu?: bool
   );
 
   const results = useQueries({
-    // @ts-ignore
+    // @ts-expect-error useQueries types don't support infinite query options, but it works at runtime
     queries: types.map((t) => ({
       ...getContextEntityTypeToListQueries()[t]({ userId: userId ?? '' }),
       enabled: !!userId,

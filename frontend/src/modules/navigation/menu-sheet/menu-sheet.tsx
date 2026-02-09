@@ -83,7 +83,7 @@ export const MenuSheet = () => {
             id: sourceItem.membership.id,
             displayOrder: newOrder,
             tenantId: sourceItem.tenantId,
-            orgIdOrSlug: sourceItem.membership.organizationId || sourceItem.id,
+            orgId: sourceItem.membership.organizationId || sourceItem.id,
             entityId: sourceItem.id,
             entityType: sourceItem.entityType,
           });

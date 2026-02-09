@@ -16,7 +16,7 @@ export const getContextEntityRoute = (item: ContextEntityData, _isSubitem?: bool
 
   const to = baseEntityRoutes[entityType];
 
-  // Organization routes use tenantId and orgIdOrSlug params
+  // Organization routes use tenantId and orgId params
   // Currently cella only has organization as context entity type
-  return { to, params: { tenantId, orgIdOrSlug: slug || id }, search: {} };
+  return { to, params: { tenantId, orgId: slug || id }, search: {} };
 };

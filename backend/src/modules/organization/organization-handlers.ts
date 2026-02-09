@@ -159,7 +159,7 @@ const organizationRouteHandlers = app
     const memberships = ctx.var.memberships;
     const isSystemAdmin = userSystemRole === 'admin' && !userId;
 
-    // TODO We should only allow this if you have a relationship to the target user
+    // TODO-003 We should only allow this if you have a relationship to the target user
     const targetUserId = userId ?? user.id;
 
     // Determine what to include
@@ -295,10 +295,11 @@ const organizationRouteHandlers = app
   })
 
   /**
-   * Get organization by id or slug (tenant-scoped)
+   * Get organization by id (tenant-scoped). Pass ?slug=true to resolve by slug.
    */
   .openapi(organizationRoutes.getOrganization, async (ctx) => {
-    const { tenantId, idOrSlug } = ctx.req.valid('param');
+    const { tenantId, organizationId } = ctx.req.valid('param');
+    const { slug: bySlug } = ctx.req.valid('query');
 
     // Validate tenantId is provided (early explicit error)
     if (!tenantId) {
@@ -309,7 +310,7 @@ const organizationRouteHandlers = app
       entity: organization,
       membership,
       can,
-    } = await getValidContextEntity(ctx, idOrSlug, 'organization', 'read');
+    } = await getValidContextEntity(ctx, organizationId, 'organization', 'read', bySlug);
 
     // Validate organization belongs to the specified tenant
     if (organization.tenantId !== tenantId) {
@@ -368,7 +369,7 @@ const organizationRouteHandlers = app
         throw new AppError(409, 'slug_exists', 'warn', { entityType: 'organization', meta: { slug } });
     }
 
-    // TODO-019 sanitize blocknote blocks for welcomeText? How to only allow image urls from our own cdn plus a list from allowed domains?
+    // TODO-005 sanitize blocknote blocks for welcomeText? How to only allow image urls from our own cdn plus a list from allowed domains?
 
     // Use RLS-enabled transaction from tenant guard middleware
     const tx = ctx.var.db;

@@ -28,16 +28,18 @@ export interface ValidContextEntityResult<T extends ContextEntityType> {
  *
  *
  * @param ctx - Hono context with db set by guard middleware.
- * @param idOrSlug - Entity's unique ID or slug.
+ * @param entityId - Entity's unique ID (or slug when bySlug is true).
  * @param entityType - Type of context entity (e.g., organization, project).
  * @param action - Action to check (e.g., `"read" | "update" | "delete"`).
+ * @param bySlug - If true, resolve by slug instead of ID.
  * @returns An object containing resolved entity, associated membership (or `null`), and can object.
  */
 export const getValidContextEntity = async <T extends ContextEntityType>(
   ctx: Context<Env>,
-  idOrSlug: string,
+  entityId: string,
   entityType: T,
   action: Exclude<EntityActionType, 'create'>,
+  bySlug = false,
 ): Promise<ValidContextEntityResult<T>> => {
   // Get current user role and memberships from request context
   const userSystemRole = ctx.var.userSystemRole;
@@ -46,8 +48,8 @@ export const getValidContextEntity = async <T extends ContextEntityType>(
   // Get db from context (set by tenantGuard or crossTenantGuard middleware)
   const db = ctx.var.db;
 
-  // Step 1: Resolve target entity by ID or slug using RLS-enabled db from middleware
-  const entity = await resolveEntity(entityType, idOrSlug, db);
+  // Step 1: Resolve target entity by ID (or slug when bySlug is true)
+  const entity = await resolveEntity(entityType, entityId, db, bySlug);
   if (!entity) throw new AppError(404, 'not_found', 'warn', { entityType });
 
   // Step 2: Check permission for the requested action (system admin bypass is handled inside)

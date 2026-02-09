@@ -189,17 +189,17 @@ The runtime role never owns tables and cannot escalate privileges. This ensures 
 
 To guarantee RLS works correctly for any entity hierarchy:
 
-> **Every tenant-scoped table must have `tenant_id` and `organization_id` as required columns, with a composite FK to `organizations(tenant_id, id)`.**
+> **Every tenant-scoped table must have `tenant_id`. Tables with an organization parent must also have `organization_id` with a composite FK to `organizations(tenant_id, id)`. Parentless product entities (like `page`) only require `tenant_id`.**
 
-This single rule makes the design compatible with any entity hierarchy — forks can add projects, workspaces, or other nested contexts without modifying RLS policies.
+This rule makes the design compatible with any entity hierarchy — forks can add projects, workspaces, or other nested contexts without modifying RLS policies. The hierarchy config determines which pattern applies: entities with `parent: 'organization'` (or a nested context) get both columns, while entities with `parent: null` are tenant-scoped only.
 
 ### Table type reference
 
-| Type | Required Columns | Composite FK | RLS |
-|------|------------------|--------------|-----|
-| Org-scoped (most tables) | tenant_id, organization_id | → organizations | Standard |
-| Tenant-only (rare) | tenant_id | None | Tenant-only |
-| Global (users, sessions) | None | None | None or user-based |
+| Type | Required Columns | Composite FK | RLS | Example |
+|------|------------------|--------------|-----|---------|
+| Org-scoped (most tables) | tenant_id, organization_id | → organizations | Standard or hybrid | attachments |
+| Tenant-only | tenant_id | None | Tenant-only or hybrid | pages |
+| Global | None | None | None or user-based | users, sessions |
 
 ---
 

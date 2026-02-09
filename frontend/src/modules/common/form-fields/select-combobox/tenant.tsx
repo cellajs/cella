@@ -73,13 +73,10 @@ export const SelectTenantFormField = <TFieldValues extends FieldValues>({
                 trigger: 'common:select_resource',
                 search: 'common:placeholder.search',
                 notFound: 'common:no_resource_found',
-                //  TODO this trnsllation doesnt exist or something broken here?
                 resource: 'common:tenant',
               }}
             />
           </FormControl>
-          {/* TODO validation when left blank shows Too small: expected string to have >=1 characters. Can we show instread of string the label translation? THis can also be valuable in other location so perhaps this needs to be a util or embedded in the FormMessage or validation logic itself?  */}
-          {/* TODO: the validation in password form shows a red border when validation throws an error, can we do that here too? */}
 
           <FormMessage />
         </FormItem>

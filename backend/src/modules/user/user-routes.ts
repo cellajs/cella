@@ -3,7 +3,13 @@ import { authGuard, tenantGuard } from '#/middlewares/guard';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
 import { systemRoleBaseSchema } from '#/modules/system/system-schema';
 import { userListQuerySchema, userSchema } from '#/modules/user/user-schema';
-import { errorResponseRefs, idOrSlugInTenantOrgParamSchema, paginationSchema, tenantOrgParamSchema } from '#/schemas';
+import {
+  errorResponseRefs,
+  paginationSchema,
+  slugQuerySchema,
+  tenantOrgParamSchema,
+  userIdInTenantOrgParamSchema,
+} from '#/schemas';
 import { mockPaginatedUsersResponse, mockUserResponse } from '../../../mocks/mock-user';
 
 const userRoutes = {
@@ -38,17 +44,17 @@ const userRoutes = {
     },
   }),
   /**
-   * Get a user by ID or slug
+   * Get a user by ID. Pass ?slug=true to resolve by slug.
    */
   getUser: createXRoute({
     operationId: 'getUser',
     method: 'get',
-    path: '/{idOrSlug}',
+    path: '/{userId}',
     xGuard: [authGuard, tenantGuard],
     tags: ['users'],
     summary: 'Get user',
-    description: 'Retrieves a *user* by ID or slug in an organization context.',
-    request: { params: idOrSlugInTenantOrgParamSchema },
+    description: 'Retrieves a *user* by ID in an organization context. Pass `?slug=true` to resolve by slug instead.',
+    request: { params: userIdInTenantOrgParamSchema, query: slugQuerySchema },
     responses: {
       200: {
         description: 'User',

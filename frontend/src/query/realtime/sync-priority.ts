@@ -13,10 +13,10 @@ interface SyncNotification {
 /** Extract org ID from current route pathname using baseEntityRoutes pattern. */
 function getRouteOrgId(): string | null {
   const pathname = router.state.location.pathname;
-  // Convert baseEntityRoutes.organization pattern to regex: /$idOrSlug/organization → /([^/]+)/organization
-  const pattern = baseEntityRoutes.organization.replace('$idOrSlug', '([^/]+)');
+  // Convert baseEntityRoutes.organization pattern to regex: /$tenantId/$orgId/organization → /([^/]+)/([^/]+)/organization
+  const pattern = baseEntityRoutes.organization.replace('$tenantId', '([^/]+)').replace('$orgId', '([^/]+)');
   const match = pathname.match(new RegExp(`^${pattern}`));
-  return match?.[1] ?? null;
+  return match?.[2] ?? null;
 }
 
 /**
