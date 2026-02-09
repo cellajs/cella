@@ -3,18 +3,13 @@ import { logEvent } from '../pino';
 
 const { retry: RETRY_CONFIG } = RESOURCE_LIMITS;
 
-// Check if an error is transient and should be retried.
+/** Check if an error is transient and should be retried. */
 export function isTransientError(error: unknown): boolean {
   if (!error || typeof error !== 'object') return false;
 
-  // Check for PostgreSQL error code property
-  const code =
-    'code' in error && typeof (error as { code: unknown }).code === 'string'
-      ? error.code as string
-      : null;
-
+  // Check for PostgreSQL error code (also unwraps Drizzle-wrapped errors via .cause)
+  const code = getErrorCode(error);
   if (code && TRANSIENT_ERROR_CODES.has(code)) return true;
-  
 
   // Also check for common transient error messages
   const message = error instanceof Error ? error.message.toLowerCase() : '';
@@ -33,11 +28,18 @@ export function isTransientError(error: unknown): boolean {
 
 /**
  * Extract PostgreSQL error code from an error if available.
+ * Also checks .cause for Drizzle-wrapped errors.
  */
 export function getErrorCode(error: unknown): string | null {
   if (!error || typeof error !== 'object') return null;
+  // Direct PG error code
   if ('code' in error && typeof (error as { code: unknown }).code === 'string') {
     return (error as { code: string }).code;
+  }
+  // Drizzle-wrapped: check .cause
+  const cause = error instanceof Error ? error.cause : undefined;
+  if (cause && typeof cause === 'object' && 'code' in cause && typeof (cause as { code: unknown }).code === 'string') {
+    return (cause as { code: string }).code;
   }
   return null;
 }

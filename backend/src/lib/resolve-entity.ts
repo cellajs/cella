@@ -1,77 +1,51 @@
+// src/lib/resolve-entity.ts
 import { eq, inArray, or } from 'drizzle-orm';
-import type { PgTable } from 'drizzle-orm/pg-core';
-import type { EntityType } from 'shared';
 import type { DbOrTx } from '#/db/db';
-import { entityTables } from '#/table-config';
+import { entityTables, hasSlug } from '#/table-config';
 
+export type EntityType = keyof typeof entityTables;
 export type EntityModel<T extends EntityType> = (typeof entityTables)[T]['$inferSelect'];
 
-// Helper type for entity tables with common columns
-type EntityTable = PgTable & { id: unknown; slug?: unknown };
-
 /**
- * Resolves entity based on `id` or `slug`.
- *
- * @param entityType - The type of entity.
- * @param idOrSlug - The unique identifier or slug of entity.
- * @param db - Database or transaction to use (from ctx.var.db).
+ * Key trick: preserve key->value correlation.
+ * Without this helper, TS often widens `entityTables[entityType]`
+ * to a union of all tables, which Drizzle v1 rejects in `.from(...)`.
  */
+function getEntityTable<T extends EntityType>(entityType: T): (typeof entityTables)[T] {
+  return entityTables[entityType];
+}
+
 export async function resolveEntity<T extends EntityType>(
   entityType: T,
   idOrSlug: string,
   db: DbOrTx,
-): Promise<EntityModel<T> | undefined>;
-export async function resolveEntity<T extends EntityType>(entityType: T, idOrSlug: string, db: DbOrTx) {
-  const table = entityTables[entityType] as EntityTable;
+): Promise<EntityModel<T> | undefined> {
+  const table = getEntityTable(entityType);
 
-  // Return early if table is not available
-  if (!table) throw new Error(`Invalid entityType: ${entityType}`);
+  const idCondition = eq(table.id, idOrSlug);
+  const whereCondition = hasSlug(table) ? or(idCondition, eq(table.slug, idOrSlug)) : idCondition;
 
-  // Build where condition: always match by id, optionally by slug if column exists
-  // TODO review resolveEntity and resolveEntities. perahps
-  // biome-ignore lint/suspicious/noExplicitAny: Dynamic table access requires type assertion
-  const idCondition = eq((table as any).id, idOrSlug);
-  // biome-ignore lint/suspicious/noExplicitAny: Dynamic table access requires type assertion
-  const slugColumn = (table as any).slug;
-  const whereCondition = slugColumn ? or(idCondition, eq(slugColumn, idOrSlug)) : idCondition;
-
-  // biome-ignore lint/suspicious/noExplicitAny: Dynamic table access requires type assertion
+  // biome-ignore lint/suspicious/noExplicitAny: Drizzle v1 .from() rejects generic indexed-access union types
   const [entity] = await db
     .select()
     .from(table as any)
     .where(whereCondition);
-
-  return entity;
+  return entity as EntityModel<T> | undefined;
 }
 
-/**
- * Resolves entities based on array of `id`.
- *
- * @param entityType - The type of the entity.
- * @param ids - An array of unique identifiers (IDs) of entities to resolve.
- * @param db - Database or transaction to use (from ctx.var.db).
- */
 export async function resolveEntities<T extends EntityType>(
   entityType: T,
-  ids: Array<string>,
+  ids: string[],
   db: DbOrTx,
 ): Promise<Array<EntityModel<T>>> {
-  // Get the corresponding table for the entity type
-  const table = entityTables[entityType] as EntityTable;
+  if (!ids.length) return [];
 
-  // Return early if table is not available
-  if (!table) throw new Error(`Invalid entityType: ${entityType}`);
+  const table = getEntityTable(entityType);
 
-  // Validate presence of IDs
-  if (!Array.isArray(ids) || !ids.length)
-    throw new Error(`Missing or invalid query identifiers for entityType: ${entityType}`);
-
-  // Query for multiple entities by IDs
-  // biome-ignore lint/suspicious/noExplicitAny: Dynamic table access requires type assertion
+  // biome-ignore lint/suspicious/noExplicitAny: Drizzle v1 .from() rejects generic indexed-access union types
   const entities = await db
     .select()
     .from(table as any)
-    .where(inArray((table as any).id, ids));
-
+    .where(inArray(table.id, ids));
   return entities as Array<EntityModel<T>>;
 }

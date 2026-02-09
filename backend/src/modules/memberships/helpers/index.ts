@@ -1,6 +1,6 @@
 import { inArray, max } from 'drizzle-orm';
 import { appConfig, type ContextEntityType } from 'shared';
-import { unsafeInternalDb as db } from '#/db/db';
+import type { DbOrTx } from '#/db/db';
 import { InsertMembershipModel, type MembershipModel, membershipsTable } from '#/db/schema/memberships';
 import type { EntityModel } from '#/lib/resolve-entity';
 
@@ -67,6 +67,7 @@ export const getBaseMembershipEntityId = <T extends ContextEntityType>(entity: E
  * @returns inserted target memberships (MembershipBaseModel)
  */
 export const insertMemberships = async <T extends BaseEntityModel>(
+  db: DbOrTx,
   items: Array<InsertMultipleProps<T>>,
 ): Promise<Array<MembershipBaseModel>> => {
   // Early exit: nothing to insert

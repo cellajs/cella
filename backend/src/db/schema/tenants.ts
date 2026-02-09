@@ -21,7 +21,6 @@ export const tenantStatusEnum = pgEnum('tenant_status', ['active', 'suspended', 
 export const tenantsTable = pgTable(
   'tenants',
   {
-    // 24-character lowercase alphanumeric ID
     id: varchar({ length: 24 }).primaryKey().$defaultFn(nanoidTenant),
     name: varchar().notNull(),
     status: tenantStatusEnum().notNull().default('active'),

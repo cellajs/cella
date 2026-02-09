@@ -18,6 +18,8 @@
  * @see info/RLS.md for full architecture documentation
  */
 
+// TODO review if all are necessary after many iterations. Also reduce verbose comments
+
 import { sql } from 'drizzle-orm';
 
 // ============================================================================

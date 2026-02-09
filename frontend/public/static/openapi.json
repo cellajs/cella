@@ -22,6 +22,9 @@
           "authGuard": {
             "description": "Requires valid session"
           },
+          "crossTenantGuard": {
+            "description": "Wraps handler in user RLS context for cross-tenant access"
+          },
           "sysAdminGuard": {
             "description": "Requires system admin + IP whitelist"
           },
@@ -7702,7 +7705,7 @@
         }
       }
     },
-    "/organizations": {
+    "/{tenantId}/organizations": {
       "post": {
         "security": [
           {
@@ -7714,12 +7717,25 @@
           "organizations"
         ],
         "summary": "Create organizations",
-        "description": "Creates one or more new *organizations*.",
+        "description": "Creates one or more new *organizations* within a tenant.",
         "x-guard": [
-          "authGuard"
+          "authGuard",
+          "tenantGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 24,
+              "pattern": "^[a-z0-9]+$"
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -8024,6 +8040,113 @@
           }
         }
       },
+      "delete": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "deleteOrganizations",
+        "tags": [
+          "organizations"
+        ],
+        "summary": "Delete organizations",
+        "description": "Deletes one or more *organizations* by ID within a tenant.",
+        "x-guard": [
+          "authGuard",
+          "tenantGuard"
+        ],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 24,
+              "pattern": "^[a-z0-9]+$"
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "minItems": 1,
+                    "maxItems": 50
+                  }
+                },
+                "required": [
+                  "ids"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "prefixItems": []
+                    },
+                    "rejectedItemIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Identifiers of items that could not be processed"
+                    },
+                    "rejectionReasons": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "description": "Map of rejected item ID to reason code"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "rejectedItemIds"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/organizations": {
       "get": {
         "security": [
           {
@@ -8037,7 +8160,8 @@
         "summary": "Get list of organizations",
         "description": "Returns a list of *organizations*.",
         "x-guard": [
-          "authGuard"
+          "authGuard",
+          "crossTenantGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -8319,7 +8443,8 @@
         "summary": "Get organization",
         "description": "Retrieves an *organization* by ID or slug within a tenant.",
         "x-guard": [
-          "authGuard"
+          "authGuard",
+          "tenantGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -8447,7 +8572,8 @@
         "summary": "Update organization",
         "description": "Updates an *organization* within a tenant.",
         "x-guard": [
-          "authGuard"
+          "authGuard",
+          "tenantGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -8666,112 +8792,6 @@
                       }
                     }
                   }
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      }
-    },
-    "/{tenantId}/organizations": {
-      "delete": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "deleteOrganizations",
-        "tags": [
-          "organizations"
-        ],
-        "summary": "Delete organizations",
-        "description": "Deletes one or more *organizations* by ID within a tenant.",
-        "x-guard": [
-          "authGuard"
-        ],
-        "x-rate-limiter": [],
-        "x-cache": [],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 24,
-              "pattern": "^[a-z0-9]+$"
-            },
-            "required": true,
-            "name": "tenantId",
-            "in": "path"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "ids": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    },
-                    "minItems": 1,
-                    "maxItems": 50
-                  }
-                },
-                "required": [
-                  "ids"
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "prefixItems": []
-                    },
-                    "rejectedItemIds": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "description": "Identifiers of items that could not be processed"
-                    },
-                    "rejectionReasons": {
-                      "type": "object",
-                      "additionalProperties": {
-                        "type": "string"
-                      },
-                      "description": "Map of rejected item ID to reason code"
-                    }
-                  },
-                  "required": [
-                    "data",
-                    "rejectedItemIds"
-                  ]
                 }
               }
             }

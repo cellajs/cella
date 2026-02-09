@@ -1,7 +1,7 @@
 import type { z } from '@hono/zod-openapi';
 import { and, desc, eq, getColumns } from 'drizzle-orm';
 import type { Context } from 'hono';
-import { unsafeInternalDb as db } from '#/db/db';
+import type { DbOrTx } from '#/db/db';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { passwordsTable } from '#/db/schema/passwords';
@@ -20,10 +20,11 @@ import type { sessionSchema } from '#/modules/me/me-schema';
  * - TOTP entries
  * - Verified OAuth accounts
  *
+ * @param db - Database connection
  * @param userId - ID of the user to fetch auth data for
  * @returns An object containing arrays of passkeys, password, TOTP entries, and OAuth providers
  */
-export const getAuthInfo = async (userId: string) => {
+export const getAuthInfo = async (db: DbOrTx, userId: string) => {
   const { credentialId, publicKey, ...passkeySelect } = getColumns(passkeysTable);
   const getPasskeys = db.select(passkeySelect).from(passkeysTable).where(eq(passkeysTable.userId, userId));
 
@@ -49,6 +50,7 @@ export const getAuthInfo = async (userId: string) => {
  * @returns A list of sessions, with an additional `isCurrent` flag indicating if the session is the current active session.
  */
 export const getUserSessions = async (ctx: Context<Env>, userId: string): Promise<z.infer<typeof sessionSchema>[]> => {
+  const db = ctx.var.db;
   const sessions = await db
     .select()
     .from(sessionsTable)

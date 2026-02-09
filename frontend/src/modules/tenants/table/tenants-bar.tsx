@@ -16,6 +16,7 @@ import { useInfiniteQueryTotal } from '~/query/basic';
 
 type TenantsTableBarProps = BaseTableBarProps<Tenant, TenantsRouteSearchParams>;
 
+// TODO tenants table bar is somehow not on a single line. search input takes a second line. Check with other bars
 export const TenantsTableBar = ({
   selected,
   queryKey,

@@ -1,7 +1,7 @@
 import { eq, sql } from 'drizzle-orm';
 import { type ContextEntityType, hierarchy, roles } from 'shared';
 import type z from 'zod';
-import { unsafeInternalDb as db } from '#/db/db';
+import type { DbOrTx } from '#/db/db';
 import { getMemberCountsSubquery } from '#/modules/entities/helpers/get-member-counts';
 import { getRelatedCountsSubquery } from '#/modules/entities/helpers/get-related-entity-counts';
 import type { membershipCountSchema } from '#/modules/organization/organization-schema';
@@ -11,15 +11,16 @@ import { entityTables } from '#/table-config';
  * Returns the subqueries and select shape needed for entity counts.
  * This can be used in both single-entity and list queries.
  *
+ * @param db - Database connection
  * @param entityType - Type of the context entity
  * @returns Object containing:
  *   - memberCountsSubquery: Subquery for membership counts (LEFT JOIN on id)
  *   - relatedCountsSubquery: Subquery for related entity counts (LEFT JOIN on id)
  *   - countsSelect: SQL columns for counts.membership and counts.entities
  */
-export const getEntityCountsSelect = (entityType: ContextEntityType) => {
-  const memberCountsSubquery = getMemberCountsSubquery(entityType);
-  const relatedCountsSubquery = getRelatedCountsSubquery(entityType);
+export const getEntityCountsSelect = (db: DbOrTx, entityType: ContextEntityType) => {
+  const memberCountsSubquery = getMemberCountsSubquery(db, entityType);
+  const relatedCountsSubquery = getRelatedCountsSubquery(db, entityType);
 
   const validEntities = hierarchy.getChildren(entityType);
   const relatedJsonPairs = validEntities
@@ -47,17 +48,18 @@ export const getEntityCountsSelect = (entityType: ContextEntityType) => {
  *  - Membership counts: number of admins, members, pending invitations, and total members.
  *  - Related entity counts: counts of entities(product | context) related to this entity (e.g., attachments, projects, etc.).
  *
+ * @param db - Database connection
  * @param entityType - Type of the context entity
  * @param entityId - The ID of the entity to fetch counts for.
  * @returns An object containing:
  *    - membership: JSON object with counts of admin, member, pending, and total members.
  *    - entities: JSON object with counts of related entities, keyed by entity type.
  */
-export const getEntityCounts = async (entityType: ContextEntityType, entityId: string) => {
+export const getEntityCounts = async (db: DbOrTx, entityType: ContextEntityType, entityId: string) => {
   const table = entityTables[entityType];
   if (!table) throw new Error(`Invalid entityType: ${entityType}`);
 
-  const { memberCountsSubquery, relatedCountsSubquery, countsSelect } = getEntityCountsSelect(entityType);
+  const { memberCountsSubquery, relatedCountsSubquery, countsSelect } = getEntityCountsSelect(db, entityType);
 
   const [counts] = await db
     .select(countsSelect)

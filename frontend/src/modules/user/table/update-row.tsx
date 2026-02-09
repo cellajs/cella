@@ -46,9 +46,9 @@ export function UpdateRow({ user, tabIndex }: Props) {
     <Button
       ref={buttonRef}
       variant="cell"
-      size="icon"
+      size="cell"
       tabIndex={tabIndex}
-      className="h-full w-full"
+      className="justify-center"
       data-tooltip="true"
       data-tooltip-content={i18n.t('common:edit')}
       onClick={() => openUpdateUserSheet(user, buttonRef)}

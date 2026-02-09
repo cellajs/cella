@@ -20,6 +20,8 @@ function rowKeyGetter(row: Tenant) {
   return row.id;
 }
 
+// TODO backend should not send `public` tenant at all.
+
 /**
  * Tenants table for system admin panel.
  * Allows viewing and managing all tenants in the system.

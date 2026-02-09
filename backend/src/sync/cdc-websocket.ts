@@ -19,7 +19,7 @@ const cdcMessageSchema = z.object({
     // Override nullable fields that are always present in CDC messages
     action: activityActionSchema,
     entityId: z.string(),
-    // seq is computed atomically in the database, not available when CDC sends the message
+    // seq is computed atomically in the database and included for frontend ordering sanity checks
     seq: z.number().optional(),
     // error is only set for dead letter activities, not sent via WebSocket
     error: z.union([activityErrorSchema, z.null()]).optional(),

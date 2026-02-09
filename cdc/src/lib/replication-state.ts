@@ -4,6 +4,9 @@ import { wsClient, type WsState } from '../websocket-client';
 /** Replication state for health monitoring */
 export type ReplicationState = 'active' | 'paused' | 'stopped';
 
+
+// TODO review the value of having this vs inlining this at the call site. Write a report in md
+
 /** Health state exposed for monitoring */
 export interface CdcHealthState {
   wsState: WsState;

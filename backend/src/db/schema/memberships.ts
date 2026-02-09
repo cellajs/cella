@@ -64,12 +64,17 @@ export const membershipsTable = pgTable(
       for: 'select',
       using: sql`${tenantContextSet} OR ${userContextSet}`,
     }),
-    // SELECT: Users can see their own memberships across tenants.
-    // Viewing other org members is handled at app layer (requires membership check there).
-    // This avoids infinite recursion that would occur if we checked membership here.
-    pgPolicy('memberships_select_policy', {
+    // SELECT (own): Users can see their own memberships across all tenants (for /me routes).
+    pgPolicy('memberships_select_own_policy', {
       for: 'select',
       using: sql`${isAuthenticated} AND ${userMatch(table)}`,
+    }),
+    // SELECT (tenant): Users can see all memberships within the current tenant.
+    // Org-level filtering is enforced by the handler WHERE clause + orgGuard middleware.
+    // Cannot use membershipExists here (self-referencing memberships → infinite recursion).
+    pgPolicy('memberships_select_tenant_policy', {
+      for: 'select',
+      using: sql`${isAuthenticated} AND ${tenantMatch(table)}`,
     }),
     // INSERT: Strictly tenant-scoped
     pgPolicy('memberships_insert_policy', {

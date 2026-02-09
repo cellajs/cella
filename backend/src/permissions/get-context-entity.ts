@@ -1,6 +1,5 @@
 import type { Context } from 'hono';
 import type { ContextEntityType, EntityActionType } from 'shared';
-import { setUserRlsContext } from '#/db/tenant-context';
 import type { Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
 import { type EntityModel, resolveEntity } from '#/lib/resolve-entity';
@@ -27,7 +26,9 @@ export interface ValidContextEntityResult<T extends ContextEntityType> {
  * of a higher-level entity as defined in `permissions-config`.
  * Throws an error if entity cannot be found or user lacks required permissions.
  *
- * @param id - Entity's unique ID.
+ *
+ * @param ctx - Hono context with db set by guard middleware.
+ * @param idOrSlug - Entity's unique ID or slug.
  * @param entityType - Type of context entity (e.g., organization, project).
  * @param action - Action to check (e.g., `"read" | "update" | "delete"`).
  * @returns An object containing resolved entity, associated membership (or `null`), and can object.
@@ -39,12 +40,14 @@ export const getValidContextEntity = async <T extends ContextEntityType>(
   action: Exclude<EntityActionType, 'create'>,
 ): Promise<ValidContextEntityResult<T>> => {
   // Get current user role and memberships from request context
-  const user = ctx.var.user;
   const userSystemRole = ctx.var.userSystemRole;
   const memberships = ctx.var.memberships;
 
-  // Step 1: Resolve target entity by ID or slug with user RLS context
-  const entity = await setUserRlsContext({ userId: user.id }, (tx) => resolveEntity(entityType, idOrSlug, tx));
+  // Get db from context (set by tenantGuard or crossTenantGuard middleware)
+  const db = ctx.var.db;
+
+  // Step 1: Resolve target entity by ID or slug using RLS-enabled db from middleware
+  const entity = await resolveEntity(entityType, idOrSlug, db);
   if (!entity) throw new AppError(404, 'not_found', 'warn', { entityType });
 
   // Step 2: Check permission for the requested action (system admin bypass is handled inside)

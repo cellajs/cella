@@ -28,6 +28,11 @@ const extractEmail = (value: string, stripDisplayName: boolean): string => {
   return match ? match[1].trim() : value.trim();
 };
 
+// TODO error to fix:
+/**
+ * installHook.js:1 Cannot update a component (`Controller`) while rendering a different component (`SelectEmails`). To locate the bad setState() call inside `SelectEmails`, follow the stack trace as described in https://react.dev/link/setstate-in-render
+ */
+
 /**
  * Email input component with multi-email support, validation, and paste handling.
  * Built on top of TagInput with email-specific validation and delimiter support.

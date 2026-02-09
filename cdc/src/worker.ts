@@ -126,16 +126,16 @@ async function handleDataMessage(lsn: string, message: unknown): Promise<void> {
           }
 
           recordCdcMetric('activitiesCreated');
-        });
 
-        logEvent('info', `${LOG_PREFIX} Activity created from CDC`, {
-          type: processResult.activity.type,
-          entityId: processResult.activity.entityId,
-          activityId,
-          lsn,
-        });
+          logEvent('info', `${LOG_PREFIX} Activity created from CDC`, {
+            type: processResult.activity.type,
+            entityId: processResult.activity.entityId,
+            activityId,
+            lsn,
+          });
 
-        sendActivityToApi(activityWithId, processResult.entityData, traceCtx);
+          sendActivityToApi(activityWithId, processResult.entityData, traceCtx, seq);
+        });
       }
 
       if (wsClient.isConnected()) {

@@ -29,6 +29,7 @@ function buildActivityPayload(
   activity: InsertActivityModel,
   entityData: Record<string, unknown>,
   traceContext: TraceContext,
+  seq?: number,
 ) {
   // Generate cache token for product entities
   const cacheToken = activity.entityType && isProductEntity(activity.entityType) ? nanoid() : null;
@@ -54,6 +55,7 @@ function buildActivityPayload(
       ...contextIds,
       changedKeys: activity.changedKeys,
       tx: activity.tx,
+      seq,
       createdAt: new Date().toISOString(),
     },
     entity: entityData,
@@ -72,8 +74,9 @@ export function sendActivityToApi(
   activity: InsertActivityModel,
   entityData: Record<string, unknown>,
   traceContext: TraceContext,
+  seq?: number,
 ): void {
-  const payload = buildActivityPayload(activity, entityData, traceContext);
+  const payload = buildActivityPayload(activity, entityData, traceContext, seq);
   const success = wsClient.send(payload);
 
   if (success) {

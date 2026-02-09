@@ -1160,76 +1160,19 @@
   },
   {
     "id": "createOrganizations",
-    "hash": "tag/organizations/POST/organizations",
+    "hash": "tag/organizations/POST/{tenantId}/organizations",
     "method": "post",
-    "path": "/organizations",
+    "path": "/{tenantId}/organizations",
     "tags": ["organizations"],
     "summary": "Create organizations",
-    "description": "Creates one or more new *organizations*.",
-    "deprecated": false,
-    "hasParams": false,
-    "hasRequestBody": true,
-    "hasResponseBody": true,
-    "hasExample": true,
-    "extensions": {
-      "xGuard": ["authGuard"],
-      "xRateLimiter": [],
-      "xCache": []
-    }
-  },
-  {
-    "id": "getOrganizations",
-    "hash": "tag/organizations/GET/organizations",
-    "method": "get",
-    "path": "/organizations",
-    "tags": ["organizations"],
-    "summary": "Get list of organizations",
-    "description": "Returns a list of *organizations*.",
-    "deprecated": false,
-    "hasParams": true,
-    "hasRequestBody": false,
-    "hasResponseBody": true,
-    "hasExample": true,
-    "extensions": {
-      "xGuard": ["authGuard"],
-      "xRateLimiter": [],
-      "xCache": []
-    }
-  },
-  {
-    "id": "getOrganization",
-    "hash": "tag/organizations/GET/{tenantId}/organizations/{idOrSlug}",
-    "method": "get",
-    "path": "/{tenantId}/organizations/{idOrSlug}",
-    "tags": ["organizations"],
-    "summary": "Get organization",
-    "description": "Retrieves an *organization* by ID or slug within a tenant.",
-    "deprecated": false,
-    "hasParams": true,
-    "hasRequestBody": false,
-    "hasResponseBody": true,
-    "hasExample": true,
-    "extensions": {
-      "xGuard": ["authGuard"],
-      "xRateLimiter": [],
-      "xCache": []
-    }
-  },
-  {
-    "id": "updateOrganization",
-    "hash": "tag/organizations/PUT/{tenantId}/organizations/{id}",
-    "method": "put",
-    "path": "/{tenantId}/organizations/{id}",
-    "tags": ["organizations"],
-    "summary": "Update organization",
-    "description": "Updates an *organization* within a tenant.",
+    "description": "Creates one or more new *organizations* within a tenant.",
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": true,
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["authGuard"],
+      "xGuard": ["authGuard", "tenantGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -1248,7 +1191,64 @@
     "hasResponseBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["authGuard"],
+      "xGuard": ["authGuard", "tenantGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    }
+  },
+  {
+    "id": "getOrganizations",
+    "hash": "tag/organizations/GET/organizations",
+    "method": "get",
+    "path": "/organizations",
+    "tags": ["organizations"],
+    "summary": "Get list of organizations",
+    "description": "Returns a list of *organizations*.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["authGuard", "crossTenantGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    }
+  },
+  {
+    "id": "getOrganization",
+    "hash": "tag/organizations/GET/{tenantId}/organizations/{idOrSlug}",
+    "method": "get",
+    "path": "/{tenantId}/organizations/{idOrSlug}",
+    "tags": ["organizations"],
+    "summary": "Get organization",
+    "description": "Retrieves an *organization* by ID or slug within a tenant.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["authGuard", "tenantGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    }
+  },
+  {
+    "id": "updateOrganization",
+    "hash": "tag/organizations/PUT/{tenantId}/organizations/{id}",
+    "method": "put",
+    "path": "/{tenantId}/organizations/{id}",
+    "tags": ["organizations"],
+    "summary": "Update organization",
+    "description": "Updates an *organization* within a tenant.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": true,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["authGuard", "tenantGuard"],
       "xRateLimiter": [],
       "xCache": []
     }

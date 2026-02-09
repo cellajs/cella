@@ -3,12 +3,13 @@ import type React from 'react';
 import { useMemo } from 'react';
 import { type UseFormProps, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import type { z } from 'zod';
+import { z } from 'zod';
 import type { Organization } from '~/api.gen';
 import { zCreateOrganizationsData } from '~/api.gen/zod.gen';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { CallbackArgs } from '~/modules/common/data-table/types';
 import { InputFormField } from '~/modules/common/form-fields/input';
+import { SelectTenantFormField } from '~/modules/common/form-fields/select-combobox/tenant';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
 import { useStepper } from '~/modules/common/stepper';
 import { toaster } from '~/modules/common/toaster/service';
@@ -24,8 +25,10 @@ interface Props {
   callback?: (args: CallbackArgs<Organization>) => void;
 }
 
-// Extract the single item schema from the bulk creation array
-const formSchema = zCreateOrganizationsData.shape.body.element.omit({ id: true });
+// Combine body item schema with tenantId from path
+const formSchema = zCreateOrganizationsData.shape.body.element.omit({ id: true }).extend({
+  tenantId: z.string().min(1),
+});
 type FormValues = z.infer<typeof formSchema>;
 
 export function CreateOrganizationForm({ labelDirection = 'top', children, callback }: Props) {
@@ -33,7 +36,7 @@ export function CreateOrganizationForm({ labelDirection = 'top', children, callb
 
   const { nextStep } = useStepper();
 
-  const defaultValues = { name: '', slug: '' };
+  const defaultValues = { name: '', slug: '', tenantId: '' };
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
       resolver: zodResolver(formSchema),
@@ -51,23 +54,33 @@ export function CreateOrganizationForm({ labelDirection = 'top', children, callb
   const { mutate, isPending } = useOrganizationCreateMutation();
 
   const onSubmit = (values: FormValues) => {
-    mutate([{ ...values, id: `temp-${nanoid()}` }], {
-      onSuccess: (createdOrganization) => {
-        form.reset();
-        toaster(t('common:success.create_resource', { resource: t('common:organization') }), 'success');
+    const { tenantId, ...rest } = values;
+    mutate(
+      { tenantId, body: [{ ...rest, id: `temp-${nanoid()}` }] },
+      {
+        onSuccess: (createdOrganization) => {
+          form.reset();
+          toaster(t('common:success.create_resource', { resource: t('common:organization') }), 'success');
 
-        callback?.({ data: createdOrganization, status: 'success' }); // Trigger callback
+          callback?.({ data: createdOrganization, status: 'success' }); // Trigger callback
 
-        // Since this form is also used in onboarding, we need to call the next step
-        // This should ideally be done through the callback, but we need to refactor stepper
-        nextStep?.();
+          // Since this form is also used in onboarding, we need to call the next step
+          // This should ideally be done through the callback, but we need to refactor stepper
+          nextStep?.();
+        },
+        onError: (error) => {
+          if (error.message === 'org_limit_reached') {
+            toaster(t('error:org_limit_reached'), 'warning');
+          }
+        },
       },
-    });
+    );
   };
 
   return (
     <Form {...form} labelDirection={labelDirection}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <SelectTenantFormField control={form.control} name="tenantId" label={t('common:tenant')} required />
         <InputFormField control={form.control} name="name" label={t('common:name')} required />
         <SlugFormField
           control={form.control}

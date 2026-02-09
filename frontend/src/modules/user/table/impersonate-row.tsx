@@ -32,9 +32,9 @@ export function ImpersonateRow({ user, tabIndex }: Props) {
   return (
     <Button
       variant="cell"
-      size="icon"
+      size="cell"
       tabIndex={tabIndex}
-      className="w-full h-full"
+      className="justify-center"
       data-tooltip="true"
       data-tooltip-content={i18n.t('common:impersonate')}
       onClick={() => handleStartImpersonation(user.id)}

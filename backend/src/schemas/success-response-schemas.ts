@@ -39,5 +39,6 @@ export const batchResponseSchema = <T extends z.ZodTypeAny>(itemSchema?: T) =>
 export interface BatchResponseEmpty {
   data: [];
   rejectedItemIds: string[];
+  // TODO instead of a id to reason, we can have a reason and an array of ids. lets also enforce translation key type here?
   rejectionReasons?: Record<string, string>;
 }

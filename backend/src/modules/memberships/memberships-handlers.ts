@@ -3,7 +3,6 @@ import { and, count, eq, ilike, inArray, or, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import i18n from 'i18next';
 import { appConfig } from 'shared';
-import { unsafeInternalDb as db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { lastSeenTable } from '#/db/schema/last-seen';
@@ -55,6 +54,7 @@ const membershipsRouteHandlers = app
     // Step 0: Parse and normalize input
     const { emails, role } = ctx.req.valid('json');
     const { entityId, entityType } = ctx.req.valid('query');
+    const db = ctx.var.db;
 
     const normalizedEmails = [...new Set(emails.map((e: string) => e.toLowerCase().trim()))];
     if (!normalizedEmails.length) throw new AppError(400, 'no_recipients', 'warn');
@@ -212,7 +212,7 @@ const membershipsRouteHandlers = app
         createdBy: user.id,
       }));
 
-      createdMemberships = await insertMemberships(membershipsToInsert);
+      createdMemberships = await insertMemberships(db, membershipsToInsert);
     }
 
     // Step 3: Prepare no-token recipients (Scenario 1b + Scenario 2)
@@ -377,6 +377,7 @@ const membershipsRouteHandlers = app
   .openapi(membershipRoutes.deleteMemberships, async (ctx) => {
     const { entityType, entityId } = ctx.req.valid('query');
     const { ids } = ctx.req.valid('json');
+    const db = ctx.var.db;
 
     const { entity } = await getValidContextEntity(ctx, entityId, entityType, 'delete');
 
@@ -424,6 +425,7 @@ const membershipsRouteHandlers = app
   .openapi(membershipRoutes.updateMembership, async (ctx) => {
     const { id: membershipId } = ctx.req.valid('param');
     const { role, archived, muted, displayOrder } = ctx.req.valid('json');
+    const db = ctx.var.db;
 
     const user = ctx.var.user;
     const memberships = ctx.var.memberships;
@@ -490,6 +492,7 @@ const membershipsRouteHandlers = app
    */
   .openapi(membershipRoutes.handleMembershipInvitation, async (ctx) => {
     const { id: inactiveMembershipId, acceptOrReject } = ctx.req.valid('param');
+    const db = ctx.var.db;
 
     const user = ctx.var.user;
 
@@ -511,7 +514,7 @@ const membershipsRouteHandlers = app
       const entity = await resolveEntity(inactiveMembership.contextType, entityFieldId, db);
       if (!entity) throw new AppError(404, 'not_found', 'error', { entityType: inactiveMembership.contextType });
 
-      const activatedMemberships = await insertMemberships([
+      const activatedMemberships = await insertMemberships(db, [
         { entity, userId: user.id, role: inactiveMembership.role, createdBy: inactiveMembership.createdBy },
       ]);
 
@@ -539,6 +542,7 @@ const membershipsRouteHandlers = app
    */
   .openapi(membershipRoutes.getMembers, async (ctx) => {
     const { entityId, entityType, q, sort, order, offset, limit, role } = ctx.req.valid('query');
+    const db = ctx.var.db;
 
     const organization = ctx.var.organization;
 
@@ -592,6 +596,7 @@ const membershipsRouteHandlers = app
    */
   .openapi(membershipRoutes.getPendingMemberships, async (ctx) => {
     const { entityId, entityType, sort, order, offset, limit } = ctx.req.valid('query');
+    const db = ctx.var.db;
 
     const organization = ctx.var.organization;
     const { entity } = await getValidContextEntity(ctx, entityId, entityType, 'read');

@@ -2,7 +2,7 @@ import { execSync } from 'node:child_process';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { migrateConfig, migrationDb } from '#/db/db';
 import { env } from '#/env';
-import { setupRoles } from './db/setup-roles';
+import { createDbRoles } from './db/create-db-roles';
 
 if (env.DEV_MODE === 'basic') {
   console.info(' ');
@@ -16,8 +16,8 @@ if (!migrationDb) {
   process.exit(1);
 }
 
-// Setup roles first (dev only, skipped if already exist)
-await setupRoles();
+// Create db roles first
+await createDbRoles();
 
 // Migrate db using admin connection (applies RLS grants)
 await migrate(migrationDb, migrateConfig);

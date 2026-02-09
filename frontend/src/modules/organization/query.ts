@@ -100,20 +100,31 @@ export const useOrganizationCreateMutation = () => {
   const queryClient = useQueryClient();
   const mutateCache = useMutateQueryData(keys.list.base);
 
-  return useMutation<OrganizationWithMembership, ApiError, CreateOrganizationsData['body']>({
-    mutationKey: keys.create,
-    mutationFn: async (body) => {
-      const result = await createOrganizations({ body });
-      // Return the first created organization (currently only single creation supported)
-      return result.data[0] as OrganizationWithMembership;
+  return useMutation<OrganizationWithMembership, ApiError, { tenantId: string; body: CreateOrganizationsData['body'] }>(
+    {
+      mutationKey: keys.create,
+      mutationFn: async ({ tenantId, body }) => {
+        const result = await createOrganizations({ path: { tenantId }, body });
+
+        // Check for rejection reasons and throw if org limit reached
+        if (result.rejectionReasons) {
+          const reasons = Object.values(result.rejectionReasons);
+          if (reasons.includes('org_limit_reached')) {
+            throw new Error('org_limit_reached');
+          }
+        }
+
+        // Return the first created organization (currently only single creation supported)
+        return result.data[0] as OrganizationWithMembership;
+      },
+      onSuccess: (createdOrganization) => {
+        mutateCache.create([createdOrganization]);
+      },
+      onSettled: () => {
+        invalidateIfLastMutation(queryClient, keys.all, keys.list.base);
+      },
     },
-    onSuccess: (createdOrganization) => {
-      mutateCache.create([createdOrganization]);
-    },
-    onSettled: () => {
-      invalidateIfLastMutation(queryClient, keys.all, keys.list.base);
-    },
-  });
+  );
 };
 
 /**

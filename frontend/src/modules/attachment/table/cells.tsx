@@ -107,9 +107,9 @@ export const CopyUrlCell = ({ row, tabIndex }: CopyUrlCellProps) => {
   return (
     <Button
       variant="cell"
-      size="icon"
+      size="cell"
       tabIndex={tabIndex}
-      className="h-full w-full"
+      className="justify-center"
       aria-label="Copy"
       data-tooltip="true"
       data-tooltip-content={copied ? t('common:copied') : t('common:copy')}
@@ -138,10 +138,10 @@ export const DownloadCell = ({ row, tabIndex }: DownloadCellProps) => {
   return (
     <Button
       variant="cell"
-      size="icon"
+      size="cell"
       tabIndex={tabIndex}
       disabled={isInProgress}
-      className="h-full w-full"
+      className="justify-center"
       aria-label="Download"
       data-tooltip="true"
       data-tooltip-content={t('common:download')}

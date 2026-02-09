@@ -2,7 +2,7 @@ import { z } from '@hono/zod-openapi';
 import { roles } from 'shared';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { membershipsTable } from '#/db/schema/memberships';
-import { createSelectSchema } from '#/lib/drizzle-schema';
+import { createSelectSchema } from '#/db/utils/drizzle-schema';
 import { contextEntityTypeSchema, idSchema, paginationQuerySchema, validEmailSchema } from '#/schemas';
 import { userBaseSchema } from '#/schemas/user-schema-base';
 import {

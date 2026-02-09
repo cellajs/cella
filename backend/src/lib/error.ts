@@ -77,11 +77,23 @@ const PG_ERROR_MAP: Record<string, { status: number; type: ErrorKey; message: st
   '40P01': { status: 409, type: 'server_error', message: 'Operation conflict, please retry' },
 };
 
+type PgErrorInfo = { code: string; detail?: string; constraint?: string };
+
 /**
- * Checks if error is a PostgreSQL database error with a code.
+ * Extracts PostgreSQL error info from an error, checking both the error itself
+ * and its cause (Drizzle ORM wraps PG errors in DrizzleQueryError with the original on .cause).
  */
-function isPostgresError(err: unknown): err is Error & { code: string; detail?: string; constraint?: string } {
-  return err instanceof Error && 'code' in err && typeof (err as { code: unknown }).code === 'string';
+function extractPgError(err: unknown): PgErrorInfo | null {
+  // Direct PG error (e.g., raw pg client)
+  if (err instanceof Error && 'code' in err && typeof (err as { code: unknown }).code === 'string') {
+    return err as Error & PgErrorInfo;
+  }
+  // Drizzle-wrapped PG error (original PG error stored on .cause)
+  const cause = err instanceof Error ? err.cause : undefined;
+  if (cause && typeof cause === 'object' && 'code' in cause && typeof (cause as { code: unknown }).code === 'string') {
+    return cause as PgErrorInfo;
+  }
+  return null;
 }
 
 /**
@@ -90,11 +102,9 @@ function isPostgresError(err: unknown): err is Error & { code: string; detail?: 
 export const appErrorHandler: ErrorHandler<Env> = (err, ctx) => {
   const isAppError = err instanceof AppError;
 
-  // Check if this is a PostgreSQL error we can map to a friendlier message
-  let pgMappedError: { status: number; type: ErrorKey; message: string } | undefined;
-  if (!isAppError && isPostgresError(err)) {
-    pgMappedError = PG_ERROR_MAP[err.code];
-  }
+  // Check if this is a PostgreSQL error we can map to a friendlier message (also unwraps Drizzle-wrapped errors)
+  const pgError = !isAppError ? extractPgError(err) : null;
+  const pgMappedError = pgError ? PG_ERROR_MAP[pgError.code] : undefined;
 
   const severity = isAppError ? err.severity : pgMappedError ? 'warn' : 'error';
   const type = isAppError ? err.type : (pgMappedError?.type ?? 'server_error');
@@ -129,6 +139,7 @@ export const appErrorHandler: ErrorHandler<Env> = (err, ctx) => {
     organizationId: organization?.id,
     timestamp: getIsoDate(),
     meta,
+    ...(pgError && { pgCode: pgError.code, pgDetail: pgError.detail, pgConstraint: pgError.constraint }),
   };
 
   if (detailsRequired) {

@@ -13,6 +13,7 @@
       "values": {
         "publicGuard": { "description": "No authentication required" },
         "authGuard": { "description": "Requires valid session" },
+        "crossTenantGuard": { "description": "Wraps handler in user RLS context for cross-tenant access" },
         "sysAdminGuard": { "description": "Requires system admin + IP whitelist" },
         "tenantGuard": { "description": "Validates tenant access and wraps handler in RLS-enabled transaction" }
       }

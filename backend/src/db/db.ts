@@ -1,58 +1,60 @@
 import type { PGlite } from '@electric-sql/pglite';
-import { type DrizzleConfig } from 'drizzle-orm';
-import { type NodePgClient, drizzle as pgDrizzle } from 'drizzle-orm/node-postgres';
+import type { DrizzleConfig } from 'drizzle-orm';
+
+import { type NodePgClient, type NodePgDatabase, drizzle as pgDrizzle } from 'drizzle-orm/node-postgres';
 import type { PgAsyncDatabase } from 'drizzle-orm/pg-core';
-import { drizzle as pgliteDrizzle } from 'drizzle-orm/pglite';
+import { type PgliteDatabase, drizzle as pgliteDrizzle } from 'drizzle-orm/pglite';
+
 import { appConfig } from 'shared';
+import * as schema from '#/db/schema';
 import { env } from '../env';
 
+export type DBSchema = typeof schema;
+
 /**
- * Database configuration for Drizzle ORM.
+ * ✅ Key change: type/satisfies DrizzleConfig WITH the schema type.
+ * If you annotate as plain `DrizzleConfig`, TS may widen schema and you get
+ * `Record<string, never> | typeof schema` in the DB type.
  */
-export const dbConfig: DrizzleConfig = {
+export const dbConfig = {
   logger: appConfig.debug,
   casing: 'snake_case',
-};
+} satisfies DrizzleConfig<DBSchema>;
 
-/**
- * Migration configuration for Drizzle ORM.
- */
 export const migrateConfig = { migrationsFolder: 'drizzle', migrationsSchema: 'drizzle-backend' };
 
-// biome-ignore lint/suspicious/noExplicitAny: Can be two different types
-export type DB = PgAsyncDatabase<any> & { $client: PGlite | NodePgClient };
+export type PgDB = NodePgDatabase<DBSchema> & { $client: NodePgClient };
+export type LiteDB = PgliteDatabase<DBSchema> & { $client: PGlite };
 
-/** Transaction type inferred from db.transaction callback */
-export type Tx = Parameters<Parameters<DB['transaction']>[0]>[0];
+// biome-ignore lint/suspicious/noExplicitAny: Common base type avoids union issues with .returning() and .execute()
+export type DB = PgAsyncDatabase<any, DBSchema> & { $client: PGlite | NodePgClient };
 
-/** Union type for functions that accept either raw db or transaction */
+type TxOf<D extends { transaction: (...args: any[]) => any }> = Parameters<Parameters<D['transaction']>[0]>[0];
+
+export type Tx = TxOf<DB>;
 export type DbOrTx = DB | Tx;
 
-/** Helper to create a Postgres connection with standard config. */
-const createPgConnection = (connectionString: string) =>
+const createPgConnection = (connectionString: string): PgDB =>
   pgDrizzle({
-    connection: { connectionString, connectionTimeoutMillis: 10000 },
+    connection: { connectionString, connectionTimeoutMillis: 10_000 },
+    schema,
     ...dbConfig,
-  }) as DB;
+  });
 
-/**
- * Initialize database connections based on DEV_MODE.
- *
- * - DEV_MODE=none: No connections (OpenAPI generation, basic tests)
- * - DEV_MODE=basic: PGlite only (single connection)
- * - Otherwise: Full Postgres with role-specific connections
- */
-const initConnections = (): { db: DB; migrationDb: DB | undefined; adminDb: DB | undefined } => {
+const createPgliteConnection = (): LiteDB =>
+  pgliteDrizzle({
+    connection: { dataDir: './.db' },
+    schema,
+    ...dbConfig,
+  });
+
+const initConnections = (): { db: DB; migrationDb?: PgDB; adminDb?: PgDB } => {
   if (env.DEV_MODE === 'none') {
-    return { db: {} as DB, migrationDb: undefined, adminDb: undefined };
+    return { db: {} as unknown as DB };
   }
 
   if (env.DEV_MODE === 'basic') {
-    return {
-      db: pgliteDrizzle({ connection: { dataDir: './.db' }, ...dbConfig }) as DB,
-      migrationDb: undefined,
-      adminDb: undefined, // PGlite doesn't have RLS, no bypass needed
-    };
+    return { db: createPgliteConnection() };
   }
 
   return {
@@ -64,36 +66,6 @@ const initConnections = (): { db: DB; migrationDb: DB | undefined; adminDb: DB |
 
 const connections = initConnections();
 
-/**
- * Primary database client (runtime_role, subject to RLS).
- *
- * ⚠️ UNSAFE for direct use in handlers: Use ctx.var.db instead, which is set
- * by guard middleware with proper RLS context. Direct usage bypasses tenant isolation.
- *
- * Legitimate uses: tenant-context.ts (creates RLS transactions), scripts, tests, seeds.
- * The 'unsafeInternal' prefix makes it greppable for security audits.
- */
 export const unsafeInternalDb: DB = connections.db;
-
-/**
- * Admin database connection for migrations only.
- *
- * ⚠️ UNSAFE: Bypasses all RLS policies. Only use for:
- * - Migrations (DDL requires superuser)
- * - Seeds (initial data setup)
- *
- * Undefined in DEV_MODE=none or DEV_MODE=basic.
- */
-export const migrationDb: DB | undefined = connections.migrationDb;
-
-/**
- * Admin database connection that bypasses RLS (admin_role, BYPASSRLS).
- *
- * ⚠️ UNSAFE: Bypasses ALL RLS policies. Only use for:
- * - System admin operations on entities they don't have membership in
- * - Cross-tenant operations that require admin privileges
- *
- * The 'unsafe' prefix makes it greppable for security audits.
- * Undefined in DEV_MODE=none or DEV_MODE=basic (PGlite has no RLS).
- */
-export const unsafeInternalAdminDb: DB | undefined = connections.adminDb;
+export const migrationDb: PgDB | undefined = connections.migrationDb;
+export const unsafeInternalAdminDb: PgDB | undefined = connections.adminDb;

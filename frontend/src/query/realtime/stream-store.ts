@@ -22,6 +22,7 @@ interface StreamConfig {
   processNotification: (notification: unknown) => void;
   processCatchupBatch?: (activities: unknown[], options: { lastSyncAt: string | null }) => void;
   invalidateOnReconnect?: boolean;
+  maxConsecutiveFailures?: number;
 }
 
 interface StreamStoreState {
@@ -64,6 +65,8 @@ class StreamManager {
   private reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
   private broadcastCleanup: (() => void) | null = null;
   private abortController: AbortController | null = null;
+  private consecutiveFailures = 0;
+  private circuitOpen = false;
 
   constructor(config: StreamConfig, store: ReturnType<typeof createStreamStore>) {
     this.config = config;
@@ -82,6 +85,12 @@ class StreamManager {
   async connect() {
     const { state } = this.store.getState();
     if (state === 'catching-up' || state === 'connecting' || state === 'live') return;
+
+    // Circuit breaker: stop if too many consecutive failures
+    if (this.circuitOpen) {
+      console.debug(`[${this.config.debugLabel}] Circuit breaker open, not attempting reconnect`);
+      return;
+    }
 
     this.abortController?.abort();
     this.abortController = new AbortController();
@@ -142,14 +151,43 @@ class StreamManager {
 
       console.debug(`[${debugLabel}] Catchup complete, cursor: ${newCursor}`);
 
+      // Reset circuit breaker on success
+      this.consecutiveFailures = 0;
+
       if (!signal.aborted) this.connectSSE();
     } catch (error) {
       if (!signal.aborted) {
-        console.error(`[${debugLabel}] Catchup failed:`, error);
+        this.consecutiveFailures++;
+        const maxFailures = this.config.maxConsecutiveFailures ?? 3;
+        const isPermanentError = this.isPermanentError(error);
+
+        console.error(`[${debugLabel}] Catchup failed (${this.consecutiveFailures}/${maxFailures}):`, error);
         this.store.getState().setState('error');
+
+        // Open circuit breaker for permanent errors or after max failures
+        if (isPermanentError || this.consecutiveFailures >= maxFailures) {
+          this.circuitOpen = true;
+          console.warn(
+            `[${debugLabel}] Circuit breaker opened: ${isPermanentError ? 'permanent error detected' : `${maxFailures} consecutive failures`}`,
+          );
+          return;
+        }
+
         this.scheduleReconnect();
       }
     }
+  }
+
+  /** Check if an error is permanent (no point retrying). */
+  private isPermanentError(error: unknown): boolean {
+    if (error && typeof error === 'object' && 'status' in error) {
+      const status = (error as { status: number }).status;
+      // 401 Unauthorized, 403 Forbidden - auth/permission issues won't resolve with retry
+      return status === 401 || status === 403;
+    }
+    // Check error message for known permanent error patterns
+    const message = error instanceof Error ? error.message : String(error);
+    return message.includes('Access denied') || message.includes('Unauthorized');
   }
 
   private connectSSE() {
@@ -189,15 +227,28 @@ class StreamManager {
         this.store.getState().setCursor(e.data);
         if (useTabCoordination) useSyncStore.getState().setCursor(e.data);
       }
+      // Reset failure count on successful connection
+      this.consecutiveFailures = 0;
       this.store.getState().setState('live');
     });
 
     eventSource.addEventListener('ping', () => {});
 
     eventSource.onerror = () => {
+      this.consecutiveFailures++;
+      const maxFailures = this.config.maxConsecutiveFailures ?? 3;
+      console.debug(`[${debugLabel}] SSE error (${this.consecutiveFailures}/${maxFailures})`);
+
       this.store.getState().setState('error');
       eventSource.close();
       this.eventSource = null;
+
+      if (this.consecutiveFailures >= maxFailures) {
+        this.circuitOpen = true;
+        console.warn(`[${debugLabel}] Circuit breaker opened: ${maxFailures} consecutive SSE failures`);
+        return;
+      }
+
       this.scheduleReconnect();
     };
 
@@ -205,7 +256,7 @@ class StreamManager {
   }
 
   private scheduleReconnect() {
-    if (this.reconnectTimeout) return;
+    if (this.reconnectTimeout || this.circuitOpen) return;
     this.reconnectTimeout = setTimeout(() => {
       this.reconnectTimeout = null;
       this.connect();
@@ -231,7 +282,14 @@ class StreamManager {
     this.store.getState().setState('disconnected');
   }
 
+  /** Reset circuit breaker and failure count. Call when auth state changes. */
+  resetCircuitBreaker() {
+    this.consecutiveFailures = 0;
+    this.circuitOpen = false;
+  }
+
   reconnect() {
+    this.resetCircuitBreaker();
     this.disconnect();
     this.connect();
   }

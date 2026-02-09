@@ -1,7 +1,7 @@
 import { count, eq, type SelectedFields, type SQL, sql } from 'drizzle-orm';
 import type { PgColumn, SubqueryWithSelection } from 'drizzle-orm/pg-core';
 import { appConfig, type ContextEntityType, hierarchy } from 'shared';
-import { unsafeInternalDb as db } from '#/db/db';
+import type { DbOrTx } from '#/db/db';
 import { organizationsTable } from '#/db/schema/organizations';
 import { entityTables } from '#/table-config';
 
@@ -9,10 +9,11 @@ import { entityTables } from '#/table-config';
  * Generates a subquery to count related entities for a context entity type.
  * Used for LEFT JOINs in list queries.
  *
+ * @param db - Database connection
  * @param entityType - The context entity type to count related entities for
  * @returns Subquery that can be joined on the entity's id column
  */
-export const getRelatedCountsSubquery = (entityType: ContextEntityType) => {
+export const getRelatedCountsSubquery = (db: DbOrTx, entityType: ContextEntityType) => {
   const entityIdColumnKey = appConfig.entityIdColumnKeys[entityType];
   const table = entityTables[entityType];
   if (!table) throw new Error(`Invalid entityType: ${entityType}`);

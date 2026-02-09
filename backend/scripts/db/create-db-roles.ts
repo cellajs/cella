@@ -8,7 +8,7 @@ import pc from 'picocolors';
  * This script is idempotent - skips if roles already exist.
  */
 
-const setupRolesSql = `
+const createDbRolesSql = `
 DO $$
 BEGIN
   -- Check if we can create roles (not available in PGlite)
@@ -42,7 +42,11 @@ BEGIN
 END $$;
 `;
 
-export async function setupRoles() {
+const isProduction = env.NODE_ENV === 'production';
+
+export async function createDbRoles() {
+    if (isProduction) return console.error('Not allowed in production.');
+
   if (env.DEV_MODE === 'basic') {
     // PGlite doesn't support roles
     return;
@@ -54,7 +58,7 @@ export async function setupRoles() {
   }
 
   try {
-    await migrationDb.execute(setupRolesSql);
+    await migrationDb.execute(createDbRolesSql);
     console.info(`${pc.green('✔')} Database roles configured`);
   } catch (error) {
     console.error('Failed to setup roles:', error);
@@ -64,6 +68,6 @@ export async function setupRoles() {
 
 // Run if executed directly
 if (import.meta.url === `file://${process.argv[1]}`) {
-  await setupRoles();
+  await createDbRoles();
   process.exit(0);
 }

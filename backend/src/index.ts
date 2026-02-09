@@ -40,10 +40,12 @@ Sentry.init({
 });
 
 const main = async () => {
-  // Migrate db using admin connection (bypasses RLS, creates roles)
+  // Create db roles if needed (dev only), then migrate
   if (isPGliteDatabase(db)) {
     await pgliteMigrate(db, migrateConfig);
   } else if (migrationDb) {
+    const { createDbRoles } = await import('../scripts/db/create-db-roles');
+    await createDbRoles();
     await pgMigrate(migrationDb, migrateConfig);
   } else {
     console.error('DATABASE_ADMIN_URL required for migrations');

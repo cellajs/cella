@@ -2,7 +2,7 @@ import { z } from '@hono/zod-openapi';
 import { appConfig, type EntityType, recordFromKeys, roles } from 'shared';
 import { organizationsTable } from '#/db/schema/organizations';
 import { authStrategiesEnum } from '#/db/schema/sessions';
-import { createInsertSchema, createSelectSchema } from '#/lib/drizzle-schema';
+import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schema';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
 import {
   entityCanSchema,

@@ -2,7 +2,7 @@ import { z } from '@hono/zod-openapi';
 import { appConfig } from 'shared';
 import { activitiesTable } from '#/db/schema/activities';
 import { activityErrorSchema } from '#/db/utils/activity-error-schema';
-import { createSelectSchema } from '#/lib/drizzle-schema';
+import { createSelectSchema } from '#/db/utils/drizzle-schema';
 import { paginationQuerySchema } from '#/schemas';
 import { txBaseSchema } from '#/schemas/tx-base-schema';
 import { activityActions } from '#/sync/activity-bus';

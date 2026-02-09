@@ -1854,6 +1854,69 @@ export const getSyncMetrics = <ThrowOnError extends boolean = true>(
   });
 
 /**
+ * Delete organizations
+ *
+ * Deletes one or more *organizations* by ID within a tenant.
+ *
+ * **DELETE /{tenantId}/organizations** ·· [deleteOrganizations](https://api.cellajs.com/docs#tag/organizations/delete/{tenantId}/organizations) ·· _organizations_
+ *
+ * @param {deleteOrganizationsData} options
+ * @param {string} options.path.tenantid - `string`
+ * @param {any[]=} options.body.ids - `any[]` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const deleteOrganizations = <ThrowOnError extends boolean = true>(
+  options: Options<DeleteOrganizationsData, ThrowOnError>,
+) =>
+  (options.client ?? client).delete<DeleteOrganizationsResponses, DeleteOrganizationsErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/{tenantId}/organizations',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Create organizations
+ *
+ * Creates one or more new *organizations* within a tenant.
+ *
+ * **POST /{tenantId}/organizations** ·· [createOrganizations](https://api.cellajs.com/docs#tag/organizations/post/{tenantId}/organizations) ·· _organizations_
+ *
+ * @param {createOrganizationsData} options
+ * @param {string} options.path.tenantid - `string`
+ * @returns Possible status codes: 201, 400, 401, 403, 404, 429
+ */
+export const createOrganizations = <ThrowOnError extends boolean = true>(
+  options: Options<CreateOrganizationsData, ThrowOnError>,
+) =>
+  (options.client ?? client).post<CreateOrganizationsResponses, CreateOrganizationsErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/{tenantId}/organizations',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
  * Get list of organizations
  *
  * Returns a list of *organizations*.
@@ -1886,36 +1949,6 @@ export const getOrganizations = <ThrowOnError extends boolean = true>(
     ],
     url: '/organizations',
     ...options,
-  });
-
-/**
- * Create organizations
- *
- * Creates one or more new *organizations*.
- *
- * **POST /organizations** ·· [createOrganizations](https://api.cellajs.com/docs#tag/organizations/post/organizations) ·· _organizations_
- *
- * @param {createOrganizationsData} options
- * @returns Possible status codes: 201, 400, 401, 403, 404, 429
- */
-export const createOrganizations = <ThrowOnError extends boolean = true>(
-  options: Options<CreateOrganizationsData, ThrowOnError>,
-) =>
-  (options.client ?? client).post<CreateOrganizationsResponses, CreateOrganizationsErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/organizations',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
   });
 
 /**
@@ -1988,38 +2021,6 @@ export const updateOrganization = <ThrowOnError extends boolean = true>(
       },
     ],
     url: '/{tenantId}/organizations/{id}',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
- * Delete organizations
- *
- * Deletes one or more *organizations* by ID within a tenant.
- *
- * **DELETE /{tenantId}/organizations** ·· [deleteOrganizations](https://api.cellajs.com/docs#tag/organizations/delete/{tenantId}/organizations) ·· _organizations_
- *
- * @param {deleteOrganizationsData} options
- * @param {string} options.path.tenantid - `string`
- * @param {any[]=} options.body.ids - `any[]` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const deleteOrganizations = <ThrowOnError extends boolean = true>(
-  options: Options<DeleteOrganizationsData, ThrowOnError>,
-) =>
-  (options.client ?? client).delete<DeleteOrganizationsResponses, DeleteOrganizationsErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/{tenantId}/organizations',
     ...options,
     headers: {
       'Content-Type': 'application/json',

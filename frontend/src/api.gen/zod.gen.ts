@@ -1398,6 +1398,63 @@ export const zGetSyncMetricsResponse = z.object({
   errorCount: z.number(),
 });
 
+export const zDeleteOrganizationsData = z.object({
+  body: z.object({
+    ids: z.array(z.string()).min(1).max(50),
+  }),
+  path: z.object({
+    tenantId: z
+      .string()
+      .max(24)
+      .regex(/^[a-z0-9]+$/),
+  }),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Success
+ */
+export const zDeleteOrganizationsResponse = z.object({
+  data: z.array(z.unknown()),
+  rejectedItemIds: z.array(z.string()),
+  rejectionReasons: z.optional(z.record(z.string(), z.string())),
+});
+
+export const zCreateOrganizationsData = z.object({
+  body: z
+    .array(
+      z.object({
+        id: z.string().regex(/^temp-/),
+        name: z.string().min(2).max(100),
+        slug: z.string().min(2).max(100),
+      }),
+    )
+    .min(1)
+    .max(10),
+  path: z.object({
+    tenantId: z
+      .string()
+      .max(24)
+      .regex(/^[a-z0-9]+$/),
+  }),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Organizations were created
+ */
+export const zCreateOrganizationsResponse = z.object({
+  data: z.array(
+    zOrganization.and(
+      z.object({
+        included: zOrganizationIncluded.and(z.record(z.string(), z.unknown())),
+      }),
+    ),
+  ),
+  rejectedItemIds: z.array(z.string()),
+  rejectionReasons: z.optional(z.record(z.string(), z.string())),
+});
+
 export const zGetOrganizationsData = z.object({
   body: z.optional(z.never()),
   path: z.optional(z.never()),
@@ -1422,36 +1479,6 @@ export const zGetOrganizationsData = z.object({
 export const zGetOrganizationsResponse = z.object({
   items: z.array(zOrganization),
   total: z.number(),
-});
-
-export const zCreateOrganizationsData = z.object({
-  body: z
-    .array(
-      z.object({
-        id: z.string().regex(/^temp-/),
-        name: z.string().min(2).max(100),
-        slug: z.string().min(2).max(100),
-      }),
-    )
-    .min(1)
-    .max(10),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
-});
-
-/**
- * Organizations were created
- */
-export const zCreateOrganizationsResponse = z.object({
-  data: z.array(
-    zOrganization.and(
-      z.object({
-        included: zOrganizationIncluded.and(z.record(z.string(), z.unknown())),
-      }),
-    ),
-  ),
-  rejectedItemIds: z.array(z.string()),
-  rejectionReasons: z.optional(z.record(z.string(), z.string())),
 });
 
 export const zGetOrganizationData = z.object({
@@ -1509,28 +1536,6 @@ export const zUpdateOrganizationData = z.object({
  * Organization was updated
  */
 export const zUpdateOrganizationResponse = zOrganization;
-
-export const zDeleteOrganizationsData = z.object({
-  body: z.object({
-    ids: z.array(z.string()).min(1).max(50),
-  }),
-  path: z.object({
-    tenantId: z
-      .string()
-      .max(24)
-      .regex(/^[a-z0-9]+$/),
-  }),
-  query: z.optional(z.never()),
-});
-
-/**
- * Success
- */
-export const zDeleteOrganizationsResponse = z.object({
-  data: z.array(z.unknown()),
-  rejectedItemIds: z.array(z.string()),
-  rejectionReasons: z.optional(z.record(z.string(), z.string())),
-});
 
 export const zGetPagesData = z.object({
   body: z.optional(z.never()),

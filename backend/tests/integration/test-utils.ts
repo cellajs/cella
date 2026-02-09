@@ -15,7 +15,7 @@
 import path from 'node:path';
 import { sql } from 'drizzle-orm';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
-import { unsafeInternalDb as db } from '#/db/db';
+import { unsafeInternalDb as db, type PgDB } from '#/db/db';
 import { activitiesTable } from '#/db/schema/activities';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -30,7 +30,7 @@ import { activityBus } from '#/sync/activity-bus';
  */
 export async function migrateDatabase() {
   const migrationsFolder = path.resolve(process.cwd(), 'drizzle');
-  await migrate(db, { migrationsFolder });
+  await migrate(db as PgDB, { migrationsFolder });
 }
 
 /**

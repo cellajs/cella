@@ -3322,24 +3322,18 @@ export type GetSyncMetricsResponses = {
 
 export type GetSyncMetricsResponse = GetSyncMetricsResponses[keyof GetSyncMetricsResponses];
 
-export type GetOrganizationsData = {
-  body?: never;
-  path?: never;
-  query?: {
-    q?: string;
-    sort?: 'id' | 'name' | 'createdAt';
-    order?: 'asc' | 'desc';
-    offset?: string;
-    limit?: string;
-    userId?: string;
-    role?: 'admin' | 'member';
-    excludeArchived?: 'true' | 'false';
-    include?: string;
+export type DeleteOrganizationsData = {
+  body: {
+    ids: Array<string>;
   };
-  url: '/organizations';
+  path: {
+    tenantId: string;
+  };
+  query?: never;
+  url: '/{tenantId}/organizations';
 };
 
-export type GetOrganizationsErrors = {
+export type DeleteOrganizationsErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -3362,19 +3356,28 @@ export type GetOrganizationsErrors = {
   429: TooManyRequestsError;
 };
 
-export type GetOrganizationsError = GetOrganizationsErrors[keyof GetOrganizationsErrors];
+export type DeleteOrganizationsError = DeleteOrganizationsErrors[keyof DeleteOrganizationsErrors];
 
-export type GetOrganizationsResponses = {
+export type DeleteOrganizationsResponses = {
   /**
-   * Organizations
+   * Success
    */
   200: {
-    items: Array<Organization>;
-    total: number;
+    data: Array<unknown>;
+    /**
+     * Identifiers of items that could not be processed
+     */
+    rejectedItemIds: Array<string>;
+    /**
+     * Map of rejected item ID to reason code
+     */
+    rejectionReasons?: {
+      [key: string]: string;
+    };
   };
 };
 
-export type GetOrganizationsResponse = GetOrganizationsResponses[keyof GetOrganizationsResponses];
+export type DeleteOrganizationsResponse = DeleteOrganizationsResponses[keyof DeleteOrganizationsResponses];
 
 export type CreateOrganizationsData = {
   body: Array<{
@@ -3382,9 +3385,11 @@ export type CreateOrganizationsData = {
     name: string;
     slug: string;
   }>;
-  path?: never;
+  path: {
+    tenantId: string;
+  };
   query?: never;
-  url: '/organizations';
+  url: '/{tenantId}/organizations';
 };
 
 export type CreateOrganizationsErrors = {
@@ -3438,6 +3443,60 @@ export type CreateOrganizationsResponses = {
 };
 
 export type CreateOrganizationsResponse = CreateOrganizationsResponses[keyof CreateOrganizationsResponses];
+
+export type GetOrganizationsData = {
+  body?: never;
+  path?: never;
+  query?: {
+    q?: string;
+    sort?: 'id' | 'name' | 'createdAt';
+    order?: 'asc' | 'desc';
+    offset?: string;
+    limit?: string;
+    userId?: string;
+    role?: 'admin' | 'member';
+    excludeArchived?: 'true' | 'false';
+    include?: string;
+  };
+  url: '/organizations';
+};
+
+export type GetOrganizationsErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetOrganizationsError = GetOrganizationsErrors[keyof GetOrganizationsErrors];
+
+export type GetOrganizationsResponses = {
+  /**
+   * Organizations
+   */
+  200: {
+    items: Array<Organization>;
+    total: number;
+  };
+};
+
+export type GetOrganizationsResponse = GetOrganizationsResponses[keyof GetOrganizationsResponses];
 
 export type GetOrganizationData = {
   body?: never;
@@ -3544,63 +3603,6 @@ export type UpdateOrganizationResponses = {
 };
 
 export type UpdateOrganizationResponse = UpdateOrganizationResponses[keyof UpdateOrganizationResponses];
-
-export type DeleteOrganizationsData = {
-  body: {
-    ids: Array<string>;
-  };
-  path: {
-    tenantId: string;
-  };
-  query?: never;
-  url: '/{tenantId}/organizations';
-};
-
-export type DeleteOrganizationsErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type DeleteOrganizationsError = DeleteOrganizationsErrors[keyof DeleteOrganizationsErrors];
-
-export type DeleteOrganizationsResponses = {
-  /**
-   * Success
-   */
-  200: {
-    data: Array<unknown>;
-    /**
-     * Identifiers of items that could not be processed
-     */
-    rejectedItemIds: Array<string>;
-    /**
-     * Map of rejected item ID to reason code
-     */
-    rejectionReasons?: {
-      [key: string]: string;
-    };
-  };
-};
-
-export type DeleteOrganizationsResponse = DeleteOrganizationsResponses[keyof DeleteOrganizationsResponses];
 
 export type GetPagesData = {
   body?: never;

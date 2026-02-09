@@ -87,7 +87,7 @@ for (const entityType of appConfig.productEntityTypes) {
 }
 
 // Organization events - routed via org channel
-// TODO not entityConfig agnostic yet or is this one ok?
+// TODO not entityConfig and hierarchy agnostic yet or is this one ok?
 
 const organizationEvents = ['organization.updated', 'organization.deleted'] as const;
 

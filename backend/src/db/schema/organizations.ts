@@ -45,17 +45,20 @@ export const organizationsTable = pgTable(
     unique('organizations_tenant_id_unique').on(table.tenantId, table.id),
 
     // RLS Policies: Cross-tenant read (user sees orgs they're member of), tenant-scoped write
-    // SELECT: User can see orgs where they have membership (cross-tenant for /me routes)
+    // SELECT: User can see orgs where they have membership OR they created it (for RETURNING after INSERT)
     pgPolicy('organizations_select_policy', {
       for: 'select',
       using: sql`
         ${isAuthenticated}
         AND ${userContextSet}
-        AND EXISTS (
-          SELECT 1 FROM memberships m
-          WHERE m.organization_id = ${table.id}
-          AND m.user_id = current_setting('app.user_id', true)::text
-          AND m.tenant_id = ${table.tenantId}
+        AND (
+          ${table.createdBy} = current_setting('app.user_id', true)::text
+          OR EXISTS (
+            SELECT 1 FROM memberships m
+            WHERE m.organization_id = ${table.id}
+            AND m.user_id = current_setting('app.user_id', true)::text
+            AND m.tenant_id = ${table.tenantId}
+          )
         )
       `,
     }),

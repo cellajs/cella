@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "32724639-9a57-4962-bc3f-9c877614db09",
+  "id": "94e08183-83d5-4253-9fca-3c33369d2550",
   "prevIds": [
     "00000000-0000-0000-0000-000000000000"
   ],
@@ -4858,7 +4858,20 @@
       ],
       "using": "current_setting('app.is_authenticated', true)::boolean = true AND \n  COALESCE(current_setting('app.user_id', true), '') != ''\n  AND \"memberships\".\"user_id\" = current_setting('app.user_id', true)::text\n",
       "withCheck": null,
-      "name": "memberships_select_policy",
+      "name": "memberships_select_own_policy",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "memberships"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "SELECT",
+      "roles": [
+        "public"
+      ],
+      "using": "current_setting('app.is_authenticated', true)::boolean = true AND \n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"memberships\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n",
+      "withCheck": null,
+      "name": "memberships_select_tenant_policy",
       "entityType": "policies",
       "schema": "public",
       "table": "memberships"

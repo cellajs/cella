@@ -9,14 +9,15 @@ export const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz0123456789', 24)
 const RESERVED_TENANT_ID = 'public';
 
 /**
- * Generate a 24-character lowercase alphanumeric ID for tenant IDs.
- * Includes collision check against reserved 'public' tenant ID.
+ * Generate a tenant ID: 6-character lowercase alphanumeric string.
+ * Shorter than the default nanoid for brevity in URLs and ease of use.
+ * Checks against reserved ID to prevent collision (extremely unlikely).
  */
 export function nanoidTenant(): string {
-  let id = customAlphabet('abcdefghijklmnopqrstuvwxyz0123456789', 24)();
+  let id = customAlphabet('abcdefghijklmnopqrstuvwxyz0123456789', 6)();
   // Extremely unlikely but prevent reserved ID collision
   while (id === RESERVED_TENANT_ID) {
-    id = customAlphabet('abcdefghijklmnopqrstuvwxyz0123456789', 24)();
+    id = customAlphabet('abcdefghijklmnopqrstuvwxyz0123456789', 6)();
   }
   return id;
 }

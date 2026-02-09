@@ -98,9 +98,10 @@ const meRouteHandlers = app
    */
   .openapi(meRoutes.getMyAuth, async (ctx) => {
     const user = ctx.var.user;
+    const db = ctx.var.db;
 
     // Get auth info + sessions in parallel
-    const [authInfo, sessions] = await Promise.all([getAuthInfo(user.id), getUserSessions(ctx, user.id)]);
+    const [authInfo, sessions] = await Promise.all([getAuthInfo(db, user.id), getUserSessions(ctx, user.id)]);
 
     const { oauth, ...restInfo } = authInfo;
     // Filter only providers that are enabled in appConfig
@@ -321,6 +322,7 @@ const meRouteHandlers = app
       muted: m.muted,
       archived: m.archived,
       organizationId: m.organizationId,
+      tenantId: m.tenantId,
     }));
 
     return ctx.json({ items }, 200);

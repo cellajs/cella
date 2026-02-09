@@ -354,6 +354,15 @@
       }
     ],
     "request": {
+      "path": {
+        "properties": {
+          "tenantId": {
+            "type": "string",
+            "required": true,
+            "maxLength": 24
+          }
+        }
+      },
       "body": {
         "type": "array",
         "itemType": "object",
@@ -378,6 +387,94 @@
         },
         "minItems": 1,
         "maxItems": 10,
+        "required": true,
+        "contentType": "application/json"
+      }
+    }
+  },
+  {
+    "operationId": "deleteOrganizations",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Success",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "data": { "type": "array", "required": true },
+            "rejectedItemIds": {
+              "type": "array",
+              "required": true,
+              "description": "Identifiers of items that could not be processed",
+              "itemType": "string"
+            },
+            "rejectionReasons": {
+              "type": "object",
+              "required": false,
+              "description": "Map of rejected item ID to reason code"
+            }
+          },
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "tenantId": {
+            "type": "string",
+            "required": true,
+            "maxLength": 24
+          }
+        }
+      },
+      "body": {
+        "type": "object",
+        "properties": {
+          "ids": {
+            "type": "array",
+            "required": true,
+            "minItems": 1,
+            "maxItems": 50,
+            "itemType": "string"
+          }
+        },
         "required": true,
         "contentType": "application/json"
       }
@@ -1421,94 +1518,6 @@
           "chatSupport": { "type": "boolean", "required": false }
         },
         "required": false,
-        "contentType": "application/json"
-      }
-    }
-  },
-  {
-    "operationId": "deleteOrganizations",
-    "responses": [
-      {
-        "status": 200,
-        "description": "Success",
-        "contentType": "application/json",
-        "schema": {
-          "type": "object",
-          "properties": {
-            "data": { "type": "array", "required": true },
-            "rejectedItemIds": {
-              "type": "array",
-              "required": true,
-              "description": "Identifiers of items that could not be processed",
-              "itemType": "string"
-            },
-            "rejectionReasons": {
-              "type": "object",
-              "required": false,
-              "description": "Map of rejected item ID to reason code"
-            }
-          },
-          "contentType": "application/json"
-        }
-      },
-      {
-        "status": 400,
-        "description": "Bad request: problem processing request.",
-        "name": "BadRequestError",
-        "ref": "#/components/responses/BadRequestError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 401,
-        "description": "Unauthorized: authentication required.",
-        "name": "UnauthorizedError",
-        "ref": "#/components/responses/UnauthorizedError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 403,
-        "description": "Forbidden: insufficient permissions.",
-        "name": "ForbiddenError",
-        "ref": "#/components/responses/ForbiddenError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 404,
-        "description": "Not found: resource does not exist.",
-        "name": "NotFoundError",
-        "ref": "#/components/responses/NotFoundError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 429,
-        "description": "Rate limit: too many requests.",
-        "name": "TooManyRequestsError",
-        "ref": "#/components/responses/TooManyRequestsError",
-        "contentType": "application/json"
-      }
-    ],
-    "request": {
-      "path": {
-        "properties": {
-          "tenantId": {
-            "type": "string",
-            "required": true,
-            "maxLength": 24
-          }
-        }
-      },
-      "body": {
-        "type": "object",
-        "properties": {
-          "ids": {
-            "type": "array",
-            "required": true,
-            "minItems": 1,
-            "maxItems": 50,
-            "itemType": "string"
-          }
-        },
-        "required": true,
         "contentType": "application/json"
       }
     }

@@ -4,8 +4,6 @@ import { appConfig, hierarchy, recordFromKeys, roles } from 'shared';
 import { unsafeInternalDb as db, unsafeInternalAdminDb } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
-import { tenantsTable } from '#/db/schema/tenants';
-import { setUserRlsContext } from '#/db/tenant-context';
 import { type Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
 import { checkSlugAvailable, checkSlugsAvailable } from '#/modules/entities/helpers/check-slug';
@@ -31,6 +29,7 @@ const organizationRouteHandlers = app
    */
   .openapi(organizationRoutes.createOrganizations, async (ctx) => {
     const items = ctx.req.valid('json');
+    const { tenantId } = ctx.req.valid('param');
 
     const user = ctx.var.user;
     const memberships = ctx.var.memberships;
@@ -46,7 +45,8 @@ const organizationRouteHandlers = app
     const availableSlots = 5 - createdOrgsCount;
 
     // No slots - system admins can bypass this restriction
-    if (!isSystemAdmin && availableSlots <= 0) throw new AppError(403, 'restrict_by_app', 'warn', { entityType: 'organization' });
+    if (!isSystemAdmin && availableSlots <= 0)
+      throw new AppError(403, 'restrict_by_app', 'warn', { entityType: 'organization' });
 
     // Check slug availability in database
     const slugs = items.map((item) => item.slug);
@@ -55,10 +55,11 @@ const organizationRouteHandlers = app
     // Filter by slug availability, track rejections
     const slugFiltered = filterWithRejection(items, (item) => slugAvailability.get(item.slug) === true, 'slug_exists');
 
-    // Enforce org creation restriction
+    // Enforce org creation restriction (system admins bypass this)
+    const effectiveSlots = isSystemAdmin ? Number.POSITIVE_INFINITY : availableSlots;
     const restrictionFiltered = takeWithRestriction(
       slugFiltered.items,
-      availableSlots,
+      effectiveSlots,
       'org_limit_reached',
       slugFiltered.rejectionState,
     );
@@ -72,25 +73,18 @@ const organizationRouteHandlers = app
       return ctx.json({ data: [], ...rejectionState }, 201);
     }
 
-    // Create tenants first (one per organization for now)
-    const createdTenants = await db
-      .insert(tenantsTable)
+    // Get the RLS-enabled db from tenant guard middleware
+    const tx = ctx.var.db;
+
+    // Insert organizations with proper RLS context (all in same tenant from path)
+    const createdOrganizations = await tx
+      .insert(organizationsTable)
       .values(
         itemsToCreate.map((item) => ({
           name: item.name,
-        })),
-      )
-      .returning();
-
-    // Batch insert organizations with tenant references
-    const createdOrganizations = await db
-      .insert(organizationsTable)
-      .values(
-        itemsToCreate.map((item, index) => ({
-          name: item.name,
           shortName: item.name,
           slug: item.slug,
-          tenantId: createdTenants[index].id,
+          tenantId,
           languages: [appConfig.defaultLanguage],
           welcomeText: defaultWelcomeText,
           defaultLanguage: appConfig.defaultLanguage,
@@ -105,7 +99,7 @@ const organizationRouteHandlers = app
       createdOrganizations.map((org) => org.id),
     );
 
-    // Insert memberships
+    // Insert memberships (using RLS-enabled db from middleware)
     const membershipInserts = createdOrganizations.map((org) => ({
       userId: user.id,
       createdBy: user.id,
@@ -113,7 +107,7 @@ const organizationRouteHandlers = app
       entity: org,
     }));
 
-    const createdMemberships = await insertMemberships(membershipInserts);
+    const createdMemberships = await insertMemberships(tx, membershipInserts);
 
     // Build counts
     const validEntities = hierarchy.getChildren('organization');
@@ -191,9 +185,6 @@ const organizationRouteHandlers = app
     // Org-only filters belong in WHERE (safe for both admin + non-admin)
     const orgWhere: SQL[] = [...(q ? [ilike(organizationsTable.name, prepareStringForILikeFilter(q))] : [])];
 
-    // Get reusable count subqueries and select shape (only when requested)
-    const countData = includeCounts ? getEntityCountsSelect(entityType) : null;
-
     const orderColumn = getOrderColumn(sort, organizationsTable.id, order, {
       id: organizationsTable.id,
       name: organizationsTable.name,
@@ -201,18 +192,21 @@ const organizationRouteHandlers = app
       userSystemRole: membershipsTable.role,
     });
 
-    // Select shape without membership - we'll add it via included wrapper if requested
-    const selectShape = {
-      ...getColumns(organizationsTable),
-      ...(countData && { counts: countData.countsSelect }),
-    } as const;
+    // Get RLS-enabled db from crossTenantGuard middleware
+    const tx = ctx.var.db;
 
     // System admin uses unsafeInternalAdminDb to bypass RLS (they have no membership in all orgs)
-    // Regular users use setUserRlsContext for cross-tenant membership-based access
+    // Regular users use ctx.var.db which has user RLS context from crossTenantGuard
     const { total, organizations } = isSystemAdmin
       ? await (async () => {
           // System admins bypass RLS entirely
           const adminDb = unsafeInternalAdminDb ?? db;
+          const countData = includeCounts ? getEntityCountsSelect(adminDb, entityType) : null;
+          const selectShape = {
+            ...getColumns(organizationsTable),
+            ...(countData && { counts: countData.countsSelect }),
+          } as const;
+
           const baseQuery = adminDb.select({ orgId: organizationsTable.id }).from(organizationsTable);
           const totalQuery = baseQuery.where(and(...orgWhere)).as('base');
           const [{ total }] = await adminDb.select({ total: count() }).from(totalQuery);
@@ -230,8 +224,14 @@ const organizationRouteHandlers = app
             .offset(offset);
           return { total, organizations };
         })()
-      : await setUserRlsContext({ userId: user.id }, async (tx) => {
+      : await (async () => {
           // Regular users: RLS allows cross-tenant SELECT via membership check
+          const countData = includeCounts ? getEntityCountsSelect(tx, entityType) : null;
+          const selectShape = {
+            ...getColumns(organizationsTable),
+            ...(countData && { counts: countData.countsSelect }),
+          } as const;
+
           const baseQuery = tx.select({ orgId: organizationsTable.id }).from(organizationsTable);
           const totalQuery = baseQuery
             .innerJoin(membershipsTable, membershipOn)
@@ -251,7 +251,7 @@ const organizationRouteHandlers = app
             .limit(limit)
             .offset(offset);
           return { total, organizations };
-        });
+        })();
 
     // Build response with included wrapper for optional data
     const items = organizations.map((org) => {
@@ -316,7 +316,7 @@ const organizationRouteHandlers = app
       throw new AppError(403, 'forbidden', 'warn', { entityType: 'organization', meta: { reason: 'Tenant mismatch' } });
     }
 
-    const counts = await getEntityCounts(organization.entityType, organization.id);
+    const counts = await getEntityCounts(ctx.var.db, organization.entityType, organization.id);
 
     // Build included object with membership and counts
     const included = {
@@ -370,7 +370,10 @@ const organizationRouteHandlers = app
 
     // TODO-019 sanitize blocknote blocks for welcomeText? How to only allow image urls from our own cdn plus a list from allowed domains?
 
-    const [updatedOrganization] = await db
+    // Use RLS-enabled transaction from tenant guard middleware
+    const tx = ctx.var.db;
+
+    const [updatedOrganization] = await tx
       .update(organizationsTable)
       .set({
         ...updatedFields,
@@ -382,7 +385,7 @@ const organizationRouteHandlers = app
 
     logEvent('info', 'Organization updated', { organizationId: updatedOrganization.id });
 
-    const counts = await getEntityCounts(organization.entityType, organization.id);
+    const counts = await getEntityCounts(ctx.var.db, organization.entityType, organization.id);
 
     // Build included object with membership and counts
     const included = {

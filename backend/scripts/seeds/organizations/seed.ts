@@ -25,7 +25,8 @@ const db = migrationDb;
 
 const isProduction = process.env.NODE_ENV === 'production';
 
-const ORGANIZATIONS_COUNT = 100;
+const TENANTS_COUNT = 10;
+const ORGANIZATIONS_PER_TENANT = 10;
 const MEMBERS_COUNT = 100;
 const SYSTEM_ADMIN_MEMBERSHIP_COUNT = 10;
 export const PLAIN_USER_PASSWORD = '12345678';
@@ -55,8 +56,8 @@ export const organizationsSeed = async () => {
     return;
   }
 
-  // Create tenants first (one per organization for seed data)
-  const tenantRecords = Array.from({ length: ORGANIZATIONS_COUNT }, (_, i) => ({
+  // Create tenants (10 tenants, each will have 10 organizations)
+  const tenantRecords = Array.from({ length: TENANTS_COUNT }, (_, i) => ({
     name: `Tenant ${i + 1}`,
   }));
   const tenants = await db
@@ -65,10 +66,10 @@ export const organizationsSeed = async () => {
     .returning()
     .onConflictDoNothing();
 
-  // Make many organizations → Insert into the database
-  const organizationRecords = mockMany(mockOrganization, ORGANIZATIONS_COUNT).map((org, i) => ({
+  // Make organizations - distribute across tenants (10 per tenant)
+  const organizationRecords = mockMany(mockOrganization, TENANTS_COUNT * ORGANIZATIONS_PER_TENANT).map((org, i) => ({
     ...org,
-    tenantId: tenants[i].id, // Override the random tenantId with actual tenant
+    tenantId: tenants[Math.floor(i / ORGANIZATIONS_PER_TENANT)].id, // Assign 10 orgs per tenant
   }));
   const organizations = await db
     .insert(organizationsTable)
@@ -138,7 +139,7 @@ export const organizationsSeed = async () => {
       .onConflictDoNothing();
   }
 
-  succeedSpinner(`Created ${ORGANIZATIONS_COUNT} organizations with ${MEMBERS_COUNT} members each`);
+  succeedSpinner(`Created ${TENANTS_COUNT} tenants with ${ORGANIZATIONS_PER_TENANT} organizations each (${TENANTS_COUNT * ORGANIZATIONS_PER_TENANT} total), ${MEMBERS_COUNT} members per org`);
 };
 
 /**

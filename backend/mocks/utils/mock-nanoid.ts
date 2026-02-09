@@ -75,6 +75,5 @@ export const mockNanoid = (length = 24) => {
 
 /**
  * Generates a mock tenant ID (6 lowercase alphanumeric chars).
- * Uses faker's seeded RNG for deterministic output.
  */
-export const mockTenantId = () => faker.string.alphanumeric({ length: 6, casing: 'lower' });
+export const mockTenantId = () => mockNanoid(6);

@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { requestsTable } from '#/db/schema/requests';
-import { createSelectSchema } from '#/lib/drizzle-schema';
+import { createSelectSchema } from '#/db/utils/drizzle-schema';
 import { paginationQuerySchema } from '#/schemas';
 import { mockRequestResponse } from '../../../mocks/mock-entity-base';
 

@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { t } from 'i18next';
 import { passkeysTable } from '#/db/schema/passkeys';
-import { createSelectSchema } from '#/lib/drizzle-schema';
+import { createSelectSchema } from '#/db/utils/drizzle-schema';
 
 const passkeyTypeSchema = z.enum(['authentication', 'mfa']);
 const challengeTypeSchema = z.enum([...passkeyTypeSchema.options, 'registration']);

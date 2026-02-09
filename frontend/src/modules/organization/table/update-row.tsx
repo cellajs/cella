@@ -45,9 +45,9 @@ export function UpdateRow({ organization, tabIndex }: Props) {
       id={`update-${organization.id}`}
       ref={buttonRef}
       variant="cell"
-      size="icon"
+      size="cell"
       tabIndex={tabIndex}
-      className="h-full w-full"
+      className="justify-center"
       data-tooltip="true"
       data-tooltip-content={i18n.t('common:edit')}
       onClick={() => openUpdateSheet(organization, buttonRef)}
