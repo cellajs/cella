@@ -12,7 +12,9 @@ export default defineConfig({
     syncWithPackages: true,
     packageJsonSync: ['dependencies', 'devDependencies', 'scripts'],
     mergeStrategy: 'squash',
-    fileLinkMode: 'file'
+    fileLinkMode: 'file',
+    // upstreamLocalPath: '../cella',
+    // autoContribute: true,
   },
 
   // Local forks to sync to (for upstream template development)

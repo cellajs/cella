@@ -137,8 +137,30 @@ async function applyDirectMerge(
     }
 
     if (pinned) {
-      onProgress?.(`→ ${filePath}: keeping fork (pinned)`);
-      await restoreToHead(forkPath, filePath);
+      if (file.renamedFrom) {
+        // Renamed file where old path was pinned — accept the rename (new path)
+        // but keep fork's content from the old path
+        const oldPathExists = await fileExistsInWorktree(forkPath, file.renamedFrom);
+        if (oldPathExists) {
+          onProgress?.(`→ ${file.renamedFrom} → ${filePath}: moving fork content (pinned rename)`);
+          try {
+            await gitMv(forkPath, file.renamedFrom, filePath);
+          } catch {
+            // git mv failed — copy content manually
+            await gitRm(forkPath, file.renamedFrom);
+            await removeFileFromWorktree(forkPath, file.renamedFrom);
+            // Checkout upstream's new path first, then restore fork content
+            await checkoutFromRef(forkPath, 'HEAD', file.renamedFrom).catch(() => {});
+          }
+        } else {
+          // Old path already gone — restore from HEAD at old path via git show
+          onProgress?.(`→ ${filePath}: keeping fork content (pinned rename, old path removed)`);
+          await restoreToHead(forkPath, filePath);
+        }
+      } else {
+        onProgress?.(`→ ${filePath}: keeping fork (pinned)`);
+        await restoreToHead(forkPath, filePath);
+      }
       resolved++;
       continue;
     }
@@ -361,8 +383,13 @@ async function analyzeFiles(
       // Check if fork modified the old file
       const forkModifiedOld = forkOldHash !== baseOldHash;
 
-      if (fileIsPinned || isIgnored(oldPath, config)) {
-        // Pinned or ignored - keep fork's version
+      // Check both old and new paths for pinned/ignored status.
+      // When a directory is renamed (e.g., config/ → shared/), the fork's
+      // pinned list may still reference the old path.
+      const oldPathPinned = isPinned(oldPath, config);
+
+      if (fileIsPinned || oldPathPinned || isIgnored(oldPath, config)) {
+        // Pinned or ignored - keep fork's version at the new path
         status = 'pinned';
       } else if (!oldPathInFork) {
         // Old path doesn't exist in fork (fork already deleted or moved it)

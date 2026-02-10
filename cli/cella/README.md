@@ -23,9 +23,10 @@ pnpm cella
 | `sync` | Merge upstream changes into your app |
 | `packages` | Sync package.json keys with upstream |
 | `audit` | Check for outdated packages & vulnerabilities |
-| `forks` | Sync downstream to local fork repositories* |
+| `forks` * | Sync downstream to local fork repositories |
+| `contributions` * | Review and accept file contributions from forks |
 
-\* `forks` only appears in the menu when you have `forks` configured in `cella.config.ts`. This is for upstream template developers who maintain multiple downstream forks from a single template repo.
+\* `forks` and `contributions` only appear in the menu when you have `forks` configured in `cella.config.ts`. These are for upstream template developers who maintain multiple downstream forks.
 
 ## CLI Options
 
@@ -35,8 +36,9 @@ pnpm cella [options]
 
 | Flag | Description |
 |------|-------------|
-| `--service <name>` | Choose service: `analyze`, `inspect`, `sync`, `packages`, `audit`, `forks` |
-| `--list` | Non-interactive output for `inspect` (one file per line, useful for scripting) |
+| `--service <name>` | Choose service: `analyze`, `inspect`, `sync`, `packages`, `audit`, `forks`, `contributions` |
+| `--fork <name>` | Sync a specific fork directly (skips interactive menu) |
+| `--list` | Non-interactive output for `inspect` / `contributions` (one file per line, useful for scripting) |
 | `--log` | Write complete file list to `cella-sync.log` |
 | `-V, --verbose` | Show detailed output during operations |
 | `-v, --version` | Output the current version |
@@ -97,6 +99,7 @@ During analysis and sync, files are displayed with status indicators:
 | ↓ | `behind` | Upstream has changes | Will sync from upstream |
 | ⇅ | `diverged` | Both sides changed | Will merge from upstream |
 | ⨀ | `pinned` | Both changed, fork wins | Protected, keeping fork |
+| ◌ | `local` | Only in fork, never in upstream | No action needed |
 
 ## Package.json Sync
 
@@ -135,6 +138,40 @@ mergeStrategy: 'merge' // default
 **Use `squash`** for:
 - Cleaner commit history (one commit per sync)
 - When you prefer manual conflict resolution
+
+## Contributions (bidirectional sync)
+
+Forks can push modifications back to upstream via **contrib branches**. This enables a lightweight contribution flow without pull requests.
+
+### Fork side
+
+Add to your fork's `cella.config.ts`:
+
+```typescript
+settings: {
+  upstreamLocalPath: '../cella', // Path to local upstream clone
+  autoContribute: true,          // Auto-push drifted files after sync/analyze
+}
+```
+
+With `autoContribute` enabled, any **drifted** files (fork modified, upstream didn't) are automatically pushed to a `contrib/<fork-name>` branch in the upstream repo after every sync or analyze run.
+
+Alternatively, use the **inspect** service to selectively contribute: review drifted files, select with `space`, and press `enter` to push.
+
+### Upstream side
+
+Run `pnpm cella` and choose **contributions** (or `--service contributions`). This fetches all `contrib/*` branches and presents an interactive TUI:
+
+| Key | Action |
+|-----|--------|
+| `↑↓` | Navigate files |
+| `d` | View diff in terminal pager |
+| `a` | Select all files from same fork |
+| `space` | Toggle file selection |
+| `enter` | Accept selected files (staged for commit) |
+| `q` | Quit |
+
+Accepted files are checked out from the contrib branch and staged — review and commit when ready.
 
 ## Development
 
