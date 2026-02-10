@@ -150,14 +150,14 @@ const attachmentRouteHandlers = app
     const newAttachments = ctx.req.valid('json');
     const tenantDb = ctx.var.db;
 
-    // Idempotency check - use first item's tx.id to check entire batch
-    const batchTxId = newAttachments[0].tx.id;
-    if (await isTransactionProcessed(batchTxId, tenantDb)) {
-      // Fetch all items from same batch by querying tx.id in JSONB column
+    // Idempotency check - use first item's stx.id to check entire batch
+    const batchStxId = newAttachments[0].stx.id;
+    if (await isTransactionProcessed(batchStxId, tenantDb)) {
+      // Fetch all items from same batch by querying stx.id in JSONB column
       const existingBatch = await tenantDb
         .select()
         .from(attachmentsTable)
-        .where(sql`${attachmentsTable.tx}->>'id' = ${batchTxId}`);
+        .where(sql`${attachmentsTable.stx}->>'id' = ${batchStxId}`);
       if (existingBatch.length > 0) {
         return ctx.json({ data: existingBatch, rejectedItemIds: [] }, 200);
       }
@@ -181,8 +181,8 @@ const attachmentRouteHandlers = app
       throw new AppError(403, 'restrict_by_org', 'warn', { entityType: 'attachment' });
     }
 
-    // Prepare attachments with tx metadata for CDC
-    const attachmentsToInsert = newAttachments.map(({ tx, ...att }) => ({
+    // Prepare attachments with stx metadata for CDC
+    const attachmentsToInsert = newAttachments.map(({ stx, ...att }) => ({
       ...att,
       tenantId: organization.tenantId,
       organizationId: organization.id,
@@ -193,10 +193,10 @@ const attachmentRouteHandlers = app
       modifiedBy: null,
       keywords: '', // Required by productEntityColumns
       description: '', // Required by baseEntityColumns
-      // Sync: write transient tx metadata for CDC Worker
-      tx: {
-        id: tx.id,
-        sourceId: tx.sourceId,
+      // Sync: write transient stx metadata for CDC Worker
+      stx: {
+        id: stx.id,
+        sourceId: stx.sourceId,
         version: 1,
         fieldVersions: {},
       },
@@ -207,7 +207,7 @@ const attachmentRouteHandlers = app
 
     logEvent('info', `${createdAttachments.length} attachments have been created`);
 
-    // Return entities with tx embedded (for client tracking)
+    // Return entities with stx embedded (for client tracking)
     return ctx.json({ data: createdAttachments, rejectedItemIds: [] }, 201);
   })
   /**
@@ -215,7 +215,7 @@ const attachmentRouteHandlers = app
    */
   .openapi(attachmentRoutes.updateAttachment, async (ctx) => {
     const { id } = ctx.req.valid('param');
-    const { tx, ...updatedFields } = ctx.req.valid('json');
+    const { stx, ...updatedFields } = ctx.req.valid('json');
 
     const { entity, can } = await getValidProductEntity(ctx, id, 'attachment', 'update');
 
@@ -226,10 +226,10 @@ const attachmentRouteHandlers = app
     const changedFields = getChangedTrackedFields(updatedFields, trackedFields);
 
     // Field-level conflict detection - check ALL changed fields
-    const { conflicts } = checkFieldConflicts(changedFields, entity.tx, tx.baseVersion);
+    const { conflicts } = checkFieldConflicts(changedFields, entity.stx, stx.baseVersion);
     throwIfConflicts('attachment', conflicts);
 
-    const newVersion = (entity.tx?.version ?? 0) + 1;
+    const newVersion = (entity.stx?.version ?? 0) + 1;
 
     // Use tenant-scoped db from tenantGuard middleware (RLS context already set)
     const tenantDb = ctx.var.db;
@@ -239,12 +239,12 @@ const attachmentRouteHandlers = app
         ...updatedFields,
         modifiedAt: getIsoDate(),
         modifiedBy: user.id,
-        // Sync: write transient tx metadata for CDC Worker + client tracking
-        tx: {
-          id: tx.id,
-          sourceId: tx.sourceId,
+        // Sync: write transient stx metadata for CDC Worker + client tracking
+        stx: {
+          id: stx.id,
+          sourceId: stx.sourceId,
           version: newVersion,
-          fieldVersions: buildFieldVersions(entity.tx?.fieldVersions, changedFields, newVersion),
+          fieldVersions: buildFieldVersions(entity.stx?.fieldVersions, changedFields, newVersion),
         },
       })
       .where(eq(attachmentsTable.id, id))
@@ -252,21 +252,21 @@ const attachmentRouteHandlers = app
 
     logEvent('info', 'Attachment updated', { attachmentId: updatedAttachment.id });
 
-    // Return entity directly with can permissions (tx embedded for client tracking)
+    // Return entity directly with can permissions (stx embedded for client tracking)
     return ctx.json({ ...updatedAttachment, can }, 200);
   })
   /**
    * Delete attachments by ids
    */
   .openapi(attachmentRoutes.deleteAttachments, async (ctx) => {
-    const { ids, tx } = ctx.req.valid('json');
+    const { ids, stx } = ctx.req.valid('json');
 
     const memberships = ctx.var.memberships;
 
-    // tx is available for CDC echo prevention (sourceId tracking)
-    // CDC will read tx from the deleted row's old data
-    if (tx) {
-      logEvent('debug', 'Delete with tx metadata', { txId: tx.id, sourceId: tx.sourceId });
+    // stx is available for CDC echo prevention (sourceId tracking)
+    // CDC will read stx from the deleted row's old data
+    if (stx) {
+      logEvent('debug', 'Delete with stx metadata', { stxId: stx.id, sourceId: stx.sourceId });
     }
 
     // Convert the ids to an array

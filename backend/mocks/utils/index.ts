@@ -20,5 +20,5 @@ export {
 } from './mock-nanoid';
 export { mockPaginated } from './mock-paginated';
 export { pastIsoDate } from './mock-past-iso-date';
+export { mockStx } from './mock-stx';
 export { MOCK_REF_DATE, mockFutureDate, mockPastDate, mockTimestamps } from './mock-timestamps';
-export { mockTx } from './mock-tx';

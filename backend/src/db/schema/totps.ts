@@ -3,9 +3,6 @@ import { usersTable } from '#/db/schema/users';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
 
-/**
- * TOTPs table to store Time-based One-Time Password (TOTP) secrets for users.
- */
 export const totpsTable = pgTable('totps', {
   id: varchar().primaryKey().$defaultFn(nanoid),
   userId: varchar()

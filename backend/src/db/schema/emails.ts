@@ -3,11 +3,7 @@ import { usersTable } from '#/db/schema/users';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
 
-/**
- * Emails table. Users can have multiple emails, each needing verification.
- * tokenId references tokens table but without FK constraint (tokens is partitioned by expiresAt,
- * and PostgreSQL doesn't support FK to partitioned tables unless including the partition key).
- */
+/** Users can have multiple emails. tokenId has no FK constraint (tokens is partitioned). */
 export const emailsTable = pgTable('emails', {
   createdAt: timestampColumns.createdAt,
   id: varchar().primaryKey().$defaultFn(nanoid),

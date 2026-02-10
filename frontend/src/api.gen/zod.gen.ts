@@ -42,14 +42,14 @@ export const zMembershipBase = z.object({
   organizationId: z.string(),
 });
 
-export const zTxBase = z.object({
+export const zStxBase = z.object({
   id: z.string(),
   sourceId: z.string(),
   version: z.number(),
   fieldVersions: z.record(z.string(), z.number()),
 });
 
-export const zTxStreamMessage = z.union([
+export const zStxStreamMessage = z.union([
   z.object({
     id: z.string(),
     sourceId: z.string(),
@@ -67,7 +67,7 @@ export const zStreamNotification = z.object({
   organizationId: z.union([z.string(), z.null()]),
   contextType: z.nullable(z.enum(['organization'])),
   seq: z.union([z.int(), z.null()]),
-  tx: zTxStreamMessage,
+  stx: zStxStreamMessage,
   cacheToken: z.union([z.string(), z.null()]),
 });
 
@@ -164,7 +164,7 @@ export const zActivity = z.object({
   organizationId: z.union([z.string(), z.null()]),
   createdAt: z.string(),
   changedKeys: z.union([z.array(z.string()), z.null()]),
-  tx: z.union([zTxBase, z.null()]),
+  stx: z.union([zStxBase, z.null()]),
   seq: z.union([z.int().gte(-2147483648).lte(2147483647), z.null()]),
   error: z.union([zActivityError, z.null()]),
 });
@@ -310,6 +310,7 @@ export const zOrganization = z.object({
   createdAt: z.string(),
   id: z.string(),
   entityType: z.enum(['organization']),
+  tenantId: z.string().max(24),
   name: z.string(),
   description: z.union([z.string(), z.null()]),
   modifiedAt: z.union([z.string(), z.null()]),
@@ -318,7 +319,6 @@ export const zOrganization = z.object({
   bannerUrl: z.union([z.string(), z.null()]),
   createdBy: z.union([z.string(), z.null()]),
   modifiedBy: z.union([z.string(), z.null()]),
-  tenantId: z.string().max(24),
   shortName: z.union([z.string(), z.null()]),
   country: z.union([z.string(), z.null()]),
   timezone: z.union([z.string(), z.null()]),
@@ -348,21 +348,21 @@ export const zPage = z.object({
   createdAt: z.string(),
   id: z.string(),
   entityType: z.enum(['page']),
+  tenantId: z.string().max(24),
   name: z.string(),
   description: z.union([z.string(), z.null()]),
   modifiedAt: z.union([z.string(), z.null()]),
-  tx: zTxBase,
+  stx: zStxBase,
   keywords: z.string(),
   createdBy: z.union([z.string(), z.null()]),
   modifiedBy: z.union([z.string(), z.null()]),
-  tenantId: z.string().max(24),
   status: z.enum(['unpublished', 'published', 'archived']),
   publicAccess: z.boolean(),
   parentId: z.union([z.string(), z.null()]),
   displayOrder: z.number().gte(-140737488355328).lte(140737488355327),
 });
 
-export const zTxRequest = z.object({
+export const zStxRequest = z.object({
   id: z.string().max(32),
   sourceId: z.string().max(64),
   baseVersion: z.int().gte(0),
@@ -372,14 +372,14 @@ export const zAttachment = z.object({
   createdAt: z.string(),
   id: z.string(),
   entityType: z.enum(['attachment']),
+  tenantId: z.string().max(24),
   name: z.string(),
   description: z.union([z.string(), z.null()]),
   modifiedAt: z.union([z.string(), z.null()]),
-  tx: zTxBase,
+  stx: zStxBase,
   keywords: z.string(),
   createdBy: z.union([z.string(), z.null()]),
   modifiedBy: z.union([z.string(), z.null()]),
-  tenantId: z.string().max(24),
   public: z.boolean(),
   bucketName: z.string(),
   groupId: z.union([z.string(), z.null()]),
@@ -1600,7 +1600,7 @@ export const zCreatePagesData = z.object({
     .array(
       z.object({
         name: z.optional(z.string()),
-        tx: zTxRequest,
+        stx: zStxRequest,
       }),
     )
     .min(1)
@@ -1635,7 +1635,7 @@ export const zUpdatePageData = z.object({
     displayOrder: z.optional(z.number().gte(-140737488355328).lte(140737488355327)),
     status: z.optional(z.enum(['unpublished', 'published', 'archived'])),
     parentId: z.optional(z.union([z.string(), z.null()])),
-    tx: zTxRequest,
+    stx: zStxRequest,
   }),
   path: z.object({
     tenantId: z
@@ -1715,7 +1715,7 @@ export const zGetUserResponse = zUser;
 export const zDeleteAttachmentsData = z.object({
   body: z.object({
     ids: z.array(z.string()).min(1).max(50),
-    tx: z.optional(
+    stx: z.optional(
       z.object({
         id: z.string(),
         sourceId: z.string(),
@@ -1788,7 +1788,7 @@ export const zCreateAttachmentsData = z.object({
         convertedContentType: z.optional(z.union([z.string(), z.null()])),
         convertedKey: z.optional(z.union([z.string(), z.null()])),
         thumbnailKey: z.optional(z.union([z.string(), z.null()])),
-        tx: zTxRequest,
+        stx: zStxRequest,
       }),
     )
     .min(1)
@@ -1857,7 +1857,7 @@ export const zUpdateAttachmentData = z.object({
   body: z.object({
     name: z.optional(z.string()),
     originalKey: z.optional(z.string()),
-    tx: zTxRequest,
+    stx: zStxRequest,
   }),
   path: z.object({
     tenantId: z

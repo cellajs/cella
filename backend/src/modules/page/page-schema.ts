@@ -1,8 +1,8 @@
 import { z } from '@hono/zod-openapi';
 import { pagesTable } from '#/db/schema/pages';
 import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schema';
-import { batchResponseSchema, paginationQuerySchema, txRequestSchema } from '#/schemas';
-import { txBaseSchema } from '#/schemas/tx-base-schema';
+import { batchResponseSchema, paginationQuerySchema, stxRequestSchema } from '#/schemas';
+import { stxBaseSchema } from '#/schemas/stx-base-schema';
 import { mockPageResponse } from '../../../mocks/mock-page';
 
 /** Page status enum - matches pages table status column */
@@ -18,18 +18,18 @@ const pageSelectSchema = z.object({
 });
 
 export const pageSchema = z
-  .object({ ...pageSelectSchema.shape, tx: txBaseSchema })
+  .object({ ...pageSelectSchema.shape, stx: stxBaseSchema })
   .openapi('Page', { example: mockPageResponse() });
 
 export const pageCreateBodySchema = pageInsertSchema.pick({
   name: true,
 });
 
-/** Create body with tx for single page creation */
-export const pageCreateTxBodySchema = pageCreateBodySchema.extend({ tx: txRequestSchema });
+/** Create body with stx for single page creation */
+export const pageCreateStxBodySchema = pageCreateBodySchema.extend({ stx: stxRequestSchema });
 
-/** Array schema for batch creates (1-50 pages per request), each with own tx */
-export const pageCreateManyTxBodySchema = pageCreateTxBodySchema.array().min(1).max(50);
+/** Array schema for batch creates (1-50 pages per request), each with own stx */
+export const pageCreateManyStxBodySchema = pageCreateStxBodySchema.array().min(1).max(50);
 
 export const pageUpdateBodySchema = pageInsertSchema
   .pick({
@@ -42,8 +42,8 @@ export const pageUpdateBodySchema = pageInsertSchema
   })
   .partial();
 
-/** Update body with tx embedded */
-export const pageUpdateTxBodySchema = pageUpdateBodySchema.extend({ tx: txRequestSchema });
+/** Update body with stx embedded */
+export const pageUpdateStxBodySchema = pageUpdateBodySchema.extend({ stx: stxRequestSchema });
 
 // Response schemas: batch operations use { data, rejectedItems }, single returns entity directly
 export const pageCreateResponseSchema = batchResponseSchema(pageSchema);

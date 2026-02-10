@@ -54,7 +54,7 @@ function buildActivityPayload(
       userId: activity.userId,
       ...contextIds,
       changedKeys: activity.changedKeys,
-      tx: activity.tx,
+      stx: activity.stx,
       seq,
       createdAt: new Date().toISOString(),
     },

@@ -130,6 +130,7 @@ const userRouteHandlers = app
     // Resolve user by ID (or slug when bySlug is true)
     // TODO-009 we should scan codebase for usage of resolveEntity in handlers directy.
     // Perhaps we would do well to make it explicitly internal use only
+    // Perhaps make it part of permission refactor
     // Since the permission wrapped is preferred getValidEntity
     const targetUser = await resolveEntity('user', userId, db, bySlug);
 

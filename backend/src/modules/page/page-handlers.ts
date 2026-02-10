@@ -119,10 +119,10 @@ const pageRouteHandlers = app
     const newPages = ctx.req.valid('json');
     const tenantDb = ctx.var.db;
 
-    // Idempotency check - use first item's tx.id
-    const firstTx = newPages[0].tx;
-    if (await isTransactionProcessed(firstTx.id, tenantDb)) {
-      const ref = await getEntityByTransaction(firstTx.id, tenantDb);
+    // Idempotency check - use first item's stx.id
+    const firstStx = newPages[0].stx;
+    if (await isTransactionProcessed(firstStx.id, tenantDb)) {
+      const ref = await getEntityByTransaction(firstStx.id, tenantDb);
       if (ref) {
         // For batch create, the first page ID is stored - fetch all from that batch
         const existing = await tenantDb.select().from(pagesTable).where(eq(pagesTable.id, ref.entityId));
@@ -135,8 +135,8 @@ const pageRouteHandlers = app
     const user = ctx.var.user;
     const tenantId = ctx.var.tenantId;
 
-    // Prepare pages with tx metadata for CDC
-    const pagesToInsert = newPages.map(({ tx, ...pageData }) => ({
+    // Prepare pages with stx metadata for CDC
+    const pagesToInsert = newPages.map(({ stx, ...pageData }) => ({
       ...pageData,
       tenantId,
       id: nanoid(),
@@ -149,10 +149,10 @@ const pageRouteHandlers = app
       modifiedAt: null,
       modifiedBy: null,
       publicAccess: true, // Pages are publicly readable by default
-      // Sync: write transient tx metadata for CDC Worker
-      tx: {
-        id: tx.id,
-        sourceId: tx.sourceId,
+      // Sync: write transient stx metadata for CDC Worker
+      stx: {
+        id: stx.id,
+        sourceId: stx.sourceId,
         version: 1,
         fieldVersions: {},
       },
@@ -163,7 +163,7 @@ const pageRouteHandlers = app
 
     logEvent('info', `${createdPages.length} pages have been created`);
 
-    // Return with tx on each item (for client-side tracking)
+    // Return with stx on each item (for client-side tracking)
     return ctx.json({ data: createdPages, rejectedItems: [] }, 201);
   })
   /**
@@ -174,7 +174,7 @@ const pageRouteHandlers = app
 
     const { entity } = await getValidProductEntity(ctx, id, 'page', 'update');
 
-    const { tx, ...pageData } = ctx.req.valid('json');
+    const { stx, ...pageData } = ctx.req.valid('json');
     const user = ctx.var.user;
 
     // Get all tracked fields that are being updated
@@ -182,10 +182,10 @@ const pageRouteHandlers = app
     const changedFields = getChangedTrackedFields(pageData, trackedFields);
 
     // Field-level conflict detection - check ALL changed fields
-    const { conflicts } = checkFieldConflicts(changedFields, entity.tx, tx.baseVersion);
+    const { conflicts } = checkFieldConflicts(changedFields, entity.stx, stx.baseVersion);
     throwIfConflicts('page', conflicts);
 
-    const newVersion = (entity.tx?.version ?? 0) + 1;
+    const newVersion = (entity.stx?.version ?? 0) + 1;
 
     // Use tenant-scoped db from tenantGuard middleware (RLS context already set)
     const tenantDb = ctx.var.db;
@@ -195,12 +195,12 @@ const pageRouteHandlers = app
         ...pageData,
         modifiedAt: getIsoDate(),
         modifiedBy: user.id,
-        // Sync: write transient tx metadata for CDC Worker + client tracking
-        tx: {
-          id: tx.id,
-          sourceId: tx.sourceId,
+        // Sync: write transient stx metadata for CDC Worker + client tracking
+        stx: {
+          id: stx.id,
+          sourceId: stx.sourceId,
           version: newVersion,
-          fieldVersions: buildFieldVersions(entity.tx?.fieldVersions, changedFields, newVersion),
+          fieldVersions: buildFieldVersions(entity.stx?.fieldVersions, changedFields, newVersion),
         },
       })
       .where(eq(pagesTable.id, id))
@@ -208,7 +208,7 @@ const pageRouteHandlers = app
 
     logEvent('info', 'Page updated', { pageId: page.id });
 
-    // Return entity directly (tx embedded for client tracking)
+    // Return entity directly (stx embedded for client tracking)
     return ctx.json(page, 200);
   })
   /**

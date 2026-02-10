@@ -4,14 +4,10 @@ import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
 
 /**
- * Unsubscribe tokens table to manage email unsubscribe tokens for users.
- * Multiple tokens per user allowed - old tokens remain valid for 90 days.
+ * Email unsubscribe tokens. Multiple per user allowed, old tokens remain valid.
  *
- * PARTITIONING (production only):
- * - Partitioned by createdAt via pg_partman (see 0002_partman_setup.sql)
- * - Monthly partitions, 90-day retention
- * - Drizzle sees regular table; PostgreSQL has partitioned table
- * - Standard ALTERs (ADD/DROP COLUMN, ADD INDEX) work normally
+ * PARTITIONING: Partitioned by createdAt via pg_partman (monthly, 90-day retention).
+ * Drizzle sees a regular table; PostgreSQL manages partitions transparently.
  */
 export const unsubscribeTokensTable = pgTable(
   'unsubscribe_tokens',

@@ -3,7 +3,6 @@ import { boolean, index, json, pgPolicy, pgTable, unique, varchar } from 'drizzl
 import { appConfig, type Language } from 'shared';
 import { isAuthenticated, tenantMatch, userContextSet } from '#/db/rls-helpers';
 import type { AuthStrategy } from '#/db/schema/sessions';
-import { tenantsTable } from '#/db/schema/tenants';
 import { contextEntityColumns } from '#/db/utils/context-entity-columns';
 import { defaultRestrictions, type Restrictions } from '#/db/utils/organization-restrictions';
 
@@ -17,11 +16,6 @@ export const organizationsTable = pgTable(
   'organizations',
   {
     ...contextEntityColumns('organization'),
-    // Tenant isolation
-    tenantId: varchar('tenant_id', { length: 24 })
-      .notNull()
-      .references(() => tenantsTable.id),
-    // Specific columns
     shortName: varchar(),
     country: varchar(),
     timezone: varchar(),
@@ -43,9 +37,7 @@ export const organizationsTable = pgTable(
     index('organizations_tenant_id_index').on(table.tenantId),
     // Compound unique for composite FK targets (memberships, products reference this)
     unique('organizations_tenant_id_unique').on(table.tenantId, table.id),
-
-    // RLS Policies: Cross-tenant read (user sees orgs they're member of), tenant-scoped write
-    // SELECT: User can see orgs where they have membership OR they created it (for RETURNING after INSERT)
+    // SELECT includes createdBy match for RETURNING after INSERT
     pgPolicy('organizations_select_policy', {
       for: 'select',
       using: sql`
@@ -62,12 +54,10 @@ export const organizationsTable = pgTable(
         )
       `,
     }),
-    // INSERT: Strictly tenant-scoped (new orgs must match tenant context)
     pgPolicy('organizations_insert_policy', {
       for: 'insert',
       withCheck: sql`${tenantMatch(table)} AND ${isAuthenticated}`,
     }),
-    // UPDATE: Requires membership in the organization
     pgPolicy('organizations_update_policy', {
       for: 'update',
       using: sql`
@@ -82,7 +72,6 @@ export const organizationsTable = pgTable(
       `,
       withCheck: sql`${tenantMatch(table)} AND ${isAuthenticated}`,
     }),
-    // DELETE: Requires membership in the organization
     pgPolicy('organizations_delete_policy', {
       for: 'delete',
       using: sql`

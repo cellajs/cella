@@ -26,6 +26,9 @@ export {
   isPublicProductEntity,
 } from './entity-guards';
 
+// Utility functions
+export { hasKey, identityRecord, mergeDeep, recordFromKeys } from './utils';
+
 // Config types
 export type {
   BaseAuthStrategies,

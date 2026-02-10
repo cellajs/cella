@@ -48,7 +48,7 @@ describe('EventBus Integration', () => {
         organizationId: null,
         changedKeys: ['email', 'name'],
         createdAt: new Date().toISOString(),
-        tx: null,
+        stx: null,
         seq: null,
         error: null,
       };
@@ -77,7 +77,7 @@ describe('EventBus Integration', () => {
         organizationId: nanoid(),
         changedKeys: ['name'],
         createdAt: new Date().toISOString(),
-        tx: null,
+        stx: null,
         seq: null,
         error: null,
       };

@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { contextEntityBaseSchema } from '#/modules/entities/entities-schema-base';
+import { contextEntityBaseSchema } from '#/schemas/entity-base';
 import { mockUserBase } from '../../mocks/mock-entity-base';
 
 /**

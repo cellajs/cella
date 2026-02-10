@@ -5,12 +5,7 @@ import { nanoid } from '#/utils/nanoid';
 
 const languagesEnum = appConfig.languages;
 
-/**
- * Users table contains all users. It is used to store user information such as name, email, password, etc.
- * Its closely related to `emailsTable`, which stores email addresses and email verification.
- *
- * @link http://localhost:4000/docs#tag/users
- */
+/** Users table. Closely related to `emailsTable` for email verification. */
 export const usersTable = pgTable(
   'users',
   {

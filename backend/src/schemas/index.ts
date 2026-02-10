@@ -11,12 +11,13 @@ export {
   entityIdParamSchema,
   entityTypeSchema,
   entityWithTypeQuerySchema,
+  excludeArchivedQuerySchema,
   type IncludeOption,
   idInOrgParamSchema,
   idInTenantOrgParamSchema,
   idSchema,
   idsBodySchema,
-  idsWithTxBodySchema,
+  idsWithStxBodySchema,
   imageUrlSchema,
   includeOptions,
   includeQuerySchema,
@@ -24,6 +25,7 @@ export {
   languageSchema,
   locationSchema,
   nameSchema,
+  noDuplicateSlugsRefine,
   paginationQuerySchema,
   passwordSchema,
   productEntityTypeSchema,
@@ -44,6 +46,9 @@ export {
   validTempIdSchema,
   validUrlSchema,
 } from './common-schemas';
+// Entity base schemas
+export { contextEntityBaseSchema, productEntityBaseSchema } from './entity-base';
+
 // Error response schemas
 export { errorResponseRefs, errorResponses, registerAllErrorResponses } from './error-response-schemas';
 // Entity mapping schemas
@@ -71,10 +76,10 @@ export {
   paginationSchema,
 } from './success-response-schemas';
 
-// Transaction schemas (request wrapper only - responses return entities directly)
+// Sync transaction schemas (request wrapper only - responses return entities directly)
 export {
-  type TxRequest,
-  type TxStreamMessage,
-  txRequestSchema,
-  txStreamMessageSchema,
-} from './transaction-schemas';
+  type StxRequest,
+  type StxStreamMessage,
+  stxRequestSchema,
+  stxStreamMessageSchema,
+} from './sync-transaction-schemas';

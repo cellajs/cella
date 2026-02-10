@@ -32,7 +32,7 @@ export function processCatchupBatch(activities: AppStreamNotification[], options
   if (activities.length === 0) return;
 
   // Echo prevention: filter out own mutations from catchup
-  const filteredActivities = activities.filter((a) => a.tx?.sourceId !== sourceId);
+  const filteredActivities = activities.filter((a) => a.stx?.sourceId !== sourceId);
   const skippedCount = activities.length - filteredActivities.length;
   if (skippedCount > 0) {
     console.debug(`[CatchupProcessor] Echo prevention: skipped ${skippedCount} own mutations`);

@@ -7,7 +7,7 @@ function autoFocusAndSelect(input: HTMLInputElement | null) {
   input?.select();
 }
 
-// TODO-038 use shadcn input component? is this used?
+// TODO-038 use shadcn input component instead? But is this actually used or do we always add our own edit component?
 export function textTextEditor<TRow, TSummaryRow>({
   row,
   column,

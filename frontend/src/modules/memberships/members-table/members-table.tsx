@@ -67,16 +67,6 @@ function MembersTable({ entity, isSheet = false, children }: MembersTableWrapper
   } = useInfiniteQuery({
     ...queryOptions,
     select: ({ pages }) => pages.flatMap(({ items }) => items),
-    // TODO-035 review Deduplicate by id to prevent React key warnings during filter transitions
-    // select: ({ pages }) => {
-    //   const allItems = pages.flatMap(({ items }) => items);
-    //   const seen = new Set<string>();
-    //   return allItems.filter((item) => {
-    //     if (seen.has(item.id)) return false;
-    //     seen.add(item.id);
-    //     return true;
-    //   });
-    // },
   });
 
   // Update rows

@@ -1,7 +1,7 @@
 import { getColumns } from 'drizzle-orm';
 import { ContextEntityType } from 'shared';
 import { pickColumns } from '#/db/utils/pick-columns';
-import { contextEntityBaseSchema } from '#/modules/entities/entities-schema-base';
+import { contextEntityBaseSchema } from '#/schemas/entity-base';
 import { entityTables } from '#/table-config';
 
 /**

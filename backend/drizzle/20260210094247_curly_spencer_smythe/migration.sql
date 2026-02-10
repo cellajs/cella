@@ -12,7 +12,7 @@ CREATE TABLE "activities" (
 	"organization_id" varchar,
 	"created_at" timestamp DEFAULT now(),
 	"changed_keys" jsonb,
-	"tx" jsonb,
+	"stx" jsonb,
 	"seq" integer,
 	"error" jsonb,
 	CONSTRAINT "activities_pkey" PRIMARY KEY("id","created_at")
@@ -22,14 +22,14 @@ CREATE TABLE "attachments" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"id" varchar PRIMARY KEY,
 	"entity_type" varchar DEFAULT 'attachment' NOT NULL,
+	"tenant_id" varchar(24) NOT NULL,
 	"name" varchar DEFAULT 'New attachment' NOT NULL,
 	"description" varchar,
 	"modified_at" timestamp,
+	"stx" jsonb NOT NULL,
 	"keywords" varchar NOT NULL,
 	"created_by" varchar,
 	"modified_by" varchar,
-	"tenant_id" varchar(24) NOT NULL,
-	"tx" jsonb NOT NULL,
 	"public" boolean DEFAULT false NOT NULL,
 	"bucket_name" varchar NOT NULL,
 	"group_id" varchar,
@@ -118,6 +118,7 @@ CREATE TABLE "organizations" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"id" varchar PRIMARY KEY,
 	"entity_type" varchar DEFAULT 'organization' NOT NULL,
+	"tenant_id" varchar(24) NOT NULL,
 	"name" varchar NOT NULL,
 	"description" varchar,
 	"modified_at" timestamp,
@@ -126,7 +127,6 @@ CREATE TABLE "organizations" (
 	"banner_url" varchar,
 	"created_by" varchar,
 	"modified_by" varchar,
-	"tenant_id" varchar(24) NOT NULL,
 	"short_name" varchar,
 	"country" varchar,
 	"timezone" varchar,
@@ -149,14 +149,14 @@ CREATE TABLE "pages" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"id" varchar PRIMARY KEY,
 	"entity_type" varchar DEFAULT 'page' NOT NULL,
+	"tenant_id" varchar(24) NOT NULL,
 	"name" varchar DEFAULT 'New page' NOT NULL,
 	"description" varchar,
 	"modified_at" timestamp,
+	"stx" jsonb NOT NULL,
 	"keywords" varchar NOT NULL,
 	"created_by" varchar,
 	"modified_by" varchar,
-	"tenant_id" varchar(24) NOT NULL,
-	"tx" jsonb NOT NULL,
 	"status" varchar DEFAULT 'unpublished' NOT NULL,
 	"public_access" boolean DEFAULT false NOT NULL,
 	"parent_id" varchar,
@@ -291,7 +291,7 @@ CREATE INDEX "activities_user_id_index" ON "activities" ("user_id");--> statemen
 CREATE INDEX "activities_entity_id_index" ON "activities" ("entity_id");--> statement-breakpoint
 CREATE INDEX "activities_table_name_index" ON "activities" ("table_name");--> statement-breakpoint
 CREATE INDEX "activities_tenant_id_index" ON "activities" ("tenant_id");--> statement-breakpoint
-CREATE INDEX "activities_tx_id_index" ON "activities" ((tx->>'id'));--> statement-breakpoint
+CREATE INDEX "activities_stx_id_index" ON "activities" ((stx->>'id'));--> statement-breakpoint
 CREATE INDEX "activities_error_lsn_index" ON "activities" ((error->>'lsn')) WHERE error IS NOT NULL;--> statement-breakpoint
 CREATE INDEX "activities_organization_id_index" ON "activities" ("organization_id");--> statement-breakpoint
 CREATE INDEX "activities_organization_id_seq_index" ON "activities" ("organization_id","seq" desc);--> statement-breakpoint
@@ -328,9 +328,9 @@ ALTER TABLE "activities" ADD CONSTRAINT "activities_tenant_id_tenants_id_fkey" F
 ALTER TABLE "activities" ADD CONSTRAINT "activities_user_id_users_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE SET NULL;--> statement-breakpoint
 ALTER TABLE "activities" ADD CONSTRAINT "activities_mcflvig2gMS8_fkey" FOREIGN KEY ("tenant_id","organization_id") REFERENCES "organizations"("tenant_id","id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "activities" ADD CONSTRAINT "activities_organization_id_organizations_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations"("id") ON DELETE CASCADE;--> statement-breakpoint
+ALTER TABLE "attachments" ADD CONSTRAINT "attachments_tenant_id_tenants_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id");--> statement-breakpoint
 ALTER TABLE "attachments" ADD CONSTRAINT "attachments_created_by_users_id_fkey" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON DELETE SET NULL;--> statement-breakpoint
 ALTER TABLE "attachments" ADD CONSTRAINT "attachments_modified_by_users_id_fkey" FOREIGN KEY ("modified_by") REFERENCES "users"("id") ON DELETE SET NULL;--> statement-breakpoint
-ALTER TABLE "attachments" ADD CONSTRAINT "attachments_tenant_id_tenants_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id");--> statement-breakpoint
 ALTER TABLE "attachments" ADD CONSTRAINT "attachments_organization_id_organizations_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations"("id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "attachments" ADD CONSTRAINT "attachments_Ytb3N4m0pWsH_fkey" FOREIGN KEY ("tenant_id","organization_id") REFERENCES "organizations"("tenant_id","id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "emails" ADD CONSTRAINT "emails_user_id_users_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE;--> statement-breakpoint
@@ -347,12 +347,12 @@ ALTER TABLE "memberships" ADD CONSTRAINT "memberships_modified_by_users_id_fkey"
 ALTER TABLE "memberships" ADD CONSTRAINT "memberships_organization_id_organizations_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations"("id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "memberships" ADD CONSTRAINT "memberships_Yta3VHtyCTj4_fkey" FOREIGN KEY ("tenant_id","organization_id") REFERENCES "organizations"("tenant_id","id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "oauth_accounts" ADD CONSTRAINT "oauth_accounts_user_id_users_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE;--> statement-breakpoint
+ALTER TABLE "organizations" ADD CONSTRAINT "organizations_tenant_id_tenants_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id");--> statement-breakpoint
 ALTER TABLE "organizations" ADD CONSTRAINT "organizations_created_by_users_id_fkey" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON DELETE SET NULL;--> statement-breakpoint
 ALTER TABLE "organizations" ADD CONSTRAINT "organizations_modified_by_users_id_fkey" FOREIGN KEY ("modified_by") REFERENCES "users"("id") ON DELETE SET NULL;--> statement-breakpoint
-ALTER TABLE "organizations" ADD CONSTRAINT "organizations_tenant_id_tenants_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id");--> statement-breakpoint
+ALTER TABLE "pages" ADD CONSTRAINT "pages_tenant_id_tenants_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id");--> statement-breakpoint
 ALTER TABLE "pages" ADD CONSTRAINT "pages_created_by_users_id_fkey" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON DELETE SET NULL;--> statement-breakpoint
 ALTER TABLE "pages" ADD CONSTRAINT "pages_modified_by_users_id_fkey" FOREIGN KEY ("modified_by") REFERENCES "users"("id") ON DELETE SET NULL;--> statement-breakpoint
-ALTER TABLE "pages" ADD CONSTRAINT "pages_tenant_id_tenants_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id");--> statement-breakpoint
 ALTER TABLE "pages" ADD CONSTRAINT "pages_parent_id_pages_id_fkey" FOREIGN KEY ("parent_id") REFERENCES "pages"("id") ON DELETE SET NULL;--> statement-breakpoint
 ALTER TABLE "passkeys" ADD CONSTRAINT "passkeys_user_id_users_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "passwords" ADD CONSTRAINT "passwords_user_id_users_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE;--> statement-breakpoint
@@ -509,11 +509,14 @@ CREATE POLICY "memberships_delete_policy" ON "memberships" AS PERMISSIVE FOR DEL
 CREATE POLICY "organizations_select_policy" ON "organizations" AS PERMISSIVE FOR SELECT TO public USING (
         current_setting('app.is_authenticated', true)::boolean = true
         AND COALESCE(current_setting('app.user_id', true), '') != ''
-        AND EXISTS (
-          SELECT 1 FROM memberships m
-          WHERE m.organization_id = "organizations"."id"
-          AND m.user_id = current_setting('app.user_id', true)::text
-          AND m.tenant_id = "organizations"."tenant_id"
+        AND (
+          "organizations"."created_by" = current_setting('app.user_id', true)::text
+          OR EXISTS (
+            SELECT 1 FROM memberships m
+            WHERE m.organization_id = "organizations"."id"
+            AND m.user_id = current_setting('app.user_id', true)::text
+            AND m.tenant_id = "organizations"."tenant_id"
+          )
         )
       );--> statement-breakpoint
 CREATE POLICY "organizations_insert_policy" ON "organizations" AS PERMISSIVE FOR INSERT TO public WITH CHECK (

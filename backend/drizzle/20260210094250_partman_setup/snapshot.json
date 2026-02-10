@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "94e08183-83d5-4253-9fca-3c33369d2550",
+  "id": "b06f43bf-0277-4c59-a75c-ced0f72299f3",
   "prevIds": [
     "00000000-0000-0000-0000-000000000000"
   ],
@@ -306,7 +306,7 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "tx",
+      "name": "stx",
       "entityType": "columns",
       "schema": "public",
       "table": "activities"
@@ -377,6 +377,19 @@
       "table": "attachments"
     },
     {
+      "type": "varchar(24)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "tenant_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "attachments"
+    },
+    {
       "type": "varchar",
       "typeSchema": null,
       "notNull": true,
@@ -416,6 +429,19 @@
       "table": "attachments"
     },
     {
+      "type": "jsonb",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "stx",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "attachments"
+    },
+    {
       "type": "varchar",
       "typeSchema": null,
       "notNull": true,
@@ -450,32 +476,6 @@
       "generated": null,
       "identity": null,
       "name": "modified_by",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "attachments"
-    },
-    {
-      "type": "varchar(24)",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "tenant_id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "attachments"
-    },
-    {
-      "type": "jsonb",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "tx",
       "entityType": "columns",
       "schema": "public",
       "table": "attachments"
@@ -1261,6 +1261,19 @@
       "table": "organizations"
     },
     {
+      "type": "varchar(24)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "tenant_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "organizations"
+    },
+    {
       "type": "varchar",
       "typeSchema": null,
       "notNull": true,
@@ -1360,19 +1373,6 @@
       "generated": null,
       "identity": null,
       "name": "modified_by",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "organizations"
-    },
-    {
-      "type": "varchar(24)",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "tenant_id",
       "entityType": "columns",
       "schema": "public",
       "table": "organizations"
@@ -1599,6 +1599,19 @@
       "table": "pages"
     },
     {
+      "type": "varchar(24)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "tenant_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "pages"
+    },
+    {
       "type": "varchar",
       "typeSchema": null,
       "notNull": true,
@@ -1638,6 +1651,19 @@
       "table": "pages"
     },
     {
+      "type": "jsonb",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "stx",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "pages"
+    },
+    {
       "type": "varchar",
       "typeSchema": null,
       "notNull": true,
@@ -1672,32 +1698,6 @@
       "generated": null,
       "identity": null,
       "name": "modified_by",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "pages"
-    },
-    {
-      "type": "varchar(24)",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "tenant_id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "pages"
-    },
-    {
-      "type": "jsonb",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "tx",
       "entityType": "columns",
       "schema": "public",
       "table": "pages"
@@ -2976,7 +2976,7 @@
       "nameExplicit": true,
       "columns": [
         {
-          "value": "(tx->>'id')",
+          "value": "(stx->>'id')",
           "isExpression": true,
           "asc": true,
           "nullsFirst": false,
@@ -2988,7 +2988,7 @@
       "with": "",
       "method": "btree",
       "concurrently": false,
-      "name": "activities_tx_id_index",
+      "name": "activities_stx_id_index",
       "entityType": "indexes",
       "schema": "public",
       "table": "activities"
@@ -3773,6 +3773,23 @@
     {
       "nameExplicit": false,
       "columns": [
+        "tenant_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "tenants",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "attachments_tenant_id_tenants_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "attachments"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
         "created_by"
       ],
       "schemaTo": "public",
@@ -3800,23 +3817,6 @@
       "onUpdate": "NO ACTION",
       "onDelete": "SET NULL",
       "name": "attachments_modified_by_users_id_fkey",
-      "entityType": "fks",
-      "schema": "public",
-      "table": "attachments"
-    },
-    {
-      "nameExplicit": false,
-      "columns": [
-        "tenant_id"
-      ],
-      "schemaTo": "public",
-      "tableTo": "tenants",
-      "columnsTo": [
-        "id"
-      ],
-      "onUpdate": "NO ACTION",
-      "onDelete": "NO ACTION",
-      "name": "attachments_tenant_id_tenants_id_fkey",
       "entityType": "fks",
       "schema": "public",
       "table": "attachments"
@@ -4102,6 +4102,23 @@
     {
       "nameExplicit": false,
       "columns": [
+        "tenant_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "tenants",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "organizations_tenant_id_tenants_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "organizations"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
         "created_by"
       ],
       "schemaTo": "public",
@@ -4145,10 +4162,10 @@
       ],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
-      "name": "organizations_tenant_id_tenants_id_fkey",
+      "name": "pages_tenant_id_tenants_id_fkey",
       "entityType": "fks",
       "schema": "public",
-      "table": "organizations"
+      "table": "pages"
     },
     {
       "nameExplicit": false,
@@ -4180,23 +4197,6 @@
       "onUpdate": "NO ACTION",
       "onDelete": "SET NULL",
       "name": "pages_modified_by_users_id_fkey",
-      "entityType": "fks",
-      "schema": "public",
-      "table": "pages"
-    },
-    {
-      "nameExplicit": false,
-      "columns": [
-        "tenant_id"
-      ],
-      "schemaTo": "public",
-      "tableTo": "tenants",
-      "columnsTo": [
-        "id"
-      ],
-      "onUpdate": "NO ACTION",
-      "onDelete": "NO ACTION",
-      "name": "pages_tenant_id_tenants_id_fkey",
       "entityType": "fks",
       "schema": "public",
       "table": "pages"
@@ -4921,7 +4921,7 @@
       "roles": [
         "public"
       ],
-      "using": "\n        current_setting('app.is_authenticated', true)::boolean = true\n        AND COALESCE(current_setting('app.user_id', true), '') != ''\n        AND EXISTS (\n          SELECT 1 FROM memberships m\n          WHERE m.organization_id = \"organizations\".\"id\"\n          AND m.user_id = current_setting('app.user_id', true)::text\n          AND m.tenant_id = \"organizations\".\"tenant_id\"\n        )\n      ",
+      "using": "\n        current_setting('app.is_authenticated', true)::boolean = true\n        AND COALESCE(current_setting('app.user_id', true), '') != ''\n        AND (\n          \"organizations\".\"created_by\" = current_setting('app.user_id', true)::text\n          OR EXISTS (\n            SELECT 1 FROM memberships m\n            WHERE m.organization_id = \"organizations\".\"id\"\n            AND m.user_id = current_setting('app.user_id', true)::text\n            AND m.tenant_id = \"organizations\".\"tenant_id\"\n          )\n        )\n      ",
       "withCheck": null,
       "name": "organizations_select_policy",
       "entityType": "policies",

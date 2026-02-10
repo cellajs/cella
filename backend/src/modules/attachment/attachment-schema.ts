@@ -1,8 +1,8 @@
 import { z } from '@hono/zod-openapi';
 import { attachmentsTable } from '#/db/schema/attachments';
 import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schema';
-import { batchResponseSchema, entityCanSchema, paginationQuerySchema, txRequestSchema } from '#/schemas';
-import { txBaseSchema } from '#/schemas/tx-base-schema';
+import { batchResponseSchema, entityCanSchema, paginationQuerySchema, stxRequestSchema } from '#/schemas';
+import { stxBaseSchema } from '#/schemas/stx-base-schema';
 import { mockAttachmentResponse } from '../../../mocks/mock-attachment';
 
 const attachmentInsertSchema = createInsertSchema(attachmentsTable);
@@ -11,7 +11,7 @@ const attachmentSelectSchema = createSelectSchema(attachmentsTable);
 export const attachmentSchema = z
   .object({
     ...attachmentSelectSchema.shape,
-    tx: txBaseSchema,
+    stx: stxBaseSchema,
     can: entityCanSchema.optional(),
   })
   .openapi('Attachment', { example: mockAttachmentResponse() });
@@ -33,11 +33,11 @@ export const attachmentCreateBodySchema = attachmentInsertSchema.pick({
   thumbnailKey: true,
 });
 
-/** Create body with tx for single attachment creation */
-export const attachmentCreateTxBodySchema = attachmentCreateBodySchema.extend({ tx: txRequestSchema });
+/** Create body with stx for single attachment creation */
+export const attachmentCreateStxBodySchema = attachmentCreateBodySchema.extend({ stx: stxRequestSchema });
 
-/** Array schema for batch creates (1-50 attachments per request), each with own tx */
-export const attachmentCreateManyTxBodySchema = attachmentCreateTxBodySchema.array().min(1).max(50);
+/** Array schema for batch creates (1-50 attachments per request), each with own stx */
+export const attachmentCreateManyStxBodySchema = attachmentCreateStxBodySchema.array().min(1).max(50);
 
 export const attachmentUpdateBodySchema = attachmentInsertSchema
   .pick({
@@ -46,8 +46,8 @@ export const attachmentUpdateBodySchema = attachmentInsertSchema
   })
   .partial();
 
-/** Update body with tx embedded */
-export const attachmentUpdateTxBodySchema = attachmentUpdateBodySchema.extend({ tx: txRequestSchema });
+/** Update body with stx embedded */
+export const attachmentUpdateStxBodySchema = attachmentUpdateBodySchema.extend({ stx: stxRequestSchema });
 
 // Response schemas: batch operations use { data, rejectedItemIds }, single returns entity directly
 export const attachmentCreateResponseSchema = batchResponseSchema(attachmentSchema);

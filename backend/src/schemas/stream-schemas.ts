@@ -2,7 +2,7 @@ import { z } from '@hono/zod-openapi';
 import { appConfig } from 'shared';
 import { activityActions } from '#/sync/activity-bus';
 import { mockPublicStreamActivity, mockStreamNotification } from '../../mocks/mock-entity-base';
-import { txStreamMessageSchema } from './transaction-schemas';
+import { stxStreamMessageSchema } from './sync-transaction-schemas';
 
 /**
  * Stream notification schema for SSE streams.
@@ -10,11 +10,11 @@ import { txStreamMessageSchema } from './transaction-schemas';
  * No entity data is included to keep payloads small and consistent.
  *
  * For product entities (page, attachment):
- * - Includes tx, seq, cacheToken for sync engine
+ * - Includes stx, seq, cacheToken for sync engine
  * - Client uses cacheToken to fetch entity via LRU cache
  *
  * For context entities (membership, organization):
- * - tx/seq/cacheToken are null/omitted
+ * - stx/seq/cacheToken are null/omitted
  * - Client invalidates queries to refetch
  */
 export const streamNotificationSchema = z
@@ -30,8 +30,8 @@ export const streamNotificationSchema = z
     contextType: z.enum(appConfig.contextEntityTypes).nullable(),
     /** Sequence number for gap detection (entities only) */
     seq: z.number().int().nullable(),
-    /** Transaction metadata for conflict detection (entities only) */
-    tx: txStreamMessageSchema.nullable(),
+    /** Sync transaction metadata for conflict detection (entities only) */
+    stx: stxStreamMessageSchema.nullable(),
     /** HMAC-signed token for LRU cache access (entities only) */
     cacheToken: z.string().nullable(),
   })

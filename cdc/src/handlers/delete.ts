@@ -3,7 +3,7 @@ import type { InsertActivityModel } from '#/db/schema/activities';
 import { getTableName } from 'drizzle-orm';
 import type { ProcessMessageResult } from '../process-message';
 import type { TableRegistryEntry } from '../types';
-import { actionToVerb, convertRowKeys, extractActivityContext, extractRowData, extractTxData } from '../utils';
+import { actionToVerb, convertRowKeys, extractActivityContext, extractRowData, extractStxData } from '../utils';
 
 /**
  * Handle a DELETE message and create an activity with entity data.
@@ -25,8 +25,8 @@ export async function handleDelete(
   // which no longer exists. Set to null to avoid foreign key violation.
   const userId = tableName === 'users' ? null : ctx.userId;
 
-  // Extract tx data from realtime entities
-  const tx = extractTxData(row);
+  // Extract stx data from realtime entities
+  const stx = extractStxData(row);
 
   const activity: InsertActivityModel = {
     tenantId: ctx.tenantId,
@@ -39,7 +39,7 @@ export async function handleDelete(
     entityId: ctx.entityId,
     organizationId: ctx.organizationId,
     changedKeys: null,
-    tx,
+    stx,
   };
 
   return { activity, entityData: row, entry };

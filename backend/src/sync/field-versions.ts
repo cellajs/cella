@@ -5,7 +5,7 @@
 
 import type { EntityType } from 'shared';
 import { AppError } from '#/lib/error';
-import type { TxBase } from '#/schemas/tx-base-schema';
+import type { StxBase } from '#/schemas/stx-base-schema';
 
 interface FieldConflict {
   field: string;
@@ -25,19 +25,19 @@ interface ConflictCheckResult {
  * Returns conflicts for fields where server version is newer than client's baseVersion.
  *
  * @param changedFields - Array of field names being updated
- * @param entityTx - Current entity's tx metadata (from DB)
+ * @param entityStx - Current entity's stx metadata (from DB)
  * @param baseVersion - Client's version when entity was last read
  */
 export function checkFieldConflicts(
   changedFields: string[],
-  entityTx: TxBase | null | undefined,
+  entityStx: StxBase | null | undefined,
   baseVersion: number,
 ): ConflictCheckResult {
   const conflicts: ConflictCheckResult['conflicts'] = [];
   const safeFields: string[] = [];
 
   for (const field of changedFields) {
-    const serverVersion = entityTx?.fieldVersions?.[field] ?? 0;
+    const serverVersion = entityStx?.fieldVersions?.[field] ?? 0;
     if (serverVersion > baseVersion) {
       conflicts.push({ field, clientVersion: baseVersion, serverVersion });
     } else {
@@ -76,7 +76,7 @@ export function throwIfConflicts(entityType: EntityType, conflicts: ConflictChec
  * Build updated fieldVersions map for changed fields.
  * Sets each changed field's version to the new entity version.
  *
- * @param existingFieldVersions - Current fieldVersions from entity tx
+ * @param existingFieldVersions - Current fieldVersions from entity stx
  * @param changedFields - Array of field names being updated
  * @param newVersion - New entity version
  */

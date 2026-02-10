@@ -28,7 +28,7 @@ function getScopeKey(orgId: string | null, entityType: string): string {
  * to trigger refetch, or use cacheToken for efficient fetches.
  */
 export function handleAppStreamNotification(notification: AppStreamNotification): void {
-  const { entityId, action, resourceType, entityType, tx, organizationId, contextType, seq, cacheToken, _trace } =
+  const { entityId, action, resourceType, entityType, stx, organizationId, contextType, seq, cacheToken, _trace } =
     notification;
 
   withSpanSync(syncSpanNames.messageProcess, { entityType, action, entityId, _trace }, () => {
@@ -47,7 +47,7 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
     if (entityType) {
       const keys = getEntityQueryKeys(entityType);
       if (keys) {
-        handleEntityNotification(entityType as ProductEntityType, entityId, action, tx, organizationId, seq, keys);
+        handleEntityNotification(entityType as ProductEntityType, entityId, action, stx, organizationId, seq, keys);
       }
     }
   });
@@ -96,14 +96,14 @@ function handleEntityNotification(
   entityType: ProductEntityType,
   entityId: string,
   action: AppStreamNotification['action'],
-  tx: AppStreamNotification['tx'],
+  stx: AppStreamNotification['stx'],
   organizationId: string | null,
   seq: number | null,
   keys: EntityQueryKeys,
 ): void {
   // Echo prevention: skip if this is our own mutation
-  if (tx?.sourceId === sourceId) {
-    console.debug('[handleEntityNotification] Echo prevention - skipping own mutation:', tx.id);
+  if (stx?.sourceId === sourceId) {
+    console.debug('[handleEntityNotification] Echo prevention - skipping own mutation:', stx.id);
     return;
   }
 

@@ -205,7 +205,7 @@
                     "type": ["integer", "null"],
                     "required": true
                   },
-                  "tx": {
+                  "stx": {
                     "type": ["object", "null"],
                     "required": true,
                     "properties": {
@@ -214,7 +214,7 @@
                       "version": { "type": "integer", "required": true },
                       "fieldVersions": { "type": "object", "required": true }
                     },
-                    "ref": "#/components/schemas/TxStreamMessage"
+                    "ref": "#/components/schemas/StxStreamMessage"
                   },
                   "cacheToken": {
                     "type": ["string", "null"],
@@ -243,10 +243,10 @@
               "contextType": null,
               "seq": 526,
               "cacheToken": "hg18eRugoaB38Ug7A1n7Zj018TyC3pwn",
-              "tx": {
-                "id": "gdgo47kv9o7rvgjoql6a1dxp",
-                "sourceId": "8u6gifwzsuyr58fapjsndxb3",
-                "version": 5,
+              "stx": {
+                "id": "hd7xubc5zuydxdgepv2tpr0z",
+                "sourceId": "jt0hyw517e6fpcmgsgfuxfwx",
+                "version": 1,
                 "fieldVersions": { "name": 1 }
               }
             }

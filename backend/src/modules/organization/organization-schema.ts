@@ -1,4 +1,5 @@
 import { z } from '@hono/zod-openapi';
+import { t } from 'i18next';
 import { appConfig, type EntityType, recordFromKeys, roles } from 'shared';
 import { organizationsTable } from '#/db/schema/organizations';
 import { authStrategiesEnum } from '#/db/schema/sessions';
@@ -6,8 +7,10 @@ import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schem
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
 import {
   entityCanSchema,
+  excludeArchivedQuerySchema,
   includeQuerySchema,
   languageSchema,
+  noDuplicateSlugsRefine,
   paginationQuerySchema,
   validCDNUrlSchema,
   validDomainsSchema,
@@ -72,9 +75,7 @@ export const organizationCreateBodySchema = organizationCreateItemSchema
   .array()
   .min(1)
   .max(10)
-  .refine((items) => new Set(items.map((i) => i.slug)).size === items.length, {
-    message: 'Duplicate slugs are not allowed',
-  });
+  .refine(noDuplicateSlugsRefine, t('error:duplicate_slugs'));
 
 export const organizationUpdateBodySchema = createInsertSchema(organizationsTable, {
   slug: validSlugSchema,
@@ -114,10 +115,6 @@ export const organizationListQuerySchema = paginationQuerySchema.extend({
   sort: z.enum(['id', 'name', 'createdAt']).default('createdAt').optional(),
   userId: z.string().optional(),
   role: z.enum(roles.all).optional(),
-  // TODO-029 make common schema
-  excludeArchived: z
-    .enum(['true', 'false'])
-    .optional()
-    .transform((val) => val === 'true'),
+  excludeArchived: excludeArchivedQuerySchema,
   include: includeQuerySchema,
 });

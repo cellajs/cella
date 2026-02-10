@@ -66,7 +66,7 @@ Cella is a TypeScript template for building collaborative web apps with sync and
 - Prefer feature-oriented folders; test files near code or under `tests/`.
 - Zod v4 only: `import { z } from 'zod'`. However, in backend due to using hono/zod-openapi, `import { z } from '@hono/zod-openapi'` is required.
 - camelCase for variables and functions (including constants - no UPPER_CASE), PascalCase for React components. File names should be kebab-case. Language translation keys should be snake_case.
-- Documentation: Add JSDoc block comments to all exported functions and components. Keep comments concise (1-3 lines) describing the purpose and key behavior. In backend we usually add a full JSDoc including params and response, in frontend we limit it to 1-3 text lines, unless its complex and critical functionality.
+- Documentation: Add JSDoc block comments to all exported functions and components. Keep comments concise (1-3 lines) describing the purpose and key behavior. In backend we usually add a full JSDoc including params and response, in frontend we limit it to 1-3 text lines, unless its complex and critical functionality. Do not add standalone file-level comments above imports — place descriptive comments as JSDoc on the nearest export instead.
 - Storybook: Stories should be placed in a central `stories/` folder within the module (e.g., `frontend/src/modules/ui/stories/` or `frontend/src/modules/common/stories/`), not alongside component files. Name stories `<component-filename>.stories.tsx`.
 - Icons: We use lucide icons and import them using Icon suffix, such as `PencilIcon`.
 - Code comment: when iterating keep comments intact as they provide valuable history. They should be cleaned only when explicitly requested.

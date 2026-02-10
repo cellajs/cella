@@ -42,7 +42,7 @@ By internalizing the sync engine, cella can make unique combos: audit trail func
 
 | Concern | External services | Built-in approach |
 |---------|-------------------|-------------------|
-| **OpenAPI contract** | Bypassed | Extends existing endpoints with `tx` object in entity |
+| **OpenAPI contract** | Bypassed | Extends existing endpoints with `stx` object in entity |
 | **Authorization** | Requires re-implementing | Reuses `checkPermission()` and existing guards |
 | **Schema ownership** | Sync layer dictates patterns | Drizzle/Zod schemas remain authoritative |
 | **Opt-in complexity** | All-or-nothing | Progressive: REST → Tracked → Offline → Realtime |
@@ -128,7 +128,7 @@ This architecture uses a persistent WebSocket connection from CDC Worker to API 
 │  │  │ (org-123)    │ (org-123)    │ (org-456)    │        │        │        │
 │  │  └──────┬───────┴──────────────┴──────────────┴────────┘        │        │
 │  │         │  event: change                                        │        │
-│  │         │  data: { action, entityType, entityId, seq, tx }      │        │
+│  │         │  data: { action, entityType, entityId, seq, stx }      │        │
 │  │         ▼                                                       │        │
 │  └─────────────────────────────────────────────────────────────────┘        │
 │                                                                             │
@@ -214,7 +214,7 @@ interface StreamNotification {
   entityId: string;
   organizationId: string | null;
   seq: number;                     // Scoped sequence for gap detection
-  tx: {
+  stx: {
     id: string;                    // Mutation ID
     sourceId: string;              // Tab/instance ID for echo prevention
     version: number;               // Entity version after mutation
@@ -291,7 +291,7 @@ Both streams use the same two-phase connection pattern:
 **When offline:** Mutations queue locally, split/squashed by field. On reconnect, catch-up first, THEN replay pending mutations. Client detects conflicts before pushing, enabling side-by-side comparison and per-field resolution.
 
 #### 2. Field-level tracking
-Conflicts are scoped to individual fields via `tx.fieldVersions`. Two users editing different fields = no conflict. Multi-field mutations check each changed field independently.
+Conflicts are scoped to individual fields via `stx.fieldVersions`. Two users editing different fields = no conflict. Multi-field mutations check each changed field independently.
 
 #### 3. Conflict strategy
 Server rejects conflicting mutations with 409 status. Client must refetch, rebase changes onto fresh data, and retry. No silent overwrites.
@@ -330,7 +330,7 @@ Server rejects conflicting mutations with 409 status. Client must refetch, rebas
 
 ### Idempotency
 
-Replaying the same mutation (same `tx.id`) produces the same result without side effects. Critical for:
+Replaying the same mutation (same `stx.id`) produces the same result without side effects. Critical for:
 - **Network retries**: Request succeeds but response is lost
 - **Offline queue replay**: Some mutations may have reached server before disconnect
 - **Crash recovery**: Pending transactions replay from IndexedDB
@@ -365,16 +365,16 @@ seqStore.set(scopeKey, seq);
 
 ### Conflict detection (version)
 
-Uses entity-level version numbers (`tx.version`) and field-level versions (`tx.fieldVersions`) for **mutation conflict detection**.
+Uses entity-level version numbers (`stx.version`) and field-level versions (`stx.fieldVersions`) for **mutation conflict detection**.
 
 **Client-side (mutation creation):**
 ```typescript
 // Extract baseVersion from cached entity when creating update mutation
-function createTxForUpdate(cachedEntity?: EntityWithTx | null): TxMetadata {
+function createStxForUpdate(cachedEntity?: EntityWithStx | null): StxMetadata {
   return {
     id: nanoid(),
     sourceId,
-    baseVersion: extractVersion(cachedEntity?.tx),  // From cached tx.version
+    baseVersion: extractVersion(cachedEntity?.stx),  // From cached stx.version
   };
 }
 ```
@@ -388,16 +388,16 @@ const trackedFields = ['name', 'content', 'status'] as const;
 const changedFields = getChangedTrackedFields(payload, trackedFields);
 
 // Field-level conflict detection - check ALL changed fields
-const { conflicts } = checkFieldConflicts(changedFields, entity.tx, tx.baseVersion);
+const { conflicts } = checkFieldConflicts(changedFields, entity.stx, stx.baseVersion);
 throwIfConflicts('entity', conflicts);
 
 // Build updated fieldVersions for ALL changed fields
-const fieldVersions = buildFieldVersions(entity.tx?.fieldVersions, changedFields, newVersion);
+const fieldVersions = buildFieldVersions(entity.stx?.fieldVersions, changedFields, newVersion);
 ```
 
 **Key features:**
-- `tx.version` increments on every mutation (entity-level)
-- `tx.fieldVersions` tracks per-field last-modified version
+- `stx.version` increments on every mutation (entity-level)
+- `stx.fieldVersions` tracks per-field last-modified version
 - Client sends `baseVersion` (version when entity was read)
 - Server rejects if ANY field's `fieldVersions[field] > baseVersion`
 - Multi-field mutations check ALL changed fields for conflicts
@@ -405,11 +405,11 @@ const fieldVersions = buildFieldVersions(entity.tx?.fieldVersions, changedFields
 
 ### Echo prevention (sourceId)
 
-Uses `tx.sourceId` to prevent applying own mutations received from stream.
+Uses `stx.sourceId` to prevent applying own mutations received from stream.
 
 ```typescript
 // In handleEntityNotification():
-if (tx?.sourceId === sourceId) {
+if (stx?.sourceId === sourceId) {
   return; // Skip own mutation
 }
 ```
@@ -422,7 +422,7 @@ Uses React Query's mutation cache with `squashPendingMutation()`.
 
 **Squashing behavior:**
 - Same-entity mutations squash (cancel pending, keep latest)
-- Version-based conflict detection via `tx.baseVersion`
+- Version-based conflict detection via `stx.baseVersion`
 - On reconnect: pull upstream first, check for conflicts, then flush
 
 ### Create + edit coalescing
@@ -511,7 +511,7 @@ When a realtime entity changes, the SSE stream notification includes a `cacheTok
 
 2. CDC sends message → ActivityBus emits event → SSE sends notification
    └── Stream builds notification with cacheToken for each subscriber
-   └── Notification: { action, entityType, entityId, tx, cacheToken }
+   └── Notification: { action, entityType, entityId, stx, cacheToken }
 
 3. Client receives notification
    └── Stores cacheToken in cache-token-store (entityType:entityId → token)

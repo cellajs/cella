@@ -8,17 +8,10 @@ import { nanoid } from '#/utils/nanoid';
 const tokenTypeEnum = appConfig.tokenTypes;
 
 /**
- * Tokens table contains tokens of different types: email verification, invitation, password reset.
- * Users can have multiple tokens of different types. Users can also have multiple tokens of the same type (e.g., multiple password reset requests).
- * Tokens can be associated with an email, user, oauth account, or inactive membership. Invoking a token marks it as used by setting invokedAt and creates a singleUseToken.
+ * Tokens for email verification, invitation, and password reset.
  *
- * PARTITIONING (production only):
- * - Partitioned by expiresAt via pg_partman (see 0002_partman_setup.sql)
- * - Weekly partitions, 30-day retention after expiry
- * - Drizzle sees regular table; PostgreSQL has partitioned table
- * - Standard ALTERs (ADD/DROP COLUMN, ADD INDEX) work normally
- *
- * @link http://localhost:4000/docs#tag/tokens
+ * PARTITIONING: Partitioned by expiresAt via pg_partman (weekly, 30-day retention).
+ * Drizzle sees a regular table; PostgreSQL manages partitions transparently.
  */
 export const tokensTable = pgTable(
   'tokens',

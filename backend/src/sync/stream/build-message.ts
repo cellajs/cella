@@ -24,8 +24,8 @@ export function buildStreamNotification(event: ActivityEventWithEntity): StreamN
     throw new Error(`${entityType} is not a product entity type`);
   }
 
-  if (!event.tx) {
-    throw new Error(`Activity ${event.id} missing tx - realtime entities must have tx`);
+  if (!event.stx) {
+    throw new Error(`Activity ${event.id} missing stx - realtime entities must have stx`);
   }
 
   // Use cache token from CDC (all users share the same token)
@@ -39,11 +39,11 @@ export function buildStreamNotification(event: ActivityEventWithEntity): StreamN
     organizationId: event.organizationId ?? null,
     contextType: null,
     seq: event.seq ?? 0,
-    tx: {
-      id: event.tx.id,
-      sourceId: event.tx.sourceId,
-      version: event.tx.version,
-      fieldVersions: event.tx.fieldVersions,
+    stx: {
+      id: event.stx.id,
+      sourceId: event.stx.sourceId,
+      version: event.stx.version,
+      fieldVersions: event.stx.fieldVersions,
     },
     cacheToken,
   };

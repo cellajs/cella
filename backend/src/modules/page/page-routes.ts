@@ -11,11 +11,11 @@ import {
 } from '#/schemas';
 import { mockBatchPagesResponse, mockPageResponse, mockPaginatedPagesResponse } from '../../../mocks/mock-page';
 import {
-  pageCreateManyTxBodySchema,
+  pageCreateManyStxBodySchema,
   pageCreateResponseSchema,
   pageListQuerySchema,
   pageSchema,
-  pageUpdateTxBodySchema,
+  pageUpdateStxBodySchema,
 } from './page-schema';
 
 // NOTE: Public stream route has been moved to entities module (/entities/public/stream)
@@ -36,7 +36,7 @@ const pagesRoutes = {
       params: tenantOnlyParamSchema,
       body: {
         required: true,
-        content: { 'application/json': { schema: pageCreateManyTxBodySchema } },
+        content: { 'application/json': { schema: pageCreateManyStxBodySchema } },
       },
     },
     responses: {
@@ -125,7 +125,7 @@ const pagesRoutes = {
       params: tenantIdParamSchema,
       body: {
         required: true,
-        content: { 'application/json': { schema: pageUpdateTxBodySchema } },
+        content: { 'application/json': { schema: pageUpdateStxBodySchema } },
       },
     },
     responses: {

@@ -28,15 +28,15 @@ import {
   useMutateQueryData,
 } from '~/query/basic';
 import { addMutationRegistrar } from '~/query/mutation-registry';
-import { createTxForCreate, createTxForDelete, createTxForUpdate, squashPendingMutation } from '~/query/offline';
+import { createStxForCreate, createStxForDelete, createStxForUpdate, squashPendingMutation } from '~/query/offline';
 import { getCacheToken } from '~/query/realtime';
 
 // Use generated types from api.gen for mutation input shapes
-// Body is array of items with tx embedded, so extract element type without tx
+// Body is array of items with stx embedded, so extract element type without stx
 type CreateAttachmentItem = CreateAttachmentsData['body'][number];
-type CreateAttachmentInput = Omit<CreateAttachmentItem, 'tx'>[];
+type CreateAttachmentInput = Omit<CreateAttachmentItem, 'stx'>[];
 type UpdateAttachmentItem = UpdateAttachmentData['body'];
-type UpdateAttachmentInput = Omit<UpdateAttachmentItem, 'tx'>;
+type UpdateAttachmentInput = Omit<UpdateAttachmentItem, 'stx'>;
 
 export const attachmentsLimit = appConfig.requestLimits.attachments;
 
@@ -165,9 +165,9 @@ export const useAttachmentCreateMutation = (tenantId: string, orgId: string) => 
 
     // Execute API call with transaction metadata for conflict tracking
     mutationFn: async (data: CreateAttachmentInput) => {
-      const tx = createTxForCreate();
-      // Body is array with tx embedded in each item
-      const body = data.map((item) => ({ ...item, tx }));
+      const stx = createStxForCreate();
+      // Body is array with stx embedded in each item
+      const body = data.map((item) => ({ ...item, stx }));
       const result = await createAttachments({ path: { tenantId, orgId }, body });
       return result;
     },
@@ -235,9 +235,9 @@ export const useAttachmentUpdateMutation = (tenantId: string, orgId: string) => 
     mutationFn: async ({ id, data }: { id: string; data: UpdateAttachmentInput }) => {
       // Get cached entity for baseVersion conflict detection
       const cachedEntity = findAttachmentInListCache(id);
-      const tx = createTxForUpdate(cachedEntity);
-      // Body has tx embedded directly
-      const result = await updateAttachment({ path: { tenantId, orgId, id }, body: { ...data, tx } });
+      const stx = createStxForUpdate(cachedEntity);
+      // Body has stx embedded directly
+      const result = await updateAttachment({ path: { tenantId, orgId, id }, body: { ...data, stx } });
       return result;
     },
 
@@ -295,11 +295,11 @@ export const useAttachmentDeleteMutation = (tenantId: string, orgId: string) => 
   return useMutation({
     mutationKey: keys.delete,
 
-    // Execute batch delete API call with tx for echo prevention
+    // Execute batch delete API call with stx for echo prevention
     mutationFn: async (attachments: Attachment[]) => {
       const ids = attachments.map((a) => a.id);
-      const tx = createTxForDelete();
-      await deleteAttachments({ path: { tenantId, orgId }, body: { ids, tx } });
+      const stx = createStxForDelete();
+      await deleteAttachments({ path: { tenantId, orgId }, body: { ids, stx } });
     },
 
     // Runs BEFORE mutationFn - remove items immediately from UI
@@ -343,9 +343,9 @@ addMutationRegistrar((queryClient: QueryClient) => {
   // Create mutation - variables include path params for persistence
   queryClient.setMutationDefaults(keys.create, {
     mutationFn: async ({ tenantId, orgId, data }: { tenantId: string; orgId: string; data: CreateAttachmentInput }) => {
-      const tx = createTxForCreate();
-      // Body is array with tx embedded in each item
-      const body = data.map((item) => ({ ...item, tx }));
+      const stx = createStxForCreate();
+      // Body is array with stx embedded in each item
+      const body = data.map((item) => ({ ...item, stx }));
       return createAttachments({ path: { tenantId, orgId }, body });
     },
   });
@@ -365,9 +365,9 @@ addMutationRegistrar((queryClient: QueryClient) => {
     }) => {
       // Get cached entity for baseVersion (may be undefined if not in cache)
       const cachedEntity = findAttachmentInListCache(id);
-      const tx = createTxForUpdate(cachedEntity);
-      // Body has tx embedded directly
-      return updateAttachment({ path: { tenantId, orgId, id }, body: { ...data, tx } });
+      const stx = createStxForUpdate(cachedEntity);
+      // Body has stx embedded directly
+      return updateAttachment({ path: { tenantId, orgId, id }, body: { ...data, stx } });
     },
   });
 

@@ -4,10 +4,10 @@ import { sessionsTable } from '#/db/schema/sessions';
 import { createSelectSchema } from '#/db/utils/drizzle-schema';
 import { passkeySchema, webAuthnAssertionSchema } from '#/modules/auth/passkeys/passkeys-schema';
 import { totpCreateBodySchema } from '#/modules/auth/totps/totps-schema';
-import { contextEntityBaseSchema } from '#/modules/entities/entities-schema-base';
 import { inactiveMembershipSchema } from '#/modules/memberships/memberships-schema';
 import { enabledOAuthProvidersEnum, userSchema } from '#/modules/user/user-schema';
 import { booleanTransformSchema } from '#/schemas';
+import { contextEntityBaseSchema } from '#/schemas/entity-base';
 import { mockMeAuthDataResponse, mockMeResponse, mockUploadTokenResponse } from '../../../mocks/mock-me';
 
 export const sessionSchema = createSelectSchema(sessionsTable)

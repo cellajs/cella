@@ -16,6 +16,7 @@
   "delete_resource_forbidden.text": "You do not have enough permission to delete this {{resourceLowerCase}}.",
   "delete_resources": "{{resources}} could not be deleted",
   "duplicate_creation": "Item already exist",
+  "duplicate_slugs": "Duplicate slugs are not allowed",
   "email_already_verified": "Email already verified",
   "email_exists": "Email already exists",
   "email-verification_expired": "Email verification token expired",

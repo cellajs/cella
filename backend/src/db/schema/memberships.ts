@@ -22,7 +22,6 @@ export const membershipsTable = pgTable(
   {
     createdAt: timestampColumns.createdAt,
     id: varchar().primaryKey().$defaultFn(nanoid),
-    // Tenant isolation
     tenantId: varchar('tenant_id', { length: 24 })
       .notNull()
       .references(() => tenantsTable.id),
@@ -39,7 +38,6 @@ export const membershipsTable = pgTable(
     archived: boolean().default(false).notNull(),
     muted: boolean().default(false).notNull(),
     displayOrder: doublePrecision().notNull(),
-    // Context entity columns
     organizationId: organizationId.notNull(),
     ...otherEntityIdColumns,
   },
@@ -47,47 +45,37 @@ export const membershipsTable = pgTable(
     index('memberships_user_id_idx').on(table.userId),
     index('memberships_organization_id_idx').on(table.organizationId),
     index('memberships_tenant_id_idx').on(table.tenantId),
-    // Composite index for count queries by context type
     index('memberships_context_org_role_idx').on(table.contextType, table.organizationId, table.role),
-    // Native composite unique constraint (replaces uniqueKey column)
     unique('memberships_tenant_user_org').on(table.tenantId, table.userId, table.organizationId),
-    // Composite FK to organization (prevents franken-rows)
     foreignKey({
       columns: [table.tenantId, table.organizationId],
       foreignColumns: [organizationsTable.tenantId, organizationsTable.id],
     }).onDelete('cascade'),
-
-    // RLS Policies: Cross-tenant read (user sees own memberships), tenant-scoped write
-    // RESTRICTIVE guard: at least one context var must be set (defense-in-depth)
+    // Restrictive guard: at least one context var must be set (defense-in-depth)
     pgPolicy('memberships_context_guard', {
       as: 'restrictive',
       for: 'select',
       using: sql`${tenantContextSet} OR ${userContextSet}`,
     }),
-    // SELECT (own): Users can see their own memberships across all tenants (for /me routes).
+    // Own memberships visible across all tenants (for /me routes)
     pgPolicy('memberships_select_own_policy', {
       for: 'select',
       using: sql`${isAuthenticated} AND ${userMatch(table)}`,
     }),
-    // SELECT (tenant): Users can see all memberships within the current tenant.
-    // Org-level filtering is enforced by the handler WHERE clause + orgGuard middleware.
-    // Cannot use membershipExists here (self-referencing memberships → infinite recursion).
+    // All tenant memberships visible. Cannot use membershipExists here (self-referencing → infinite recursion).
     pgPolicy('memberships_select_tenant_policy', {
       for: 'select',
       using: sql`${isAuthenticated} AND ${tenantMatch(table)}`,
     }),
-    // INSERT: Strictly tenant-scoped
     pgPolicy('memberships_insert_policy', {
       for: 'insert',
       withCheck: sql`${tenantMatch(table)} AND ${isAuthenticated}`,
     }),
-    // UPDATE: Strictly tenant-scoped
     pgPolicy('memberships_update_policy', {
       for: 'update',
       using: sql`${tenantMatch(table)} AND ${isAuthenticated}`,
       withCheck: sql`${tenantMatch(table)} AND ${isAuthenticated}`,
     }),
-    // DELETE: Strictly tenant-scoped
     pgPolicy('memberships_delete_policy', {
       for: 'delete',
       using: sql`${tenantMatch(table)} AND ${isAuthenticated}`,

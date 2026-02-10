@@ -23,6 +23,11 @@
                     "required": true,
                     "enum": ["organization"]
                   },
+                  "tenantId": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 24
+                  },
                   "name": { "type": "string", "required": true },
                   "description": {
                     "type": ["string", "null"],
@@ -48,11 +53,6 @@
                   "modifiedBy": {
                     "type": ["string", "null"],
                     "required": true
-                  },
-                  "tenantId": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 24
                   },
                   "shortName": {
                     "type": ["string", "null"],
@@ -505,6 +505,11 @@
                     "required": true,
                     "enum": ["organization"]
                   },
+                  "tenantId": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 24
+                  },
                   "name": { "type": "string", "required": true },
                   "description": {
                     "type": ["string", "null"],
@@ -530,11 +535,6 @@
                   "modifiedBy": {
                     "type": ["string", "null"],
                     "required": true
-                  },
-                  "tenantId": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 24
                   },
                   "shortName": {
                     "type": ["string", "null"],
@@ -876,6 +876,11 @@
               "required": true,
               "enum": ["organization"]
             },
+            "tenantId": {
+              "type": "string",
+              "required": true,
+              "maxLength": 24
+            },
             "name": { "type": "string", "required": true },
             "description": {
               "type": ["string", "null"],
@@ -901,11 +906,6 @@
             "modifiedBy": {
               "type": ["string", "null"],
               "required": true
-            },
-            "tenantId": {
-              "type": "string",
-              "required": true,
-              "maxLength": 24
             },
             "shortName": {
               "type": ["string", "null"],
@@ -1176,6 +1176,11 @@
               "required": true,
               "enum": ["organization"]
             },
+            "tenantId": {
+              "type": "string",
+              "required": true,
+              "maxLength": 24
+            },
             "name": { "type": "string", "required": true },
             "description": {
               "type": ["string", "null"],
@@ -1201,11 +1206,6 @@
             "modifiedBy": {
               "type": ["string", "null"],
               "required": true
-            },
-            "tenantId": {
-              "type": "string",
-              "required": true,
-              "maxLength": 24
             },
             "shortName": {
               "type": ["string", "null"],

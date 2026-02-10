@@ -24,6 +24,11 @@
                     "required": true,
                     "enum": ["page"]
                   },
+                  "tenantId": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 24
+                  },
                   "name": { "type": "string", "required": true },
                   "description": {
                     "type": ["string", "null"],
@@ -33,7 +38,7 @@
                     "type": ["string", "null"],
                     "required": true
                   },
-                  "tx": {
+                  "stx": {
                     "type": "object",
                     "required": true,
                     "properties": {
@@ -42,7 +47,7 @@
                       "version": { "type": "number", "required": true },
                       "fieldVersions": { "type": "object", "required": true }
                     },
-                    "ref": "#/components/schemas/TxBase"
+                    "ref": "#/components/schemas/StxBase"
                   },
                   "keywords": { "type": "string", "required": true },
                   "createdBy": {
@@ -52,11 +57,6 @@
                   "modifiedBy": {
                     "type": ["string", "null"],
                     "required": true
-                  },
-                  "tenantId": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 24
                   },
                   "status": {
                     "type": "string",
@@ -99,7 +99,7 @@
               "createdBy": "qqp8d07imsvjbtqtl3rtjgxd",
               "modifiedAt": "2024-11-21T04:00:59.122Z",
               "modifiedBy": "qqp8d07imsvjbtqtl3rtjgxd",
-              "tx": {
+              "stx": {
                 "id": "y6mqh9hmikgme3gy3a9lhe0c",
                 "sourceId": "src_trmzc53x7z222ydtq57iu31m",
                 "version": 1,
@@ -121,7 +121,7 @@
               "createdBy": "hg5ogh3yr2b2dbwf7b9eckaj",
               "modifiedAt": "2024-10-29T08:46:20.790Z",
               "modifiedBy": "hg5ogh3yr2b2dbwf7b9eckaj",
-              "tx": {
+              "stx": {
                 "id": "4bpmhsyauxcwuwjsrzvzac8q",
                 "sourceId": "src_x1h9s6vzhgvcj0rs3xtuk03g",
                 "version": 1,
@@ -212,6 +212,11 @@
               "required": true,
               "enum": ["page"]
             },
+            "tenantId": {
+              "type": "string",
+              "required": true,
+              "maxLength": 24
+            },
             "name": { "type": "string", "required": true },
             "description": {
               "type": ["string", "null"],
@@ -221,7 +226,7 @@
               "type": ["string", "null"],
               "required": true
             },
-            "tx": {
+            "stx": {
               "type": "object",
               "required": true,
               "properties": {
@@ -230,7 +235,7 @@
                 "version": { "type": "number", "required": true },
                 "fieldVersions": { "type": "object", "required": true }
               },
-              "ref": "#/components/schemas/TxBase"
+              "ref": "#/components/schemas/StxBase"
             },
             "keywords": { "type": "string", "required": true },
             "createdBy": {
@@ -240,11 +245,6 @@
             "modifiedBy": {
               "type": ["string", "null"],
               "required": true
-            },
-            "tenantId": {
-              "type": "string",
-              "required": true,
-              "maxLength": 24
             },
             "status": {
               "type": "string",
@@ -281,7 +281,7 @@
           "createdBy": "0f0ak5vkrrl687pmkwpa1vju",
           "modifiedAt": "2024-08-06T10:28:33.226Z",
           "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju",
-          "tx": {
+          "stx": {
             "id": "4tufkeho7gg1xwx21e333ngq",
             "sourceId": "src_ujcbpukfple60p8h3tnk9zpo",
             "version": 1,
@@ -358,6 +358,11 @@
                     "required": true,
                     "enum": ["page"]
                   },
+                  "tenantId": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 24
+                  },
                   "name": { "type": "string", "required": true },
                   "description": {
                     "type": ["string", "null"],
@@ -367,7 +372,7 @@
                     "type": ["string", "null"],
                     "required": true
                   },
-                  "tx": {
+                  "stx": {
                     "type": "object",
                     "required": true,
                     "properties": {
@@ -376,7 +381,7 @@
                       "version": { "type": "number", "required": true },
                       "fieldVersions": { "type": "object", "required": true }
                     },
-                    "ref": "#/components/schemas/TxBase"
+                    "ref": "#/components/schemas/StxBase"
                   },
                   "keywords": { "type": "string", "required": true },
                   "createdBy": {
@@ -386,11 +391,6 @@
                   "modifiedBy": {
                     "type": ["string", "null"],
                     "required": true
-                  },
-                  "tenantId": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 24
                   },
                   "status": {
                     "type": "string",
@@ -443,7 +443,7 @@
               "createdBy": "kzmv5qbhdcqeiuvwlosan0fc",
               "modifiedAt": "2024-04-19T14:04:35.773Z",
               "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
-              "tx": {
+              "stx": {
                 "id": "akf4ovzm1ne3h55lgj31d63n",
                 "sourceId": "src_9apx99a5auvr5cyj5s37irnj",
                 "version": 1,
@@ -465,7 +465,7 @@
               "createdBy": "p3t0ygxx0aa83en3sk1fs1we",
               "modifiedAt": "2024-02-25T13:01:35.301Z",
               "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
-              "tx": {
+              "stx": {
                 "id": "4hj92yzr7v1itpc9wztvbcy2",
                 "sourceId": "src_1q04oq81k5rbzt4yq63pob5r",
                 "version": 1,
@@ -498,6 +498,11 @@
                     "required": true,
                     "enum": ["page"]
                   },
+                  "tenantId": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 24
+                  },
                   "name": { "type": "string", "required": true },
                   "description": {
                     "type": ["string", "null"],
@@ -507,7 +512,7 @@
                     "type": ["string", "null"],
                     "required": true
                   },
-                  "tx": {
+                  "stx": {
                     "type": "object",
                     "required": true,
                     "properties": {
@@ -516,7 +521,7 @@
                       "version": { "type": "number", "required": true },
                       "fieldVersions": { "type": "object", "required": true }
                     },
-                    "ref": "#/components/schemas/TxBase"
+                    "ref": "#/components/schemas/StxBase"
                   },
                   "keywords": { "type": "string", "required": true },
                   "createdBy": {
@@ -526,11 +531,6 @@
                   "modifiedBy": {
                     "type": ["string", "null"],
                     "required": true
-                  },
-                  "tenantId": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 24
                   },
                   "status": {
                     "type": "string",
@@ -583,7 +583,7 @@
               "createdBy": "kzmv5qbhdcqeiuvwlosan0fc",
               "modifiedAt": "2024-04-19T14:04:35.773Z",
               "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
-              "tx": {
+              "stx": {
                 "id": "akf4ovzm1ne3h55lgj31d63n",
                 "sourceId": "src_9apx99a5auvr5cyj5s37irnj",
                 "version": 1,
@@ -605,7 +605,7 @@
               "createdBy": "p3t0ygxx0aa83en3sk1fs1we",
               "modifiedAt": "2024-02-25T13:01:35.301Z",
               "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
-              "tx": {
+              "stx": {
                 "id": "4hj92yzr7v1itpc9wztvbcy2",
                 "sourceId": "src_1q04oq81k5rbzt4yq63pob5r",
                 "version": 1,
@@ -670,7 +670,7 @@
           "required": true,
           "properties": {
             "name": { "type": "string", "required": false },
-            "tx": {
+            "stx": {
               "type": "object",
               "required": true,
               "properties": {
@@ -693,7 +693,7 @@
                   "minimum": 0
                 }
               },
-              "ref": "#/components/schemas/TxRequest"
+              "ref": "#/components/schemas/StxRequest"
             }
           }
         },
@@ -789,6 +789,11 @@
               "required": true,
               "enum": ["page"]
             },
+            "tenantId": {
+              "type": "string",
+              "required": true,
+              "maxLength": 24
+            },
             "name": { "type": "string", "required": true },
             "description": {
               "type": ["string", "null"],
@@ -798,7 +803,7 @@
               "type": ["string", "null"],
               "required": true
             },
-            "tx": {
+            "stx": {
               "type": "object",
               "required": true,
               "properties": {
@@ -807,7 +812,7 @@
                 "version": { "type": "number", "required": true },
                 "fieldVersions": { "type": "object", "required": true }
               },
-              "ref": "#/components/schemas/TxBase"
+              "ref": "#/components/schemas/StxBase"
             },
             "keywords": { "type": "string", "required": true },
             "createdBy": {
@@ -817,11 +822,6 @@
             "modifiedBy": {
               "type": ["string", "null"],
               "required": true
-            },
-            "tenantId": {
-              "type": "string",
-              "required": true,
-              "maxLength": 24
             },
             "status": {
               "type": "string",
@@ -858,7 +858,7 @@
           "createdBy": "0f0ak5vkrrl687pmkwpa1vju",
           "modifiedAt": "2024-08-06T10:28:33.226Z",
           "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju",
-          "tx": {
+          "stx": {
             "id": "4tufkeho7gg1xwx21e333ngq",
             "sourceId": "src_ujcbpukfple60p8h3tnk9zpo",
             "version": 1,
@@ -937,7 +937,7 @@
             "type": ["string", "null"],
             "required": false
           },
-          "tx": {
+          "stx": {
             "type": "object",
             "required": true,
             "properties": {
@@ -960,7 +960,7 @@
                 "minimum": 0
               }
             },
-            "ref": "#/components/schemas/TxRequest"
+            "ref": "#/components/schemas/StxRequest"
           }
         },
         "required": true,

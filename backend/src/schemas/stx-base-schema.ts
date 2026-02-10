@@ -1,16 +1,16 @@
 import { z } from '@hono/zod-openapi';
 
 /**
- * Zod schema for TxBase.
+ * Zod schema for StxBase (sync transaction base).
  */
-export const txBaseSchema = z
+export const stxBaseSchema = z
   .object({
     id: z.string(),
     sourceId: z.string(),
     version: z.number(),
     fieldVersions: z.record(z.string(), z.number()),
   })
-  .openapi('TxBase', {
+  .openapi('StxBase', {
     example: {
       id: 'gen-abc123def456ghi789',
       sourceId: 'src_gen-xyz987wvu654',
@@ -19,4 +19,4 @@ export const txBaseSchema = z
     },
   });
 
-export type TxBase = z.infer<typeof txBaseSchema>;
+export type StxBase = z.infer<typeof stxBaseSchema>;

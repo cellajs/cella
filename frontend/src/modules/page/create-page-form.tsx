@@ -16,7 +16,7 @@ interface Props {
 
 // Form only collects the data portion - tx is added by mutation
 // zCreatePagesData.shape.body is an array schema with tx in each element, use .element and omit tx
-const formSchema = zCreatePagesData.shape.body.element.omit({ tx: true });
+const formSchema = zCreatePagesData.shape.body.element.omit({ stx: true });
 type FormValues = z.infer<typeof formSchema>;
 
 export const CreatePageForm = ({ callback }: Props) => {

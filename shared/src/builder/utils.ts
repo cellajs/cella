@@ -1,9 +1,10 @@
-import type { DeepPartial } from './src/builder/types';
+import type { DeepPartial } from './types';
 
 function isObject(item: object) {
   return item && typeof item === 'object' && !Array.isArray(item);
 }
 
+/** Deep merges source objects into target, preserving nested structure. */
 export function mergeDeep<T extends {}, U extends DeepPartial<T>>(target: T, ...sources: U[]) {
   if (!sources.length) return target;
   const source = sources.shift();

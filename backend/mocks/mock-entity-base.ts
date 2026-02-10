@@ -88,10 +88,10 @@ export const mockRequestResponse = (key = 'request:default') =>
   }));
 
 /**
- * Generates a mock TxRequest example.
+ * Generates a mock StxRequest example.
  * Used for sync transaction requests.
  */
-export const mockTxRequest = (key = 'tx-request:default') =>
+export const mockStxRequest = (key = 'stx-request:default') =>
   withFakerSeed(key, () => ({
     id: mockNanoid(),
     sourceId: mockNanoid(),
@@ -99,20 +99,20 @@ export const mockTxRequest = (key = 'tx-request:default') =>
   }));
 
 /**
- * Generates a mock TxResponse example.
+ * Generates a mock StxResponse example.
  * Used for sync transaction responses.
  */
-export const mockTxResponse = (key = 'tx-response:default') =>
+export const mockStxResponse = (key = 'stx-response:default') =>
   withFakerSeed(key, () => ({
     id: mockNanoid(),
     version: faker.number.int({ min: 1, max: 10 }),
   }));
 
 /**
- * Generates a mock TxStreamMessage example.
+ * Generates a mock StxStreamMessage example.
  * Used for real-time sync stream messages.
  */
-export const mockTxStreamMessage = (key = 'tx-stream:default') =>
+export const mockStxStreamMessage = (key = 'stx-stream:default') =>
   withFakerSeed(key, () => ({
     id: mockNanoid(),
     sourceId: mockNanoid(),
@@ -126,7 +126,7 @@ export const mockTxStreamMessage = (key = 'tx-stream:default') =>
  *
  * For product entities (page, attachment):
  * - entityType is set, resourceType is null
- * - Includes tx, seq, cacheToken for sync engine
+ * - Includes stx, seq, cacheToken for sync engine
  * - contextType is null (not a context entity event)
  */
 export const mockStreamNotification = (key = 'stream-notification:default') =>
@@ -138,10 +138,10 @@ export const mockStreamNotification = (key = 'stream-notification:default') =>
     organizationId: mockNanoid(),
     contextType: null,
     seq: faker.number.int({ min: 1, max: 1000 }),
-    // Generate cacheToken BEFORE tx to ensure deterministic output
-    // (tx uses nested withFakerSeed which resets the seed after)
+    // Generate cacheToken BEFORE stx to ensure deterministic output
+    // (stx uses nested withFakerSeed which resets the seed after)
     cacheToken: faker.string.alphanumeric(32),
-    tx: mockTxStreamMessage(`${key}:tx`),
+    stx: mockStxStreamMessage(`${key}:stx`),
   }));
 
 /**

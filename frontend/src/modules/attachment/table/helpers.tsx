@@ -5,7 +5,7 @@ import { parseUploadedAttachments } from '~/modules/attachment/helpers';
 import { attachmentQueryKeys } from '~/modules/attachment/query';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
 import { useUploader } from '~/modules/common/uploader/use-uploader';
-import { createTxForCreate } from '~/query/offline';
+import { createStxForCreate } from '~/query/offline';
 import { queryClient } from '~/query/query-client';
 
 const maxNumberOfFiles = 20;
@@ -16,9 +16,9 @@ export const useAttachmentsUploadDialog = (tenantId: string, organizationId: str
     const onComplete = async (result: UploadedUppyFile<'attachment'>) => {
       const attachments = parseUploadedAttachments(result, organizationId);
 
-      // Create attachments via API with transaction metadata (tx embedded in each item)
-      const tx = createTxForCreate();
-      const body = attachments.map((att) => ({ ...att, tx }));
+      // Create attachments via API with transaction metadata (stx embedded in each item)
+      const stx = createStxForCreate();
+      const body = attachments.map((att) => ({ ...att, stx }));
       await createAttachments({ path: { tenantId, orgId: organizationId }, body });
 
       // Invalidate the cache to refresh the table

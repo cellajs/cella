@@ -6,11 +6,11 @@ import { buildExtensionRegistry } from '#/docs/openapi-extensions';
 import { openapiTags, registerAppSchema } from '#/docs/tags-config';
 import { getExtensionValueDescriptions } from '#/docs/x-middleware';
 import type { Env } from '#/lib/context';
-import { contextEntityBaseSchema } from '#/modules/entities/entities-schema-base';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
 import { errorResponses, registerAllErrorResponses } from '#/schemas';
+import { contextEntityBaseSchema } from '#/schemas/entity-base';
 import { publicStreamActivitySchema, streamNotificationSchema } from '#/schemas/stream-schemas';
-import { txBaseSchema } from '#/schemas/tx-base-schema';
+import { stxBaseSchema } from '#/schemas/stx-base-schema';
 import { userBaseSchema } from '#/schemas/user-schema-base';
 import { checkMark } from '#/utils/console';
 
@@ -54,7 +54,7 @@ const docs = async (app: OpenAPIHono<Env>, skipScalar = false) => {
   registry.register('UserBase', userBaseSchema);
   registry.register('ContextEntityBase', contextEntityBaseSchema);
   registry.register('MembershipBase', membershipBaseSchema);
-  registry.register('TxBase', txBaseSchema);
+  registry.register('StxBase', stxBaseSchema);
 
   // Register stream schemas (SSE payloads, not in REST responses but useful for client typing)
   registry.register('StreamNotification', streamNotificationSchema);

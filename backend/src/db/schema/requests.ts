@@ -4,10 +4,7 @@ import { nanoid } from '#/utils/nanoid';
 
 export const requestTypeEnum = ['waitlist', 'newsletter', 'contact'] as const;
 
-/**
- * Requests table to store various types of end-user requests.
- * Includes waitlist signups, newsletter subscriptions, and contact form messages.
- */
+/** Waitlist signups, newsletter subscriptions, and contact form messages. */
 export const requestsTable = pgTable(
   'requests',
   {

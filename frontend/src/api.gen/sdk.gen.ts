@@ -2145,7 +2145,7 @@ export const createPages = <ThrowOnError extends boolean = true>(options: Option
  * @param {number=} options.body.displayOrder - `number` (optional)
  * @param {enum=} options.body.status - `enum` (optional)
  * @param {string | null=} options.body.parentId - `string | null` (optional)
- * @param {any=} options.body.tx - `any` (optional)
+ * @param {any=} options.body.stx - `any` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const updatePage = <ThrowOnError extends boolean = true>(options: Options<UpdatePageData, ThrowOnError>) =>
@@ -2239,7 +2239,7 @@ export const getUser = <ThrowOnError extends boolean = true>(options: Options<Ge
  * @param {string} options.path.tenantid - `string`
  * @param {string} options.path.orgid - `string`
  * @param {any[]=} options.body.ids - `any[]` (optional)
- * @param {object} options.body.tx - `object`
+ * @param {object} options.body.stx - `object`
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const deleteAttachments = <ThrowOnError extends boolean = true>(
@@ -2397,7 +2397,7 @@ export const getAttachment = <ThrowOnError extends boolean = true>(options: Opti
  * @param {string} options.path.id - `string`
  * @param {string=} options.body.name - `string` (optional)
  * @param {string=} options.body.originalKey - `string` (optional)
- * @param {any=} options.body.tx - `any` (optional)
+ * @param {any=} options.body.stx - `any` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const updateAttachment = <ThrowOnError extends boolean = true>(

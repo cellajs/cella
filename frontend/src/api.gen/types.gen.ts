@@ -44,7 +44,7 @@ export type MembershipBase = {
   organizationId: string;
 };
 
-export type TxBase = {
+export type StxBase = {
   id: string;
   sourceId: string;
   version: number;
@@ -61,11 +61,11 @@ export type StreamNotification = {
   organizationId: string | null;
   contextType: 'organization' | null;
   seq: number | null;
-  tx: TxStreamMessage;
+  stx: StxStreamMessage;
   cacheToken: string | null;
 };
 
-export type TxStreamMessage = {
+export type StxStreamMessage = {
   id: string;
   sourceId: string;
   version: number;
@@ -146,7 +146,7 @@ export type Activity = {
   organizationId: string | null;
   createdAt: string;
   changedKeys: Array<string> | null;
-  tx: TxBase | null;
+  stx: StxBase | null;
   seq: number | null;
   error: ActivityError | null;
 };
@@ -315,6 +315,7 @@ export type Organization = {
   createdAt: string;
   id: string;
   entityType: 'organization';
+  tenantId: string;
   name: string;
   description: string | null;
   modifiedAt: string | null;
@@ -323,7 +324,6 @@ export type Organization = {
   bannerUrl: string | null;
   createdBy: string | null;
   modifiedBy: string | null;
-  tenantId: string;
   shortName: string | null;
   country: string | null;
   timezone: string | null;
@@ -351,21 +351,21 @@ export type Page = {
   createdAt: string;
   id: string;
   entityType: 'page';
+  tenantId: string;
   name: string;
   description: string | null;
   modifiedAt: string | null;
-  tx: TxBase;
+  stx: StxBase;
   keywords: string;
   createdBy: string | null;
   modifiedBy: string | null;
-  tenantId: string;
   status: 'unpublished' | 'published' | 'archived';
   publicAccess: boolean;
   parentId: string | null;
   displayOrder: number;
 };
 
-export type TxRequest = {
+export type StxRequest = {
   /**
    * Unique mutation ID (nanoid)
    */
@@ -384,14 +384,14 @@ export type Attachment = {
   createdAt: string;
   id: string;
   entityType: 'attachment';
+  tenantId: string;
   name: string;
   description: string | null;
   modifiedAt: string | null;
-  tx: TxBase;
+  stx: StxBase;
   keywords: string;
   createdBy: string | null;
   modifiedBy: string | null;
-  tenantId: string;
   public: boolean;
   bucketName: string;
   groupId: string | null;
@@ -3748,7 +3748,7 @@ export type DeletePagesResponse = DeletePagesResponses[keyof DeletePagesResponse
 export type CreatePagesData = {
   body: Array<{
     name?: string;
-    tx: TxRequest;
+    stx: StxRequest;
   }>;
   path: {
     tenantId: string;
@@ -3827,7 +3827,7 @@ export type UpdatePageData = {
     displayOrder?: number;
     status?: 'unpublished' | 'published' | 'archived';
     parentId?: string | null;
-    tx: TxRequest;
+    stx: StxRequest;
   };
   path: {
     tenantId: string;
@@ -3982,7 +3982,7 @@ export type GetUserResponse = GetUserResponses[keyof GetUserResponses];
 export type DeleteAttachmentsData = {
   body: {
     ids: Array<string>;
-    tx?: {
+    stx?: {
       id: string;
       sourceId: string;
     };
@@ -4111,7 +4111,7 @@ export type CreateAttachmentsData = {
     convertedContentType?: string | null;
     convertedKey?: string | null;
     thumbnailKey?: string | null;
-    tx: TxRequest;
+    stx: StxRequest;
   }>;
   path: {
     tenantId: string;
@@ -4278,7 +4278,7 @@ export type UpdateAttachmentData = {
   body: {
     name?: string;
     originalKey?: string;
-    tx: TxRequest;
+    stx: StxRequest;
   };
   path: {
     tenantId: string;

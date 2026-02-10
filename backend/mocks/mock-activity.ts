@@ -37,7 +37,7 @@ export const mockActivity = (key = 'activity:default'): ActivityModel =>
         action === 'update'
           ? faker.helpers.arrayElements(['name', 'email', 'slug', 'description'], { min: 2, max: 4 })
           : null,
-      tx: null,
+      stx: null,
       seq: faker.number.int({ min: 1, max: 1000 }),
       // Dead letter error info (null for successfully processed activities)
       error: null,

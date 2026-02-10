@@ -38,9 +38,6 @@ export const OrganizationLayoutRoute = createRoute({
     const { tenantId, orgId: orgIdParam } = params;
     const isOnline = onlineManager.isOnline();
 
-    // TODO-024: Validate tenantId format (6-char lowercase alphanumeric)
-    // TODO-024: Validate user has membership in this tenant
-
     // Resolve slug to ID via list cache (from menu), or fetch if not cached
     const cached = findOrganizationInListCache(orgIdParam);
     const orgId = cached?.id;
@@ -48,7 +45,7 @@ export const OrganizationLayoutRoute = createRoute({
     // If we have the ID from cache, use ID-based query; otherwise fetch by slug first
     let organization: Organization | undefined;
 
-    // TODO-025 - being called on every route change, including search params changes?
+    // TODO-025 - getOrganization is being called on every route change, including search params changes?
     if (orgId) {
       const orgOptions = organizationQueryOptions(orgId, tenantId);
       organization = await queryClient.ensureQueryData({ ...orgOptions, revalidateIfStale: true });

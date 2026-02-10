@@ -3,7 +3,7 @@ export { convertRowKeys, type RowData } from './convert-row-keys';
 export { extractActivityContext, type ActivityContext } from './extract-activity-context';
 export { extractContextEntityIds, type ContextEntityIds } from './extract-context-entity-ids';
 export { extractRowData } from './extract-row-data';
-export { extractTxData } from './extract-tx-data';
+export { extractStxData } from './extract-stx-data';
 export { getChangedKeys } from './get-changed-keys';
 export { getNextSeq } from './get-next-seq';
 export { getRowValue } from './get-row-value';

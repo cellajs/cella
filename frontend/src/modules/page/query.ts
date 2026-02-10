@@ -28,14 +28,14 @@ import {
   useMutateQueryData,
 } from '~/query/basic';
 import { addMutationRegistrar } from '~/query/mutation-registry';
-import { createTxForCreate, createTxForUpdate, squashPendingMutation } from '~/query/offline';
+import { createStxForCreate, createStxForUpdate, squashPendingMutation } from '~/query/offline';
 
 // Use generated types from api.gen for mutation input shapes
-// Body is array of items with tx embedded, extract element type without tx
+// Body is array of items with stx embedded, extract element type without stx
 type CreatePageItem = CreatePagesData['body'][number];
-type CreatePageInput = Omit<CreatePageItem, 'tx'>;
+type CreatePageInput = Omit<CreatePageItem, 'stx'>;
 type UpdatePageItem = UpdatePageData['body'];
-type UpdatePageInput = Omit<UpdatePageItem, 'tx'>;
+type UpdatePageInput = Omit<UpdatePageItem, 'stx'>;
 
 export const pagesLimit = appConfig.requestLimits.pages;
 
@@ -129,10 +129,10 @@ export const usePageCreateMutation = () => {
     // Execute API call with transaction metadata for conflict tracking
     // API accepts array - wrap single item, extract first from response
     mutationFn: async (data: CreatePageInput) => {
-      const tx = createTxForCreate();
-      // Body is array with tx embedded in each item
-      const result = await createPages({ path: { tenantId: 'public' }, body: [{ ...data, tx }] });
-      // Return created page (has tx embedded)
+      const stx = createStxForCreate();
+      // Body is array with stx embedded in each item
+      const result = await createPages({ path: { tenantId: 'public' }, body: [{ ...data, stx }] });
+      // Return created page (has stx embedded)
       return result.data[0];
     },
 
@@ -191,9 +191,9 @@ export const usePageUpdateMutation = () => {
     mutationFn: async ({ id, data }: { id: string; data: UpdatePageInput }) => {
       // Get cached entity for baseVersion conflict detection
       const cachedEntity = findPageInListCache(id);
-      const tx = createTxForUpdate(cachedEntity);
-      // Body has tx embedded directly
-      const result = await updatePage({ path: { tenantId: 'public', id }, body: { ...data, tx } });
+      const stx = createStxForUpdate(cachedEntity);
+      // Body has stx embedded directly
+      const result = await updatePage({ path: { tenantId: 'public', id }, body: { ...data, stx } });
       return result;
     },
 
@@ -298,10 +298,10 @@ addMutationRegistrar((queryClient: QueryClient) => {
   // Create mutation - API accepts array, unwrap single result
   queryClient.setMutationDefaults(keys.create, {
     mutationFn: async (data: CreatePageInput) => {
-      const tx = createTxForCreate();
-      // Body is array with tx embedded in each item
-      const result = await createPages({ path: { tenantId: 'public' }, body: [{ ...data, tx }] });
-      return result.data[0]; // Return entity with tx embedded
+      const stx = createStxForCreate();
+      // Body is array with stx embedded in each item
+      const result = await createPages({ path: { tenantId: 'public' }, body: [{ ...data, stx }] });
+      return result.data[0]; // Return entity with stx embedded
     },
   });
 
@@ -310,9 +310,9 @@ addMutationRegistrar((queryClient: QueryClient) => {
     mutationFn: async ({ id, data }: { id: string; data: UpdatePageInput }) => {
       // Get cached entity for baseVersion (may be undefined if not in cache)
       const cachedEntity = findPageInListCache(id);
-      const tx = createTxForUpdate(cachedEntity);
-      // Body has tx embedded directly
-      return updatePage({ path: { tenantId: 'public', id }, body: { ...data, tx } });
+      const stx = createStxForUpdate(cachedEntity);
+      // Body has stx embedded directly
+      return updatePage({ path: { tenantId: 'public', id }, body: { ...data, stx } });
     },
   });
 

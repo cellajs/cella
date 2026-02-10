@@ -406,7 +406,7 @@
           "archived": false
         }
       },
-      "TxBase": {
+      "StxBase": {
         "type": "object",
         "properties": {
           "id": {
@@ -501,8 +501,8 @@
               "null"
             ]
           },
-          "tx": {
-            "$ref": "#/components/schemas/TxStreamMessage"
+          "stx": {
+            "$ref": "#/components/schemas/StxStreamMessage"
           },
           "cacheToken": {
             "type": [
@@ -519,7 +519,7 @@
           "organizationId",
           "contextType",
           "seq",
-          "tx",
+          "stx",
           "cacheToken"
         ],
         "example": {
@@ -531,17 +531,17 @@
           "contextType": null,
           "seq": 550,
           "cacheToken": "UyMeEcuBnWoD28KSeQr21dJgZDmxiD2W",
-          "tx": {
-            "id": "wiooyt8ngdjsef4skbnrj1fg",
-            "sourceId": "m3unlw6p4wjqfhll7n1r95ec",
-            "version": 3,
+          "stx": {
+            "id": "g5bhj6q04ey9pbycghixqzn7",
+            "sourceId": "8ex8g1epv4xwf03jl4snuwh0",
+            "version": 5,
             "fieldVersions": {
               "name": 1
             }
           }
         }
       },
-      "TxStreamMessage": {
+      "StxStreamMessage": {
         "type": [
           "object",
           "null"
@@ -570,9 +570,9 @@
           "fieldVersions"
         ],
         "example": {
-          "id": "gd9m8kym1wafivmk7c3du9yy",
-          "sourceId": "u3is64cucutsxomeo8xiy6bt",
-          "version": 4,
+          "id": "sfz18l7ga7zqldxm2tqvvbxi",
+          "sourceId": "4418k64puayhyq1hx77zbjsj",
+          "version": 3,
           "fieldVersions": {
             "name": 1
           }
@@ -925,10 +925,10 @@
               "type": "string"
             }
           },
-          "tx": {
+          "stx": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/TxBase"
+                "$ref": "#/components/schemas/StxBase"
               },
               {
                 "type": "null"
@@ -967,7 +967,7 @@
           "organizationId",
           "createdAt",
           "changedKeys",
-          "tx",
+          "stx",
           "seq",
           "error"
         ],
@@ -987,7 +987,7 @@
             "name",
             "email"
           ],
-          "tx": null,
+          "stx": null,
           "seq": 66,
           "error": null,
           "organizationId": "pg8iwtnhw3666j3aifuxshox"
@@ -1747,6 +1747,10 @@
               "organization"
             ]
           },
+          "tenantId": {
+            "type": "string",
+            "maxLength": 24
+          },
           "name": {
             "type": "string"
           },
@@ -1788,10 +1792,6 @@
               "string",
               "null"
             ]
-          },
-          "tenantId": {
-            "type": "string",
-            "maxLength": 24
           },
           "shortName": {
             "type": [
@@ -1918,6 +1918,7 @@
           "createdAt",
           "id",
           "entityType",
+          "tenantId",
           "name",
           "description",
           "modifiedAt",
@@ -1926,7 +1927,6 @@
           "bannerUrl",
           "createdBy",
           "modifiedBy",
-          "tenantId",
           "shortName",
           "country",
           "timezone",
@@ -2018,6 +2018,10 @@
               "page"
             ]
           },
+          "tenantId": {
+            "type": "string",
+            "maxLength": 24
+          },
           "name": {
             "type": "string"
           },
@@ -2033,8 +2037,8 @@
               "null"
             ]
           },
-          "tx": {
-            "$ref": "#/components/schemas/TxBase"
+          "stx": {
+            "$ref": "#/components/schemas/StxBase"
           },
           "keywords": {
             "type": "string"
@@ -2050,10 +2054,6 @@
               "string",
               "null"
             ]
-          },
-          "tenantId": {
-            "type": "string",
-            "maxLength": 24
           },
           "status": {
             "type": "string",
@@ -2082,14 +2082,14 @@
           "createdAt",
           "id",
           "entityType",
+          "tenantId",
           "name",
           "description",
           "modifiedAt",
-          "tx",
+          "stx",
           "keywords",
           "createdBy",
           "modifiedBy",
-          "tenantId",
           "status",
           "publicAccess",
           "parentId",
@@ -2110,7 +2110,7 @@
           "createdBy": "0f0ak5vkrrl687pmkwpa1vju",
           "modifiedAt": "2024-08-06T10:28:33.226Z",
           "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju",
-          "tx": {
+          "stx": {
             "id": "4tufkeho7gg1xwx21e333ngq",
             "sourceId": "src_ujcbpukfple60p8h3tnk9zpo",
             "version": 1,
@@ -2118,7 +2118,7 @@
           }
         }
       },
-      "TxRequest": {
+      "StxRequest": {
         "type": "object",
         "properties": {
           "id": {
@@ -2143,8 +2143,8 @@
           "baseVersion"
         ],
         "example": {
-          "id": "uoobg3gmzvie508npzus4h2j",
-          "sourceId": "q0fso83v5i0v5s1hl5zutg31",
+          "id": "efuoa1qdsm3eoz4p3a4an8mw",
+          "sourceId": "mwbi2hv7uirbw4zg9xtdd05t",
           "baseVersion": 0
         }
       },
@@ -2163,6 +2163,10 @@
               "attachment"
             ]
           },
+          "tenantId": {
+            "type": "string",
+            "maxLength": 24
+          },
           "name": {
             "type": "string"
           },
@@ -2178,8 +2182,8 @@
               "null"
             ]
           },
-          "tx": {
-            "$ref": "#/components/schemas/TxBase"
+          "stx": {
+            "$ref": "#/components/schemas/StxBase"
           },
           "keywords": {
             "type": "string"
@@ -2195,10 +2199,6 @@
               "string",
               "null"
             ]
-          },
-          "tenantId": {
-            "type": "string",
-            "maxLength": 24
           },
           "public": {
             "type": "boolean"
@@ -2277,14 +2277,14 @@
           "createdAt",
           "id",
           "entityType",
+          "tenantId",
           "name",
           "description",
           "modifiedAt",
-          "tx",
+          "stx",
           "keywords",
           "createdBy",
           "modifiedBy",
-          "tenantId",
           "public",
           "bucketName",
           "groupId",
@@ -2318,7 +2318,7 @@
           "createdBy": "0uwim8y2tppz7th9tol75wjz",
           "modifiedAt": "2024-10-12T17:43:05.360Z",
           "modifiedBy": "0uwim8y2tppz7th9tol75wjz",
-          "tx": {
+          "stx": {
             "id": "pkeuemouu8t58r8fuj3tlenh",
             "sourceId": "src_qurk6hu54pnfytf99mpmuhw0",
             "version": 1,
@@ -2609,7 +2609,7 @@
                       "entityId": "9nes1yx645yb0gleyvjbbm5p",
                       "createdAt": "2024-11-21T04:00:59.122Z",
                       "changedKeys": null,
-                      "tx": null,
+                      "stx": null,
                       "seq": 511,
                       "error": null,
                       "organizationId": "weg2q4gqa3vx9cfyey6mqh9h"
@@ -2630,7 +2630,7 @@
                         "name",
                         "email"
                       ],
-                      "tx": null,
+                      "stx": null,
                       "seq": 810,
                       "error": null,
                       "organizationId": "5nr6k4huj5qv4k6bwmvl0e44"
@@ -5731,10 +5731,10 @@
                       "contextType": null,
                       "seq": 526,
                       "cacheToken": "hg18eRugoaB38Ug7A1n7Zj018TyC3pwn",
-                      "tx": {
-                        "id": "gdgo47kv9o7rvgjoql6a1dxp",
-                        "sourceId": "8u6gifwzsuyr58fapjsndxb3",
-                        "version": 5,
+                      "stx": {
+                        "id": "hd7xubc5zuydxdgepv2tpr0z",
+                        "sourceId": "jt0hyw517e6fpcmgsgfuxfwx",
+                        "version": 1,
                         "fieldVersions": {
                           "name": 1
                         }
@@ -8946,7 +8946,7 @@
                       "createdBy": "qqp8d07imsvjbtqtl3rtjgxd",
                       "modifiedAt": "2024-11-21T04:00:59.122Z",
                       "modifiedBy": "qqp8d07imsvjbtqtl3rtjgxd",
-                      "tx": {
+                      "stx": {
                         "id": "y6mqh9hmikgme3gy3a9lhe0c",
                         "sourceId": "src_trmzc53x7z222ydtq57iu31m",
                         "version": 1,
@@ -8968,7 +8968,7 @@
                       "createdBy": "hg5ogh3yr2b2dbwf7b9eckaj",
                       "modifiedAt": "2024-10-29T08:46:20.790Z",
                       "modifiedBy": "hg5ogh3yr2b2dbwf7b9eckaj",
-                      "tx": {
+                      "stx": {
                         "id": "4bpmhsyauxcwuwjsrzvzac8q",
                         "sourceId": "src_x1h9s6vzhgvcj0rs3xtuk03g",
                         "version": 1,
@@ -9048,7 +9048,7 @@
                   "createdBy": "0f0ak5vkrrl687pmkwpa1vju",
                   "modifiedAt": "2024-08-06T10:28:33.226Z",
                   "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju",
-                  "tx": {
+                  "stx": {
                     "id": "4tufkeho7gg1xwx21e333ngq",
                     "sourceId": "src_ujcbpukfple60p8h3tnk9zpo",
                     "version": 1,
@@ -9120,12 +9120,12 @@
                     "name": {
                       "type": "string"
                     },
-                    "tx": {
-                      "$ref": "#/components/schemas/TxRequest"
+                    "stx": {
+                      "$ref": "#/components/schemas/StxRequest"
                     }
                   },
                   "required": [
-                    "tx"
+                    "stx"
                   ]
                 },
                 "minItems": 1,
@@ -9185,7 +9185,7 @@
                       "createdBy": "kzmv5qbhdcqeiuvwlosan0fc",
                       "modifiedAt": "2024-04-19T14:04:35.773Z",
                       "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
-                      "tx": {
+                      "stx": {
                         "id": "akf4ovzm1ne3h55lgj31d63n",
                         "sourceId": "src_9apx99a5auvr5cyj5s37irnj",
                         "version": 1,
@@ -9207,7 +9207,7 @@
                       "createdBy": "p3t0ygxx0aa83en3sk1fs1we",
                       "modifiedAt": "2024-02-25T13:01:35.301Z",
                       "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
-                      "tx": {
+                      "stx": {
                         "id": "4hj92yzr7v1itpc9wztvbcy2",
                         "sourceId": "src_1q04oq81k5rbzt4yq63pob5r",
                         "version": 1,
@@ -9270,7 +9270,7 @@
                       "createdBy": "kzmv5qbhdcqeiuvwlosan0fc",
                       "modifiedAt": "2024-04-19T14:04:35.773Z",
                       "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
-                      "tx": {
+                      "stx": {
                         "id": "akf4ovzm1ne3h55lgj31d63n",
                         "sourceId": "src_9apx99a5auvr5cyj5s37irnj",
                         "version": 1,
@@ -9292,7 +9292,7 @@
                       "createdBy": "p3t0ygxx0aa83en3sk1fs1we",
                       "modifiedAt": "2024-02-25T13:01:35.301Z",
                       "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
-                      "tx": {
+                      "stx": {
                         "id": "4hj92yzr7v1itpc9wztvbcy2",
                         "sourceId": "src_1q04oq81k5rbzt4yq63pob5r",
                         "version": 1,
@@ -9477,12 +9477,12 @@
                       "null"
                     ]
                   },
-                  "tx": {
-                    "$ref": "#/components/schemas/TxRequest"
+                  "stx": {
+                    "$ref": "#/components/schemas/StxRequest"
                   }
                 },
                 "required": [
-                  "tx"
+                  "stx"
                 ]
               }
             }
@@ -9511,7 +9511,7 @@
                   "createdBy": "0f0ak5vkrrl687pmkwpa1vju",
                   "modifiedAt": "2024-08-06T10:28:33.226Z",
                   "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju",
-                  "tx": {
+                  "stx": {
                     "id": "4tufkeho7gg1xwx21e333ngq",
                     "sourceId": "src_ujcbpukfple60p8h3tnk9zpo",
                     "version": 1,
@@ -10087,7 +10087,7 @@
                       "createdBy": "qqp8d07imsvjbtqtl3rtjgxd",
                       "modifiedAt": "2024-11-21T04:00:59.122Z",
                       "modifiedBy": "qqp8d07imsvjbtqtl3rtjgxd",
-                      "tx": {
+                      "stx": {
                         "id": "vx9cfyey6mqh9hmikgme3gy3",
                         "sourceId": "src_a9lhe0ctrmzc53x7z222ydtq",
                         "version": 1,
@@ -10116,7 +10116,7 @@
                       "createdBy": "hg5ogh3yr2b2dbwf7b9eckaj",
                       "modifiedAt": "2024-10-29T08:46:20.790Z",
                       "modifiedBy": "hg5ogh3yr2b2dbwf7b9eckaj",
-                      "tx": {
+                      "stx": {
                         "id": "k6bwmvl0e44bpmhsyauxcwuw",
                         "sourceId": "src_jsrzvzac8qx1h9s6vzhgvcj0",
                         "version": 1,
@@ -10252,8 +10252,8 @@
                         "null"
                       ]
                     },
-                    "tx": {
-                      "$ref": "#/components/schemas/TxRequest"
+                    "stx": {
+                      "$ref": "#/components/schemas/StxRequest"
                     }
                   },
                   "required": [
@@ -10263,7 +10263,7 @@
                     "organizationId",
                     "originalKey",
                     "bucketName",
-                    "tx"
+                    "stx"
                   ]
                 },
                 "minItems": 1,
@@ -10329,7 +10329,7 @@
                       "createdBy": "kzmv5qbhdcqeiuvwlosan0fc",
                       "modifiedAt": "2024-04-19T14:04:35.773Z",
                       "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
-                      "tx": {
+                      "stx": {
                         "id": "b6pakf4ovzm1ne3h55lgj31d",
                         "sourceId": "src_63n9apx99a5auvr5cyj5s37i",
                         "version": 1,
@@ -10358,7 +10358,7 @@
                       "createdBy": "p3t0ygxx0aa83en3sk1fs1we",
                       "modifiedAt": "2024-02-25T13:01:35.301Z",
                       "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
-                      "tx": {
+                      "stx": {
                         "id": "y4dvzpz75e03ldr2ga54hj92",
                         "sourceId": "src_yzr7v1itpc9wztvbcy21q04o",
                         "version": 1,
@@ -10428,7 +10428,7 @@
                       "createdBy": "kzmv5qbhdcqeiuvwlosan0fc",
                       "modifiedAt": "2024-04-19T14:04:35.773Z",
                       "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
-                      "tx": {
+                      "stx": {
                         "id": "b6pakf4ovzm1ne3h55lgj31d",
                         "sourceId": "src_63n9apx99a5auvr5cyj5s37i",
                         "version": 1,
@@ -10457,7 +10457,7 @@
                       "createdBy": "p3t0ygxx0aa83en3sk1fs1we",
                       "modifiedAt": "2024-02-25T13:01:35.301Z",
                       "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
-                      "tx": {
+                      "stx": {
                         "id": "y4dvzpz75e03ldr2ga54hj92",
                         "sourceId": "src_yzr7v1itpc9wztvbcy21q04o",
                         "version": 1,
@@ -10542,7 +10542,7 @@
                     "minItems": 1,
                     "maxItems": 50
                   },
-                  "tx": {
+                  "stx": {
                     "type": "object",
                     "properties": {
                       "id": {
@@ -10776,7 +10776,7 @@
                   "createdBy": "0uwim8y2tppz7th9tol75wjz",
                   "modifiedAt": "2024-10-12T17:43:05.360Z",
                   "modifiedBy": "0uwim8y2tppz7th9tol75wjz",
-                  "tx": {
+                  "stx": {
                     "id": "pkeuemouu8t58r8fuj3tlenh",
                     "sourceId": "src_qurk6hu54pnfytf99mpmuhw0",
                     "version": 1,
@@ -10864,12 +10864,12 @@
                   "originalKey": {
                     "type": "string"
                   },
-                  "tx": {
-                    "$ref": "#/components/schemas/TxRequest"
+                  "stx": {
+                    "$ref": "#/components/schemas/StxRequest"
                   }
                 },
                 "required": [
-                  "tx"
+                  "stx"
                 ]
               }
             }
@@ -10904,7 +10904,7 @@
                   "createdBy": "0uwim8y2tppz7th9tol75wjz",
                   "modifiedAt": "2024-10-12T17:43:05.360Z",
                   "modifiedBy": "0uwim8y2tppz7th9tol75wjz",
-                  "tx": {
+                  "stx": {
                     "id": "pkeuemouu8t58r8fuj3tlenh",
                     "sourceId": "src_qurk6hu54pnfytf99mpmuhw0",
                     "version": 1,

@@ -21,12 +21,12 @@ export async function sendNotificationToSubscriber<T extends CursoredSubscriber>
   subscriber: T,
   event: ActivityEventWithEntity,
 ): Promise<void> {
-  // Validate this is a product entity with tx data
+  // Validate this is a product entity with stx data
   if (!isProductEntity(event.entityType)) {
     throw new Error(`sendNotificationToSubscriber only supports product entities, got: ${event.entityType}`);
   }
-  if (!event.tx) {
-    throw new Error(`Activity ${event.id} missing tx - realtime entities must have tx`);
+  if (!event.stx) {
+    throw new Error(`Activity ${event.id} missing stx - realtime entities must have stx`);
   }
 
   // Build notification (cache token comes from CDC via event)

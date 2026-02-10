@@ -4,7 +4,7 @@ import { activitiesTable } from '#/db/schema/activities';
 import { activityErrorSchema } from '#/db/utils/activity-error-schema';
 import { createSelectSchema } from '#/db/utils/drizzle-schema';
 import { paginationQuerySchema } from '#/schemas';
-import { txBaseSchema } from '#/schemas/tx-base-schema';
+import { stxBaseSchema } from '#/schemas/stx-base-schema';
 import { activityActions } from '#/sync/activity-bus';
 import { mockActivityResponse } from '../../../mocks/mock-activity';
 
@@ -20,7 +20,7 @@ export const resourceTypeSchema = z.enum(appConfig.resourceTypes);
 // Re-export for convenience
 export { activityErrorSchema } from '#/db/utils/activity-error-schema';
 
-/** Full activity schema derived from table, with proper tx and changedKeys typing */
+/** Full activity schema derived from table, with proper stx and changedKeys typing */
 export const activitySchema = z
   .object({
     ...createSelectSchema(activitiesTable).shape,
@@ -31,7 +31,7 @@ export const activitySchema = z
     // Override jsonb columns with properly typed schemas to avoid generic types in OpenAPI
     changedKeys: z.array(z.string()).nullable(),
     // Use union instead of .nullable() to generate proper anyOf in OpenAPI (avoids allOf intersection issue)
-    tx: z.union([txBaseSchema, z.null()]),
+    stx: z.union([stxBaseSchema, z.null()]),
     error: z.union([activityErrorSchema, z.null()]),
   })
   .openapi('Activity', { example: mockActivityResponse() });

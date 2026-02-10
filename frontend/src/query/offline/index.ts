@@ -9,4 +9,4 @@
 
 export { detectChangedFields } from './detect-changed-fields';
 export { coalescePendingCreate, hasPendingDelete, squashPendingMutation } from './squash-utils';
-export { createTxForCreate, createTxForDelete, createTxForUpdate, sourceId, type TxMetadata } from './tx-utils';
+export { createStxForCreate, createStxForDelete, createStxForUpdate, type StxMetadata, sourceId } from './stx-utils';

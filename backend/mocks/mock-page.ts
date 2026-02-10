@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker';
 import type { PageModel } from '#/db/schema/pages';
 import { mockBatchResponse } from './mock-common';
-import { mockNanoid, mockPaginated, mockTenantId, mockTx, withFakerSeed } from './utils';
+import { mockNanoid, mockPaginated, mockStx, mockTenantId, withFakerSeed } from './utils';
 
 /**
  * Generates a mock page with all fields populated.
@@ -34,7 +34,7 @@ export const mockPage = (key = 'page:default'): PageModel =>
       createdBy: userId,
       modifiedAt: createdAt,
       modifiedBy: userId,
-      tx: mockTx(),
+      stx: mockStx(),
     };
   });
 

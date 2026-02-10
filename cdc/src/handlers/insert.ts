@@ -3,7 +3,7 @@ import type { InsertActivityModel } from '#/db/schema/activities';
 import { getTableName } from 'drizzle-orm';
 import type { ProcessMessageResult } from '../process-message';
 import type { TableRegistryEntry } from '../types';
-import { actionToVerb, convertRowKeys, extractActivityContext, extractRowData, extractTxData } from '../utils';
+import { actionToVerb, convertRowKeys, extractActivityContext, extractRowData, extractStxData } from '../utils';
 
 /**
  * Handle an INSERT message and create an activity with entity data.
@@ -19,8 +19,8 @@ export async function handleInsert(
   const entityOrResourceType = ctx.entityType ?? ctx.resourceType;
   const type = `${entityOrResourceType}.${actionToVerb(action)}`;
 
-  // Extract tx data from realtime entities
-  const tx = extractTxData(row);
+  // Extract stx data from realtime entities
+  const stx = extractStxData(row);
 
   const activity: InsertActivityModel = {
     tenantId: ctx.tenantId,
@@ -33,7 +33,7 @@ export async function handleInsert(
     entityId: ctx.entityId,
     organizationId: ctx.organizationId,
     changedKeys: null,
-    tx,
+    stx,
   };
 
   return { activity, entityData: row, entry };

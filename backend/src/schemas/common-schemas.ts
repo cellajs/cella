@@ -159,6 +159,12 @@ export const paginationQuerySchema = z.object({
     .refine(limitRefine, t('error:invalid_limit', { max: limitMax })),
 });
 
+/** Schema for optional excludeArchived query param (transforms to boolean) */
+export const excludeArchivedQuerySchema = z
+  .enum(['true', 'false'])
+  .optional()
+  .transform((val) => val === 'true');
+
 /** Valid options for include query param */
 export const includeOptions = ['counts', 'membership'] as const;
 export type IncludeOption = (typeof includeOptions)[number];
@@ -192,14 +198,14 @@ export const idsBodySchema = (maxItems = 50) =>
       .max(maxItems, t('error:invalid_max_items', { max: maxItems, name: 'ID' })),
   });
 
-/** Schema for a request body containing IDs with optional tx for echo prevention */
-export const idsWithTxBodySchema = (maxItems = 50) =>
+/** Schema for a request body containing IDs with optional stx for echo prevention */
+export const idsWithStxBodySchema = (maxItems = 50) =>
   z.object({
     ids: z
       .array(z.string())
       .min(1, t('error:invalid_min_items', { min: 'one', name: 'ID' }))
       .max(maxItems, t('error:invalid_max_items', { max: maxItems, name: 'ID' })),
-    tx: z
+    stx: z
       .object({
         id: z.string(),
         sourceId: z.string(),
@@ -236,6 +242,10 @@ export const refineWithType = <T>(check: (val: T) => boolean, errorType: string)
     }
   };
 };
+
+/** Refinement that rejects arrays with duplicate slug values */
+export const noDuplicateSlugsRefine = (items: { slug: string }[]) =>
+  new Set(items.map((i) => i.slug)).size === items.length;
 
 /** Schema for a valid HTTPS URL */
 export const validUrlSchema = z

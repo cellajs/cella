@@ -1,7 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/docs/x-routes';
 import { authGuard, orgGuard, tenantGuard } from '#/middlewares/guard';
-import { contextEntityBaseSchema } from '#/modules/entities/entities-schema-base';
 import {
   memberListQuerySchema,
   membershipBaseSchema,
@@ -22,6 +21,7 @@ import {
   paginationSchema,
   tenantOrgParamSchema,
 } from '#/schemas';
+import { contextEntityBaseSchema } from '#/schemas/entity-base';
 import { mockContextEntityBase } from '../../../mocks/mock-entity-base';
 import {
   mockMembershipInviteResponse,

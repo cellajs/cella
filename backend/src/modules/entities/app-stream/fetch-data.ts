@@ -10,11 +10,11 @@ import { type ActivityEventWithEntity, getTypedEntity } from '#/sync/activity-bu
  * Notification-only format - no entity data included.
  *
  * For realtime entities:
- * - Includes tx, seq, cacheToken for sync engine
+ * - Includes stx, seq, cacheToken for sync engine
  * - Client uses cacheToken to fetch entity via entity cache
  *
  * For membership:
- * - tx/seq/cacheToken are null
+ * - stx/seq/cacheToken are null
  * - Client invalidates queries to refetch
  */
 export function buildStreamNotification(event: ActivityEventWithEntity): StreamNotification {
@@ -36,13 +36,13 @@ export function buildStreamNotification(event: ActivityEventWithEntity): StreamN
     organizationId: event.organizationId,
     contextType,
     seq: isProduct ? (event.seq ?? 0) : null,
-    tx:
-      isProduct && event.tx
+    stx:
+      isProduct && event.stx
         ? {
-            id: event.tx.id,
-            sourceId: event.tx.sourceId,
-            version: event.tx.version,
-            fieldVersions: event.tx.fieldVersions,
+            id: event.stx.id,
+            sourceId: event.stx.sourceId,
+            version: event.stx.version,
+            fieldVersions: event.stx.fieldVersions,
           }
         : null,
     cacheToken,
@@ -108,7 +108,7 @@ export async function fetchUserCatchUpActivities(
       organizationId: activity.organizationId,
       contextType: null, // Not available in catch-up (would require joining membership table)
       seq: null,
-      tx: null,
+      stx: null,
       cacheToken: null,
     };
 

@@ -58,7 +58,7 @@
                     "required": true,
                     "itemType": "string"
                   },
-                  "tx": {
+                  "stx": {
                     "required": true,
                     "anyOf": [
                       {
@@ -70,7 +70,7 @@
                           "version": { "type": "number", "required": true },
                           "fieldVersions": { "type": "object", "required": true }
                         },
-                        "ref": "#/components/schemas/TxBase"
+                        "ref": "#/components/schemas/StxBase"
                       },
                       { "type": "null", "required": false }
                     ]
@@ -126,7 +126,7 @@
               "entityId": "9nes1yx645yb0gleyvjbbm5p",
               "createdAt": "2024-11-21T04:00:59.122Z",
               "changedKeys": null,
-              "tx": null,
+              "stx": null,
               "seq": 511,
               "error": null,
               "organizationId": "weg2q4gqa3vx9cfyey6mqh9h"
@@ -143,7 +143,7 @@
               "entityId": "3o02wpa56tpd77kpi37syiav",
               "createdAt": "2024-10-29T08:46:20.790Z",
               "changedKeys": ["slug", "name", "email"],
-              "tx": null,
+              "stx": null,
               "seq": 810,
               "error": null,
               "organizationId": "5nr6k4huj5qv4k6bwmvl0e44"

@@ -21,6 +21,7 @@
     "noFallthroughCasesInSwitch": true,
 
     /* Type checking */
-    "incremental": true
+    "incremental": true,
+    "noEmit": true
   }
 }

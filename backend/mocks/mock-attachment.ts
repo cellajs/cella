@@ -5,8 +5,8 @@ import {
   generateMockContextEntityIdColumns,
   mockNanoid,
   mockPaginated,
+  mockStx,
   mockTenantId,
-  mockTx,
   withFakerSeed,
 } from './utils';
 
@@ -43,7 +43,7 @@ export const mockAttachment = (key = 'attachment:default'): AttachmentModel =>
       createdBy: userId,
       modifiedAt: createdAt,
       modifiedBy: userId,
-      tx: mockTx(),
+      stx: mockStx(),
       ...generateMockContextEntityIdColumns('relatable'),
     };
   });

@@ -10,13 +10,10 @@ export const authStrategiesEnum = ['github', 'google', 'microsoft', 'password', 
 export type AuthStrategy = (typeof authStrategiesEnum)[number];
 
 /**
- * Sessions table to store authenticated session data.
+ * Authenticated session data.
  *
- * PARTITIONING (production only):
- * - Partitioned by expiresAt via pg_partman (see 0002_partman_setup.sql)
- * - Weekly partitions, 30-day retention after expiry
- * - Drizzle sees regular table; PostgreSQL has partitioned table
- * - Standard ALTERs (ADD/DROP COLUMN, ADD INDEX) work normally
+ * PARTITIONING: Partitioned by expiresAt via pg_partman (weekly, 30-day retention).
+ * Drizzle sees a regular table; PostgreSQL manages partitions transparently.
  */
 export const sessionsTable = pgTable(
   'sessions',

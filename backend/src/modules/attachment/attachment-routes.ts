@@ -4,11 +4,11 @@ import { appCache } from '#/middlewares/entity-cache';
 import { authGuard, orgGuard, publicGuard, tenantGuard } from '#/middlewares/guard';
 import { presignedUrlLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
-  attachmentCreateManyTxBodySchema,
+  attachmentCreateManyStxBodySchema,
   attachmentCreateResponseSchema,
   attachmentListQuerySchema,
   attachmentSchema,
-  attachmentUpdateTxBodySchema,
+  attachmentUpdateStxBodySchema,
   presignedUrlKeySchema,
 } from '#/modules/attachment/attachment-schema';
 import {
@@ -16,7 +16,7 @@ import {
   errorResponseRefs,
   idInTenantOrgParamSchema,
   idSchema,
-  idsWithTxBodySchema,
+  idsWithStxBodySchema,
   paginationSchema,
   tenantOrgParamSchema,
 } from '#/schemas';
@@ -71,7 +71,7 @@ const attachmentRoutes = {
       params: tenantOrgParamSchema,
       body: {
         required: true,
-        content: { 'application/json': { schema: attachmentCreateManyTxBodySchema } },
+        content: { 'application/json': { schema: attachmentCreateManyStxBodySchema } },
       },
     },
     responses: {
@@ -128,7 +128,7 @@ const attachmentRoutes = {
       params: idInTenantOrgParamSchema,
       body: {
         required: true,
-        content: { 'application/json': { schema: attachmentUpdateTxBodySchema } },
+        content: { 'application/json': { schema: attachmentUpdateStxBodySchema } },
       },
     },
     responses: {
@@ -154,7 +154,7 @@ const attachmentRoutes = {
       params: tenantOrgParamSchema,
       body: {
         required: true,
-        content: { 'application/json': { schema: idsWithTxBodySchema() } },
+        content: { 'application/json': { schema: idsWithStxBodySchema() } },
       },
     },
     responses: {
