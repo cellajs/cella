@@ -21,7 +21,11 @@ export type MemberQueryData = QueryData<Member>;
 export type InfiniteMemberQueryData = InfiniteQueryData<Member>;
 export type MemberContextProp = ContextQueryProp<Member, string | null>;
 
-export type EntityMembershipContextProp = { queryContext: MemberContextProp[]; toastMessage: string };
+export type EntityMembershipContextProp = {
+  queryContext: MemberContextProp[];
+  toastMessage: string;
+  entityType?: ContextEntityType;
+};
 
 export type InviteMember = NonNullable<MembershipInviteData['body']> & { entity: ContextEntityData };
 

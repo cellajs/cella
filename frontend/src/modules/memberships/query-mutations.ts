@@ -122,6 +122,7 @@ export const useMemberUpdateMutation = () =>
       const context = {
         queryContext: [] as MemberContextProp[],
         toastMessage: t('common:success.update_item', { item: t('common:membership') }),
+        entityType,
       };
 
       // Set toast message based on what was updated

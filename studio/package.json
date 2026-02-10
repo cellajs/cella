@@ -5,7 +5,6 @@
   "type": "module",
   "scripts": {
     "quick": "cross-env DEV_MODE=basic pnpm dev",
-    "dev": "tsx ../backend/scripts/drizzle-studio/start.ts",
     "stop": "tsx ../backend/scripts/drizzle-studio/stop.ts"
   },
   "keywords": [

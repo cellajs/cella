@@ -31,7 +31,6 @@ function getMembershipForEntity(entityId: string): MembershipBase | undefined {
  * Subscribes to cache changes and returns the membership for the given entity.
  */
 export function useMembershipForEntity(entityId: string | undefined): MembershipBase | undefined {
-  // Subscribe to cache changes for memberships query
   const membershipsData = useSyncExternalStore(
     (callback) => {
       const unsubscribe = queryClient.getQueryCache().subscribe((event) => {
@@ -52,8 +51,6 @@ export function useMembershipForEntity(entityId: string | undefined): Membership
 function enrichEntityWithMembership<T extends { id: string; membership?: MembershipBase | null }>(entity: T): T {
   const membership = getMembershipForEntity(entity.id);
   if (!membership) return entity;
-
-  // Always update with latest membership data (for when archived/muted/order changes)
   return { ...entity, membership };
 }
 
@@ -80,31 +77,104 @@ function enrichInfiniteData(data: unknown): unknown {
   };
 }
 
+/** Deep compare two membership objects to check if they have meaningful differences */
+function hasMembershipChanged(
+  oldMembership: MembershipBase | null | undefined,
+  newMembership: MembershipBase | null | undefined,
+): boolean {
+  if (!oldMembership && !newMembership) return false;
+  if (!oldMembership || !newMembership) return true;
+
+  return (
+    oldMembership.archived !== newMembership.archived ||
+    oldMembership.muted !== newMembership.muted ||
+    oldMembership.displayOrder !== newMembership.displayOrder ||
+    oldMembership.role !== newMembership.role
+  );
+}
+
+/** Check if enrichment would actually change any data */
+function wouldEnrichmentChangeData(data: unknown): boolean {
+  if (!data || typeof data !== 'object') return false;
+  const d = data as { pages?: unknown[] };
+  if (!d.pages) return false;
+
+  for (const page of d.pages) {
+    if (!page || typeof page !== 'object') continue;
+    const p = page as { items?: unknown[] };
+    if (!p.items) continue;
+
+    for (const item of p.items) {
+      if (!item || typeof item !== 'object' || !('id' in item)) continue;
+      const entity = item as { id: string; membership?: MembershipBase | null };
+      const newMembership = getMembershipForEntity(entity.id);
+
+      if (hasMembershipChanged(entity.membership, newMembership)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
 /** Flag to prevent re-entrancy during enrichment */
 let isEnriching = false;
 
-// Re-enrich all existing enrichable list queries with current membership data
-function reEnrichAllEntityLists(): void {
+/** Store previous memberships state to detect actual changes */
+let previousMembershipsState: Map<string, MembershipBase> = new Map();
+
+/** Check if memberships actually changed and update stored state */
+function detectMembershipChanges(currentMemberships: MembershipBase[]): Set<string> {
+  const changedEntityTypes = new Set<string>();
+  const currentState = new Map<string, MembershipBase>();
+
+  for (const membership of currentMemberships) {
+    const entityId = membership.organizationId || membership.id;
+    currentState.set(entityId, membership);
+
+    const previous = previousMembershipsState.get(entityId);
+    if (hasMembershipChanged(previous, membership)) {
+      if (membership.organizationId) {
+        changedEntityTypes.add('organization');
+      }
+    }
+  }
+
+  previousMembershipsState = currentState;
+  return changedEntityTypes;
+}
+
+/** Re-enrich entity list queries for specific entity types */
+function reEnrichEntityLists(entityTypes?: Set<string>): void {
   if (isEnriching) return;
 
   const membershipsData = queryClient.getQueryData<{ items: MembershipBase[] }>(meKeys.memberships);
   if (!membershipsData?.items?.length) return;
+
+  const changedTypes = entityTypes || detectMembershipChanges(membershipsData.items);
+  if (changedTypes.size === 0) return;
 
   const queries = queryClient.getQueryCache().getAll();
 
   for (const query of queries) {
     const queryKey = query.queryKey;
 
-    // Skip non-enrichable
     if (!isEnrichableListQuery(queryKey)) continue;
+
+    if (entityTypes) {
+      const queryEntityType = queryKey[0] as string;
+      if (!entityTypes.has(queryEntityType)) continue;
+    }
 
     const data = query.state.data;
     if (!data) continue;
 
+    if (!wouldEnrichmentChangeData(data)) continue;
+
     const enrichedData = enrichInfiniteData(data);
     if (enrichedData === data) continue;
 
-    // Set enriched data (with guard to prevent re-entry)
     isEnriching = true;
     try {
       queryClient.setQueryData(queryKey, enrichedData);
@@ -126,9 +196,9 @@ export function setupMembershipEnrichment(): () => void {
     const query = event.query as Query;
     const queryKey = query.queryKey;
 
-    // When myMemberships is updated, re-enrich all entity list queries
+    // When myMemberships is updated, only re-enrich affected entity types
     if (queryKey[0] === 'me' && queryKey[1] === 'memberships') {
-      reEnrichAllEntityLists();
+      reEnrichEntityLists();
       return;
     }
 
