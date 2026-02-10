@@ -1593,6 +1593,17 @@
           "type": ["string", "null"],
           "required": true
         },
+        "tx": {
+          "type": "object",
+          "required": true,
+          "properties": {
+            "id": { "type": "string", "required": true },
+            "sourceId": { "type": "string", "required": true },
+            "version": { "type": "number", "required": true },
+            "fieldVersions": { "type": "object", "required": true }
+          },
+          "ref": "#/components/schemas/TxBase"
+        },
         "keywords": { "type": "string", "required": true },
         "createdBy": {
           "type": ["string", "null"],
@@ -1606,17 +1617,6 @@
           "type": "string",
           "required": true,
           "maxLength": 24
-        },
-        "tx": {
-          "type": "object",
-          "required": true,
-          "properties": {
-            "id": { "type": "string", "required": true },
-            "sourceId": { "type": "string", "required": true },
-            "version": { "type": "number", "required": true },
-            "fieldVersions": { "type": "object", "required": true }
-          },
-          "ref": "#/components/schemas/TxBase"
         },
         "status": {
           "type": "string",
@@ -1717,6 +1717,17 @@
           "type": ["string", "null"],
           "required": true
         },
+        "tx": {
+          "type": "object",
+          "required": true,
+          "properties": {
+            "id": { "type": "string", "required": true },
+            "sourceId": { "type": "string", "required": true },
+            "version": { "type": "number", "required": true },
+            "fieldVersions": { "type": "object", "required": true }
+          },
+          "ref": "#/components/schemas/TxBase"
+        },
         "keywords": { "type": "string", "required": true },
         "createdBy": {
           "type": ["string", "null"],
@@ -1730,17 +1741,6 @@
           "type": "string",
           "required": true,
           "maxLength": 24
-        },
-        "tx": {
-          "type": "object",
-          "required": true,
-          "properties": {
-            "id": { "type": "string", "required": true },
-            "sourceId": { "type": "string", "required": true },
-            "version": { "type": "number", "required": true },
-            "fieldVersions": { "type": "object", "required": true }
-          },
-          "ref": "#/components/schemas/TxBase"
         },
         "public": { "type": "boolean", "required": true },
         "bucketName": { "type": "string", "required": true },

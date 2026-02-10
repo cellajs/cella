@@ -9,7 +9,7 @@ const extendConfig = devMode === 'basic' ? { driver: 'pglite' as const } : {};
  * @link https://orm.drizzle.team/docs/drizzle-config-file
  */
 export default defineConfig({
-  schema: './src/db/schema/*',
+  schema: './src/db/schema/index.ts',
   out: './drizzle',
   dialect: 'postgresql',
   casing: 'snake_case',

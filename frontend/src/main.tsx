@@ -1,11 +1,7 @@
 import { StrictMode } from 'react';
 import ReactDOM from 'react-dom/client';
 import { Themer } from '~/modules/common/themer';
-
-// Import tailwind css
 import './styling/tailwind.css';
-
-// Boot with i18n & dayjs
 import '~/lib/dayjs';
 import '~/lib/i18n';
 

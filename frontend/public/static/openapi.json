@@ -2033,6 +2033,9 @@
               "null"
             ]
           },
+          "tx": {
+            "$ref": "#/components/schemas/TxBase"
+          },
           "keywords": {
             "type": "string"
           },
@@ -2051,9 +2054,6 @@
           "tenantId": {
             "type": "string",
             "maxLength": 24
-          },
-          "tx": {
-            "$ref": "#/components/schemas/TxBase"
           },
           "status": {
             "type": "string",
@@ -2085,11 +2085,11 @@
           "name",
           "description",
           "modifiedAt",
+          "tx",
           "keywords",
           "createdBy",
           "modifiedBy",
           "tenantId",
-          "tx",
           "status",
           "publicAccess",
           "parentId",
@@ -2178,6 +2178,9 @@
               "null"
             ]
           },
+          "tx": {
+            "$ref": "#/components/schemas/TxBase"
+          },
           "keywords": {
             "type": "string"
           },
@@ -2196,9 +2199,6 @@
           "tenantId": {
             "type": "string",
             "maxLength": 24
-          },
-          "tx": {
-            "$ref": "#/components/schemas/TxBase"
           },
           "public": {
             "type": "boolean"
@@ -2280,11 +2280,11 @@
           "name",
           "description",
           "modifiedAt",
+          "tx",
           "keywords",
           "createdBy",
           "modifiedBy",
           "tenantId",
-          "tx",
           "public",
           "bucketName",
           "groupId",

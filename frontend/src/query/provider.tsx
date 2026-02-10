@@ -8,26 +8,32 @@ import { getMenuData } from '~/modules/navigation/menu-sheet/helpers/get-menu-da
 import { entityToPrefetchQueries } from '~/offline-config';
 import { setupMembershipEnrichment } from '~/query/membership-enrichment';
 import { initMutationDefaults } from '~/query/mutation-registry';
-// Import query modules AFTER mutation-registry to ensure registrars is initialized.
-// These modules call addMutationRegistrar() at module load time.
 import '~/modules/attachment/query';
 import '~/modules/page/query';
-import { persister } from '~/query/persister';
+import { cleanupOrphanedSessions, persister, sessionPersister } from '~/query/persister';
 import { queryClient, silentRevalidateOnReconnect, updateStaleTime } from '~/query/query-client';
 import { useTabCoordinatorStore } from '~/query/realtime/tab-coordinator';
-import { sessionPersister } from '~/query/session-persister';
 import { useUIStore } from '~/store/ui';
 import { useUserStore } from '~/store/user';
 
-// Initialize mutation defaults BEFORE any cache restoration.
-// This registers mutationFn for each entity type so that paused mutations
-// can resume after page reload (mutationFn cannot be serialized to IndexedDB).
+/**
+ * Initialize mutation defaults BEFORE any cache restoration.
+ * This registers mutationFn for each entity type so that paused mutations
+ * can resume after page reload (mutationFn cannot be serialized to IndexedDB).
+ *
+ * NOTE: Query modules (~/modules/..../query) must be imported AFTER mutation-registry
+ * as they call addMutationRegistrar() at module load time.
+ */
 initMutationDefaults(queryClient);
 
-// Setup membership enrichment to auto-attach membership data to context entities
+/**
+ * Setup membership enrichment to auto-attach membership data to context entities.
+ */
 setupMembershipEnrichment();
 
-// Start offline services for background blob caching and upload sync
+/**
+ * Start offline services for background blob caching and upload sync.
+ */
 downloadService.start();
 uploadService.start();
 
@@ -62,6 +68,11 @@ export function QueryClientProvider({ children }: { children: React.ReactNode })
 
   // Disable offline access if PWA is not enabled in the config
   if (!appConfig.has.pwa && offlineAccess) toggleOfflineAccess();
+
+  // Clean up orphaned session-scoped IndexedDB entries on mount (fire-and-forget)
+  useEffect(() => {
+    cleanupOrphanedSessions();
+  }, []);
 
   // Select persister based on offline access mode
   // - offlineAccess: IndexedDB (survives browser restart)

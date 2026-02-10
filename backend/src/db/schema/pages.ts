@@ -12,7 +12,6 @@ import {
 import { publicAccessSelectCondition, tenantWriteCondition } from '#/db/rls-helpers';
 import { tenantsTable } from '#/db/schema/tenants';
 import { productEntityColumns } from '#/db/utils/product-entity-columns';
-import { txColumns } from '#/db/utils/tx-columns';
 
 const pageStatusEnum = ['unpublished', 'published', 'archived'] as const;
 
@@ -30,9 +29,8 @@ export const pagesTable = pgTable(
     tenantId: varchar('tenant_id', { length: 24 })
       .notNull()
       .references(() => tenantsTable.id),
-    // Sync: transient transaction metadata (overwritten on each mutation)
-    ...txColumns,
     // Specific columns
+    // TODO should we consider restricting all varchars to a certain length for better perf? e.g. name: varchar(255)
     status: varchar({ enum: pageStatusEnum }).notNull().default('unpublished'),
     publicAccess: boolean('public_access').notNull().default(false),
     parentId: varchar().references((): AnyPgColumn => pagesTable.id, {

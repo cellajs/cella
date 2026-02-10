@@ -19,7 +19,6 @@ import appTitle from '~/utils/app-title';
 import { noDirectAccess } from '~/utils/no-direct-access';
 import { rewriteUrlToSlug } from '~/utils/rewrite-url-to-slug';
 
-//Lazy-loaded components
 const OrganizationPage = lazy(() => import('~/modules/organization/organization-page'));
 const MembersTable = lazy(() => import('~/modules/memberships/members-table/members-table'));
 const AttachmentsTable = lazy(() => import('~/modules/attachment/table/attachments-table'));

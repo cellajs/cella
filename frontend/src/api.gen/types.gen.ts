@@ -354,11 +354,11 @@ export type Page = {
   name: string;
   description: string | null;
   modifiedAt: string | null;
+  tx: TxBase;
   keywords: string;
   createdBy: string | null;
   modifiedBy: string | null;
   tenantId: string;
-  tx: TxBase;
   status: 'unpublished' | 'published' | 'archived';
   publicAccess: boolean;
   parentId: string | null;
@@ -387,11 +387,11 @@ export type Attachment = {
   name: string;
   description: string | null;
   modifiedAt: string | null;
+  tx: TxBase;
   keywords: string;
   createdBy: string | null;
   modifiedBy: string | null;
   tenantId: string;
-  tx: TxBase;
   public: boolean;
   bucketName: string;
   groupId: string | null;

@@ -1,7 +1,5 @@
 @import "tailwindcss";
-
-/* Custom gradients that are not easy to build using tailwind */
-@import "./gradients.css" layer(base);
+@import "./gradients.css" layer(base); /* Custom gradients that are not easy to build using tailwind */
 @import "../modules/common/blocknote/styles.css" layer(base);
 
 @config "../../tailwind.config.ts";

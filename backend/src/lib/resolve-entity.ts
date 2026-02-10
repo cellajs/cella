@@ -1,4 +1,3 @@
-// src/lib/resolve-entity.ts
 import { eq, inArray } from 'drizzle-orm';
 import type { DbOrTx } from '#/db/db';
 import { entityTables, hasSlug } from '#/table-config';

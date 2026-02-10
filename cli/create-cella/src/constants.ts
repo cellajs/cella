@@ -1,20 +1,19 @@
-// Name of this CLI tool
-export const NAME = 'create cella';
-
-// Thin line divider for console output (60 chars wide)
-export const DIVIDER = '─'.repeat(60);
-
-// URL of the template repository
-export const TEMPLATE_URL = 'github:cellajs/cella';
-
-// URL to the repository
-export const CELLA_REMOTE_URL = 'git@github.com:cellajs/cella.git';
-
 import pc from 'picocolors';
-// Import package.json dynamically for version and website information
 import packageJson from '../package.json' with { type: 'json' };
 
-// Export details from package.json
+/** Name of this CLI tool */
+export const NAME = 'create cella';
+
+/** Thin line divider for console output (60 chars wide) */
+export const DIVIDER = '─'.repeat(60);
+
+/** URL of the template repository */
+export const TEMPLATE_URL = 'github:cellajs/cella';
+
+/** URL to the repository */
+export const CELLA_REMOTE_URL = 'git@github.com:cellajs/cella.git';
+
+/** Export details from package.json */
 export const DESCRIPTION: string = packageJson.description;
 export const VERSION: string = packageJson.version;
 export const AUTHOR: string = packageJson.author;

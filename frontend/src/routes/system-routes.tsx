@@ -8,9 +8,8 @@ import { tenantsRouteSearchParamsSchema } from '~/modules/tenants/search-params-
 import { usersRouteSearchParamsSchema } from '~/modules/user/search-params-schemas';
 import { AppLayoutRoute } from '~/routes/base-routes';
 import appTitle from '~/utils/app-title';
-import { noDirectAccess } from '~/utils/no-direct-access'; // Lazy-loaded route components
+import { noDirectAccess } from '~/utils/no-direct-access';
 
-// Lazy-loaded route components
 const OrganizationsTable = lazy(() => import('~/modules/organization/table/organizations-table'));
 const UsersTable = lazy(() => import('~/modules/user/table/users-table'));
 const RequestsTable = lazy(() => import('~/modules/requests/table/requests-table'));

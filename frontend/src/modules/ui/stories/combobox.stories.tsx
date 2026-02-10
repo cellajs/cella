@@ -164,7 +164,7 @@ const placeholders = {
   trigger: 'Select from 1000 options...',
   search: 'Search options...',
   notFound: 'No options found',
-} as ComboboxProps['placeholders'];
+} as unknown as ComboboxProps['placeholders'];
 
 /**
  * Combobox with large number of options to demonstrate virtualization.
@@ -179,13 +179,7 @@ export const LargeOptions: Story = {
     const [value, setValue] = useState(args.value);
     return (
       <div className="w-80">
-        <Combobox
-          {...args}
-          options={args.options}
-          value={value}
-          onChange={setValue}
-          placeholders={placeholders}
-        />
+        <Combobox {...args} options={args.options} value={value} onChange={setValue} placeholders={placeholders} />
       </div>
     );
   },
@@ -209,7 +203,13 @@ export const CustomPlaceholders: Story = {
           options={args.options}
           value={value}
           onChange={setValue}
-          placeholders={{ trigger: 'Choose a person...', search: 'Search people...', notFound: 'No people found' } as ComboboxProps['placeholders']}
+          placeholders={
+            {
+              trigger: 'Choose a person...',
+              search: 'Search people...',
+              notFound: 'No people found',
+            } as unknown as ComboboxProps['placeholders']
+          }
         />
       </div>
     );

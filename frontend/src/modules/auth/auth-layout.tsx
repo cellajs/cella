@@ -4,13 +4,11 @@ import { useMountedState } from '~/hooks/use-mounted-state';
 import { type FooterLinkProps, FooterLinks } from '~/modules/common/app/app-footer';
 import { Logo } from '~/modules/common/logo';
 
-// Auth footer links
 const authFooterLinks: FooterLinkProps[] = [
   { id: 'sign_in', href: '/authenticate' },
   { id: 'about', href: '/about' },
 ];
 
-// Lazy load bg animation
 const BgAnimation = lazy(() => import('~/modules/common/bg-animation'));
 
 export function AuthLayout() {

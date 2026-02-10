@@ -24,6 +24,7 @@ dist-ssr
 *.sln
 *.sw?
 .turbo
+.todos
 .env
 .env.*
 !.env.example

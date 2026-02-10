@@ -1,5 +1,7 @@
-// Base route segments - upstream owned
-// Forks should NOT modify this file. Instead, spread these in route-tree.tsx
+/**
+ * Base route segments - upstream owned.
+ * Forks should NOT modify this file. Instead, spread these in route-tree.tsx.
+ */
 import { NavItemId } from '~/modules/navigation/types';
 import {
   AuthErrorRoute,

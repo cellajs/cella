@@ -8,9 +8,8 @@ import { writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import ora, { type Ora } from 'ora';
 import pc from 'picocolors';
-// Import package.json for version
 import packageJson from '../../package.json' with { type: 'json' };
-import type { AnalysisSummary, AnalyzedFile, MergeResult } from '../config/types';
+import type { AnalysisSummary, AnalyzedFile, FileStatus, MergeResult } from '../config/types';
 
 /** CLI name */
 export const NAME = 'cella cli';
@@ -206,40 +205,29 @@ function formatFileDateInfo(
   return date ? pc.dim(` ≠ ${date} ${linkLabel}`) : '';
 }
 
-/** Status icons */
-const statusIcons: Record<string, string> = {
-  identical: pc.gray('✓'),
-  ahead: pc.blue('↑'),
-  drifted: pc.yellow('!'),
-  behind: pc.cyan('↓'),
-  diverged: pc.magenta('⇅'),
-  pinned: pc.green('⨀'),
-  ignored: pc.gray('⨂'),
+/** Display configuration for a file status */
+interface StatusConfig {
+  icon: string;
+  label: string;
+  color: (text: string) => string;
+  description?: string;
+}
+
+/** Unified status display config: icon, label, color, and description for each status. Key order defines sort priority. */
+const statusConfig: Record<FileStatus, StatusConfig> = {
+  behind: { icon: pc.cyan('↓'), label: 'behind', color: pc.cyan, description: 'upstream changed, will sync' },
+  diverged: { icon: pc.magenta('⇅'), label: 'diverged', color: pc.magenta, description: 'both changed, will merge' },
+  drifted: { icon: pc.yellow('!'), label: 'drifted', color: pc.yellow, description: 'fork changed (at risk)' },
+  ahead: { icon: pc.blue('↑'), label: 'ahead', color: pc.blue, description: 'fork changed (protected)' },
+  pinned: { icon: pc.green('⨀'), label: 'pinned', color: pc.green, description: 'both changed, fork wins' },
+  ignored: { icon: pc.gray('⨂'), label: 'ignored', color: pc.gray },
+  identical: { icon: pc.gray('✓'), label: 'identical', color: pc.gray, description: 'no changes' },
+  deleted: { icon: pc.red('✗'), label: 'deleted', color: pc.red },
+  renamed: { icon: pc.blue('→'), label: 'renamed', color: pc.blue },
 };
 
-/** Status labels for summary */
-const statusLabels: Record<string, string> = {
-  identical: 'identical',
-  ahead: 'ahead',
-  drifted: 'drifted',
-  behind: 'behind',
-  diverged: 'diverged',
-  pinned: 'pinned',
-  ignored: 'ignored',
-  deleted: 'deleted',
-};
-
-/** Status colors for summary counts */
-const statusColors: Record<string, (text: string) => string> = {
-  identical: pc.gray,
-  ahead: pc.blue,
-  drifted: pc.yellow,
-  behind: pc.cyan,
-  diverged: pc.magenta,
-  pinned: pc.green,
-  ignored: pc.gray,
-  deleted: pc.red,
-};
+/** Ordered status keys derived from statusConfig key order */
+const statusOrder = Object.keys(statusConfig) as FileStatus[];
 
 /**
  * Print the analysis summary.
@@ -258,26 +246,27 @@ export function printSummary(summary: AnalysisSummary, title = 'summary'): void 
   );
   const countWidth = String(maxCount).length + 1;
 
-  // Helper to print a status line
-  const printLine = (status: string, icon: string, count: number, label: string) => {
-    const colorFn = statusColors[status];
-    const countStr = colorFn(String(count).padStart(countWidth));
-    console.info(`  ${icon} ${countStr}  ${label}`);
+  // Helper to print a status line using unified config
+  const printLine = (status: FileStatus, count: number) => {
+    const { icon, label, color, description } = statusConfig[status];
+    const countStr = color(String(count).padStart(countWidth));
+    const desc = description ? pc.dim(description) : '';
+    console.info(`  ${icon} ${countStr}  ${label.padEnd(15)}${desc}`);
   };
 
   // Grouped layout with blank lines between groups
-  printLine('identical', statusIcons.identical, summary.identical, `identical      ${pc.dim('no changes')}`);
+  printLine('identical', summary.identical);
 
   console.info();
-  printLine('ahead', statusIcons.ahead, summary.ahead, `ahead          ${pc.dim('fork changed (protected)')}`);
-  printLine('drifted', statusIcons.drifted, summary.drifted, `drifted        ${pc.dim('fork changed (at risk)')}`);
+  printLine('ahead', summary.ahead);
+  printLine('drifted', summary.drifted);
 
   console.info();
-  printLine('diverged', statusIcons.diverged, summary.diverged, `diverged       ${pc.dim('both changed, will merge')}`);
-  printLine('pinned', statusIcons.pinned, summary.pinned, `pinned         ${pc.dim('both changed, fork wins')}`);
+  printLine('diverged', summary.diverged);
+  printLine('pinned', summary.pinned);
 
   console.info();
-  printLine('behind', statusIcons.behind, summary.behind, `behind         ${pc.dim('upstream changed, will sync')}`);
+  printLine('behind', summary.behind);
 }
 
 /**
@@ -292,7 +281,7 @@ export function printSyncFiles(files: AnalyzedFile[], linkOptions: LinkOptions):
 
   for (const file of syncFiles) {
     const dateInfo = formatFileDateInfo(file.path, file.changedCommit, file.changedAt, linkOptions);
-    console.info(`  ${statusIcons.behind} ${file.path}${dateInfo}`);
+    console.info(`  ${statusConfig.behind.icon} ${file.path}${dateInfo}`);
   }
 }
 
@@ -308,7 +297,7 @@ export function printDriftedWarning(files: AnalyzedFile[], linkOptions: LinkOpti
 
   for (const file of driftedFiles) {
     const dateInfo = formatFileDateInfo(file.path, file.changedCommit, file.changedAt, linkOptions);
-    console.info(`  ${statusIcons.drifted} ${file.path}${dateInfo}`);
+    console.info(`  ${statusConfig.drifted.icon} ${file.path}${dateInfo}`);
   }
 
   console.info();
@@ -328,7 +317,7 @@ export function printDivergedPreview(files: AnalyzedFile[], linkOptions: LinkOpt
 
   for (const file of divergedFiles) {
     const dateInfo = formatFileDateInfo(file.path, file.upstreamCommit, file.upstreamChangedAt, linkOptions);
-    console.info(`  ${statusIcons.diverged} ${file.path}${dateInfo}`);
+    console.info(`  ${statusConfig.diverged.icon} ${file.path}${dateInfo}`);
   }
 
   console.info();
@@ -348,7 +337,7 @@ export function printPinnedPreview(files: AnalyzedFile[], linkOptions: LinkOptio
 
   for (const file of pinnedFiles) {
     const dateInfo = formatFileDateInfo(file.path, file.upstreamCommit, file.upstreamChangedAt, linkOptions);
-    console.info(`  ${statusIcons.pinned} ${file.path}${dateInfo}`);
+    console.info(`  ${statusConfig.pinned.icon} ${file.path}${dateInfo}`);
   }
 
   console.info();
@@ -388,7 +377,6 @@ export function writeLogFile(forkPath: string, files: AnalyzedFile[]): string {
 
   // Sort files by status, then path
   const sortedFiles = [...files].sort((a, b) => {
-    const statusOrder = ['behind', 'diverged', 'drifted', 'ahead', 'pinned', 'ignored', 'identical', 'deleted'];
     const aOrder = statusOrder.indexOf(a.status);
     const bOrder = statusOrder.indexOf(b.status);
     if (aOrder !== bOrder) return aOrder - bOrder;
@@ -396,9 +384,9 @@ export function writeLogFile(forkPath: string, files: AnalyzedFile[]): string {
   });
 
   for (const file of sortedFiles) {
-    const icon = statusIcons[file.status].replace(/\x1b\[[0-9;]*m/g, ''); // Strip ANSI
-    const label = statusLabels[file.status] || file.status;
-    lines.push(`  ${icon} ${label.padEnd(12)} ${file.path}`);
+    const config = statusConfig[file.status];
+    const icon = config.icon.replace(/\x1b\[[0-9;]*m/g, ''); // Strip ANSI
+    lines.push(`  ${icon} ${config.label.padEnd(12)} ${file.path}`);
   }
 
   writeFileSync(logPath, lines.join('\n'), 'utf-8');

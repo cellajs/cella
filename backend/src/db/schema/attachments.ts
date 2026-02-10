@@ -5,7 +5,6 @@ import { organizationsTable } from '#/db/schema/organizations';
 import { tenantsTable } from '#/db/schema/tenants';
 import { generateContextEntityIdColumns } from '#/db/utils/generate-context-entity-columns';
 import { productEntityColumns } from '#/db/utils/product-entity-columns';
-import { txColumns } from '#/db/utils/tx-columns';
 
 const { organizationId, ...otherEntityIdColumns } = generateContextEntityIdColumns('relatable');
 
@@ -21,8 +20,6 @@ export const attachmentsTable = pgTable(
     tenantId: varchar('tenant_id', { length: 24 })
       .notNull()
       .references(() => tenantsTable.id),
-    // Sync: transient transaction metadata
-    ...txColumns,
     // Specific columns
     public: boolean().notNull().default(false),
     bucketName: varchar().notNull(),

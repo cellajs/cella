@@ -16,7 +16,6 @@ import { queryClient } from '~/query/query-client';
 import { useUserStore } from '~/store/user';
 import appTitle from '~/utils/app-title';
 
-// Lazy load main App component, which is behind authentication
 const AppLayout = lazy(() => import('~/modules/common/app/app-layout'));
 
 /**
