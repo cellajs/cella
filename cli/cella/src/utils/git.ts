@@ -207,12 +207,17 @@ export async function listWorktrees(cwd: string): Promise<string[]> {
 /**
  * Perform a merge in the current directory.
  */
+/**
+ * Perform a merge in the current directory.
+ * Always uses --no-ff to prevent fast-forward, ensuring HEAD stays in place
+ * and MERGE_HEAD is created for proper merge state tracking.
+ */
 export async function merge(
   cwd: string,
   ref: string,
   options: { noCommit?: boolean; noEdit?: boolean; squash?: boolean } = {},
 ): Promise<{ success: boolean; conflicts: string[] }> {
-  const args = ['merge', ref];
+  const args = ['merge', '--no-ff', ref];
   if (options.squash) args.push('--squash');
   if (options.noCommit) args.push('--no-commit');
   if (options.noEdit) args.push('--no-edit');
@@ -444,4 +449,89 @@ async function cleanupEmptyParentDirs(cwd: string, relativePath: string): Promis
   } catch {
     // Directory doesn't exist, not empty, or can't be removed - stop
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sync ref tracking & merge-base recovery
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Store the upstream commit hash after a successful sync.
+ * Used to recover correct merge-base when squash strategy creates single-parent commits.
+ */
+export async function storeLastSyncRef(cwd: string, upstreamHash: string): Promise<void> {
+  await git(['update-ref', 'refs/cella/last-sync', upstreamHash], cwd);
+}
+
+/**
+ * Get the stored last-sync upstream ref.
+ * Returns null if no previous sync has been recorded.
+ */
+export async function getStoredSyncRef(cwd: string): Promise<string | null> {
+  const ref = await git(['rev-parse', 'refs/cella/last-sync'], cwd, { ignoreErrors: true });
+  return ref || null;
+}
+
+/**
+ * Check if one commit is an ancestor of another.
+ */
+export async function isAncestor(cwd: string, ancestor: string, descendant: string): Promise<boolean> {
+  try {
+    await git(['merge-base', '--is-ancestor', ancestor, descendant], cwd);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Get the effective merge-base, preferring the stored last-sync ref when it's more recent.
+ * This handles stale merge-base caused by previous squash syncs (single-parent commits
+ * don't update git's merge-base graph).
+ *
+ * @returns The effective base commit, whether git's base was stale, and the stored ref
+ */
+export async function getEffectiveMergeBase(
+  cwd: string,
+  headRef: string,
+  upstreamRef: string,
+): Promise<{ base: string; isStale: boolean; storedRef: string | null }> {
+  const gitBase = await getMergeBase(cwd, headRef, upstreamRef);
+  const storedRef = await getStoredSyncRef(cwd);
+
+  if (!storedRef) {
+    return { base: gitBase, isStale: false, storedRef: null };
+  }
+
+  // Check if stored ref is a descendant of git's merge-base (i.e., more recent)
+  const storedIsNewer = await isAncestor(cwd, gitBase, storedRef);
+
+  if (storedIsNewer && storedRef !== gitBase) {
+    return { base: storedRef, isStale: true, storedRef };
+  }
+
+  return { base: gitBase, isStale: false, storedRef };
+}
+
+/**
+ * Remove .git/MERGE_HEAD to convert a pending merge into a regular commit.
+ * Used by squash strategy to create single-parent commits while preserving
+ * correct 3-way merge behavior internally.
+ */
+export async function removeMergeHead(cwd: string): Promise<void> {
+  const { unlink } = await import('node:fs/promises');
+  const { join } = await import('node:path');
+  try {
+    await unlink(join(cwd, '.git', 'MERGE_HEAD'));
+  } catch {
+    // MERGE_HEAD doesn't exist - that's fine
+  }
+}
+
+/**
+ * Stage all changes and create a commit.
+ */
+export async function autoCommit(cwd: string, message: string): Promise<void> {
+  await git(['add', '-A'], cwd);
+  await git(['commit', '-m', message, '--allow-empty'], cwd, { skipEditor: true });
 }

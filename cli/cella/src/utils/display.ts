@@ -412,5 +412,16 @@ export function printSyncComplete(result: MergeResult): void {
   console.info(`${pc.green('✓')} sync complete`);
   console.info();
   console.info(`  ${updated} files updated, ${merged} merged, ${conflicts} conflicts`);
+
+  if (result.autoCommitted) {
+    console.info();
+    console.info(pc.dim('  changes auto-committed (squash). run pnpm install if dependencies changed.'));
+  } else if (conflicts > 0) {
+    console.info();
+    console.info(pc.dim('  resolve conflicts in your IDE, then commit the merge.'));
+  } else if (updated > 0) {
+    console.info();
+    console.info(pc.dim('  review staged changes, then commit the merge.'));
+  }
   console.info();
 }

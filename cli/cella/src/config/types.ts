@@ -44,8 +44,10 @@ export interface SyncSettings {
 
   /**
    * Merge strategy for syncing upstream changes.
-   * - 'merge' (default): Creates merge commit with full ancestry. IDE 3-way merge for conflicts.
-   * - 'squash': Stages all changes as one commit. Cleaner history but no 3-way merge support.
+   * Both use real git merge internally for correct 3-way merge and merge-base tracking.
+   * - 'merge': Leaves merge state for user to commit (merge commit with full ancestry).
+   * - 'squash' (default): Auto-commits as single-parent when clean. Falls back to merge
+   *   commit (with IDE 3-way support) when there are conflicts.
    */
   mergeStrategy?: MergeStrategy;
 
@@ -216,4 +218,6 @@ export interface MergeResult {
     message: string;
     date: string;
   };
+  /** Whether the sync was auto-committed (squash strategy with no conflicts) */
+  autoCommitted?: boolean;
 }
