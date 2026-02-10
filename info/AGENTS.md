@@ -86,6 +86,7 @@ Cella is a TypeScript template for building collaborative web apps with sync and
 - See [info/TESTING.md](./TESTING.md) for detailed test mode documentation.
 
 ## Commits & Pull Requests
+- Use `git` and `gh` CLI wherever possible. Do not use GitKraken or other third-party git tools.
 - Use Conventional Commits: `feat:`, `fix:`, `chore:`, `refactor:`; optional scope (e.g., `feat(web): ...`).
 - PRs must include: concise description, linked issues (`#123`), screenshots for UI, and passing checks (build, typecheck, lint, tests).
 - Keep changes scoped; update docs and `.env.example` when config changes.

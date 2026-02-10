@@ -65,6 +65,7 @@ pnpm cella           # Sync changes from upstream cella to fork (useful for fork
 
 ## Code style and conventions
 
+- **Git**: Use `git` and `gh` CLI wherever possible. Do not use GitKraken or other third-party git tools.
 - **Formatter/Linter**: Biome (`pnpm lint:fix`)
 - **Indentation**: 2 spaces, single quotes, trailing commas (ES5)
 - **Files**: kebab-case (`user-profile.tsx`)

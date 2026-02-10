@@ -168,13 +168,13 @@ async function syncPackageJson(
  * Syncs package.json dependencies from upstream to fork.
  */
 export async function runPackages(config: RuntimeConfig): Promise<void> {
-  createSpinner('Syncing package.json files...');
+  createSpinner('syncing package.json files...');
 
   const keysToSync = config.settings.packageJsonSync || ['dependencies', 'devDependencies'];
   const results: { location: string; changes: string[] }[] = [];
 
   for (const location of packageLocations) {
-    spinnerText(`Syncing ${location || 'root'}/package.json...`);
+    spinnerText(`syncing ${location || 'root'}/package.json...`);
 
     const { updated, changes } = await syncPackageJson(config.forkPath, config.upstreamRef, location, keysToSync);
 
@@ -183,11 +183,11 @@ export async function runPackages(config: RuntimeConfig): Promise<void> {
     }
   }
 
-  spinnerSuccess('Package sync complete');
+  spinnerSuccess('package sync complete');
 
   // Print results
   if (results.length === 0) {
-    console.info(pc.dim('  No package.json changes needed'));
+    console.info(pc.dim('  no package.json changes needed'));
   } else {
     for (const { location, changes } of results) {
       console.info(`  ${pc.green('✓')} ${location}/package.json`);

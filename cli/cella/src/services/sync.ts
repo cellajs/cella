@@ -27,7 +27,7 @@ import { runMergeEngine } from './merge-engine';
  */
 export async function runSync(config: RuntimeConfig): Promise<MergeResult> {
   resetSteps();
-  createSpinner('Starting sync...');
+  createSpinner('starting sync...');
 
   const result = await runMergeEngine(config, {
     apply: true,

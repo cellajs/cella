@@ -301,7 +301,7 @@ export function printDriftedWarning(files: AnalyzedFile[], linkOptions: LinkOpti
   }
 
   console.info();
-  console.info(pc.dim('  These files have fork changes but are NOT pinned or ignored.'));
+  console.info(pc.dim('  these files have fork changes but are not pinned or ignored.'));
 }
 
 /**
@@ -321,7 +321,7 @@ export function printDivergedPreview(files: AnalyzedFile[], linkOptions: LinkOpt
   }
 
   console.info();
-  console.info(pc.dim('  Both fork and upstream changed.'));
+  console.info(pc.dim('  both fork and upstream changed.'));
 }
 
 /**
@@ -341,7 +341,7 @@ export function printPinnedPreview(files: AnalyzedFile[], linkOptions: LinkOptio
   }
 
   console.info();
-  console.info(pc.dim('  Both changed, fork wins (pinned in cella.config.ts).'));
+  console.info(pc.dim('  both changed, fork wins (pinned in cella.config.ts).'));
 }
 
 /**
@@ -351,7 +351,7 @@ export function printPinnedPreview(files: AnalyzedFile[], linkOptions: LinkOptio
 export function printConflicts(conflicts: string[]): void {
   if (conflicts.length === 0) return;
 
-  printSectionHeader(`${pc.red('✗')} Unresolved conflicts (${conflicts.length} files)`);
+  printSectionHeader(`${pc.red('✗')} unresolved conflicts (${conflicts.length} files)`);
 
   for (const file of conflicts) {
     console.info(`  ${pc.red('!')} ${file}`);

@@ -19,8 +19,13 @@ pnpm cella
 | Service | Description |
 |---------|-------------|
 | `analyze` | Dry run to see what would change on sync |
+| `inspect` | Review drifted files, view diffs, pin or contribute upstream |
 | `sync` | Merge upstream changes into your app |
 | `packages` | Sync package.json keys with upstream |
+| `audit` | Check for outdated packages & vulnerabilities |
+| `forks` | Sync downstream to local fork repositories* |
+
+\* `forks` only appears in the menu when you have `forks` configured in `cella.config.ts`. This is for upstream template developers who maintain multiple downstream forks from a single template repo.
 
 ## CLI Options
 
@@ -30,7 +35,8 @@ pnpm cella [options]
 
 | Flag | Description |
 |------|-------------|
-| `--service <name>` | Choose service: `analyze`, `sync`, `packages` |
+| `--service <name>` | Choose service: `analyze`, `inspect`, `sync`, `packages`, `audit`, `forks` |
+| `--list` | Non-interactive output for `inspect` (one file per line, useful for scripting) |
 | `--log` | Write complete file list to `cella-sync.log` |
 | `-V, --verbose` | Show detailed output during operations |
 | `-v, --version` | Output the current version |

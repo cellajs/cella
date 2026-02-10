@@ -305,7 +305,7 @@ async function contributeUpstream(files: AnalyzedFile[], config: RuntimeConfig):
   if (!upstreamLocalPath) {
     console.info();
     console.info(pc.red('✗ upstreamLocalPath not configured in cella.config.ts'));
-    console.info(pc.dim('  Add upstreamLocalPath to settings to enable contributing upstream.'));
+    console.info(pc.dim('  add upstreamLocalPath to settings to enable contributing upstream.'));
     return;
   }
 
@@ -358,7 +358,7 @@ async function contributeUpstream(files: AnalyzedFile[], config: RuntimeConfig):
       console.info(`  ${pc.dim('→')} ${file.path}`);
     }
 
-    createSpinner('Committing...');
+    createSpinner('committing...');
     await git(['add', ...files.map((f) => f.path)], upstreamPath);
     try {
       await git(['commit', '-m', commitMessage], upstreamPath);
@@ -374,7 +374,7 @@ async function contributeUpstream(files: AnalyzedFile[], config: RuntimeConfig):
         await git(['branch', '-D', branchName], upstreamPath, { ignoreErrors: true });
         return;
       }
-      createSpinner('Committing (force)...');
+      createSpinner('committing (force)...');
       await git(['commit', '--no-verify', '-m', commitMessage], upstreamPath);
     }
     spinnerSuccess(`committed ${files.length} files`);
@@ -385,14 +385,14 @@ async function contributeUpstream(files: AnalyzedFile[], config: RuntimeConfig):
     });
 
     if (shouldPush) {
-      createSpinner('Pushing...');
+      createSpinner('pushing...');
       await git(['push', '-u', 'origin', branchName], upstreamPath);
       spinnerSuccess(`pushed to origin/${branchName}`);
 
       // Try creating PR with gh CLI
       const hasGh = spawnSync('which', ['gh'], { stdio: 'pipe' }).status === 0;
       if (hasGh) {
-        createSpinner('Creating draft PR...');
+        createSpinner('creating draft PR...');
         const prResult = spawnSync(
           'gh',
           [
@@ -438,7 +438,7 @@ async function contributeUpstream(files: AnalyzedFile[], config: RuntimeConfig):
  */
 export async function runInspect(config: RuntimeConfig): Promise<void> {
   resetSteps();
-  createSpinner('Analyzing drift...');
+  createSpinner('analyzing drift...');
 
   // Run the merge engine in analyze mode to get drifted files
   const result = await runMergeEngine(config, {

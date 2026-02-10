@@ -27,7 +27,7 @@ async function loadConfig(forkPath: string): Promise<CellaCliConfig> {
   const configPath = join(forkPath, 'cella.config.ts');
 
   if (!existsSync(configPath)) {
-    throw new Error(`Config file not found: ${configPath}`);
+    throw new Error(`config file not found: ${configPath}`);
   }
 
   // Dynamic import of the config
@@ -66,24 +66,30 @@ function getForkPath(): string {
 async function preflight(
   forkPath: string,
   forkBranch: string,
-  options: { skipCleanCheck?: boolean } = {},
+  options: { skipCleanCheck?: boolean; warnOnBranch?: boolean } = {},
 ): Promise<void> {
   // Check we're in a git repository
   if (!existsSync(join(forkPath, '.git'))) {
-    throw new Error(`Not a git repository: ${forkPath}`);
+    throw new Error(`not a git repository: ${forkPath}`);
   }
 
   // Check we're on the correct branch
   const currentBranch = await getCurrentBranch(forkPath);
   if (currentBranch !== forkBranch) {
-    throw new Error(`Must be on branch '${forkBranch}' to sync. Currently on '${currentBranch}'.`);
+    if (options.warnOnBranch) {
+      console.warn(
+        `${pc.yellow('⚠')} not on branch '${forkBranch}' (currently on '${currentBranch}'). results may differ from your sync branch.`,
+      );
+    } else {
+      throw new Error(`must be on branch '${forkBranch}' to sync. currently on '${currentBranch}'.`);
+    }
   }
 
   // Check for uncommitted changes (skip for analyze/dry-run mode)
   if (!options.skipCleanCheck) {
     const clean = await isClean(forkPath);
     if (!clean) {
-      throw new Error('Working directory has uncommitted changes. Please commit or stash before syncing.');
+      throw new Error('working directory has uncommitted changes. please commit or stash before syncing.');
     }
   }
 }
@@ -107,8 +113,11 @@ async function main(): Promise<void> {
 
     // Run preflight checks (except for packages/audit/forks which don't need clean working dir)
     if (!['packages', 'audit', 'forks'].includes(config.service)) {
-      const skipCleanCheck = config.service === 'analyze' || config.service === 'inspect';
-      await preflight(forkPath, userConfig.settings.forkBranch, { skipCleanCheck });
+      const isReadOnly = config.service === 'analyze' || config.service === 'inspect';
+      await preflight(forkPath, userConfig.settings.forkBranch, {
+        skipCleanCheck: isReadOnly,
+        warnOnBranch: isReadOnly,
+      });
     }
 
     // Route to service

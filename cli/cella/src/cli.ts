@@ -60,7 +60,7 @@ export async function parseCli(userConfig: CellaCliConfig, forkPath: string): Pr
     .helpOption('-h, --help', 'display this help message')
     .option('--service <name>', 'service to run: analyze, inspect, sync, packages, audit, forks', (value) => {
       if (!['analyze', 'inspect', 'sync', 'packages', 'audit', 'forks'].includes(value)) {
-        console.error(`Invalid service: ${value}. Must be one of: analyze, inspect, sync, packages, audit, forks`);
+        console.error(`invalid service: ${value}. must be one of: analyze, inspect, sync, packages, audit, forks`);
         process.exit(1);
       }
       service = value as SyncService;
@@ -93,6 +93,7 @@ export async function parseCli(userConfig: CellaCliConfig, forkPath: string): Pr
     const selected = await select<SyncService | 'exit'>({
       message: 'choose a service:',
       choices: buildServiceChoices(hasForks),
+      loop: false,
     });
 
     if (selected === 'exit') {

@@ -16,9 +16,9 @@ export default defineConfig({
 
   // Local forks to sync to (for upstream template development)
   // Uncomment and configure when running from upstream cella repo
-  // forks: [
-  //   { name: 'my-app', path: '../my-app' },
-  // ],
+  forks: [
+    { name: 'my-app', path: '../my-app' },
+  ],
 
   // File overrides
   overrides: {

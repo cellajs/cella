@@ -298,7 +298,7 @@ function printVulnerabilityResults(auditResult: AuditResult | null, vulnMap: Map
     if (totalVulns > 0) {
       console.info();
       console.info(
-        pc.dim('Run ') + pc.cyan('pnpm audit --fix') + pc.dim(' to add overrides for non-vulnerable versions'),
+        pc.dim('run ') + pc.cyan('pnpm audit --fix') + pc.dim(' to add overrides for non-vulnerable versions'),
       );
     }
   } else {

@@ -7,7 +7,7 @@
 
 import { existsSync } from 'node:fs';
 import { basename, resolve } from 'node:path';
-import { select } from '@inquirer/prompts';
+import { Separator, select } from '@inquirer/prompts';
 import pc from 'picocolors';
 import type { CellaCliConfig, ForkConfig, RuntimeConfig, SyncService } from '../config/types';
 import { getCurrentBranch, isClean } from '../utils/git';
@@ -19,7 +19,7 @@ async function loadForkConfig(forkPath: string): Promise<CellaCliConfig> {
   const configPath = `${forkPath}/cella.config.ts`;
 
   if (!existsSync(configPath)) {
-    throw new Error(`Config file not found: ${configPath}`);
+    throw new Error(`config file not found: ${configPath}`);
   }
 
   const configModule = await import(configPath);
@@ -56,12 +56,12 @@ function validateForkPath(
 async function preflightFork(forkPath: string, forkBranch: string): Promise<void> {
   const currentBranch = await getCurrentBranch(forkPath);
   if (currentBranch !== forkBranch) {
-    throw new Error(`Fork must be on branch '${forkBranch}'. Currently on '${currentBranch}'.`);
+    throw new Error(`fork must be on branch '${forkBranch}'. currently on '${currentBranch}'.`);
   }
 
   const clean = await isClean(forkPath);
   if (!clean) {
-    throw new Error('Fork has uncommitted changes. Please commit or stash before syncing.');
+    throw new Error('fork has uncommitted changes. please commit or stash before syncing.');
   }
 }
 
@@ -74,8 +74,8 @@ export async function runForks(config: RuntimeConfig): Promise<void> {
   const forks = config.forks ?? [];
 
   if (forks.length === 0) {
-    console.info(pc.yellow('No forks configured in cella.config.ts'));
-    console.info(pc.dim('Add forks to your config:'));
+    console.info(pc.yellow('no forks configured in cella.config.ts'));
+    console.info(pc.dim('add forks to your config:'));
     console.info(pc.dim(`  forks: [{ name: 'my-app', path: '../my-app' }]`));
     return;
   }
@@ -101,18 +101,20 @@ export async function runForks(config: RuntimeConfig): Promise<void> {
   }
 
   // Add back/exit option
-  choices.push(
-    { value: '_separator', name: '─'.repeat(40), disabled: ' ' },
+  const forkChoices = [
+    ...choices,
+    new Separator('─'.repeat(40)),
     { value: '_back', name: pc.dim('← back to main menu') },
-  );
+  ];
 
   // Prompt for fork selection
   const selectedPath = await select<string>({
     message: 'select fork to sync:',
-    choices,
+    choices: forkChoices,
+    loop: false,
   });
 
-  if (selectedPath === '_back' || selectedPath === '_separator') {
+  if (selectedPath === '_back') {
     return;
   }
 
@@ -120,8 +122,8 @@ export async function runForks(config: RuntimeConfig): Promise<void> {
   const forkName = forks.find((f) => f.path === selectedPath)?.name ?? basename(resolvedForkPath);
 
   console.info();
-  console.info(pc.cyan(`Syncing to ${forkName}...`));
-  console.info(pc.dim(`Path: ${resolvedForkPath}`));
+  console.info(pc.cyan(`syncing to ${forkName}...`));
+  console.info(pc.dim(`path: ${resolvedForkPath}`));
   console.info();
 
   // Load the fork's config
@@ -130,22 +132,25 @@ export async function runForks(config: RuntimeConfig): Promise<void> {
   // Prompt for which service to run on the fork
   const service = await select<SyncService | 'back'>({
     message: `select service for ${forkName}:`,
+    loop: false,
     choices: [
       { value: 'analyze' as SyncService, name: `analyze    ${pc.dim('dry run to see what would change')}` },
+      { value: 'inspect' as SyncService, name: `inspect    ${pc.dim('review drifted files, view diffs')}` },
       { value: 'sync' as SyncService, name: `sync       ${pc.dim('merge upstream changes')}` },
       { value: 'packages' as SyncService, name: `packages   ${pc.dim('sync package.json keys')}` },
-      { value: '_separator', name: '─'.repeat(40), disabled: ' ' } as unknown as { value: 'back'; name: string },
+      { value: 'audit' as SyncService, name: `audit      ${pc.dim('check outdated packages')}` },
+      new Separator('─'.repeat(40)),
       { value: 'back', name: pc.dim('← back to fork selection') },
     ],
   });
 
-  if (service === 'back' || service === ('_separator' as SyncService)) {
+  if (service === 'back') {
     // Recursively show fork selection again
     return runForks(config);
   }
 
-  // Run preflight for non-analyze services
-  if (service !== 'analyze') {
+  // Run preflight for services that modify the fork
+  if (service === 'sync' || service === 'packages') {
     await preflightFork(resolvedForkPath, forkConfig.settings.forkBranch);
   }
 
@@ -170,6 +175,11 @@ export async function runForks(config: RuntimeConfig): Promise<void> {
       await runAnalyze(forkRuntimeConfig);
       break;
     }
+    case 'inspect': {
+      const { runInspect } = await import('./inspect');
+      await runInspect(forkRuntimeConfig);
+      break;
+    }
     case 'sync': {
       const { runSync } = await import('./sync');
       await runSync(forkRuntimeConfig);
@@ -178,6 +188,11 @@ export async function runForks(config: RuntimeConfig): Promise<void> {
     case 'packages': {
       const { runPackages } = await import('./packages');
       await runPackages(forkRuntimeConfig);
+      break;
+    }
+    case 'audit': {
+      const { runAudit } = await import('./audit');
+      await runAudit(forkRuntimeConfig);
       break;
     }
   }
