@@ -65,6 +65,16 @@ export interface SyncSettings {
 }
 
 /**
+ * Configuration for a local fork repository.
+ */
+export interface ForkConfig {
+  /** Display name for the fork (shown in CLI menu) */
+  name: string;
+  /** Path to the fork repository (relative to this config or absolute) */
+  path: string;
+}
+
+/**
  * User-configurable sync options for cella.config.ts.
  * Simplified for v2 - no sync branch or squash options.
  */
@@ -91,6 +101,13 @@ export interface CellaCliConfig {
      */
     pinned?: string[];
   };
+
+  /**
+   * Local fork repositories to sync to (for upstream template repos).
+   * When configured, a 'forks' service option appears in the CLI menu.
+   * Each fork should have its own cella.config.ts with overrides.
+   */
+  forks?: ForkConfig[];
 }
 
 /**
@@ -105,7 +122,7 @@ export function defineConfig(config: CellaCliConfig): CellaCliConfig {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Sync services available in the CLI */
-export type SyncService = 'analyze' | 'sync' | 'packages' | 'audit';
+export type SyncService = 'analyze' | 'sync' | 'packages' | 'audit' | 'forks';
 
 /** Runtime configuration with all resolved values */
 export interface RuntimeConfig extends CellaCliConfig {
