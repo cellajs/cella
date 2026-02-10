@@ -14,6 +14,7 @@ import { printWarnings, validateOverrides } from './utils/overrides';
 /** Service descriptions for inquirer prompt */
 const serviceDescriptions: Record<SyncService, string> = {
   analyze: 'dry run to see what would change',
+  inspect: 'review drifted files, view diffs, contribute upstream',
   sync: 'merge upstream changes',
   packages: 'sync package.json keys with upstream',
   audit: 'check for outdated packages & vulnerabilities',
@@ -26,6 +27,7 @@ const serviceDescriptions: Record<SyncService, string> = {
 function buildServiceChoices(hasForks: boolean) {
   const baseChoices = [
     { value: 'analyze' as SyncService, name: `analyze    ${pc.dim(serviceDescriptions.analyze)}` },
+    { value: 'inspect' as SyncService, name: `inspect    ${pc.dim(serviceDescriptions.inspect)}` },
     { value: 'sync' as SyncService, name: `sync       ${pc.dim(serviceDescriptions.sync)}` },
     { value: 'packages' as SyncService, name: `packages   ${pc.dim(serviceDescriptions.packages)}` },
     { value: 'audit' as SyncService, name: `audit      ${pc.dim(serviceDescriptions.audit)}` },
@@ -50,20 +52,24 @@ export async function parseCli(userConfig: CellaCliConfig, forkPath: string): Pr
   let service: SyncService | undefined;
   let logFile = false;
   let verbose = false;
+  let list = false;
 
   const program = new Command(NAME)
     .version(VERSION, '-v, --version', 'output the current version')
     .usage('[options]')
     .helpOption('-h, --help', 'display this help message')
-    .option('--service <name>', 'service to run: analyze, sync, packages, audit, forks', (value) => {
-      if (!['analyze', 'sync', 'packages', 'audit', 'forks'].includes(value)) {
-        console.error(`Invalid service: ${value}. Must be one of: analyze, sync, packages, audit, forks`);
+    .option('--service <name>', 'service to run: analyze, inspect, sync, packages, audit, forks', (value) => {
+      if (!['analyze', 'inspect', 'sync', 'packages', 'audit', 'forks'].includes(value)) {
+        console.error(`Invalid service: ${value}. Must be one of: analyze, inspect, sync, packages, audit, forks`);
         process.exit(1);
       }
       service = value as SyncService;
     })
     .option('--log', 'write complete file list to cella-sync.log', () => {
       logFile = true;
+    })
+    .option('--list', 'non-interactive output for inspect (one file per line)', () => {
+      list = true;
     })
     .option('-V, --verbose', 'show detailed output during operations', () => {
       verbose = true;
@@ -109,6 +115,7 @@ export async function parseCli(userConfig: CellaCliConfig, forkPath: string): Pr
     upstreamRef,
     service,
     logFile,
+    list,
     verbose,
   };
 }

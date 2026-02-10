@@ -14,6 +14,7 @@ import type { CellaCliConfig } from './config/types';
 import { runAnalyze } from './services/analyze';
 import { runAudit } from './services/audit';
 import { runForks } from './services/forks';
+import { runInspect } from './services/inspect';
 import { runPackages } from './services/packages';
 import { runSync } from './services/sync';
 import { registerSignalHandlers } from './utils/cleanup';
@@ -106,7 +107,7 @@ async function main(): Promise<void> {
 
     // Run preflight checks (except for packages/audit/forks which don't need clean working dir)
     if (!['packages', 'audit', 'forks'].includes(config.service)) {
-      const skipCleanCheck = config.service === 'analyze';
+      const skipCleanCheck = config.service === 'analyze' || config.service === 'inspect';
       await preflight(forkPath, userConfig.settings.forkBranch, { skipCleanCheck });
     }
 
@@ -114,6 +115,10 @@ async function main(): Promise<void> {
     switch (config.service) {
       case 'analyze':
         await runAnalyze(config);
+        break;
+
+      case 'inspect':
+        await runInspect(config);
         break;
 
       case 'sync':

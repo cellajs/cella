@@ -159,6 +159,7 @@ export async function runForks(config: RuntimeConfig): Promise<void> {
     upstreamRef,
     service,
     logFile: config.logFile,
+    list: false,
     verbose: config.verbose,
   };
 

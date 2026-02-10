@@ -234,6 +234,7 @@ export function buildRuntimeConfig(
     upstreamRef: `${UPSTREAM_REMOTE}/main`,
     service,
     logFile: false,
+    list: false,
     verbose: false,
   };
 }

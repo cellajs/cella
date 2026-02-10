@@ -122,7 +122,7 @@ export function defineConfig(config: CellaCliConfig): CellaCliConfig {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Sync services available in the CLI */
-export type SyncService = 'analyze' | 'sync' | 'packages' | 'audit' | 'forks';
+export type SyncService = 'analyze' | 'inspect' | 'sync' | 'packages' | 'audit' | 'forks';
 
 /** Runtime configuration with all resolved values */
 export interface RuntimeConfig extends CellaCliConfig {
@@ -137,6 +137,9 @@ export interface RuntimeConfig extends CellaCliConfig {
 
   /** Write full file list to log file */
   logFile: boolean;
+
+  /** Non-interactive list output (for LLM/agent usage) */
+  list: boolean;
 
   /** Show verbose output */
   verbose: boolean;
