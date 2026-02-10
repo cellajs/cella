@@ -26,7 +26,6 @@ function OrganizationPage({ organizationId, tenantId }: { organizationId: string
 
   const { mutate } = useOrganizationUpdateMutation();
 
-  // TODO-042 research alternative pattern
   const coverUpdateCallback = (bannerUrl: string) => {
     mutate(
       { tenantId: organization.tenantId, id: organization.id, body: { bannerUrl } },

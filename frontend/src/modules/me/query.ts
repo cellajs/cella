@@ -1,12 +1,21 @@
 import { queryOptions, useMutation } from '@tanstack/react-query';
 import { t } from 'i18next';
-import type { DeletePasskeyData, DeletePasskeyResponse, ToggleMfaData, User } from '~/api.gen';
+import type {
+  DeletePasskeyData,
+  DeletePasskeyResponse,
+  GetMyInvitationsResponse,
+  HandleMembershipInvitationData,
+  HandleMembershipInvitationResponse,
+  ToggleMfaData,
+  User,
+} from '~/api.gen';
 import {
   createPasskey,
   deletePasskey,
   deleteTotp,
   getMyInvitations,
   getMyMemberships,
+  handleMembershipInvitation,
   toggleMfa,
   type UpdateMeData,
   updateMe,
@@ -16,6 +25,7 @@ import { getPasskeyRegistrationCredential } from '~/modules/auth/passkey-credent
 import { toaster } from '~/modules/common/toaster/service';
 import { getAndSetMe, getAndSetMeAuthData } from '~/modules/me/helpers';
 import type { MeAuthData, Passkey } from '~/modules/me/types';
+import { getMenuData } from '~/modules/navigation/menu-sheet/helpers';
 import { userQueryKeys } from '~/modules/user/query';
 import { queryClient } from '~/query/query-client';
 import { useUserStore } from '~/store/user';
@@ -203,4 +213,26 @@ export const myMembershipsQueryOptions = () =>
   queryOptions({
     queryKey: meKeys.memberships,
     queryFn: async ({ signal }) => getMyMemberships({ signal }),
+  });
+
+/**
+ * Mutation hook to accept or reject a membership invitation.
+ * Removes the settled invite from cache and refreshes the menu.
+ */
+export const useHandleInvitationMutation = () =>
+  useMutation<HandleMembershipInvitationResponse, ApiError, HandleMembershipInvitationData['path']>({
+    mutationFn: ({ id, acceptOrReject }) => handleMembershipInvitation({ path: { id, acceptOrReject } }),
+    onSuccess: async (settledEntity, { acceptOrReject }) => {
+      await getMenuData();
+
+      queryClient.setQueryData<GetMyInvitationsResponse>(meKeys.invites, (oldData) => {
+        if (!oldData) return oldData;
+        return { ...oldData, items: oldData.items.filter((invite) => invite.entity.id !== settledEntity.id) };
+      });
+
+      toaster(
+        t('common:invitation_settled', { action: acceptOrReject === 'accept' ? 'accepted' : 'rejected' }),
+        'success',
+      );
+    },
   });

@@ -1,6 +1,6 @@
-import { useMutation } from '@tanstack/react-query';
+import { onlineManager, useMutation } from '@tanstack/react-query';
 import { t } from 'i18next';
-import { appConfig } from 'shared';
+import { appConfig, type ContextEntityType } from 'shared';
 import {
   deleteMemberships,
   type MembershipBase,
@@ -26,13 +26,18 @@ import type {
 } from '~/modules/memberships/types';
 import { getMenuData } from '~/modules/navigation/menu-sheet/helpers';
 import {
+  changeInfiniteQueryData,
+  changeQueryData,
   formatUpdatedCacheData,
   getEntityQueryKeys,
   getQueryItems,
   getSimilarQueries,
   invalidateOnMembershipChange,
+  isInfiniteQueryData,
+  isQueryData,
 } from '~/query/basic';
 import { queryClient } from '~/query/query-client';
+import { useUserStore } from '~/store/user';
 
 const limit = appConfig.requestLimits.members;
 
@@ -48,6 +53,33 @@ const updateMyMembershipCache = (updatedMembership: Partial<MembershipBase> & { 
       items: oldData.items.map((m) => (m.id === updatedMembership.id ? { ...m, ...updatedMembership } : m)),
     };
   });
+};
+
+/**
+ * Add a new membership to the myMemberships cache.
+ * Used when the current user is invited to a new entity.
+ */
+const addMyMembershipCache = (newMembership: MembershipBase) => {
+  queryClient.setQueryData<{ items: MembershipBase[] }>(meKeys.memberships, (oldData) => {
+    if (!oldData) return { items: [newMembership] };
+    return { ...oldData, items: [...oldData.items, newMembership] };
+  });
+};
+
+/**
+ * Update an entity's data in all matching list cache queries.
+ * Uses the entity query registry to resolve query keys dynamically.
+ */
+const updateEntityInListCache = (entityType: ContextEntityType, updatedItems: { id: string }[]) => {
+  const keys = getEntityQueryKeys(entityType);
+  if (!keys) return;
+
+  const queries = queryClient.getQueriesData({ queryKey: keys.list.base });
+  for (const [queryKey, queryData] of queries) {
+    if (!queryData) continue;
+    if (isInfiniteQueryData(queryData)) changeInfiniteQueryData(queryKey, updatedItems, 'update');
+    else if (isQueryData(queryData)) changeQueryData(queryKey, updatedItems, 'update');
+  }
 };
 
 const onError = (
@@ -295,3 +327,65 @@ const updateMembershipCounts = (
     },
   };
 };
+
+/** Variables for changing a user's role on a context entity from an entity table */
+type ChangeEntityRoleVariables = {
+  entity: ContextEntityData;
+  role: MembershipBase['role'];
+};
+
+type ChangeEntityRoleResult = {
+  entity: ContextEntityData;
+  membership: MembershipBase;
+  wasNew: boolean;
+};
+
+/**
+ * Entity-agnostic mutation hook for changing a user's role on a context entity.
+ * Handles both updating an existing membership and creating a new one via invite.
+ * Updates the entity list cache and myMemberships cache automatically.
+ */
+export const useChangeEntityRoleMutation = () =>
+  useMutation<ChangeEntityRoleResult, ApiError, ChangeEntityRoleVariables>({
+    mutationFn: async ({ entity, role }) => {
+      if (!onlineManager.isOnline()) throw new Error(t('common:action.offline.text'));
+
+      const { id: entityId, entityType, tenantId, membership } = entity;
+      const orgId = entity.organizationId || entityId;
+
+      if (membership?.id) {
+        // Existing membership — update role
+        const updated = await updateMembership({
+          body: { role },
+          path: { id: membership.id, tenantId, orgId },
+        });
+        return { entity, membership: updated, wasNew: false };
+      }
+
+      // No membership — create via invite
+      const { email } = useUserStore.getState().user;
+      const result = await membershipInvite({
+        query: { entityId, entityType },
+        path: { tenantId, orgId },
+        body: { emails: [email], role },
+      });
+
+      const created = result.data?.[0];
+      if (!created) throw new Error('Failed to create membership');
+      return { entity, membership: created, wasNew: true };
+    },
+    onSuccess: ({ entity, membership, wasNew }) => {
+      // Update entity list cache with the new/updated membership
+      const updatedEntity = { ...entity, membership };
+      updateEntityInListCache(entity.entityType, [updatedEntity]);
+
+      // Update myMemberships cache
+      if (wasNew) addMyMembershipCache(membership);
+      else updateMyMembershipCache(membership);
+
+      toaster(t('common:success.role_updated'), 'success');
+    },
+    onError: () => {
+      toaster(t('error:error'), 'error');
+    },
+  });

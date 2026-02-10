@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import { TagInput, type TagInputProps } from '~/modules/ui/tag-input';
 import { isEmail } from '~/utils/is-email';
 
@@ -28,17 +27,28 @@ const extractEmail = (value: string, stripDisplayName: boolean): string => {
   return match ? match[1].trim() : value.trim();
 };
 
-// TODO-019 error to fix:
-/**
- * installHook.js:1 Cannot update a component (`Controller`) while rendering a different component (`SelectEmails`). To locate the bad setState() call inside `SelectEmails`, follow the stack trace as described in https://react.dev/link/setstate-in-render
- */
+/** Processes raw tags: extracts emails and filters duplicates */
+const processTags = (tags: string[], stripDisplayName: boolean, allowDuplicate: boolean): string[] => {
+  const processed = stripDisplayName ? tags.map((tag) => extractEmail(tag, true)) : tags;
+
+  if (allowDuplicate) return processed;
+
+  const seen = new Set<string>();
+  return processed.filter((email) => {
+    const lower = email.toLowerCase();
+    if (seen.has(lower)) return false;
+    seen.add(lower);
+    return true;
+  });
+};
 
 /**
- * Email input component with multi-email support, validation, and paste handling.
+ * Controlled email input component with multi-email support, validation, and paste handling.
  * Built on top of TagInput with email-specific validation and delimiter support.
+ * State is fully owned by the parent via emails/onChange — no internal state duplication.
  */
 export const SelectEmails = ({
-  emails,
+  emails = [],
   onChange,
   allowDisplayName = false,
   stripDisplayName = false,
@@ -46,46 +56,21 @@ export const SelectEmails = ({
   delimiter = defaultEmailDelimiter,
   ...tagInputProps
 }: SelectEmailsProps) => {
-  const [tags, setTags] = useState<string[]>(emails ?? []);
-
-  // Sync external emails prop with internal state
-  useEffect(() => {
-    if (emails) setTags(emails);
-  }, [emails]);
-
   /** Validates email format, optionally allowing display name format */
   const validateEmail = (value: string): boolean => {
     const email = extractEmail(value, stripDisplayName);
     return isEmail(email, { allowDisplayName });
   };
 
-  /** Handles tag changes, applies email extraction and duplicate filtering */
+  /** Translates TagInput's setTags dispatcher into processed onChange calls */
   const handleSetTags: React.Dispatch<React.SetStateAction<string[]>> = (newTagsOrFn) => {
-    setTags((prevTags) => {
-      const newTags = typeof newTagsOrFn === 'function' ? newTagsOrFn(prevTags) : newTagsOrFn;
-
-      // Process tags: extract emails if needed
-      let processedTags = stripDisplayName ? newTags.map((tag) => extractEmail(tag, true)) : newTags;
-
-      // Filter duplicates unless allowed
-      if (!allowDuplicate) {
-        const seen = new Set<string>();
-        processedTags = processedTags.filter((email) => {
-          const lower = email.toLowerCase();
-          if (seen.has(lower)) return false;
-          seen.add(lower);
-          return true;
-        });
-      }
-
-      onChange?.(processedTags);
-      return processedTags;
-    });
+    const newTags = typeof newTagsOrFn === 'function' ? newTagsOrFn(emails) : newTagsOrFn;
+    onChange?.(processTags(newTags, stripDisplayName, allowDuplicate));
   };
 
   return (
     <TagInput
-      tags={tags}
+      tags={emails}
       setTags={handleSetTags}
       validateTag={validateEmail}
       delimiter={delimiter}
