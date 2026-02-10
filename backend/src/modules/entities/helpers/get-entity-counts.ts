@@ -4,7 +4,7 @@ import type z from 'zod';
 import type { DbOrTx } from '#/db/db';
 import { getMemberCountsSubquery } from '#/modules/entities/helpers/get-member-counts';
 import { getRelatedCountsSubquery } from '#/modules/entities/helpers/get-related-entity-counts';
-import type { membershipCountSchema } from '#/modules/organization/organization-schema';
+import type { membershipCountSchema } from '#/schemas';
 import { entityTables } from '#/table-config';
 
 /**

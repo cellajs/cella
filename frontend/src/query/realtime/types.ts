@@ -6,11 +6,7 @@ export type StreamState = 'disconnected' | 'connecting' | 'catching-up' | 'live'
 /** Base options for stream hooks. */
 export interface BaseStreamOptions {
   enabled?: boolean;
-  initialOffset?: string | null;
-  onCatchUpComplete?: (cursor: string | null) => void;
   onStateChange?: (state: StreamState) => void;
-  /** When false, notifications are queued until hydration completes. */
-  isHydrated?: boolean;
 }
 
 /** Base return value for stream hooks. */
@@ -35,9 +31,7 @@ export type AppStreamNotification = StreamNotification & {
 };
 
 /** Options for useAppStream hook. */
-export interface UseAppStreamOptions extends BaseStreamOptions {
-  onNotification?: (notification: AppStreamNotification) => void;
-}
+export interface UseAppStreamOptions extends BaseStreamOptions {}
 
 /** Return value for useAppStream hook. */
 export type UseAppStreamReturn = BaseStreamReturn;

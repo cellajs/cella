@@ -5185,9 +5185,12 @@
                     "rejectionReasons": {
                       "type": "object",
                       "additionalProperties": {
-                        "type": "string"
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
                       },
-                      "description": "Map of rejected item ID to reason code"
+                      "description": "Map of reason code to rejected item IDs"
                     }
                   },
                   "required": [
@@ -5829,9 +5832,12 @@
                     "rejectionReasons": {
                       "type": "object",
                       "additionalProperties": {
-                        "type": "string"
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
                       },
-                      "description": "Map of rejected item ID to reason code"
+                      "description": "Map of reason code to rejected item IDs"
                     },
                     "invitesSentCount": {
                       "type": "number"
@@ -6201,9 +6207,12 @@
                     "rejectionReasons": {
                       "type": "object",
                       "additionalProperties": {
-                        "type": "string"
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
                       },
-                      "description": "Map of rejected item ID to reason code"
+                      "description": "Map of reason code to rejected item IDs"
                     }
                   },
                   "required": [
@@ -7883,9 +7892,12 @@
                     "rejectionReasons": {
                       "type": "object",
                       "additionalProperties": {
-                        "type": "string"
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
                       },
-                      "description": "Map of rejected item ID to reason code"
+                      "description": "Map of reason code to rejected item IDs"
                     }
                   },
                   "required": [
@@ -8115,9 +8127,12 @@
                     "rejectionReasons": {
                       "type": "object",
                       "additionalProperties": {
-                        "type": "string"
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
                       },
-                      "description": "Map of rejected item ID to reason code"
+                      "description": "Map of reason code to rejected item IDs"
                     }
                   },
                   "required": [
@@ -9158,9 +9173,12 @@
                     "rejectionReasons": {
                       "type": "object",
                       "additionalProperties": {
-                        "type": "string"
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
                       },
-                      "description": "Map of rejected item ID to reason code"
+                      "description": "Map of reason code to rejected item IDs"
                     }
                   },
                   "required": [
@@ -9243,9 +9261,12 @@
                     "rejectionReasons": {
                       "type": "object",
                       "additionalProperties": {
-                        "type": "string"
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
                       },
-                      "description": "Map of rejected item ID to reason code"
+                      "description": "Map of reason code to rejected item IDs"
                     }
                   },
                   "required": [
@@ -10296,9 +10317,12 @@
                     "rejectionReasons": {
                       "type": "object",
                       "additionalProperties": {
-                        "type": "string"
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
                       },
-                      "description": "Map of rejected item ID to reason code"
+                      "description": "Map of reason code to rejected item IDs"
                     }
                   },
                   "required": [
@@ -10395,9 +10419,12 @@
                     "rejectionReasons": {
                       "type": "object",
                       "additionalProperties": {
-                        "type": "string"
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
                       },
-                      "description": "Map of rejected item ID to reason code"
+                      "description": "Map of reason code to rejected item IDs"
                     }
                   },
                   "required": [
@@ -10587,9 +10614,12 @@
                     "rejectionReasons": {
                       "type": "object",
                       "additionalProperties": {
-                        "type": "string"
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
                       },
-                      "description": "Map of rejected item ID to reason code"
+                      "description": "Map of reason code to rejected item IDs"
                     }
                   },
                   "required": [
@@ -11098,9 +11128,12 @@
                     "rejectionReasons": {
                       "type": "object",
                       "additionalProperties": {
-                        "type": "string"
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
                       },
-                      "description": "Map of rejected item ID to reason code"
+                      "description": "Map of reason code to rejected item IDs"
                     },
                     "invitesSentCount": {
                       "type": "number"
@@ -11252,9 +11285,12 @@
                     "rejectionReasons": {
                       "type": "object",
                       "additionalProperties": {
-                        "type": "string"
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
                       },
-                      "description": "Map of rejected item ID to reason code"
+                      "description": "Map of reason code to rejected item IDs"
                     }
                   },
                   "required": [

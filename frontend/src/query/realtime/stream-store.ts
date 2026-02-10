@@ -10,7 +10,13 @@ import { useSyncStore } from '~/store/sync';
 import { handleAppStreamNotification } from './app-stream-handler';
 import { processCatchupBatch } from './catchup-processor';
 import { handlePublicStreamMessage } from './public-stream-handler';
-import { broadcastNotification, initTabCoordinator, isLeader, onNotification } from './tab-coordinator';
+import {
+  broadcastNotification,
+  initTabCoordinator,
+  isLeader,
+  onNotification,
+  useTabCoordinatorStore,
+} from './tab-coordinator';
 import type { AppStreamNotification, StreamState } from './types';
 
 interface StreamConfig {
@@ -67,6 +73,8 @@ class StreamManager {
   private abortController: AbortController | null = null;
   private consecutiveFailures = 0;
   private circuitOpen = false;
+  private visibilityHandler: (() => void) | null = null;
+  private leaderUnsubscribe: (() => void) | null = null;
 
   constructor(config: StreamConfig, store: ReturnType<typeof createStreamStore>) {
     this.config = config;
@@ -83,6 +91,10 @@ class StreamManager {
 
   /** Connect to stream (two-phase: catchup → live SSE). */
   async connect() {
+    // Set up reconnect listeners (idempotent, cleaned up in disconnect)
+    this.startVisibilityReconnect();
+    this.startLeaderReconnect();
+
     const { state } = this.store.getState();
     if (state === 'catching-up' || state === 'connecting' || state === 'live') return;
 
@@ -263,7 +275,48 @@ class StreamManager {
     }, 5000);
   }
 
+  /** Start listening for visibility changes to reconnect when tab becomes visible. */
+  private startVisibilityReconnect() {
+    if (this.visibilityHandler) return;
+    this.visibilityHandler = () => {
+      const shouldReconnect = this.config.useTabCoordination ? isLeader() : true;
+      if (document.visibilityState === 'visible' && shouldReconnect && !this.isConnected()) {
+        console.debug(`[${this.config.debugLabel}] Tab visible, reconnecting...`);
+        this.reconnect();
+      }
+    };
+    document.addEventListener('visibilitychange', this.visibilityHandler);
+  }
+
+  private stopVisibilityReconnect() {
+    if (this.visibilityHandler) {
+      document.removeEventListener('visibilitychange', this.visibilityHandler);
+      this.visibilityHandler = null;
+    }
+  }
+
+  /** Subscribe to leader changes and reconnect when becoming leader. */
+  private startLeaderReconnect() {
+    if (!this.config.useTabCoordination || this.leaderUnsubscribe) return;
+    let wasLeader = useTabCoordinatorStore.getState().isLeader;
+    this.leaderUnsubscribe = useTabCoordinatorStore.subscribe((s) => {
+      if (s.isLeader && !wasLeader && !this.isConnected()) {
+        console.debug(`[${this.config.debugLabel}] Became leader, reconnecting...`);
+        this.reconnect();
+      }
+      wasLeader = s.isLeader;
+    });
+  }
+
+  private stopLeaderReconnect() {
+    this.leaderUnsubscribe?.();
+    this.leaderUnsubscribe = null;
+  }
+
   disconnect() {
+    this.stopVisibilityReconnect();
+    this.stopLeaderReconnect();
+
     this.abortController?.abort();
     this.abortController = null;
 

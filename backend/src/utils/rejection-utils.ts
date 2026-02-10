@@ -6,7 +6,7 @@
 /** Rejection state passed through the pipeline */
 export type RejectionState = {
   rejectedItemIds: string[];
-  rejectionReasons: Record<string, string>;
+  rejectionReasons: Record<string, string[]>;
 };
 
 /** Create empty rejection state */
@@ -18,20 +18,32 @@ export const createRejectionState = (): RejectionState => ({
 /** Add a single rejection (immutable) */
 export const reject = (rejectionState: RejectionState, id: string, reason: string): RejectionState => ({
   rejectedItemIds: [...rejectionState.rejectedItemIds, id],
-  rejectionReasons: { ...rejectionState.rejectionReasons, [id]: reason },
+  rejectionReasons: {
+    ...rejectionState.rejectionReasons,
+    [reason]: [...(rejectionState.rejectionReasons[reason] ?? []), id],
+  },
 });
 
 /** Add multiple rejections with same reason (immutable) */
 export const rejectMany = (rejectionState: RejectionState, ids: string[], reason: string): RejectionState => ({
   rejectedItemIds: [...rejectionState.rejectedItemIds, ...ids],
-  rejectionReasons: { ...rejectionState.rejectionReasons, ...Object.fromEntries(ids.map((id) => [id, reason])) },
+  rejectionReasons: {
+    ...rejectionState.rejectionReasons,
+    [reason]: [...(rejectionState.rejectionReasons[reason] ?? []), ...ids],
+  },
 });
 
 /** Merge two rejection states */
-export const mergeRejections = (a: RejectionState, b: RejectionState): RejectionState => ({
-  rejectedItemIds: [...a.rejectedItemIds, ...b.rejectedItemIds],
-  rejectionReasons: { ...a.rejectionReasons, ...b.rejectionReasons },
-});
+export const mergeRejections = (a: RejectionState, b: RejectionState): RejectionState => {
+  const merged = { ...a.rejectionReasons };
+  for (const [reason, ids] of Object.entries(b.rejectionReasons)) {
+    merged[reason] = [...(merged[reason] ?? []), ...ids];
+  }
+  return {
+    rejectedItemIds: [...a.rejectedItemIds, ...b.rejectedItemIds],
+    rejectionReasons: merged,
+  };
+};
 
 /** Filter items, rejecting those that fail the predicate */
 export const filterWithRejection = <T extends { id: string }>(

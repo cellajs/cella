@@ -1949,10 +1949,10 @@ export type DeleteMySessionsResponses = {
      */
     rejectedItemIds: Array<string>;
     /**
-     * Map of rejected item ID to reason code
+     * Map of reason code to rejected item IDs
      */
     rejectionReasons?: {
-      [key: string]: string;
+      [key: string]: Array<string>;
     };
   };
 };
@@ -2326,10 +2326,10 @@ export type SystemInviteResponses = {
      */
     rejectedItemIds: Array<string>;
     /**
-     * Map of rejected item ID to reason code
+     * Map of reason code to rejected item IDs
      */
     rejectionReasons?: {
-      [key: string]: string;
+      [key: string]: Array<string>;
     };
     invitesSentCount: number;
   };
@@ -2382,10 +2382,10 @@ export type DeleteUsersResponses = {
      */
     rejectedItemIds: Array<string>;
     /**
-     * Map of rejected item ID to reason code
+     * Map of reason code to rejected item IDs
      */
     rejectionReasons?: {
-      [key: string]: string;
+      [key: string]: Array<string>;
     };
   };
 };
@@ -3369,10 +3369,10 @@ export type DeleteOrganizationsResponses = {
      */
     rejectedItemIds: Array<string>;
     /**
-     * Map of rejected item ID to reason code
+     * Map of reason code to rejected item IDs
      */
     rejectionReasons?: {
-      [key: string]: string;
+      [key: string]: Array<string>;
     };
   };
 };
@@ -3434,10 +3434,10 @@ export type CreateOrganizationsResponses = {
      */
     rejectedItemIds: Array<string>;
     /**
-     * Map of rejected item ID to reason code
+     * Map of reason code to rejected item IDs
      */
     rejectionReasons?: {
-      [key: string]: string;
+      [key: string]: Array<string>;
     };
   };
 };
@@ -3793,10 +3793,10 @@ export type CreatePagesResponses = {
      */
     rejectedItemIds: Array<string>;
     /**
-     * Map of rejected item ID to reason code
+     * Map of reason code to rejected item IDs
      */
     rejectionReasons?: {
-      [key: string]: string;
+      [key: string]: Array<string>;
     };
   };
   /**
@@ -3809,10 +3809,10 @@ export type CreatePagesResponses = {
      */
     rejectedItemIds: Array<string>;
     /**
-     * Map of rejected item ID to reason code
+     * Map of reason code to rejected item IDs
      */
     rejectionReasons?: {
-      [key: string]: string;
+      [key: string]: Array<string>;
     };
   };
 };
@@ -4031,10 +4031,10 @@ export type DeleteAttachmentsResponses = {
      */
     rejectedItemIds: Array<string>;
     /**
-     * Map of rejected item ID to reason code
+     * Map of reason code to rejected item IDs
      */
     rejectionReasons?: {
-      [key: string]: string;
+      [key: string]: Array<string>;
     };
   };
 };
@@ -4157,10 +4157,10 @@ export type CreateAttachmentsResponses = {
      */
     rejectedItemIds: Array<string>;
     /**
-     * Map of rejected item ID to reason code
+     * Map of reason code to rejected item IDs
      */
     rejectionReasons?: {
-      [key: string]: string;
+      [key: string]: Array<string>;
     };
   };
   /**
@@ -4173,10 +4173,10 @@ export type CreateAttachmentsResponses = {
      */
     rejectedItemIds: Array<string>;
     /**
-     * Map of rejected item ID to reason code
+     * Map of reason code to rejected item IDs
      */
     rejectionReasons?: {
-      [key: string]: string;
+      [key: string]: Array<string>;
     };
   };
 };
@@ -4415,10 +4415,10 @@ export type DeleteMembershipsResponses = {
      */
     rejectedItemIds: Array<string>;
     /**
-     * Map of rejected item ID to reason code
+     * Map of reason code to rejected item IDs
      */
     rejectionReasons?: {
-      [key: string]: string;
+      [key: string]: Array<string>;
     };
   };
 };
@@ -4477,10 +4477,10 @@ export type MembershipInviteResponses = {
      */
     rejectedItemIds: Array<string>;
     /**
-     * Map of rejected item ID to reason code
+     * Map of reason code to rejected item IDs
      */
     rejectionReasons?: {
-      [key: string]: string;
+      [key: string]: Array<string>;
     };
     invitesSentCount: number;
   };

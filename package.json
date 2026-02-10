@@ -69,14 +69,14 @@
     "@evilmartians/lefthook": "^2.1.0",
     "@typescript/native-preview": "7.0.0-dev.20260129.1",
     "cross-env": "^10.1.0",
-    "knip": "^5.83.0",
+    "knip": "^5.83.1",
     "rimraf": "^6.1.2",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
   },
   "dependencies": {
-    "dotenv": "^17.2.3"
+    "dotenv": "^17.2.4"
   },
   "overrides": {
     "@types/node": "^24.10.1",

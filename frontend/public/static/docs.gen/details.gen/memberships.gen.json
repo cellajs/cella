@@ -56,7 +56,7 @@
             "rejectionReasons": {
               "type": "object",
               "required": false,
-              "description": "Map of rejected item ID to reason code"
+              "description": "Map of reason code to rejected item IDs"
             },
             "invitesSentCount": { "type": "number", "required": true }
           },
@@ -181,7 +181,7 @@
             "rejectionReasons": {
               "type": "object",
               "required": false,
-              "description": "Map of rejected item ID to reason code"
+              "description": "Map of reason code to rejected item IDs"
             }
           },
           "contentType": "application/json"

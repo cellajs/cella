@@ -21,7 +21,7 @@ export const mockBatchResponseEmpty = (): BatchResponseEmpty => ({
 export interface BatchResponse<T> {
   data: T[];
   rejectedItemIds: string[];
-  rejectionReasons?: Record<string, string>;
+  rejectionReasons?: Record<string, string[]>;
 }
 
 /**

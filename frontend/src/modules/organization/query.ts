@@ -108,7 +108,7 @@ export const useOrganizationCreateMutation = () => {
 
         // Check for rejection reasons and throw if org limit reached
         if (result.rejectionReasons) {
-          const reasons = Object.values(result.rejectionReasons);
+          const reasons = Object.keys(result.rejectionReasons);
           if (reasons.includes('org_limit_reached')) {
             throw new Error('org_limit_reached');
           }

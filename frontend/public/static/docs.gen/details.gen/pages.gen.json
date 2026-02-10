@@ -421,7 +421,7 @@
             "rejectionReasons": {
               "type": "object",
               "required": false,
-              "description": "Map of rejected item ID to reason code"
+              "description": "Map of reason code to rejected item IDs"
             }
           },
           "contentType": "application/json"
@@ -561,7 +561,7 @@
             "rejectionReasons": {
               "type": "object",
               "required": false,
-              "description": "Map of rejected item ID to reason code"
+              "description": "Map of reason code to rejected item IDs"
             }
           },
           "contentType": "application/json"

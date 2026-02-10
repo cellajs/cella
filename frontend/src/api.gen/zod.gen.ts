@@ -929,7 +929,7 @@ export const zDeleteMySessionsData = z.object({
 export const zDeleteMySessionsResponse = z.object({
   data: z.array(z.unknown()),
   rejectedItemIds: z.array(z.string()),
-  rejectionReasons: z.optional(z.record(z.string(), z.string())),
+  rejectionReasons: z.optional(z.record(z.string(), z.array(z.string()))),
 });
 
 export const zDeleteMyMembershipData = z.object({
@@ -1048,7 +1048,7 @@ export const zSystemInviteData = z.object({
 export const zSystemInviteResponse = z.object({
   data: z.array(z.unknown()),
   rejectedItemIds: z.array(z.string()),
-  rejectionReasons: z.optional(z.record(z.string(), z.string())),
+  rejectionReasons: z.optional(z.record(z.string(), z.array(z.string()))),
   invitesSentCount: z.number(),
 });
 
@@ -1066,7 +1066,7 @@ export const zDeleteUsersData = z.object({
 export const zDeleteUsersResponse = z.object({
   data: z.array(z.unknown()),
   rejectedItemIds: z.array(z.string()),
-  rejectionReasons: z.optional(z.record(z.string(), z.string())),
+  rejectionReasons: z.optional(z.record(z.string(), z.array(z.string()))),
 });
 
 export const zGetUsersData = z.object({
@@ -1417,7 +1417,7 @@ export const zDeleteOrganizationsData = z.object({
 export const zDeleteOrganizationsResponse = z.object({
   data: z.array(z.unknown()),
   rejectedItemIds: z.array(z.string()),
-  rejectionReasons: z.optional(z.record(z.string(), z.string())),
+  rejectionReasons: z.optional(z.record(z.string(), z.array(z.string()))),
 });
 
 export const zCreateOrganizationsData = z.object({
@@ -1452,7 +1452,7 @@ export const zCreateOrganizationsResponse = z.object({
     ),
   ),
   rejectedItemIds: z.array(z.string()),
-  rejectionReasons: z.optional(z.record(z.string(), z.string())),
+  rejectionReasons: z.optional(z.record(z.string(), z.array(z.string()))),
 });
 
 export const zGetOrganizationsData = z.object({
@@ -1618,12 +1618,12 @@ export const zCreatePagesResponse = z.union([
   z.object({
     data: z.array(zPage),
     rejectedItemIds: z.array(z.string()),
-    rejectionReasons: z.optional(z.record(z.string(), z.string())),
+    rejectionReasons: z.optional(z.record(z.string(), z.array(z.string()))),
   }),
   z.object({
     data: z.array(zPage),
     rejectedItemIds: z.array(z.string()),
-    rejectionReasons: z.optional(z.record(z.string(), z.string())),
+    rejectionReasons: z.optional(z.record(z.string(), z.array(z.string()))),
   }),
 ]);
 
@@ -1738,7 +1738,7 @@ export const zDeleteAttachmentsData = z.object({
 export const zDeleteAttachmentsResponse = z.object({
   data: z.array(z.unknown()),
   rejectedItemIds: z.array(z.string()),
-  rejectionReasons: z.optional(z.record(z.string(), z.string())),
+  rejectionReasons: z.optional(z.record(z.string(), z.array(z.string()))),
 });
 
 export const zGetAttachmentsData = z.object({
@@ -1807,12 +1807,12 @@ export const zCreateAttachmentsResponse = z.union([
   z.object({
     data: z.array(zAttachment),
     rejectedItemIds: z.array(z.string()),
-    rejectionReasons: z.optional(z.record(z.string(), z.string())),
+    rejectionReasons: z.optional(z.record(z.string(), z.array(z.string()))),
   }),
   z.object({
     data: z.array(zAttachment),
     rejectedItemIds: z.array(z.string()),
-    rejectionReasons: z.optional(z.record(z.string(), z.string())),
+    rejectionReasons: z.optional(z.record(z.string(), z.array(z.string()))),
   }),
 ]);
 
@@ -1906,7 +1906,7 @@ export const zDeleteMembershipsData = z.object({
 export const zDeleteMembershipsResponse = z.object({
   data: z.array(z.unknown()),
   rejectedItemIds: z.array(z.string()),
-  rejectionReasons: z.optional(z.record(z.string(), z.string())),
+  rejectionReasons: z.optional(z.record(z.string(), z.array(z.string()))),
 });
 
 export const zMembershipInviteData = z.object({
@@ -1933,7 +1933,7 @@ export const zMembershipInviteData = z.object({
 export const zMembershipInviteResponse = z.object({
   data: z.array(zMembershipBase),
   rejectedItemIds: z.array(z.string()),
-  rejectionReasons: z.optional(z.record(z.string(), z.string())),
+  rejectionReasons: z.optional(z.record(z.string(), z.array(z.string()))),
   invitesSentCount: z.number(),
 });
 

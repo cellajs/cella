@@ -17,8 +17,8 @@
     "@hono/node-server": "^1.19.9",
     "dotenv": "^16.6.1",
     "drizzle-orm": "1.0.0-beta.15-859cf75",
-    "hono": "^4.11.7",
-    "lru-cache": "^11.2.5",
+    "hono": "^4.11.9",
+    "lru-cache": "^11.2.6",
     "nanoid": "^5.1.6",
     "pg-logical-replication": "^2.3.0",
     "pino": "^9.14.0",
@@ -28,7 +28,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@types/node": "^24.10.10",
+    "@types/node": "^24.10.13",
     "@types/ws": "^8.18.1",
     "cross-env": "^7.0.3",
     "tsx": "^4.21.0",

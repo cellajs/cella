@@ -56,19 +56,6 @@ export function usePublicStream(options: UsePublicStreamOptions = {}): UsePublic
     onStateChange?.(state);
   }, [state, onStateChange]);
 
-  // Reconnect on visibility change (tab becomes visible)
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && enabled && !publicStreamManager.isConnected()) {
-        console.debug(`[${debugLabel}] Tab visible, reconnecting...`);
-        publicStreamManager.reconnect();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [enabled]);
-
   return {
     state,
     cursor,

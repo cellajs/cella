@@ -21,24 +21,26 @@ export const paginationSchema = <O, I>(schema: z.ZodType<O, I>) =>
  * @example
  * // For create operations - returns created items
  * const pagesResponseSchema = batchResponseSchema(pageSchema);
- * // Result: { data: Page[], rejectedItemIds: string[], rejectionReasons?: Record<string, string> }
+ * // Result: { data: Page[], rejectedItemIds: string[], rejectionReasons?: Record<string, string[]> }
  *
  * @example
  * // For delete operations - returns empty data
  * const deleteResponseSchema = batchResponseSchema();
- * // Result: { data: [], rejectedItemIds: string[], rejectionReasons?: Record<string, string> }
+ * // Result: { data: [], rejectedItemIds: string[], rejectionReasons?: Record<string, string[]> }
  */
 export const batchResponseSchema = <T extends z.ZodTypeAny>(itemSchema?: T) =>
   z.object({
     data: itemSchema ? z.array(itemSchema) : z.tuple([]).rest(z.never()),
     rejectedItemIds: z.array(z.string()).describe('Identifiers of items that could not be processed'),
-    rejectionReasons: z.record(z.string(), z.string()).optional().describe('Map of rejected item ID to reason code'),
+    rejectionReasons: z
+      .record(z.string(), z.array(z.string()))
+      .optional()
+      .describe('Map of reason code to rejected item IDs'),
   });
 
 /** BatchResponse type for delete operations (no data items) */
 export interface BatchResponseEmpty {
   data: [];
   rejectedItemIds: string[];
-  // TODO-031 instead of a id to reason, we can have a reason and an array of ids. lets also enforce translation key type here?
-  rejectionReasons?: Record<string, string>;
+  rejectionReasons?: Record<string, string[]>;
 }

@@ -34,7 +34,10 @@ export const OrganizationLayoutRoute = createRoute({
   path: '/$tenantId/$orgId',
   staticData: { isAuth: true },
   getParentRoute: () => AppLayoutRoute,
-  beforeLoad: async ({ params }) => {
+  beforeLoad: async ({ params, cause }) => {
+    // Only revalidate on initial entry — search param changes are handled by child useSuspenseQuery
+    const shouldRevalidate = cause === 'enter';
+
     const { tenantId, orgId: orgIdParam } = params;
     const isOnline = onlineManager.isOnline();
 
@@ -45,10 +48,9 @@ export const OrganizationLayoutRoute = createRoute({
     // If we have the ID from cache, use ID-based query; otherwise fetch by slug first
     let organization: Organization | undefined;
 
-    // TODO-025 - getOrganization is being called on every route change, including search params changes?
     if (orgId) {
       const orgOptions = organizationQueryOptions(orgId, tenantId);
-      organization = await queryClient.ensureQueryData({ ...orgOptions, revalidateIfStale: true });
+      organization = await queryClient.ensureQueryData({ ...orgOptions, revalidateIfStale: shouldRevalidate });
     } else if (isOnline) {
       organization = await fetchSlugCacheId(
         () => getOrganization({ path: { tenantId, organizationId: orgIdParam }, query: { slug: true } }),

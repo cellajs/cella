@@ -1,6 +1,5 @@
 // API error schemas
 export { apiErrorSchema } from './api-error-schemas';
-
 // Common schemas
 export {
   booleanTransformSchema,
@@ -46,6 +45,8 @@ export {
   validTempIdSchema,
   validUrlSchema,
 } from './common-schemas';
+// Count schemas
+export { entityCountSchema, fullCountsSchema, membershipCountSchema } from './count-schemas';
 // Entity base schemas
 export { contextEntityBaseSchema, productEntityBaseSchema } from './entity-base';
 

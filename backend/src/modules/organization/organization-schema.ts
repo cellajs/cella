@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { t } from 'i18next';
-import { appConfig, type EntityType, recordFromKeys, roles } from 'shared';
+import { roles } from 'shared';
 import { organizationsTable } from '#/db/schema/organizations';
 import { authStrategiesEnum } from '#/db/schema/sessions';
 import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schema';
@@ -8,6 +8,7 @@ import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
 import {
   entityCanSchema,
   excludeArchivedQuerySchema,
+  fullCountsSchema,
   includeQuerySchema,
   languageSchema,
   noDuplicateSlugsRefine,
@@ -20,26 +21,6 @@ import {
   validUrlSchema,
 } from '#/schemas';
 import { mockOrganizationResponse } from '../../../mocks/mock-organization';
-
-// TODO-028 these count schemas should perhaps go to src/schemas because they are used in multiple modules
-// Entity count schema should exclude 'user' and 'organization'
-type FilteredEntityType = Exclude<EntityType, 'user' | 'organization'>;
-
-const isFilteredEntityType = (entityType: EntityType): entityType is FilteredEntityType => {
-  return entityType !== 'user' && entityType !== 'organization';
-};
-
-const entityCountSchema = z.object(
-  recordFromKeys(appConfig.entityTypes.filter(isFilteredEntityType), () => z.number()),
-);
-
-export const membershipCountSchema = z.object({
-  ...recordFromKeys(roles.all, () => z.number()),
-  pending: z.number(),
-  total: z.number(),
-});
-
-export const fullCountsSchema = z.object({ membership: membershipCountSchema, entities: entityCountSchema });
 
 /** Schema for optional included data (requested via include query param) */
 export const organizationIncludedSchema = z

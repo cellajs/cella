@@ -9,8 +9,11 @@ import { TableCount } from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarSearch, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import { TableSearch } from '~/modules/common/data-table/table-search';
 import type { BaseTableBarProps } from '~/modules/common/data-table/types';
+import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
 import { toaster } from '~/modules/common/toaster/service';
+import { UnsavedBadge } from '~/modules/common/unsaved-badge';
+import { CreateTenantForm } from '~/modules/tenants/create-tenant-form';
 import { useTenantArchiveMutation } from '~/modules/tenants/query';
 import type { TenantsRouteSearchParams } from '~/modules/tenants/search-params-schema';
 import { useInfiniteQueryTotal } from '~/query/basic';
@@ -28,8 +31,12 @@ export const TenantsTableBar = ({
 }: TenantsTableBarProps) => {
   const { t } = useTranslation();
 
+  const removeDialog = useDialoger((state) => state.remove);
+  const createDialog = useDialoger((state) => state.create);
+
   const total = useInfiniteQueryTotal(queryKey);
   const archiveButtonRef = useRef(null);
+  const createButtonRef = useRef(null);
 
   const { q } = searchVars;
   const isFiltered = !!q;
@@ -63,8 +70,22 @@ export const TenantsTableBar = ({
   };
 
   const openCreateDialog = () => {
-    // TODO-014: Implement tenant creation dialog
-    toaster('Create tenant dialog not implemented yet', 'info');
+    createDialog(
+      <CreateTenantForm
+        callback={() => {
+          removeDialog('create-tenant');
+        }}
+      />,
+      {
+        id: 'create-tenant',
+        triggerRef: createButtonRef,
+        className: 'md:max-w-xl',
+        title: t('common:create_resource', { resource: t('common:tenant').toLowerCase() }),
+        titleContent: (
+          <UnsavedBadge title={t('common:create_resource', { resource: t('common:tenant').toLowerCase() })} />
+        ),
+      },
+    );
   };
 
   return (
