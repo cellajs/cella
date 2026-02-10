@@ -50,12 +50,10 @@ export function useMembershipForEntity(entityId: string | undefined): Membership
 
 /** Enrich a single entity with its membership */
 function enrichEntityWithMembership<T extends { id: string; membership?: MembershipBase | null }>(entity: T): T {
-  // Skip if already has membership
-  if (entity.membership) return entity;
-
   const membership = getMembershipForEntity(entity.id);
   if (!membership) return entity;
 
+  // Always update with latest membership data (for when archived/muted/order changes)
   return { ...entity, membership };
 }
 
@@ -85,6 +83,37 @@ function enrichInfiniteData(data: unknown): unknown {
 /** Flag to prevent re-entrancy during enrichment */
 let isEnriching = false;
 
+// Re-enrich all existing enrichable list queries with current membership data
+function reEnrichAllEntityLists(): void {
+  if (isEnriching) return;
+
+  const membershipsData = queryClient.getQueryData<{ items: MembershipBase[] }>(meKeys.memberships);
+  if (!membershipsData?.items?.length) return;
+
+  const queries = queryClient.getQueryCache().getAll();
+
+  for (const query of queries) {
+    const queryKey = query.queryKey;
+
+    // Skip non-enrichable
+    if (!isEnrichableListQuery(queryKey)) continue;
+
+    const data = query.state.data;
+    if (!data) continue;
+
+    const enrichedData = enrichInfiniteData(data);
+    if (enrichedData === data) continue;
+
+    // Set enriched data (with guard to prevent re-entry)
+    isEnriching = true;
+    try {
+      queryClient.setQueryData(queryKey, enrichedData);
+    } finally {
+      isEnriching = false;
+    }
+  }
+}
+
 /**
  * Subscribe to query cache to auto-enrich context entities with membership data.
  * Call this once during app initialization.
@@ -96,6 +125,12 @@ export function setupMembershipEnrichment(): () => void {
 
     const query = event.query as Query;
     const queryKey = query.queryKey;
+
+    // When myMemberships is updated, re-enrich all entity list queries
+    if (queryKey[0] === 'me' && queryKey[1] === 'memberships') {
+      reEnrichAllEntityLists();
+      return;
+    }
 
     // Skip non-enrichable queries
     if (!isEnrichableListQuery(queryKey)) return;
