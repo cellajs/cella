@@ -19,23 +19,36 @@ const serviceDescriptions: Record<SyncService, string> = {
   packages: 'sync package.json keys with upstream',
   audit: 'check for outdated packages & vulnerabilities',
   forks: 'sync downstream to local fork repositories',
+  contributions: 'review and accept file contributions from forks',
 };
 
 /**
- * Build service menu choices, conditionally including forks option.
+ * Build service menu choices, conditionally including optional services.
  */
-function buildServiceChoices(hasForks: boolean) {
+function buildServiceChoices(hasForks: boolean, syncWithPackages: boolean) {
   const baseChoices = [
     { value: 'analyze' as SyncService, name: `analyze    ${pc.dim(serviceDescriptions.analyze)}` },
     { value: 'inspect' as SyncService, name: `inspect    ${pc.dim(serviceDescriptions.inspect)}` },
-    { value: 'sync' as SyncService, name: `sync       ${pc.dim(serviceDescriptions.sync)}` },
-    { value: 'packages' as SyncService, name: `packages   ${pc.dim(serviceDescriptions.packages)}` },
-    { value: 'audit' as SyncService, name: `audit      ${pc.dim(serviceDescriptions.audit)}` },
+    {
+      value: 'sync' as SyncService,
+      name: `sync       ${pc.dim(syncWithPackages ? 'merge upstream changes + sync packages' : serviceDescriptions.sync)}`,
+    },
   ];
+
+  // Show packages as separate service only when syncWithPackages is disabled
+  if (!syncWithPackages) {
+    baseChoices.push({ value: 'packages' as SyncService, name: `packages   ${pc.dim(serviceDescriptions.packages)}` });
+  }
+
+  baseChoices.push({ value: 'audit' as SyncService, name: `audit      ${pc.dim(serviceDescriptions.audit)}` });
 
   // Add forks option if configured
   if (hasForks) {
     baseChoices.push({ value: 'forks' as SyncService, name: `forks      ${pc.dim(serviceDescriptions.forks)}` });
+    baseChoices.push({
+      value: 'contributions' as SyncService,
+      name: `contrib    ${pc.dim(serviceDescriptions.contributions)}`,
+    });
   }
 
   return [
@@ -58,13 +71,19 @@ export async function parseCli(userConfig: CellaCliConfig, forkPath: string): Pr
     .version(VERSION, '-v, --version', 'output the current version')
     .usage('[options]')
     .helpOption('-h, --help', 'display this help message')
-    .option('--service <name>', 'service to run: analyze, inspect, sync, packages, audit, forks', (value) => {
-      if (!['analyze', 'inspect', 'sync', 'packages', 'audit', 'forks'].includes(value)) {
-        console.error(`invalid service: ${value}. must be one of: analyze, inspect, sync, packages, audit, forks`);
-        process.exit(1);
-      }
-      service = value as SyncService;
-    })
+    .option(
+      '--service <name>',
+      'service to run: analyze, inspect, sync, packages, audit, forks, contributions',
+      (value) => {
+        if (!['analyze', 'inspect', 'sync', 'packages', 'audit', 'forks', 'contributions'].includes(value)) {
+          console.error(
+            `invalid service: ${value}. must be one of: analyze, inspect, sync, packages, audit, forks, contributions`,
+          );
+          process.exit(1);
+        }
+        service = value as SyncService;
+      },
+    )
     .option('--log', 'write complete file list to cella-sync.log', () => {
       logFile = true;
     })
@@ -73,7 +92,8 @@ export async function parseCli(userConfig: CellaCliConfig, forkPath: string): Pr
     })
     .option('-V, --verbose', 'show detailed output during operations', () => {
       verbose = true;
-    });
+    })
+    .option('--fork <name>', 'pre-select fork by name (skips fork selection prompt)');
 
   program.parse(process.argv);
 
@@ -90,9 +110,10 @@ export async function parseCli(userConfig: CellaCliConfig, forkPath: string): Pr
   // If no service provided, prompt for it
   if (!service) {
     const hasForks = (userConfig.forks?.length ?? 0) > 0;
+    const syncWithPackages = userConfig.settings.syncWithPackages !== false;
     const selected = await select<SyncService | 'exit'>({
       message: 'choose a service:',
-      choices: buildServiceChoices(hasForks),
+      choices: buildServiceChoices(hasForks, syncWithPackages),
       loop: false,
     });
 
@@ -110,6 +131,8 @@ export async function parseCli(userConfig: CellaCliConfig, forkPath: string): Pr
   const remoteName = userConfig.settings.upstreamRemoteName || 'cella-upstream';
   const upstreamRef = `${remoteName}/${userConfig.settings.upstreamBranch}`;
 
+  const opts = program.opts();
+
   return {
     ...userConfig,
     forkPath,
@@ -118,5 +141,6 @@ export async function parseCli(userConfig: CellaCliConfig, forkPath: string): Pr
     logFile,
     list,
     verbose,
+    fork: opts.fork,
   };
 }

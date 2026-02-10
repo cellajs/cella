@@ -6,9 +6,9 @@
  */
 
 import { spawnSync } from 'node:child_process';
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { basename, dirname, join, resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 import {
   createPrompt,
   isDownKey,
@@ -20,12 +20,21 @@ import {
   usePagination,
   useState,
 } from '@inquirer/core';
-import { confirm, input } from '@inquirer/prompts';
 import pc from 'picocolors';
 import type { AnalyzedFile, RuntimeConfig } from '../config/types';
-import { createSpinner, DIVIDER, resetSteps, spinnerSuccess, spinnerText } from '../utils/display';
-import { git } from '../utils/git';
+import { createSpinner, DIVIDER, showDiffInPager, spinnerSuccess, spinnerText } from '../utils/display';
+import { pushContribBranch } from './contribute';
 import { runMergeEngine } from './merge-engine';
+
+/** Track temp directories for cleanup on process exit */
+const tempCleanupDirs: string[] = [];
+process.on('exit', () => {
+  for (const dir of tempCleanupDirs) {
+    try {
+      rmSync(dir, { recursive: true, force: true });
+    } catch {}
+  }
+});
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -57,6 +66,7 @@ function openVsCodeDiff(file: AnalyzedFile, config: RuntimeConfig): void {
   } else {
     // Extract upstream version from git ref to temp file
     const tmpDir = mkdtempSync(join(tmpdir(), 'cella-diff-'));
+    tempCleanupDirs.push(tmpDir);
     const fileName = file.path.split('/').pop() || 'file';
     const tmpFile = join(tmpDir, `upstream-${fileName}`);
 
@@ -77,33 +87,11 @@ function openVsCodeDiff(file: AnalyzedFile, config: RuntimeConfig): void {
  * Blocks until user exits the pager. Clears screen on return so inquirer re-renders cleanly.
  */
 function showTerminalDiff(file: AnalyzedFile, config: RuntimeConfig): void {
-  const hasBat = spawnSync('which', ['bat'], { stdio: 'pipe' }).status === 0;
+  const diffResult = spawnSync('git', ['diff', '--color=always', `${config.upstreamRef}..HEAD`, '--', file.path], {
+    cwd: config.forkPath,
+  });
 
-  const diffResult = spawnSync(
-    'git',
-    ['diff', hasBat ? '--color=never' : '--color=always', `${config.upstreamRef}..HEAD`, '--', file.path],
-    { cwd: config.forkPath },
-  );
-
-  if (diffResult.stdout.length === 0) return;
-
-  // Show cursor before handing off to pager
-  process.stdout.write('\x1B[?25h');
-
-  if (hasBat) {
-    spawnSync('bat', ['--language', 'diff', '--paging', 'always', '--style', 'plain'], {
-      input: diffResult.stdout,
-      stdio: ['pipe', 'inherit', 'inherit'],
-    });
-  } else {
-    spawnSync('less', ['-R'], {
-      input: diffResult.stdout,
-      stdio: ['pipe', 'inherit', 'inherit'],
-    });
-  }
-
-  // Clear screen so inquirer re-renders cleanly after pager exit
-  process.stdout.write('\x1B[2J\x1B[0;0H');
+  showDiffInPager(diffResult.stdout);
 }
 
 /**
@@ -111,6 +99,9 @@ function showTerminalDiff(file: AnalyzedFile, config: RuntimeConfig): void {
  */
 function pinSingleFile(file: AnalyzedFile, config: RuntimeConfig): boolean {
   const configPath = resolve(config.forkPath, 'cella.config.ts');
+  // Validate config path stays within fork directory (CWE-22)
+  if (!configPath.startsWith(resolve(config.forkPath))) return false;
+  if (!existsSync(configPath)) return false;
   const content = readFileSync(configPath, 'utf-8');
 
   const pinnedMatch = content.match(/(pinned:\s*\[[\s\S]*?)(])/);
@@ -242,7 +233,7 @@ const inspectPrompt = createPrompt<string[], InspectPromptConfig>((config, done)
   if (promptStatus === 'done') {
     const checked = items.filter((i) => i.checked);
     if (checked.length > 0) {
-      return `${pc.green('✓')} ${checked.length} files selected for upstream PR`;
+      return `${pc.green('✓')} ${checked.length} files selected for contribution`;
     }
     return `${pc.green('✓')} done`;
   }
@@ -281,7 +272,7 @@ const inspectPrompt = createPrompt<string[], InspectPromptConfig>((config, done)
     ['t', 'terminal diff'],
     ['p', 'pin'],
     ['space', 'select'],
-    ['⏎', 'add to pr'],
+    ['⏎', 'contribute'],
     ['q', 'quit'],
   ];
   const helpLine = keys.map(([k, a]) => `${pc.bold(k)} ${pc.dim(a)}`).join(pc.dim(' · '));
@@ -293,141 +284,6 @@ const inspectPrompt = createPrompt<string[], InspectPromptConfig>((config, done)
   return `${lines}\x1B[?25l`;
 });
 
-// ── Contribute upstream ──────────────────────────────────────────────────────
-
-/**
- * Contribute selected files to upstream as a draft PR.
- * Copies fork versions into the upstream local clone on a new branch.
- */
-async function contributeUpstream(files: AnalyzedFile[], config: RuntimeConfig): Promise<void> {
-  const upstreamLocalPath = config.settings.upstreamLocalPath;
-
-  if (!upstreamLocalPath) {
-    console.info();
-    console.info(pc.red('✗ upstreamLocalPath not configured in cella.config.ts'));
-    console.info(pc.dim('  add upstreamLocalPath to settings to enable contributing upstream.'));
-    return;
-  }
-
-  const upstreamPath = resolve(config.forkPath, upstreamLocalPath);
-
-  if (!existsSync(upstreamPath)) {
-    console.info();
-    console.info(pc.red(`✗ upstream path not found: ${upstreamPath}`));
-    return;
-  }
-
-  const forkName = basename(config.forkPath);
-
-  // Prompt for branch name
-  const defaultBranch = `fork/${forkName}/drift-${Date.now().toString(36).slice(-4)}`;
-  const branchName = await input({
-    message: 'branch name:',
-    default: defaultBranch,
-  });
-
-  // Prompt for commit message
-  const defaultMessage = `feat: apply improvements from ${forkName} fork`;
-  const commitMessage = await input({
-    message: 'commit message:',
-    default: defaultMessage,
-  });
-
-  console.info();
-
-  try {
-    const upstreamBranch = config.settings.upstreamBranch;
-    const currentBranch = await git(['rev-parse', '--abbrev-ref', 'HEAD'], upstreamPath);
-
-    if (currentBranch !== upstreamBranch) {
-      console.info(pc.yellow(`  ⚠ upstream on '${currentBranch}', switching to '${upstreamBranch}'...`));
-      await git(['checkout', upstreamBranch], upstreamPath);
-    }
-
-    await git(['pull', '--ff-only'], upstreamPath, { ignoreErrors: true });
-
-    await git(['checkout', '-b', branchName], upstreamPath);
-    console.info(`${pc.green('✓')} created branch ${pc.cyan(branchName)}`);
-
-    // Copy files from fork to upstream
-    for (const file of files) {
-      const src = join(config.forkPath, file.path);
-      const dest = join(upstreamPath, file.path);
-      mkdirSync(dirname(dest), { recursive: true });
-      copyFileSync(src, dest);
-      console.info(`  ${pc.dim('→')} ${file.path}`);
-    }
-
-    createSpinner('committing...');
-    await git(['add', ...files.map((f) => f.path)], upstreamPath);
-    try {
-      await git(['commit', '-m', commitMessage], upstreamPath);
-    } catch (commitError) {
-      spinnerSuccess('commit blocked by pre-commit hook');
-      console.info(pc.dim('  files may not compile in upstream context'));
-      const forceCommit = await confirm({
-        message: 'force commit with --no-verify?',
-        default: false,
-      });
-      if (!forceCommit) {
-        await git(['checkout', config.settings.upstreamBranch], upstreamPath);
-        await git(['branch', '-D', branchName], upstreamPath, { ignoreErrors: true });
-        return;
-      }
-      createSpinner('committing (force)...');
-      await git(['commit', '--no-verify', '-m', commitMessage], upstreamPath);
-    }
-    spinnerSuccess(`committed ${files.length} files`);
-
-    const shouldPush = await confirm({
-      message: 'push branch and create draft PR?',
-      default: true,
-    });
-
-    if (shouldPush) {
-      createSpinner('pushing...');
-      await git(['push', '-u', 'origin', branchName], upstreamPath);
-      spinnerSuccess(`pushed to origin/${branchName}`);
-
-      // Try creating PR with gh CLI
-      const hasGh = spawnSync('which', ['gh'], { stdio: 'pipe' }).status === 0;
-      if (hasGh) {
-        createSpinner('creating draft PR...');
-        const prResult = spawnSync(
-          'gh',
-          [
-            'pr',
-            'create',
-            '--draft',
-            '--title',
-            commitMessage,
-            '--body',
-            `Files contributed from \`${forkName}\` fork:\n\n${files.map((f) => `- \`${f.path}\``).join('\n')}`,
-          ],
-          { cwd: upstreamPath, stdio: 'pipe' },
-        );
-        if (prResult.status === 0) {
-          const prUrl = prResult.stdout.toString().trim();
-          spinnerSuccess(`draft PR created${prUrl ? ` · ${prUrl}` : ''}`);
-        } else {
-          spinnerSuccess('PR creation failed — push succeeded, create PR manually');
-        }
-      } else {
-        console.info(pc.dim('  tip: install gh CLI to auto-create PRs'));
-      }
-    }
-
-    await git(['checkout', upstreamBranch], upstreamPath);
-  } catch (error) {
-    console.info(pc.red(`✗ ${error instanceof Error ? error.message : error}`));
-    try {
-      await git(['checkout', config.settings.upstreamBranch], upstreamPath);
-    } catch {
-      // ignore
-    }
-  }
-}
-
 // ── Main entry ───────────────────────────────────────────────────────────────
 
 /**
@@ -437,7 +293,6 @@ async function contributeUpstream(files: AnalyzedFile[], config: RuntimeConfig):
  * prompt with inline key actions for reviewing, diffing, pinning, and contributing.
  */
 export async function runInspect(config: RuntimeConfig): Promise<void> {
-  resetSteps();
   createSpinner('analyzing drift...');
 
   // Run the merge engine in analyze mode to get drifted files
@@ -479,19 +334,10 @@ export async function runInspect(config: RuntimeConfig): Promise<void> {
     pageSize: 20,
   });
 
-  // If files were selected, offer to contribute upstream
+  // Push selected files to contrib branch
   if (selectedPaths.length > 0) {
     const selectedFiles = driftedFiles.filter((f) => selectedPaths.includes(f.path));
-
-    console.info();
-    const shouldContribute = await confirm({
-      message: `add ${selectedFiles.length} files to a draft PR for upstream?`,
-      default: true,
-    });
-
-    if (shouldContribute) {
-      await contributeUpstream(selectedFiles, config);
-    }
+    await pushContribBranch(selectedFiles, config);
   }
 
   console.info();

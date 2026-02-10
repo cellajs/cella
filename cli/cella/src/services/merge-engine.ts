@@ -22,7 +22,6 @@ import {
   registerWorktree,
 } from '../utils/cleanup';
 import {
-  autoCommit,
   checkoutFromRef,
   countCommitsBetween,
   createWorktree,
@@ -410,7 +409,7 @@ async function analyzeFiles(
         // File was in base, upstream deleted it - sync deletion unless pinned
         status = fileIsPinned ? 'ahead' : 'behind';
       } else {
-        // Fork-only file (never existed in merge-base)
+        // Local file (never existed in merge-base)
         // Check if this file's content exists at a different path in upstream
         // (indicates a rename that we couldn't detect due to squash merge-base)
         const forkFileHash = forkHash;
@@ -424,7 +423,7 @@ async function analyzeFiles(
             }
           }
         }
-        status = isRenamedSource ? 'behind' : 'ahead';
+        status = isRenamedSource ? 'behind' : 'local';
       }
     } else if (forkHash === upstreamHash) {
       // Identical
@@ -469,6 +468,7 @@ function calculateSummary(files: AnalyzedFile[]): AnalysisSummary {
   const summary: AnalysisSummary = {
     identical: 0,
     ahead: 0,
+    local: 0,
     drifted: 0,
     behind: 0,
     diverged: 0,
@@ -560,7 +560,6 @@ export async function runMergeEngine(
       const summary = calculateSummary(analyzedFiles);
       const synced = summary.behind + summary.diverged + summary.renamed;
       const isSquash = config.settings.mergeStrategy === 'squash';
-      let autoCommitted = false;
 
       // Count total resolved changes (includes ignored/pinned resolutions)
       const totalResolved = synced + summary.ignored + summary.pinned;
@@ -573,14 +572,11 @@ export async function runMergeEngine(
       } else if (totalResolved > 0) {
         const label = synced > 0 ? `${synced} files from upstream` : 'upstream changes';
         if (isSquash) {
-          // Auto-commit as single-parent (squash-style clean history)
-          onProgress?.('auto-committing (squash)...');
+          // Remove MERGE_HEAD so commit becomes single-parent (squash-style)
           await removeMergeHead(forkPath);
-          await autoCommit(forkPath, `sync: merge ${label}`);
-          autoCommitted = true;
         }
         await storeLastSyncRef(forkPath, upstreamCommit.hash);
-        onStep?.('synced', `${label}${isSquash ? ' (auto-committed)' : ''}`);
+        onStep?.('synced', `${label} (staged, commit to finish)`);
       } else {
         // Truly nothing changed - clean up merge state
         await mergeAbort(forkPath);
@@ -597,7 +593,6 @@ export async function runMergeEngine(
         upstreamGitHubUrl: upstreamGitHubUrl ?? undefined,
         forkGitHubUrl: forkGitHubUrl ?? undefined,
         upstreamCommit,
-        autoCommitted,
       };
     } else {
       // ANALYZE MODE: Use worktree to preview changes without affecting fork

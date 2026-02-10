@@ -105,7 +105,9 @@ async function handleAbort(signal: string): Promise<void> {
       await cleanupWorktree(currentRepoPath, currentWorktreePath);
       console.info(`${pc.green('✓')} no changes were made to your repository.`);
     } catch (error) {
-      console.error(`${pc.red('✗')} failed to clean up worktree: ${error}`);
+      console.error(
+        `${pc.red('✗')} failed to clean up worktree: ${error instanceof Error ? error.message : 'unknown error'}`,
+      );
     }
   }
 

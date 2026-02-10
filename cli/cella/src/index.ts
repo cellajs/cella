@@ -6,33 +6,32 @@
  * from the main repository until the final atomic rsync copy.
  */
 
-import { existsSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import pc from 'picocolors';
 import { parseCli } from './cli';
-import type { CellaCliConfig } from './config/types';
+import type { MergeResult, RuntimeConfig } from './config/types';
 import { runAnalyze } from './services/analyze';
 import { runAudit } from './services/audit';
+import { pushContribBranch } from './services/contribute';
+import { runContributions } from './services/contributions';
 import { runForks } from './services/forks';
 import { runInspect } from './services/inspect';
 import { runPackages } from './services/packages';
 import { runSync } from './services/sync';
 import { registerSignalHandlers } from './utils/cleanup';
+import { loadConfig } from './utils/config';
 import { getCurrentBranch, isClean } from './utils/git';
 
 /**
- * Load cella.config.ts from the fork path.
+ * Auto-contribute drifted files if enabled in config.
  */
-async function loadConfig(forkPath: string): Promise<CellaCliConfig> {
-  const configPath = join(forkPath, 'cella.config.ts');
-
-  if (!existsSync(configPath)) {
-    throw new Error(`config file not found: ${configPath}`);
+async function autoContribute(result: MergeResult, config: RuntimeConfig): Promise<void> {
+  if (!config.settings.autoContribute) return;
+  const drifted = result.files.filter((f) => f.status === 'drifted');
+  if (drifted.length > 0) {
+    await pushContribBranch(drifted, config);
   }
-
-  // Dynamic import of the config
-  const configModule = await import(configPath);
-  return configModule.default;
 }
 
 /**
@@ -47,7 +46,11 @@ async function loadConfig(forkPath: string): Promise<CellaCliConfig> {
 function getForkPath(): string {
   const envPath = process.env.CELLA_FORK_PATH;
   if (envPath) {
-    return resolve(envPath);
+    const resolved = resolve(envPath);
+    if (!existsSync(resolved) || !statSync(resolved).isDirectory()) {
+      throw new Error(`CELLA_FORK_PATH is not a valid directory: ${resolved}`);
+    }
+    return resolved;
   }
 
   let cwd = process.cwd();
@@ -111,8 +114,8 @@ async function main(): Promise<void> {
     // Parse CLI and get runtime config
     const config = await parseCli(userConfig, forkPath);
 
-    // Run preflight checks (except for packages/audit/forks which don't need clean working dir)
-    if (!['packages', 'audit', 'forks'].includes(config.service)) {
+    // Run preflight checks (except for packages/audit/forks/contributions which don't need clean working dir)
+    if (!['packages', 'audit', 'forks', 'contributions'].includes(config.service)) {
       const isReadOnly = config.service === 'analyze' || config.service === 'inspect';
       await preflight(forkPath, userConfig.settings.forkBranch, {
         skipCleanCheck: isReadOnly,
@@ -122,17 +125,24 @@ async function main(): Promise<void> {
 
     // Route to service
     switch (config.service) {
-      case 'analyze':
-        await runAnalyze(config);
+      case 'analyze': {
+        const analyzeResult = await runAnalyze(config);
+        await autoContribute(analyzeResult, config);
         break;
+      }
 
       case 'inspect':
         await runInspect(config);
         break;
 
-      case 'sync':
-        await runSync(config);
+      case 'sync': {
+        const result = await runSync(config);
+        if (config.settings.syncWithPackages !== false && result.success) {
+          await runPackages(config);
+        }
+        await autoContribute(result, config);
         break;
+      }
 
       case 'packages':
         await runPackages(config);
@@ -145,12 +155,16 @@ async function main(): Promise<void> {
       case 'forks':
         await runForks(config);
         break;
+
+      case 'contributions':
+        await runContributions(config);
+        break;
     }
 
     console.info();
   } catch (error) {
     console.error();
-    console.error(`${pc.red('✗')} ${error instanceof Error ? error.message : error}`);
+    console.error(`${pc.red('✗')} ${error instanceof Error ? error.message : 'unknown error'}`);
     process.exit(1);
   }
 }

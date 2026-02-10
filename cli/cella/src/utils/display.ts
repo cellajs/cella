@@ -4,6 +4,7 @@
  * Handles console output formatting, progress tracking, and result display.
  */
 
+import { spawnSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import ora, { type Ora } from 'ora';
@@ -37,13 +38,6 @@ export const DIVIDER = '─'.repeat(60);
 /** Active spinner reference */
 let activeSpinner: Ora | null = null;
 
-/** Track completed steps for persistent display */
-interface CompletedStep {
-  label: string;
-  detail?: string;
-}
-const completedSteps: CompletedStep[] = [];
-
 /**
  * Get the header line for CLI output.
  */
@@ -66,13 +60,6 @@ export function printHeader(): void {
 }
 
 /**
- * Reset completed steps (call at start of each service).
- */
-export function resetSteps(): void {
-  completedSteps.length = 0;
-}
-
-/**
  * Print a completed step with checkmark.
  * Optionally include a detail line in grey, followed by a blank line.
  */
@@ -82,7 +69,6 @@ export function printStep(label: string, detail?: string): void {
     console.info(`  ${pc.dim(detail)}`);
     console.info(); // blank line after detail block
   }
-  completedSteps.push({ label, detail });
 }
 
 /**
@@ -131,6 +117,35 @@ function stopSpinner(): void {
     activeSpinner.stop();
     activeSpinner = null;
   }
+}
+
+/**
+ * Show a diff buffer in a terminal pager (bat or less).
+ * Blocks until the user exits the pager. Clears screen on return
+ * so inquirer re-renders cleanly.
+ */
+export function showDiffInPager(diffOutput: Buffer): void {
+  if (diffOutput.length === 0) return;
+
+  const hasBat = spawnSync('which', ['bat'], { stdio: 'pipe' }).status === 0;
+
+  // Show cursor before handing off to pager
+  process.stdout.write('\x1B[?25h');
+
+  if (hasBat) {
+    spawnSync('bat', ['--language', 'diff', '--paging', 'always', '--style', 'plain'], {
+      input: diffOutput,
+      stdio: ['pipe', 'inherit', 'inherit'],
+    });
+  } else {
+    spawnSync('less', ['-R'], {
+      input: diffOutput,
+      stdio: ['pipe', 'inherit', 'inherit'],
+    });
+  }
+
+  // Clear screen so inquirer re-renders cleanly after pager exit
+  process.stdout.write('\x1B[2J\x1B[0;0H');
 }
 
 /**
@@ -219,6 +234,7 @@ const statusConfig: Record<FileStatus, StatusConfig> = {
   diverged: { icon: pc.magenta('⇅'), label: 'diverged', color: pc.magenta, description: 'both changed, will merge' },
   drifted: { icon: pc.yellow('!'), label: 'drifted', color: pc.yellow, description: 'fork changed (at risk)' },
   ahead: { icon: pc.blue('↑'), label: 'ahead', color: pc.blue, description: 'fork changed (protected)' },
+  local: { icon: pc.green('+'), label: 'local', color: pc.green, description: 'local file' },
   pinned: { icon: pc.green('⨀'), label: 'pinned', color: pc.green, description: 'both changed, fork wins' },
   ignored: { icon: pc.gray('⨂'), label: 'ignored', color: pc.gray },
   identical: { icon: pc.gray('✓'), label: 'identical', color: pc.gray, description: 'no changes' },
@@ -259,6 +275,7 @@ export function printSummary(summary: AnalysisSummary, title = 'summary'): void 
 
   console.info();
   printLine('ahead', summary.ahead);
+  printLine('local', summary.local);
   printLine('drifted', summary.drifted);
 
   console.info();
@@ -270,38 +287,60 @@ export function printSummary(summary: AnalysisSummary, title = 'summary'): void 
 }
 
 /**
+ * Print a group of files with a specific status, including section header and footer.
+ */
+export function printFileGroup(
+  files: AnalyzedFile[],
+  status: FileStatus,
+  linkOptions: LinkOptions,
+  options?: {
+    /** Override section header title */
+    title?: string;
+    /** Footer hint text (dimmed) */
+    hint?: string;
+    /** Which commit/date fields to use: 'fork' or 'upstream' */
+    dateSource?: 'fork' | 'upstream';
+  },
+): void {
+  const filtered = files.filter((f) => f.status === status);
+  if (filtered.length === 0) return;
+
+  const config = statusConfig[status];
+  const title = options?.title ?? `${config.icon} ${config.label}`;
+
+  printSectionHeader(`${title} ${pc.dim(`· ${filtered.length} files`)}`);
+
+  const useUpstream = options?.dateSource === 'upstream';
+  for (const file of filtered) {
+    const commit = useUpstream ? file.upstreamCommit : file.changedCommit;
+    const date = useUpstream ? file.upstreamChangedAt : file.changedAt;
+    const dateInfo = formatFileDateInfo(file.path, commit, date, linkOptions);
+    console.info(`  ${config.icon} ${file.path}${dateInfo}`);
+  }
+
+  if (options?.hint) {
+    console.info();
+    console.info(pc.dim(`  ${options.hint}`));
+  }
+}
+
+/**
  * Print files that will sync from upstream.
  */
 export function printSyncFiles(files: AnalyzedFile[], linkOptions: LinkOptions): void {
-  const syncFiles = files.filter((f) => f.status === 'behind');
-
-  if (syncFiles.length === 0) return;
-
-  printSectionHeader(pc.cyan('↓ behind on upstream') + pc.dim(` · ${syncFiles.length} files`));
-
-  for (const file of syncFiles) {
-    const dateInfo = formatFileDateInfo(file.path, file.changedCommit, file.changedAt, linkOptions);
-    console.info(`  ${statusConfig.behind.icon} ${file.path}${dateInfo}`);
-  }
+  printFileGroup(files, 'behind', linkOptions, {
+    title: pc.cyan('↓ behind on upstream'),
+  });
 }
 
 /**
  * Print drifted files warning.
  */
 export function printDriftedWarning(files: AnalyzedFile[], linkOptions: LinkOptions): void {
-  const driftedFiles = files.filter((f) => f.status === 'drifted');
-
-  if (driftedFiles.length === 0) return;
-
-  printSectionHeader(`${pc.yellow('⚠ drifted from upstream')} ${pc.dim(`· ${driftedFiles.length} files`)}`);
-
-  for (const file of driftedFiles) {
-    const dateInfo = formatFileDateInfo(file.path, file.changedCommit, file.changedAt, linkOptions);
-    console.info(`  ${statusConfig.drifted.icon} ${file.path}${dateInfo}`);
-  }
-
-  console.info();
-  console.info(pc.dim('  these files have fork changes but are not pinned or ignored.'));
+  printFileGroup(files, 'drifted', linkOptions, {
+    title: `${pc.yellow('⚠ drifted from upstream')}`,
+    hint: 'these files have fork changes but are not pinned or ignored.',
+  });
 }
 
 /**
@@ -309,19 +348,11 @@ export function printDriftedWarning(files: AnalyzedFile[], linkOptions: LinkOpti
  * These will be merged by git - some may auto-merge, others may conflict.
  */
 export function printDivergedPreview(files: AnalyzedFile[], linkOptions: LinkOptions): void {
-  const divergedFiles = files.filter((f) => f.status === 'diverged');
-
-  if (divergedFiles.length === 0) return;
-
-  printSectionHeader(`${pc.magenta('⇅ diverged')} ${pc.dim(`· ${divergedFiles.length} files`)}`);
-
-  for (const file of divergedFiles) {
-    const dateInfo = formatFileDateInfo(file.path, file.upstreamCommit, file.upstreamChangedAt, linkOptions);
-    console.info(`  ${statusConfig.diverged.icon} ${file.path}${dateInfo}`);
-  }
-
-  console.info();
-  console.info(pc.dim('  both fork and upstream changed.'));
+  printFileGroup(files, 'diverged', linkOptions, {
+    title: `${pc.magenta('⇅ diverged')}`,
+    hint: 'both fork and upstream changed.',
+    dateSource: 'upstream',
+  });
 }
 
 /**
@@ -329,19 +360,11 @@ export function printDivergedPreview(files: AnalyzedFile[], linkOptions: LinkOpt
  * These files have both fork and upstream changes, but fork changes take precedence.
  */
 export function printPinnedPreview(files: AnalyzedFile[], linkOptions: LinkOptions): void {
-  const pinnedFiles = files.filter((f) => f.status === 'pinned');
-
-  if (pinnedFiles.length === 0) return;
-
-  printSectionHeader(`${pc.green('⨀ pinned')} ${pc.dim(`· ${pinnedFiles.length} files`)}`);
-
-  for (const file of pinnedFiles) {
-    const dateInfo = formatFileDateInfo(file.path, file.upstreamCommit, file.upstreamChangedAt, linkOptions);
-    console.info(`  ${statusConfig.pinned.icon} ${file.path}${dateInfo}`);
-  }
-
-  console.info();
-  console.info(pc.dim('  both changed, fork wins (pinned in cella.config.ts).'));
+  printFileGroup(files, 'pinned', linkOptions, {
+    title: `${pc.green('⨀ pinned')}`,
+    hint: 'both changed, fork wins (pinned in cella.config.ts).',
+    dateSource: 'upstream',
+  });
 }
 
 /**
@@ -394,13 +417,6 @@ export function writeLogFile(forkPath: string, files: AnalyzedFile[]): string {
 }
 
 /**
- * Print analyze completion message.
- */
-export function printAnalyzeComplete(): void {
-  console.info();
-}
-
-/**
  * Print sync completion message.
  */
 export function printSyncComplete(result: MergeResult): void {
@@ -411,17 +427,14 @@ export function printSyncComplete(result: MergeResult): void {
   console.info();
   console.info(`${pc.green('✓')} sync complete`);
   console.info();
-  console.info(`  ${updated} files updated, ${merged} merged, ${conflicts} conflicts`);
+  console.info(`  ${updated} files updated, ${merged} auto-merged, ${conflicts} conflicts`);
 
-  if (result.autoCommitted) {
-    console.info();
-    console.info(pc.dim('  changes auto-committed (squash). run pnpm install if dependencies changed.'));
-  } else if (conflicts > 0) {
+  if (conflicts > 0) {
     console.info();
     console.info(pc.dim('  resolve conflicts in your IDE, then commit the merge.'));
   } else if (updated > 0) {
     console.info();
-    console.info(pc.dim('  review staged changes, then commit the merge.'));
+    console.info(pc.dim('  review staged changes and commit to finish the sync.'));
   }
   console.info();
 }

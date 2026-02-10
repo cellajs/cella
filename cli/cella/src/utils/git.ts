@@ -5,9 +5,23 @@
  */
 
 import { execFile } from 'node:child_process';
+import { existsSync } from 'node:fs';
+import { mkdir, readdir, rmdir, unlink } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
 import { promisify } from 'node:util';
 
 const execFileAsync = promisify(execFile);
+
+/**
+ * Sanitize text by redacting credentials from URLs.
+ * Prevents accidental credential exposure in error messages (CWE-532).
+ */
+function sanitizeCredentials(text: string): string {
+  return text.replace(/https?:\/\/[^@\s]+@/g, (match) => {
+    const protocol = match.startsWith('https') ? 'https' : 'http';
+    return `${protocol}://***@`;
+  });
+}
 
 /** Options for git command execution */
 interface GitCommandOptions {
@@ -40,6 +54,10 @@ export async function git(args: string[], cwd: string, options: GitCommandOption
     return stdout.trim();
   } catch (error) {
     if (options.ignoreErrors) return '';
+    // Sanitize to prevent credential leakage from git remote URLs
+    if (error instanceof Error) {
+      error.message = sanitizeCredentials(error.message);
+    }
     throw error;
   }
 }
@@ -204,9 +222,6 @@ export async function listWorktrees(cwd: string): Promise<string[]> {
   return paths;
 }
 
-/**
- * Perform a merge in the current directory.
- */
 /**
  * Perform a merge in the current directory.
  * Always uses --no-ff to prevent fast-forward, ensuring HEAD stays in place
@@ -392,9 +407,6 @@ export async function gitRm(cwd: string, filePath: string): Promise<void> {
  * Creates parent directories if needed and preserves git history.
  */
 export async function gitMv(cwd: string, oldPath: string, newPath: string): Promise<void> {
-  const { mkdir } = await import('node:fs/promises');
-  const { join, dirname } = await import('node:path');
-
   // Ensure parent directory exists for new path
   const newDir = dirname(join(cwd, newPath));
   await mkdir(newDir, { recursive: true });
@@ -406,8 +418,6 @@ export async function gitMv(cwd: string, oldPath: string, newPath: string): Prom
  * Check if a file exists in the worktree filesystem.
  */
 export async function fileExistsInWorktree(cwd: string, filePath: string): Promise<boolean> {
-  const { existsSync } = await import('node:fs');
-  const { join } = await import('node:path');
   return existsSync(join(cwd, filePath));
 }
 
@@ -416,8 +426,6 @@ export async function fileExistsInWorktree(cwd: string, filePath: string): Promi
  * Used to clean up files that git rm may not have removed (e.g., after squash merge).
  */
 export async function removeFileFromWorktree(cwd: string, filePath: string): Promise<void> {
-  const { unlink } = await import('node:fs/promises');
-  const { join, dirname } = await import('node:path');
   const fullPath = join(cwd, filePath);
   try {
     await unlink(fullPath);
@@ -434,9 +442,6 @@ export async function removeFileFromWorktree(cwd: string, filePath: string): Pro
  */
 async function cleanupEmptyParentDirs(cwd: string, relativePath: string): Promise<void> {
   if (!relativePath || relativePath === '.') return;
-
-  const { rmdir, readdir } = await import('node:fs/promises');
-  const { join, dirname } = await import('node:path');
 
   const fullPath = join(cwd, relativePath);
   try {
@@ -519,19 +524,9 @@ export async function getEffectiveMergeBase(
  * correct 3-way merge behavior internally.
  */
 export async function removeMergeHead(cwd: string): Promise<void> {
-  const { unlink } = await import('node:fs/promises');
-  const { join } = await import('node:path');
   try {
     await unlink(join(cwd, '.git', 'MERGE_HEAD'));
   } catch {
     // MERGE_HEAD doesn't exist - that's fine
   }
-}
-
-/**
- * Stage all changes and create a commit.
- */
-export async function autoCommit(cwd: string, message: string): Promise<void> {
-  await git(['add', '-A'], cwd);
-  await git(['commit', '-m', message, '--allow-empty'], cwd, { skipEditor: true });
 }

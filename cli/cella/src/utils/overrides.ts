@@ -30,6 +30,9 @@ export function isGlobPattern(pattern: string): boolean {
  * @returns True if the file matches the pattern
  */
 export function matchPattern(filePath: string, pattern: string): boolean {
+  // Limit pattern length to prevent ReDoS (CWE-1333)
+  if (pattern.length > 500) return false;
+
   // Exact match (no glob characters)
   if (!isGlobPattern(pattern)) {
     return filePath === pattern;

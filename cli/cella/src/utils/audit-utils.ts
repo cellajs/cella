@@ -4,7 +4,7 @@
  * Provides npm registry fetching, changelog detection, vulnerability parsing, and caching.
  */
 
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import pc from 'picocolors';
@@ -299,9 +299,9 @@ export function isMajorVersionChange(current: string, latest: string): boolean {
  */
 export function getOutdatedPackages(cwd: string): Record<string, OutdatedPackage> {
   try {
-    const result = execSync('pnpm -r outdated --json 2>/dev/null', {
+    const result = execFileSync('pnpm', ['-r', 'outdated', '--json'], {
       encoding: 'utf-8',
-      stdio: ['pipe', 'pipe', 'pipe'],
+      stdio: ['pipe', 'pipe', 'ignore'],
       maxBuffer: 10 * 1024 * 1024, // 10MB buffer for large outputs
       cwd,
     });
@@ -339,9 +339,9 @@ export function getOutdatedPackages(cwd: string): Record<string, OutdatedPackage
  */
 export function runPnpmAudit(cwd: string): AuditResult | null {
   try {
-    const result = execSync('pnpm audit --json 2>/dev/null', {
+    const result = execFileSync('pnpm', ['audit', '--json'], {
       encoding: 'utf-8',
-      stdio: ['pipe', 'pipe', 'pipe'],
+      stdio: ['pipe', 'pipe', 'ignore'],
       maxBuffer: 10 * 1024 * 1024,
       cwd,
     });
@@ -472,6 +472,8 @@ export function formatDependents(dependents: string[]): string {
  * Falls back to plain text if terminal doesn't support it.
  */
 export function terminalLink(text: string, url: string): string {
+  // Strip control characters from URL to prevent terminal escape injection (CWE-116)
+  const safeUrl = url.replace(/[\x00-\x1f\x7f]/g, '');
   // OSC 8 hyperlink format: \e]8;;URL\e\\TEXT\e]8;;\e\\
-  return `\u001B]8;;${url}\u0007${text}\u001B]8;;\u0007`;
+  return `\u001B]8;;${safeUrl}\u0007${text}\u001B]8;;\u0007`;
 }

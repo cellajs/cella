@@ -10,13 +10,11 @@ import type { MergeResult, RuntimeConfig } from '../config/types';
 import {
   createSpinner,
   type LinkOptions,
-  printAnalyzeComplete,
   printDivergedPreview,
   printDriftedWarning,
   printPinnedPreview,
   printSummary,
   printSyncFiles,
-  resetSteps,
   spinnerSuccess,
   spinnerText,
   writeLogFile,
@@ -29,7 +27,6 @@ import { runMergeEngine } from './merge-engine';
  * Creates worktree, performs merge, shows results, discards worktree.
  */
 export async function runAnalyze(config: RuntimeConfig): Promise<MergeResult> {
-  resetSteps();
   createSpinner('starting analysis...');
 
   const result = await runMergeEngine(config, {
@@ -70,7 +67,7 @@ export async function runAnalyze(config: RuntimeConfig): Promise<MergeResult> {
     console.info(pc.dim(`full file list written to: ${logPath}`));
   }
 
-  printAnalyzeComplete();
+  console.info();
 
   return result;
 }

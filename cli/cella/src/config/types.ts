@@ -52,6 +52,22 @@ export interface SyncSettings {
   mergeStrategy?: MergeStrategy;
 
   /**
+   * Automatically run packages sync after the sync service completes.
+   * When true (default), the packages service is hidden from the menu
+   * and runs automatically as part of sync.
+   * Set to false to keep packages as a separate manual service.
+   */
+  syncWithPackages?: boolean;
+
+  /**
+   * Automatically push drifted files to a `contrib/<fork-name>` branch in upstream
+   * after sync or analyze. Upstream can then review and cherry-pick changes.
+   * Requires upstreamLocalPath to be set.
+   * @default false
+   */
+  autoContribute?: boolean;
+
+  /**
    * How to link files in CLI output.
    * - 'commit' (default): Link to the commit that changed the file on GitHub.
    * - 'file': Link to the file in the repo at the upstream branch on GitHub.
@@ -91,7 +107,7 @@ export interface CellaCliConfig {
     /**
      * Files ignored entirely during sync — never synced (existing or new).
      * Supports glob patterns (e.g., 'frontend/public/static/*').
-     * Fork-only territory: upstream cannot add, modify, or delete these.
+     * Local territory: upstream cannot add, modify, or delete these.
      */
     ignored?: string[];
 
@@ -124,7 +140,7 @@ export function defineConfig(config: CellaCliConfig): CellaCliConfig {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Sync services available in the CLI */
-export type SyncService = 'analyze' | 'inspect' | 'sync' | 'packages' | 'audit' | 'forks';
+export type SyncService = 'analyze' | 'inspect' | 'sync' | 'packages' | 'audit' | 'forks' | 'contributions';
 
 /** Runtime configuration with all resolved values */
 export interface RuntimeConfig extends CellaCliConfig {
@@ -145,12 +161,16 @@ export interface RuntimeConfig extends CellaCliConfig {
 
   /** Show verbose output */
   verbose: boolean;
+
+  /** Pre-selected fork name (skips fork selection prompt) */
+  fork?: string;
 }
 
 /** File status after analysis */
 export type FileStatus =
   | 'identical' // No changes needed
   | 'ahead' // Fork is ahead, protected (pinned/ignored)
+  | 'local' // Local file (never existed upstream)
   | 'drifted' // Fork is ahead, NOT protected (at risk)
   | 'behind' // Upstream has changes to sync
   | 'diverged' // Both changed, will merge
@@ -189,6 +209,7 @@ export interface AnalyzedFile {
 export interface AnalysisSummary {
   identical: number;
   ahead: number;
+  local: number;
   drifted: number;
   behind: number;
   diverged: number;
