@@ -1,7 +1,5 @@
 import type { GenerateScript } from './types';
 
-// TODO-010: review cli/create-cella to check if the cleaning of drizzle folder and running the migration still works as expected with the new structure. We might need to perhaps adjust the paths or commands accordingly.
-
 /** Scripts run during `pnpm generate` for migrations */
 export const generateScripts: GenerateScript[] = [
   {
