@@ -8,7 +8,7 @@
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { basename, join, resolve } from 'node:path';
 import {
   createPrompt,
   isDownKey,
@@ -87,9 +87,22 @@ function openVsCodeDiff(file: AnalyzedFile, config: RuntimeConfig): void {
  * Blocks until user exits the pager. Clears screen on return so inquirer re-renders cleanly.
  */
 function showTerminalDiff(file: AnalyzedFile, config: RuntimeConfig): void {
-  const diffResult = spawnSync('git', ['diff', '--color=always', `${config.upstreamRef}..HEAD`, '--', file.path], {
-    cwd: config.forkPath,
-  });
+  const forkName = basename(config.forkPath);
+  const upstreamName = config.settings.upstreamUrl.replace(/.*\/([^/.]+?)(?:\.git)?$/, '$1');
+
+  const diffResult = spawnSync(
+    'git',
+    [
+      'diff',
+      '--color=always',
+      `--src-prefix=${upstreamName}/`,
+      `--dst-prefix=${forkName}/`,
+      `${config.upstreamRef}..HEAD`,
+      '--',
+      file.path,
+    ],
+    { cwd: config.forkPath },
+  );
 
   showDiffInPager(diffResult.stdout);
 }

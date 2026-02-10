@@ -4,8 +4,10 @@
  * Checks for outdated packages and security vulnerabilities across the monorepo.
  */
 
+import { spawnSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { checkbox, confirm } from '@inquirer/prompts';
 import pc from 'picocolors';
 import type { RuntimeConfig } from '../config/types';
 import {
@@ -99,6 +101,20 @@ export async function runAudit(config: RuntimeConfig, options: AuditOptions = {}
         const repoUrl = getRepoUrl(metadata);
         const changelogUrl = await findChangelogUrl(repoUrl, name, cache);
 
+        // Detect workspaces where this package is pinned (exact version, no ^ or ~)
+        const pinnedIn: string[] = [];
+        for (const d of pkg.dependentPackages) {
+          try {
+            const pkgJson = JSON.parse(fs.readFileSync(path.join(d.location, 'package.json'), 'utf-8'));
+            const spec = pkgJson[pkg.dependencyType]?.[name] || '';
+            if (spec && !spec.startsWith('^') && !spec.startsWith('~') && !spec.startsWith('>')) {
+              pinnedIn.push(d.name.replace('@cella/', ''));
+            }
+          } catch {
+            // skip
+          }
+        }
+
         return {
           name,
           current: pkg.current,
@@ -107,6 +123,7 @@ export async function runAudit(config: RuntimeConfig, options: AuditOptions = {}
           dependentLocations: pkg.dependentPackages.map((d) => d.location),
           isDev: pkg.dependencyType === 'devDependencies',
           isMajorUpdate: isMajorVersionChange(pkg.current, pkg.latest),
+          pinnedIn,
           repoUrl,
           changelogUrl,
           releasesUrl: getReleasesUrl(repoUrl),
@@ -135,6 +152,11 @@ export async function runAudit(config: RuntimeConfig, options: AuditOptions = {}
   // Print results
   printOutdatedResults(enhancedPackages, dependentNameCache, forkPath);
   printVulnerabilityResults(auditResult, vulnMap);
+
+  // Interactive update prompt (skip in non-interactive/list mode)
+  if (enhancedPackages.length > 0 && !config.list) {
+    await promptForUpdates(enhancedPackages, forkPath);
+  }
 }
 
 /**
@@ -145,22 +167,6 @@ function printOutdatedResults(
   dependentNameCache: Map<string, string>,
   forkPath: string,
 ): void {
-  // Calculate counts for summary
-  const prodCount = enhancedPackages.filter((p) => !p.isDev).length;
-  const devCount = enhancedPackages.filter((p) => p.isDev).length;
-  const majorCount = enhancedPackages.filter((p) => p.isMajorUpdate).length;
-  const vulnCount = enhancedPackages.filter((p) => p.vulnerabilities.length > 0).length;
-
-  console.info(
-    `${prodCount} production` +
-      pc.dim(' + ') +
-      `${devCount} dev` +
-      pc.dim(' dependencies need updates') +
-      (majorCount > 0 ? pc.dim(' (') + pc.bold(pc.green(`${majorCount} major`)) + pc.dim(')') : '') +
-      (vulnCount > 0 ? pc.dim(' (') + pc.bold(pc.red(`${vulnCount} vulnerable`)) + pc.dim(')') : ''),
-  );
-  console.info();
-
   // Calculate column widths
   const DEV_TAG = ' (dev)';
   const MAX_NAME_LEN = 35;
@@ -248,8 +254,133 @@ function printOutdatedResults(
     const relativePath = path.relative(forkPath, packageJsonPath);
     const paddedName = dependentName.padEnd(maxDependentNameLen);
     console.info(
-      `  ${pc.dim('•')} ${paddedName}  ${terminalLink(pc.cyan(relativePath), `file://${packageJsonPath}`)} ${pc.dim(`${count}`)}`,
+      `  ${pc.dim('•')} ${paddedName}  ${terminalLink(relativePath, `file://${packageJsonPath}`)} ${pc.dim(`${count}`)}`,
     );
+  }
+}
+
+/**
+ * Prompt user to select packages to update, then run pnpm up.
+ */
+async function promptForUpdates(packages: EnhancedPackageInfo[], forkPath: string): Promise<void> {
+  // Ask if user wants to update packages
+  let wantsUpdate: boolean;
+  try {
+    wantsUpdate = await confirm({
+      message: 'update packages?',
+      default: true,
+    });
+  } catch {
+    return;
+  }
+  if (!wantsUpdate) return;
+
+  // Build choices
+  const choices: Array<{ name: string; value: string; checked: boolean }> = packages.map((pkg) => {
+    const devTag = pkg.isDev ? pc.dim(' (dev)') : '';
+    const version = `${pc.red(pkg.current)} → ${pc.green(pkg.latest)}`;
+    const pinnedWarning =
+      pkg.pinnedIn.length > 0 ? `  ${pc.yellow('⚠')} ${pc.dim(`pinned in ${pkg.pinnedIn.join(', ')}`)}` : '';
+    return {
+      name: `${pkg.name}${devTag}  ${version}${pinnedWarning}`,
+      value: pkg.name,
+      checked: false,
+    };
+  });
+
+  let selected: string[];
+  try {
+    selected = await checkbox({
+      message: `toggle packages to update\n${pc.dim('↑↓')} navigate  ${pc.dim('space')} toggle  ${pc.dim('⏎')} confirm  ${pc.dim('esc')} skip`,
+      choices,
+      pageSize: 20,
+      loop: false,
+      theme: {
+        icon: {
+          cursor: '❯ ',
+        },
+        style: {
+          highlight: (text: string) => text,
+          renderSelectedChoices: (selectedChoices: Array<{ value?: string }>) =>
+            pc.dim(`${selectedChoices.length} package${selectedChoices.length !== 1 ? 's' : ''} selected`),
+        },
+      },
+    });
+  } catch {
+    // User pressed Ctrl+C or escaped
+    return;
+  }
+
+  // Handle empty selection
+  if (selected.length === 0) {
+    return;
+  }
+
+  // Check if any major updates are selected
+  const selectedMajor = packages.filter((p) => selected.includes(p.name) && p.isMajorUpdate);
+  if (selectedMajor.length > 0) {
+    const majorNames = selectedMajor.map((p) => pc.bold(p.name)).join(', ');
+    try {
+      const proceed = await confirm({
+        message: `${selectedMajor.length} major update${selectedMajor.length > 1 ? 's' : ''} selected (${majorNames}). proceed?`,
+        default: true,
+      });
+      if (!proceed) {
+        console.info(pc.dim('  update cancelled'));
+        return;
+      }
+    } catch {
+      return;
+    }
+  }
+
+  // Group selected packages by workspace
+  const workspacePackages = new Map<string, { filter: string; packages: string[] }>();
+  for (const pkgName of selected) {
+    const pkg = packages.find((p) => p.name === pkgName);
+    if (!pkg) continue;
+
+    for (let i = 0; i < pkg.dependents.length; i++) {
+      const dependent = pkg.dependents[i];
+      const location = pkg.dependentLocations[i];
+      if (!workspacePackages.has(dependent)) {
+        // Read the workspace package name from package.json for --filter
+        const pkgJsonPath = path.join(location, 'package.json');
+        let filterName = dependent;
+        try {
+          const pkgJson = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf-8'));
+          filterName = pkgJson.name || dependent;
+        } catch {
+          // Use dependent name as fallback
+        }
+        workspacePackages.set(dependent, { filter: filterName, packages: [] });
+      }
+      workspacePackages.get(dependent)?.packages.push(pkgName);
+    }
+  }
+
+  // Build pnpm update commands and run with inherited stdio so user sees pnpm output directly
+  const commands: string[] = [];
+  for (const [workspace, { filter, packages: pkgs }] of workspacePackages) {
+    const pkgList = pkgs.join(', ');
+    console.info(`  ${pc.cyan('↑')} ${pc.bold(workspace)}: ${pc.dim(pkgList)}`);
+    commands.push(`pnpm --filter ${filter} up --latest ${pkgs.join(' ')}`);
+  }
+
+  console.info();
+
+  // Run combined command with inherited stdio so pnpm output streams directly to terminal
+  const combined = commands.join(' && ');
+  const result = spawnSync('sh', ['-c', combined], {
+    cwd: forkPath,
+    stdio: 'inherit',
+  });
+
+  console.info();
+  if (result.status === 0) {
+    console.info(pc.green(`✓ ${selected.length} package${selected.length > 1 ? 's' : ''} updated`));
+  } else {
+    console.error(pc.red(`✗ update failed (exit code ${result.status})`));
   }
 }
 
@@ -303,7 +434,7 @@ function printVulnerabilityResults(auditResult: AuditResult | null, vulnMap: Map
     }
   } else {
     console.info();
-    console.info(pc.green('✓ no vulnerabilities found'));
+    console.info(`${pc.green('✓')} no vulnerabilities found`);
   }
 
   console.info();

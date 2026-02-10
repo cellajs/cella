@@ -46,6 +46,8 @@ export interface EnhancedPackageInfo {
   dependentLocations: string[];
   isDev: boolean;
   isMajorUpdate: boolean;
+  /** Workspace names where this package is pinned to an exact version (no ^ or ~) */
+  pinnedIn: string[];
   repoUrl: string | null;
   changelogUrl: string | null;
   releasesUrl: string | null;
