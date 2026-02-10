@@ -13,6 +13,7 @@ import { parseCli } from './cli';
 import type { CellaCliConfig } from './config/types';
 import { runAnalyze } from './services/analyze';
 import { runAudit } from './services/audit';
+import { runForks } from './services/forks';
 import { runPackages } from './services/packages';
 import { runSync } from './services/sync';
 import { registerSignalHandlers } from './utils/cleanup';
@@ -103,8 +104,8 @@ async function main(): Promise<void> {
     // Parse CLI and get runtime config
     const config = await parseCli(userConfig, forkPath);
 
-    // Run preflight checks (except for packages/audit which don't need clean working dir)
-    if (!['packages', 'audit'].includes(config.service)) {
+    // Run preflight checks (except for packages/audit/forks which don't need clean working dir)
+    if (!['packages', 'audit', 'forks'].includes(config.service)) {
       const skipCleanCheck = config.service === 'analyze';
       await preflight(forkPath, userConfig.settings.forkBranch, { skipCleanCheck });
     }
@@ -125,6 +126,10 @@ async function main(): Promise<void> {
 
       case 'audit':
         await runAudit(config);
+        break;
+
+      case 'forks':
+        await runForks(config);
         break;
     }
 
