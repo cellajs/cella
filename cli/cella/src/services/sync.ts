@@ -11,7 +11,6 @@ import {
   createSpinner,
   printSummary,
   printSyncComplete,
-  resetSteps,
   spinnerFail,
   spinnerSuccess,
   spinnerText,
@@ -26,8 +25,7 @@ import { runMergeEngine } from './merge-engine';
  * Conflicted files are left unstaged for IDE resolution.
  */
 export async function runSync(config: RuntimeConfig): Promise<MergeResult> {
-  resetSteps();
-  createSpinner('Starting sync...');
+  createSpinner('starting sync...');
 
   const result = await runMergeEngine(config, {
     apply: true,

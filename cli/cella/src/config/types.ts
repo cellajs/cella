@@ -44,10 +44,28 @@ export interface SyncSettings {
 
   /**
    * Merge strategy for syncing upstream changes.
-   * - 'merge' (default): Creates merge commit with full ancestry. IDE 3-way merge for conflicts.
-   * - 'squash': Stages all changes as one commit. Cleaner history but no 3-way merge support.
+   * Both use real git merge internally for correct 3-way merge and merge-base tracking.
+   * - 'merge': Leaves merge state for user to commit (merge commit with full ancestry).
+   * - 'squash' (default): Auto-commits as single-parent when clean. Falls back to merge
+   *   commit (with IDE 3-way support) when there are conflicts.
    */
   mergeStrategy?: MergeStrategy;
+
+  /**
+   * Automatically run packages sync after the sync service completes.
+   * When true (default), the packages service is hidden from the menu
+   * and runs automatically as part of sync.
+   * Set to false to keep packages as a separate manual service.
+   */
+  syncWithPackages?: boolean;
+
+  /**
+   * Automatically push drifted files to a `contrib/<fork-name>` branch in upstream
+   * after sync or analyze. Upstream can then review and cherry-pick changes.
+   * Requires upstreamLocalPath to be set.
+   * @default false
+   */
+  autoContribute?: boolean;
 
   /**
    * How to link files in CLI output.
@@ -89,7 +107,7 @@ export interface CellaCliConfig {
     /**
      * Files ignored entirely during sync — never synced (existing or new).
      * Supports glob patterns (e.g., 'frontend/public/static/*').
-     * Fork-only territory: upstream cannot add, modify, or delete these.
+     * Local territory: upstream cannot add, modify, or delete these.
      */
     ignored?: string[];
 
@@ -122,7 +140,7 @@ export function defineConfig(config: CellaCliConfig): CellaCliConfig {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Sync services available in the CLI */
-export type SyncService = 'analyze' | 'sync' | 'packages' | 'audit' | 'forks';
+export type SyncService = 'analyze' | 'inspect' | 'sync' | 'packages' | 'audit' | 'forks' | 'contributions';
 
 /** Runtime configuration with all resolved values */
 export interface RuntimeConfig extends CellaCliConfig {
@@ -138,14 +156,21 @@ export interface RuntimeConfig extends CellaCliConfig {
   /** Write full file list to log file */
   logFile: boolean;
 
+  /** Non-interactive list output (for LLM/agent usage) */
+  list: boolean;
+
   /** Show verbose output */
   verbose: boolean;
+
+  /** Pre-selected fork name (skips fork selection prompt) */
+  fork?: string;
 }
 
 /** File status after analysis */
 export type FileStatus =
   | 'identical' // No changes needed
   | 'ahead' // Fork is ahead, protected (pinned/ignored)
+  | 'local' // Local file (never existed upstream)
   | 'drifted' // Fork is ahead, NOT protected (at risk)
   | 'behind' // Upstream has changes to sync
   | 'diverged' // Both changed, will merge
@@ -184,6 +209,7 @@ export interface AnalyzedFile {
 export interface AnalysisSummary {
   identical: number;
   ahead: number;
+  local: number;
   drifted: number;
   behind: number;
   diverged: number;
@@ -213,4 +239,6 @@ export interface MergeResult {
     message: string;
     date: string;
   };
+  /** Whether the sync was auto-committed (squash strategy with no conflicts) */
+  autoCommitted?: boolean;
 }

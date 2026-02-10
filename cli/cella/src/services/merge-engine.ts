@@ -31,16 +31,19 @@ import {
   fileExistsInWorktree,
   getCommitInfo,
   getConflictedFiles,
+  getEffectiveMergeBase,
   getFileChangeInfo,
   getFileChanges,
   getFileHashesAtRef,
-  getMergeBase,
   getRemoteUrl,
   gitMv,
   gitRm,
   merge,
+  mergeAbort,
   removeFileFromWorktree,
+  removeMergeHead,
   restoreToHead,
+  storeLastSyncRef,
 } from '../utils/git';
 import { isIgnored, isPinned } from '../utils/overrides';
 
@@ -100,10 +103,11 @@ async function applyDirectMerge(
   config: RuntimeConfig,
   onProgress?: ProgressCallback,
 ): Promise<{ resolved: number; remainingConflicts: string[]; analyzedFiles: AnalyzedFile[] }> {
-  // Start real merge in fork
+  // Start real merge in fork (always real merge, never --squash).
+  // Squash strategy is handled post-merge by removing MERGE_HEAD before auto-commit,
+  // which preserves correct 3-way merge behavior and merge-base ancestry.
   onProgress?.('starting merge in fork...');
-  const squash = config.settings.mergeStrategy === 'squash';
-  await merge(forkPath, upstreamRef, { noCommit: true, noEdit: true, squash });
+  await merge(forkPath, upstreamRef, { noCommit: true, noEdit: true });
 
   // Analyze files post-merge
   onProgress?.('analyzing files...');
@@ -133,8 +137,30 @@ async function applyDirectMerge(
     }
 
     if (pinned) {
-      onProgress?.(`→ ${filePath}: keeping fork (pinned)`);
-      await restoreToHead(forkPath, filePath);
+      if (file.renamedFrom) {
+        // Renamed file where old path was pinned — accept the rename (new path)
+        // but keep fork's content from the old path
+        const oldPathExists = await fileExistsInWorktree(forkPath, file.renamedFrom);
+        if (oldPathExists) {
+          onProgress?.(`→ ${file.renamedFrom} → ${filePath}: moving fork content (pinned rename)`);
+          try {
+            await gitMv(forkPath, file.renamedFrom, filePath);
+          } catch {
+            // git mv failed — copy content manually
+            await gitRm(forkPath, file.renamedFrom);
+            await removeFileFromWorktree(forkPath, file.renamedFrom);
+            // Checkout upstream's new path first, then restore fork content
+            await checkoutFromRef(forkPath, 'HEAD', file.renamedFrom).catch(() => {});
+          }
+        } else {
+          // Old path already gone — restore from HEAD at old path via git show
+          onProgress?.(`→ ${filePath}: keeping fork content (pinned rename, old path removed)`);
+          await restoreToHead(forkPath, filePath);
+        }
+      } else {
+        onProgress?.(`→ ${filePath}: keeping fork (pinned)`);
+        await restoreToHead(forkPath, filePath);
+      }
       resolved++;
       continue;
     }
@@ -158,8 +184,12 @@ async function applyDirectMerge(
         await gitRm(forkPath, filePath);
         // Also remove from filesystem if git rm didn't (e.g., after squash merge)
         await removeFileFromWorktree(forkPath, filePath);
+      } else {
+        // Both exist, only upstream changed - accept upstream version explicitly.
+        // This resolves false conflicts from stale merge-base (previous squash syncs).
+        onProgress?.(`→ ${filePath}: accepting upstream (behind)`);
+        await checkoutFromRef(forkPath, upstreamRef, filePath);
       }
-      // If file exists in both, merge already applied upstream changes
       resolved++;
       continue;
     }
@@ -353,8 +383,13 @@ async function analyzeFiles(
       // Check if fork modified the old file
       const forkModifiedOld = forkOldHash !== baseOldHash;
 
-      if (fileIsPinned || isIgnored(oldPath, config)) {
-        // Pinned or ignored - keep fork's version
+      // Check both old and new paths for pinned/ignored status.
+      // When a directory is renamed (e.g., config/ → shared/), the fork's
+      // pinned list may still reference the old path.
+      const oldPathPinned = isPinned(oldPath, config);
+
+      if (fileIsPinned || oldPathPinned || isIgnored(oldPath, config)) {
+        // Pinned or ignored - keep fork's version at the new path
         status = 'pinned';
       } else if (!oldPathInFork) {
         // Old path doesn't exist in fork (fork already deleted or moved it)
@@ -401,7 +436,7 @@ async function analyzeFiles(
         // File was in base, upstream deleted it - sync deletion unless pinned
         status = fileIsPinned ? 'ahead' : 'behind';
       } else {
-        // Fork-only file (never existed in merge-base)
+        // Local file (never existed in merge-base)
         // Check if this file's content exists at a different path in upstream
         // (indicates a rename that we couldn't detect due to squash merge-base)
         const forkFileHash = forkHash;
@@ -415,7 +450,7 @@ async function analyzeFiles(
             }
           }
         }
-        status = isRenamedSource ? 'behind' : 'ahead';
+        status = isRenamedSource ? 'behind' : 'local';
       }
     } else if (forkHash === upstreamHash) {
       // Identical
@@ -460,6 +495,7 @@ function calculateSummary(files: AnalyzedFile[]): AnalysisSummary {
   const summary: AnalysisSummary = {
     identical: 0,
     ahead: 0,
+    local: 0,
     drifted: 0,
     behind: 0,
     diverged: 0,
@@ -520,8 +556,9 @@ export async function runMergeEngine(
     const forkOriginUrl = await getRemoteUrl(forkPath, 'origin');
     const forkGitHubUrl = forkOriginUrl ? getGitHubBaseUrl(forkOriginUrl) : null;
 
-    // Get merge base for analysis (need it before showing commit count)
-    const mergeBase = await getMergeBase(forkPath, 'HEAD', upstreamRef);
+    // Get effective merge base (handles stale base from previous squash syncs)
+    const effectiveBase = await getEffectiveMergeBase(forkPath, 'HEAD', upstreamRef);
+    const mergeBase = effectiveBase.base;
 
     // Get upstream commit info and count commits since merge-base
     const upstreamCommit = await getCommitInfo(forkPath, upstreamRef);
@@ -548,14 +585,28 @@ export async function runMergeEngine(
       } = await applyDirectMerge(forkPath, upstreamRef, mergeBase, config, onProgress);
 
       const summary = calculateSummary(analyzedFiles);
-      const synced = summary.behind + summary.diverged;
-      const mergeType = config.settings.mergeStrategy === 'squash' ? 'squash merge' : 'merge';
+      const synced = summary.behind + summary.diverged + summary.renamed;
+      const isSquash = config.settings.mergeStrategy === 'squash';
+
+      // Count total resolved changes (includes ignored/pinned resolutions)
+      const totalResolved = synced + summary.ignored + summary.pinned;
 
       if (remainingConflicts.length > 0) {
-        onStep?.(`${mergeType} in progress`, `${remainingConflicts.length} conflicts to resolve in IDE`);
-      } else if (synced > 0) {
-        onStep?.('synced', `${synced} files from upstream`);
+        // Conflicts: leave MERGE_HEAD intact for IDE 3-way merge resolution.
+        // When user commits, it becomes a merge commit (self-healing ancestry).
+        await storeLastSyncRef(forkPath, upstreamCommit.hash);
+        onStep?.('merge in progress', `${remainingConflicts.length} conflicts to resolve in IDE`);
+      } else if (totalResolved > 0) {
+        const label = synced > 0 ? `${synced} files from upstream` : 'upstream changes';
+        if (isSquash) {
+          // Remove MERGE_HEAD so commit becomes single-parent (squash-style)
+          await removeMergeHead(forkPath);
+        }
+        await storeLastSyncRef(forkPath, upstreamCommit.hash);
+        onStep?.('synced', `${label} (staged, commit to finish)`);
       } else {
+        // Truly nothing changed - clean up merge state
+        await mergeAbort(forkPath);
         onStep?.('up to date', 'no upstream changes to sync');
       }
 
@@ -563,7 +614,7 @@ export async function runMergeEngine(
         success: remainingConflicts.length === 0,
         files: analyzedFiles,
         summary,
-        worktreePath: forkPath, // No worktree used
+        worktreePath: forkPath,
         conflicts: remainingConflicts,
         upstreamBranch: config.settings.upstreamBranch,
         upstreamGitHubUrl: upstreamGitHubUrl ?? undefined,
@@ -578,10 +629,9 @@ export async function runMergeEngine(
       await createWorktree(forkPath, worktreePath, 'HEAD');
       onStep?.('worktree created', worktreePath);
 
-      // Perform merge in worktree
+      // Perform merge in worktree (always real merge, never --squash, for correct 3-way)
       onProgress?.('performing merge in worktree...');
-      const squash = config.settings.mergeStrategy === 'squash';
-      await merge(worktreePath, upstreamRef, { noCommit: true, noEdit: true, squash });
+      await merge(worktreePath, upstreamRef, { noCommit: true, noEdit: true });
       onStep?.('merge complete', 'upstream merged into worktree');
 
       // Analyze all files

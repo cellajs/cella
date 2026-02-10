@@ -9,16 +9,19 @@ export default defineConfig({
     upstreamBranch: 'development',
     upstreamRemoteName: 'cella-upstream',
     forkBranch: 'development',
+    syncWithPackages: true,
     packageJsonSync: ['dependencies', 'devDependencies', 'scripts'],
     mergeStrategy: 'squash',
-    fileLinkMode: 'file'
+    fileLinkMode: 'file',
+    // upstreamLocalPath: '../cella',
+    // autoContribute: true,
   },
 
   // Local forks to sync to (for upstream template development)
   // Uncomment and configure when running from upstream cella repo
-  // forks: [
-  //   { name: 'my-app', path: '../my-app' },
-  // ],
+  forks: [
+    { name: 'raak', path: '../raak' },
+  ],
 
   // File overrides
   overrides: {

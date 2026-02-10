@@ -5,9 +5,23 @@
  */
 
 import { execFile } from 'node:child_process';
+import { existsSync } from 'node:fs';
+import { mkdir, readdir, rmdir, unlink } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
 import { promisify } from 'node:util';
 
 const execFileAsync = promisify(execFile);
+
+/**
+ * Sanitize text by redacting credentials from URLs.
+ * Prevents accidental credential exposure in error messages (CWE-532).
+ */
+function sanitizeCredentials(text: string): string {
+  return text.replace(/https?:\/\/[^@\s]+@/g, (match) => {
+    const protocol = match.startsWith('https') ? 'https' : 'http';
+    return `${protocol}://***@`;
+  });
+}
 
 /** Options for git command execution */
 interface GitCommandOptions {
@@ -40,6 +54,10 @@ export async function git(args: string[], cwd: string, options: GitCommandOption
     return stdout.trim();
   } catch (error) {
     if (options.ignoreErrors) return '';
+    // Sanitize to prevent credential leakage from git remote URLs
+    if (error instanceof Error) {
+      error.message = sanitizeCredentials(error.message);
+    }
     throw error;
   }
 }
@@ -206,13 +224,15 @@ export async function listWorktrees(cwd: string): Promise<string[]> {
 
 /**
  * Perform a merge in the current directory.
+ * Always uses --no-ff to prevent fast-forward, ensuring HEAD stays in place
+ * and MERGE_HEAD is created for proper merge state tracking.
  */
 export async function merge(
   cwd: string,
   ref: string,
   options: { noCommit?: boolean; noEdit?: boolean; squash?: boolean } = {},
 ): Promise<{ success: boolean; conflicts: string[] }> {
-  const args = ['merge', ref];
+  const args = ['merge', '--no-ff', ref];
   if (options.squash) args.push('--squash');
   if (options.noCommit) args.push('--no-commit');
   if (options.noEdit) args.push('--no-edit');
@@ -387,9 +407,6 @@ export async function gitRm(cwd: string, filePath: string): Promise<void> {
  * Creates parent directories if needed and preserves git history.
  */
 export async function gitMv(cwd: string, oldPath: string, newPath: string): Promise<void> {
-  const { mkdir } = await import('node:fs/promises');
-  const { join, dirname } = await import('node:path');
-
   // Ensure parent directory exists for new path
   const newDir = dirname(join(cwd, newPath));
   await mkdir(newDir, { recursive: true });
@@ -401,8 +418,6 @@ export async function gitMv(cwd: string, oldPath: string, newPath: string): Prom
  * Check if a file exists in the worktree filesystem.
  */
 export async function fileExistsInWorktree(cwd: string, filePath: string): Promise<boolean> {
-  const { existsSync } = await import('node:fs');
-  const { join } = await import('node:path');
   return existsSync(join(cwd, filePath));
 }
 
@@ -411,8 +426,6 @@ export async function fileExistsInWorktree(cwd: string, filePath: string): Promi
  * Used to clean up files that git rm may not have removed (e.g., after squash merge).
  */
 export async function removeFileFromWorktree(cwd: string, filePath: string): Promise<void> {
-  const { unlink } = await import('node:fs/promises');
-  const { join, dirname } = await import('node:path');
   const fullPath = join(cwd, filePath);
   try {
     await unlink(fullPath);
@@ -430,9 +443,6 @@ export async function removeFileFromWorktree(cwd: string, filePath: string): Pro
 async function cleanupEmptyParentDirs(cwd: string, relativePath: string): Promise<void> {
   if (!relativePath || relativePath === '.') return;
 
-  const { rmdir, readdir } = await import('node:fs/promises');
-  const { join, dirname } = await import('node:path');
-
   const fullPath = join(cwd, relativePath);
   try {
     const entries = await readdir(fullPath);
@@ -443,5 +453,80 @@ async function cleanupEmptyParentDirs(cwd: string, relativePath: string): Promis
     }
   } catch {
     // Directory doesn't exist, not empty, or can't be removed - stop
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sync ref tracking & merge-base recovery
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Store the upstream commit hash after a successful sync.
+ * Used to recover correct merge-base when squash strategy creates single-parent commits.
+ */
+export async function storeLastSyncRef(cwd: string, upstreamHash: string): Promise<void> {
+  await git(['update-ref', 'refs/cella/last-sync', upstreamHash], cwd);
+}
+
+/**
+ * Get the stored last-sync upstream ref.
+ * Returns null if no previous sync has been recorded.
+ */
+export async function getStoredSyncRef(cwd: string): Promise<string | null> {
+  const ref = await git(['rev-parse', 'refs/cella/last-sync'], cwd, { ignoreErrors: true });
+  return ref || null;
+}
+
+/**
+ * Check if one commit is an ancestor of another.
+ */
+export async function isAncestor(cwd: string, ancestor: string, descendant: string): Promise<boolean> {
+  try {
+    await git(['merge-base', '--is-ancestor', ancestor, descendant], cwd);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Get the effective merge-base, preferring the stored last-sync ref when it's more recent.
+ * This handles stale merge-base caused by previous squash syncs (single-parent commits
+ * don't update git's merge-base graph).
+ *
+ * @returns The effective base commit, whether git's base was stale, and the stored ref
+ */
+export async function getEffectiveMergeBase(
+  cwd: string,
+  headRef: string,
+  upstreamRef: string,
+): Promise<{ base: string; isStale: boolean; storedRef: string | null }> {
+  const gitBase = await getMergeBase(cwd, headRef, upstreamRef);
+  const storedRef = await getStoredSyncRef(cwd);
+
+  if (!storedRef) {
+    return { base: gitBase, isStale: false, storedRef: null };
+  }
+
+  // Check if stored ref is a descendant of git's merge-base (i.e., more recent)
+  const storedIsNewer = await isAncestor(cwd, gitBase, storedRef);
+
+  if (storedIsNewer && storedRef !== gitBase) {
+    return { base: storedRef, isStale: true, storedRef };
+  }
+
+  return { base: gitBase, isStale: false, storedRef };
+}
+
+/**
+ * Remove .git/MERGE_HEAD to convert a pending merge into a regular commit.
+ * Used by squash strategy to create single-parent commits while preserving
+ * correct 3-way merge behavior internally.
+ */
+export async function removeMergeHead(cwd: string): Promise<void> {
+  try {
+    await unlink(join(cwd, '.git', 'MERGE_HEAD'));
+  } catch {
+    // MERGE_HEAD doesn't exist - that's fine
   }
 }
