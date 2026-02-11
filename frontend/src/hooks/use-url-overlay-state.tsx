@@ -1,4 +1,4 @@
-import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
+import { useMatch, useNavigate, useSearch } from '@tanstack/react-router';
 import { useCallback, useRef } from 'react';
 import type { TriggerRef } from '~/modules/common/dialoger/use-dialoger';
 import { fallbackContentRef } from '~/utils/fallback-content-ref';
@@ -33,7 +33,8 @@ export function useUrlOverlayState(searchParamKey: string, options: UseUrlOverla
 
   const navigate = useNavigate();
   const searchParams = useSearch({ strict: false }) as Record<string, string | undefined>;
-  const { orgSlug } = useParams({ strict: false }) as { orgSlug?: string };
+  const orgMatch = useMatch({ from: '/appLayout/$tenantId/$orgSlug', shouldThrow: false });
+  const orgSlug = orgMatch?.context.organization.slug;
 
   const value = searchParams[searchParamKey] ?? null;
   const isOpen = !!value;

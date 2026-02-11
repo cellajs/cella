@@ -9,7 +9,7 @@ import { AppError } from '#/lib/error';
 import { checkSlugAvailable, checkSlugsAvailable } from '#/modules/entities/helpers/check-slug';
 import { getEntityCounts, getEntityCountsSelect } from '#/modules/entities/helpers/get-entity-counts';
 import { insertMemberships } from '#/modules/memberships/helpers';
-import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
+import { type MembershipBaseModel, toMembershipBase } from '#/modules/memberships/helpers/select';
 import organizationRoutes from '#/modules/organization/organization-routes';
 import { addPermission, getValidContextEntity } from '#/permissions';
 import { splitByPermission } from '#/permissions/split-by-permission';
@@ -127,17 +127,7 @@ const organizationRouteHandlers = app
       return {
         ...org,
         included: {
-          membership: {
-            id: membership.id,
-            tenantId: membership.tenantId,
-            contextType: membership.contextType,
-            userId: membership.userId,
-            role: membership.role,
-            displayOrder: membership.displayOrder,
-            muted: membership.muted,
-            archived: membership.archived,
-            organizationId: membership.organizationId,
-          },
+          membership: toMembershipBase(membership),
           counts: { membership: memberCounts, entities: entitiesCounts },
         },
         can,
@@ -264,17 +254,7 @@ const organizationRouteHandlers = app
         // Find membership from context memberships
         const membership = memberships.find((m) => m.contextType === entityType && m.organizationId === org.id);
         if (membership) {
-          included.membership = {
-            id: membership.id,
-            tenantId: membership.tenantId,
-            contextType: membership.contextType,
-            userId: membership.userId,
-            role: membership.role,
-            displayOrder: membership.displayOrder,
-            muted: membership.muted,
-            archived: membership.archived,
-            organizationId: membership.organizationId,
-          };
+          included.membership = toMembershipBase(membership);
         }
       }
 
@@ -321,19 +301,7 @@ const organizationRouteHandlers = app
 
     // Build included object with membership and counts
     const included = {
-      ...(membership && {
-        membership: {
-          id: membership.id,
-          tenantId: membership.tenantId,
-          contextType: membership.contextType,
-          userId: membership.userId,
-          role: membership.role,
-          displayOrder: membership.displayOrder,
-          muted: membership.muted,
-          archived: membership.archived,
-          organizationId: membership.organizationId,
-        },
-      }),
+      ...(membership && { membership: toMembershipBase(membership) }),
       counts,
     };
 
@@ -391,19 +359,7 @@ const organizationRouteHandlers = app
 
     // Build included object with membership and counts
     const included = {
-      ...(membership && {
-        membership: {
-          id: membership.id,
-          tenantId: membership.tenantId,
-          contextType: membership.contextType,
-          userId: membership.userId,
-          role: membership.role,
-          displayOrder: membership.displayOrder,
-          muted: membership.muted,
-          archived: membership.archived,
-          organizationId: membership.organizationId,
-        },
-      }),
+      ...(membership && { membership: toMembershipBase(membership) }),
       counts,
     };
 

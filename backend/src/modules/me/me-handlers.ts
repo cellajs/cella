@@ -333,27 +333,8 @@ const meRouteHandlers = app
   .openapi(meRoutes.getMyMemberships, async (ctx) => {
     const memberships = ctx.var.memberships;
 
-    // Map to base schema fields, dynamically including all context entity ID columns.
-    // Use type assertion since dynamic entity ID keys can't be statically verified.
-    const items = memberships.map((m) => {
-      const entityIdFields: Record<string, string | null> = {};
-      for (const entityType of appConfig.contextEntityTypes) {
-        const columnKey = appConfig.entityIdColumnKeys[entityType];
-        entityIdFields[columnKey] = (m as Record<string, unknown>)[columnKey] as string | null;
-      }
-
-      return {
-        id: m.id,
-        contextType: m.contextType,
-        userId: m.userId,
-        role: m.role,
-        displayOrder: m.displayOrder,
-        muted: m.muted,
-        archived: m.archived,
-        tenantId: m.tenantId,
-        ...entityIdFields,
-      } as typeof m;
-    });
+    // Strip createdBy (not in membershipBaseSchema) — the rest already matches MembershipBaseModel
+    const items = memberships.map(({ createdBy, ...rest }) => rest);
 
     return ctx.json({ items }, 200);
   });

@@ -38,11 +38,11 @@ export const OrganizationLayoutRoute = createRoute({
     // Only revalidate on initial entry — search param changes are handled by child useSuspenseQuery
     const shouldRevalidate = cause === 'enter';
 
-    const { tenantId, orgSlug: orgSlugParam } = params;
+    const { tenantId, orgSlug } = params;
     const isOnline = onlineManager.isOnline();
 
     // Resolve slug to ID via list cache (from menu), or fetch if not cached
-    const cached = findOrganizationInListCache(orgSlugParam);
+    const cached = findOrganizationInListCache(orgSlug);
     const orgId = cached?.id;
 
     // If we have the ID from cache, use ID-based query; otherwise fetch by slug first
@@ -50,10 +50,17 @@ export const OrganizationLayoutRoute = createRoute({
 
     if (orgId) {
       const orgOptions = organizationQueryOptions(orgId, tenantId);
+
+      // Seed detail cache from list cache so ensureQueryData returns immediately
+      // instead of blocking on a fetch. It will still revalidate in background if stale.
+      if (cached && !queryClient.getQueryData(orgOptions.queryKey)) {
+        queryClient.setQueryData(orgOptions.queryKey, cached);
+      }
+
       organization = await queryClient.ensureQueryData({ ...orgOptions, revalidateIfStale: shouldRevalidate });
     } else if (isOnline) {
       organization = await fetchSlugCacheId(
-        () => getOrganization({ path: { tenantId, organizationId: orgSlugParam }, query: { slug: true } }),
+        () => getOrganization({ path: { tenantId, organizationId: orgSlug }, query: { slug: true } }),
         organizationQueryKeys.detail.byId,
       );
     }
