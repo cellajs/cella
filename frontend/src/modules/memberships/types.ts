@@ -7,7 +7,7 @@ import type {
   UpdateMembershipData,
   UpdateMembershipResponse,
 } from '~/api.gen';
-import type { ContextEntityData } from '~/modules/entities/types';
+import type { ContextEntity } from '~/modules/entities/types';
 import type { membersRouteSearchParamsSchema } from '~/modules/memberships/search-params-schemas';
 import type { ContextQueryProp, InfiniteQueryData, QueryData } from '~/query/types';
 
@@ -27,7 +27,7 @@ export type EntityMembershipContextProp = {
   entityType?: ContextEntityType;
 };
 
-export type InviteMember = NonNullable<MembershipInviteData['body']> & { entity: ContextEntityData };
+export type InviteMember = NonNullable<MembershipInviteData['body']> & { entity: ContextEntity };
 
 type UpdateMembershipProp = NonNullable<UpdateMembershipData['body']> & UpdateMembershipData['path'];
 export type MutationUpdateMembership = {

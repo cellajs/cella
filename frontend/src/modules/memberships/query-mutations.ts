@@ -6,11 +6,12 @@ import {
   type MembershipBase,
   type MembershipInviteResponse,
   membershipInvite,
+  type Organization,
   updateMembership,
 } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import { toaster } from '~/modules/common/toaster/service';
-import type { ContextEntityData } from '~/modules/entities/types';
+import type { ContextEntity } from '~/modules/entities/types';
 import { meKeys } from '~/modules/me/query';
 import { memberQueryKeys } from '~/modules/memberships/query';
 import type {
@@ -110,7 +111,7 @@ export const useInviteMemberMutation = () =>
           const orgKeys = getEntityQueryKeys('organization');
           if (orgKeys) {
             const orgDetailQueryKey = orgKeys.detail.byId(organizationId);
-            queryClient.setQueryData<ContextEntityData>(orgDetailQueryKey, (oldOrg) => {
+            queryClient.setQueryData<Organization>(orgDetailQueryKey, (oldOrg) => {
               if (!oldOrg?.included?.counts) return oldOrg;
               return updateMembershipCounts(oldOrg, invitesSentCount);
             });
@@ -127,7 +128,7 @@ export const useInviteMemberMutation = () =>
         const entityKeys = getEntityQueryKeys(entityType);
         if (entityKeys) {
           const detailQueryKey = entityKeys.detail.byId(entityId);
-          queryClient.setQueryData<ContextEntityData>(detailQueryKey, (oldEntity) => {
+          queryClient.setQueryData<Organization>(detailQueryKey, (oldEntity) => {
             if (!oldEntity?.included?.counts) return oldEntity;
             return updateMembershipCounts(oldEntity, invitesSentCount);
           });
@@ -307,10 +308,7 @@ const deletedMembers = (members: Member[], ids: string[]) => {
 /**
  * Update the memberships and pending membership count in the cache for a given entity.
  */
-const updateMembershipCounts = (
-  oldEntity: ContextEntityData | undefined,
-  updateCount: number,
-): ContextEntityData | undefined => {
+const updateMembershipCounts = (oldEntity: Organization | undefined, updateCount: number): Organization | undefined => {
   if (!oldEntity?.included?.counts) return oldEntity;
 
   return {
@@ -330,12 +328,12 @@ const updateMembershipCounts = (
 
 /** Variables for changing a user's role on a context entity from an entity table */
 type ChangeEntityRoleVariables = {
-  entity: ContextEntityData;
+  entity: ContextEntity;
   role: MembershipBase['role'];
 };
 
 type ChangeEntityRoleResult = {
-  entity: ContextEntityData;
+  entity: ContextEntity;
   membership: MembershipBase;
   wasNew: boolean;
 };

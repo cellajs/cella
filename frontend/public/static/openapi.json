@@ -297,6 +297,11 @@
               "null"
             ]
           },
+          "tenantId": {
+            "type": "string",
+            "maxLength": 24,
+            "pattern": "^[a-z0-9]+$"
+          },
           "entityType": {
             "type": "string",
             "enum": [
@@ -325,6 +330,7 @@
           "description",
           "createdAt",
           "modifiedAt",
+          "tenantId",
           "entityType",
           "slug",
           "thumbnailUrl",
@@ -334,8 +340,9 @@
           "id": "bafp6iiu2dt74olfvl618xur",
           "createdAt": "2024-09-15T16:29:26.122Z",
           "modifiedAt": "2024-12-04T06:32:26.983Z",
+          "tenantId": "d9wtu57tfwtfux7yivt59ywq",
           "name": "Nolan - Jacobson",
-          "description": "Horizontal demand-driven support",
+          "description": "Automated eco-centric open architecture",
           "entityType": "organization",
           "slug": "nolan---jacobson",
           "thumbnailUrl": null,
@@ -5066,8 +5073,9 @@
                         "id": "kk63h1dxe8cgq643ccglytgb",
                         "createdAt": "2024-12-25T19:05:51.784Z",
                         "modifiedAt": "2024-12-27T22:12:06.410Z",
+                        "tenantId": "kv08ddk8lkbjmurn9341gpf1",
                         "name": "Effertz Group",
-                        "description": "Organized systemic adapter",
+                        "description": "Diverse demand-driven matrices",
                         "entityType": "organization",
                         "slug": "effertz-group",
                         "thumbnailUrl": null,
@@ -5092,8 +5100,9 @@
                         "id": "ip52vb8otvpz1qn2gfy3zjnp",
                         "createdAt": "2024-03-25T23:28:46.492Z",
                         "modifiedAt": "2024-06-03T13:50:52.760Z",
+                        "tenantId": "od7xdlm77e2i9qj90kx71lz5",
                         "name": "Hansen - Reynolds",
-                        "description": "Progressive fresh-thinking concept",
+                        "description": "Automated eco-centric capability",
                         "entityType": "organization",
                         "slug": "hansen---reynolds",
                         "thumbnailUrl": null,
@@ -11578,8 +11587,9 @@
                   "id": "bafp6iiu2dt74olfvl618xur",
                   "createdAt": "2024-09-15T16:29:26.122Z",
                   "modifiedAt": "2024-12-04T06:32:26.983Z",
+                  "tenantId": "d9wtu57tfwtfux7yivt59ywq",
                   "name": "Nolan - Jacobson",
-                  "description": "Horizontal demand-driven support",
+                  "description": "Automated eco-centric open architecture",
                   "entityType": "organization",
                   "slug": "nolan---jacobson",
                   "thumbnailUrl": null,

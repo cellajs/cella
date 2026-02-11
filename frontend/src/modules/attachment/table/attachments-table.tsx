@@ -13,7 +13,7 @@ import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import type { RowsChangeData } from '~/modules/common/data-grid';
 import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
-import type { ContextEntityData } from '~/modules/entities/types';
+import type { ContextEntity } from '~/modules/entities/types';
 
 const LIMIT = appConfig.requestLimits.attachments;
 
@@ -23,7 +23,7 @@ function rowKeyGetter(row: Attachment) {
 }
 
 export interface AttachmentsTableProps {
-  entity: ContextEntityData;
+  entity: ContextEntity;
   isSheet?: boolean;
   canUpload?: boolean;
 }

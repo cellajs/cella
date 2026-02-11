@@ -15,7 +15,7 @@ interface UseUrlOverlayStateOptions {
 interface UrlOverlayState {
   isOpen: boolean;
   value: string | null;
-  orgId: string | undefined;
+  orgSlug: string | undefined;
   triggerRef: TriggerRef;
   hasTrigger: boolean;
   close: (isCleanup?: boolean) => void;
@@ -33,7 +33,7 @@ export function useUrlOverlayState(searchParamKey: string, options: UseUrlOverla
 
   const navigate = useNavigate();
   const searchParams = useSearch({ strict: false }) as Record<string, string | undefined>;
-  const { orgId } = useParams({ strict: false }) as { orgId?: string };
+  const { orgSlug } = useParams({ strict: false }) as { orgSlug?: string };
 
   const value = searchParams[searchParamKey] ?? null;
   const isOpen = !!value;
@@ -78,5 +78,5 @@ export function useUrlOverlayState(searchParamKey: string, options: UseUrlOverla
     [getStore, searchParamKey, additionalParamKeys, navigate],
   );
 
-  return { isOpen, value, orgId, triggerRef, hasTrigger, close };
+  return { isOpen, value, orgSlug, triggerRef, hasTrigger, close };
 }

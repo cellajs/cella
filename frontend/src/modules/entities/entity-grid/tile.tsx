@@ -1,8 +1,9 @@
 import { Link } from '@tanstack/react-router';
 import { t } from 'i18next';
 import { UserIcon } from 'lucide-react';
+import type { Organization } from '~/api.gen';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
-import type { ContextEntityData } from '~/modules/entities/types';
+import type { ContextEntity } from '~/modules/entities/types';
 import { Badge } from '~/modules/ui/badge';
 import { Card, CardContent, CardFooter } from '~/modules/ui/card';
 import { getContextEntityRoute } from '~/routes-resolver';
@@ -12,7 +13,7 @@ import { numberToColorClass } from '~/utils/number-to-color-class';
 /**
  * Tile component to display an entity in a grid layout.
  */
-export const EntityGridTile = ({ entity }: { entity: ContextEntityData }) => {
+export const EntityGridTile = ({ entity }: { entity: ContextEntity & Pick<Organization, 'included'> }) => {
   const { to, params, search } = getContextEntityRoute(entity);
   return (
     <Card className="overflow-hidden px-0 sm:px-0 pt-0 sm:pt-0 transition [&:has(.tile-link:hover)]:shadow-sm shadow-xs [&:has(.tile-link:focus-visible)]:ring-2 [&:has(.tile-link:active)]:translate-y-[.05rem] [&:has(.tile-link:focus-visible)]:ring-ring [&:has(.tile-link:focus-visible)]:ring-offset-2 [&:has(.tile-link:focus-visible)]:ring-offset-background">

@@ -1,6 +1,5 @@
 import { hierarchy, type ProductEntityType } from 'shared';
 import router from '~/routes/router';
-import { baseEntityRoutes } from '~/routes-config';
 
 export type SyncPriority = 'high' | 'medium' | 'low';
 
@@ -10,13 +9,15 @@ interface SyncNotification {
   organizationId: string | null;
 }
 
-/** Extract org ID from current route pathname using baseEntityRoutes pattern. */
+/** Get the current org ID from the router's matched route context, if user is within an org layout. */
 function getRouteOrgId(): string | null {
-  const pathname = router.state.location.pathname;
-  // Convert baseEntityRoutes.organization pattern to regex: /$tenantId/$orgId/organization → /([^/]+)/([^/]+)/organization
-  const pattern = baseEntityRoutes.organization.replace('$tenantId', '([^/]+)').replace('$orgId', '([^/]+)');
-  const match = pathname.match(new RegExp(`^${pattern}`));
-  return match?.[2] ?? null;
+  for (const match of router.state.matches) {
+    const ctx = match.context;
+    if (ctx && 'organization' in ctx && ctx.organization) {
+      return (ctx.organization as { id: string }).id;
+    }
+  }
+  return null;
 }
 
 /**

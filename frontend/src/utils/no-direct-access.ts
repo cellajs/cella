@@ -10,7 +10,7 @@ import router from '~/routes/router';
  * @throws Throws a redirect to `redirectTo` preserving current query parameters and replacing the history entry.
  *
  * @example
- * // Redirect users from `/$tenantId/$orgId/organization` to its `/members` child route if accessed directly
+ * // Redirect users from `/$tenantId/$orgSlug/organization` to its `/members` child route if accessed directly
  * noDirectAccess(OrganizationRoute.to, OrganizationMembersRoute.to);
  */
 export const noDirectAccess = (currentTo: string, redirectTo: string) => {

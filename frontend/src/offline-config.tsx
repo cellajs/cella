@@ -4,14 +4,14 @@ import { organizationsListQueryOptions } from '~/modules/organization/query';
 
 /**
  * Query factory type for context entity list queries.
- * Returns infinite query options that produce items extending ContextEntityDataWithMembership.
+ * Returns infinite query options that produce items extending ContextEntityWithMembership.
  *
  * Uses a structural type to allow different query option signatures while ensuring
  * the queryKey is present. The actual return data type is validated
- * at usage sites via flattenInfiniteData<ContextEntityDataWithMembership>.
+ * at usage sites via flattenInfiniteData<ContextEntityWithMembership>.
  *
  * When adding new context entity types in forks, ensure each query factory
- * returns data compatible with ContextEntityDataWithMembership.
+ * returns data compatible with ContextEntityWithMembership.
  *
  * @example
  * ```typescript
@@ -34,7 +34,7 @@ export type ContextEntityQueryRegistry = Partial<Record<ContextEntityType, Conte
  * This is used to generate the menu based on entity types defined in appConfig.menuStructure.
  *
  * When extending for forks with multiple context entity types, ensure each query factory
- * returns data compatible with ContextEntityDataWithMembership for proper type inference.
+ * returns data compatible with ContextEntityWithMembership for proper type inference.
  */
 export const getContextEntityTypeToListQueries = () =>
   ({

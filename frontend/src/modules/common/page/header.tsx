@@ -3,11 +3,10 @@ import { ChevronRightIcon, HomeIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig, ContextEntityType } from 'shared';
-import type { UserBase } from '~/api.gen';
+import type { ContextEntityBase, UserBase } from '~/api.gen';
 import { useScrollTo } from '~/hooks/use-scroll-to';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { PageCover, type PageCoverProps } from '~/modules/common/page/cover';
-import type { ContextEntityData } from '~/modules/entities/types';
 import { Badge } from '~/modules/ui/badge';
 import {
   Breadcrumb,
@@ -21,7 +20,7 @@ import { useMembershipForEntity } from '~/query/membership-enrichment';
 import { getContextEntityRoute } from '~/routes-resolver';
 
 type PageHeaderProps = Omit<PageCoverProps, 'id' | 'url'> & {
-  entity: ContextEntityData | UserBase;
+  entity: ContextEntityBase | UserBase;
   panel?: React.ReactNode;
   parent?: { entityId: string; entityType: ContextEntityType | 'user' };
   disableScroll?: boolean;
@@ -36,7 +35,7 @@ export function PageHeader({ entity, panel, parent, disableScroll, ...coverProps
   const membership = useMembershipForEntity(entityId);
 
   // Find parent entity from cache
-  const parentData = useFindInListCache<ContextEntityData>(parent ? [parent.entityType] : [], (item) =>
+  const parentData = useFindInListCache<ContextEntityBase>(parent ? [parent.entityType] : [], (item) =>
     parent ? item.id === parent.entityId || item.slug === parent.entityId : false,
   );
 

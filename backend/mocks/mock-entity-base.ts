@@ -27,6 +27,7 @@ export const mockContextEntityBase = (key = 'context-entity:default') =>
     const name = faker.company.name();
     return {
       ...mockEntityCore(),
+      tenantId: mockNanoid(),
       name,
       description: faker.company.catchPhrase(),
       entityType: 'organization' as const,

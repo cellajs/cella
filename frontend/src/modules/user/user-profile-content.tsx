@@ -13,8 +13,8 @@ interface Props {
  * This is a placeholder component for the user profile content
  **/
 function UserProfileContent({ isSheet, user }: Props) {
-  const { orgId } = useParams({ strict: false });
-  const hasOrgContext = !!orgId;
+  const { orgSlug } = useParams({ strict: false });
+  const hasOrgContext = !!orgSlug;
 
   if (!hasOrgContext)
     return <OrganizationsGrid fixedQuery={{ userId: user.id }} saveDataInSearch={!isSheet} focusView={!isSheet} />;

@@ -1,7 +1,7 @@
 import { appConfig, ContextEntityType } from 'shared';
 import type { MembershipBase } from '~/api.gen';
 import { myMembershipsQueryOptions } from '~/modules/me/query';
-import { ContextEntityDataWithMembership } from '~/modules/me/types';
+import { ContextEntityWithMembership } from '~/modules/me/types';
 import { buildMenu } from '~/modules/navigation/menu-sheet/helpers/build-menu';
 import { getContextEntityTypeToListQueries } from '~/offline-config';
 import { flattenInfiniteData } from '~/query/basic';
@@ -32,7 +32,7 @@ export async function getMenuData(opts?: { detailedMenu?: boolean }) {
     }
   }
 
-  const byType = new Map<ContextEntityType, ContextEntityDataWithMembership[]>();
+  const byType = new Map<ContextEntityType, ContextEntityWithMembership[]>();
 
   await Promise.all(
     appConfig.contextEntityTypes.map(async (entityType) => {
@@ -52,7 +52,7 @@ export async function getMenuData(opts?: { detailedMenu?: boolean }) {
           if (!membership) return null; // Skip entities without membership
           return { ...item, membership };
         })
-        .filter((item: any): item is ContextEntityDataWithMembership => item !== null);
+        .filter((item: any): item is ContextEntityWithMembership => item !== null);
 
       byType.set(entityType, enrichedItems);
     }),

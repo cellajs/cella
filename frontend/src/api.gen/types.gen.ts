@@ -26,6 +26,7 @@ export type ContextEntityBase = {
   description: string | null;
   createdAt: string;
   modifiedAt: string | null;
+  tenantId: string;
   entityType: 'organization';
   slug: string;
   thumbnailUrl: string | null;

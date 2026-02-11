@@ -26,23 +26,23 @@ const OrganizationSettings = lazy(() => import('~/modules/organization/organizat
 
 /**
  * Layout route for tenant and organization-scoped pages.
- * Captures $tenantId and $orgId params, validates tenant access,
+ * Captures $tenantId and $orgSlug params, validates tenant access,
  * fetches org, and provides context for all nested routes.
  * Forks can nest additional routes (workspace, project, etc.) under this layout.
  */
 export const OrganizationLayoutRoute = createRoute({
-  path: '/$tenantId/$orgId',
+  path: '/$tenantId/$orgSlug',
   staticData: { isAuth: true },
   getParentRoute: () => AppLayoutRoute,
   beforeLoad: async ({ params, cause }) => {
     // Only revalidate on initial entry — search param changes are handled by child useSuspenseQuery
     const shouldRevalidate = cause === 'enter';
 
-    const { tenantId, orgId: orgIdParam } = params;
+    const { tenantId, orgSlug: orgSlugParam } = params;
     const isOnline = onlineManager.isOnline();
 
     // Resolve slug to ID via list cache (from menu), or fetch if not cached
-    const cached = findOrganizationInListCache(orgIdParam);
+    const cached = findOrganizationInListCache(orgSlugParam);
     const orgId = cached?.id;
 
     // If we have the ID from cache, use ID-based query; otherwise fetch by slug first
@@ -53,7 +53,7 @@ export const OrganizationLayoutRoute = createRoute({
       organization = await queryClient.ensureQueryData({ ...orgOptions, revalidateIfStale: shouldRevalidate });
     } else if (isOnline) {
       organization = await fetchSlugCacheId(
-        () => getOrganization({ path: { tenantId, organizationId: orgIdParam }, query: { slug: true } }),
+        () => getOrganization({ path: { tenantId, organizationId: orgSlugParam }, query: { slug: true } }),
         organizationQueryKeys.detail.byId,
       );
     }
@@ -64,7 +64,7 @@ export const OrganizationLayoutRoute = createRoute({
     }
 
     // Rewrite URL to use slug if user navigated with ID
-    rewriteUrlToSlug(params, { tenantId, orgId: organization.slug }, OrganizationLayoutRoute.to);
+    rewriteUrlToSlug(params, { tenantId, orgSlug: organization.slug }, OrganizationLayoutRoute.to);
 
     return { organization, tenantId };
   },

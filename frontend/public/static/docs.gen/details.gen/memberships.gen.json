@@ -416,6 +416,11 @@
               "type": ["string", "null"],
               "required": true
             },
+            "tenantId": {
+              "type": "string",
+              "required": true,
+              "maxLength": 24
+            },
             "entityType": {
               "type": "string",
               "required": true,
@@ -438,8 +443,9 @@
           "id": "bafp6iiu2dt74olfvl618xur",
           "createdAt": "2024-09-15T16:29:26.122Z",
           "modifiedAt": "2024-12-04T06:32:26.983Z",
+          "tenantId": "d9wtu57tfwtfux7yivt59ywq",
           "name": "Nolan - Jacobson",
-          "description": "Horizontal demand-driven support",
+          "description": "Automated eco-centric open architecture",
           "entityType": "organization",
           "slug": "nolan---jacobson",
           "thumbnailUrl": null,

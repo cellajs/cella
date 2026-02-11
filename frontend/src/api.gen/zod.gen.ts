@@ -24,6 +24,10 @@ export const zContextEntityBase = z.object({
   description: z.union([z.string(), z.null()]),
   createdAt: z.string(),
   modifiedAt: z.union([z.string(), z.null()]),
+  tenantId: z
+    .string()
+    .max(24)
+    .regex(/^[a-z0-9]+$/),
   entityType: z.enum(['organization']),
   slug: z.string(),
   thumbnailUrl: z.union([z.string(), z.null()]),

@@ -6,6 +6,7 @@ import {
   nameSchema,
   productEntityTypeSchema,
   slugSchema,
+  tenantIdSchema,
 } from '#/schemas';
 import { mockContextEntityBase, mockProductEntityBase } from '../../mocks/mock-entity-base';
 
@@ -34,6 +35,7 @@ const auditShape = {
 export const contextEntityBaseSchema = z
   .object({
     ...entityBaseShape,
+    tenantId: tenantIdSchema,
     entityType: contextEntityTypeSchema,
     slug: slugSchema,
     thumbnailUrl: imageUrlSchema.nullable(),

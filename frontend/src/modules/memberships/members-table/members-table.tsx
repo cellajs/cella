@@ -8,7 +8,7 @@ import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import type { RowsChangeData } from '~/modules/common/data-grid';
 import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
-import type { ContextEntityData } from '~/modules/entities/types';
+import type { ContextEntity } from '~/modules/entities/types';
 import { MembersTableBar } from '~/modules/memberships/members-table/members-bar';
 import { useColumns } from '~/modules/memberships/members-table/members-columns';
 import { membersListQueryOptions } from '~/modules/memberships/query';
@@ -24,7 +24,7 @@ function rowKeyGetter(row: Member) {
 }
 
 export interface MembersTableWrapperProps {
-  entity: ContextEntityData;
+  entity: ContextEntity;
   isSheet?: boolean;
   children?: React.ReactNode;
 }

@@ -21,7 +21,7 @@ export type AttachmentDialogItem = Partial<CarouselItemData> & { id: string };
  */
 export function AttachmentDialog() {
   const removeDialog = useDialoger((state) => state.remove);
-  const { tenantId, orgId } = useParams({ strict: false });
+  const { tenantId, orgSlug } = useParams({ strict: false });
 
   // Only subscribe to groupId changes - this determines which attachments to show
   const groupId = useSearch({ strict: false, select: (s) => (s as { groupId?: string }).groupId });
@@ -36,7 +36,7 @@ export function AttachmentDialog() {
   const initialAttachmentId = initialAttachmentIdRef.current;
 
   // Reactively subscribe to group attachments - re-renders when cache updates
-  const groupAttachments = useGroupAttachments(tenantId, orgId, groupId);
+  const groupAttachments = useGroupAttachments(tenantId, orgSlug, groupId);
 
   // Build items array: use group attachments if available, otherwise single attachment
   const attachments: AttachmentDialogItem[] = groupAttachments ?? [

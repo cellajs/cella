@@ -7,7 +7,7 @@ import { mockUserBase } from '../../mocks/mock-entity-base';
  * Users do not have the permissions field (only context entities do).
  */
 export const userBaseSchema = contextEntityBaseSchema
-  .omit({ entityType: true })
+  .omit({ entityType: true, tenantId: true })
   .extend({
     email: z.email(),
     entityType: z.literal('user'),

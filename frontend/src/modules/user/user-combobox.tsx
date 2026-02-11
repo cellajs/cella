@@ -4,12 +4,12 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
+import type { ContextEntityBase } from '~/api.gen';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useDebounce } from '~/hooks/use-debounce';
 import { useMeasure } from '~/hooks/use-measure';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
-import type { ContextEntityData } from '~/modules/entities/types';
 import { Badge } from '~/modules/ui/badge';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
@@ -19,7 +19,7 @@ import { usersListQueryOptions } from '~/modules/user/query';
 interface Props {
   value: string[];
   onChange: (items: string[]) => void;
-  entity: ContextEntityData;
+  entity: ContextEntityBase;
 }
 
 export const UserCombobox = ({ value, onChange, entity }: Props) => {

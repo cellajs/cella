@@ -18,7 +18,7 @@ function getChildRoutes(route: AnyRoute): AnyRoute[] {
  * Extract navigation tabs from child routes based on their staticData.navTab configuration.
  * Only routes with navTab defined in staticData will be included.
  *
- * @param parentRouteId - The route ID of the parent route (e.g., '/system' or '/$tenantId/$orgId/organization')
+ * @param parentRouteId - The route ID of the parent route (e.g., '/system' or '/$tenantId/$orgSlug/organization')
  * @param filterTabIds - Optional array of tab IDs to include (for permission-based filtering)
  */
 export function useNavTabs(parentRouteId: string, filterTabIds?: string[]): PageTab[] {

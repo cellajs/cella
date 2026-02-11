@@ -18,8 +18,8 @@ function createOrganizationAction(triggerRef: RefObject<HTMLButtonElement | null
     if (args.status === 'success') {
       // Navigate using the tenant ID and slug from the created organization
       router.navigate({
-        to: '/$tenantId/$orgId/organization/members',
-        params: { tenantId: args.data.tenantId, orgId: args.data.slug },
+        to: '/$tenantId/$orgSlug/organization/members',
+        params: { tenantId: args.data.tenantId, orgSlug: args.data.slug },
       });
     }
   };

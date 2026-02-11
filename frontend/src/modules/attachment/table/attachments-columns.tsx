@@ -8,12 +8,12 @@ import { SyncStatusCell } from '~/modules/attachment/table/sync-status-cell';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
 import { HeaderCell } from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
-import type { ContextEntityData } from '~/modules/entities/types';
+import type { ContextEntity } from '~/modules/entities/types';
 import { Input } from '~/modules/ui/input';
 import { UserCellById } from '~/modules/user/user-cell';
 import { dateShort } from '~/utils/date-short';
 
-export const useColumns = (entity: ContextEntityData, isSheet: boolean, isCompact: boolean) => {
+export const useColumns = (entity: ContextEntity, isSheet: boolean, isCompact: boolean) => {
   const { t } = useTranslation();
 
   const isMobile = useBreakpoints('max', 'sm', false);

@@ -32,10 +32,10 @@ export const useColumns = (isCompact: boolean) => {
         renderCell: ({ row, tabIndex }) => (
           <Link
             className={buttonVariants({ variant: 'cell', size: 'cell' })}
-            to="/$tenantId/$orgId/organization/members"
+            to="/$tenantId/$orgSlug/organization/members"
             draggable="false"
             tabIndex={tabIndex}
-            params={{ tenantId: row.tenantId, orgId: row.slug }}
+            params={{ tenantId: row.tenantId, orgSlug: row.slug }}
           >
             <AvatarWrap
               type="organization"

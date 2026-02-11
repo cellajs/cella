@@ -1,9 +1,10 @@
 import { onlineManager } from '@tanstack/react-query';
 import { lazy, Suspense, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { Organization } from '~/api.gen';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster/service';
-import type { PendingMembershipsTableProps } from '~/modules/memberships/pending-table/pending-memberships-table';
+import type { ContextEntity } from '~/modules/entities/types';
 import { Button } from '~/modules/ui/button';
 
 const PendingMembershipsTable = lazy(() => import('~/modules/memberships/pending-table/pending-memberships-table'));
@@ -12,7 +13,7 @@ const PendingMembershipsTable = lazy(() => import('~/modules/memberships/pending
  * Component to display pending memberships count.
  * Users can click to open them in a table in a sheet.
  */
-export const PendingMembershipsCount = ({ entity }: PendingMembershipsTableProps) => {
+export const PendingMembershipsCount = ({ entity }: { entity: ContextEntity & Pick<Organization, 'included'> }) => {
   const { t } = useTranslation();
   const buttonRef = useRef(null);
 
