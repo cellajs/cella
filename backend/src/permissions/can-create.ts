@@ -1,20 +1,15 @@
 import type { Context } from 'hono';
-import type { ContextEntityType, ProductEntityType } from 'shared';
 import type { Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
-import type { EntityModel } from '#/lib/resolve-entity';
 import { checkPermission } from '#/permissions';
+import type { SubjectForPermission } from '#/permissions/permission-manager/types';
 
 /**
  * Checks if user has permission to create product or context entity.
- * This is separate from read/update/delete checks, since the entity doesn not exist yet.
- *
- * @param entity - Entity that user wants to create.
+ * This is separate from read/update/delete checks, since the entity doesn't exist yet.
+ * Uses SubjectForPermission directly — id is optional for create checks.
  */
-export const canCreateEntity = <K extends Exclude<ContextEntityType, 'organization'> | ProductEntityType>(
-  ctx: Context<Env>,
-  entity: EntityModel<K>,
-) => {
+export const canCreateEntity = (ctx: Context<Env>, entity: SubjectForPermission) => {
   const userSystemRole = ctx.var.userSystemRole;
   const memberships = ctx.var.memberships;
 
@@ -30,8 +25,8 @@ export const canCreateEntity = <K extends Exclude<ContextEntityType, 'organizati
 
   const org = ctx.var.organization;
 
-  // Defense in depth check: it must match context organization
-  if (org && 'organizationId' in entity && entity.organizationId !== org.id) {
+  // Defense in depth check: if entity has organizationId, it must match context organization
+  if (org && 'organizationId' in entity && entity.organizationId && entity.organizationId !== org.id) {
     throw new AppError(409, 'organization_mismatch', 'error', { entityType });
   }
 };

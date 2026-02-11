@@ -18,7 +18,7 @@ type MembershipContextId<T extends ContextEntityType, M> = M extends Record<Cont
 /** Resolve the Drizzle column for a given context entity type. */
 export const getMembershipContextColumn = <T extends ContextEntityType>(contextType: T): ContextColumnMap[T] => {
   const key = appConfig.entityIdColumnKeys[contextType] as ContextIdKeyMap[T];
-  return membershipsTable[key];
+  return membershipsTable[key] as ContextColumnMap[T];
 };
 
 /** Get the configured context ID property name for a membership. */

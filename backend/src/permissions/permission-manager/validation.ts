@@ -15,8 +15,8 @@ export const validateSubject = (subject: SubjectForPermission, index?: number): 
     throw new Error(`[Permission] ${prefix} has invalid entityType: ${subject.entityType}`);
   }
 
-  if (!subject.id || typeof subject.id !== 'string' || subject.id.trim() === '') {
-    throw new Error(`[Permission] ${prefix} missing or invalid id`);
+  if (subject.id !== undefined && (typeof subject.id !== 'string' || subject.id.trim() === '')) {
+    throw new Error(`[Permission] ${prefix} invalid id`);
   }
 };
 

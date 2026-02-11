@@ -55,7 +55,8 @@ export type ContextEntityIdColumns = {
 export type SubjectForPermission = {
   /** The entity type being accessed (context or product, not user) */
   entityType: ContextEntityType | ProductEntityType;
-  id: string;
+  /** Entity id. Optional for create checks where the entity doesn't exist yet. */
+  id?: string;
 } & ContextEntityIdColumns;
 
 /**
@@ -81,7 +82,7 @@ export interface PermissionDecision<T extends MembershipBaseModel = MembershipBa
   /** The subject being checked with resolved context IDs */
   subject: {
     entityType: ContextEntityType | ProductEntityType;
-    id: string;
+    id?: string;
     contextIds: Partial<Record<ContextEntityType, string>>;
   };
   /** Context types checked in order (most specific to root). First element is primaryContext. */

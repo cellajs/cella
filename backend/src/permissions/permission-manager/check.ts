@@ -81,7 +81,7 @@ const getSubjectContextId = (
   subject: SubjectForPermission,
   contextType: ContextEntityType,
 ): string | null | undefined => {
-  if (subject.entityType === contextType && 'id' in subject) {
+  if (subject.entityType === contextType && subject.id) {
     return subject.id;
   }
   const contextIdKey = appConfig.entityIdColumnKeys[contextType];
@@ -248,7 +248,7 @@ export function getAllDecisions<T extends MembershipBaseModel>(
   const results = new Map<string, PermissionDecision<T>>();
 
   if (subjectArray.length === 0) {
-    return isSingle ? results.get(subjects.id)! : results;
+    return isSingle ? results.get(subjects.id ?? '_idx:0')! : results;
   }
 
   // Validate all inputs before processing
@@ -285,12 +285,14 @@ export function getAllDecisions<T extends MembershipBaseModel>(
 
     // Perform the permission check using pre-built indices
     const decision = checkWithIndices(membershipIndex, policyIndex, subject, orderedContexts, isSystemAdmin);
-    results.set(subject.id, decision);
+    const key = subject.id ?? `_idx:${subjectArray.indexOf(subject)}`;
+    results.set(key, decision);
   }
 
   // Return single decision or full map based on input type
   if (isSingle) {
-    const decision = results.get(subjects.id);
+    const key = subjects.id ?? '_idx:0';
+    const decision = results.get(key);
 
     // Should never happen
     if (!decision) throw new Error(`[Permission] Check failed for subject ${subjects.entityType}:${subjects.id}`);

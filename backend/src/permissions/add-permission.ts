@@ -18,7 +18,7 @@ export type WithAllowance<T> = T & {
  * @param entities - Array of entities to enrich
  * @returns Entities with `can` object added
  */
-export const addPermission = <T extends SubjectForPermission>(
+export const addPermission = <T extends SubjectForPermission & { id: string }>(
   ctx: Context<Env>,
   action: EntityActionType,
   entities: T[],
