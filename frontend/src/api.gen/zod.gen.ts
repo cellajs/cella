@@ -250,13 +250,16 @@ export const zUploadToken = z.object({
   public: z.boolean(),
   sub: z.string(),
   s3: z.boolean(),
-  signature: z.string(),
-  params: z.object({
-    auth: z.object({
-      key: z.string(),
-      expires: z.optional(z.string()),
+  signature: z.union([z.string(), z.null()]),
+  params: z.union([
+    z.object({
+      auth: z.object({
+        key: z.string(),
+        expires: z.optional(z.string()),
+      }),
     }),
-  }),
+    z.null(),
+  ]),
 });
 
 export const zTenantStatus = z.enum(['active', 'suspended', 'archived']);
@@ -1094,7 +1097,7 @@ export const zGetUsersResponse = z.object({
     zUser.and(
       z.object({
         memberships: z.array(zMembershipBase),
-        role: z.optional(z.enum(['admin'])),
+        role: z.optional(z.union([z.enum(['admin']), z.null()])),
       }),
     ),
   ),
@@ -1683,7 +1686,7 @@ export const zGetUsers2Response = z.object({
     zUser.and(
       z.object({
         memberships: z.array(zMembershipBase),
-        role: z.optional(z.enum(['admin'])),
+        role: z.optional(z.union([z.enum(['admin']), z.null()])),
       }),
     ),
   ),

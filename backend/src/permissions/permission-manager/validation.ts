@@ -30,7 +30,7 @@ export const validateMembership = <T extends MembershipBaseModel>(membership: T,
   }
 
   const contextIdKey = appConfig.entityIdColumnKeys[membership.contextType];
-  if (!membership[contextIdKey]) {
+  if (!(membership as any)[contextIdKey]) {
     throw new Error(`[Permission] Membership[${index}] missing context ID (${contextIdKey})`);
   }
 };

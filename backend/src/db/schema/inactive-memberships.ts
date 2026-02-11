@@ -40,7 +40,16 @@ export const inactiveMembershipsTable = pgTable(
     index('inactive_memberships_tenant_id_idx').on(table.tenantId),
     index('inactive_memberships_email_idx').on(table.email),
     index('inactive_memberships_org_pending_idx').on(table.organizationId, table.rejectedAt),
-    unique('inactive_memberships_tenant_email_org').on(table.tenantId, table.email, table.organizationId),
+    // Include contextType + all entity ID columns so forks with additional context types
+    // get proper uniqueness. nullsNotDistinct treats NULLs as equal.
+    unique('inactive_memberships_tenant_email_ctx')
+      .on(
+        table.tenantId,
+        table.email,
+        table.contextType,
+        ...appConfig.contextEntityTypes.map((t) => table[appConfig.entityIdColumnKeys[t] as keyof typeof table]),
+      )
+      .nullsNotDistinct(),
     foreignKey({
       columns: [table.tenantId, table.organizationId],
       foreignColumns: [organizationsTable.tenantId, organizationsTable.id],

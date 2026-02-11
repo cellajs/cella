@@ -36,16 +36,19 @@ export const uploadTokenSchema = z
     public: z.boolean(),
     sub: z.string(),
     s3: z.boolean(),
-    signature: z.string(),
-    params: z
-      .object({
-        auth: z.object({
-          key: z.string(),
-          expires: z.string().optional(),
-        }),
-        // Allow additional arbitrary keys with any type in params
-      })
-      .catchall(z.any()),
+    signature: z.union([z.string(), z.null()]),
+    params: z.union([
+      z
+        .object({
+          auth: z.object({
+            key: z.string(),
+            expires: z.string().optional(),
+          }),
+          // Allow additional arbitrary keys with any type in params
+        })
+        .catchall(z.any()),
+      z.null(),
+    ]),
   })
   .openapi('UploadToken', { example: mockUploadTokenResponse() });
 

@@ -348,10 +348,15 @@ type ChangeEntityRoleResult = {
 export const useChangeEntityRoleMutation = () =>
   useMutation<ChangeEntityRoleResult, ApiError, ChangeEntityRoleVariables>({
     mutationFn: async ({ entity, role }) => {
-      if (!onlineManager.isOnline()) throw new Error(t('common:action.offline.text'));
+      if (!onlineManager.isOnline()) {
+        toaster(t('common:action.offline.text'), 'warning');
+        throw new Error('offline');
+      }
 
       const { id: entityId, entityType, tenantId, membership } = entity;
-      const orgId = entity.organizationId || entityId;
+      // For organization entities, orgId is the entity itself; for children it comes from the entity data
+      const orgId = entityType === 'organization' ? entityId : entity.organizationId;
+      if (!orgId) throw new Error(`Missing organizationId for ${entityType} entity`);
 
       if (membership?.id) {
         // Existing membership — update role

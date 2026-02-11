@@ -1,6 +1,6 @@
 import { onlineManager } from '@tanstack/react-query';
 import i18n from 'i18next';
-import { HomeIcon, MenuIcon, SearchIcon, SettingsIcon, UserIcon } from 'lucide-react';
+import { HomeIcon, MenuIcon, SearchIcon, UserIcon } from 'lucide-react';
 import type { RefObject } from 'react';
 import type { FooterLinkProps } from '~/modules/common/app/app-footer';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -8,7 +8,6 @@ import { toaster } from '~/modules/common/toaster/service';
 import { AccountSheet } from '~/modules/navigation/account-sheet';
 import { AppSearch } from '~/modules/navigation/app-search';
 import { MenuSheet } from '~/modules/navigation/menu-sheet/menu-sheet';
-import { SettingsSheet } from '~/modules/navigation/settings-sheet';
 
 /**
  * Declare search nav button action
@@ -33,7 +32,6 @@ export const navItems = [
   { id: 'home', type: 'base', icon: HomeIcon, href: '/home' },
   { id: 'search', type: 'base', icon: SearchIcon, action: startSearchAction },
   { id: 'account', type: 'base', icon: UserIcon, sheet: <AccountSheet />, mirrorOnMobile: true },
-  { id: 'settings', type: 'footer', icon: SettingsIcon, sheet: <SettingsSheet /> },
 ] as const;
 
 /**

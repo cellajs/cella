@@ -9,6 +9,13 @@ import {
   syncMetricsSchema,
 } from '#/modules/metrics/metrics-schema';
 import { errorResponseRefs } from '#/schemas';
+import {
+  mockCacheStatsResponse,
+  mockMetricsListResponse,
+  mockPublicCountsResponse,
+  mockRuntimeMetricsResponse,
+  mockSyncMetricsResponse,
+} from '../../../mocks/mock-metrics';
 
 const metricRouteConfig = {
   /**
@@ -26,7 +33,7 @@ const metricRouteConfig = {
     responses: {
       200: {
         description: 'Metrics',
-        content: { 'application/json': { schema: metricListSchema } },
+        content: { 'application/json': { schema: metricListSchema, example: mockMetricsListResponse() } },
       },
       ...errorResponseRefs,
     },
@@ -46,7 +53,7 @@ const metricRouteConfig = {
     responses: {
       200: {
         description: 'Runtime metrics',
-        content: { 'application/json': { schema: runtimeMetricsSchema } },
+        content: { 'application/json': { schema: runtimeMetricsSchema, example: mockRuntimeMetricsResponse() } },
       },
       ...errorResponseRefs,
     },
@@ -67,7 +74,7 @@ const metricRouteConfig = {
     responses: {
       200: {
         description: 'Public counts',
-        content: { 'application/json': { schema: publicCountsSchema } },
+        content: { 'application/json': { schema: publicCountsSchema, example: mockPublicCountsResponse() } },
       },
       ...errorResponseRefs,
     },
@@ -87,7 +94,7 @@ const metricRouteConfig = {
     responses: {
       200: {
         description: 'Cache statistics',
-        content: { 'application/json': { schema: cacheStatsSchema } },
+        content: { 'application/json': { schema: cacheStatsSchema, example: mockCacheStatsResponse() } },
       },
       ...errorResponseRefs,
     },
@@ -107,7 +114,7 @@ const metricRouteConfig = {
     responses: {
       200: {
         description: 'Sync metrics',
-        content: { 'application/json': { schema: syncMetricsSchema } },
+        content: { 'application/json': { schema: syncMetricsSchema, example: mockSyncMetricsResponse() } },
       },
       ...errorResponseRefs,
     },

@@ -1075,7 +1075,7 @@
     "hasParams": false,
     "hasRequestBody": false,
     "hasResponseBody": true,
-    "hasExample": false,
+    "hasExample": true,
     "extensions": {
       "xGuard": ["authGuard", "sysAdminGuard"],
       "xRateLimiter": [],
@@ -1094,7 +1094,7 @@
     "hasParams": false,
     "hasRequestBody": false,
     "hasResponseBody": true,
-    "hasExample": false,
+    "hasExample": true,
     "extensions": {
       "xGuard": ["authGuard", "sysAdminGuard"],
       "xRateLimiter": [],
@@ -1113,7 +1113,7 @@
     "hasParams": false,
     "hasRequestBody": false,
     "hasResponseBody": true,
-    "hasExample": false,
+    "hasExample": true,
     "extensions": {
       "xGuard": ["publicGuard"],
       "xRateLimiter": [],
@@ -1132,7 +1132,7 @@
     "hasParams": false,
     "hasRequestBody": false,
     "hasResponseBody": true,
-    "hasExample": false,
+    "hasExample": true,
     "extensions": {
       "xGuard": ["authGuard", "sysAdminGuard"],
       "xRateLimiter": [],
@@ -1151,7 +1151,7 @@
     "hasParams": false,
     "hasRequestBody": false,
     "hasResponseBody": true,
-    "hasExample": false,
+    "hasExample": true,
     "extensions": {
       "xGuard": ["authGuard", "sysAdminGuard"],
       "xRateLimiter": [],

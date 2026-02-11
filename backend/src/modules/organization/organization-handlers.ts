@@ -70,7 +70,7 @@ const organizationRouteHandlers = app
 
     // If nothing to create, return early
     if (itemsToCreate.length === 0) {
-      return ctx.json({ data: [], ...rejectionState }, 201);
+      return ctx.json({ data: [] as never[], ...rejectionState }, 201);
     }
 
     // Get the RLS-enabled db from tenant guard middleware
@@ -122,22 +122,22 @@ const organizationRouteHandlers = app
     const membershipByOrgId = new Map(createdMemberships.map((m) => [m.organizationId, m]));
 
     const data = createdOrganizations.map((org) => {
-      const membership = membershipByOrgId.get(org.id);
+      // Membership must exist — we just inserted it above
+      const membership = membershipByOrgId.get(org.id)!;
       return {
         ...org,
         included: {
-          membership: membership
-            ? {
-                id: membership.id,
-                contextType: membership.contextType,
-                userId: membership.userId,
-                role: membership.role,
-                displayOrder: membership.displayOrder,
-                muted: membership.muted,
-                archived: membership.archived,
-                organizationId: membership.organizationId,
-              }
-            : undefined,
+          membership: {
+            id: membership.id,
+            tenantId: membership.tenantId,
+            contextType: membership.contextType,
+            userId: membership.userId,
+            role: membership.role,
+            displayOrder: membership.displayOrder,
+            muted: membership.muted,
+            archived: membership.archived,
+            organizationId: membership.organizationId,
+          },
           counts: { membership: memberCounts, entities: entitiesCounts },
         },
         can,
@@ -324,6 +324,7 @@ const organizationRouteHandlers = app
       ...(membership && {
         membership: {
           id: membership.id,
+          tenantId: membership.tenantId,
           contextType: membership.contextType,
           userId: membership.userId,
           role: membership.role,
@@ -393,6 +394,7 @@ const organizationRouteHandlers = app
       ...(membership && {
         membership: {
           id: membership.id,
+          tenantId: membership.tenantId,
           contextType: membership.contextType,
           userId: membership.userId,
           role: membership.role,

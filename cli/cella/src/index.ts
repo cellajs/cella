@@ -13,7 +13,7 @@ import { parseCli } from './cli';
 import type { MergeResult, RuntimeConfig } from './config/types';
 import { runAnalyze } from './services/analyze';
 import { runAudit } from './services/audit';
-import { pushContribBranch } from './services/contribute';
+import { pushContribBranch, pushPinnedBranch } from './services/contribute';
 import { runContributions } from './services/contributions';
 import { runForks } from './services/forks';
 import { runInspect } from './services/inspect';
@@ -128,6 +128,7 @@ async function main(): Promise<void> {
       case 'analyze': {
         const analyzeResult = await runAnalyze(config);
         await autoContribute(analyzeResult, config);
+        await pushPinnedBranch(config);
         break;
       }
 
@@ -141,6 +142,7 @@ async function main(): Promise<void> {
           await runPackages(config);
         }
         await autoContribute(result, config);
+        await pushPinnedBranch(config);
         break;
       }
 

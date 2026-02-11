@@ -88,7 +88,7 @@ const userRouteHandlers = app
       const entityFieldId = appConfig.entityIdColumnKeys[targetEntityType];
       membershipFilters.push(
         eq(membershipsTable.contextType, targetEntityType),
-        eq(membershipsTable[entityFieldId], targetEntityId),
+        eq(membershipsTable[entityFieldId as keyof (typeof membershipsTable)['_']['columns']], targetEntityId),
       );
     }
 
@@ -124,7 +124,9 @@ const userRouteHandlers = app
 
     // Check if requesting self (by id or slug)
     if (userId === requestingUser.id || (bySlug && userId === requestingUser.slug)) {
-      return ctx.json(requestingUser, 200);
+      // Re-select with userSelect to include lastSeenAt (subquery from last_seen table)
+      const [self] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, requestingUser.id)).limit(1);
+      return ctx.json(self, 200);
     }
 
     // Resolve user by ID (or slug when bySlug is true)
@@ -147,7 +149,14 @@ const userRouteHandlers = app
       throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { user: targetUser.id } });
     }
 
-    return ctx.json(targetUser, 200);
+    // Re-select with userSelect to include lastSeenAt (subquery from last_seen table)
+    const [userWithActivity] = await db
+      .select(userSelect)
+      .from(usersTable)
+      .where(eq(usersTable.id, targetUser.id))
+      .limit(1);
+
+    return ctx.json(userWithActivity, 200);
   });
 
 export default userRouteHandlers;

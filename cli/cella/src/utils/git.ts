@@ -31,6 +31,8 @@ interface GitCommandOptions {
   maxBuffer?: number;
   /** Ignore command errors (return empty string instead of throwing) */
   ignoreErrors?: boolean;
+  /** Additional environment variables for the git command */
+  env?: Record<string, string>;
 }
 
 /**
@@ -45,6 +47,7 @@ export async function git(args: string[], cwd: string, options: GitCommandOption
   const env = {
     ...process.env,
     ...(options.skipEditor ? { GIT_EDITOR: 'true' } : {}),
+    ...options.env,
   };
 
   const maxBuffer = options.maxBuffer ?? 50 * 1024 * 1024; // 50MB default

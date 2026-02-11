@@ -127,7 +127,7 @@ const pageRouteHandlers = app
         // For batch create, the first page ID is stored - fetch all from that batch
         const existing = await tenantDb.select().from(pagesTable).where(eq(pagesTable.id, ref.entityId));
         if (existing.length > 0) {
-          return ctx.json({ data: existing, rejectedItems: [] }, 200);
+          return ctx.json({ data: existing, rejectedItemIds: [] }, 200);
         }
       }
     }
@@ -164,7 +164,7 @@ const pageRouteHandlers = app
     logEvent('info', `${createdPages.length} pages have been created`);
 
     // Return with stx on each item (for client-side tracking)
-    return ctx.json({ data: createdPages, rejectedItems: [] }, 201);
+    return ctx.json({ data: createdPages, rejectedItemIds: [] }, 201);
   })
   /**
    * Update page by id

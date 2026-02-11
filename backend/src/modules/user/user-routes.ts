@@ -1,3 +1,4 @@
+import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/docs/x-routes';
 import { authGuard, tenantGuard } from '#/middlewares/guard';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
@@ -33,7 +34,7 @@ const userRoutes = {
             schema: paginationSchema(
               userSchema.extend({
                 memberships: membershipBaseSchema.array(),
-                role: systemRoleBaseSchema.shape.role.optional(),
+                role: z.union([systemRoleBaseSchema.shape.role, z.null()]).optional(),
               }),
             ),
             example: mockPaginatedUsersResponse(),

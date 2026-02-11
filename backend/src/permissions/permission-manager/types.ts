@@ -44,7 +44,7 @@ export type AccessPolicies = Partial<Record<ContextEntityType | ProductEntityTyp
  * Maps each context entity type to its ID column value type.
  */
 export type ContextEntityIdColumns = {
-  [K in ContextEntityType as EntityIdColumnKeys[K]]?: string;
+  [K in ContextEntityType as EntityIdColumnKeys[K]]?: string | null;
 };
 
 /**

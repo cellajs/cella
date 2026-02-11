@@ -91,15 +91,21 @@ export const errorResponses: Responses = Object.fromEntries(
 );
 
 /**
- * Errors as array of `$ref` for creating routes
+ * Errors as `$ref` for route definitions — keeps OpenAPI output compact by referencing
+ * registered response components instead of inlining the full schema per route.
+ *
+ * NOTE: The type is cast to look like inline Zod-backed responses. Without this,
+ * `@hono/zod-openapi` sees `$ref` objects (no `content` key) and widens the handler
+ * return type to `Response`, silently disabling compile-time response type checking.
+ * See: https://github.com/honojs/middleware/issues — no upstream fix as of 2026-02.
  */
-export const errorResponseRefs: Record<ErrorCode, { $ref: Ref }> = errorResponseOptions.reduce(
+export const errorResponseRefs = errorResponseOptions.reduce(
   (acc, { code, ref }) => {
     acc[code] = { $ref: ref };
     return acc;
   },
   {} as Record<ErrorCode, { $ref: Ref }>,
-);
+) as unknown as Record<ErrorCode, ZodBackedResponse>;
 
 // Registry helpers
 const registerResponseFromZod = (

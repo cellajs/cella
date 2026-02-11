@@ -46,7 +46,17 @@ export const membershipsTable = pgTable(
     index('memberships_organization_id_idx').on(table.organizationId),
     index('memberships_tenant_id_idx').on(table.tenantId),
     index('memberships_context_org_role_idx').on(table.contextType, table.organizationId, table.role),
-    unique('memberships_tenant_user_org').on(table.tenantId, table.userId, table.organizationId),
+    // Include contextType + all entity ID columns so forks with additional context types
+    // (e.g. workspace, project) get proper uniqueness without manual schema changes.
+    // nullsNotDistinct ensures NULL entity IDs are treated as equal, preventing duplicates.
+    unique('memberships_tenant_user_ctx')
+      .on(
+        table.tenantId,
+        table.userId,
+        table.contextType,
+        ...appConfig.contextEntityTypes.map((t) => table[appConfig.entityIdColumnKeys[t] as keyof typeof table]),
+      )
+      .nullsNotDistinct(),
     foreignKey({
       columns: [table.tenantId, table.organizationId],
       foreignColumns: [organizationsTable.tenantId, organizationsTable.id],

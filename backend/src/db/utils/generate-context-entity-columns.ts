@@ -1,12 +1,17 @@
 import { varchar } from 'drizzle-orm/pg-core';
-import { appConfig, type RelatableContextEntityType } from 'shared';
+import { appConfig, type ContextEntityType, type EntityIdColumnKey, type RelatableContextEntityType } from 'shared';
 import { allContextEntityTables, relatableContextEntityTables } from '#/relatable-config';
 
+/** Column type produced by varchar().references() */
+type VarcharColumn = ReturnType<typeof varchar>;
+
 /**
- * Type for dynamically generated context entity ID columns.
- * Each column is a varchar with string data type.
+ * Mapped type that produces statically-known keys from entity ID column config.
+ * e.g. { organizationId: VarcharColumn }
  */
-export type ContextEntityTypeColumns = Record<string, ReturnType<typeof varchar>>;
+type ContextEntityIdColumns<T extends ContextEntityType = ContextEntityType> = {
+  [K in T as EntityIdColumnKey<K>]: VarcharColumn;
+};
 
 /** All relatable context entity types (keys of relatableContextEntityTables). */
 const relatableContextEntityTypes = Object.keys(relatableContextEntityTables) as RelatableContextEntityType[];
@@ -18,10 +23,12 @@ const relatableContextEntityTypes = Object.keys(relatableContextEntityTables) as
  * @param mode - 'all' includes all context entity types from appConfig, 'relatable' only includes those from relatableContextEntityTables. Defaults to 'all'.
  * @returns A set of dynamically generated columns for context entities.
  */
-export const generateContextEntityIdColumns = (mode: 'all' | 'relatable' = 'all'): ContextEntityTypeColumns => {
+export function generateContextEntityIdColumns(mode?: 'all'): ContextEntityIdColumns<ContextEntityType>;
+export function generateContextEntityIdColumns(mode: 'relatable'): ContextEntityIdColumns<RelatableContextEntityType>;
+export function generateContextEntityIdColumns(mode: 'all' | 'relatable' = 'all'): ContextEntityIdColumns {
   const entityTypes = mode === 'all' ? appConfig.contextEntityTypes : relatableContextEntityTypes;
   const tables = mode === 'all' ? allContextEntityTables : relatableContextEntityTables;
-  const columns = {} as ContextEntityTypeColumns;
+  const columns = {} as ContextEntityIdColumns;
 
   for (const entityType of entityTypes) {
     const table = tables[entityType as keyof typeof tables];
@@ -31,4 +38,4 @@ export const generateContextEntityIdColumns = (mode: 'all' | 'relatable' = 'all'
   }
 
   return columns;
-};
+}

@@ -37,7 +37,7 @@ function getBaseNavItems() {
 // Cached footer nav items
 let footerNavItems: NavItem[] | null = null;
 function getFooterNavItems() {
-  if (!footerNavItems) footerNavItems = navItems.filter(({ type }) => type === 'footer');
+  if (!footerNavItems) footerNavItems = navItems.filter(({ type }) => (type as string) === 'footer');
   return footerNavItems;
 }
 

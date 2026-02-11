@@ -31,7 +31,7 @@ const buildMembershipIndex = <T extends MembershipBaseModel>(memberships: T[]): 
   const index: MembershipIndex<T> = new Map();
   for (const m of memberships) {
     const contextIdKey = appConfig.entityIdColumnKeys[m.contextType];
-    const key = `${m.contextType}:${m[contextIdKey]}`;
+    const key = `${m.contextType}:${(m as any)[contextIdKey]}`;
     const list = index.get(key) ?? [];
     list.push(m);
     index.set(key, list);
@@ -73,7 +73,10 @@ const getOrBuildPolicyIndex = (
  * - If `subject.entityType === contextType` and subject has `id`: returns `subject.id`
  * - Otherwise: returns `subject[entityIdColumnKeys[contextType]]` (e.g., subject.organizationId)
  */
-const getSubjectContextId = (subject: SubjectForPermission, contextType: ContextEntityType): string | undefined => {
+const getSubjectContextId = (
+  subject: SubjectForPermission,
+  contextType: ContextEntityType,
+): string | null | undefined => {
   if (subject.entityType === contextType && 'id' in subject) {
     return subject.id;
   }

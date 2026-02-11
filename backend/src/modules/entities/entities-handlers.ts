@@ -180,7 +180,8 @@ const entitiesRouteHandlers = app
 
       // Keep connection alive
       await keepAlive(stream);
-    });
+      // biome-ignore lint/suspicious/noExplicitAny: streamSSE returns Response, not TypedResponse expected by OpenAPI handler
+    }) as any;
   })
   /**
    * App stream (authenticated App stream for membership and entity updates)
@@ -268,7 +269,8 @@ const entitiesRouteHandlers = app
 
       // Keep connection alive
       await keepAlive(stream);
-    });
+      // biome-ignore lint/suspicious/noExplicitAny: streamSSE returns Response, not TypedResponse expected by OpenAPI handler
+    }) as any;
   });
 
 export default entitiesRouteHandlers;

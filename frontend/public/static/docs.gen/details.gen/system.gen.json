@@ -212,9 +212,15 @@
                     }
                   },
                   "role": {
-                    "type": "string",
                     "required": false,
-                    "enum": ["admin"]
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "required": false,
+                        "enum": ["admin"]
+                      },
+                      { "type": "null", "required": false }
+                    ]
                   }
                 },
                 "extendsRef": "#/components/schemas/User"

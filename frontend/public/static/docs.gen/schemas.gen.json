@@ -1118,20 +1118,32 @@
         "public": { "type": "boolean", "required": true },
         "sub": { "type": "string", "required": true },
         "s3": { "type": "boolean", "required": true },
-        "signature": { "type": "string", "required": true },
-        "params": {
-          "type": "object",
+        "signature": {
           "required": true,
-          "properties": {
-            "auth": {
+          "anyOf": [
+            { "type": "string", "required": false },
+            { "type": "null", "required": false }
+          ]
+        },
+        "params": {
+          "required": true,
+          "anyOf": [
+            {
               "type": "object",
-              "required": true,
+              "required": false,
               "properties": {
-                "key": { "type": "string", "required": true },
-                "expires": { "type": "string", "required": false }
+                "auth": {
+                  "type": "object",
+                  "required": true,
+                  "properties": {
+                    "key": { "type": "string", "required": true },
+                    "expires": { "type": "string", "required": false }
+                  }
+                }
               }
-            }
-          }
+            },
+            { "type": "null", "required": false }
+          ]
         }
       }
     },

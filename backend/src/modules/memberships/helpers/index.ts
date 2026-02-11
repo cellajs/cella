@@ -1,5 +1,5 @@
 import { inArray, max } from 'drizzle-orm';
-import { appConfig, type ContextEntityType } from 'shared';
+import { appConfig, type ContextEntityType, hierarchy } from 'shared';
 import type { DbOrTx } from '#/db/db';
 import { InsertMembershipModel, type MembershipModel, membershipsTable } from '#/db/schema/memberships';
 import type { EntityModel } from '#/lib/resolve-entity';
@@ -7,8 +7,16 @@ import type { EntityModel } from '#/lib/resolve-entity';
 import { MembershipBaseModel, membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import { logEvent } from '#/utils/logger';
 
+/**
+ * The root context entity type — the parentless context entity (e.g. 'organization').
+ * Derived from the hierarchy so forks that change the root entity type
+ * don't need to update membership helper code.
+ */
+const rootContextType = hierarchy.contextTypes.find((t) => hierarchy.getParent(t) === null)!;
+const rootIdColumnKey = appConfig.entityIdColumnKeys[rootContextType];
+
 type BaseEntityModel = EntityModel<ContextEntityType> & {
-  organizationId?: string;
+  [key: string]: unknown;
   tenantId: string; // Required for RLS
 };
 
@@ -46,9 +54,7 @@ export const getBaseMembershipEntityId = <T extends ContextEntityType>(entity: E
 
       return acc;
     },
-    {} as Partial<Record<(typeof appConfig.entityIdColumnKeys)[ContextEntityType], string>> & {
-      organizationId: string;
-    },
+    {} as Record<(typeof appConfig.entityIdColumnKeys)[ContextEntityType], string>,
   );
 };
 
@@ -118,22 +124,20 @@ export const insertMemberships = async <T extends BaseEntityModel>(
   });
 
   /**
-   * Build organization membership rows (only for non-organization entities).
+   * Build root context membership rows (only for non-root entities).
    * These are parent memberships and always get role "member".
    * Creation is effectively "only if not existing" thanks to unique constraint + onConflictDoNothing.
    */
-  const orgRows: InsertMembershipModel[] = prepared
-    .filter(({ entity }) => entity.entityType !== 'organization')
+  const rootRows: InsertMembershipModel[] = prepared
+    .filter(({ entity }) => entity.entityType !== rootContextType)
     .map(({ baseMembership, targetEntitiesIdColumnKeys, entity }) => {
-      // Extract only organizationId (ignore other entity IDs)
-      const { organizationId } = targetEntitiesIdColumnKeys;
       return {
         ...baseMembership,
         tenantId: entity.tenantId,
-        role: 'member', // parent org membership is always 'member'
-        organizationId,
-        contextType: 'organization',
-      } satisfies InsertMembershipModel;
+        role: 'member', // parent membership is always 'member'
+        [rootIdColumnKey]: targetEntitiesIdColumnKeys[rootIdColumnKey],
+        contextType: rootContextType,
+      } as InsertMembershipModel;
     });
 
   // Build associated entity membership rows (when an associated relationship exists)
@@ -150,18 +154,17 @@ export const insertMemberships = async <T extends BaseEntityModel>(
       const associatedField = targetEntitiesIdColumnKeys[appConfig.entityIdColumnKeys[associatedType]];
       if (!associatedField) return null;
 
-      // Get the target entity's ID field to exclude it, but always preserve organizationId
+      // Get the target entity's ID field to exclude it, but always preserve the root context ID
       const targetEntityIdColumnKey = appConfig.entityIdColumnKeys[entity.entityType];
-      const { [targetEntityIdColumnKey]: _, organizationId, ...otherIdColumnKeys } = targetEntitiesIdColumnKeys;
+      const { [targetEntityIdColumnKey]: _, ...remainingIdColumnKeys } = targetEntitiesIdColumnKeys;
 
       return {
         ...baseMembership,
         tenantId: entity.tenantId,
         role: 'member', // parent/associated membership is always 'member'
-        organizationId,
-        ...otherIdColumnKeys,
+        ...remainingIdColumnKeys,
         contextType: associatedType,
-      } satisfies InsertMembershipModel;
+      } as InsertMembershipModel;
     })
     .filter((row): row is NonNullable<typeof row> => row !== null);
 
@@ -179,8 +182,8 @@ export const insertMemberships = async <T extends BaseEntityModel>(
     // targetRows → main insert (returns inserted memberships)
     db.insert(membershipsTable).values(targetRows).returning(membershipBaseSelect),
 
-    // optional org + associated inserts (safe upserts)
-    orgRows.length ? db.insert(membershipsTable).values(orgRows).onConflictDoNothing() : Promise.resolve(),
+    // optional root context + associated inserts (safe upserts)
+    rootRows.length ? db.insert(membershipsTable).values(rootRows).onConflictDoNothing() : Promise.resolve(),
     associatedRows.length
       ? db.insert(membershipsTable).values(associatedRows).onConflictDoNothing()
       : Promise.resolve(),

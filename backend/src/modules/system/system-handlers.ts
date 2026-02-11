@@ -222,7 +222,7 @@ const systemRouteHandlers = app
       const entityFieldId = appConfig.entityIdColumnKeys[targetEntityType];
       membershipFilters.push(
         eq(membershipsTable.contextType, targetEntityType),
-        eq(membershipsTable[entityFieldId], targetEntityId),
+        eq((membershipsTable as any)[entityFieldId], targetEntityId),
       );
     }
 
@@ -311,7 +311,14 @@ const systemRouteHandlers = app
 
     logEvent('info', 'User updated', { userId: updatedUser.id });
 
-    return ctx.json(updatedUser, 200);
+    // Re-select with userSelect to include lastSeenAt (subquery from last_seen table)
+    const [userWithActivity] = await db
+      .select(userSelect)
+      .from(usersTable)
+      .where(eq(usersTable.id, updatedUser.id))
+      .limit(1);
+
+    return ctx.json(userWithActivity, 200);
   })
   /**
    * Paddle webhook

@@ -242,7 +242,7 @@ export type UploadToken = {
   public: boolean;
   sub: string;
   s3: boolean;
-  signature: string;
+  signature: string | null;
   params: {
     auth: {
       key: string;
@@ -254,7 +254,7 @@ export type UploadToken = {
           key: string;
           expires?: string;
         };
-  };
+  } | null;
 };
 
 export type Tenant = {
@@ -2441,7 +2441,7 @@ export type GetUsersResponses = {
     items: Array<
       User & {
         memberships: Array<MembershipBase>;
-        role?: 'admin';
+        role?: 'admin' | null;
       }
     >;
     total: number;
@@ -3923,7 +3923,7 @@ export type GetUsers2Responses = {
     items: Array<
       User & {
         memberships: Array<MembershipBase>;
-        role?: 'admin';
+        role?: 'admin' | null;
       }
     >;
     total: number;
