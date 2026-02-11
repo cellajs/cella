@@ -121,6 +121,13 @@ async function main(): Promise<void> {
       }
       await preflight(forkPath, userConfig.settings.forkBranch, { skipCleanCheck: true, warnOnBranch: true });
 
+      const { basename } = await import('node:path');
+      const forkName = basename(forkPath);
+      console.info(
+        pc.cyan(`contributing: analyze → update contrib/${forkName} in upstream and upstream/pinned in repo`),
+      );
+      console.info();
+
       const { runMergeEngine } = await import('./services/merge-engine');
       const { createSpinner, spinnerSuccess, spinnerText } = await import('./utils/display');
 

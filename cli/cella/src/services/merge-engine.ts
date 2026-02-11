@@ -672,7 +672,7 @@ export async function runMergeEngine(
         }
       }
 
-      onStep?.('analysis complete', `${analyzedFiles.length} files analyzed`);
+      onStep?.('analysis complete', `${analyzedFiles.length} files analyzed, dry run — no changes applied`);
 
       const summary = calculateSummary(analyzedFiles);
 
@@ -682,8 +682,6 @@ export async function runMergeEngine(
 
       // For analyze mode, count diverged files as potential conflicts
       const potentialConflicts = analyzedFiles.filter((f) => f.status === 'diverged').map((f) => f.path);
-
-      onStep?.('analysis complete', 'dry run, no changes applied');
 
       return {
         success: true,
