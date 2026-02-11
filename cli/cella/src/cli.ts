@@ -93,7 +93,8 @@ export async function parseCli(userConfig: CellaCliConfig, forkPath: string): Pr
     .option('-V, --verbose', 'show detailed output during operations', () => {
       verbose = true;
     })
-    .option('--fork <name>', 'pre-select fork by name (skips fork selection prompt)');
+    .option('--fork <name>', 'pre-select fork by name (skips fork selection prompt)')
+    .option('--contribute', 'push drifted files to contrib branch in upstream (non-interactive)');
 
   program.parse(process.argv);
 
@@ -107,8 +108,9 @@ export async function parseCli(userConfig: CellaCliConfig, forkPath: string): Pr
     console.info();
   }
 
-  // If no service provided, prompt for it
-  if (!service) {
+  // If no service provided (and not --contribute), prompt for it
+  const opts = program.opts();
+  if (!service && !opts.contribute) {
     const hasForks = (userConfig.forks?.length ?? 0) > 0;
     const syncWithPackages = userConfig.settings.syncWithPackages !== false;
     const selected = await select<SyncService | 'exit'>({
@@ -131,16 +133,15 @@ export async function parseCli(userConfig: CellaCliConfig, forkPath: string): Pr
   const remoteName = userConfig.settings.upstreamRemoteName || 'cella-upstream';
   const upstreamRef = `${remoteName}/${userConfig.settings.upstreamBranch}`;
 
-  const opts = program.opts();
-
   return {
     ...userConfig,
     forkPath,
     upstreamRef,
-    service,
+    service: service ?? 'analyze',
     logFile,
     list,
     verbose,
     fork: opts.fork,
+    contribute: opts.contribute,
   };
 }

@@ -38,6 +38,7 @@ pnpm cella [options]
 |------|-------------|
 | `--service <name>` | Choose service: `analyze`, `inspect`, `sync`, `packages`, `audit`, `forks`, `contributions` |
 | `--fork <name>` | Sync a specific fork directly (skips interactive menu) |
+| `--contribute` | Push drifted files to `contrib/<fork>` branch in upstream (non-interactive) |
 | `--list` | Non-interactive output for `inspect` / `contributions` (one file per line, useful for scripting) |
 | `--log` | Write complete file list to `cella-sync.log` |
 | `-V, --verbose` | Show detailed output during operations |
@@ -157,6 +158,14 @@ settings: {
 With `autoContribute` enabled, any **drifted** files (fork modified, upstream didn't) are automatically pushed to a `contrib/<fork-name>` branch in the upstream repo after every sync or analyze run.
 
 Alternatively, use the **inspect** service to selectively contribute: review drifted files, select with `space`, and press `enter` to push.
+
+For a quick non-interactive push, use:
+
+```bash
+pnpm cella --contribute
+```
+
+This runs a lightweight analysis, pushes all drifted files to `contrib/<fork-name>`, and updates the `upstream/pinned` branch — no prompts, no menu.
 
 ### Upstream side
 

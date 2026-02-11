@@ -114,6 +114,37 @@ async function main(): Promise<void> {
     // Parse CLI and get runtime config
     const config = await parseCli(userConfig, forkPath);
 
+    // --contribute flag: quick non-interactive push of drifted files
+    if (config.contribute) {
+      if (!config.settings.upstreamLocalPath) {
+        throw new Error('upstreamLocalPath is required in cella.config.ts to use --contribute');
+      }
+      await preflight(forkPath, userConfig.settings.forkBranch, { skipCleanCheck: true, warnOnBranch: true });
+
+      const { runMergeEngine } = await import('./services/merge-engine');
+      const { createSpinner, spinnerSuccess, spinnerText } = await import('./utils/display');
+
+      createSpinner('analyzing drifts...');
+      const result = await runMergeEngine(config, {
+        apply: false,
+        onProgress: (msg) => spinnerText(msg),
+        onStep: (label, detail) => {
+          spinnerSuccess(label, detail);
+          createSpinner('...');
+        },
+      });
+      spinnerSuccess();
+
+      const drifted = result.files.filter((f) => f.status === 'drifted');
+      if (drifted.length > 0) {
+        await pushContribBranch(drifted, config);
+      } else {
+        console.info(pc.dim('no drifted files to contribute.'));
+      }
+      await pushPinnedBranch(config);
+      return;
+    }
+
     // Run preflight checks (except for packages/audit/forks/contributions which don't need clean working dir)
     if (!['packages', 'audit', 'forks', 'contributions'].includes(config.service)) {
       const isReadOnly = config.service === 'analyze' || config.service === 'inspect';

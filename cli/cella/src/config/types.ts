@@ -164,6 +164,9 @@ export interface RuntimeConfig extends CellaCliConfig {
 
   /** Pre-selected fork name (skips fork selection prompt) */
   fork?: string;
+
+  /** Quick-push drifted files to contrib branch without interactive menu */
+  contribute?: boolean;
 }
 
 /** File status after analysis */
