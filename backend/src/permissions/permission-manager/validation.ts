@@ -1,4 +1,5 @@
-import { appConfig, isContextEntity, isProductEntity } from 'shared';
+import { isContextEntity, isProductEntity } from 'shared';
+import { getMembershipContextId, getMembershipContextIdKey } from '#/modules/memberships/helpers/context-ids';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import type { SubjectForPermission } from './types';
 
@@ -29,8 +30,9 @@ export const validateMembership = <T extends MembershipBaseModel>(membership: T,
     throw new Error(`[Permission] Membership[${index}] missing or invalid role`);
   }
 
-  const contextIdKey = appConfig.entityIdColumnKeys[membership.contextType];
-  if (!(membership as any)[contextIdKey]) {
+  const contextIdKey = getMembershipContextIdKey(membership.contextType);
+  const contextId = getMembershipContextId(membership, membership.contextType);
+  if (!contextId) {
     throw new Error(`[Permission] Membership[${index}] missing context ID (${contextIdKey})`);
   }
 };

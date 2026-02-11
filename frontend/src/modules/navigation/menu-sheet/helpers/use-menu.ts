@@ -16,6 +16,9 @@ import { buildMenu } from './build-menu';
 export function useMenu(userId: string | undefined, opts?: { detailedMenu?: boolean }) {
   const detailedMenu = !!opts?.detailedMenu;
 
+  // Memoize registry so useQueries sees stable configs across renders
+  const contextEntityQueryRegistry = useMemo(() => getContextEntityTypeToListQueries(), []);
+
   // Types must be memoized to prevent useQueries from creating new query instances on every render
   const types = useMemo(
     () =>
@@ -28,7 +31,7 @@ export function useMenu(userId: string | undefined, opts?: { detailedMenu?: bool
   const results = useQueries({
     // @ts-expect-error useQueries types don't support infinite query options, but it works at runtime
     queries: types.map((t) => ({
-      ...getContextEntityTypeToListQueries()[t]({ userId: userId ?? '' }),
+      ...contextEntityQueryRegistry[t]?.({ userId: userId ?? '' }),
       enabled: !!userId,
     })),
   });
@@ -41,8 +44,9 @@ export function useMenu(userId: string | undefined, opts?: { detailedMenu?: bool
     const byType = new Map<ContextEntityType, UserMenuItem[]>();
 
     types.forEach((t, i) => {
-      const data = results[i]?.data as any;
-      byType.set(t, data ? flattenInfiniteData<UserMenuItem>(data) : []);
+      const data = results[i]?.data;
+      const items = data ? flattenInfiniteData<UserMenuItem>(data) : [];
+      byType.set(t, items);
     });
 
     return buildMenu(byType, appConfig.menuStructure, { detailedMenu });

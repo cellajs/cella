@@ -74,7 +74,6 @@ export const AppSearch = () => {
   const contextEntityResults = Object.fromEntries(
     Object.entries(contextEntityQueries).map(([entityType, queryOptions]) => [
       entityType,
-      // biome-ignore lint: queryOptions typing is complex
       useInfiniteQuery({
         ...queryOptions({ q: searchValue }),
         enabled: searchValue.length > 0,

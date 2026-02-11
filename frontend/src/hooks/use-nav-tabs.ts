@@ -3,6 +3,17 @@ import { useMemo } from 'react';
 import type { PageTab } from '~/modules/common/page/tab-nav';
 import router from '~/routes/router';
 
+function hasRoute<TRoutes extends Record<string, AnyRoute>>(
+  routes: TRoutes,
+  routeId: string,
+): routeId is Extract<keyof TRoutes, string> {
+  return routeId in routes;
+}
+
+function getChildRoutes(route: AnyRoute): AnyRoute[] {
+  return Array.isArray(route.children) ? route.children : [];
+}
+
 /**
  * Extract navigation tabs from child routes based on their staticData.navTab configuration.
  * Only routes with navTab defined in staticData will be included.
@@ -14,11 +25,11 @@ export function useNavTabs(parentRouteId: string, filterTabIds?: string[]): Page
   return useMemo(() => {
     if (!parentRouteId) return [];
 
-    const parentRoute = router.routesById[parentRouteId as keyof typeof router.routesById] as AnyRoute | undefined;
-    if (!parentRoute) return [];
+    const routesById = router.routesById;
+    if (!hasRoute(routesById, parentRouteId)) return [];
 
-    // Get children from the route tree
-    const children = (parentRoute.children ?? []) as AnyRoute[];
+    const parentRoute = routesById[parentRouteId];
+    const children = getChildRoutes(parentRoute);
 
     // Extract tabs from child routes that have navTab in staticData
     const tabs: PageTab[] = children

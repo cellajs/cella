@@ -24,7 +24,7 @@ export async function resolveEntity<T extends EntityType>(
 
   const condition = bySlug && hasSlug(table) ? eq(table.slug, identifier) : eq(table.id, identifier);
 
-  // biome-ignore lint/suspicious/noExplicitAny: Drizzle v1 .from() rejects generic indexed-access union types
+  // biome-ignore lint/suspicious/noExplicitAny: Drizzle .from() rejects generic table types (https://github.com/drizzle-team/drizzle-orm/issues/4367)
   const [entity] = await db
     .select()
     .from(table as any)
@@ -41,7 +41,7 @@ export async function resolveEntities<T extends EntityType>(
 
   const table = getEntityTable(entityType);
 
-  // biome-ignore lint/suspicious/noExplicitAny: Drizzle v1 .from() rejects generic indexed-access union types
+  // biome-ignore lint/suspicious/noExplicitAny: Drizzle .from() rejects generic table types (https://github.com/drizzle-team/drizzle-orm/issues/4367)
   const entities = await db
     .select()
     .from(table as any)

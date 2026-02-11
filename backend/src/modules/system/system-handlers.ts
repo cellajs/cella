@@ -18,6 +18,7 @@ import { type Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
 import { mailer } from '#/lib/mailer';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
+import { getMembershipContextColumn } from '#/modules/memberships/helpers/context-ids';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import { replaceSignedSrcs } from '#/modules/system/helpers/get-signed-src';
 import systemRoutes from '#/modules/system/system-routes';
@@ -219,11 +220,8 @@ const systemRouteHandlers = app
     // Fetch memberships for all these users
     const membershipFilters = [inArray(membershipsTable.userId, userIds)];
     if (targetEntityId && targetEntityType) {
-      const entityFieldId = appConfig.entityIdColumnKeys[targetEntityType];
-      membershipFilters.push(
-        eq(membershipsTable.contextType, targetEntityType),
-        eq((membershipsTable as any)[entityFieldId], targetEntityId),
-      );
+      const contextColumn = getMembershipContextColumn(targetEntityType);
+      membershipFilters.push(eq(membershipsTable.contextType, targetEntityType), eq(contextColumn, targetEntityId));
     }
 
     const memberships = await db
