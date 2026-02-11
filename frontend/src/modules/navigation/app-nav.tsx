@@ -1,10 +1,10 @@
-import { useNavigate } from '@tanstack/react-router';
+import { useNavigate, useRouterState } from '@tanstack/react-router';
 import { useEffect } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { BottomBarNav } from '~/modules/navigation/bottom-bar-nav';
-import { FloatingNav } from '~/modules/navigation/floating-nav/floating-nav';
+import { FloatingNav, type FloatingNavItem } from '~/modules/navigation/floating-nav/floating-nav';
 import { SidebarNav } from '~/modules/navigation/sidebar-nav';
 import type { NavItem, TriggerNavItemFn } from '~/modules/navigation/types';
 import { navItems } from '~/nav-config';
@@ -91,9 +91,46 @@ export function AppNav() {
     }
   }, []);
 
+  // Build floating nav items from route staticData
+  const routerState = useRouterState();
+  const floatingItems: FloatingNavItem[] = [];
+
+  if (isMobile) {
+    // Collect left/right button IDs from route staticData
+    const floatingConfig = routerState.matches.reduce(
+      (acc, match) => {
+        const config = match.staticData.floatingNavButtons;
+        if (config?.left) acc.left.push(config.left);
+        if (config?.right) acc.right.push(config.right);
+        return acc;
+      },
+      { left: [] as string[], right: [] as string[] },
+    );
+
+    // Dedupe and map to FloatingNavItem
+    for (const id of [...new Set(floatingConfig.left)]) {
+      const item = navItems.find((n) => n.id === id);
+      if (item)
+        floatingItems.push({ id: item.id, icon: item.icon, onClick: () => triggerNavItem(item.id), direction: 'left' });
+    }
+    for (const id of [...new Set(floatingConfig.right)]) {
+      const item = navItems.find((n) => n.id === id);
+      if (item)
+        floatingItems.push({
+          id: item.id,
+          icon: item.icon,
+          onClick: () => triggerNavItem(item.id),
+          direction: 'right',
+        });
+    }
+  }
+
+  // Use the owning route's path as resetTrigger so floating nav resets on page change
+  const floatingNavOwner = routerState.matches.findLast((m) => m.staticData.floatingNavButtons);
+
   return (
     <>
-      <FloatingNav triggerNavItem={triggerNavItem} />
+      <FloatingNav items={floatingItems} resetTrigger={floatingNavOwner?.pathname} />
       {isMobile ? <BottomBarNav triggerNavItem={triggerNavItem} /> : <SidebarNav triggerNavItem={triggerNavItem} />}
     </>
   );

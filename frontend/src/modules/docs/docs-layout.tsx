@@ -1,9 +1,10 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { Outlet, useNavigate } from '@tanstack/react-router';
 import { ArrowUpIcon, MenuIcon } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useHotkeys } from '~/hooks/use-hot-keys';
+import { useScrollVisibility } from '~/hooks/use-scroll-visibility';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { tagsQueryOptions } from '~/modules/docs/query';
 import { DocsSidebar } from '~/modules/docs/sidebar/docs-sidebar';
@@ -18,7 +19,10 @@ function DocsLayout() {
   const focusView = useUIStore((state) => state.focusView);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const mainRef = useRef<HTMLElement>(null);
-  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  // Track scroll position for scroll-to-top button visibility
+  const { scrollTop } = useScrollVisibility(isMobile, mainRef);
+  const showScrollTop = scrollTop > 300;
 
   // Fetch tags via React Query (reduces bundle size)
   const { data: tags } = useSuspenseQuery(tagsQueryOptions);
@@ -98,7 +102,6 @@ function DocsLayout() {
             scrollContainerRef={mainRef}
             bodyClass="docs-floating-nav"
             resetTrigger={sidebarOpen}
-            onScrollTopChange={(scrollTop) => setShowScrollTop(scrollTop > 300)}
           />
           <main ref={mainRef} className="h-screen pt-3 sm:pt-6 overflow-auto pb-[70vh]">
             <Outlet />
