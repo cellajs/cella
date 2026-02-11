@@ -27,7 +27,7 @@ function OperationsPage() {
   const { data: tags } = useSuspenseQuery(tagsQueryOptions);
 
   // Tag section IDs - operation hashes are contributed by OperationDetail when rendered
-  const tagSectionIds = useMemo(() => tags.map((t) => `tag/${t.name}`), [tags]);
+  const tagSectionIds = tags.map((t) => `tag/${t.name}`);
 
   // Enable scroll spy with tag section IDs
   useScrollSpy(tagSectionIds);

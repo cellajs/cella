@@ -79,6 +79,8 @@
   "continue": "Continue",
   "copied": "Copied!",
   "copy": "Copy",
+  "copy_as_link": "Copy as link",
+  "copy_content": "Copy content",
   "copy_token": "Copy token",
   "copy_url": "Copy URL",
   "country": "Country",

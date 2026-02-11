@@ -42,16 +42,14 @@ export const CellaCustomBlockTypeSelect = ({
     [editor, dict],
   );
 
-  const shouldShow = useMemo(() => filteredItems.some((item) => item.type === block.type), [block.type, filteredItems]);
+  const shouldShow = filteredItems.some((item) => item.type === block.type);
 
-  const selectedItem = useMemo(() => {
-    return filteredItems.find(
-      (el) =>
-        el.type === currentBlock.type &&
-        el.props?.level === currentBlock.props.level &&
-        !!el.props?.isToggleable === currentBlock.props.isToggleable,
-    );
-  }, [filteredItems, currentBlock]);
+  const selectedItem = filteredItems.find(
+    (el) =>
+      el.type === currentBlock.type &&
+      el.props?.level === currentBlock.props.level &&
+      !!el.props?.isToggleable === currentBlock.props.isToggleable,
+  );
 
   // Handle item click for updating the block type
   const handleItemClick = (item: BlockTypeSelectItem) => {

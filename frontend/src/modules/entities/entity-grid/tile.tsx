@@ -34,7 +34,7 @@ export const EntityGridTile = ({ entity }: { entity: ContextEntityData }) => {
               <div className="flex w-full items-center backdrop-blur-xs gap-3 px-4 py-2 min-h-14 bg-background/50 group-hover:bg-background/70 transition-colors">
                 <AvatarWrap
                   className="h-10 w-10"
-                  type="organization"
+                  type={entity.entityType}
                   id={entity.id}
                   name={entity.name}
                   url={entity.thumbnailUrl}

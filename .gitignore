@@ -45,7 +45,6 @@ frontend/vite/.generate-client.lock
 .netlify
 .wrangler
 frontend/stats.html
-.trigger
 .junie
 
 # Cella

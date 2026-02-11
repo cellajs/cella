@@ -46,7 +46,7 @@ export function ResetBlockTypeItem({ editor, allowedTypes, headingLevels }: Rese
   }, [editor, dict, selectItemsType, headingLevels]);
 
   // Determine if the current block type should be shown
-  const shouldShow = useMemo(() => filteredItems.some((item) => item.type === block.type), [block.type, filteredItems]);
+  const shouldShow = filteredItems.some((item) => item.type === block.type);
 
   // Handle item click for updating the block type
   const handleItemClick = (item: BlockTypeSelectItem & { oneInstanceOnly?: boolean }) => {

@@ -1,5 +1,4 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DataTable } from '~/modules/common/data-table';
 import { HeaderCell } from '~/modules/common/data-table/header-cell';
@@ -24,42 +23,36 @@ export function OverviewTable() {
   const { data: info } = useSuspenseQuery(infoQueryOptions);
 
   // Transform info object into rows for the table
-  const rows: InfoRow[] = useMemo(
-    () => [
-      { key: 'title', label: t('common:title'), value: info.title },
-      { key: 'version', label: t('common:version'), value: info.version },
-      { key: 'description', label: t('common:description'), value: info.description },
-      { key: 'openapiVersion', label: t('common:docs.openapi_version'), value: info.openapiVersion },
-    ],
-    [t],
-  );
+  const rows: InfoRow[] = [
+    { key: 'title', label: t('common:title'), value: info.title },
+    { key: 'version', label: t('common:version'), value: info.version },
+    { key: 'description', label: t('common:description'), value: info.description },
+    { key: 'openapiVersion', label: t('common:docs.openapi_version'), value: info.openapiVersion },
+  ];
 
-  const columns: ColumnOrColumnGroup<InfoRow>[] = useMemo(
-    () => [
-      {
-        key: 'label',
-        name: '',
-        visible: true,
-        sortable: false,
-        resizable: false,
-        width: 160,
-        renderHeaderCell: HeaderCell,
-        renderCell: ({ row }) => <span className="font-medium">{row.label}</span>,
-      },
-      {
-        key: 'value',
-        name: '',
-        visible: true,
-        sortable: false,
-        resizable: true,
-        renderHeaderCell: HeaderCell,
-        renderCell: ({ row }) => (
-          <div className="whitespace-pre-line leading-5 py-3 text-muted-foreground">{row.value}</div>
-        ),
-      },
-    ],
-    [],
-  );
+  const columns: ColumnOrColumnGroup<InfoRow>[] = [
+    {
+      key: 'label',
+      name: '',
+      visible: true,
+      sortable: false,
+      resizable: false,
+      width: 160,
+      renderHeaderCell: HeaderCell,
+      renderCell: ({ row }) => <span className="font-medium">{row.label}</span>,
+    },
+    {
+      key: 'value',
+      name: '',
+      visible: true,
+      sortable: false,
+      resizable: true,
+      renderHeaderCell: HeaderCell,
+      renderCell: ({ row }) => (
+        <div className="whitespace-pre-line leading-5 py-3 text-muted-foreground">{row.value}</div>
+      ),
+    },
+  ];
 
   return (
     <Card className="mb-12 border-0">

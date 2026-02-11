@@ -49,7 +49,8 @@ type ContextEntityIdOverrides = Partial<MockContextEntityIdColumns>;
 /**
  * Generates a mock membership linking a user to a context entity.
  * Works with any context entity type (organization, project, etc.).
- * Uses generateMockContextEntityIdColumns() as base, then overrides with provided IDs.
+ * Initializes all context entity ID columns to null, then sets the specific context entity ID.
+ * Additional ancestor IDs can be provided via overrideIds.
  * Ensures consistent ordering via the `getMembershipOrderOffset` function.
  */
 export const mockContextMembership = <T extends ContextEntityType>(
@@ -60,8 +61,10 @@ export const mockContextMembership = <T extends ContextEntityType>(
 ): InsertMembershipModel => {
   const userId = user.id;
 
-  // Generate all context entity ID columns, then override with actual IDs
-  const contextEntityColumns = generateMockContextEntityIdColumns();
+  // Initialize all context entity ID columns to null (nullable FK columns)
+  const contextEntityColumns = Object.fromEntries(
+    appConfig.contextEntityTypes.map((type) => [appConfig.entityIdColumnKeys[type], null]),
+  );
 
   // Determine the correct ID column name for this context type (e.g., 'organizationId')
   const contextIdColumnKey = appConfig.entityIdColumnKeys[contextType];

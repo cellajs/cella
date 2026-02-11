@@ -111,10 +111,12 @@ export const OperationExamples = ({ operationId, tagName }: OperationExamplesPro
   const operation = operations.find((op) => op.operationId === operationId);
   const responses = operation?.responses ?? [];
 
-  // Filter to only responses with examples
-  const responsesWithExamples = responses.filter((r) => r.example !== undefined);
+  // Filter to only success responses (2xx) with examples
+  const successResponsesWithExamples = responses.filter(
+    (r) => r.status >= 200 && r.status < 300 && r.example !== undefined,
+  );
 
-  if (responsesWithExamples.length === 0) {
+  if (successResponsesWithExamples.length === 0) {
     return <div className="py-4 text-center text-muted-foreground">{t('common:docs.no_examples_defined')}</div>;
   }
 
