@@ -25,7 +25,7 @@ router.subscribe('onBeforeLoad', ({ pathChanged }) => {
 
   if (useUIStore.getState().focusView) useUIStore.getState().setFocusView(false);
   useDialoger.getState().remove();
-  // Note: Sheet cleanup handled by Sheeter provider (respects keepMenuOpen)
+  // Note: Sheet cleanup for boundary changes is handled in layout route beforeLoad functions
 
   useNavigationStore.getState().setNavLoading(true);
 });

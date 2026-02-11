@@ -41,16 +41,16 @@
     "schemaTag": "base",
     "description": "Base user schema with essential fields for identification and display.",
     "example": {
-      "id": "eyp654w9neyhyka0hezx1xnh",
-      "createdAt": "2024-05-14T11:11:41.599Z",
-      "modifiedAt": "2024-08-06T10:38:55.463Z",
-      "name": "Rosendo Bayer",
+      "id": "1b1eyp654w9neyhyka0hezx1",
+      "createdAt": "2024-12-04T07:25:23.386Z",
+      "modifiedAt": "2024-12-22T02:34:34.155Z",
+      "name": "Cali Stanton",
       "description": null,
       "entityType": "user",
-      "slug": "rosendo.bayer89",
+      "slug": "cali.stanton36",
       "thumbnailUrl": null,
       "bannerUrl": null,
-      "email": "rosendo.bayer7@yahoo.com"
+      "email": "cali_stanton@gmail.com"
     }
   },
   {
@@ -811,18 +811,18 @@
     "schemaTag": "data",
     "example": {
       "user": {
-        "id": "snou9b80h3jlnu1j458h6mvs",
+        "id": "7qgsnou9b80h3jlnu1j458h6",
         "entityType": "user",
-        "name": "Douglas McClure",
-        "firstName": "Douglas",
-        "lastName": "McClure",
-        "email": "douglas.mcclure57@yahoo.com",
-        "slug": "douglasmcclure74",
+        "name": "Mr. Odell Gislason",
+        "firstName": "Odell",
+        "lastName": "Gislason",
+        "email": "odell.gislason@yahoo.com",
+        "slug": "odellgislason57",
         "description": null,
         "thumbnailUrl": null,
         "bannerUrl": null,
         "language": "en",
-        "newsletter": false,
+        "newsletter": true,
         "mfaRequired": false,
         "userFlags": {},
         "createdAt": "2024-07-14T22:49:14.651Z",
@@ -917,18 +917,18 @@
     },
     "schemaTag": "data",
     "example": {
-      "id": "7sfzetbhjls7m9dg1xzavv78",
+      "id": "w6g7sfzetbhjls7m9dg1xzav",
       "entityType": "user",
-      "name": "Cecilia Hodkiewicz",
-      "firstName": "Cecilia",
-      "lastName": "Hodkiewicz",
-      "email": "cecilia.hodkiewicz@hotmail.com",
-      "slug": "ceciliahodkiewicz17",
+      "name": "Franco Corwin",
+      "firstName": "Franco",
+      "lastName": "Corwin",
+      "email": "franco_corwin@gmail.com",
+      "slug": "francocorwin",
       "description": null,
       "thumbnailUrl": null,
       "bannerUrl": null,
       "language": "en",
-      "newsletter": false,
+      "newsletter": true,
       "mfaRequired": false,
       "userFlags": {},
       "createdAt": "2024-12-13T11:17:23.643Z",
@@ -1097,13 +1097,13 @@
     "example": {
       "id": "ukxfca4ddim4bvuklzn5bszg",
       "contextType": "organization",
-      "email": "angel25@hotmail.com",
+      "email": "belle.bashirian10@hotmail.com",
       "userId": "ne0c1n1xatbgsj5m94fa2zfj",
       "tokenId": "0w94eh4h0qgupj2wo2oz6c0e",
       "role": "admin",
       "rejectedAt": null,
       "createdAt": "2024-02-08T11:19:07.168Z",
-      "createdBy": "n0dfrh6s450ooxn5tb992nwz",
+      "createdBy": "9v2n0dfrh6s450ooxn5tb992",
       "organizationId": "9angnio9zojjlzk3croh621f",
       "tenantId": "test01"
     }
@@ -1261,11 +1261,11 @@
     "schemaTag": "data",
     "example": {
       "id": "wejsiq864y0sbytrzsnlr9a0",
-      "email": "marlin62@yahoo.com",
+      "email": "anderson.pfannerstill23@yahoo.com",
       "type": "contact",
-      "message": "Terreo amiculum comitatus necessitatibus candidus cursim.",
-      "createdAt": "2024-02-10T18:46:44.143Z",
-      "wasInvited": true
+      "message": "Suggero accusator demens terreo amiculum comitatus necessitatibus candidus.",
+      "createdAt": "2024-06-05T15:03:46.141Z",
+      "wasInvited": false
     }
   },
   {

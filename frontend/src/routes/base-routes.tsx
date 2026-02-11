@@ -13,6 +13,7 @@ import { meQueryOptions } from '~/modules/me/query';
 import { getMenuData } from '~/modules/navigation/menu-sheet/helpers';
 import { onError } from '~/query/on-error';
 import { queryClient } from '~/query/query-client';
+import { cleanupOnBoundaryChange } from '~/routes/boundary-cleanup';
 import { useUserStore } from '~/store/user';
 import appTitle from '~/utils/app-title';
 
@@ -55,6 +56,11 @@ export const PublicLayoutRoute = createRoute({
   getParentRoute: () => RootRoute,
   component: () => <PublicLayout />,
   beforeLoad: async ({ location, cause }) => {
+    if (cause === 'enter') {
+      // Clean up sheets/dialogs when entering public layout from different boundary
+      cleanupOnBoundaryChange('public');
+    }
+
     if (cause !== 'enter' || location.pathname === '/sign-out') return;
 
     try {
@@ -84,6 +90,11 @@ export const AppLayoutRoute = createRoute({
     </Suspense>
   ),
   beforeLoad: async ({ location, cause }) => {
+    if (cause === 'enter') {
+      // Clean up sheets/dialogs when entering app layout from different boundary
+      cleanupOnBoundaryChange('app');
+    }
+
     if (cause !== 'enter') return;
 
     try {
