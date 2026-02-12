@@ -10,12 +10,12 @@ export type ClientOptions = {
 export type UserBase = {
   id: string;
   name: string;
-  description: string | null;
   createdAt: string;
   modifiedAt: string | null;
   slug: string;
   thumbnailUrl: string | null;
   bannerUrl: string | null;
+  description: string | null;
   email: string;
   entityType: 'user';
 };
@@ -26,7 +26,6 @@ export type UserBase = {
 export type ContextEntityBase = {
   id: string;
   name: string;
-  description: string | null;
   createdAt: string;
   modifiedAt: string | null;
   tenantId: string;
@@ -79,6 +78,17 @@ export type StreamNotification = {
       [key: string]: unknown;
     } | null);
   cacheToken: string | null;
+};
+
+/**
+ * Error info for failed CDC activities (dead letters).
+ */
+export type ActivityError = {
+  lsn: string;
+  message: string;
+  code?: string | null;
+  retryCount: number;
+  resolved?: boolean;
 };
 
 /**
@@ -153,17 +163,6 @@ export type Activity = {
   stx: StxBase | null;
   seq: number | null;
   error: ActivityError | null;
-};
-
-/**
- * Error info for failed CDC activities (dead letters).
- */
-export type ActivityError = {
-  lsn: string;
-  message: string;
-  code?: string | null;
-  retryCount: number;
-  resolved?: boolean;
 };
 
 /**
@@ -314,7 +313,6 @@ export type Organization = {
   entityType: 'organization';
   tenantId: string;
   name: string;
-  description: string | null;
   modifiedAt: string | null;
   slug: string;
   thumbnailUrl: string | null;
@@ -367,9 +365,9 @@ export type Page = {
   entityType: 'page';
   tenantId: string;
   name: string;
-  description: string | null;
   modifiedAt: string | null;
   stx: StxBase;
+  description: string | null;
   keywords: string;
   createdBy: string | null;
   modifiedBy: string | null;
@@ -406,9 +404,9 @@ export type Attachment = {
   entityType: 'attachment';
   tenantId: string;
   name: string;
-  description: string | null;
   modifiedAt: string | null;
   stx: StxBase;
+  description: string | null;
   keywords: string;
   createdBy: string | null;
   modifiedBy: string | null;

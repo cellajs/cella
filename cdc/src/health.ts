@@ -3,10 +3,11 @@ import { Hono } from 'hono';
 import { secureHeaders } from 'hono/secure-headers';
 import { env } from './env';
 import { cdcErrorHandler } from './lib/error';
+import { replicationState, type CdcHealthState } from './lib/replication-state';
+import { getFreeDiskSpace, getWalBytes } from './lib/resource-monitor';
 import { logEvent } from './pino';
 import { getCdcMetrics } from './tracing';
 import { RESOURCE_LIMITS } from './constants';
-import { getCdcHealthState, getReplicationPausedAt, getWalBytes, getFreeDiskSpace, type CdcHealthState } from './worker';
 
 export type HealthStatus = 'healthy' | 'degraded' | 'unhealthy';
 
@@ -35,7 +36,7 @@ async function getHealthStatus(state: CdcHealthState): Promise<HealthStatus> {
   const freeDisk = getFreeDiskSpace();
   if (freeDisk !== null && freeDisk < runtime.diskUnhealthyBytes) return 'unhealthy';
 
-  const pausedAt = getReplicationPausedAt();
+  const pausedAt = replicationState.replicationPausedAt;
   if (pausedAt && Date.now() - pausedAt.getTime() > runtime.pauseUnhealthyMs) return 'unhealthy';
 
   if (state.wsState === 'reconnecting' && state.replicationState === 'paused') return 'degraded';
@@ -52,12 +53,12 @@ app.use('*', secureHeaders());
 
 // Health check endpoint
 app.get('/health', async (c) => {
-  const cdcState = getCdcHealthState();
+  const cdcState = replicationState.getCdcHealthState();
   const status = await getHealthStatus(cdcState);
   const metrics = getCdcMetrics();
 
   // Calculate paused duration if replication is paused
-  const pausedAt = getReplicationPausedAt();
+  const pausedAt = replicationState.replicationPausedAt;
   const pausedDurationMs = pausedAt ? Date.now() - pausedAt.getTime() : null;
   
   // Get WAL and disk space metrics

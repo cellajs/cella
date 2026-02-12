@@ -41,24 +41,4 @@ export const logEvent = (severity: CdcSeverity, msg: string, meta?: object): voi
   cdcLogger[severity]({ ...(meta ?? {}), msg });
 };
 
-/**
- * Logs an error with its stack trace and optional metadata.
- *
- * @param msg - Context message for the error
- * @param error - The error object to log
- * @param meta - Optional additional data to log
- */
-export const logError = (msg: string, error: Error | unknown, meta?: object): void => {
-  if (!(error instanceof Error)) {
-    cdcLogger.error({ ...(meta ?? {}), msg, error });
-    return;
-  }
 
-  const errorDetails = {
-    errorName: error.name,
-    errorMessage: error.message,
-    errorStack: error.stack,
-  };
-
-  cdcLogger.error({ ...(meta ?? {}), errorDetails, msg });
-};

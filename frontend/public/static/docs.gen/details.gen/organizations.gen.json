@@ -38,10 +38,6 @@
                     "required": true,
                     "maxLength": 255
                   },
-                  "description": {
-                    "type": ["string", "null"],
-                    "required": true
-                  },
                   "modifiedAt": {
                     "type": ["string", "null"],
                     "required": true
@@ -560,10 +556,6 @@
                     "required": true,
                     "maxLength": 255
                   },
-                  "description": {
-                    "type": ["string", "null"],
-                    "required": true
-                  },
                   "modifiedAt": {
                     "type": ["string", "null"],
                     "required": true
@@ -975,10 +967,6 @@
               "required": true,
               "maxLength": 255
             },
-            "description": {
-              "type": ["string", "null"],
-              "required": true
-            },
             "modifiedAt": {
               "type": ["string", "null"],
               "required": true
@@ -1314,10 +1302,6 @@
               "type": "string",
               "required": true,
               "maxLength": 255
-            },
-            "description": {
-              "type": ["string", "null"],
-              "required": true
             },
             "modifiedAt": {
               "type": ["string", "null"],

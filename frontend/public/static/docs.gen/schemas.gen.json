@@ -8,10 +8,6 @@
       "properties": {
         "id": { "type": "string", "required": true },
         "name": { "type": "string", "required": true },
-        "description": {
-          "type": ["string", "null"],
-          "required": true
-        },
         "createdAt": { "type": "string", "required": true },
         "modifiedAt": {
           "type": ["string", "null"],
@@ -23,6 +19,10 @@
           "required": true
         },
         "bannerUrl": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "description": {
           "type": ["string", "null"],
           "required": true
         },
@@ -62,10 +62,6 @@
       "properties": {
         "id": { "type": "string", "required": true },
         "name": { "type": "string", "required": true },
-        "description": {
-          "type": ["string", "null"],
-          "required": true
-        },
         "createdAt": { "type": "string", "required": true },
         "modifiedAt": {
           "type": ["string", "null"],
@@ -96,7 +92,6 @@
       "modifiedAt": "2024-12-04T06:32:26.983Z",
       "tenantId": "d9wtu57tfwtfux7yivt59ywq",
       "name": "Nolan - Jacobson",
-      "description": "Automated eco-centric open architecture",
       "entityType": "organization",
       "slug": "nolan---jacobson",
       "thumbnailUrl": null,
@@ -257,6 +252,33 @@
         "version": 5,
         "fieldVersions": { "name": 1 }
       }
+    }
+  },
+  {
+    "name": "ActivityError",
+    "ref": "#/components/schemas/ActivityError",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "lsn": { "type": "string", "required": true },
+        "message": { "type": "string", "required": true },
+        "code": {
+          "type": ["string", "null"],
+          "required": false
+        },
+        "retryCount": { "type": "number", "required": true },
+        "resolved": { "type": "boolean", "required": false }
+      }
+    },
+    "schemaTag": "errors",
+    "description": "Error info for failed CDC activities (dead letters).",
+    "example": {
+      "lsn": "0/16B3A40",
+      "message": "Connection timeout during processing",
+      "code": null,
+      "retryCount": 3,
+      "resolved": false
     }
   },
   {
@@ -663,33 +685,6 @@
       "seq": 66,
       "error": null,
       "organizationId": "pg8iwtnhw3666j3aifuxshox"
-    }
-  },
-  {
-    "name": "ActivityError",
-    "ref": "#/components/schemas/ActivityError",
-    "type": "object",
-    "schema": {
-      "type": "object",
-      "properties": {
-        "lsn": { "type": "string", "required": true },
-        "message": { "type": "string", "required": true },
-        "code": {
-          "type": ["string", "null"],
-          "required": false
-        },
-        "retryCount": { "type": "number", "required": true },
-        "resolved": { "type": "boolean", "required": false }
-      }
-    },
-    "schemaTag": "errors",
-    "description": "Error info for failed CDC activities (dead letters).",
-    "example": {
-      "lsn": "0/16B3A40",
-      "message": "Connection timeout during processing",
-      "code": null,
-      "retryCount": 3,
-      "resolved": false
     }
   },
   {
@@ -1313,10 +1308,6 @@
           "required": true,
           "maxLength": 255
         },
-        "description": {
-          "type": ["string", "null"],
-          "required": true
-        },
         "modifiedAt": {
           "type": ["string", "null"],
           "required": true
@@ -1583,10 +1574,6 @@
           "required": true,
           "maxLength": 255
         },
-        "description": {
-          "type": ["string", "null"],
-          "required": true
-        },
         "modifiedAt": {
           "type": ["string", "null"],
           "required": true
@@ -1602,6 +1589,10 @@
             "fieldVersions": { "type": "object", "required": true }
           },
           "ref": "#/components/schemas/StxBase"
+        },
+        "description": {
+          "type": ["string", "null"],
+          "required": true
         },
         "keywords": {
           "type": "string",
@@ -1725,10 +1716,6 @@
           "required": true,
           "maxLength": 255
         },
-        "description": {
-          "type": ["string", "null"],
-          "required": true
-        },
         "modifiedAt": {
           "type": ["string", "null"],
           "required": true
@@ -1744,6 +1731,10 @@
             "fieldVersions": { "type": "object", "required": true }
           },
           "ref": "#/components/schemas/StxBase"
+        },
+        "description": {
+          "type": ["string", "null"],
+          "required": true
         },
         "keywords": {
           "type": "string",

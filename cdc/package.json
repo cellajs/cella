@@ -18,7 +18,6 @@
     "dotenv": "^17.2.4",
     "drizzle-orm": "1.0.0-beta.15-859cf75",
     "hono": "^4.11.9",
-    "lru-cache": "^11.2.6",
     "nanoid": "^5.1.6",
     "pg-logical-replication": "^2.3.0",
     "pino": "^10.3.1",

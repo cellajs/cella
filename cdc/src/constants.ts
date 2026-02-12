@@ -1,14 +1,3 @@
-import type { ActivityAction } from '#/sync/activity-bus';
-
-/**
- * Convert a CDC operation to an activity action.
- */
-export const cdcOperationToAction: Record<string, ActivityAction> = {
-  insert: 'create',
-  update: 'update',
-  delete: 'delete',
-};
-
 /**
  * Publication name for CDC.
  */
@@ -71,6 +60,20 @@ export const RESOURCE_LIMITS = {
     maxDelayMs: 5000,
     /** Backoff multiplier */
     backoffMultiplier: 2,
+  },
+
+  // Reconnection configuration
+  reconnection: {
+    /** Delay before retrying replication subscription (ms) */
+    retryDelayMs: 5000,
+    /** Max consecutive failures before recreating slot */
+    maxFailuresBeforeRecreate: 3,
+  },
+
+  // WAL guard monitoring
+  walGuard: {
+    /** Interval for pause warning checks (ms) */
+    monitorIntervalMs: 30_000,
   },
 } as const;
 

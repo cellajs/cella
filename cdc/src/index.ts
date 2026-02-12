@@ -20,19 +20,15 @@ if (devMode !== 'full' && process.env.NODE_ENV !== 'production') {
 }
 
 // Handle graceful shutdown
-process.on('SIGINT', async () => {
-  logEvent('info', 'Received SIGINT, shutting down CDC worker...');
+async function gracefulShutdown(signal: string): Promise<void> {
+  logEvent('info', `Received ${signal}, shutting down CDC worker...`);
   await stopCdcWorker();
   await stopHealthServer();
   process.exit(0);
-});
+}
 
-process.on('SIGTERM', async () => {
-  logEvent('info', 'Received SIGTERM, shutting down CDC worker...');
-  await stopCdcWorker();
-  await stopHealthServer();
-  process.exit(0);
-});
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 
 // Start health server for monitoring
 startHealthServer();

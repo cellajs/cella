@@ -463,10 +463,6 @@
           "properties": {
             "id": { "type": "string", "required": true },
             "name": { "type": "string", "required": true },
-            "description": {
-              "type": ["string", "null"],
-              "required": true
-            },
             "createdAt": { "type": "string", "required": true },
             "modifiedAt": {
               "type": ["string", "null"],
@@ -497,7 +493,6 @@
           "modifiedAt": "2024-12-04T06:32:26.983Z",
           "tenantId": "d9wtu57tfwtfux7yivt59ywq",
           "name": "Nolan - Jacobson",
-          "description": "Automated eco-centric open architecture",
           "entityType": "organization",
           "slug": "nolan---jacobson",
           "thumbnailUrl": null,

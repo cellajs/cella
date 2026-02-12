@@ -206,12 +206,6 @@
           "name": {
             "type": "string"
           },
-          "description": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
           "createdAt": {
             "type": "string"
           },
@@ -236,6 +230,12 @@
               "null"
             ]
           },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "email": {
             "type": "string",
             "format": "email"
@@ -250,12 +250,12 @@
         "required": [
           "id",
           "name",
-          "description",
           "createdAt",
           "modifiedAt",
           "slug",
           "thumbnailUrl",
           "bannerUrl",
+          "description",
           "email",
           "entityType"
         ],
@@ -281,12 +281,6 @@
           },
           "name": {
             "type": "string"
-          },
-          "description": {
-            "type": [
-              "string",
-              "null"
-            ]
           },
           "createdAt": {
             "type": "string"
@@ -325,7 +319,6 @@
         "required": [
           "id",
           "name",
-          "description",
           "createdAt",
           "modifiedAt",
           "tenantId",
@@ -341,7 +334,6 @@
           "modifiedAt": "2024-12-04T06:32:26.983Z",
           "tenantId": "d9wtu57tfwtfux7yivt59ywq",
           "name": "Nolan - Jacobson",
-          "description": "Automated eco-centric open architecture",
           "entityType": "organization",
           "slug": "nolan---jacobson",
           "thumbnailUrl": null,
@@ -560,6 +552,42 @@
               "name": 1
             }
           }
+        }
+      },
+      "ActivityError": {
+        "type": "object",
+        "properties": {
+          "lsn": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "code": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "retryCount": {
+            "type": "number"
+          },
+          "resolved": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "lsn",
+          "message",
+          "retryCount"
+        ],
+        "description": "Error info for failed CDC activities (dead letters).",
+        "example": {
+          "lsn": "0/16B3A40",
+          "message": "Connection timeout during processing",
+          "code": null,
+          "retryCount": 3,
+          "resolved": false
         }
       },
       "BadRequestError": {
@@ -926,42 +954,6 @@
           "seq": 66,
           "error": null,
           "organizationId": "pg8iwtnhw3666j3aifuxshox"
-        }
-      },
-      "ActivityError": {
-        "type": "object",
-        "properties": {
-          "lsn": {
-            "type": "string"
-          },
-          "message": {
-            "type": "string"
-          },
-          "code": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "retryCount": {
-            "type": "number"
-          },
-          "resolved": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "lsn",
-          "message",
-          "retryCount"
-        ],
-        "description": "Error info for failed CDC activities (dead letters).",
-        "example": {
-          "lsn": "0/16B3A40",
-          "message": "Connection timeout during processing",
-          "code": null,
-          "retryCount": 3,
-          "resolved": false
         }
       },
       "Me": {
@@ -1644,12 +1636,6 @@
             "type": "string",
             "maxLength": 255
           },
-          "description": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
           "modifiedAt": {
             "type": [
               "string",
@@ -1874,7 +1860,6 @@
           "entityType",
           "tenantId",
           "name",
-          "description",
           "modifiedAt",
           "slug",
           "thumbnailUrl",
@@ -1982,12 +1967,6 @@
             "type": "string",
             "maxLength": 255
           },
-          "description": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
           "modifiedAt": {
             "type": [
               "string",
@@ -1996,6 +1975,12 @@
           },
           "stx": {
             "$ref": "#/components/schemas/StxBase"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "keywords": {
             "type": "string",
@@ -2045,9 +2030,9 @@
           "entityType",
           "tenantId",
           "name",
-          "description",
           "modifiedAt",
           "stx",
+          "description",
           "keywords",
           "createdBy",
           "modifiedBy",
@@ -2135,12 +2120,6 @@
             "type": "string",
             "maxLength": 255
           },
-          "description": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
           "modifiedAt": {
             "type": [
               "string",
@@ -2149,6 +2128,12 @@
           },
           "stx": {
             "$ref": "#/components/schemas/StxBase"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "keywords": {
             "type": "string",
@@ -2257,9 +2242,9 @@
           "entityType",
           "tenantId",
           "name",
-          "description",
           "modifiedAt",
           "stx",
+          "description",
           "keywords",
           "createdBy",
           "modifiedBy",
@@ -5063,7 +5048,6 @@
                         "modifiedAt": "2024-12-27T22:12:06.410Z",
                         "tenantId": "kv08ddk8lkbjmurn9341gpf1",
                         "name": "Effertz Group",
-                        "description": "Diverse demand-driven matrices",
                         "entityType": "organization",
                         "slug": "effertz-group",
                         "thumbnailUrl": null,
@@ -5090,7 +5074,6 @@
                         "modifiedAt": "2024-06-03T13:50:52.760Z",
                         "tenantId": "od7xdlm77e2i9qj90kx71lz5",
                         "name": "Hansen - Reynolds",
-                        "description": "Automated eco-centric capability",
                         "entityType": "organization",
                         "slug": "hansen---reynolds",
                         "thumbnailUrl": null,
@@ -11705,7 +11688,6 @@
                   "modifiedAt": "2024-12-04T06:32:26.983Z",
                   "tenantId": "d9wtu57tfwtfux7yivt59ywq",
                   "name": "Nolan - Jacobson",
-                  "description": "Automated eco-centric open architecture",
                   "entityType": "organization",
                   "slug": "nolan---jacobson",
                   "thumbnailUrl": null,

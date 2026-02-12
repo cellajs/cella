@@ -132,13 +132,4 @@ export async function recordDeadLetter(
   }
 }
 
-/**
- * Insert activity into database with idempotency handling.
- * Returns true if inserted, false if already exists (replay scenario).
- */
-export async function insertActivity(activity: InsertActivityModel & { id: string; seq: number }): Promise<boolean> {
-  const result = await cdcDb.insert(activitiesTable).values(activity).onConflictDoNothing();
 
-  // Check if row was actually inserted (rowCount > 0) or skipped due to conflict
-  return (result.rowCount ?? 0) > 0;
-}

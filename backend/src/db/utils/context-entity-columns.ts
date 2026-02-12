@@ -6,14 +6,12 @@ import { tenantEntityColumns } from '#/db/utils/tenant-entity-columns';
 
 /**
  * Creates base columns shared by all context entities.
- * Extends tenantEntityColumns with slug, thumbnailUrl, bannerUrl, permissions, and audit fields.
  */
 export const contextEntityColumns = <T extends ContextEntityType>(entityType: T) => ({
   ...tenantEntityColumns(entityType),
   slug: varchar({ length: maxLength.field }).unique().notNull(),
   thumbnailUrl: varchar({ length: maxLength.url }),
   bannerUrl: varchar({ length: maxLength.url }),
-  // Audit fields
   createdBy: varchar({ length: maxLength.id }).references(() => usersTable.id, { onDelete: 'set null' }),
   modifiedBy: varchar({ length: maxLength.id }).references(() => usersTable.id, { onDelete: 'set null' }),
 });

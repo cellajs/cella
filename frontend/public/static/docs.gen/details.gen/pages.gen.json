@@ -39,10 +39,6 @@
                     "required": true,
                     "maxLength": 255
                   },
-                  "description": {
-                    "type": ["string", "null"],
-                    "required": true
-                  },
                   "modifiedAt": {
                     "type": ["string", "null"],
                     "required": true
@@ -58,6 +54,10 @@
                       "fieldVersions": { "type": "object", "required": true }
                     },
                     "ref": "#/components/schemas/StxBase"
+                  },
+                  "description": {
+                    "type": ["string", "null"],
+                    "required": true
                   },
                   "keywords": {
                     "type": "string",
@@ -248,10 +248,6 @@
               "required": true,
               "maxLength": 255
             },
-            "description": {
-              "type": ["string", "null"],
-              "required": true
-            },
             "modifiedAt": {
               "type": ["string", "null"],
               "required": true
@@ -267,6 +263,10 @@
                 "fieldVersions": { "type": "object", "required": true }
               },
               "ref": "#/components/schemas/StxBase"
+            },
+            "description": {
+              "type": ["string", "null"],
+              "required": true
             },
             "keywords": {
               "type": "string",
@@ -411,10 +411,6 @@
                     "required": true,
                     "maxLength": 255
                   },
-                  "description": {
-                    "type": ["string", "null"],
-                    "required": true
-                  },
                   "modifiedAt": {
                     "type": ["string", "null"],
                     "required": true
@@ -430,6 +426,10 @@
                       "fieldVersions": { "type": "object", "required": true }
                     },
                     "ref": "#/components/schemas/StxBase"
+                  },
+                  "description": {
+                    "type": ["string", "null"],
+                    "required": true
                   },
                   "keywords": {
                     "type": "string",
@@ -568,10 +568,6 @@
                     "required": true,
                     "maxLength": 255
                   },
-                  "description": {
-                    "type": ["string", "null"],
-                    "required": true
-                  },
                   "modifiedAt": {
                     "type": ["string", "null"],
                     "required": true
@@ -587,6 +583,10 @@
                       "fieldVersions": { "type": "object", "required": true }
                     },
                     "ref": "#/components/schemas/StxBase"
+                  },
+                  "description": {
+                    "type": ["string", "null"],
+                    "required": true
                   },
                   "keywords": {
                     "type": "string",
@@ -881,10 +881,6 @@
               "required": true,
               "maxLength": 255
             },
-            "description": {
-              "type": ["string", "null"],
-              "required": true
-            },
             "modifiedAt": {
               "type": ["string", "null"],
               "required": true
@@ -900,6 +896,10 @@
                 "fieldVersions": { "type": "object", "required": true }
               },
               "ref": "#/components/schemas/StxBase"
+            },
+            "description": {
+              "type": ["string", "null"],
+              "required": true
             },
             "keywords": {
               "type": "string",

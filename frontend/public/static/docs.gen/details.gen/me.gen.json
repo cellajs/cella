@@ -821,10 +821,6 @@
                     "properties": {
                       "id": { "type": "string", "required": true },
                       "name": { "type": "string", "required": true },
-                      "description": {
-                        "type": ["string", "null"],
-                        "required": true
-                      },
                       "createdAt": { "type": "string", "required": true },
                       "modifiedAt": {
                         "type": ["string", "null"],
@@ -922,7 +918,6 @@
                 "modifiedAt": "2024-12-27T22:12:06.410Z",
                 "tenantId": "kv08ddk8lkbjmurn9341gpf1",
                 "name": "Effertz Group",
-                "description": "Diverse demand-driven matrices",
                 "entityType": "organization",
                 "slug": "effertz-group",
                 "thumbnailUrl": null,
@@ -949,7 +944,6 @@
                 "modifiedAt": "2024-06-03T13:50:52.760Z",
                 "tenantId": "od7xdlm77e2i9qj90kx71lz5",
                 "name": "Hansen - Reynolds",
-                "description": "Automated eco-centric capability",
                 "entityType": "organization",
                 "slug": "hansen---reynolds",
                 "thumbnailUrl": null,

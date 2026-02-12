@@ -3,12 +3,11 @@ import { contextEntityTypeSchema, productEntityTypeSchema } from '#/schemas';
 import { mockContextEntityBase, mockProductEntityBase } from '../../mocks/mock-entity-base';
 
 /**
- * Base schema shared by all entities (mirrors baseEntityColumns).
+ * Core fields shared by all entities (id, name, timestamps).
  */
-const entityBaseShape = {
+const entityCoreShape = {
   id: z.string(),
   name: z.string(),
-  description: z.string().nullable(),
   createdAt: z.string(),
   modifiedAt: z.string().nullable(),
 };
@@ -26,7 +25,7 @@ const auditShape = {
  */
 export const contextEntityBaseSchema = z
   .object({
-    ...entityBaseShape,
+    ...entityCoreShape,
     tenantId: z.string(),
     entityType: contextEntityTypeSchema,
     slug: z.string(),
@@ -43,7 +42,8 @@ export const contextEntityBaseSchema = z
  */
 export const productEntityBaseSchema = z
   .object({
-    ...entityBaseShape,
+    ...entityCoreShape,
+    description: z.string().nullable(),
     ...auditShape,
     entityType: productEntityTypeSchema,
     keywords: z.string(),

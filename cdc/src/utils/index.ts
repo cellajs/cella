@@ -8,5 +8,4 @@ export { getChangedKeys } from './get-changed-keys';
 export { getNextSeq } from './get-next-seq';
 export { getRowValue } from './get-row-value';
 export { getSeqScope, type SeqScope } from './get-seq-scope';
-export { snakeToCamel } from './snake-to-camel';
 export { getTableEntry } from './get-table-entry';

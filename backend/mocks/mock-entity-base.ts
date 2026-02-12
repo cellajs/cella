@@ -29,7 +29,6 @@ export const mockContextEntityBase = (key = 'context-entity:default') =>
       ...mockEntityCore(),
       tenantId: mockNanoid(),
       name,
-      description: faker.company.catchPhrase(),
       entityType: 'organization' as const,
       slug: faker.helpers.slugify(name).toLowerCase(),
       thumbnailUrl: null,

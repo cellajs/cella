@@ -5,7 +5,7 @@ import { replicationState } from './replication-state';
 import { fmtBytes, getFreeDiskSpace, getWalBytes } from './resource-monitor';
 
 const LOG_PREFIX = '[wal-guard]';
-const { runtime } = RESOURCE_LIMITS;
+const { runtime, walGuard } = RESOURCE_LIMITS;
 
 let pauseWarningInterval: NodeJS.Timeout | null = null;
 let shutdownHandler: ((reason: string) => Promise<never>) | null = null;
@@ -100,7 +100,7 @@ export function startPauseWarningInterval(): void {
 
     // Check warning thresholds
     await checkWarningConditions(pausedMs);
-  }, 30_000);
+  }, walGuard.monitorIntervalMs);
 }
 
 /**

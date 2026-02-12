@@ -9,6 +9,7 @@ import { mockUserBase } from '../../mocks/mock-entity-base';
 export const userBaseSchema = contextEntityBaseSchema
   .omit({ entityType: true, tenantId: true })
   .extend({
+    description: z.string().nullable(),
     email: z.email(),
     entityType: z.literal('user'),
   })

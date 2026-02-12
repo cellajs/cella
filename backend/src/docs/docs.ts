@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import type { OpenAPIHono } from '@hono/zod-openapi';
 import { Scalar } from '@scalar/hono-api-reference';
 import { appConfig } from 'shared';
+import { activityErrorSchema } from '#/db/utils/activity-error-schema';
 import { buildExtensionRegistry } from '#/docs/openapi-extensions';
 import { openapiTags, registerAppSchema } from '#/docs/tags-config';
 import { getExtensionValueDescriptions } from '#/docs/x-middleware';
@@ -58,6 +59,9 @@ const docs = async (app: OpenAPIHono<Env>, skipScalar = false) => {
 
   // Register stream notification schema (SSE payloads, not in REST responses but useful for client typing)
   registry.register('StreamNotification', streamNotificationSchema);
+
+  // Register CDC activity error schema (dead letter format, not in REST responses but useful for inspection)
+  registry.register('ActivityError', activityErrorSchema);
 
   // Register error responses
   registerAllErrorResponses(registry, errorResponses);

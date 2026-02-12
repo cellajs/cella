@@ -193,7 +193,6 @@ const attachmentRouteHandlers = app
       modifiedBy: null,
       keywords: '', // Required by productEntityColumns
       description: '', // Required by baseEntityColumns
-      // Sync: write transient stx metadata for CDC Worker
       stx: {
         mutationId: stx.mutationId,
         sourceId: stx.sourceId,

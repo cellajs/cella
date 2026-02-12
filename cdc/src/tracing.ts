@@ -12,7 +12,6 @@ import {
   createTracer,
   withSpan as sharedWithSpan,
   type SpanAttributes,
-  type SpanData,
   type TraceContext,
 } from 'shared/tracing';
 import { logEvent } from './pino';
@@ -65,21 +64,7 @@ export function getCdcMetrics(): typeof metrics & { recentSpanCount: number } {
   return { ...metrics, recentSpanCount: spanStore.length };
 }
 
-/** Get recent spans for debugging. */
-export function getRecentSpans(): SpanData[] {
-  return spanStore.getSpans();
-}
 
-/** Clear metrics and spans. */
-export function resetCdcTracing(): void {
-  spanStore.clear();
-  metrics.messagesProcessed = 0;
-  metrics.activitiesCreated = 0;
-  metrics.wsSendSuccess = 0;
-  metrics.wsSendFailed = 0;
-  metrics.errors = 0;
-  metrics.lastProcessedAt = null;
-}
 
 // ================================
 // withSpan (uses local tracer)

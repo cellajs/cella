@@ -15,6 +15,7 @@ const ProfilePageContent = lazy(() => import('~/modules/user/user-profile-conten
 
 interface Props {
   user: UserBase;
+  orgId?: string;
   isSheet?: boolean;
 }
 

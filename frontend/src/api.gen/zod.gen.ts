@@ -8,12 +8,12 @@ import * as z from 'zod';
 export const zUserBase = z.object({
   id: z.string(),
   name: z.string(),
-  description: z.union([z.string(), z.null()]),
   createdAt: z.string(),
   modifiedAt: z.union([z.string(), z.null()]),
   slug: z.string(),
   thumbnailUrl: z.union([z.string(), z.null()]),
   bannerUrl: z.union([z.string(), z.null()]),
+  description: z.union([z.string(), z.null()]),
   email: z.email(),
   entityType: z.enum(['user']),
 });
@@ -24,7 +24,6 @@ export const zUserBase = z.object({
 export const zContextEntityBase = z.object({
   id: z.string(),
   name: z.string(),
-  description: z.union([z.string(), z.null()]),
   createdAt: z.string(),
   modifiedAt: z.union([z.string(), z.null()]),
   tenantId: z.string(),
@@ -72,6 +71,17 @@ export const zStreamNotification = z.object({
   seq: z.union([z.int(), z.null()]),
   stx: zStxBase.and(z.union([z.record(z.string(), z.unknown()), z.null()])),
   cacheToken: z.union([z.string(), z.null()]),
+});
+
+/**
+ * Error info for failed CDC activities (dead letters).
+ */
+export const zActivityError = z.object({
+  lsn: z.string(),
+  message: z.string(),
+  code: z.optional(z.union([z.string(), z.null()])),
+  retryCount: z.number(),
+  resolved: z.optional(z.boolean()),
 });
 
 /**
@@ -136,17 +146,6 @@ export const zTooManyRequestsError = zApiError.and(
     status: z.optional(z.literal(429)),
   }),
 );
-
-/**
- * Error info for failed CDC activities (dead letters).
- */
-export const zActivityError = z.object({
-  lsn: z.string(),
-  message: z.string(),
-  code: z.optional(z.union([z.string(), z.null()])),
-  retryCount: z.number(),
-  resolved: z.optional(z.boolean()),
-});
 
 /**
  * An auditable event recording an entity change, used for sync and history.
@@ -309,7 +308,6 @@ export const zOrganization = z.object({
   entityType: z.enum(['organization']),
   tenantId: z.string().max(24),
   name: z.string().max(255),
-  description: z.union([z.string(), z.null()]),
   modifiedAt: z.union([z.string(), z.null()]),
   slug: z.string().max(255),
   thumbnailUrl: z.union([z.string().max(2048), z.null()]),
@@ -368,9 +366,9 @@ export const zPage = z.object({
   entityType: z.enum(['page']),
   tenantId: z.string().max(24),
   name: z.string().max(255),
-  description: z.union([z.string(), z.null()]),
   modifiedAt: z.union([z.string(), z.null()]),
   stx: zStxBase,
+  description: z.union([z.string(), z.null()]),
   keywords: z.string().max(255),
   createdBy: z.union([z.string().max(50), z.null()]),
   modifiedBy: z.union([z.string().max(50), z.null()]),
@@ -398,9 +396,9 @@ export const zAttachment = z.object({
   entityType: z.enum(['attachment']),
   tenantId: z.string().max(24),
   name: z.string().max(255),
-  description: z.union([z.string(), z.null()]),
   modifiedAt: z.union([z.string(), z.null()]),
   stx: zStxBase,
+  description: z.union([z.string(), z.null()]),
   keywords: z.string().max(255),
   createdBy: z.union([z.string().max(50), z.null()]),
   modifiedBy: z.union([z.string().max(50), z.null()]),

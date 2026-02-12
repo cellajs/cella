@@ -104,36 +104,4 @@ export async function configureWalLimits(): Promise<void> {
   }
 }
 
-/**
- * Resource thresholds for health checks.
- */
-export interface ResourceStatus {
-  walBytes: number | null;
-  freeDiskBytes: number | null;
-  isHealthy: boolean;
-  warnings: string[];
-}
 
-/**
- * Get current resource status for health monitoring.
- */
-export async function getResourceStatus(): Promise<ResourceStatus> {
-  const walBytes = await getWalBytes();
-  const freeDiskBytes = getFreeDiskSpace();
-  const warnings: string[] = [];
-  const { runtime } = RESOURCE_LIMITS;
-
-  if (walBytes !== null && walBytes > runtime.walWarningBytes) {
-    warnings.push(`WAL accumulation high: ${fmtBytes(walBytes)}`);
-  }
-
-  if (freeDiskBytes !== null && freeDiskBytes < runtime.diskWarningBytes) {
-    warnings.push(`Disk space low: ${fmtBytes(freeDiskBytes)}`);
-  }
-
-  const isHealthy =
-    (walBytes === null || walBytes <= runtime.walShutdownBytes) &&
-    (freeDiskBytes === null || freeDiskBytes >= runtime.diskShutdownBytes);
-
-  return { walBytes, freeDiskBytes, isHealthy, warnings };
-}
