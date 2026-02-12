@@ -45,7 +45,8 @@ export function useMenu(userId: string | undefined, opts?: { detailedMenu?: bool
 
     types.forEach((t, i) => {
       const data = results[i]?.data;
-      const items = data ? flattenInfiniteData<UserMenuItem>(data) : [];
+      // biome-ignore lint/suspicious/noExplicitAny: useQueries union types don't narrow per-index
+      const items = data ? flattenInfiniteData<UserMenuItem>(data as any) : [];
       byType.set(t, items);
     });
 

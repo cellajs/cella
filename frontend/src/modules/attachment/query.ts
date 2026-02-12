@@ -248,6 +248,7 @@ export const useAttachmentUpdateMutation = (tenantId: string, orgId: string) => 
 
       // Cancel queries to prevent race conditions
       await queryClient.cancelQueries({ queryKey: keys.list.base });
+      await queryClient.cancelQueries({ queryKey: keys.detail.byId(id) });
 
       // Snapshot current state for potential rollback
       const previousAttachment = findAttachmentInListCache(id);
@@ -256,6 +257,8 @@ export const useAttachmentUpdateMutation = (tenantId: string, orgId: string) => 
         // Merge new data into existing entity for instant UI update
         const optimisticAttachment = { ...previousAttachment, ...data, modifiedAt: new Date().toISOString() };
         mutateCache.update([optimisticAttachment]);
+        // Also update detail cache so detail views show updated data immediately
+        queryClient.setQueryData(keys.detail.byId(id), optimisticAttachment);
       }
 
       // Return snapshot for rollback in onError
@@ -267,6 +270,7 @@ export const useAttachmentUpdateMutation = (tenantId: string, orgId: string) => 
       // Revert cache to pre-mutation snapshot
       if (context?.previousAttachment) {
         mutateCache.update([context.previousAttachment]);
+        queryClient.setQueryData(keys.detail.byId(context.previousAttachment.id), context.previousAttachment);
       }
     },
 
@@ -274,6 +278,7 @@ export const useAttachmentUpdateMutation = (tenantId: string, orgId: string) => 
     onSuccess: (updatedAttachment) => {
       // Replace optimistic data with server response (source of truth)
       mutateCache.update([updatedAttachment]);
+      queryClient.setQueryData(keys.detail.byId(updatedAttachment.id), updatedAttachment);
     },
 
     // Runs after success OR error - refresh queries

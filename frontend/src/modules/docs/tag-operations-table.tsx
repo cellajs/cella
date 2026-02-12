@@ -110,6 +110,7 @@ export const TagOperationsTable = ({ operations, tagName }: TagOperationsTablePr
       rowHeight={36}
       hideHeader
       enableVirtualization={false}
+      readOnly
     />
   );
 };

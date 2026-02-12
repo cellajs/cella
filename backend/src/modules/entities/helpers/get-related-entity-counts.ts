@@ -2,7 +2,6 @@ import { count, eq, type SelectedFields, type SQL, sql } from 'drizzle-orm';
 import type { PgColumn, SubqueryWithSelection } from 'drizzle-orm/pg-core';
 import { appConfig, type ContextEntityType, hierarchy } from 'shared';
 import type { DbOrTx } from '#/db/db';
-import { organizationsTable } from '#/db/schema/organizations';
 import { entityTables } from '#/table-config';
 
 /**
@@ -59,7 +58,7 @@ export const getRelatedCountsSubquery = (db: DbOrTx, entityType: ContextEntityTy
     );
   }
 
-  const query = db.select({ id: entityIdColumn, ...baseCounts }).from(organizationsTable);
+  const query = db.select({ id: entityIdColumn, ...baseCounts }).from(table);
 
   for (const { subquery, join } of joins) query.leftJoin(subquery, join);
 

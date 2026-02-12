@@ -3,7 +3,7 @@ import { authGuard, publicGuard, sysAdminGuard } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { emailEnumLimiter, spamLimiter } from '#/middlewares/rate-limiter/limiters';
 import { requestCreateBodySchema, requestListQuerySchema, requestSchema } from '#/modules/requests/requests-schema';
-import { errorResponseRefs, idsBodySchema, paginationSchema } from '#/schemas';
+import { batchResponseSchema, errorResponseRefs, idsBodySchema, paginationSchema } from '#/schemas';
 import { mockPaginatedRequestsResponse, mockRequestResponse } from '../../../mocks/mock-request';
 
 const requestRoutes = {
@@ -78,8 +78,9 @@ const requestRoutes = {
       },
     },
     responses: {
-      204: {
-        description: 'Requests deleted',
+      200: {
+        description: 'Success',
+        content: { 'application/json': { schema: batchResponseSchema() } },
       },
       ...errorResponseRefs,
     },

@@ -5,7 +5,7 @@ import { meKeys } from '~/modules/me/query';
 import { queryClient } from '~/query/query-client';
 
 /** Entity types that should be enriched with membership data */
-const enrichableEntityTypes = ['organization'] as const;
+const enrichableEntityTypes = ['organization', 'workspace', 'project'] as const;
 
 /** Check if a query key is for an enrichable entity list */
 function isEnrichableListQuery(queryKey: readonly unknown[]): boolean {

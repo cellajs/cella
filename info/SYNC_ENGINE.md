@@ -388,7 +388,7 @@ const trackedFields = ['name', 'content', 'status'] as const;
 const changedFields = getChangedTrackedFields(payload, trackedFields);
 
 // Field-level conflict detection - check ALL changed fields
-const { conflicts } = checkFieldConflicts(changedFields, entity.stx, stx.baseVersion);
+const { conflicts } = checkFieldConflicts(changedFields, entity.stx, stx.lastReadVersion);
 throwIfConflicts('entity', conflicts);
 
 // Build updated fieldVersions for ALL changed fields
@@ -561,6 +561,8 @@ activityBus.onAny((event) => {
   }
 });
 ```
+
+// TODO-016 we need to consider a variant for a list of items because SSE could also trigger a lot of paginated requests.
 
 **On delete:** Just invalidate. No tombstone needed — let DB return 404 if client missed SSE.
 

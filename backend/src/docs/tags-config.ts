@@ -25,55 +25,57 @@ export type OpenApiTagId = (typeof openapiTagIds)[number];
  * Tag descriptions for OpenAPI documentation.
  */
 const tagDescriptions: Record<OpenApiTagId, string> = {
-  me: `Endpoints related to the *current user*, meaning the user associated with the active session making
-        the request. These routes are distinct from general \`users\` endpoints: while \`users\` may operate on
-        any user in the system, \`me\` endpoints are scoped exclusively to the *current user* and follow a
-        different authorization flow.`,
+  me: `Operations scoped to the current user (the user associated with the active session). Includes
+        profile management, session control, MFA toggling, upload token generation, viewing and responding
+        to membership invitations, leaving entities, and email unsubscription. Distinct from \`users\`
+        operations, which target any user in the system.`,
 
-  users: `Endpoints for managing *users* at the system level. Unlike context entities (such as
-        \`organizations\`), a \`user\` is a "global" entity and not scoped to a specific context. These endpoints
-        are intended for administrative operations on any user in the system.`,
+  users: `Read-only operations for listing and retrieving users within an organization context. Write
+        operations on users are handled by the \`me\` (self) and \`system\` (admin) modules.`,
 
-  memberships: `Endpoints for managing *memberships*, which represent one-to-one relationships between a
-        \`user\` and a contextual \`entity\` (e.g., an \`organization\`). Each membership includes role information
-        and status flags such as \`archived\` or \`muted\`. Memberships can also reference parent entities,
-        enabling hierarchical context.`,
+  memberships: `Operations for managing memberships, which represent relationships between a user and a
+        context entity (e.g., an organization). Includes inviting users, accepting or rejecting invitations,
+        updating role and status flags (archived, muted), listing members and pending invitations, and
+        removing memberships.`,
 
-  organizations: `Endpoints for managing \`organizations\`, which are core context entities. Organizations are
-        the highest ancestor in the parent hierarchy. They define access boundaries and are often the minimal
-        primary scope for permission and resource management.`,
+  organizations: `Operations for managing organizations, which are core context entities and the highest
+        ancestor in the entity hierarchy. Supports creating, listing, retrieving, updating, and deleting
+        organizations within a tenant. Cross-tenant listing is available with elevated permissions.`,
 
-  requests: `Endpoints for handling incoming *requests* such as contact form submissions, newsletter signups,
-        and waitlist entries.`,
+  requests: `Operations for handling public form submissions such as contact messages, newsletter signups,
+        and waitlist entries. Submission is public with bot protection and rate limiting. Listing and
+        deletion require system admin access.`,
 
-  entities: `Endpoints that operate across multiple *entity types*, such as \`users\` and \`organizations\`.
-        *Entities* are identifiable domain objects that may be contextual, hierarchical (with parent/child
-        relations), or actor-like. These endpoints offer shared logic across modules, including slug validation
-        and entity visibility.`,
+  entities: `Cross-cutting operations that apply across multiple entity types. Includes slug availability
+        checking and real-time SSE streaming (both a public stream for unauthenticated entity updates and
+        an authenticated app stream for per-user entity and membership notifications).`,
 
-  system: `*System level* endpoints for administrative actions and platform wide functionality. These endpoints
-        support operations such as user invitations, file uploads, and webhook handling.`,
+  system: `System admin operations for platform-wide user management. Includes listing, updating, and
+        deleting users, sending system-level invitations, sending newsletters, and handling payment
+        webhooks.`,
 
-  auth: `*Authentication* endpoints supporting multiple sign-in methods, including email/password, OAuth
-        (Google, Microsoft, GitHub), and passkeys (WebAuthn). These routes cover user sign-up, sign-in, password
-        recovery, email verification, account linking, and impersonation for system admins.`,
+  auth: `Authentication operations supporting multiple sign-in methods: email/password, OAuth (GitHub,
+        Google, Microsoft), passkeys (WebAuthn), and TOTP. Covers sign-up, sign-in, sign-out, password
+        reset, token invocation, email checking, admin impersonation, and MFA credential management.`,
 
-  attachments: `Endpoints for managing file based *attachments* (e.g. images, PDFs, documents) linked to
-        entities such as organizations or users. Files are uploaded directly by the client; the API handles
-        metadata registration, linking, access, and preview utilities.`,
+  attachments: `Operations for managing file-based attachments (e.g., images, documents) linked to entities.
+        Files are uploaded directly by the client to S3; the API handles metadata registration, retrieval,
+        updates, deletion of records, and presigned URL generation for private files.`,
 
-  pages: `Endpoints for managing *pages*, which are product entities supporting realtime sync and offline
-        capabilities. Pages can be organized hierarchically and are used in /docs.`,
+  pages: `Operations for managing pages, which are content entities with public read access. Read operations
+        are publicly available with caching. Write operations (create, update, delete) require system admin
+        access and are scoped to a tenant.`,
 
-  metrics: `Endpoints for retrieving system level statistics and basic observability data. Includes internal
-        metrics as well as simple, high level counts for entities such as \`users\` and \`organizations\`.`,
+  metrics: `Operations for retrieving system-level statistics and observability data. Includes public entity
+        counts (cached, with bot protection), raw system metrics, Node.js runtime metrics, entity cache
+        stats, and CDC sync pipeline metrics. Detailed metrics require system admin access.`,
 
-  activities: `Endpoints for retrieving *activities* (audit log entries). Activities track create, update, and
-        delete operations across all resources. This serves as an audit trail and can be extended for webhook
-        delivery.`,
+  activities: `Operations for retrieving activities (audit log entries). Activities track create, update, and
+        delete events across all resources. Read-only, system admin access only.`,
 
-  tenants: `System-level endpoints for managing *tenants*. Tenants are top-level isolation boundaries used by
-        Row-Level Security (RLS) to partition data. Only system administrators can manage tenants.`,
+  tenants: `System admin operations for managing tenants. Tenants are top-level isolation boundaries used by
+        Row-Level Security (RLS) to partition data. Supports listing, retrieving, creating, updating, and
+        soft-deleting (archiving) tenants.`,
 };
 
 /**

@@ -47,6 +47,8 @@ interface DataTableProps<TData> {
   onRowsChange?: (rows: TData[], data: RowsChangeData<TData>) => void;
   fetchMore?: () => Promise<unknown>;
   className?: string;
+  /** When true, hides infinite loader (for static/non-paginated tables) */
+  readOnly?: boolean;
 }
 
 /**
@@ -75,6 +77,7 @@ export const DataTable = <TData,>({
   renderRow,
   onCellClick,
   className,
+  readOnly,
 }: DataTableProps<TData>) => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm', false);
@@ -127,7 +130,7 @@ export const DataTable = <TData,>({
           ) : !rows.length ? (
             <NoRows isFiltered={isFiltered} isFetching={isFetching} customComponent={NoRowsComponent} />
           ) : (
-            <div className={`grid rdg-wrapper relative ${hideHeader ? 'rdg-hide-header' : ''}`} ref={gridRef}>
+            <div className={`grid rdg-wrapper relative ${hideHeader ? 'rdg-hide-header' : ''} ${readOnly ? 'rdg-readonly' : ''}`} ref={gridRef}>
               <DataGrid
                 rowHeight={isMobile ? rowHeight * 1.2 : rowHeight}
                 enableVirtualization={enableVirtualization}
@@ -143,6 +146,7 @@ export const DataTable = <TData,>({
                 sortColumns={sortColumns}
                 onSortColumnsChange={onSortColumnsChange}
                 onRowsEndApproaching={handleRowsEndApproaching}
+                selectionMode={readOnly ? 'none' : undefined}
                 renderers={{
                   renderRow,
                   renderCheckbox: ({ onChange, ...props }) => {
@@ -168,7 +172,7 @@ export const DataTable = <TData,>({
                   },
                 }}
               />
-              <InfiniteLoader hasNextPage={hasNextPage} isFetching={isFetching} isFetchMoreError={!!error} />
+              {!readOnly && <InfiniteLoader hasNextPage={hasNextPage} isFetching={isFetching} isFetchMoreError={!!error} />}
             </div>
           )}
         </>

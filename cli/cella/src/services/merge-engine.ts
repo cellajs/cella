@@ -93,7 +93,7 @@ function getGitHubCommitUrl(remoteUrl: string, commitHash: string): string | nul
 /**
  * Apply merge directly to fork (no worktree).
  *
- * Pre-analyzes files using refs (fork untouched), then merges and resolves.
+ * Performs merge in fork, analyzes files, and resolves them.
  * Fork is left in merge state with MERGE_HEAD for IDE 3-way merge.
  */
 async function applyDirectMerge(
@@ -103,18 +103,15 @@ async function applyDirectMerge(
   config: RuntimeConfig,
   onProgress?: ProgressCallback,
 ): Promise<{ resolved: number; remainingConflicts: string[]; analyzedFiles: AnalyzedFile[] }> {
-  // Pre-analyze files BEFORE merge (all ref-based, doesn't need merge state).
-  // This keeps the fork working tree clean during the slow analysis phase,
-  // so the IDE doesn't show distracting intermediate file changes.
-  onProgress?.('analyzing files...');
-  const analyzedFiles = await analyzeFiles(forkPath, forkPath, upstreamRef, mergeBaseRef, config, onProgress);
-
   // Start real merge in fork (always real merge, never --squash).
   // Squash strategy is handled post-merge by removing MERGE_HEAD before auto-commit,
   // which preserves correct 3-way merge behavior and merge-base ancestry.
-  // Done after analysis so the fork is only in merge state during the fast resolution phase.
   onProgress?.('starting merge in fork...');
   await merge(forkPath, upstreamRef, { noCommit: true, noEdit: true });
+
+  // Analyze files post-merge
+  onProgress?.('analyzing files...');
+  const analyzedFiles = await analyzeFiles(forkPath, forkPath, upstreamRef, mergeBaseRef, config, onProgress);
 
   // Apply resolutions directly in fork
   let resolved = 0;
@@ -194,16 +191,6 @@ async function applyDirectMerge(
         await checkoutFromRef(forkPath, upstreamRef, filePath);
       }
       resolved++;
-      continue;
-    }
-
-    if (status === 'drifted') {
-      if (config.hard) {
-        // --hard: reset drifted files to upstream version
-        onProgress?.(`→ ${filePath}: resetting to upstream (--hard)`);
-        await checkoutFromRef(forkPath, upstreamRef, filePath);
-        resolved++;
-      }
       continue;
     }
 
@@ -599,11 +586,10 @@ export async function runMergeEngine(
 
       const summary = calculateSummary(analyzedFiles);
       const synced = summary.behind + summary.diverged + summary.renamed;
-      const hardReset = config.hard ? summary.drifted : 0;
       const isSquash = config.settings.mergeStrategy === 'squash';
 
-      // Count total resolved changes (includes ignored/pinned resolutions and --hard resets)
-      const totalResolved = synced + summary.ignored + summary.pinned + hardReset;
+      // Count total resolved changes (includes ignored/pinned resolutions)
+      const totalResolved = synced + summary.ignored + summary.pinned;
 
       if (remainingConflicts.length > 0) {
         // Conflicts: leave MERGE_HEAD intact for IDE 3-way merge resolution.
@@ -611,10 +597,7 @@ export async function runMergeEngine(
         await storeLastSyncRef(forkPath, upstreamCommit.hash);
         onStep?.('merge in progress', `${remainingConflicts.length} conflicts to resolve in IDE`);
       } else if (totalResolved > 0) {
-        const parts: string[] = [];
-        if (synced > 0) parts.push(`${synced} files from upstream`);
-        if (hardReset > 0) parts.push(`${hardReset} drifted files reset`);
-        const label = parts.length > 0 ? parts.join(', ') : 'upstream changes';
+        const label = synced > 0 ? `${synced} files from upstream` : 'upstream changes';
         if (isSquash) {
           // Remove MERGE_HEAD so commit becomes single-parent (squash-style)
           await removeMergeHead(forkPath);

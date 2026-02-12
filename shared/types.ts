@@ -32,6 +32,12 @@ export type RelatableContextEntityType = (typeof hierarchy.relatableContextTypes
 /** Resource types that are not entities but have activities logged */
 export type ResourceType = (typeof appConfig.resourceTypes)[number];
 
+/** Offline entities that support offline transactions */
+export type OfflineEntityType = (typeof appConfig.offlineEntityTypes)[number];
+
+/** Realtime entities that support realtime & offline transactions */
+export type RealtimeEntityType = (typeof appConfig.realtimeEntityTypes)[number];
+
 /******************************************************************************
  * APP CONFIGURATION TYPES
  ******************************************************************************/

@@ -204,6 +204,7 @@ export const usePageUpdateMutation = () => {
 
       // Cancel queries to prevent race conditions
       await queryClient.cancelQueries({ queryKey: keys.list.base });
+      await queryClient.cancelQueries({ queryKey: keys.detail.byId(id) });
 
       // Snapshot current state for potential rollback
       const previousPage = findPageInListCache(id);
@@ -212,6 +213,8 @@ export const usePageUpdateMutation = () => {
         // Merge new data into existing entity for instant UI update
         const optimisticPage = { ...previousPage, ...data, modifiedAt: new Date().toISOString() };
         mutateCache.update([optimisticPage]);
+        // Also update detail cache so view page shows updated data immediately
+        queryClient.setQueryData(keys.detail.byId(id), optimisticPage);
       }
 
       // Return snapshot for rollback in onError
@@ -223,13 +226,15 @@ export const usePageUpdateMutation = () => {
       // Revert cache to pre-mutation snapshot
       if (context?.previousPage) {
         mutateCache.update([context.previousPage]);
+        queryClient.setQueryData(keys.detail.byId(context.previousPage.id), context.previousPage);
       }
     },
 
     // Runs on API success - apply authoritative server data
-    onSuccess: (updatedPage) => {
+    onSuccess: (updatedPage, _variables) => {
       // Replace optimistic data with server response (source of truth)
       mutateCache.update([updatedPage]);
+      queryClient.setQueryData(keys.detail.byId(updatedPage.id), updatedPage);
     },
 
     // Runs after success OR error - refresh detail view

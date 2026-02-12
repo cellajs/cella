@@ -12,7 +12,15 @@ import { OrganizationRoute } from '~/routes/organization-routes';
 
 const LeaveOrgButton = lazy(() => import('~/modules/organization/leave-organization'));
 
-function OrganizationPage({ organizationId, tenantId }: { organizationId: string; tenantId: string }) {
+interface Props {
+  organizationId: string;
+  tenantId: string;
+}
+
+/**
+ * Organization page with header, tab navigation and nested routes.
+ */
+function OrganizationPage({ organizationId, tenantId }: Props) {
   const { t } = useTranslation();
 
   const orgQueryOptions = organizationQueryOptions(organizationId, tenantId);

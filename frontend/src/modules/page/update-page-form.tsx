@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { Check, EyeIcon, Loader2 } from 'lucide-react';
 import { lazy, Suspense, useCallback, useMemo, useState } from 'react';
@@ -14,7 +15,7 @@ import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { InputFormField } from '~/modules/common/form-fields/input';
 import { Spinner } from '~/modules/common/spinner';
-import { usePageUpdateMutation } from '~/modules/page/query';
+import { pageQueryKeys, usePageUpdateMutation } from '~/modules/page/query';
 import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
 
@@ -32,6 +33,7 @@ interface Props {
 export function UpdatePageForm({ page }: Props) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const updatePage = usePageUpdateMutation();
@@ -118,7 +120,16 @@ export function UpdatePageForm({ page }: Props) {
     <>
       <div className="flex items-center justify-between gap-3 mb-6">
         <div className="flex items-center gap-2">
-          <Button variant="plain" onClick={() => navigate({ to: '/docs/page/$id', params: { id: page.id } })}>
+          <Button
+            variant="plain"
+            onClick={() => {
+              // Update detail cache with current form values before navigating
+              // so the view page shows the latest content immediately
+              const currentData = form.getValues();
+              queryClient.setQueryData(pageQueryKeys.detail.byId(page.id), { ...page, ...currentData, modifiedAt: new Date().toISOString() });
+              navigate({ to: '/docs/page/$id', params: { id: page.id } });
+            }}
+          >
             <EyeIcon size={16} className="mr-2" />
             {t('common:view')}
           </Button>

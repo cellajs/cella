@@ -30,8 +30,10 @@ export const SelectParentFormField = <TFieldValues extends FieldValues>({
 
   // Fetch entities using proper query
   const queryFactory = getContextEntityTypeToListQueries()[parentType];
-  const query = useInfiniteQuery(queryFactory({ userId: user.id }));
-  const items = flattenInfiniteData<ContextEntityBase>(query.data);
+  // biome-ignore lint/suspicious/noExplicitAny: queryFactory returns heterogeneous query options based on parentType
+  const query = useInfiniteQuery((queryFactory as any)({ userId: user.id }));
+  // biome-ignore lint/suspicious/noExplicitAny: queryFactory is heterogeneous, data shape is unknown
+  const items = flattenInfiniteData<ContextEntityBase>(query.data as any);
 
   const options =
     opts ??

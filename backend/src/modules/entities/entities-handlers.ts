@@ -4,6 +4,7 @@ import { nanoid } from 'nanoid';
 import { appConfig, hierarchy } from 'shared';
 import { signCacheToken } from '#/lib/cache-token-signer';
 import { type Env } from '#/lib/context';
+import { publicEntityCache } from '#/middlewares/entity-cache';
 import {
   type AppStreamSubscriber,
   dispatchToUserSubscribers,
@@ -20,7 +21,7 @@ import {
   type PublicStreamSubscriber,
   publicChannel,
 } from '#/modules/entities/public-stream';
-import { type ActivityEventWithEntity, activityBus, allActionVerbs } from '#/sync/activity-bus';
+import { type ActivityEventWithEntity, activityBus } from '#/sync/activity-bus';
 import { keepAlive, streamSubscriberManager, writeChange, writeOffset } from '#/sync/stream';
 import { defaultHook } from '#/utils/default-hook';
 import { logEvent } from '#/utils/logger';
@@ -28,15 +29,21 @@ import { logEvent } from '#/utils/logger';
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 // ============================================
-// ActivityBus event registration for SSE streams
-// Cache invalidation is handled separately in cache-invalidation.ts
+// ActivityBus registration for public entity stream
 // ============================================
 
-// Public entity events - dispatched to unauthenticated public stream
+// Register listeners dynamically for all public product entity types
 for (const entityType of hierarchy.publicAccessTypes) {
-  for (const action of allActionVerbs) {
-    const eventType = `${entityType}.${action}` as const;
+  const eventTypes = [`${entityType}.created`, `${entityType}.updated`, `${entityType}.deleted`] as const;
+
+  for (const eventType of eventTypes) {
     activityBus.on(eventType, async (event: ActivityEventWithEntity) => {
+      // Invalidate public entity cache
+      if (event.entityId) {
+        publicEntityCache.delete(entityType, event.entityId);
+      }
+
+      // Dispatch to public stream subscribers
       try {
         await dispatchToPublicSubscribers(event);
       } catch (error) {
@@ -46,9 +53,14 @@ for (const entityType of hierarchy.publicAccessTypes) {
   }
 }
 
+// ============================================
+// ActivityBus registration for app stream (authenticated user events)
+// ============================================
+
 // Membership events - routed via user channel
-for (const action of allActionVerbs) {
-  const eventType = `membership.${action}` as const;
+const membershipEvents = ['membership.created', 'membership.updated', 'membership.deleted'] as const;
+
+for (const eventType of membershipEvents) {
   activityBus.on(eventType, async (event: ActivityEventWithEntity) => {
     try {
       await dispatchToUserSubscribers(event);
@@ -58,9 +70,11 @@ for (const action of allActionVerbs) {
   });
 }
 
-// Product entity events - dispatched to authenticated app stream
+// Product entity events - dynamically registered from config
+const productEntityActions = ['created', 'updated', 'deleted'] as const;
+
 for (const entityType of appConfig.productEntityTypes) {
-  for (const action of allActionVerbs) {
+  for (const action of productEntityActions) {
     const eventType = `${entityType}.${action}` as const;
     activityBus.on(eventType, async (event: ActivityEventWithEntity) => {
       try {
@@ -72,20 +86,19 @@ for (const entityType of appConfig.productEntityTypes) {
   }
 }
 
-// Context entity events - no 'created' (handled via membership.created)
-const contextActions = allActionVerbs.filter((a) => a !== 'created');
+// Organization events - routed via org channel
+// TODO-012 not entityConfig and hierarchy agnostic yet or is this one ok?
 
-for (const entityType of appConfig.contextEntityTypes) {
-  for (const action of contextActions) {
-    const eventType = `${entityType}.${action}` as const;
-    activityBus.on(eventType, async (event: ActivityEventWithEntity) => {
-      try {
-        await dispatchToUserSubscribers(event);
-      } catch (error) {
-        logEvent('error', 'Failed to dispatch context entity event', { error, activityId: event.id });
-      }
-    });
-  }
+const organizationEvents = ['organization.updated', 'organization.deleted'] as const;
+
+for (const eventType of organizationEvents) {
+  activityBus.on(eventType, async (event: ActivityEventWithEntity) => {
+    try {
+      await dispatchToUserSubscribers(event);
+    } catch (error) {
+      logEvent('error', 'Failed to dispatch organization event', { error, activityId: event.id });
+    }
+  });
 }
 
 // ============================================
@@ -120,14 +133,14 @@ const entitiesRouteHandlers = app
 
     // Non-SSE request: return delete catch-up notifications as batch
     if (live !== 'sse') {
-      const catchUpNotifications = await fetchPublicDeleteCatchUp(cursor);
-      const lastNotification = catchUpNotifications.at(-1);
+      const deleteNotifications = await fetchPublicDeleteCatchUp(cursor);
+      const lastNotification = deleteNotifications.at(-1);
 
       // Always return a consistent cursor - use lastNotification.activityId, original cursor, or empty string
       const newCursor = lastNotification?.activityId ?? cursor ?? '';
 
       return ctx.json({
-        notifications: catchUpNotifications.map((n) => n.notification),
+        notifications: deleteNotifications.map((n) => n.notification),
         cursor: newCursor,
       });
     }
@@ -188,9 +201,9 @@ const entitiesRouteHandlers = app
       const lastNotification = catchUpNotifications.at(-1);
 
       // Sign cache tokens for this user's session
-      const signedNotifications = catchUpNotifications.map((a) => ({
-        ...a.notification,
-        cacheToken: a.notification.cacheToken ? signCacheToken(a.notification.cacheToken, sessionToken) : null,
+      const signedNotifications = catchUpNotifications.map((n) => ({
+        ...n.notification,
+        cacheToken: n.notification.cacheToken ? signCacheToken(n.notification.cacheToken, sessionToken) : null,
       }));
 
       return ctx.json({
@@ -203,7 +216,7 @@ const entitiesRouteHandlers = app
     return streamSSE(ctx, async (stream) => {
       ctx.header('Content-Encoding', '');
 
-      // Send catch-up notifications with signed tokens
+      // Send catch-up activities with signed tokens
       const catchUpNotifications = await fetchUserCatchUpNotifications(user.id, orgIds, cursor);
       for (const { activityId, notification } of catchUpNotifications) {
         const signedNotification = notification.cacheToken
