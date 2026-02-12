@@ -354,8 +354,7 @@
             "type": "string"
           },
           "tenantId": {
-            "type": "string",
-            "maxLength": 24
+            "type": "string"
           },
           "contextType": {
             "type": "string",
@@ -857,8 +856,7 @@
             "type": [
               "string",
               "null"
-            ],
-            "maxLength": 24
+            ]
           },
           "userId": {
             "type": [
@@ -1434,8 +1432,7 @@
             "type": "string"
           },
           "tenantId": {
-            "type": "string",
-            "maxLength": 24
+            "type": "string"
           },
           "contextType": {
             "type": "string",
@@ -1767,8 +1764,7 @@
             ]
           },
           "tenantId": {
-            "type": "string",
-            "maxLength": 24
+            "type": "string"
           },
           "name": {
             "type": "string"
@@ -2038,8 +2034,7 @@
             ]
           },
           "tenantId": {
-            "type": "string",
-            "maxLength": 24
+            "type": "string"
           },
           "name": {
             "type": "string"
@@ -2183,8 +2178,7 @@
             ]
           },
           "tenantId": {
-            "type": "string",
-            "maxLength": 24
+            "type": "string"
           },
           "name": {
             "type": "string"
@@ -2356,8 +2350,7 @@
             "type": "string"
           },
           "tenantId": {
-            "type": "string",
-            "maxLength": 24
+            "type": "string"
           },
           "contextType": {
             "type": "string",

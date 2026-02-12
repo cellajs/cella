@@ -4,13 +4,10 @@ import { membershipCrudPolicies } from '#/db/rls-helpers';
 import { organizationsTable } from '#/db/schema/organizations';
 import { tenantsTable } from '#/db/schema/tenants';
 import { usersTable } from '#/db/schema/users';
-import { generateContextEntityIdColumns } from '#/db/utils/generate-context-entity-columns';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
 
 const roleEnum = roles.all;
-
-const { organizationId, ...otherEntityIdColumns } = generateContextEntityIdColumns();
 
 /** Inactive memberships track pending invitations and rejected membership requests. */
 export const inactiveMembershipsTable = pgTable(
@@ -18,7 +15,7 @@ export const inactiveMembershipsTable = pgTable(
   {
     createdAt: timestampColumns.createdAt,
     id: varchar().primaryKey().$defaultFn(nanoid),
-    tenantId: varchar('tenant_id', { length: 24 })
+    tenantId: varchar('tenant_id')
       .notNull()
       .references(() => tenantsTable.id),
     contextType: varchar({ enum: appConfig.contextEntityTypes }).notNull(),
@@ -30,8 +27,9 @@ export const inactiveMembershipsTable = pgTable(
     createdBy: varchar()
       .notNull()
       .references(() => usersTable.id, { onDelete: 'cascade' }),
-    organizationId: organizationId.notNull(),
-    ...otherEntityIdColumns,
+    organizationId: varchar()
+      .notNull()
+      .references(() => organizationsTable.id, { onDelete: 'cascade' }),
   },
   (table) => [
     index('inactive_memberships_user_id_idx').on(table.userId),

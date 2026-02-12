@@ -20,8 +20,7 @@
                   "id": { "type": "string", "required": true },
                   "tenantId": {
                     "type": ["string", "null"],
-                    "required": true,
-                    "maxLength": 24
+                    "required": true
                   },
                   "userId": {
                     "type": ["string", "null"],

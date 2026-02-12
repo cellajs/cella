@@ -110,11 +110,7 @@
       "type": "object",
       "properties": {
         "id": { "type": "string", "required": true },
-        "tenantId": {
-          "type": "string",
-          "required": true,
-          "maxLength": 24
-        },
+        "tenantId": { "type": "string", "required": true },
         "contextType": {
           "type": "string",
           "required": true,
@@ -585,8 +581,7 @@
         "id": { "type": "string", "required": true },
         "tenantId": {
           "type": ["string", "null"],
-          "required": true,
-          "maxLength": 24
+          "required": true
         },
         "userId": {
           "type": ["string", "null"],
@@ -1063,11 +1058,7 @@
       "properties": {
         "createdAt": { "type": "string", "required": true },
         "id": { "type": "string", "required": true },
-        "tenantId": {
-          "type": "string",
-          "required": true,
-          "maxLength": 24
-        },
+        "tenantId": { "type": "string", "required": true },
         "contextType": {
           "type": "string",
           "required": true,
@@ -1294,11 +1285,7 @@
           "required": false,
           "properties": {
             "id": { "type": "string", "required": true },
-            "tenantId": {
-              "type": "string",
-              "required": true,
-              "maxLength": 24
-            },
+            "tenantId": { "type": "string", "required": true },
             "contextType": {
               "type": "string",
               "required": true,
@@ -1364,11 +1351,7 @@
           "required": true,
           "enum": ["organization"]
         },
-        "tenantId": {
-          "type": "string",
-          "required": true,
-          "maxLength": 24
-        },
+        "tenantId": { "type": "string", "required": true },
         "name": { "type": "string", "required": true },
         "description": {
           "type": ["string", "null"],
@@ -1460,11 +1443,7 @@
               "required": false,
               "properties": {
                 "id": { "type": "string", "required": true },
-                "tenantId": {
-                  "type": "string",
-                  "required": true,
-                  "maxLength": 24
-                },
+                "tenantId": { "type": "string", "required": true },
                 "contextType": {
                   "type": "string",
                   "required": true,
@@ -1598,11 +1577,7 @@
           "required": true,
           "enum": ["page"]
         },
-        "tenantId": {
-          "type": "string",
-          "required": true,
-          "maxLength": 24
-        },
+        "tenantId": { "type": "string", "required": true },
         "name": { "type": "string", "required": true },
         "description": {
           "type": ["string", "null"],
@@ -1722,11 +1697,7 @@
           "required": true,
           "enum": ["attachment"]
         },
-        "tenantId": {
-          "type": "string",
-          "required": true,
-          "maxLength": 24
-        },
+        "tenantId": { "type": "string", "required": true },
         "name": { "type": "string", "required": true },
         "description": {
           "type": ["string", "null"],
@@ -1832,11 +1803,7 @@
       "properties": {
         "createdAt": { "type": "string", "required": true },
         "id": { "type": "string", "required": true },
-        "tenantId": {
-          "type": "string",
-          "required": true,
-          "maxLength": 24
-        },
+        "tenantId": { "type": "string", "required": true },
         "contextType": {
           "type": "string",
           "required": true,

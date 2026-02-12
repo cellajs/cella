@@ -24,11 +24,7 @@
                     "required": true,
                     "enum": ["attachment"]
                   },
-                  "tenantId": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 24
-                  },
+                  "tenantId": { "type": "string", "required": true },
                   "name": { "type": "string", "required": true },
                   "description": {
                     "type": ["string", "null"],
@@ -268,11 +264,7 @@
                     "required": true,
                     "enum": ["attachment"]
                   },
-                  "tenantId": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 24
-                  },
+                  "tenantId": { "type": "string", "required": true },
                   "name": { "type": "string", "required": true },
                   "description": {
                     "type": ["string", "null"],
@@ -440,11 +432,7 @@
                     "required": true,
                     "enum": ["attachment"]
                   },
-                  "tenantId": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 24
-                  },
+                  "tenantId": { "type": "string", "required": true },
                   "name": { "type": "string", "required": true },
                   "description": {
                     "type": ["string", "null"],
@@ -939,11 +927,7 @@
               "required": true,
               "enum": ["attachment"]
             },
-            "tenantId": {
-              "type": "string",
-              "required": true,
-              "maxLength": 24
-            },
+            "tenantId": { "type": "string", "required": true },
             "name": { "type": "string", "required": true },
             "description": {
               "type": ["string", "null"],
@@ -1118,11 +1102,7 @@
               "required": true,
               "enum": ["attachment"]
             },
-            "tenantId": {
-              "type": "string",
-              "required": true,
-              "maxLength": 24
-            },
+            "tenantId": { "type": "string", "required": true },
             "name": { "type": "string", "required": true },
             "description": {
               "type": ["string", "null"],

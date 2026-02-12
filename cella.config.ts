@@ -78,7 +78,7 @@ export default defineConfig({
       "backend/package.json",
       "backend/src/custom-env.ts",
       "backend/src/table-config.ts",
-      "backend/src/relatable-config.ts",
+
       "backend/src/routes.ts",
       "backend/src/permissions/permissions-config.ts",
       "backend/src/docs/tags-config.ts",

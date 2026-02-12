@@ -5,13 +5,10 @@ import { isAuthenticated, tenantContextSet, tenantMatch, userContextSet, userMat
 import { organizationsTable } from '#/db/schema/organizations';
 import { tenantsTable } from '#/db/schema/tenants';
 import { usersTable } from '#/db/schema/users';
-import { generateContextEntityIdColumns } from '#/db/utils/generate-context-entity-columns';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
 
 const roleEnum = roles.all;
-
-const { organizationId, ...otherEntityIdColumns } = generateContextEntityIdColumns();
 
 /**
  * Memberships table to track active memberships of users in organizations and other context entities.
@@ -22,7 +19,7 @@ export const membershipsTable = pgTable(
   {
     createdAt: timestampColumns.createdAt,
     id: varchar().primaryKey().$defaultFn(nanoid),
-    tenantId: varchar('tenant_id', { length: 24 })
+    tenantId: varchar('tenant_id')
       .notNull()
       .references(() => tenantsTable.id),
     contextType: varchar({ enum: appConfig.contextEntityTypes }).notNull(),
@@ -38,8 +35,9 @@ export const membershipsTable = pgTable(
     archived: boolean().default(false).notNull(),
     muted: boolean().default(false).notNull(),
     displayOrder: doublePrecision().notNull(),
-    organizationId: organizationId.notNull(),
-    ...otherEntityIdColumns,
+    organizationId: varchar()
+      .notNull()
+      .references(() => organizationsTable.id, { onDelete: 'cascade' }),
   },
   (table) => [
     index('memberships_user_id_idx').on(table.userId),

@@ -33,7 +33,7 @@ export const zContextEntityBase = z.object({
 
 export const zMembershipBase = z.object({
   id: z.string(),
-  tenantId: z.string().max(24),
+  tenantId: z.string(),
   contextType: z.enum(['organization']),
   userId: z.string(),
   role: z.enum(['admin', 'member']),
@@ -154,7 +154,7 @@ export const zActivityError = z.object({
 
 export const zActivity = z.object({
   id: z.string(),
-  tenantId: z.union([z.string().max(24), z.null()]),
+  tenantId: z.union([z.string(), z.null()]),
   userId: z.union([z.string(), z.null()]),
   entityType: z.nullable(z.enum(['user', 'organization', 'attachment', 'page'])),
   resourceType: z.nullable(z.enum(['request', 'membership', 'inactive_membership', 'tenant'])),
@@ -236,7 +236,7 @@ export const zMeAuthData = z.object({
 export const zInactiveMembership = z.object({
   createdAt: z.string(),
   id: z.string(),
-  tenantId: z.string().max(24),
+  tenantId: z.string(),
   contextType: z.enum(['organization']),
   email: z.string(),
   userId: z.union([z.string(), z.null()]),
@@ -314,7 +314,7 @@ export const zOrganization = z.object({
   createdAt: z.string(),
   id: z.string(),
   entityType: z.enum(['organization']),
-  tenantId: z.string().max(24),
+  tenantId: z.string(),
   name: z.string(),
   description: z.union([z.string(), z.null()]),
   modifiedAt: z.union([z.string(), z.null()]),
@@ -352,7 +352,7 @@ export const zPage = z.object({
   createdAt: z.string(),
   id: z.string(),
   entityType: z.enum(['page']),
-  tenantId: z.string().max(24),
+  tenantId: z.string(),
   name: z.string(),
   description: z.union([z.string(), z.null()]),
   modifiedAt: z.union([z.string(), z.null()]),
@@ -376,7 +376,7 @@ export const zAttachment = z.object({
   createdAt: z.string(),
   id: z.string(),
   entityType: z.enum(['attachment']),
-  tenantId: z.string().max(24),
+  tenantId: z.string(),
   name: z.string(),
   description: z.union([z.string(), z.null()]),
   modifiedAt: z.union([z.string(), z.null()]),
@@ -409,7 +409,7 @@ export const zAttachment = z.object({
 export const zMembership = z.object({
   createdAt: z.string(),
   id: z.string(),
-  tenantId: z.string().max(24),
+  tenantId: z.string(),
   contextType: z.enum(['organization']),
   userId: z.string(),
   role: z.enum(['admin', 'member']),

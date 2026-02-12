@@ -182,11 +182,7 @@
                       "type": "object",
                       "properties": {
                         "id": { "type": "string", "required": true },
-                        "tenantId": {
-                          "type": "string",
-                          "required": true,
-                          "maxLength": 24
-                        },
+                        "tenantId": { "type": "string", "required": true },
                         "contextType": {
                           "type": "string",
                           "required": true,

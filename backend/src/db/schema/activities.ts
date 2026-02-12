@@ -1,12 +1,7 @@
-import { sql } from 'drizzle-orm';
+import { desc, sql } from 'drizzle-orm';
 import { foreignKey, index, integer, jsonb, pgTable, primaryKey, varchar } from 'drizzle-orm/pg-core';
 import { appConfig } from 'shared';
 import type { ActivityError } from '#/db/utils/activity-error-schema';
-import {
-  generateActivityContextColumns,
-  generateActivityContextForeignKeys,
-  generateActivityContextIndexes,
-} from '#/db/utils/generate-activity-context-columns';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import type { StxBase } from '#/schemas/stx-base-schema';
 import { activityActions } from '#/sync/activity-bus';
@@ -28,7 +23,7 @@ export const activitiesTable = pgTable(
   'activities',
   {
     id: varchar().notNull().$defaultFn(nanoid),
-    tenantId: varchar('tenant_id', { length: 24 }).references(() => tenantsTable.id),
+    tenantId: varchar('tenant_id').references(() => tenantsTable.id),
     userId: varchar(),
     entityType: varchar({ enum: appConfig.entityTypes }),
     resourceType: varchar({ enum: appConfig.resourceTypes }),
@@ -36,7 +31,7 @@ export const activitiesTable = pgTable(
     tableName: varchar().notNull(),
     type: varchar().notNull(),
     entityId: varchar(),
-    ...generateActivityContextColumns(),
+    organizationId: varchar(),
     createdAt: timestampColumns.createdAt,
     changedKeys: jsonb().$type<string[]>(),
     stx: jsonb().$type<StxBase>(),
@@ -54,6 +49,8 @@ export const activitiesTable = pgTable(
     index('activities_tenant_id_index').on(table.tenantId),
     index('activities_stx_id_index').on(sql`(stx->>'id')`),
     index('activities_error_lsn_index').on(sql`(error->>'lsn')`).where(sql`error IS NOT NULL`),
+    index('activities_organization_id_index').on(table.organizationId),
+    index('activities_organization_id_seq_index').on(table.organizationId, desc(table.seq)),
     foreignKey({
       columns: [table.userId],
       foreignColumns: [usersTable.id],
@@ -62,8 +59,10 @@ export const activitiesTable = pgTable(
       columns: [table.tenantId, table.organizationId],
       foreignColumns: [organizationsTable.tenantId, organizationsTable.id],
     }).onDelete('cascade'),
-    ...generateActivityContextIndexes(table),
-    ...generateActivityContextForeignKeys(table),
+    foreignKey({
+      columns: [table.organizationId],
+      foreignColumns: [organizationsTable.id],
+    }).onDelete('cascade'),
   ],
 );
 

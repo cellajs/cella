@@ -1,10 +1,7 @@
 import { boolean, foreignKey, index, pgTable, varchar } from 'drizzle-orm/pg-core';
 import { membershipCrudPolicies } from '#/db/rls-helpers';
 import { organizationsTable } from '#/db/schema/organizations';
-import { generateContextEntityIdColumns } from '#/db/utils/generate-context-entity-columns';
 import { productEntityColumns } from '#/db/utils/product-entity-columns';
-
-const { organizationId, ...otherEntityIdColumns } = generateContextEntityIdColumns('relatable');
 
 /**
  * Attachments table to store file metadata and relations.
@@ -24,8 +21,9 @@ export const attachmentsTable = pgTable(
     originalKey: varchar().notNull(),
     convertedKey: varchar(),
     thumbnailKey: varchar(),
-    organizationId: organizationId.notNull(),
-    ...otherEntityIdColumns,
+    organizationId: varchar()
+      .notNull()
+      .references(() => organizationsTable.id, { onDelete: 'cascade' }),
   },
   (table) => [
     index('attachments_organization_id_index').on(table.organizationId),

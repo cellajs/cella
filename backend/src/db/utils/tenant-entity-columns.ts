@@ -17,7 +17,7 @@ export const tenantEntityColumns = <T extends string>(entityType: T) => ({
     .notNull()
     .default(entityType),
   // Tenant isolation
-  tenantId: varchar('tenant_id', { length: 24 })
+  tenantId: varchar('tenant_id')
     .notNull()
     .references(() => tenantsTable.id),
   // Metadata

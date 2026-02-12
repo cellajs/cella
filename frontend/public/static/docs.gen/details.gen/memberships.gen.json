@@ -18,11 +18,7 @@
                 "type": "object",
                 "properties": {
                   "id": { "type": "string", "required": true },
-                  "tenantId": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 24
-                  },
+                  "tenantId": { "type": "string", "required": true },
                   "contextType": {
                     "type": "string",
                     "required": true,
@@ -290,11 +286,7 @@
           "properties": {
             "createdAt": { "type": "string", "required": true },
             "id": { "type": "string", "required": true },
-            "tenantId": {
-              "type": "string",
-              "required": true,
-              "maxLength": 24
-            },
+            "tenantId": { "type": "string", "required": true },
             "contextType": {
               "type": "string",
               "required": true,
@@ -610,11 +602,7 @@
                     "required": true,
                     "properties": {
                       "id": { "type": "string", "required": true },
-                      "tenantId": {
-                        "type": "string",
-                        "required": true,
-                        "maxLength": 24
-                      },
+                      "tenantId": { "type": "string", "required": true },
                       "contextType": {
                         "type": "string",
                         "required": true,
