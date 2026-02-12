@@ -167,6 +167,9 @@ export interface RuntimeConfig extends CellaCliConfig {
 
   /** Quick-push drifted files to contrib branch without interactive menu */
   contribute?: boolean;
+
+  /** Overwrite drifted files with upstream version (aggressive realignment) */
+  hard?: boolean;
 }
 
 /** File status after analysis */

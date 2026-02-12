@@ -44,13 +44,12 @@ CREATE TABLE "attachments" (
 );
 --> statement-breakpoint
 ALTER TABLE "attachments" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
-CREATE TABLE "counters" (
-	"namespace" varchar(255),
-	"scope" varchar(255),
-	"key" varchar(255) DEFAULT '',
-	"value" bigint DEFAULT 0 NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL,
-	CONSTRAINT "counters_pkey" PRIMARY KEY("namespace","scope","key")
+CREATE TABLE "context_counters" (
+	"context_key" varchar(50) PRIMARY KEY,
+	"seq" bigint DEFAULT 0 NOT NULL,
+	"m_seq" bigint DEFAULT 0 NOT NULL,
+	"counts" jsonb DEFAULT '{}' NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "emails" (
@@ -296,7 +295,6 @@ CREATE INDEX "activities_organization_id_index" ON "activities" ("organization_i
 CREATE INDEX "activities_organization_id_seq_index" ON "activities" ("organization_id","seq" desc);--> statement-breakpoint
 CREATE INDEX "attachments_organization_id_index" ON "attachments" ("organization_id");--> statement-breakpoint
 CREATE INDEX "attachments_tenant_id_index" ON "attachments" ("tenant_id");--> statement-breakpoint
-CREATE INDEX "counters_scope_idx" ON "counters" ("scope");--> statement-breakpoint
 CREATE INDEX "inactive_memberships_user_id_idx" ON "inactive_memberships" ("user_id");--> statement-breakpoint
 CREATE INDEX "inactive_memberships_organization_id_idx" ON "inactive_memberships" ("organization_id");--> statement-breakpoint
 CREATE INDEX "inactive_memberships_tenant_id_idx" ON "inactive_memberships" ("tenant_id");--> statement-breakpoint

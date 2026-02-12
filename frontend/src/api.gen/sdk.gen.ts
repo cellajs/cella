@@ -1287,6 +1287,7 @@ export const checkSlug = <ThrowOnError extends boolean = true>(options: Options<
  * @param {getPublicStreamData} options
  * @param {string=} options.query.offset - `string` (optional)
  * @param {enum=} options.query.live - `enum` (optional)
+ * @param {string=} options.query.seqs - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getPublicStream = <ThrowOnError extends boolean = true>(
@@ -1308,6 +1309,7 @@ export const getPublicStream = <ThrowOnError extends boolean = true>(
  * @param {getAppStreamData} options
  * @param {string=} options.query.offset - `string` (optional)
  * @param {enum=} options.query.live - `enum` (optional)
+ * @param {string=} options.query.seqs - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getAppStream = <ThrowOnError extends boolean = true>(options?: Options<GetAppStreamData, ThrowOnError>) =>
@@ -1658,7 +1660,7 @@ export const updateTenant = <ThrowOnError extends boolean = true>(options: Optio
  *
  * @param {deleteRequestsData} options
  * @param {any[]=} options.body.ids - `any[]` (optional)
- * @returns Possible status codes: 204, 400, 401, 403, 404, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const deleteRequests = <ThrowOnError extends boolean = true>(
   options: Options<DeleteRequestsData, ThrowOnError>,
@@ -2086,7 +2088,7 @@ export const getPage = <ThrowOnError extends boolean = true>(options: Options<Ge
  * @param {deletePagesData} options
  * @param {string} options.path.tenantid - `string`
  * @param {any[]=} options.body.ids - `any[]` (optional)
- * @returns Possible status codes: 204, 400, 401, 403, 404, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const deletePages = <ThrowOnError extends boolean = true>(options: Options<DeletePagesData, ThrowOnError>) =>
   (options.client ?? client).delete<DeletePagesResponses, DeletePagesErrors, ThrowOnError, 'data'>({

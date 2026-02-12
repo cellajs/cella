@@ -35,7 +35,7 @@ export const OrganizationLayoutRoute = createRoute({
   staticData: { isAuth: true },
   getParentRoute: () => AppLayoutRoute,
   beforeLoad: async ({ params, cause }) => {
-    // Only revalidate on initial entry — search param changes are handled by child useSuspenseQuery
+    // TODO not working Only revalidate on initial entry — search param changes are handled by child useSuspenseQuery
     const shouldRevalidate = cause === 'enter';
 
     const { tenantId, orgSlug } = params;

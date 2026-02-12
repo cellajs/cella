@@ -22,6 +22,8 @@ import {
   registerWorktree,
 } from '../utils/cleanup';
 import {
+  batchGitRm,
+  batchRestoreToHead,
   checkoutFromRef,
   countCommitsBetween,
   createWorktree,
@@ -83,18 +85,17 @@ function getGitHubCommitUrl(remoteUrl: string, commitHash: string): string | nul
 }
 
 /**
- * Apply sync directly in the fork with a real merge.
+ * Apply merge directly to fork with pre-analysis.
  *
- * Strategy:
- * 1. Start real merge in fork (git merge --no-commit)
- * 2. Apply resolutions directly (pinned→ours, ignored→rm, diverged→git's merge)
- * 3. Leave fork in merge state for IDE 3-way conflict resolution
- */
-/**
- * Apply merge directly to fork (no worktree).
+ * Strategy: analyze BEFORE merge (uses git refs only, invisible to IDE),
+ * then merge + immediate batch resolution to minimize working tree flickering.
  *
- * Performs merge in fork, analyzes files, and resolves them.
- * Fork is left in merge state with MERGE_HEAD for IDE 3-way merge.
+ * 1. Pre-analyze using git refs (no working tree changes)
+ * 2. Collect batch resolution plan (which files to restore/remove)
+ * 3. Start real merge in fork (git merge --no-commit)
+ * 4. Immediately batch-restore pinned/ignored files (single git command)
+ * 5. Apply remaining individual resolutions
+ * 6. Leave fork in merge state for IDE 3-way conflict resolution
  */
 async function applyDirectMerge(
   forkPath: string,
@@ -103,18 +104,55 @@ async function applyDirectMerge(
   config: RuntimeConfig,
   onProgress?: ProgressCallback,
 ): Promise<{ resolved: number; remainingConflicts: string[]; analyzedFiles: AnalyzedFile[] }> {
-  // Start real merge in fork (always real merge, never --squash).
+  // Phase 1: Pre-analyze using git refs (invisible to IDE).
+  // analyzeFiles only uses git plumbing (ls-tree, diff-tree) on refs,
+  // not the working tree, so results are identical before or after merge.
+  onProgress?.('analyzing files...');
+  const analyzedFiles = await analyzeFiles(forkPath, forkPath, upstreamRef, mergeBaseRef, config, onProgress);
+
+  // Phase 2: Collect batch resolution plan for immediate post-merge application.
+  // These files will be restored to HEAD in a single git command right after merge,
+  // preventing the IDE from seeing upstream changes to pinned/ignored files.
+  const batchRestorePaths: string[] = [];
+  const batchRemovePaths: string[] = [];
+
+  for (const file of analyzedFiles) {
+    const { path: filePath, status, isPinned: pinned, isIgnored: ignored, existsInFork } = file;
+    if (status === 'identical' || status === 'ahead') continue;
+
+    if (ignored && existsInFork) {
+      batchRestorePaths.push(filePath);
+    } else if (ignored && !existsInFork) {
+      batchRemovePaths.push(filePath);
+    } else if (pinned && !file.renamedFrom) {
+      batchRestorePaths.push(filePath);
+    }
+  }
+
+  // Phase 3: Start real merge in fork (always real merge, never --squash).
   // Squash strategy is handled post-merge by removing MERGE_HEAD before auto-commit,
   // which preserves correct 3-way merge behavior and merge-base ancestry.
   onProgress?.('starting merge in fork...');
   await merge(forkPath, upstreamRef, { noCommit: true, noEdit: true });
 
-  // Analyze files post-merge
-  onProgress?.('analyzing files...');
-  const analyzedFiles = await analyzeFiles(forkPath, forkPath, upstreamRef, mergeBaseRef, config, onProgress);
+  // Phase 4: Immediately batch-restore pinned/ignored files.
+  // Single git command restores all files at once, minimizing the window
+  // where the IDE sees upstream changes to protected files.
+  if (batchRestorePaths.length > 0) {
+    onProgress?.(`batch restoring ${batchRestorePaths.length} pinned/ignored files...`);
+    await batchRestoreToHead(forkPath, batchRestorePaths);
+  }
+  if (batchRemovePaths.length > 0) {
+    onProgress?.(`batch removing ${batchRemovePaths.length} ignored files...`);
+    await batchGitRm(forkPath, batchRemovePaths);
+    for (const filePath of batchRemovePaths) {
+      await removeFileFromWorktree(forkPath, filePath);
+    }
+  }
 
-  // Apply resolutions directly in fork
-  let resolved = 0;
+  // Phase 5: Apply remaining individual resolutions.
+  // Pinned/ignored already handled in batch above — skip them here.
+  let resolved = batchRestorePaths.length + batchRemovePaths.length;
 
   for (const file of analyzedFiles) {
     const { path: filePath, status, isPinned: pinned, isIgnored: ignored, existsInFork } = file;
@@ -123,42 +161,28 @@ async function applyDirectMerge(
       continue;
     }
 
-    if (ignored) {
-      if (existsInFork) {
-        onProgress?.(`→ ${filePath}: keeping fork (ignored)`);
-        await restoreToHead(forkPath, filePath);
-      } else {
-        onProgress?.(`→ ${filePath}: removing (ignored, new from upstream)`);
-        await gitRm(forkPath, filePath);
-        await removeFileFromWorktree(forkPath, filePath);
-      }
-      resolved++;
-      continue;
-    }
+    // Skip files already handled in batch
+    if (ignored) continue;
+    if (pinned && !file.renamedFrom) continue;
 
-    if (pinned) {
-      if (file.renamedFrom) {
-        // Renamed file where old path was pinned — accept the rename (new path)
-        // but keep fork's content from the old path
-        const oldPathExists = await fileExistsInWorktree(forkPath, file.renamedFrom);
-        if (oldPathExists) {
-          onProgress?.(`→ ${file.renamedFrom} → ${filePath}: moving fork content (pinned rename)`);
-          try {
-            await gitMv(forkPath, file.renamedFrom, filePath);
-          } catch {
-            // git mv failed — copy content manually
-            await gitRm(forkPath, file.renamedFrom);
-            await removeFileFromWorktree(forkPath, file.renamedFrom);
-            // Checkout upstream's new path first, then restore fork content
-            await checkoutFromRef(forkPath, 'HEAD', file.renamedFrom).catch(() => {});
-          }
-        } else {
-          // Old path already gone — restore from HEAD at old path via git show
-          onProgress?.(`→ ${filePath}: keeping fork content (pinned rename, old path removed)`);
-          await restoreToHead(forkPath, filePath);
+    if (pinned && file.renamedFrom) {
+      // Renamed file where old path was pinned — accept the rename (new path)
+      // but keep fork's content from the old path
+      const oldPathExists = await fileExistsInWorktree(forkPath, file.renamedFrom);
+      if (oldPathExists) {
+        onProgress?.(`→ ${file.renamedFrom} → ${filePath}: moving fork content (pinned rename)`);
+        try {
+          await gitMv(forkPath, file.renamedFrom, filePath);
+        } catch {
+          // git mv failed — copy content manually
+          await gitRm(forkPath, file.renamedFrom);
+          await removeFileFromWorktree(forkPath, file.renamedFrom);
+          // Checkout upstream's new path first, then restore fork content
+          await checkoutFromRef(forkPath, 'HEAD', file.renamedFrom).catch(() => {});
         }
       } else {
-        onProgress?.(`→ ${filePath}: keeping fork (pinned)`);
+        // Old path already gone — restore from HEAD at old path via git show
+        onProgress?.(`→ ${filePath}: keeping fork content (pinned rename, old path removed)`);
         await restoreToHead(forkPath, filePath);
       }
       resolved++;
@@ -465,7 +489,8 @@ async function analyzeFiles(
         status = fileIsPinned ? 'pinned' : 'diverged';
       } else if (forkChanged && !upstreamChanged) {
         // Only fork changed
-        status = fileIsPinned ? 'ahead' : 'drifted';
+        // --hard mode: treat drifted as behind (overwrite with upstream)
+        status = fileIsPinned ? 'ahead' : config.hard ? 'behind' : 'drifted';
       } else if (!forkChanged && upstreamChanged) {
         // Only upstream changed
         status = 'behind';

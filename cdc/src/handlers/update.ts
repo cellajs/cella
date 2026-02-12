@@ -47,5 +47,5 @@ export function handleUpdate(
     stx,
   };
 
-  return { activity, entityData: newRow, entry };
+  return { activity, entityData: newRow, oldEntityData: Object.keys(oldRow).length > 0 ? oldRow : undefined, entry };
 }

@@ -2,6 +2,7 @@ import { isPublicProductEntity } from 'shared';
 import type { StreamNotification } from '~/api.gen';
 import { pageQueryKeys } from '~/modules/page/query';
 import { queryClient } from '~/query/query-client';
+import { useSyncStore } from '~/store/sync';
 
 type QueryKeyHandler = {
   listBase: readonly unknown[];
@@ -30,11 +31,16 @@ const entityQueryKeyHandlers: Record<string, QueryKeyHandler> = {
  * also refetch when they become active again.
  */
 export function handlePublicStreamNotification(message: StreamNotification): void {
-  const { entityType, entityId, action } = message;
+  const { entityType, entityId, action, seq } = message;
 
   // Only handle configured public entity types
   if (!entityType || !isPublicProductEntity(entityType)) {
     return;
+  }
+
+  // Track seq for gap detection — scoped per entityType for public stream
+  if (seq !== null && seq !== undefined) {
+    useSyncStore.getState().setSeq(entityType, seq);
   }
 
   const handler = entityQueryKeyHandlers[entityType];
@@ -45,21 +51,20 @@ export function handlePublicStreamNotification(message: StreamNotification): voi
 
   switch (action) {
     case 'create':
-      // Invalidate list queries to refetch with new entity
+      // New entity - list must be refetched to include it
       queryClient.invalidateQueries({ queryKey: handler.listBase, refetchType: 'all' });
       break;
 
     case 'update':
-      // Invalidate to trigger refetch on access
+      // Only invalidate detail - the entity already exists in the list,
+      // it just needs fresh field values from a detail refetch.
       queryClient.invalidateQueries({ queryKey: handler.detailById(entityId), refetchType: 'all' });
-      // Invalidate list to refetch (entity data in list may differ from detail)
-      queryClient.invalidateQueries({ queryKey: handler.listBase, refetchType: 'all' });
       break;
 
     case 'delete':
       // Remove from detail cache
       queryClient.removeQueries({ queryKey: handler.detailById(entityId) });
-      // Invalidate list
+      // List must be refetched to remove the deleted entity
       queryClient.invalidateQueries({ queryKey: handler.listBase, refetchType: 'all' });
       break;
   }

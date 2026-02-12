@@ -2,23 +2,11 @@ import type { ContextEntityType, ProductEntityType } from 'shared';
 import { syncSpanNames, withSpanSync } from '~/lib/tracing';
 import { type EntityQueryKeys, getEntityQueryKeys } from '~/query/basic';
 import { sourceId } from '~/query/offline';
+import { useSyncStore } from '~/store/sync';
 import * as cacheOps from './cache-ops';
 import * as membershipOps from './membership-ops';
 import { getSyncPriority } from './sync-priority';
 import type { AppStreamNotification } from './types';
-
-/**
- * Per-scope sequence tracking for gap detection.
- * Key: scopeKey (orgId or 'global:entityType'), Value: last seen seq
- */
-const seqStore = new Map<string, number>();
-
-/**
- * Build a scope key for seq tracking.
- */
-function getScopeKey(orgId: string | null, entityType: string): string {
-  return orgId ?? `global:${entityType}`;
-}
 
 /**
  * Handles incoming app stream notifications and updates the React Query cache accordingly.
@@ -39,6 +27,10 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
 
     // Membership events (resourceType = 'membership')
     if (resourceType === 'membership') {
+      // Track mSeq for membership gap detection (scoped per org with :m suffix)
+      if (seq !== null && organizationId) {
+        useSyncStore.getState().setSeq(`${organizationId}:m`, seq);
+      }
       handleMembershipNotification(action, organizationId, contextType);
       return;
     }
@@ -107,17 +99,9 @@ function handleEntityNotification(
     return;
   }
 
-  // Seq-based gap detection
-  if (seq != null) {
-    const scopeKey = getScopeKey(organizationId, entityType);
-    const lastSeenSeq = seqStore.get(scopeKey) ?? 0;
-
-    if (seq > lastSeenSeq + 1) {
-      // Missed changes - invalidate list for this scope
-      console.warn(`[handleEntityNotification] Missed ${seq - lastSeenSeq - 1} changes in ${scopeKey}`);
-      cacheOps.invalidateEntityList(keys, 'active');
-    }
-    seqStore.set(scopeKey, seq);
+  // Track seq for gap detection — scoped per org for app stream
+  if (seq !== null && organizationId) {
+    useSyncStore.getState().setSeq(organizationId, seq);
   }
 
   // Determine fetch priority based on entityConfig ancestors and current route
@@ -136,24 +120,22 @@ function handleEntityNotification(
 
   switch (action) {
     case 'create':
-      // Invalidate list queries - refetch behavior based on priority
+      // New entity - list must be refetched to include it
       if (priority !== 'medium') {
         cacheOps.invalidateEntityList(keys, refetchType);
       }
       break;
 
     case 'update':
-      // Invalidate detail and list to trigger refetch based on priority
+      // Only invalidate detail - the entity already exists in the list,
+      // it just needs fresh field values from a detail refetch.
       cacheOps.invalidateEntityDetail(entityId, keys, refetchType);
-      if (priority !== 'medium') {
-        cacheOps.invalidateEntityList(keys, refetchType);
-      }
       break;
 
     case 'delete':
       // Remove from cache (detail + token)
       cacheOps.removeEntityFromCache(entityType, entityId);
-      // Invalidate list - refetch behavior based on priority
+      // List must be refetched to remove the deleted entity
       if (priority !== 'medium') {
         cacheOps.invalidateEntityList(keys, refetchType);
       }

@@ -281,10 +281,9 @@ export const useAttachmentUpdateMutation = (tenantId: string, orgId: string) => 
       queryClient.setQueryData(keys.detail.byId(updatedAttachment.id), updatedAttachment);
     },
 
-    // Runs after success OR error - refresh queries
-    onSettled: () => {
-      // Skip invalidation if other attachment mutations still in flight (prevents over-invalidation)
-      invalidateIfLastMutation(queryClient, attachmentsMutationKeyBase, keys.list.base);
+    // Runs after success OR error - only refetch on error to get true server state
+    onSettled: (_data, error, { id }) => {
+      if (error) queryClient.invalidateQueries({ queryKey: keys.detail.byId(id) });
     },
   });
 };

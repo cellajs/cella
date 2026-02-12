@@ -54,13 +54,16 @@ export { mapEntitiesToSchema } from './map-entities-to-schema';
 
 // Stream schemas
 export {
+  type AppCatchupResponse,
+  appCatchupResponseSchema,
+  type CatchupChangeSummary,
+  catchupChangeSummarySchema,
+  type PublicCatchupResponse,
+  publicCatchupResponseSchema,
   publicStreamQuerySchema,
   type StreamNotification,
-  type StreamNotificationResponse,
-  streamNotificationResponseSchema,
   streamNotificationSchema,
   streamQuerySchema,
-  streamResponseSchema,
 } from './stream-schemas';
 
 // Success response schemas

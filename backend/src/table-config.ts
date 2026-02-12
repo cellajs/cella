@@ -2,6 +2,7 @@ import { getTableName } from 'drizzle-orm';
 import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
 
 import { attachmentsTable } from '#/db/schema/attachments';
+import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 import { pagesTable } from '#/db/schema/pages';
@@ -39,6 +40,7 @@ export const entityTables = {
 export const resourceTables = {
   request: requestsTable,
   membership: membershipsTable,
+  inactive_membership: inactiveMembershipsTable,
 } as const satisfies Record<string, TableWithId>;
 
 /** Combined type of all tracked tables (entities + resources) */

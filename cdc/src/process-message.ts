@@ -12,6 +12,8 @@ import { getTableEntry } from './utils';
 export interface ProcessMessageResult {
   activity: InsertActivityModel;
   entityData: Record<string, unknown>;
+  /** Old row data for UPDATE events (when REPLICA IDENTITY FULL). Used for count delta detection. */
+  oldEntityData?: Record<string, unknown>;
   entry: TableRegistryEntry;
 }
 

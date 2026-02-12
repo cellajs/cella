@@ -1,10 +1,9 @@
 import { isProductEntity } from 'shared';
 import { signCacheToken } from '#/lib/cache-token-signer';
 import type { ActivityEventWithEntity } from '#/sync/activity-bus';
-import { streamSubscriberManager, writeChange } from '#/sync/stream';
+import { buildStreamNotification, streamSubscriberManager, writeChange } from '#/sync/stream';
 import { logEvent } from '#/utils/logger';
 import { canReceiveUserEvent } from './can-receive';
-import { buildStreamNotification } from './fetch-data';
 import { type AppStreamSubscriber, orgChannel } from './types';
 
 /**

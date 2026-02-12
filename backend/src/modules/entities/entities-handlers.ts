@@ -2,13 +2,12 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { streamSSE } from 'hono/streaming';
 import { nanoid } from 'nanoid';
 import { appConfig, hierarchy } from 'shared';
-import { signCacheToken } from '#/lib/cache-token-signer';
 import { type Env } from '#/lib/context';
 import { publicEntityCache } from '#/middlewares/entity-cache';
 import {
   type AppStreamSubscriber,
   dispatchToUserSubscribers,
-  fetchUserCatchUpNotifications,
+  fetchUserCatchupSummary,
   getLatestUserActivityId,
   orgChannel,
 } from '#/modules/entities/app-stream';
@@ -16,13 +15,13 @@ import entityRoutes from '#/modules/entities/entities-routes';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import {
   dispatchToPublicSubscribers,
-  fetchPublicDeleteCatchUp,
+  fetchPublicCatchupSummary,
   getLatestPublicActivityId,
   type PublicStreamSubscriber,
   publicChannel,
 } from '#/modules/entities/public-stream';
 import { type ActivityEventWithEntity, activityBus } from '#/sync/activity-bus';
-import { keepAlive, streamSubscriberManager, writeChange, writeOffset } from '#/sync/stream';
+import { keepAlive, streamSubscriberManager, writeOffset } from '#/sync/stream';
 import { defaultHook } from '#/utils/default-hook';
 import { logEvent } from '#/utils/logger';
 
@@ -86,21 +85,6 @@ for (const entityType of appConfig.productEntityTypes) {
   }
 }
 
-// Organization events - routed via org channel
-// TODO-012 not entityConfig and hierarchy agnostic yet or is this one ok?
-
-const organizationEvents = ['organization.updated', 'organization.deleted'] as const;
-
-for (const eventType of organizationEvents) {
-  activityBus.on(eventType, async (event: ActivityEventWithEntity) => {
-    try {
-      await dispatchToUserSubscribers(event);
-    } catch (error) {
-      logEvent('error', 'Failed to dispatch organization event', { error, activityId: event.id });
-    }
-  });
-}
-
 // ============================================
 // Route handlers
 // ============================================
@@ -121,7 +105,7 @@ const entitiesRouteHandlers = app
    * Public stream for public entity changes (no auth required)
    */
   .openapi(entityRoutes.publicStream, async (ctx) => {
-    const { offset, live } = ctx.req.valid('query');
+    const { offset, live, seqs: seqsParam } = ctx.req.valid('query');
 
     // Resolve cursor from offset parameter
     let cursor: string | null = null;
@@ -131,18 +115,11 @@ const entitiesRouteHandlers = app
       cursor = offset;
     }
 
-    // Non-SSE request: return delete catch-up notifications as batch
+    // Non-SSE request: return catchup summary
     if (live !== 'sse') {
-      const deleteNotifications = await fetchPublicDeleteCatchUp(cursor);
-      const lastNotification = deleteNotifications.at(-1);
-
-      // Always return a consistent cursor - use lastNotification.activityId, original cursor, or empty string
-      const newCursor = lastNotification?.activityId ?? cursor ?? '';
-
-      return ctx.json({
-        notifications: deleteNotifications.map((n) => n.notification),
-        cursor: newCursor,
-      });
+      const clientSeqs = seqsParam ? (JSON.parse(seqsParam) as Record<string, number>) : undefined;
+      const summary = await fetchPublicCatchupSummary(cursor, clientSeqs);
+      return ctx.json(summary);
     }
 
     // SSE streaming mode - live only, no catch-up (client catches up first)
@@ -180,7 +157,7 @@ const entitiesRouteHandlers = app
    * App stream (authenticated App stream for membership and entity updates)
    */
   .openapi(entityRoutes.appStream, async (ctx) => {
-    const { offset, live } = ctx.req.valid('query');
+    const { offset, live, seqs: seqsParam } = ctx.req.valid('query');
     const user = ctx.var.user;
     const memberships = ctx.var.memberships;
     const userSystemRole = ctx.var.userSystemRole;
@@ -197,36 +174,16 @@ const entitiesRouteHandlers = app
 
     // Non-streaming catch-up request
     if (live !== 'sse') {
-      const catchUpNotifications = await fetchUserCatchUpNotifications(user.id, orgIds, cursor);
-      const lastNotification = catchUpNotifications.at(-1);
-
-      // Sign cache tokens for this user's session
-      const signedNotifications = catchUpNotifications.map((n) => ({
-        ...n.notification,
-        cacheToken: n.notification.cacheToken ? signCacheToken(n.notification.cacheToken, sessionToken) : null,
-      }));
-
-      return ctx.json({
-        notifications: signedNotifications,
-        cursor: lastNotification?.activityId ?? cursor,
-      });
+      const clientSeqs = seqsParam ? (JSON.parse(seqsParam) as Record<string, number>) : undefined;
+      const summary = await fetchUserCatchupSummary(user.id, orgIds, cursor, clientSeqs);
+      return ctx.json(summary);
     }
 
-    // SSE streaming mode
+    // SSE streaming mode — no inline catchup, client catches up first via non-SSE request
     return streamSSE(ctx, async (stream) => {
       ctx.header('Content-Encoding', '');
 
-      // Send catch-up activities with signed tokens
-      const catchUpNotifications = await fetchUserCatchUpNotifications(user.id, orgIds, cursor);
-      for (const { activityId, notification } of catchUpNotifications) {
-        const signedNotification = notification.cacheToken
-          ? { ...notification, cacheToken: signCacheToken(notification.cacheToken, sessionToken) }
-          : notification;
-        await writeChange(stream, activityId, signedNotification);
-        cursor = activityId;
-      }
-
-      // Send offset marker (catch-up complete)
+      // Send offset marker immediately (live mode ready)
       await writeOffset(stream, cursor);
 
       // Build subscriber with memberships for permission checks

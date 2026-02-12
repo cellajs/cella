@@ -60,68 +60,15 @@
     "responses": [
       {
         "status": 200,
-        "description": "Catch-up activities or SSE stream started",
+        "description": "Catch-up summary or SSE stream started",
         "contentType": "application/json",
         "schema": {
           "type": "object",
           "properties": {
-            "notifications": {
-              "type": "array",
+            "changes": {
+              "type": "object",
               "required": true,
-              "itemType": "object",
-              "ref": "#/components/schemas/StreamNotification",
-              "items": {
-                "type": "object",
-                "description": "Realtime notification delivered via SSE for entity and membership changes.",
-                "properties": {
-                  "action": {
-                    "type": "string",
-                    "required": true,
-                    "enum": ["create", "update", "delete"]
-                  },
-                  "entityType": {
-                    "type": ["string", "null"],
-                    "required": true,
-                    "enum": ["attachment", "page", null]
-                  },
-                  "resourceType": {
-                    "type": ["string", "null"],
-                    "required": true,
-                    "enum": ["request", "membership", "inactive_membership", "tenant", null]
-                  },
-                  "entityId": { "type": "string", "required": true },
-                  "organizationId": {
-                    "type": ["string", "null"],
-                    "required": true
-                  },
-                  "contextType": {
-                    "type": ["string", "null"],
-                    "required": true,
-                    "enum": ["organization", null]
-                  },
-                  "seq": {
-                    "type": ["integer", "null"],
-                    "required": true
-                  },
-                  "stx": {
-                    "type": ["object", "null"],
-                    "required": true,
-                    "description": "Sync transaction metadata stored on entities for offline and realtime support.",
-                    "properties": {
-                      "mutationId": { "type": "string", "required": true },
-                      "sourceId": { "type": "string", "required": true },
-                      "version": { "type": "integer", "required": true },
-                      "fieldVersions": { "type": "object", "required": true }
-                    },
-                    "extendsRef": "#/components/schemas/StxBase"
-                  },
-                  "cacheToken": {
-                    "type": ["string", "null"],
-                    "required": true
-                  }
-                },
-                "ref": "#/components/schemas/StreamNotification"
-              }
+              "description": "Per-entityType change summary: { [entityType]: { seq, deletedIds } }"
             },
             "cursor": {
               "type": ["string", "null"],
@@ -181,6 +128,11 @@
             "required": false,
             "description": "Set to \"sse\" for live updates (SSE stream)",
             "enum": ["sse"]
+          },
+          "seqs": {
+            "type": "string",
+            "required": false,
+            "description": "JSON-encoded client seqs for gap detection: {\"scopeId\":42}. Unchanged scopes are excluded from the response."
           }
         }
       }
@@ -191,68 +143,15 @@
     "responses": [
       {
         "status": 200,
-        "description": "SSE stream or notification response",
+        "description": "SSE stream or catchup summary response",
         "contentType": "application/json",
         "schema": {
           "type": "object",
           "properties": {
-            "notifications": {
-              "type": "array",
+            "changes": {
+              "type": "object",
               "required": true,
-              "itemType": "object",
-              "ref": "#/components/schemas/StreamNotification",
-              "items": {
-                "type": "object",
-                "description": "Realtime notification delivered via SSE for entity and membership changes.",
-                "properties": {
-                  "action": {
-                    "type": "string",
-                    "required": true,
-                    "enum": ["create", "update", "delete"]
-                  },
-                  "entityType": {
-                    "type": ["string", "null"],
-                    "required": true,
-                    "enum": ["attachment", "page", null]
-                  },
-                  "resourceType": {
-                    "type": ["string", "null"],
-                    "required": true,
-                    "enum": ["request", "membership", "inactive_membership", "tenant", null]
-                  },
-                  "entityId": { "type": "string", "required": true },
-                  "organizationId": {
-                    "type": ["string", "null"],
-                    "required": true
-                  },
-                  "contextType": {
-                    "type": ["string", "null"],
-                    "required": true,
-                    "enum": ["organization", null]
-                  },
-                  "seq": {
-                    "type": ["integer", "null"],
-                    "required": true
-                  },
-                  "stx": {
-                    "type": ["object", "null"],
-                    "required": true,
-                    "description": "Sync transaction metadata stored on entities for offline and realtime support.",
-                    "properties": {
-                      "mutationId": { "type": "string", "required": true },
-                      "sourceId": { "type": "string", "required": true },
-                      "version": { "type": "integer", "required": true },
-                      "fieldVersions": { "type": "object", "required": true }
-                    },
-                    "extendsRef": "#/components/schemas/StxBase"
-                  },
-                  "cacheToken": {
-                    "type": ["string", "null"],
-                    "required": true
-                  }
-                },
-                "ref": "#/components/schemas/StreamNotification"
-              }
+              "description": "Per-org change summary: { [orgId]: { seq, deletedIds, membership? } }"
             },
             "cursor": {
               "type": ["string", "null"],
@@ -263,24 +162,12 @@
           "contentType": "application/json"
         },
         "example": {
-          "notifications": [
-            {
-              "action": "delete",
-              "entityType": "page",
-              "resourceType": null,
-              "entityId": "ipyf3p33iix6bh90l5vkhljl",
-              "organizationId": "xv5tmemhybwpov3sftl08uic",
-              "contextType": null,
-              "seq": 409,
-              "cacheToken": "1iLESdsWiPgPMn1DbxaxLythT5YAdIMV",
-              "stx": {
-                "mutationId": "4wt4fsnzvcmmcnaqpirymrng",
-                "sourceId": "yq5yyt6xf4dt1l81p0arc53l",
-                "version": 4,
-                "fieldVersions": { "name": 1 }
-              }
+          "changes": {
+            "org-example-id": {
+              "seq": 42,
+              "deletedIds": []
             }
-          ],
+          },
           "cursor": "d9909rsl2y2ii9vbcsc2ywg7"
         }
       },
@@ -333,6 +220,11 @@
             "required": false,
             "description": "Connection mode: 'sse' for streaming, 'catchup' for one-time fetch",
             "enum": ["sse", "catchup"]
+          },
+          "seqs": {
+            "type": "string",
+            "required": false,
+            "description": "JSON-encoded client seqs for gap detection: {\"scopeId\":42}. Unchanged scopes are excluded from the response."
           }
         }
       }

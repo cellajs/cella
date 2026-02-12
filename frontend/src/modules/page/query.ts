@@ -237,10 +237,9 @@ export const usePageUpdateMutation = () => {
       queryClient.setQueryData(keys.detail.byId(updatedPage.id), updatedPage);
     },
 
-    // Runs after success OR error - refresh detail view
-    onSettled: (_data, _error, { id }) => {
-      // Skip invalidation if other page mutations still in flight
-      invalidateIfLastMutation(queryClient, pagesMutationKeyBase, keys.detail.byId(id));
+    // Runs after success OR error - only refetch on error to get true server state
+    onSettled: (_data, error, { id }) => {
+      if (error) queryClient.invalidateQueries({ queryKey: keys.detail.byId(id) });
     },
   });
 };

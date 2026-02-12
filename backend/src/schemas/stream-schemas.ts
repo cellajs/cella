@@ -29,7 +29,7 @@ export const streamNotificationSchema = z
     organizationId: z.string().nullable(),
     /** Context entity type for membership events (organization, project, etc.) */
     contextType: z.enum(appConfig.contextEntityTypes).nullable(),
-    /** Sequence number for gap detection (entities only) */
+    /** Sequence number for gap detection (org-scoped for app, entityType-scoped for public) */
     seq: z.number().int().nullable(),
     /** Sync transaction metadata for conflict detection (entities only) */
     stx: stxBaseSchema.nullable(),
@@ -56,6 +56,11 @@ export const streamQuerySchema = z.object({
     description: "Connection mode: 'sse' for streaming, 'catchup' for one-time fetch",
     example: 'sse',
   }),
+  seqs: z.string().optional().openapi({
+    description:
+      'JSON-encoded client seqs for gap detection: {"scopeId":42}. Unchanged scopes are excluded from the response.',
+    example: '{}',
+  }),
 });
 
 /**
@@ -69,15 +74,50 @@ export const publicStreamQuerySchema = streamQuerySchema.extend({
 });
 
 /**
- * Generic stream response schema factory.
- * Returns notifications array with cursor for pagination.
+ * Per-scope catchup change summary.
+ * Used in catchup responses to give client minimal info to sync efficiently.
+ *
+ * - deletedIds: exact IDs to remove from cache
+ * - seq: current sequence number for product entity changes
+ * - mSeq: current sequence number for membership changes (app stream only)
+ *
+ * Client logic:
+ * - delta = serverSeq - clientSeq
+ * - if delta == deletedIds.length → only deletes, no list fetch needed
+ * - if delta > deletedIds.length → creates/updates happened → modifiedAfter list fetch
+ * - if delta == 0 → nothing changed
+ * - mSeq gap > 0 → membership changes → invalidate member queries + refresh menu
  */
-export const streamResponseSchema = <T extends z.ZodTypeAny>(notificationSchema: T) =>
-  z.object({
-    notifications: z.array(notificationSchema),
-    cursor: z.string().nullable().openapi({ description: 'Last activity ID (use as offset for next request)' }),
-  });
+export const catchupChangeSummarySchema = z.object({
+  seq: z.number().int(),
+  deletedIds: z.array(z.string()),
+  mSeq: z.number().int().optional(),
+});
 
-/** Stream response (notifications array with cursor for pagination) */
-export const streamNotificationResponseSchema = streamResponseSchema(streamNotificationSchema);
-export type StreamNotificationResponse = z.infer<typeof streamNotificationResponseSchema>;
+export type CatchupChangeSummary = z.infer<typeof catchupChangeSummarySchema>;
+
+/**
+ * Catchup response schema for app stream.
+ * Changes keyed by orgId. Client uses org context for priority routing.
+ */
+export const appCatchupResponseSchema = z.object({
+  changes: z.record(z.string(), catchupChangeSummarySchema).openapi({
+    description: 'Per-org change summary: { [orgId]: { seq, deletedIds, membership? } }',
+  }),
+  cursor: z.string().nullable().openapi({ description: 'Last activity ID (use as offset for next request)' }),
+});
+
+export type AppCatchupResponse = z.infer<typeof appCatchupResponseSchema>;
+
+/**
+ * Catchup response schema for public stream.
+ * Changes keyed by entityType (e.g., 'page').
+ */
+export const publicCatchupResponseSchema = z.object({
+  changes: z.record(z.string(), catchupChangeSummarySchema).openapi({
+    description: 'Per-entityType change summary: { [entityType]: { seq, deletedIds } }',
+  }),
+  cursor: z.string().nullable().openapi({ description: 'Last activity ID (use as offset for next request)' }),
+});
+
+export type PublicCatchupResponse = z.infer<typeof publicCatchupResponseSchema>;

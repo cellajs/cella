@@ -1,38 +1,34 @@
 import { sql } from 'drizzle-orm';
-import { countersTable } from '#/db/schema/counters';
+import { contextCountersTable } from '#/db/schema/context-counters';
 import { cdcDb } from '../db';
 import type { SeqScope } from './get-seq-scope';
 
-/** Counter namespace for activity sequences */
-const SEQ_NAMESPACE = 'seq';
-
 /**
  * Get the next sequence number for an activity scope.
- * Uses atomic counter increment for high performance (no table scans).
+ * All sequences are stored in contextCountersTable (org-scoped and public).
+ * Uses atomic upsert: INSERT ... ON CONFLICT DO UPDATE.
  *
- * NOTE: Uses cdcDb (cdc_role) which has SELECT, INSERT, UPDATE on counters.
- *
- * @param seqScope - Scope information from getSeqScope()
- * @returns The next sequence number for this scope
+ * @param scope - Typed scope from getSeqScope()
+ * @returns The next sequence number
  */
-export async function getNextSeq(seqScope: SeqScope): Promise<number> {
+export async function getNextSeq(scope: SeqScope): Promise<number> {
+  const col = scope.column === 'mSeq' ? contextCountersTable.mSeq : contextCountersTable.seq;
+
   const result = await cdcDb
-    .insert(countersTable)
+    .insert(contextCountersTable)
     .values({
-      namespace: SEQ_NAMESPACE,
-      scope: seqScope.scopeValue,
-      key: '',
-      value: 1,
+      contextKey: scope.contextKey,
+      [scope.column]: 1,
       updatedAt: new Date(),
     })
     .onConflictDoUpdate({
-      target: [countersTable.namespace, countersTable.scope, countersTable.key],
+      target: contextCountersTable.contextKey,
       set: {
-        value: sql`${countersTable.value} + 1`,
+        [scope.column]: sql`${col} + 1`,
         updatedAt: new Date(),
       },
     })
-    .returning({ value: countersTable.value });
+    .returning({ value: col });
 
   return result[0].value;
 }

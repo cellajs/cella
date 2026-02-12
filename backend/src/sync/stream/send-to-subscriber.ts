@@ -1,4 +1,3 @@
-import { isProductEntity } from 'shared';
 import type { ActivityEventWithEntity } from '#/sync/activity-bus';
 import { logEvent } from '#/utils/logger';
 import { buildStreamNotification } from './build-message';
@@ -21,14 +20,6 @@ export async function sendNotificationToSubscriber<T extends CursoredSubscriber>
   subscriber: T,
   event: ActivityEventWithEntity,
 ): Promise<void> {
-  // Validate this is a product entity with stx data
-  if (!isProductEntity(event.entityType)) {
-    throw new Error(`sendNotificationToSubscriber only supports product entities, got: ${event.entityType}`);
-  }
-  if (!event.stx) {
-    throw new Error(`Activity ${event.id} missing stx - realtime entities must have stx`);
-  }
-
   // Build notification (cache token comes from CDC via event)
   const notification = buildStreamNotification(event);
 

@@ -1,45 +1,42 @@
-import { appConfig, hasKey, hierarchy, isProductEntity } from 'shared';
+import { isProductEntity } from 'shared';
 import type { TableRegistryEntry } from '../types';
 
+/** Prefix for public (org-less) entity seq keys in contextCountersTable */
+export const PUBLIC_SEQ_PREFIX = 'public';
+
+/**
+ * Seq scope — all sequences are stored in contextCountersTable.
+ * Org-scoped entities use org ID as entityId.
+ * Org-less entities use 'public:{entityType}' as entityId.
+ */
 export interface SeqScope {
-  /** Column name for the WHERE clause (e.g., 'organization_id', 'project_id') */
-  scopeColumn: string;
-  /** Value to match in the WHERE clause */
-  scopeValue: string;
+  contextKey: string;
+  column: 'seq' | 'mSeq';
 }
 
 /**
- * Determine the sequence scope for an activity based on entity hierarchy.
- * Returns null for non-product entities (user, organization, etc.) since
- * seq counters are only used for product entity sync.
+ * Determine the sequence scope for an activity.
  *
- * Uses hierarchy.getOrderedAncestors() to get the ordered ancestor chain
- * (most specific first), then finds the first ancestor with a FK value in the row.
- *
- * Examples:
- * - task with projectId → scope by projectId
- * - attachment with only organizationId → scope by organizationId
- * - page without org → scope by entityType
+ * For org-scoped product entities → increment seq on contextCountersTable (orgId)
+ * For org-less product entities → increment seq on contextCountersTable (public:{type})
+ * For membership resources → increment mSeq on contextCountersTable (orgId)
+ * For other resources → null (no seq tracking)
  */
 export function getSeqScope(entry: TableRegistryEntry, row: Record<string, unknown>): SeqScope | null {
-  // Only product entities need sequence tracking
-  if (entry.kind !== 'entity' || !isProductEntity(entry.type)) return null;
-  // Get ancestors from hierarchy (already ordered most-specific first)
-  const ancestors = hierarchy.getOrderedAncestors(entry.type);
+  const orgId = row.organizationId;
+  const hasOrgId = orgId && typeof orgId === 'string';
 
-  for (const ancestor of ancestors) {
-    if (!hasKey(appConfig.entityIdColumnKeys, ancestor)) continue;
-
-    const fkColumnKey = appConfig.entityIdColumnKeys[ancestor];
-    const value = row[fkColumnKey];
-
-    if (value && typeof value === 'string') {
-      // Convert camelCase to snake_case for SQL column name
-      const snakeColumn = fkColumnKey.replace(/([A-Z])/g, '_$1').toLowerCase();
-      return { scopeColumn: snakeColumn, scopeValue: value };
-    }
+  // Product entities: track seq
+  if (entry.kind === 'entity' && isProductEntity(entry.type)) {
+    const contextKey = hasOrgId ? orgId : `${PUBLIC_SEQ_PREFIX}:${entry.type}`;
+    return { contextKey, column: 'seq' };
   }
 
-  // Fallback: no context FK found (e.g., org-less product entity) - scope by entity type
-  return { scopeColumn: 'entity_type', scopeValue: entry.type };
+  // Membership resources: track mSeq on the org's contextCounters row
+  if (entry.kind === 'resource' && entry.type === 'membership') {
+    if (hasOrgId) return { contextKey: orgId, column: 'mSeq' };
+    return null;
+  }
+
+  return null;
 }

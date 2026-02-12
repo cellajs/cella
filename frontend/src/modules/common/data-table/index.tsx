@@ -130,7 +130,10 @@ export const DataTable = <TData,>({
           ) : !rows.length ? (
             <NoRows isFiltered={isFiltered} isFetching={isFetching} customComponent={NoRowsComponent} />
           ) : (
-            <div className={`grid rdg-wrapper relative ${hideHeader ? 'rdg-hide-header' : ''} ${readOnly ? 'rdg-readonly' : ''}`} ref={gridRef}>
+            <div
+              className={`grid rdg-wrapper relative ${hideHeader ? 'rdg-hide-header' : ''} ${readOnly ? 'rdg-readonly' : ''}`}
+              ref={gridRef}
+            >
               <DataGrid
                 rowHeight={isMobile ? rowHeight * 1.2 : rowHeight}
                 enableVirtualization={enableVirtualization}
@@ -172,7 +175,9 @@ export const DataTable = <TData,>({
                   },
                 }}
               />
-              {!readOnly && <InfiniteLoader hasNextPage={hasNextPage} isFetching={isFetching} isFetchMoreError={!!error} />}
+              {!readOnly && (
+                <InfiniteLoader hasNextPage={hasNextPage} isFetching={isFetching} isFetchMoreError={!!error} />
+              )}
             </div>
           )}
         </>

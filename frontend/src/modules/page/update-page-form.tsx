@@ -126,7 +126,11 @@ export function UpdatePageForm({ page }: Props) {
               // Update detail cache with current form values before navigating
               // so the view page shows the latest content immediately
               const currentData = form.getValues();
-              queryClient.setQueryData(pageQueryKeys.detail.byId(page.id), { ...page, ...currentData, modifiedAt: new Date().toISOString() });
+              queryClient.setQueryData(pageQueryKeys.detail.byId(page.id), {
+                ...page,
+                ...currentData,
+                modifiedAt: new Date().toISOString(),
+              });
               navigate({ to: '/docs/page/$id', params: { id: page.id } });
             }}
           >

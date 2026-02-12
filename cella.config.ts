@@ -39,6 +39,7 @@ export default defineConfig({
       "frontend/src/modules/common/bg-animation/**",
       "backend/drizzle/**",
       "backend/scripts/seeds/data/**",
+      "frontend/vite/openapi-parser/tests/__snapshots__/**",
     ],
     // Files and directories pinned to fork; prefer fork version during merge conflicts
     pinned: [
@@ -54,6 +55,7 @@ export default defineConfig({
       "shared/test-config.ts",
       "shared/production-config.ts",
       "shared/tunnel-config.ts",
+      "shared/hierarchy-config.ts",
       "frontend/package.json",
       "frontend/public/favicon.ico",
       "frontend/public/favicon.svg",
@@ -78,6 +80,7 @@ export default defineConfig({
       "backend/package.json",
       "backend/src/custom-env.ts",
       "backend/src/table-config.ts",
+      "backend/src/relatable-config.ts",
       "backend/src/routes.ts",
       "backend/src/permissions/permissions-config.ts",
       "backend/src/docs/tags-config.ts",

@@ -1,50 +1,48 @@
-import { isProductEntity } from 'shared';
+import { type ContextEntityType, isProductEntity } from 'shared';
 import type { StreamNotification } from '#/schemas';
-import type { ActivityEventWithEntity } from '#/sync/activity-bus';
-
-/**
- * Options for building stream notifications.
- */
-export interface BuildNotificationOptions {
-  // No longer needed - cacheToken comes from CDC via event
-}
+import { type ActivityEventWithEntity, getTypedEntity } from '#/sync/activity-bus';
 
 /**
  * Build stream notification from activity event.
- * Used for notification-based sync - lightweight payload without entity data.
+ * Notification-only format - no entity data included.
  *
- * Cache token is provided by CDC and shared across all users, enabling
- * efficient server-side caching.
+ * For realtime entities:
+ * - Includes stx, seq, cacheToken for sync engine
+ * - Client uses cacheToken to fetch entity via entity cache
+ *
+ * For membership:
+ * - Includes seq (mSeq from contextCounters) for gap detection
+ * - stx/cacheToken are null
+ * - Client invalidates queries to refetch
  */
 export function buildStreamNotification(event: ActivityEventWithEntity): StreamNotification {
   const { entityType } = event;
-
-  // Only product entity types should reach this path
-  if (!isProductEntity(entityType)) {
-    throw new Error(`${entityType} is not a product entity type`);
-  }
-
-  if (!event.stx) {
-    throw new Error(`Activity ${event.id} missing stx - realtime entities must have stx`);
-  }
+  const isProduct = isProductEntity(entityType);
 
   // Use cache token from CDC (all users share the same token)
-  const cacheToken = event.cacheToken ?? null;
+  const cacheToken = isProduct ? (event.cacheToken ?? null) : null;
+
+  // Extract contextType for membership events
+  const membership = event.resourceType === 'membership' ? getTypedEntity(event, 'membership') : null;
+  const contextType: ContextEntityType | null = (membership?.contextType as ContextEntityType | undefined) ?? null;
 
   return {
     action: event.action,
-    entityType,
-    resourceType: null,
+    entityType: isProduct ? entityType : null,
+    resourceType: event.resourceType,
     entityId: event.entityId!,
-    organizationId: event.organizationId ?? null,
-    contextType: null,
-    seq: event.seq ?? 0,
-    stx: {
-      mutationId: event.stx.mutationId,
-      sourceId: event.stx.sourceId,
-      version: event.stx.version,
-      fieldVersions: event.stx.fieldVersions,
-    },
+    organizationId: event.organizationId,
+    contextType,
+    seq: event.seq ?? null,
+    stx:
+      isProduct && event.stx
+        ? {
+            mutationId: event.stx.mutationId,
+            sourceId: event.stx.sourceId,
+            version: event.stx.version,
+            fieldVersions: event.stx.fieldVersions,
+          }
+        : null,
     cacheToken,
   };
 }

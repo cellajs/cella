@@ -3,9 +3,10 @@ import { createXRoute } from '#/docs/x-routes';
 import { authGuard, publicGuard } from '#/middlewares/guard';
 import { checkSlugBodySchema } from '#/modules/entities/entities-schema';
 import {
+  appCatchupResponseSchema,
   errorResponseRefs,
+  publicCatchupResponseSchema,
   publicStreamQuerySchema,
-  streamNotificationResponseSchema,
   streamQuerySchema,
 } from '#/schemas';
 import { mockStreamResponse } from '../../../mocks/mock-me';
@@ -52,10 +53,10 @@ const entityRoutes = {
     request: { query: publicStreamQuerySchema },
     responses: {
       200: {
-        description: 'Catch-up activities or SSE stream started',
+        description: 'Catch-up summary or SSE stream started',
         content: {
           'application/json': {
-            schema: streamNotificationResponseSchema,
+            schema: publicCatchupResponseSchema,
           },
         },
       },
@@ -80,11 +81,11 @@ const entityRoutes = {
     },
     responses: {
       200: {
-        description: 'SSE stream or notification response',
+        description: 'SSE stream or catchup summary response',
         content: {
           'text/event-stream': { schema: z.any() },
           'application/json': {
-            schema: streamNotificationResponseSchema,
+            schema: appCatchupResponseSchema,
             example: mockStreamResponse(),
           },
         },

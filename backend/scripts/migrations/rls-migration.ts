@@ -35,6 +35,7 @@ const fullCrudTables = [
   'emails',
   'rate_limits',
   'counters',
+  'context_counters',
 ];
 const readOnlyTables = ['tenants', 'system_roles', 'activities'];
 
@@ -68,6 +69,7 @@ ${readOnlyTables.map((t) => `  GRANT SELECT ON ${t} TO runtime_role;`).join('\n'
   -- Grants: cdc_role (append-only activities + counter sequences)
   GRANT INSERT ON activities TO cdc_role;
   GRANT SELECT, INSERT, UPDATE ON counters TO cdc_role;
+  GRANT SELECT, INSERT, UPDATE ON context_counters TO cdc_role;
   GRANT SELECT ON tenants TO cdc_role;
   GRANT SELECT ON organizations TO cdc_role;
 

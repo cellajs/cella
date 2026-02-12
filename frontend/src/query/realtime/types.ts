@@ -35,3 +35,22 @@ export interface UseAppStreamOptions extends BaseStreamOptions {}
 
 /** Return value for useAppStream hook. */
 export type UseAppStreamReturn = BaseStreamReturn;
+
+/** Change summary per scope (org or entityType) from catchup endpoint */
+export interface CatchupChangeSummary {
+  seq: number;
+  deletedIds: string[];
+  mSeq?: number;
+}
+
+/** App stream catchup response (per-org summaries) */
+export interface AppCatchupResponse {
+  changes: Record<string, CatchupChangeSummary>;
+  cursor: string | null;
+}
+
+/** Public stream catchup response (per-entityType summaries) */
+export interface PublicCatchupResponse {
+  changes: Record<string, CatchupChangeSummary>;
+  cursor: string | null;
+}

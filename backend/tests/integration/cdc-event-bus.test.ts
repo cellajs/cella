@@ -17,9 +17,10 @@ import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 import { tenantsTable } from '#/db/schema/tenants';
 import { usersTable } from '#/db/schema/users';
-import type { ActivityEvent } from '#/sync/activity-bus';
+import type { ActivityEventWithEntity } from '#/sync/activity-bus';
 import { activityBus } from '#/sync/activity-bus';
-import { nanoid } from '#/utils/nanoid';
+import { mockActivity } from '../../mocks/mock-activity';
+import { mockContextMembership } from '../../mocks/mock-membership';
 import { mockOrganization } from '../../mocks/mock-organization';
 import { mockUser } from '../../mocks/mock-user';
 import { clearDatabase, ensureCdcSetup, waitForEvent } from './test-utils';
@@ -33,56 +34,22 @@ describe('EventBus Integration', () => {
   describe('EventBus basics', () => {
     it('should receive locally emitted events', async () => {
       const handler = vi.fn();
-      activityBus.on('user.created', handler);
+      // Use mockActivity for entity-agnostic event generation
+      const mockEvent = mockActivity('test:emit-basic') as unknown as ActivityEventWithEntity;
 
-      const mockEvent: ActivityEvent = {
-        id: nanoid(),
-        tenantId: 'test01',
-        type: 'user.created',
-        action: 'create',
-        tableName: 'users',
-        entityType: 'user',
-        resourceType: null,
-        entityId: nanoid(),
-        userId: nanoid(),
-        organizationId: null,
-        projectId: null,
-        changedKeys: ['email', 'name'],
-        createdAt: new Date().toISOString(),
-        stx: null,
-        seq: null,
-        error: null,
-      };
-
+      activityBus.on(mockEvent.type, handler);
       activityBus.emit(mockEvent);
 
       expect(handler).toHaveBeenCalledWith(mockEvent);
 
-      activityBus.off('user.created', handler);
+      activityBus.off(mockEvent.type, handler);
     });
 
     it('should support one-time event handlers', async () => {
       const handler = vi.fn();
-      activityBus.once('organization.updated', handler);
+      const mockEvent = mockActivity('test:once-handler') as unknown as ActivityEventWithEntity;
 
-      const mockEvent: ActivityEvent = {
-        id: nanoid(),
-        tenantId: 'test01',
-        type: 'organization.updated',
-        action: 'update',
-        tableName: 'organizations',
-        entityType: 'organization',
-        resourceType: null,
-        entityId: nanoid(),
-        userId: nanoid(),
-        organizationId: nanoid(),
-        projectId: null,
-        changedKeys: ['name'],
-        createdAt: new Date().toISOString(),
-        stx: null,
-        seq: null,
-        error: null,
-      };
+      activityBus.once(mockEvent.type, handler);
 
       activityBus.emit(mockEvent);
       activityBus.emit(mockEvent);
@@ -138,24 +105,15 @@ describe.skipIf(!process.env.CDC_WORKER_RUNNING)('Full CDC Flow', () => {
   it('should emit membership.created when membership is inserted', async () => {
     const eventPromise = waitForEvent('membership.created', 15000);
 
-    // Insert membership (CDC will pick this up and create activity)
-    const membershipId = nanoid();
-    await db.insert(membershipsTable).values({
-      id: membershipId,
-      userId: testUser.id,
-      organizationId: testOrg.id,
-      tenantId: testOrg.tenantId,
-      contextType: 'organization',
-      role: 'member',
-      displayOrder: 1,
-      createdBy: testUser.id,
-    });
+    // Use entity-agnostic mock that handles dynamic context entity columns
+    const membershipData = mockContextMembership('organization', testOrg, testUser);
+    await db.insert(membershipsTable).values(membershipData);
 
     // Wait for: INSERT → CDC → activities INSERT → trigger → NOTIFY → activityBus
     const event = await eventPromise;
 
     expect(event.type).toBe('membership.created');
-    expect(event.entityId).toBe(membershipId);
+    expect(event.entityId).toBe(membershipData.id);
     expect(event.organizationId).toBe(testOrg.id);
   });
 });

@@ -25,6 +25,7 @@
     "seed:user": "tsx scripts/seeds/user/run.ts",
     "seed:organizations": "tsx scripts/seeds/organizations/run.ts",
     "seed:data": "tsx scripts/seeds/data/run.ts",
+    "seed:counters": "tsx scripts/seeds/counters/run.ts",
     "seed": "tsx scripts/seed.ts",
     "manual-migration": "tsx scripts/manual-migration.ts",
     "generate": "tsx scripts/generate.ts",

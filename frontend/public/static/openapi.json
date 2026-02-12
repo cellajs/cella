@@ -5592,21 +5592,51 @@
             "description": "Set to \"sse\" for live updates (SSE stream)",
             "name": "live",
             "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "JSON-encoded client seqs for gap detection: {\"scopeId\":42}. Unchanged scopes are excluded from the response.",
+              "example": "{}"
+            },
+            "required": false,
+            "description": "JSON-encoded client seqs for gap detection: {\"scopeId\":42}. Unchanged scopes are excluded from the response.",
+            "name": "seqs",
+            "in": "query"
           }
         ],
         "responses": {
           "200": {
-            "description": "Catch-up activities or SSE stream started",
+            "description": "Catch-up summary or SSE stream started",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "notifications": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/StreamNotification"
-                      }
+                    "changes": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "object",
+                        "properties": {
+                          "seq": {
+                            "type": "integer"
+                          },
+                          "deletedIds": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "mSeq": {
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "seq",
+                          "deletedIds"
+                        ]
+                      },
+                      "description": "Per-entityType change summary: { [entityType]: { seq, deletedIds } }"
                     },
                     "cursor": {
                       "type": [
@@ -5617,7 +5647,7 @@
                     }
                   },
                   "required": [
-                    "notifications",
+                    "changes",
                     "cursor"
                   ]
                 }
@@ -5686,11 +5716,22 @@
             "description": "Connection mode: 'sse' for streaming, 'catchup' for one-time fetch",
             "name": "live",
             "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "JSON-encoded client seqs for gap detection: {\"scopeId\":42}. Unchanged scopes are excluded from the response.",
+              "example": "{}"
+            },
+            "required": false,
+            "description": "JSON-encoded client seqs for gap detection: {\"scopeId\":42}. Unchanged scopes are excluded from the response.",
+            "name": "seqs",
+            "in": "query"
           }
         ],
         "responses": {
           "200": {
-            "description": "SSE stream or notification response",
+            "description": "SSE stream or catchup summary response",
             "content": {
               "text/event-stream": {
                 "schema": {}
@@ -5699,11 +5740,30 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "notifications": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/StreamNotification"
-                      }
+                    "changes": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "object",
+                        "properties": {
+                          "seq": {
+                            "type": "integer"
+                          },
+                          "deletedIds": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "mSeq": {
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "seq",
+                          "deletedIds"
+                        ]
+                      },
+                      "description": "Per-org change summary: { [orgId]: { seq, deletedIds, membership? } }"
                     },
                     "cursor": {
                       "type": [
@@ -5714,31 +5774,17 @@
                     }
                   },
                   "required": [
-                    "notifications",
+                    "changes",
                     "cursor"
                   ]
                 },
                 "example": {
-                  "notifications": [
-                    {
-                      "action": "delete",
-                      "entityType": "page",
-                      "resourceType": null,
-                      "entityId": "ipyf3p33iix6bh90l5vkhljl",
-                      "organizationId": "xv5tmemhybwpov3sftl08uic",
-                      "contextType": null,
-                      "seq": 409,
-                      "cacheToken": "1iLESdsWiPgPMn1DbxaxLythT5YAdIMV",
-                      "stx": {
-                        "mutationId": "4wt4fsnzvcmmcnaqpirymrng",
-                        "sourceId": "yq5yyt6xf4dt1l81p0arc53l",
-                        "version": 4,
-                        "fieldVersions": {
-                          "name": 1
-                        }
-                      }
+                  "changes": {
+                    "org-example-id": {
+                      "seq": 42,
+                      "deletedIds": []
                     }
-                  ],
+                  },
                   "cursor": "d9909rsl2y2ii9vbcsc2ywg7"
                 }
               }
@@ -7219,8 +7265,42 @@
           }
         },
         "responses": {
-          "204": {
-            "description": "Requests deleted"
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "prefixItems": []
+                    },
+                    "rejectedItemIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Identifiers of items that could not be processed"
+                    },
+                    "rejectionReasons": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "description": "Map of reason code to rejected item IDs"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "rejectedItemIds"
+                  ]
+                }
+              }
+            }
           },
           "400": {
             "$ref": "#/components/responses/BadRequestError"
@@ -9558,8 +9638,42 @@
           }
         },
         "responses": {
-          "204": {
-            "description": "Page(s) deleted"
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "prefixItems": []
+                    },
+                    "rejectedItemIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Identifiers of items that could not be processed"
+                    },
+                    "rejectionReasons": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "description": "Map of reason code to rejected item IDs"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "rejectedItemIds"
+                  ]
+                }
+              }
+            }
           },
           "400": {
             "$ref": "#/components/responses/BadRequestError"
@@ -9739,7 +9853,8 @@
         "description": "Returns a list of *users* in an organization context.",
         "x-guard": [
           "authGuard",
-          "tenantGuard"
+          "tenantGuard",
+          "orgGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -10034,7 +10149,8 @@
         "description": "Retrieves a *user* by ID in an organization context. Pass `?slug=true` to resolve by slug instead.",
         "x-guard": [
           "authGuard",
-          "tenantGuard"
+          "tenantGuard",
+          "orgGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],

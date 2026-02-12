@@ -67,9 +67,11 @@ export const organizationsSeed = async () => {
     .onConflictDoNothing();
 
   // Make organizations - distribute across tenants (10 per tenant)
+  // Set createdBy to admin so system admin can access all orgs via RLS (createdBy match)
   const organizationRecords = mockMany(mockOrganization, TENANTS_COUNT * ORGANIZATIONS_PER_TENANT).map((org, i) => ({
     ...org,
     tenantId: tenants[Math.floor(i / ORGANIZATIONS_PER_TENANT)].id, // Assign 10 orgs per tenant
+    createdBy: defaultAdminUser.id,
   }));
   const organizations = await db
     .insert(organizationsTable)
