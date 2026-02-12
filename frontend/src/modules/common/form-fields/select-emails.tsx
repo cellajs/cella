@@ -32,6 +32,7 @@ const extractEmail = (value: string, stripDisplayName: boolean): string => {
  * Email input component with multi-email support, validation, and paste handling.
  * Built on top of TagInput with email-specific validation and delimiter support.
  */
+// TODO-019 React warns: Cannot update a component (SelectEmails) while rendering a different component (Controller)
 export const SelectEmails = ({
   emails,
   onChange,

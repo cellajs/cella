@@ -19,13 +19,13 @@ import { redirect } from '@tanstack/react-router';
  *   return { workspace };
  * }
  */
-export const rewriteUrlToSlug = (
-  params: Record<string, string>,
-  slugOverrides: Record<string, string | undefined>,
+export const rewriteUrlToSlug = <T extends Record<string, string>>(
+  params: T,
+  slugOverrides: Partial<Record<keyof T, string>>,
   routeTo: string,
 ) => {
   // Build new params, replacing IDs with slugs where available
-  const newParams = { ...params };
+  const newParams: Record<string, string> = { ...params };
   let hasChanges = false;
 
   for (const [key, slug] of Object.entries(slugOverrides)) {

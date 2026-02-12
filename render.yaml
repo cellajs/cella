@@ -19,11 +19,17 @@ services:
     envVars:
       - key: DATABASE_URL
         sync: false
+      - key: DATABASE_ADMIN_URL
+        sync: false
       - key: UNSUBSCRIBE_SECRET
         sync: false
       - key: ARGON_SECRET
         sync: false
       - key: COOKIE_SECRET
+        sync: false
+      - key: REMOTE_SYSTEM_ACCESS_IP
+        sync: false
+      - key: CDC_INTERNAL_SECRET
         sync: false
       - key: NODE_VERSION
         sync: true
@@ -31,6 +37,31 @@ services:
     buildFilter:
       paths:
         - backend/**/*.?s
+
+  # CDC Worker
+  - type: worker
+    name: cella-cdc
+    runtime: node
+    region: frankfurt
+    rootDir: cdc
+    buildCommand: pnpm install
+    startCommand: pnpm start
+    numInstances: 1
+    previews:
+      generation: manual
+    envVars:
+      - key: DATABASE_CDC_URL
+        sync: false
+      - key: API_WS_URL
+        sync: false
+      - key: CDC_INTERNAL_SECRET
+        sync: false
+      - key: NODE_VERSION
+        sync: true
+        value: 24
+    buildFilter:
+      paths:
+        - cdc/**/*.?s
 
   # Frontend
   - type: web

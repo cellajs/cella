@@ -75,7 +75,7 @@ CREATE TABLE "inactive_memberships" (
 	"rejected_at" timestamp,
 	"created_by" varchar NOT NULL,
 	"organization_id" varchar NOT NULL,
-	CONSTRAINT "inactive_memberships_tenant_email_org" UNIQUE("tenant_id","email","organization_id")
+	CONSTRAINT "inactive_memberships_tenant_email_ctx" UNIQUE NULLS NOT DISTINCT("tenant_id","email","context_type","organization_id")
 );
 --> statement-breakpoint
 ALTER TABLE "inactive_memberships" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
@@ -98,7 +98,7 @@ CREATE TABLE "memberships" (
 	"muted" boolean DEFAULT false NOT NULL,
 	"display_order" double precision NOT NULL,
 	"organization_id" varchar NOT NULL,
-	CONSTRAINT "memberships_tenant_user_org" UNIQUE("tenant_id","user_id","organization_id")
+	CONSTRAINT "memberships_tenant_user_ctx" UNIQUE NULLS NOT DISTINCT("tenant_id","user_id","context_type","organization_id")
 );
 --> statement-breakpoint
 ALTER TABLE "memberships" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
@@ -365,9 +365,12 @@ ALTER TABLE "totps" ADD CONSTRAINT "totps_user_id_users_id_fkey" FOREIGN KEY ("u
 ALTER TABLE "unsubscribe_tokens" ADD CONSTRAINT "unsubscribe_tokens_user_id_users_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "users" ADD CONSTRAINT "users_modified_by_users_id_fkey" FOREIGN KEY ("modified_by") REFERENCES "users"("id");--> statement-breakpoint
 CREATE POLICY "attachments_select_policy" ON "attachments" AS PERMISSIVE FOR SELECT TO public USING (
+  
   COALESCE(current_setting('app.tenant_id', true), '') != ''
   AND "attachments"."tenant_id" = current_setting('app.tenant_id', true)::text
- AND current_setting('app.is_authenticated', true)::boolean = true AND 
+
+  AND current_setting('app.is_authenticated', true)::boolean = true
+  AND 
   COALESCE(current_setting('app.user_id', true), '') != ''
   AND EXISTS (
     SELECT 1 FROM memberships m
@@ -375,11 +378,15 @@ CREATE POLICY "attachments_select_policy" ON "attachments" AS PERMISSIVE FOR SEL
     AND m.user_id = current_setting('app.user_id', true)::text
     AND m.tenant_id = "attachments"."tenant_id"
   )
+
 );--> statement-breakpoint
 CREATE POLICY "attachments_insert_policy" ON "attachments" AS PERMISSIVE FOR INSERT TO public WITH CHECK (
+  
   COALESCE(current_setting('app.tenant_id', true), '') != ''
   AND "attachments"."tenant_id" = current_setting('app.tenant_id', true)::text
- AND current_setting('app.is_authenticated', true)::boolean = true AND 
+
+  AND current_setting('app.is_authenticated', true)::boolean = true
+  AND 
   COALESCE(current_setting('app.user_id', true), '') != ''
   AND EXISTS (
     SELECT 1 FROM memberships m
@@ -387,11 +394,15 @@ CREATE POLICY "attachments_insert_policy" ON "attachments" AS PERMISSIVE FOR INS
     AND m.user_id = current_setting('app.user_id', true)::text
     AND m.tenant_id = "attachments"."tenant_id"
   )
+
 );--> statement-breakpoint
 CREATE POLICY "attachments_update_policy" ON "attachments" AS PERMISSIVE FOR UPDATE TO public USING (
+  
   COALESCE(current_setting('app.tenant_id', true), '') != ''
   AND "attachments"."tenant_id" = current_setting('app.tenant_id', true)::text
- AND current_setting('app.is_authenticated', true)::boolean = true AND 
+
+  AND current_setting('app.is_authenticated', true)::boolean = true
+  AND 
   COALESCE(current_setting('app.user_id', true), '') != ''
   AND EXISTS (
     SELECT 1 FROM memberships m
@@ -399,10 +410,14 @@ CREATE POLICY "attachments_update_policy" ON "attachments" AS PERMISSIVE FOR UPD
     AND m.user_id = current_setting('app.user_id', true)::text
     AND m.tenant_id = "attachments"."tenant_id"
   )
+
 ) WITH CHECK (
+  
   COALESCE(current_setting('app.tenant_id', true), '') != ''
   AND "attachments"."tenant_id" = current_setting('app.tenant_id', true)::text
- AND current_setting('app.is_authenticated', true)::boolean = true AND 
+
+  AND current_setting('app.is_authenticated', true)::boolean = true
+  AND 
   COALESCE(current_setting('app.user_id', true), '') != ''
   AND EXISTS (
     SELECT 1 FROM memberships m
@@ -410,11 +425,15 @@ CREATE POLICY "attachments_update_policy" ON "attachments" AS PERMISSIVE FOR UPD
     AND m.user_id = current_setting('app.user_id', true)::text
     AND m.tenant_id = "attachments"."tenant_id"
   )
+
 );--> statement-breakpoint
 CREATE POLICY "attachments_delete_policy" ON "attachments" AS PERMISSIVE FOR DELETE TO public USING (
+  
   COALESCE(current_setting('app.tenant_id', true), '') != ''
   AND "attachments"."tenant_id" = current_setting('app.tenant_id', true)::text
- AND current_setting('app.is_authenticated', true)::boolean = true AND 
+
+  AND current_setting('app.is_authenticated', true)::boolean = true
+  AND 
   COALESCE(current_setting('app.user_id', true), '') != ''
   AND EXISTS (
     SELECT 1 FROM memberships m
@@ -422,11 +441,15 @@ CREATE POLICY "attachments_delete_policy" ON "attachments" AS PERMISSIVE FOR DEL
     AND m.user_id = current_setting('app.user_id', true)::text
     AND m.tenant_id = "attachments"."tenant_id"
   )
+
 );--> statement-breakpoint
 CREATE POLICY "inactive_memberships_select_policy" ON "inactive_memberships" AS PERMISSIVE FOR SELECT TO public USING (
+  
   COALESCE(current_setting('app.tenant_id', true), '') != ''
   AND "inactive_memberships"."tenant_id" = current_setting('app.tenant_id', true)::text
- AND current_setting('app.is_authenticated', true)::boolean = true AND 
+
+  AND current_setting('app.is_authenticated', true)::boolean = true
+  AND 
   COALESCE(current_setting('app.user_id', true), '') != ''
   AND EXISTS (
     SELECT 1 FROM memberships m
@@ -434,11 +457,15 @@ CREATE POLICY "inactive_memberships_select_policy" ON "inactive_memberships" AS 
     AND m.user_id = current_setting('app.user_id', true)::text
     AND m.tenant_id = "inactive_memberships"."tenant_id"
   )
+
 );--> statement-breakpoint
 CREATE POLICY "inactive_memberships_insert_policy" ON "inactive_memberships" AS PERMISSIVE FOR INSERT TO public WITH CHECK (
+  
   COALESCE(current_setting('app.tenant_id', true), '') != ''
   AND "inactive_memberships"."tenant_id" = current_setting('app.tenant_id', true)::text
- AND current_setting('app.is_authenticated', true)::boolean = true AND 
+
+  AND current_setting('app.is_authenticated', true)::boolean = true
+  AND 
   COALESCE(current_setting('app.user_id', true), '') != ''
   AND EXISTS (
     SELECT 1 FROM memberships m
@@ -446,11 +473,15 @@ CREATE POLICY "inactive_memberships_insert_policy" ON "inactive_memberships" AS 
     AND m.user_id = current_setting('app.user_id', true)::text
     AND m.tenant_id = "inactive_memberships"."tenant_id"
   )
+
 );--> statement-breakpoint
 CREATE POLICY "inactive_memberships_update_policy" ON "inactive_memberships" AS PERMISSIVE FOR UPDATE TO public USING (
+  
   COALESCE(current_setting('app.tenant_id', true), '') != ''
   AND "inactive_memberships"."tenant_id" = current_setting('app.tenant_id', true)::text
- AND current_setting('app.is_authenticated', true)::boolean = true AND 
+
+  AND current_setting('app.is_authenticated', true)::boolean = true
+  AND 
   COALESCE(current_setting('app.user_id', true), '') != ''
   AND EXISTS (
     SELECT 1 FROM memberships m
@@ -458,10 +489,14 @@ CREATE POLICY "inactive_memberships_update_policy" ON "inactive_memberships" AS 
     AND m.user_id = current_setting('app.user_id', true)::text
     AND m.tenant_id = "inactive_memberships"."tenant_id"
   )
+
 ) WITH CHECK (
+  
   COALESCE(current_setting('app.tenant_id', true), '') != ''
   AND "inactive_memberships"."tenant_id" = current_setting('app.tenant_id', true)::text
- AND current_setting('app.is_authenticated', true)::boolean = true AND 
+
+  AND current_setting('app.is_authenticated', true)::boolean = true
+  AND 
   COALESCE(current_setting('app.user_id', true), '') != ''
   AND EXISTS (
     SELECT 1 FROM memberships m
@@ -469,11 +504,15 @@ CREATE POLICY "inactive_memberships_update_policy" ON "inactive_memberships" AS 
     AND m.user_id = current_setting('app.user_id', true)::text
     AND m.tenant_id = "inactive_memberships"."tenant_id"
   )
+
 );--> statement-breakpoint
 CREATE POLICY "inactive_memberships_delete_policy" ON "inactive_memberships" AS PERMISSIVE FOR DELETE TO public USING (
+  
   COALESCE(current_setting('app.tenant_id', true), '') != ''
   AND "inactive_memberships"."tenant_id" = current_setting('app.tenant_id', true)::text
- AND current_setting('app.is_authenticated', true)::boolean = true AND 
+
+  AND current_setting('app.is_authenticated', true)::boolean = true
+  AND 
   COALESCE(current_setting('app.user_id', true), '') != ''
   AND EXISTS (
     SELECT 1 FROM memberships m
@@ -481,6 +520,7 @@ CREATE POLICY "inactive_memberships_delete_policy" ON "inactive_memberships" AS 
     AND m.user_id = current_setting('app.user_id', true)::text
     AND m.tenant_id = "inactive_memberships"."tenant_id"
   )
+
 );--> statement-breakpoint
 CREATE POLICY "memberships_context_guard" ON "memberships" AS RESTRICTIVE FOR SELECT TO public USING (COALESCE(current_setting('app.tenant_id', true), '') != '' OR COALESCE(current_setting('app.user_id', true), '') != '');--> statement-breakpoint
 CREATE POLICY "memberships_select_own_policy" ON "memberships" AS PERMISSIVE FOR SELECT TO public USING (current_setting('app.is_authenticated', true)::boolean = true AND 

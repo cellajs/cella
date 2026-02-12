@@ -1,7 +1,7 @@
 import { defineConfig } from './cli/cella/config';
 
 /**
- * Cella sync config: run with `pnpm sync`.
+ * Cella sync config: run with `pnpm cella` to interact with cella upstream or forks.
  */
 export default defineConfig({
   settings: {

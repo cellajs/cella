@@ -78,7 +78,6 @@ export class EntityHierarchyBuilder<
   TContexts extends string = never,
   TProducts extends string = never,
   TParentlessProducts extends string = never,
-  TPublicTypes extends string = never,
 > {
   private readonly entities = new Map<string, EntityEntry>();
   private readonly roles: TRoles;
@@ -89,7 +88,7 @@ export class EntityHierarchyBuilder<
   }
 
   /** Add user entity (required, once). */
-  user(): EntityHierarchyBuilder<TRoles, TContexts, TProducts, TParentlessProducts, TPublicTypes> {
+  user(): EntityHierarchyBuilder<TRoles, TContexts, TProducts, TParentlessProducts> {
     if (this.hasUser) throw new Error('EntityHierarchy: user() can only be called once');
     this.hasUser = true;
     this.entities.set('user', { kind: 'user' });
@@ -97,31 +96,31 @@ export class EntityHierarchyBuilder<
   }
 
   /** Add a context entity with parent reference and roles. */
-  context<N extends string, PA extends PublicAccessSource | undefined = undefined>(
+  context<N extends string>(
     name: N,
-    options: { parent: TContexts | null; roles: readonly RoleFromRegistry<TRoles>[]; publicAccess?: PA },
-  ): EntityHierarchyBuilder<TRoles, TContexts | N, TProducts, TParentlessProducts, PA extends PublicAccessSource ? TPublicTypes | N : TPublicTypes> {
+    options: { parent: TContexts | null; roles: readonly RoleFromRegistry<TRoles>[]; publicAccess?: PublicAccessSource },
+  ): EntityHierarchyBuilder<TRoles, TContexts | N, TProducts, TParentlessProducts> {
     this.validateName(name);
     this.validateParent(name, options.parent, 'context');
     this.validateRoles(name, options.roles);
     this.entities.set(name, { kind: 'context', parent: options.parent, roles: options.roles, publicAccess: options.publicAccess });
-    return this as unknown as EntityHierarchyBuilder<TRoles, TContexts | N, TProducts, TParentlessProducts, PA extends PublicAccessSource ? TPublicTypes | N : TPublicTypes>;
+    return this as EntityHierarchyBuilder<TRoles, TContexts | N, TProducts, TParentlessProducts>;
   }
 
   /** Add a product entity with parent reference. Products with parent: null tracked as TParentlessProducts. */
-  product<N extends string, P extends TContexts | null, PA extends PublicAccessConfig | undefined = undefined>(
+  product<N extends string, P extends TContexts | null>(
     name: N,
-    options: { parent: P; publicAccess?: PA },
-  ): EntityHierarchyBuilder<TRoles, TContexts, TProducts | N, P extends null ? TParentlessProducts | N : TParentlessProducts, PA extends PublicAccessConfig ? TPublicTypes | N : TPublicTypes> {
+    options: { parent: P; publicAccess?: PublicAccessConfig },
+  ): EntityHierarchyBuilder<TRoles, TContexts, TProducts | N, P extends null ? TParentlessProducts | N : TParentlessProducts> {
     this.validateName(name);
     this.validateParent(name, options.parent, 'product');
     this.validatePublicAccess(name, options.publicAccess);
     this.entities.set(name, { kind: 'product', parent: options.parent, publicAccess: options.publicAccess });
-    return this as unknown as EntityHierarchyBuilder<TRoles, TContexts, TProducts | N, P extends null ? TParentlessProducts | N : TParentlessProducts, PA extends PublicAccessConfig ? TPublicTypes | N : TPublicTypes>;
+    return this as unknown as EntityHierarchyBuilder<TRoles, TContexts, TProducts | N, P extends null ? TParentlessProducts | N : TParentlessProducts>;
   }
 
   /** Build and freeze the hierarchy. */
-  build(): EntityHierarchy<TRoles, TContexts, TProducts, TParentlessProducts, TPublicTypes> {
+  build(): EntityHierarchy<TRoles, TContexts, TProducts, TParentlessProducts> {
     if (!this.hasUser) throw new Error('EntityHierarchy: user() must be called before build()');
     if (!this.entities.has('organization')) throw new Error('EntityHierarchy: organization context is required');
     return new EntityHierarchy(this.roles, this.entities);
@@ -212,7 +211,6 @@ export class EntityHierarchy<
   TContexts extends string = string,
   TProducts extends string = string,
   TParentlessProducts extends string = string,
-  TPublicTypes extends string = string,
 > {
   private readonly entities: ReadonlyMap<string, EntityEntry>;
   private readonly roleRegistry: TRoles;
@@ -226,7 +224,7 @@ export class EntityHierarchy<
   readonly relatableContextTypes: readonly TContexts[];
   readonly parentlessProductTypes: readonly TParentlessProducts[];
   readonly publicAccessSourceTypes: readonly TContexts[];
-  readonly publicAccessTypes: readonly TPublicTypes[];
+  readonly publicAccessTypes: readonly (TContexts | TProducts)[];
 
   constructor(roles: TRoles, entities: Map<string, EntityEntry>) {
     this.roleRegistry = roles;
@@ -239,7 +237,7 @@ export class EntityHierarchy<
     const parentlessProducts: TParentlessProducts[] = [];
     const relatableContexts = new Set<TContexts>();
     const publicSources: TContexts[] = [];
-    const publicAccessTypes: TPublicTypes[] = [];
+    const publicAccessTypes: (TContexts | TProducts)[] = [];
 
     for (const [name, entry] of entities) {
       all.push(name as 'user' | TContexts | TProducts);
@@ -248,7 +246,7 @@ export class EntityHierarchy<
         contexts.push(name as TContexts);
         if (entry.publicAccess) {
           publicSources.push(name as TContexts);
-          publicAccessTypes.push(name as TPublicTypes);
+          publicAccessTypes.push(name as TContexts);
         }
       } else if (entry.kind === 'product') {
         products.push(name as TProducts);
@@ -258,7 +256,7 @@ export class EntityHierarchy<
           relatableContexts.add(entry.parent as TContexts);
         }
         if (entry.publicAccess) {
-          publicAccessTypes.push(name as TPublicTypes);
+          publicAccessTypes.push(name as TProducts);
         }
       }
     }
@@ -416,7 +414,7 @@ export class EntityHierarchy<
 /** Create a new entity hierarchy builder with a role registry. */
 export function createEntityHierarchy<R extends { all: readonly string[] }>(
   roles: R,
-): EntityHierarchyBuilder<R, never, never, never, never> {
+): EntityHierarchyBuilder<R, never, never, never> {
   return new EntityHierarchyBuilder(roles);
 }
 

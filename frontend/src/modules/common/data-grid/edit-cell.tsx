@@ -25,7 +25,9 @@ import { createCellEvent, getCellClassname, getCellStyle, onEditorNavigation } f
  * We must also rely on React's event capturing/bubbling to handle elements rendered in a portal.
  */
 
-const canUsePostTask = typeof scheduler === 'object' && typeof scheduler.postTask === 'function';
+// biome-ignore lint/suspicious/noExplicitAny: Scheduling API types not available in tsgo
+const _scheduler = globalThis as any;
+const canUsePostTask = typeof _scheduler.scheduler === 'object' && typeof _scheduler.scheduler.postTask === 'function';
 
 const cellEditingClassname = 'rdg-cell-editing';
 
@@ -75,7 +77,7 @@ export function EditCell<R, SR>({
         abortControllerRef.current = abortController;
         // Use postTask to ensure that the event is not called in the middle of a React render
         // and that it is called before the next paint.
-        scheduler
+        _scheduler.scheduler
           .postTask(commitOnOutsideMouseDown, {
             priority: 'user-blocking',
             signal,

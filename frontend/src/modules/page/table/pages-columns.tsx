@@ -11,8 +11,8 @@ import { UserCellById } from '~/modules/user/user-cell';
 import { dateShort } from '~/utils/date-short';
 
 /** Check if a page is local-only (not yet synced to server) */
-function isLocalPage(id: string) {
-  return id.startsWith('temp-');
+function isLocalPage(page: Page) {
+  return '_optimistic' in page;
 }
 
 /**
@@ -60,7 +60,7 @@ export function usePagesTableColumns(isCompact: boolean) {
       sortable: false,
       width: 32,
       renderCell: ({ row }) => {
-        const isLocal = isLocalPage(row.id);
+        const isLocal = isLocalPage(row);
         return (
           <div
             className="flex justify-center items-center h-full w-full"

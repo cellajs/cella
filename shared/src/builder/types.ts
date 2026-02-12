@@ -30,6 +30,7 @@ export interface S3Config {
   bucketPrefix?: string;
   publicBucket: string;
   privateBucket: string;
+  zipBucket?: string;
   region: string;
   host: string;
   privateCDNUrl?: string;

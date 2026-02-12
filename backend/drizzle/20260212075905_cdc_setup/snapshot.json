@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "b06f43bf-0277-4c59-a75c-ced0f72299f3",
+  "id": "814eac91-d39a-438a-a0c4-e412433a0c30",
   "prevIds": [
     "00000000-0000-0000-0000-000000000000"
   ],
@@ -4609,10 +4609,11 @@
       "columns": [
         "tenant_id",
         "email",
+        "context_type",
         "organization_id"
       ],
-      "nullsNotDistinct": false,
-      "name": "inactive_memberships_tenant_email_org",
+      "nullsNotDistinct": true,
+      "name": "inactive_memberships_tenant_email_ctx",
       "entityType": "uniques",
       "schema": "public",
       "table": "inactive_memberships"
@@ -4622,10 +4623,11 @@
       "columns": [
         "tenant_id",
         "user_id",
+        "context_type",
         "organization_id"
       ],
-      "nullsNotDistinct": false,
-      "name": "memberships_tenant_user_org",
+      "nullsNotDistinct": true,
+      "name": "memberships_tenant_user_ctx",
       "entityType": "uniques",
       "schema": "public",
       "table": "memberships"
@@ -4739,7 +4741,7 @@
       "roles": [
         "public"
       ],
-      "using": "\n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"attachments\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n AND current_setting('app.is_authenticated', true)::boolean = true AND \n  COALESCE(current_setting('app.user_id', true), '') != ''\n  AND EXISTS (\n    SELECT 1 FROM memberships m\n    WHERE m.organization_id = \"attachments\".\"organization_id\"\n    AND m.user_id = current_setting('app.user_id', true)::text\n    AND m.tenant_id = \"attachments\".\"tenant_id\"\n  )\n",
+      "using": "\n  \n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"attachments\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n\n  AND current_setting('app.is_authenticated', true)::boolean = true\n  AND \n  COALESCE(current_setting('app.user_id', true), '') != ''\n  AND EXISTS (\n    SELECT 1 FROM memberships m\n    WHERE m.organization_id = \"attachments\".\"organization_id\"\n    AND m.user_id = current_setting('app.user_id', true)::text\n    AND m.tenant_id = \"attachments\".\"tenant_id\"\n  )\n\n",
       "withCheck": null,
       "name": "attachments_select_policy",
       "entityType": "policies",
@@ -4753,7 +4755,7 @@
         "public"
       ],
       "using": null,
-      "withCheck": "\n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"attachments\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n AND current_setting('app.is_authenticated', true)::boolean = true AND \n  COALESCE(current_setting('app.user_id', true), '') != ''\n  AND EXISTS (\n    SELECT 1 FROM memberships m\n    WHERE m.organization_id = \"attachments\".\"organization_id\"\n    AND m.user_id = current_setting('app.user_id', true)::text\n    AND m.tenant_id = \"attachments\".\"tenant_id\"\n  )\n",
+      "withCheck": "\n  \n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"attachments\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n\n  AND current_setting('app.is_authenticated', true)::boolean = true\n  AND \n  COALESCE(current_setting('app.user_id', true), '') != ''\n  AND EXISTS (\n    SELECT 1 FROM memberships m\n    WHERE m.organization_id = \"attachments\".\"organization_id\"\n    AND m.user_id = current_setting('app.user_id', true)::text\n    AND m.tenant_id = \"attachments\".\"tenant_id\"\n  )\n\n",
       "name": "attachments_insert_policy",
       "entityType": "policies",
       "schema": "public",
@@ -4765,8 +4767,8 @@
       "roles": [
         "public"
       ],
-      "using": "\n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"attachments\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n AND current_setting('app.is_authenticated', true)::boolean = true AND \n  COALESCE(current_setting('app.user_id', true), '') != ''\n  AND EXISTS (\n    SELECT 1 FROM memberships m\n    WHERE m.organization_id = \"attachments\".\"organization_id\"\n    AND m.user_id = current_setting('app.user_id', true)::text\n    AND m.tenant_id = \"attachments\".\"tenant_id\"\n  )\n",
-      "withCheck": "\n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"attachments\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n AND current_setting('app.is_authenticated', true)::boolean = true AND \n  COALESCE(current_setting('app.user_id', true), '') != ''\n  AND EXISTS (\n    SELECT 1 FROM memberships m\n    WHERE m.organization_id = \"attachments\".\"organization_id\"\n    AND m.user_id = current_setting('app.user_id', true)::text\n    AND m.tenant_id = \"attachments\".\"tenant_id\"\n  )\n",
+      "using": "\n  \n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"attachments\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n\n  AND current_setting('app.is_authenticated', true)::boolean = true\n  AND \n  COALESCE(current_setting('app.user_id', true), '') != ''\n  AND EXISTS (\n    SELECT 1 FROM memberships m\n    WHERE m.organization_id = \"attachments\".\"organization_id\"\n    AND m.user_id = current_setting('app.user_id', true)::text\n    AND m.tenant_id = \"attachments\".\"tenant_id\"\n  )\n\n",
+      "withCheck": "\n  \n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"attachments\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n\n  AND current_setting('app.is_authenticated', true)::boolean = true\n  AND \n  COALESCE(current_setting('app.user_id', true), '') != ''\n  AND EXISTS (\n    SELECT 1 FROM memberships m\n    WHERE m.organization_id = \"attachments\".\"organization_id\"\n    AND m.user_id = current_setting('app.user_id', true)::text\n    AND m.tenant_id = \"attachments\".\"tenant_id\"\n  )\n\n",
       "name": "attachments_update_policy",
       "entityType": "policies",
       "schema": "public",
@@ -4778,7 +4780,7 @@
       "roles": [
         "public"
       ],
-      "using": "\n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"attachments\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n AND current_setting('app.is_authenticated', true)::boolean = true AND \n  COALESCE(current_setting('app.user_id', true), '') != ''\n  AND EXISTS (\n    SELECT 1 FROM memberships m\n    WHERE m.organization_id = \"attachments\".\"organization_id\"\n    AND m.user_id = current_setting('app.user_id', true)::text\n    AND m.tenant_id = \"attachments\".\"tenant_id\"\n  )\n",
+      "using": "\n  \n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"attachments\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n\n  AND current_setting('app.is_authenticated', true)::boolean = true\n  AND \n  COALESCE(current_setting('app.user_id', true), '') != ''\n  AND EXISTS (\n    SELECT 1 FROM memberships m\n    WHERE m.organization_id = \"attachments\".\"organization_id\"\n    AND m.user_id = current_setting('app.user_id', true)::text\n    AND m.tenant_id = \"attachments\".\"tenant_id\"\n  )\n\n",
       "withCheck": null,
       "name": "attachments_delete_policy",
       "entityType": "policies",
@@ -4791,7 +4793,7 @@
       "roles": [
         "public"
       ],
-      "using": "\n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"inactive_memberships\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n AND current_setting('app.is_authenticated', true)::boolean = true AND \n  COALESCE(current_setting('app.user_id', true), '') != ''\n  AND EXISTS (\n    SELECT 1 FROM memberships m\n    WHERE m.organization_id = \"inactive_memberships\".\"organization_id\"\n    AND m.user_id = current_setting('app.user_id', true)::text\n    AND m.tenant_id = \"inactive_memberships\".\"tenant_id\"\n  )\n",
+      "using": "\n  \n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"inactive_memberships\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n\n  AND current_setting('app.is_authenticated', true)::boolean = true\n  AND \n  COALESCE(current_setting('app.user_id', true), '') != ''\n  AND EXISTS (\n    SELECT 1 FROM memberships m\n    WHERE m.organization_id = \"inactive_memberships\".\"organization_id\"\n    AND m.user_id = current_setting('app.user_id', true)::text\n    AND m.tenant_id = \"inactive_memberships\".\"tenant_id\"\n  )\n\n",
       "withCheck": null,
       "name": "inactive_memberships_select_policy",
       "entityType": "policies",
@@ -4805,7 +4807,7 @@
         "public"
       ],
       "using": null,
-      "withCheck": "\n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"inactive_memberships\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n AND current_setting('app.is_authenticated', true)::boolean = true AND \n  COALESCE(current_setting('app.user_id', true), '') != ''\n  AND EXISTS (\n    SELECT 1 FROM memberships m\n    WHERE m.organization_id = \"inactive_memberships\".\"organization_id\"\n    AND m.user_id = current_setting('app.user_id', true)::text\n    AND m.tenant_id = \"inactive_memberships\".\"tenant_id\"\n  )\n",
+      "withCheck": "\n  \n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"inactive_memberships\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n\n  AND current_setting('app.is_authenticated', true)::boolean = true\n  AND \n  COALESCE(current_setting('app.user_id', true), '') != ''\n  AND EXISTS (\n    SELECT 1 FROM memberships m\n    WHERE m.organization_id = \"inactive_memberships\".\"organization_id\"\n    AND m.user_id = current_setting('app.user_id', true)::text\n    AND m.tenant_id = \"inactive_memberships\".\"tenant_id\"\n  )\n\n",
       "name": "inactive_memberships_insert_policy",
       "entityType": "policies",
       "schema": "public",
@@ -4817,8 +4819,8 @@
       "roles": [
         "public"
       ],
-      "using": "\n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"inactive_memberships\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n AND current_setting('app.is_authenticated', true)::boolean = true AND \n  COALESCE(current_setting('app.user_id', true), '') != ''\n  AND EXISTS (\n    SELECT 1 FROM memberships m\n    WHERE m.organization_id = \"inactive_memberships\".\"organization_id\"\n    AND m.user_id = current_setting('app.user_id', true)::text\n    AND m.tenant_id = \"inactive_memberships\".\"tenant_id\"\n  )\n",
-      "withCheck": "\n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"inactive_memberships\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n AND current_setting('app.is_authenticated', true)::boolean = true AND \n  COALESCE(current_setting('app.user_id', true), '') != ''\n  AND EXISTS (\n    SELECT 1 FROM memberships m\n    WHERE m.organization_id = \"inactive_memberships\".\"organization_id\"\n    AND m.user_id = current_setting('app.user_id', true)::text\n    AND m.tenant_id = \"inactive_memberships\".\"tenant_id\"\n  )\n",
+      "using": "\n  \n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"inactive_memberships\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n\n  AND current_setting('app.is_authenticated', true)::boolean = true\n  AND \n  COALESCE(current_setting('app.user_id', true), '') != ''\n  AND EXISTS (\n    SELECT 1 FROM memberships m\n    WHERE m.organization_id = \"inactive_memberships\".\"organization_id\"\n    AND m.user_id = current_setting('app.user_id', true)::text\n    AND m.tenant_id = \"inactive_memberships\".\"tenant_id\"\n  )\n\n",
+      "withCheck": "\n  \n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"inactive_memberships\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n\n  AND current_setting('app.is_authenticated', true)::boolean = true\n  AND \n  COALESCE(current_setting('app.user_id', true), '') != ''\n  AND EXISTS (\n    SELECT 1 FROM memberships m\n    WHERE m.organization_id = \"inactive_memberships\".\"organization_id\"\n    AND m.user_id = current_setting('app.user_id', true)::text\n    AND m.tenant_id = \"inactive_memberships\".\"tenant_id\"\n  )\n\n",
       "name": "inactive_memberships_update_policy",
       "entityType": "policies",
       "schema": "public",
@@ -4830,7 +4832,7 @@
       "roles": [
         "public"
       ],
-      "using": "\n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"inactive_memberships\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n AND current_setting('app.is_authenticated', true)::boolean = true AND \n  COALESCE(current_setting('app.user_id', true), '') != ''\n  AND EXISTS (\n    SELECT 1 FROM memberships m\n    WHERE m.organization_id = \"inactive_memberships\".\"organization_id\"\n    AND m.user_id = current_setting('app.user_id', true)::text\n    AND m.tenant_id = \"inactive_memberships\".\"tenant_id\"\n  )\n",
+      "using": "\n  \n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"inactive_memberships\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n\n  AND current_setting('app.is_authenticated', true)::boolean = true\n  AND \n  COALESCE(current_setting('app.user_id', true), '') != ''\n  AND EXISTS (\n    SELECT 1 FROM memberships m\n    WHERE m.organization_id = \"inactive_memberships\".\"organization_id\"\n    AND m.user_id = current_setting('app.user_id', true)::text\n    AND m.tenant_id = \"inactive_memberships\".\"tenant_id\"\n  )\n\n",
       "withCheck": null,
       "name": "inactive_memberships_delete_policy",
       "entityType": "policies",

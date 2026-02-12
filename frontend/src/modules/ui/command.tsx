@@ -73,11 +73,18 @@ function CommandInput({
       <CommandPrimitive.Input
         data-slot="command-input"
         className={cn(
-          'placeholder:text-muted-foreground flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-hidden disabled:cursor-not-allowed disabled:opacity-50',
+          'placeholder:text-muted-foreground flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-hidden disabled:cursor-not-allowed disabled:opacity-50 [&::-webkit-search-cancel-button]:hidden',
           className,
         )}
         value={value}
+        data-1p-ignore
+        data-lpignore="true"
         {...props}
+        ref={(el) => {
+          // Set type="search" imperatively — cmdk omits it from its types.
+          // Password managers (NordPass, etc.) skip search inputs.
+          if (el) el.type = 'search';
+        }}
       />
       {value.length > 0 && (
         <XCircleIcon
