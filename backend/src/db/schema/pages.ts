@@ -10,6 +10,7 @@ import {
   varchar,
 } from 'drizzle-orm/pg-core';
 import { publicAccessSelectCondition, tenantWriteCondition } from '#/db/rls-helpers';
+import { maxLength } from '#/db/utils/constraints';
 import { productEntityColumns } from '#/db/utils/product-entity-columns';
 
 const pageStatusEnum = ['unpublished', 'published', 'archived'] as const;
@@ -26,7 +27,7 @@ export const pagesTable = pgTable(
     ...productEntityColumns('page'),
     status: varchar({ enum: pageStatusEnum }).notNull().default('unpublished'),
     publicAccess: boolean('public_access').notNull().default(false),
-    parentId: varchar().references((): AnyPgColumn => pagesTable.id, {
+    parentId: varchar({ length: maxLength.id }).references((): AnyPgColumn => pagesTable.id, {
       onDelete: 'set null',
     }),
     displayOrder: doublePrecision().notNull(),

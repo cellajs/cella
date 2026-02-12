@@ -2,7 +2,7 @@
 
 exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
 {
-  "inputHash": "333857ff58a6a407",
+  "inputHash": "8c3f70a24bcf25b3",
   "output": {
     "info": {
       "description": "⚠️ ATTENTION: PRERELEASE!  
@@ -1059,7 +1059,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasRequestBody": false,
         "hasResponseBody": true,
         "hash": "tag/entities/GET/entities/public/stream",
-        "id": "publicStream",
+        "id": "getPublicStream",
         "method": "get",
         "path": "/entities/public/stream",
         "summary": "Public entity stream",
@@ -1441,7 +1441,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           ],
           "xRateLimiter": [],
         },
-        "hasExample": false,
+        "hasExample": true,
         "hasParams": false,
         "hasRequestBody": false,
         "hasResponseBody": true,
@@ -1466,7 +1466,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           ],
           "xRateLimiter": [],
         },
-        "hasExample": false,
+        "hasExample": true,
         "hasParams": false,
         "hasRequestBody": false,
         "hasResponseBody": true,
@@ -1490,7 +1490,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           ],
           "xRateLimiter": [],
         },
-        "hasExample": false,
+        "hasExample": true,
         "hasParams": false,
         "hasRequestBody": false,
         "hasResponseBody": true,
@@ -1515,7 +1515,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           ],
           "xRateLimiter": [],
         },
-        "hasExample": false,
+        "hasExample": true,
         "hasParams": false,
         "hasRequestBody": false,
         "hasResponseBody": true,
@@ -1540,7 +1540,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           ],
           "xRateLimiter": [],
         },
-        "hasExample": false,
+        "hasExample": true,
         "hasParams": false,
         "hasRequestBody": false,
         "hasResponseBody": true,
@@ -1627,7 +1627,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Retrieves an *organization* by ID or slug within a tenant.",
+        "description": "Retrieves an *organization* by ID within a tenant. Pass \`?slug=true\` to resolve by slug instead.",
         "extensions": {
           "xCache": [],
           "xGuard": [
@@ -1640,10 +1640,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasParams": true,
         "hasRequestBody": false,
         "hasResponseBody": true,
-        "hash": "tag/organizations/GET/{tenantId}/organizations/{idOrSlug}",
+        "hash": "tag/organizations/GET/{tenantId}/organizations/{organizationId}",
         "id": "getOrganization",
         "method": "get",
-        "path": "/{tenantId}/organizations/{idOrSlug}",
+        "path": "/{tenantId}/organizations/{organizationId}",
         "summary": "Get organization",
         "tags": [
           "organizations",
@@ -1822,7 +1822,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Retrieves a *user* by ID or slug in an organization context.",
+        "description": "Retrieves a *user* by ID in an organization context. Pass \`?slug=true\` to resolve by slug instead.",
         "extensions": {
           "xCache": [],
           "xGuard": [
@@ -1835,10 +1835,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasParams": true,
         "hasRequestBody": false,
         "hasResponseBody": true,
-        "hash": "tag/users/GET/{tenantId}/{orgId}/users/{idOrSlug}",
+        "hash": "tag/users/GET/{tenantId}/{orgId}/users/{userId}",
         "id": "getUser",
         "method": "get",
-        "path": "/{tenantId}/{orgId}/users/{idOrSlug}",
+        "path": "/{tenantId}/{orgId}/users/{userId}",
         "summary": "Get user",
         "tags": [
           "users",
@@ -2174,12 +2174,12 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
     ],
     "schemaTags": [
       {
-        "count": 4,
+        "count": 5,
         "description": "Schemas with base fields only",
         "name": "base",
       },
       {
-        "count": 20,
+        "count": 15,
         "description": "Complete data schemas",
         "name": "data",
       },
@@ -2194,14 +2194,14 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "description": "Base user schema with essential fields for identification and display.",
         "example": {
           "bannerUrl": null,
-          "createdAt": "2024-12-04T07:25:23.386Z",
+          "createdAt": "2024-05-14T11:11:41.599Z",
           "description": null,
-          "email": "cali_stanton@gmail.com",
+          "email": "rosendo.bayer7@yahoo.com",
           "entityType": "user",
-          "id": "1b1eyp654w9neyhyka0hezx1",
-          "modifiedAt": "2024-12-22T02:34:34.155Z",
-          "name": "Cali Stanton",
-          "slug": "cali.stanton36",
+          "id": "eyp654w9neyhyka0hezx1xnh",
+          "modifiedAt": "2024-08-06T10:38:55.463Z",
+          "name": "Rosendo Bayer",
+          "slug": "rosendo.bayer89",
           "thumbnailUrl": null,
         },
         "name": "UserBase",
@@ -2274,12 +2274,13 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "example": {
           "bannerUrl": null,
           "createdAt": "2024-09-15T16:29:26.122Z",
-          "description": "Horizontal demand-driven support",
+          "description": "Automated eco-centric open architecture",
           "entityType": "organization",
           "id": "bafp6iiu2dt74olfvl618xur",
           "modifiedAt": "2024-12-04T06:32:26.983Z",
           "name": "Nolan - Jacobson",
           "slug": "nolan---jacobson",
+          "tenantId": "d9wtu57tfwtfux7yivt59ywq",
           "thumbnailUrl": null,
         },
         "name": "ContextEntityBase",
@@ -2327,6 +2328,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "type": "string",
             },
             "slug": {
+              "required": true,
+              "type": "string",
+            },
+            "tenantId": {
               "required": true,
               "type": "string",
             },
@@ -2397,7 +2402,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "type": "string",
             },
             "tenantId": {
-              "maxLength": 24,
               "required": true,
               "type": "string",
             },
@@ -2414,15 +2418,14 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
       {
         "example": {
           "fieldVersions": {
-            "description": 1,
             "name": 1,
           },
-          "id": "gen-abc123def456ghi789",
-          "sourceId": "src_gen-xyz987wvu654",
-          "version": 1,
+          "id": "oucavr5r34v981pcrg8lwo1m",
+          "sourceId": "wd4527bghf5s4igm3ddc22cy",
+          "version": 2,
         },
-        "name": "TxBase",
-        "ref": "#/components/schemas/TxBase",
+        "name": "StxBase",
+        "ref": "#/components/schemas/StxBase",
         "schema": {
           "properties": {
             "fieldVersions": {
@@ -2439,7 +2442,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             },
             "version": {
               "required": true,
-              "type": "number",
+              "type": "integer",
             },
           },
           "type": "object",
@@ -2450,24 +2453,24 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
       {
         "example": {
           "action": "update",
-          "cacheToken": "UyMeEcuBnWoD28KSeQr21dJgZDmxiD2W",
+          "cacheToken": "GhED0dmvcIKucngWTXW94wdNnjfgQkom",
           "contextType": null,
-          "entityId": "gj2w2bwxrkgnv0oa592jxwar",
-          "entityType": "attachment",
-          "organizationId": "c2u05q7olzsfy1csy8m2q98f",
+          "entityId": "r6fj30k69pgq5wresno8gbti",
+          "entityType": "page",
+          "organizationId": "nocwhipwzpzyyyf0gv66b9yz",
           "resourceType": null,
-          "seq": 550,
-          "tx": {
+          "seq": 560,
+          "stx": {
             "fieldVersions": {
               "name": 1,
             },
-            "id": "wiooyt8ngdjsef4skbnrj1fg",
-            "sourceId": "m3unlw6p4wjqfhll7n1r95ec",
+            "id": "mul9o7zuh9pqbrwqxd7fwfkl",
+            "sourceId": "5u2s0r3ld4uhi5g84g54ez4e",
             "version": 3,
           },
         },
-        "name": "StreamNotification",
-        "ref": "#/components/schemas/StreamNotification",
+        "name": "AppStreamNotification",
+        "ref": "#/components/schemas/AppStreamNotification",
         "schema": {
           "properties": {
             "action": {
@@ -2541,7 +2544,8 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 "null",
               ],
             },
-            "tx": {
+            "stx": {
+              "extendsRef": "#/components/schemas/StxBase",
               "properties": {
                 "fieldVersions": {
                   "required": true,
@@ -2560,7 +2564,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "type": "integer",
                 },
               },
-              "ref": "#/components/schemas/TxStreamMessage",
               "required": true,
               "type": [
                 "object",
@@ -2575,59 +2578,20 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
       },
       {
         "example": {
-          "fieldVersions": {
-            "name": 1,
-          },
-          "id": "gd9m8kym1wafivmk7c3du9yy",
-          "sourceId": "u3is64cucutsxomeo8xiy6bt",
-          "version": 4,
-        },
-        "name": "TxStreamMessage",
-        "ref": "#/components/schemas/TxStreamMessage",
-        "schema": {
-          "properties": {
-            "fieldVersions": {
-              "required": true,
-              "type": "object",
-            },
-            "id": {
-              "required": true,
-              "type": "string",
-            },
-            "sourceId": {
-              "required": true,
-              "type": "string",
-            },
-            "version": {
-              "required": true,
-              "type": "integer",
-            },
-          },
-          "type": [
-            "object",
-            "null",
-          ],
-        },
-        "schemaTag": "data",
-        "type": [
-          "object",
-          "null",
-        ],
-      },
-      {
-        "example": {
-          "action": "update",
-          "activityId": "tr1619any4wiivw7050pxbnj",
+          "action": "create",
+          "activityId": "ragf1ycwc0b2iz21o03r2akl",
           "changedKeys": [
+            "status",
             "keywords",
+            "name",
           ],
-          "createdAt": "2024-01-31T10:09:41.032Z",
-          "entityId": "9pjvmlsr1u1yqqvio34f744e",
-          "entityType": "attachment",
-          "modifiedAt": "2024-07-15T15:19:59.216Z",
+          "createdAt": "2024-08-23T15:19:27.671Z",
+          "entityId": "4gxf4cgd71szihzxxvrwn5qz",
+          "entityType": "page",
+          "modifiedAt": "2024-11-19T07:37:33.898Z",
         },
-        "name": "PublicStreamActivity",
-        "ref": "#/components/schemas/PublicStreamActivity",
+        "name": "PublicStreamNotification",
+        "ref": "#/components/schemas/PublicStreamNotification",
         "schema": {
           "properties": {
             "action": {
@@ -3207,9 +3171,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "organizationId": "pg8iwtnhw3666j3aifuxshox",
           "resourceType": null,
           "seq": 66,
+          "stx": null,
           "tableName": "pages",
           "tenantId": "qc8osc",
-          "tx": null,
           "type": "page.updated",
           "userId": "lgd1300kpvq3dotk41121rs6",
         },
@@ -3334,19 +3298,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 "null",
               ],
             },
-            "tableName": {
-              "required": true,
-              "type": "string",
-            },
-            "tenantId": {
-              "maxLength": 24,
-              "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
-            },
-            "tx": {
+            "stx": {
               "anyOf": [
                 {
                   "properties": {
@@ -3364,10 +3316,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     },
                     "version": {
                       "required": true,
-                      "type": "number",
+                      "type": "integer",
                     },
                   },
-                  "ref": "#/components/schemas/TxBase",
+                  "ref": "#/components/schemas/StxBase",
                   "required": false,
                   "type": "object",
                 },
@@ -3377,6 +3329,17 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 },
               ],
               "required": true,
+            },
+            "tableName": {
+              "required": true,
+              "type": "string",
+            },
+            "tenantId": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
             },
             "type": {
               "required": true,
@@ -3444,21 +3407,21 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "bannerUrl": null,
             "createdAt": "2024-07-14T22:49:14.651Z",
             "description": null,
-            "email": "odell.gislason@yahoo.com",
+            "email": "douglas.mcclure57@yahoo.com",
             "entityType": "user",
-            "firstName": "Odell",
-            "id": "7qgsnou9b80h3jlnu1j458h6",
+            "firstName": "Douglas",
+            "id": "snou9b80h3jlnu1j458h6mvs",
             "language": "en",
-            "lastName": "Gislason",
+            "lastName": "McClure",
             "lastSeenAt": "2024-07-14T22:49:14.651Z",
             "lastSignInAt": "2024-07-14T22:49:14.651Z",
             "lastStartedAt": "2024-07-14T22:49:14.651Z",
             "mfaRequired": false,
             "modifiedAt": "2024-07-14T22:49:14.651Z",
             "modifiedBy": null,
-            "name": "Mr. Odell Gislason",
-            "newsletter": true,
-            "slug": "odellgislason57",
+            "name": "Douglas McClure",
+            "newsletter": false,
+            "slug": "douglasmcclure74",
             "thumbnailUrl": null,
             "userFlags": {},
           },
@@ -3624,21 +3587,21 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "bannerUrl": null,
           "createdAt": "2024-12-13T11:17:23.643Z",
           "description": null,
-          "email": "franco_corwin@gmail.com",
+          "email": "cecilia.hodkiewicz@hotmail.com",
           "entityType": "user",
-          "firstName": "Franco",
-          "id": "w6g7sfzetbhjls7m9dg1xzav",
+          "firstName": "Cecilia",
+          "id": "7sfzetbhjls7m9dg1xzavv78",
           "language": "en",
-          "lastName": "Corwin",
+          "lastName": "Hodkiewicz",
           "lastSeenAt": "2024-12-13T11:17:23.643Z",
           "lastSignInAt": "2024-12-13T11:17:23.643Z",
           "lastStartedAt": "2024-12-13T11:17:23.643Z",
           "mfaRequired": false,
           "modifiedAt": "2024-12-13T11:17:23.643Z",
           "modifiedBy": null,
-          "name": "Franco Corwin",
-          "newsletter": true,
-          "slug": "francocorwin",
+          "name": "Cecilia Hodkiewicz",
+          "newsletter": false,
+          "slug": "ceciliahodkiewicz17",
           "thumbnailUrl": null,
           "userFlags": {},
         },
@@ -3972,8 +3935,8 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "example": {
           "contextType": "organization",
           "createdAt": "2024-02-08T11:19:07.168Z",
-          "createdBy": "9v2n0dfrh6s450ooxn5tb992",
-          "email": "belle.bashirian10@hotmail.com",
+          "createdBy": "n0dfrh6s450ooxn5tb992nwz",
+          "email": "angel25@hotmail.com",
           "id": "ukxfca4ddim4bvuklzn5bszg",
           "organizationId": "9angnio9zojjlzk3croh621f",
           "rejectedAt": null,
@@ -4029,7 +3992,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "type": "string",
             },
             "tenantId": {
-              "maxLength": 24,
               "required": true,
               "type": "string",
             },
@@ -4071,24 +4033,33 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "schema": {
           "properties": {
             "params": {
-              "properties": {
-                "auth": {
+              "anyOf": [
+                {
                   "properties": {
-                    "expires": {
-                      "required": false,
-                      "type": "string",
-                    },
-                    "key": {
+                    "auth": {
+                      "properties": {
+                        "expires": {
+                          "required": false,
+                          "type": "string",
+                        },
+                        "key": {
+                          "required": true,
+                          "type": "string",
+                        },
+                      },
                       "required": true,
-                      "type": "string",
+                      "type": "object",
                     },
                   },
-                  "required": true,
+                  "required": false,
                   "type": "object",
                 },
-              },
+                {
+                  "required": false,
+                  "type": "null",
+                },
+              ],
               "required": true,
-              "type": "object",
             },
             "public": {
               "required": true,
@@ -4099,8 +4070,17 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "type": "boolean",
             },
             "signature": {
+              "anyOf": [
+                {
+                  "required": false,
+                  "type": "string",
+                },
+                {
+                  "required": false,
+                  "type": "null",
+                },
+              ],
               "required": true,
-              "type": "string",
             },
             "sub": {
               "required": true,
@@ -4145,77 +4125,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 "suspended",
                 "archived",
               ],
-              "ref": "#/components/schemas/TenantStatus",
               "required": true,
-              "type": "string",
-            },
-          },
-          "type": "object",
-        },
-        "schemaTag": "data",
-        "type": "object",
-      },
-      {
-        "name": "TenantStatus",
-        "ref": "#/components/schemas/TenantStatus",
-        "schema": {
-          "enum": [
-            "active",
-            "suspended",
-            "archived",
-          ],
-          "type": "string",
-        },
-        "schemaTag": "data",
-        "type": "string",
-      },
-      {
-        "name": "CreateTenantBody",
-        "ref": "#/components/schemas/CreateTenantBody",
-        "schema": {
-          "properties": {
-            "name": {
-              "description": "Tenant display name",
-              "maxLength": 255,
-              "minLength": 1,
-              "required": true,
-              "type": "string",
-            },
-            "status": {
-              "enum": [
-                "active",
-                "suspended",
-                "archived",
-              ],
-              "ref": "#/components/schemas/TenantStatus",
-              "required": false,
-              "type": "string",
-            },
-          },
-          "type": "object",
-        },
-        "schemaTag": "data",
-        "type": "object",
-      },
-      {
-        "name": "UpdateTenantBody",
-        "ref": "#/components/schemas/UpdateTenantBody",
-        "schema": {
-          "properties": {
-            "name": {
-              "maxLength": 255,
-              "minLength": 1,
-              "required": false,
-              "type": "string",
-            },
-            "status": {
-              "enum": [
-                "active",
-                "suspended",
-                "archived",
-              ],
-              "ref": "#/components/schemas/TenantStatus",
-              "required": false,
               "type": "string",
             },
           },
@@ -4226,12 +4136,12 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
       },
       {
         "example": {
-          "createdAt": "2024-06-05T15:03:46.141Z",
-          "email": "anderson.pfannerstill23@yahoo.com",
+          "createdAt": "2024-02-10T18:46:44.143Z",
+          "email": "marlin62@yahoo.com",
           "id": "wejsiq864y0sbytrzsnlr9a0",
-          "message": "Suggero accusator demens terreo amiculum comitatus necessitatibus candidus.",
+          "message": "Terreo amiculum comitatus necessitatibus candidus cursim.",
           "type": "contact",
-          "wasInvited": false,
+          "wasInvited": true,
         },
         "name": "Request",
         "ref": "#/components/schemas/Request",
@@ -4362,7 +4272,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "type": "string",
                 },
                 "tenantId": {
-                  "maxLength": 24,
                   "required": true,
                   "type": "string",
                 },
@@ -4638,7 +4547,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                       "type": "string",
                     },
                     "tenantId": {
-                      "maxLength": 24,
                       "required": true,
                       "type": "string",
                     },
@@ -4710,7 +4618,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "type": "string",
             },
             "tenantId": {
-              "maxLength": 24,
               "required": true,
               "type": "string",
             },
@@ -4763,13 +4670,13 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "parentId": null,
           "publicAccess": true,
           "status": "unpublished",
-          "tenantId": "ijllhz",
-          "tx": {
+          "stx": {
             "fieldVersions": {},
             "id": "4tufkeho7gg1xwx21e333ngq",
             "sourceId": "src_ujcbpukfple60p8h3tnk9zpo",
             "version": 1,
           },
+          "tenantId": "ijllhz",
         },
         "name": "Page",
         "ref": "#/components/schemas/Page",
@@ -4852,12 +4759,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": true,
               "type": "string",
             },
-            "tenantId": {
-              "maxLength": 24,
-              "required": true,
-              "type": "string",
-            },
-            "tx": {
+            "stx": {
               "properties": {
                 "fieldVersions": {
                   "required": true,
@@ -4873,12 +4775,16 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 },
                 "version": {
                   "required": true,
-                  "type": "number",
+                  "type": "integer",
                 },
               },
-              "ref": "#/components/schemas/TxBase",
+              "ref": "#/components/schemas/StxBase",
               "required": true,
               "type": "object",
+            },
+            "tenantId": {
+              "required": true,
+              "type": "string",
             },
           },
           "type": "object",
@@ -4889,11 +4795,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
       {
         "example": {
           "baseVersion": 0,
-          "id": "uoobg3gmzvie508npzus4h2j",
-          "sourceId": "q0fso83v5i0v5s1hl5zutg31",
+          "id": "efuoa1qdsm3eoz4p3a4an8mw",
+          "sourceId": "mwbi2hv7uirbw4zg9xtdd05t",
         },
-        "name": "TxRequest",
-        "ref": "#/components/schemas/TxRequest",
+        "name": "StxRequestBase",
+        "ref": "#/components/schemas/StxRequestBase",
         "schema": {
           "properties": {
             "baseVersion": {
@@ -4917,7 +4823,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           },
           "type": "object",
         },
-        "schemaTag": "data",
+        "schemaTag": "base",
         "type": "object",
       },
       {
@@ -4941,14 +4847,14 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "originalKey": "uploads/y6bqnt152wowxrfkyy8dwkbm/yet_rightfully_lest.ogx",
           "public": false,
           "size": "2524242",
-          "tenantId": "lphxlo",
-          "thumbnailKey": null,
-          "tx": {
+          "stx": {
             "fieldVersions": {},
             "id": "pkeuemouu8t58r8fuj3tlenh",
             "sourceId": "src_qurk6hu54pnfytf99mpmuhw0",
             "version": 1,
           },
+          "tenantId": "lphxlo",
+          "thumbnailKey": null,
         },
         "name": "Attachment",
         "ref": "#/components/schemas/Attachment",
@@ -5080,19 +4986,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": true,
               "type": "string",
             },
-            "tenantId": {
-              "maxLength": 24,
-              "required": true,
-              "type": "string",
-            },
-            "thumbnailKey": {
-              "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
-            },
-            "tx": {
+            "stx": {
               "properties": {
                 "fieldVersions": {
                   "required": true,
@@ -5108,12 +5002,23 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 },
                 "version": {
                   "required": true,
-                  "type": "number",
+                  "type": "integer",
                 },
               },
-              "ref": "#/components/schemas/TxBase",
+              "ref": "#/components/schemas/StxBase",
               "required": true,
               "type": "object",
+            },
+            "tenantId": {
+              "required": true,
+              "type": "string",
+            },
+            "thumbnailKey": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
             },
           },
           "type": "object",
@@ -5201,7 +5106,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "type": "string",
             },
             "tenantId": {
-              "maxLength": 24,
               "required": true,
               "type": "string",
             },
@@ -5266,6 +5170,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "type": "string",
                 },
                 "q": {
+                  "maxLength": 255,
                   "required": false,
                   "type": "string",
                 },
@@ -5323,9 +5228,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "organizationId": "weg2q4gqa3vx9cfyey6mqh9h",
                     "resourceType": null,
                     "seq": 511,
+                    "stx": null,
                     "tableName": "attachments",
                     "tenantId": "n03u76",
-                    "tx": null,
                     "type": "attachment.deleted",
                     "userId": "eo7z71y60a882cwpxtanaxns",
                   },
@@ -5344,9 +5249,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "organizationId": "5nr6k4huj5qv4k6bwmvl0e44",
                     "resourceType": null,
                     "seq": 810,
+                    "stx": null,
                     "tableName": "organizations",
                     "tenantId": "xs8vay",
-                    "tx": null,
                     "type": "organization.updated",
                     "userId": "zrul7vmeyahbgyu01sr6utec",
                   },
@@ -5477,19 +5382,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                             "null",
                           ],
                         },
-                        "tableName": {
-                          "required": true,
-                          "type": "string",
-                        },
-                        "tenantId": {
-                          "maxLength": 24,
-                          "required": true,
-                          "type": [
-                            "string",
-                            "null",
-                          ],
-                        },
-                        "tx": {
+                        "stx": {
                           "anyOf": [
                             {
                               "properties": {
@@ -5507,10 +5400,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                                 },
                                 "version": {
                                   "required": true,
-                                  "type": "number",
+                                  "type": "integer",
                                 },
                               },
-                              "ref": "#/components/schemas/TxBase",
+                              "ref": "#/components/schemas/StxBase",
                               "required": false,
                               "type": "object",
                             },
@@ -5520,6 +5413,17 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                             },
                           ],
                           "required": true,
+                        },
+                        "tableName": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "tenantId": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
                         },
                         "type": {
                           "required": true,
@@ -5594,11 +5498,12 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "path": {
               "properties": {
                 "orgId": {
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
                 },
                 "tenantId": {
-                  "maxLength": 24,
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
                 },
@@ -5628,6 +5533,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "type": "string",
                 },
                 "q": {
+                  "maxLength": 255,
                   "required": false,
                   "type": "string",
                 },
@@ -5658,25 +5564,25 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "createdBy": "qqp8d07imsvjbtqtl3rtjgxd",
                     "description": null,
                     "entityType": "attachment",
-                    "filename": "elegantly.vst",
+                    "filename": "elegantly.vss",
                     "groupId": null,
                     "id": "o7z71y60a882cwpxtanaxnsp",
                     "keywords": "vesco audentia angustus",
                     "modifiedAt": "2024-11-21T04:00:59.122Z",
                     "modifiedBy": "qqp8d07imsvjbtqtl3rtjgxd",
-                    "name": "elegantly.vst",
+                    "name": "elegantly.vss",
                     "organizationId": "57iu31mz5oaqf10oe7y51pr5",
-                    "originalKey": "uploads/b0gleyvjbbm5piweg2q4gqa3/elegantly.vst",
+                    "originalKey": "uploads/b0gleyvjbbm5piweg2q4gqa3/elegantly.vss",
                     "public": false,
                     "size": "9665489",
-                    "tenantId": "9nes1y",
-                    "thumbnailKey": null,
-                    "tx": {
+                    "stx": {
                       "fieldVersions": {},
                       "id": "vx9cfyey6mqh9hmikgme3gy3",
                       "sourceId": "src_a9lhe0ctrmzc53x7z222ydtq",
                       "version": 1,
                     },
+                    "tenantId": "9nes1y",
+                    "thumbnailKey": null,
                   },
                   {
                     "bucketName": "attachments",
@@ -5698,14 +5604,14 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "originalKey": "uploads/7syiavgc67t5nr6k4huj5qv4/woefully_bah.vsw",
                     "public": false,
                     "size": "1107841",
-                    "tenantId": "56tpd7",
-                    "thumbnailKey": null,
-                    "tx": {
+                    "stx": {
                       "fieldVersions": {},
                       "id": "k6bwmvl0e44bpmhsyauxcwuw",
                       "sourceId": "src_jsrzvzac8qx1h9s6vzhgvcj0",
                       "version": 1,
                     },
+                    "tenantId": "56tpd7",
+                    "thumbnailKey": null,
                   },
                 ],
                 "total": 2,
@@ -5843,19 +5749,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "required": true,
                           "type": "string",
                         },
-                        "tenantId": {
-                          "maxLength": 24,
-                          "required": true,
-                          "type": "string",
-                        },
-                        "thumbnailKey": {
-                          "required": true,
-                          "type": [
-                            "string",
-                            "null",
-                          ],
-                        },
-                        "tx": {
+                        "stx": {
                           "properties": {
                             "fieldVersions": {
                               "required": true,
@@ -5871,12 +5765,23 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                             },
                             "version": {
                               "required": true,
-                              "type": "number",
+                              "type": "integer",
                             },
                           },
-                          "ref": "#/components/schemas/TxBase",
+                          "ref": "#/components/schemas/StxBase",
                           "required": true,
                           "type": "object",
+                        },
+                        "tenantId": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "thumbnailKey": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
                         },
                       },
                       "ref": "#/components/schemas/Attachment",
@@ -5941,58 +5846,69 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "items": {
                 "properties": {
                   "bucketName": {
+                    "maxLength": 255,
                     "required": true,
                     "type": "string",
                   },
                   "contentType": {
+                    "maxLength": 255,
                     "required": true,
                     "type": "string",
                   },
                   "convertedContentType": {
-                    "required": false,
+                    "maxLength": 255,
+                    "required": true,
                     "type": [
                       "string",
                       "null",
                     ],
                   },
                   "convertedKey": {
-                    "required": false,
+                    "maxLength": 2048,
+                    "required": true,
                     "type": [
                       "string",
                       "null",
                     ],
                   },
                   "createdBy": {
-                    "required": false,
+                    "maxLength": 50,
+                    "required": true,
                     "type": [
                       "string",
                       "null",
                     ],
                   },
                   "filename": {
+                    "maxLength": 255,
                     "required": true,
                     "type": "string",
                   },
                   "groupId": {
-                    "required": false,
+                    "maxLength": 50,
+                    "required": true,
                     "type": [
                       "string",
                       "null",
                     ],
                   },
                   "id": {
-                    "required": false,
+                    "maxLength": 50,
+                    "required": true,
                     "type": "string",
                   },
                   "name": {
-                    "required": false,
+                    "maxLength": 255,
+                    "required": true,
                     "type": "string",
                   },
                   "organizationId": {
+                    "maxLength": 50,
                     "required": true,
                     "type": "string",
                   },
                   "originalKey": {
+                    "maxLength": 2048,
                     "required": true,
                     "type": "string",
                   },
@@ -6001,17 +5917,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "type": "boolean",
                   },
                   "size": {
+                    "maxLength": 255,
                     "required": true,
                     "type": "string",
                   },
-                  "thumbnailKey": {
-                    "required": false,
-                    "type": [
-                      "string",
-                      "null",
-                    ],
-                  },
-                  "tx": {
+                  "stx": {
                     "properties": {
                       "baseVersion": {
                         "description": "Entity version when read (for conflict detection)",
@@ -6032,9 +5942,17 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                         "type": "string",
                       },
                     },
-                    "ref": "#/components/schemas/TxRequest",
+                    "ref": "#/components/schemas/StxRequestBase",
                     "required": true,
                     "type": "object",
+                  },
+                  "thumbnailKey": {
+                    "maxLength": 2048,
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
                   },
                 },
                 "required": true,
@@ -6048,11 +5966,12 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "path": {
               "properties": {
                 "orgId": {
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
                 },
                 "tenantId": {
-                  "maxLength": 24,
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
                 },
@@ -6085,14 +6004,14 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "originalKey": "uploads/auzy6zwhhoizpinjn9as93qc/excluding_ugh_besides.svgz",
                     "public": false,
                     "size": "7651256",
-                    "tenantId": "b7j0p6",
-                    "thumbnailKey": null,
-                    "tx": {
+                    "stx": {
                       "fieldVersions": {},
                       "id": "b6pakf4ovzm1ne3h55lgj31d",
                       "sourceId": "src_63n9apx99a5auvr5cyj5s37i",
                       "version": 1,
                     },
+                    "tenantId": "b7j0p6",
+                    "thumbnailKey": null,
                   },
                   {
                     "bucketName": "attachments",
@@ -6103,25 +6022,25 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "createdBy": "p3t0ygxx0aa83en3sk1fs1we",
                     "description": null,
                     "entityType": "attachment",
-                    "filename": "gown.ini",
+                    "filename": "gown.txt",
                     "groupId": null,
                     "id": "pxxbqdej8622zpgo54qw5fqo",
                     "keywords": "denique tum candidus",
                     "modifiedAt": "2024-02-25T13:01:35.301Z",
                     "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
-                    "name": "gown.ini",
+                    "name": "gown.txt",
                     "organizationId": "q81k5rbzt4yq63pob5r5tp1l",
-                    "originalKey": "uploads/g18wbwob9s8r85nah671ybl6/gown.ini",
+                    "originalKey": "uploads/g18wbwob9s8r85nah671ybl6/gown.txt",
                     "public": false,
                     "size": "6125227",
-                    "tenantId": "9wwhw5",
-                    "thumbnailKey": null,
-                    "tx": {
+                    "stx": {
                       "fieldVersions": {},
                       "id": "y4dvzpz75e03ldr2ga54hj92",
                       "sourceId": "src_yzr7v1itpc9wztvbcy21q04o",
                       "version": 1,
                     },
+                    "tenantId": "9wwhw5",
+                    "thumbnailKey": null,
                   },
                 ],
                 "rejectedItemIds": [],
@@ -6259,19 +6178,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "required": true,
                           "type": "string",
                         },
-                        "tenantId": {
-                          "maxLength": 24,
-                          "required": true,
-                          "type": "string",
-                        },
-                        "thumbnailKey": {
-                          "required": true,
-                          "type": [
-                            "string",
-                            "null",
-                          ],
-                        },
-                        "tx": {
+                        "stx": {
                           "properties": {
                             "fieldVersions": {
                               "required": true,
@@ -6287,12 +6194,23 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                             },
                             "version": {
                               "required": true,
-                              "type": "number",
+                              "type": "integer",
                             },
                           },
-                          "ref": "#/components/schemas/TxBase",
+                          "ref": "#/components/schemas/StxBase",
                           "required": true,
                           "type": "object",
+                        },
+                        "tenantId": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "thumbnailKey": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
                         },
                       },
                       "ref": "#/components/schemas/Attachment",
@@ -6309,7 +6227,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "type": "array",
                   },
                   "rejectionReasons": {
-                    "description": "Map of rejected item ID to reason code",
+                    "description": "Map of reason code to rejected item IDs",
                     "required": false,
                     "type": "object",
                   },
@@ -6343,14 +6261,14 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "originalKey": "uploads/auzy6zwhhoizpinjn9as93qc/excluding_ugh_besides.svgz",
                     "public": false,
                     "size": "7651256",
-                    "tenantId": "b7j0p6",
-                    "thumbnailKey": null,
-                    "tx": {
+                    "stx": {
                       "fieldVersions": {},
                       "id": "b6pakf4ovzm1ne3h55lgj31d",
                       "sourceId": "src_63n9apx99a5auvr5cyj5s37i",
                       "version": 1,
                     },
+                    "tenantId": "b7j0p6",
+                    "thumbnailKey": null,
                   },
                   {
                     "bucketName": "attachments",
@@ -6361,25 +6279,25 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "createdBy": "p3t0ygxx0aa83en3sk1fs1we",
                     "description": null,
                     "entityType": "attachment",
-                    "filename": "gown.ini",
+                    "filename": "gown.txt",
                     "groupId": null,
                     "id": "pxxbqdej8622zpgo54qw5fqo",
                     "keywords": "denique tum candidus",
                     "modifiedAt": "2024-02-25T13:01:35.301Z",
                     "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
-                    "name": "gown.ini",
+                    "name": "gown.txt",
                     "organizationId": "q81k5rbzt4yq63pob5r5tp1l",
-                    "originalKey": "uploads/g18wbwob9s8r85nah671ybl6/gown.ini",
+                    "originalKey": "uploads/g18wbwob9s8r85nah671ybl6/gown.txt",
                     "public": false,
                     "size": "6125227",
-                    "tenantId": "9wwhw5",
-                    "thumbnailKey": null,
-                    "tx": {
+                    "stx": {
                       "fieldVersions": {},
                       "id": "y4dvzpz75e03ldr2ga54hj92",
                       "sourceId": "src_yzr7v1itpc9wztvbcy21q04o",
                       "version": 1,
                     },
+                    "tenantId": "9wwhw5",
+                    "thumbnailKey": null,
                   },
                 ],
                 "rejectedItemIds": [],
@@ -6517,19 +6435,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "required": true,
                           "type": "string",
                         },
-                        "tenantId": {
-                          "maxLength": 24,
-                          "required": true,
-                          "type": "string",
-                        },
-                        "thumbnailKey": {
-                          "required": true,
-                          "type": [
-                            "string",
-                            "null",
-                          ],
-                        },
-                        "tx": {
+                        "stx": {
                           "properties": {
                             "fieldVersions": {
                               "required": true,
@@ -6545,12 +6451,23 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                             },
                             "version": {
                               "required": true,
-                              "type": "number",
+                              "type": "integer",
                             },
                           },
-                          "ref": "#/components/schemas/TxBase",
+                          "ref": "#/components/schemas/StxBase",
                           "required": true,
                           "type": "object",
+                        },
+                        "tenantId": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "thumbnailKey": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
                         },
                       },
                       "ref": "#/components/schemas/Attachment",
@@ -6567,7 +6484,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "type": "array",
                   },
                   "rejectionReasons": {
-                    "description": "Map of rejected item ID to reason code",
+                    "description": "Map of reason code to rejected item IDs",
                     "required": false,
                     "type": "object",
                   },
@@ -6626,7 +6543,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "required": true,
                   "type": "array",
                 },
-                "tx": {
+                "stx": {
                   "properties": {
                     "id": {
                       "required": true,
@@ -6647,11 +6564,12 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "path": {
               "properties": {
                 "orgId": {
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
                 },
                 "tenantId": {
-                  "maxLength": 24,
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
                 },
@@ -6676,7 +6594,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "type": "array",
                   },
                   "rejectionReasons": {
-                    "description": "Map of rejected item ID to reason code",
+                    "description": "Map of reason code to rejected item IDs",
                     "required": false,
                     "type": "object",
                   },
@@ -6728,11 +6646,12 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "path": {
               "properties": {
                 "orgId": {
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
                 },
                 "tenantId": {
-                  "maxLength": 24,
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
                 },
@@ -6741,6 +6660,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "query": {
               "properties": {
                 "key": {
+                  "maxLength": 2048,
                   "required": true,
                   "type": "string",
                 },
@@ -6800,15 +6720,17 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "path": {
               "properties": {
                 "id": {
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
                 },
                 "orgId": {
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
                 },
                 "tenantId": {
-                  "maxLength": 24,
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
                 },
@@ -6839,14 +6761,14 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 "originalKey": "uploads/y6bqnt152wowxrfkyy8dwkbm/yet_rightfully_lest.ogx",
                 "public": false,
                 "size": "2524242",
-                "tenantId": "lphxlo",
-                "thumbnailKey": null,
-                "tx": {
+                "stx": {
                   "fieldVersions": {},
                   "id": "pkeuemouu8t58r8fuj3tlenh",
                   "sourceId": "src_qurk6hu54pnfytf99mpmuhw0",
                   "version": 1,
                 },
+                "tenantId": "lphxlo",
+                "thumbnailKey": null,
               },
               "name": "Attachment",
               "ref": "#/components/schemas/Attachment",
@@ -6979,19 +6901,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "required": true,
                     "type": "string",
                   },
-                  "tenantId": {
-                    "maxLength": 24,
-                    "required": true,
-                    "type": "string",
-                  },
-                  "thumbnailKey": {
-                    "required": true,
-                    "type": [
-                      "string",
-                      "null",
-                    ],
-                  },
-                  "tx": {
+                  "stx": {
                     "properties": {
                       "fieldVersions": {
                         "required": true,
@@ -7007,12 +6917,23 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                       },
                       "version": {
                         "required": true,
-                        "type": "number",
+                        "type": "integer",
                       },
                     },
-                    "ref": "#/components/schemas/TxBase",
+                    "ref": "#/components/schemas/StxBase",
                     "required": true,
                     "type": "object",
+                  },
+                  "tenantId": {
+                    "required": true,
+                    "type": "string",
+                  },
+                  "thumbnailKey": {
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
                   },
                 },
                 "ref": "#/components/schemas/Attachment",
@@ -7064,14 +6985,16 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "contentType": "application/json",
               "properties": {
                 "name": {
+                  "maxLength": 255,
                   "required": false,
                   "type": "string",
                 },
                 "originalKey": {
+                  "maxLength": 2048,
                   "required": false,
                   "type": "string",
                 },
-                "tx": {
+                "stx": {
                   "properties": {
                     "baseVersion": {
                       "description": "Entity version when read (for conflict detection)",
@@ -7092,7 +7015,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                       "type": "string",
                     },
                   },
-                  "ref": "#/components/schemas/TxRequest",
+                  "ref": "#/components/schemas/StxRequestBase",
                   "required": true,
                   "type": "object",
                 },
@@ -7103,15 +7026,17 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "path": {
               "properties": {
                 "id": {
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
                 },
                 "orgId": {
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
                 },
                 "tenantId": {
-                  "maxLength": 24,
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
                 },
@@ -7142,14 +7067,14 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 "originalKey": "uploads/y6bqnt152wowxrfkyy8dwkbm/yet_rightfully_lest.ogx",
                 "public": false,
                 "size": "2524242",
-                "tenantId": "lphxlo",
-                "thumbnailKey": null,
-                "tx": {
+                "stx": {
                   "fieldVersions": {},
                   "id": "pkeuemouu8t58r8fuj3tlenh",
                   "sourceId": "src_qurk6hu54pnfytf99mpmuhw0",
                   "version": 1,
                 },
+                "tenantId": "lphxlo",
+                "thumbnailKey": null,
               },
               "name": "Attachment",
               "ref": "#/components/schemas/Attachment",
@@ -7282,19 +7207,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "required": true,
                     "type": "string",
                   },
-                  "tenantId": {
-                    "maxLength": 24,
-                    "required": true,
-                    "type": "string",
-                  },
-                  "thumbnailKey": {
-                    "required": true,
-                    "type": [
-                      "string",
-                      "null",
-                    ],
-                  },
-                  "tx": {
+                  "stx": {
                     "properties": {
                       "fieldVersions": {
                         "required": true,
@@ -7310,12 +7223,23 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                       },
                       "version": {
                         "required": true,
-                        "type": "number",
+                        "type": "integer",
                       },
                     },
-                    "ref": "#/components/schemas/TxBase",
+                    "ref": "#/components/schemas/StxBase",
                     "required": true,
                     "type": "object",
+                  },
+                  "tenantId": {
+                    "required": true,
+                    "type": "string",
+                  },
+                  "thumbnailKey": {
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
                   },
                 },
                 "ref": "#/components/schemas/Attachment",
@@ -7366,6 +7290,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "path": {
               "properties": {
                 "id": {
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
                 },
@@ -7604,6 +7529,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "path": {
               "properties": {
                 "id": {
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
                 },
@@ -7626,8 +7552,8 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "contentType": "application/json",
               "description": "Token is valid",
               "example": {
-                "email": "bradford_ryan98@demo.local",
-                "userId": "dh2fifqwn7yznn0t633emq5s",
+                "email": "ona.becker-hickle@demo.local",
+                "userId": "ifqwn7yznn0t633emq5sbn33",
               },
               "schema": {
                 "contentType": "application/json",
@@ -8521,6 +8447,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "type": "string",
                 },
                 "nameOnDevice": {
+                  "maxLength": 255,
                   "required": true,
                   "type": "string",
                 },
@@ -8636,6 +8563,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "path": {
               "properties": {
                 "id": {
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
                 },
@@ -8691,6 +8619,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "contentType": "application/json",
               "properties": {
                 "email": {
+                  "maxLength": 255,
                   "required": false,
                   "type": "string",
                 },
@@ -8791,6 +8720,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "type": "string",
                 },
                 "email": {
+                  "maxLength": 255,
                   "required": false,
                   "type": "string",
                 },
@@ -9299,7 +9229,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           ],
         },
         {
-          "operationId": "publicStream",
+          "operationId": "getPublicStream",
           "request": {
             "query": {
               "properties": {
@@ -9326,7 +9256,15 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "schema": {
                 "contentType": "application/json",
                 "properties": {
-                  "activities": {
+                  "cursor": {
+                    "description": "Last activity ID (use as offset for next request)",
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "notifications": {
                     "itemType": "object",
                     "items": {
                       "properties": {
@@ -9368,20 +9306,12 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "type": "string",
                         },
                       },
-                      "ref": "#/components/schemas/PublicStreamActivity",
+                      "ref": "#/components/schemas/PublicStreamNotification",
                       "type": "object",
                     },
-                    "ref": "#/components/schemas/PublicStreamActivity",
+                    "ref": "#/components/schemas/PublicStreamNotification",
                     "required": true,
                     "type": "array",
-                  },
-                  "cursor": {
-                    "description": "Last activity ID (use as offset for next request)",
-                    "required": true,
-                    "type": [
-                      "string",
-                      "null",
-                    ],
                   },
                 },
                 "type": "object",
@@ -9452,7 +9382,8 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "contentType": "application/json",
               "description": "SSE stream or notification response",
               "example": {
-                "activities": [
+                "cursor": "ll6ebv8jmzcs1cydc8ytq68u",
+                "notifications": [
                   {
                     "action": "create",
                     "cacheToken": "hg18eRugoaB38Ug7A1n7Zj018TyC3pwn",
@@ -9462,22 +9393,29 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "organizationId": "ufjhv1cwh0j4x3xi7ae54uen",
                     "resourceType": null,
                     "seq": 526,
-                    "tx": {
+                    "stx": {
                       "fieldVersions": {
                         "name": 1,
                       },
-                      "id": "gdgo47kv9o7rvgjoql6a1dxp",
-                      "sourceId": "8u6gifwzsuyr58fapjsndxb3",
-                      "version": 5,
+                      "id": "hd7xubc5zuydxdgepv2tpr0z",
+                      "sourceId": "jt0hyw517e6fpcmgsgfuxfwx",
+                      "version": 1,
                     },
                   },
                 ],
-                "cursor": "ll6ebv8jmzcs1cydc8ytq68u",
               },
               "schema": {
                 "contentType": "application/json",
                 "properties": {
-                  "activities": {
+                  "cursor": {
+                    "description": "Last activity ID (use as offset for next request)",
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "notifications": {
                     "itemType": "object",
                     "items": {
                       "properties": {
@@ -9552,7 +9490,8 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                             "null",
                           ],
                         },
-                        "tx": {
+                        "stx": {
+                          "extendsRef": "#/components/schemas/StxBase",
                           "properties": {
                             "fieldVersions": {
                               "required": true,
@@ -9571,7 +9510,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                               "type": "integer",
                             },
                           },
-                          "ref": "#/components/schemas/TxStreamMessage",
                           "required": true,
                           "type": [
                             "object",
@@ -9579,20 +9517,12 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           ],
                         },
                       },
-                      "ref": "#/components/schemas/StreamNotification",
+                      "ref": "#/components/schemas/AppStreamNotification",
                       "type": "object",
                     },
-                    "ref": "#/components/schemas/StreamNotification",
+                    "ref": "#/components/schemas/AppStreamNotification",
                     "required": true,
                     "type": "array",
-                  },
-                  "cursor": {
-                    "description": "Last activity ID (use as offset for next request)",
-                    "required": true,
-                    "type": [
-                      "string",
-                      "null",
-                    ],
                   },
                 },
                 "type": "object",
@@ -9650,21 +9580,21 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "bannerUrl": null,
                   "createdAt": "2024-07-14T22:49:14.651Z",
                   "description": null,
-                  "email": "odell.gislason@yahoo.com",
+                  "email": "douglas.mcclure57@yahoo.com",
                   "entityType": "user",
-                  "firstName": "Odell",
-                  "id": "7qgsnou9b80h3jlnu1j458h6",
+                  "firstName": "Douglas",
+                  "id": "snou9b80h3jlnu1j458h6mvs",
                   "language": "en",
-                  "lastName": "Gislason",
+                  "lastName": "McClure",
                   "lastSeenAt": "2024-07-14T22:49:14.651Z",
                   "lastSignInAt": "2024-07-14T22:49:14.651Z",
                   "lastStartedAt": "2024-07-14T22:49:14.651Z",
                   "mfaRequired": false,
                   "modifiedAt": "2024-07-14T22:49:14.651Z",
                   "modifiedBy": null,
-                  "name": "Mr. Odell Gislason",
-                  "newsletter": true,
-                  "slug": "odellgislason57",
+                  "name": "Douglas McClure",
+                  "newsletter": false,
+                  "slug": "douglasmcclure74",
                   "thumbnailUrl": null,
                   "userFlags": {},
                 },
@@ -9870,6 +9800,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "contentType": "application/json",
               "properties": {
                 "bannerUrl": {
+                  "maxLength": 2048,
                   "required": false,
                   "type": [
                     "string",
@@ -9877,7 +9808,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   ],
                 },
                 "firstName": {
-                  "maxLength": 100,
+                  "maxLength": 255,
                   "minLength": 2,
                   "required": false,
                   "type": [
@@ -9894,7 +9825,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "type": "string",
                 },
                 "lastName": {
-                  "maxLength": 100,
+                  "maxLength": 255,
                   "minLength": 2,
                   "required": false,
                   "type": [
@@ -9907,12 +9838,13 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "type": "boolean",
                 },
                 "slug": {
-                  "maxLength": 100,
+                  "maxLength": 255,
                   "minLength": 2,
                   "required": false,
                   "type": "string",
                 },
                 "thumbnailUrl": {
+                  "maxLength": 2048,
                   "required": false,
                   "type": [
                     "string",
@@ -9942,21 +9874,21 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 "bannerUrl": null,
                 "createdAt": "2024-12-13T11:17:23.643Z",
                 "description": null,
-                "email": "franco_corwin@gmail.com",
+                "email": "cecilia.hodkiewicz@hotmail.com",
                 "entityType": "user",
-                "firstName": "Franco",
-                "id": "w6g7sfzetbhjls7m9dg1xzav",
+                "firstName": "Cecilia",
+                "id": "7sfzetbhjls7m9dg1xzavv78",
                 "language": "en",
-                "lastName": "Corwin",
+                "lastName": "Hodkiewicz",
                 "lastSeenAt": "2024-12-13T11:17:23.643Z",
                 "lastSignInAt": "2024-12-13T11:17:23.643Z",
                 "lastStartedAt": "2024-12-13T11:17:23.643Z",
                 "mfaRequired": false,
                 "modifiedAt": "2024-12-13T11:17:23.643Z",
                 "modifiedBy": null,
-                "name": "Franco Corwin",
-                "newsletter": true,
-                "slug": "francocorwin",
+                "name": "Cecilia Hodkiewicz",
+                "newsletter": false,
+                "slug": "ceciliahodkiewicz17",
                 "thumbnailUrl": null,
                 "userFlags": {},
               },
@@ -10231,21 +10163,21 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 "bannerUrl": null,
                 "createdAt": "2024-12-13T11:17:23.643Z",
                 "description": null,
-                "email": "franco_corwin@gmail.com",
+                "email": "cecilia.hodkiewicz@hotmail.com",
                 "entityType": "user",
-                "firstName": "Franco",
-                "id": "w6g7sfzetbhjls7m9dg1xzav",
+                "firstName": "Cecilia",
+                "id": "7sfzetbhjls7m9dg1xzavv78",
                 "language": "en",
-                "lastName": "Corwin",
+                "lastName": "Hodkiewicz",
                 "lastSeenAt": "2024-12-13T11:17:23.643Z",
                 "lastSignInAt": "2024-12-13T11:17:23.643Z",
                 "lastStartedAt": "2024-12-13T11:17:23.643Z",
                 "mfaRequired": false,
                 "modifiedAt": "2024-12-13T11:17:23.643Z",
                 "modifiedBy": null,
-                "name": "Franco Corwin",
-                "newsletter": true,
-                "slug": "francocorwin",
+                "name": "Cecilia Hodkiewicz",
+                "newsletter": false,
+                "slug": "ceciliahodkiewicz17",
                 "thumbnailUrl": null,
                 "userFlags": {},
               },
@@ -10668,19 +10600,20 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "entity": {
                       "bannerUrl": null,
                       "createdAt": "2024-12-25T19:05:51.784Z",
-                      "description": "Organized systemic adapter",
+                      "description": "Diverse demand-driven matrices",
                       "entityType": "organization",
                       "id": "kk63h1dxe8cgq643ccglytgb",
                       "modifiedAt": "2024-12-27T22:12:06.410Z",
                       "name": "Effertz Group",
                       "slug": "effertz-group",
+                      "tenantId": "kv08ddk8lkbjmurn9341gpf1",
                       "thumbnailUrl": null,
                     },
                     "inactiveMembership": {
                       "contextType": "organization",
                       "createdAt": "2024-11-13T18:39:21.444Z",
-                      "createdBy": "6385w1ul2bx3ld4na8k0ts70",
-                      "email": "felicity.steuber@yahoo.com",
+                      "createdBy": "5w1ul2bx3ld4na8k0ts708fo",
+                      "email": "russ.herzog17@yahoo.com",
                       "id": "6gr354pie22th7dif16z86xc",
                       "organizationId": "ft7nt6w77qphfz9detwtt178",
                       "rejectedAt": null,
@@ -10694,19 +10627,20 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "entity": {
                       "bannerUrl": null,
                       "createdAt": "2024-03-25T23:28:46.492Z",
-                      "description": "Progressive fresh-thinking concept",
+                      "description": "Automated eco-centric capability",
                       "entityType": "organization",
                       "id": "ip52vb8otvpz1qn2gfy3zjnp",
                       "modifiedAt": "2024-06-03T13:50:52.760Z",
                       "name": "Hansen - Reynolds",
                       "slug": "hansen---reynolds",
+                      "tenantId": "od7xdlm77e2i9qj90kx71lz5",
                       "thumbnailUrl": null,
                     },
                     "inactiveMembership": {
                       "contextType": "organization",
                       "createdAt": "2024-04-12T10:35:38.557Z",
-                      "createdBy": "r95gtt9htxwawq5tdvqh553o",
-                      "email": "carmela35@gmail.com",
+                      "createdBy": "gtt9htxwawq5tdvqh553onul",
+                      "email": "bethany.osinski75@gmail.com",
                       "id": "3gqwjug71n1cwllydl9l6917",
                       "organizationId": "okmsol2r5n4cy72j57t1tgy0",
                       "rejectedAt": null,
@@ -10772,6 +10706,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                               "required": true,
                               "type": "string",
                             },
+                            "tenantId": {
+                              "required": true,
+                              "type": "string",
+                            },
                             "thumbnailUrl": {
                               "required": true,
                               "type": [
@@ -10829,7 +10767,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                               "type": "string",
                             },
                             "tenantId": {
-                              "maxLength": 24,
                               "required": true,
                               "type": "string",
                             },
@@ -10940,7 +10877,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "type": "array",
                   },
                   "rejectionReasons": {
-                    "description": "Map of rejected item ID to reason code",
+                    "description": "Map of reason code to rejected item IDs",
                     "required": false,
                     "type": "object",
                   },
@@ -10992,6 +10929,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "query": {
               "properties": {
                 "entityId": {
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
                 },
@@ -11103,24 +11041,33 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 "contentType": "application/json",
                 "properties": {
                   "params": {
-                    "properties": {
-                      "auth": {
+                    "anyOf": [
+                      {
                         "properties": {
-                          "expires": {
-                            "required": false,
-                            "type": "string",
-                          },
-                          "key": {
+                          "auth": {
+                            "properties": {
+                              "expires": {
+                                "required": false,
+                                "type": "string",
+                              },
+                              "key": {
+                                "required": true,
+                                "type": "string",
+                              },
+                            },
                             "required": true,
-                            "type": "string",
+                            "type": "object",
                           },
                         },
-                        "required": true,
+                        "required": false,
                         "type": "object",
                       },
-                    },
+                      {
+                        "required": false,
+                        "type": "null",
+                      },
+                    ],
                     "required": true,
-                    "type": "object",
                   },
                   "public": {
                     "required": true,
@@ -11131,8 +11078,17 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "type": "boolean",
                   },
                   "signature": {
+                    "anyOf": [
+                      {
+                        "required": false,
+                        "type": "string",
+                      },
+                      {
+                        "required": false,
+                        "type": "null",
+                      },
+                    ],
                     "required": true,
-                    "type": "string",
                   },
                   "sub": {
                     "required": true,
@@ -11286,7 +11242,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "type": "string",
                         },
                         "tenantId": {
-                          "maxLength": 24,
                           "required": true,
                           "type": "string",
                         },
@@ -11356,7 +11311,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "format": "email",
                   "itemType": "string",
                   "maxItems": 50,
-                  "maxLength": 100,
+                  "maxLength": 255,
                   "minItems": 1,
                   "minLength": 4,
                   "required": true,
@@ -11377,11 +11332,12 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "path": {
               "properties": {
                 "orgId": {
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
                 },
                 "tenantId": {
-                  "maxLength": 24,
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
                 },
@@ -11390,6 +11346,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "query": {
               "properties": {
                 "entityId": {
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
                 },
@@ -11469,7 +11426,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "type": "string",
                         },
                         "tenantId": {
-                          "maxLength": 24,
                           "required": true,
                           "type": "string",
                         },
@@ -11496,7 +11452,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "type": "array",
                   },
                   "rejectionReasons": {
-                    "description": "Map of rejected item ID to reason code",
+                    "description": "Map of reason code to rejected item IDs",
                     "required": false,
                     "type": "object",
                   },
@@ -11562,11 +11518,12 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "path": {
               "properties": {
                 "orgId": {
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
                 },
                 "tenantId": {
-                  "maxLength": 24,
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
                 },
@@ -11575,6 +11532,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "query": {
               "properties": {
                 "entityId": {
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
                 },
@@ -11606,7 +11564,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "type": "array",
                   },
                   "rejectionReasons": {
-                    "description": "Map of rejected item ID to reason code",
+                    "description": "Map of reason code to rejected item IDs",
                     "required": false,
                     "type": "object",
                   },
@@ -11685,15 +11643,17 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "path": {
               "properties": {
                 "id": {
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
                 },
                 "orgId": {
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
                 },
                 "tenantId": {
-                  "maxLength": 24,
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
                 },
@@ -11784,7 +11744,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "type": "string",
                   },
                   "tenantId": {
-                    "maxLength": 24,
                     "required": true,
                     "type": "string",
                   },
@@ -11849,6 +11808,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "type": "string",
                 },
                 "id": {
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
                 },
@@ -11862,12 +11822,13 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "example": {
                 "bannerUrl": null,
                 "createdAt": "2024-09-15T16:29:26.122Z",
-                "description": "Horizontal demand-driven support",
+                "description": "Automated eco-centric open architecture",
                 "entityType": "organization",
                 "id": "bafp6iiu2dt74olfvl618xur",
                 "modifiedAt": "2024-12-04T06:32:26.983Z",
                 "name": "Nolan - Jacobson",
                 "slug": "nolan---jacobson",
+                "tenantId": "d9wtu57tfwtfux7yivt59ywq",
                 "thumbnailUrl": null,
               },
               "name": "ContextEntityBase",
@@ -11916,6 +11877,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "type": "string",
                   },
                   "slug": {
+                    "required": true,
+                    "type": "string",
+                  },
+                  "tenantId": {
                     "required": true,
                     "type": "string",
                   },
@@ -11975,11 +11940,12 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "path": {
               "properties": {
                 "orgId": {
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
                 },
                 "tenantId": {
-                  "maxLength": 24,
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
                 },
@@ -11988,6 +11954,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "query": {
               "properties": {
                 "entityId": {
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
                 },
@@ -12015,6 +11982,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "type": "string",
                 },
                 "q": {
+                  "maxLength": 255,
                   "required": false,
                   "type": "string",
                 },
@@ -12051,12 +12019,12 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "bannerUrl": null,
                     "createdAt": "2024-11-21T04:00:59.122Z",
                     "description": null,
-                    "email": "marlon3@hotmail.com",
+                    "email": "estelle89@yahoo.com",
                     "entityType": "user",
-                    "firstName": "Rose",
+                    "firstName": "Cortney",
                     "id": "qqp8d07imsvjbtqtl3rtjgxd",
                     "language": "en",
-                    "lastName": "Dicki",
+                    "lastName": "Bashirian",
                     "lastSeenAt": "2024-11-21T04:00:59.122Z",
                     "lastSignInAt": "2024-11-21T04:00:59.122Z",
                     "lastStartedAt": "2024-11-21T04:00:59.122Z",
@@ -12074,20 +12042,20 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "mfaRequired": false,
                     "modifiedAt": "2024-11-21T04:00:59.122Z",
                     "modifiedBy": null,
-                    "name": "Tasha Abernathy",
-                    "slug": "christine.greenholt23",
+                    "name": "Dr. Lucy Brakus",
+                    "slug": "elbert78",
                     "thumbnailUrl": null,
                   },
                   {
                     "bannerUrl": null,
                     "createdAt": "2024-10-29T08:46:20.790Z",
                     "description": null,
-                    "email": "nestor.miller@yahoo.com",
+                    "email": "ellie_koch85@hotmail.com",
                     "entityType": "user",
-                    "firstName": "Sarah",
+                    "firstName": "Ron",
                     "id": "hg5ogh3yr2b2dbwf7b9eckaj",
                     "language": "en",
-                    "lastName": "Witting",
+                    "lastName": "Stracke",
                     "lastSeenAt": "2024-10-29T08:46:20.790Z",
                     "lastSignInAt": "2024-10-29T08:46:20.790Z",
                     "lastStartedAt": "2024-10-29T08:46:20.790Z",
@@ -12105,8 +12073,8 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "mfaRequired": false,
                     "modifiedAt": "2024-10-29T08:46:20.790Z",
                     "modifiedBy": null,
-                    "name": "Lula Schaefer",
-                    "slug": "harley45",
+                    "name": "Ms. Trudie Feeney",
+                    "slug": "nichole34",
                     "thumbnailUrl": null,
                   },
                 ],
@@ -12242,7 +12210,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                               "type": "string",
                             },
                             "tenantId": {
-                              "maxLength": 24,
                               "required": true,
                               "type": "string",
                             },
@@ -12346,11 +12313,12 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "path": {
               "properties": {
                 "orgId": {
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
                 },
                 "tenantId": {
-                  "maxLength": 24,
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
                 },
@@ -12359,6 +12327,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "query": {
               "properties": {
                 "entityId": {
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
                 },
@@ -12386,6 +12355,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "type": "string",
                 },
                 "q": {
+                  "maxLength": 255,
                   "required": false,
                   "type": "string",
                 },
@@ -12408,12 +12378,12 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   {
                     "contextType": "organization",
                     "createdAt": "2024-11-21T04:00:59.122Z",
-                    "createdBy": "9hmikgme3gy3a9lhe0ctrmzc",
-                    "email": "waino61@hotmail.com",
+                    "createdBy": "ikgme3gy3a9lhe0ctrmzc53x",
+                    "email": "troy.reichert@hotmail.com",
                     "id": "eyvjbbm5piweg2q4gqa3vx9c",
                     "organizationId": "9xn03u76eo7z71y60a882cwp",
                     "rejectedAt": null,
-                    "role": "admin",
+                    "role": "member",
                     "tenantId": "test01",
                     "tokenId": "xtanaxnsp9nes1yx645yb0gl",
                     "userId": "qqp8d07imsvjbtqtl3rtjgxd",
@@ -12421,12 +12391,12 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   {
                     "contextType": "organization",
                     "createdAt": "2024-10-29T08:46:20.790Z",
-                    "createdBy": "vl0e44bpmhsyauxcwuwjsrzv",
-                    "email": "serena33@yahoo.com",
+                    "createdBy": "e44bpmhsyauxcwuwjsrzvzac",
+                    "email": "kurt_treutel@yahoo.com",
                     "id": "pi37syiavgc67t5nr6k4huj5",
                     "organizationId": "clxs8vayzrul7vmeyahbgyu0",
                     "rejectedAt": null,
-                    "role": "member",
+                    "role": "admin",
                     "tenantId": "test01",
                     "tokenId": "1sr6utecq3o02wpa56tpd77k",
                     "userId": "hg5ogh3yr2b2dbwf7b9eckaj",
@@ -12540,6 +12510,16 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             {
               "contentType": "application/json",
               "description": "Metrics",
+              "example": [
+                {
+                  "count": 42,
+                  "date": "2026-01-01",
+                },
+                {
+                  "count": 58,
+                  "date": "2026-01-02",
+                },
+              ],
               "schema": {
                 "contentType": "application/json",
                 "itemType": "object",
@@ -12604,6 +12584,22 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             {
               "contentType": "application/json",
               "description": "Runtime metrics",
+              "example": {
+                "otel": [],
+                "process": {
+                  "cpu": {
+                    "system": 30000,
+                    "user": 150000,
+                  },
+                  "memory": {
+                    "external": 2097152,
+                    "heapTotal": 104857600,
+                    "heapUsed": 52428800,
+                    "rss": 134217728,
+                  },
+                  "uptime": 86400,
+                },
+              },
               "schema": {
                 "contentType": "application/json",
                 "properties": {
@@ -12776,6 +12772,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             {
               "contentType": "application/json",
               "description": "Public counts",
+              "example": {
+                "organization": 12,
+                "user": 150,
+              },
               "schema": {
                 "contentType": "application/json",
                 "properties": {
@@ -12843,6 +12843,20 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             {
               "contentType": "application/json",
               "description": "Cache statistics",
+              "example": {
+                "cache": {
+                  "capacity": 1000,
+                  "coalescedRequests": 156,
+                  "hitRate": 93.6,
+                  "hits": 1250,
+                  "invalidations": 42,
+                  "misses": 85,
+                  "size": 420,
+                  "totalRequests": 1335,
+                  "uptimeSeconds": 3600,
+                  "utilization": 0.42,
+                },
+              },
               "schema": {
                 "contentType": "application/json",
                 "properties": {
@@ -12956,6 +12970,22 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             {
               "contentType": "application/json",
               "description": "Sync metrics",
+              "example": {
+                "activeConnections": 24,
+                "avgDurationByName": {
+                  "cdc.process": 12.5,
+                  "sse.broadcast": 1.2,
+                },
+                "errorCount": 7,
+                "messagesReceived": 5420,
+                "notificationsSent": 3180,
+                "pgNotifyFallbacks": 3,
+                "recentSpanCount": 150,
+                "spansByName": {
+                  "cdc.process": 2100,
+                  "sse.broadcast": 3180,
+                },
+              },
               "schema": {
                 "contentType": "application/json",
                 "properties": {
@@ -13052,17 +13082,18 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "items": {
                 "properties": {
                   "id": {
+                    "maxLength": 50,
                     "required": true,
                     "type": "string",
                   },
                   "name": {
-                    "maxLength": 100,
+                    "maxLength": 255,
                     "minLength": 2,
                     "required": true,
                     "type": "string",
                   },
                   "slug": {
-                    "maxLength": 100,
+                    "maxLength": 255,
                     "minLength": 2,
                     "required": true,
                     "type": "string",
@@ -13079,7 +13110,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "path": {
               "properties": {
                 "tenantId": {
-                  "maxLength": 24,
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
                 },
@@ -13417,7 +13448,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                                   "type": "string",
                                 },
                                 "tenantId": {
-                                  "maxLength": 24,
                                   "required": true,
                                   "type": "string",
                                 },
@@ -13488,7 +13518,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "type": "string",
                         },
                         "tenantId": {
-                          "maxLength": 24,
                           "required": true,
                           "type": "string",
                         },
@@ -13533,7 +13562,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "type": "array",
                   },
                   "rejectionReasons": {
-                    "description": "Map of rejected item ID to reason code",
+                    "description": "Map of reason code to rejected item IDs",
                     "required": false,
                     "type": "object",
                   },
@@ -13599,7 +13628,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "path": {
               "properties": {
                 "tenantId": {
-                  "maxLength": 24,
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
                 },
@@ -13624,7 +13653,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "type": "array",
                   },
                   "rejectionReasons": {
-                    "description": "Map of rejected item ID to reason code",
+                    "description": "Map of reason code to rejected item IDs",
                     "required": false,
                     "type": "object",
                   },
@@ -13704,6 +13733,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "type": "string",
                 },
                 "q": {
+                  "maxLength": 255,
                   "required": false,
                   "type": "string",
                 },
@@ -13725,6 +13755,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "type": "string",
                 },
                 "userId": {
+                  "maxLength": 50,
                   "required": false,
                   "type": "string",
                 },
@@ -14060,7 +14091,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                                   "type": "string",
                                 },
                                 "tenantId": {
-                                  "maxLength": 24,
                                   "required": true,
                                   "type": "string",
                                 },
@@ -14132,7 +14162,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "type": "string",
                         },
                         "tenantId": {
-                          "maxLength": 24,
                           "required": true,
                           "type": "string",
                         },
@@ -14223,14 +14252,32 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "request": {
             "path": {
               "properties": {
-                "idOrSlug": {
+                "organizationId": {
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
                 },
                 "tenantId": {
-                  "maxLength": 24,
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
+                },
+              },
+            },
+            "query": {
+              "properties": {
+                "slug": {
+                  "anyOf": [
+                    {
+                      "required": false,
+                      "type": "string",
+                    },
+                    {
+                      "required": false,
+                      "type": "boolean",
+                    },
+                  ],
+                  "required": false,
                 },
               },
             },
@@ -14496,7 +14543,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                             "type": "string",
                           },
                           "tenantId": {
-                            "maxLength": 24,
                             "required": true,
                             "type": "string",
                           },
@@ -14568,7 +14614,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "type": "string",
                   },
                   "tenantId": {
-                    "maxLength": 24,
                     "required": true,
                     "type": "string",
                   },
@@ -14664,6 +14709,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "type": "array",
                 },
                 "bannerUrl": {
+                  "maxLength": 2048,
                   "required": false,
                   "type": [
                     "string",
@@ -14675,6 +14721,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "type": "boolean",
                 },
                 "color": {
+                  "maxLength": 255,
                   "required": false,
                   "type": [
                     "string",
@@ -14682,6 +14729,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   ],
                 },
                 "country": {
+                  "maxLength": 255,
                   "required": false,
                   "type": [
                     "string",
@@ -14698,7 +14746,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 },
                 "emailDomains": {
                   "itemType": "string",
-                  "maxLength": 100,
+                  "maxLength": 255,
                   "minLength": 4,
                   "required": false,
                   "type": "array",
@@ -14714,6 +14762,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "type": "array",
                 },
                 "logoUrl": {
+                  "maxLength": 2048,
                   "required": false,
                   "type": [
                     "string",
@@ -14721,12 +14770,13 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   ],
                 },
                 "name": {
-                  "maxLength": 100,
+                  "maxLength": 255,
                   "minLength": 2,
                   "required": false,
                   "type": "string",
                 },
                 "notificationEmail": {
+                  "maxLength": 255,
                   "required": false,
                   "type": [
                     "string",
@@ -14734,7 +14784,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   ],
                 },
                 "shortName": {
-                  "maxLength": 100,
+                  "maxLength": 255,
                   "minLength": 2,
                   "required": false,
                   "type": [
@@ -14743,12 +14793,13 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   ],
                 },
                 "slug": {
-                  "maxLength": 100,
+                  "maxLength": 255,
                   "minLength": 2,
                   "required": false,
                   "type": "string",
                 },
                 "thumbnailUrl": {
+                  "maxLength": 2048,
                   "required": false,
                   "type": [
                     "string",
@@ -14756,6 +14807,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   ],
                 },
                 "timezone": {
+                  "maxLength": 255,
                   "required": false,
                   "type": [
                     "string",
@@ -14763,6 +14815,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   ],
                 },
                 "websiteUrl": {
+                  "maxLength": 2048,
                   "required": false,
                   "type": [
                     "string",
@@ -14770,6 +14823,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   ],
                 },
                 "welcomeText": {
+                  "maxLength": 100000,
                   "required": false,
                   "type": [
                     "string",
@@ -14783,11 +14837,12 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "path": {
               "properties": {
                 "id": {
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
                 },
                 "tenantId": {
-                  "maxLength": 24,
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
                 },
@@ -15055,7 +15110,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                             "type": "string",
                           },
                           "tenantId": {
-                            "maxLength": 24,
                             "required": true,
                             "type": "string",
                           },
@@ -15127,7 +15181,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "type": "string",
                   },
                   "tenantId": {
-                    "maxLength": 24,
                     "required": true,
                     "type": "string",
                   },
@@ -15231,6 +15284,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "type": "string",
                 },
                 "q": {
+                  "maxLength": 255,
                   "required": false,
                   "type": "string",
                 },
@@ -15266,13 +15320,13 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "parentId": null,
                     "publicAccess": true,
                     "status": "unpublished",
-                    "tenantId": "xtanax",
-                    "tx": {
+                    "stx": {
                       "fieldVersions": {},
                       "id": "y6mqh9hmikgme3gy3a9lhe0c",
                       "sourceId": "src_trmzc53x7z222ydtq57iu31m",
                       "version": 1,
                     },
+                    "tenantId": "xtanax",
                   },
                   {
                     "createdAt": "2024-10-29T08:46:20.790Z",
@@ -15288,13 +15342,13 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "parentId": null,
                     "publicAccess": true,
                     "status": "unpublished",
-                    "tenantId": "1sr6ut",
-                    "tx": {
+                    "stx": {
                       "fieldVersions": {},
                       "id": "4bpmhsyauxcwuwjsrzvzac8q",
                       "sourceId": "src_x1h9s6vzhgvcj0rs3xtuk03g",
                       "version": 1,
                     },
+                    "tenantId": "1sr6ut",
                   },
                 ],
                 "total": 2,
@@ -15383,12 +15437,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "required": true,
                           "type": "string",
                         },
-                        "tenantId": {
-                          "maxLength": 24,
-                          "required": true,
-                          "type": "string",
-                        },
-                        "tx": {
+                        "stx": {
                           "properties": {
                             "fieldVersions": {
                               "required": true,
@@ -15404,12 +15453,16 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                             },
                             "version": {
                               "required": true,
-                              "type": "number",
+                              "type": "integer",
                             },
                           },
-                          "ref": "#/components/schemas/TxBase",
+                          "ref": "#/components/schemas/StxBase",
                           "required": true,
                           "type": "object",
+                        },
+                        "tenantId": {
+                          "required": true,
+                          "type": "string",
                         },
                       },
                       "ref": "#/components/schemas/Page",
@@ -15495,13 +15548,13 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 "parentId": null,
                 "publicAccess": true,
                 "status": "unpublished",
-                "tenantId": "ijllhz",
-                "tx": {
+                "stx": {
                   "fieldVersions": {},
                   "id": "4tufkeho7gg1xwx21e333ngq",
                   "sourceId": "src_ujcbpukfple60p8h3tnk9zpo",
                   "version": 1,
                 },
+                "tenantId": "ijllhz",
               },
               "name": "Page",
               "ref": "#/components/schemas/Page",
@@ -15585,12 +15638,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "required": true,
                     "type": "string",
                   },
-                  "tenantId": {
-                    "maxLength": 24,
-                    "required": true,
-                    "type": "string",
-                  },
-                  "tx": {
+                  "stx": {
                     "properties": {
                       "fieldVersions": {
                         "required": true,
@@ -15606,12 +15654,16 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                       },
                       "version": {
                         "required": true,
-                        "type": "number",
+                        "type": "integer",
                       },
                     },
-                    "ref": "#/components/schemas/TxBase",
+                    "ref": "#/components/schemas/StxBase",
                     "required": true,
                     "type": "object",
+                  },
+                  "tenantId": {
+                    "required": true,
+                    "type": "string",
                   },
                 },
                 "ref": "#/components/schemas/Page",
@@ -15665,10 +15717,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "items": {
                 "properties": {
                   "name": {
-                    "required": false,
+                    "maxLength": 255,
+                    "required": true,
                     "type": "string",
                   },
-                  "tx": {
+                  "stx": {
                     "properties": {
                       "baseVersion": {
                         "description": "Entity version when read (for conflict detection)",
@@ -15689,7 +15742,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                         "type": "string",
                       },
                     },
-                    "ref": "#/components/schemas/TxRequest",
+                    "ref": "#/components/schemas/StxRequestBase",
                     "required": true,
                     "type": "object",
                   },
@@ -15705,7 +15758,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "path": {
               "properties": {
                 "tenantId": {
-                  "maxLength": 24,
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
                 },
@@ -15732,13 +15785,13 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "parentId": null,
                     "publicAccess": true,
                     "status": "unpublished",
-                    "tenantId": "lwtksu",
-                    "tx": {
+                    "stx": {
                       "fieldVersions": {},
                       "id": "akf4ovzm1ne3h55lgj31d63n",
                       "sourceId": "src_9apx99a5auvr5cyj5s37irnj",
                       "version": 1,
                     },
+                    "tenantId": "lwtksu",
                   },
                   {
                     "createdAt": "2024-02-25T13:01:35.301Z",
@@ -15754,13 +15807,13 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "parentId": null,
                     "publicAccess": true,
                     "status": "unpublished",
-                    "tenantId": "o54qw5",
-                    "tx": {
+                    "stx": {
                       "fieldVersions": {},
                       "id": "4hj92yzr7v1itpc9wztvbcy2",
                       "sourceId": "src_1q04oq81k5rbzt4yq63pob5r",
                       "version": 1,
                     },
+                    "tenantId": "o54qw5",
                   },
                 ],
                 "rejectedItemIds": [],
@@ -15849,12 +15902,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "required": true,
                           "type": "string",
                         },
-                        "tenantId": {
-                          "maxLength": 24,
-                          "required": true,
-                          "type": "string",
-                        },
-                        "tx": {
+                        "stx": {
                           "properties": {
                             "fieldVersions": {
                               "required": true,
@@ -15870,12 +15918,16 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                             },
                             "version": {
                               "required": true,
-                              "type": "number",
+                              "type": "integer",
                             },
                           },
-                          "ref": "#/components/schemas/TxBase",
+                          "ref": "#/components/schemas/StxBase",
                           "required": true,
                           "type": "object",
+                        },
+                        "tenantId": {
+                          "required": true,
+                          "type": "string",
                         },
                       },
                       "ref": "#/components/schemas/Page",
@@ -15892,7 +15944,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "type": "array",
                   },
                   "rejectionReasons": {
-                    "description": "Map of rejected item ID to reason code",
+                    "description": "Map of reason code to rejected item IDs",
                     "required": false,
                     "type": "object",
                   },
@@ -15920,13 +15972,13 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "parentId": null,
                     "publicAccess": true,
                     "status": "unpublished",
-                    "tenantId": "lwtksu",
-                    "tx": {
+                    "stx": {
                       "fieldVersions": {},
                       "id": "akf4ovzm1ne3h55lgj31d63n",
                       "sourceId": "src_9apx99a5auvr5cyj5s37irnj",
                       "version": 1,
                     },
+                    "tenantId": "lwtksu",
                   },
                   {
                     "createdAt": "2024-02-25T13:01:35.301Z",
@@ -15942,13 +15994,13 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "parentId": null,
                     "publicAccess": true,
                     "status": "unpublished",
-                    "tenantId": "o54qw5",
-                    "tx": {
+                    "stx": {
                       "fieldVersions": {},
                       "id": "4hj92yzr7v1itpc9wztvbcy2",
                       "sourceId": "src_1q04oq81k5rbzt4yq63pob5r",
                       "version": 1,
                     },
+                    "tenantId": "o54qw5",
                   },
                 ],
                 "rejectedItemIds": [],
@@ -16037,12 +16089,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "required": true,
                           "type": "string",
                         },
-                        "tenantId": {
-                          "maxLength": 24,
-                          "required": true,
-                          "type": "string",
-                        },
-                        "tx": {
+                        "stx": {
                           "properties": {
                             "fieldVersions": {
                               "required": true,
@@ -16058,12 +16105,16 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                             },
                             "version": {
                               "required": true,
-                              "type": "number",
+                              "type": "integer",
                             },
                           },
-                          "ref": "#/components/schemas/TxBase",
+                          "ref": "#/components/schemas/StxBase",
                           "required": true,
                           "type": "object",
+                        },
+                        "tenantId": {
+                          "required": true,
+                          "type": "string",
                         },
                       },
                       "ref": "#/components/schemas/Page",
@@ -16080,7 +16131,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "type": "array",
                   },
                   "rejectionReasons": {
-                    "description": "Map of rejected item ID to reason code",
+                    "description": "Map of reason code to rejected item IDs",
                     "required": false,
                     "type": "object",
                   },
@@ -16146,7 +16197,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "path": {
               "properties": {
                 "tenantId": {
-                  "maxLength": 24,
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
                 },
@@ -16202,6 +16253,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "contentType": "application/json",
               "properties": {
                 "description": {
+                  "maxLength": 255,
                   "required": false,
                   "type": [
                     "string",
@@ -16215,14 +16267,17 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "type": "number",
                 },
                 "keywords": {
+                  "maxLength": 255,
                   "required": false,
                   "type": "string",
                 },
                 "name": {
+                  "maxLength": 255,
                   "required": false,
                   "type": "string",
                 },
                 "parentId": {
+                  "maxLength": 50,
                   "required": false,
                   "type": [
                     "string",
@@ -16238,7 +16293,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "required": false,
                   "type": "string",
                 },
-                "tx": {
+                "stx": {
                   "properties": {
                     "baseVersion": {
                       "description": "Entity version when read (for conflict detection)",
@@ -16259,7 +16314,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                       "type": "string",
                     },
                   },
-                  "ref": "#/components/schemas/TxRequest",
+                  "ref": "#/components/schemas/StxRequestBase",
                   "required": true,
                   "type": "object",
                 },
@@ -16270,11 +16325,12 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "path": {
               "properties": {
                 "id": {
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
                 },
                 "tenantId": {
-                  "maxLength": 24,
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
                 },
@@ -16299,13 +16355,13 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 "parentId": null,
                 "publicAccess": true,
                 "status": "unpublished",
-                "tenantId": "ijllhz",
-                "tx": {
+                "stx": {
                   "fieldVersions": {},
                   "id": "4tufkeho7gg1xwx21e333ngq",
                   "sourceId": "src_ujcbpukfple60p8h3tnk9zpo",
                   "version": 1,
                 },
+                "tenantId": "ijllhz",
               },
               "name": "Page",
               "ref": "#/components/schemas/Page",
@@ -16389,12 +16445,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "required": true,
                     "type": "string",
                   },
-                  "tenantId": {
-                    "maxLength": 24,
-                    "required": true,
-                    "type": "string",
-                  },
-                  "tx": {
+                  "stx": {
                     "properties": {
                       "fieldVersions": {
                         "required": true,
@@ -16410,12 +16461,16 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                       },
                       "version": {
                         "required": true,
-                        "type": "number",
+                        "type": "integer",
                       },
                     },
-                    "ref": "#/components/schemas/TxBase",
+                    "ref": "#/components/schemas/StxBase",
                     "required": true,
                     "type": "object",
+                  },
+                  "tenantId": {
+                    "required": true,
+                    "type": "string",
                   },
                 },
                 "ref": "#/components/schemas/Page",
@@ -16470,10 +16525,12 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "properties": {
                 "email": {
                   "format": "email",
+                  "maxLength": 255,
                   "required": true,
                   "type": "string",
                 },
                 "message": {
+                  "maxLength": 255,
                   "required": true,
                   "type": [
                     "string",
@@ -16499,12 +16556,12 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "contentType": "application/json",
               "description": "Requests",
               "example": {
-                "createdAt": "2024-06-05T15:03:46.141Z",
-                "email": "anderson.pfannerstill23@yahoo.com",
+                "createdAt": "2024-02-10T18:46:44.143Z",
+                "email": "marlin62@yahoo.com",
                 "id": "wejsiq864y0sbytrzsnlr9a0",
-                "message": "Suggero accusator demens terreo amiculum comitatus necessitatibus candidus.",
+                "message": "Terreo amiculum comitatus necessitatibus candidus cursim.",
                 "type": "contact",
-                "wasInvited": false,
+                "wasInvited": true,
               },
               "name": "Request",
               "ref": "#/components/schemas/Request",
@@ -16608,6 +16665,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "type": "string",
                 },
                 "q": {
+                  "maxLength": 255,
                   "required": false,
                   "type": "string",
                 },
@@ -16631,18 +16689,18 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "example": {
                 "items": [
                   {
-                    "createdAt": "2024-12-26T18:45:14.064Z",
-                    "email": "destin10@hotmail.com",
+                    "createdAt": "2024-03-27T17:11:37.653Z",
+                    "email": "lucy.stamm@hotmail.com",
                     "id": "vqqp8d07imsvjbtqtl3rtjgx",
-                    "message": "Aufero cubo stipes bene.",
+                    "message": "Bene voro avarus adfero vis audacia abundans claro.",
                     "type": "contact",
                     "wasInvited": false,
                   },
                   {
-                    "createdAt": "2024-03-19T05:56:29.150Z",
-                    "email": "fay23@hotmail.com",
+                    "createdAt": "2024-04-30T21:08:34.063Z",
+                    "email": "trudie97@hotmail.com",
                     "id": "thg5ogh3yr2b2dbwf7b9ecka",
-                    "message": "Voluntarius volva tandem turba pauci.",
+                    "message": "Turba pauci beneficium urbanus ratione cupiditate virga cognomen deprimo.",
                     "type": "contact",
                     "wasInvited": false,
                   },
@@ -16850,7 +16908,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "type": "array",
                   },
                   "rejectionReasons": {
-                    "description": "Map of rejected item ID to reason code",
+                    "description": "Map of reason code to rejected item IDs",
                     "required": false,
                     "type": "object",
                   },
@@ -16918,6 +16976,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "type": "string",
                 },
                 "q": {
+                  "maxLength": 255,
                   "required": false,
                   "type": "string",
                 },
@@ -16941,6 +17000,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "type": "string",
                 },
                 "targetEntityId": {
+                  "maxLength": 50,
                   "required": false,
                   "type": "string",
                 },
@@ -16964,12 +17024,12 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "bannerUrl": null,
                     "createdAt": "2024-11-11T02:15:51.916Z",
                     "description": null,
-                    "email": "ciara.blanda30@yahoo.com",
+                    "email": "becky.gutmann@gmail.com",
                     "entityType": "user",
-                    "firstName": "Ciara",
-                    "id": "s6ymybas8856dxliw6zkuiov",
+                    "firstName": "Becky",
+                    "id": "mybas8856dxliw6zkuiovvao",
                     "language": "en",
-                    "lastName": "Blanda",
+                    "lastName": "Gutmann",
                     "lastSeenAt": "2024-11-11T02:15:51.916Z",
                     "lastSignInAt": "2024-11-11T02:15:51.916Z",
                     "lastStartedAt": "2024-11-11T02:15:51.916Z",
@@ -16989,9 +17049,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "mfaRequired": false,
                     "modifiedAt": "2024-11-11T02:15:51.916Z",
                     "modifiedBy": null,
-                    "name": "Ciara Blanda",
-                    "newsletter": false,
-                    "slug": "ciarablanda",
+                    "name": "Becky Gutmann",
+                    "newsletter": true,
+                    "slug": "beckygutmann",
                     "thumbnailUrl": null,
                     "userFlags": {},
                   },
@@ -16999,12 +17059,12 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "bannerUrl": null,
                     "createdAt": "2024-05-19T00:16:13.149Z",
                     "description": null,
-                    "email": "carlee.murray48@gmail.com",
+                    "email": "lonie_kuhn75@gmail.com",
                     "entityType": "user",
-                    "firstName": "Carlee",
-                    "id": "8n0rfau2m1vkjc8nvp8e05me",
+                    "firstName": "Lonie",
+                    "id": "rfau2m1vkjc8nvp8e05meqcc",
                     "language": "en",
-                    "lastName": "Murray",
+                    "lastName": "Kuhn",
                     "lastSeenAt": "2024-05-19T00:16:13.149Z",
                     "lastSignInAt": "2024-05-19T00:16:13.149Z",
                     "lastStartedAt": "2024-05-19T00:16:13.149Z",
@@ -17024,9 +17084,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "mfaRequired": false,
                     "modifiedAt": "2024-05-19T00:16:13.149Z",
                     "modifiedBy": null,
-                    "name": "Carlee Murray",
+                    "name": "Lonie Kuhn",
                     "newsletter": true,
-                    "slug": "carleemurray75",
+                    "slug": "loniekuhn64",
                     "thumbnailUrl": null,
                     "userFlags": {},
                   },
@@ -17166,7 +17226,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                                 "type": "string",
                               },
                               "tenantId": {
-                                "maxLength": 24,
                                 "required": true,
                                 "type": "string",
                               },
@@ -17209,11 +17268,20 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "type": "boolean",
                         },
                         "role": {
-                          "enum": [
-                            "admin",
+                          "anyOf": [
+                            {
+                              "enum": [
+                                "admin",
+                              ],
+                              "required": false,
+                              "type": "string",
+                            },
+                            {
+                              "required": false,
+                              "type": "null",
+                            },
                           ],
                           "required": false,
-                          "type": "string",
                         },
                         "slug": {
                           "required": true,
@@ -17324,7 +17392,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "type": "array",
                   },
                   "rejectionReasons": {
-                    "description": "Map of rejected item ID to reason code",
+                    "description": "Map of reason code to rejected item IDs",
                     "required": false,
                     "type": "object",
                   },
@@ -17377,6 +17445,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "contentType": "application/json",
               "properties": {
                 "bannerUrl": {
+                  "maxLength": 2048,
                   "required": false,
                   "type": [
                     "string",
@@ -17384,7 +17453,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   ],
                 },
                 "firstName": {
-                  "maxLength": 100,
+                  "maxLength": 255,
                   "minLength": 2,
                   "required": false,
                   "type": [
@@ -17401,7 +17470,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "type": "string",
                 },
                 "lastName": {
-                  "maxLength": 100,
+                  "maxLength": 255,
                   "minLength": 2,
                   "required": false,
                   "type": [
@@ -17414,12 +17483,13 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "type": "boolean",
                 },
                 "slug": {
-                  "maxLength": 100,
+                  "maxLength": 255,
                   "minLength": 2,
                   "required": false,
                   "type": "string",
                 },
                 "thumbnailUrl": {
+                  "maxLength": 2048,
                   "required": false,
                   "type": [
                     "string",
@@ -17433,6 +17503,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "path": {
               "properties": {
                 "id": {
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
                 },
@@ -17447,21 +17518,21 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 "bannerUrl": null,
                 "createdAt": "2024-12-13T11:17:23.643Z",
                 "description": null,
-                "email": "franco_corwin@gmail.com",
+                "email": "cecilia.hodkiewicz@hotmail.com",
                 "entityType": "user",
-                "firstName": "Franco",
-                "id": "w6g7sfzetbhjls7m9dg1xzav",
+                "firstName": "Cecilia",
+                "id": "7sfzetbhjls7m9dg1xzavv78",
                 "language": "en",
-                "lastName": "Corwin",
+                "lastName": "Hodkiewicz",
                 "lastSeenAt": "2024-12-13T11:17:23.643Z",
                 "lastSignInAt": "2024-12-13T11:17:23.643Z",
                 "lastStartedAt": "2024-12-13T11:17:23.643Z",
                 "mfaRequired": false,
                 "modifiedAt": "2024-12-13T11:17:23.643Z",
                 "modifiedBy": null,
-                "name": "Franco Corwin",
-                "newsletter": true,
-                "slug": "francocorwin",
+                "name": "Cecilia Hodkiewicz",
+                "newsletter": false,
+                "slug": "ceciliahodkiewicz17",
                 "thumbnailUrl": null,
                 "userFlags": {},
               },
@@ -17701,11 +17772,13 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "contentType": "application/json",
               "properties": {
                 "content": {
+                  "maxLength": 100000,
                   "required": true,
                   "type": "string",
                 },
                 "organizationIds": {
                   "itemType": "string",
+                  "maxLength": 50,
                   "required": true,
                   "type": "array",
                 },
@@ -17720,6 +17793,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "type": "array",
                 },
                 "subject": {
+                  "maxLength": 255,
                   "required": true,
                   "type": "string",
                 },
@@ -17825,7 +17899,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 },
                 "status": {
                   "description": "Filter by status",
-                  "extendsRef": "#/components/schemas/TenantStatus",
+                  "enum": [
+                    "active",
+                    "suspended",
+                    "archived",
+                  ],
                   "required": false,
                   "type": "string",
                 },
@@ -17871,7 +17949,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                             "suspended",
                             "archived",
                           ],
-                          "ref": "#/components/schemas/TenantStatus",
                           "required": true,
                           "type": "string",
                         },
@@ -17948,12 +18025,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "suspended",
                     "archived",
                   ],
-                  "ref": "#/components/schemas/TenantStatus",
                   "required": false,
                   "type": "string",
                 },
               },
-              "ref": "#/components/schemas/CreateTenantBody",
               "required": true,
               "type": "object",
             },
@@ -17995,7 +18070,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                       "suspended",
                       "archived",
                     ],
-                    "ref": "#/components/schemas/TenantStatus",
                     "required": true,
                     "type": "string",
                   },
@@ -18093,7 +18167,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                       "suspended",
                       "archived",
                     ],
-                    "ref": "#/components/schemas/TenantStatus",
                     "required": true,
                     "type": "string",
                   },
@@ -18158,12 +18231,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "suspended",
                     "archived",
                   ],
-                  "ref": "#/components/schemas/TenantStatus",
                   "required": false,
                   "type": "string",
                 },
               },
-              "ref": "#/components/schemas/UpdateTenantBody",
               "required": true,
               "type": "object",
             },
@@ -18215,7 +18286,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                       "suspended",
                       "archived",
                     ],
-                    "ref": "#/components/schemas/TenantStatus",
                     "required": true,
                     "type": "string",
                   },
@@ -18337,11 +18407,12 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "path": {
               "properties": {
                 "orgId": {
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
                 },
                 "tenantId": {
-                  "maxLength": 24,
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
                 },
@@ -18366,6 +18437,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "type": "string",
                 },
                 "q": {
+                  "maxLength": 255,
                   "required": false,
                   "type": "string",
                 },
@@ -18389,6 +18461,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "type": "string",
                 },
                 "targetEntityId": {
+                  "maxLength": 50,
                   "required": false,
                   "type": "string",
                 },
@@ -18412,12 +18485,12 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "bannerUrl": null,
                     "createdAt": "2024-11-11T02:15:51.916Z",
                     "description": null,
-                    "email": "ciara.blanda30@yahoo.com",
+                    "email": "becky.gutmann@gmail.com",
                     "entityType": "user",
-                    "firstName": "Ciara",
-                    "id": "s6ymybas8856dxliw6zkuiov",
+                    "firstName": "Becky",
+                    "id": "mybas8856dxliw6zkuiovvao",
                     "language": "en",
-                    "lastName": "Blanda",
+                    "lastName": "Gutmann",
                     "lastSeenAt": "2024-11-11T02:15:51.916Z",
                     "lastSignInAt": "2024-11-11T02:15:51.916Z",
                     "lastStartedAt": "2024-11-11T02:15:51.916Z",
@@ -18437,9 +18510,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "mfaRequired": false,
                     "modifiedAt": "2024-11-11T02:15:51.916Z",
                     "modifiedBy": null,
-                    "name": "Ciara Blanda",
-                    "newsletter": false,
-                    "slug": "ciarablanda",
+                    "name": "Becky Gutmann",
+                    "newsletter": true,
+                    "slug": "beckygutmann",
                     "thumbnailUrl": null,
                     "userFlags": {},
                   },
@@ -18447,12 +18520,12 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "bannerUrl": null,
                     "createdAt": "2024-05-19T00:16:13.149Z",
                     "description": null,
-                    "email": "carlee.murray48@gmail.com",
+                    "email": "lonie_kuhn75@gmail.com",
                     "entityType": "user",
-                    "firstName": "Carlee",
-                    "id": "8n0rfau2m1vkjc8nvp8e05me",
+                    "firstName": "Lonie",
+                    "id": "rfau2m1vkjc8nvp8e05meqcc",
                     "language": "en",
-                    "lastName": "Murray",
+                    "lastName": "Kuhn",
                     "lastSeenAt": "2024-05-19T00:16:13.149Z",
                     "lastSignInAt": "2024-05-19T00:16:13.149Z",
                     "lastStartedAt": "2024-05-19T00:16:13.149Z",
@@ -18472,9 +18545,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "mfaRequired": false,
                     "modifiedAt": "2024-05-19T00:16:13.149Z",
                     "modifiedBy": null,
-                    "name": "Carlee Murray",
+                    "name": "Lonie Kuhn",
                     "newsletter": true,
-                    "slug": "carleemurray75",
+                    "slug": "loniekuhn64",
                     "thumbnailUrl": null,
                     "userFlags": {},
                   },
@@ -18614,7 +18687,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                                 "type": "string",
                               },
                               "tenantId": {
-                                "maxLength": 24,
                                 "required": true,
                                 "type": "string",
                               },
@@ -18657,11 +18729,20 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "type": "boolean",
                         },
                         "role": {
-                          "enum": [
-                            "admin",
+                          "anyOf": [
+                            {
+                              "enum": [
+                                "admin",
+                              ],
+                              "required": false,
+                              "type": "string",
+                            },
+                            {
+                              "required": false,
+                              "type": "null",
+                            },
                           ],
                           "required": false,
-                          "type": "string",
                         },
                         "slug": {
                           "required": true,
@@ -18741,18 +18822,37 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "request": {
             "path": {
               "properties": {
-                "idOrSlug": {
-                  "required": true,
-                  "type": "string",
-                },
                 "orgId": {
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
                 },
                 "tenantId": {
-                  "maxLength": 24,
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
+                },
+                "userId": {
+                  "maxLength": 50,
+                  "required": true,
+                  "type": "string",
+                },
+              },
+            },
+            "query": {
+              "properties": {
+                "slug": {
+                  "anyOf": [
+                    {
+                      "required": false,
+                      "type": "string",
+                    },
+                    {
+                      "required": false,
+                      "type": "boolean",
+                    },
+                  ],
+                  "required": false,
                 },
               },
             },
@@ -18765,21 +18865,21 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 "bannerUrl": null,
                 "createdAt": "2024-12-13T11:17:23.643Z",
                 "description": null,
-                "email": "franco_corwin@gmail.com",
+                "email": "cecilia.hodkiewicz@hotmail.com",
                 "entityType": "user",
-                "firstName": "Franco",
-                "id": "w6g7sfzetbhjls7m9dg1xzav",
+                "firstName": "Cecilia",
+                "id": "7sfzetbhjls7m9dg1xzavv78",
                 "language": "en",
-                "lastName": "Corwin",
+                "lastName": "Hodkiewicz",
                 "lastSeenAt": "2024-12-13T11:17:23.643Z",
                 "lastSignInAt": "2024-12-13T11:17:23.643Z",
                 "lastStartedAt": "2024-12-13T11:17:23.643Z",
                 "mfaRequired": false,
                 "modifiedAt": "2024-12-13T11:17:23.643Z",
                 "modifiedBy": null,
-                "name": "Franco Corwin",
-                "newsletter": true,
-                "slug": "francocorwin",
+                "name": "Cecilia Hodkiewicz",
+                "newsletter": false,
+                "slug": "ceciliahodkiewicz17",
                 "thumbnailUrl": null,
                 "userFlags": {},
               },

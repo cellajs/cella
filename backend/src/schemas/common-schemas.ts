@@ -1,7 +1,10 @@
 import { z } from '@hono/zod-openapi';
 import { t } from 'i18next';
 import { appConfig } from 'shared';
+import { maxLength } from '#/db/utils/constraints';
 import { isCDNUrl } from '#/utils/is-cdn-url';
+
+export { maxLength };
 
 /** Schema to use boolean parameters (transform string to boolean) */
 export const booleanTransformSchema = z
@@ -39,15 +42,6 @@ export const entityCanSchema = z.object({
 /*************************************************************************************************
  * Common param schemas
  ************************************************************************************************/
-
-/** Max length limits for request validation schemas (not applied to response schemas) */
-export const maxLength = {
-  password: 100,
-  id: 50,
-  field: 255,
-  html: 100_000,
-  url: 2048,
-} as const;
 
 /** Schema for an entity ID with max length */
 export const validIdSchema = z.string().max(maxLength.id);
@@ -204,7 +198,7 @@ export const idsWithStxBodySchema = (maxItems = 50) =>
       .max(maxItems, t('error:invalid_max_items', { max: maxItems, name: 'ID' })),
     stx: z
       .object({
-        id: z.string(),
+        mutationId: z.string(),
         sourceId: z.string(),
       })
       .optional(),

@@ -4,6 +4,7 @@ import { membershipCrudPolicies } from '#/db/rls-helpers';
 import { organizationsTable } from '#/db/schema/organizations';
 import { tenantsTable } from '#/db/schema/tenants';
 import { usersTable } from '#/db/schema/users';
+import { maxLength, tenantIdLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
 
@@ -14,20 +15,20 @@ export const inactiveMembershipsTable = pgTable(
   'inactive_memberships',
   {
     createdAt: timestampColumns.createdAt,
-    id: varchar().primaryKey().$defaultFn(nanoid),
-    tenantId: varchar('tenant_id')
+    id: varchar({ length: maxLength.id }).primaryKey().$defaultFn(nanoid),
+    tenantId: varchar('tenant_id', { length: tenantIdLength })
       .notNull()
       .references(() => tenantsTable.id),
     contextType: varchar({ enum: appConfig.contextEntityTypes }).notNull(),
-    email: varchar().notNull(),
-    userId: varchar().references(() => usersTable.id, { onDelete: 'cascade' }),
-    tokenId: varchar(), // References tokens.id logically (no FK due to partitioning)
+    email: varchar({ length: maxLength.field }).notNull(),
+    userId: varchar({ length: maxLength.id }).references(() => usersTable.id, { onDelete: 'cascade' }),
+    tokenId: varchar({ length: maxLength.id }), // References tokens.id logically (no FK due to partitioning)
     role: varchar({ enum: roleEnum }).notNull().default('member'),
     rejectedAt: timestamp({ mode: 'string' }),
-    createdBy: varchar()
+    createdBy: varchar({ length: maxLength.id })
       .notNull()
       .references(() => usersTable.id, { onDelete: 'cascade' }),
-    organizationId: varchar()
+    organizationId: varchar({ length: maxLength.id })
       .notNull()
       .references(() => organizationsTable.id, { onDelete: 'cascade' }),
   },

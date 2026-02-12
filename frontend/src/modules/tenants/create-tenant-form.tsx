@@ -5,7 +5,7 @@ import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import type { Tenant } from '~/api.gen';
-import { zCreateTenantBody } from '~/api.gen/zod.gen';
+import { zCreateTenantData } from '~/api.gen/zod.gen';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { InputFormField } from '~/modules/common/form-fields/input';
@@ -21,7 +21,7 @@ interface Props {
   callback?: (args: CallbackArgs<Tenant>) => void;
 }
 
-const formSchema = zCreateTenantBody.extend({
+const formSchema = zCreateTenantData.shape.body.extend({
   name: z.string().min(1, 'error:form.required').max(255),
 });
 type FormValues = z.infer<typeof formSchema>;

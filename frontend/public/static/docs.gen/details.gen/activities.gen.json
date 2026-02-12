@@ -16,15 +16,22 @@
               "ref": "#/components/schemas/Activity",
               "items": {
                 "type": "object",
+                "description": "An auditable event recording an entity change, used for sync and history.",
                 "properties": {
-                  "id": { "type": "string", "required": true },
+                  "id": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 50
+                  },
                   "tenantId": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 24
                   },
                   "userId": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 50
                   },
                   "entityType": {
                     "type": ["string", "null"],
@@ -41,15 +48,25 @@
                     "required": true,
                     "enum": ["create", "update", "delete"]
                   },
-                  "tableName": { "type": "string", "required": true },
-                  "type": { "type": "string", "required": true },
+                  "tableName": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "type": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
+                  },
                   "entityId": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 50
                   },
                   "organizationId": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 50
                   },
                   "createdAt": { "type": "string", "required": true },
                   "changedKeys": {
@@ -63,10 +80,11 @@
                       {
                         "type": "object",
                         "required": false,
+                        "description": "Sync transaction metadata stored on entities for offline and realtime support.",
                         "properties": {
-                          "id": { "type": "string", "required": true },
+                          "mutationId": { "type": "string", "required": true },
                           "sourceId": { "type": "string", "required": true },
-                          "version": { "type": "number", "required": true },
+                          "version": { "type": "integer", "required": true },
                           "fieldVersions": { "type": "object", "required": true }
                         },
                         "ref": "#/components/schemas/StxBase"
@@ -86,7 +104,7 @@
                       {
                         "type": "object",
                         "required": false,
-                        "description": "Error info for failed CDC activities (dead letters)",
+                        "description": "Error info for failed CDC activities (dead letters).",
                         "properties": {
                           "lsn": { "type": "string", "required": true },
                           "message": { "type": "string", "required": true },
@@ -97,8 +115,7 @@
                           "retryCount": { "type": "number", "required": true },
                           "resolved": { "type": "boolean", "required": false }
                         },
-                        "ref": "#/components/schemas/ActivityError",
-                        "refDescription": "Error info for failed CDC activities (dead letters)"
+                        "ref": "#/components/schemas/ActivityError"
                       },
                       { "type": "null", "required": false }
                     ]
@@ -209,7 +226,8 @@
           "limit": { "type": "string", "required": false },
           "userId": {
             "type": ["string", "null"],
-            "required": false
+            "required": false,
+            "maxLength": 50
           },
           "entityType": {
             "type": "string",
@@ -226,11 +244,20 @@
             "required": false,
             "enum": ["create", "update", "delete"]
           },
-          "tableName": { "type": "string", "required": false },
-          "type": { "type": "string", "required": false },
+          "tableName": {
+            "type": "string",
+            "required": false,
+            "maxLength": 255
+          },
+          "type": {
+            "type": "string",
+            "required": false,
+            "maxLength": 255
+          },
           "entityId": {
             "type": ["string", "null"],
-            "required": false
+            "required": false,
+            "maxLength": 50
           }
         }
       }

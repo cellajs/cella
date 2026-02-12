@@ -1,5 +1,6 @@
-import { boolean, foreignKey, index, jsonb, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { boolean, foreignKey, index, jsonb, pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { appConfig, type UserFlags } from 'shared';
+import { maxLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
 
@@ -10,19 +11,19 @@ export const usersTable = pgTable(
   'users',
   {
     createdAt: timestampColumns.createdAt,
-    id: varchar().primaryKey().$defaultFn(nanoid),
+    id: varchar({ length: maxLength.id }).primaryKey().$defaultFn(nanoid),
     entityType: varchar({ enum: ['user'] })
       .notNull()
       .default('user'),
-    name: varchar().notNull(),
-    description: varchar(),
-    slug: varchar().unique().notNull(),
-    thumbnailUrl: varchar(),
-    bannerUrl: varchar(),
-    email: varchar().notNull().unique(),
+    name: varchar({ length: maxLength.field }).notNull(),
+    description: text(),
+    slug: varchar({ length: maxLength.field }).unique().notNull(),
+    thumbnailUrl: varchar({ length: maxLength.url }),
+    bannerUrl: varchar({ length: maxLength.url }),
+    email: varchar({ length: maxLength.field }).notNull().unique(),
     mfaRequired: boolean().notNull().default(false),
-    firstName: varchar(),
-    lastName: varchar(),
+    firstName: varchar({ length: maxLength.field }),
+    lastName: varchar({ length: maxLength.field }),
     language: varchar({ enum: languagesEnum }).notNull().default(appConfig.defaultLanguage),
     newsletter: boolean().notNull().default(false),
     userFlags: jsonb()
@@ -32,7 +33,7 @@ export const usersTable = pgTable(
     modifiedAt: timestampColumns.modifiedAt,
     lastStartedAt: timestamp({ mode: 'string' }), // Last time GET /me was called
     lastSignInAt: timestamp({ mode: 'string' }), // Last time user completed authentication flow
-    modifiedBy: varchar(),
+    modifiedBy: varchar({ length: maxLength.id }),
   },
   (table) => [
     index('users_name_index').on(table.name.desc()),

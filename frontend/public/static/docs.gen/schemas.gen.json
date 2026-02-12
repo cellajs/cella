@@ -89,6 +89,7 @@
       }
     },
     "schemaTag": "base",
+    "description": "Base schema for entities with memberships (e.g. organization).",
     "example": {
       "id": "bafp6iiu2dt74olfvl618xur",
       "createdAt": "2024-09-15T16:29:26.122Z",
@@ -109,14 +110,26 @@
     "schema": {
       "type": "object",
       "properties": {
-        "id": { "type": "string", "required": true },
-        "tenantId": { "type": "string", "required": true },
+        "id": {
+          "type": "string",
+          "required": true,
+          "maxLength": 50
+        },
+        "tenantId": {
+          "type": "string",
+          "required": true,
+          "maxLength": 24
+        },
         "contextType": {
           "type": "string",
           "required": true,
           "enum": ["organization"]
         },
-        "userId": { "type": "string", "required": true },
+        "userId": {
+          "type": "string",
+          "required": true,
+          "maxLength": 50
+        },
         "role": {
           "type": "string",
           "required": true,
@@ -130,10 +143,15 @@
           "minimum": -140737488355328,
           "maximum": 140737488355327
         },
-        "organizationId": { "type": "string", "required": true }
+        "organizationId": {
+          "type": "string",
+          "required": true,
+          "maxLength": 50
+        }
       }
     },
     "schemaTag": "base",
+    "description": "Core membership fields shared across active and inactive memberships.",
     "example": {
       "id": "vn86f6g3ci8ybeh37sz3gscf",
       "tenantId": "gmpj3u",
@@ -153,18 +171,19 @@
     "schema": {
       "type": "object",
       "properties": {
-        "id": { "type": "string", "required": true },
+        "mutationId": { "type": "string", "required": true },
         "sourceId": { "type": "string", "required": true },
-        "version": { "type": "number", "required": true },
+        "version": { "type": "integer", "required": true },
         "fieldVersions": { "type": "object", "required": true }
       }
     },
     "schemaTag": "base",
+    "description": "Sync transaction metadata stored on entities for offline and realtime support.",
     "example": {
-      "id": "gen-abc123def456ghi789",
-      "sourceId": "src_gen-xyz987wvu654",
-      "version": 1,
-      "fieldVersions": { "name": 1, "description": 1 }
+      "mutationId": "oucavr5r34v981pcrg8lwo1m",
+      "sourceId": "wd4527bghf5s4igm3ddc22cy",
+      "version": 2,
+      "fieldVersions": { "name": 1 }
     }
   },
   {
@@ -206,13 +225,14 @@
         "stx": {
           "type": ["object", "null"],
           "required": true,
+          "description": "Sync transaction metadata stored on entities for offline and realtime support.",
           "properties": {
-            "id": { "type": "string", "required": true },
+            "mutationId": { "type": "string", "required": true },
             "sourceId": { "type": "string", "required": true },
             "version": { "type": "integer", "required": true },
             "fieldVersions": { "type": "object", "required": true }
           },
-          "ref": "#/components/schemas/StxStreamMessage"
+          "extendsRef": "#/components/schemas/StxBase"
         },
         "cacheToken": {
           "type": ["string", "null"],
@@ -221,6 +241,7 @@
       }
     },
     "schemaTag": "data",
+    "description": "Realtime notification delivered via SSE for entity and membership changes.",
     "example": {
       "action": "update",
       "entityType": "attachment",
@@ -231,70 +252,11 @@
       "seq": 550,
       "cacheToken": "UyMeEcuBnWoD28KSeQr21dJgZDmxiD2W",
       "stx": {
-        "id": "g5bhj6q04ey9pbycghixqzn7",
+        "mutationId": "g5bhj6q04ey9pbycghixqzn7",
         "sourceId": "8ex8g1epv4xwf03jl4snuwh0",
         "version": 5,
         "fieldVersions": { "name": 1 }
       }
-    }
-  },
-  {
-    "name": "StxStreamMessage",
-    "ref": "#/components/schemas/StxStreamMessage",
-    "type": ["object", "null"],
-    "schema": {
-      "type": ["object", "null"],
-      "properties": {
-        "id": { "type": "string", "required": true },
-        "sourceId": { "type": "string", "required": true },
-        "version": { "type": "integer", "required": true },
-        "fieldVersions": { "type": "object", "required": true }
-      }
-    },
-    "schemaTag": "data",
-    "example": {
-      "id": "sfz18l7ga7zqldxm2tqvvbxi",
-      "sourceId": "4418k64puayhyq1hx77zbjsj",
-      "version": 3,
-      "fieldVersions": { "name": 1 }
-    }
-  },
-  {
-    "name": "PublicStreamActivity",
-    "ref": "#/components/schemas/PublicStreamActivity",
-    "type": "object",
-    "schema": {
-      "type": "object",
-      "properties": {
-        "activityId": { "type": "string", "required": true },
-        "action": {
-          "type": "string",
-          "required": true,
-          "enum": ["create", "update", "delete"]
-        },
-        "entityType": {
-          "type": "string",
-          "required": true,
-          "enum": ["attachment", "page"]
-        },
-        "entityId": { "type": "string", "required": true },
-        "changedKeys": {
-          "type": ["array", "null"],
-          "required": true,
-          "itemType": "string"
-        },
-        "createdAt": { "type": "string", "required": true }
-      }
-    },
-    "schemaTag": "data",
-    "example": {
-      "activityId": "tr1619any4wiivw7050pxbnj",
-      "action": "update",
-      "entityType": "attachment",
-      "entityId": "9pjvmlsr1u1yqqvio34f744e",
-      "changedKeys": ["keywords"],
-      "createdAt": "2024-01-31T10:09:41.032Z",
-      "modifiedAt": "2024-07-15T15:19:59.216Z"
     }
   },
   {
@@ -378,6 +340,7 @@
       }
     },
     "schemaTag": "errors",
+    "description": "Standard error response returned by all API endpoints.",
     "example": {
       "name": "BadRequestError",
       "message": "error:bad_request_action",
@@ -578,14 +541,20 @@
     "schema": {
       "type": "object",
       "properties": {
-        "id": { "type": "string", "required": true },
+        "id": {
+          "type": "string",
+          "required": true,
+          "maxLength": 50
+        },
         "tenantId": {
           "type": ["string", "null"],
-          "required": true
+          "required": true,
+          "maxLength": 24
         },
         "userId": {
           "type": ["string", "null"],
-          "required": true
+          "required": true,
+          "maxLength": 50
         },
         "entityType": {
           "type": ["string", "null"],
@@ -602,15 +571,25 @@
           "required": true,
           "enum": ["create", "update", "delete"]
         },
-        "tableName": { "type": "string", "required": true },
-        "type": { "type": "string", "required": true },
+        "tableName": {
+          "type": "string",
+          "required": true,
+          "maxLength": 255
+        },
+        "type": {
+          "type": "string",
+          "required": true,
+          "maxLength": 255
+        },
         "entityId": {
           "type": ["string", "null"],
-          "required": true
+          "required": true,
+          "maxLength": 50
         },
         "organizationId": {
           "type": ["string", "null"],
-          "required": true
+          "required": true,
+          "maxLength": 50
         },
         "createdAt": { "type": "string", "required": true },
         "changedKeys": {
@@ -624,10 +603,11 @@
             {
               "type": "object",
               "required": false,
+              "description": "Sync transaction metadata stored on entities for offline and realtime support.",
               "properties": {
-                "id": { "type": "string", "required": true },
+                "mutationId": { "type": "string", "required": true },
                 "sourceId": { "type": "string", "required": true },
-                "version": { "type": "number", "required": true },
+                "version": { "type": "integer", "required": true },
                 "fieldVersions": { "type": "object", "required": true }
               },
               "ref": "#/components/schemas/StxBase"
@@ -647,7 +627,7 @@
             {
               "type": "object",
               "required": false,
-              "description": "Error info for failed CDC activities (dead letters)",
+              "description": "Error info for failed CDC activities (dead letters).",
               "properties": {
                 "lsn": { "type": "string", "required": true },
                 "message": { "type": "string", "required": true },
@@ -658,8 +638,7 @@
                 "retryCount": { "type": "number", "required": true },
                 "resolved": { "type": "boolean", "required": false }
               },
-              "ref": "#/components/schemas/ActivityError",
-              "refDescription": "Error info for failed CDC activities (dead letters)"
+              "ref": "#/components/schemas/ActivityError"
             },
             { "type": "null", "required": false }
           ]
@@ -667,6 +646,7 @@
       }
     },
     "schemaTag": "data",
+    "description": "An auditable event recording an entity change, used for sync and history.",
     "example": {
       "id": "s933zhzgm8axl572xlcja86p",
       "tenantId": "qc8osc",
@@ -703,7 +683,7 @@
       }
     },
     "schemaTag": "errors",
-    "description": "Error info for failed CDC activities (dead letters)",
+    "description": "Error info for failed CDC activities (dead letters).",
     "example": {
       "lsn": "0/16B3A40",
       "message": "Connection timeout during processing",
@@ -722,27 +702,42 @@
         "user": {
           "type": "object",
           "required": true,
+          "description": "A user with profile data and last-seen activity timestamp.",
           "properties": {
             "createdAt": { "type": "string", "required": true },
-            "id": { "type": "string", "required": true },
+            "id": {
+              "type": "string",
+              "required": true,
+              "maxLength": 50
+            },
             "entityType": {
               "type": "string",
               "required": true,
               "enum": ["user"]
             },
-            "name": { "type": "string", "required": true },
+            "name": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
+            },
             "description": {
               "type": ["string", "null"],
               "required": true
             },
-            "slug": { "type": "string", "required": true },
+            "slug": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
+            },
             "thumbnailUrl": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 2048
             },
             "bannerUrl": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 2048
             },
             "email": {
               "type": "string",
@@ -752,11 +747,13 @@
             "mfaRequired": { "type": "boolean", "required": true },
             "firstName": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 255
             },
             "lastName": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 255
             },
             "language": {
               "type": "string",
@@ -785,14 +782,12 @@
             },
             "modifiedBy": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 50
             },
             "lastSeenAt": {
-              "required": true,
-              "anyOf": [
-                { "type": "string", "required": false },
-                { "type": "null", "required": false }
-              ]
+              "type": ["string", "null"],
+              "required": true
             }
           },
           "ref": "#/components/schemas/User"
@@ -800,12 +795,13 @@
         "systemRole": {
           "type": "string",
           "required": true,
-          "description": "Explain system role here",
+          "description": "System-level role (e.g. admin) or user for standard access.",
           "enum": ["admin", "user"]
         }
       }
     },
     "schemaTag": "data",
+    "description": "The currently authenticated user with their system role.",
     "example": {
       "user": {
         "id": "snou9b80h3jlnu1j458h6mvs",
@@ -840,25 +836,39 @@
       "type": "object",
       "properties": {
         "createdAt": { "type": "string", "required": true },
-        "id": { "type": "string", "required": true },
+        "id": {
+          "type": "string",
+          "required": true,
+          "maxLength": 50
+        },
         "entityType": {
           "type": "string",
           "required": true,
           "enum": ["user"]
         },
-        "name": { "type": "string", "required": true },
+        "name": {
+          "type": "string",
+          "required": true,
+          "maxLength": 255
+        },
         "description": {
           "type": ["string", "null"],
           "required": true
         },
-        "slug": { "type": "string", "required": true },
+        "slug": {
+          "type": "string",
+          "required": true,
+          "maxLength": 255
+        },
         "thumbnailUrl": {
           "type": ["string", "null"],
-          "required": true
+          "required": true,
+          "maxLength": 2048
         },
         "bannerUrl": {
           "type": ["string", "null"],
-          "required": true
+          "required": true,
+          "maxLength": 2048
         },
         "email": {
           "type": "string",
@@ -868,11 +878,13 @@
         "mfaRequired": { "type": "boolean", "required": true },
         "firstName": {
           "type": ["string", "null"],
-          "required": true
+          "required": true,
+          "maxLength": 255
         },
         "lastName": {
           "type": ["string", "null"],
-          "required": true
+          "required": true,
+          "maxLength": 255
         },
         "language": {
           "type": "string",
@@ -901,18 +913,17 @@
         },
         "modifiedBy": {
           "type": ["string", "null"],
-          "required": true
+          "required": true,
+          "maxLength": 50
         },
         "lastSeenAt": {
-          "required": true,
-          "anyOf": [
-            { "type": "string", "required": false },
-            { "type": "null", "required": false }
-          ]
+          "type": ["string", "null"],
+          "required": true
         }
       }
     },
     "schemaTag": "data",
+    "description": "A user with profile data and last-seen activity timestamp.",
     "example": {
       "id": "7sfzetbhjls7m9dg1xzavv78",
       "entityType": "user",
@@ -958,16 +969,25 @@
           "items": {
             "type": "object",
             "properties": {
-              "id": { "type": "string", "required": true },
+              "id": {
+                "type": "string",
+                "required": true,
+                "maxLength": 50
+              },
               "type": {
                 "type": "string",
                 "required": true,
                 "enum": ["regular", "impersonation", "mfa"]
               },
-              "userId": { "type": "string", "required": true },
+              "userId": {
+                "type": "string",
+                "required": true,
+                "maxLength": 50
+              },
               "deviceName": {
                 "type": ["string", "null"],
-                "required": true
+                "required": true,
+                "maxLength": 255
               },
               "deviceType": {
                 "type": "string",
@@ -976,11 +996,13 @@
               },
               "deviceOs": {
                 "type": ["string", "null"],
-                "required": true
+                "required": true,
+                "maxLength": 255
               },
               "browser": {
                 "type": ["string", "null"],
-                "required": true
+                "required": true,
+                "maxLength": 255
               },
               "authStrategy": {
                 "type": "string",
@@ -1000,11 +1022,20 @@
           "items": {
             "type": "object",
             "properties": {
-              "id": { "type": "string", "required": true },
-              "userId": { "type": "string", "required": true },
+              "id": {
+                "type": "string",
+                "required": true,
+                "maxLength": 50
+              },
+              "userId": {
+                "type": "string",
+                "required": true,
+                "maxLength": 50
+              },
               "deviceName": {
                 "type": ["string", "null"],
-                "required": true
+                "required": true,
+                "maxLength": 255
               },
               "deviceType": {
                 "type": "string",
@@ -1013,13 +1044,19 @@
               },
               "deviceOs": {
                 "type": ["string", "null"],
-                "required": true
+                "required": true,
+                "maxLength": 255
               },
               "browser": {
                 "type": ["string", "null"],
-                "required": true
+                "required": true,
+                "maxLength": 255
               },
-              "nameOnDevice": { "type": "string", "required": true },
+              "nameOnDevice": {
+                "type": "string",
+                "required": true,
+                "maxLength": 255
+              },
               "createdAt": { "type": "string", "required": true }
             }
           }
@@ -1027,6 +1064,7 @@
       }
     },
     "schemaTag": "data",
+    "description": "Authentication metadata for the current user session.",
     "example": {
       "enabledOAuth": ["github"],
       "hasTotp": false,
@@ -1057,21 +1095,35 @@
       "type": "object",
       "properties": {
         "createdAt": { "type": "string", "required": true },
-        "id": { "type": "string", "required": true },
-        "tenantId": { "type": "string", "required": true },
+        "id": {
+          "type": "string",
+          "required": true,
+          "maxLength": 50
+        },
+        "tenantId": {
+          "type": "string",
+          "required": true,
+          "maxLength": 24
+        },
         "contextType": {
           "type": "string",
           "required": true,
           "enum": ["organization"]
         },
-        "email": { "type": "string", "required": true },
+        "email": {
+          "type": "string",
+          "required": true,
+          "maxLength": 255
+        },
         "userId": {
           "type": ["string", "null"],
-          "required": true
+          "required": true,
+          "maxLength": 50
         },
         "tokenId": {
           "type": ["string", "null"],
-          "required": true
+          "required": true,
+          "maxLength": 50
         },
         "role": {
           "type": "string",
@@ -1082,11 +1134,20 @@
           "type": ["string", "null"],
           "required": true
         },
-        "createdBy": { "type": "string", "required": true },
-        "organizationId": { "type": "string", "required": true }
+        "createdBy": {
+          "type": "string",
+          "required": true,
+          "maxLength": 50
+        },
+        "organizationId": {
+          "type": "string",
+          "required": true,
+          "maxLength": 50
+        }
       }
     },
     "schemaTag": "data",
+    "description": "A membership record for a user who has not yet accepted an invitation.",
     "example": {
       "id": "ukxfca4ddim4bvuklzn5bszg",
       "contextType": "organization",
@@ -1112,11 +1173,8 @@
         "sub": { "type": "string", "required": true },
         "s3": { "type": "boolean", "required": true },
         "signature": {
-          "required": true,
-          "anyOf": [
-            { "type": "string", "required": false },
-            { "type": "null", "required": false }
-          ]
+          "type": ["string", "null"],
+          "required": true
         },
         "params": {
           "required": true,
@@ -1141,6 +1199,7 @@
       }
     },
     "schemaTag": "data",
+    "description": "A signed token authorizing file uploads to the configured storage provider.",
     "example": {
       "public": false,
       "sub": "x1lsgegsw6imziogthaolhvy",
@@ -1172,8 +1231,7 @@
         "status": {
           "type": "string",
           "required": true,
-          "enum": ["active", "suspended", "archived"],
-          "ref": "#/components/schemas/TenantStatus"
+          "enum": ["active", "suspended", "archived"]
         },
         "createdAt": { "type": "string", "required": true },
         "modifiedAt": {
@@ -1182,64 +1240,8 @@
         }
       }
     },
-    "schemaTag": "data"
-  },
-  {
-    "name": "TenantStatus",
-    "ref": "#/components/schemas/TenantStatus",
-    "type": "string",
-    "schema": {
-      "type": "string",
-      "enum": ["active", "suspended", "archived"]
-    },
-    "schemaTag": "data"
-  },
-  {
-    "name": "CreateTenantBody",
-    "ref": "#/components/schemas/CreateTenantBody",
-    "type": "object",
-    "schema": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string",
-          "required": true,
-          "description": "Tenant display name",
-          "minLength": 1,
-          "maxLength": 255
-        },
-        "status": {
-          "type": "string",
-          "required": false,
-          "enum": ["active", "suspended", "archived"],
-          "ref": "#/components/schemas/TenantStatus"
-        }
-      }
-    },
-    "schemaTag": "data"
-  },
-  {
-    "name": "UpdateTenantBody",
-    "ref": "#/components/schemas/UpdateTenantBody",
-    "type": "object",
-    "schema": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string",
-          "required": false,
-          "minLength": 1,
-          "maxLength": 255
-        },
-        "status": {
-          "type": "string",
-          "required": false,
-          "enum": ["active", "suspended", "archived"],
-          "ref": "#/components/schemas/TenantStatus"
-        }
-      }
-    },
-    "schemaTag": "data"
+    "schemaTag": "data",
+    "description": "A tenant representing an isolated data partition for multi-tenancy."
   },
   {
     "name": "Request",
@@ -1249,12 +1251,21 @@
       "type": "object",
       "properties": {
         "createdAt": { "type": "string", "required": true },
-        "id": { "type": "string", "required": true },
+        "id": {
+          "type": "string",
+          "required": true,
+          "maxLength": 50
+        },
         "message": {
           "type": ["string", "null"],
-          "required": true
+          "required": true,
+          "maxLength": 255
         },
-        "email": { "type": "string", "required": true },
+        "email": {
+          "type": "string",
+          "required": true,
+          "maxLength": 255
+        },
         "type": {
           "type": "string",
           "required": true,
@@ -1264,6 +1275,7 @@
       }
     },
     "schemaTag": "data",
+    "description": "A contact or waitlist submission from an unauthenticated user.",
     "example": {
       "id": "wejsiq864y0sbytrzsnlr9a0",
       "email": "marlin62@yahoo.com",
@@ -1274,70 +1286,6 @@
     }
   },
   {
-    "name": "OrganizationIncluded",
-    "ref": "#/components/schemas/OrganizationIncluded",
-    "type": "object",
-    "schema": {
-      "type": "object",
-      "properties": {
-        "membership": {
-          "type": "object",
-          "required": false,
-          "properties": {
-            "id": { "type": "string", "required": true },
-            "tenantId": { "type": "string", "required": true },
-            "contextType": {
-              "type": "string",
-              "required": true,
-              "enum": ["organization"]
-            },
-            "userId": { "type": "string", "required": true },
-            "role": {
-              "type": "string",
-              "required": true,
-              "enum": ["admin", "member"]
-            },
-            "archived": { "type": "boolean", "required": true },
-            "muted": { "type": "boolean", "required": true },
-            "displayOrder": {
-              "type": "number",
-              "required": true,
-              "minimum": -140737488355328,
-              "maximum": 140737488355327
-            },
-            "organizationId": { "type": "string", "required": true }
-          },
-          "ref": "#/components/schemas/MembershipBase"
-        },
-        "counts": {
-          "type": "object",
-          "required": false,
-          "properties": {
-            "membership": {
-              "type": "object",
-              "required": true,
-              "properties": {
-                "admin": { "type": "number", "required": true },
-                "member": { "type": "number", "required": true },
-                "pending": { "type": "number", "required": true },
-                "total": { "type": "number", "required": true }
-              }
-            },
-            "entities": {
-              "type": "object",
-              "required": true,
-              "properties": {
-                "attachment": { "type": "number", "required": true },
-                "page": { "type": "number", "required": true }
-              }
-            }
-          }
-        }
-      }
-    },
-    "schemaTag": "data"
-  },
-  {
     "name": "Organization",
     "ref": "#/components/schemas/Organization",
     "type": "object",
@@ -1345,14 +1293,26 @@
       "type": "object",
       "properties": {
         "createdAt": { "type": "string", "required": true },
-        "id": { "type": "string", "required": true },
+        "id": {
+          "type": "string",
+          "required": true,
+          "maxLength": 50
+        },
         "entityType": {
           "type": "string",
           "required": true,
           "enum": ["organization"]
         },
-        "tenantId": { "type": "string", "required": true },
-        "name": { "type": "string", "required": true },
+        "tenantId": {
+          "type": "string",
+          "required": true,
+          "maxLength": 24
+        },
+        "name": {
+          "type": "string",
+          "required": true,
+          "maxLength": 255
+        },
         "description": {
           "type": ["string", "null"],
           "required": true
@@ -1361,34 +1321,45 @@
           "type": ["string", "null"],
           "required": true
         },
-        "slug": { "type": "string", "required": true },
+        "slug": {
+          "type": "string",
+          "required": true,
+          "maxLength": 255
+        },
         "thumbnailUrl": {
           "type": ["string", "null"],
-          "required": true
+          "required": true,
+          "maxLength": 2048
         },
         "bannerUrl": {
           "type": ["string", "null"],
-          "required": true
+          "required": true,
+          "maxLength": 2048
         },
         "createdBy": {
           "type": ["string", "null"],
-          "required": true
+          "required": true,
+          "maxLength": 50
         },
         "modifiedBy": {
           "type": ["string", "null"],
-          "required": true
+          "required": true,
+          "maxLength": 50
         },
         "shortName": {
           "type": ["string", "null"],
-          "required": true
+          "required": true,
+          "maxLength": 255
         },
         "country": {
           "type": ["string", "null"],
-          "required": true
+          "required": true,
+          "maxLength": 255
         },
         "timezone": {
           "type": ["string", "null"],
-          "required": true
+          "required": true,
+          "maxLength": 255
         },
         "defaultLanguage": {
           "type": "string",
@@ -1404,7 +1375,8 @@
         },
         "notificationEmail": {
           "type": ["string", "null"],
-          "required": true
+          "required": true,
+          "maxLength": 255
         },
         "emailDomains": {
           "type": "array",
@@ -1413,15 +1385,18 @@
         },
         "color": {
           "type": ["string", "null"],
-          "required": true
+          "required": true,
+          "maxLength": 255
         },
         "logoUrl": {
           "type": ["string", "null"],
-          "required": true
+          "required": true,
+          "maxLength": 2048
         },
         "websiteUrl": {
           "type": ["string", "null"],
-          "required": true
+          "required": true,
+          "maxLength": 2048
         },
         "welcomeText": {
           "type": ["string", "null"],
@@ -1441,15 +1416,28 @@
             "membership": {
               "type": "object",
               "required": false,
+              "description": "Core membership fields shared across active and inactive memberships.",
               "properties": {
-                "id": { "type": "string", "required": true },
-                "tenantId": { "type": "string", "required": true },
+                "id": {
+                  "type": "string",
+                  "required": true,
+                  "maxLength": 50
+                },
+                "tenantId": {
+                  "type": "string",
+                  "required": true,
+                  "maxLength": 24
+                },
                 "contextType": {
                   "type": "string",
                   "required": true,
                   "enum": ["organization"]
                 },
-                "userId": { "type": "string", "required": true },
+                "userId": {
+                  "type": "string",
+                  "required": true,
+                  "maxLength": 50
+                },
                 "role": {
                   "type": "string",
                   "required": true,
@@ -1463,7 +1451,11 @@
                   "minimum": -140737488355328,
                   "maximum": 140737488355327
                 },
-                "organizationId": { "type": "string", "required": true }
+                "organizationId": {
+                  "type": "string",
+                  "required": true,
+                  "maxLength": 50
+                }
               },
               "ref": "#/components/schemas/MembershipBase"
             },
@@ -1491,8 +1483,7 @@
                 }
               }
             }
-          },
-          "ref": "#/components/schemas/OrganizationIncluded"
+          }
         },
         "can": {
           "type": "object",
@@ -1508,6 +1499,7 @@
       }
     },
     "schemaTag": "data",
+    "description": "An organization with settings, restrictions, and membership context.",
     "example": {
       "id": "hmo9fwr239kqavr3yur671kl",
       "tenantId": "vk6xht",
@@ -1571,14 +1563,26 @@
       "type": "object",
       "properties": {
         "createdAt": { "type": "string", "required": true },
-        "id": { "type": "string", "required": true },
+        "id": {
+          "type": "string",
+          "required": true,
+          "maxLength": 50
+        },
         "entityType": {
           "type": "string",
           "required": true,
           "enum": ["page"]
         },
-        "tenantId": { "type": "string", "required": true },
-        "name": { "type": "string", "required": true },
+        "tenantId": {
+          "type": "string",
+          "required": true,
+          "maxLength": 24
+        },
+        "name": {
+          "type": "string",
+          "required": true,
+          "maxLength": 255
+        },
         "description": {
           "type": ["string", "null"],
           "required": true
@@ -1590,22 +1594,29 @@
         "stx": {
           "type": "object",
           "required": true,
+          "description": "Sync transaction metadata stored on entities for offline and realtime support.",
           "properties": {
-            "id": { "type": "string", "required": true },
+            "mutationId": { "type": "string", "required": true },
             "sourceId": { "type": "string", "required": true },
-            "version": { "type": "number", "required": true },
+            "version": { "type": "integer", "required": true },
             "fieldVersions": { "type": "object", "required": true }
           },
           "ref": "#/components/schemas/StxBase"
         },
-        "keywords": { "type": "string", "required": true },
+        "keywords": {
+          "type": "string",
+          "required": true,
+          "maxLength": 255
+        },
         "createdBy": {
           "type": ["string", "null"],
-          "required": true
+          "required": true,
+          "maxLength": 50
         },
         "modifiedBy": {
           "type": ["string", "null"],
-          "required": true
+          "required": true,
+          "maxLength": 50
         },
         "status": {
           "type": "string",
@@ -1615,7 +1626,8 @@
         "publicAccess": { "type": "boolean", "required": true },
         "parentId": {
           "type": ["string", "null"],
-          "required": true
+          "required": true,
+          "maxLength": 50
         },
         "displayOrder": {
           "type": "number",
@@ -1626,6 +1638,7 @@
       }
     },
     "schemaTag": "data",
+    "description": "A content page belonging to an organization.",
     "example": {
       "id": "co96vrmic3wbowmxzbqa1e9f",
       "tenantId": "ijllhz",
@@ -1642,7 +1655,7 @@
       "modifiedAt": "2024-08-06T10:28:33.226Z",
       "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju",
       "stx": {
-        "id": "4tufkeho7gg1xwx21e333ngq",
+        "mutationId": "4tufkeho7gg1xwx21e333ngq",
         "sourceId": "src_ujcbpukfple60p8h3tnk9zpo",
         "version": 1,
         "fieldVersions": {}
@@ -1650,13 +1663,13 @@
     }
   },
   {
-    "name": "StxRequest",
-    "ref": "#/components/schemas/StxRequest",
+    "name": "StxRequestBase",
+    "ref": "#/components/schemas/StxRequestBase",
     "type": "object",
     "schema": {
       "type": "object",
       "properties": {
-        "id": {
+        "mutationId": {
           "type": "string",
           "required": true,
           "description": "Unique mutation ID (nanoid)",
@@ -1668,19 +1681,20 @@
           "description": "Tab/instance identifier for echo prevention",
           "maxLength": 64
         },
-        "baseVersion": {
+        "lastReadVersion": {
           "type": "integer",
           "required": true,
-          "description": "Entity version when read (for conflict detection)",
+          "description": "Entity version when last read (for conflict detection)",
           "minimum": 0
         }
       }
     },
-    "schemaTag": "data",
+    "schemaTag": "base",
+    "description": "Sync transaction metadata sent with mutations for idempotency and conflict detection.",
     "example": {
-      "id": "efuoa1qdsm3eoz4p3a4an8mw",
+      "mutationId": "efuoa1qdsm3eoz4p3a4an8mw",
       "sourceId": "mwbi2hv7uirbw4zg9xtdd05t",
-      "baseVersion": 0
+      "lastReadVersion": 0
     }
   },
   {
@@ -1691,14 +1705,26 @@
       "type": "object",
       "properties": {
         "createdAt": { "type": "string", "required": true },
-        "id": { "type": "string", "required": true },
+        "id": {
+          "type": "string",
+          "required": true,
+          "maxLength": 50
+        },
         "entityType": {
           "type": "string",
           "required": true,
           "enum": ["attachment"]
         },
-        "tenantId": { "type": "string", "required": true },
-        "name": { "type": "string", "required": true },
+        "tenantId": {
+          "type": "string",
+          "required": true,
+          "maxLength": 24
+        },
+        "name": {
+          "type": "string",
+          "required": true,
+          "maxLength": 255
+        },
         "description": {
           "type": ["string", "null"],
           "required": true
@@ -1710,46 +1736,81 @@
         "stx": {
           "type": "object",
           "required": true,
+          "description": "Sync transaction metadata stored on entities for offline and realtime support.",
           "properties": {
-            "id": { "type": "string", "required": true },
+            "mutationId": { "type": "string", "required": true },
             "sourceId": { "type": "string", "required": true },
-            "version": { "type": "number", "required": true },
+            "version": { "type": "integer", "required": true },
             "fieldVersions": { "type": "object", "required": true }
           },
           "ref": "#/components/schemas/StxBase"
         },
-        "keywords": { "type": "string", "required": true },
+        "keywords": {
+          "type": "string",
+          "required": true,
+          "maxLength": 255
+        },
         "createdBy": {
           "type": ["string", "null"],
-          "required": true
+          "required": true,
+          "maxLength": 50
         },
         "modifiedBy": {
           "type": ["string", "null"],
-          "required": true
+          "required": true,
+          "maxLength": 50
         },
         "public": { "type": "boolean", "required": true },
-        "bucketName": { "type": "string", "required": true },
+        "bucketName": {
+          "type": "string",
+          "required": true,
+          "maxLength": 255
+        },
         "groupId": {
           "type": ["string", "null"],
-          "required": true
+          "required": true,
+          "maxLength": 50
         },
-        "filename": { "type": "string", "required": true },
-        "contentType": { "type": "string", "required": true },
+        "filename": {
+          "type": "string",
+          "required": true,
+          "maxLength": 255
+        },
+        "contentType": {
+          "type": "string",
+          "required": true,
+          "maxLength": 255
+        },
         "convertedContentType": {
           "type": ["string", "null"],
-          "required": true
+          "required": true,
+          "maxLength": 255
         },
-        "size": { "type": "string", "required": true },
-        "originalKey": { "type": "string", "required": true },
+        "size": {
+          "type": "string",
+          "required": true,
+          "maxLength": 255
+        },
+        "originalKey": {
+          "type": "string",
+          "required": true,
+          "maxLength": 2048
+        },
         "convertedKey": {
           "type": ["string", "null"],
-          "required": true
+          "required": true,
+          "maxLength": 2048
         },
         "thumbnailKey": {
           "type": ["string", "null"],
-          "required": true
+          "required": true,
+          "maxLength": 2048
         },
-        "organizationId": { "type": "string", "required": true },
+        "organizationId": {
+          "type": "string",
+          "required": true,
+          "maxLength": 50
+        },
         "can": {
           "type": "object",
           "required": false,
@@ -1764,6 +1825,7 @@
       }
     },
     "schemaTag": "data",
+    "description": "A file attachment belonging to an organization.",
     "example": {
       "id": "og9ynkm3vp2mdgi3oeicogxv",
       "tenantId": "lphxlo",
@@ -1786,7 +1848,7 @@
       "modifiedAt": "2024-10-12T17:43:05.360Z",
       "modifiedBy": "0uwim8y2tppz7th9tol75wjz",
       "stx": {
-        "id": "pkeuemouu8t58r8fuj3tlenh",
+        "mutationId": "pkeuemouu8t58r8fuj3tlenh",
         "sourceId": "src_qurk6hu54pnfytf99mpmuhw0",
         "version": 1,
         "fieldVersions": {}
@@ -1802,27 +1864,44 @@
       "type": "object",
       "properties": {
         "createdAt": { "type": "string", "required": true },
-        "id": { "type": "string", "required": true },
-        "tenantId": { "type": "string", "required": true },
+        "id": {
+          "type": "string",
+          "required": true,
+          "maxLength": 50
+        },
+        "tenantId": {
+          "type": "string",
+          "required": true,
+          "maxLength": 24
+        },
         "contextType": {
           "type": "string",
           "required": true,
           "enum": ["organization"]
         },
-        "userId": { "type": "string", "required": true },
+        "userId": {
+          "type": "string",
+          "required": true,
+          "maxLength": 50
+        },
         "role": {
           "type": "string",
           "required": true,
           "enum": ["admin", "member"]
         },
-        "createdBy": { "type": "string", "required": true },
+        "createdBy": {
+          "type": "string",
+          "required": true,
+          "maxLength": 50
+        },
         "modifiedAt": {
           "type": ["string", "null"],
           "required": true
         },
         "modifiedBy": {
           "type": ["string", "null"],
-          "required": true
+          "required": true,
+          "maxLength": 50
         },
         "archived": { "type": "boolean", "required": true },
         "muted": { "type": "boolean", "required": true },
@@ -1832,10 +1911,15 @@
           "minimum": -140737488355328,
           "maximum": 140737488355327
         },
-        "organizationId": { "type": "string", "required": true }
+        "organizationId": {
+          "type": "string",
+          "required": true,
+          "maxLength": 50
+        }
       }
     },
     "schemaTag": "data",
+    "description": "A user's membership in a context entity, including role and activity data.",
     "example": {
       "id": "575b0vreys30k2k4z795uufw",
       "contextType": "organization",

@@ -28,7 +28,12 @@ export function DeleteMemberships({
   const { mutate: deleteMemberships, isPending } = useMembershipsDeleteMutation();
 
   const onDeleteMembers = () => {
-    deleteMemberships({ tenantId, orgId, entityId, entityType, members });
+    deleteMemberships({
+      path: { tenantId, orgId },
+      body: { ids: members.map(({ id }) => id) },
+      query: { entityId, entityType },
+      members,
+    });
 
     if (isDialog) removeDialog();
     callback?.({ data: members, status: 'success' });

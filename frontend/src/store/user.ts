@@ -3,9 +3,9 @@ import { appConfig } from 'shared';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import type { GetMeResponse, User } from '~/api.gen';
+import type { GetMeResponse, MeAuthData, User } from '~/api.gen';
 import { isDebugMode } from '~/env';
-import type { MeAuthData, MeUser } from '~/modules/me/types';
+import type { MeUser } from '~/modules/me/types';
 
 interface UserStoreState {
   user: MeUser; // Current user data

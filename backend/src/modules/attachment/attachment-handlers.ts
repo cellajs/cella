@@ -150,14 +150,14 @@ const attachmentRouteHandlers = app
     const newAttachments = ctx.req.valid('json');
     const tenantDb = ctx.var.db;
 
-    // Idempotency check - use first item's stx.id to check entire batch
-    const batchStxId = newAttachments[0].stx.id;
+    // Idempotency check - use first item's stx.mutationId to check entire batch
+    const batchStxId = newAttachments[0].stx.mutationId;
     if (await isTransactionProcessed(batchStxId, tenantDb)) {
-      // Fetch all items from same batch by querying stx.id in JSONB column
+      // Fetch all items from same batch by querying stx.mutationId in JSONB column
       const existingBatch = await tenantDb
         .select()
         .from(attachmentsTable)
-        .where(sql`${attachmentsTable.stx}->>'id' = ${batchStxId}`);
+        .where(sql`${attachmentsTable.stx}->>'mutationId' = ${batchStxId}`);
       if (existingBatch.length > 0) {
         return ctx.json({ data: existingBatch, rejectedItemIds: [] }, 200);
       }
@@ -195,7 +195,7 @@ const attachmentRouteHandlers = app
       description: '', // Required by baseEntityColumns
       // Sync: write transient stx metadata for CDC Worker
       stx: {
-        id: stx.id,
+        mutationId: stx.mutationId,
         sourceId: stx.sourceId,
         version: 1,
         fieldVersions: {},
@@ -226,7 +226,7 @@ const attachmentRouteHandlers = app
     const changedFields = getChangedTrackedFields(updatedFields, trackedFields);
 
     // Field-level conflict detection - check ALL changed fields
-    const { conflicts } = checkFieldConflicts(changedFields, entity.stx, stx.baseVersion);
+    const { conflicts } = checkFieldConflicts(changedFields, entity.stx, stx.lastReadVersion);
     throwIfConflicts('attachment', conflicts);
 
     const newVersion = (entity.stx?.version ?? 0) + 1;
@@ -241,7 +241,7 @@ const attachmentRouteHandlers = app
         modifiedBy: user.id,
         // Sync: write transient stx metadata for CDC Worker + client tracking
         stx: {
-          id: stx.id,
+          mutationId: stx.mutationId,
           sourceId: stx.sourceId,
           version: newVersion,
           fieldVersions: buildFieldVersions(entity.stx?.fieldVersions, changedFields, newVersion),
@@ -266,7 +266,7 @@ const attachmentRouteHandlers = app
     // stx is available for CDC echo prevention (sourceId tracking)
     // CDC will read stx from the deleted row's old data
     if (stx) {
-      logEvent('debug', 'Delete with stx metadata', { stxId: stx.id, sourceId: stx.sourceId });
+      logEvent('debug', 'Delete with stx metadata', { stxId: stx.mutationId, sourceId: stx.sourceId });
     }
 
     // Convert the ids to an array

@@ -17,13 +17,17 @@ export const sendNewsletterBodySchema = z.object({
   content: z.string().max(maxLength.html),
 });
 
-export const systemRoleSchema = z
-  .object(createSelectSchema(systemRolesTable).shape)
-  .openapi('SystemRole', { example: mockSystemRoleResponse() });
+export const systemRoleSchema = z.object(createSelectSchema(systemRolesTable).shape).openapi('SystemRole', {
+  description: 'A system-level role assignment for a user.',
+  example: mockSystemRoleResponse(),
+});
 
 export const systemRoleBaseSchema = systemRoleSchema
   .omit({
     createdAt: true,
     modifiedAt: true,
   })
-  .openapi('SystemRoleBase', { example: mockSystemRoleBase() });
+  .openapi('SystemRoleBase', {
+    description: 'Core fields for a system role assignment.',
+    example: mockSystemRoleBase(),
+  });

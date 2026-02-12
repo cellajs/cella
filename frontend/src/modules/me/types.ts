@@ -1,8 +1,7 @@
 import { appConfig } from 'shared';
-import type { GetMyAuthResponse, GetMyInvitationsResponse, GetUploadTokenData, User } from '~/api.gen';
+import type { GetMyInvitationsResponse, GetUploadTokenData, MeAuthData, User } from '~/api.gen';
 import type { ContextEntity } from '~/modules/entities/types';
 
-export type MeAuthData = GetMyAuthResponse;
 export type Session = MeAuthData['sessions'][number];
 export type Passkey = MeAuthData['passkeys'][number];
 

@@ -29,17 +29,20 @@ export function UserProfilePage({ user, isSheet }: Props) {
   const isSelf = !!currentUser && currentUser.id === user.id;
 
   // Pick correct mutation hook
-  const useMutationHook = isSelf ? useUpdateSelfMutation : useUserUpdateMutation;
-  const { mutate } = useMutationHook();
+  const updateSelf = useUpdateSelfMutation();
+  const updateUser = useUserUpdateMutation();
 
   const coverUpdateCallback = (bannerUrl: string) => {
-    mutate(
-      { id: currentUser.id, bannerUrl },
-      {
-        onSuccess: () => toaster(t('common:success.upload_cover'), 'success'),
-        onError: () => toaster(t('error:image_upload_failed'), 'error'),
-      },
-    );
+    const callbacks = {
+      onSuccess: () => toaster(t('common:success.upload_cover'), 'success'),
+      onError: () => toaster(t('error:image_upload_failed'), 'error'),
+    };
+
+    if (isSelf) {
+      updateSelf.mutate({ bannerUrl }, callbacks);
+    } else {
+      updateUser.mutate({ path: { id: user.id }, body: { bannerUrl } }, callbacks);
+    }
   };
 
   if (!user) return <ContentPlaceholder icon={FlameKindlingIcon} title="error:no_user_found" />;

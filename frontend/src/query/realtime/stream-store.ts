@@ -1,15 +1,15 @@
 import { appConfig } from 'shared';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import type { PublicStreamActivity, StreamNotification } from '~/api.gen';
-import { getAppStream, publicStream } from '~/api.gen';
+import type { StreamNotification } from '~/api.gen';
+import { getAppStream, getPublicStream } from '~/api.gen';
 import { isDebugMode } from '~/env';
 import { pageQueryKeys } from '~/modules/page/query';
 import { queryClient } from '~/query/query-client';
 import { useSyncStore } from '~/store/sync';
 import { handleAppStreamNotification } from './app-stream-handler';
 import { processCatchupBatch } from './catchup-processor';
-import { handlePublicStreamMessage } from './public-stream-handler';
+import { handlePublicStreamNotification } from './public-stream-handler';
 import {
   broadcastNotification,
   initTabCoordinator,
@@ -24,9 +24,9 @@ interface StreamConfig {
   endpoint: string;
   withCredentials: boolean;
   useTabCoordination: boolean;
-  fetchCatchup: (offset: string | null) => Promise<{ activities: unknown[]; cursor: string | null }>;
+  fetchCatchup: (offset: string | null) => Promise<{ notifications: unknown[]; cursor: string | null }>;
   processNotification: (notification: unknown) => void;
-  processCatchupBatch?: (activities: unknown[], options: { lastSyncAt: string | null }) => void;
+  processCatchupBatch?: (notifications: unknown[], options: { lastSyncAt: string | null }) => void;
   invalidateOnReconnect?: boolean;
   maxConsecutiveFailures?: number;
 }
@@ -134,15 +134,15 @@ class StreamManager {
       const lastSyncAt = useTabCoordination ? useSyncStore.getState().lastSyncAt : null;
 
       console.debug(`[${debugLabel}] Fetching catchup from offset: ${currentCursor ?? 'null'}`);
-      const { activities, cursor: newCursor } = await this.config.fetchCatchup(currentCursor);
+      const { notifications, cursor: newCursor } = await this.config.fetchCatchup(currentCursor);
       if (signal.aborted) return;
 
-      if (activities.length > 0) {
-        console.debug(`[${debugLabel}] Processing ${activities.length} catchup activities`);
+      if (notifications.length > 0) {
+        console.debug(`[${debugLabel}] Processing ${notifications.length} catchup notifications`);
         if (this.config.processCatchupBatch) {
-          this.config.processCatchupBatch(activities, { lastSyncAt });
+          this.config.processCatchupBatch(notifications, { lastSyncAt });
         } else {
-          for (const activity of activities) this.config.processNotification(activity);
+          for (const notification of notifications) this.config.processNotification(notification);
         }
       }
 
@@ -359,10 +359,13 @@ const publicStreamConfig: StreamConfig = {
   useTabCoordination: false,
   invalidateOnReconnect: true,
   fetchCatchup: async (offset) => {
-    const response = await publicStream({ query: { offset: offset ?? undefined } });
-    return { activities: (response.activities ?? []) as PublicStreamActivity[], cursor: response.cursor ?? null };
+    const response = await getPublicStream({ query: { offset: offset ?? undefined } });
+    return {
+      notifications: (response.notifications ?? []) as StreamNotification[],
+      cursor: response.cursor ?? null,
+    };
   },
-  processNotification: (notification) => handlePublicStreamMessage(notification as PublicStreamActivity),
+  processNotification: (notification) => handlePublicStreamNotification(notification as StreamNotification),
 };
 
 export const publicStreamManager = new StreamManager(publicStreamConfig, publicStreamStore);
@@ -380,10 +383,14 @@ const appStreamConfig: StreamConfig = {
   invalidateOnReconnect: false,
   fetchCatchup: async (offset) => {
     const response = await getAppStream({ query: { offset: offset ?? undefined } });
-    return { activities: (response.activities ?? []) as StreamNotification[], cursor: response.cursor ?? null };
+    return {
+      notifications: (response.notifications ?? []) as AppStreamNotification[],
+      cursor: response.cursor ?? null,
+    };
   },
   processNotification: (notification) => handleAppStreamNotification(notification as AppStreamNotification),
-  processCatchupBatch: (activities, options) => processCatchupBatch(activities as AppStreamNotification[], options),
+  processCatchupBatch: (notifications, options) =>
+    processCatchupBatch(notifications as AppStreamNotification[], options),
 };
 
 export const appStreamManager = new StreamManager(appStreamConfig, appStreamStore);

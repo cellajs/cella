@@ -5,6 +5,7 @@ import { isAuthenticated, tenantContextSet, tenantMatch, userContextSet, userMat
 import { organizationsTable } from '#/db/schema/organizations';
 import { tenantsTable } from '#/db/schema/tenants';
 import { usersTable } from '#/db/schema/users';
+import { maxLength, tenantIdLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
 
@@ -18,24 +19,24 @@ export const membershipsTable = pgTable(
   'memberships',
   {
     createdAt: timestampColumns.createdAt,
-    id: varchar().primaryKey().$defaultFn(nanoid),
-    tenantId: varchar('tenant_id')
+    id: varchar({ length: maxLength.id }).primaryKey().$defaultFn(nanoid),
+    tenantId: varchar('tenant_id', { length: tenantIdLength })
       .notNull()
       .references(() => tenantsTable.id),
     contextType: varchar({ enum: appConfig.contextEntityTypes }).notNull(),
-    userId: varchar()
+    userId: varchar({ length: maxLength.id })
       .notNull()
       .references(() => usersTable.id, { onDelete: 'cascade' }),
     role: varchar({ enum: roleEnum }).notNull().default('member'),
-    createdBy: varchar()
+    createdBy: varchar({ length: maxLength.id })
       .notNull()
       .references(() => usersTable.id, { onDelete: 'set null' }),
     modifiedAt: timestampColumns.modifiedAt,
-    modifiedBy: varchar().references(() => usersTable.id, { onDelete: 'set null' }),
+    modifiedBy: varchar({ length: maxLength.id }).references(() => usersTable.id, { onDelete: 'set null' }),
     archived: boolean().default(false).notNull(),
     muted: boolean().default(false).notNull(),
     displayOrder: doublePrecision().notNull(),
-    organizationId: varchar()
+    organizationId: varchar({ length: maxLength.id })
       .notNull()
       .references(() => organizationsTable.id, { onDelete: 'cascade' }),
   },

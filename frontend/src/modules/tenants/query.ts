@@ -2,17 +2,19 @@ import { infiniteQueryOptions, queryOptions, useMutation, useQueryClient } from 
 import { appConfig } from 'shared';
 import type { Tenant } from '~/api.gen';
 import {
+  type ArchiveTenantData,
   archiveTenant,
-  type CreateTenantBody,
+  type CreateTenantData,
   createTenant,
   type GetTenantsData,
   getTenantById,
   getTenants,
-  type UpdateTenantBody,
+  type UpdateTenantData,
   updateTenant,
 } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import { baseInfiniteQueryOptions } from '~/query/basic';
+import type { MutationData } from '~/query/types';
 
 type TenantFilters = Omit<GetTenantsData['query'], 'limit' | 'offset'>;
 
@@ -75,7 +77,7 @@ export const tenantsListQueryOptions = ({
 export const useTenantCreateMutation = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<Tenant, ApiError, CreateTenantBody>({
+  return useMutation<Tenant, ApiError, CreateTenantData['body']>({
     mutationKey: tenantQueryKeys.create,
     mutationFn: (body) => createTenant({ body }),
     onSuccess: () => {
@@ -91,9 +93,9 @@ export const useTenantCreateMutation = () => {
 export const useTenantUpdateMutation = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<Tenant, ApiError, UpdateTenantBody & { tenantId: string }>({
+  return useMutation<Tenant, ApiError, MutationData<UpdateTenantData>>({
     mutationKey: tenantQueryKeys.update,
-    mutationFn: ({ tenantId, ...body }) => updateTenant({ path: { tenantId }, body }),
+    mutationFn: ({ path, body }) => updateTenant({ path, body }),
     onSuccess: () => {
       // Invalidate tenant list to refetch
       queryClient.invalidateQueries({ queryKey: tenantQueryKeys.list.base });
@@ -107,9 +109,9 @@ export const useTenantUpdateMutation = () => {
 export const useTenantArchiveMutation = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<{ success: boolean }, ApiError, { tenantId: string }>({
+  return useMutation<{ success: boolean }, ApiError, MutationData<ArchiveTenantData>>({
     mutationKey: tenantQueryKeys.delete,
-    mutationFn: ({ tenantId }) => archiveTenant({ path: { tenantId } }),
+    mutationFn: ({ path }) => archiveTenant({ path }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: tenantQueryKeys.list.base });
     },

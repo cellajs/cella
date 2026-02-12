@@ -17,6 +17,7 @@ import { toaster } from '~/modules/common/toaster/service';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
+import type { MutationData } from '~/query/types';
 import { MfaRoute } from '~/routes/auth-routes';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 
@@ -41,8 +42,8 @@ export function CreatePasswordPage() {
     mutate: _createPassword,
     isPending,
     error: resetPasswordError,
-  } = useMutation<CreatePasswordResponse, ApiError, CreatePasswordData['body'] & CreatePasswordData['path']>({
-    mutationFn: ({ tokenId, password }) => createPassword({ path: { tokenId }, body: { password } }),
+  } = useMutation<CreatePasswordResponse, ApiError, MutationData<CreatePasswordData>>({
+    mutationFn: ({ path, body }) => createPassword({ path, body }),
     onSuccess: ({ mfa }) => {
       toaster(t('common:success.password_reset'), 'success');
       const navigateInfo = mfa
@@ -58,7 +59,7 @@ export function CreatePasswordPage() {
   });
 
   // Submit new password
-  const onSubmit = ({ password }: FormValues) => _createPassword({ tokenId, password });
+  const onSubmit = ({ password }: FormValues) => _createPassword({ path: { tokenId }, body: { password } });
 
   if (isLoading) return <Spinner className="h-10 w-10" />;
 

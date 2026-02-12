@@ -4,7 +4,7 @@ import { activitiesTable } from '#/db/schema/activities';
 import { activityErrorSchema } from '#/db/utils/activity-error-schema';
 import { createSelectSchema } from '#/db/utils/drizzle-schema';
 import { paginationQuerySchema } from '#/schemas';
-import { stxBaseSchema } from '#/schemas/stx-base-schema';
+import { stxBaseSchema } from '#/schemas/sync-transaction-schemas';
 import { activityActions } from '#/sync/activity-bus';
 import { mockActivityResponse } from '../../../mocks/mock-activity';
 
@@ -34,7 +34,10 @@ export const activitySchema = z
     stx: z.union([stxBaseSchema, z.null()]),
     error: z.union([activityErrorSchema, z.null()]),
   })
-  .openapi('Activity', { example: mockActivityResponse() });
+  .openapi('Activity', {
+    description: 'An auditable event recording an entity change, used for sync and history.',
+    example: mockActivityResponse(),
+  });
 
 /** Query schema for filtering and paginating activities */
 export const activityListQuerySchema = paginationQuerySchema.extend({

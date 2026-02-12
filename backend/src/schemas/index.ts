@@ -54,14 +54,10 @@ export { mapEntitiesToSchema } from './map-entities-to-schema';
 
 // Stream schemas
 export {
-  type AppStreamResponse,
-  appStreamResponseSchema,
-  type PublicStreamActivity,
-  type PublicStreamResponse,
-  publicStreamActivitySchema,
   publicStreamQuerySchema,
-  publicStreamResponseSchema,
   type StreamNotification,
+  type StreamNotificationResponse,
+  streamNotificationResponseSchema,
   streamNotificationSchema,
   streamQuerySchema,
   streamResponseSchema,
@@ -75,9 +71,4 @@ export {
 } from './success-response-schemas';
 
 // Sync transaction schemas (request wrapper only - responses return entities directly)
-export {
-  type StxRequest,
-  type StxStreamMessage,
-  stxRequestSchema,
-  stxStreamMessageSchema,
-} from './sync-transaction-schemas';
+export { type StxBase, type StxRequest, stxBaseSchema, stxRequestSchema } from './sync-transaction-schemas';

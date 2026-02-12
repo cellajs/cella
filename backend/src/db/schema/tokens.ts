@@ -2,6 +2,7 @@ import { index, pgTable, primaryKey, timestamp, varchar } from 'drizzle-orm/pg-c
 import { appConfig } from 'shared';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { usersTable } from '#/db/schema/users';
+import { maxLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
 
@@ -16,15 +17,15 @@ const tokenTypeEnum = appConfig.tokenTypes;
 export const tokensTable = pgTable(
   'tokens',
   {
-    id: varchar().notNull().$defaultFn(nanoid),
-    secret: varchar().notNull(),
-    singleUseToken: varchar(),
+    id: varchar({ length: maxLength.id }).notNull().$defaultFn(nanoid),
+    secret: varchar({ length: maxLength.field }).notNull(),
+    singleUseToken: varchar({ length: maxLength.field }),
     type: varchar({ enum: tokenTypeEnum }).notNull(),
-    email: varchar().notNull(),
-    userId: varchar().references(() => usersTable.id, { onDelete: 'cascade' }),
-    oauthAccountId: varchar().references(() => oauthAccountsTable.id, { onDelete: 'cascade' }),
-    inactiveMembershipId: varchar(),
-    createdBy: varchar().references(() => usersTable.id, { onDelete: 'cascade' }),
+    email: varchar({ length: maxLength.field }).notNull(),
+    userId: varchar({ length: maxLength.id }).references(() => usersTable.id, { onDelete: 'cascade' }),
+    oauthAccountId: varchar({ length: maxLength.id }).references(() => oauthAccountsTable.id, { onDelete: 'cascade' }),
+    inactiveMembershipId: varchar({ length: maxLength.id }),
+    createdBy: varchar({ length: maxLength.id }).references(() => usersTable.id, { onDelete: 'cascade' }),
     createdAt: timestampColumns.createdAt,
     expiresAt: timestampColumns.expiresAt,
     invokedAt: timestamp({ withTimezone: true, mode: 'string' }),

@@ -10,31 +10,47 @@
         "contentType": "application/json",
         "schema": {
           "type": "object",
+          "description": "The currently authenticated user with their system role.",
           "properties": {
             "user": {
               "type": "object",
               "required": true,
+              "description": "A user with profile data and last-seen activity timestamp.",
               "properties": {
                 "createdAt": { "type": "string", "required": true },
-                "id": { "type": "string", "required": true },
+                "id": {
+                  "type": "string",
+                  "required": true,
+                  "maxLength": 50
+                },
                 "entityType": {
                   "type": "string",
                   "required": true,
                   "enum": ["user"]
                 },
-                "name": { "type": "string", "required": true },
+                "name": {
+                  "type": "string",
+                  "required": true,
+                  "maxLength": 255
+                },
                 "description": {
                   "type": ["string", "null"],
                   "required": true
                 },
-                "slug": { "type": "string", "required": true },
+                "slug": {
+                  "type": "string",
+                  "required": true,
+                  "maxLength": 255
+                },
                 "thumbnailUrl": {
                   "type": ["string", "null"],
-                  "required": true
+                  "required": true,
+                  "maxLength": 2048
                 },
                 "bannerUrl": {
                   "type": ["string", "null"],
-                  "required": true
+                  "required": true,
+                  "maxLength": 2048
                 },
                 "email": {
                   "type": "string",
@@ -44,11 +60,13 @@
                 "mfaRequired": { "type": "boolean", "required": true },
                 "firstName": {
                   "type": ["string", "null"],
-                  "required": true
+                  "required": true,
+                  "maxLength": 255
                 },
                 "lastName": {
                   "type": ["string", "null"],
-                  "required": true
+                  "required": true,
+                  "maxLength": 255
                 },
                 "language": {
                   "type": "string",
@@ -77,14 +95,12 @@
                 },
                 "modifiedBy": {
                   "type": ["string", "null"],
-                  "required": true
+                  "required": true,
+                  "maxLength": 50
                 },
                 "lastSeenAt": {
-                  "required": true,
-                  "anyOf": [
-                    { "type": "string", "required": false },
-                    { "type": "null", "required": false }
-                  ]
+                  "type": ["string", "null"],
+                  "required": true
                 }
               },
               "ref": "#/components/schemas/User"
@@ -92,7 +108,7 @@
             "systemRole": {
               "type": "string",
               "required": true,
-              "description": "Explain system role here",
+              "description": "System-level role (e.g. admin) or user for standard access.",
               "enum": ["admin", "user"]
             }
           },
@@ -173,27 +189,42 @@
         "contentType": "application/json",
         "schema": {
           "type": "object",
+          "description": "A user with profile data and last-seen activity timestamp.",
           "properties": {
             "createdAt": { "type": "string", "required": true },
-            "id": { "type": "string", "required": true },
+            "id": {
+              "type": "string",
+              "required": true,
+              "maxLength": 50
+            },
             "entityType": {
               "type": "string",
               "required": true,
               "enum": ["user"]
             },
-            "name": { "type": "string", "required": true },
+            "name": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
+            },
             "description": {
               "type": ["string", "null"],
               "required": true
             },
-            "slug": { "type": "string", "required": true },
+            "slug": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
+            },
             "thumbnailUrl": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 2048
             },
             "bannerUrl": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 2048
             },
             "email": {
               "type": "string",
@@ -203,11 +234,13 @@
             "mfaRequired": { "type": "boolean", "required": true },
             "firstName": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 255
             },
             "lastName": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 255
             },
             "language": {
               "type": "string",
@@ -236,14 +269,12 @@
             },
             "modifiedBy": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 50
             },
             "lastSeenAt": {
-              "required": true,
-              "anyOf": [
-                { "type": "string", "required": false },
-                { "type": "null", "required": false }
-              ]
+              "type": ["string", "null"],
+              "required": true
             }
           },
           "ref": "#/components/schemas/User",
@@ -411,27 +442,42 @@
         "contentType": "application/json",
         "schema": {
           "type": "object",
+          "description": "A user with profile data and last-seen activity timestamp.",
           "properties": {
             "createdAt": { "type": "string", "required": true },
-            "id": { "type": "string", "required": true },
+            "id": {
+              "type": "string",
+              "required": true,
+              "maxLength": 50
+            },
             "entityType": {
               "type": "string",
               "required": true,
               "enum": ["user"]
             },
-            "name": { "type": "string", "required": true },
+            "name": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
+            },
             "description": {
               "type": ["string", "null"],
               "required": true
             },
-            "slug": { "type": "string", "required": true },
+            "slug": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
+            },
             "thumbnailUrl": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 2048
             },
             "bannerUrl": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 2048
             },
             "email": {
               "type": "string",
@@ -441,11 +487,13 @@
             "mfaRequired": { "type": "boolean", "required": true },
             "firstName": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 255
             },
             "lastName": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 255
             },
             "language": {
               "type": "string",
@@ -474,14 +522,12 @@
             },
             "modifiedBy": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 50
             },
             "lastSeenAt": {
-              "required": true,
-              "anyOf": [
-                { "type": "string", "required": false },
-                { "type": "null", "required": false }
-              ]
+              "type": ["string", "null"],
+              "required": true
             }
           },
           "ref": "#/components/schemas/User",
@@ -579,6 +625,7 @@
         "contentType": "application/json",
         "schema": {
           "type": "object",
+          "description": "Authentication metadata for the current user session.",
           "properties": {
             "enabledOAuth": {
               "type": "array",
@@ -595,16 +642,25 @@
               "items": {
                 "type": "object",
                 "properties": {
-                  "id": { "type": "string", "required": true },
+                  "id": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 50
+                  },
                   "type": {
                     "type": "string",
                     "required": true,
                     "enum": ["regular", "impersonation", "mfa"]
                   },
-                  "userId": { "type": "string", "required": true },
+                  "userId": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 50
+                  },
                   "deviceName": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 255
                   },
                   "deviceType": {
                     "type": "string",
@@ -613,11 +669,13 @@
                   },
                   "deviceOs": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 255
                   },
                   "browser": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 255
                   },
                   "authStrategy": {
                     "type": "string",
@@ -637,11 +695,20 @@
               "items": {
                 "type": "object",
                 "properties": {
-                  "id": { "type": "string", "required": true },
-                  "userId": { "type": "string", "required": true },
+                  "id": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 50
+                  },
+                  "userId": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 50
+                  },
                   "deviceName": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 255
                   },
                   "deviceType": {
                     "type": "string",
@@ -650,13 +717,19 @@
                   },
                   "deviceOs": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 255
                   },
                   "browser": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 255
                   },
-                  "nameOnDevice": { "type": "string", "required": true },
+                  "nameOnDevice": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
+                  },
                   "createdAt": { "type": "string", "required": true }
                 }
               }
@@ -744,6 +817,7 @@
                   "entity": {
                     "type": "object",
                     "required": true,
+                    "description": "Base schema for entities with memberships (e.g. organization).",
                     "properties": {
                       "id": { "type": "string", "required": true },
                       "name": { "type": "string", "required": true },
@@ -777,23 +851,38 @@
                   "inactiveMembership": {
                     "type": "object",
                     "required": true,
+                    "description": "A membership record for a user who has not yet accepted an invitation.",
                     "properties": {
                       "createdAt": { "type": "string", "required": true },
-                      "id": { "type": "string", "required": true },
-                      "tenantId": { "type": "string", "required": true },
+                      "id": {
+                        "type": "string",
+                        "required": true,
+                        "maxLength": 50
+                      },
+                      "tenantId": {
+                        "type": "string",
+                        "required": true,
+                        "maxLength": 24
+                      },
                       "contextType": {
                         "type": "string",
                         "required": true,
                         "enum": ["organization"]
                       },
-                      "email": { "type": "string", "required": true },
+                      "email": {
+                        "type": "string",
+                        "required": true,
+                        "maxLength": 255
+                      },
                       "userId": {
                         "type": ["string", "null"],
-                        "required": true
+                        "required": true,
+                        "maxLength": 50
                       },
                       "tokenId": {
                         "type": ["string", "null"],
-                        "required": true
+                        "required": true,
+                        "maxLength": 50
                       },
                       "role": {
                         "type": "string",
@@ -804,8 +893,16 @@
                         "type": ["string", "null"],
                         "required": true
                       },
-                      "createdBy": { "type": "string", "required": true },
-                      "organizationId": { "type": "string", "required": true }
+                      "createdBy": {
+                        "type": "string",
+                        "required": true,
+                        "maxLength": 50
+                      },
+                      "organizationId": {
+                        "type": "string",
+                        "required": true,
+                        "maxLength": 50
+                      }
                     },
                     "ref": "#/components/schemas/InactiveMembership"
                   }
@@ -1060,16 +1157,14 @@
         "contentType": "application/json",
         "schema": {
           "type": "object",
+          "description": "A signed token authorizing file uploads to the configured storage provider.",
           "properties": {
             "public": { "type": "boolean", "required": true },
             "sub": { "type": "string", "required": true },
             "s3": { "type": "boolean", "required": true },
             "signature": {
-              "required": true,
-              "anyOf": [
-                { "type": "string", "required": false },
-                { "type": "null", "required": false }
-              ]
+              "type": ["string", "null"],
+              "required": true
             },
             "params": {
               "required": true,
@@ -1226,15 +1321,28 @@
               "ref": "#/components/schemas/MembershipBase",
               "items": {
                 "type": "object",
+                "description": "Core membership fields shared across active and inactive memberships.",
                 "properties": {
-                  "id": { "type": "string", "required": true },
-                  "tenantId": { "type": "string", "required": true },
+                  "id": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 50
+                  },
+                  "tenantId": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 24
+                  },
                   "contextType": {
                     "type": "string",
                     "required": true,
                     "enum": ["organization"]
                   },
-                  "userId": { "type": "string", "required": true },
+                  "userId": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 50
+                  },
                   "role": {
                     "type": "string",
                     "required": true,
@@ -1248,7 +1356,11 @@
                     "minimum": -140737488355328,
                     "maximum": 140737488355327
                   },
-                  "organizationId": { "type": "string", "required": true }
+                  "organizationId": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 50
+                  }
                 },
                 "ref": "#/components/schemas/MembershipBase"
               }

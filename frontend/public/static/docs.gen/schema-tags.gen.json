@@ -2,12 +2,12 @@
   {
     "name": "base",
     "description": "Schemas with base fields only",
-    "count": 4
+    "count": 5
   },
   {
     "name": "data",
     "description": "Complete data schemas",
-    "count": 20
+    "count": 13
   },
   {
     "name": "errors",

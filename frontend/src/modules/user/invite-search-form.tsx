@@ -28,9 +28,14 @@ export function InviteSearchForm({ entity, dialog: isDialog }: Props) {
 
   const onSubmit = (values: InviteFormValues) => {
     invite(
-      { ...values, entity },
       {
-        onSuccess: ({ invitesSentCount, rejectedItemIds }, { emails }) => {
+        body: values,
+        path: { tenantId: entity.tenantId, orgId: entity.organizationId || entity.id },
+        query: { entityId: entity.id, entityType: entity.entityType },
+        entity,
+      },
+      {
+        onSuccess: ({ invitesSentCount, rejectedItemIds }, { body: { emails } }) => {
           form.reset(undefined, { keepDirtyValues: true });
           if (invitesSentCount > 0) {
             const resource = t(`common:${invitesSentCount === 1 ? 'user' : 'users'}`).toLowerCase();

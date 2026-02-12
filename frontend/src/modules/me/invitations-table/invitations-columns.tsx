@@ -108,8 +108,7 @@ export const useColumns = () => {
               variant={variant}
               onClick={() =>
                 handleInvitation({
-                  id: row.inactiveMembership.id,
-                  acceptOrReject: action,
+                  path: { id: row.inactiveMembership.id, acceptOrReject: action },
                 })
               }
             >

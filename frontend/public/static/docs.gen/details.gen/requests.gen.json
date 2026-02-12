@@ -10,14 +10,24 @@
         "contentType": "application/json",
         "schema": {
           "type": "object",
+          "description": "A contact or waitlist submission from an unauthenticated user.",
           "properties": {
             "createdAt": { "type": "string", "required": true },
-            "id": { "type": "string", "required": true },
+            "id": {
+              "type": "string",
+              "required": true,
+              "maxLength": 50
+            },
             "message": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 255
             },
-            "email": { "type": "string", "required": true },
+            "email": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
+            },
             "type": {
               "type": "string",
               "required": true,
@@ -116,14 +126,24 @@
               "ref": "#/components/schemas/Request",
               "items": {
                 "type": "object",
+                "description": "A contact or waitlist submission from an unauthenticated user.",
                 "properties": {
                   "createdAt": { "type": "string", "required": true },
-                  "id": { "type": "string", "required": true },
+                  "id": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 50
+                  },
                   "message": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 255
                   },
-                  "email": { "type": "string", "required": true },
+                  "email": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
+                  },
                   "type": {
                     "type": "string",
                     "required": true,

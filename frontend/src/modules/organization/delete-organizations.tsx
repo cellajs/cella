@@ -17,7 +17,7 @@ export function DeleteOrganizations({ tenantId, organizations, callback, dialog:
 
   const onDelete = () => {
     deleteOrganizations(
-      { tenantId, organizations },
+      { path: { tenantId }, body: { ids: organizations.map(({ id }) => id) }, organizations },
       {
         onSuccess: (_, { organizations: deletedOrgs }) => {
           if (isDialog) removeDialog();

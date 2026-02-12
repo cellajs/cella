@@ -21,7 +21,10 @@ export const membershipSchema = z
     role: entityRoleSchema,
     contextType: contextEntityTypeSchema,
   })
-  .openapi('Membership', { example: mockMembershipResponse() });
+  .openapi('Membership', {
+    description: "A user's membership in a context entity, including role and activity data.",
+    example: mockMembershipResponse(),
+  });
 
 export const inactiveMembershipSchema = z
   .object({
@@ -30,7 +33,10 @@ export const inactiveMembershipSchema = z
     role: entityRoleSchema,
     contextType: contextEntityTypeSchema,
   })
-  .openapi('InactiveMembership', { example: mockInactiveMembershipResponse() });
+  .openapi('InactiveMembership', {
+    description: 'A membership record for a user who has not yet accepted an invitation.',
+    example: mockInactiveMembershipResponse(),
+  });
 
 export const membershipBaseSchema = membershipSchema
   .omit({
@@ -39,7 +45,10 @@ export const membershipBaseSchema = membershipSchema
     modifiedAt: true,
     modifiedBy: true,
   })
-  .openapi('MembershipBase', { example: mockMembershipBase() });
+  .openapi('MembershipBase', {
+    description: 'Core membership fields shared across active and inactive memberships.',
+    example: mockMembershipBase(),
+  });
 
 export const membershipCreateBodySchema = z.object({
   emails: validEmailSchema.array().min(1).max(50),

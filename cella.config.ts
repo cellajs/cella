@@ -78,10 +78,14 @@ export default defineConfig({
       "backend/package.json",
       "backend/src/custom-env.ts",
       "backend/src/table-config.ts",
-
       "backend/src/routes.ts",
       "backend/src/permissions/permissions-config.ts",
       "backend/src/docs/tags-config.ts",
+      "backend/src/db/schema/index.ts",
+      "backend/src/db/schema/memberships.ts",
+      "backend/src/db/schema/inactive-memberships.ts",
+      "backend/src/db/schema/attachments.ts",
+      "backend/src/db/schema/activities.ts",
       "json/text-blocks.json",
       "locales/en/about.json",
       "locales/en/app.json"

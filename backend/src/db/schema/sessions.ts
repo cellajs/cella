@@ -1,5 +1,6 @@
 import { index, pgTable, primaryKey, varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from '#/db/schema/users';
+import { maxLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
 
@@ -18,18 +19,18 @@ export type AuthStrategy = (typeof authStrategiesEnum)[number];
 export const sessionsTable = pgTable(
   'sessions',
   {
-    id: varchar().notNull().$defaultFn(nanoid),
-    secret: varchar().notNull(),
+    id: varchar({ length: maxLength.id }).notNull().$defaultFn(nanoid),
+    secret: varchar({ length: maxLength.field }).notNull(),
     type: varchar({ enum: sessionTypeEnum }).notNull().default('regular'),
-    userId: varchar()
+    userId: varchar({ length: maxLength.id })
       .notNull()
       .references(() => usersTable.id, { onDelete: 'cascade' }),
-    deviceName: varchar(),
+    deviceName: varchar({ length: maxLength.field }),
     deviceType: varchar({ enum: ['desktop', 'mobile'] })
       .notNull()
       .default('desktop'),
-    deviceOs: varchar(),
-    browser: varchar(),
+    deviceOs: varchar({ length: maxLength.field }),
+    browser: varchar({ length: maxLength.field }),
     authStrategy: varchar({ enum: authStrategiesEnum }).notNull(),
     createdAt: timestampColumns.createdAt,
     expiresAt: timestampColumns.expiresAt,

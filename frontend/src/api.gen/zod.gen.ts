@@ -18,6 +18,9 @@ export const zUserBase = z.object({
   entityType: z.enum(['user']),
 });
 
+/**
+ * Base schema for entities with memberships (e.g. organization).
+ */
 export const zContextEntityBase = z.object({
   id: z.string(),
   name: z.string(),
@@ -31,35 +34,34 @@ export const zContextEntityBase = z.object({
   bannerUrl: z.union([z.string(), z.null()]),
 });
 
+/**
+ * Core membership fields shared across active and inactive memberships.
+ */
 export const zMembershipBase = z.object({
-  id: z.string(),
-  tenantId: z.string(),
+  id: z.string().max(50),
+  tenantId: z.string().max(24),
   contextType: z.enum(['organization']),
-  userId: z.string(),
+  userId: z.string().max(50),
   role: z.enum(['admin', 'member']),
   archived: z.boolean(),
   muted: z.boolean(),
   displayOrder: z.number().gte(-140737488355328).lte(140737488355327),
-  organizationId: z.string(),
+  organizationId: z.string().max(50),
 });
 
+/**
+ * Sync transaction metadata stored on entities for offline and realtime support.
+ */
 export const zStxBase = z.object({
-  id: z.string(),
+  mutationId: z.string(),
   sourceId: z.string(),
-  version: z.number(),
-  fieldVersions: z.record(z.string(), z.number()),
+  version: z.int(),
+  fieldVersions: z.record(z.string(), z.int()),
 });
 
-export const zStxStreamMessage = z.union([
-  z.object({
-    id: z.string(),
-    sourceId: z.string(),
-    version: z.int(),
-    fieldVersions: z.record(z.string(), z.int()),
-  }),
-  z.null(),
-]);
-
+/**
+ * Realtime notification delivered via SSE for entity and membership changes.
+ */
 export const zStreamNotification = z.object({
   action: z.enum(['create', 'update', 'delete']),
   entityType: z.nullable(z.enum(['attachment', 'page'])),
@@ -68,19 +70,13 @@ export const zStreamNotification = z.object({
   organizationId: z.union([z.string(), z.null()]),
   contextType: z.nullable(z.enum(['organization'])),
   seq: z.union([z.int(), z.null()]),
-  stx: zStxStreamMessage,
+  stx: zStxBase.and(z.union([z.record(z.string(), z.unknown()), z.null()])),
   cacheToken: z.union([z.string(), z.null()]),
 });
 
-export const zPublicStreamActivity = z.object({
-  activityId: z.string(),
-  action: z.enum(['create', 'update', 'delete']),
-  entityType: z.enum(['attachment', 'page']),
-  entityId: z.string(),
-  changedKeys: z.union([z.array(z.string()), z.null()]),
-  createdAt: z.string(),
-});
-
+/**
+ * Standard error response returned by all API endpoints.
+ */
 export const zApiError = z.object({
   name: z.string(),
   message: z.string(),
@@ -142,7 +138,7 @@ export const zTooManyRequestsError = zApiError.and(
 );
 
 /**
- * Error info for failed CDC activities (dead letters)
+ * Error info for failed CDC activities (dead letters).
  */
 export const zActivityError = z.object({
   lsn: z.string(),
@@ -152,17 +148,20 @@ export const zActivityError = z.object({
   resolved: z.optional(z.boolean()),
 });
 
+/**
+ * An auditable event recording an entity change, used for sync and history.
+ */
 export const zActivity = z.object({
-  id: z.string(),
-  tenantId: z.union([z.string(), z.null()]),
-  userId: z.union([z.string(), z.null()]),
+  id: z.string().max(50),
+  tenantId: z.union([z.string().max(24), z.null()]),
+  userId: z.union([z.string().max(50), z.null()]),
   entityType: z.nullable(z.enum(['user', 'organization', 'attachment', 'page'])),
   resourceType: z.nullable(z.enum(['request', 'membership', 'inactive_membership', 'tenant'])),
   action: z.enum(['create', 'update', 'delete']),
-  tableName: z.string(),
-  type: z.string(),
-  entityId: z.union([z.string(), z.null()]),
-  organizationId: z.union([z.string(), z.null()]),
+  tableName: z.string().max(255),
+  type: z.string().max(255),
+  entityId: z.union([z.string().max(50), z.null()]),
+  organizationId: z.union([z.string().max(50), z.null()]),
   createdAt: z.string(),
   changedKeys: z.union([z.array(z.string()), z.null()]),
   stx: z.union([zStxBase, z.null()]),
@@ -170,19 +169,22 @@ export const zActivity = z.object({
   error: z.union([zActivityError, z.null()]),
 });
 
+/**
+ * A user with profile data and last-seen activity timestamp.
+ */
 export const zUser = z.object({
   createdAt: z.string(),
-  id: z.string(),
+  id: z.string().max(50),
   entityType: z.enum(['user']),
-  name: z.string(),
+  name: z.string().max(255),
   description: z.union([z.string(), z.null()]),
-  slug: z.string(),
-  thumbnailUrl: z.union([z.string(), z.null()]),
-  bannerUrl: z.union([z.string(), z.null()]),
+  slug: z.string().max(255),
+  thumbnailUrl: z.union([z.string().max(2048), z.null()]),
+  bannerUrl: z.union([z.string().max(2048), z.null()]),
   email: z.email(),
   mfaRequired: z.boolean(),
-  firstName: z.union([z.string(), z.null()]),
-  lastName: z.union([z.string(), z.null()]),
+  firstName: z.union([z.string().max(255), z.null()]),
+  lastName: z.union([z.string().max(255), z.null()]),
   language: z.enum(['en', 'nl']),
   newsletter: z.boolean(),
   userFlags: z.object({
@@ -191,28 +193,34 @@ export const zUser = z.object({
   modifiedAt: z.union([z.string(), z.null()]),
   lastStartedAt: z.union([z.string(), z.null()]),
   lastSignInAt: z.union([z.string(), z.null()]),
-  modifiedBy: z.union([z.string(), z.null()]),
+  modifiedBy: z.union([z.string().max(50), z.null()]),
   lastSeenAt: z.union([z.string(), z.null()]),
 });
 
+/**
+ * The currently authenticated user with their system role.
+ */
 export const zMe = z.object({
   user: zUser,
   systemRole: z.enum(['admin', 'user']),
 });
 
+/**
+ * Authentication metadata for the current user session.
+ */
 export const zMeAuthData = z.object({
   enabledOAuth: z.array(z.enum(['github'])),
   hasTotp: z.boolean(),
   hasPassword: z.boolean(),
   sessions: z.array(
     z.object({
-      id: z.string(),
+      id: z.string().max(50),
       type: z.enum(['regular', 'impersonation', 'mfa']),
-      userId: z.string(),
-      deviceName: z.union([z.string(), z.null()]),
+      userId: z.string().max(50),
+      deviceName: z.union([z.string().max(255), z.null()]),
       deviceType: z.enum(['desktop', 'mobile']),
-      deviceOs: z.union([z.string(), z.null()]),
-      browser: z.union([z.string(), z.null()]),
+      deviceOs: z.union([z.string().max(255), z.null()]),
+      browser: z.union([z.string().max(255), z.null()]),
       authStrategy: z.enum(['github', 'google', 'microsoft', 'password', 'passkey', 'totp', 'email']),
       createdAt: z.string(),
       expiresAt: z.string(),
@@ -221,32 +229,38 @@ export const zMeAuthData = z.object({
   ),
   passkeys: z.array(
     z.object({
-      id: z.string(),
-      userId: z.string(),
-      deviceName: z.union([z.string(), z.null()]),
+      id: z.string().max(50),
+      userId: z.string().max(50),
+      deviceName: z.union([z.string().max(255), z.null()]),
       deviceType: z.enum(['desktop', 'mobile']),
-      deviceOs: z.union([z.string(), z.null()]),
-      browser: z.union([z.string(), z.null()]),
-      nameOnDevice: z.string(),
+      deviceOs: z.union([z.string().max(255), z.null()]),
+      browser: z.union([z.string().max(255), z.null()]),
+      nameOnDevice: z.string().max(255),
       createdAt: z.string(),
     }),
   ),
 });
 
+/**
+ * A membership record for a user who has not yet accepted an invitation.
+ */
 export const zInactiveMembership = z.object({
   createdAt: z.string(),
-  id: z.string(),
-  tenantId: z.string(),
+  id: z.string().max(50),
+  tenantId: z.string().max(24),
   contextType: z.enum(['organization']),
-  email: z.string(),
-  userId: z.union([z.string(), z.null()]),
-  tokenId: z.union([z.string(), z.null()]),
+  email: z.string().max(255),
+  userId: z.union([z.string().max(50), z.null()]),
+  tokenId: z.union([z.string().max(50), z.null()]),
   role: z.enum(['admin', 'member']),
   rejectedAt: z.union([z.string(), z.null()]),
-  createdBy: z.string(),
-  organizationId: z.string(),
+  createdBy: z.string().max(50),
+  organizationId: z.string().max(50),
 });
 
+/**
+ * A signed token authorizing file uploads to the configured storage provider.
+ */
 export const zUploadToken = z.object({
   public: z.boolean(),
   sub: z.string(),
@@ -263,80 +277,77 @@ export const zUploadToken = z.object({
   ]),
 });
 
-export const zTenantStatus = z.enum(['active', 'suspended', 'archived']);
-
+/**
+ * A tenant representing an isolated data partition for multi-tenancy.
+ */
 export const zTenant = z.object({
   id: z.string().max(24),
   name: z.string(),
-  status: zTenantStatus,
+  status: z.enum(['active', 'suspended', 'archived']),
   createdAt: z.string(),
   modifiedAt: z.union([z.string(), z.null()]),
 });
 
-export const zCreateTenantBody = z.object({
-  name: z.string().min(1).max(255),
-  status: z.optional(zTenantStatus),
-});
-
-export const zUpdateTenantBody = z.object({
-  name: z.optional(z.string().min(1).max(255)),
-  status: z.optional(zTenantStatus),
-});
-
+/**
+ * A contact or waitlist submission from an unauthenticated user.
+ */
 export const zRequest = z.object({
   createdAt: z.string(),
-  id: z.string(),
-  message: z.union([z.string(), z.null()]),
-  email: z.string(),
+  id: z.string().max(50),
+  message: z.union([z.string().max(255), z.null()]),
+  email: z.string().max(255),
   type: z.enum(['waitlist', 'newsletter', 'contact']),
   wasInvited: z.boolean(),
 });
 
-export const zOrganizationIncluded = z.object({
-  membership: z.optional(zMembershipBase),
-  counts: z.optional(
-    z.object({
-      membership: z.object({
-        admin: z.number(),
-        member: z.number(),
-        pending: z.number(),
-        total: z.number(),
-      }),
-      entities: z.object({
-        attachment: z.number(),
-        page: z.number(),
-      }),
-    }),
-  ),
-});
-
+/**
+ * An organization with settings, restrictions, and membership context.
+ */
 export const zOrganization = z.object({
   createdAt: z.string(),
-  id: z.string(),
+  id: z.string().max(50),
   entityType: z.enum(['organization']),
-  tenantId: z.string(),
-  name: z.string(),
+  tenantId: z.string().max(24),
+  name: z.string().max(255),
   description: z.union([z.string(), z.null()]),
   modifiedAt: z.union([z.string(), z.null()]),
-  slug: z.string(),
-  thumbnailUrl: z.union([z.string(), z.null()]),
-  bannerUrl: z.union([z.string(), z.null()]),
-  createdBy: z.union([z.string(), z.null()]),
-  modifiedBy: z.union([z.string(), z.null()]),
-  shortName: z.union([z.string(), z.null()]),
-  country: z.union([z.string(), z.null()]),
-  timezone: z.union([z.string(), z.null()]),
+  slug: z.string().max(255),
+  thumbnailUrl: z.union([z.string().max(2048), z.null()]),
+  bannerUrl: z.union([z.string().max(2048), z.null()]),
+  createdBy: z.union([z.string().max(50), z.null()]),
+  modifiedBy: z.union([z.string().max(50), z.null()]),
+  shortName: z.union([z.string().max(255), z.null()]),
+  country: z.union([z.string().max(255), z.null()]),
+  timezone: z.union([z.string().max(255), z.null()]),
   defaultLanguage: z.enum(['en', 'nl']),
   languages: z.array(z.enum(['en', 'nl'])).min(1),
-  notificationEmail: z.union([z.string(), z.null()]),
+  notificationEmail: z.union([z.string().max(255), z.null()]),
   emailDomains: z.array(z.string()),
-  color: z.union([z.string(), z.null()]),
-  logoUrl: z.union([z.string(), z.null()]),
-  websiteUrl: z.union([z.string(), z.null()]),
+  color: z.union([z.string().max(255), z.null()]),
+  logoUrl: z.union([z.string().max(2048), z.null()]),
+  websiteUrl: z.union([z.string().max(2048), z.null()]),
   welcomeText: z.union([z.string(), z.null()]),
   authStrategies: z.array(z.enum(['github', 'google', 'microsoft', 'password', 'passkey', 'totp', 'email'])),
   chatSupport: z.boolean(),
-  included: z.optional(zOrganizationIncluded),
+  included: z.optional(
+    z.object({
+      membership: z.optional(zMembershipBase),
+      counts: z.optional(
+        z.object({
+          membership: z.object({
+            admin: z.number(),
+            member: z.number(),
+            pending: z.number(),
+            total: z.number(),
+          }),
+          entities: z.object({
+            attachment: z.number(),
+            page: z.number(),
+          }),
+        }),
+      ),
+    }),
+  ),
   can: z.optional(
     z.object({
       create: z.boolean(),
@@ -348,53 +359,62 @@ export const zOrganization = z.object({
   ),
 });
 
+/**
+ * A content page belonging to an organization.
+ */
 export const zPage = z.object({
   createdAt: z.string(),
-  id: z.string(),
+  id: z.string().max(50),
   entityType: z.enum(['page']),
-  tenantId: z.string(),
-  name: z.string(),
+  tenantId: z.string().max(24),
+  name: z.string().max(255),
   description: z.union([z.string(), z.null()]),
   modifiedAt: z.union([z.string(), z.null()]),
   stx: zStxBase,
-  keywords: z.string(),
-  createdBy: z.union([z.string(), z.null()]),
-  modifiedBy: z.union([z.string(), z.null()]),
+  keywords: z.string().max(255),
+  createdBy: z.union([z.string().max(50), z.null()]),
+  modifiedBy: z.union([z.string().max(50), z.null()]),
   status: z.enum(['unpublished', 'published', 'archived']),
   publicAccess: z.boolean(),
-  parentId: z.union([z.string(), z.null()]),
+  parentId: z.union([z.string().max(50), z.null()]),
   displayOrder: z.number().gte(-140737488355328).lte(140737488355327),
 });
 
-export const zStxRequest = z.object({
-  id: z.string().max(32),
+/**
+ * Sync transaction metadata sent with mutations for idempotency and conflict detection.
+ */
+export const zStxRequestBase = z.object({
+  mutationId: z.string().max(32),
   sourceId: z.string().max(64),
-  baseVersion: z.int().gte(0),
+  lastReadVersion: z.int().gte(0),
 });
 
+/**
+ * A file attachment belonging to an organization.
+ */
 export const zAttachment = z.object({
   createdAt: z.string(),
-  id: z.string(),
+  id: z.string().max(50),
   entityType: z.enum(['attachment']),
-  tenantId: z.string(),
-  name: z.string(),
+  tenantId: z.string().max(24),
+  name: z.string().max(255),
   description: z.union([z.string(), z.null()]),
   modifiedAt: z.union([z.string(), z.null()]),
   stx: zStxBase,
-  keywords: z.string(),
-  createdBy: z.union([z.string(), z.null()]),
-  modifiedBy: z.union([z.string(), z.null()]),
+  keywords: z.string().max(255),
+  createdBy: z.union([z.string().max(50), z.null()]),
+  modifiedBy: z.union([z.string().max(50), z.null()]),
   public: z.boolean(),
-  bucketName: z.string(),
-  groupId: z.union([z.string(), z.null()]),
-  filename: z.string(),
-  contentType: z.string(),
-  convertedContentType: z.union([z.string(), z.null()]),
-  size: z.string(),
-  originalKey: z.string(),
-  convertedKey: z.union([z.string(), z.null()]),
-  thumbnailKey: z.union([z.string(), z.null()]),
-  organizationId: z.string(),
+  bucketName: z.string().max(255),
+  groupId: z.union([z.string().max(50), z.null()]),
+  filename: z.string().max(255),
+  contentType: z.string().max(255),
+  convertedContentType: z.union([z.string().max(255), z.null()]),
+  size: z.string().max(255),
+  originalKey: z.string().max(2048),
+  convertedKey: z.union([z.string().max(2048), z.null()]),
+  thumbnailKey: z.union([z.string().max(2048), z.null()]),
+  organizationId: z.string().max(50),
   can: z.optional(
     z.object({
       create: z.boolean(),
@@ -406,20 +426,23 @@ export const zAttachment = z.object({
   ),
 });
 
+/**
+ * A user's membership in a context entity, including role and activity data.
+ */
 export const zMembership = z.object({
   createdAt: z.string(),
-  id: z.string(),
-  tenantId: z.string(),
+  id: z.string().max(50),
+  tenantId: z.string().max(24),
   contextType: z.enum(['organization']),
-  userId: z.string(),
+  userId: z.string().max(50),
   role: z.enum(['admin', 'member']),
-  createdBy: z.string(),
+  createdBy: z.string().max(50),
   modifiedAt: z.union([z.string(), z.null()]),
-  modifiedBy: z.union([z.string(), z.null()]),
+  modifiedBy: z.union([z.string().max(50), z.null()]),
   archived: z.boolean(),
   muted: z.boolean(),
   displayOrder: z.number().gte(-140737488355328).lte(140737488355327),
-  organizationId: z.string(),
+  organizationId: z.string().max(50),
 });
 
 export const zGetActivitiesData = z.object({
@@ -432,13 +455,13 @@ export const zGetActivitiesData = z.object({
       order: z.optional(z.enum(['asc', 'desc'])),
       offset: z.optional(z.string()),
       limit: z.optional(z.string()),
-      userId: z.optional(z.union([z.string(), z.null()])),
+      userId: z.optional(z.union([z.string().max(50), z.null()])),
       entityType: z.optional(z.enum(['user', 'organization', 'attachment', 'page'])),
       resourceType: z.optional(z.enum(['request', 'membership', 'inactive_membership', 'tenant'])),
       action: z.optional(z.enum(['create', 'update', 'delete'])),
-      tableName: z.optional(z.string()),
-      type: z.optional(z.string()),
-      entityId: z.optional(z.union([z.string(), z.null()])),
+      tableName: z.optional(z.string().max(255)),
+      type: z.optional(z.string().max(255)),
+      entityId: z.optional(z.union([z.string().max(50), z.null()])),
     }),
   ),
 });
@@ -696,13 +719,13 @@ export const zCreatePasskeyData = z.object({
  * Passkey created
  */
 export const zCreatePasskeyResponse = z.object({
-  id: z.string(),
-  userId: z.string(),
-  deviceName: z.union([z.string(), z.null()]),
+  id: z.string().max(50),
+  userId: z.string().max(50),
+  deviceName: z.union([z.string().max(255), z.null()]),
   deviceType: z.enum(['desktop', 'mobile']),
-  deviceOs: z.union([z.string(), z.null()]),
-  browser: z.union([z.string(), z.null()]),
-  nameOnDevice: z.string(),
+  deviceOs: z.union([z.string().max(255), z.null()]),
+  browser: z.union([z.string().max(255), z.null()]),
+  nameOnDevice: z.string().max(255),
   createdAt: z.string(),
 });
 
@@ -1000,7 +1023,7 @@ export const zCheckSlugData = z.object({
  */
 export const zCheckSlugResponse = z.void();
 
-export const zPublicStreamData = z.object({
+export const zGetPublicStreamData = z.object({
   body: z.optional(z.never()),
   path: z.optional(z.never()),
   query: z.optional(
@@ -1014,8 +1037,8 @@ export const zPublicStreamData = z.object({
 /**
  * Catch-up activities or SSE stream started
  */
-export const zPublicStreamResponse = z.object({
-  activities: z.array(zPublicStreamActivity),
+export const zGetPublicStreamResponse = z.object({
+  notifications: z.array(zStreamNotification),
   cursor: z.union([z.string(), z.null()]),
 });
 
@@ -1034,7 +1057,7 @@ export const zGetAppStreamData = z.object({
  * SSE stream or notification response
  */
 export const zGetAppStreamResponse = z.object({
-  activities: z.array(zStreamNotification),
+  notifications: z.array(zStreamNotification),
   cursor: z.union([z.string(), z.null()]),
 });
 
@@ -1098,7 +1121,7 @@ export const zGetUsersResponse = z.object({
     zUser.and(
       z.object({
         memberships: z.array(zMembershipBase),
-        role: z.optional(z.union([z.enum(['admin']), z.null()])),
+        role: z.optional(z.nullable(z.enum(['admin']))),
       }),
     ),
   ),
@@ -1165,7 +1188,7 @@ export const zGetTenantsData = z.object({
   query: z.optional(
     z.object({
       q: z.optional(z.string()),
-      status: z.optional(zTenantStatus.and(z.unknown())),
+      status: z.optional(z.enum(['active', 'suspended', 'archived'])),
       limit: z.optional(z.string()).default('50'),
       offset: z.optional(z.string()).default('0'),
       sort: z.optional(z.enum(['createdAt', 'name'])),
@@ -1183,7 +1206,10 @@ export const zGetTenantsResponse = z.object({
 });
 
 export const zCreateTenantData = z.object({
-  body: zCreateTenantBody,
+  body: z.object({
+    name: z.string().min(1).max(255),
+    status: z.optional(z.enum(['active', 'suspended', 'archived'])),
+  }),
   path: z.optional(z.never()),
   query: z.optional(z.never()),
 });
@@ -1222,7 +1248,10 @@ export const zGetTenantByIdData = z.object({
 export const zGetTenantByIdResponse = zTenant;
 
 export const zUpdateTenantData = z.object({
-  body: zUpdateTenantBody,
+  body: z.object({
+    name: z.optional(z.string().min(1).max(255)),
+    status: z.optional(z.enum(['active', 'suspended', 'archived'])),
+  }),
   path: z.object({
     tenantId: z.string().max(24),
   }),
@@ -1448,7 +1477,23 @@ export const zCreateOrganizationsResponse = z.object({
   data: z.array(
     zOrganization.and(
       z.object({
-        included: zOrganizationIncluded.and(z.record(z.string(), z.unknown())),
+        included: z.object({
+          membership: zMembershipBase,
+          counts: z.optional(
+            z.object({
+              membership: z.object({
+                admin: z.number(),
+                member: z.number(),
+                pending: z.number(),
+                total: z.number(),
+              }),
+              entities: z.object({
+                attachment: z.number(),
+                page: z.number(),
+              }),
+            }),
+          ),
+        }),
       }),
     ),
   ),
@@ -1591,8 +1636,8 @@ export const zCreatePagesData = z.object({
   body: z
     .array(
       z.object({
-        name: z.string().max(255),
-        stx: zStxRequest,
+        name: z.optional(z.string().max(255)),
+        stx: zStxRequestBase,
       }),
     )
     .min(1)
@@ -1619,12 +1664,12 @@ export const zCreatePagesResponse = z.union([
 export const zUpdatePageData = z.object({
   body: z.object({
     name: z.optional(z.string().max(255)),
-    description: z.optional(z.union([z.string().max(255), z.null()])),
+    description: z.optional(z.union([z.string().max(100000), z.null()])),
     keywords: z.optional(z.string().max(255)),
     displayOrder: z.optional(z.number().gte(-140737488355328).lte(140737488355327)),
     status: z.optional(z.enum(['unpublished', 'published', 'archived'])),
     parentId: z.optional(z.union([z.string().max(50), z.null()])),
-    stx: zStxRequest,
+    stx: zStxRequestBase,
   }),
   path: z.object({
     tenantId: z.string().max(50),
@@ -1666,7 +1711,7 @@ export const zGetUsers2Response = z.object({
     zUser.and(
       z.object({
         memberships: z.array(zMembershipBase),
-        role: z.optional(z.union([z.enum(['admin']), z.null()])),
+        role: z.optional(z.nullable(z.enum(['admin']))),
       }),
     ),
   ),
@@ -1697,7 +1742,7 @@ export const zDeleteAttachmentsData = z.object({
     ids: z.array(z.string()).min(1).max(50),
     stx: z.optional(
       z.object({
-        id: z.string(),
+        mutationId: z.string(),
         sourceId: z.string(),
       }),
     ),
@@ -1748,21 +1793,21 @@ export const zCreateAttachmentsData = z.object({
   body: z
     .array(
       z.object({
-        id: z.string().max(50),
-        name: z.string().max(255),
+        id: z.optional(z.string().max(50)),
+        name: z.optional(z.string().max(255)),
         filename: z.string().max(255),
         contentType: z.string().max(255),
         size: z.string().max(255),
         organizationId: z.string().max(50),
-        createdBy: z.union([z.string().max(50), z.null()]),
+        createdBy: z.optional(z.union([z.string().max(50), z.null()])),
         originalKey: z.string().max(2048),
         bucketName: z.string().max(255),
         public: z.optional(z.boolean()),
-        groupId: z.union([z.string().max(50), z.null()]),
-        convertedContentType: z.union([z.string().max(255), z.null()]),
-        convertedKey: z.union([z.string().max(2048), z.null()]),
-        thumbnailKey: z.union([z.string().max(2048), z.null()]),
-        stx: zStxRequest,
+        groupId: z.optional(z.union([z.string().max(50), z.null()])),
+        convertedContentType: z.optional(z.union([z.string().max(255), z.null()])),
+        convertedKey: z.optional(z.union([z.string().max(2048), z.null()])),
+        thumbnailKey: z.optional(z.union([z.string().max(2048), z.null()])),
+        stx: zStxRequestBase,
       }),
     )
     .min(1)
@@ -1822,7 +1867,7 @@ export const zUpdateAttachmentData = z.object({
   body: z.object({
     name: z.optional(z.string().max(255)),
     originalKey: z.optional(z.string().max(2048)),
-    stx: zStxRequest,
+    stx: zStxRequestBase,
   }),
   path: z.object({
     tenantId: z.string().max(50),
@@ -1954,22 +1999,22 @@ export const zGetMembersResponse = z.object({
   items: z.array(
     z.object({
       createdAt: z.string(),
-      id: z.string(),
+      id: z.string().max(50),
       entityType: z.enum(['user']),
-      name: z.string(),
+      name: z.string().max(255),
       description: z.union([z.string(), z.null()]),
-      slug: z.string(),
-      thumbnailUrl: z.union([z.string(), z.null()]),
-      bannerUrl: z.union([z.string(), z.null()]),
+      slug: z.string().max(255),
+      thumbnailUrl: z.union([z.string().max(2048), z.null()]),
+      bannerUrl: z.union([z.string().max(2048), z.null()]),
       email: z.email(),
       mfaRequired: z.boolean(),
-      firstName: z.union([z.string(), z.null()]),
-      lastName: z.union([z.string(), z.null()]),
+      firstName: z.union([z.string().max(255), z.null()]),
+      lastName: z.union([z.string().max(255), z.null()]),
       language: z.enum(['en', 'nl']),
       modifiedAt: z.union([z.string(), z.null()]),
       lastStartedAt: z.union([z.string(), z.null()]),
       lastSignInAt: z.union([z.string(), z.null()]),
-      modifiedBy: z.union([z.string(), z.null()]),
+      modifiedBy: z.union([z.string().max(50), z.null()]),
       lastSeenAt: z.union([z.string(), z.null()]),
       membership: zMembershipBase,
     }),
@@ -2005,7 +2050,7 @@ export const zGetPendingMembershipsResponse = z.object({
       thumbnailUrl: z.union([z.string(), z.null()]),
       role: z.nullable(z.enum(['admin', 'member'])),
       createdAt: z.string(),
-      createdBy: z.union([z.string(), z.null()]),
+      createdBy: z.union([z.string().max(50), z.null()]),
     }),
   ),
   total: z.number(),

@@ -14,7 +14,7 @@ export const tenantStatusValues = ['active', 'suspended', 'archived'] as const;
 export type TenantStatus = (typeof tenantStatusValues)[number];
 
 /** Tenant status schema */
-export const tenantStatusSchema = z.enum(tenantStatusValues).openapi('TenantStatus');
+export const tenantStatusSchema = z.enum(tenantStatusValues);
 
 /**
  * Base tenant schema for API responses.
@@ -27,27 +27,23 @@ export const tenantSchema = z
     createdAt: z.string(),
     modifiedAt: z.string().nullable(),
   })
-  .openapi('Tenant');
+  .openapi('Tenant', { description: 'A tenant representing an isolated data partition for multi-tenancy.' });
 
 /**
  * Schema for creating a new tenant.
  */
-export const createTenantBodySchema = z
-  .object({
-    name: z.string().min(1).max(255).describe('Tenant display name'),
-    status: tenantStatusSchema.optional().default('active'),
-  })
-  .openapi('CreateTenantBody');
+export const createTenantBodySchema = z.object({
+  name: z.string().min(1).max(255).describe('Tenant display name'),
+  status: tenantStatusSchema.optional().default('active'),
+});
 
 /**
  * Schema for updating a tenant.
  */
-export const updateTenantBodySchema = z
-  .object({
-    name: z.string().min(1).max(255).optional(),
-    status: tenantStatusSchema.optional(),
-  })
-  .openapi('UpdateTenantBody');
+export const updateTenantBodySchema = z.object({
+  name: z.string().min(1).max(255).optional(),
+  status: tenantStatusSchema.optional(),
+});
 
 /**
  * Query params for listing tenants.
@@ -61,7 +57,7 @@ export const tenantListQuerySchema = z
     sort: z.enum(['createdAt', 'name']).optional().default('createdAt'),
     order: z.enum(['asc', 'desc']).optional().default('desc'),
   })
-  .openapi('TenantListQuery');
+  .openapi('TenantListQuery', { description: 'Query parameters for listing and filtering tenants.' });
 
 /**
  * Tenant ID path parameter.

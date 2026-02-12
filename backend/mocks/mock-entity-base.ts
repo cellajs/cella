@@ -94,9 +94,9 @@ export const mockRequestResponse = (key = 'request:default') =>
  */
 export const mockStxRequest = (key = 'stx-request:default') =>
   withFakerSeed(key, () => ({
-    id: mockNanoid(),
+    mutationId: mockNanoid(),
     sourceId: mockNanoid(),
-    baseVersion: 0,
+    lastReadVersion: 0,
   }));
 
 /**
@@ -105,17 +105,17 @@ export const mockStxRequest = (key = 'stx-request:default') =>
  */
 export const mockStxResponse = (key = 'stx-response:default') =>
   withFakerSeed(key, () => ({
-    id: mockNanoid(),
+    mutationId: mockNanoid(),
     version: faker.number.int({ min: 1, max: 10 }),
   }));
 
 /**
- * Generates a mock StxStreamMessage example.
- * Used for real-time sync stream messages.
+ * Generates a mock StxBase example.
+ * Used for sync transaction base metadata on entities.
  */
-export const mockStxStreamMessage = (key = 'stx-stream:default') =>
+export const mockStxBase = (key = 'stx-base:default') =>
   withFakerSeed(key, () => ({
-    id: mockNanoid(),
+    mutationId: mockNanoid(),
     sourceId: mockNanoid(),
     version: faker.number.int({ min: 1, max: 5 }),
     fieldVersions: { name: 1 },
@@ -123,7 +123,7 @@ export const mockStxStreamMessage = (key = 'stx-stream:default') =>
 
 /**
  * Generates a mock StreamNotification example for product entity events.
- * Used for app stream notifications.
+ * Used for both app and public stream notifications.
  *
  * For product entities (page, attachment):
  * - entityType is set, resourceType is null
@@ -142,20 +142,5 @@ export const mockStreamNotification = (key = 'stream-notification:default') =>
     // Generate cacheToken BEFORE stx to ensure deterministic output
     // (stx uses nested withFakerSeed which resets the seed after)
     cacheToken: faker.string.alphanumeric(32),
-    stx: mockStxStreamMessage(`${key}:stx`),
-  }));
-
-/**
- * Generates a mock PublicStreamActivity example.
- * Used for public activity stream items.
- */
-export const mockPublicStreamActivity = (key = 'public-stream-activity:default') =>
-  withFakerSeed(key, () => ({
-    activityId: mockNanoid(),
-    action: faker.helpers.arrayElement(['create', 'update', 'delete'] as const),
-    entityType: faker.helpers.arrayElement(['page', 'attachment'] as const),
-    entityId: mockNanoid(),
-    changedKeys: faker.helpers.arrayElements(['name', 'description', 'status', 'keywords'], { min: 1, max: 3 }),
-    // Generate createdAt LAST since mockTimestamps uses nested withFakerSeed
-    ...mockTimestamps(),
+    stx: mockStxBase(`${key}:stx`),
   }));

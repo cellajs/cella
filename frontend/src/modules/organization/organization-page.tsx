@@ -28,7 +28,7 @@ function OrganizationPage({ organizationId, tenantId }: { organizationId: string
 
   const coverUpdateCallback = (bannerUrl: string) => {
     mutate(
-      { tenantId: organization.tenantId, id: organization.id, body: { bannerUrl } },
+      { path: { tenantId: organization.tenantId, id: organization.id }, body: { bannerUrl } },
       {
         onSuccess: () => toaster(t('common:success.upload_cover'), 'success'),
         onError: () => toaster(t('error:image_upload_failed'), 'error'),

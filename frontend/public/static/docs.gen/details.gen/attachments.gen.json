@@ -16,16 +16,29 @@
               "ref": "#/components/schemas/Attachment",
               "items": {
                 "type": "object",
+                "description": "A file attachment belonging to an organization.",
                 "properties": {
                   "createdAt": { "type": "string", "required": true },
-                  "id": { "type": "string", "required": true },
+                  "id": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 50
+                  },
                   "entityType": {
                     "type": "string",
                     "required": true,
                     "enum": ["attachment"]
                   },
-                  "tenantId": { "type": "string", "required": true },
-                  "name": { "type": "string", "required": true },
+                  "tenantId": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 24
+                  },
+                  "name": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
+                  },
                   "description": {
                     "type": ["string", "null"],
                     "required": true
@@ -37,46 +50,81 @@
                   "stx": {
                     "type": "object",
                     "required": true,
+                    "description": "Sync transaction metadata stored on entities for offline and realtime support.",
                     "properties": {
-                      "id": { "type": "string", "required": true },
+                      "mutationId": { "type": "string", "required": true },
                       "sourceId": { "type": "string", "required": true },
-                      "version": { "type": "number", "required": true },
+                      "version": { "type": "integer", "required": true },
                       "fieldVersions": { "type": "object", "required": true }
                     },
                     "ref": "#/components/schemas/StxBase"
                   },
-                  "keywords": { "type": "string", "required": true },
+                  "keywords": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
+                  },
                   "createdBy": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 50
                   },
                   "modifiedBy": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 50
                   },
                   "public": { "type": "boolean", "required": true },
-                  "bucketName": { "type": "string", "required": true },
+                  "bucketName": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
+                  },
                   "groupId": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 50
                   },
-                  "filename": { "type": "string", "required": true },
-                  "contentType": { "type": "string", "required": true },
+                  "filename": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "contentType": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
+                  },
                   "convertedContentType": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 255
                   },
-                  "size": { "type": "string", "required": true },
-                  "originalKey": { "type": "string", "required": true },
+                  "size": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "originalKey": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 2048
+                  },
                   "convertedKey": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 2048
                   },
                   "thumbnailKey": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 2048
                   },
-                  "organizationId": { "type": "string", "required": true },
+                  "organizationId": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 50
+                  },
                   "can": {
                     "type": "object",
                     "required": false,
@@ -120,7 +168,7 @@
               "modifiedAt": "2024-11-21T04:00:59.122Z",
               "modifiedBy": "qqp8d07imsvjbtqtl3rtjgxd",
               "stx": {
-                "id": "vx9cfyey6mqh9hmikgme3gy3",
+                "mutationId": "vx9cfyey6mqh9hmikgme3gy3",
                 "sourceId": "src_a9lhe0ctrmzc53x7z222ydtq",
                 "version": 1,
                 "fieldVersions": {}
@@ -149,7 +197,7 @@
               "modifiedAt": "2024-10-29T08:46:20.790Z",
               "modifiedBy": "hg5ogh3yr2b2dbwf7b9eckaj",
               "stx": {
-                "id": "k6bwmvl0e44bpmhsyauxcwuw",
+                "mutationId": "k6bwmvl0e44bpmhsyauxcwuw",
                 "sourceId": "src_jsrzvzac8qx1h9s6vzhgvcj0",
                 "version": 1,
                 "fieldVersions": {}
@@ -256,16 +304,29 @@
               "ref": "#/components/schemas/Attachment",
               "items": {
                 "type": "object",
+                "description": "A file attachment belonging to an organization.",
                 "properties": {
                   "createdAt": { "type": "string", "required": true },
-                  "id": { "type": "string", "required": true },
+                  "id": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 50
+                  },
                   "entityType": {
                     "type": "string",
                     "required": true,
                     "enum": ["attachment"]
                   },
-                  "tenantId": { "type": "string", "required": true },
-                  "name": { "type": "string", "required": true },
+                  "tenantId": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 24
+                  },
+                  "name": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
+                  },
                   "description": {
                     "type": ["string", "null"],
                     "required": true
@@ -277,46 +338,81 @@
                   "stx": {
                     "type": "object",
                     "required": true,
+                    "description": "Sync transaction metadata stored on entities for offline and realtime support.",
                     "properties": {
-                      "id": { "type": "string", "required": true },
+                      "mutationId": { "type": "string", "required": true },
                       "sourceId": { "type": "string", "required": true },
-                      "version": { "type": "number", "required": true },
+                      "version": { "type": "integer", "required": true },
                       "fieldVersions": { "type": "object", "required": true }
                     },
                     "ref": "#/components/schemas/StxBase"
                   },
-                  "keywords": { "type": "string", "required": true },
+                  "keywords": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
+                  },
                   "createdBy": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 50
                   },
                   "modifiedBy": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 50
                   },
                   "public": { "type": "boolean", "required": true },
-                  "bucketName": { "type": "string", "required": true },
+                  "bucketName": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
+                  },
                   "groupId": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 50
                   },
-                  "filename": { "type": "string", "required": true },
-                  "contentType": { "type": "string", "required": true },
+                  "filename": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "contentType": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
+                  },
                   "convertedContentType": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 255
                   },
-                  "size": { "type": "string", "required": true },
-                  "originalKey": { "type": "string", "required": true },
+                  "size": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "originalKey": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 2048
+                  },
                   "convertedKey": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 2048
                   },
                   "thumbnailKey": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 2048
                   },
-                  "organizationId": { "type": "string", "required": true },
+                  "organizationId": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 50
+                  },
                   "can": {
                     "type": "object",
                     "required": false,
@@ -370,7 +466,7 @@
               "modifiedAt": "2024-04-19T14:04:35.773Z",
               "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
               "stx": {
-                "id": "b6pakf4ovzm1ne3h55lgj31d",
+                "mutationId": "b6pakf4ovzm1ne3h55lgj31d",
                 "sourceId": "src_63n9apx99a5auvr5cyj5s37i",
                 "version": 1,
                 "fieldVersions": {}
@@ -399,7 +495,7 @@
               "modifiedAt": "2024-02-25T13:01:35.301Z",
               "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
               "stx": {
-                "id": "y4dvzpz75e03ldr2ga54hj92",
+                "mutationId": "y4dvzpz75e03ldr2ga54hj92",
                 "sourceId": "src_yzr7v1itpc9wztvbcy21q04o",
                 "version": 1,
                 "fieldVersions": {}
@@ -424,16 +520,29 @@
               "ref": "#/components/schemas/Attachment",
               "items": {
                 "type": "object",
+                "description": "A file attachment belonging to an organization.",
                 "properties": {
                   "createdAt": { "type": "string", "required": true },
-                  "id": { "type": "string", "required": true },
+                  "id": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 50
+                  },
                   "entityType": {
                     "type": "string",
                     "required": true,
                     "enum": ["attachment"]
                   },
-                  "tenantId": { "type": "string", "required": true },
-                  "name": { "type": "string", "required": true },
+                  "tenantId": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 24
+                  },
+                  "name": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
+                  },
                   "description": {
                     "type": ["string", "null"],
                     "required": true
@@ -445,46 +554,81 @@
                   "stx": {
                     "type": "object",
                     "required": true,
+                    "description": "Sync transaction metadata stored on entities for offline and realtime support.",
                     "properties": {
-                      "id": { "type": "string", "required": true },
+                      "mutationId": { "type": "string", "required": true },
                       "sourceId": { "type": "string", "required": true },
-                      "version": { "type": "number", "required": true },
+                      "version": { "type": "integer", "required": true },
                       "fieldVersions": { "type": "object", "required": true }
                     },
                     "ref": "#/components/schemas/StxBase"
                   },
-                  "keywords": { "type": "string", "required": true },
+                  "keywords": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
+                  },
                   "createdBy": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 50
                   },
                   "modifiedBy": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 50
                   },
                   "public": { "type": "boolean", "required": true },
-                  "bucketName": { "type": "string", "required": true },
+                  "bucketName": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
+                  },
                   "groupId": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 50
                   },
-                  "filename": { "type": "string", "required": true },
-                  "contentType": { "type": "string", "required": true },
+                  "filename": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "contentType": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
+                  },
                   "convertedContentType": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 255
                   },
-                  "size": { "type": "string", "required": true },
-                  "originalKey": { "type": "string", "required": true },
+                  "size": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "originalKey": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 2048
+                  },
                   "convertedKey": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 2048
                   },
                   "thumbnailKey": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 2048
                   },
-                  "organizationId": { "type": "string", "required": true },
+                  "organizationId": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 50
+                  },
                   "can": {
                     "type": "object",
                     "required": false,
@@ -538,7 +682,7 @@
               "modifiedAt": "2024-04-19T14:04:35.773Z",
               "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
               "stx": {
-                "id": "b6pakf4ovzm1ne3h55lgj31d",
+                "mutationId": "b6pakf4ovzm1ne3h55lgj31d",
                 "sourceId": "src_63n9apx99a5auvr5cyj5s37i",
                 "version": 1,
                 "fieldVersions": {}
@@ -567,7 +711,7 @@
               "modifiedAt": "2024-02-25T13:01:35.301Z",
               "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
               "stx": {
-                "id": "y4dvzpz75e03ldr2ga54hj92",
+                "mutationId": "y4dvzpz75e03ldr2ga54hj92",
                 "sourceId": "src_yzr7v1itpc9wztvbcy21q04o",
                 "version": 1,
                 "fieldVersions": {}
@@ -638,12 +782,12 @@
           "properties": {
             "id": {
               "type": "string",
-              "required": true,
+              "required": false,
               "maxLength": 50
             },
             "name": {
               "type": "string",
-              "required": true,
+              "required": false,
               "maxLength": 255
             },
             "filename": {
@@ -668,7 +812,7 @@
             },
             "createdBy": {
               "type": ["string", "null"],
-              "required": true,
+              "required": false,
               "maxLength": 50
             },
             "originalKey": {
@@ -684,29 +828,30 @@
             "public": { "type": "boolean", "required": false },
             "groupId": {
               "type": ["string", "null"],
-              "required": true,
+              "required": false,
               "maxLength": 50
             },
             "convertedContentType": {
               "type": ["string", "null"],
-              "required": true,
+              "required": false,
               "maxLength": 255
             },
             "convertedKey": {
               "type": ["string", "null"],
-              "required": true,
+              "required": false,
               "maxLength": 2048
             },
             "thumbnailKey": {
               "type": ["string", "null"],
-              "required": true,
+              "required": false,
               "maxLength": 2048
             },
             "stx": {
               "type": "object",
               "required": true,
+              "description": "Sync transaction metadata sent with mutations for idempotency and conflict detection.",
               "properties": {
-                "id": {
+                "mutationId": {
                   "type": "string",
                   "required": true,
                   "description": "Unique mutation ID (nanoid)",
@@ -718,14 +863,14 @@
                   "description": "Tab/instance identifier for echo prevention",
                   "maxLength": 64
                 },
-                "baseVersion": {
+                "lastReadVersion": {
                   "type": "integer",
                   "required": true,
-                  "description": "Entity version when read (for conflict detection)",
+                  "description": "Entity version when last read (for conflict detection)",
                   "minimum": 0
                 }
               },
-              "ref": "#/components/schemas/StxRequest"
+              "ref": "#/components/schemas/StxRequestBase"
             }
           }
         },
@@ -827,7 +972,7 @@
             "type": "object",
             "required": false,
             "properties": {
-              "id": { "type": "string", "required": true },
+              "mutationId": { "type": "string", "required": true },
               "sourceId": { "type": "string", "required": true }
             }
           }
@@ -919,16 +1064,29 @@
         "contentType": "application/json",
         "schema": {
           "type": "object",
+          "description": "A file attachment belonging to an organization.",
           "properties": {
             "createdAt": { "type": "string", "required": true },
-            "id": { "type": "string", "required": true },
+            "id": {
+              "type": "string",
+              "required": true,
+              "maxLength": 50
+            },
             "entityType": {
               "type": "string",
               "required": true,
               "enum": ["attachment"]
             },
-            "tenantId": { "type": "string", "required": true },
-            "name": { "type": "string", "required": true },
+            "tenantId": {
+              "type": "string",
+              "required": true,
+              "maxLength": 24
+            },
+            "name": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
+            },
             "description": {
               "type": ["string", "null"],
               "required": true
@@ -940,46 +1098,81 @@
             "stx": {
               "type": "object",
               "required": true,
+              "description": "Sync transaction metadata stored on entities for offline and realtime support.",
               "properties": {
-                "id": { "type": "string", "required": true },
+                "mutationId": { "type": "string", "required": true },
                 "sourceId": { "type": "string", "required": true },
-                "version": { "type": "number", "required": true },
+                "version": { "type": "integer", "required": true },
                 "fieldVersions": { "type": "object", "required": true }
               },
               "ref": "#/components/schemas/StxBase"
             },
-            "keywords": { "type": "string", "required": true },
+            "keywords": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
+            },
             "createdBy": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 50
             },
             "modifiedBy": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 50
             },
             "public": { "type": "boolean", "required": true },
-            "bucketName": { "type": "string", "required": true },
+            "bucketName": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
+            },
             "groupId": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 50
             },
-            "filename": { "type": "string", "required": true },
-            "contentType": { "type": "string", "required": true },
+            "filename": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
+            },
+            "contentType": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
+            },
             "convertedContentType": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 255
             },
-            "size": { "type": "string", "required": true },
-            "originalKey": { "type": "string", "required": true },
+            "size": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
+            },
+            "originalKey": {
+              "type": "string",
+              "required": true,
+              "maxLength": 2048
+            },
             "convertedKey": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 2048
             },
             "thumbnailKey": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 2048
             },
-            "organizationId": { "type": "string", "required": true },
+            "organizationId": {
+              "type": "string",
+              "required": true,
+              "maxLength": 50
+            },
             "can": {
               "type": "object",
               "required": false,
@@ -1017,7 +1210,7 @@
           "modifiedAt": "2024-10-12T17:43:05.360Z",
           "modifiedBy": "0uwim8y2tppz7th9tol75wjz",
           "stx": {
-            "id": "pkeuemouu8t58r8fuj3tlenh",
+            "mutationId": "pkeuemouu8t58r8fuj3tlenh",
             "sourceId": "src_qurk6hu54pnfytf99mpmuhw0",
             "version": 1,
             "fieldVersions": {}
@@ -1094,16 +1287,29 @@
         "contentType": "application/json",
         "schema": {
           "type": "object",
+          "description": "A file attachment belonging to an organization.",
           "properties": {
             "createdAt": { "type": "string", "required": true },
-            "id": { "type": "string", "required": true },
+            "id": {
+              "type": "string",
+              "required": true,
+              "maxLength": 50
+            },
             "entityType": {
               "type": "string",
               "required": true,
               "enum": ["attachment"]
             },
-            "tenantId": { "type": "string", "required": true },
-            "name": { "type": "string", "required": true },
+            "tenantId": {
+              "type": "string",
+              "required": true,
+              "maxLength": 24
+            },
+            "name": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
+            },
             "description": {
               "type": ["string", "null"],
               "required": true
@@ -1115,46 +1321,81 @@
             "stx": {
               "type": "object",
               "required": true,
+              "description": "Sync transaction metadata stored on entities for offline and realtime support.",
               "properties": {
-                "id": { "type": "string", "required": true },
+                "mutationId": { "type": "string", "required": true },
                 "sourceId": { "type": "string", "required": true },
-                "version": { "type": "number", "required": true },
+                "version": { "type": "integer", "required": true },
                 "fieldVersions": { "type": "object", "required": true }
               },
               "ref": "#/components/schemas/StxBase"
             },
-            "keywords": { "type": "string", "required": true },
+            "keywords": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
+            },
             "createdBy": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 50
             },
             "modifiedBy": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 50
             },
             "public": { "type": "boolean", "required": true },
-            "bucketName": { "type": "string", "required": true },
+            "bucketName": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
+            },
             "groupId": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 50
             },
-            "filename": { "type": "string", "required": true },
-            "contentType": { "type": "string", "required": true },
+            "filename": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
+            },
+            "contentType": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
+            },
             "convertedContentType": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 255
             },
-            "size": { "type": "string", "required": true },
-            "originalKey": { "type": "string", "required": true },
+            "size": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
+            },
+            "originalKey": {
+              "type": "string",
+              "required": true,
+              "maxLength": 2048
+            },
             "convertedKey": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 2048
             },
             "thumbnailKey": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 2048
             },
-            "organizationId": { "type": "string", "required": true },
+            "organizationId": {
+              "type": "string",
+              "required": true,
+              "maxLength": 50
+            },
             "can": {
               "type": "object",
               "required": false,
@@ -1192,7 +1433,7 @@
           "modifiedAt": "2024-10-12T17:43:05.360Z",
           "modifiedBy": "0uwim8y2tppz7th9tol75wjz",
           "stx": {
-            "id": "pkeuemouu8t58r8fuj3tlenh",
+            "mutationId": "pkeuemouu8t58r8fuj3tlenh",
             "sourceId": "src_qurk6hu54pnfytf99mpmuhw0",
             "version": 1,
             "fieldVersions": {}
@@ -1272,8 +1513,9 @@
           "stx": {
             "type": "object",
             "required": true,
+            "description": "Sync transaction metadata sent with mutations for idempotency and conflict detection.",
             "properties": {
-              "id": {
+              "mutationId": {
                 "type": "string",
                 "required": true,
                 "description": "Unique mutation ID (nanoid)",
@@ -1285,14 +1527,14 @@
                 "description": "Tab/instance identifier for echo prevention",
                 "maxLength": 64
               },
-              "baseVersion": {
+              "lastReadVersion": {
                 "type": "integer",
                 "required": true,
-                "description": "Entity version when read (for conflict detection)",
+                "description": "Entity version when last read (for conflict detection)",
                 "minimum": 0
               }
             },
-            "ref": "#/components/schemas/StxRequest"
+            "ref": "#/components/schemas/StxRequestBase"
           }
         },
         "required": true,

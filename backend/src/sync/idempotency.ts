@@ -14,7 +14,7 @@ export async function isTransactionProcessed(stxId: string, db: DbOrTx): Promise
   const existing = await db
     .select({ id: activitiesTable.id })
     .from(activitiesTable)
-    .where(sql`${activitiesTable.stx}->>'id' = ${stxId}`)
+    .where(sql`${activitiesTable.stx}->>'mutationId' = ${stxId}`)
     .limit(1);
 
   return existing.length > 0;
@@ -40,7 +40,7 @@ export async function getEntityByTransaction(stxId: string, db: DbOrTx): Promise
       entityId: activitiesTable.entityId,
     })
     .from(activitiesTable)
-    .where(sql`${activitiesTable.stx}->>'id' = ${stxId}`)
+    .where(sql`${activitiesTable.stx}->>'mutationId' = ${stxId}`)
     .limit(1);
 
   // entityType and entityId are nullable in schema, narrow before returning

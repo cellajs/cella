@@ -132,6 +132,9 @@ import type {
   GetPublicCountsData,
   GetPublicCountsErrors,
   GetPublicCountsResponses,
+  GetPublicStreamData,
+  GetPublicStreamErrors,
+  GetPublicStreamResponses,
   GetRequestsData,
   GetRequestsErrors,
   GetRequestsResponses,
@@ -185,9 +188,6 @@ import type {
   PaddleWebhookData,
   PaddleWebhookErrors,
   PaddleWebhookResponses,
-  PublicStreamData,
-  PublicStreamErrors,
-  PublicStreamResponses,
   RedirectToAttachmentData,
   RedirectToAttachmentErrors,
   RedirectToAttachmentResponses,
@@ -1282,15 +1282,17 @@ export const checkSlug = <ThrowOnError extends boolean = true>(options: Options<
  *
  * Stream real-time changes for public entities (entities with no parent context). No authentication required. Use offset for catch-up, live=sse for SSE streaming.
  *
- * **GET /entities/public/stream** ·· [publicStream](https://api.cellajs.com/docs#tag/entities/get/entities/public/stream) ·· _entities_
+ * **GET /entities/public/stream** ·· [getPublicStream](https://api.cellajs.com/docs#tag/entities/get/entities/public/stream) ·· _entities_
  *
- * @param {publicStreamData} options
+ * @param {getPublicStreamData} options
  * @param {string=} options.query.offset - `string` (optional)
  * @param {enum=} options.query.live - `enum` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const publicStream = <ThrowOnError extends boolean = true>(options?: Options<PublicStreamData, ThrowOnError>) =>
-  (options?.client ?? client).get<PublicStreamResponses, PublicStreamErrors, ThrowOnError, 'data'>({
+export const getPublicStream = <ThrowOnError extends boolean = true>(
+  options?: Options<GetPublicStreamData, ThrowOnError>,
+) =>
+  (options?.client ?? client).get<GetPublicStreamResponses, GetPublicStreamErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/entities/public/stream',
     ...options,
@@ -1515,7 +1517,7 @@ export const sendNewsletter = <ThrowOnError extends boolean = true>(
  *
  * @param {getTenantsData} options
  * @param {string=} options.query.q - `string` (optional)
- * @param {any=} options.query.status - `any` (optional)
+ * @param {enum=} options.query.status - `enum` (optional)
  * @param {string=} options.query.limit - `string` (optional)
  * @param {string=} options.query.offset - `string` (optional)
  * @param {enum=} options.query.sort - `enum` (optional)
@@ -1544,6 +1546,8 @@ export const getTenants = <ThrowOnError extends boolean = true>(options?: Option
  * **POST /tenants** ·· [createTenant](https://api.cellajs.com/docs#tag/tenants/post/tenants) ·· _tenants_
  *
  * @param {createTenantData} options
+ * @param {string=} options.body.name - `string` (optional)
+ * @param {enum=} options.body.status - `enum` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const createTenant = <ThrowOnError extends boolean = true>(options: Options<CreateTenantData, ThrowOnError>) =>
@@ -1623,6 +1627,8 @@ export const getTenantById = <ThrowOnError extends boolean = true>(options: Opti
  *
  * @param {updateTenantData} options
  * @param {string} options.path.tenantid - `string`
+ * @param {string=} options.body.name - `string` (optional)
+ * @param {enum=} options.body.status - `enum` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const updateTenant = <ThrowOnError extends boolean = true>(options: Options<UpdateTenantData, ThrowOnError>) =>

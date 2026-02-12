@@ -1,22 +1,23 @@
 import { pgTable, varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from '#/db/schema/users';
+import { maxLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
 
 export const passkeysTable = pgTable('passkeys', {
-  id: varchar().primaryKey().$defaultFn(nanoid),
-  userId: varchar()
+  id: varchar({ length: maxLength.id }).primaryKey().$defaultFn(nanoid),
+  userId: varchar({ length: maxLength.id })
     .notNull()
     .references(() => usersTable.id, { onDelete: 'cascade' }),
-  credentialId: varchar().notNull(),
-  publicKey: varchar().notNull(),
-  deviceName: varchar(),
+  credentialId: varchar({ length: maxLength.url }).notNull(),
+  publicKey: varchar({ length: maxLength.url }).notNull(),
+  deviceName: varchar({ length: maxLength.field }),
   deviceType: varchar({ enum: ['desktop', 'mobile'] })
     .notNull()
     .default('desktop'),
-  deviceOs: varchar(),
-  browser: varchar(),
-  nameOnDevice: varchar().notNull(),
+  deviceOs: varchar({ length: maxLength.field }),
+  browser: varchar({ length: maxLength.field }),
+  nameOnDevice: varchar({ length: maxLength.field }).notNull(),
   createdAt: timestampColumns.createdAt,
 });
 

@@ -9,8 +9,8 @@ import type { Env } from '#/lib/context';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
 import { errorResponses, registerAllErrorResponses } from '#/schemas';
 import { contextEntityBaseSchema } from '#/schemas/entity-base';
-import { publicStreamActivitySchema, streamNotificationSchema } from '#/schemas/stream-schemas';
-import { stxBaseSchema } from '#/schemas/stx-base-schema';
+import { streamNotificationSchema } from '#/schemas/stream-schemas';
+import { stxBaseSchema } from '#/schemas/sync-transaction-schemas';
 import { userBaseSchema } from '#/schemas/user-schema-base';
 import { checkMark } from '#/utils/console';
 
@@ -56,9 +56,8 @@ const docs = async (app: OpenAPIHono<Env>, skipScalar = false) => {
   registry.register('MembershipBase', membershipBaseSchema);
   registry.register('StxBase', stxBaseSchema);
 
-  // Register stream schemas (SSE payloads, not in REST responses but useful for client typing)
+  // Register stream notification schema (SSE payloads, not in REST responses but useful for client typing)
   registry.register('StreamNotification', streamNotificationSchema);
-  registry.register('PublicStreamActivity', publicStreamActivitySchema);
 
   // Register error responses
   registerAllErrorResponses(registry, errorResponses);

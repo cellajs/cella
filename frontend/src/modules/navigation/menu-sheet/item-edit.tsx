@@ -27,15 +27,17 @@ export const MenuItemEdit = ({ item, icon: Icon }: MenuItemEditProps) => {
     }
 
     const updatedMembership: MutationUpdateMembership = {
-      id: item.membership.id,
-      tenantId: item.tenantId,
-      orgId: item.membership.organizationId,
+      path: {
+        id: item.membership.id,
+        tenantId: item.tenantId,
+        orgId: item.membership.organizationId,
+      },
       entityId: item.id,
       entityType: item.entityType,
     };
 
-    if (key === 'archived') updatedMembership.archived = !item.membership.archived;
-    if (key === 'muted') updatedMembership.muted = !item.membership.muted;
+    if (key === 'archived') updatedMembership.body = { archived: !item.membership.archived };
+    if (key === 'muted') updatedMembership.body = { muted: !item.membership.muted };
 
     updateMembership(updatedMembership);
   };

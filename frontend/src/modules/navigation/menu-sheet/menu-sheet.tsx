@@ -80,10 +80,12 @@ export const MenuSheet = () => {
           if (newOrder === sourceItem.membership.displayOrder) return;
 
           await mutateAsync({
-            id: sourceItem.membership.id,
-            displayOrder: newOrder,
-            tenantId: sourceItem.tenantId,
-            orgId: sourceItem.membership.organizationId || sourceItem.id,
+            path: {
+              id: sourceItem.membership.id,
+              tenantId: sourceItem.tenantId,
+              orgId: sourceItem.membership.organizationId || sourceItem.id,
+            },
+            body: { displayOrder: newOrder },
             entityId: sourceItem.id,
             entityType: sourceItem.entityType,
           });

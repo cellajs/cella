@@ -43,8 +43,9 @@ export function UpdateUserForm({ user, callback, sheet: isSheet, compact, childr
   const isSelf = currentUser.id === user.id;
   const { nextStep } = useStepper();
 
-  const mutationFn = isSelf ? useUpdateSelfMutation : useUserUpdateMutation;
-  const { mutate, isPending } = mutationFn();
+  const updateSelf = useUpdateSelfMutation();
+  const updateUser = useUserUpdateMutation();
+  const isPending = updateSelf.isPending || updateUser.isPending;
 
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
@@ -63,26 +64,27 @@ export function UpdateUserForm({ user, callback, sheet: isSheet, compact, childr
   const onSubmit = (values: FormValues) => {
     if (!user) return;
 
-    mutate(
-      { id: user.id, ...values },
-      {
-        onSuccess: (updatedUser) => {
-          const message = isSelf
-            ? t('common:success.profile_updated')
-            : t('common:success.update_item', { item: t('common:user') });
-          toaster(message, 'success');
+    const onSuccess = (updatedUser: User) => {
+      const message = isSelf
+        ? t('common:success.profile_updated')
+        : t('common:success.update_item', { item: t('common:user') });
+      toaster(message, 'success');
 
-          form.reset(updatedUser);
-          if (isSheet) useSheeter.getState().remove(formContainerId);
+      form.reset(updatedUser);
+      if (isSheet) useSheeter.getState().remove(formContainerId);
 
-          // Since this form is also used in onboarding, we need to call the next step
-          // This should ideally be done through the callback, but we need to refactor stepper
-          nextStep?.();
+      // Since this form is also used in onboarding, we need to call the next step
+      // This should ideally be done through the callback, but we need to refactor stepper
+      nextStep?.();
 
-          callback?.({ data: updatedUser, status: 'success' });
-        },
-      },
-    );
+      callback?.({ data: updatedUser, status: 'success' });
+    };
+
+    if (isSelf) {
+      updateSelf.mutate(values, { onSuccess });
+    } else {
+      updateUser.mutate({ path: { id: user.id }, body: values }, { onSuccess });
+    }
   };
 
   return (

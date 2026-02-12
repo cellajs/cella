@@ -7,7 +7,7 @@ import { type Env } from '#/lib/context';
 import {
   type AppStreamSubscriber,
   dispatchToUserSubscribers,
-  fetchUserCatchUpActivities,
+  fetchUserCatchUpNotifications,
   getLatestUserActivityId,
   orgChannel,
 } from '#/modules/entities/app-stream';
@@ -118,23 +118,16 @@ const entitiesRouteHandlers = app
       cursor = offset;
     }
 
-    // Non-SSE request: return delete catch-up activities as batch
+    // Non-SSE request: return delete catch-up notifications as batch
     if (live !== 'sse') {
-      const deleteActivities = await fetchPublicDeleteCatchUp(cursor);
-      const lastActivity = deleteActivities.at(-1);
+      const catchUpNotifications = await fetchPublicDeleteCatchUp(cursor);
+      const lastNotification = catchUpNotifications.at(-1);
 
-      // Always return a consistent cursor - use lastActivity.activityId, original cursor, or empty string
-      const newCursor = lastActivity?.activityId ?? cursor ?? '';
+      // Always return a consistent cursor - use lastNotification.activityId, original cursor, or empty string
+      const newCursor = lastNotification?.activityId ?? cursor ?? '';
 
       return ctx.json({
-        activities: deleteActivities.map((a) => ({
-          activityId: a.activityId,
-          action: a.action,
-          entityType: a.entityType,
-          entityId: a.entityId,
-          changedKeys: a.changedKeys,
-          createdAt: a.createdAt,
-        })),
+        notifications: catchUpNotifications.map((n) => n.notification),
         cursor: newCursor,
       });
     }
@@ -191,18 +184,18 @@ const entitiesRouteHandlers = app
 
     // Non-streaming catch-up request
     if (live !== 'sse') {
-      const catchUpActivities = await fetchUserCatchUpActivities(user.id, orgIds, cursor);
-      const lastActivity = catchUpActivities.at(-1);
+      const catchUpNotifications = await fetchUserCatchUpNotifications(user.id, orgIds, cursor);
+      const lastNotification = catchUpNotifications.at(-1);
 
       // Sign cache tokens for this user's session
-      const signedActivities = catchUpActivities.map((a) => ({
+      const signedNotifications = catchUpNotifications.map((a) => ({
         ...a.notification,
         cacheToken: a.notification.cacheToken ? signCacheToken(a.notification.cacheToken, sessionToken) : null,
       }));
 
       return ctx.json({
-        activities: signedActivities,
-        cursor: lastActivity?.activityId ?? cursor,
+        notifications: signedNotifications,
+        cursor: lastNotification?.activityId ?? cursor,
       });
     }
 
@@ -210,9 +203,9 @@ const entitiesRouteHandlers = app
     return streamSSE(ctx, async (stream) => {
       ctx.header('Content-Encoding', '');
 
-      // Send catch-up activities with signed tokens
-      const catchUpActivities = await fetchUserCatchUpActivities(user.id, orgIds, cursor);
-      for (const { activityId, notification } of catchUpActivities) {
+      // Send catch-up notifications with signed tokens
+      const catchUpNotifications = await fetchUserCatchUpNotifications(user.id, orgIds, cursor);
+      for (const { activityId, notification } of catchUpNotifications) {
         const signedNotification = notification.cacheToken
           ? { ...notification, cacheToken: signCacheToken(notification.cacheToken, sessionToken) }
           : notification;

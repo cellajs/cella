@@ -1,8 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { pagesTable } from '#/db/schema/pages';
 import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schema';
-import { batchResponseSchema, maxLength, paginationQuerySchema, stxRequestSchema } from '#/schemas';
-import { stxBaseSchema } from '#/schemas/stx-base-schema';
+import { batchResponseSchema, maxLength, paginationQuerySchema, stxBaseSchema, stxRequestSchema } from '#/schemas';
 import { mockPageResponse } from '../../../mocks/mock-page';
 
 /** Page status enum - matches pages table status column */
@@ -10,10 +9,7 @@ export const pageStatusSchema = z.enum(['unpublished', 'published', 'archived'])
 
 const pageInsertSchema = z.object({
   ...createInsertSchema(pagesTable, {
-    name: z.string().max(maxLength.field),
-    description: z.string().max(maxLength.field).nullable(),
-    keywords: z.string().max(maxLength.field),
-    parentId: z.string().max(maxLength.id).nullable(),
+    description: z.string().max(maxLength.html).nullable(),
   }).shape,
   status: pageStatusSchema.default('unpublished'),
 });
@@ -24,7 +20,7 @@ const pageSelectSchema = z.object({
 
 export const pageSchema = z
   .object({ ...pageSelectSchema.shape, stx: stxBaseSchema })
-  .openapi('Page', { example: mockPageResponse() });
+  .openapi('Page', { description: 'A content page belonging to an organization.', example: mockPageResponse() });
 
 export const pageCreateBodySchema = pageInsertSchema.pick({
   name: true,

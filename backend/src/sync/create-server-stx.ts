@@ -1,4 +1,4 @@
-import type { StxBase } from '#/schemas/stx-base-schema';
+import type { StxBase } from '#/schemas/sync-transaction-schemas';
 import { nanoid } from '#/utils/nanoid';
 
 /**
@@ -8,7 +8,7 @@ import { nanoid } from '#/utils/nanoid';
  */
 export function createServerStx(): StxBase {
   return {
-    id: nanoid(),
+    mutationId: nanoid(),
     sourceId: 'server',
     version: 1,
     fieldVersions: {},

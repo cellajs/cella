@@ -119,10 +119,10 @@ const pageRouteHandlers = app
     const newPages = ctx.req.valid('json');
     const tenantDb = ctx.var.db;
 
-    // Idempotency check - use first item's stx.id
+    // Idempotency check - use first item's stx.mutationId
     const firstStx = newPages[0].stx;
-    if (await isTransactionProcessed(firstStx.id, tenantDb)) {
-      const ref = await getEntityByTransaction(firstStx.id, tenantDb);
+    if (await isTransactionProcessed(firstStx.mutationId, tenantDb)) {
+      const ref = await getEntityByTransaction(firstStx.mutationId, tenantDb);
       if (ref) {
         // For batch create, the first page ID is stored - fetch all from that batch
         const existing = await tenantDb.select().from(pagesTable).where(eq(pagesTable.id, ref.entityId));
@@ -151,7 +151,7 @@ const pageRouteHandlers = app
       publicAccess: true, // Pages are publicly readable by default
       // Sync: write transient stx metadata for CDC Worker
       stx: {
-        id: stx.id,
+        mutationId: stx.mutationId,
         sourceId: stx.sourceId,
         version: 1,
         fieldVersions: {},
@@ -182,7 +182,7 @@ const pageRouteHandlers = app
     const changedFields = getChangedTrackedFields(pageData, trackedFields);
 
     // Field-level conflict detection - check ALL changed fields
-    const { conflicts } = checkFieldConflicts(changedFields, entity.stx, stx.baseVersion);
+    const { conflicts } = checkFieldConflicts(changedFields, entity.stx, stx.lastReadVersion);
     throwIfConflicts('page', conflicts);
 
     const newVersion = (entity.stx?.version ?? 0) + 1;
@@ -197,7 +197,7 @@ const pageRouteHandlers = app
         modifiedBy: user.id,
         // Sync: write transient stx metadata for CDC Worker + client tracking
         stx: {
-          id: stx.id,
+          mutationId: stx.mutationId,
           sourceId: stx.sourceId,
           version: newVersion,
           fieldVersions: buildFieldVersions(entity.stx?.fieldVersions, changedFields, newVersion),

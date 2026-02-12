@@ -22,6 +22,7 @@ import { toaster } from '~/modules/common/toaster/service';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
+import type { MutationData } from '~/query/types';
 import { blocknoteFieldIsDirty } from '~/utils/blocknote-field-is-dirty';
 
 const formSchema = zSendNewsletterData.shape.body;
@@ -53,10 +54,10 @@ export function CreateNewsletterForm({ organizationIds, callback }: CreateNewsle
   const { mutate: _sendNewsletter, isPending } = useMutation<
     SendNewsletterResponse,
     ApiError,
-    { body: SendNewsletterData['body'] } & SendNewsletterData['query']
+    MutationData<SendNewsletterData>
   >({
-    mutationFn: async ({ body, toSelf }) => {
-      return await sendNewsletter({ body, query: { toSelf } });
+    mutationFn: async ({ body, query }) => {
+      return await sendNewsletter({ body, query });
     },
     onSuccess: () => {
       if (testOnly) return toaster(t('common:success.test_email'), 'success');
@@ -74,7 +75,7 @@ export function CreateNewsletterForm({ organizationIds, callback }: CreateNewsle
       organizationIds,
       content: blocksToHTML(data.content),
     };
-    _sendNewsletter({ body, toSelf: !!testOnly });
+    _sendNewsletter({ body, query: { toSelf: !!testOnly } });
   };
 
   const cancel = () => form.reset();

@@ -985,11 +985,20 @@
         "schema": {
           "type": "object",
           "properties": {
-            "id": { "type": "string", "required": true },
-            "userId": { "type": "string", "required": true },
+            "id": {
+              "type": "string",
+              "required": true,
+              "maxLength": 50
+            },
+            "userId": {
+              "type": "string",
+              "required": true,
+              "maxLength": 50
+            },
             "deviceName": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 255
             },
             "deviceType": {
               "type": "string",
@@ -998,13 +1007,19 @@
             },
             "deviceOs": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 255
             },
             "browser": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 255
             },
-            "nameOnDevice": { "type": "string", "required": true },
+            "nameOnDevice": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
+            },
             "createdAt": { "type": "string", "required": true }
           },
           "contentType": "application/json"

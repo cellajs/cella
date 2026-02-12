@@ -3,6 +3,7 @@ import { BirdIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
+import type { Request } from '~/api.gen';
 import { useSearchParams } from '~/hooks/use-search-params';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
@@ -10,7 +11,7 @@ import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { requestsListQueryOptions } from '~/modules/requests/query';
 import { RequestsTableBar } from '~/modules/requests/table/requests-bar';
 import { useColumns } from '~/modules/requests/table/requests-columns';
-import type { Request, RequestsRouteSearchParams } from '~/modules/requests/types';
+import type { RequestsRouteSearchParams } from '~/modules/requests/types';
 
 const LIMIT = appConfig.requestLimits.requests;
 

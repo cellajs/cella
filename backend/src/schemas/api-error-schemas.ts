@@ -42,4 +42,7 @@ export const apiErrorSchema = z
     userId: z.string().optional(), // Optional user identifier
     organizationId: z.string().optional(), // Optional organization identifier
   })
-  .openapi('ApiError', { example: mockApiError() });
+  .openapi('ApiError', {
+    description: 'Standard error response returned by all API endpoints.',
+    example: mockApiError(),
+  });

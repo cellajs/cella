@@ -1,20 +1,19 @@
 import type { ContextEntityType } from 'shared';
 import type z from 'zod';
 import type {
+  DeleteMembershipsData,
   GetMembersResponse,
   GetPendingMembershipsResponse,
   MembershipInviteData,
   UpdateMembershipData,
-  UpdateMembershipResponse,
 } from '~/api.gen';
 import type { ContextEntity } from '~/modules/entities/types';
 import type { membersRouteSearchParamsSchema } from '~/modules/memberships/search-params-schemas';
-import type { ContextQueryProp, InfiniteQueryData, QueryData } from '~/query/types';
+import type { ContextQueryProp, InfiniteQueryData, MutationData, QueryData } from '~/query/types';
 
 export type MembersRouteSearchParams = z.infer<typeof membersRouteSearchParamsSchema>;
 
 export type Member = GetMembersResponse['items'][number];
-export type Membership = UpdateMembershipResponse;
 export type PendingMembership = GetPendingMembershipsResponse['items'][number];
 
 export type MemberQueryData = QueryData<Member>;
@@ -27,18 +26,13 @@ export type EntityMembershipContextProp = {
   entityType?: ContextEntityType;
 };
 
-export type InviteMember = NonNullable<MembershipInviteData['body']> & { entity: ContextEntity };
+export type InviteMember = MutationData<MembershipInviteData> & { entity: ContextEntity };
 
-type UpdateMembershipProp = NonNullable<UpdateMembershipData['body']> & UpdateMembershipData['path'];
-export type MutationUpdateMembership = {
+export type MutationUpdateMembership = MutationData<UpdateMembershipData> & {
   entityId: string;
   entityType: ContextEntityType;
-} & UpdateMembershipProp;
+};
 
-export type DeleteMembership = {
-  entityId: string;
-  entityType: ContextEntityType;
-  tenantId: string;
-  orgId: string;
+export type DeleteMembership = MutationData<DeleteMembershipsData> & {
   members: Member[];
 };

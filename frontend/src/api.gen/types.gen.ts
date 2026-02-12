@@ -20,6 +20,9 @@ export type UserBase = {
   entityType: 'user';
 };
 
+/**
+ * Base schema for entities with memberships (e.g. organization).
+ */
 export type ContextEntityBase = {
   id: string;
   name: string;
@@ -33,6 +36,9 @@ export type ContextEntityBase = {
   bannerUrl: string | null;
 };
 
+/**
+ * Core membership fields shared across active and inactive memberships.
+ */
 export type MembershipBase = {
   id: string;
   tenantId: string;
@@ -45,8 +51,11 @@ export type MembershipBase = {
   organizationId: string;
 };
 
+/**
+ * Sync transaction metadata stored on entities for offline and realtime support.
+ */
 export type StxBase = {
-  id: string;
+  mutationId: string;
   sourceId: string;
   version: number;
   fieldVersions: {
@@ -54,6 +63,9 @@ export type StxBase = {
   };
 };
 
+/**
+ * Realtime notification delivered via SSE for entity and membership changes.
+ */
 export type StreamNotification = {
   action: 'create' | 'update' | 'delete';
   entityType: 'attachment' | 'page' | null;
@@ -62,26 +74,11 @@ export type StreamNotification = {
   organizationId: string | null;
   contextType: 'organization' | null;
   seq: number | null;
-  stx: StxStreamMessage;
+  stx: StxBase &
+    ({
+      [key: string]: unknown;
+    } | null);
   cacheToken: string | null;
-};
-
-export type StxStreamMessage = {
-  id: string;
-  sourceId: string;
-  version: number;
-  fieldVersions: {
-    [key: string]: number;
-  };
-} | null;
-
-export type PublicStreamActivity = {
-  activityId: string;
-  action: 'create' | 'update' | 'delete';
-  entityType: 'attachment' | 'page';
-  entityId: string;
-  changedKeys: Array<string> | null;
-  createdAt: string;
 };
 
 /**
@@ -91,6 +88,9 @@ export type BadRequestError = ApiError & {
   status?: 400;
 };
 
+/**
+ * Standard error response returned by all API endpoints.
+ */
 export type ApiError = {
   name: string;
   message: string;
@@ -134,6 +134,9 @@ export type TooManyRequestsError = ApiError & {
   status?: 429;
 };
 
+/**
+ * An auditable event recording an entity change, used for sync and history.
+ */
 export type Activity = {
   id: string;
   tenantId: string | null;
@@ -153,7 +156,7 @@ export type Activity = {
 };
 
 /**
- * Error info for failed CDC activities (dead letters)
+ * Error info for failed CDC activities (dead letters).
  */
 export type ActivityError = {
   lsn: string;
@@ -163,14 +166,20 @@ export type ActivityError = {
   resolved?: boolean;
 };
 
+/**
+ * The currently authenticated user with their system role.
+ */
 export type Me = {
   user: User;
   /**
-   * Explain system role here
+   * System-level role (e.g. admin) or user for standard access.
    */
   systemRole: 'admin' | 'user';
 };
 
+/**
+ * A user with profile data and last-seen activity timestamp.
+ */
 export type User = {
   createdAt: string;
   id: string;
@@ -196,6 +205,9 @@ export type User = {
   lastSeenAt: string | null;
 };
 
+/**
+ * Authentication metadata for the current user session.
+ */
 export type MeAuthData = {
   enabledOAuth: Array<'github'>;
   hasTotp: boolean;
@@ -225,6 +237,9 @@ export type MeAuthData = {
   }>;
 };
 
+/**
+ * A membership record for a user who has not yet accepted an invitation.
+ */
 export type InactiveMembership = {
   createdAt: string;
   id: string;
@@ -239,6 +254,9 @@ export type InactiveMembership = {
   organizationId: string;
 };
 
+/**
+ * A signed token authorizing file uploads to the configured storage provider.
+ */
 export type UploadToken = {
   public: boolean;
   sub: string;
@@ -258,6 +276,9 @@ export type UploadToken = {
   } | null;
 };
 
+/**
+ * A tenant representing an isolated data partition for multi-tenancy.
+ */
 export type Tenant = {
   /**
    * Lowercase alphanumeric tenant ID
@@ -267,26 +288,14 @@ export type Tenant = {
    * Tenant display name
    */
   name: string;
-  status: TenantStatus;
+  status: 'active' | 'suspended' | 'archived';
   createdAt: string;
   modifiedAt: string | null;
 };
 
-export type TenantStatus = 'active' | 'suspended' | 'archived';
-
-export type CreateTenantBody = {
-  /**
-   * Tenant display name
-   */
-  name: string;
-  status?: TenantStatus;
-};
-
-export type UpdateTenantBody = {
-  name?: string;
-  status?: TenantStatus;
-};
-
+/**
+ * A contact or waitlist submission from an unauthenticated user.
+ */
 export type Request = {
   createdAt: string;
   id: string;
@@ -296,22 +305,9 @@ export type Request = {
   wasInvited: boolean;
 };
 
-export type OrganizationIncluded = {
-  membership?: MembershipBase;
-  counts?: {
-    membership: {
-      admin: number;
-      member: number;
-      pending: number;
-      total: number;
-    };
-    entities: {
-      attachment: number;
-      page: number;
-    };
-  };
-};
-
+/**
+ * An organization with settings, restrictions, and membership context.
+ */
 export type Organization = {
   createdAt: string;
   id: string;
@@ -338,7 +334,21 @@ export type Organization = {
   welcomeText: string | null;
   authStrategies: Array<'github' | 'google' | 'microsoft' | 'password' | 'passkey' | 'totp' | 'email'>;
   chatSupport: boolean;
-  included?: OrganizationIncluded;
+  included?: {
+    membership?: MembershipBase;
+    counts?: {
+      membership: {
+        admin: number;
+        member: number;
+        pending: number;
+        total: number;
+      };
+      entities: {
+        attachment: number;
+        page: number;
+      };
+    };
+  };
   can?: {
     create: boolean;
     read: boolean;
@@ -348,6 +358,9 @@ export type Organization = {
   };
 };
 
+/**
+ * A content page belonging to an organization.
+ */
 export type Page = {
   createdAt: string;
   id: string;
@@ -366,21 +379,27 @@ export type Page = {
   displayOrder: number;
 };
 
-export type StxRequest = {
+/**
+ * Sync transaction metadata sent with mutations for idempotency and conflict detection.
+ */
+export type StxRequestBase = {
   /**
    * Unique mutation ID (nanoid)
    */
-  id: string;
+  mutationId: string;
   /**
    * Tab/instance identifier for echo prevention
    */
   sourceId: string;
   /**
-   * Entity version when read (for conflict detection)
+   * Entity version when last read (for conflict detection)
    */
-  baseVersion: number;
+  lastReadVersion: number;
 };
 
+/**
+ * A file attachment belonging to an organization.
+ */
 export type Attachment = {
   createdAt: string;
   id: string;
@@ -413,6 +432,9 @@ export type Attachment = {
   };
 };
 
+/**
+ * A user's membership in a context entity, including role and activity data.
+ */
 export type Membership = {
   createdAt: string;
   id: string;
@@ -2170,7 +2192,7 @@ export type CheckSlugResponses = {
 
 export type CheckSlugResponse = CheckSlugResponses[keyof CheckSlugResponses];
 
-export type PublicStreamData = {
+export type GetPublicStreamData = {
   body?: never;
   path?: never;
   query?: {
@@ -2186,7 +2208,7 @@ export type PublicStreamData = {
   url: '/entities/public/stream';
 };
 
-export type PublicStreamErrors = {
+export type GetPublicStreamErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -2209,14 +2231,14 @@ export type PublicStreamErrors = {
   429: TooManyRequestsError;
 };
 
-export type PublicStreamError = PublicStreamErrors[keyof PublicStreamErrors];
+export type GetPublicStreamError = GetPublicStreamErrors[keyof GetPublicStreamErrors];
 
-export type PublicStreamResponses = {
+export type GetPublicStreamResponses = {
   /**
    * Catch-up activities or SSE stream started
    */
   200: {
-    activities: Array<PublicStreamActivity>;
+    notifications: Array<StreamNotification>;
     /**
      * Last activity ID (use as offset for next request)
      */
@@ -2224,7 +2246,7 @@ export type PublicStreamResponses = {
   };
 };
 
-export type PublicStreamResponse = PublicStreamResponses[keyof PublicStreamResponses];
+export type GetPublicStreamResponse = GetPublicStreamResponses[keyof GetPublicStreamResponses];
 
 export type GetAppStreamData = {
   body?: never;
@@ -2272,7 +2294,7 @@ export type GetAppStreamResponses = {
    * SSE stream or notification response
    */
   200: {
-    activities: Array<StreamNotification>;
+    notifications: Array<StreamNotification>;
     /**
      * Last activity ID (use as offset for next request)
      */
@@ -2439,6 +2461,9 @@ export type GetUsersResponses = {
    * Users
    */
   200: {
+    /**
+     * A user with profile data and last-seen activity timestamp.
+     */
     items: Array<
       User & {
         memberships: Array<MembershipBase>;
@@ -2602,7 +2627,7 @@ export type GetTenantsData = {
     /**
      * Filter by status
      */
-    status?: TenantStatus & unknown;
+    status?: 'active' | 'suspended' | 'archived';
     limit?: string;
     offset?: string;
     sort?: 'createdAt' | 'name';
@@ -2649,7 +2674,13 @@ export type GetTenantsResponses = {
 export type GetTenantsResponse = GetTenantsResponses[keyof GetTenantsResponses];
 
 export type CreateTenantData = {
-  body: CreateTenantBody;
+  body: {
+    /**
+     * Tenant display name
+     */
+    name: string;
+    status?: 'active' | 'suspended' | 'archived';
+  };
   path?: never;
   query?: never;
   url: '/tenants';
@@ -2784,7 +2815,10 @@ export type GetTenantByIdResponses = {
 export type GetTenantByIdResponse = GetTenantByIdResponses[keyof GetTenantByIdResponses];
 
 export type UpdateTenantData = {
-  body: UpdateTenantBody;
+  body: {
+    name?: string;
+    status?: 'active' | 'suspended' | 'archived';
+  };
   path: {
     /**
      * Tenant ID
@@ -3423,10 +3457,25 @@ export type CreateOrganizationsResponses = {
    * Organizations were created
    */
   201: {
+    /**
+     * An organization with settings, restrictions, and membership context.
+     */
     data: Array<
       Organization & {
-        included: OrganizationIncluded & {
-          [key: string]: unknown;
+        included: {
+          membership: MembershipBase;
+          counts?: {
+            membership: {
+              admin: number;
+              member: number;
+              pending: number;
+              total: number;
+            };
+            entities: {
+              attachment: number;
+              page: number;
+            };
+          };
         };
       }
     >;
@@ -3748,8 +3797,8 @@ export type DeletePagesResponse = DeletePagesResponses[keyof DeletePagesResponse
 
 export type CreatePagesData = {
   body: Array<{
-    name: string;
-    stx: StxRequest;
+    name?: string;
+    stx: StxRequestBase;
   }>;
   path: {
     tenantId: string;
@@ -3828,7 +3877,7 @@ export type UpdatePageData = {
     displayOrder?: number;
     status?: 'unpublished' | 'published' | 'archived';
     parentId?: string | null;
-    stx: StxRequest;
+    stx: StxRequestBase;
   };
   path: {
     tenantId: string;
@@ -3921,6 +3970,9 @@ export type GetUsers2Responses = {
    * Users
    */
   200: {
+    /**
+     * A user with profile data and last-seen activity timestamp.
+     */
     items: Array<
       User & {
         memberships: Array<MembershipBase>;
@@ -3984,7 +4036,7 @@ export type DeleteAttachmentsData = {
   body: {
     ids: Array<string>;
     stx?: {
-      id: string;
+      mutationId: string;
       sourceId: string;
     };
   };
@@ -4098,21 +4150,21 @@ export type GetAttachmentsResponse = GetAttachmentsResponses[keyof GetAttachment
 
 export type CreateAttachmentsData = {
   body: Array<{
-    id: string;
-    name: string;
+    id?: string;
+    name?: string;
     filename: string;
     contentType: string;
     size: string;
     organizationId: string;
-    createdBy: string | null;
+    createdBy?: string | null;
     originalKey: string;
     bucketName: string;
     public?: boolean;
-    groupId: string | null;
-    convertedContentType: string | null;
-    convertedKey: string | null;
-    thumbnailKey: string | null;
-    stx: StxRequest;
+    groupId?: string | null;
+    convertedContentType?: string | null;
+    convertedKey?: string | null;
+    thumbnailKey?: string | null;
+    stx: StxRequestBase;
   }>;
   path: {
     tenantId: string;
@@ -4279,7 +4331,7 @@ export type UpdateAttachmentData = {
   body: {
     name?: string;
     originalKey?: string;
-    stx: StxRequest;
+    stx: StxRequestBase;
   };
   path: {
     tenantId: string;

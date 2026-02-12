@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "814eac91-d39a-438a-a0c4-e412433a0c30",
+  "id": "a11449bd-1830-4d79-83e3-90cf391a1709",
   "prevIds": [
     "00000000-0000-0000-0000-000000000000"
   ],
@@ -143,7 +143,7 @@
       "schema": "public"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -169,7 +169,7 @@
       "table": "activities"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -221,7 +221,7 @@
       "table": "activities"
     },
     {
-      "type": "varchar",
+      "type": "varchar(255)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -234,7 +234,7 @@
       "table": "activities"
     },
     {
-      "type": "varchar",
+      "type": "varchar(255)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -247,7 +247,7 @@
       "table": "activities"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -260,7 +260,7 @@
       "table": "activities"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -351,7 +351,7 @@
       "table": "attachments"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -390,7 +390,7 @@
       "table": "attachments"
     },
     {
-      "type": "varchar",
+      "type": "varchar(255)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -403,7 +403,7 @@
       "table": "attachments"
     },
     {
-      "type": "varchar",
+      "type": "text",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -442,7 +442,7 @@
       "table": "attachments"
     },
     {
-      "type": "varchar",
+      "type": "varchar(255)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -455,7 +455,7 @@
       "table": "attachments"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -468,7 +468,7 @@
       "table": "attachments"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -494,7 +494,7 @@
       "table": "attachments"
     },
     {
-      "type": "varchar",
+      "type": "varchar(255)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -507,7 +507,7 @@
       "table": "attachments"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -520,7 +520,7 @@
       "table": "attachments"
     },
     {
-      "type": "varchar",
+      "type": "varchar(255)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -533,7 +533,7 @@
       "table": "attachments"
     },
     {
-      "type": "varchar",
+      "type": "varchar(255)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -546,7 +546,7 @@
       "table": "attachments"
     },
     {
-      "type": "varchar",
+      "type": "varchar(255)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -559,7 +559,7 @@
       "table": "attachments"
     },
     {
-      "type": "varchar",
+      "type": "varchar(255)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -572,7 +572,7 @@
       "table": "attachments"
     },
     {
-      "type": "varchar",
+      "type": "varchar(2048)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -585,7 +585,7 @@
       "table": "attachments"
     },
     {
-      "type": "varchar",
+      "type": "varchar(2048)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -598,7 +598,7 @@
       "table": "attachments"
     },
     {
-      "type": "varchar",
+      "type": "varchar(2048)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -611,7 +611,7 @@
       "table": "attachments"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -624,7 +624,7 @@
       "table": "attachments"
     },
     {
-      "type": "varchar",
+      "type": "varchar(255)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -637,7 +637,7 @@
       "table": "counters"
     },
     {
-      "type": "varchar",
+      "type": "varchar(255)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -650,7 +650,7 @@
       "table": "counters"
     },
     {
-      "type": "varchar",
+      "type": "varchar(255)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -702,7 +702,7 @@
       "table": "emails"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -715,7 +715,7 @@
       "table": "emails"
     },
     {
-      "type": "varchar",
+      "type": "varchar(255)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -741,7 +741,7 @@
       "table": "emails"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -754,7 +754,7 @@
       "table": "emails"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -793,7 +793,7 @@
       "table": "inactive_memberships"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -832,7 +832,7 @@
       "table": "inactive_memberships"
     },
     {
-      "type": "varchar",
+      "type": "varchar(255)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -845,7 +845,7 @@
       "table": "inactive_memberships"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -858,7 +858,7 @@
       "table": "inactive_memberships"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -897,7 +897,7 @@
       "table": "inactive_memberships"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -910,7 +910,7 @@
       "table": "inactive_memberships"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -923,7 +923,7 @@
       "table": "inactive_memberships"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -962,7 +962,7 @@
       "table": "memberships"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -1001,7 +1001,7 @@
       "table": "memberships"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -1027,7 +1027,7 @@
       "table": "memberships"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -1053,7 +1053,7 @@
       "table": "memberships"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -1105,7 +1105,7 @@
       "table": "memberships"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -1131,7 +1131,7 @@
       "table": "oauth_accounts"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -1157,7 +1157,7 @@
       "table": "oauth_accounts"
     },
     {
-      "type": "varchar",
+      "type": "varchar(255)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -1170,7 +1170,7 @@
       "table": "oauth_accounts"
     },
     {
-      "type": "varchar",
+      "type": "varchar(255)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -1209,7 +1209,7 @@
       "table": "oauth_accounts"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -1235,7 +1235,7 @@
       "table": "organizations"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -1274,7 +1274,7 @@
       "table": "organizations"
     },
     {
-      "type": "varchar",
+      "type": "varchar(255)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -1287,7 +1287,7 @@
       "table": "organizations"
     },
     {
-      "type": "varchar",
+      "type": "text",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -1313,7 +1313,7 @@
       "table": "organizations"
     },
     {
-      "type": "varchar",
+      "type": "varchar(255)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -1326,7 +1326,7 @@
       "table": "organizations"
     },
     {
-      "type": "varchar",
+      "type": "varchar(2048)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -1339,7 +1339,7 @@
       "table": "organizations"
     },
     {
-      "type": "varchar",
+      "type": "varchar(2048)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -1352,7 +1352,7 @@
       "table": "organizations"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -1365,7 +1365,7 @@
       "table": "organizations"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -1378,7 +1378,7 @@
       "table": "organizations"
     },
     {
-      "type": "varchar",
+      "type": "varchar(255)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -1391,7 +1391,7 @@
       "table": "organizations"
     },
     {
-      "type": "varchar",
+      "type": "varchar(255)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -1404,7 +1404,7 @@
       "table": "organizations"
     },
     {
-      "type": "varchar",
+      "type": "varchar(255)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -1456,7 +1456,7 @@
       "table": "organizations"
     },
     {
-      "type": "varchar",
+      "type": "varchar(255)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -1482,7 +1482,7 @@
       "table": "organizations"
     },
     {
-      "type": "varchar",
+      "type": "varchar(255)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -1495,7 +1495,7 @@
       "table": "organizations"
     },
     {
-      "type": "varchar",
+      "type": "varchar(2048)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -1508,7 +1508,7 @@
       "table": "organizations"
     },
     {
-      "type": "varchar",
+      "type": "varchar(2048)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -1573,7 +1573,7 @@
       "table": "pages"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -1612,7 +1612,7 @@
       "table": "pages"
     },
     {
-      "type": "varchar",
+      "type": "varchar(255)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -1625,7 +1625,7 @@
       "table": "pages"
     },
     {
-      "type": "varchar",
+      "type": "text",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -1664,7 +1664,7 @@
       "table": "pages"
     },
     {
-      "type": "varchar",
+      "type": "varchar(255)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -1677,7 +1677,7 @@
       "table": "pages"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -1690,7 +1690,7 @@
       "table": "pages"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -1729,7 +1729,7 @@
       "table": "pages"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -1755,7 +1755,7 @@
       "table": "pages"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -1768,7 +1768,7 @@
       "table": "passkeys"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -1781,7 +1781,7 @@
       "table": "passkeys"
     },
     {
-      "type": "varchar",
+      "type": "varchar(2048)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -1794,7 +1794,7 @@
       "table": "passkeys"
     },
     {
-      "type": "varchar",
+      "type": "varchar(2048)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -1807,7 +1807,7 @@
       "table": "passkeys"
     },
     {
-      "type": "varchar",
+      "type": "varchar(255)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -1833,7 +1833,7 @@
       "table": "passkeys"
     },
     {
-      "type": "varchar",
+      "type": "varchar(255)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -1846,7 +1846,7 @@
       "table": "passkeys"
     },
     {
-      "type": "varchar",
+      "type": "varchar(255)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -1859,7 +1859,7 @@
       "table": "passkeys"
     },
     {
-      "type": "varchar",
+      "type": "varchar(255)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -1885,7 +1885,7 @@
       "table": "passkeys"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -1898,7 +1898,7 @@
       "table": "passwords"
     },
     {
-      "type": "varchar",
+      "type": "varchar(255)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -1911,7 +1911,7 @@
       "table": "passwords"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -2002,7 +2002,7 @@
       "table": "requests"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -2015,7 +2015,7 @@
       "table": "requests"
     },
     {
-      "type": "varchar",
+      "type": "varchar(255)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -2028,7 +2028,7 @@
       "table": "requests"
     },
     {
-      "type": "varchar",
+      "type": "varchar(255)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -2054,7 +2054,7 @@
       "table": "requests"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -2067,7 +2067,7 @@
       "table": "requests"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -2080,7 +2080,7 @@
       "table": "sessions"
     },
     {
-      "type": "varchar",
+      "type": "varchar(255)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -2106,7 +2106,7 @@
       "table": "sessions"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -2119,7 +2119,7 @@
       "table": "sessions"
     },
     {
-      "type": "varchar",
+      "type": "varchar(255)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -2145,7 +2145,7 @@
       "table": "sessions"
     },
     {
-      "type": "varchar",
+      "type": "varchar(255)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -2158,7 +2158,7 @@
       "table": "sessions"
     },
     {
-      "type": "varchar",
+      "type": "varchar(255)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -2210,7 +2210,7 @@
       "table": "sessions"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -2223,7 +2223,7 @@
       "table": "system_roles"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -2288,7 +2288,7 @@
       "table": "tenants"
     },
     {
-      "type": "varchar",
+      "type": "varchar(255)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -2340,7 +2340,7 @@
       "table": "tenants"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -2353,7 +2353,7 @@
       "table": "tokens"
     },
     {
-      "type": "varchar",
+      "type": "varchar(255)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -2366,7 +2366,7 @@
       "table": "tokens"
     },
     {
-      "type": "varchar",
+      "type": "varchar(255)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -2392,7 +2392,7 @@
       "table": "tokens"
     },
     {
-      "type": "varchar",
+      "type": "varchar(255)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -2405,7 +2405,7 @@
       "table": "tokens"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -2418,7 +2418,7 @@
       "table": "tokens"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -2431,7 +2431,7 @@
       "table": "tokens"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -2444,7 +2444,7 @@
       "table": "tokens"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -2496,7 +2496,7 @@
       "table": "tokens"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -2509,7 +2509,7 @@
       "table": "totps"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -2522,7 +2522,7 @@
       "table": "totps"
     },
     {
-      "type": "varchar",
+      "type": "varchar(255)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -2548,7 +2548,7 @@
       "table": "totps"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -2561,7 +2561,7 @@
       "table": "unsubscribe_tokens"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -2574,7 +2574,7 @@
       "table": "unsubscribe_tokens"
     },
     {
-      "type": "varchar",
+      "type": "varchar(255)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -2613,7 +2613,7 @@
       "table": "users"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -2639,7 +2639,7 @@
       "table": "users"
     },
     {
-      "type": "varchar",
+      "type": "varchar(255)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -2652,7 +2652,7 @@
       "table": "users"
     },
     {
-      "type": "varchar",
+      "type": "text",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -2665,7 +2665,7 @@
       "table": "users"
     },
     {
-      "type": "varchar",
+      "type": "varchar(255)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -2678,7 +2678,7 @@
       "table": "users"
     },
     {
-      "type": "varchar",
+      "type": "varchar(2048)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -2691,7 +2691,7 @@
       "table": "users"
     },
     {
-      "type": "varchar",
+      "type": "varchar(2048)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -2704,7 +2704,7 @@
       "table": "users"
     },
     {
-      "type": "varchar",
+      "type": "varchar(255)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
@@ -2730,7 +2730,7 @@
       "table": "users"
     },
     {
-      "type": "varchar",
+      "type": "varchar(255)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -2743,7 +2743,7 @@
       "table": "users"
     },
     {
-      "type": "varchar",
+      "type": "varchar(255)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -2834,7 +2834,7 @@
       "table": "users"
     },
     {
-      "type": "varchar",
+      "type": "varchar(50)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -2976,7 +2976,7 @@
       "nameExplicit": true,
       "columns": [
         {
-          "value": "(stx->>'id')",
+          "value": "(stx->>'mutationId')",
           "isExpression": true,
           "asc": true,
           "nullsFirst": false,

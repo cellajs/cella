@@ -1,5 +1,8 @@
 import type { InfiniteData, QueryKey, useInfiniteQuery } from '@tanstack/react-query';
 
+/** Extract usable mutation variables from a generated *Data type (strips `url` and `path`). */
+export type MutationData<T> = Omit<T, 'url'>;
+
 export type QueryData<TItem> = {
   items: TItem[];
   total: number;

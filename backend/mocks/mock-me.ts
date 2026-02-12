@@ -87,16 +87,16 @@ export const mockPendingInvitationResponse = (key = 'pending-invitation:default'
 export const mockPaginatedInvitationsResponse = (count = 2) => mockPaginated(mockPendingInvitationResponse, count);
 
 /**
- * Generates a mock app stream response.
- * Used for getAppStream endpoint example (JSON mode).
+ * Generates a mock stream response.
+ * Used for getAppStream / getPublicStream endpoint examples (JSON mode).
  */
-export const mockAppStreamResponse = (key = 'app-stream:default') =>
+export const mockStreamResponse = (key = 'stream:default') =>
   withFakerSeed(key, () => {
     // Generate cursor BEFORE nested mock to ensure deterministic output
     // (mockStreamNotification uses nested withFakerSeed which resets the seed after)
     const cursor = mockNanoid();
     return {
-      activities: [mockStreamNotification(`${key}:notification`)],
+      notifications: [mockStreamNotification(`${key}:notification`)],
       cursor,
     };
   });

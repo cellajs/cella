@@ -1,11 +1,12 @@
 import { z } from '@hono/zod-openapi';
 import { appConfig } from 'shared';
 import { activityActions } from '#/sync/activity-bus';
-import { mockPublicStreamActivity, mockStreamNotification } from '../../mocks/mock-entity-base';
-import { stxStreamMessageSchema } from './sync-transaction-schemas';
+import { mockStreamNotification } from '../../mocks/mock-entity-base';
+import { stxBaseSchema } from './sync-transaction-schemas';
 
 /**
  * Stream notification schema for SSE streams.
+ * Shared by both app and public streams — identical payload shape.
  * Lightweight payload - client fetches entity data via API if needed.
  * No entity data is included to keep payloads small and consistent.
  *
@@ -13,7 +14,7 @@ import { stxStreamMessageSchema } from './sync-transaction-schemas';
  * - Includes stx, seq, cacheToken for sync engine
  * - Client uses cacheToken to fetch entity via LRU cache
  *
- * For context entities (membership, organization):
+ * For context entities (membership, organization) — app stream only:
  * - stx/seq/cacheToken are null/omitted
  * - Client invalidates queries to refetch
  */
@@ -31,30 +32,16 @@ export const streamNotificationSchema = z
     /** Sequence number for gap detection (entities only) */
     seq: z.number().int().nullable(),
     /** Sync transaction metadata for conflict detection (entities only) */
-    stx: stxStreamMessageSchema.nullable(),
+    stx: stxBaseSchema.nullable(),
     /** HMAC-signed token for LRU cache access (entities only) */
     cacheToken: z.string().nullable(),
   })
-  .openapi('StreamNotification', { example: mockStreamNotification() });
+  .openapi('StreamNotification', {
+    description: 'Realtime notification delivered via SSE for entity and membership changes.',
+    example: mockStreamNotification(),
+  });
 
 export type StreamNotification = z.infer<typeof streamNotificationSchema>;
-
-/**
- * Schema for public stream activity items.
- * Used for catch-up responses in public SSE streams.
- */
-export const publicStreamActivitySchema = z
-  .object({
-    activityId: z.string(),
-    action: z.enum(activityActions),
-    entityType: z.enum(appConfig.productEntityTypes),
-    entityId: z.string(),
-    changedKeys: z.array(z.string()).nullable(),
-    createdAt: z.string(),
-  })
-  .openapi('PublicStreamActivity', { example: mockPublicStreamActivity() });
-
-export type PublicStreamActivity = z.infer<typeof publicStreamActivitySchema>;
 
 /**
  * Base query parameters for SSE streams.
@@ -83,18 +70,14 @@ export const publicStreamQuerySchema = streamQuerySchema.extend({
 
 /**
  * Generic stream response schema factory.
- * Returns activities array with cursor for pagination.
+ * Returns notifications array with cursor for pagination.
  */
-export const streamResponseSchema = <T extends z.ZodTypeAny>(activitySchema: T) =>
+export const streamResponseSchema = <T extends z.ZodTypeAny>(notificationSchema: T) =>
   z.object({
-    activities: z.array(activitySchema),
+    notifications: z.array(notificationSchema),
     cursor: z.string().nullable().openapi({ description: 'Last activity ID (use as offset for next request)' }),
   });
 
-/** App stream response (for authenticated user streams) */
-export const appStreamResponseSchema = streamResponseSchema(streamNotificationSchema);
-export type AppStreamResponse = z.infer<typeof appStreamResponseSchema>;
-
-/** Public stream response (for unauthenticated entity streams) */
-export const publicStreamResponseSchema = streamResponseSchema(publicStreamActivitySchema);
-export type PublicStreamResponse = z.infer<typeof publicStreamResponseSchema>;
+/** Stream response (notifications array with cursor for pagination) */
+export const streamNotificationResponseSchema = streamResponseSchema(streamNotificationSchema);
+export type StreamNotificationResponse = z.infer<typeof streamNotificationResponseSchema>;

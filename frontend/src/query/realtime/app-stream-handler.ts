@@ -103,7 +103,7 @@ function handleEntityNotification(
 ): void {
   // Echo prevention: skip if this is our own mutation
   if (stx?.sourceId === sourceId) {
-    console.debug('[handleEntityNotification] Echo prevention - skipping own mutation:', stx.id);
+    console.debug('[handleEntityNotification] Echo prevention - skipping own mutation:', stx.mutationId);
     return;
   }
 

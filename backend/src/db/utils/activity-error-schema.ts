@@ -16,7 +16,7 @@ export const activityErrorSchema = z
     resolved: z.boolean().optional(),
   })
   .openapi('ActivityError', {
-    description: 'Error info for failed CDC activities (dead letters)',
+    description: 'Error info for failed CDC activities (dead letters).',
     example: {
       lsn: '0/16B3A40',
       message: 'Connection timeout during processing',

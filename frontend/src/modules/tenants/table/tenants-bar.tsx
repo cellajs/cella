@@ -60,7 +60,7 @@ export const TenantsTableBar = ({
 
     try {
       for (const tenant of activeSelected) {
-        await archiveTenant({ tenantId: tenant.id });
+        await archiveTenant({ path: { tenantId: tenant.id } });
       }
       toaster(t('common:success.archived_resource', { resource: t('common:tenants') }), 'success');
       clearSelection();

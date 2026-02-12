@@ -22,6 +22,7 @@ import { TokenData } from '~/modules/auth/types';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
+import type { MutationData } from '~/query/types';
 import { useAuthStore } from '~/store/auth';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 
@@ -56,9 +57,9 @@ export function SignUpStep({ tokenData }: { tokenData?: TokenData }) {
   const { mutate: _signUpWithToken, isPending: isPendingWithToken } = useMutation<
     SignUpWithTokenResponse,
     ApiError,
-    NonNullable<SignUpWithTokenData['body']> & SignUpWithTokenData['path']
+    MutationData<SignUpWithTokenData>
   >({
-    mutationFn: ({ tokenId, ...body }) => signUpWithToken({ body, path: { tokenId } }),
+    mutationFn: ({ path, body }) => signUpWithToken({ path, body }),
     onSuccess: ({ membershipInvite }) => {
       const to = appConfig.defaultRedirectPath;
       const search = membershipInvite ? { skipWelcome: true } : {};
@@ -74,7 +75,7 @@ export function SignUpStep({ tokenData }: { tokenData?: TokenData }) {
 
   // Handle submit action
   const onSubmit = (formValues: FormValues) => {
-    if (tokenId) return _signUpWithToken({ ...formValues, tokenId });
+    if (tokenId) return _signUpWithToken({ path: { tokenId }, body: formValues });
     _signUp({ ...formValues });
   };
 

@@ -3,6 +3,7 @@ import { appConfig } from 'shared';
 import {
   type CreateOrganizationsData,
   createOrganizations,
+  type DeleteOrganizationsData,
   deleteOrganizations,
   type GetOrganizationsData,
   getOrganization,
@@ -21,6 +22,7 @@ import {
   registerEntityQueryKeys,
   useMutateQueryData,
 } from '~/query/basic';
+import type { MutationData } from '~/query/types';
 
 type OrganizationFilters = Omit<GetOrganizationsData['query'], 'limit' | 'offset'>;
 
@@ -100,31 +102,29 @@ export const useOrganizationCreateMutation = () => {
   const queryClient = useQueryClient();
   const mutateCache = useMutateQueryData(keys.list.base);
 
-  return useMutation<OrganizationWithMembership, ApiError, { tenantId: string; body: CreateOrganizationsData['body'] }>(
-    {
-      mutationKey: keys.create,
-      mutationFn: async ({ tenantId, body }) => {
-        const result = await createOrganizations({ path: { tenantId }, body });
+  return useMutation<OrganizationWithMembership, ApiError, MutationData<CreateOrganizationsData>>({
+    mutationKey: keys.create,
+    mutationFn: async ({ path, body }) => {
+      const result = await createOrganizations({ path, body });
 
-        // Check for rejection reasons and throw if org limit reached
-        if (result.rejectionReasons) {
-          const reasons = Object.keys(result.rejectionReasons);
-          if (reasons.includes('org_limit_reached')) {
-            throw new Error('org_limit_reached');
-          }
+      // Check for rejection reasons and throw if org limit reached
+      if (result.rejectionReasons) {
+        const reasons = Object.keys(result.rejectionReasons);
+        if (reasons.includes('org_limit_reached')) {
+          throw new Error('org_limit_reached');
         }
+      }
 
-        // Return the first created organization (currently only single creation supported)
-        return result.data[0] as OrganizationWithMembership;
-      },
-      onSuccess: (createdOrganization) => {
-        mutateCache.create([createdOrganization]);
-      },
-      onSettled: () => {
-        invalidateIfLastMutation(queryClient, keys.all, keys.list.base);
-      },
+      // Return the first created organization (currently only single creation supported)
+      return result.data[0] as OrganizationWithMembership;
     },
-  );
+    onSuccess: (createdOrganization) => {
+      mutateCache.create([createdOrganization]);
+    },
+    onSettled: () => {
+      invalidateIfLastMutation(queryClient, keys.all, keys.list.base);
+    },
+  });
 };
 
 /**
@@ -134,9 +134,9 @@ export const useOrganizationUpdateMutation = () => {
   const queryClient = useQueryClient();
   const mutateCache = useMutateQueryData(keys.list.base, () => keys.detail.base, ['update']);
 
-  return useMutation<Organization, ApiError, { tenantId: string; id: string; body: UpdateOrganizationData['body'] }>({
+  return useMutation<Organization, ApiError, MutationData<UpdateOrganizationData>>({
     mutationKey: keys.update,
-    mutationFn: ({ tenantId, id, body }) => updateOrganization({ body, path: { tenantId, id } }),
+    mutationFn: ({ path, body }) => updateOrganization({ path, body }),
     onSuccess: (updatedOrganization) => {
       mutateCache.update([updatedOrganization]);
     },
@@ -153,11 +153,10 @@ export const useOrganizationDeleteMutation = () => {
   const queryClient = useQueryClient();
   const mutateCache = useMutateQueryData(keys.list.base, (org) => keys.detail.byId(org.id), ['remove']);
 
-  return useMutation<void, ApiError, { tenantId: string; organizations: Organization[] }>({
+  return useMutation<void, ApiError, MutationData<DeleteOrganizationsData> & { organizations: Organization[] }>({
     mutationKey: keys.delete,
-    mutationFn: async ({ tenantId, organizations }) => {
-      const ids = organizations.map(({ id }) => id);
-      await deleteOrganizations({ body: { ids }, path: { tenantId } });
+    mutationFn: async ({ path, body }) => {
+      await deleteOrganizations({ path, body });
     },
     onSuccess: (_, { organizations }) => {
       mutateCache.remove(organizations);

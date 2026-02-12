@@ -5,7 +5,10 @@
 # Triggered on pushes to main (prod) or manually for other environments
 # =============================================================================
 
-name: Deploy to Scaleway
+export const stxRequestSchema = z
+
+permissions:
+  contents: read
 
 on:
   # Automatic deployment to production on main branch

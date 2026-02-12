@@ -67,10 +67,10 @@ function buildActivityPayload(
 }
 
 /**
- * Send activity + entity data to API server via WebSocket.
+ * Send CDC message (activity + entity data) to API server via WebSocket.
  * Generates cacheToken for product entities.
  */
-export function sendActivityToApi(
+export function sendMessageToApi(
   activity: InsertActivityModel,
   entityData: Record<string, unknown>,
   traceContext: TraceContext,

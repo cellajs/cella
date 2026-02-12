@@ -5,7 +5,7 @@ import { activitiesTable } from '#/db/schema/activities';
 import { CDC_PUBLICATION_NAME, CDC_SLOT_NAME } from './constants';
 import { cdcDb } from './db';
 import { env } from './env';
-import { generateActivityId, recordDeadLetter, sendActivityToApi } from './lib/activity-service';
+import { generateActivityId, recordDeadLetter, sendMessageToApi } from './lib/activity-service';
 import { replicationState, type CdcHealthState, type ReplicationState } from './lib/replication-state';
 import { configureWalLimits, getFreeDiskSpace, getWalBytes } from './lib/resource-monitor';
 import { getErrorCode, withRetry } from './lib/retry';
@@ -134,7 +134,7 @@ async function handleDataMessage(lsn: string, message: unknown): Promise<void> {
             lsn,
           });
 
-          sendActivityToApi(activityWithId, processResult.entityData, traceCtx, seq);
+          sendMessageToApi(activityWithId, processResult.entityData, traceCtx, seq);
         });
       }
 

@@ -33,7 +33,10 @@ export const contextEntityBaseSchema = z
     thumbnailUrl: z.string().nullable(),
     bannerUrl: z.string().nullable(),
   })
-  .openapi('ContextEntityBase', { example: mockContextEntityBase() });
+  .openapi('ContextEntityBase', {
+    description: 'Base schema for entities with memberships (e.g. organization).',
+    example: mockContextEntityBase(),
+  });
 
 /**
  * Base schema for product entities, including common fields. Exported separately to avoid circular dependencies.
@@ -45,4 +48,7 @@ export const productEntityBaseSchema = z
     entityType: productEntityTypeSchema,
     keywords: z.string(),
   })
-  .openapi('ProductEntityBase', { example: mockProductEntityBase() });
+  .openapi('ProductEntityBase', {
+    description: 'Base schema for content entities with creator tracking (e.g. page, attachment).',
+    example: mockProductEntityBase(),
+  });

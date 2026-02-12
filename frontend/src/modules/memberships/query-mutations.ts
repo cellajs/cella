@@ -3,6 +3,7 @@ import { t } from 'i18next';
 import { appConfig, type ContextEntityType } from 'shared';
 import {
   deleteMemberships,
+  type Membership,
   type MembershipBase,
   type MembershipInviteResponse,
   membershipInvite,
@@ -22,7 +23,6 @@ import type {
   Member,
   MemberContextProp,
   MemberQueryData,
-  Membership,
   MutationUpdateMembership,
 } from '~/modules/memberships/types';
 import { getMenuData } from '~/modules/navigation/menu-sheet/helpers';
@@ -96,12 +96,7 @@ const onError = (
 export const useInviteMemberMutation = () =>
   useMutation<MembershipInviteResponse, ApiError, InviteMember, undefined>({
     mutationKey: memberQueryKeys.update(),
-    mutationFn: ({ entity, ...body }) =>
-      membershipInvite({
-        body,
-        query: { entityId: entity.id, entityType: entity.entityType },
-        path: { tenantId: entity.tenantId, orgId: entity.organizationId || entity.id },
-      }),
+    mutationFn: ({ body, path, query }) => membershipInvite({ body, path, query }),
     onSuccess: ({ invitesSentCount }, { entity }) => {
       const { id: entityId, entityType, organizationId } = entity;
 
@@ -144,12 +139,13 @@ export const useInviteMemberMutation = () =>
 export const useMemberUpdateMutation = () =>
   useMutation<Membership, ApiError, MutationUpdateMembership, EntityMembershipContextProp>({
     mutationKey: memberQueryKeys.update(),
-    mutationFn: async ({ id, tenantId, orgId, entityType, entityId, ...body }) => {
-      return await updateMembership({ body, path: { id, tenantId, orgId } });
+    mutationFn: async ({ path, body }) => {
+      return await updateMembership({ body, path });
     },
     onMutate: async (variables) => {
-      const { entityId, entityType, tenantId, orgId, ...membershipInfo } = variables;
-      const { archived, muted, role, displayOrder } = membershipInfo;
+      const { entityId, entityType, path, body } = variables;
+      const { tenantId, orgId, id } = path;
+      const membershipInfo = { id, ...body };
 
       // Store previous query data for rollback if an Apierror occurs
       const context = {
@@ -159,17 +155,17 @@ export const useMemberUpdateMutation = () =>
       };
 
       // Set toast message based on what was updated
-      if (archived !== undefined) {
-        context.toastMessage = t(`common:success.${archived ? 'archived' : 'restore'}_resource`, {
+      if (body?.archived !== undefined) {
+        context.toastMessage = t(`common:success.${body.archived ? 'archived' : 'restore'}_resource`, {
           resource: t(`common:${entityType}`),
         });
-      } else if (muted !== undefined) {
-        context.toastMessage = t(`common:success.${muted ? 'mute' : 'unmute'}_resource`, {
+      } else if (body?.muted !== undefined) {
+        context.toastMessage = t(`common:success.${body.muted ? 'mute' : 'unmute'}_resource`, {
           resource: t(`common:${entityType}`),
         });
-      } else if (role) {
+      } else if (body?.role) {
         context.toastMessage = t('common:success.update_item', { item: t('common:role') });
-      } else if (displayOrder !== undefined)
+      } else if (body?.displayOrder !== undefined)
         context.toastMessage = t('common:success.update_item', { item: t('common:order') });
 
       // Update membership in the separate myMemberships cache
@@ -199,7 +195,7 @@ export const useMemberUpdateMutation = () =>
 
       return context;
     },
-    onSuccess: async (updatedMembership, { entityId, entityType, tenantId, orgId }, { toastMessage }) => {
+    onSuccess: async (updatedMembership, { entityId, entityType, path: { tenantId, orgId } }, { toastMessage }) => {
       // Update membership in the separate myMemberships cache with server response
       updateMyMembershipCache(updatedMembership);
 
@@ -241,12 +237,15 @@ export const useMemberUpdateMutation = () =>
 export const useMembershipsDeleteMutation = () =>
   useMutation<void, ApiError, DeleteMembership, MemberContextProp[]>({
     mutationKey: memberQueryKeys.delete(),
-    mutationFn: async ({ entityId, entityType, tenantId, orgId, members }) => {
-      const ids = members.map(({ id }) => id);
-      await deleteMemberships({ query: { entityId, entityType }, body: { ids }, path: { tenantId, orgId } });
+    mutationFn: async ({ path, body, query }) => {
+      await deleteMemberships({ path, body, query });
     },
     onMutate: async (variables) => {
-      const { members, entityId, entityType, tenantId, orgId } = variables;
+      const {
+        members,
+        query: { entityId, entityType },
+        path: { tenantId, orgId },
+      } = variables;
       const ids = members.map(({ id }) => id);
 
       const context: MemberContextProp[] = []; // previous query data for rollback if an Apierror occurs
@@ -275,7 +274,7 @@ export const useMembershipsDeleteMutation = () =>
 
       return context;
     },
-    onSuccess: (_, { entityId, entityType, orgId }) => {
+    onSuccess: (_, { query: { entityId, entityType }, path: { orgId } }) => {
       // Invalidate entity queries to ensure counts are fresh
       invalidateOnMembershipChange(queryClient, entityType, entityId, orgId);
       toaster(t('common:success.delete_members'), 'success');
@@ -283,10 +282,7 @@ export const useMembershipsDeleteMutation = () =>
     onError,
   });
 
-const updateMembers = (
-  members: Member[],
-  variables: Pick<MutationUpdateMembership, 'id'> & Partial<MutationUpdateMembership>,
-) => {
+const updateMembers = (members: Member[], variables: { id: string } & Record<string, unknown>) => {
   return members.map((member) => {
     // Update the task itself
     if (member.membership.id === variables.id) return { ...member, membership: { ...member.membership, ...variables } };

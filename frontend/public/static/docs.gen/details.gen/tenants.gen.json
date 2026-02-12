@@ -16,6 +16,7 @@
               "ref": "#/components/schemas/Tenant",
               "items": {
                 "type": "object",
+                "description": "A tenant representing an isolated data partition for multi-tenancy.",
                 "properties": {
                   "id": {
                     "type": "string",
@@ -31,8 +32,7 @@
                   "status": {
                     "type": "string",
                     "required": true,
-                    "enum": ["active", "suspended", "archived"],
-                    "ref": "#/components/schemas/TenantStatus"
+                    "enum": ["active", "suspended", "archived"]
                   },
                   "createdAt": { "type": "string", "required": true },
                   "modifiedAt": {
@@ -96,7 +96,7 @@
             "type": "string",
             "required": false,
             "description": "Filter by status",
-            "extendsRef": "#/components/schemas/TenantStatus"
+            "enum": ["active", "suspended", "archived"]
           },
           "limit": { "type": "string", "required": false },
           "offset": { "type": "string", "required": false },
@@ -125,6 +125,7 @@
         "contentType": "application/json",
         "schema": {
           "type": "object",
+          "description": "A tenant representing an isolated data partition for multi-tenancy.",
           "properties": {
             "id": {
               "type": "string",
@@ -140,8 +141,7 @@
             "status": {
               "type": "string",
               "required": true,
-              "enum": ["active", "suspended", "archived"],
-              "ref": "#/components/schemas/TenantStatus"
+              "enum": ["active", "suspended", "archived"]
             },
             "createdAt": { "type": "string", "required": true },
             "modifiedAt": {
@@ -203,11 +203,9 @@
           "status": {
             "type": "string",
             "required": false,
-            "enum": ["active", "suspended", "archived"],
-            "ref": "#/components/schemas/TenantStatus"
+            "enum": ["active", "suspended", "archived"]
           }
         },
-        "ref": "#/components/schemas/CreateTenantBody",
         "required": true,
         "contentType": "application/json"
       }
@@ -224,6 +222,7 @@
         "contentType": "application/json",
         "schema": {
           "type": "object",
+          "description": "A tenant representing an isolated data partition for multi-tenancy.",
           "properties": {
             "id": {
               "type": "string",
@@ -239,8 +238,7 @@
             "status": {
               "type": "string",
               "required": true,
-              "enum": ["active", "suspended", "archived"],
-              "ref": "#/components/schemas/TenantStatus"
+              "enum": ["active", "suspended", "archived"]
             },
             "createdAt": { "type": "string", "required": true },
             "modifiedAt": {
@@ -312,6 +310,7 @@
         "contentType": "application/json",
         "schema": {
           "type": "object",
+          "description": "A tenant representing an isolated data partition for multi-tenancy.",
           "properties": {
             "id": {
               "type": "string",
@@ -327,8 +326,7 @@
             "status": {
               "type": "string",
               "required": true,
-              "enum": ["active", "suspended", "archived"],
-              "ref": "#/components/schemas/TenantStatus"
+              "enum": ["active", "suspended", "archived"]
             },
             "createdAt": { "type": "string", "required": true },
             "modifiedAt": {
@@ -399,11 +397,9 @@
           "status": {
             "type": "string",
             "required": false,
-            "enum": ["active", "suspended", "archived"],
-            "ref": "#/components/schemas/TenantStatus"
+            "enum": ["active", "suspended", "archived"]
           }
         },
-        "ref": "#/components/schemas/UpdateTenantBody",
         "required": true,
         "contentType": "application/json"
       }

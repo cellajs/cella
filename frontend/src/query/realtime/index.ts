@@ -9,7 +9,7 @@ export {
 } from './cache-token-store';
 export type { UsePublicStreamOptions, UsePublicStreamReturn } from './public-stream';
 export { PublicStream, usePublicStream } from './public-stream';
-export { handlePublicStreamMessage } from './public-stream-handler';
+export { handlePublicStreamNotification } from './public-stream-handler';
 export {
   broadcastNotification,
   cleanupTabCoordinator,

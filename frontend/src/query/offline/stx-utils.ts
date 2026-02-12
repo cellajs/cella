@@ -6,6 +6,7 @@
  */
 
 import { nanoid } from 'nanoid';
+import type { StxRequestBase } from '~/api.gen';
 
 /**
  * Unique identifier for this browser tab/instance.
@@ -15,15 +16,8 @@ import { nanoid } from 'nanoid';
  */
 export const sourceId = `src_${nanoid()}`;
 
-/** Sync transaction metadata sent to API in { data, stx } wrapper - matches StxRequest from api.gen */
-export interface StxMetadata {
-  /** Unique mutation ID (nanoid) */
-  id: string;
-  /** Tab/instance identifier for echo prevention */
-  sourceId: string;
-  /** Entity version when read (for conflict detection) */
-  baseVersion: number;
-}
+/** Sync transaction metadata sent to API in { data, stx } wrapper - reuses StxRequestBase from api.gen */
+export type StxMetadata = StxRequestBase;
 
 /** Represents a JSONB type from the database that may contain stx metadata. */
 type JsonbStx = string | number | boolean | null | { [key: string]: unknown } | unknown[];
@@ -47,9 +41,9 @@ function extractVersion(stx: JsonbStx | undefined): number {
  */
 export function createStxForCreate(): StxMetadata {
   return {
-    id: nanoid(),
+    mutationId: nanoid(),
     sourceId,
-    baseVersion: 0,
+    lastReadVersion: 0,
   };
 }
 
@@ -61,9 +55,9 @@ export function createStxForCreate(): StxMetadata {
  */
 export function createStxForUpdate(cachedEntity?: EntityWithStx | null): StxMetadata {
   return {
-    id: nanoid(),
+    mutationId: nanoid(),
     sourceId,
-    baseVersion: extractVersion(cachedEntity?.stx),
+    lastReadVersion: extractVersion(cachedEntity?.stx),
   };
 }
 
@@ -73,8 +67,8 @@ export function createStxForUpdate(cachedEntity?: EntityWithStx | null): StxMeta
  */
 export function createStxForDelete(): StxMetadata {
   return {
-    id: nanoid(),
+    mutationId: nanoid(),
     sourceId,
-    baseVersion: 0,
+    lastReadVersion: 0,
   };
 }

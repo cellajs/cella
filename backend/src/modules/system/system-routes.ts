@@ -68,7 +68,7 @@ const systemRoutes = {
             schema: paginationSchema(
               userSchema.extend({
                 memberships: membershipBaseSchema.array(),
-                role: z.union([systemRoleBaseSchema.shape.role, z.null()]).optional(),
+                role: systemRoleBaseSchema.shape.role.nullable().optional(),
               }),
             ),
             example: mockPaginatedUsersResponse(),

@@ -3,6 +3,7 @@ import { boolean, index, json, pgPolicy, pgTable, unique, varchar } from 'drizzl
 import { appConfig, type Language } from 'shared';
 import { isAuthenticated, tenantMatch, userContextSet } from '#/db/rls-helpers';
 import type { AuthStrategy } from '#/db/schema/sessions';
+import { maxLength } from '#/db/utils/constraints';
 import { contextEntityColumns } from '#/db/utils/context-entity-columns';
 import { defaultRestrictions, type Restrictions } from '#/db/utils/organization-restrictions';
 
@@ -16,17 +17,17 @@ export const organizationsTable = pgTable(
   'organizations',
   {
     ...contextEntityColumns('organization'),
-    shortName: varchar(),
-    country: varchar(),
-    timezone: varchar(),
+    shortName: varchar({ length: maxLength.field }),
+    country: varchar({ length: maxLength.field }),
+    timezone: varchar({ length: maxLength.field }),
     defaultLanguage: varchar({ enum: languagesEnum }).notNull().default(appConfig.defaultLanguage),
     languages: json().$type<Language[]>().notNull().default([appConfig.defaultLanguage]),
     restrictions: json().$type<Restrictions>().notNull().default(defaultRestrictions()),
-    notificationEmail: varchar(),
+    notificationEmail: varchar({ length: maxLength.field }),
     emailDomains: json().$type<string[]>().notNull().default([]),
-    color: varchar(),
-    logoUrl: varchar(),
-    websiteUrl: varchar(),
+    color: varchar({ length: maxLength.field }),
+    logoUrl: varchar({ length: maxLength.url }),
+    websiteUrl: varchar({ length: maxLength.url }),
     welcomeText: varchar(),
     authStrategies: json().$type<AuthStrategy[]>().notNull().default([]),
     chatSupport: boolean().notNull().default(false),

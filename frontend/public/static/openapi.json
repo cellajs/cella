@@ -334,6 +334,7 @@
           "thumbnailUrl",
           "bannerUrl"
         ],
+        "description": "Base schema for entities with memberships (e.g. organization).",
         "example": {
           "id": "bafp6iiu2dt74olfvl618xur",
           "createdAt": "2024-09-15T16:29:26.122Z",
@@ -351,10 +352,12 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 50
           },
           "tenantId": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 24
           },
           "contextType": {
             "type": "string",
@@ -363,7 +366,8 @@
             ]
           },
           "userId": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 50
           },
           "role": {
             "type": "string",
@@ -384,7 +388,8 @@
             "maximum": 140737488355327
           },
           "organizationId": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 50
           }
         },
         "required": [
@@ -398,6 +403,7 @@
           "displayOrder",
           "organizationId"
         ],
+        "description": "Core membership fields shared across active and inactive memberships.",
         "example": {
           "id": "vn86f6g3ci8ybeh37sz3gscf",
           "tenantId": "gmpj3u",
@@ -413,35 +419,35 @@
       "StxBase": {
         "type": "object",
         "properties": {
-          "id": {
+          "mutationId": {
             "type": "string"
           },
           "sourceId": {
             "type": "string"
           },
           "version": {
-            "type": "number"
+            "type": "integer"
           },
           "fieldVersions": {
             "type": "object",
             "additionalProperties": {
-              "type": "number"
+              "type": "integer"
             }
           }
         },
         "required": [
-          "id",
+          "mutationId",
           "sourceId",
           "version",
           "fieldVersions"
         ],
+        "description": "Sync transaction metadata stored on entities for offline and realtime support.",
         "example": {
-          "id": "gen-abc123def456ghi789",
-          "sourceId": "src_gen-xyz987wvu654",
-          "version": 1,
+          "mutationId": "oucavr5r34v981pcrg8lwo1m",
+          "sourceId": "wd4527bghf5s4igm3ddc22cy",
+          "version": 2,
           "fieldVersions": {
-            "name": 1,
-            "description": 1
+            "name": 1
           }
         }
       },
@@ -506,7 +512,17 @@
             ]
           },
           "stx": {
-            "$ref": "#/components/schemas/StxStreamMessage"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StxBase"
+              },
+              {
+                "type": [
+                  "object",
+                  "null"
+                ]
+              }
+            ]
           },
           "cacheToken": {
             "type": [
@@ -526,6 +542,7 @@
           "stx",
           "cacheToken"
         ],
+        "description": "Realtime notification delivered via SSE for entity and membership changes.",
         "example": {
           "action": "update",
           "entityType": "attachment",
@@ -536,107 +553,13 @@
           "seq": 550,
           "cacheToken": "UyMeEcuBnWoD28KSeQr21dJgZDmxiD2W",
           "stx": {
-            "id": "g5bhj6q04ey9pbycghixqzn7",
+            "mutationId": "g5bhj6q04ey9pbycghixqzn7",
             "sourceId": "8ex8g1epv4xwf03jl4snuwh0",
             "version": 5,
             "fieldVersions": {
               "name": 1
             }
           }
-        }
-      },
-      "StxStreamMessage": {
-        "type": [
-          "object",
-          "null"
-        ],
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "sourceId": {
-            "type": "string"
-          },
-          "version": {
-            "type": "integer"
-          },
-          "fieldVersions": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "integer"
-            }
-          }
-        },
-        "required": [
-          "id",
-          "sourceId",
-          "version",
-          "fieldVersions"
-        ],
-        "example": {
-          "id": "sfz18l7ga7zqldxm2tqvvbxi",
-          "sourceId": "4418k64puayhyq1hx77zbjsj",
-          "version": 3,
-          "fieldVersions": {
-            "name": 1
-          }
-        }
-      },
-      "PublicStreamActivity": {
-        "type": "object",
-        "properties": {
-          "activityId": {
-            "type": "string"
-          },
-          "action": {
-            "type": "string",
-            "enum": [
-              "create",
-              "update",
-              "delete"
-            ]
-          },
-          "entityType": {
-            "type": "string",
-            "enum": [
-              "attachment",
-              "page"
-            ]
-          },
-          "entityId": {
-            "type": "string"
-          },
-          "changedKeys": {
-            "type": [
-              "array",
-              "null"
-            ],
-            "items": {
-              "type": "string"
-            }
-          },
-          "createdAt": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "activityId",
-          "action",
-          "entityType",
-          "entityId",
-          "changedKeys",
-          "createdAt"
-        ],
-        "example": {
-          "activityId": "tr1619any4wiivw7050pxbnj",
-          "action": "update",
-          "entityType": "attachment",
-          "entityId": "9pjvmlsr1u1yqqvio34f744e",
-          "changedKeys": [
-            "keywords"
-          ],
-          "createdAt": "2024-01-31T10:09:41.032Z",
-          "modifiedAt": "2024-07-15T15:19:59.216Z"
         }
       },
       "BadRequestError": {
@@ -656,6 +579,7 @@
             }
           }
         ],
+        "description": "Error returned when the request is malformed or contains invalid data.",
         "example": {
           "name": "BadRequestError",
           "message": "error:bad_request_action",
@@ -663,8 +587,7 @@
           "status": 400,
           "severity": "warn",
           "timestamp": "2025-01-01T12:00:00.000Z"
-        },
-        "description": "Error returned when the request is malformed or contains invalid data."
+        }
       },
       "ApiError": {
         "type": "object",
@@ -729,6 +652,7 @@
           "status",
           "severity"
         ],
+        "description": "Standard error response returned by all API endpoints.",
         "example": {
           "name": "BadRequestError",
           "message": "error:bad_request_action",
@@ -755,6 +679,7 @@
             }
           }
         ],
+        "description": "Error returned when authentication is missing or invalid.",
         "example": {
           "name": "BadRequestError",
           "message": "error:bad_request_action",
@@ -762,8 +687,7 @@
           "status": 400,
           "severity": "warn",
           "timestamp": "2025-01-01T12:00:00.000Z"
-        },
-        "description": "Error returned when authentication is missing or invalid."
+        }
       },
       "ForbiddenError": {
         "allOf": [
@@ -782,6 +706,7 @@
             }
           }
         ],
+        "description": "Error returned when the user lacks permission for the requested action.",
         "example": {
           "name": "BadRequestError",
           "message": "error:bad_request_action",
@@ -789,8 +714,7 @@
           "status": 400,
           "severity": "warn",
           "timestamp": "2025-01-01T12:00:00.000Z"
-        },
-        "description": "Error returned when the user lacks permission for the requested action."
+        }
       },
       "NotFoundError": {
         "allOf": [
@@ -809,6 +733,7 @@
             }
           }
         ],
+        "description": "Error returned when the requested resource cannot be found.",
         "example": {
           "name": "BadRequestError",
           "message": "error:bad_request_action",
@@ -816,8 +741,7 @@
           "status": 400,
           "severity": "warn",
           "timestamp": "2025-01-01T12:00:00.000Z"
-        },
-        "description": "Error returned when the requested resource cannot be found."
+        }
       },
       "TooManyRequestsError": {
         "allOf": [
@@ -836,6 +760,7 @@
             }
           }
         ],
+        "description": "Error returned when rate limits are exceeded.",
         "example": {
           "name": "BadRequestError",
           "message": "error:bad_request_action",
@@ -843,26 +768,28 @@
           "status": 400,
           "severity": "warn",
           "timestamp": "2025-01-01T12:00:00.000Z"
-        },
-        "description": "Error returned when rate limits are exceeded."
+        }
       },
       "Activity": {
         "type": "object",
         "properties": {
           "id": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 50
           },
           "tenantId": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "maxLength": 24
           },
           "userId": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "maxLength": 50
           },
           "entityType": {
             "type": [
@@ -899,22 +826,26 @@
             ]
           },
           "tableName": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 255
           },
           "type": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 255
           },
           "entityId": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "maxLength": 50
           },
           "organizationId": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "maxLength": 50
           },
           "createdAt": {
             "type": "string"
@@ -974,6 +905,7 @@
           "seq",
           "error"
         ],
+        "description": "An auditable event recording an entity change, used for sync and history.",
         "example": {
           "id": "s933zhzgm8axl572xlcja86p",
           "tenantId": "qc8osc",
@@ -1023,7 +955,7 @@
           "message",
           "retryCount"
         ],
-        "description": "Error info for failed CDC activities (dead letters)",
+        "description": "Error info for failed CDC activities (dead letters).",
         "example": {
           "lsn": "0/16B3A40",
           "message": "Connection timeout during processing",
@@ -1044,13 +976,14 @@
               "admin",
               "user"
             ],
-            "description": "Explain system role here"
+            "description": "System-level role (e.g. admin) or user for standard access."
           }
         },
         "required": [
           "user",
           "systemRole"
         ],
+        "description": "The currently authenticated user with their system role.",
         "example": {
           "user": {
             "id": "snou9b80h3jlnu1j458h6mvs",
@@ -1084,7 +1017,8 @@
             "type": "string"
           },
           "id": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 50
           },
           "entityType": {
             "type": "string",
@@ -1093,7 +1027,8 @@
             ]
           },
           "name": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 255
           },
           "description": {
             "type": [
@@ -1102,19 +1037,22 @@
             ]
           },
           "slug": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 255
           },
           "thumbnailUrl": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "maxLength": 2048
           },
           "bannerUrl": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "maxLength": 2048
           },
           "email": {
             "type": "string",
@@ -1127,13 +1065,15 @@
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "maxLength": 255
           },
           "lastName": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "maxLength": 255
           },
           "language": {
             "type": "string",
@@ -1178,16 +1118,13 @@
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "maxLength": 50
           },
           "lastSeenAt": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           }
         },
@@ -1213,6 +1150,7 @@
           "modifiedBy",
           "lastSeenAt"
         ],
+        "description": "A user with profile data and last-seen activity timestamp.",
         "example": {
           "id": "7sfzetbhjls7m9dg1xzavv78",
           "entityType": "user",
@@ -1260,7 +1198,8 @@
               "type": "object",
               "properties": {
                 "id": {
-                  "type": "string"
+                  "type": "string",
+                  "maxLength": 50
                 },
                 "type": {
                   "type": "string",
@@ -1271,13 +1210,15 @@
                   ]
                 },
                 "userId": {
-                  "type": "string"
+                  "type": "string",
+                  "maxLength": 50
                 },
                 "deviceName": {
                   "type": [
                     "string",
                     "null"
-                  ]
+                  ],
+                  "maxLength": 255
                 },
                 "deviceType": {
                   "type": "string",
@@ -1290,13 +1231,15 @@
                   "type": [
                     "string",
                     "null"
-                  ]
+                  ],
+                  "maxLength": 255
                 },
                 "browser": {
                   "type": [
                     "string",
                     "null"
-                  ]
+                  ],
+                  "maxLength": 255
                 },
                 "authStrategy": {
                   "type": "string",
@@ -1341,16 +1284,19 @@
               "type": "object",
               "properties": {
                 "id": {
-                  "type": "string"
+                  "type": "string",
+                  "maxLength": 50
                 },
                 "userId": {
-                  "type": "string"
+                  "type": "string",
+                  "maxLength": 50
                 },
                 "deviceName": {
                   "type": [
                     "string",
                     "null"
-                  ]
+                  ],
+                  "maxLength": 255
                 },
                 "deviceType": {
                   "type": "string",
@@ -1363,16 +1309,19 @@
                   "type": [
                     "string",
                     "null"
-                  ]
+                  ],
+                  "maxLength": 255
                 },
                 "browser": {
                   "type": [
                     "string",
                     "null"
-                  ]
+                  ],
+                  "maxLength": 255
                 },
                 "nameOnDevice": {
-                  "type": "string"
+                  "type": "string",
+                  "maxLength": 255
                 },
                 "createdAt": {
                   "type": "string"
@@ -1398,6 +1347,7 @@
           "sessions",
           "passkeys"
         ],
+        "description": "Authentication metadata for the current user session.",
         "example": {
           "enabledOAuth": [
             "github"
@@ -1429,10 +1379,12 @@
             "type": "string"
           },
           "id": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 50
           },
           "tenantId": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 24
           },
           "contextType": {
             "type": "string",
@@ -1441,19 +1393,22 @@
             ]
           },
           "email": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 255
           },
           "userId": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "maxLength": 50
           },
           "tokenId": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "maxLength": 50
           },
           "role": {
             "type": "string",
@@ -1469,10 +1424,12 @@
             ]
           },
           "createdBy": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 50
           },
           "organizationId": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 50
           }
         },
         "required": [
@@ -1488,6 +1445,7 @@
           "createdBy",
           "organizationId"
         ],
+        "description": "A membership record for a user who has not yet accepted an invitation.",
         "example": {
           "id": "ukxfca4ddim4bvuklzn5bszg",
           "contextType": "organization",
@@ -1515,13 +1473,9 @@
             "type": "boolean"
           },
           "signature": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "params": {
@@ -1562,6 +1516,7 @@
           "signature",
           "params"
         ],
+        "description": "A signed token authorizing file uploads to the configured storage provider.",
         "example": {
           "public": false,
           "sub": "x1lsgegsw6imziogthaolhvy",
@@ -1588,7 +1543,12 @@
             "description": "Tenant display name"
           },
           "status": {
-            "$ref": "#/components/schemas/TenantStatus"
+            "type": "string",
+            "enum": [
+              "active",
+              "suspended",
+              "archived"
+            ]
           },
           "createdAt": {
             "type": "string"
@@ -1606,45 +1566,8 @@
           "status",
           "createdAt",
           "modifiedAt"
-        ]
-      },
-      "TenantStatus": {
-        "type": "string",
-        "enum": [
-          "active",
-          "suspended",
-          "archived"
-        ]
-      },
-      "CreateTenantBody": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 255,
-            "description": "Tenant display name"
-          },
-          "status": {
-            "$ref": "#/components/schemas/TenantStatus"
-          }
-        },
-        "required": [
-          "name"
-        ]
-      },
-      "UpdateTenantBody": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 255
-          },
-          "status": {
-            "$ref": "#/components/schemas/TenantStatus"
-          }
-        }
+        ],
+        "description": "A tenant representing an isolated data partition for multi-tenancy."
       },
       "Request": {
         "type": "object",
@@ -1653,16 +1576,19 @@
             "type": "string"
           },
           "id": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 50
           },
           "message": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "maxLength": 255
           },
           "email": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 255
           },
           "type": {
             "type": "string",
@@ -1684,6 +1610,7 @@
           "type",
           "wasInvited"
         ],
+        "description": "A contact or waitlist submission from an unauthenticated user.",
         "example": {
           "id": "wejsiq864y0sbytrzsnlr9a0",
           "email": "marlin62@yahoo.com",
@@ -1693,61 +1620,6 @@
           "wasInvited": true
         }
       },
-      "OrganizationIncluded": {
-        "type": "object",
-        "properties": {
-          "membership": {
-            "$ref": "#/components/schemas/MembershipBase"
-          },
-          "counts": {
-            "type": "object",
-            "properties": {
-              "membership": {
-                "type": "object",
-                "properties": {
-                  "admin": {
-                    "type": "number"
-                  },
-                  "member": {
-                    "type": "number"
-                  },
-                  "pending": {
-                    "type": "number"
-                  },
-                  "total": {
-                    "type": "number"
-                  }
-                },
-                "required": [
-                  "admin",
-                  "member",
-                  "pending",
-                  "total"
-                ]
-              },
-              "entities": {
-                "type": "object",
-                "properties": {
-                  "attachment": {
-                    "type": "number"
-                  },
-                  "page": {
-                    "type": "number"
-                  }
-                },
-                "required": [
-                  "attachment",
-                  "page"
-                ]
-              }
-            },
-            "required": [
-              "membership",
-              "entities"
-            ]
-          }
-        }
-      },
       "Organization": {
         "type": "object",
         "properties": {
@@ -1755,7 +1627,8 @@
             "type": "string"
           },
           "id": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 50
           },
           "entityType": {
             "type": "string",
@@ -1764,10 +1637,12 @@
             ]
           },
           "tenantId": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 24
           },
           "name": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 255
           },
           "description": {
             "type": [
@@ -1782,49 +1657,57 @@
             ]
           },
           "slug": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 255
           },
           "thumbnailUrl": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "maxLength": 2048
           },
           "bannerUrl": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "maxLength": 2048
           },
           "createdBy": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "maxLength": 50
           },
           "modifiedBy": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "maxLength": 50
           },
           "shortName": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "maxLength": 255
           },
           "country": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "maxLength": 255
           },
           "timezone": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "maxLength": 255
           },
           "defaultLanguage": {
             "type": "string",
@@ -1848,7 +1731,8 @@
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "maxLength": 255
           },
           "emailDomains": {
             "type": "array",
@@ -1860,19 +1744,22 @@
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "maxLength": 255
           },
           "logoUrl": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "maxLength": 2048
           },
           "websiteUrl": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "maxLength": 2048
           },
           "welcomeText": {
             "type": [
@@ -1899,7 +1786,59 @@
             "type": "boolean"
           },
           "included": {
-            "$ref": "#/components/schemas/OrganizationIncluded"
+            "type": "object",
+            "properties": {
+              "membership": {
+                "$ref": "#/components/schemas/MembershipBase"
+              },
+              "counts": {
+                "type": "object",
+                "properties": {
+                  "membership": {
+                    "type": "object",
+                    "properties": {
+                      "admin": {
+                        "type": "number"
+                      },
+                      "member": {
+                        "type": "number"
+                      },
+                      "pending": {
+                        "type": "number"
+                      },
+                      "total": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "admin",
+                      "member",
+                      "pending",
+                      "total"
+                    ]
+                  },
+                  "entities": {
+                    "type": "object",
+                    "properties": {
+                      "attachment": {
+                        "type": "number"
+                      },
+                      "page": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "attachment",
+                      "page"
+                    ]
+                  }
+                },
+                "required": [
+                  "membership",
+                  "entities"
+                ]
+              }
+            }
           },
           "can": {
             "type": "object",
@@ -1956,6 +1895,7 @@
           "authStrategies",
           "chatSupport"
         ],
+        "description": "An organization with settings, restrictions, and membership context.",
         "example": {
           "id": "hmo9fwr239kqavr3yur671kl",
           "tenantId": "vk6xht",
@@ -2025,7 +1965,8 @@
             "type": "string"
           },
           "id": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 50
           },
           "entityType": {
             "type": "string",
@@ -2034,10 +1975,12 @@
             ]
           },
           "tenantId": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 24
           },
           "name": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 255
           },
           "description": {
             "type": [
@@ -2055,19 +1998,22 @@
             "$ref": "#/components/schemas/StxBase"
           },
           "keywords": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 255
           },
           "createdBy": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "maxLength": 50
           },
           "modifiedBy": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "maxLength": 50
           },
           "status": {
             "type": "string",
@@ -2084,7 +2030,8 @@
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "maxLength": 50
           },
           "displayOrder": {
             "type": "number",
@@ -2109,6 +2056,7 @@
           "parentId",
           "displayOrder"
         ],
+        "description": "A content page belonging to an organization.",
         "example": {
           "id": "co96vrmic3wbowmxzbqa1e9f",
           "tenantId": "ijllhz",
@@ -2125,17 +2073,17 @@
           "modifiedAt": "2024-08-06T10:28:33.226Z",
           "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju",
           "stx": {
-            "id": "4tufkeho7gg1xwx21e333ngq",
+            "mutationId": "4tufkeho7gg1xwx21e333ngq",
             "sourceId": "src_ujcbpukfple60p8h3tnk9zpo",
             "version": 1,
             "fieldVersions": {}
           }
         }
       },
-      "StxRequest": {
+      "StxRequestBase": {
         "type": "object",
         "properties": {
-          "id": {
+          "mutationId": {
             "type": "string",
             "maxLength": 32,
             "description": "Unique mutation ID (nanoid)"
@@ -2145,21 +2093,22 @@
             "maxLength": 64,
             "description": "Tab/instance identifier for echo prevention"
           },
-          "baseVersion": {
+          "lastReadVersion": {
             "type": "integer",
             "minimum": 0,
-            "description": "Entity version when read (for conflict detection)"
+            "description": "Entity version when last read (for conflict detection)"
           }
         },
         "required": [
-          "id",
+          "mutationId",
           "sourceId",
-          "baseVersion"
+          "lastReadVersion"
         ],
+        "description": "Sync transaction metadata sent with mutations for idempotency and conflict detection.",
         "example": {
-          "id": "efuoa1qdsm3eoz4p3a4an8mw",
+          "mutationId": "efuoa1qdsm3eoz4p3a4an8mw",
           "sourceId": "mwbi2hv7uirbw4zg9xtdd05t",
-          "baseVersion": 0
+          "lastReadVersion": 0
         }
       },
       "Attachment": {
@@ -2169,7 +2118,8 @@
             "type": "string"
           },
           "id": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 50
           },
           "entityType": {
             "type": "string",
@@ -2178,10 +2128,12 @@
             ]
           },
           "tenantId": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 24
           },
           "name": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 255
           },
           "description": {
             "type": [
@@ -2199,64 +2151,77 @@
             "$ref": "#/components/schemas/StxBase"
           },
           "keywords": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 255
           },
           "createdBy": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "maxLength": 50
           },
           "modifiedBy": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "maxLength": 50
           },
           "public": {
             "type": "boolean"
           },
           "bucketName": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 255
           },
           "groupId": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "maxLength": 50
           },
           "filename": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 255
           },
           "contentType": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 255
           },
           "convertedContentType": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "maxLength": 255
           },
           "size": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 255
           },
           "originalKey": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 2048
           },
           "convertedKey": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "maxLength": 2048
           },
           "thumbnailKey": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "maxLength": 2048
           },
           "organizationId": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 50
           },
           "can": {
             "type": "object",
@@ -2310,6 +2275,7 @@
           "thumbnailKey",
           "organizationId"
         ],
+        "description": "A file attachment belonging to an organization.",
         "example": {
           "id": "og9ynkm3vp2mdgi3oeicogxv",
           "tenantId": "lphxlo",
@@ -2332,7 +2298,7 @@
           "modifiedAt": "2024-10-12T17:43:05.360Z",
           "modifiedBy": "0uwim8y2tppz7th9tol75wjz",
           "stx": {
-            "id": "pkeuemouu8t58r8fuj3tlenh",
+            "mutationId": "pkeuemouu8t58r8fuj3tlenh",
             "sourceId": "src_qurk6hu54pnfytf99mpmuhw0",
             "version": 1,
             "fieldVersions": {}
@@ -2347,10 +2313,12 @@
             "type": "string"
           },
           "id": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 50
           },
           "tenantId": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 24
           },
           "contextType": {
             "type": "string",
@@ -2359,7 +2327,8 @@
             ]
           },
           "userId": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 50
           },
           "role": {
             "type": "string",
@@ -2369,7 +2338,8 @@
             ]
           },
           "createdBy": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 50
           },
           "modifiedAt": {
             "type": [
@@ -2381,7 +2351,8 @@
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "maxLength": 50
           },
           "archived": {
             "type": "boolean"
@@ -2395,7 +2366,8 @@
             "maximum": 140737488355327
           },
           "organizationId": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 50
           }
         },
         "required": [
@@ -2413,6 +2385,7 @@
           "displayOrder",
           "organizationId"
         ],
+        "description": "A user's membership in a context entity, including role and activity data.",
         "example": {
           "id": "575b0vreys30k2k4z795uufw",
           "contextType": "organization",
@@ -2510,7 +2483,8 @@
               "type": [
                 "string",
                 "null"
-              ]
+              ],
+              "maxLength": 50
             },
             "required": false,
             "name": "userId",
@@ -2559,7 +2533,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 255
             },
             "required": false,
             "name": "tableName",
@@ -2567,7 +2542,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 255
             },
             "required": false,
             "name": "type",
@@ -2578,7 +2554,8 @@
               "type": [
                 "string",
                 "null"
-              ]
+              ],
+              "maxLength": 50
             },
             "required": false,
             "name": "entityId",
@@ -3861,16 +3838,19 @@
                   "type": "object",
                   "properties": {
                     "id": {
-                      "type": "string"
+                      "type": "string",
+                      "maxLength": 50
                     },
                     "userId": {
-                      "type": "string"
+                      "type": "string",
+                      "maxLength": 50
                     },
                     "deviceName": {
                       "type": [
                         "string",
                         "null"
-                      ]
+                      ],
+                      "maxLength": 255
                     },
                     "deviceType": {
                       "type": "string",
@@ -3883,16 +3863,19 @@
                       "type": [
                         "string",
                         "null"
-                      ]
+                      ],
+                      "maxLength": 255
                     },
                     "browser": {
                       "type": [
                         "string",
                         "null"
-                      ]
+                      ],
+                      "maxLength": 255
                     },
                     "nameOnDevice": {
-                      "type": "string"
+                      "type": "string",
+                      "maxLength": 255
                     },
                     "createdAt": {
                       "type": "string"
@@ -5590,7 +5573,7 @@
     "/entities/public/stream": {
       "get": {
         "security": [],
-        "operationId": "publicStream",
+        "operationId": "getPublicStream",
         "tags": [
           "entities"
         ],
@@ -5636,10 +5619,10 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "activities": {
+                    "notifications": {
                       "type": "array",
                       "items": {
-                        "$ref": "#/components/schemas/PublicStreamActivity"
+                        "$ref": "#/components/schemas/StreamNotification"
                       }
                     },
                     "cursor": {
@@ -5651,7 +5634,7 @@
                     }
                   },
                   "required": [
-                    "activities",
+                    "notifications",
                     "cursor"
                   ]
                 }
@@ -5733,7 +5716,7 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "activities": {
+                    "notifications": {
                       "type": "array",
                       "items": {
                         "$ref": "#/components/schemas/StreamNotification"
@@ -5748,32 +5731,32 @@
                     }
                   },
                   "required": [
-                    "activities",
+                    "notifications",
                     "cursor"
                   ]
                 },
                 "example": {
-                  "activities": [
+                  "notifications": [
                     {
-                      "action": "create",
+                      "action": "delete",
                       "entityType": "page",
                       "resourceType": null,
-                      "entityId": "p4mjvy3c0rjatirn6hp0rcgf",
-                      "organizationId": "ufjhv1cwh0j4x3xi7ae54uen",
+                      "entityId": "ipyf3p33iix6bh90l5vkhljl",
+                      "organizationId": "xv5tmemhybwpov3sftl08uic",
                       "contextType": null,
-                      "seq": 526,
-                      "cacheToken": "hg18eRugoaB38Ug7A1n7Zj018TyC3pwn",
+                      "seq": 409,
+                      "cacheToken": "1iLESdsWiPgPMn1DbxaxLythT5YAdIMV",
                       "stx": {
-                        "id": "hd7xubc5zuydxdgepv2tpr0z",
-                        "sourceId": "jt0hyw517e6fpcmgsgfuxfwx",
-                        "version": 1,
+                        "mutationId": "4wt4fsnzvcmmcnaqpirymrng",
+                        "sourceId": "yq5yyt6xf4dt1l81p0arc53l",
+                        "version": 4,
                         "fieldVersions": {
                           "name": 1
                         }
                       }
                     }
                   ],
-                  "cursor": "ll6ebv8jmzcs1cydc8ytq68u"
+                  "cursor": "d9909rsl2y2ii9vbcsc2ywg7"
                 }
               }
             }
@@ -6036,16 +6019,13 @@
                                 }
                               },
                               "role": {
-                                "anyOf": [
-                                  {
-                                    "type": "string",
-                                    "enum": [
-                                      "admin"
-                                    ]
-                                  },
-                                  {
-                                    "type": "null"
-                                  }
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "admin",
+                                  null
                                 ]
                               }
                             },
@@ -6054,6 +6034,7 @@
                             ]
                           }
                         ],
+                        "description": "A user with profile data and last-seen activity timestamp.",
                         "example": {
                           "id": "7sfzetbhjls7m9dg1xzavv78",
                           "entityType": "user",
@@ -6596,14 +6577,13 @@
           },
           {
             "schema": {
-              "allOf": [
-                {
-                  "$ref": "#/components/schemas/TenantStatus"
-                },
-                {
-                  "description": "Filter by status"
-                }
-              ]
+              "type": "string",
+              "enum": [
+                "active",
+                "suspended",
+                "archived"
+              ],
+              "description": "Filter by status"
             },
             "required": false,
             "description": "Filter by status",
@@ -6721,7 +6701,27 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateTenantBody"
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255,
+                    "description": "Tenant display name"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "active",
+                      "suspended",
+                      "archived"
+                    ],
+                    "default": "active"
+                  }
+                },
+                "required": [
+                  "name"
+                ]
               }
             }
           }
@@ -6851,7 +6851,22 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateTenantBody"
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "active",
+                      "suspended",
+                      "archived"
+                    ]
+                  }
+                }
               }
             }
           }
@@ -7907,17 +7922,61 @@
                             "type": "object",
                             "properties": {
                               "included": {
-                                "allOf": [
-                                  {
-                                    "$ref": "#/components/schemas/OrganizationIncluded"
+                                "type": "object",
+                                "properties": {
+                                  "membership": {
+                                    "$ref": "#/components/schemas/MembershipBase"
                                   },
-                                  {
+                                  "counts": {
                                     "type": "object",
-                                    "properties": {},
+                                    "properties": {
+                                      "membership": {
+                                        "type": "object",
+                                        "properties": {
+                                          "admin": {
+                                            "type": "number"
+                                          },
+                                          "member": {
+                                            "type": "number"
+                                          },
+                                          "pending": {
+                                            "type": "number"
+                                          },
+                                          "total": {
+                                            "type": "number"
+                                          }
+                                        },
+                                        "required": [
+                                          "admin",
+                                          "member",
+                                          "pending",
+                                          "total"
+                                        ]
+                                      },
+                                      "entities": {
+                                        "type": "object",
+                                        "properties": {
+                                          "attachment": {
+                                            "type": "number"
+                                          },
+                                          "page": {
+                                            "type": "number"
+                                          }
+                                        },
+                                        "required": [
+                                          "attachment",
+                                          "page"
+                                        ]
+                                      }
+                                    },
                                     "required": [
-                                      "membership"
+                                      "membership",
+                                      "entities"
                                     ]
                                   }
+                                },
+                                "required": [
+                                  "membership"
                                 ]
                               }
                             },
@@ -7926,6 +7985,7 @@
                             ]
                           }
                         ],
+                        "description": "An organization with settings, restrictions, and membership context.",
                         "example": {
                           "id": "hmo9fwr239kqavr3yur671kl",
                           "tenantId": "vk6xht",
@@ -9080,7 +9140,7 @@
                       "modifiedAt": "2024-11-21T04:00:59.122Z",
                       "modifiedBy": "qqp8d07imsvjbtqtl3rtjgxd",
                       "stx": {
-                        "id": "y6mqh9hmikgme3gy3a9lhe0c",
+                        "mutationId": "y6mqh9hmikgme3gy3a9lhe0c",
                         "sourceId": "src_trmzc53x7z222ydtq57iu31m",
                         "version": 1,
                         "fieldVersions": {}
@@ -9102,7 +9162,7 @@
                       "modifiedAt": "2024-10-29T08:46:20.790Z",
                       "modifiedBy": "hg5ogh3yr2b2dbwf7b9eckaj",
                       "stx": {
-                        "id": "4bpmhsyauxcwuwjsrzvzac8q",
+                        "mutationId": "4bpmhsyauxcwuwjsrzvzac8q",
                         "sourceId": "src_x1h9s6vzhgvcj0rs3xtuk03g",
                         "version": 1,
                         "fieldVersions": {}
@@ -9182,7 +9242,7 @@
                   "modifiedAt": "2024-08-06T10:28:33.226Z",
                   "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju",
                   "stx": {
-                    "id": "4tufkeho7gg1xwx21e333ngq",
+                    "mutationId": "4tufkeho7gg1xwx21e333ngq",
                     "sourceId": "src_ujcbpukfple60p8h3tnk9zpo",
                     "version": 1,
                     "fieldVersions": {}
@@ -9254,11 +9314,10 @@
                       "maxLength": 255
                     },
                     "stx": {
-                      "$ref": "#/components/schemas/StxRequest"
+                      "$ref": "#/components/schemas/StxRequestBase"
                     }
                   },
                   "required": [
-                    "name",
                     "stx"
                   ]
                 },
@@ -9323,7 +9382,7 @@
                       "modifiedAt": "2024-04-19T14:04:35.773Z",
                       "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
                       "stx": {
-                        "id": "akf4ovzm1ne3h55lgj31d63n",
+                        "mutationId": "akf4ovzm1ne3h55lgj31d63n",
                         "sourceId": "src_9apx99a5auvr5cyj5s37irnj",
                         "version": 1,
                         "fieldVersions": {}
@@ -9345,7 +9404,7 @@
                       "modifiedAt": "2024-02-25T13:01:35.301Z",
                       "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
                       "stx": {
-                        "id": "4hj92yzr7v1itpc9wztvbcy2",
+                        "mutationId": "4hj92yzr7v1itpc9wztvbcy2",
                         "sourceId": "src_1q04oq81k5rbzt4yq63pob5r",
                         "version": 1,
                         "fieldVersions": {}
@@ -9411,7 +9470,7 @@
                       "modifiedAt": "2024-04-19T14:04:35.773Z",
                       "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
                       "stx": {
-                        "id": "akf4ovzm1ne3h55lgj31d63n",
+                        "mutationId": "akf4ovzm1ne3h55lgj31d63n",
                         "sourceId": "src_9apx99a5auvr5cyj5s37irnj",
                         "version": 1,
                         "fieldVersions": {}
@@ -9433,7 +9492,7 @@
                       "modifiedAt": "2024-02-25T13:01:35.301Z",
                       "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
                       "stx": {
-                        "id": "4hj92yzr7v1itpc9wztvbcy2",
+                        "mutationId": "4hj92yzr7v1itpc9wztvbcy2",
                         "sourceId": "src_1q04oq81k5rbzt4yq63pob5r",
                         "version": 1,
                         "fieldVersions": {}
@@ -9593,7 +9652,7 @@
                       "string",
                       "null"
                     ],
-                    "maxLength": 255
+                    "maxLength": 100000
                   },
                   "keywords": {
                     "type": "string",
@@ -9621,7 +9680,7 @@
                     "maxLength": 50
                   },
                   "stx": {
-                    "$ref": "#/components/schemas/StxRequest"
+                    "$ref": "#/components/schemas/StxRequestBase"
                   }
                 },
                 "required": [
@@ -9655,7 +9714,7 @@
                   "modifiedAt": "2024-08-06T10:28:33.226Z",
                   "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju",
                   "stx": {
-                    "id": "4tufkeho7gg1xwx21e333ngq",
+                    "mutationId": "4tufkeho7gg1xwx21e333ngq",
                     "sourceId": "src_ujcbpukfple60p8h3tnk9zpo",
                     "version": 1,
                     "fieldVersions": {}
@@ -9832,16 +9891,13 @@
                                 }
                               },
                               "role": {
-                                "anyOf": [
-                                  {
-                                    "type": "string",
-                                    "enum": [
-                                      "admin"
-                                    ]
-                                  },
-                                  {
-                                    "type": "null"
-                                  }
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "admin",
+                                  null
                                 ]
                               }
                             },
@@ -9850,6 +9906,7 @@
                             ]
                           }
                         ],
+                        "description": "A user with profile data and last-seen activity timestamp.",
                         "example": {
                           "id": "7sfzetbhjls7m9dg1xzavv78",
                           "entityType": "user",
@@ -10242,7 +10299,7 @@
                       "modifiedAt": "2024-11-21T04:00:59.122Z",
                       "modifiedBy": "qqp8d07imsvjbtqtl3rtjgxd",
                       "stx": {
-                        "id": "vx9cfyey6mqh9hmikgme3gy3",
+                        "mutationId": "vx9cfyey6mqh9hmikgme3gy3",
                         "sourceId": "src_a9lhe0ctrmzc53x7z222ydtq",
                         "version": 1,
                         "fieldVersions": {}
@@ -10271,7 +10328,7 @@
                       "modifiedAt": "2024-10-29T08:46:20.790Z",
                       "modifiedBy": "hg5ogh3yr2b2dbwf7b9eckaj",
                       "stx": {
-                        "id": "k6bwmvl0e44bpmhsyauxcwuw",
+                        "mutationId": "k6bwmvl0e44bpmhsyauxcwuw",
                         "sourceId": "src_jsrzvzac8qx1h9s6vzhgvcj0",
                         "version": 1,
                         "fieldVersions": {}
@@ -10420,23 +10477,16 @@
                       "maxLength": 2048
                     },
                     "stx": {
-                      "$ref": "#/components/schemas/StxRequest"
+                      "$ref": "#/components/schemas/StxRequestBase"
                     }
                   },
                   "required": [
-                    "id",
-                    "name",
                     "filename",
                     "contentType",
                     "size",
                     "organizationId",
-                    "createdBy",
                     "originalKey",
                     "bucketName",
-                    "groupId",
-                    "convertedContentType",
-                    "convertedKey",
-                    "thumbnailKey",
                     "stx"
                   ]
                 },
@@ -10507,7 +10557,7 @@
                       "modifiedAt": "2024-04-19T14:04:35.773Z",
                       "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
                       "stx": {
-                        "id": "b6pakf4ovzm1ne3h55lgj31d",
+                        "mutationId": "b6pakf4ovzm1ne3h55lgj31d",
                         "sourceId": "src_63n9apx99a5auvr5cyj5s37i",
                         "version": 1,
                         "fieldVersions": {}
@@ -10536,7 +10586,7 @@
                       "modifiedAt": "2024-02-25T13:01:35.301Z",
                       "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
                       "stx": {
-                        "id": "y4dvzpz75e03ldr2ga54hj92",
+                        "mutationId": "y4dvzpz75e03ldr2ga54hj92",
                         "sourceId": "src_yzr7v1itpc9wztvbcy21q04o",
                         "version": 1,
                         "fieldVersions": {}
@@ -10609,7 +10659,7 @@
                       "modifiedAt": "2024-04-19T14:04:35.773Z",
                       "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
                       "stx": {
-                        "id": "b6pakf4ovzm1ne3h55lgj31d",
+                        "mutationId": "b6pakf4ovzm1ne3h55lgj31d",
                         "sourceId": "src_63n9apx99a5auvr5cyj5s37i",
                         "version": 1,
                         "fieldVersions": {}
@@ -10638,7 +10688,7 @@
                       "modifiedAt": "2024-02-25T13:01:35.301Z",
                       "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
                       "stx": {
-                        "id": "y4dvzpz75e03ldr2ga54hj92",
+                        "mutationId": "y4dvzpz75e03ldr2ga54hj92",
                         "sourceId": "src_yzr7v1itpc9wztvbcy21q04o",
                         "version": 1,
                         "fieldVersions": {}
@@ -10725,7 +10775,7 @@
                   "stx": {
                     "type": "object",
                     "properties": {
-                      "id": {
+                      "mutationId": {
                         "type": "string"
                       },
                       "sourceId": {
@@ -10733,7 +10783,7 @@
                       }
                     },
                     "required": [
-                      "id",
+                      "mutationId",
                       "sourceId"
                     ]
                   }
@@ -10962,7 +11012,7 @@
                   "modifiedAt": "2024-10-12T17:43:05.360Z",
                   "modifiedBy": "0uwim8y2tppz7th9tol75wjz",
                   "stx": {
-                    "id": "pkeuemouu8t58r8fuj3tlenh",
+                    "mutationId": "pkeuemouu8t58r8fuj3tlenh",
                     "sourceId": "src_qurk6hu54pnfytf99mpmuhw0",
                     "version": 1,
                     "fieldVersions": {}
@@ -11053,7 +11103,7 @@
                     "maxLength": 2048
                   },
                   "stx": {
-                    "$ref": "#/components/schemas/StxRequest"
+                    "$ref": "#/components/schemas/StxRequestBase"
                   }
                 },
                 "required": [
@@ -11093,7 +11143,7 @@
                   "modifiedAt": "2024-10-12T17:43:05.360Z",
                   "modifiedBy": "0uwim8y2tppz7th9tol75wjz",
                   "stx": {
-                    "id": "pkeuemouu8t58r8fuj3tlenh",
+                    "mutationId": "pkeuemouu8t58r8fuj3tlenh",
                     "sourceId": "src_qurk6hu54pnfytf99mpmuhw0",
                     "version": 1,
                     "fieldVersions": {}
@@ -11826,7 +11876,8 @@
                             "type": "string"
                           },
                           "id": {
-                            "type": "string"
+                            "type": "string",
+                            "maxLength": 50
                           },
                           "entityType": {
                             "type": "string",
@@ -11835,7 +11886,8 @@
                             ]
                           },
                           "name": {
-                            "type": "string"
+                            "type": "string",
+                            "maxLength": 255
                           },
                           "description": {
                             "type": [
@@ -11844,19 +11896,22 @@
                             ]
                           },
                           "slug": {
-                            "type": "string"
+                            "type": "string",
+                            "maxLength": 255
                           },
                           "thumbnailUrl": {
                             "type": [
                               "string",
                               "null"
-                            ]
+                            ],
+                            "maxLength": 2048
                           },
                           "bannerUrl": {
                             "type": [
                               "string",
                               "null"
-                            ]
+                            ],
+                            "maxLength": 2048
                           },
                           "email": {
                             "type": "string",
@@ -11869,13 +11924,15 @@
                             "type": [
                               "string",
                               "null"
-                            ]
+                            ],
+                            "maxLength": 255
                           },
                           "lastName": {
                             "type": [
                               "string",
                               "null"
-                            ]
+                            ],
+                            "maxLength": 255
                           },
                           "language": {
                             "type": "string",
@@ -11906,16 +11963,13 @@
                             "type": [
                               "string",
                               "null"
-                            ]
+                            ],
+                            "maxLength": 50
                           },
                           "lastSeenAt": {
-                            "anyOf": [
-                              {
-                                "type": "string"
-                              },
-                              {
-                                "type": "null"
-                              }
+                            "type": [
+                              "string",
+                              "null"
                             ]
                           },
                           "membership": {
@@ -12196,7 +12250,8 @@
                             "type": [
                               "string",
                               "null"
-                            ]
+                            ],
+                            "maxLength": 50
                           }
                         },
                         "required": [

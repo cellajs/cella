@@ -4,27 +4,27 @@
  */
 
 import { and, desc, gt, inArray } from 'drizzle-orm';
-import { hierarchy, type PublicProductEntityType } from 'shared';
+import { hierarchy, isProductEntity } from 'shared';
 import { unsafeInternalDb as db } from '#/db/db';
 import { activitiesTable } from '#/db/schema/activities';
+import type { StreamNotification } from '#/schemas';
 
 /**
- * Public stream catch-up activity format.
+ * Catch-up notification with activity ID for cursor tracking.
  */
-export interface PublicCatchUpActivity {
+export interface PublicCatchUpNotification {
   activityId: string;
-  action: 'create' | 'update' | 'delete';
-  entityType: PublicProductEntityType;
-  entityId: string;
-  changedKeys: string[] | null;
-  createdAt: string;
+  notification: StreamNotification;
 }
 
 /**
  * Fetch delete activities for public stream catch-up.
  * Only returns .deleted activities since the cursor for public entity types.
  */
-export async function fetchPublicDeleteCatchUp(cursor: string | null, limit = 100): Promise<PublicCatchUpActivity[]> {
+export async function fetchPublicDeleteCatchUp(
+  cursor: string | null,
+  limit = 100,
+): Promise<PublicCatchUpNotification[]> {
   const publicTypes = hierarchy.publicAccessTypes as readonly string[];
 
   if (publicTypes.length === 0) return [];
@@ -53,11 +53,17 @@ export async function fetchPublicDeleteCatchUp(cursor: string | null, limit = 10
     .filter((a) => a.entityType && a.entityId)
     .map((a) => ({
       activityId: a.id,
-      action: 'delete' as const,
-      entityType: a.entityType as PublicProductEntityType,
-      entityId: a.entityId!,
-      changedKeys: null,
-      createdAt: a.createdAt,
+      notification: {
+        action: 'delete' as const,
+        entityType: isProductEntity(a.entityType) ? a.entityType : null,
+        resourceType: null,
+        entityId: a.entityId!,
+        organizationId: null,
+        contextType: null,
+        seq: null,
+        stx: null,
+        cacheToken: null,
+      },
     }));
 }
 

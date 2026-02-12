@@ -1,15 +1,15 @@
 CREATE TYPE "tenant_status" AS ENUM('active', 'suspended', 'archived');--> statement-breakpoint
 CREATE TABLE "activities" (
-	"id" varchar,
+	"id" varchar(50),
 	"tenant_id" varchar(24),
-	"user_id" varchar,
+	"user_id" varchar(50),
 	"entity_type" varchar,
 	"resource_type" varchar,
 	"action" varchar NOT NULL,
-	"table_name" varchar NOT NULL,
-	"type" varchar NOT NULL,
-	"entity_id" varchar,
-	"organization_id" varchar,
+	"table_name" varchar(255) NOT NULL,
+	"type" varchar(255) NOT NULL,
+	"entity_id" varchar(50),
+	"organization_id" varchar(50),
 	"created_at" timestamp DEFAULT now(),
 	"changed_keys" jsonb,
 	"stx" jsonb,
@@ -20,34 +20,34 @@ CREATE TABLE "activities" (
 --> statement-breakpoint
 CREATE TABLE "attachments" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	"id" varchar PRIMARY KEY,
+	"id" varchar(50) PRIMARY KEY,
 	"entity_type" varchar DEFAULT 'attachment' NOT NULL,
 	"tenant_id" varchar(24) NOT NULL,
-	"name" varchar DEFAULT 'New attachment' NOT NULL,
-	"description" varchar,
+	"name" varchar(255) DEFAULT 'New attachment' NOT NULL,
+	"description" text,
 	"modified_at" timestamp,
 	"stx" jsonb NOT NULL,
-	"keywords" varchar NOT NULL,
-	"created_by" varchar,
-	"modified_by" varchar,
+	"keywords" varchar(255) NOT NULL,
+	"created_by" varchar(50),
+	"modified_by" varchar(50),
 	"public" boolean DEFAULT false NOT NULL,
-	"bucket_name" varchar NOT NULL,
-	"group_id" varchar,
-	"filename" varchar NOT NULL,
-	"content_type" varchar NOT NULL,
-	"converted_content_type" varchar,
-	"size" varchar NOT NULL,
-	"original_key" varchar NOT NULL,
-	"converted_key" varchar,
-	"thumbnail_key" varchar,
-	"organization_id" varchar NOT NULL
+	"bucket_name" varchar(255) NOT NULL,
+	"group_id" varchar(50),
+	"filename" varchar(255) NOT NULL,
+	"content_type" varchar(255) NOT NULL,
+	"converted_content_type" varchar(255),
+	"size" varchar(255) NOT NULL,
+	"original_key" varchar(2048) NOT NULL,
+	"converted_key" varchar(2048),
+	"thumbnail_key" varchar(2048),
+	"organization_id" varchar(50) NOT NULL
 );
 --> statement-breakpoint
 ALTER TABLE "attachments" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 CREATE TABLE "counters" (
-	"namespace" varchar,
-	"scope" varchar,
-	"key" varchar DEFAULT '',
+	"namespace" varchar(255),
+	"scope" varchar(255),
+	"key" varchar(255) DEFAULT '',
 	"value" bigint DEFAULT 0 NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "counters_pkey" PRIMARY KEY("namespace","scope","key")
@@ -55,89 +55,89 @@ CREATE TABLE "counters" (
 --> statement-breakpoint
 CREATE TABLE "emails" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	"id" varchar PRIMARY KEY,
-	"email" varchar NOT NULL UNIQUE,
+	"id" varchar(50) PRIMARY KEY,
+	"email" varchar(255) NOT NULL UNIQUE,
 	"verified" boolean DEFAULT false NOT NULL,
-	"token_id" varchar,
-	"user_id" varchar NOT NULL,
+	"token_id" varchar(50),
+	"user_id" varchar(50) NOT NULL,
 	"verified_at" timestamp
 );
 --> statement-breakpoint
 CREATE TABLE "inactive_memberships" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	"id" varchar PRIMARY KEY,
+	"id" varchar(50) PRIMARY KEY,
 	"tenant_id" varchar(24) NOT NULL,
 	"context_type" varchar NOT NULL,
-	"email" varchar NOT NULL,
-	"user_id" varchar,
-	"token_id" varchar,
+	"email" varchar(255) NOT NULL,
+	"user_id" varchar(50),
+	"token_id" varchar(50),
 	"role" varchar DEFAULT 'member' NOT NULL,
 	"rejected_at" timestamp,
-	"created_by" varchar NOT NULL,
-	"organization_id" varchar NOT NULL,
+	"created_by" varchar(50) NOT NULL,
+	"organization_id" varchar(50) NOT NULL,
 	CONSTRAINT "inactive_memberships_tenant_email_ctx" UNIQUE NULLS NOT DISTINCT("tenant_id","email","context_type","organization_id")
 );
 --> statement-breakpoint
 ALTER TABLE "inactive_memberships" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 CREATE TABLE "last_seen" (
-	"user_id" varchar PRIMARY KEY,
+	"user_id" varchar(50) PRIMARY KEY,
 	"last_seen_at" timestamp
 );
 --> statement-breakpoint
 CREATE TABLE "memberships" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	"id" varchar PRIMARY KEY,
+	"id" varchar(50) PRIMARY KEY,
 	"tenant_id" varchar(24) NOT NULL,
 	"context_type" varchar NOT NULL,
-	"user_id" varchar NOT NULL,
+	"user_id" varchar(50) NOT NULL,
 	"role" varchar DEFAULT 'member' NOT NULL,
-	"created_by" varchar NOT NULL,
+	"created_by" varchar(50) NOT NULL,
 	"modified_at" timestamp,
-	"modified_by" varchar,
+	"modified_by" varchar(50),
 	"archived" boolean DEFAULT false NOT NULL,
 	"muted" boolean DEFAULT false NOT NULL,
 	"display_order" double precision NOT NULL,
-	"organization_id" varchar NOT NULL,
+	"organization_id" varchar(50) NOT NULL,
 	CONSTRAINT "memberships_tenant_user_ctx" UNIQUE NULLS NOT DISTINCT("tenant_id","user_id","context_type","organization_id")
 );
 --> statement-breakpoint
 ALTER TABLE "memberships" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 CREATE TABLE "oauth_accounts" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	"id" varchar PRIMARY KEY,
+	"id" varchar(50) PRIMARY KEY,
 	"provider" varchar NOT NULL,
-	"provider_user_id" varchar NOT NULL,
-	"email" varchar NOT NULL,
+	"provider_user_id" varchar(255) NOT NULL,
+	"email" varchar(255) NOT NULL,
 	"verified" boolean DEFAULT false NOT NULL,
 	"verified_at" timestamp,
-	"user_id" varchar NOT NULL,
+	"user_id" varchar(50) NOT NULL,
 	CONSTRAINT "oauth_accounts_provider_provider_user_id_email_unique" UNIQUE("provider","provider_user_id","email")
 );
 --> statement-breakpoint
 CREATE TABLE "organizations" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	"id" varchar PRIMARY KEY,
+	"id" varchar(50) PRIMARY KEY,
 	"entity_type" varchar DEFAULT 'organization' NOT NULL,
 	"tenant_id" varchar(24) NOT NULL,
-	"name" varchar NOT NULL,
-	"description" varchar,
+	"name" varchar(255) NOT NULL,
+	"description" text,
 	"modified_at" timestamp,
-	"slug" varchar NOT NULL UNIQUE,
-	"thumbnail_url" varchar,
-	"banner_url" varchar,
-	"created_by" varchar,
-	"modified_by" varchar,
-	"short_name" varchar,
-	"country" varchar,
-	"timezone" varchar,
+	"slug" varchar(255) NOT NULL UNIQUE,
+	"thumbnail_url" varchar(2048),
+	"banner_url" varchar(2048),
+	"created_by" varchar(50),
+	"modified_by" varchar(50),
+	"short_name" varchar(255),
+	"country" varchar(255),
+	"timezone" varchar(255),
 	"default_language" varchar DEFAULT 'en' NOT NULL,
 	"languages" json DEFAULT '["en"]' NOT NULL,
 	"restrictions" json DEFAULT '{"user":1000,"attachment":100,"page":0}' NOT NULL,
-	"notification_email" varchar,
+	"notification_email" varchar(255),
 	"email_domains" json DEFAULT '[]' NOT NULL,
-	"color" varchar,
-	"logo_url" varchar,
-	"website_url" varchar,
+	"color" varchar(255),
+	"logo_url" varchar(2048),
+	"website_url" varchar(2048),
 	"welcome_text" varchar,
 	"auth_strategies" json DEFAULT '[]' NOT NULL,
 	"chat_support" boolean DEFAULT false NOT NULL,
@@ -147,41 +147,41 @@ CREATE TABLE "organizations" (
 ALTER TABLE "organizations" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 CREATE TABLE "pages" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	"id" varchar PRIMARY KEY,
+	"id" varchar(50) PRIMARY KEY,
 	"entity_type" varchar DEFAULT 'page' NOT NULL,
 	"tenant_id" varchar(24) NOT NULL,
-	"name" varchar DEFAULT 'New page' NOT NULL,
-	"description" varchar,
+	"name" varchar(255) DEFAULT 'New page' NOT NULL,
+	"description" text,
 	"modified_at" timestamp,
 	"stx" jsonb NOT NULL,
-	"keywords" varchar NOT NULL,
-	"created_by" varchar,
-	"modified_by" varchar,
+	"keywords" varchar(255) NOT NULL,
+	"created_by" varchar(50),
+	"modified_by" varchar(50),
 	"status" varchar DEFAULT 'unpublished' NOT NULL,
 	"public_access" boolean DEFAULT false NOT NULL,
-	"parent_id" varchar,
+	"parent_id" varchar(50),
 	"display_order" double precision NOT NULL,
 	CONSTRAINT "pages_group_order" UNIQUE("parent_id","display_order")
 );
 --> statement-breakpoint
 ALTER TABLE "pages" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 CREATE TABLE "passkeys" (
-	"id" varchar PRIMARY KEY,
-	"user_id" varchar NOT NULL,
-	"credential_id" varchar NOT NULL,
-	"public_key" varchar NOT NULL,
-	"device_name" varchar,
+	"id" varchar(50) PRIMARY KEY,
+	"user_id" varchar(50) NOT NULL,
+	"credential_id" varchar(2048) NOT NULL,
+	"public_key" varchar(2048) NOT NULL,
+	"device_name" varchar(255),
 	"device_type" varchar DEFAULT 'desktop' NOT NULL,
-	"device_os" varchar,
-	"browser" varchar,
-	"name_on_device" varchar NOT NULL,
+	"device_os" varchar(255),
+	"browser" varchar(255),
+	"name_on_device" varchar(255) NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "passwords" (
-	"id" varchar PRIMARY KEY,
-	"hashed_password" varchar NOT NULL,
-	"user_id" varchar NOT NULL UNIQUE,
+	"id" varchar(50) PRIMARY KEY,
+	"hashed_password" varchar(255) NOT NULL,
+	"user_id" varchar(50) NOT NULL UNIQUE,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"modified_at" timestamp
 );
@@ -194,22 +194,22 @@ CREATE TABLE "rate_limits" (
 --> statement-breakpoint
 CREATE TABLE "requests" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	"id" varchar PRIMARY KEY,
-	"message" varchar,
-	"email" varchar NOT NULL,
+	"id" varchar(50) PRIMARY KEY,
+	"message" varchar(255),
+	"email" varchar(255) NOT NULL,
 	"type" varchar NOT NULL,
-	"token_id" varchar
+	"token_id" varchar(50)
 );
 --> statement-breakpoint
 CREATE TABLE "sessions" (
-	"id" varchar,
-	"secret" varchar NOT NULL,
+	"id" varchar(50),
+	"secret" varchar(255) NOT NULL,
 	"type" varchar DEFAULT 'regular' NOT NULL,
-	"user_id" varchar NOT NULL,
-	"device_name" varchar,
+	"user_id" varchar(50) NOT NULL,
+	"device_name" varchar(255),
 	"device_type" varchar DEFAULT 'desktop' NOT NULL,
-	"device_os" varchar,
-	"browser" varchar,
+	"device_os" varchar(255),
+	"browser" varchar(255),
 	"auth_strategy" varchar NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"expires_at" timestamp with time zone,
@@ -217,8 +217,8 @@ CREATE TABLE "sessions" (
 );
 --> statement-breakpoint
 CREATE TABLE "system_roles" (
-	"id" varchar PRIMARY KEY,
-	"user_id" varchar NOT NULL UNIQUE,
+	"id" varchar(50) PRIMARY KEY,
+	"user_id" varchar(50) NOT NULL UNIQUE,
 	"role" varchar NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"modified_at" timestamp
@@ -226,22 +226,22 @@ CREATE TABLE "system_roles" (
 --> statement-breakpoint
 CREATE TABLE "tenants" (
 	"id" varchar(24) PRIMARY KEY,
-	"name" varchar NOT NULL,
+	"name" varchar(255) NOT NULL,
 	"status" "tenant_status" DEFAULT 'active'::"tenant_status" NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"modified_at" timestamp
 );
 --> statement-breakpoint
 CREATE TABLE "tokens" (
-	"id" varchar,
-	"secret" varchar NOT NULL,
-	"single_use_token" varchar,
+	"id" varchar(50),
+	"secret" varchar(255) NOT NULL,
+	"single_use_token" varchar(255),
 	"type" varchar NOT NULL,
-	"email" varchar NOT NULL,
-	"user_id" varchar,
-	"oauth_account_id" varchar,
-	"inactive_membership_id" varchar,
-	"created_by" varchar,
+	"email" varchar(255) NOT NULL,
+	"user_id" varchar(50),
+	"oauth_account_id" varchar(50),
+	"inactive_membership_id" varchar(50),
+	"created_by" varchar(50),
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"expires_at" timestamp with time zone,
 	"invoked_at" timestamp with time zone,
@@ -249,40 +249,40 @@ CREATE TABLE "tokens" (
 );
 --> statement-breakpoint
 CREATE TABLE "totps" (
-	"id" varchar PRIMARY KEY,
-	"user_id" varchar NOT NULL,
-	"secret" varchar NOT NULL,
+	"id" varchar(50) PRIMARY KEY,
+	"user_id" varchar(50) NOT NULL,
+	"secret" varchar(255) NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "unsubscribe_tokens" (
-	"id" varchar,
-	"user_id" varchar NOT NULL,
-	"secret" varchar NOT NULL,
+	"id" varchar(50),
+	"user_id" varchar(50) NOT NULL,
+	"secret" varchar(255) NOT NULL,
 	"created_at" timestamp DEFAULT now(),
 	CONSTRAINT "unsubscribe_tokens_pkey" PRIMARY KEY("id","created_at")
 );
 --> statement-breakpoint
 CREATE TABLE "users" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	"id" varchar PRIMARY KEY,
+	"id" varchar(50) PRIMARY KEY,
 	"entity_type" varchar DEFAULT 'user' NOT NULL,
-	"name" varchar NOT NULL,
-	"description" varchar,
-	"slug" varchar NOT NULL UNIQUE,
-	"thumbnail_url" varchar,
-	"banner_url" varchar,
-	"email" varchar NOT NULL UNIQUE,
+	"name" varchar(255) NOT NULL,
+	"description" text,
+	"slug" varchar(255) NOT NULL UNIQUE,
+	"thumbnail_url" varchar(2048),
+	"banner_url" varchar(2048),
+	"email" varchar(255) NOT NULL UNIQUE,
 	"mfa_required" boolean DEFAULT false NOT NULL,
-	"first_name" varchar,
-	"last_name" varchar,
+	"first_name" varchar(255),
+	"last_name" varchar(255),
 	"language" varchar DEFAULT 'en' NOT NULL,
 	"newsletter" boolean DEFAULT false NOT NULL,
 	"user_flags" jsonb DEFAULT '{}' NOT NULL,
 	"modified_at" timestamp,
 	"last_started_at" timestamp,
 	"last_sign_in_at" timestamp,
-	"modified_by" varchar
+	"modified_by" varchar(50)
 );
 --> statement-breakpoint
 CREATE INDEX "activities_created_at_index" ON "activities" ("created_at" DESC NULLS LAST);--> statement-breakpoint
@@ -291,7 +291,7 @@ CREATE INDEX "activities_user_id_index" ON "activities" ("user_id");--> statemen
 CREATE INDEX "activities_entity_id_index" ON "activities" ("entity_id");--> statement-breakpoint
 CREATE INDEX "activities_table_name_index" ON "activities" ("table_name");--> statement-breakpoint
 CREATE INDEX "activities_tenant_id_index" ON "activities" ("tenant_id");--> statement-breakpoint
-CREATE INDEX "activities_stx_id_index" ON "activities" ((stx->>'id'));--> statement-breakpoint
+CREATE INDEX "activities_stx_id_index" ON "activities" ((stx->>'mutationId'));--> statement-breakpoint
 CREATE INDEX "activities_error_lsn_index" ON "activities" ((error->>'lsn')) WHERE error IS NOT NULL;--> statement-breakpoint
 CREATE INDEX "activities_organization_id_index" ON "activities" ("organization_id");--> statement-breakpoint
 CREATE INDEX "activities_organization_id_seq_index" ON "activities" ("organization_id","seq" desc);--> statement-breakpoint

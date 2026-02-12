@@ -10,6 +10,7 @@ import {
   invalidateIfLastMutation,
   useMutateQueryData,
 } from '~/query/basic';
+import type { MutationData } from '~/query/types';
 
 type UserFilters = Omit<GetUsersData['query'], 'limit' | 'offset'>;
 
@@ -64,9 +65,9 @@ export const useUserUpdateMutation = () => {
   const queryClient = useQueryClient();
   const mutateCache = useMutateQueryData(keys.list.base, () => keys.detail.base, ['update']);
 
-  return useMutation<User, ApiError, UpdateUserData['body'] & { id: string }>({
+  return useMutation<User, ApiError, MutationData<UpdateUserData>>({
     mutationKey: keys.update,
-    mutationFn: ({ id, ...body }) => updateUser({ path: { id }, body }),
+    mutationFn: ({ path, body }) => updateUser({ path, body }),
     onSuccess: (updatedUser) => {
       mutateCache.update([updatedUser]);
     },

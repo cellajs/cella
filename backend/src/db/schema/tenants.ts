@@ -1,4 +1,5 @@
 import { index, pgEnum, pgTable, varchar } from 'drizzle-orm/pg-core';
+import { maxLength, tenantIdLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoidTenant } from '#/utils/nanoid';
 
@@ -8,8 +9,8 @@ export const tenantStatusEnum = pgEnum('tenant_status', ['active', 'suspended', 
 export const tenantsTable = pgTable(
   'tenants',
   {
-    id: varchar({ length: 24 }).primaryKey().$defaultFn(nanoidTenant),
-    name: varchar().notNull(),
+    id: varchar({ length: tenantIdLength }).primaryKey().$defaultFn(nanoidTenant),
+    name: varchar({ length: maxLength.field }).notNull(),
     status: tenantStatusEnum().notNull().default('active'),
     createdAt: timestampColumns.createdAt,
     modifiedAt: timestampColumns.modifiedAt,

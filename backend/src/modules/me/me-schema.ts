@@ -17,9 +17,14 @@ export const sessionSchema = createSelectSchema(sessionsTable)
 export const meSchema = z
   .object({
     user: userSchema,
-    systemRole: z.enum([...appConfig.systemRoles, 'user']).openapi({ description: 'Explain system role here' }),
+    systemRole: z
+      .enum([...appConfig.systemRoles, 'user'])
+      .openapi({ description: 'System-level role (e.g. admin) or user for standard access.' }),
   })
-  .openapi('Me', { example: mockMeResponse() });
+  .openapi('Me', {
+    description: 'The currently authenticated user with their system role.',
+    example: mockMeResponse(),
+  });
 
 export const meAuthDataSchema = z
   .object({
@@ -29,14 +34,17 @@ export const meAuthDataSchema = z
     sessions: z.array(sessionSchema.extend({ expiresAt: z.string() })),
     passkeys: z.array(passkeySchema),
   })
-  .openapi('MeAuthData', { example: mockMeAuthDataResponse() });
+  .openapi('MeAuthData', {
+    description: 'Authentication metadata for the current user session.',
+    example: mockMeAuthDataResponse(),
+  });
 
 export const uploadTokenSchema = z
   .object({
     public: z.boolean(),
     sub: z.string(),
     s3: z.boolean(),
-    signature: z.union([z.string(), z.null()]),
+    signature: z.string().nullable(),
     params: z.union([
       z
         .object({
@@ -50,7 +58,10 @@ export const uploadTokenSchema = z
       z.null(),
     ]),
   })
-  .openapi('UploadToken', { example: mockUploadTokenResponse() });
+  .openapi('UploadToken', {
+    description: 'A signed token authorizing file uploads to the configured storage provider.',
+    example: mockUploadTokenResponse(),
+  });
 
 // Re-export types from types.ts for convenience
 export type { MeAuthDataResponse, MeResponse, UploadTokenResponse } from './types';

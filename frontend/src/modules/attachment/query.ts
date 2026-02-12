@@ -233,7 +233,7 @@ export const useAttachmentUpdateMutation = (tenantId: string, orgId: string) => 
 
     // Execute API call with version-based transaction metadata
     mutationFn: async ({ id, data }: { id: string; data: UpdateAttachmentInput }) => {
-      // Get cached entity for baseVersion conflict detection
+      // Get cached entity for lastReadVersion conflict detection
       const cachedEntity = findAttachmentInListCache(id);
       const stx = createStxForUpdate(cachedEntity);
       // Body has stx embedded directly
@@ -363,7 +363,7 @@ addMutationRegistrar((queryClient: QueryClient) => {
       id: string;
       data: UpdateAttachmentInput;
     }) => {
-      // Get cached entity for baseVersion (may be undefined if not in cache)
+      // Get cached entity for lastReadVersion (may be undefined if not in cache)
       const cachedEntity = findAttachmentInListCache(id);
       const stx = createStxForUpdate(cachedEntity);
       // Body has stx embedded directly

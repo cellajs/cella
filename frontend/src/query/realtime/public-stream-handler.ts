@@ -1,5 +1,5 @@
 import { isPublicProductEntity } from 'shared';
-import type { PublicStreamActivity } from '~/api.gen';
+import type { StreamNotification } from '~/api.gen';
 import { pageQueryKeys } from '~/modules/page/query';
 import { queryClient } from '~/query/query-client';
 
@@ -29,7 +29,7 @@ const entityQueryKeyHandlers: Record<string, QueryKeyHandler> = {
  * Uses refetchType: 'all' to ensure inactive queries (e.g., in closed sheets on mobile)
  * also refetch when they become active again.
  */
-export function handlePublicStreamMessage(message: PublicStreamActivity): void {
+export function handlePublicStreamNotification(message: StreamNotification): void {
   const { entityType, entityId, action } = message;
 
   // Only handle configured public entity types

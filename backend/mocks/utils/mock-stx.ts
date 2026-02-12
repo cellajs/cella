@@ -1,4 +1,4 @@
-import type { StxBase } from '#/schemas/stx-base-schema';
+import type { StxBase } from '#/schemas/sync-transaction-schemas';
 import { mockNanoid } from './mock-nanoid';
 
 /**
@@ -6,7 +6,7 @@ import { mockNanoid } from './mock-nanoid';
  * Uses faker's seeded RNG for deterministic output.
  */
 export const mockStx = (): StxBase => ({
-  id: mockNanoid(),
+  mutationId: mockNanoid(),
   sourceId: `src_${mockNanoid()}`,
   version: 1,
   fieldVersions: {},

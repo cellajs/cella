@@ -1,5 +1,5 @@
 import { jsonb } from 'drizzle-orm/pg-core';
-import type { StxBase } from '#/schemas/stx-base-schema';
+import type { StxBase } from '#/schemas/sync-transaction-schemas';
 
 /**
  * Sync transaction column for sync-enabled entities (offline/realtime).

@@ -24,12 +24,10 @@ import {
 import { mockOrganizationResponse } from '../../../mocks/mock-organization';
 
 /** Schema for optional included data (requested via include query param) */
-export const organizationIncludedSchema = z
-  .object({
-    membership: membershipBaseSchema.optional(),
-    counts: fullCountsSchema.optional(),
-  })
-  .openapi('OrganizationIncluded');
+export const organizationIncludedSchema = z.object({
+  membership: membershipBaseSchema.optional(),
+  counts: fullCountsSchema.optional(),
+});
 
 export const organizationSchema = z
   .object({
@@ -40,7 +38,10 @@ export const organizationSchema = z
     included: organizationIncludedSchema.optional(),
     can: entityCanSchema.optional(),
   })
-  .openapi('Organization', { example: mockOrganizationResponse() });
+  .openapi('Organization', {
+    description: 'An organization with settings, restrictions, and membership context.',
+    example: mockOrganizationResponse(),
+  });
 
 export const organizationWithMembershipSchema = organizationSchema.extend({
   included: organizationIncludedSchema.extend({ membership: membershipBaseSchema }),
@@ -71,10 +72,6 @@ export const organizationUpdateBodySchema = createInsertSchema(organizationsTabl
   thumbnailUrl: validCDNUrlSchema.nullable(),
   bannerUrl: validCDNUrlSchema.nullable(),
   logoUrl: validCDNUrlSchema.nullable(),
-  country: z.string().max(maxLength.field).nullable(),
-  timezone: z.string().max(maxLength.field).nullable(),
-  notificationEmail: z.string().max(maxLength.field).nullable(),
-  color: z.string().max(maxLength.field).nullable(),
   welcomeText: z.string().max(maxLength.html).nullable(),
 })
   .pick({

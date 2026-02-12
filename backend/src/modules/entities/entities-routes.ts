@@ -3,13 +3,12 @@ import { createXRoute } from '#/docs/x-routes';
 import { authGuard, publicGuard } from '#/middlewares/guard';
 import { checkSlugBodySchema } from '#/modules/entities/entities-schema';
 import {
-  appStreamResponseSchema,
   errorResponseRefs,
   publicStreamQuerySchema,
-  publicStreamResponseSchema,
+  streamNotificationResponseSchema,
   streamQuerySchema,
 } from '#/schemas';
-import { mockAppStreamResponse } from '../../../mocks/mock-me';
+import { mockStreamResponse } from '../../../mocks/mock-me';
 
 const entityRoutes = {
   /**
@@ -42,7 +41,7 @@ const entityRoutes = {
    * Public stream for all public entity changes (no auth required)
    */
   publicStream: createXRoute({
-    operationId: 'publicStream',
+    operationId: 'getPublicStream',
     method: 'get',
     path: '/public/stream',
     xGuard: publicGuard,
@@ -56,7 +55,7 @@ const entityRoutes = {
         description: 'Catch-up activities or SSE stream started',
         content: {
           'application/json': {
-            schema: publicStreamResponseSchema,
+            schema: streamNotificationResponseSchema,
           },
         },
       },
@@ -85,8 +84,8 @@ const entityRoutes = {
         content: {
           'text/event-stream': { schema: z.any() },
           'application/json': {
-            schema: appStreamResponseSchema,
-            example: mockAppStreamResponse(),
+            schema: streamNotificationResponseSchema,
+            example: mockStreamResponse(),
           },
         },
       },

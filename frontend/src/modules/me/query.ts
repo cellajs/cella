@@ -6,6 +6,7 @@ import type {
   GetMyInvitationsResponse,
   HandleMembershipInvitationData,
   HandleMembershipInvitationResponse,
+  MeAuthData,
   ToggleMfaData,
   User,
 } from '~/api.gen';
@@ -24,10 +25,11 @@ import type { ApiError } from '~/lib/api';
 import { getPasskeyRegistrationCredential } from '~/modules/auth/passkey-credentials';
 import { toaster } from '~/modules/common/toaster/service';
 import { getAndSetMe, getAndSetMeAuthData } from '~/modules/me/helpers';
-import type { MeAuthData, Passkey } from '~/modules/me/types';
+import type { Passkey } from '~/modules/me/types';
 import { getMenuData } from '~/modules/navigation/menu-sheet/helpers';
 import { userQueryKeys } from '~/modules/user/query';
 import { queryClient } from '~/query/query-client';
+import type { MutationData } from '~/query/types';
 import { useUserStore } from '~/store/user';
 
 /**
@@ -158,10 +160,10 @@ export const useCreatePasskeyMutation = () => {
  * @returns The mutation hook for deleting passkey.
  */
 export const useDeletePasskeyMutation = () => {
-  return useMutation<DeletePasskeyResponse, ApiError, DeletePasskeyData['path']>({
+  return useMutation<DeletePasskeyResponse, ApiError, MutationData<DeletePasskeyData>>({
     mutationKey: meKeys.delete.passkey,
-    mutationFn: ({ id }) => deletePasskey({ path: { id } }),
-    onSuccess: (_data, { id }) => {
+    mutationFn: ({ path }) => deletePasskey({ path }),
+    onSuccess: (_data, { path: { id } }) => {
       queryClient.setQueryData<MeAuthData>(meKeys.auth, (oldData) => {
         if (!oldData) return oldData;
         return {
@@ -220,9 +222,9 @@ export const myMembershipsQueryOptions = () =>
  * Removes the settled invite from cache and refreshes the menu.
  */
 export const useHandleInvitationMutation = () =>
-  useMutation<HandleMembershipInvitationResponse, ApiError, HandleMembershipInvitationData['path']>({
-    mutationFn: ({ id, acceptOrReject }) => handleMembershipInvitation({ path: { id, acceptOrReject } }),
-    onSuccess: async (settledEntity, { acceptOrReject }) => {
+  useMutation<HandleMembershipInvitationResponse, ApiError, MutationData<HandleMembershipInvitationData>>({
+    mutationFn: ({ path }) => handleMembershipInvitation({ path }),
+    onSuccess: async (settledEntity, { path: { acceptOrReject } }) => {
       await getMenuData();
 
       queryClient.setQueryData<GetMyInvitationsResponse>(meKeys.invites, (oldData) => {

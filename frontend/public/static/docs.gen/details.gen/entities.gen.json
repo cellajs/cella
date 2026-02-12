@@ -56,7 +56,7 @@
     }
   },
   {
-    "operationId": "publicStream",
+    "operationId": "getPublicStream",
     "responses": [
       {
         "status": 200,
@@ -65,34 +65,62 @@
         "schema": {
           "type": "object",
           "properties": {
-            "activities": {
+            "notifications": {
               "type": "array",
               "required": true,
               "itemType": "object",
-              "ref": "#/components/schemas/PublicStreamActivity",
+              "ref": "#/components/schemas/StreamNotification",
               "items": {
                 "type": "object",
+                "description": "Realtime notification delivered via SSE for entity and membership changes.",
                 "properties": {
-                  "activityId": { "type": "string", "required": true },
                   "action": {
                     "type": "string",
                     "required": true,
                     "enum": ["create", "update", "delete"]
                   },
                   "entityType": {
-                    "type": "string",
+                    "type": ["string", "null"],
                     "required": true,
-                    "enum": ["attachment", "page"]
+                    "enum": ["attachment", "page", null]
+                  },
+                  "resourceType": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "enum": ["request", "membership", "inactive_membership", "tenant", null]
                   },
                   "entityId": { "type": "string", "required": true },
-                  "changedKeys": {
-                    "type": ["array", "null"],
-                    "required": true,
-                    "itemType": "string"
+                  "organizationId": {
+                    "type": ["string", "null"],
+                    "required": true
                   },
-                  "createdAt": { "type": "string", "required": true }
+                  "contextType": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "enum": ["organization", null]
+                  },
+                  "seq": {
+                    "type": ["integer", "null"],
+                    "required": true
+                  },
+                  "stx": {
+                    "type": ["object", "null"],
+                    "required": true,
+                    "description": "Sync transaction metadata stored on entities for offline and realtime support.",
+                    "properties": {
+                      "mutationId": { "type": "string", "required": true },
+                      "sourceId": { "type": "string", "required": true },
+                      "version": { "type": "integer", "required": true },
+                      "fieldVersions": { "type": "object", "required": true }
+                    },
+                    "extendsRef": "#/components/schemas/StxBase"
+                  },
+                  "cacheToken": {
+                    "type": ["string", "null"],
+                    "required": true
+                  }
                 },
-                "ref": "#/components/schemas/PublicStreamActivity"
+                "ref": "#/components/schemas/StreamNotification"
               }
             },
             "cursor": {
@@ -168,13 +196,14 @@
         "schema": {
           "type": "object",
           "properties": {
-            "activities": {
+            "notifications": {
               "type": "array",
               "required": true,
               "itemType": "object",
               "ref": "#/components/schemas/StreamNotification",
               "items": {
                 "type": "object",
+                "description": "Realtime notification delivered via SSE for entity and membership changes.",
                 "properties": {
                   "action": {
                     "type": "string",
@@ -208,13 +237,14 @@
                   "stx": {
                     "type": ["object", "null"],
                     "required": true,
+                    "description": "Sync transaction metadata stored on entities for offline and realtime support.",
                     "properties": {
-                      "id": { "type": "string", "required": true },
+                      "mutationId": { "type": "string", "required": true },
                       "sourceId": { "type": "string", "required": true },
                       "version": { "type": "integer", "required": true },
                       "fieldVersions": { "type": "object", "required": true }
                     },
-                    "ref": "#/components/schemas/StxStreamMessage"
+                    "extendsRef": "#/components/schemas/StxBase"
                   },
                   "cacheToken": {
                     "type": ["string", "null"],
@@ -233,25 +263,25 @@
           "contentType": "application/json"
         },
         "example": {
-          "activities": [
+          "notifications": [
             {
-              "action": "create",
+              "action": "delete",
               "entityType": "page",
               "resourceType": null,
-              "entityId": "p4mjvy3c0rjatirn6hp0rcgf",
-              "organizationId": "ufjhv1cwh0j4x3xi7ae54uen",
+              "entityId": "ipyf3p33iix6bh90l5vkhljl",
+              "organizationId": "xv5tmemhybwpov3sftl08uic",
               "contextType": null,
-              "seq": 526,
-              "cacheToken": "hg18eRugoaB38Ug7A1n7Zj018TyC3pwn",
+              "seq": 409,
+              "cacheToken": "1iLESdsWiPgPMn1DbxaxLythT5YAdIMV",
               "stx": {
-                "id": "hd7xubc5zuydxdgepv2tpr0z",
-                "sourceId": "jt0hyw517e6fpcmgsgfuxfwx",
-                "version": 1,
+                "mutationId": "4wt4fsnzvcmmcnaqpirymrng",
+                "sourceId": "yq5yyt6xf4dt1l81p0arc53l",
+                "version": 4,
                 "fieldVersions": { "name": 1 }
               }
             }
           ],
-          "cursor": "ll6ebv8jmzcs1cydc8ytq68u"
+          "cursor": "d9909rsl2y2ii9vbcsc2ywg7"
         }
       },
       {

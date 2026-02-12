@@ -189,7 +189,7 @@ export const usePageUpdateMutation = () => {
 
     // Execute API call with version-based transaction metadata
     mutationFn: async ({ id, data }: { id: string; data: UpdatePageInput }) => {
-      // Get cached entity for baseVersion conflict detection
+      // Get cached entity for lastReadVersion conflict detection
       const cachedEntity = findPageInListCache(id);
       const stx = createStxForUpdate(cachedEntity);
       // Body has stx embedded directly
@@ -308,7 +308,7 @@ addMutationRegistrar((queryClient: QueryClient) => {
   // Update mutation
   queryClient.setMutationDefaults(keys.update, {
     mutationFn: async ({ id, data }: { id: string; data: UpdatePageInput }) => {
-      // Get cached entity for baseVersion (may be undefined if not in cache)
+      // Get cached entity for lastReadVersion (may be undefined if not in cache)
       const cachedEntity = findPageInListCache(id);
       const stx = createStxForUpdate(cachedEntity);
       // Body has stx embedded directly

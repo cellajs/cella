@@ -1,4 +1,5 @@
 import { bigint, index, pgTable, primaryKey, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { maxLength } from '#/db/utils/constraints';
 
 /**
  * Entity-agnostic counters for high-performance atomic increments.
@@ -8,9 +9,9 @@ import { bigint, index, pgTable, primaryKey, timestamp, varchar } from 'drizzle-
 export const countersTable = pgTable(
   'counters',
   {
-    namespace: varchar().notNull(),
-    scope: varchar().notNull(),
-    key: varchar().notNull().default(''),
+    namespace: varchar({ length: maxLength.field }).notNull(),
+    scope: varchar({ length: maxLength.field }).notNull(),
+    key: varchar({ length: maxLength.field }).notNull().default(''),
     value: bigint({ mode: 'number' }).notNull().default(0),
     updatedAt: timestamp().defaultNow().notNull(),
   },

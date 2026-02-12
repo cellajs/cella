@@ -9,7 +9,10 @@ const requestSelectSchema = createSelectSchema(requestsTable);
 export const requestSchema = requestSelectSchema
   .omit({ tokenId: true })
   .extend({ wasInvited: z.boolean() })
-  .openapi('Request', { example: mockRequestResponse() });
+  .openapi('Request', {
+    description: 'A contact or waitlist submission from an unauthenticated user.',
+    example: mockRequestResponse(),
+  });
 
 export const requestCreateBodySchema = z.object({
   email: z.email().max(maxLength.field),

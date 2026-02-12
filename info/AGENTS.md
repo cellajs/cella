@@ -57,6 +57,7 @@ Cella is a TypeScript template for building collaborative web apps with sync and
 - **Debug Mode**: Set `VITE_DEBUG_MODE=true` in `frontend/.env` to enable debug features:
 - **Stores, no Providers**: The code base favours Stores over react Provider pattern due to DX and render performance.
 - **OpenAPI nullable schemas**: When making a named OpenAPI schema nullable, use `z.union([namedSchema, z.null()])` instead of `namedSchema.nullable()`. The `.nullable()` approach generates an `allOf` intersection in OpenAPI, resulting in `Type & ({[key: string]: unknown} | null)` in generated types. Using `z.union()` generates a proper `anyOf`, resulting in clean `Type | null`.
+- **OpenAPI schema naming**: Only register schemas as named OpenAPI components (`.openapi('Name')`) when they represent core entity responses or shared base types. Inline enums (e.g., status values) and request body schemas should not be registered — they get inlined at usage sites. Named schemas are categorized automatically by the docs UI: names containing "Base" → base, "Error" → errors, everything else → data. Use a single shared schema when the shape is identical across contexts (e.g., `StreamNotification` used by both app and public streams). Use consistent prefixes only when schemas genuinely differ.
 
 ## Coding Style & Naming Conventions
 - Formatter/Linter: Biome (see `biome.json`). Run it with `pnpm lint` or `pnpm lint:fix`.
@@ -104,6 +105,4 @@ Cella is a TypeScript template for building collaborative web apps with sync and
 - `pnpm generate`: Generate new Drizzle migrations based on schema changes in `backend/src/db/schema/`.
 - `pnpm generate:openapi`: Regenerate backend OpenAPI spec and update the frontend `api.gen` client.
 - `pnpm seed`: Seed the database with initial/test data.
-- `pnpm diverged`: List files that have diverged from the upstream Cella template.
-- `pnpm upstream:pull`: Pull changes from the upstream Cella template (automatically undoes changes in ignored files).
 - `pnpm cella`: Orchestrates the full execution flow of the Cella sync CLI (boilerplate/fork sync).

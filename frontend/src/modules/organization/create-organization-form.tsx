@@ -56,7 +56,7 @@ export function CreateOrganizationForm({ labelDirection = 'top', children, callb
   const onSubmit = (values: FormValues) => {
     const { tenantId, ...rest } = values;
     mutate(
-      { tenantId, body: [{ ...rest, id: `temp-${nanoid()}` }] },
+      { path: { tenantId }, body: [{ ...rest, id: `temp-${nanoid()}` }] },
       {
         onSuccess: (createdOrganization) => {
           form.reset();

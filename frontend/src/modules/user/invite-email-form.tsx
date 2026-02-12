@@ -33,8 +33,9 @@ export function InviteEmailForm({ entity, dialog: isDialog, children }: Props) {
 
   const onSuccess = (
     { invitesSentCount, rejectedItemIds }: { rejectedItemIds: string[]; invitesSentCount: number },
-    { emails }: { emails: string[] },
+    variables: InviteFormValues | InviteMember,
   ) => {
+    const emails = 'emails' in variables ? variables.emails : variables.body.emails;
     form.reset(undefined, { keepDirtyValues: true });
     if (isDialog) useDialoger.getState().remove();
 
@@ -57,7 +58,17 @@ export function InviteEmailForm({ entity, dialog: isDialog, children }: Props) {
   });
 
   const onSubmit = (values: InviteFormValues) => {
-    entity ? membershipInvite({ ...values, entity } as InviteMember, { onSuccess }) : systemInvite(values);
+    entity
+      ? membershipInvite(
+          {
+            body: values,
+            path: { tenantId: entity.tenantId, orgId: entity.organizationId || entity.id },
+            query: { entityId: entity.id, entityType: entity.entityType },
+            entity,
+          },
+          { onSuccess },
+        )
+      : systemInvite(values);
   };
 
   return (

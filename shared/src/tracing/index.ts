@@ -390,7 +390,7 @@ export function getDefaultStore(): SpanStore | undefined {
  * @example
  * await withSpan(spanNames.cdc.processWal, { lsn, entityType }, async (ctx) => {
  *   // Core logic here
- *   sendActivityToApi(activity, ctx);
+ *   sendMessageToApi(activity, ctx);
  * });
  */
 export async function withSpan<T>(

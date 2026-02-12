@@ -1,4 +1,4 @@
-import type { StxBase } from '#/schemas/stx-base-schema';
+import type { StxBase } from '#/schemas/sync-transaction-schemas';
 import type { RowData } from './convert-row-keys';
 
 /**
@@ -18,12 +18,12 @@ export function extractStxData(row: RowData): StxBase | null {
   const stxObj = stx as Record<string, unknown>;
 
   // Validate required fields for new schema
-  if (typeof stxObj.id !== 'string' || typeof stxObj.sourceId !== 'string' || typeof stxObj.version !== 'number') {
+  if (typeof stxObj.mutationId !== 'string' || typeof stxObj.sourceId !== 'string' || typeof stxObj.version !== 'number') {
     return null;
   }
 
   return {
-    id: stxObj.id,
+    mutationId: stxObj.mutationId,
     sourceId: stxObj.sourceId,
     version: stxObj.version,
     fieldVersions: (typeof stxObj.fieldVersions === 'object' && stxObj.fieldVersions !== null)

@@ -760,7 +760,7 @@
     }
   },
   {
-    "id": "publicStream",
+    "id": "getPublicStream",
     "hash": "tag/entities/GET/entities/public/stream",
     "method": "get",
     "path": "/entities/public/stream",

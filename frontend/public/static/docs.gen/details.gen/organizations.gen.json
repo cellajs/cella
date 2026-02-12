@@ -15,16 +15,29 @@
               "itemType": "object",
               "items": {
                 "type": "object",
+                "description": "An organization with settings, restrictions, and membership context.",
                 "properties": {
                   "createdAt": { "type": "string", "required": true },
-                  "id": { "type": "string", "required": true },
+                  "id": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 50
+                  },
                   "entityType": {
                     "type": "string",
                     "required": true,
                     "enum": ["organization"]
                   },
-                  "tenantId": { "type": "string", "required": true },
-                  "name": { "type": "string", "required": true },
+                  "tenantId": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 24
+                  },
+                  "name": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
+                  },
                   "description": {
                     "type": ["string", "null"],
                     "required": true
@@ -33,34 +46,45 @@
                     "type": ["string", "null"],
                     "required": true
                   },
-                  "slug": { "type": "string", "required": true },
+                  "slug": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
+                  },
                   "thumbnailUrl": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 2048
                   },
                   "bannerUrl": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 2048
                   },
                   "createdBy": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 50
                   },
                   "modifiedBy": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 50
                   },
                   "shortName": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 255
                   },
                   "country": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 255
                   },
                   "timezone": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 255
                   },
                   "defaultLanguage": {
                     "type": "string",
@@ -76,7 +100,8 @@
                   },
                   "notificationEmail": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 255
                   },
                   "emailDomains": {
                     "type": "array",
@@ -85,15 +110,18 @@
                   },
                   "color": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 255
                   },
                   "logoUrl": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 2048
                   },
                   "websiteUrl": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 2048
                   },
                   "welcomeText": {
                     "type": ["string", "null"],
@@ -113,15 +141,28 @@
                       "membership": {
                         "type": "object",
                         "required": true,
+                        "description": "Core membership fields shared across active and inactive memberships.",
                         "properties": {
-                          "id": { "type": "string", "required": true },
-                          "tenantId": { "type": "string", "required": true },
+                          "id": {
+                            "type": "string",
+                            "required": true,
+                            "maxLength": 50
+                          },
+                          "tenantId": {
+                            "type": "string",
+                            "required": true,
+                            "maxLength": 24
+                          },
                           "contextType": {
                             "type": "string",
                             "required": true,
                             "enum": ["organization"]
                           },
-                          "userId": { "type": "string", "required": true },
+                          "userId": {
+                            "type": "string",
+                            "required": true,
+                            "maxLength": 50
+                          },
                           "role": {
                             "type": "string",
                             "required": true,
@@ -135,7 +176,11 @@
                             "minimum": -140737488355328,
                             "maximum": 140737488355327
                           },
-                          "organizationId": { "type": "string", "required": true }
+                          "organizationId": {
+                            "type": "string",
+                            "required": true,
+                            "maxLength": 50
+                          }
                         },
                         "ref": "#/components/schemas/MembershipBase"
                       },
@@ -163,8 +208,7 @@
                           }
                         }
                       }
-                    },
-                    "extendsRef": "#/components/schemas/OrganizationIncluded"
+                    }
                   },
                   "can": {
                     "type": "object",
@@ -493,16 +537,29 @@
               "ref": "#/components/schemas/Organization",
               "items": {
                 "type": "object",
+                "description": "An organization with settings, restrictions, and membership context.",
                 "properties": {
                   "createdAt": { "type": "string", "required": true },
-                  "id": { "type": "string", "required": true },
+                  "id": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 50
+                  },
                   "entityType": {
                     "type": "string",
                     "required": true,
                     "enum": ["organization"]
                   },
-                  "tenantId": { "type": "string", "required": true },
-                  "name": { "type": "string", "required": true },
+                  "tenantId": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 24
+                  },
+                  "name": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
+                  },
                   "description": {
                     "type": ["string", "null"],
                     "required": true
@@ -511,34 +568,45 @@
                     "type": ["string", "null"],
                     "required": true
                   },
-                  "slug": { "type": "string", "required": true },
+                  "slug": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
+                  },
                   "thumbnailUrl": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 2048
                   },
                   "bannerUrl": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 2048
                   },
                   "createdBy": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 50
                   },
                   "modifiedBy": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 50
                   },
                   "shortName": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 255
                   },
                   "country": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 255
                   },
                   "timezone": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 255
                   },
                   "defaultLanguage": {
                     "type": "string",
@@ -554,7 +622,8 @@
                   },
                   "notificationEmail": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 255
                   },
                   "emailDomains": {
                     "type": "array",
@@ -563,15 +632,18 @@
                   },
                   "color": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 255
                   },
                   "logoUrl": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 2048
                   },
                   "websiteUrl": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 2048
                   },
                   "welcomeText": {
                     "type": ["string", "null"],
@@ -591,15 +663,28 @@
                       "membership": {
                         "type": "object",
                         "required": false,
+                        "description": "Core membership fields shared across active and inactive memberships.",
                         "properties": {
-                          "id": { "type": "string", "required": true },
-                          "tenantId": { "type": "string", "required": true },
+                          "id": {
+                            "type": "string",
+                            "required": true,
+                            "maxLength": 50
+                          },
+                          "tenantId": {
+                            "type": "string",
+                            "required": true,
+                            "maxLength": 24
+                          },
                           "contextType": {
                             "type": "string",
                             "required": true,
                             "enum": ["organization"]
                           },
-                          "userId": { "type": "string", "required": true },
+                          "userId": {
+                            "type": "string",
+                            "required": true,
+                            "maxLength": 50
+                          },
                           "role": {
                             "type": "string",
                             "required": true,
@@ -613,7 +698,11 @@
                             "minimum": -140737488355328,
                             "maximum": 140737488355327
                           },
-                          "organizationId": { "type": "string", "required": true }
+                          "organizationId": {
+                            "type": "string",
+                            "required": true,
+                            "maxLength": 50
+                          }
                         },
                         "ref": "#/components/schemas/MembershipBase"
                       },
@@ -641,8 +730,7 @@
                           }
                         }
                       }
-                    },
-                    "ref": "#/components/schemas/OrganizationIncluded"
+                    }
                   },
                   "can": {
                     "type": "object",
@@ -864,16 +952,29 @@
         "contentType": "application/json",
         "schema": {
           "type": "object",
+          "description": "An organization with settings, restrictions, and membership context.",
           "properties": {
             "createdAt": { "type": "string", "required": true },
-            "id": { "type": "string", "required": true },
+            "id": {
+              "type": "string",
+              "required": true,
+              "maxLength": 50
+            },
             "entityType": {
               "type": "string",
               "required": true,
               "enum": ["organization"]
             },
-            "tenantId": { "type": "string", "required": true },
-            "name": { "type": "string", "required": true },
+            "tenantId": {
+              "type": "string",
+              "required": true,
+              "maxLength": 24
+            },
+            "name": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
+            },
             "description": {
               "type": ["string", "null"],
               "required": true
@@ -882,34 +983,45 @@
               "type": ["string", "null"],
               "required": true
             },
-            "slug": { "type": "string", "required": true },
+            "slug": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
+            },
             "thumbnailUrl": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 2048
             },
             "bannerUrl": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 2048
             },
             "createdBy": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 50
             },
             "modifiedBy": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 50
             },
             "shortName": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 255
             },
             "country": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 255
             },
             "timezone": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 255
             },
             "defaultLanguage": {
               "type": "string",
@@ -925,7 +1037,8 @@
             },
             "notificationEmail": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 255
             },
             "emailDomains": {
               "type": "array",
@@ -934,15 +1047,18 @@
             },
             "color": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 255
             },
             "logoUrl": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 2048
             },
             "websiteUrl": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 2048
             },
             "welcomeText": {
               "type": ["string", "null"],
@@ -962,15 +1078,28 @@
                 "membership": {
                   "type": "object",
                   "required": false,
+                  "description": "Core membership fields shared across active and inactive memberships.",
                   "properties": {
-                    "id": { "type": "string", "required": true },
-                    "tenantId": { "type": "string", "required": true },
+                    "id": {
+                      "type": "string",
+                      "required": true,
+                      "maxLength": 50
+                    },
+                    "tenantId": {
+                      "type": "string",
+                      "required": true,
+                      "maxLength": 24
+                    },
                     "contextType": {
                       "type": "string",
                       "required": true,
                       "enum": ["organization"]
                     },
-                    "userId": { "type": "string", "required": true },
+                    "userId": {
+                      "type": "string",
+                      "required": true,
+                      "maxLength": 50
+                    },
                     "role": {
                       "type": "string",
                       "required": true,
@@ -984,7 +1113,11 @@
                       "minimum": -140737488355328,
                       "maximum": 140737488355327
                     },
-                    "organizationId": { "type": "string", "required": true }
+                    "organizationId": {
+                      "type": "string",
+                      "required": true,
+                      "maxLength": 50
+                    }
                   },
                   "ref": "#/components/schemas/MembershipBase"
                 },
@@ -1012,8 +1145,7 @@
                     }
                   }
                 }
-              },
-              "ref": "#/components/schemas/OrganizationIncluded"
+              }
             },
             "can": {
               "type": "object",
@@ -1160,16 +1292,29 @@
         "contentType": "application/json",
         "schema": {
           "type": "object",
+          "description": "An organization with settings, restrictions, and membership context.",
           "properties": {
             "createdAt": { "type": "string", "required": true },
-            "id": { "type": "string", "required": true },
+            "id": {
+              "type": "string",
+              "required": true,
+              "maxLength": 50
+            },
             "entityType": {
               "type": "string",
               "required": true,
               "enum": ["organization"]
             },
-            "tenantId": { "type": "string", "required": true },
-            "name": { "type": "string", "required": true },
+            "tenantId": {
+              "type": "string",
+              "required": true,
+              "maxLength": 24
+            },
+            "name": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
+            },
             "description": {
               "type": ["string", "null"],
               "required": true
@@ -1178,34 +1323,45 @@
               "type": ["string", "null"],
               "required": true
             },
-            "slug": { "type": "string", "required": true },
+            "slug": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
+            },
             "thumbnailUrl": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 2048
             },
             "bannerUrl": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 2048
             },
             "createdBy": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 50
             },
             "modifiedBy": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 50
             },
             "shortName": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 255
             },
             "country": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 255
             },
             "timezone": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 255
             },
             "defaultLanguage": {
               "type": "string",
@@ -1221,7 +1377,8 @@
             },
             "notificationEmail": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 255
             },
             "emailDomains": {
               "type": "array",
@@ -1230,15 +1387,18 @@
             },
             "color": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 255
             },
             "logoUrl": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 2048
             },
             "websiteUrl": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 2048
             },
             "welcomeText": {
               "type": ["string", "null"],
@@ -1258,15 +1418,28 @@
                 "membership": {
                   "type": "object",
                   "required": false,
+                  "description": "Core membership fields shared across active and inactive memberships.",
                   "properties": {
-                    "id": { "type": "string", "required": true },
-                    "tenantId": { "type": "string", "required": true },
+                    "id": {
+                      "type": "string",
+                      "required": true,
+                      "maxLength": 50
+                    },
+                    "tenantId": {
+                      "type": "string",
+                      "required": true,
+                      "maxLength": 24
+                    },
                     "contextType": {
                       "type": "string",
                       "required": true,
                       "enum": ["organization"]
                     },
-                    "userId": { "type": "string", "required": true },
+                    "userId": {
+                      "type": "string",
+                      "required": true,
+                      "maxLength": 50
+                    },
                     "role": {
                       "type": "string",
                       "required": true,
@@ -1280,7 +1453,11 @@
                       "minimum": -140737488355328,
                       "maximum": 140737488355327
                     },
-                    "organizationId": { "type": "string", "required": true }
+                    "organizationId": {
+                      "type": "string",
+                      "required": true,
+                      "maxLength": 50
+                    }
                   },
                   "ref": "#/components/schemas/MembershipBase"
                 },
@@ -1308,8 +1485,7 @@
                     }
                   }
                 }
-              },
-              "ref": "#/components/schemas/OrganizationIncluded"
+              }
             },
             "can": {
               "type": "object",

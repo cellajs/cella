@@ -1,6 +1,7 @@
 import { boolean, foreignKey, index, pgTable, varchar } from 'drizzle-orm/pg-core';
 import { membershipCrudPolicies } from '#/db/rls-helpers';
 import { organizationsTable } from '#/db/schema/organizations';
+import { maxLength } from '#/db/utils/constraints';
 import { productEntityColumns } from '#/db/utils/product-entity-columns';
 
 /**
@@ -12,16 +13,16 @@ export const attachmentsTable = pgTable(
   {
     ...productEntityColumns('attachment'),
     public: boolean().notNull().default(false),
-    bucketName: varchar().notNull(),
-    groupId: varchar(),
-    filename: varchar().notNull(),
-    contentType: varchar().notNull(),
-    convertedContentType: varchar(),
-    size: varchar().notNull(),
-    originalKey: varchar().notNull(),
-    convertedKey: varchar(),
-    thumbnailKey: varchar(),
-    organizationId: varchar()
+    bucketName: varchar({ length: maxLength.field }).notNull(),
+    groupId: varchar({ length: maxLength.id }),
+    filename: varchar({ length: maxLength.field }).notNull(),
+    contentType: varchar({ length: maxLength.field }).notNull(),
+    convertedContentType: varchar({ length: maxLength.field }),
+    size: varchar({ length: maxLength.field }).notNull(),
+    originalKey: varchar({ length: maxLength.url }).notNull(),
+    convertedKey: varchar({ length: maxLength.url }),
+    thumbnailKey: varchar({ length: maxLength.url }),
+    organizationId: varchar({ length: maxLength.id })
       .notNull()
       .references(() => organizationsTable.id, { onDelete: 'cascade' }),
   },

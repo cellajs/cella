@@ -76,10 +76,12 @@ function MembersTable({ entity, isSheet = false, children }: MembersTableWrapper
     // If role is changed, update membership
     for (const index of indexes) {
       const updatedMembership = {
-        id: changedRows[index].membership.id,
-        role: changedRows[index].membership.role,
-        tenantId,
-        orgId,
+        path: {
+          id: changedRows[index].membership.id,
+          tenantId,
+          orgId,
+        },
+        body: { role: changedRows[index].membership.role },
         entityId,
         entityType,
       };

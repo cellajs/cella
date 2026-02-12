@@ -39,7 +39,7 @@ export function buildStreamNotification(event: ActivityEventWithEntity): StreamN
     stx:
       isProduct && event.stx
         ? {
-            id: event.stx.id,
+            mutationId: event.stx.mutationId,
             sourceId: event.stx.sourceId,
             version: event.stx.version,
             fieldVersions: event.stx.fieldVersions,
@@ -50,24 +50,24 @@ export function buildStreamNotification(event: ActivityEventWithEntity): StreamN
 }
 
 /**
- * Catch-up activity with activity ID for cursor tracking.
+ * Catch-up notification with activity ID for cursor tracking.
  */
-export interface CatchUpActivity {
+export interface CatchUpNotification {
   activityId: string;
   notification: StreamNotification;
 }
 
 /**
- * Fetch catch-up activities for a user.
- * Returns activities for all synced entity types in user's orgs.
+ * Fetch catch-up notifications for a user.
+ * Returns notifications for all synced entity types in user's orgs.
  * Entity-agnostic: uses appConfig.productEntityTypes and appConfig.contextEntityTypes.
  */
-export async function fetchUserCatchUpActivities(
+export async function fetchUserCatchUpNotifications(
   _userId: string,
   orgIds: Set<string>,
   cursor: string | null,
   limit = 50,
-): Promise<CatchUpActivity[]> {
+): Promise<CatchUpNotification[]> {
   if (orgIds.size === 0) return [];
 
   const orgIdArray = Array.from(orgIds);
@@ -96,8 +96,8 @@ export async function fetchUserCatchUpActivities(
     .orderBy(desc(activitiesTable.createdAt))
     .limit(limit);
 
-  // Build catch-up activities with notifications
-  const catchUpActivities: CatchUpActivity[] = [];
+  // Build catch-up notifications
+  const catchUpNotifications: CatchUpNotification[] = [];
 
   for (const activity of activities) {
     const notification: StreamNotification = {
@@ -112,13 +112,13 @@ export async function fetchUserCatchUpActivities(
       cacheToken: null,
     };
 
-    catchUpActivities.push({
+    catchUpNotifications.push({
       activityId: activity.id,
       notification,
     });
   }
 
-  return catchUpActivities;
+  return catchUpNotifications;
 }
 
 /**

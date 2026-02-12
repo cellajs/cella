@@ -5,7 +5,7 @@
 
 import type { EntityType } from 'shared';
 import { AppError } from '#/lib/error';
-import type { StxBase } from '#/schemas/stx-base-schema';
+import type { StxBase } from '#/schemas/sync-transaction-schemas';
 
 interface FieldConflict {
   field: string;
@@ -14,7 +14,7 @@ interface FieldConflict {
 }
 
 interface ConflictCheckResult {
-  /** Fields that have conflicts (server version > client baseVersion) */
+  /** Fields that have conflicts (server version > client lastReadVersion) */
   conflicts: FieldConflict[];
   /** Fields that are safe to update */
   safeFields: string[];
@@ -22,24 +22,24 @@ interface ConflictCheckResult {
 
 /**
  * Check for field-level conflicts between client and server versions.
- * Returns conflicts for fields where server version is newer than client's baseVersion.
+ * Returns conflicts for fields where server version is newer than client's lastReadVersion.
  *
  * @param changedFields - Array of field names being updated
  * @param entityStx - Current entity's stx metadata (from DB)
- * @param baseVersion - Client's version when entity was last read
+ * @param lastReadVersion - Client's version when entity was last read
  */
 export function checkFieldConflicts(
   changedFields: string[],
   entityStx: StxBase | null | undefined,
-  baseVersion: number,
+  lastReadVersion: number,
 ): ConflictCheckResult {
   const conflicts: ConflictCheckResult['conflicts'] = [];
   const safeFields: string[] = [];
 
   for (const field of changedFields) {
     const serverVersion = entityStx?.fieldVersions?.[field] ?? 0;
-    if (serverVersion > baseVersion) {
-      conflicts.push({ field, clientVersion: baseVersion, serverVersion });
+    if (serverVersion > lastReadVersion) {
+      conflicts.push({ field, clientVersion: lastReadVersion, serverVersion });
     } else {
       safeFields.push(field);
     }

@@ -33,9 +33,12 @@ export const userSchema = createSelectSchema(usersTable, {
 })
   .extend({
     // lastSeenAt from last_seen table (populated via subquery in userSelect)
-    lastSeenAt: z.union([z.string(), z.null()]),
+    lastSeenAt: z.string().nullable(),
   })
-  .openapi('User', { example: mockUserResponse() });
+  .openapi('User', {
+    description: 'A user with profile data and last-seen activity timestamp.',
+    example: mockUserResponse(),
+  });
 
 export const memberSchema = z
   .object({

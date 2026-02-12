@@ -2,8 +2,9 @@ import { desc, sql } from 'drizzle-orm';
 import { foreignKey, index, integer, jsonb, pgTable, primaryKey, varchar } from 'drizzle-orm/pg-core';
 import { appConfig } from 'shared';
 import type { ActivityError } from '#/db/utils/activity-error-schema';
+import { maxLength, tenantIdLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
-import type { StxBase } from '#/schemas/stx-base-schema';
+import type { StxBase } from '#/schemas/sync-transaction-schemas';
 import { activityActions } from '#/sync/activity-bus';
 import { nanoid } from '#/utils/nanoid';
 import { organizationsTable } from './organizations';
@@ -22,16 +23,16 @@ import { usersTable } from './users';
 export const activitiesTable = pgTable(
   'activities',
   {
-    id: varchar().notNull().$defaultFn(nanoid),
-    tenantId: varchar('tenant_id').references(() => tenantsTable.id),
-    userId: varchar(),
+    id: varchar({ length: maxLength.id }).notNull().$defaultFn(nanoid),
+    tenantId: varchar('tenant_id', { length: tenantIdLength }).references(() => tenantsTable.id),
+    userId: varchar({ length: maxLength.id }),
     entityType: varchar({ enum: appConfig.entityTypes }),
     resourceType: varchar({ enum: appConfig.resourceTypes }),
     action: varchar({ enum: activityActions }).notNull(),
-    tableName: varchar().notNull(),
-    type: varchar().notNull(),
-    entityId: varchar(),
-    organizationId: varchar(),
+    tableName: varchar({ length: maxLength.field }).notNull(),
+    type: varchar({ length: maxLength.field }).notNull(),
+    entityId: varchar({ length: maxLength.id }),
+    organizationId: varchar({ length: maxLength.id }),
     createdAt: timestampColumns.createdAt,
     changedKeys: jsonb().$type<string[]>(),
     stx: jsonb().$type<StxBase>(),
@@ -47,7 +48,7 @@ export const activitiesTable = pgTable(
     index('activities_entity_id_index').on(table.entityId),
     index('activities_table_name_index').on(table.tableName),
     index('activities_tenant_id_index').on(table.tenantId),
-    index('activities_stx_id_index').on(sql`(stx->>'id')`),
+    index('activities_stx_id_index').on(sql`(stx->>'mutationId')`),
     index('activities_error_lsn_index').on(sql`(error->>'lsn')`).where(sql`error IS NOT NULL`),
     index('activities_organization_id_index').on(table.organizationId),
     index('activities_organization_id_seq_index').on(table.organizationId, desc(table.seq)),

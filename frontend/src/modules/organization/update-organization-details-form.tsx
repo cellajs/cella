@@ -47,7 +47,7 @@ export function UpdateOrganizationDetailsForm({ organization, callback, sheet: i
 
   const onSubmit = (body: FormValues) => {
     mutate(
-      { tenantId: organization.tenantId, id: organization.id, body },
+      { path: { tenantId: organization.tenantId, id: organization.id }, body },
       {
         onSuccess: (updatedOrganization) => {
           if (isSheet) useSheeter.getState().remove(formContainerId);

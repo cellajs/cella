@@ -40,7 +40,7 @@ export function buildStreamNotification(event: ActivityEventWithEntity): StreamN
     contextType: null,
     seq: event.seq ?? 0,
     stx: {
-      id: event.stx.id,
+      mutationId: event.stx.mutationId,
       sourceId: event.stx.sourceId,
       version: event.stx.version,
       fieldVersions: event.stx.fieldVersions,
