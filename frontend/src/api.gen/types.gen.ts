@@ -3748,7 +3748,7 @@ export type DeletePagesResponse = DeletePagesResponses[keyof DeletePagesResponse
 
 export type CreatePagesData = {
   body: Array<{
-    name?: string;
+    name: string;
     stx: StxRequest;
   }>;
   path: {
@@ -4098,20 +4098,20 @@ export type GetAttachmentsResponse = GetAttachmentsResponses[keyof GetAttachment
 
 export type CreateAttachmentsData = {
   body: Array<{
-    id?: string;
-    name?: string;
+    id: string;
+    name: string;
     filename: string;
     contentType: string;
     size: string;
     organizationId: string;
-    createdBy?: string | null;
+    createdBy: string | null;
     originalKey: string;
     bucketName: string;
     public?: boolean;
-    groupId?: string | null;
-    convertedContentType?: string | null;
-    convertedKey?: string | null;
-    thumbnailKey?: string | null;
+    groupId: string | null;
+    convertedContentType: string | null;
+    convertedKey: string | null;
+    thumbnailKey: string | null;
     stx: StxRequest;
   }>;
   path: {

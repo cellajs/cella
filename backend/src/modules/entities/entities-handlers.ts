@@ -4,7 +4,6 @@ import { nanoid } from 'nanoid';
 import { appConfig, hierarchy } from 'shared';
 import { signCacheToken } from '#/lib/cache-token-signer';
 import { type Env } from '#/lib/context';
-import { publicEntityCache } from '#/middlewares/entity-cache';
 import {
   type AppStreamSubscriber,
   dispatchToUserSubscribers,
@@ -21,7 +20,7 @@ import {
   type PublicStreamSubscriber,
   publicChannel,
 } from '#/modules/entities/public-stream';
-import { type ActivityEventWithEntity, activityBus } from '#/sync/activity-bus';
+import { type ActivityEventWithEntity, activityBus, allActionVerbs } from '#/sync/activity-bus';
 import { keepAlive, streamSubscriberManager, writeChange, writeOffset } from '#/sync/stream';
 import { defaultHook } from '#/utils/default-hook';
 import { logEvent } from '#/utils/logger';
@@ -29,21 +28,15 @@ import { logEvent } from '#/utils/logger';
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 // ============================================
-// ActivityBus registration for public entity stream
+// ActivityBus event registration for SSE streams
+// Cache invalidation is handled separately in cache-invalidation.ts
 // ============================================
 
-// Register listeners dynamically for all public product entity types
+// Public entity events - dispatched to unauthenticated public stream
 for (const entityType of hierarchy.publicAccessTypes) {
-  const eventTypes = [`${entityType}.created`, `${entityType}.updated`, `${entityType}.deleted`] as const;
-
-  for (const eventType of eventTypes) {
+  for (const action of allActionVerbs) {
+    const eventType = `${entityType}.${action}` as const;
     activityBus.on(eventType, async (event: ActivityEventWithEntity) => {
-      // Invalidate public entity cache
-      if (event.entityId) {
-        publicEntityCache.delete(entityType, event.entityId);
-      }
-
-      // Dispatch to public stream subscribers
       try {
         await dispatchToPublicSubscribers(event);
       } catch (error) {
@@ -53,14 +46,9 @@ for (const entityType of hierarchy.publicAccessTypes) {
   }
 }
 
-// ============================================
-// ActivityBus registration for app stream (authenticated user events)
-// ============================================
-
 // Membership events - routed via user channel
-const membershipEvents = ['membership.created', 'membership.updated', 'membership.deleted'] as const;
-
-for (const eventType of membershipEvents) {
+for (const action of allActionVerbs) {
+  const eventType = `membership.${action}` as const;
   activityBus.on(eventType, async (event: ActivityEventWithEntity) => {
     try {
       await dispatchToUserSubscribers(event);
@@ -70,11 +58,9 @@ for (const eventType of membershipEvents) {
   });
 }
 
-// Product entity events - dynamically registered from config
-const productEntityActions = ['created', 'updated', 'deleted'] as const;
-
+// Product entity events - dispatched to authenticated app stream
 for (const entityType of appConfig.productEntityTypes) {
-  for (const action of productEntityActions) {
+  for (const action of allActionVerbs) {
     const eventType = `${entityType}.${action}` as const;
     activityBus.on(eventType, async (event: ActivityEventWithEntity) => {
       try {
@@ -86,19 +72,20 @@ for (const entityType of appConfig.productEntityTypes) {
   }
 }
 
-// Organization events - routed via org channel
-// TODO-012 not entityConfig and hierarchy agnostic yet or is this one ok?
+// Context entity events - no 'created' (handled via membership.created)
+const contextActions = allActionVerbs.filter((a) => a !== 'created');
 
-const organizationEvents = ['organization.updated', 'organization.deleted'] as const;
-
-for (const eventType of organizationEvents) {
-  activityBus.on(eventType, async (event: ActivityEventWithEntity) => {
-    try {
-      await dispatchToUserSubscribers(event);
-    } catch (error) {
-      logEvent('error', 'Failed to dispatch organization event', { error, activityId: event.id });
-    }
-  });
+for (const entityType of appConfig.contextEntityTypes) {
+  for (const action of contextActions) {
+    const eventType = `${entityType}.${action}` as const;
+    activityBus.on(eventType, async (event: ActivityEventWithEntity) => {
+      try {
+        await dispatchToUserSubscribers(event);
+      } catch (error) {
+        logEvent('error', 'Failed to dispatch context entity event', { error, activityId: event.id });
+      }
+    });
+  }
 }
 
 // ============================================

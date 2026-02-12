@@ -27,7 +27,10 @@ const actionVerbs = {
   delete: 'deleted',
 } as const satisfies Record<ActivityAction, string>;
 
-type ActionVerb = (typeof actionVerbs)[ActivityAction];
+export type ActionVerb = (typeof actionVerbs)[ActivityAction];
+
+/** All action verbs as a readonly array (e.g., ['created', 'updated', 'deleted']) */
+export const allActionVerbs = Object.values(actionVerbs) as readonly ActionVerb[];
 
 /**
  * Strongly typed activity event type.

@@ -191,7 +191,11 @@
     "request": {
       "query": {
         "properties": {
-          "q": { "type": "string", "required": false },
+          "q": {
+            "type": "string",
+            "required": false,
+            "maxLength": 255
+          },
           "sort": {
             "type": "string",
             "required": false,

@@ -6,6 +6,7 @@ import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
 import {
   contextEntityTypeSchema,
   languageSchema,
+  maxLength,
   paginationQuerySchema,
   validCDNUrlSchema,
   validNameSchema,
@@ -67,7 +68,7 @@ export const userListQuerySchema = paginationQuerySchema
     sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt']).default('createdAt').optional(),
     role: z.enum(appConfig.systemRoles).optional(),
     targetEntityType: contextEntityTypeSchema.optional(),
-    targetEntityId: z.string().optional(),
+    targetEntityId: z.string().max(maxLength.id).optional(),
   })
   .refine(
     (data) => (data.targetEntityType && data.targetEntityId) || (!data.targetEntityType && !data.targetEntityId),

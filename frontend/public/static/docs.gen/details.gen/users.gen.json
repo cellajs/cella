@@ -262,14 +262,22 @@
           "tenantId": {
             "type": "string",
             "required": true,
-            "maxLength": 24
+            "maxLength": 50
           },
-          "orgId": { "type": "string", "required": true }
+          "orgId": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          }
         }
       },
       "query": {
         "properties": {
-          "q": { "type": "string", "required": false },
+          "q": {
+            "type": "string",
+            "required": false,
+            "maxLength": 255
+          },
           "sort": {
             "type": "string",
             "required": false,
@@ -292,7 +300,11 @@
             "required": false,
             "enum": ["organization"]
           },
-          "targetEntityId": { "type": "string", "required": false }
+          "targetEntityId": {
+            "type": "string",
+            "required": false,
+            "maxLength": 50
+          }
         }
       }
     }
@@ -449,10 +461,18 @@
           "tenantId": {
             "type": "string",
             "required": true,
-            "maxLength": 24
+            "maxLength": 50
           },
-          "orgId": { "type": "string", "required": true },
-          "userId": { "type": "string", "required": true }
+          "orgId": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          },
+          "userId": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          }
         }
       },
       "query": {

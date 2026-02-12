@@ -226,7 +226,11 @@
             "required": true,
             "enum": ["email-verification", "oauth-verification", "password-reset", "invitation", "confirm-mfa"]
           },
-          "id": { "type": "string", "required": true }
+          "id": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          }
         }
       }
     }
@@ -1055,7 +1059,11 @@
         "properties": {
           "attestationObject": { "type": "string", "required": true },
           "clientDataJSON": { "type": "string", "required": true },
-          "nameOnDevice": { "type": "string", "required": true }
+          "nameOnDevice": {
+            "type": "string",
+            "required": true,
+            "maxLength": 255
+          }
         },
         "required": true,
         "contentType": "application/json"
@@ -1105,7 +1113,11 @@
     "request": {
       "path": {
         "properties": {
-          "id": { "type": "string", "required": true }
+          "id": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          }
         }
       }
     }
@@ -1179,7 +1191,11 @@
             "required": true,
             "enum": ["authentication", "mfa", "registration"]
           },
-          "email": { "type": "string", "required": false }
+          "email": {
+            "type": "string",
+            "required": false,
+            "maxLength": 255
+          }
         },
         "required": true,
         "contentType": "application/json"
@@ -1239,7 +1255,11 @@
             "required": true,
             "enum": ["authentication", "mfa"]
           },
-          "email": { "type": "string", "required": false }
+          "email": {
+            "type": "string",
+            "required": false,
+            "maxLength": 255
+          }
         },
         "required": true,
         "contentType": "application/json"

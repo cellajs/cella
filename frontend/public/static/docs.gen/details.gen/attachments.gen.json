@@ -206,14 +206,22 @@
           "tenantId": {
             "type": "string",
             "required": true,
-            "maxLength": 24
+            "maxLength": 50
           },
-          "orgId": { "type": "string", "required": true }
+          "orgId": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          }
         }
       },
       "query": {
         "properties": {
-          "q": { "type": "string", "required": false },
+          "q": {
+            "type": "string",
+            "required": false,
+            "maxLength": 255
+          },
           "sort": {
             "type": "string",
             "required": false,
@@ -624,9 +632,13 @@
           "tenantId": {
             "type": "string",
             "required": true,
-            "maxLength": 24
+            "maxLength": 50
           },
-          "orgId": { "type": "string", "required": true }
+          "orgId": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          }
         }
       },
       "body": {
@@ -636,34 +648,71 @@
           "type": "object",
           "required": true,
           "properties": {
-            "id": { "type": "string", "required": false },
-            "name": { "type": "string", "required": false },
-            "filename": { "type": "string", "required": true },
-            "contentType": { "type": "string", "required": true },
-            "size": { "type": "string", "required": true },
-            "organizationId": { "type": "string", "required": true },
+            "id": {
+              "type": "string",
+              "required": true,
+              "maxLength": 50
+            },
+            "name": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
+            },
+            "filename": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
+            },
+            "contentType": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
+            },
+            "size": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
+            },
+            "organizationId": {
+              "type": "string",
+              "required": true,
+              "maxLength": 50
+            },
             "createdBy": {
               "type": ["string", "null"],
-              "required": false
+              "required": true,
+              "maxLength": 50
             },
-            "originalKey": { "type": "string", "required": true },
-            "bucketName": { "type": "string", "required": true },
+            "originalKey": {
+              "type": "string",
+              "required": true,
+              "maxLength": 2048
+            },
+            "bucketName": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
+            },
             "public": { "type": "boolean", "required": false },
             "groupId": {
               "type": ["string", "null"],
-              "required": false
+              "required": true,
+              "maxLength": 50
             },
             "convertedContentType": {
               "type": ["string", "null"],
-              "required": false
+              "required": true,
+              "maxLength": 255
             },
             "convertedKey": {
               "type": ["string", "null"],
-              "required": false
+              "required": true,
+              "maxLength": 2048
             },
             "thumbnailKey": {
               "type": ["string", "null"],
-              "required": false
+              "required": true,
+              "maxLength": 2048
             },
             "stx": {
               "type": "object",
@@ -767,9 +816,13 @@
           "tenantId": {
             "type": "string",
             "required": true,
-            "maxLength": 24
+            "maxLength": 50
           },
-          "orgId": { "type": "string", "required": true }
+          "orgId": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          }
         }
       },
       "body": {
@@ -847,14 +900,22 @@
           "tenantId": {
             "type": "string",
             "required": true,
-            "maxLength": 24
+            "maxLength": 50
           },
-          "orgId": { "type": "string", "required": true }
+          "orgId": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          }
         }
       },
       "query": {
         "properties": {
-          "key": { "type": "string", "required": true }
+          "key": {
+            "type": "string",
+            "required": true,
+            "maxLength": 2048
+          }
         }
       }
     }
@@ -1022,10 +1083,18 @@
           "tenantId": {
             "type": "string",
             "required": true,
-            "maxLength": 24
+            "maxLength": 50
           },
-          "orgId": { "type": "string", "required": true },
-          "id": { "type": "string", "required": true }
+          "orgId": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          },
+          "id": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          }
         }
       }
     }
@@ -1193,17 +1262,33 @@
           "tenantId": {
             "type": "string",
             "required": true,
-            "maxLength": 24
+            "maxLength": 50
           },
-          "orgId": { "type": "string", "required": true },
-          "id": { "type": "string", "required": true }
+          "orgId": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          },
+          "id": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          }
         }
       },
       "body": {
         "type": "object",
         "properties": {
-          "name": { "type": "string", "required": false },
-          "originalKey": { "type": "string", "required": false },
+          "name": {
+            "type": "string",
+            "required": false,
+            "maxLength": 255
+          },
+          "originalKey": {
+            "type": "string",
+            "required": false,
+            "maxLength": 2048
+          },
           "stx": {
             "type": "object",
             "required": true,
@@ -1278,7 +1363,11 @@
     "request": {
       "path": {
         "properties": {
-          "id": { "type": "string", "required": true }
+          "id": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          }
         }
       }
     }

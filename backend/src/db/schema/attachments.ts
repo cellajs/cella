@@ -1,6 +1,5 @@
-import { sql } from 'drizzle-orm';
-import { boolean, foreignKey, index, pgPolicy, pgTable, varchar } from 'drizzle-orm/pg-core';
-import { isAuthenticated, membershipExists, tenantMatch } from '#/db/rls-helpers';
+import { boolean, foreignKey, index, pgTable, varchar } from 'drizzle-orm/pg-core';
+import { membershipCrudPolicies } from '#/db/rls-helpers';
 import { organizationsTable } from '#/db/schema/organizations';
 import { generateContextEntityIdColumns } from '#/db/utils/generate-context-entity-columns';
 import { productEntityColumns } from '#/db/utils/product-entity-columns';
@@ -35,23 +34,7 @@ export const attachmentsTable = pgTable(
       columns: [table.tenantId, table.organizationId],
       foreignColumns: [organizationsTable.tenantId, organizationsTable.id],
     }).onDelete('cascade'),
-    pgPolicy('attachments_select_policy', {
-      for: 'select',
-      using: sql`${tenantMatch(table)} AND ${isAuthenticated} AND ${membershipExists(table)}`,
-    }),
-    pgPolicy('attachments_insert_policy', {
-      for: 'insert',
-      withCheck: sql`${tenantMatch(table)} AND ${isAuthenticated} AND ${membershipExists(table)}`,
-    }),
-    pgPolicy('attachments_update_policy', {
-      for: 'update',
-      using: sql`${tenantMatch(table)} AND ${isAuthenticated} AND ${membershipExists(table)}`,
-      withCheck: sql`${tenantMatch(table)} AND ${isAuthenticated} AND ${membershipExists(table)}`,
-    }),
-    pgPolicy('attachments_delete_policy', {
-      for: 'delete',
-      using: sql`${tenantMatch(table)} AND ${isAuthenticated} AND ${membershipExists(table)}`,
-    }),
+    ...membershipCrudPolicies('attachments', table),
   ],
 );
 

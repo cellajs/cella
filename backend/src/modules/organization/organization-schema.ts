@@ -11,6 +11,7 @@ import {
   fullCountsSchema,
   includeQuerySchema,
   languageSchema,
+  maxLength,
   noDuplicateSlugsRefine,
   paginationQuerySchema,
   validCDNUrlSchema,
@@ -70,6 +71,11 @@ export const organizationUpdateBodySchema = createInsertSchema(organizationsTabl
   thumbnailUrl: validCDNUrlSchema.nullable(),
   bannerUrl: validCDNUrlSchema.nullable(),
   logoUrl: validCDNUrlSchema.nullable(),
+  country: z.string().max(maxLength.field).nullable(),
+  timezone: z.string().max(maxLength.field).nullable(),
+  notificationEmail: z.string().max(maxLength.field).nullable(),
+  color: z.string().max(maxLength.field).nullable(),
+  welcomeText: z.string().max(maxLength.html).nullable(),
 })
   .pick({
     slug: true,
@@ -94,7 +100,7 @@ export const organizationUpdateBodySchema = createInsertSchema(organizationsTabl
 
 export const organizationListQuerySchema = paginationQuerySchema.extend({
   sort: z.enum(['id', 'name', 'createdAt']).default('createdAt').optional(),
-  userId: z.string().optional(),
+  userId: z.string().max(maxLength.id).optional(),
   role: z.enum(roles.all).optional(),
   excludeArchived: excludeArchivedQuerySchema,
   include: includeQuerySchema,

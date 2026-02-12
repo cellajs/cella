@@ -28,7 +28,6 @@ export const activitiesTable = pgTable(
   'activities',
   {
     id: varchar().notNull().$defaultFn(nanoid),
-    // Nullable: cross-tenant entities like users have no tenantId
     tenantId: varchar('tenant_id', { length: 24 }).references(() => tenantsTable.id),
     userId: varchar(),
     entityType: varchar({ enum: appConfig.entityTypes }),
@@ -40,9 +39,7 @@ export const activitiesTable = pgTable(
     ...generateActivityContextColumns(),
     createdAt: timestampColumns.createdAt,
     changedKeys: jsonb().$type<string[]>(),
-    // Sync transaction metadata (null for context entities)
     stx: jsonb().$type<StxBase>(),
-    // Per-ancestor sequence number for sync gap detection
     seq: integer(),
     error: jsonb().$type<ActivityError>(),
   },

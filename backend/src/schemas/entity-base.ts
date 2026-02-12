@@ -1,21 +1,13 @@
 import { z } from '@hono/zod-openapi';
-import {
-  contextEntityTypeSchema,
-  idSchema,
-  imageUrlSchema,
-  nameSchema,
-  productEntityTypeSchema,
-  slugSchema,
-  tenantIdSchema,
-} from '#/schemas';
+import { contextEntityTypeSchema, productEntityTypeSchema } from '#/schemas';
 import { mockContextEntityBase, mockProductEntityBase } from '../../mocks/mock-entity-base';
 
 /**
  * Base schema shared by all entities (mirrors baseEntityColumns).
  */
 const entityBaseShape = {
-  id: idSchema,
-  name: nameSchema,
+  id: z.string(),
+  name: z.string(),
   description: z.string().nullable(),
   createdAt: z.string(),
   modifiedAt: z.string().nullable(),
@@ -25,8 +17,8 @@ const entityBaseShape = {
  * Audit fields for entities that track who created/modified them.
  */
 const auditShape = {
-  createdBy: idSchema.nullable(),
-  modifiedBy: idSchema.nullable(),
+  createdBy: z.string().nullable(),
+  modifiedBy: z.string().nullable(),
 };
 
 /**
@@ -35,11 +27,11 @@ const auditShape = {
 export const contextEntityBaseSchema = z
   .object({
     ...entityBaseShape,
-    tenantId: tenantIdSchema,
+    tenantId: z.string(),
     entityType: contextEntityTypeSchema,
-    slug: slugSchema,
-    thumbnailUrl: imageUrlSchema.nullable(),
-    bannerUrl: imageUrlSchema.nullable(),
+    slug: z.string(),
+    thumbnailUrl: z.string().nullable(),
+    bannerUrl: z.string().nullable(),
   })
   .openapi('ContextEntityBase', { example: mockContextEntityBase() });
 

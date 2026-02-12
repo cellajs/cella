@@ -122,14 +122,22 @@
           "tenantId": {
             "type": "string",
             "required": true,
-            "maxLength": 24
+            "maxLength": 50
           },
-          "orgId": { "type": "string", "required": true }
+          "orgId": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          }
         }
       },
       "query": {
         "properties": {
-          "entityId": { "type": "string", "required": true },
+          "entityId": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          },
           "entityType": {
             "type": "string",
             "required": true,
@@ -148,7 +156,7 @@
             "itemType": "string",
             "format": "email",
             "minLength": 4,
-            "maxLength": 100
+            "maxLength": 255
           },
           "role": {
             "type": "string",
@@ -229,14 +237,22 @@
           "tenantId": {
             "type": "string",
             "required": true,
-            "maxLength": 24
+            "maxLength": 50
           },
-          "orgId": { "type": "string", "required": true }
+          "orgId": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          }
         }
       },
       "query": {
         "properties": {
-          "entityId": { "type": "string", "required": true },
+          "entityId": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          },
           "entityType": {
             "type": "string",
             "required": true,
@@ -370,10 +386,18 @@
           "tenantId": {
             "type": "string",
             "required": true,
-            "maxLength": 24
+            "maxLength": 50
           },
-          "orgId": { "type": "string", "required": true },
-          "id": { "type": "string", "required": true }
+          "orgId": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          },
+          "id": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          }
         }
       },
       "body": {
@@ -416,11 +440,7 @@
               "type": ["string", "null"],
               "required": true
             },
-            "tenantId": {
-              "type": "string",
-              "required": true,
-              "maxLength": 24
-            },
+            "tenantId": { "type": "string", "required": true },
             "entityType": {
               "type": "string",
               "required": true,
@@ -491,7 +511,11 @@
     "request": {
       "path": {
         "properties": {
-          "id": { "type": "string", "required": true },
+          "id": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          },
           "acceptOrReject": {
             "type": "string",
             "required": true,
@@ -731,14 +755,22 @@
           "tenantId": {
             "type": "string",
             "required": true,
-            "maxLength": 24
+            "maxLength": 50
           },
-          "orgId": { "type": "string", "required": true }
+          "orgId": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          }
         }
       },
       "query": {
         "properties": {
-          "q": { "type": "string", "required": false },
+          "q": {
+            "type": "string",
+            "required": false,
+            "maxLength": 255
+          },
           "sort": {
             "type": "string",
             "required": false,
@@ -751,7 +783,11 @@
           },
           "offset": { "type": "string", "required": false },
           "limit": { "type": "string", "required": false },
-          "entityId": { "type": "string", "required": true },
+          "entityId": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          },
           "entityType": {
             "type": "string",
             "required": true,
@@ -884,14 +920,22 @@
           "tenantId": {
             "type": "string",
             "required": true,
-            "maxLength": 24
+            "maxLength": 50
           },
-          "orgId": { "type": "string", "required": true }
+          "orgId": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          }
         }
       },
       "query": {
         "properties": {
-          "q": { "type": "string", "required": false },
+          "q": {
+            "type": "string",
+            "required": false,
+            "maxLength": 255
+          },
           "sort": {
             "type": "string",
             "required": false,
@@ -904,7 +948,11 @@
           },
           "offset": { "type": "string", "required": false },
           "limit": { "type": "string", "required": false },
-          "entityId": { "type": "string", "required": true },
+          "entityId": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          },
           "entityType": {
             "type": "string",
             "required": true,

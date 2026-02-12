@@ -80,7 +80,8 @@
           "email": {
             "type": "string",
             "required": true,
-            "format": "email"
+            "format": "email",
+            "maxLength": 255
           },
           "type": {
             "type": "string",
@@ -89,7 +90,8 @@
           },
           "message": {
             "type": ["string", "null"],
-            "required": true
+            "required": true,
+            "maxLength": 255
           }
         },
         "required": true,
@@ -197,7 +199,11 @@
     "request": {
       "query": {
         "properties": {
-          "q": { "type": "string", "required": false },
+          "q": {
+            "type": "string",
+            "required": false,
+            "maxLength": 255
+          },
           "sort": {
             "type": "string",
             "required": false,

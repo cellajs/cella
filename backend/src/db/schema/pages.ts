@@ -24,7 +24,6 @@ export const pagesTable = pgTable(
   'pages',
   {
     ...productEntityColumns('page'),
-    // TODO should we consider restricting all varchars to a certain length for better perf? e.g. name: varchar(255)
     status: varchar({ enum: pageStatusEnum }).notNull().default('unpublished'),
     publicAccess: boolean('public_access').notNull().default(false),
     parentId: varchar().references((): AnyPgColumn => pagesTable.id, {

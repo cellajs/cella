@@ -1,11 +1,25 @@
 import { z } from '@hono/zod-openapi';
 import { attachmentsTable } from '#/db/schema/attachments';
 import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schema';
-import { batchResponseSchema, entityCanSchema, paginationQuerySchema, stxRequestSchema } from '#/schemas';
+import { batchResponseSchema, entityCanSchema, maxLength, paginationQuerySchema, stxRequestSchema } from '#/schemas';
 import { stxBaseSchema } from '#/schemas/stx-base-schema';
 import { mockAttachmentResponse } from '../../../mocks/mock-attachment';
 
-const attachmentInsertSchema = createInsertSchema(attachmentsTable);
+const attachmentInsertSchema = createInsertSchema(attachmentsTable, {
+  id: z.string().max(maxLength.id),
+  name: z.string().max(maxLength.field),
+  filename: z.string().max(maxLength.field),
+  contentType: z.string().max(maxLength.field),
+  size: z.string().max(maxLength.field),
+  organizationId: z.string().max(maxLength.id),
+  createdBy: z.string().max(maxLength.id).nullable(),
+  originalKey: z.string().max(maxLength.url),
+  bucketName: z.string().max(maxLength.field),
+  groupId: z.string().max(maxLength.id).nullable(),
+  convertedContentType: z.string().max(maxLength.field).nullable(),
+  convertedKey: z.string().max(maxLength.url).nullable(),
+  thumbnailKey: z.string().max(maxLength.url).nullable(),
+});
 const attachmentSelectSchema = createSelectSchema(attachmentsTable);
 
 export const attachmentSchema = z
@@ -62,5 +76,5 @@ export const attachmentListQuerySchema = paginationQuerySchema.extend({
 
 /** Query schema for presigned URL endpoint - requires the file key to sign */
 export const presignedUrlKeySchema = z.object({
-  key: z.string(),
+  key: z.string().max(maxLength.url),
 });

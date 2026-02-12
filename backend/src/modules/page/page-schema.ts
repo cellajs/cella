@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { pagesTable } from '#/db/schema/pages';
 import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schema';
-import { batchResponseSchema, paginationQuerySchema, stxRequestSchema } from '#/schemas';
+import { batchResponseSchema, maxLength, paginationQuerySchema, stxRequestSchema } from '#/schemas';
 import { stxBaseSchema } from '#/schemas/stx-base-schema';
 import { mockPageResponse } from '../../../mocks/mock-page';
 
@@ -9,7 +9,12 @@ import { mockPageResponse } from '../../../mocks/mock-page';
 export const pageStatusSchema = z.enum(['unpublished', 'published', 'archived']);
 
 const pageInsertSchema = z.object({
-  ...createInsertSchema(pagesTable).shape,
+  ...createInsertSchema(pagesTable, {
+    name: z.string().max(maxLength.field),
+    description: z.string().max(maxLength.field).nullable(),
+    keywords: z.string().max(maxLength.field),
+    parentId: z.string().max(maxLength.id).nullable(),
+  }).shape,
   status: pageStatusSchema.default('unpublished'),
 });
 const pageSelectSchema = z.object({

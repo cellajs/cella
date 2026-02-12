@@ -27,9 +27,6 @@ export const productEntityTypeSchema = z.enum(appConfig.productEntityTypes);
  * Common properties schemas
  ************************************************************************************************/
 
-/** Schema for a generic name (string) */
-export const nameSchema = z.string();
-
 /** Schema for entity action permissions (`can` object) */
 export const entityCanSchema = z.object({
   create: z.boolean(),
@@ -39,71 +36,71 @@ export const entityCanSchema = z.object({
   search: z.boolean(),
 });
 
-/** Schema for an entity ID (string) */
-export const idSchema = z.string();
-
-/** Schema for a temporary ID (must start with 'temp-') used for optimistic creates */
-export const validTempIdSchema = z.string().regex(/^temp-/, { message: 'ID must start with "temp-"' });
-
-/** Schema for a slug (string) */
-export const slugSchema = z.string();
-
-/** Schema for an image URL (string) */
-export const imageUrlSchema = z.string();
-
-/** Schema for a cookie value (string) */
-export const cookieSchema = z.string();
-
-/** Schema for session cookie */
-export const sessionCookieSchema = z.object({ sessionToken: z.string(), adminUserId: z.string().optional() });
-
-/** Password schema: string - min 8 - max 100 characters */
-export const passwordSchema = z.string().min(8).max(100);
-
-/** Schema for supported languages (enum) */
-export const languageSchema = z.enum(appConfig.languages);
-
 /*************************************************************************************************
  * Common param schemas
  ************************************************************************************************/
 
-// TODO-030 apply regex in other places?
-// TODO-030 is limiting size better done using zod for readability also in openapi?
-/** Tenant ID schema: 1-24 char lowercase alphanumeric */
-export const tenantIdSchema = z
+/** Max length limits for request validation schemas (not applied to response schemas) */
+export const maxLength = {
+  password: 100,
+  id: 50,
+  field: 255,
+  html: 100_000,
+  url: 2048,
+} as const;
+
+/** Schema for an entity ID with max length */
+export const validIdSchema = z.string().max(maxLength.id);
+
+/** Schema for a temporary ID (must start with 'temp-') used for optimistic creates */
+export const validTempIdSchema = z
   .string()
-  .max(24)
-  .regex(/^[a-z0-9]+$/, 'Tenant ID must be lowercase alphanumeric')
-  .transform((v) => v.toLowerCase());
+  .max(maxLength.id)
+  .regex(/^temp-/, { message: 'ID must start with "temp-"' });
+
+/** Schema for a cookie value */
+export const cookieSchema = z.string().max(maxLength.field);
+
+/** Schema for session cookie */
+export const sessionCookieSchema = z.object({
+  sessionToken: z.string().max(maxLength.field),
+  adminUserId: z.string().max(maxLength.id).optional(),
+});
+
+/** Password schema: string - min 8 - max characters */
+export const passwordSchema = z.string().min(8).max(maxLength.password);
+
+/** Schema for supported languages (enum) */
+export const languageSchema = z.enum(appConfig.languages);
 
 /** Schema for entity identifier id */
-export const entityIdParamSchema = z.object({ id: idSchema });
+export const entityIdParamSchema = z.object({ id: validIdSchema });
 
 /** Schema for optional slug query flag — when true, resolve entity by slug instead of ID */
 export const slugQuerySchema = z.object({ slug: booleanTransformSchema.optional() });
 
 /** Schema for tenant-scoped organization id (for getOrganization route) */
 export const tenantOrganizationIdParamSchema = z.object({
-  tenantId: tenantIdSchema,
-  organizationId: idSchema,
+  tenantId: validIdSchema,
+  organizationId: validIdSchema,
 });
 
 /** Schema for tenant-scoped entity id (for organization routes) */
 export const tenantIdParamSchema = z.object({
-  tenantId: tenantIdSchema,
-  id: idSchema,
+  tenantId: validIdSchema,
+  id: validIdSchema,
 });
 
 /** Schema for tenant-only param (no entity id) */
 export const tenantOnlyParamSchema = z.object({
-  tenantId: tenantIdSchema,
+  tenantId: validIdSchema,
 });
 
 /** Schema for an organization identifier orgId */
-export const inOrgParamSchema = z.object({ orgId: idSchema });
+export const inOrgParamSchema = z.object({ orgId: validIdSchema });
 
 /** Schema for entity id within an organization orgId */
-export const idInOrgParamSchema = z.object({ id: idSchema, orgId: idSchema });
+export const idInOrgParamSchema = z.object({ id: validIdSchema, orgId: validIdSchema });
 
 /*************************************************************************************************
  * Tenant-scoped param schemas (for RLS-enabled routes)
@@ -111,22 +108,22 @@ export const idInOrgParamSchema = z.object({ id: idSchema, orgId: idSchema });
 
 /** Schema for tenant-scoped routes: tenantId + orgId */
 export const tenantOrgParamSchema = z.object({
-  tenantId: tenantIdSchema,
-  orgId: idSchema,
+  tenantId: validIdSchema,
+  orgId: validIdSchema,
 });
 
 /** Schema for entity id within tenant + org context */
 export const idInTenantOrgParamSchema = z.object({
-  tenantId: tenantIdSchema,
-  orgId: idSchema,
-  id: idSchema,
+  tenantId: validIdSchema,
+  orgId: validIdSchema,
+  id: validIdSchema,
 });
 
 /** Schema for user id within tenant + org context (for getUser route) */
 export const userIdInTenantOrgParamSchema = z.object({
-  tenantId: tenantIdSchema,
-  orgId: idSchema,
-  userId: idSchema,
+  tenantId: validIdSchema,
+  orgId: validIdSchema,
+  userId: validIdSchema,
 });
 
 /*************************************************************************************************
@@ -134,7 +131,7 @@ export const userIdInTenantOrgParamSchema = z.object({
  ************************************************************************************************/
 
 /** Schema for id that must be a specific entity type */
-export const entityWithTypeQuerySchema = z.object({ entityId: idSchema, entityType: contextEntityTypeSchema });
+export const entityWithTypeQuerySchema = z.object({ entityId: validIdSchema, entityType: contextEntityTypeSchema });
 
 const offsetRefine = (value: number) => value >= 0;
 const limitMax = 1000;
@@ -142,7 +139,7 @@ const limitRefine = (value: number) => value > 0 && value <= limitMax;
 
 /** Schema for pagination query parameters */
 export const paginationQuerySchema = z.object({
-  q: z.string().optional(), // Optional search query
+  q: z.string().max(maxLength.field).optional(), // Optional search query
   sort: z.enum(['createdAt']).default('createdAt').optional(), // Sorting field
   order: z.enum(['asc', 'desc']).default('asc').optional(), // Sorting order
   // Pagination offset
@@ -250,33 +247,35 @@ export const noDuplicateSlugsRefine = (items: { slug: string }[]) =>
 /** Schema for a valid HTTPS URL */
 export const validUrlSchema = z
   .string()
+  .max(maxLength.url)
   .superRefine(refineWithType((url: string) => url.startsWith('https'), 'invalid_url'))
   .transform((str) => str.toLowerCase().trim());
 
-/** Schema for a valid name: string between 2 and 100 characters, allowing specific characters */
+/** Schema for a valid name: string between 2 and max field length, allowing specific characters */
 export const validNameSchema = z
   .string()
-  .min(2, t('error:invalid_between_num', { name: 'Name', min: 2, max: 100 }))
-  .max(100, t('error:invalid_between_num', { name: 'Name', min: 2, max: 100 }))
+  .min(2, t('error:invalid_between_num', { name: 'Name', min: 2, max: maxLength.field }))
+  .max(maxLength.field, t('error:invalid_between_num', { name: 'Name', min: 2, max: maxLength.field }))
   .superRefine(refineWithType((s) => /^[\p{L}\d\-., '&()]+$/u.test(s), 'invalid_name'));
 
 /** Schema for a valid email */
 export const validEmailSchema = z
   .email({ message: t('error:invalid_email') })
-  .min(4, t('error:invalid_between_num', { name: 'Email', min: 4, max: 100 }))
-  .max(100, t('error:invalid_between_num', { name: 'Email', min: 4, max: 100 }))
+  .min(4, t('error:invalid_between_num', { name: 'Email', min: 4, max: maxLength.field }))
+  .max(maxLength.field, t('error:invalid_between_num', { name: 'Email', min: 4, max: maxLength.field }))
   .transform((str) => str.toLowerCase().trim());
 
-/** Schema for a valid slug: string between 2 and 100 characters, allowing alphanumeric and hyphens */
+/** Schema for a valid slug: string between 2 and max field length, allowing alphanumeric and hyphens */
 export const validSlugSchema = z
   .string()
-  .min(2, t('error:invalid_between_num', { name: 'Slug', min: 2, max: 100 }))
-  .max(100, t('error:invalid_between_num', { name: 'Slug', min: 2, max: 100 }))
+  .min(2, t('error:invalid_between_num', { name: 'Slug', min: 2, max: maxLength.field }))
+  .max(maxLength.field, t('error:invalid_between_num', { name: 'Slug', min: 2, max: maxLength.field }))
   .superRefine(refineWithType((s) => /^[a-z0-9]+(-{0,3}[a-z0-9]+)*$/i.test(s), 'invalid_slug'))
   .transform((str) => str.toLowerCase().trim());
 
 export const validCDNUrlSchema = z
   .string()
+  .max(maxLength.url)
   .superRefine(refineWithType((url: string) => isCDNUrl(url), 'invalid_cdn_url'))
   .transform((str) => str.trim());
 
@@ -285,8 +284,8 @@ export const validDomainsSchema = z
   .array(
     z
       .string()
-      .min(4, t('error:invalid_between_num', { name: 'Domain', min: 4, max: 100 }))
-      .max(100, t('error:invalid_between_num', { name: 'Domain', min: 4, max: 100 }))
+      .min(4, t('error:invalid_between_num', { name: 'Domain', min: 4, max: maxLength.field }))
+      .max(maxLength.field, t('error:invalid_between_num', { name: 'Domain', min: 4, max: maxLength.field }))
       .superRefine(refineWithType((s) => /^[a-z0-9].*[a-z0-9]$/i.test(s) && s.includes('.'), 'invalid_domain'))
       .transform((str) => str.toLowerCase().trim()),
   )

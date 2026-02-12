@@ -16,10 +16,10 @@ import {
   entityWithTypeQuerySchema,
   errorResponseRefs,
   idInTenantOrgParamSchema,
-  idSchema,
   idsBodySchema,
   paginationSchema,
   tenantOrgParamSchema,
+  validIdSchema,
 } from '#/schemas';
 import { contextEntityBaseSchema } from '#/schemas/entity-base';
 import { mockContextEntityBase } from '../../../mocks/mock-entity-base';
@@ -133,7 +133,7 @@ const membershipRoutes = {
     summary: 'Respond to membership invitation',
     description: 'Accepting activates the associated membership. Rejecting simply removes the invitation token.',
     request: {
-      params: z.object({ id: idSchema, acceptOrReject: z.enum(['accept', 'reject']) }),
+      params: z.object({ id: validIdSchema, acceptOrReject: z.enum(['accept', 'reject']) }),
     },
     responses: {
       200: {

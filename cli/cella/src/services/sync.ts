@@ -25,7 +25,7 @@ import { runMergeEngine } from './merge-engine';
  * Conflicted files are left unstaged for IDE resolution.
  */
 export async function runSync(config: RuntimeConfig): Promise<MergeResult> {
-  createSpinner('starting sync...');
+  createSpinner(config.hard ? 'starting hard sync...' : 'starting sync...');
 
   const result = await runMergeEngine(config, {
     apply: true,

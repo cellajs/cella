@@ -71,11 +71,7 @@
           "type": ["string", "null"],
           "required": true
         },
-        "tenantId": {
-          "type": "string",
-          "required": true,
-          "maxLength": 24
-        },
+        "tenantId": { "type": "string", "required": true },
         "entityType": {
           "type": "string",
           "required": true,

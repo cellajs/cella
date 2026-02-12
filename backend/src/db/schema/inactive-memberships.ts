@@ -1,7 +1,6 @@
-import { sql } from 'drizzle-orm';
-import { foreignKey, index, pgPolicy, pgTable, timestamp, unique, varchar } from 'drizzle-orm/pg-core';
+import { foreignKey, index, pgTable, timestamp, unique, varchar } from 'drizzle-orm/pg-core';
 import { appConfig, roles } from 'shared';
-import { isAuthenticated, membershipExists, tenantMatch } from '#/db/rls-helpers';
+import { membershipCrudPolicies } from '#/db/rls-helpers';
 import { organizationsTable } from '#/db/schema/organizations';
 import { tenantsTable } from '#/db/schema/tenants';
 import { usersTable } from '#/db/schema/users';
@@ -54,23 +53,7 @@ export const inactiveMembershipsTable = pgTable(
       columns: [table.tenantId, table.organizationId],
       foreignColumns: [organizationsTable.tenantId, organizationsTable.id],
     }).onDelete('cascade'),
-    pgPolicy('inactive_memberships_select_policy', {
-      for: 'select',
-      using: sql`${tenantMatch(table)} AND ${isAuthenticated} AND ${membershipExists(table)}`,
-    }),
-    pgPolicy('inactive_memberships_insert_policy', {
-      for: 'insert',
-      withCheck: sql`${tenantMatch(table)} AND ${isAuthenticated} AND ${membershipExists(table)}`,
-    }),
-    pgPolicy('inactive_memberships_update_policy', {
-      for: 'update',
-      using: sql`${tenantMatch(table)} AND ${isAuthenticated} AND ${membershipExists(table)}`,
-      withCheck: sql`${tenantMatch(table)} AND ${isAuthenticated} AND ${membershipExists(table)}`,
-    }),
-    pgPolicy('inactive_memberships_delete_policy', {
-      for: 'delete',
-      using: sql`${tenantMatch(table)} AND ${isAuthenticated} AND ${membershipExists(table)}`,
-    }),
+    ...membershipCrudPolicies('inactive_memberships', table),
   ],
 );
 

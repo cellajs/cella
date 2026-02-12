@@ -345,7 +345,11 @@
     "request": {
       "query": {
         "properties": {
-          "q": { "type": "string", "required": false },
+          "q": {
+            "type": "string",
+            "required": false,
+            "maxLength": 255
+          },
           "sort": {
             "type": "string",
             "required": false,
@@ -368,7 +372,11 @@
             "required": false,
             "enum": ["organization"]
           },
-          "targetEntityId": { "type": "string", "required": false }
+          "targetEntityId": {
+            "type": "string",
+            "required": false,
+            "maxLength": 50
+          }
         }
       }
     }
@@ -601,7 +609,11 @@
     "request": {
       "path": {
         "properties": {
-          "id": { "type": "string", "required": true }
+          "id": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          }
         }
       },
       "body": {
@@ -609,19 +621,20 @@
         "properties": {
           "bannerUrl": {
             "type": ["string", "null"],
-            "required": false
+            "required": false,
+            "maxLength": 2048
           },
           "firstName": {
             "type": ["string", "null"],
             "required": false,
             "minLength": 2,
-            "maxLength": 100
+            "maxLength": 255
           },
           "lastName": {
             "type": ["string", "null"],
             "required": false,
             "minLength": 2,
-            "maxLength": 100
+            "maxLength": 255
           },
           "language": {
             "type": "string",
@@ -631,13 +644,14 @@
           "newsletter": { "type": "boolean", "required": false },
           "thumbnailUrl": {
             "type": ["string", "null"],
-            "required": false
+            "required": false,
+            "maxLength": 2048
           },
           "slug": {
             "type": "string",
             "required": false,
             "minLength": 2,
-            "maxLength": 100
+            "maxLength": 255
           }
         },
         "required": false,
@@ -751,7 +765,8 @@
           "organizationIds": {
             "type": "array",
             "required": true,
-            "itemType": "string"
+            "itemType": "string",
+            "maxLength": 50
           },
           "roles": {
             "type": "array",
@@ -760,8 +775,16 @@
             "itemType": "string",
             "enum": ["admin", "member"]
           },
-          "subject": { "type": "string", "required": true },
-          "content": { "type": "string", "required": true }
+          "subject": {
+            "type": "string",
+            "required": true,
+            "maxLength": 255
+          },
+          "content": {
+            "type": "string",
+            "required": true,
+            "maxLength": 100000
+          }
         },
         "required": true,
         "contentType": "application/json"

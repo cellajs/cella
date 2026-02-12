@@ -298,9 +298,7 @@
             ]
           },
           "tenantId": {
-            "type": "string",
-            "maxLength": 24,
-            "pattern": "^[a-z0-9]+$"
+            "type": "string"
           },
           "entityType": {
             "type": "string",
@@ -2464,7 +2462,8 @@
         "parameters": [
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 255
             },
             "required": false,
             "name": "q",
@@ -2896,7 +2895,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 50
             },
             "required": true,
             "name": "id",
@@ -2986,7 +2986,8 @@
             "headers": {
               "Set-Cookie": {
                 "schema": {
-                  "type": "string"
+                  "type": "string",
+                  "maxLength": 255
                 },
                 "required": true
               }
@@ -3366,7 +3367,8 @@
             "headers": {
               "Set-Cookie": {
                 "schema": {
-                  "type": "string"
+                  "type": "string",
+                  "maxLength": 255
                 },
                 "required": true
               }
@@ -3437,7 +3439,8 @@
             "headers": {
               "Set-Cookie": {
                 "schema": {
-                  "type": "string"
+                  "type": "string",
+                  "maxLength": 255
                 },
                 "required": true
               }
@@ -3530,7 +3533,8 @@
             "headers": {
               "Set-Cookie": {
                 "schema": {
-                  "type": "string"
+                  "type": "string",
+                  "maxLength": 255
                 },
                 "required": true
               }
@@ -3763,7 +3767,8 @@
             "headers": {
               "Set-Cookie": {
                 "schema": {
-                  "type": "string"
+                  "type": "string",
+                  "maxLength": 255
                 },
                 "required": false
               }
@@ -3841,7 +3846,8 @@
                     "type": "string"
                   },
                   "nameOnDevice": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255
                   }
                 },
                 "required": [
@@ -3959,7 +3965,8 @@
         "parameters": [
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 50
             },
             "required": true,
             "name": "id",
@@ -4020,7 +4027,8 @@
                     ]
                   },
                   "email": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255
                   }
                 },
                 "required": [
@@ -4123,7 +4131,8 @@
                     ]
                   },
                   "email": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255
                   }
                 },
                 "required": [
@@ -4143,7 +4152,8 @@
             "headers": {
               "Set-Cookie": {
                 "schema": {
-                  "type": "string"
+                  "type": "string",
+                  "maxLength": 255
                 },
                 "required": true
               }
@@ -4689,7 +4699,8 @@
                     "type": [
                       "string",
                       "null"
-                    ]
+                    ],
+                    "maxLength": 2048
                   },
                   "firstName": {
                     "type": [
@@ -4697,7 +4708,7 @@
                       "null"
                     ],
                     "minLength": 2,
-                    "maxLength": 100
+                    "maxLength": 255
                   },
                   "lastName": {
                     "type": [
@@ -4705,7 +4716,7 @@
                       "null"
                     ],
                     "minLength": 2,
-                    "maxLength": 100
+                    "maxLength": 255
                   },
                   "language": {
                     "type": "string",
@@ -4721,12 +4732,13 @@
                     "type": [
                       "string",
                       "null"
-                    ]
+                    ],
+                    "maxLength": 2048
                   },
                   "slug": {
                     "type": "string",
                     "minLength": 2,
-                    "maxLength": 100
+                    "maxLength": 255
                   },
                   "userFlags": {
                     "type": "object",
@@ -5263,7 +5275,8 @@
         "parameters": [
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 50
             },
             "required": true,
             "name": "entityId",
@@ -5920,7 +5933,8 @@
         "parameters": [
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 255
             },
             "required": false,
             "name": "q",
@@ -5996,7 +6010,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 50
             },
             "required": false,
             "name": "targetEntityId",
@@ -6293,7 +6308,8 @@
         "parameters": [
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 50
             },
             "required": true,
             "name": "id",
@@ -6310,7 +6326,8 @@
                     "type": [
                       "string",
                       "null"
-                    ]
+                    ],
+                    "maxLength": 2048
                   },
                   "firstName": {
                     "type": [
@@ -6318,7 +6335,7 @@
                       "null"
                     ],
                     "minLength": 2,
-                    "maxLength": 100
+                    "maxLength": 255
                   },
                   "lastName": {
                     "type": [
@@ -6326,7 +6343,7 @@
                       "null"
                     ],
                     "minLength": 2,
-                    "maxLength": 100
+                    "maxLength": 255
                   },
                   "language": {
                     "type": "string",
@@ -6342,12 +6359,13 @@
                     "type": [
                       "string",
                       "null"
-                    ]
+                    ],
+                    "maxLength": 2048
                   },
                   "slug": {
                     "type": "string",
                     "minLength": 2,
-                    "maxLength": 100
+                    "maxLength": 255
                   }
                 }
               }
@@ -6497,7 +6515,8 @@
                   "organizationIds": {
                     "type": "array",
                     "items": {
-                      "type": "string"
+                      "type": "string",
+                      "maxLength": 50
                     }
                   },
                   "roles": {
@@ -6512,10 +6531,12 @@
                     "minItems": 1
                   },
                   "subject": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255
                   },
                   "content": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 100000
                   }
                 },
                 "required": [
@@ -6964,6 +6985,7 @@
                 "properties": {
                   "email": {
                     "type": "string",
+                    "maxLength": 255,
                     "format": "email"
                   },
                   "type": {
@@ -6978,7 +7000,8 @@
                     "type": [
                       "string",
                       "null"
-                    ]
+                    ],
+                    "maxLength": 255
                   }
                 },
                 "required": [
@@ -7047,7 +7070,8 @@
         "parameters": [
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 255
             },
             "required": false,
             "name": "q",
@@ -7827,8 +7851,7 @@
           {
             "schema": {
               "type": "string",
-              "maxLength": 24,
-              "pattern": "^[a-z0-9]+$"
+              "maxLength": 50
             },
             "required": true,
             "name": "tenantId",
@@ -7846,17 +7869,18 @@
                   "properties": {
                     "id": {
                       "type": "string",
+                      "maxLength": 50,
                       "pattern": "^temp-"
                     },
                     "name": {
                       "type": "string",
                       "minLength": 2,
-                      "maxLength": 100
+                      "maxLength": 255
                     },
                     "slug": {
                       "type": "string",
                       "minLength": 2,
-                      "maxLength": 100
+                      "maxLength": 255
                     }
                   },
                   "required": [
@@ -8164,8 +8188,7 @@
           {
             "schema": {
               "type": "string",
-              "maxLength": 24,
-              "pattern": "^[a-z0-9]+$"
+              "maxLength": 50
             },
             "required": true,
             "name": "tenantId",
@@ -8273,7 +8296,8 @@
         "parameters": [
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 255
             },
             "required": false,
             "name": "q",
@@ -8324,7 +8348,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 50
             },
             "required": false,
             "name": "userId",
@@ -8557,8 +8582,7 @@
           {
             "schema": {
               "type": "string",
-              "maxLength": 24,
-              "pattern": "^[a-z0-9]+$"
+              "maxLength": 50
             },
             "required": true,
             "name": "tenantId",
@@ -8566,7 +8590,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 50
             },
             "required": true,
             "name": "organizationId",
@@ -8702,8 +8727,7 @@
           {
             "schema": {
               "type": "string",
-              "maxLength": 24,
-              "pattern": "^[a-z0-9]+$"
+              "maxLength": 50
             },
             "required": true,
             "name": "tenantId",
@@ -8711,7 +8735,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 50
             },
             "required": true,
             "name": "id",
@@ -8727,12 +8752,12 @@
                   "slug": {
                     "type": "string",
                     "minLength": 2,
-                    "maxLength": 100
+                    "maxLength": 255
                   },
                   "name": {
                     "type": "string",
                     "minLength": 2,
-                    "maxLength": 100
+                    "maxLength": 255
                   },
                   "shortName": {
                     "type": [
@@ -8740,19 +8765,21 @@
                       "null"
                     ],
                     "minLength": 2,
-                    "maxLength": 100
+                    "maxLength": 255
                   },
                   "country": {
                     "type": [
                       "string",
                       "null"
-                    ]
+                    ],
+                    "maxLength": 255
                   },
                   "timezone": {
                     "type": [
                       "string",
                       "null"
-                    ]
+                    ],
+                    "maxLength": 255
                   },
                   "defaultLanguage": {
                     "type": "string",
@@ -8776,51 +8803,58 @@
                     "type": [
                       "string",
                       "null"
-                    ]
+                    ],
+                    "maxLength": 255
                   },
                   "emailDomains": {
                     "type": "array",
                     "items": {
                       "type": "string",
                       "minLength": 4,
-                      "maxLength": 100
+                      "maxLength": 255
                     }
                   },
                   "color": {
                     "type": [
                       "string",
                       "null"
-                    ]
+                    ],
+                    "maxLength": 255
                   },
                   "thumbnailUrl": {
                     "type": [
                       "string",
                       "null"
-                    ]
+                    ],
+                    "maxLength": 2048
                   },
                   "logoUrl": {
                     "type": [
                       "string",
                       "null"
-                    ]
+                    ],
+                    "maxLength": 2048
                   },
                   "bannerUrl": {
                     "type": [
                       "string",
                       "null"
-                    ]
+                    ],
+                    "maxLength": 2048
                   },
                   "websiteUrl": {
                     "type": [
                       "string",
                       "null"
-                    ]
+                    ],
+                    "maxLength": 2048
                   },
                   "welcomeText": {
                     "type": [
                       "string",
                       "null"
-                    ]
+                    ],
+                    "maxLength": 100000
                   },
                   "authStrategies": {
                     "type": "array",
@@ -8952,7 +8986,8 @@
         "parameters": [
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 255
             },
             "required": false,
             "name": "q",
@@ -9205,8 +9240,7 @@
           {
             "schema": {
               "type": "string",
-              "maxLength": 24,
-              "pattern": "^[a-z0-9]+$"
+              "maxLength": 50
             },
             "required": true,
             "name": "tenantId",
@@ -9223,13 +9257,15 @@
                   "type": "object",
                   "properties": {
                     "name": {
-                      "type": "string"
+                      "type": "string",
+                      "maxLength": 255
                     },
                     "stx": {
                       "$ref": "#/components/schemas/StxRequest"
                     }
                   },
                   "required": [
+                    "name",
                     "stx"
                   ]
                 },
@@ -9456,8 +9492,7 @@
           {
             "schema": {
               "type": "string",
-              "maxLength": 24,
-              "pattern": "^[a-z0-9]+$"
+              "maxLength": 50
             },
             "required": true,
             "name": "tenantId",
@@ -9533,8 +9568,7 @@
           {
             "schema": {
               "type": "string",
-              "maxLength": 24,
-              "pattern": "^[a-z0-9]+$"
+              "maxLength": 50
             },
             "required": true,
             "name": "tenantId",
@@ -9542,7 +9576,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 50
             },
             "required": true,
             "name": "id",
@@ -9557,16 +9592,19 @@
                 "type": "object",
                 "properties": {
                   "name": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255
                   },
                   "description": {
                     "type": [
                       "string",
                       "null"
-                    ]
+                    ],
+                    "maxLength": 255
                   },
                   "keywords": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255
                   },
                   "displayOrder": {
                     "type": "number",
@@ -9586,7 +9624,8 @@
                     "type": [
                       "string",
                       "null"
-                    ]
+                    ],
+                    "maxLength": 50
                   },
                   "stx": {
                     "$ref": "#/components/schemas/StxRequest"
@@ -9673,8 +9712,7 @@
           {
             "schema": {
               "type": "string",
-              "maxLength": 24,
-              "pattern": "^[a-z0-9]+$"
+              "maxLength": 50
             },
             "required": true,
             "name": "tenantId",
@@ -9682,7 +9720,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 50
             },
             "required": true,
             "name": "orgId",
@@ -9690,7 +9729,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 255
             },
             "required": false,
             "name": "q",
@@ -9766,7 +9806,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 50
             },
             "required": false,
             "name": "targetEntityId",
@@ -9968,8 +10009,7 @@
           {
             "schema": {
               "type": "string",
-              "maxLength": 24,
-              "pattern": "^[a-z0-9]+$"
+              "maxLength": 50
             },
             "required": true,
             "name": "tenantId",
@@ -9977,7 +10017,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 50
             },
             "required": true,
             "name": "orgId",
@@ -9985,7 +10026,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 50
             },
             "required": true,
             "name": "userId",
@@ -10083,8 +10125,7 @@
           {
             "schema": {
               "type": "string",
-              "maxLength": 24,
-              "pattern": "^[a-z0-9]+$"
+              "maxLength": 50
             },
             "required": true,
             "name": "tenantId",
@@ -10092,7 +10133,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 50
             },
             "required": true,
             "name": "orgId",
@@ -10100,7 +10142,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 255
             },
             "required": false,
             "name": "q",
@@ -10288,8 +10331,7 @@
           {
             "schema": {
               "type": "string",
-              "maxLength": 24,
-              "pattern": "^[a-z0-9]+$"
+              "maxLength": 50
             },
             "required": true,
             "name": "tenantId",
@@ -10297,7 +10339,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 50
             },
             "required": true,
             "name": "orgId",
@@ -10314,34 +10357,43 @@
                   "type": "object",
                   "properties": {
                     "id": {
-                      "type": "string"
+                      "type": "string",
+                      "maxLength": 50
                     },
                     "name": {
-                      "type": "string"
+                      "type": "string",
+                      "maxLength": 255
                     },
                     "filename": {
-                      "type": "string"
+                      "type": "string",
+                      "maxLength": 255
                     },
                     "contentType": {
-                      "type": "string"
+                      "type": "string",
+                      "maxLength": 255
                     },
                     "size": {
-                      "type": "string"
+                      "type": "string",
+                      "maxLength": 255
                     },
                     "organizationId": {
-                      "type": "string"
+                      "type": "string",
+                      "maxLength": 50
                     },
                     "createdBy": {
                       "type": [
                         "string",
                         "null"
-                      ]
+                      ],
+                      "maxLength": 50
                     },
                     "originalKey": {
-                      "type": "string"
+                      "type": "string",
+                      "maxLength": 2048
                     },
                     "bucketName": {
-                      "type": "string"
+                      "type": "string",
+                      "maxLength": 255
                     },
                     "public": {
                       "type": "boolean"
@@ -10350,37 +10402,48 @@
                       "type": [
                         "string",
                         "null"
-                      ]
+                      ],
+                      "maxLength": 50
                     },
                     "convertedContentType": {
                       "type": [
                         "string",
                         "null"
-                      ]
+                      ],
+                      "maxLength": 255
                     },
                     "convertedKey": {
                       "type": [
                         "string",
                         "null"
-                      ]
+                      ],
+                      "maxLength": 2048
                     },
                     "thumbnailKey": {
                       "type": [
                         "string",
                         "null"
-                      ]
+                      ],
+                      "maxLength": 2048
                     },
                     "stx": {
                       "$ref": "#/components/schemas/StxRequest"
                     }
                   },
                   "required": [
+                    "id",
+                    "name",
                     "filename",
                     "contentType",
                     "size",
                     "organizationId",
+                    "createdBy",
                     "originalKey",
                     "bucketName",
+                    "groupId",
+                    "convertedContentType",
+                    "convertedKey",
+                    "thumbnailKey",
                     "stx"
                   ]
                 },
@@ -10635,8 +10698,7 @@
           {
             "schema": {
               "type": "string",
-              "maxLength": 24,
-              "pattern": "^[a-z0-9]+$"
+              "maxLength": 50
             },
             "required": true,
             "name": "tenantId",
@@ -10644,7 +10706,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 50
             },
             "required": true,
             "name": "orgId",
@@ -10771,8 +10834,7 @@
           {
             "schema": {
               "type": "string",
-              "maxLength": 24,
-              "pattern": "^[a-z0-9]+$"
+              "maxLength": 50
             },
             "required": true,
             "name": "tenantId",
@@ -10780,7 +10842,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 50
             },
             "required": true,
             "name": "orgId",
@@ -10788,7 +10851,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 2048
             },
             "required": true,
             "name": "key",
@@ -10850,8 +10914,7 @@
           {
             "schema": {
               "type": "string",
-              "maxLength": 24,
-              "pattern": "^[a-z0-9]+$"
+              "maxLength": 50
             },
             "required": true,
             "name": "tenantId",
@@ -10859,7 +10922,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 50
             },
             "required": true,
             "name": "orgId",
@@ -10867,7 +10931,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 50
             },
             "required": true,
             "name": "id",
@@ -10954,8 +11019,7 @@
           {
             "schema": {
               "type": "string",
-              "maxLength": 24,
-              "pattern": "^[a-z0-9]+$"
+              "maxLength": 50
             },
             "required": true,
             "name": "tenantId",
@@ -10963,7 +11027,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 50
             },
             "required": true,
             "name": "orgId",
@@ -10971,7 +11036,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 50
             },
             "required": true,
             "name": "id",
@@ -10986,10 +11052,12 @@
                 "type": "object",
                 "properties": {
                   "name": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255
                   },
                   "originalKey": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 2048
                   },
                   "stx": {
                     "$ref": "#/components/schemas/StxRequest"
@@ -11079,7 +11147,8 @@
         "parameters": [
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 50
             },
             "required": true,
             "name": "id",
@@ -11132,8 +11201,7 @@
           {
             "schema": {
               "type": "string",
-              "maxLength": 24,
-              "pattern": "^[a-z0-9]+$"
+              "maxLength": 50
             },
             "required": true,
             "name": "tenantId",
@@ -11141,7 +11209,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 50
             },
             "required": true,
             "name": "orgId",
@@ -11149,7 +11218,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 50
             },
             "required": true,
             "name": "entityId",
@@ -11179,7 +11249,7 @@
                     "items": {
                       "type": "string",
                       "minLength": 4,
-                      "maxLength": 100,
+                      "maxLength": 255,
                       "format": "email"
                     },
                     "minItems": 1,
@@ -11302,8 +11372,7 @@
           {
             "schema": {
               "type": "string",
-              "maxLength": 24,
-              "pattern": "^[a-z0-9]+$"
+              "maxLength": 50
             },
             "required": true,
             "name": "tenantId",
@@ -11311,7 +11380,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 50
             },
             "required": true,
             "name": "orgId",
@@ -11319,7 +11389,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 50
             },
             "required": true,
             "name": "entityId",
@@ -11440,8 +11511,7 @@
           {
             "schema": {
               "type": "string",
-              "maxLength": 24,
-              "pattern": "^[a-z0-9]+$"
+              "maxLength": 50
             },
             "required": true,
             "name": "tenantId",
@@ -11449,7 +11519,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 50
             },
             "required": true,
             "name": "orgId",
@@ -11457,7 +11528,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 50
             },
             "required": true,
             "name": "id",
@@ -11556,7 +11628,8 @@
         "parameters": [
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 50
             },
             "required": true,
             "name": "id",
@@ -11640,8 +11713,7 @@
           {
             "schema": {
               "type": "string",
-              "maxLength": 24,
-              "pattern": "^[a-z0-9]+$"
+              "maxLength": 50
             },
             "required": true,
             "name": "tenantId",
@@ -11649,7 +11721,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 50
             },
             "required": true,
             "name": "orgId",
@@ -11657,7 +11730,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 255
             },
             "required": false,
             "name": "q",
@@ -11711,7 +11785,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 50
             },
             "required": true,
             "name": "entityId",
@@ -11998,8 +12073,7 @@
           {
             "schema": {
               "type": "string",
-              "maxLength": 24,
-              "pattern": "^[a-z0-9]+$"
+              "maxLength": 50
             },
             "required": true,
             "name": "tenantId",
@@ -12007,7 +12081,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 50
             },
             "required": true,
             "name": "orgId",
@@ -12015,7 +12090,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 255
             },
             "required": false,
             "name": "q",
@@ -12064,7 +12140,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 50
             },
             "required": true,
             "name": "entityId",

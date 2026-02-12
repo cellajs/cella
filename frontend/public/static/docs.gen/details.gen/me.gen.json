@@ -314,19 +314,20 @@
         "properties": {
           "bannerUrl": {
             "type": ["string", "null"],
-            "required": false
+            "required": false,
+            "maxLength": 2048
           },
           "firstName": {
             "type": ["string", "null"],
             "required": false,
             "minLength": 2,
-            "maxLength": 100
+            "maxLength": 255
           },
           "lastName": {
             "type": ["string", "null"],
             "required": false,
             "minLength": 2,
-            "maxLength": 100
+            "maxLength": 255
           },
           "language": {
             "type": "string",
@@ -336,13 +337,14 @@
           "newsletter": { "type": "boolean", "required": false },
           "thumbnailUrl": {
             "type": ["string", "null"],
-            "required": false
+            "required": false,
+            "maxLength": 2048
           },
           "slug": {
             "type": "string",
             "required": false,
             "minLength": 2,
-            "maxLength": 100
+            "maxLength": 255
           },
           "userFlags": {
             "type": "object",
@@ -754,11 +756,7 @@
                         "type": ["string", "null"],
                         "required": true
                       },
-                      "tenantId": {
-                        "type": "string",
-                        "required": true,
-                        "maxLength": 24
-                      },
+                      "tenantId": { "type": "string", "required": true },
                       "entityType": {
                         "type": "string",
                         "required": true,
@@ -1041,7 +1039,11 @@
     "request": {
       "query": {
         "properties": {
-          "entityId": { "type": "string", "required": true },
+          "entityId": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          },
           "entityType": {
             "type": "string",
             "required": true,

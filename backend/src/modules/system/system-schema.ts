@@ -3,6 +3,7 @@ import { roles } from 'shared';
 import { systemRolesTable } from '#/db/schema/system-roles';
 import { createSelectSchema } from '#/db/utils/drizzle-schema';
 import { userSchema } from '#/modules/user/user-schema';
+import { maxLength } from '#/schemas';
 import { mockSystemRoleBase, mockSystemRoleResponse } from '../../../mocks/mock-system';
 
 export const inviteBodySchema = z.object({
@@ -10,10 +11,10 @@ export const inviteBodySchema = z.object({
 });
 
 export const sendNewsletterBodySchema = z.object({
-  organizationIds: z.array(z.string()),
+  organizationIds: z.array(z.string().max(maxLength.id)),
   roles: z.array(z.enum(roles.all)).min(1, { message: 'Role selection is required' }),
-  subject: z.string(),
-  content: z.string(),
+  subject: z.string().max(maxLength.field),
+  content: z.string().max(maxLength.html),
 });
 
 export const systemRoleSchema = z

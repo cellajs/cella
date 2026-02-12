@@ -171,7 +171,11 @@
     "request": {
       "query": {
         "properties": {
-          "q": { "type": "string", "required": false },
+          "q": {
+            "type": "string",
+            "required": false,
+            "maxLength": 255
+          },
           "sort": {
             "type": "string",
             "required": false,
@@ -658,7 +662,7 @@
           "tenantId": {
             "type": "string",
             "required": true,
-            "maxLength": 24
+            "maxLength": 50
           }
         }
       },
@@ -669,7 +673,11 @@
           "type": "object",
           "required": true,
           "properties": {
-            "name": { "type": "string", "required": false },
+            "name": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
+            },
             "stx": {
               "type": "object",
               "required": true,
@@ -750,7 +758,7 @@
           "tenantId": {
             "type": "string",
             "required": true,
-            "maxLength": 24
+            "maxLength": 50
           }
         }
       },
@@ -908,20 +916,33 @@
           "tenantId": {
             "type": "string",
             "required": true,
-            "maxLength": 24
+            "maxLength": 50
           },
-          "id": { "type": "string", "required": true }
+          "id": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          }
         }
       },
       "body": {
         "type": "object",
         "properties": {
-          "name": { "type": "string", "required": false },
+          "name": {
+            "type": "string",
+            "required": false,
+            "maxLength": 255
+          },
           "description": {
             "type": ["string", "null"],
-            "required": false
+            "required": false,
+            "maxLength": 255
           },
-          "keywords": { "type": "string", "required": false },
+          "keywords": {
+            "type": "string",
+            "required": false,
+            "maxLength": 255
+          },
           "displayOrder": {
             "type": "number",
             "required": false,
@@ -935,7 +956,8 @@
           },
           "parentId": {
             "type": ["string", "null"],
-            "required": false
+            "required": false,
+            "maxLength": 50
           },
           "stx": {
             "type": "object",

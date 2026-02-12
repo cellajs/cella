@@ -9,7 +9,7 @@ import {
   passkeySchema,
   passkeyVerificationBodySchema,
 } from '#/modules/auth/passkeys/passkeys-schema';
-import { cookieSchema, errorResponseRefs, idSchema } from '#/schemas';
+import { cookieSchema, errorResponseRefs, validIdSchema } from '#/schemas';
 import { mockPasskeyChallengeResponse, mockPasskeyResponse } from '../../../../mocks/mock-auth';
 
 const authPasskeysRoutes = {
@@ -76,7 +76,7 @@ const authPasskeysRoutes = {
     tags: ['auth'],
     summary: 'Delete passkey',
     description: 'Delete a passkey by id from the *current user*.',
-    request: { params: z.object({ id: idSchema }) },
+    request: { params: z.object({ id: validIdSchema }) },
     responses: {
       204: {
         description: 'Passkey deleted',

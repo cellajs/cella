@@ -15,10 +15,10 @@ import {
   batchResponseSchema,
   errorResponseRefs,
   idInTenantOrgParamSchema,
-  idSchema,
   idsWithStxBodySchema,
   paginationSchema,
   tenantOrgParamSchema,
+  validIdSchema,
 } from '#/schemas';
 import {
   mockAttachmentResponse,
@@ -181,7 +181,7 @@ const attachmentRoutes = {
     tags: ['attachments'],
     summary: 'Redirect to attachment',
     description: "Redirects to the file's public or presigned URL, depending on storage visibility.",
-    request: { params: z.object({ id: idSchema }) },
+    request: { params: z.object({ id: validIdSchema }) },
     responses: {
       200: { description: 'Success' },
       ...errorResponseRefs,

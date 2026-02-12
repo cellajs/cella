@@ -5,7 +5,7 @@ import { authGuard, publicGuard, sysAdminGuard } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { emailEnumLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { emailBodySchema, tokenWithDataSchema } from '#/modules/auth/general/general-schema';
-import { cookieSchema, emailOrTokenIdQuerySchema, errorResponseRefs, idSchema, locationSchema } from '#/schemas';
+import { cookieSchema, emailOrTokenIdQuerySchema, errorResponseRefs, locationSchema, validIdSchema } from '#/schemas';
 import { mockTokenDataResponse } from '../../../../mocks/mock-auth';
 
 const authGeneralRoutes = {
@@ -137,7 +137,7 @@ const authGeneralRoutes = {
     description:
       'Get basic token data from single-use token session, It returns basic data if the session is still valid.',
     request: {
-      params: z.object({ type: z.enum(appConfig.tokenTypes), id: idSchema }),
+      params: z.object({ type: z.enum(appConfig.tokenTypes), id: validIdSchema }),
     },
     responses: {
       200: {
