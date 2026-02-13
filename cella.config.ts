@@ -10,7 +10,7 @@ export default defineConfig({
     upstreamRemoteName: 'cella-upstream',
     forkBranch: 'development',
     syncWithPackages: true,
-    packageJsonSync: ['dependencies', 'devDependencies', 'scripts'],
+    packageJsonSync: ['dependencies', 'devDependencies', 'scripts', 'overrides'],
     mergeStrategy: 'squash',
     fileLinkMode: 'file',
     // upstreamLocalPath: '../cella',

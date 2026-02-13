@@ -62,7 +62,7 @@
                   "keywords": {
                     "type": "string",
                     "required": true,
-                    "maxLength": 255
+                    "maxLength": 100000
                   },
                   "createdBy": {
                     "type": ["string", "null"],
@@ -271,7 +271,7 @@
             "keywords": {
               "type": "string",
               "required": true,
-              "maxLength": 255
+              "maxLength": 100000
             },
             "createdBy": {
               "type": ["string", "null"],
@@ -434,7 +434,7 @@
                   "keywords": {
                     "type": "string",
                     "required": true,
-                    "maxLength": 255
+                    "maxLength": 100000
                   },
                   "createdBy": {
                     "type": ["string", "null"],
@@ -591,7 +591,7 @@
                   "keywords": {
                     "type": "string",
                     "required": true,
-                    "maxLength": 255
+                    "maxLength": 100000
                   },
                   "createdBy": {
                     "type": ["string", "null"],
@@ -926,7 +926,7 @@
             "keywords": {
               "type": "string",
               "required": true,
-              "maxLength": 255
+              "maxLength": 100000
             },
             "createdBy": {
               "type": ["string", "null"],
@@ -1049,7 +1049,7 @@
           "keywords": {
             "type": "string",
             "required": false,
-            "maxLength": 255
+            "maxLength": 100000
           },
           "displayOrder": {
             "type": "number",

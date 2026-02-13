@@ -62,7 +62,7 @@
                   "keywords": {
                     "type": "string",
                     "required": true,
-                    "maxLength": 255
+                    "maxLength": 100000
                   },
                   "createdBy": {
                     "type": ["string", "null"],
@@ -350,7 +350,7 @@
                   "keywords": {
                     "type": "string",
                     "required": true,
-                    "maxLength": 255
+                    "maxLength": 100000
                   },
                   "createdBy": {
                     "type": ["string", "null"],
@@ -566,7 +566,7 @@
                   "keywords": {
                     "type": "string",
                     "required": true,
-                    "maxLength": 255
+                    "maxLength": 100000
                   },
                   "createdBy": {
                     "type": ["string", "null"],
@@ -1110,7 +1110,7 @@
             "keywords": {
               "type": "string",
               "required": true,
-              "maxLength": 255
+              "maxLength": 100000
             },
             "createdBy": {
               "type": ["string", "null"],
@@ -1333,7 +1333,7 @@
             "keywords": {
               "type": "string",
               "required": true,
-              "maxLength": 255
+              "maxLength": 100000
             },
             "createdBy": {
               "type": ["string", "null"],

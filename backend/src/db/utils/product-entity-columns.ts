@@ -13,7 +13,7 @@ export const productEntityColumns = <T extends ProductEntityType>(entityType: T)
   name: varchar({ length: maxLength.field }).notNull().default(`New ${entityType}`), // Override default name
   ...stxColumns,
   description: text(),
-  keywords: varchar({ length: maxLength.field }).notNull(),
+  keywords: varchar({ length: maxLength.html }).notNull(),
   createdBy: varchar({ length: maxLength.id }).references(() => usersTable.id, { onDelete: 'set null' }),
   modifiedBy: varchar({ length: maxLength.id }).references(() => usersTable.id, { onDelete: 'set null' }),
 });

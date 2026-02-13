@@ -1984,7 +1984,7 @@
           },
           "keywords": {
             "type": "string",
-            "maxLength": 255
+            "maxLength": 100000
           },
           "createdBy": {
             "type": [
@@ -2137,7 +2137,7 @@
           },
           "keywords": {
             "type": "string",
-            "maxLength": 255
+            "maxLength": 100000
           },
           "createdBy": {
             "type": [
@@ -9753,7 +9753,7 @@
                   },
                   "keywords": {
                     "type": "string",
-                    "maxLength": 255
+                    "maxLength": 100000
                   },
                   "displayOrder": {
                     "type": "number",
