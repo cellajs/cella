@@ -5,11 +5,15 @@
  * upstream local clone. The branch is always force-pushed as a single commit
  * on top of upstream's working branch, so the diff is always clean and current.
  *
+ * Uses git plumbing commands (temp index + hash-object + commit-tree +
+ * update-ref) so it never touches the working tree — safe to call even
+ * when the upstream clone has staged changes or is on a different branch.
+ *
  * Upstream can then review via `pnpm cella contributions`.
  */
 
-import { copyFileSync, existsSync, lstatSync, mkdirSync, unlinkSync } from 'node:fs';
-import { basename, dirname, join, resolve } from 'node:path';
+import { existsSync, lstatSync, unlinkSync } from 'node:fs';
+import { basename, join, resolve } from 'node:path';
 import pc from 'picocolors';
 import type { AnalyzedFile, RuntimeConfig } from '../config/types';
 import { createSpinner, spinnerFail, spinnerSuccess } from '../utils/display';
@@ -18,6 +22,8 @@ import { git } from '../utils/git';
 /**
  * Push drifted files to a contrib branch in the upstream local clone.
  * Always force-pushes a single commit: upstream/branch + drifted files overlay.
+ *
+ * Uses git plumbing to avoid checkout — never touches the working tree.
  *
  * @returns true if files were pushed, false if skipped/failed
  */
@@ -40,67 +46,66 @@ export async function pushContribBranch(driftedFiles: AnalyzedFile[], config: Ru
   const forkName = basename(config.forkPath);
   const branchName = `contrib/${forkName}`;
   const upstreamBranch = config.settings.upstreamBranch;
+  const tmpIndex = join(upstreamPath, '.git', 'tmp-contrib-index');
 
   createSpinner(`contributing ${driftedFiles.length} drifted files to ${branchName}...`);
-
-  // Save current branch to restore later
-  let originalBranch: string;
-
-  try {
-    originalBranch = await git(['rev-parse', '--abbrev-ref', 'HEAD'], upstreamPath);
-  } catch {
-    spinnerFail('could not read upstream branch');
-    return false;
-  }
 
   try {
     // Ensure we have latest upstream
     await git(['fetch', 'origin'], upstreamPath, { ignoreErrors: true });
 
-    // Create or reset the contrib branch from upstream's working branch
-    // Use origin/<branch> to ensure we start from the latest remote state
     const baseRef = `origin/${upstreamBranch}`;
+    const indexEnv = { GIT_INDEX_FILE: tmpIndex };
 
-    // Delete existing local branch if it exists (we always recreate)
-    await git(['branch', '-D', branchName], upstreamPath, { ignoreErrors: true });
+    // Read upstream branch tree into temp index
+    await git(['read-tree', baseRef], upstreamPath, { env: indexEnv });
 
-    // Create fresh branch from upstream's latest
-    await git(['checkout', '-b', branchName, baseRef], upstreamPath);
-
-    // Copy drifted files from fork to upstream
+    // Overlay drifted files from fork into the temp index
     const fileList: string[] = [];
     for (const file of driftedFiles) {
       const src = join(config.forkPath, file.path);
-      const dest = join(upstreamPath, file.path);
-      // Validate paths stay within their roots (CWE-22 path traversal)
+      // Validate path stays within fork root (CWE-22 path traversal)
       if (!resolve(src).startsWith(resolve(config.forkPath))) continue;
-      if (!resolve(dest).startsWith(resolve(upstreamPath))) continue;
       // Skip symlinks to prevent symlink-following attacks (CWE-61)
-      if (existsSync(src) && !lstatSync(src).isSymbolicLink()) {
-        mkdirSync(dirname(dest), { recursive: true });
-        copyFileSync(src, dest);
+      if (!existsSync(src) || lstatSync(src).isSymbolicLink()) continue;
+
+      try {
+        // Hash the fork file into upstream's object store
+        const blobHash = await git(['hash-object', '-w', src], upstreamPath);
+
+        // Update temp index with the new blob
+        await git(['update-index', '--replace', '--cacheinfo', `100644,${blobHash},${file.path}`], upstreamPath, {
+          env: indexEnv,
+        });
         fileList.push(file.path);
+      } catch {
+        // Skip files that fail to hash
       }
     }
 
     if (fileList.length === 0) {
       spinnerFail('no files to contribute');
-      await git(['checkout', originalBranch], upstreamPath);
-      await git(['branch', '-D', branchName], upstreamPath, { ignoreErrors: true });
       return false;
     }
 
-    // Stage and commit
-    await git(['add', ...fileList], upstreamPath);
+    // Write tree from temp index
+    const treeHash = await git(['write-tree'], upstreamPath, { env: indexEnv });
 
+    // Create commit on top of upstream branch
+    const parentHash = await git(['rev-parse', baseRef], upstreamPath);
     const commitBody = fileList.map((f) => `- ${f}`).join('\n');
     const commitMessage = `contrib(${forkName}): ${fileList.length} drifted files\n\n${commitBody}`;
-    await git(['commit', '--no-verify', '-m', commitMessage], upstreamPath);
+    const commitHash = await git(['commit-tree', treeHash, '-p', parentHash, '-m', commitMessage], upstreamPath);
 
-    // Force-push with lease — fetch first so the lease has a tracking ref
+    // Update branch ref without checkout
+    await git(['update-ref', `refs/heads/${branchName}`, commitHash], upstreamPath);
+
+    // Fetch remote branch first so --force-with-lease has a tracking ref
     await git(['fetch', 'origin', `${branchName}:refs/remotes/origin/${branchName}`], upstreamPath, {
       ignoreErrors: true,
     });
+
+    // Force-push with lease
     await git(['push', '--force-with-lease', '-u', 'origin', branchName], upstreamPath);
 
     spinnerSuccess(`pushed ${fileList.length} files to ${pc.cyan(branchName)}`);
@@ -110,9 +115,9 @@ export async function pushContribBranch(driftedFiles: AnalyzedFile[], config: Ru
     spinnerFail(`contribute failed: ${error instanceof Error ? error.message : 'unknown error'}`);
     return false;
   } finally {
-    // Always restore original branch
+    // Clean up temp index
     try {
-      await git(['checkout', originalBranch!], upstreamPath);
+      unlinkSync(tmpIndex);
     } catch {
       // Best effort
     }
