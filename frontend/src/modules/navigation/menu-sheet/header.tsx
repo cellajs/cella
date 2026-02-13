@@ -95,7 +95,7 @@ export const MenuSheetHeader = ({ searchTerm, setSearchTerm, isSearchActive, set
           </Link>
         </motion.div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 group/actions">
           {/* Search toggle button - icon animates between search and X */}
           <motion.div animate={{ x: isSearchActive ? 48 : 0 }} transition={{ duration: 0.2 }}>
             <Button
@@ -107,7 +107,7 @@ export const MenuSheetHeader = ({ searchTerm, setSearchTerm, isSearchActive, set
                 'size-10 relative transition-opacity',
                 !hasWaited && 'opacity-0!',
                 !isSearchActive &&
-                  'group-[.keep-menu-open]/body:opacity-0 group-[.keep-menu-open]/body:group-hover/menu:opacity-100 group-[.keep-menu-open]/body:group-focus-within/menu:opacity-100',
+                  'group-[.keep-menu-open]/body:opacity-0 group-[.keep-menu-open]/body:group-hover/menu:opacity-100 group-[.keep-menu-open]/body:group-focus-within/menu:opacity-100 group-[.keep-menu-open]/body:group-has-data-[state=open]/actions:opacity-100',
               )}
             >
               <AnimatePresence mode="wait">
@@ -148,7 +148,7 @@ export const MenuSheetHeader = ({ searchTerm, setSearchTerm, isSearchActive, set
                 'size-10 transition-opacity',
                 !hasWaited && 'opacity-0!',
                 !isSearchActive &&
-                  'group-[.keep-menu-open]/body:opacity-0 group-[.keep-menu-open]/body:group-hover/menu:opacity-100 group-[.keep-menu-open]/body:group-focus-within/menu:opacity-100',
+                  'group-[.keep-menu-open]/body:opacity-0 group-[.keep-menu-open]/body:group-hover/menu:opacity-100 group-[.keep-menu-open]/body:group-focus-within/menu:opacity-100 group-[.keep-menu-open]/body:data-[state=open]:opacity-100',
               )}
             />
           </motion.div>

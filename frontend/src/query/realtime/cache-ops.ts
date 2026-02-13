@@ -3,7 +3,9 @@
  * Used by both live handler and catchup processor.
  */
 
-import { type EntityQueryKeys, getEntityQueryKeys } from '~/query/basic';
+import { type EntityQueryKeys, getEntityQueryKeys, type ItemData } from '~/query/basic';
+import { changeInfiniteQueryData, changeQueryData } from '~/query/basic/helpers';
+import { isInfiniteQueryData, isQueryData } from '~/query/basic/mutate-query';
 import { queryClient } from '~/query/query-client';
 import { removeCacheToken, storeCacheToken } from './cache-token-store';
 
@@ -50,6 +52,48 @@ export function invalidateEntityDetail(
 /** Invalidate entity list queries */
 export function invalidateEntityList(keys: EntityQueryKeys, refetchType: 'active' | 'none' | 'all' = 'active'): void {
   queryClient.invalidateQueries({ queryKey: keys.list.base, refetchType });
+}
+
+/** Remove a single entity from all list caches by ID (no refetch triggered). */
+export function removeEntityFromListCache(entityId: string, keys: EntityQueryKeys): void {
+  for (const [queryKey, queryData] of queryClient.getQueriesData({ queryKey: keys.list.base })) {
+    if (isInfiniteQueryData(queryData)) {
+      changeInfiniteQueryData(queryKey, [{ id: entityId }], 'remove');
+    } else if (isQueryData(queryData)) {
+      changeQueryData(queryKey, [{ id: entityId }], 'remove');
+    }
+  }
+}
+
+/**
+ * Fetch a single entity by ID and update both detail and list caches.
+ * Uses query defaults (registered by entity modules via queryClient.setQueryDefaults)
+ * to resolve the queryFn, so no entity-specific imports are needed here.
+ * Falls back to list invalidation if no query defaults are registered.
+ */
+export async function fetchEntityAndUpdateList(
+  entityId: string,
+  keys: EntityQueryKeys,
+  action: 'create' | 'update',
+): Promise<void> {
+  try {
+    const entity = await queryClient.fetchQuery<ItemData>({
+      queryKey: keys.detail.byId(entityId),
+      staleTime: 0, // Always fetch fresh on SSE notification
+    });
+    if (entity) {
+      for (const [queryKey, queryData] of queryClient.getQueriesData({ queryKey: keys.list.base })) {
+        if (isInfiniteQueryData(queryData)) {
+          changeInfiniteQueryData(queryKey, [entity], action);
+        } else if (isQueryData(queryData)) {
+          changeQueryData(queryKey, [entity], action);
+        }
+      }
+    }
+  } catch {
+    // No query defaults registered for this entity type — fall back to list invalidation
+    invalidateEntityList(keys, 'all');
+  }
 }
 
 /**

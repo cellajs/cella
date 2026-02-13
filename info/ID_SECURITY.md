@@ -19,7 +19,7 @@ However, accepting client-generated IDs and timestamps introduces security risks
 ### Client-Side ID Generation
 IDs are generated using `nanoid` with cryptographically secure randomness:
 ```typescript
-import { nanoid } from 'nanoid';
+import { nanoid } from '#/utils/nanoid';
 const entityId = nanoid(); // 21 characters, URL-safe alphabet
 ```
 

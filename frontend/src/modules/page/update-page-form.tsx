@@ -15,6 +15,7 @@ import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { InputFormField } from '~/modules/common/form-fields/input';
 import { Spinner } from '~/modules/common/spinner';
+import { StickyBox } from '~/modules/common/sticky-box';
 import { pageQueryKeys, usePageUpdateMutation } from '~/modules/page/query';
 import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
@@ -118,44 +119,46 @@ export function UpdatePageForm({ page }: Props) {
 
   return (
     <>
-      <div className="flex items-center justify-between gap-3 mb-6">
-        <div className="flex items-center gap-2">
-          <Button
-            variant="plain"
-            onClick={() => {
-              // Update detail cache with current form values before navigating
-              // so the view page shows the latest content immediately
-              const currentData = form.getValues();
-              queryClient.setQueryData(pageQueryKeys.detail.byId(page.id), {
-                ...page,
-                ...currentData,
-                modifiedAt: new Date().toISOString(),
-              });
-              navigate({ to: '/docs/page/$id', params: { id: page.id } });
-            }}
-          >
-            <EyeIcon size={16} className="mr-2" />
-            {t('common:view')}
-          </Button>
+      <StickyBox className="z-10 bg-background" offsetTop={0} hideOnScrollDown>
+        <div className="flex items-center justify-between gap-3 py-3 sm:py-6">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="plain"
+              onClick={() => {
+                // Update detail cache with current form values before navigating
+                // so the view page shows the latest content immediately
+                const currentData = form.getValues();
+                queryClient.setQueryData(pageQueryKeys.detail.byId(page.id), {
+                  ...page,
+                  ...currentData,
+                  modifiedAt: new Date().toISOString(),
+                });
+                navigate({ to: '/docs/page/$id', params: { id: page.id } });
+              }}
+            >
+              <EyeIcon size={16} className="mr-2" />
+              {t('common:view')}
+            </Button>
+          </div>
+          <div>
+            {saveStatus === 'saving' && (
+              <span className="flex items-center gap-1.5">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                {t('common:saving')}
+              </span>
+            )}
+            {saveStatus === 'saved' && (
+              <span className="flex items-center gap-1.5 text-success">
+                <Check className="h-3.5 w-3.5" />
+                {t('common:saved')}
+              </span>
+            )}
+            {saveStatus === 'idle' && hasUnsavedChanges && (
+              <span className="text-muted-foreground/60">{t('common:unsaved_changes')}</span>
+            )}
+          </div>
         </div>
-        <div>
-          {saveStatus === 'saving' && (
-            <span className="flex items-center gap-1.5">
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              {t('common:saving')}
-            </span>
-          )}
-          {saveStatus === 'saved' && (
-            <span className="flex items-center gap-1.5 text-success">
-              <Check className="h-3.5 w-3.5" />
-              {t('common:saved')}
-            </span>
-          )}
-          {saveStatus === 'idle' && hasUnsavedChanges && (
-            <span className="text-muted-foreground/60">{t('common:unsaved_changes')}</span>
-          )}
-        </div>
-      </div>
+      </StickyBox>
 
       <Form {...form}>
         <form className="space-y-6 [&_label]:hidden">

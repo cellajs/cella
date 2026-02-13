@@ -279,7 +279,7 @@ export function DocsSidebar({ tags }: DocsSidebarProps) {
       </SidebarGroup>
 
       {/* Debug Toolbars */}
-      <Suspense>{DebugDropdown ? <DebugDropdown className="mt-auto p-4" /> : null}</Suspense>
+      <Suspense>{DebugDropdown ? <DebugDropdown className="absolute bottom-0 m-1" /> : null}</Suspense>
     </SidebarContent>
   );
 }

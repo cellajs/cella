@@ -498,6 +498,7 @@
   "subject": "Subject",
   "submit": "Submit",
   "subscription": "Subscription",
+  "support": "Support",
   "suspended": "Suspended",
   "success.archived_resource": "{{resource}} has been archived.",
   "success.cancel_mfa": "Multifactor authentication has been canceled.",

@@ -1,6 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { streamSSE } from 'hono/streaming';
-import { nanoid } from 'nanoid';
 import { appConfig, hierarchy } from 'shared';
 import { type Env } from '#/lib/context';
 import { publicEntityCache } from '#/middlewares/entity-cache';
@@ -24,6 +23,7 @@ import { type ActivityEventWithEntity, activityBus } from '#/sync/activity-bus';
 import { keepAlive, streamSubscriberManager, writeOffset } from '#/sync/stream';
 import { defaultHook } from '#/utils/default-hook';
 import { logEvent } from '#/utils/logger';
+import { nanoid } from '#/utils/nanoid';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 

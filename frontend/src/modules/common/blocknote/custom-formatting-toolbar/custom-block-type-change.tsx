@@ -12,7 +12,7 @@ import { ChevronDownIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { customBlockTypeSwitchItems } from '~/modules/common/blocknote/blocknote-config';
 import { isHeadingMenuItemActive } from '~/modules/common/blocknote/helpers/header-item-select';
-import type { CustomBlock, CustomBlockNoteMenuProps } from '~/modules/common/blocknote/types';
+import type { CustomBlockNoteMenuProps } from '~/modules/common/blocknote/types';
 
 export const CellaCustomBlockTypeSelect = ({
   headingLevels,
@@ -71,10 +71,7 @@ export const CellaCustomBlockTypeSelect = ({
           title: name,
           icon: <Icon size={16} />,
           onClick: () => handleItemClick(item),
-          isSelected:
-            block.type === 'heading'
-              ? isHeadingMenuItemActive(block as unknown as CustomBlock, name)
-              : block.type === type,
+          isSelected: block.type === 'heading' ? isHeadingMenuItemActive(block, name) : block.type === type,
         };
       }),
     [block, filteredItems, editor, selectedBlocks],

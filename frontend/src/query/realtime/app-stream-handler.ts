@@ -107,57 +107,25 @@ function handleEntityNotification(
   // Determine fetch priority based on entityConfig ancestors and current route
   const priority = getSyncPriority({ entityType, entityId, organizationId });
 
-  // Map priority to refetchType:
-  // - high: immediate refetch of active queries
-  // - medium: debounced refetch (batch updates)
-  // - low: invalidate only, refetch on next access
-  const refetchType = priority === 'low' ? 'none' : 'active';
-
-  // For medium priority, debounce the invalidation
-  if (priority === 'medium') {
-    debouncedInvalidateList(entityType, keys);
-  }
-
   switch (action) {
     case 'create':
-      // New entity - list must be refetched to include it
-      if (priority !== 'medium') {
-        cacheOps.invalidateEntityList(keys, refetchType);
-      }
-      break;
-
     case 'update':
-      // Only invalidate detail - the entity already exists in the list,
-      // it just needs fresh field values from a detail refetch.
-      cacheOps.invalidateEntityDetail(entityId, keys, refetchType);
+      if (priority === 'low') {
+        // Mark stale only, refetch on next access
+        cacheOps.invalidateEntityDetail(entityId, keys, 'none');
+        cacheOps.invalidateEntityList(keys, 'none');
+      } else {
+        // Fetch single entity and patch both detail and list caches
+        cacheOps.fetchEntityAndUpdateList(entityId, keys, action);
+      }
       break;
 
     case 'delete':
-      // Remove from cache (detail + token)
+      // Remove from detail and list caches directly (no refetch needed)
       cacheOps.removeEntityFromCache(entityType, entityId);
-      // List must be refetched to remove the deleted entity
-      if (priority !== 'medium') {
-        cacheOps.invalidateEntityList(keys, refetchType);
-      }
+      cacheOps.removeEntityFromListCache(entityId, keys);
       break;
   }
 
   console.debug(`[handleEntityNotification] ${entityType}:${action} priority=${priority}`);
-}
-
-/** Debounce timers for medium priority list invalidations */
-const debounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
-
-/** Debounce list invalidations for medium priority to batch rapid updates */
-function debouncedInvalidateList(entityType: string, keys: EntityQueryKeys): void {
-  const existing = debounceTimers.get(entityType);
-  if (existing) clearTimeout(existing);
-
-  debounceTimers.set(
-    entityType,
-    setTimeout(() => {
-      cacheOps.invalidateEntityList(keys, 'active');
-      debounceTimers.delete(entityType);
-    }, 500),
-  );
 }

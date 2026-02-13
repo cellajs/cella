@@ -1,31 +1,17 @@
 import { isPublicProductEntity } from 'shared';
 import type { StreamNotification } from '~/api.gen';
-import { pageQueryKeys } from '~/modules/page/query';
+import { getEntityQueryKeys } from '~/query/basic';
 import { queryClient } from '~/query/query-client';
 import { useSyncStore } from '~/store/sync';
-
-type QueryKeyHandler = {
-  listBase: readonly unknown[];
-  detailById: (id: string) => readonly unknown[];
-};
-
-/**
- * Query key handlers for each public entity type.
- * Maps entity types to their query key generators.
- * Note: Only entities with publicAccess configured in hierarchy need handlers here.
- */
-const entityQueryKeyHandlers: Record<string, QueryKeyHandler> = {
-  page: {
-    listBase: pageQueryKeys.list.base,
-    detailById: (id) => pageQueryKeys.detail.byId(id),
-  },
-  // Add more public entity types here when they are added to hierarchy
-};
+import * as cacheOps from './cache-ops';
 
 /**
  * Handles incoming public stream notifications and updates the React Query cache.
  * Processes public entity events (create, update, delete) for public/unauthenticated views.
  * Uses notification-based pattern: invalidates cache so data is refetched on access.
+ *
+ * Uses the entity query key registry for dynamic lookup (same pattern as app-stream-handler),
+ * avoiding direct imports from entity modules which can cause HMR initialization errors.
  *
  * Uses refetchType: 'all' to ensure inactive queries (e.g., in closed sheets on mobile)
  * also refetch when they become active again.
@@ -43,29 +29,24 @@ export function handlePublicStreamNotification(message: StreamNotification): voi
     useSyncStore.getState().setSeq(entityType, seq);
   }
 
-  const handler = entityQueryKeyHandlers[entityType];
-  if (!handler) {
-    console.debug(`[PublicStreamHandler] No handler for entity type: ${entityType}`);
+  // Use registry for dynamic lookup (keys registered at module load time by entity modules)
+  const keys = getEntityQueryKeys(entityType);
+  if (!keys) {
+    console.debug(`[PublicStreamHandler] No query keys registered for entity type: ${entityType}`);
     return;
   }
 
   switch (action) {
     case 'create':
-      // New entity - list must be refetched to include it
-      queryClient.invalidateQueries({ queryKey: handler.listBase, refetchType: 'all' });
-      break;
-
     case 'update':
-      // Only invalidate detail - the entity already exists in the list,
-      // it just needs fresh field values from a detail refetch.
-      queryClient.invalidateQueries({ queryKey: handler.detailById(entityId), refetchType: 'all' });
+      // Fetch single entity and patch both detail and list caches
+      cacheOps.fetchEntityAndUpdateList(entityId, keys, action);
       break;
 
     case 'delete':
-      // Remove from detail cache
-      queryClient.removeQueries({ queryKey: handler.detailById(entityId) });
-      // List must be refetched to remove the deleted entity
-      queryClient.invalidateQueries({ queryKey: handler.listBase, refetchType: 'all' });
+      // Remove from detail and list caches directly (no refetch needed)
+      queryClient.removeQueries({ queryKey: keys.detail.byId(entityId) });
+      cacheOps.removeEntityFromListCache(entityId, keys);
       break;
   }
 }

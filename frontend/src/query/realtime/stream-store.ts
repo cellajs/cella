@@ -15,7 +15,7 @@ import {
   onNotification,
   useTabCoordinatorStore,
 } from './tab-coordinator';
-import type { AppCatchupResponse, AppStreamNotification, PublicCatchupResponse, StreamState } from './types';
+import type { AppStreamNotification, StreamState } from './types';
 
 interface StreamConfig {
   debugLabel: string;
@@ -343,9 +343,9 @@ const publicStreamConfig: StreamConfig = {
   fetchAndProcessCatchup: async (offset) => {
     const seqs = useSyncStore.getState().seqs;
     const seqsParam = Object.keys(seqs).length > 0 ? JSON.stringify(seqs) : undefined;
-    const response = (await getPublicStream({
+    const response = await getPublicStream({
       query: { offset: offset ?? undefined, seqs: seqsParam },
-    })) as unknown as PublicCatchupResponse;
+    });
     processPublicCatchup(response);
     return response.cursor ?? null;
   },
@@ -367,9 +367,9 @@ const appStreamConfig: StreamConfig = {
   fetchAndProcessCatchup: async (offset) => {
     const seqs = useSyncStore.getState().seqs;
     const seqsParam = Object.keys(seqs).length > 0 ? JSON.stringify(seqs) : undefined;
-    const response = (await getAppStream({
+    const response = await getAppStream({
       query: { offset: offset ?? undefined, seqs: seqsParam },
-    })) as unknown as AppCatchupResponse;
+    });
     processAppCatchup(response);
     return response.cursor ?? null;
   },

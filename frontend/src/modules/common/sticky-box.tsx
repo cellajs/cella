@@ -1,4 +1,5 @@
-import { type ComponentProps, useEffect, useRef, useState } from 'react';
+import { type ComponentProps, type RefObject, useEffect, useRef, useState } from 'react';
+import { useScrollVisibility } from '~/hooks/use-scroll-visibility';
 
 function getScrollParent(node: HTMLElement) {
   let parent: HTMLElement | null = node;
@@ -438,20 +439,48 @@ export function useStickyBox({
   return [setNode, isSticky] as const;
 }
 
-export type StickyBoxCompProps = StickyBoxConfig & Pick<ComponentProps<'div'>, 'children' | 'className' | 'style'>;
+export type StickyBoxCompProps = StickyBoxConfig &
+  Pick<ComponentProps<'div'>, 'children' | 'className' | 'style'> & {
+    /** When true, hides the sticky box when scrolling down and shows it when scrolling up (reuses useScrollVisibility from floating-nav) */
+    hideOnScrollDown?: boolean;
+  };
 
 export function StickyBox(props: StickyBoxCompProps) {
-  const { enabled = true, offsetTop, offsetBottom, bottom, children, className, style } = props;
+  const { enabled = true, offsetTop, offsetBottom, bottom, children, className, style, hideOnScrollDown } = props;
 
   const ref = useRef<HTMLDivElement>(null);
   const [setRef, isSticky] = useStickyBox({ offsetTop, offsetBottom, bottom, enabled });
+
+  // Find scroll parent for scroll-direction detection (reuses getScrollParent from this module)
+  const scrollContainerRef = useRef<HTMLElement | null>(null) as RefObject<HTMLElement | null>;
+  const [scrollParentReady, setScrollParentReady] = useState(false);
 
   useEffect(() => {
     if (ref.current) setRef(ref.current);
   }, [setRef]);
 
+  useEffect(() => {
+    if (!hideOnScrollDown || !ref.current) return;
+    const parent = getScrollParent(ref.current);
+    // If parent is an element (not window), store it in the ref
+    scrollContainerRef.current = parent === window ? null : (parent as HTMLElement);
+    setScrollParentReady(true);
+  }, [hideOnScrollDown]);
+
+  const { isVisible } = useScrollVisibility(
+    hideOnScrollDown && scrollParentReady,
+    scrollContainerRef.current ? scrollContainerRef : undefined,
+  );
+
+  const hideStyle: React.CSSProperties | undefined = hideOnScrollDown
+    ? {
+        transition: 'transform 300ms ease, opacity 300ms ease',
+        ...(isVisible ? {} : { transform: 'translateY(-100%)', opacity: 0, pointerEvents: 'none' as const }),
+      }
+    : undefined;
+
   return (
-    <div className={className} data-sticky={isSticky} style={style} ref={ref}>
+    <div className={className} data-sticky={isSticky} style={{ ...style, ...hideStyle }} ref={ref}>
       {children}
     </div>
   );

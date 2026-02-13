@@ -74,8 +74,20 @@ export function UpdateOrganizationForm({ organization, callback, sheet: isSheet 
           name="thumbnailUrl"
           entity={organization}
         />
-        <InputFormField control={form.control} name="name" label={t('common:name')} required />
-        <InputFormField control={form.control} name="shortName" label={t('common:short_name')} required />
+        <InputFormField
+          control={form.control}
+          name="name"
+          label={t('common:name')}
+          placeholder={t('common:placeholder.type_name')}
+          required
+        />
+        <InputFormField
+          control={form.control}
+          name="shortName"
+          label={t('common:short_name')}
+          placeholder={t('common:placeholder.type_name')}
+          required
+        />
         <SlugFormField
           control={form.control}
           entityType="organization"

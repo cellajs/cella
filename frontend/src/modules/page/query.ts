@@ -299,6 +299,12 @@ export const usePageDeleteMutation = () => {
  * Called during app initialization before persisted cache restoration.
  */
 addMutationRegistrar((queryClient: QueryClient) => {
+  // Register detail query defaults so stream handlers can fetch individual pages
+  // via queryClient.fetchQuery without needing entity-specific imports.
+  queryClient.setQueryDefaults(keys.detail.base, {
+    queryFn: ({ queryKey }) => getPage({ path: { id: queryKey[2] as string } }),
+  });
+
   // Create mutation - API accepts array, unwrap single result
   queryClient.setMutationDefaults(keys.create, {
     mutationFn: async (data: CreatePageInput) => {

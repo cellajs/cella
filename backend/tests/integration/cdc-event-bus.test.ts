@@ -35,7 +35,7 @@ describe('EventBus Integration', () => {
     it('should receive locally emitted events', async () => {
       const handler = vi.fn();
       // Use mockActivity for entity-agnostic event generation
-      const mockEvent = mockActivity('test:emit-basic') as unknown as ActivityEventWithEntity;
+      const mockEvent = mockActivity('test:emit-basic') as ActivityEventWithEntity;
 
       activityBus.on(mockEvent.type, handler);
       activityBus.emit(mockEvent);
@@ -47,7 +47,7 @@ describe('EventBus Integration', () => {
 
     it('should support one-time event handlers', async () => {
       const handler = vi.fn();
-      const mockEvent = mockActivity('test:once-handler') as unknown as ActivityEventWithEntity;
+      const mockEvent = mockActivity('test:once-handler') as ActivityEventWithEntity;
 
       activityBus.once(mockEvent.type, handler);
 
