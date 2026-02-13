@@ -1,9 +1,4 @@
 export { canReceiveUserEvent } from './can-receive';
 export { dispatchToUserSubscribers } from './dispatch';
-export {
-  buildStreamNotification,
-  type CatchUpNotification,
-  fetchUserCatchUpNotifications,
-  getLatestUserActivityId,
-} from './fetch-data';
+export { fetchUserCatchupSummary, getLatestUserActivityId } from './fetch-data';
 export { type AppStreamSubscriber, orgChannel } from './types';

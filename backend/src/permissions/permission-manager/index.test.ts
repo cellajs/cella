@@ -23,6 +23,8 @@ type TestMembership = {
   muted: boolean;
   archived: boolean;
   organizationId: string;
+  workspaceId: string | null;
+  projectId: string | null;
 };
 
 /** Creates a test membership with required fields */
@@ -35,6 +37,8 @@ const createTestMembership = (
   displayOrder: 0,
   muted: false,
   archived: false,
+  workspaceId: null,
+  projectId: null,
   ...overrides,
 });
 

@@ -190,6 +190,9 @@ function getRows<T = Record<string, unknown>>(result: any): T[] {
   return [];
 }
 
+/** Transaction type from NodePgDatabase — avoids `as unknown as` for tx ↔ db mismatch. */
+type NodePgTx = Parameters<Parameters<NodePgDatabase['transaction']>[0]>[0];
+
 /**
  * Helper: Execute a query as runtime_role with RLS session variables.
  * Returns rows array from an RLS-subject connection.
@@ -198,13 +201,13 @@ async function queryAsRuntimeRole<T = Record<string, unknown>>(
   tenantId: string,
   userId: string,
   isAuthenticated: boolean,
-  queryFn: (tx: NodePgDatabase) => Promise<unknown>,
+  queryFn: (tx: NodePgTx) => Promise<unknown>,
 ): Promise<T[]> {
   return runtimeDb.transaction(async (tx) => {
     await tx.execute(sql`SELECT set_config('app.tenant_id', ${tenantId}, true)`);
     await tx.execute(sql`SELECT set_config('app.user_id', ${userId}, true)`);
     await tx.execute(sql`SELECT set_config('app.is_authenticated', ${String(isAuthenticated)}, true)`);
-    const result = await queryFn(tx as unknown as NodePgDatabase);
+    const result = await queryFn(tx);
     return getRows<T>(result);
   });
 }
@@ -214,14 +217,14 @@ async function queryAsRuntimeRole<T = Record<string, unknown>>(
  * Used to verify fail-closed behavior (no context → zero rows).
  */
 async function queryWithoutContext<T = Record<string, unknown>>(
-  queryFn: (tx: NodePgDatabase) => Promise<unknown>,
+  queryFn: (tx: NodePgTx) => Promise<unknown>,
 ): Promise<T[]> {
   return runtimeDb.transaction(async (tx) => {
     // Explicitly clear any lingering context
     await tx.execute(sql`SELECT set_config('app.tenant_id', '', true)`);
     await tx.execute(sql`SELECT set_config('app.user_id', '', true)`);
     await tx.execute(sql`SELECT set_config('app.is_authenticated', 'false', true)`);
-    const result = await queryFn(tx as unknown as NodePgDatabase);
+    const result = await queryFn(tx);
     return getRows<T>(result);
   });
 }

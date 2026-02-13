@@ -3,6 +3,8 @@
  *
  * Checks for outdated packages and security vulnerabilities across the monorepo.
  */
+// TODO: audit install selection can it somehow also update overrides in root package.json to prevent hidden misalignment.
+// If there are updates that match an override it should add a warning icon that it will also update override.
 
 import { spawnSync } from 'node:child_process';
 import * as fs from 'node:fs';

@@ -1,121 +1,144 @@
 /**
- * Batch catchup processor for offline sync.
+ * Catchup processors for offline sync.
  *
- * Processes a batch of catchup activities efficiently:
- * - Handles deletes immediately (remove from cache)
- * - Groups create/update by entityType
- * - Single list invalidation per type (triggers modifiedAfter fetch)
- * - Single membership refresh per batch
+ * Processes summary-based catchup responses from the backend.
+ * Uses seq delta to determine what changed per scope:
+ *   - delta == deletedIds.length → only deletes (already handled)
+ *   - delta > deletedIds.length → creates/updates → invalidate entity lists
+ *   - delta == 0 → nothing changed
  *
- * Uses shared primitives from cache-ops.ts and membership-ops.ts.
+ * App stream: scoped per orgId with priority routing
+ * Public stream: scoped per entityType
  */
 
 import { getEntityQueryKeys } from '~/query/basic';
-import { sourceId } from '~/query/offline';
+import { useSyncStore } from '~/store/sync';
 import * as cacheOps from './cache-ops';
 import * as membershipOps from './membership-ops';
-import type { AppStreamNotification } from './types';
-
-export interface CatchupOptions {
-  /** ISO timestamp of last successful sync (for modifiedAfter queries) */
-  lastSyncAt: string | null;
-}
+import { getSyncPriority } from './sync-priority';
+import type { AppCatchupResponse, PublicCatchupResponse } from './types';
 
 /**
- * Process a batch of catchup activities.
- * Optimized for batch processing - groups operations to minimize invalidations.
+ * Process app stream catchup response.
  *
- * @param activities - Array of catchup notifications to process
- * @param options - Processing options including lastSyncAt for delta queries
+ * For each org:
+ * 1. Remove deletedIds from cache
+ * 2. Compare serverSeq with stored clientSeq
+ * 3. If creates/updates detected, invalidate entity lists (with priority)
+ * 4. Update stored seq
+ *
+ * Also handles membership changes (menu refresh, me refresh).
  */
-export function processCatchupBatch(activities: AppStreamNotification[], options: CatchupOptions): void {
-  if (activities.length === 0) return;
+export function processAppCatchup(response: AppCatchupResponse): void {
+  const { changes } = response;
+  const syncStore = useSyncStore.getState();
+  const scopes = Object.keys(changes);
 
-  // Echo prevention: filter out own mutations from catchup
-  const filteredActivities = activities.filter((a) => a.stx?.sourceId !== sourceId);
-  const skippedCount = activities.length - filteredActivities.length;
-  if (skippedCount > 0) {
-    console.debug(`[CatchupProcessor] Echo prevention: skipped ${skippedCount} own mutations`);
-  }
+  if (scopes.length === 0) return;
 
-  if (filteredActivities.length === 0) return;
+  console.debug(`[CatchupProcessor] App catchup: ${scopes.length} orgs`);
 
-  console.debug(
-    `[CatchupProcessor] Processing ${filteredActivities.length} activities, lastSyncAt=${options.lastSyncAt}`,
-  );
+  for (const orgId of scopes) {
+    const { seq: serverSeq, deletedIds, mSeq: serverMSeq } = changes[orgId];
+    const clientSeq = syncStore.getSeq(orgId);
+    const delta = serverSeq - clientSeq;
 
-  // Phase 1: Immediate deletes (remove from cache)
-  const deletes = filteredActivities.filter((a) => a.action === 'delete');
-  for (const activity of deletes) {
-    if (activity.entityType) {
-      cacheOps.removeEntityFromCache(activity.entityType, activity.entityId);
-      console.debug(`[CatchupProcessor] Removed ${activity.entityType}:${activity.entityId}`);
-    }
-  }
-
-  // Phase 2: Collect entity types that need list refetch
-  const createUpdates = filteredActivities.filter((a) => a.action !== 'delete');
-  const entityTypesToRefetch = new Set<string>();
-
-  for (const activity of createUpdates) {
-    if (activity.entityType) {
-      entityTypesToRefetch.add(activity.entityType);
-    }
-  }
-
-  // Phase 3: Invalidate list queries per entity type
-  // This triggers React Query to refetch with modifiedAfter param
-  for (const entityType of entityTypesToRefetch) {
-    const keys = getEntityQueryKeys(entityType);
-    if (keys) {
-      cacheOps.invalidateEntityList(keys, 'active');
-      console.debug(`[CatchupProcessor] Invalidated ${entityType} list`);
-    }
-  }
-
-  // Phase 4: Handle membership changes (once per batch)
-  const membershipActivities = filteredActivities.filter((a) => a.resourceType === 'membership');
-  if (membershipActivities.length > 0) {
-    const hasCreateOrDelete = membershipActivities.some((a) => a.action === 'create' || a.action === 'delete');
-    const hasUpdate = membershipActivities.some((a) => a.action === 'update');
-
-    if (hasCreateOrDelete) {
-      // contextType is null in catchup, so use fallback invalidation
-      membershipOps.invalidateContextList(null);
-      membershipOps.refreshMenu();
-      console.debug('[CatchupProcessor] Refreshed menu for membership create/delete');
+    // Phase 1: Remove deleted entities from cache
+    for (const entityId of deletedIds) {
+      // We don't know the entityType per deleted ID, so remove across all product entity caches
+      cacheOps.removeEntityById(entityId);
     }
 
-    if (hasUpdate) {
-      membershipOps.invalidateMemberQueries(null); // Invalidate all member queries
-      membershipOps.refreshMe();
-      console.debug('[CatchupProcessor] Refreshed me for membership update');
-    }
-  }
+    // Phase 2: Determine if creates/updates happened
+    if (delta > deletedIds.length) {
+      // More seq increments than deletes → creates/updates happened
+      // Determine priority based on current route context
+      const priority = getSyncPriority({
+        entityType: 'attachment', // placeholder, priority only checks orgId
+        entityId: '',
+        organizationId: orgId,
+      });
 
-  console.debug(
-    `[CatchupProcessor] Complete: ${deletes.length} deletes, ${entityTypesToRefetch.size} entity types, ${membershipActivities.length} membership events`,
-  );
+      const refetchType = priority === 'low' ? 'none' : 'active';
+
+      // Invalidate all product entity lists for this org scope
+      // The list queries use orgId filtering, so the refetch will only get relevant data
+      cacheOps.invalidateAllEntityLists(refetchType);
+
+      console.debug(
+        `[CatchupProcessor] Org ${orgId}: delta=${delta}, deletes=${deletedIds.length}, priority=${priority}`,
+      );
+    } else if (deletedIds.length > 0) {
+      console.debug(`[CatchupProcessor] Org ${orgId}: only ${deletedIds.length} deletes`);
+
+      // After removing deleted entities, invalidate affected entity lists
+      cacheOps.invalidateAllEntityLists('none');
+    }
+
+    // Phase 3: Handle membership changes via mSeq gap
+    if (serverMSeq !== undefined) {
+      const clientMSeq = syncStore.getSeq(`${orgId}:m`);
+      if (serverMSeq > clientMSeq) {
+        // Membership changes happened — invalidate all membership-related queries
+        membershipOps.invalidateContextList(null);
+        membershipOps.refreshMenu();
+        membershipOps.invalidateMemberQueries(orgId);
+        membershipOps.refreshMe();
+        console.debug(`[CatchupProcessor] Org ${orgId}: mSeq gap ${clientMSeq}→${serverMSeq} → membership refresh`);
+      }
+      syncStore.setSeq(`${orgId}:m`, serverMSeq);
+    }
+
+    // Phase 4: Update stored seq
+    syncStore.setSeq(orgId, serverSeq);
+  }
 }
 
 /**
- * Process delete activities only.
- * Used for immediate delete handling while queuing creates/updates.
+ * Process public stream catchup response.
+ *
+ * For each entityType:
+ * 1. Remove deletedIds from cache
+ * 2. Compare serverSeq with stored clientSeq
+ * 3. If creates/updates detected, invalidate list
+ * 4. Update stored seq
  */
-export function processDeletesOnly(activities: AppStreamNotification[]): AppStreamNotification[] {
-  const deletes = activities.filter((a) => a.action === 'delete');
-  const remaining = activities.filter((a) => a.action !== 'delete');
+export function processPublicCatchup(response: PublicCatchupResponse): void {
+  const { changes } = response;
+  const syncStore = useSyncStore.getState();
+  const scopes = Object.keys(changes);
 
-  for (const activity of deletes) {
-    if (activity.entityType) {
-      cacheOps.removeEntityFromCache(activity.entityType, activity.entityId);
+  if (scopes.length === 0) return;
+
+  console.debug(`[CatchupProcessor] Public catchup: ${scopes.length} entity types`);
+
+  for (const entityType of scopes) {
+    const { seq: serverSeq, deletedIds } = changes[entityType];
+    const clientSeq = syncStore.getSeq(entityType);
+    const delta = serverSeq - clientSeq;
+
+    const keys = getEntityQueryKeys(entityType);
+    if (!keys) continue;
+
+    // Phase 1: Remove deleted entities from cache
+    for (const entityId of deletedIds) {
+      cacheOps.removeEntityFromCache(entityType, entityId);
     }
-    if (activity.resourceType === 'membership') {
-      // For membership deletes, also refresh menu immediately
-      membershipOps.invalidateContextList(null);
-      membershipOps.refreshMenu();
+
+    // Phase 2: Determine if creates/updates happened
+    if (delta > deletedIds.length) {
+      // Creates/updates → invalidate list for refetch
+      cacheOps.invalidateEntityList(keys, 'all');
+      console.debug(
+        `[CatchupProcessor] Public ${entityType}: delta=${delta}, deletes=${deletedIds.length} → list invalidated`,
+      );
+    } else if (deletedIds.length > 0) {
+      // Only deletes → list needs update too (items removed)
+      cacheOps.invalidateEntityList(keys, 'all');
+      console.debug(`[CatchupProcessor] Public ${entityType}: only ${deletedIds.length} deletes`);
     }
+
+    // Phase 3: Update stored seq
+    syncStore.setSeq(entityType, serverSeq);
   }
-
-  return remaining;
 }

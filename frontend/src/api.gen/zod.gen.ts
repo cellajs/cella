@@ -1028,15 +1028,23 @@ export const zGetPublicStreamData = z.object({
     z.object({
       offset: z.optional(z.string()),
       live: z.optional(z.enum(['sse'])),
+      seqs: z.optional(z.string()),
     }),
   ),
 });
 
 /**
- * Catch-up activities or SSE stream started
+ * Catch-up summary or SSE stream started
  */
 export const zGetPublicStreamResponse = z.object({
-  notifications: z.array(zStreamNotification),
+  changes: z.record(
+    z.string(),
+    z.object({
+      seq: z.int(),
+      deletedIds: z.array(z.string()),
+      mSeq: z.optional(z.int()),
+    }),
+  ),
   cursor: z.union([z.string(), z.null()]),
 });
 
@@ -1047,15 +1055,23 @@ export const zGetAppStreamData = z.object({
     z.object({
       offset: z.optional(z.string()),
       live: z.optional(z.enum(['sse', 'catchup'])),
+      seqs: z.optional(z.string()),
     }),
   ),
 });
 
 /**
- * SSE stream or notification response
+ * SSE stream or catchup summary response
  */
 export const zGetAppStreamResponse = z.object({
-  notifications: z.array(zStreamNotification),
+  changes: z.record(
+    z.string(),
+    z.object({
+      seq: z.int(),
+      deletedIds: z.array(z.string()),
+      mSeq: z.optional(z.int()),
+    }),
+  ),
   cursor: z.union([z.string(), z.null()]),
 });
 
@@ -1270,9 +1286,13 @@ export const zDeleteRequestsData = z.object({
 });
 
 /**
- * Requests deleted
+ * Success
  */
-export const zDeleteRequestsResponse = z.void();
+export const zDeleteRequestsResponse = z.object({
+  data: z.array(z.unknown()),
+  rejectedItemIds: z.array(z.string()),
+  rejectionReasons: z.optional(z.record(z.string(), z.array(z.string()))),
+});
 
 export const zGetRequestsData = z.object({
   body: z.optional(z.never()),
@@ -1626,9 +1646,13 @@ export const zDeletePagesData = z.object({
 });
 
 /**
- * Page(s) deleted
+ * Success
  */
-export const zDeletePagesResponse = z.void();
+export const zDeletePagesResponse = z.object({
+  data: z.array(z.unknown()),
+  rejectedItemIds: z.array(z.string()),
+  rejectionReasons: z.optional(z.record(z.string(), z.array(z.string()))),
+});
 
 export const zCreatePagesData = z.object({
   body: z

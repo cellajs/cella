@@ -1,4 +1,3 @@
-import { nanoid } from 'nanoid';
 import { activitiesTable, type InsertActivityModel } from '#/db/schema/activities';
 import { cdcDb } from '../db';
 import { isProductEntity } from 'shared';
@@ -7,6 +6,7 @@ import { logEvent } from '../pino';
 import { recordCdcMetric, type TraceContext } from '../tracing';
 import { wsClient } from '../websocket-client';
 import { getErrorCode } from './retry';
+import { nanoid } from '#/utils/nanoid';
 
 const LOG_PREFIX = '[activity]';
 

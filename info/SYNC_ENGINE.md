@@ -147,11 +147,11 @@ Two-phase connection: fetch catch-up batch, then SSE for live-only. Stream sends
 │  Connection (catchup-then-SSE)                                          │
 │                                                                         │
 │  ┌────────────────────────────────────────────────────────────────────┐ │
-│  │ 1. Catchup: GET /me/stream?offset=<cursor>                         │ │
-│  │    → Returns batch of catch-up activities as JSON                  │ │
-│  │    → processCatchupBatch(): deletes, invalidations, membership     │ │
+│  │ 1. Catchup: GET /entities/app/stream?offset=<cursor>              │ │
+│  │    → Returns per-org summary: { seq, deletedIds } per org         │ │
+│  │    → processAppCatchup(): seq delta, deletes, membership          │ │
 │  │                                                                    │ │
-│  │ 2. SSE: GET /me/stream?offset=now&live=sse                         │ │
+│  │ 2. SSE: GET /entities/app/stream?offset=now&live=sse              │ │
 │  │    → Live notifications only (no catch-up in SSE)                  │ │
 │  │    → Server sends offset marker immediately                        │ │
 │  └────────────────────────────────────────────────────────────────────┘ │
@@ -229,7 +229,7 @@ interface StreamNotification {
 
 Cella has two stream types with different characteristics:
 
-### App stream (`/me/stream`)
+### App stream (`/entities/app/stream`)
 
 Authenticated stream for all user-scoped entities and memberships.
 
@@ -237,23 +237,36 @@ Authenticated stream for all user-scoped entities and memberships.
 |--------|----------------|
 | **Auth** | Requires authentication (session cookie) |
 | **Scope** | All orgs user belongs to + memberships |
-| **Catch-up** | Full activities (create, update, delete) via catchup fetch |
-| **Processing** | `processCatchupBatch()` - deletes, invalidations, membership refresh |
+| **Catch-up** | Summary-based: per-org `{ seq, deletedIds }` + membership flags |
+| **Processing** | `processAppCatchup()` - seq delta analysis, deletes, membership refresh |
 | **Cursor storage** | Persisted in sync store (survives refresh) |
 
-### Public stream (`/pages/stream`)
+### Public stream (`/entities/public/stream`)
 
 Unauthenticated stream for public entities (e.g., pages).
 
 | Aspect | Implementation |
 |--------|----------------|
 | **Auth** | No authentication required |
-| **Scope** | All public pages |
-| **Catch-up** | **Delete activities only** via catchup fetch |
-| **Processing** | Remove deleted pages from cache, then invalidate list for `modifiedAfter` refetch |
+| **Scope** | All public entity types (from `hierarchy.publicAccessTypes`) |
+| **Catch-up** | Summary-based: per-entityType `{ seq, deletedIds }` |
+| **Processing** | `processPublicCatchup()` - seq delta analysis, deletes, list invalidation |
 | **Cursor storage** | In-memory only (module-level variable) |
 
-**Why delete-only catch-up?** Create/update changes are handled via `modifiedAfter` query param on the list endpoint. Only deletes need explicit catch-up since they can't be detected by `modifiedAfter`.
+**How catchup works:**
+
+The backend returns a summary per scope (orgId for app stream, entityType for public stream):
+```typescript
+interface CatchupChangeSummary {
+  seq: number;       // Current max seq for this scope
+  deletedIds: string[]; // Entity IDs deleted since cursor
+}
+```
+
+The client compares `serverSeq` with its stored `clientSeq`:
+- `delta == 0` → nothing changed, skip
+- `delta == deletedIds.length` → only deletes happened, remove from cache
+- `delta > deletedIds.length` → creates/updates happened → invalidate entity lists
 
 ### Catchup-then-SSE pattern (both streams)
 
@@ -341,27 +354,43 @@ Replaying the same mutation (same `stx.id`) produces the same result without sid
 
 ### Gap detection (seq)
 
-Uses per-scope sequence numbers (`seq`) on activities table for **list-level gap detection**. When `notification.seq > lastSeenSeq + 1`, a gap is detected and list invalidation is triggered.
+Uses per-scope sequence numbers (`seq`) for **list-level gap detection**. Seq is monotonic (never decremented by deletes) and scoped per org (app stream) or per entityType (public stream).
+
+**Two modes of gap detection:**
+
+1. **Catchup (offline/reconnect):** Client compares stored `clientSeq` with `serverSeq` from catchup summary. The delta tells whether creates/updates happened beyond just deletes.
+
+2. **Live (SSE):** Each notification includes `seq`. Client updates stored seq on each notification. On reconnect, the catchup summary comparison detects any missed changes.
 
 **How it works:**
 ```typescript
-// Per-scope sequence tracking in memory
-const seqStore = new Map<string, number>();
+// Per-scope sequence tracking (persisted in sync store)
+// App stream: orgId → seq
+// Public stream: entityType → seq
+const seqs: Record<string, number> = {};
 
-// On each stream notification:
-if (seq > lastSeenSeq + 1) {
-  // Missed changes - invalidate list for this scope
-  queryClient.invalidateQueries({ queryKey: keys.list.base, refetchType: 'active' });
+// During catchup:
+const delta = serverSeq - clientSeq;
+if (delta === deletedIds.length) {
+  // Only deletes - already handled by removing from cache
+} else if (delta > deletedIds.length) {
+  // Creates/updates happened - invalidate entity lists
+  invalidateAllEntityLists(refetchType);
 }
-seqStore.set(scopeKey, seq);
+seqs[scope] = serverSeq;
+
+// During live SSE:
+if (seq !== null && organizationId) {
+  seqs[organizationId] = seq; // Track for next catchup comparison
+}
 ```
 
 **Key features:**
-- Tracks last seen `seq` per organization/scope in memory (`seqStore` Map)
-- Scope key is `organizationId` or `global:${entityType}` for org-less entities
-- Gaps detected when `notification.seq > lastSeenSeq + 1`
-- Missed changes trigger list invalidation (refetch from server)
-- No persistence needed - React Query handles staleness on reconnect
+- Tracks `seq` per org (app stream) or per entityType (public stream) in persisted sync store
+- Seq scoping: CDC uses `orgId ?? entityType` as scope for atomic counter increment
+- Persisted across tabs/reloads via localStorage (sync store)
+- Catchup summary provides seq + deletedIds per scope — no per-event notifications needed
+- Priority routing during catchup: high priority orgs get immediate refetch, low priority get invalidate-only
 
 ### Conflict detection (version)
 
@@ -388,7 +417,7 @@ const trackedFields = ['name', 'content', 'status'] as const;
 const changedFields = getChangedTrackedFields(payload, trackedFields);
 
 // Field-level conflict detection - check ALL changed fields
-const { conflicts } = checkFieldConflicts(changedFields, entity.stx, stx.baseVersion);
+const { conflicts } = checkFieldConflicts(changedFields, entity.stx, stx.lastReadVersion);
 throwIfConflicts('entity', conflicts);
 
 // Build updated fieldVersions for ALL changed fields

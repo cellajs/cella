@@ -243,7 +243,29 @@
   {
     "operationId": "deleteRequests",
     "responses": [
-      { "status": 204, "description": "Requests deleted" },
+      {
+        "status": 200,
+        "description": "Success",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "data": { "type": "array", "required": true },
+            "rejectedItemIds": {
+              "type": "array",
+              "required": true,
+              "description": "Identifiers of items that could not be processed",
+              "itemType": "string"
+            },
+            "rejectionReasons": {
+              "type": "object",
+              "required": false,
+              "description": "Map of reason code to rejected item IDs"
+            }
+          },
+          "contentType": "application/json"
+        }
+      },
       {
         "status": 400,
         "description": "Bad request: problem processing request.",

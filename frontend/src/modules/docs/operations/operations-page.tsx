@@ -4,6 +4,7 @@ import { ChevronDown } from 'lucide-react';
 import { Suspense, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
+import { StickyBox } from '~/modules/common/sticky-box';
 import { HashUrlButton } from '~/modules/docs/hash-url-button';
 import { TagOperationsList } from '~/modules/docs/operations/operation-detail';
 import { TagExpandButtonContent, TagExpandButtonLoading } from '~/modules/docs/operations/operation-responses';
@@ -52,13 +53,15 @@ function OperationsPage() {
 
   return (
     <div>
-      <div className="container flex items-center gap-3 mb-6">
-        <ViewModeToggle />
+      <StickyBox className="z-10 bg-background" offsetTop={0} hideOnScrollDown>
+        <div className="container flex items-center gap-3 py-3 ">
+          <ViewModeToggle />
 
-        <span className="text-sm text-muted-foreground lowercase">
-          {operations.length} {t('common:operation', { count: operations.length })}
-        </span>
-      </div>
+          <span className="text-sm text-muted-foreground lowercase">
+            {operations.length} {t('common:operation', { count: operations.length })}
+          </span>
+        </div>
+      </StickyBox>
 
       <div className="container flex flex-col gap-12 lg:gap-20">
         {tags.map((tag) => {

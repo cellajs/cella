@@ -4,11 +4,9 @@ import { devtools } from 'zustand/middleware';
 import type { StreamNotification } from '~/api.gen';
 import { getAppStream, getPublicStream } from '~/api.gen';
 import { isDebugMode } from '~/env';
-import { pageQueryKeys } from '~/modules/page/query';
-import { queryClient } from '~/query/query-client';
 import { useSyncStore } from '~/store/sync';
 import { handleAppStreamNotification } from './app-stream-handler';
-import { processCatchupBatch } from './catchup-processor';
+import { processAppCatchup, processPublicCatchup } from './catchup-processor';
 import { handlePublicStreamNotification } from './public-stream-handler';
 import {
   broadcastNotification,
@@ -24,10 +22,10 @@ interface StreamConfig {
   endpoint: string;
   withCredentials: boolean;
   useTabCoordination: boolean;
-  fetchCatchup: (offset: string | null) => Promise<{ notifications: unknown[]; cursor: string | null }>;
+  /** Fetch catchup summary and process it. Returns the new cursor. */
+  fetchAndProcessCatchup: (offset: string | null) => Promise<string | null>;
+  /** Process a single live SSE notification. */
   processNotification: (notification: unknown) => void;
-  processCatchupBatch?: (notifications: unknown[], options: { lastSyncAt: string | null }) => void;
-  invalidateOnReconnect?: boolean;
   maxConsecutiveFailures?: number;
 }
 
@@ -127,24 +125,14 @@ class StreamManager {
         }
       }
 
-      // Phase 1: Fetch catchup as JSON batch
+      // Phase 1: Fetch and process catchup summary
       this.store.getState().setState('catching-up');
 
       const currentCursor = useTabCoordination ? useSyncStore.getState().cursor : this.store.getState().cursor;
-      const lastSyncAt = useTabCoordination ? useSyncStore.getState().lastSyncAt : null;
 
       console.debug(`[${debugLabel}] Fetching catchup from offset: ${currentCursor ?? 'null'}`);
-      const { notifications, cursor: newCursor } = await this.config.fetchCatchup(currentCursor);
+      const newCursor = await this.config.fetchAndProcessCatchup(currentCursor);
       if (signal.aborted) return;
-
-      if (notifications.length > 0) {
-        console.debug(`[${debugLabel}] Processing ${notifications.length} catchup notifications`);
-        if (this.config.processCatchupBatch) {
-          this.config.processCatchupBatch(notifications, { lastSyncAt });
-        } else {
-          for (const notification of notifications) this.config.processNotification(notification);
-        }
-      }
 
       if (newCursor) {
         this.store.getState().setCursor(newCursor);
@@ -154,11 +142,6 @@ class StreamManager {
         }
       }
 
-      const { isFirstConnect } = this.store.getState();
-      if (!isFirstConnect && this.config.invalidateOnReconnect) {
-        console.debug(`[${debugLabel}] Invalidating list for modifiedAfter refetch`);
-        queryClient.invalidateQueries({ queryKey: pageQueryKeys.list.base });
-      }
       this.store.getState().setIsFirstConnect(false);
 
       console.debug(`[${debugLabel}] Catchup complete, cursor: ${newCursor}`);
@@ -357,13 +340,14 @@ const publicStreamConfig: StreamConfig = {
   endpoint: `${appConfig.backendUrl}/entities/public/stream`,
   withCredentials: false,
   useTabCoordination: false,
-  invalidateOnReconnect: true,
-  fetchCatchup: async (offset) => {
-    const response = await getPublicStream({ query: { offset: offset ?? undefined } });
-    return {
-      notifications: (response.notifications ?? []) as StreamNotification[],
-      cursor: response.cursor ?? null,
-    };
+  fetchAndProcessCatchup: async (offset) => {
+    const seqs = useSyncStore.getState().seqs;
+    const seqsParam = Object.keys(seqs).length > 0 ? JSON.stringify(seqs) : undefined;
+    const response = await getPublicStream({
+      query: { offset: offset ?? undefined, seqs: seqsParam },
+    });
+    processPublicCatchup(response);
+    return response.cursor ?? null;
   },
   processNotification: (notification) => handlePublicStreamNotification(notification as StreamNotification),
 };
@@ -380,17 +364,16 @@ const appStreamConfig: StreamConfig = {
   endpoint: `${appConfig.backendUrl}/entities/app/stream`,
   withCredentials: true,
   useTabCoordination: true,
-  invalidateOnReconnect: false,
-  fetchCatchup: async (offset) => {
-    const response = await getAppStream({ query: { offset: offset ?? undefined } });
-    return {
-      notifications: (response.notifications ?? []) as AppStreamNotification[],
-      cursor: response.cursor ?? null,
-    };
+  fetchAndProcessCatchup: async (offset) => {
+    const seqs = useSyncStore.getState().seqs;
+    const seqsParam = Object.keys(seqs).length > 0 ? JSON.stringify(seqs) : undefined;
+    const response = await getAppStream({
+      query: { offset: offset ?? undefined, seqs: seqsParam },
+    });
+    processAppCatchup(response);
+    return response.cursor ?? null;
   },
   processNotification: (notification) => handleAppStreamNotification(notification as AppStreamNotification),
-  processCatchupBatch: (notifications, options) =>
-    processCatchupBatch(notifications as AppStreamNotification[], options),
 };
 
 export const appStreamManager = new StreamManager(appStreamConfig, appStreamStore);

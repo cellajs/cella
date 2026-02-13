@@ -204,6 +204,7 @@ export const usePageUpdateMutation = () => {
 
       // Cancel queries to prevent race conditions
       await queryClient.cancelQueries({ queryKey: keys.list.base });
+      await queryClient.cancelQueries({ queryKey: keys.detail.byId(id) });
 
       // Snapshot current state for potential rollback
       const previousPage = findPageInListCache(id);
@@ -212,6 +213,8 @@ export const usePageUpdateMutation = () => {
         // Merge new data into existing entity for instant UI update
         const optimisticPage = { ...previousPage, ...data, modifiedAt: new Date().toISOString() };
         mutateCache.update([optimisticPage]);
+        // Also update detail cache so view page shows updated data immediately
+        queryClient.setQueryData(keys.detail.byId(id), optimisticPage);
       }
 
       // Return snapshot for rollback in onError
@@ -223,19 +226,20 @@ export const usePageUpdateMutation = () => {
       // Revert cache to pre-mutation snapshot
       if (context?.previousPage) {
         mutateCache.update([context.previousPage]);
+        queryClient.setQueryData(keys.detail.byId(context.previousPage.id), context.previousPage);
       }
     },
 
     // Runs on API success - apply authoritative server data
-    onSuccess: (updatedPage) => {
+    onSuccess: (updatedPage, _variables) => {
       // Replace optimistic data with server response (source of truth)
       mutateCache.update([updatedPage]);
+      queryClient.setQueryData(keys.detail.byId(updatedPage.id), updatedPage);
     },
 
-    // Runs after success OR error - refresh detail view
-    onSettled: (_data, _error, { id }) => {
-      // Skip invalidation if other page mutations still in flight
-      invalidateIfLastMutation(queryClient, pagesMutationKeyBase, keys.detail.byId(id));
+    // Runs after success OR error - only refetch on error to get true server state
+    onSettled: (_data, error, { id }) => {
+      if (error) queryClient.invalidateQueries({ queryKey: keys.detail.byId(id) });
     },
   });
 };
@@ -295,6 +299,12 @@ export const usePageDeleteMutation = () => {
  * Called during app initialization before persisted cache restoration.
  */
 addMutationRegistrar((queryClient: QueryClient) => {
+  // Register detail query defaults so stream handlers can fetch individual pages
+  // via queryClient.fetchQuery without needing entity-specific imports.
+  queryClient.setQueryDefaults(keys.detail.base, {
+    queryFn: ({ queryKey }) => getPage({ path: { id: queryKey[2] as string } }),
+  });
+
   // Create mutation - API accepts array, unwrap single result
   queryClient.setMutationDefaults(keys.create, {
     mutationFn: async (data: CreatePageInput) => {

@@ -45,13 +45,7 @@ export const FocusViewContainer = ({ children, className = '' }: { children: Rea
   useBodyClass({ 'focus-view': focusView });
 
   return (
-    <div
-      className={cn(
-        'focus-view-container',
-        className,
-        focusView ? 'w-full h-full max-w-none min-w-full min-h-full' : '',
-      )}
-    >
+    <div className={cn('focus-view-container', className, focusView ? 'w-full max-w-none min-w-full min-h-full' : '')}>
       {children}
     </div>
   );

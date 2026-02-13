@@ -5,6 +5,7 @@ import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
+import { StickyBox } from '~/modules/common/sticky-box';
 import { HashUrlButton } from '~/modules/docs/hash-url-button';
 import { schemasQueryOptions, schemaTagsQueryOptions } from '~/modules/docs/query';
 import { TagSchemasList } from '~/modules/docs/schemas/schema-detail';
@@ -34,11 +35,13 @@ function SchemasPage() {
 
   return (
     <div className="container">
-      <div className="flex items-center gap-3 mb-6">
-        <span className="text-sm text-muted-foreground">
-          {schemas.length} {t('common:schema', { count: schemas.length })}
-        </span>
-      </div>
+      <StickyBox className="z-10 bg-background" offsetTop={0} hideOnScrollDown>
+        <div className="flex items-center gap-3 py-3">
+          <span className="text-sm text-muted-foreground">
+            {schemas.length} {t('common:schema', { count: schemas.length })}
+          </span>
+        </div>
+      </StickyBox>
 
       <div className="flex flex-col gap-12 lg:gap-20">
         {schemaTags.map((tag) => {

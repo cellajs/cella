@@ -35,4 +35,4 @@ export const generateScripts: GenerateScript[] = [
 ];
 
 /** Seed scripts run during `pnpm seed` */
-export const seedScripts = ['pnpm run seed:user', 'pnpm run seed:organizations', 'pnpm run seed:data'];
+export const seedScripts = ['pnpm run seed:user', 'pnpm run seed:organizations', 'pnpm run seed:data', 'pnpm run seed:counters'];

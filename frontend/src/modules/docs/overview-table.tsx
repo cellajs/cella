@@ -69,6 +69,7 @@ export function OverviewTable() {
           limit={rows.length}
           isFiltered={false}
           rowHeight={42}
+          readOnly
           enableVirtualization={false}
         />
       </CardContent>

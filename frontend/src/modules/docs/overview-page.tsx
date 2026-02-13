@@ -11,7 +11,7 @@ function OverviewPage() {
 
   return (
     <div className="container">
-      <SimpleHeader className="mb-8" heading={t('common:docs.openapi_specification')} />
+      <SimpleHeader className="mt-6 mb-8" heading={t('common:docs.openapi_specification')} />
       <OverviewTable />
       <OpenApiSpecViewer />
     </div>

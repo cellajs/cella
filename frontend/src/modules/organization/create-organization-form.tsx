@@ -80,8 +80,15 @@ export function CreateOrganizationForm({ labelDirection = 'top', children, callb
   return (
     <Form {...form} labelDirection={labelDirection}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        {/* TODO If user only has one tenant can we hide this */}
         <SelectTenantFormField control={form.control} name="tenantId" label={t('common:tenant')} required />
-        <InputFormField control={form.control} name="name" label={t('common:name')} required />
+        <InputFormField
+          control={form.control}
+          name="name"
+          label={t('common:name')}
+          placeholder={t('common:placeholder.type_name')}
+          required
+        />
         <SlugFormField
           control={form.control}
           entityType="organization"

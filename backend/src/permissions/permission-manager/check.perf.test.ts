@@ -15,6 +15,8 @@ type TestMembership = {
   muted: boolean;
   archived: boolean;
   organizationId: string;
+  workspaceId: string | null;
+  projectId: string | null;
 };
 
 /**
@@ -57,6 +59,8 @@ const createMemberships = (count: number): TestMembership[] =>
     displayOrder: 0,
     muted: false,
     archived: false,
+    workspaceId: null,
+    projectId: null,
   }));
 
 // Helper to create subjects

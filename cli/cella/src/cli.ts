@@ -95,7 +95,7 @@ export async function parseCli(userConfig: CellaCliConfig, forkPath: string): Pr
     })
     .option('--fork <name>', 'pre-select fork by name (skips fork selection prompt)')
     .option('--contribute', 'push drifted files to contrib branch in upstream (non-interactive)')
-    .option('--hard', 'reset drifted files to upstream version (aggressive alignment)');
+    .option('--hard', 'overwrite drifted files with upstream version (aggressive realignment)');
 
   program.parse(process.argv);
 

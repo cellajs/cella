@@ -43,7 +43,7 @@ export function Combobox({
   renderAvatar = false,
   contentWidthMatchInput = true,
   disabled = false,
-  placeholders: passedPlaseholders = {},
+  placeholders: passedPlaceholders = {},
 }: ComboboxProps) {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm');
@@ -59,12 +59,12 @@ export function Combobox({
 
   const debouncedSearchQuery = useDebounce(searchValue, 300);
 
-  const placeholders: Record<keyof typeof passedPlaseholders, TKey> = {
+  const placeholders: Record<keyof typeof passedPlaceholders, TKey> = {
     trigger: 'common:select',
     search: 'common:placeholder.search',
     notFound: 'common:no_resource_found',
     resource: 'common:item',
-    ...passedPlaseholders,
+    ...passedPlaceholders,
   };
 
   const filteredOptions = options.filter(({ label }) =>
@@ -110,7 +110,9 @@ export function Combobox({
               {renderOption(selectedOption)}
             </div>
           ) : (
-            <span className="truncate text-muted-foreground">{t(placeholders.trigger)}</span>
+            <span className="truncate text-muted-foreground">
+              {t(placeholders.trigger, { resource: t(placeholders.resource).toLowerCase() })}
+            </span>
           )}
           <ChevronDownIcon
             className={`ml-2 size-4 shrink-0 opacity-50 transition-transform ${open ? '-rotate-90' : 'rotate-0'}`}

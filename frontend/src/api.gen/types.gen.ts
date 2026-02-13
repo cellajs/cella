@@ -2202,6 +2202,10 @@ export type GetPublicStreamData = {
      * Set to "sse" for live updates (SSE stream)
      */
     live?: 'sse';
+    /**
+     * JSON-encoded client seqs for gap detection: {"scopeId":42}. Unchanged scopes are excluded from the response.
+     */
+    seqs?: string;
   };
   url: '/entities/public/stream';
 };
@@ -2233,10 +2237,19 @@ export type GetPublicStreamError = GetPublicStreamErrors[keyof GetPublicStreamEr
 
 export type GetPublicStreamResponses = {
   /**
-   * Catch-up activities or SSE stream started
+   * Catch-up summary or SSE stream started
    */
   200: {
-    notifications: Array<StreamNotification>;
+    /**
+     * Per-entityType change summary: { [entityType]: { seq, deletedIds } }
+     */
+    changes: {
+      [key: string]: {
+        seq: number;
+        deletedIds: Array<string>;
+        mSeq?: number;
+      };
+    };
     /**
      * Last activity ID (use as offset for next request)
      */
@@ -2258,6 +2271,10 @@ export type GetAppStreamData = {
      * Connection mode: 'sse' for streaming, 'catchup' for one-time fetch
      */
     live?: 'sse' | 'catchup';
+    /**
+     * JSON-encoded client seqs for gap detection: {"scopeId":42}. Unchanged scopes are excluded from the response.
+     */
+    seqs?: string;
   };
   url: '/entities/app/stream';
 };
@@ -2289,10 +2306,19 @@ export type GetAppStreamError = GetAppStreamErrors[keyof GetAppStreamErrors];
 
 export type GetAppStreamResponses = {
   /**
-   * SSE stream or notification response
+   * SSE stream or catchup summary response
    */
   200: {
-    notifications: Array<StreamNotification>;
+    /**
+     * Per-org change summary: { [orgId]: { seq, deletedIds, membership? } }
+     */
+    changes: {
+      [key: string]: {
+        seq: number;
+        deletedIds: Array<string>;
+        mSeq?: number;
+      };
+    };
     /**
      * Last activity ID (use as offset for next request)
      */
@@ -2897,9 +2923,21 @@ export type DeleteRequestsError = DeleteRequestsErrors[keyof DeleteRequestsError
 
 export type DeleteRequestsResponses = {
   /**
-   * Requests deleted
+   * Success
    */
-  204: void;
+  200: {
+    data: Array<unknown>;
+    /**
+     * Identifiers of items that could not be processed
+     */
+    rejectedItemIds: Array<string>;
+    /**
+     * Map of reason code to rejected item IDs
+     */
+    rejectionReasons?: {
+      [key: string]: Array<string>;
+    };
+  };
 };
 
 export type DeleteRequestsResponse = DeleteRequestsResponses[keyof DeleteRequestsResponses];
@@ -3786,9 +3824,21 @@ export type DeletePagesError = DeletePagesErrors[keyof DeletePagesErrors];
 
 export type DeletePagesResponses = {
   /**
-   * Page(s) deleted
+   * Success
    */
-  204: void;
+  200: {
+    data: Array<unknown>;
+    /**
+     * Identifiers of items that could not be processed
+     */
+    rejectedItemIds: Array<string>;
+    /**
+     * Map of reason code to rejected item IDs
+     */
+    rejectionReasons?: {
+      [key: string]: Array<string>;
+    };
+  };
 };
 
 export type DeletePagesResponse = DeletePagesResponses[keyof DeletePagesResponses];

@@ -141,8 +141,10 @@ export function QueryClientProvider({ children }: { children: React.ReactNode })
           ).map((source) => {
             const options = { ...source, ...offlineQueryConfig };
             // Use ensureInfiniteQueryData for infinite queries (have getNextPageParam)
-            if ('getNextPageParam' in options) return queryClient.ensureInfiniteQueryData(options);
-            return queryClient.ensureQueryData(options);
+            // biome-ignore lint/suspicious/noExplicitAny: runtime check narrows type but TS can't infer it
+            if ('getNextPageParam' in options) return queryClient.ensureInfiniteQueryData(options as any);
+            // biome-ignore lint/suspicious/noExplicitAny: dynamic query options from entityToPrefetchQueries
+            return queryClient.ensureQueryData(options as any);
           });
           await Promise.allSettled(prefetchPromises);
 

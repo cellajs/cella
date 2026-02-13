@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import type { MeAuthDataResponse, MeResponse, UploadTokenResponse } from '#/modules/me/types';
-import { mockContextEntityBase, mockStreamNotification } from './mock-entity-base';
+import { mockContextEntityBase } from './mock-entity-base';
 import { mockInactiveMembershipResponse } from './mock-membership';
 import { mockUserResponse } from './mock-user';
 import { mockNanoid, mockPaginated, withFakerSeed } from './utils';
@@ -92,11 +92,14 @@ export const mockPaginatedInvitationsResponse = (count = 2) => mockPaginated(moc
  */
 export const mockStreamResponse = (key = 'stream:default') =>
   withFakerSeed(key, () => {
-    // Generate cursor BEFORE nested mock to ensure deterministic output
-    // (mockStreamNotification uses nested withFakerSeed which resets the seed after)
     const cursor = mockNanoid();
     return {
-      notifications: [mockStreamNotification(`${key}:notification`)],
+      changes: {
+        'org-example-id': {
+          seq: 42,
+          deletedIds: [],
+        },
+      },
       cursor,
     };
   });

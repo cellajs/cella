@@ -62,9 +62,12 @@ export const JsonActions = ({
       {viewerUrl && (
         <ToggleGroupItem value="view" aria-label={t('common:view')} className="gap-2 flex-none" size={size} asChild>
           <Link
+            resetScroll
             to={viewerUrl}
             onClick={() => {
               isMobile && useSheeter.getState().remove();
+              // Scroll the docs main content area to top (resetScroll only handles window scroll)
+              requestAnimationFrame(() => document.querySelector('main')?.scrollTo({ top: 0 }));
             }}
           >
             <span className="group-data-[small-mode=true]/toggle-group:text-xs">{filename}</span>

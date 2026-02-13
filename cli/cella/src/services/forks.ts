@@ -182,6 +182,7 @@ async function syncFork(config: RuntimeConfig, forkPath: string, forkName: strin
     logFile: config.logFile,
     list: false,
     verbose: config.verbose,
+    hard: config.hard,
   };
 
   // Run sync

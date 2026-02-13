@@ -398,11 +398,30 @@ export async function restoreToHead(cwd: string, filePath: string): Promise<void
 }
 
 /**
+ * Batch restore multiple files to HEAD version in a single git command.
+ * Much faster than calling restoreToHead for each file individually.
+ * Reduces IDE file watcher events by completing all restores at once.
+ */
+export async function batchRestoreToHead(cwd: string, filePaths: string[]): Promise<void> {
+  if (filePaths.length === 0) return;
+  await git(['restore', '--source=HEAD', '--staged', '--worktree', '--', ...filePaths], cwd);
+}
+
+/**
  * Remove a file from index with tracked delete (git rm).
  * Records a deletion in the merge result.
  */
 export async function gitRm(cwd: string, filePath: string): Promise<void> {
   await git(['rm', '-f', '--', filePath], cwd, { ignoreErrors: true });
+}
+
+/**
+ * Batch remove multiple files from index with tracked delete.
+ * Much faster than calling gitRm for each file individually.
+ */
+export async function batchGitRm(cwd: string, filePaths: string[]): Promise<void> {
+  if (filePaths.length === 0) return;
+  await git(['rm', '-f', '--', ...filePaths], cwd, { ignoreErrors: true });
 }
 
 /**

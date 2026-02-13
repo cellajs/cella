@@ -22,10 +22,11 @@ import { resetUserMockEnforcers } from '../mocks/mock-user';
  * Types
  */
 type AuthStrategy = 'password' | 'passkey' | 'oauth' | 'totp';
+type OAuthProvider = 'github' | 'google' | 'microsoft';
 
 type ConfigOverride = {
   enabledAuthStrategies?: AuthStrategy[];
-  enabledOAuthProviders?: string[];
+  enabledOAuthProviders?: OAuthProvider[];
   registrationEnabled?: boolean;
 };
 
@@ -126,14 +127,12 @@ export function mockArcticLibrary() {
  */
 export function setTestConfig(overrides: ConfigOverride) {
   if (overrides.enabledAuthStrategies) {
-    // Maybe not the best way to cast, but config.enabledAuthStrategies is a readonly fixed
-    appConfig.enabledAuthStrategies =
-      overrides.enabledAuthStrategies as unknown as typeof appConfig.enabledAuthStrategies;
+    appConfig.enabledAuthStrategies = overrides.enabledAuthStrategies;
   }
 
   if (overrides.enabledOAuthProviders) {
-    appConfig.enabledOAuthProviders =
-      overrides.enabledOAuthProviders as unknown as typeof appConfig.enabledOAuthProviders;
+    // Config type is narrowed by `satisfies` in default-config, so cast needed to widen
+    appConfig.enabledOAuthProviders = overrides.enabledOAuthProviders as typeof appConfig.enabledOAuthProviders;
   }
 
   if (overrides.registrationEnabled !== undefined) {

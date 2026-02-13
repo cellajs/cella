@@ -1,5 +1,5 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { Outlet, useNavigate } from '@tanstack/react-router';
+import { Outlet, useNavigate, useRouterState } from '@tanstack/react-router';
 import { ArrowUpIcon, MenuIcon } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
@@ -15,6 +15,7 @@ import { useUIStore } from '~/store/ui';
 
 function DocsLayout() {
   const navigate = useNavigate();
+  const { pathname } = useRouterState({ select: (s) => s.location });
   const isMobile = useBreakpoints('max', 'sm');
   const focusView = useUIStore((state) => state.focusView);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -23,6 +24,11 @@ function DocsLayout() {
   // Track scroll position for scroll-to-top button visibility
   const { scrollTop } = useScrollVisibility(isMobile, mainRef);
   const showScrollTop = scrollTop > 300;
+
+  // Scroll main container to top on route changes (main is the scroll container, not window)
+  useEffect(() => {
+    mainRef.current?.scrollTo({ top: 0 });
+  }, [pathname]);
 
   // Fetch tags via React Query (reduces bundle size)
   const { data: tags } = useSuspenseQuery(tagsQueryOptions);
@@ -103,7 +109,7 @@ function DocsLayout() {
             bodyClass="docs-floating-nav"
             resetTrigger={sidebarOpen}
           />
-          <main ref={mainRef} className="h-screen pt-3 sm:pt-6 overflow-auto pb-[70vh]">
+          <main ref={mainRef} className="h-screen overflow-auto pb-[70vh]">
             <Outlet />
           </main>
         </div>
@@ -127,7 +133,7 @@ function DocsLayout() {
             </>
           )}
           <ResizablePanel>
-            <main className="h-screen pt-3 sm:pt-6 overflow-auto pb-[70vh]">
+            <main ref={mainRef} className="h-screen overflow-auto pb-[70vh]">
               <Outlet />
             </main>
           </ResizablePanel>

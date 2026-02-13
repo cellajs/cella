@@ -23,6 +23,8 @@ interface SyncStoreState {
   isProcessing: boolean;
   /** Timestamp of last successful sync (ISO string) */
   lastSyncAt: string | null;
+  /** Per-scope seq values: orgId → seq (app stream) or entityType → seq (public stream). Persisted. */
+  seqs: Record<string, number>;
 
   // Actions
   /** Update cursor and persist to localStorage */
@@ -37,6 +39,10 @@ interface SyncStoreState {
   setIsProcessing: (isProcessing: boolean) => void;
   /** Update last sync timestamp */
   setLastSyncAt: (timestamp: string | null) => void;
+  /** Update seq for a scope (orgId or entityType) */
+  setSeq: (scope: string, seq: number) => void;
+  /** Get seq for a scope (returns 0 if unknown) */
+  getSeq: (scope: string) => number;
   /** Reset sync store (on logout) */
   clearSyncStore: () => void;
 }
@@ -46,12 +52,13 @@ const initialState = {
   activityQueue: [],
   isProcessing: false,
   lastSyncAt: null,
+  seqs: {} as Record<string, number>,
 };
 
 export const useSyncStore = create<SyncStoreState>()(
   devtools(
     persist(
-      immer((set) => ({
+      immer((set, get) => ({
         ...initialState,
 
         setCursor: (cursor) => {
@@ -90,6 +97,16 @@ export const useSyncStore = create<SyncStoreState>()(
           });
         },
 
+        setSeq: (scope, seq) => {
+          set((state) => {
+            state.seqs[scope] = seq;
+          });
+        },
+
+        getSeq: (scope) => {
+          return get().seqs[scope] ?? 0;
+        },
+
         clearSyncStore: () => {
           set(() => initialState);
         },
@@ -97,10 +114,11 @@ export const useSyncStore = create<SyncStoreState>()(
       {
         name: SYNC_STORAGE_KEY,
         storage: createJSONStorage(() => localStorage),
-        // Only persist cursor and lastSyncAt (not the queue or processing state)
+        // Only persist cursor, lastSyncAt, and seqs (not the queue or processing state)
         partialize: (state) => ({
           cursor: state.cursor,
           lastSyncAt: state.lastSyncAt,
+          seqs: state.seqs,
         }),
       },
     ),

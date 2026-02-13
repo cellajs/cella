@@ -147,7 +147,7 @@ const requestsRouteHandlers = app
     // Delete the requests
     await db.delete(requestsTable).where(inArray(requestsTable.id, toDeleteIds));
 
-    return ctx.body(null, 204);
+    return ctx.json({ data: [], rejectedItemIds: [] }, 200);
   });
 
 export default requestsRouteHandlers;

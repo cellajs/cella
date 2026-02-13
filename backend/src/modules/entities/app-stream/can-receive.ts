@@ -1,4 +1,4 @@
-import { isContextEntity, isProductEntity, type ProductEntityType } from 'shared';
+import { isProductEntity, type ProductEntityType } from 'shared';
 import { checkPermission } from '#/permissions';
 import { type ActivityEventWithEntity, getTypedEntity } from '#/sync/activity-bus';
 import { logEvent } from '#/utils/logger';
@@ -9,9 +9,6 @@ import type { AppStreamSubscriber } from './types';
  *
  * For membership events:
  * - User is the subject of the membership (entity.userId matches)
- *
- * For context entity events (organization, etc.):
- * - User is a member of the org
  *
  * For product entity events (page, attachment):
  * - User has read permission via their memberships
@@ -24,11 +21,6 @@ export function canReceiveUserEvent(subscriber: AppStreamSubscriber, event: Acti
   }
 
   const { entityType } = event;
-
-  // For context entity events, check if user is member of the organization
-  if (entityType && isContextEntity(entityType) && event.organizationId) {
-    return subscriber.orgIds.has(event.organizationId);
-  }
 
   // For product entity events (page, attachment, etc.)
   if (isProductEntity(entityType)) {

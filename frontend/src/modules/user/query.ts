@@ -24,7 +24,6 @@ export const findUserInListCache = (entityId: string) =>
 
 /**
  * Query options for fetching a user by ID within an organization context.
- * NOTE: Slug is only used on page load. All subsequent queries must use ID.
  */
 export const userQueryOptions = (id: string, tenantId: string, orgId: string) =>
   queryOptions({

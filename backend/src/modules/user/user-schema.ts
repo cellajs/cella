@@ -14,7 +14,9 @@ import {
 } from '#/schemas';
 import { mockUserResponse } from '../../../mocks/mock-user';
 
-export const enabledOAuthProvidersEnum = z.enum(appConfig.enabledOAuthProviders as unknown as [EnabledOAuthProvider]);
+export const enabledOAuthProvidersEnum = z.enum(
+  appConfig.enabledOAuthProviders as [EnabledOAuthProvider, ...EnabledOAuthProvider[]],
+);
 
 export const userFlagsSchema = z.object(
   Object.keys(appConfig.defaultUserFlags).reduce(

@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
+import type { TKey } from '~/lib/i18n-locales';
 import { Combobox, type ComboboxProps } from '~/modules/ui/combobox';
 
 /**
@@ -160,11 +161,11 @@ export const FullWidthContent: Story = {
   },
 };
 
-const placeholders = {
-  trigger: 'Select from 1000 options...',
-  search: 'Search options...',
-  notFound: 'No options found',
-} as unknown as ComboboxProps['placeholders'];
+const placeholders: ComboboxProps['placeholders'] = {
+  trigger: 'common:select_resource' as TKey,
+  search: 'common:search' as TKey,
+  notFound: 'common:no_resource_found' as TKey,
+};
 
 /**
  * Combobox with large number of options to demonstrate virtualization.
@@ -203,13 +204,11 @@ export const CustomPlaceholders: Story = {
           options={args.options}
           value={value}
           onChange={setValue}
-          placeholders={
-            {
-              trigger: 'Choose a person...',
-              search: 'Search people...',
-              notFound: 'No people found',
-            } as unknown as ComboboxProps['placeholders']
-          }
+          placeholders={{
+            trigger: 'common:select_resource' as TKey,
+            search: 'common:search' as TKey,
+            notFound: 'common:no_resource_found' as TKey,
+          }}
         />
       </div>
     );

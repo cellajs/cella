@@ -18,7 +18,7 @@ export function textTextEditor<TRow, TSummaryRow>({
     <input
       className={textEditorClassname}
       ref={autoFocusAndSelect}
-      value={row[column.key as keyof TRow] as unknown as string}
+      value={String(row[column.key as keyof TRow])}
       onChange={(event) => onRowChange({ ...row, [column.key]: event.target.value })}
       onBlur={() => onClose(true, false)}
     />

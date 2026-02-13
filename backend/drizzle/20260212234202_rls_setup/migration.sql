@@ -42,14 +42,14 @@ BEGIN
   GRANT SELECT, INSERT, UPDATE, DELETE ON unsubscribe_tokens TO runtime_role;
   GRANT SELECT, INSERT, UPDATE, DELETE ON emails TO runtime_role;
   GRANT SELECT, INSERT, UPDATE, DELETE ON rate_limits TO runtime_role;
-  GRANT SELECT, INSERT, UPDATE, DELETE ON counters TO runtime_role;
+  GRANT SELECT, INSERT, UPDATE, DELETE ON context_counters TO runtime_role;
   GRANT SELECT ON tenants TO runtime_role;
   GRANT SELECT ON system_roles TO runtime_role;
   GRANT SELECT ON activities TO runtime_role;
 
   -- Grants: cdc_role (append-only activities + counter sequences)
   GRANT INSERT ON activities TO cdc_role;
-  GRANT SELECT, INSERT, UPDATE ON counters TO cdc_role;
+  GRANT SELECT, INSERT, UPDATE ON context_counters TO cdc_role;
   GRANT SELECT ON tenants TO cdc_role;
   GRANT SELECT ON organizations TO cdc_role;
 

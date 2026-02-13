@@ -1,72 +1,74 @@
 import { eq, sql } from 'drizzle-orm';
 import { type ContextEntityType, hierarchy, roles } from 'shared';
 import type z from 'zod';
-import type { DbOrTx } from '#/db/db';
-import { getMemberCountsSubquery } from '#/modules/entities/helpers/get-member-counts';
-import { getRelatedCountsSubquery } from '#/modules/entities/helpers/get-related-entity-counts';
+import { contextCountersTable } from '#/db/schema/context-counters';
 import type { membershipCountSchema } from '#/schemas';
-import { entityTables } from '#/table-config';
 
 /**
- * Returns the subqueries and select shape needed for entity counts.
- * This can be used in both single-entity and list queries.
+ * Returns the LEFT JOIN info and select shape for entity counts from contextCountersTable.
+ * Reads pre-computed counts from JSONB instead of running COUNT(*) subqueries.
  *
- * @param db - Database connection
+ * JSONB key conventions:
+ *   m:{role}   → membership count by role (e.g. m:admin, m:member)
+ *   m:pending  → pending invitations count
+ *   m:total    → total active members
+ *   e:{type}   → child entity count (e.g. e:attachment)
+ *
  * @param entityType - Type of the context entity
  * @returns Object containing:
- *   - memberCountsSubquery: Subquery for membership counts (LEFT JOIN on id)
- *   - relatedCountsSubquery: Subquery for related entity counts (LEFT JOIN on id)
+ *   - contextCountersJoinOn: SQL for LEFT JOIN condition
  *   - countsSelect: SQL columns for counts.membership and counts.entities
  */
-export const getEntityCountsSelect = (db: DbOrTx, entityType: ContextEntityType) => {
-  const memberCountsSubquery = getMemberCountsSubquery(db, entityType);
-  const relatedCountsSubquery = getRelatedCountsSubquery(db, entityType);
+export const getEntityCountsSelect = (entityType: ContextEntityType) => {
+  const children = hierarchy.getChildren(entityType);
 
-  const validEntities = hierarchy.getChildren(entityType);
-  const relatedJsonPairs = validEntities
-    .map((entity) => `'${entity}', COALESCE("related_counts"."${entity}", 0)`)
+  // Build membership JSON: { admin: N, member: N, ..., pending: N, total: N }
+  const roleJsonPairs = roles.all
+    .map((role) => `'${role}', GREATEST(0, COALESCE(("context_counters"."counts"->>'m:${role}')::int, 0))`)
     .join(', ');
 
-  // Build dynamic role JSON pairs from config
-  const roleJsonPairs = roles.all.map((role) => `'${role}', COALESCE("membership_counts"."${role}", 0)`).join(', ');
+  // Build entity JSON: { attachment: N, ... }
+  const entityJsonPairs = children
+    .map((entity) => `'${entity}', GREATEST(0, COALESCE(("context_counters"."counts"->>'e:${entity}')::int, 0))`)
+    .join(', ');
 
   const countsSelect = {
     membership: sql<z.infer<typeof membershipCountSchema>>`
       json_build_object(
         ${sql.raw(roleJsonPairs)},
-        'pending', COALESCE(${memberCountsSubquery.pending}, 0),
-        'total', COALESCE(${memberCountsSubquery.total}, 0)
+        'pending', GREATEST(0, COALESCE(("context_counters"."counts"->>'m:pending')::int, 0)),
+        'total', GREATEST(0, COALESCE(("context_counters"."counts"->>'m:total')::int, 0))
       )`,
-    entities: sql<Record<(typeof validEntities)[number], number>>`json_build_object(${sql.raw(relatedJsonPairs)})`,
+    entities: sql<Record<(typeof children)[number], number>>`json_build_object(${sql.raw(entityJsonPairs)})`,
   };
 
-  return { memberCountsSubquery, relatedCountsSubquery, countsSelect };
+  return { countsSelect };
 };
 
 /**
- * Fetches aggregated counts for a specific entity, including:
- *  - Membership counts: number of admins, members, pending invitations, and total members.
- *  - Related entity counts: counts of entities(product | context) related to this entity (e.g., attachments, projects, etc.).
- *
- * @param db - Database connection
- * @param entityType - Type of the context entity
- * @param entityId - The ID of the entity to fetch counts for.
- * @returns An object containing:
- *    - membership: JSON object with counts of admin, member, pending, and total members.
- *    - entities: JSON object with counts of related entities, keyed by entity type.
+ * Fetches aggregated counts for a specific entity from contextCountersTable.
+ * Single LEFT JOIN on pre-computed JSONB — no COUNT(*) subqueries.
  */
-export const getEntityCounts = async (db: DbOrTx, entityType: ContextEntityType, entityId: string) => {
-  const table = entityTables[entityType];
-  if (!table) throw new Error(`Invalid entityType: ${entityType}`);
+export const getEntityCounts = async (entityType: ContextEntityType, entityId: string) => {
+  const { countsSelect } = getEntityCountsSelect(entityType);
 
-  const { memberCountsSubquery, relatedCountsSubquery, countsSelect } = getEntityCountsSelect(db, entityType);
+  // Import db lazily to avoid circular imports
+  const { unsafeInternalDb } = await import('#/db/db');
 
-  const [counts] = await db
+  const [counts] = await unsafeInternalDb
     .select(countsSelect)
-    .from(table)
-    .leftJoin(memberCountsSubquery, eq(table.id, memberCountsSubquery.id))
-    .leftJoin(relatedCountsSubquery, eq(table.id, relatedCountsSubquery.id))
-    .where(eq(table.id, entityId));
+    .from(contextCountersTable)
+    .where(eq(contextCountersTable.contextKey, entityId));
+
+  // If no row exists yet, return zeroed counts
+  if (!counts) {
+    const zeroMembership = Object.fromEntries([...roles.all.map((r) => [r, 0]), ['pending', 0], ['total', 0]]);
+    const zeroEntities = Object.fromEntries(hierarchy.getChildren(entityType).map((e) => [e, 0]));
+    return {
+      membership: zeroMembership as z.infer<typeof membershipCountSchema>,
+      entities: zeroEntities as Record<string, number>,
+    };
+  }
 
   return counts;
 };

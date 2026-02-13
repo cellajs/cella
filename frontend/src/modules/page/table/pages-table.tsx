@@ -8,6 +8,7 @@ import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { FocusViewContainer } from '~/modules/common/focus-view';
+import { StickyBox } from '~/modules/common/sticky-box';
 import { pagesLimit, pagesListQueryOptions } from '~/modules/page/query';
 import type { PagesRouteSearchParams } from '~/modules/page/types';
 import { PagesTableBar } from './pages-bar';
@@ -71,17 +72,19 @@ function PagesTable() {
 
   return (
     <FocusViewContainer data-is-compact={isCompact} className="container min-h-screen flex flex-col gap-4">
-      <PagesTableBar
-        searchVars={{ ...search, limit }}
-        setSearch={setSearch}
-        columns={columns}
-        setColumns={setColumns}
-        selected={selected}
-        clearSelection={clearSelection}
-        isCompact={isCompact}
-        setIsCompact={setIsCompact}
-        total={rows?.length ?? 0}
-      />
+      <StickyBox className="z-10 bg-background" offsetTop={0} hideOnScrollDown>
+        <PagesTableBar
+          searchVars={{ ...search, limit }}
+          setSearch={setSearch}
+          columns={columns}
+          setColumns={setColumns}
+          selected={selected}
+          clearSelection={clearSelection}
+          isCompact={isCompact}
+          setIsCompact={setIsCompact}
+          total={rows?.length ?? 0}
+        />
+      </StickyBox>
       <DataTable
         rows={rows}
         rowHeight={52}

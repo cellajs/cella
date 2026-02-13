@@ -8,8 +8,8 @@ export function flattenInfiniteData<T>(data: any): T[] {
 
   // Handle InfiniteQuery data: { pages: [...] }
   if ('pages' in data) {
-    return data.pages.flatMap((p: any) => p.items);
+    return data.pages.flatMap((p: any) => p.items ?? []);
   }
 
-  return data.items;
+  return data.items ?? [];
 }

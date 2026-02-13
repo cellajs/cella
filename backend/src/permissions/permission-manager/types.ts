@@ -42,6 +42,8 @@ export type AccessPolicies = Partial<Record<ContextEntityType | ProductEntityTyp
 /**
  * Context entity ID keys derived from entityIdColumnKeys config.
  * Maps each context entity type to its ID column value type.
+ * Uses `null` for unset values to align with database models (Drizzle).
+ * Optional (?) to support entities that don't have all context ID columns (e.g., standalone products).
  */
 export type ContextEntityIdColumns = {
   [K in ContextEntityType as EntityIdColumnKeys[K]]?: string | null;

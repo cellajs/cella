@@ -90,3 +90,40 @@ export const membershipCrudPolicies = (name: string, table: { tenantId: unknown;
     pgPolicy(`${name}_delete_policy`, { for: 'delete', using: condition }),
   ] as const;
 };
+
+/**
+ * CRUD policies for context entities (projects, workspaces, etc.).
+ * SELECT includes createdBy match for RETURNING after INSERT (before membership exists).
+ * INSERT requires tenant match + auth. UPDATE/DELETE require membership.
+ */
+export const contextEntityCrudPolicies = (
+  name: string,
+  table: { tenantId: unknown; organizationId: unknown; createdBy: unknown },
+) => {
+  return [
+    pgPolicy(`${name}_select_policy`, {
+      for: 'select',
+      using: sql`
+        ${isAuthenticated}
+        AND ${userContextSet}
+        AND (
+          ${table.createdBy} = current_setting('app.user_id', true)::text
+          OR ${membershipExists(table)}
+        )
+      `,
+    }),
+    pgPolicy(`${name}_insert_policy`, {
+      for: 'insert',
+      withCheck: sql`${tenantMatch(table)} AND ${isAuthenticated}`,
+    }),
+    pgPolicy(`${name}_update_policy`, {
+      for: 'update',
+      using: sql`${tenantMatch(table)} AND ${isAuthenticated} AND ${membershipExists(table)}`,
+      withCheck: sql`${tenantMatch(table)} AND ${isAuthenticated}`,
+    }),
+    pgPolicy(`${name}_delete_policy`, {
+      for: 'delete',
+      using: sql`${tenantMatch(table)} AND ${isAuthenticated} AND ${membershipExists(table)}`,
+    }),
+  ] as const;
+};

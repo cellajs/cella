@@ -29,7 +29,8 @@ export function findInListCache<T extends { id: string }>(
     const queries = queryClient.getQueryCache().findAll({ queryKey });
 
     for (const query of queries) {
-      const items = flattenInfiniteData<T>(query.state.data);
+      // biome-ignore lint/suspicious/noExplicitAny: cache data is untyped
+      const items = flattenInfiniteData<T>(query.state.data as any);
       for (const item of items) {
         if (item && typeof item === 'object' && 'id' in item) {
           cachedMap.set((item as { id: string }).id, item);

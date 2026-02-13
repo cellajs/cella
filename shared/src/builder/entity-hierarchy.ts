@@ -108,15 +108,20 @@ export class EntityHierarchyBuilder<
   }
 
   /** Add a product entity with parent reference. Products with parent: null tracked as TParentlessProducts. */
-  product<N extends string, P extends TContexts | null>(
+  product<N extends string>(
     name: N,
-    options: { parent: P; publicAccess?: PublicAccessConfig },
-  ): EntityHierarchyBuilder<TRoles, TContexts, TProducts | N, P extends null ? TParentlessProducts | N : TParentlessProducts> {
+    options: { parent: null; publicAccess?: PublicAccessConfig },
+  ): EntityHierarchyBuilder<TRoles, TContexts, TProducts | N, TParentlessProducts | N>;
+  product<N extends string>(
+    name: N,
+    options: { parent: TContexts; publicAccess?: PublicAccessConfig },
+  ): EntityHierarchyBuilder<TRoles, TContexts, TProducts | N, TParentlessProducts>;
+  product(name: string, options: { parent: string | null; publicAccess?: PublicAccessConfig }) {
     this.validateName(name);
     this.validateParent(name, options.parent, 'product');
     this.validatePublicAccess(name, options.publicAccess);
     this.entities.set(name, { kind: 'product', parent: options.parent, publicAccess: options.publicAccess });
-    return this as unknown as EntityHierarchyBuilder<TRoles, TContexts, TProducts | N, P extends null ? TParentlessProducts | N : TParentlessProducts>;
+    return this;
   }
 
   /** Build and freeze the hierarchy. */
@@ -251,7 +256,7 @@ export class EntityHierarchy<
       } else if (entry.kind === 'product') {
         products.push(name as TProducts);
         if (entry.parent === null) {
-          parentlessProducts.push(name as unknown as TParentlessProducts);
+          parentlessProducts.push(name as TParentlessProducts);
         } else {
           relatableContexts.add(entry.parent as TContexts);
         }

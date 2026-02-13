@@ -41,8 +41,9 @@ export async function getMenuData(opts?: { detailedMenu?: boolean }) {
 
       const queryOpts = { ...factory({ userId }) };
 
-      const data = await queryClient.ensureInfiniteQueryData({ ...queryOpts, revalidateIfStale: true });
-      const items = flattenInfiniteData<any>(data);
+      const data = await queryClient.ensureInfiniteQueryData({ ...queryOpts, revalidateIfStale: true } as any);
+      // biome-ignore lint/suspicious/noExplicitAny: queryOpts is heterogeneous
+      const items = flattenInfiniteData<any>(data as any);
 
       // Enrich entities with membership from the memberships cache
       const enrichedItems = items

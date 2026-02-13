@@ -41,7 +41,7 @@ function DebugDropdown({ className }: DebugDropdownProps) {
       return;
     }
 
-    if (item.url) return window.open(item.url);
+    if (item.url) return window.open(item.url, '_self');
 
     if (item.id === 'react-scan') {
       const prev = localStorage.getItem('react-scan-enabled') === 'true';

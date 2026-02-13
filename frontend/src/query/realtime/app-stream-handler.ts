@@ -2,23 +2,11 @@ import type { ContextEntityType, ProductEntityType } from 'shared';
 import { syncSpanNames, withSpanSync } from '~/lib/tracing';
 import { type EntityQueryKeys, getEntityQueryKeys } from '~/query/basic';
 import { sourceId } from '~/query/offline';
+import { useSyncStore } from '~/store/sync';
 import * as cacheOps from './cache-ops';
 import * as membershipOps from './membership-ops';
 import { getSyncPriority } from './sync-priority';
 import type { AppStreamNotification } from './types';
-
-/**
- * Per-scope sequence tracking for gap detection.
- * Key: scopeKey (orgId or 'global:entityType'), Value: last seen seq
- */
-const seqStore = new Map<string, number>();
-
-/**
- * Build a scope key for seq tracking.
- */
-function getScopeKey(orgId: string | null, entityType: string): string {
-  return orgId ?? `global:${entityType}`;
-}
 
 /**
  * Handles incoming app stream notifications and updates the React Query cache accordingly.
@@ -39,6 +27,10 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
 
     // Membership events (resourceType = 'membership')
     if (resourceType === 'membership') {
+      // Track mSeq for membership gap detection (scoped per org with :m suffix)
+      if (seq !== null && organizationId) {
+        useSyncStore.getState().setSeq(`${organizationId}:m`, seq);
+      }
       handleMembershipNotification(action, organizationId, contextType);
       return;
     }
@@ -107,75 +99,33 @@ function handleEntityNotification(
     return;
   }
 
-  // Seq-based gap detection
-  if (seq != null) {
-    const scopeKey = getScopeKey(organizationId, entityType);
-    const lastSeenSeq = seqStore.get(scopeKey) ?? 0;
-
-    if (seq > lastSeenSeq + 1) {
-      // Missed changes - invalidate list for this scope
-      console.warn(`[handleEntityNotification] Missed ${seq - lastSeenSeq - 1} changes in ${scopeKey}`);
-      cacheOps.invalidateEntityList(keys, 'active');
-    }
-    seqStore.set(scopeKey, seq);
+  // Track seq for gap detection — scoped per org for app stream
+  if (seq !== null && organizationId) {
+    useSyncStore.getState().setSeq(organizationId, seq);
   }
 
   // Determine fetch priority based on entityConfig ancestors and current route
   const priority = getSyncPriority({ entityType, entityId, organizationId });
 
-  // Map priority to refetchType:
-  // - high: immediate refetch of active queries
-  // - medium: debounced refetch (batch updates)
-  // - low: invalidate only, refetch on next access
-  const refetchType = priority === 'low' ? 'none' : 'active';
-
-  // For medium priority, debounce the invalidation
-  if (priority === 'medium') {
-    debouncedInvalidateList(entityType, keys);
-  }
-
   switch (action) {
     case 'create':
-      // Invalidate list queries - refetch behavior based on priority
-      if (priority !== 'medium') {
-        cacheOps.invalidateEntityList(keys, refetchType);
-      }
-      break;
-
     case 'update':
-      // Invalidate detail and list to trigger refetch based on priority
-      cacheOps.invalidateEntityDetail(entityId, keys, refetchType);
-      if (priority !== 'medium') {
-        cacheOps.invalidateEntityList(keys, refetchType);
+      if (priority === 'low') {
+        // Mark stale only, refetch on next access
+        cacheOps.invalidateEntityDetail(entityId, keys, 'none');
+        cacheOps.invalidateEntityList(keys, 'none');
+      } else {
+        // Fetch single entity and patch both detail and list caches
+        cacheOps.fetchEntityAndUpdateList(entityId, keys, action);
       }
       break;
 
     case 'delete':
-      // Remove from cache (detail + token)
+      // Remove from detail and list caches directly (no refetch needed)
       cacheOps.removeEntityFromCache(entityType, entityId);
-      // Invalidate list - refetch behavior based on priority
-      if (priority !== 'medium') {
-        cacheOps.invalidateEntityList(keys, refetchType);
-      }
+      cacheOps.removeEntityFromListCache(entityId, keys);
       break;
   }
 
   console.debug(`[handleEntityNotification] ${entityType}:${action} priority=${priority}`);
-}
-
-/** Debounce timers for medium priority list invalidations */
-const debounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
-
-/** Debounce list invalidations for medium priority to batch rapid updates */
-function debouncedInvalidateList(entityType: string, keys: EntityQueryKeys): void {
-  const existing = debounceTimers.get(entityType);
-  if (existing) clearTimeout(existing);
-
-  debounceTimers.set(
-    entityType,
-    setTimeout(() => {
-      cacheOps.invalidateEntityList(keys, 'active');
-      debounceTimers.delete(entityType);
-    }, 500),
-  );
 }

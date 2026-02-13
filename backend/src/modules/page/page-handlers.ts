@@ -149,6 +149,7 @@ const pageRouteHandlers = app
       modifiedAt: null,
       modifiedBy: null,
       publicAccess: true, // Pages are publicly readable by default
+      // Sync: write transient stx metadata for CDC Worker
       stx: {
         mutationId: stx.mutationId,
         sourceId: stx.sourceId,
@@ -223,7 +224,7 @@ const pageRouteHandlers = app
 
     logEvent('info', 'Page(s) deleted', ids);
 
-    return ctx.body(null, 204);
+    return ctx.json({ data: [], rejectedItemIds: [] }, 200);
   });
 
 export default pageRouteHandlers;

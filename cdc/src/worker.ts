@@ -13,7 +13,7 @@ import { emergencyShutdown, setShutdownHandler, startPauseWarningInterval, stopP
 import { logEvent } from './pino';
 import { processMessage } from './process-message';
 import { activityAttrs, cdcAttrs, cdcSpanNames, recordCdcMetric, withSpan } from './tracing';
-import { getNextSeq, getSeqScope } from './utils';
+import { getNextSeq, getSeqScope, getCountDeltas, updateContextCounts } from './utils';
 import { wsClient } from './websocket-client';
 
 const LOG_PREFIX = '[worker]';
@@ -75,6 +75,15 @@ async function persistAndSendActivity(
   await withSpan(cdcSpanNames.createActivity, activityAttrs(activityWithId), async () => {
     const seqScope = getSeqScope(processResult.entry, processResult.entityData);
     const seq = seqScope ? await getNextSeq(seqScope) : undefined;
+
+    // Update entity/membership counts in contextCountersTable.counts JSONB
+    const countDelta = getCountDeltas(
+      processResult.entry,
+      activityWithId.action as 'create' | 'update' | 'delete',
+      processResult.entityData,
+      processResult.oldEntityData,
+    );
+    if (countDelta) await updateContextCounts(countDelta);
 
     const insertResult = await withRetry(async () => {
       await cdcDb.insert(activitiesTable).values({ ...activityWithId, seq }).onConflictDoNothing();

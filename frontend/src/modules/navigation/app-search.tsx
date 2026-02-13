@@ -74,8 +74,9 @@ export const AppSearch = () => {
   const contextEntityResults = Object.fromEntries(
     Object.entries(contextEntityQueries).map(([entityType, queryOptions]) => [
       entityType,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       useInfiniteQuery({
-        ...queryOptions({ q: searchValue }),
+        ...(queryOptions as any)({ q: searchValue }),
         enabled: searchValue.length > 0,
       }),
     ]),
@@ -88,7 +89,8 @@ export const AppSearch = () => {
   const contextEntityData = Object.fromEntries(
     Object.entries(contextEntityResults).map(([entityType, query]) => [
       entityType,
-      searchValue.length > 0 ? (query.data?.pages.flatMap((p) => p.items) ?? []) : [],
+      // biome-ignore lint/suspicious/noExplicitAny: query data types vary per entity
+      searchValue.length > 0 ? ((query.data as any)?.pages.flatMap((p: any) => p.items) ?? []) : [],
     ]),
   );
 

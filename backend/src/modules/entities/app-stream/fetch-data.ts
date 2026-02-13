@@ -1,135 +1,103 @@
-import { and, desc, eq, gt, inArray, or } from 'drizzle-orm';
-import { appConfig, type ContextEntityType, isProductEntity } from 'shared';
+import { and, desc, eq, gt, inArray, or, sql } from 'drizzle-orm';
+import { appConfig } from 'shared';
 import { unsafeInternalDb as db } from '#/db/db';
 import { activitiesTable } from '#/db/schema/activities';
-import type { StreamNotification } from '#/schemas';
-import { type ActivityEventWithEntity, getTypedEntity } from '#/sync/activity-bus';
+import { contextCountersTable } from '#/db/schema/context-counters';
+import type { AppCatchupResponse } from '#/schemas';
 
 /**
- * Build stream notification from activity event.
- * Notification-only format - no entity data included.
+ * Fetch catchup summary for a user.
  *
- * For realtime entities:
- * - Includes stx, seq, cacheToken for sync engine
- * - Client uses cacheToken to fetch entity via entity cache
+ * Uses contextCountersTable for O(1) seq + mSeq lookup per org.
+ * When clientSeqs are provided, scopes with matching seq AND mSeq
+ * are excluded from the response — the client already has the correct state.
  *
- * For membership:
- * - stx/seq/cacheToken are null
- * - Client invalidates queries to refetch
+ * When cursor is null (fresh connect), only seq/mSeq baselines are returned.
  */
-export function buildStreamNotification(event: ActivityEventWithEntity): StreamNotification {
-  const { entityType } = event;
-  const isProduct = isProductEntity(entityType);
-
-  // Use cache token from CDC (all users share the same token)
-  const cacheToken = isProduct ? (event.cacheToken ?? null) : null;
-
-  // Extract contextType for membership events
-  const membership = event.resourceType === 'membership' ? getTypedEntity(event, 'membership') : null;
-  const contextType: ContextEntityType | null = (membership?.contextType as ContextEntityType | undefined) ?? null;
-
-  return {
-    action: event.action,
-    entityType: isProduct ? entityType : null,
-    resourceType: event.resourceType,
-    entityId: event.entityId!,
-    organizationId: event.organizationId,
-    contextType,
-    seq: isProduct ? (event.seq ?? 0) : null,
-    stx:
-      isProduct && event.stx
-        ? {
-            mutationId: event.stx.mutationId,
-            sourceId: event.stx.sourceId,
-            version: event.stx.version,
-            fieldVersions: event.stx.fieldVersions,
-          }
-        : null,
-    cacheToken,
-  };
-}
-
-/**
- * Catch-up notification with activity ID for cursor tracking.
- */
-export interface CatchUpNotification {
-  activityId: string;
-  notification: StreamNotification;
-}
-
-/**
- * Fetch catch-up notifications for a user.
- * Returns notifications for all synced entity types in user's orgs.
- * Entity-agnostic: uses appConfig.productEntityTypes and appConfig.contextEntityTypes.
- */
-export async function fetchUserCatchUpNotifications(
-  _userId: string,
+export async function fetchUserCatchupSummary(
+  userId: string,
   orgIds: Set<string>,
   cursor: string | null,
-  limit = 50,
-): Promise<CatchUpNotification[]> {
-  if (orgIds.size === 0) return [];
+  clientSeqs?: Record<string, number>,
+): Promise<AppCatchupResponse> {
+  if (orgIds.size === 0) return { changes: {}, cursor };
 
   const orgIdArray = Array.from(orgIds);
 
-  // Combine all synced entity types (product + context entities)
-  const syncedEntityTypes = [...appConfig.productEntityTypes, ...appConfig.contextEntityTypes];
+  // Step 1: Get current seq + mSeq from contextCountersTable (fast PK lookup)
+  const counterRows = await db
+    .select({
+      contextKey: contextCountersTable.contextKey,
+      seq: contextCountersTable.seq,
+      mSeq: contextCountersTable.mSeq,
+    })
+    .from(contextCountersTable)
+    .where(inArray(contextCountersTable.contextKey, orgIdArray));
 
-  // Build conditions: all synced entities in user's orgs + membership events
-  const conditions = [
-    or(
-      // Membership events for user's orgs
-      and(eq(activitiesTable.resourceType, 'membership'), inArray(activitiesTable.organizationId, orgIdArray)),
-      // All synced entity types in user's orgs
-      and(inArray(activitiesTable.entityType, syncedEntityTypes), inArray(activitiesTable.organizationId, orgIdArray)),
-    ),
-  ];
+  const serverCounters = new Map(counterRows.map((r) => [r.contextKey, { seq: r.seq, mSeq: r.mSeq }]));
 
-  if (cursor) {
-    conditions.push(gt(activitiesTable.id, cursor));
+  // Step 2: Build changes for scopes with seq or mSeq gaps
+  const changes: AppCatchupResponse['changes'] = {};
+  const changedProductScopes: string[] = [];
+
+  for (const orgId of orgIdArray) {
+    const server = serverCounters.get(orgId) ?? { seq: 0, mSeq: 0 };
+    const clientSeq = clientSeqs?.[orgId] ?? 0;
+    const clientMSeq = clientSeqs?.[`${orgId}:m`] ?? 0;
+
+    const seqChanged = !clientSeqs || server.seq !== clientSeq;
+    const mSeqChanged = !clientSeqs || server.mSeq !== clientMSeq;
+
+    if (seqChanged || mSeqChanged) {
+      changes[orgId] = { seq: server.seq, mSeq: server.mSeq, deletedIds: [] };
+      if (server.seq !== clientSeq) changedProductScopes.push(orgId);
+    }
   }
 
-  const activities = await db
-    .select()
-    .from(activitiesTable)
-    .where(and(...conditions))
-    .orderBy(desc(activitiesTable.createdAt))
-    .limit(limit);
+  // Step 3: Query activities only for product entity deletes (changed scopes)
+  // Membership no longer needs activities scan — mSeq gap is sufficient
+  // Skipped entirely when no cursor (fresh connect — no cache to reconcile)
+  if (cursor && changedProductScopes.length > 0) {
+    const deletedResults = await db
+      .select({
+        organizationId: activitiesTable.organizationId,
+        entityId: activitiesTable.entityId,
+      })
+      .from(activitiesTable)
+      .where(
+        and(
+          gt(activitiesTable.id, cursor),
+          inArray(activitiesTable.organizationId, changedProductScopes),
+          inArray(activitiesTable.entityType, [...appConfig.productEntityTypes]),
+          sql`${activitiesTable.action} = 'delete'`,
+        ),
+      )
+      .limit(1000);
 
-  // Build catch-up notifications
-  const catchUpNotifications: CatchUpNotification[] = [];
-
-  for (const activity of activities) {
-    const notification: StreamNotification = {
-      action: activity.action,
-      entityType: isProductEntity(activity.entityType) ? activity.entityType : null,
-      resourceType: activity.resourceType,
-      entityId: activity.entityId!,
-      organizationId: activity.organizationId,
-      contextType: null, // Not available in catch-up (would require joining membership table)
-      seq: null,
-      stx: null,
-      cacheToken: null,
-    };
-
-    catchUpNotifications.push({
-      activityId: activity.id,
-      notification,
-    });
+    for (const row of deletedResults) {
+      if (row.entityId && row.organizationId && changes[row.organizationId]) {
+        changes[row.organizationId].deletedIds.push(row.entityId);
+      }
+    }
   }
 
-  return catchUpNotifications;
+  // Step 4: Advance cursor (skip query if nothing changed)
+  let newCursor = cursor;
+  if (!cursor || Object.keys(changes).length > 0) {
+    newCursor = (await getLatestUserActivityId(userId, orgIds)) ?? cursor;
+  }
+
+  return { changes, cursor: newCursor };
 }
 
 /**
  * Get the latest activity ID relevant to a user.
- * Entity-agnostic: uses appConfig.productEntityTypes and appConfig.contextEntityTypes.
+ * Used for 'now' offset and as new cursor in catchup responses.
  */
 export async function getLatestUserActivityId(_userId: string, orgIds: Set<string>): Promise<string | null> {
   if (orgIds.size === 0) return null;
 
   const orgIdArray = Array.from(orgIds);
-  const syncedEntityTypes = [...appConfig.productEntityTypes, ...appConfig.contextEntityTypes];
 
   const result = await db
     .select({ id: activitiesTable.id })
@@ -138,7 +106,7 @@ export async function getLatestUserActivityId(_userId: string, orgIds: Set<strin
       or(
         and(eq(activitiesTable.resourceType, 'membership'), inArray(activitiesTable.organizationId, orgIdArray)),
         and(
-          inArray(activitiesTable.entityType, syncedEntityTypes),
+          inArray(activitiesTable.entityType, [...appConfig.productEntityTypes, ...appConfig.contextEntityTypes]),
           inArray(activitiesTable.organizationId, orgIdArray),
         ),
       ),

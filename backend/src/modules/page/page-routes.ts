@@ -3,6 +3,7 @@ import { createXRoute } from '#/docs/x-routes';
 import { publicCache } from '#/middlewares/entity-cache';
 import { authGuard, publicGuard, sysAdminGuard, tenantGuard } from '#/middlewares/guard';
 import {
+  batchResponseSchema,
   errorResponseRefs,
   idsBodySchema,
   paginationSchema,
@@ -155,7 +156,10 @@ const pagesRoutes = {
       },
     },
     responses: {
-      204: { description: 'Page(s) deleted' },
+      200: {
+        description: 'Success',
+        content: { 'application/json': { schema: batchResponseSchema() } },
+      },
       ...errorResponseRefs,
     },
   }),
