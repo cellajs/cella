@@ -33,6 +33,7 @@ export {
   tenantOrganizationIdParamSchema,
   tenantOrgParamSchema,
   userIdInTenantOrgParamSchema,
+  userIdParamSchema,
   validCDNUrlSchema,
   validDomainsSchema,
   validEmailSchema,

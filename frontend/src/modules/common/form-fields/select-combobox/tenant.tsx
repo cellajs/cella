@@ -1,6 +1,6 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import { useMemo } from 'react';
-import type { FieldValues } from 'react-hook-form';
+import { useEffect, useMemo } from 'react';
+import { type FieldValues, useController } from 'react-hook-form';
 import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
 import { myMembershipsQueryOptions } from '~/modules/me/query';
 import { tenantsListQueryOptions } from '~/modules/tenants/query';
@@ -11,6 +11,8 @@ import { useUserStore } from '~/store/user';
 
 type SelectTenantProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TFieldValues> & {
   options?: ComboboxProps['options'];
+  /** When true, auto-selects and hides the field if only one tenant is available */
+  autoHide?: boolean;
 };
 
 /**
@@ -24,6 +26,7 @@ export const SelectTenantFormField = <TFieldValues extends FieldValues>({
   options: opts,
   required,
   disabled,
+  autoHide,
 }: SelectTenantProps<TFieldValues>) => {
   const systemRole = useUserStore((s) => s.systemRole);
   const isSystemAdmin = systemRole === 'admin';
@@ -51,6 +54,19 @@ export const SelectTenantFormField = <TFieldValues extends FieldValues>({
       value: i.id,
       label: i.name,
     }));
+
+  const hasSingleOption = options.length === 1;
+
+  // Auto-select when only one tenant is available
+  const { field } = useController({ control, name });
+  useEffect(() => {
+    if (hasSingleOption && field.value !== options[0].value) {
+      field.onChange(options[0].value);
+    }
+  }, [hasSingleOption, options, field]);
+
+  // Hide the field when autoHide is enabled and only one tenant exists
+  if (autoHide && hasSingleOption) return null;
 
   return (
     <FormField

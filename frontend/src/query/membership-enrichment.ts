@@ -1,21 +1,17 @@
 import type { Query } from '@tanstack/react-query';
 import { useSyncExternalStore } from 'react';
+import { appConfig } from 'shared';
 import type { MembershipBase } from '~/api.gen';
 import { meKeys } from '~/modules/me/query';
 import { queryClient } from '~/query/query-client';
 
-/** Entity types that should be enriched with membership data */
-const enrichableEntityTypes = ['organization', 'workspace', 'project'] as const;
+/** Set of context entity types for O(1) lookup */
+const enrichableEntityTypes = new Set<string>(appConfig.contextEntityTypes);
 
-/** Check if a query key is for an enrichable entity list */
+/** Check if a query key is for an enrichable context entity list */
 function isEnrichableListQuery(queryKey: readonly unknown[]): boolean {
   if (queryKey.length < 2) return false;
-  const [entityType, queryType] = queryKey;
-  return (
-    typeof entityType === 'string' &&
-    enrichableEntityTypes.includes(entityType as (typeof enrichableEntityTypes)[number]) &&
-    queryType === 'list'
-  );
+  return enrichableEntityTypes.has(queryKey[0] as string) && queryKey[1] === 'list';
 }
 
 /** Get cached memberships array, or undefined if not loaded */
@@ -23,9 +19,15 @@ function getCachedMemberships(): MembershipBase[] | undefined {
   return queryClient.getQueryData<{ items: MembershipBase[] }>(meKeys.memberships)?.items;
 }
 
+/** Get the entity ID a membership belongs to, using entityIdColumnKeys from config */
+function getMembershipEntityId(m: MembershipBase): string | null {
+  const idKey = appConfig.entityIdColumnKeys[m.contextType];
+  return m[idKey];
+}
+
 /** Find a membership matching an entity id */
 function findMembership(memberships: MembershipBase[], entityId: string): MembershipBase | undefined {
-  return memberships.find((m) => m.organizationId === entityId);
+  return memberships.find((m) => getMembershipEntityId(m) === entityId);
 }
 
 /**
@@ -55,37 +57,42 @@ function hasMembershipChanged(a: MembershipBase | null | undefined, b: Membershi
   return comparedKeys.some((k) => a[k] !== b[k]);
 }
 
+/** Entity shape expected in infinite query pages */
+interface EnrichableEntity {
+  id: string;
+  membership?: MembershipBase | null;
+}
+
+/** Infinite query data shape: pages of items */
+interface InfiniteData {
+  pages: { items: EnrichableEntity[] }[];
+}
+
 /**
  * Enrich infinite query data with memberships in a single pass.
  * Returns the same reference when nothing changed (avoids unnecessary re-renders).
  */
-function enrichInfiniteData(data: unknown, memberships: MembershipBase[]): unknown {
-  if (!data || typeof data !== 'object') return data;
-  const d = data as { pages?: unknown[] };
-  if (!d.pages) return data;
-
+function enrichInfiniteData(data: InfiniteData, memberships: MembershipBase[]): InfiniteData {
   let dataChanged = false;
-  const newPages = d.pages.map((page: unknown) => {
-    if (!page || typeof page !== 'object') return page;
-    const p = page as { items?: unknown[] };
-    if (!p.items) return page;
+
+  const newPages = data.pages.map((page) => {
+    if (!page.items) return page;
 
     let pageChanged = false;
-    const newItems = p.items.map((item) => {
-      if (!item || typeof item !== 'object' || !('id' in item)) return item;
-      const entity = item as { id: string; membership?: MembershipBase | null };
-      const membership = findMembership(memberships, entity.id);
-      if (!membership || !hasMembershipChanged(entity.membership, membership)) return item;
+    const newItems = page.items.map((item) => {
+      if (!item.id) return item;
+      const membership = findMembership(memberships, item.id);
+      if (!membership || !hasMembershipChanged(item.membership, membership)) return item;
       pageChanged = true;
-      return { ...entity, membership };
+      return { ...item, membership };
     });
 
     if (!pageChanged) return page;
     dataChanged = true;
-    return { ...p, items: newItems };
+    return { ...page, items: newItems };
   });
 
-  return dataChanged ? { ...d, pages: newPages } : data;
+  return dataChanged ? { ...data, pages: newPages } : data;
 }
 
 /** Flag to prevent re-entrancy during enrichment */
@@ -93,8 +100,8 @@ let isEnriching = false;
 
 /** Enrich a query's data with memberships if anything changed */
 function enrichQuery(query: Query, memberships: MembershipBase[]): void {
-  const data = query.state.data;
-  if (!data) return;
+  const data = query.state.data as InfiniteData | undefined;
+  if (!data?.pages) return;
 
   const enriched = enrichInfiniteData(data, memberships);
   if (enriched === data) return;

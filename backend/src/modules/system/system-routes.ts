@@ -2,19 +2,17 @@ import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/docs/x-routes';
 import { authGuard, publicGuard, sysAdminGuard } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
-import { inviteBodySchema, sendNewsletterBodySchema, systemRoleBaseSchema } from '#/modules/system/system-schema';
+import { inviteBodySchema, sendNewsletterBodySchema } from '#/modules/system/system-schema';
 import {
   batchResponseSchema,
   booleanTransformSchema,
   entityIdParamSchema,
   errorResponseRefs,
   idsBodySchema,
-  paginationSchema,
 } from '#/schemas';
 import { mockSystemInviteResponse } from '../../../mocks/mock-system';
-import { mockPaginatedUsersResponse, mockUserResponse } from '../../../mocks/mock-user';
-import { membershipBaseSchema } from '../memberships/memberships-schema';
-import { userListQuerySchema, userSchema, userUpdateBodySchema } from '../user/user-schema';
+import { mockUserResponse } from '../../../mocks/mock-user';
+import { userSchema, userUpdateBodySchema } from '../user/user-schema';
 
 const systemRoutes = {
   /**
@@ -42,36 +40,6 @@ const systemRoutes = {
           'application/json': {
             schema: batchResponseSchema().extend({ invitesSentCount: z.number() }),
             example: mockSystemInviteResponse(),
-          },
-        },
-      },
-      ...errorResponseRefs,
-    },
-  }),
-  /**
-   * Get list of users
-   */
-  getUsers: createXRoute({
-    operationId: 'getUsers',
-    method: 'get',
-    path: '/',
-    xGuard: [authGuard, sysAdminGuard],
-    tags: ['system'],
-    summary: 'Get list of users',
-    description: 'Returns a list of *users*.',
-    request: { query: userListQuerySchema },
-    responses: {
-      200: {
-        description: 'Users',
-        content: {
-          'application/json': {
-            schema: paginationSchema(
-              userSchema.extend({
-                memberships: membershipBaseSchema.array(),
-                role: systemRoleBaseSchema.shape.role.nullable().optional(),
-              }),
-            ),
-            example: mockPaginatedUsersResponse(),
           },
         },
       },

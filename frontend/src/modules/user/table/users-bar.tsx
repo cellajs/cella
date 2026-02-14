@@ -21,10 +21,10 @@ import { toaster } from '~/modules/common/toaster/service';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import { DeleteUsers } from '~/modules/user/delete-users';
 import { InviteUsers } from '~/modules/user/invite-users';
-import type { UsersRouteSearchParams, UserWithRoleAndMemberships } from '~/modules/user/types';
+import type { UsersRouteSearchParams, UserWithRole } from '~/modules/user/types';
 import { useInfiniteQueryTotal } from '~/query/basic';
 
-type UsersTableBarProps = BaseTableBarProps<UserWithRoleAndMemberships, UsersRouteSearchParams>;
+type UsersTableBarProps = BaseTableBarProps<UserWithRole, UsersRouteSearchParams>;
 
 export const UsersTableBar = ({
   selected,

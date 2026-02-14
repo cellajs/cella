@@ -1,30 +1,23 @@
 import { createXRoute } from '#/docs/x-routes';
-import { authGuard, orgGuard, tenantGuard } from '#/middlewares/guard';
-import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
+import { authGuard, crossTenantGuard } from '#/middlewares/guard';
 import { systemRoleBaseSchema } from '#/modules/system/system-schema';
 import { userListQuerySchema, userSchema } from '#/modules/user/user-schema';
-import {
-  errorResponseRefs,
-  paginationSchema,
-  slugQuerySchema,
-  tenantOrgParamSchema,
-  userIdInTenantOrgParamSchema,
-} from '#/schemas';
+import { errorResponseRefs, paginationSchema, slugQuerySchema, userIdParamSchema } from '#/schemas';
 import { mockPaginatedUsersResponse, mockUserResponse } from '../../../mocks/mock-user';
 
 const userRoutes = {
   /**
-   * Get list of users
+   * Get list of users (cross-tenant)
    */
   getUsers: createXRoute({
     operationId: 'getUsers',
     method: 'get',
-    path: '/',
-    xGuard: [authGuard, tenantGuard, orgGuard],
+    path: '/users',
+    xGuard: [authGuard, crossTenantGuard],
     tags: ['users'],
     summary: 'Get list of users',
-    description: 'Returns a list of *users* in an organization context.',
-    request: { params: tenantOrgParamSchema, query: userListQuerySchema },
+    description: 'Returns a list of *users*.',
+    request: { query: userListQuerySchema },
     responses: {
       200: {
         description: 'Users',
@@ -32,7 +25,6 @@ const userRoutes = {
           'application/json': {
             schema: paginationSchema(
               userSchema.extend({
-                memberships: membershipBaseSchema.array(),
                 role: systemRoleBaseSchema.shape.role.nullable().optional(),
               }),
             ),
@@ -44,17 +36,18 @@ const userRoutes = {
     },
   }),
   /**
-   * Get a user by ID. Pass ?slug=true to resolve by slug.
+   * Get a user by ID (cross-tenant). Pass ?slug=true to resolve by slug.
    */
   getUser: createXRoute({
     operationId: 'getUser',
     method: 'get',
-    path: '/{userId}',
-    xGuard: [authGuard, tenantGuard, orgGuard],
+    path: '/users/{userId}',
+    xGuard: [authGuard, crossTenantGuard],
     tags: ['users'],
     summary: 'Get user',
-    description: 'Retrieves a *user* by ID in an organization context. Pass `?slug=true` to resolve by slug instead.',
-    request: { params: userIdInTenantOrgParamSchema, query: slugQuerySchema },
+    description:
+      'Retrieves a *user* by ID. The requesting user must share at least one context entity membership. Pass `?slug=true` to resolve by slug instead.',
+    request: { params: userIdParamSchema, query: slugQuerySchema },
     responses: {
       200: {
         description: 'User',

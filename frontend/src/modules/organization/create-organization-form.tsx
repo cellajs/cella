@@ -80,8 +80,7 @@ export function CreateOrganizationForm({ labelDirection = 'top', children, callb
   return (
     <Form {...form} labelDirection={labelDirection}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        {/* TODO If user only has one tenant can we hide this */}
-        <SelectTenantFormField control={form.control} name="tenantId" label={t('common:tenant')} required />
+        <SelectTenantFormField control={form.control} name="tenantId" label={t('common:tenant')} required autoHide />
         <InputFormField
           control={form.control}
           name="name"

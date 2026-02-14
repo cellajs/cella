@@ -62,7 +62,7 @@ function OrganizationSettings({ organization }: { organization: Organization }) 
     if (args.status === 'success' && orgSlug !== args.data.slug) {
       navigate({
         to: '/$tenantId/$orgSlug/organization/settings',
-        params: { tenantId, orgSlug: organization.slug },
+        params: { tenantId, orgSlug: args.data.slug },
         replace: true,
       });
     }

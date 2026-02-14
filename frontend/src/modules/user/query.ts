@@ -23,12 +23,12 @@ export const findUserInListCache = (entityId: string) =>
   findInListCache<User>(keys.list.base, (user) => user.id === entityId);
 
 /**
- * Query options for fetching a user by ID within an organization context.
+ * Query options for fetching a user by ID.
  */
-export const userQueryOptions = (id: string, tenantId: string, orgId: string) =>
+export const userQueryOptions = (id: string) =>
   queryOptions({
     queryKey: keys.detail.byId(id),
-    queryFn: async () => getUser({ path: { userId: id, tenantId, orgId } }),
+    queryFn: async () => getUser({ path: { userId: id } }),
     placeholderData: () => findUserInListCache(id),
   });
 

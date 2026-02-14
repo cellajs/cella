@@ -1110,38 +1110,6 @@ export const zDeleteUsersResponse = z.object({
   rejectionReasons: z.optional(z.record(z.string(), z.array(z.string()))),
 });
 
-export const zGetUsersData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.optional(
-    z.object({
-      q: z.optional(z.string().max(255)),
-      sort: z.optional(z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt'])),
-      order: z.optional(z.enum(['asc', 'desc'])),
-      offset: z.optional(z.string()),
-      limit: z.optional(z.string()),
-      role: z.optional(z.enum(['admin'])),
-      targetEntityType: z.optional(z.enum(['organization'])),
-      targetEntityId: z.optional(z.string().max(50)),
-    }),
-  ),
-});
-
-/**
- * Users
- */
-export const zGetUsersResponse = z.object({
-  items: z.array(
-    zUser.and(
-      z.object({
-        memberships: z.array(zMembershipBase),
-        role: z.optional(z.nullable(z.enum(['admin']))),
-      }),
-    ),
-  ),
-  total: z.number(),
-});
-
 export const zUpdateUserData = z.object({
   body: z.optional(
     z.object({
@@ -1705,12 +1673,9 @@ export const zUpdatePageData = z.object({
  */
 export const zUpdatePageResponse = zPage;
 
-export const zGetUsers2Data = z.object({
+export const zGetUsersData = z.object({
   body: z.optional(z.never()),
-  path: z.object({
-    tenantId: z.string().max(50),
-    orgId: z.string().max(50),
-  }),
+  path: z.optional(z.never()),
   query: z.optional(
     z.object({
       q: z.optional(z.string().max(255)),
@@ -1719,8 +1684,6 @@ export const zGetUsers2Data = z.object({
       offset: z.optional(z.string()),
       limit: z.optional(z.string()),
       role: z.optional(z.enum(['admin'])),
-      targetEntityType: z.optional(z.enum(['organization'])),
-      targetEntityId: z.optional(z.string().max(50)),
     }),
   ),
 });
@@ -1728,11 +1691,10 @@ export const zGetUsers2Data = z.object({
 /**
  * Users
  */
-export const zGetUsers2Response = z.object({
+export const zGetUsersResponse = z.object({
   items: z.array(
     zUser.and(
       z.object({
-        memberships: z.array(zMembershipBase),
         role: z.optional(z.nullable(z.enum(['admin']))),
       }),
     ),
@@ -1743,8 +1705,6 @@ export const zGetUsers2Response = z.object({
 export const zGetUserData = z.object({
   body: z.optional(z.never()),
   path: z.object({
-    tenantId: z.string().max(50),
-    orgId: z.string().max(50),
     userId: z.string().max(50),
   }),
   query: z.optional(

@@ -47,7 +47,11 @@ export function useMenu(userId: string | undefined, opts?: { detailedMenu?: bool
       const data = results[i]?.data;
       // biome-ignore lint/suspicious/noExplicitAny: useQueries union types don't narrow per-index
       const items = data ? flattenInfiniteData<UserMenuItem>(data as any) : [];
-      byType.set(t, items);
+      // Filter out items without membership (can happen during cache enrichment)
+      byType.set(
+        t,
+        items.filter((item) => !!item.membership),
+      );
     });
 
     return buildMenu(byType, appConfig.menuStructure, { detailedMenu });

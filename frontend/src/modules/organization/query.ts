@@ -139,6 +139,8 @@ export const useOrganizationUpdateMutation = () => {
     mutationFn: ({ path, body }) => updateOrganization({ path, body }),
     onSuccess: (updatedOrganization) => {
       mutateCache.update([updatedOrganization]);
+      // Directly update detail cache so beforeLoad doesn't use stale slug for URL rewrite
+      queryClient.setQueryData(keys.detail.byId(updatedOrganization.id), updatedOrganization);
     },
     onSettled: () => {
       invalidateIfLastMutation(queryClient, keys.all, keys.list.base);

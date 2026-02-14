@@ -5917,281 +5917,6 @@
       }
     },
     "/system": {
-      "get": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "getUsers",
-        "tags": [
-          "system"
-        ],
-        "summary": "Get list of users",
-        "description": "Returns a list of *users*.",
-        "x-guard": [
-          "authGuard",
-          "sysAdminGuard"
-        ],
-        "x-rate-limiter": [],
-        "x-cache": [],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 255
-            },
-            "required": false,
-            "name": "q",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": [
-                "id",
-                "name",
-                "email",
-                "role",
-                "createdAt",
-                "lastSeenAt"
-              ],
-              "default": "createdAt"
-            },
-            "required": false,
-            "name": "sort",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ],
-              "default": "asc"
-            },
-            "required": false,
-            "name": "order",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string"
-            },
-            "required": false,
-            "name": "offset",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string"
-            },
-            "required": false,
-            "name": "limit",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": [
-                "admin"
-              ]
-            },
-            "required": false,
-            "name": "role",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": [
-                "organization"
-              ]
-            },
-            "required": false,
-            "name": "targetEntityType",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 50
-            },
-            "required": false,
-            "name": "targetEntityId",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Users",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "items": {
-                      "type": "array",
-                      "items": {
-                        "allOf": [
-                          {
-                            "$ref": "#/components/schemas/User"
-                          },
-                          {
-                            "type": "object",
-                            "properties": {
-                              "memberships": {
-                                "type": "array",
-                                "items": {
-                                  "$ref": "#/components/schemas/MembershipBase"
-                                }
-                              },
-                              "role": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ],
-                                "enum": [
-                                  "admin",
-                                  null
-                                ]
-                              }
-                            },
-                            "required": [
-                              "memberships"
-                            ]
-                          }
-                        ],
-                        "description": "A user with profile data and last-seen activity timestamp.",
-                        "example": {
-                          "id": "7sfzetbhjls7m9dg1xzavv78",
-                          "entityType": "user",
-                          "name": "Cecilia Hodkiewicz",
-                          "firstName": "Cecilia",
-                          "lastName": "Hodkiewicz",
-                          "email": "cecilia.hodkiewicz@hotmail.com",
-                          "slug": "ceciliahodkiewicz17",
-                          "description": null,
-                          "thumbnailUrl": null,
-                          "bannerUrl": null,
-                          "language": "en",
-                          "newsletter": false,
-                          "mfaRequired": false,
-                          "userFlags": {},
-                          "createdAt": "2024-12-13T11:17:23.643Z",
-                          "modifiedAt": "2024-12-13T11:17:23.643Z",
-                          "modifiedBy": null,
-                          "lastStartedAt": "2024-12-13T11:17:23.643Z",
-                          "lastSignInAt": "2024-12-13T11:17:23.643Z",
-                          "lastSeenAt": "2024-12-13T11:17:23.643Z"
-                        }
-                      }
-                    },
-                    "total": {
-                      "type": "number"
-                    }
-                  },
-                  "required": [
-                    "items",
-                    "total"
-                  ]
-                },
-                "example": {
-                  "items": [
-                    {
-                      "id": "mybas8856dxliw6zkuiovvao",
-                      "entityType": "user",
-                      "name": "Becky Gutmann",
-                      "firstName": "Becky",
-                      "lastName": "Gutmann",
-                      "email": "becky.gutmann@gmail.com",
-                      "slug": "beckygutmann",
-                      "description": null,
-                      "thumbnailUrl": null,
-                      "bannerUrl": null,
-                      "language": "en",
-                      "newsletter": true,
-                      "mfaRequired": false,
-                      "userFlags": {},
-                      "createdAt": "2024-11-11T02:15:51.916Z",
-                      "modifiedAt": "2024-11-11T02:15:51.916Z",
-                      "modifiedBy": null,
-                      "lastStartedAt": "2024-11-11T02:15:51.916Z",
-                      "lastSignInAt": "2024-11-11T02:15:51.916Z",
-                      "lastSeenAt": "2024-11-11T02:15:51.916Z",
-                      "memberships": [
-                        {
-                          "id": "300jor4orrvsgezqoyxfckg3",
-                          "tenantId": "ifex0a",
-                          "contextType": "organization",
-                          "userId": "gu87zf240qkfh0faoqjip69q",
-                          "organizationId": "fpb1r33xdbp099f3xi8028r0",
-                          "role": "member",
-                          "displayOrder": 38,
-                          "muted": false,
-                          "archived": false
-                        }
-                      ]
-                    },
-                    {
-                      "id": "rfau2m1vkjc8nvp8e05meqcc",
-                      "entityType": "user",
-                      "name": "Lonie Kuhn",
-                      "firstName": "Lonie",
-                      "lastName": "Kuhn",
-                      "email": "lonie_kuhn75@gmail.com",
-                      "slug": "loniekuhn64",
-                      "description": null,
-                      "thumbnailUrl": null,
-                      "bannerUrl": null,
-                      "language": "en",
-                      "newsletter": true,
-                      "mfaRequired": false,
-                      "userFlags": {},
-                      "createdAt": "2024-05-19T00:16:13.149Z",
-                      "modifiedAt": "2024-05-19T00:16:13.149Z",
-                      "modifiedBy": null,
-                      "lastStartedAt": "2024-05-19T00:16:13.149Z",
-                      "lastSignInAt": "2024-05-19T00:16:13.149Z",
-                      "lastSeenAt": "2024-05-19T00:16:13.149Z",
-                      "memberships": [
-                        {
-                          "id": "1u44cckbz5av195r4h3wiruz",
-                          "tenantId": "44b7wk",
-                          "contextType": "organization",
-                          "userId": "ilwj64zmkwsnsmrzo2zxd2hr",
-                          "organizationId": "eylomg4p6xgvt4g11e2hqqxx",
-                          "role": "admin",
-                          "displayOrder": 7,
-                          "muted": false,
-                          "archived": false
-                        }
-                      ]
-                    }
-                  ],
-                  "total": 2
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      },
       "delete": {
         "security": [
           {
@@ -9838,7 +9563,7 @@
         }
       }
     },
-    "/{tenantId}/{orgId}/users": {
+    "/users": {
       "get": {
         "security": [
           {
@@ -9850,33 +9575,14 @@
           "users"
         ],
         "summary": "Get list of users",
-        "description": "Returns a list of *users* in an organization context.",
+        "description": "Returns a list of *users*.",
         "x-guard": [
           "authGuard",
-          "tenantGuard",
-          "orgGuard"
+          "crossTenantGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 50
-            },
-            "required": true,
-            "name": "tenantId",
-            "in": "path"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 50
-            },
-            "required": true,
-            "name": "orgId",
-            "in": "path"
-          },
           {
             "schema": {
               "type": "string",
@@ -9942,26 +9648,6 @@
             "required": false,
             "name": "role",
             "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": [
-                "organization"
-              ]
-            },
-            "required": false,
-            "name": "targetEntityType",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 50
-            },
-            "required": false,
-            "name": "targetEntityId",
-            "in": "query"
           }
         ],
         "responses": {
@@ -9982,12 +9668,6 @@
                           {
                             "type": "object",
                             "properties": {
-                              "memberships": {
-                                "type": "array",
-                                "items": {
-                                  "$ref": "#/components/schemas/MembershipBase"
-                                }
-                              },
                               "role": {
                                 "type": [
                                   "string",
@@ -9998,10 +9678,7 @@
                                   null
                                 ]
                               }
-                            },
-                            "required": [
-                              "memberships"
-                            ]
+                            }
                           }
                         ],
                         "description": "A user with profile data and last-seen activity timestamp.",
@@ -10134,7 +9811,7 @@
         }
       }
     },
-    "/{tenantId}/{orgId}/users/{userId}": {
+    "/users/{userId}": {
       "get": {
         "security": [
           {
@@ -10146,33 +9823,14 @@
           "users"
         ],
         "summary": "Get user",
-        "description": "Retrieves a *user* by ID in an organization context. Pass `?slug=true` to resolve by slug instead.",
+        "description": "Retrieves a *user* by ID. The requesting user must share at least one context entity membership. Pass `?slug=true` to resolve by slug instead.",
         "x-guard": [
           "authGuard",
-          "tenantGuard",
-          "orgGuard"
+          "crossTenantGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 50
-            },
-            "required": true,
-            "name": "tenantId",
-            "in": "path"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 50
-            },
-            "required": true,
-            "name": "orgId",
-            "in": "path"
-          },
           {
             "schema": {
               "type": "string",

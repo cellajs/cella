@@ -1,15 +1,13 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
-import { and, count, eq, ilike, inArray, isNull, or, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNull } from 'drizzle-orm';
 import i18n from 'i18next';
 import { appConfig } from 'shared';
 import { unsafeInternalDb as db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
-import { lastSeenTable } from '#/db/schema/last-seen';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 import { requestsTable } from '#/db/schema/requests';
-import { systemRolesTable } from '#/db/schema/system-roles';
 import { tokensTable } from '#/db/schema/tokens';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { usersTable } from '#/db/schema/users';
@@ -18,8 +16,6 @@ import { type Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
 import { mailer } from '#/lib/mailer';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
-import { getMembershipContextColumn } from '#/modules/memberships/helpers/context-ids';
-import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import { replaceSignedSrcs } from '#/modules/system/helpers/get-signed-src';
 import systemRoutes from '#/modules/system/system-routes';
 import { userSelect } from '#/modules/user/helpers/select';
@@ -27,10 +23,8 @@ import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { logError, logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
-import { getOrderColumn } from '#/utils/order-column';
 import { encodeLowerCased } from '#/utils/oslo';
 import { slugFromEmail } from '#/utils/slug-from-email';
-import { prepareStringForILikeFilter } from '#/utils/sql';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { NewsletterEmail, SystemInviteEmail } from '../../../emails';
 
@@ -165,84 +159,6 @@ const systemRouteHandlers = app
     logEvent('info', 'Users invited on system level', { count: recipients.length });
 
     return ctx.json({ data: [] as never[], rejectedItemIds, invitesSentCount: recipients.length }, 200);
-  })
-  /**
-   * Get list of users (system admin only)
-   */
-  .openapi(systemRoutes.getUsers, async (ctx) => {
-    const { q, sort, order, offset, limit, role, targetEntityId, targetEntityType } = ctx.req.valid('query');
-
-    const filters = [
-      // Filter by role if provided
-      ...(role ? [eq(systemRolesTable.role, role)] : []),
-
-      // Filter by search query if provided
-      ...(q
-        ? [
-            or(
-              ilike(usersTable.name, prepareStringForILikeFilter(q)),
-              ilike(usersTable.email, prepareStringForILikeFilter(q)),
-            ),
-          ]
-        : []),
-    ];
-
-    // Base user query with ordering
-    // Note: lastSeenAt requires subquery since it's in user_activity table
-    const orderColumn = getOrderColumn(sort, usersTable.id, order, {
-      id: usersTable.id,
-      name: usersTable.name,
-      email: usersTable.email,
-      createdAt: usersTable.createdAt,
-      lastSeenAt: sql`(SELECT ${lastSeenTable.lastSeenAt} FROM ${lastSeenTable} WHERE ${lastSeenTable.userId} = ${usersTable.id})`,
-      role: systemRolesTable.role,
-    });
-
-    const usersQuerySelect = { ...userSelect, role: systemRolesTable.role };
-
-    const usersQuery = db
-      .select(usersQuerySelect)
-      .from(usersTable)
-      .leftJoin(systemRolesTable, eq(usersTable.id, systemRolesTable.userId))
-      .where(and(...filters))
-      .orderBy(orderColumn);
-
-    // Total count
-    const [{ total }] = await db.select({ total: count() }).from(usersQuery.as('users'));
-
-    const users = await usersQuery.limit(limit).offset(offset);
-
-    // If no users, return empty result early
-    if (!users.length) return ctx.json({ items: [], total }, 200);
-
-    const userIds = users.map((u) => u.id);
-
-    // Fetch memberships for all these users
-    const membershipFilters = [inArray(membershipsTable.userId, userIds)];
-    if (targetEntityId && targetEntityType) {
-      const contextColumn = getMembershipContextColumn(targetEntityType);
-      membershipFilters.push(eq(membershipsTable.contextType, targetEntityType), eq(contextColumn, targetEntityId));
-    }
-
-    const memberships = await db
-      .select(membershipBaseSelect)
-      .from(membershipsTable)
-      .where(and(...membershipFilters));
-
-    // Group memberships by userId in a type-safe way
-    const membershipsByUser = memberships.reduce<Record<string, typeof memberships>>((acc, m) => {
-      if (!acc[m.userId]) acc[m.userId] = [];
-      acc[m.userId].push(m);
-      return acc;
-    }, {});
-
-    // Attach memberships to users
-    const items = users.map((user) => ({
-      ...user,
-      memberships: membershipsByUser[user.id] ?? [],
-    }));
-
-    return ctx.json({ items, total }, 200);
   })
   /**
    * Delete users (system admin only)

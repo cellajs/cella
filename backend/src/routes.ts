@@ -33,8 +33,8 @@ const app = baseApp
   .route('/metrics', metricsRouteHandlers)
   .route('/', organizationRouteHandlers)
   .route('/', pageRouteHandlers)
+  .route('/', userRouteHandlers)
   // Tenant-scoped routes: /:tenantId/:orgId/...
-  .route('/:tenantId/:orgId/users', userRouteHandlers)
   .route('/:tenantId/:orgId/attachments', attachmentRouteHandlers)
   .route('/:tenantId/:orgId/memberships', membershipsRouteHandlers);
 

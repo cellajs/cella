@@ -270,6 +270,7 @@ const authGeneralRouteHandlers = app
         inactiveMembership.contextType
       ] as keyof typeof inactiveMembership;
       if (!inactiveMembership[entityIdColumnKey]) throw new AppError(400, 'invalid_request', 'error');
+      // Internal resolve: getting entity info for email template (no permission check needed)
       const entity = await resolveEntity(
         inactiveMembership.contextType,
         inactiveMembership[entityIdColumnKey] as string,

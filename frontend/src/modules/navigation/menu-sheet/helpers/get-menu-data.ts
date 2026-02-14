@@ -23,13 +23,11 @@ export async function getMenuData(opts?: { detailedMenu?: boolean }) {
     revalidateIfStale: true,
   });
 
-  // Create a map for quick membership lookup by entity
+  // Create a map for quick membership lookup by entity, keyed by the entity id from entityIdColumnKeys
   const membershipsByEntity = new Map<string, MembershipBase>();
   for (const m of membershipsData.items) {
-    // Use organizationId as the key (extend for other context types as needed)
-    if (m.organizationId) {
-      membershipsByEntity.set(m.organizationId, m);
-    }
+    const entityId = m[appConfig.entityIdColumnKeys[m.contextType]];
+    if (entityId) membershipsByEntity.set(entityId, m);
   }
 
   const byType = new Map<ContextEntityType, ContextEntityWithMembership[]>();

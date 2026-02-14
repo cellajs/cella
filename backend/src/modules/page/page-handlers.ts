@@ -5,7 +5,6 @@ import { pagesTable } from '#/db/schema/pages';
 import { usersTable } from '#/db/schema/users';
 import { type Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
-import { resolveEntity } from '#/lib/resolve-entity';
 import pagesRoutes from '#/modules/page/page-routes';
 import { getValidProductEntity } from '#/permissions/get-product-entity';
 import { getEntityByTransaction, isTransactionProcessed } from '#/sync';
@@ -104,7 +103,7 @@ const pageRouteHandlers = app
 
     // Use tenant-scoped db from publicGuard middleware (RLS context already set)
     const tenantDb = ctx.var.db;
-    const page = await resolveEntity('page', id, tenantDb);
+    const [page] = await tenantDb.select().from(pagesTable).where(eq(pagesTable.id, id));
     if (!page) throw new AppError(404, 'not_found', 'warn', { entityType: 'page' });
 
     // Set data for cache middleware to store

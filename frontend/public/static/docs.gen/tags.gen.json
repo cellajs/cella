@@ -32,7 +32,7 @@
   {
     "name": "system",
     "description": "System admin operations for platform-wide user management. Includes listing, updating, and\n        deleting users, sending system-level invitations, sending newsletters, and handling payment\n        webhooks.",
-    "count": 6
+    "count": 5
   },
   {
     "name": "auth",

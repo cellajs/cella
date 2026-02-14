@@ -102,57 +102,6 @@
                     "type": ["string", "null"],
                     "required": true
                   },
-                  "memberships": {
-                    "type": "array",
-                    "required": true,
-                    "itemType": "object",
-                    "ref": "#/components/schemas/MembershipBase",
-                    "items": {
-                      "type": "object",
-                      "description": "Core membership fields shared across active and inactive memberships.",
-                      "properties": {
-                        "id": {
-                          "type": "string",
-                          "required": true,
-                          "maxLength": 50
-                        },
-                        "tenantId": {
-                          "type": "string",
-                          "required": true,
-                          "maxLength": 24
-                        },
-                        "contextType": {
-                          "type": "string",
-                          "required": true,
-                          "enum": ["organization"]
-                        },
-                        "userId": {
-                          "type": "string",
-                          "required": true,
-                          "maxLength": 50
-                        },
-                        "role": {
-                          "type": "string",
-                          "required": true,
-                          "enum": ["admin", "member"]
-                        },
-                        "archived": { "type": "boolean", "required": true },
-                        "muted": { "type": "boolean", "required": true },
-                        "displayOrder": {
-                          "type": "number",
-                          "required": true,
-                          "minimum": -140737488355328,
-                          "maximum": 140737488355327
-                        },
-                        "organizationId": {
-                          "type": "string",
-                          "required": true,
-                          "maxLength": 50
-                        }
-                      },
-                      "ref": "#/components/schemas/MembershipBase"
-                    }
-                  },
                   "role": {
                     "type": ["string", "null"],
                     "required": false,
@@ -279,20 +228,6 @@
       }
     ],
     "request": {
-      "path": {
-        "properties": {
-          "tenantId": {
-            "type": "string",
-            "required": true,
-            "maxLength": 50
-          },
-          "orgId": {
-            "type": "string",
-            "required": true,
-            "maxLength": 50
-          }
-        }
-      },
       "query": {
         "properties": {
           "q": {
@@ -316,16 +251,6 @@
             "type": "string",
             "required": false,
             "enum": ["admin"]
-          },
-          "targetEntityType": {
-            "type": "string",
-            "required": false,
-            "enum": ["organization"]
-          },
-          "targetEntityId": {
-            "type": "string",
-            "required": false,
-            "maxLength": 50
           }
         }
       }
@@ -495,16 +420,6 @@
     "request": {
       "path": {
         "properties": {
-          "tenantId": {
-            "type": "string",
-            "required": true,
-            "maxLength": 50
-          },
-          "orgId": {
-            "type": "string",
-            "required": true,
-            "maxLength": 50
-          },
           "userId": {
             "type": "string",
             "required": true,

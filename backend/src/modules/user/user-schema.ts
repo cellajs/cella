@@ -3,15 +3,7 @@ import { appConfig, type EnabledOAuthProvider, type UserFlags } from 'shared';
 import { usersTable } from '#/db/schema/users';
 import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schema';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
-import {
-  contextEntityTypeSchema,
-  languageSchema,
-  maxLength,
-  paginationQuerySchema,
-  validCDNUrlSchema,
-  validNameSchema,
-  validSlugSchema,
-} from '#/schemas';
+import { languageSchema, paginationQuerySchema, validCDNUrlSchema, validNameSchema, validSlugSchema } from '#/schemas';
 import { mockUserResponse } from '../../../mocks/mock-user';
 
 export const enabledOAuthProvidersEnum = z.enum(
@@ -68,16 +60,7 @@ export const userUpdateBodySchema = createInsertSchema(usersTable, {
   })
   .partial();
 
-export const userListQuerySchema = paginationQuerySchema
-  .extend({
-    sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt']).default('createdAt').optional(),
-    role: z.enum(appConfig.systemRoles).optional(),
-    targetEntityType: contextEntityTypeSchema.optional(),
-    targetEntityId: z.string().max(maxLength.id).optional(),
-  })
-  .refine(
-    (data) => (data.targetEntityType && data.targetEntityId) || (!data.targetEntityType && !data.targetEntityId),
-    {
-      message: 'Both targetEntityType and targetEntityId must be provided together',
-    },
-  );
+export const userListQuerySchema = paginationQuerySchema.extend({
+  sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt']).default('createdAt').optional(),
+  role: z.enum(appConfig.systemRoles).optional(),
+});

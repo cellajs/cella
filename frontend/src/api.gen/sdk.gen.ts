@@ -159,9 +159,6 @@ import type {
   GetUserData,
   GetUserErrors,
   GetUserResponses,
-  GetUsers2Data,
-  GetUsers2Errors,
-  GetUsers2Responses,
   GetUsersData,
   GetUsersErrors,
   GetUsersResponses,
@@ -1385,38 +1382,6 @@ export const deleteUsers = <ThrowOnError extends boolean = true>(options: Option
   });
 
 /**
- * Get list of users
- *
- * Returns a list of *users*.
- *
- * **GET /system** ·· [getUsers](https://api.cellajs.com/docs#tag/system/get/system) ·· _system_
- *
- * @param {getUsersData} options
- * @param {string=} options.query.q - `string` (optional)
- * @param {enum=} options.query.sort - `enum` (optional)
- * @param {enum=} options.query.order - `enum` (optional)
- * @param {string=} options.query.offset - `string` (optional)
- * @param {string=} options.query.limit - `string` (optional)
- * @param {enum=} options.query.role - `enum` (optional)
- * @param {enum=} options.query.targetentitytype - `enum` (optional)
- * @param {string=} options.query.targetentityid - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const getUsers = <ThrowOnError extends boolean = true>(options?: Options<GetUsersData, ThrowOnError>) =>
-  (options?.client ?? client).get<GetUsersResponses, GetUsersErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/system',
-    ...options,
-  });
-
-/**
  * Update user
  *
  * Updates a *user* identified by ID.
@@ -2177,25 +2142,21 @@ export const updatePage = <ThrowOnError extends boolean = true>(options: Options
 /**
  * Get list of users
  *
- * Returns a list of *users* in an organization context.
+ * Returns a list of *users*.
  *
- * **GET /{tenantId}/{orgId}/users** ·· [getUsers2](https://api.cellajs.com/docs#tag/users/get/{tenantId}/{orgId}/users) ·· _users_
+ * **GET /users** ·· [getUsers](https://api.cellajs.com/docs#tag/users/get/users) ·· _users_
  *
- * @param {getUsers2Data} options
- * @param {string} options.path.tenantid - `string`
- * @param {string} options.path.orgid - `string`
+ * @param {getUsersData} options
  * @param {string=} options.query.q - `string` (optional)
  * @param {enum=} options.query.sort - `enum` (optional)
  * @param {enum=} options.query.order - `enum` (optional)
  * @param {string=} options.query.offset - `string` (optional)
  * @param {string=} options.query.limit - `string` (optional)
  * @param {enum=} options.query.role - `enum` (optional)
- * @param {enum=} options.query.targetentitytype - `enum` (optional)
- * @param {string=} options.query.targetentityid - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const getUsers2 = <ThrowOnError extends boolean = true>(options: Options<GetUsers2Data, ThrowOnError>) =>
-  (options.client ?? client).get<GetUsers2Responses, GetUsers2Errors, ThrowOnError, 'data'>({
+export const getUsers = <ThrowOnError extends boolean = true>(options?: Options<GetUsersData, ThrowOnError>) =>
+  (options?.client ?? client).get<GetUsersResponses, GetUsersErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -2204,20 +2165,18 @@ export const getUsers2 = <ThrowOnError extends boolean = true>(options: Options<
         type: 'apiKey',
       },
     ],
-    url: '/{tenantId}/{orgId}/users',
+    url: '/users',
     ...options,
   });
 
 /**
  * Get user
  *
- * Retrieves a *user* by ID in an organization context. Pass `?slug=true` to resolve by slug instead.
+ * Retrieves a *user* by ID. The requesting user must share at least one context entity membership. Pass `?slug=true` to resolve by slug instead.
  *
- * **GET /{tenantId}/{orgId}/users/{userId}** ·· [getUser](https://api.cellajs.com/docs#tag/users/get/{tenantId}/{orgId}/users/{userId}) ·· _users_
+ * **GET /users/{userId}** ·· [getUser](https://api.cellajs.com/docs#tag/users/get/users/{userId}) ·· _users_
  *
  * @param {getUserData} options
- * @param {string} options.path.tenantid - `string`
- * @param {string} options.path.orgid - `string`
  * @param {string} options.path.userid - `string`
  * @param {string | boolean=} options.query.slug - `string | boolean` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
@@ -2232,7 +2191,7 @@ export const getUser = <ThrowOnError extends boolean = true>(options: Options<Ge
         type: 'apiKey',
       },
     ],
-    url: '/{tenantId}/{orgId}/users/{userId}',
+    url: '/users/{userId}',
     ...options,
   });
 

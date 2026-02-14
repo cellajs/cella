@@ -120,6 +120,11 @@ export const userIdInTenantOrgParamSchema = z.object({
   userId: validIdSchema,
 });
 
+/** Schema for user id param (cross-tenant getUser route) */
+export const userIdParamSchema = z.object({
+  userId: validIdSchema,
+});
+
 /*************************************************************************************************
  * Common query schemas
  ************************************************************************************************/

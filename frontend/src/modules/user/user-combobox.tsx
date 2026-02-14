@@ -10,6 +10,7 @@ import { useDebounce } from '~/hooks/use-debounce';
 import { useMeasure } from '~/hooks/use-measure';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
+import { membersListQueryOptions } from '~/modules/memberships/query';
 import { Badge } from '~/modules/ui/badge';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
@@ -19,14 +20,13 @@ import { usersListQueryOptions } from '~/modules/user/query';
 interface Props {
   value: string[];
   onChange: (items: string[]) => void;
-  entity: ContextEntityBase;
+  entity: ContextEntityBase & { organizationId?: string };
 }
 
 export const UserCombobox = ({ value, onChange, entity }: Props) => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm');
   const { ref, bounds } = useMeasure<HTMLDivElement>();
-  const entityIdColumnKey = appConfig.entityIdColumnKeys[entity.entityType];
 
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<string[]>(value);
@@ -57,11 +57,7 @@ export const UserCombobox = ({ value, onChange, entity }: Props) => {
     setOpen(false);
   };
 
-  const queryOptions = usersListQueryOptions({
-    q: debouncedSearchQuery,
-    targetEntityId: entity.id,
-    targetEntityType: entity.entityType,
-  });
+  const queryOptions = usersListQueryOptions({ q: debouncedSearchQuery });
 
   const {
     data,
@@ -70,6 +66,19 @@ export const UserCombobox = ({ value, onChange, entity }: Props) => {
     // hasNextPage,
     // isFetchingNextPage,
   } = useInfiniteQuery(queryOptions);
+
+  // TODO can we do this with filter on users in list
+  // Fetch existing members of the entity to check "already member" status
+  const { data: membersData } = useInfiniteQuery(
+    membersListQueryOptions({
+      entityId: entity.id,
+      entityType: entity.entityType,
+      tenantId: entity.tenantId,
+      orgId: entity.organizationId || entity.id,
+    }),
+  );
+
+  const existingMemberIds = new Set(membersData?.pages.flatMap((p) => p.items.map((m) => m.id)) ?? []);
 
   const items = data?.pages.flatMap((p) => p.items) ?? [];
 
@@ -170,9 +179,9 @@ export const UserCombobox = ({ value, onChange, entity }: Props) => {
                   >
                     <ScrollArea>
                       <CommandGroup>
-                        {items.map(({ id, name, email, memberships, entityType, thumbnailUrl }) => {
-                          const alreadyMember = !!memberships.find((m) => m[entityIdColumnKey] === entity.id);
-                          const disabled = !memberships || alreadyMember;
+                        {items.map(({ id, name, email, entityType, thumbnailUrl }) => {
+                          const alreadyMember = existingMemberIds.has(id);
+                          const disabled = alreadyMember;
                           return (
                             <CommandItem
                               data-was-selected={selected.some((u) => u === email)}

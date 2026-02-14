@@ -14,6 +14,16 @@ function getEntityTable<T extends EntityType>(entityType: T): (typeof entityTabl
   return entityTables[entityType];
 }
 
+/**
+ * @internal Resolves an entity by ID or slug from its table.
+ *
+ * **Do not use directly in route handlers.** Use the permission-checking wrappers instead:
+ * - `getValidContextEntity` for context entities (e.g., organization)
+ * - `getValidProductEntity` for product entities (e.g., attachment, page)
+ *
+ * Direct usage is only appropriate in internal utilities (e.g., slug availability checks)
+ * or self-operations where the user acts on their own data without permission checks.
+ */
 export async function resolveEntity<T extends EntityType>(
   entityType: T,
   identifier: string,
@@ -32,6 +42,9 @@ export async function resolveEntity<T extends EntityType>(
   return entity as EntityModel<T> | undefined;
 }
 
+/**
+ * @internal Resolves multiple entities by IDs. See `resolveEntity` for usage guidelines.
+ */
 export async function resolveEntities<T extends EntityType>(
   entityType: T,
   ids: string[],

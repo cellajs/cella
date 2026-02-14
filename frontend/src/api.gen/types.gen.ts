@@ -2439,67 +2439,6 @@ export type DeleteUsersResponses = {
 
 export type DeleteUsersResponse = DeleteUsersResponses[keyof DeleteUsersResponses];
 
-export type GetUsersData = {
-  body?: never;
-  path?: never;
-  query?: {
-    q?: string;
-    sort?: 'id' | 'name' | 'email' | 'role' | 'createdAt' | 'lastSeenAt';
-    order?: 'asc' | 'desc';
-    offset?: string;
-    limit?: string;
-    role?: 'admin';
-    targetEntityType?: 'organization';
-    targetEntityId?: string;
-  };
-  url: '/system';
-};
-
-export type GetUsersErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type GetUsersError = GetUsersErrors[keyof GetUsersErrors];
-
-export type GetUsersResponses = {
-  /**
-   * Users
-   */
-  200: {
-    /**
-     * A user with profile data and last-seen activity timestamp.
-     */
-    items: Array<
-      User & {
-        memberships: Array<MembershipBase>;
-        role?: 'admin' | null;
-      }
-    >;
-    total: number;
-  };
-};
-
-export type GetUsersResponse = GetUsersResponses[keyof GetUsersResponses];
-
 export type UpdateUserData = {
   body?: {
     bannerUrl?: string | null;
@@ -3969,12 +3908,9 @@ export type UpdatePageResponses = {
 
 export type UpdatePageResponse = UpdatePageResponses[keyof UpdatePageResponses];
 
-export type GetUsers2Data = {
+export type GetUsersData = {
   body?: never;
-  path: {
-    tenantId: string;
-    orgId: string;
-  };
+  path?: never;
   query?: {
     q?: string;
     sort?: 'id' | 'name' | 'email' | 'role' | 'createdAt' | 'lastSeenAt';
@@ -3982,13 +3918,11 @@ export type GetUsers2Data = {
     offset?: string;
     limit?: string;
     role?: 'admin';
-    targetEntityType?: 'organization';
-    targetEntityId?: string;
   };
-  url: '/{tenantId}/{orgId}/users';
+  url: '/users';
 };
 
-export type GetUsers2Errors = {
+export type GetUsersErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -4011,9 +3945,9 @@ export type GetUsers2Errors = {
   429: TooManyRequestsError;
 };
 
-export type GetUsers2Error = GetUsers2Errors[keyof GetUsers2Errors];
+export type GetUsersError = GetUsersErrors[keyof GetUsersErrors];
 
-export type GetUsers2Responses = {
+export type GetUsersResponses = {
   /**
    * Users
    */
@@ -4023,7 +3957,6 @@ export type GetUsers2Responses = {
      */
     items: Array<
       User & {
-        memberships: Array<MembershipBase>;
         role?: 'admin' | null;
       }
     >;
@@ -4031,19 +3964,17 @@ export type GetUsers2Responses = {
   };
 };
 
-export type GetUsers2Response = GetUsers2Responses[keyof GetUsers2Responses];
+export type GetUsersResponse = GetUsersResponses[keyof GetUsersResponses];
 
 export type GetUserData = {
   body?: never;
   path: {
-    tenantId: string;
-    orgId: string;
     userId: string;
   };
   query?: {
     slug?: string | boolean;
   };
-  url: '/{tenantId}/{orgId}/users/{userId}';
+  url: '/users/{userId}';
 };
 
 export type GetUserErrors = {

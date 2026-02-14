@@ -97,7 +97,7 @@ export const OrganizationRoute = createRoute({
     const { data } = useSuspenseQuery(organizationQueryOptions(organization.id, tenantId));
     return (
       <Suspense>
-        <OrganizationPage key={data.slug} organizationId={data.id} tenantId={tenantId} />
+        <OrganizationPage key={data.id} organizationId={data.id} tenantId={tenantId} />
       </Suspense>
     );
   },

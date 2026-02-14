@@ -249,6 +249,7 @@ const meRouteHandlers = app
 
     const { entityType, entityId } = ctx.req.valid('query');
 
+    // Internal resolve: user is leaving their own membership (self-operation, no permission check needed)
     const entity = await resolveEntity(entityType, entityId, db);
     if (!entity) throw new AppError(404, 'not_found', 'warn', { entityType });
 

@@ -1,5 +1,4 @@
 import { useQuery } from '@tanstack/react-query';
-import { useParams } from '@tanstack/react-router';
 import { FlameKindlingIcon, ServerCrashIcon, WifiOffIcon } from 'lucide-react';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
@@ -10,17 +9,15 @@ import { UserProfilePage as UserProfile } from './user-profile';
 /**
  * Sheet wrapper for user profile. Handles its own data fetching.
  */
-export function UserSheet({ id, orgId }: { id: string; orgId: string | undefined }) {
+export function UserSheet({ id }: { id: string; orgId: string | undefined }) {
   const { isOnline } = useOnlineManager();
-  const { tenantId } = useParams({ strict: false });
 
   const {
     data: user,
     isLoading,
     isError,
   } = useQuery({
-    ...userQueryOptions(id, tenantId!, orgId ?? ''),
-    enabled: !!tenantId,
+    ...userQueryOptions(id),
   });
 
   if (isLoading) return <Spinner className="mt-[45vh] h-10 w-10" />;

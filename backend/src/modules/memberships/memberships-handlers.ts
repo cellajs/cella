@@ -458,11 +458,8 @@ const membershipsRouteHandlers = app
     const membershipContextId = membershipToUpdate[updatedEntityIdField];
     if (!membershipContextId) throw new AppError(500, 'server_error', 'error', { entityType: updatedType });
 
-    const membershipContext = await resolveEntity(updatedType, membershipContextId, db);
-    if (!membershipContext) throw new AppError(404, 'not_found', 'warn', { entityType: updatedType });
-
-    // Check if user has permission to update someone elses membership role
-    if (role) await getValidContextEntity(ctx, membershipContextId, updatedType, 'update');
+    // Validate entity existence and check permission (read for self-updates, update for role changes)
+    await getValidContextEntity(ctx, membershipContextId, updatedType, role ? 'update' : 'read');
 
     // If archived changed, set lowest order in relevant memberships
     if (archived !== undefined && archived !== membershipToUpdate.archived) {
@@ -519,6 +516,7 @@ const membershipsRouteHandlers = app
       if (!entityFieldId)
         throw new AppError(500, 'server_error', 'error', { entityType: inactiveMembership.contextType });
 
+      // Internal resolve: user is accepting their own invitation, so no membership exists yet for permission checks
       const entity = await resolveEntity(inactiveMembership.contextType, entityFieldId, db);
       if (!entity) throw new AppError(404, 'not_found', 'error', { entityType: inactiveMembership.contextType });
 
@@ -540,7 +538,7 @@ const membershipsRouteHandlers = app
         .where(and(eq(inactiveMembershipsTable.id, inactiveMembership.id)));
     }
 
-    // Resolve the root context entity (e.g. organization) for the response
+    // Internal resolve: getting root entity for response after invitation handling (no permission check needed)
     const rootEntityId = inactiveMembership[rootIdColumnKey as InactiveEntityIdColumnNames];
     if (!rootEntityId) throw new AppError(500, 'server_error', 'error', { entityType: rootContextType });
 

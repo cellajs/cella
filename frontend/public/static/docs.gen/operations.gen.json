@@ -817,25 +817,6 @@
     }
   },
   {
-    "id": "getUsers",
-    "hash": "tag/system/GET/system",
-    "method": "get",
-    "path": "/system",
-    "tags": ["system"],
-    "summary": "Get list of users",
-    "description": "Returns a list of *users*.",
-    "deprecated": false,
-    "hasParams": true,
-    "hasRequestBody": false,
-    "hasResponseBody": true,
-    "hasExample": true,
-    "extensions": {
-      "xGuard": ["authGuard", "sysAdminGuard"],
-      "xRateLimiter": [],
-      "xCache": []
-    }
-  },
-  {
     "id": "deleteUsers",
     "hash": "tag/system/DELETE/system",
     "method": "delete",
@@ -1350,38 +1331,38 @@
   },
   {
     "id": "getUsers",
-    "hash": "tag/users/GET/{tenantId}/{orgId}/users",
+    "hash": "tag/users/GET/users",
     "method": "get",
-    "path": "/{tenantId}/{orgId}/users",
+    "path": "/users",
     "tags": ["users"],
     "summary": "Get list of users",
-    "description": "Returns a list of *users* in an organization context.",
+    "description": "Returns a list of *users*.",
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
+      "xGuard": ["authGuard", "crossTenantGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
   },
   {
     "id": "getUser",
-    "hash": "tag/users/GET/{tenantId}/{orgId}/users/{userId}",
+    "hash": "tag/users/GET/users/{userId}",
     "method": "get",
-    "path": "/{tenantId}/{orgId}/users/{userId}",
+    "path": "/users/{userId}",
     "tags": ["users"],
     "summary": "Get user",
-    "description": "Retrieves a *user* by ID in an organization context. Pass `?slug=true` to resolve by slug instead.",
+    "description": "Retrieves a *user* by ID. The requesting user must share at least one context entity membership. Pass `?slug=true` to resolve by slug instead.",
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
+      "xGuard": ["authGuard", "crossTenantGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
