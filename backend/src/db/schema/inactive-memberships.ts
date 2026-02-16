@@ -10,6 +10,21 @@ import { nanoid } from '#/utils/nanoid';
 
 const roleEnum = roles.all;
 
+/**
+ * Generate slug columns for each context entity type dynamically.
+ * These store the entity slugs for quick access without needing to join.
+ */
+const contextEntitySlugColumns = appConfig.contextEntityTypes.reduce(
+  (acc, entityType) => {
+    const slugColumnKey = appConfig.entitySlugColumnKeys[entityType];
+    if (slugColumnKey) {
+      acc[slugColumnKey] = varchar({ length: maxLength.field });
+    }
+    return acc;
+  },
+  {} as Record<string, ReturnType<typeof varchar>>,
+);
+
 /** Inactive memberships track pending invitations and rejected membership requests. */
 export const inactiveMembershipsTable = pgTable(
   'inactive_memberships',
@@ -31,6 +46,8 @@ export const inactiveMembershipsTable = pgTable(
     organizationId: varchar({ length: maxLength.id })
       .notNull()
       .references(() => organizationsTable.id, { onDelete: 'cascade' }),
+    // Dynamic slug columns for each context entity type
+    ...contextEntitySlugColumns,
   },
   (table) => [
     index('inactive_memberships_user_id_idx').on(table.userId),
@@ -38,6 +55,14 @@ export const inactiveMembershipsTable = pgTable(
     index('inactive_memberships_tenant_id_idx').on(table.tenantId),
     index('inactive_memberships_email_idx').on(table.email),
     index('inactive_memberships_org_pending_idx').on(table.organizationId, table.rejectedAt),
+    // Indexes for slug columns
+    ...appConfig.contextEntityTypes
+      .filter((t) => appConfig.entitySlugColumnKeys[t])
+      .map((t) =>
+        index(`inactive_memberships_${appConfig.entitySlugColumnKeys[t]}_idx`).on(
+          table[appConfig.entitySlugColumnKeys[t] as keyof typeof table],
+        ),
+      ),
     // Include contextType + all entity ID columns so forks with additional context types
     // get proper uniqueness. nullsNotDistinct treats NULLs as equal.
     unique('inactive_memberships_tenant_email_ctx')

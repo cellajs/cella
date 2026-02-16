@@ -32,6 +32,11 @@ export const config = {
     page: 'pageId',
   } as const,
 
+  /** Maps context entity types to their slug column names - must match contextEntityTypes */
+  entitySlugColumnKeys: {
+    organization: 'organizationSlug',
+  } as const,
+
   /** Available CRUD actions for permission checks */
   entityActions: ['create', 'read', 'update', 'delete', 'search'] as const,
 

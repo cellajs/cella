@@ -14,7 +14,11 @@ import { type Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
 import { mailer } from '#/lib/mailer';
 import { resolveEntity } from '#/lib/resolve-entity';
-import { getBaseMembershipEntityId, insertMemberships } from '#/modules/memberships/helpers';
+import {
+  getBaseMembershipEntityId,
+  getBaseMembershipEntitySlugs,
+  insertMemberships,
+} from '#/modules/memberships/helpers';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import membershipRoutes from '#/modules/memberships/memberships-routes';
 import { memberSelect, userBaseSelect } from '#/modules/user/helpers/select';
@@ -205,6 +209,7 @@ const membershipsRouteHandlers = app
         contextType: entityType,
         tenantId: ctx.var.tenantId,
         ...getBaseMembershipEntityId(entity),
+        ...getBaseMembershipEntitySlugs(entity),
       }));
 
       inactiveMembershipsToInsert.push(...inactiveMembershipsForExistingUsers);
@@ -300,6 +305,7 @@ const membershipsRouteHandlers = app
         tokenId: tokensByEmail.get(email)!, // link inactive membership → token
         tenantId: ctx.var.tenantId,
         ...getBaseMembershipEntityId(entity),
+        ...getBaseMembershipEntitySlugs(entity),
       }));
 
       inactiveMembershipsToInsert.push(...newUserInactiveMemberships);

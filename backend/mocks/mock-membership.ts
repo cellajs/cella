@@ -6,7 +6,9 @@ import type { UserModel } from '#/db/schema/users';
 import { nanoid } from '#/utils/nanoid';
 import {
   generateMockContextEntityIdColumns,
+  generateMockContextEntitySlugColumns,
   type MockContextEntityIdColumns,
+  type MockContextEntitySlugColumns,
   mockNanoid,
   mockPaginated,
   mockTenantId,
@@ -24,7 +26,8 @@ type MembershipBase = {
   displayOrder: number;
   muted: boolean;
   archived: boolean;
-} & MockContextEntityIdColumns;
+} & MockContextEntityIdColumns &
+  MockContextEntitySlugColumns;
 
 // Tracks the current order offset for memberships per context (e.g., organization)
 const membershipOrderMap: Map<string, number> = new Map();
@@ -96,6 +99,7 @@ export const mockMembershipBase = (key = 'membership-base:default'): MembershipB
     contextType: 'organization' as const,
     userId: mockNanoid(),
     ...generateMockContextEntityIdColumns(),
+    ...generateMockContextEntitySlugColumns(),
     role: faker.helpers.arrayElement(roles.all),
     displayOrder: faker.number.int({ min: 1, max: 100 }),
     muted: false,
@@ -113,12 +117,14 @@ export const mockMembership = (key = 'membership:default'): MembershipModel =>
     const createdAt = faker.date.past({ refDate }).toISOString();
     const userId = mockNanoid();
     const contextEntityColumns = generateMockContextEntityIdColumns();
+    const contextEntitySlugColumns = generateMockContextEntitySlugColumns();
 
     return {
       id: mockNanoid(),
       contextType: 'organization' as const,
       userId,
       ...contextEntityColumns,
+      ...contextEntitySlugColumns,
       role: faker.helpers.arrayElement(roles.all),
       displayOrder: faker.number.int({ min: 1, max: 100 }),
       muted: false,
@@ -145,6 +151,7 @@ export const mockInactiveMembership = (key = 'inactive-membership:default'): Ina
     const createdAt = faker.date.past({ refDate }).toISOString();
     const userId = mockNanoid();
     const contextEntityColumns = generateMockContextEntityIdColumns();
+    const contextEntitySlugColumns = generateMockContextEntitySlugColumns();
     const tokenId = mockNanoid();
 
     return {
@@ -158,6 +165,7 @@ export const mockInactiveMembership = (key = 'inactive-membership:default'): Ina
       createdAt,
       createdBy: mockNanoid(),
       ...contextEntityColumns,
+      ...contextEntitySlugColumns,
       tenantId: 'test01', // Default test tenant
     };
   });

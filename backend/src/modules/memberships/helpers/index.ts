@@ -59,6 +59,38 @@ export const getBaseMembershipEntityId = <T extends ContextEntityType>(entity: E
 };
 
 /**
+ * Returns an object mapping base membership entity slugs for the given entity.
+ *
+ * Each mapping corresponds to a context entity type defined in `appConfig.contextEntityTypes`.
+ * The key of each mapping is derived from the values of `appConfig.entitySlugColumnKeys`
+ * (e.g. `"organizationSlug"`, `"workspaceSlug"`), and the value is the corresponding string slug.
+ * Some slugs may be null if not available.
+ *
+ * @template T - The specific context entity type.
+ * @param entity - The entity object to extract membership slug information from.
+ * @returns An object mapping base membership entity slugs for the given entity.
+ */
+export const getBaseMembershipEntitySlugs = <T extends ContextEntityType>(entity: EntityModel<T>) => {
+  return appConfig.contextEntityTypes.reduce(
+    (acc, contextEntityType) => {
+      const entityFieldSlugName = appConfig.entitySlugColumnKeys[contextEntityType];
+      if (!entityFieldSlugName) return acc;
+
+      if (entity.entityType === contextEntityType) {
+        // For the entity itself, use its slug if available
+        acc[entityFieldSlugName] = (entity as unknown as Record<string, string>).slug ?? null;
+      } else if (entityFieldSlugName in entity) {
+        // For parent entities, the slug may be stored in the entity
+        acc[entityFieldSlugName] = entity[entityFieldSlugName as keyof typeof entity] as string | null;
+      }
+
+      return acc;
+    },
+    {} as Record<(typeof appConfig.entitySlugColumnKeys)[ContextEntityType], string | null>,
+  );
+};
+
+/**
  * Batch insert direct memberships for existing users. The function assumes that
  *  the data is already deduped, normalized and valid.
  *
@@ -104,6 +136,9 @@ export const insertMemberships = async <T extends BaseEntityModel>(
     // Get organizationId: prefer entity.organizationId if present, else entity.id (organization)
     const targetEntitiesIdColumnKeys = getBaseMembershipEntityId(entity);
 
+    // Get entity slugs for quick access without joins
+    const targetEntitiesSlugColumnKeys = getBaseMembershipEntitySlugs(entity);
+
     // Compute incremental order per user: start from global max, then +10 per assignment
     const prevMax = maxOrdersByUser.get(userId) ?? 0;
     const alreadyAssigned = assignedCounts.get(userId) ?? 0;
@@ -120,7 +155,7 @@ export const insertMemberships = async <T extends BaseEntityModel>(
       displayOrder: nextOrder,
     } as const;
 
-    return { targetEntitiesIdColumnKeys, baseMembership, entity };
+    return { targetEntitiesIdColumnKeys, targetEntitiesSlugColumnKeys, baseMembership, entity };
   });
 
   /**
@@ -130,19 +165,29 @@ export const insertMemberships = async <T extends BaseEntityModel>(
    */
   const rootRows: InsertMembershipModel[] = prepared
     .filter(({ entity }) => entity.entityType !== rootContextType)
-    .map(({ baseMembership, targetEntitiesIdColumnKeys, entity }) => {
+    .map(({ baseMembership, targetEntitiesIdColumnKeys, targetEntitiesSlugColumnKeys, entity }) => {
       return {
         ...baseMembership,
         tenantId: entity.tenantId,
         role: 'member', // parent membership is always 'member'
         [rootIdColumnKey]: targetEntitiesIdColumnKeys[rootIdColumnKey],
         contextType: rootContextType,
+        // Include slugs for the root context entity
+        ...Object.entries(targetEntitiesSlugColumnKeys).reduce(
+          (acc, [key, value]) => {
+            if (key === appConfig.entitySlugColumnKeys[rootContextType]) {
+              acc[key] = value;
+            }
+            return acc;
+          },
+          {} as Record<string, string | null>,
+        ),
       } as InsertMembershipModel;
     });
 
   // Build associated entity membership rows (when an associated relationship exists)
   const associatedRows = prepared
-    .map(({ baseMembership, targetEntitiesIdColumnKeys, entity }) => {
+    .map(({ baseMembership, targetEntitiesIdColumnKeys, targetEntitiesSlugColumnKeys, entity }) => {
       // Find a associated relationship for this entity type
       const relation = appConfig.menuStructure.find((rel) => rel.subentityType === entity.entityType);
       if (!relation) return null;
@@ -158,11 +203,16 @@ export const insertMemberships = async <T extends BaseEntityModel>(
       const targetEntityIdColumnKey = appConfig.entityIdColumnKeys[entity.entityType];
       const { [targetEntityIdColumnKey]: _, ...remainingIdColumnKeys } = targetEntitiesIdColumnKeys;
 
+      // Get the target entity's slug field to exclude it
+      const targetEntitySlugColumnKey = appConfig.entitySlugColumnKeys[entity.entityType];
+      const { [targetEntitySlugColumnKey]: __, ...remainingSlugColumnKeys } = targetEntitiesSlugColumnKeys;
+
       return {
         ...baseMembership,
         tenantId: entity.tenantId,
         role: 'member', // parent/associated membership is always 'member'
         ...remainingIdColumnKeys,
+        ...remainingSlugColumnKeys,
         contextType: associatedType,
       } as InsertMembershipModel;
     })
@@ -170,11 +220,12 @@ export const insertMemberships = async <T extends BaseEntityModel>(
 
   // Build target entity membership rows (the ones we return after insert)
   const targetRows: InsertMembershipModel[] = prepared.map(
-    ({ baseMembership, targetEntitiesIdColumnKeys, entity }) => ({
+    ({ baseMembership, targetEntitiesIdColumnKeys, targetEntitiesSlugColumnKeys, entity }) => ({
       ...baseMembership,
       tenantId: entity.tenantId,
       contextType: entity.entityType,
       ...targetEntitiesIdColumnKeys,
+      ...targetEntitiesSlugColumnKeys,
     }),
   );
 

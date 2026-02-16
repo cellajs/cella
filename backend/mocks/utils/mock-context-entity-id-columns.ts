@@ -10,6 +10,14 @@ export type MockContextEntityIdColumns = {
 };
 
 /**
+ * Type for dynamically generated context entity slug columns in mocks.
+ * Maps each context entity type to its corresponding slug column (e.g., organization -> organizationSlug).
+ */
+export type MockContextEntitySlugColumns = {
+  [K in ContextEntityType as (typeof appConfig.entitySlugColumnKeys)[K]]: string | null;
+};
+
+/**
  * Generates mock ID columns dynamically based on context entity types from appConfig.
  *
  * @param mode - 'all' includes all context entity types, 'relatable' only includes
@@ -26,4 +34,27 @@ export const generateMockContextEntityIdColumns = (mode: 'all' | 'relatable' = '
   }
 
   return columns as MockContextEntityIdColumns;
+};
+
+/**
+ * Generates mock slug columns dynamically based on context entity types from appConfig.
+ *
+ * @param mode - 'all' includes all context entity types, 'relatable' only includes
+ *   those in the hierarchy's relatableContextTypes. Defaults to 'all'.
+ * @returns An object with mock slug values for each context entity slug column.
+ */
+export const generateMockContextEntitySlugColumns = (
+  mode: 'all' | 'relatable' = 'all',
+): MockContextEntitySlugColumns => {
+  const entityTypes = mode === 'all' ? appConfig.contextEntityTypes : hierarchy.relatableContextTypes;
+  const columns = {} as Record<string, string | null>;
+
+  for (const entityType of entityTypes) {
+    const columnName = appConfig.entitySlugColumnKeys[entityType];
+    if (columnName) {
+      columns[columnName] = `mock-${entityType}-slug`;
+    }
+  }
+
+  return columns as MockContextEntitySlugColumns;
 };

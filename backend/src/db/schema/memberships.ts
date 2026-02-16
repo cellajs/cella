@@ -12,6 +12,21 @@ import { nanoid } from '#/utils/nanoid';
 const roleEnum = roles.all;
 
 /**
+ * Generate slug columns for each context entity type dynamically.
+ * These store the entity slugs for quick access without needing to join.
+ */
+const contextEntitySlugColumns = appConfig.contextEntityTypes.reduce(
+  (acc, entityType) => {
+    const slugColumnKey = appConfig.entitySlugColumnKeys[entityType];
+    if (slugColumnKey) {
+      acc[slugColumnKey] = varchar({ length: maxLength.field });
+    }
+    return acc;
+  },
+  {} as Record<string, ReturnType<typeof varchar>>,
+);
+
+/**
  * Memberships table to track active memberships of users in organizations and other context entities.
  * Each membership belongs to exactly one tenant (RLS isolation boundary).
  */
@@ -39,12 +54,22 @@ export const membershipsTable = pgTable(
     organizationId: varchar({ length: maxLength.id })
       .notNull()
       .references(() => organizationsTable.id, { onDelete: 'cascade' }),
+    // Dynamic slug columns for each context entity type
+    ...contextEntitySlugColumns,
   },
   (table) => [
     index('memberships_user_id_idx').on(table.userId),
     index('memberships_organization_id_idx').on(table.organizationId),
     index('memberships_tenant_id_idx').on(table.tenantId),
     index('memberships_context_org_role_idx').on(table.contextType, table.organizationId, table.role),
+    // Indexes for slug columns
+    ...appConfig.contextEntityTypes
+      .filter((t) => appConfig.entitySlugColumnKeys[t])
+      .map((t) =>
+        index(`memberships_${appConfig.entitySlugColumnKeys[t]}_idx`).on(
+          table[appConfig.entitySlugColumnKeys[t] as keyof typeof table],
+        ),
+      ),
     // Include contextType + all entity ID columns so forks with additional context types
     // (e.g. workspace, project) get proper uniqueness without manual schema changes.
     // nullsNotDistinct ensures NULL entity IDs are treated as equal, preventing duplicates.

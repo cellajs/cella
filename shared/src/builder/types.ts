@@ -153,6 +153,7 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   productEntityTypes: T['productEntityTypes'];
   parentlessProductEntityTypes: T['parentlessProductEntityTypes'];
   entityIdColumnKeys: Record<string, string>;
+  entitySlugColumnKeys: Record<string, string>;
   entityActions: T['entityActions'];
   resourceTypes: T['resourceTypes'];
   menuStructure: readonly MenuStructureItem[];
