@@ -5,7 +5,9 @@ import type {
   EntityRole,
   EntityType,
   ProductEntityType,
-} from 'config';
+  SystemRole,
+} from 'shared';
+import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 
 /**
  * Permission value: 1 = allowed, 0 = denied.
@@ -16,38 +18,6 @@ export type PermissionValue = 0 | 1;
  * Entity action permission set mapping each action to a permission value.
  */
 export type EntityActionPermissions = Record<EntityActionType, PermissionValue>;
-
-/**
- * Configuration for a context entity defining its roles and optional parent contexts.
- */
-export interface ContextConfig {
-  type: 'context';
-  roles: readonly EntityRole[];
-  parents?: readonly ContextEntityType[];
-}
-
-/**
- * Configuration for a product entity defining its parent contexts.
- */
-export interface ProductConfig {
-  type: 'product';
-  parents: readonly ContextEntityType[];
-}
-
-/**
- * Entity configuration - either a context or product entity.
- */
-export type EntityConfig = ContextConfig | ProductConfig;
-
-/**
- * Full hierarchy configuration mapping entity types to their configurations.
- * All context entity types must be configured, product entity types are optional.
- */
-export type HierarchyConfig = {
-  [K in ContextEntityType]: ContextConfig;
-} & {
-  [K in ProductEntityType]?: ProductConfig;
-};
 
 /**
  * Access policy entry for a specific context and role combination.
@@ -72,21 +42,12 @@ export type AccessPolicies = Partial<Record<ContextEntityType | ProductEntityTyp
 /**
  * Context entity ID keys derived from entityIdColumnKeys config.
  * Maps each context entity type to its ID column value type.
+ * Uses `null` for unset values to align with database models (Drizzle).
+ * Optional (?) to support entities that don't have all context ID columns (e.g., standalone products).
  */
 export type ContextEntityIdColumns = {
-  [K in ContextEntityType as EntityIdColumnKeys[K]]?: string;
+  [K in ContextEntityType as EntityIdColumnKeys[K]]?: string | null;
 };
-
-/**
- * Membership data required for permission checks.
- * Aligned with MembershipBaseModel to avoid adapters.
- */
-export type MembershipForPermission = {
-  /** The context entity type (e.g., 'organization') */
-  contextType: ContextEntityType;
-  /** The user's role in this context */
-  role: EntityRole;
-} & ContextEntityIdColumns;
 
 /**
  * Subject (entity) data required for permission checks.
@@ -96,7 +57,8 @@ export type MembershipForPermission = {
 export type SubjectForPermission = {
   /** The entity type being accessed (context or product, not user) */
   entityType: ContextEntityType | ProductEntityType;
-  id: string;
+  /** Entity id. Optional for create checks where the entity doesn't exist yet. */
+  id?: string;
 } & ContextEntityIdColumns;
 
 /**
@@ -110,7 +72,7 @@ export interface ActionAttribution {
   grantedBy: Array<{
     contextType: ContextEntityType;
     contextId: string;
-    role: EntityRole;
+    role: string;
   }>;
 }
 
@@ -118,16 +80,16 @@ export interface ActionAttribution {
  * Full permission decision with action attribution for debugging and auditing.
  * Provides complete traceability: for each action, shows exactly which memberships granted it.
  */
-export interface PermissionDecision<T extends MembershipForPermission> {
+export interface PermissionDecision<T extends MembershipBaseModel = MembershipBaseModel> {
   /** The subject being checked with resolved context IDs */
   subject: {
     entityType: ContextEntityType | ProductEntityType;
-    id: string;
+    id?: string;
     contextIds: Partial<Record<ContextEntityType, string>>;
   };
-  /** Context types checked in order (most specific to root) */
-  relevantContexts: ContextEntityType[];
-  /** The primary context where membership is captured */
+  /** Context types checked in order (most specific to root). First element is primaryContext. */
+  orderedContexts: ContextEntityType[];
+  /** The primary context where membership is captured (always orderedContexts[0]) */
   primaryContext: ContextEntityType;
   /** Per-action attribution table showing grants for each action */
   actions: Record<EntityActionType, ActionAttribution>;
@@ -157,3 +119,11 @@ export interface AccessPolicyConfiguration {
  * Callback function for configuring access policies.
  */
 export type AccessPolicyCallback = (config: AccessPolicyConfiguration) => void;
+
+/**
+ * Options for permission checking.
+ */
+export interface PermissionCheckOptions {
+  /** System role of the user. Only pass when user has elevated role (e.g., 'admin'). System admins get all permissions. */
+  systemRole?: SystemRole | null;
+}

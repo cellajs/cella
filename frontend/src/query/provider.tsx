@@ -1,18 +1,43 @@
-import { QueryClientProvider as BaseQueryClientProvider } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
-import { appConfig } from 'config';
-import { useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { appConfig } from 'shared';
+import { downloadService } from '~/modules/attachment/download-service';
+import { uploadService } from '~/modules/attachment/upload-service';
 import type { UserMenuItem } from '~/modules/me/types';
 import { getMenuData } from '~/modules/navigation/menu-sheet/helpers/get-menu-data';
 import { entityToPrefetchQueries } from '~/offline-config';
-import { useOfflineManager } from '~/query/offline-manager';
-import { persister } from '~/query/persister';
-import { queryClient } from '~/query/query-client';
-import { waitFor } from '~/query/utils';
-import { prefetchQuery } from '~/query/utils/prefetch-query';
+import { setupMembershipEnrichment } from '~/query/membership-enrichment';
+import { initMutationDefaults } from '~/query/mutation-registry';
+import '~/modules/attachment/query';
+import '~/modules/page/query';
+import { cleanupOrphanedSessions, persister, sessionPersister } from '~/query/persister';
+import { queryClient, silentRevalidateOnReconnect, updateStaleTime } from '~/query/query-client';
+import { useTabCoordinatorStore } from '~/query/realtime/tab-coordinator';
 import { useUIStore } from '~/store/ui';
 import { useUserStore } from '~/store/user';
 
+/**
+ * Initialize mutation defaults BEFORE any cache restoration.
+ * This registers mutationFn for each entity type so that paused mutations
+ * can resume after page reload (mutationFn cannot be serialized to IndexedDB).
+ *
+ * NOTE: Query modules (~/modules/..../query) must be imported AFTER mutation-registry
+ * as they call addMutationRegistrar() at module load time.
+ */
+initMutationDefaults(queryClient);
+
+/**
+ * Setup membership enrichment to auto-attach membership data to context entities.
+ */
+setupMembershipEnrichment();
+
+/**
+ * Start offline services for background blob caching and upload sync.
+ */
+downloadService.start();
+uploadService.start();
+
+/** Configuration for offline-capable queries. */
 export const offlineQueryConfig = {
   gcTime: 24 * 60 * 60 * 1000, // Cache expiration time: 24 hours
   meta: {
@@ -21,51 +46,72 @@ export const offlineQueryConfig = {
 };
 
 /**
- * QueryClientProvider wrapper that handles two modes of operation:
+ * Wait for a given number of milliseconds.
  *
- * 1. **Standard Mode** (offlineAccess = false):
- *    - Uses the base TanStack Query provider
- *    - No cache persistence or prefetching
- *
- * 2. **Offline Mode** (offlineAccess = true):
- *    - Uses PersistQueryClientProvider to persist cache to IndexedDB
- *    - Automatically prefetches content for offline availability
- *
- * ## Offline Prefetch Strategy
- *
- * The prefetch logic operates in phases:
- *
- * 1. **Menu structure**: Already cached from entity list queries (organizations, etc.)
- *    via `getContextEntityTypeToListQueries()`. The menu is built from these entity
- *    lists using `buildMenu()`.
- *
- * 2. **Menu content**: This provider prefetches the *content within* each menu item:
- *    - For each menu item entity (e.g., organization), fetch related data like
- *      members, attachments, etc. as defined in `entityToPrefetchQueries()`
- *    - Recursively processes submenus to prefetch their content as well
- *    - Skips archived items to reduce unnecessary data transfer
- *    - Rate-limited with delays to avoid overloading the server
- *
- * The separation ensures efficient caching: menu entities themselves are already
- * available from the entity list queries used to build the menu, while this provider
- * focuses on prefetching the detailed content users will need when navigating.
+ * @param ms - Number of milliseconds to wait.
+ * @returns Promise that resolves after the given number of milliseconds.
  */
-export const QueryClientProvider = ({ children }: { children: React.ReactNode }) => {
+export const waitFor = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * QueryClientProvider wrapper handling cache persistence and offline capabilities.
+ * Uses session or IndexedDB persister based on offlineAccess setting.
+ * Only leader tab persists mutations in app routes to prevent cross-tab conflicts.
+ */
+export function QueryClientProvider({ children }: { children: React.ReactNode }) {
   const { user } = useUserStore();
   const { offlineAccess, toggleOfflineAccess } = useUIStore();
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const isLeader = useTabCoordinatorStore((state) => state.isLeader);
+  const isReady = useTabCoordinatorStore((state) => state.isReady);
+  const isActive = useTabCoordinatorStore((state) => state.isActive);
 
   // Disable offline access if PWA is not enabled in the config
   if (!appConfig.has.pwa && offlineAccess) toggleOfflineAccess();
 
-  // Initialize offline manager for network status tracking and executor coordination
-  // This handles online/offline events and notifies executors when back online
-  const { isOnline, pendingCount } = useOfflineManager(offlineAccess);
+  // Clean up orphaned session-scoped IndexedDB entries on mount (fire-and-forget)
+  useEffect(() => {
+    cleanupOrphanedSessions();
+  }, []);
+
+  // Select persister based on offline access mode
+  // - offlineAccess: IndexedDB (survives browser restart)
+  // - session: sessionStorage (survives refresh, cleared on tab close)
+  const activePersister = useMemo(() => (offlineAccess ? persister : sessionPersister), [offlineAccess]);
+
+  // Track online/offline status and update staleTime accordingly
+  useEffect(() => {
+    if (!offlineAccess) return;
+
+    const handleOnline = () => {
+      setIsOnline(true);
+      updateStaleTime(true, true);
+      silentRevalidateOnReconnect();
+    };
+    const handleOffline = () => {
+      setIsOnline(false);
+      updateStaleTime(true, false);
+    };
+
+    // Set initial staleTime based on current network status
+    updateStaleTime(true, navigator.onLine);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      // Reset to default staleTime when offlineAccess is disabled
+      updateStaleTime(false, true);
+    };
+  }, [offlineAccess]);
 
   // Log offline status changes for debugging
   useEffect(() => {
     if (!offlineAccess) return;
-    console.info(`[Offline] Network: ${isOnline ? 'online' : 'offline'}, Pending mutations: ${pendingCount}`);
-  }, [offlineAccess, isOnline, pendingCount]);
+    console.info(`[Offline] Network: ${isOnline ? 'online' : 'offline'}`);
+  }, [offlineAccess, isOnline]);
 
   useEffect(() => {
     // Exit early if offline access is disabled or no stored user is available
@@ -87,13 +133,19 @@ export const QueryClientProvider = ({ children }: { children: React.ReactNode })
           if (item.membership.archived) continue; // Skip archived items
 
           // Prefetch data (e.g., members as a react query, attachments as a collection, etc.)
-          const prefetchPromises = entityToPrefetchQueries(item.id, item.entityType, item.organizationId).map(
-            (source) =>
-              prefetchQuery({
-                ...source,
-                ...offlineQueryConfig,
-              }),
-          );
+          const prefetchPromises = entityToPrefetchQueries(
+            item.id,
+            item.entityType,
+            item.tenantId,
+            item.organizationId,
+          ).map((source) => {
+            const options = { ...source, ...offlineQueryConfig };
+            // Use ensureInfiniteQueryData for infinite queries (have getNextPageParam)
+            // biome-ignore lint/suspicious/noExplicitAny: runtime check narrows type but TS can't infer it
+            if ('getNextPageParam' in options) return queryClient.ensureInfiniteQueryData(options as any);
+            // biome-ignore lint/suspicious/noExplicitAny: dynamic query options from entityToPrefetchQueries
+            return queryClient.ensureQueryData(options as any);
+          });
           await Promise.allSettled(prefetchPromises);
 
           await waitFor(500); // Avoid overloading server
@@ -113,18 +165,28 @@ export const QueryClientProvider = ({ children }: { children: React.ReactNode })
     };
   }, [offlineAccess, user]);
 
-  if (!offlineAccess) return <BaseQueryClientProvider client={queryClient}>{children}</BaseQueryClientProvider>;
-
   return (
     <PersistQueryClientProvider
       client={queryClient}
-      persistOptions={{ persister }}
+      persistOptions={{
+        persister: activePersister,
+        dehydrateOptions: {
+          // Public routes (!isActive): always persist. App routes: only leader persists after ready.
+          shouldDehydrateMutation: () => !isActive || (isReady && isLeader),
+        },
+      }}
       onSuccess={() => {
-        // After successful cache restoration, resume paused mutations and invalidate queries
-        queryClient.resumePausedMutations().then(() => queryClient.invalidateQueries());
+        // After successful cache restoration, resume any paused mutations and revalidate.
+        queryClient.resumePausedMutations().then(() => {
+          // Only invalidate queries if we're in offline mode (IDB persister)
+          // Session mode doesn't need aggressive revalidation
+          if (offlineAccess) {
+            queryClient.invalidateQueries();
+          }
+        });
       }}
     >
       {children}
     </PersistQueryClientProvider>
   );
-};
+}

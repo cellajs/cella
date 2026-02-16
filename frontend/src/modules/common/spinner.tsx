@@ -1,9 +1,9 @@
 import { Loader2Icon } from 'lucide-react';
-import useMounted from '~/hooks/use-mounted';
+import { useMountedState } from '~/hooks/use-mounted-state';
 import { cn } from '~/utils/cn';
 
-const Spinner = ({ className = '', noDelay = false }) => {
-  const { hasStarted } = useMounted();
+export function Spinner({ className = '', noDelay = false }) {
+  const { hasStarted } = useMountedState();
 
   return (
     <div
@@ -14,6 +14,4 @@ const Spinner = ({ className = '', noDelay = false }) => {
       <Loader2Icon className={cn('opacity-50 text-foreground mx-auto h-6 w-6 animate-spin', className)} />
     </div>
   );
-};
-
-export default Spinner;
+}

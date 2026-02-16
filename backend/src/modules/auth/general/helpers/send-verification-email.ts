@@ -1,18 +1,18 @@
-import { appConfig } from 'config';
 import { and, eq } from 'drizzle-orm';
 import i18n from 'i18next';
-import { db } from '#/db/db';
+import { appConfig } from 'shared';
+import { unsafeInternalDb as db } from '#/db/db';
 import { type EmailModel, emailsTable } from '#/db/schema/emails';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
-import { AppError } from '#/lib/errors';
+import { AppError } from '#/lib/error';
 import { mailer } from '#/lib/mailer';
-import { userSelect } from '#/modules/users/helpers/select';
+import { userSelect } from '#/modules/user/helpers/select';
 import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';
 import { createDate, TimeSpan } from '#/utils/time-span';
-import { EmailVerificationEmail, type EmailVerificationEmailProps } from '../../../../../emails';
+import { EmailVerificationEmail } from '../../../../../emails';
 
 interface Props {
   userId: string;
@@ -26,7 +26,7 @@ export const sendVerificationEmail = async ({ userId, redirectPath }: Props) => 
   const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, userId)).limit(1);
 
   // User not found
-  if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user' });
+  if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user' });
 
   const [emailInUse]: (EmailModel | undefined)[] = await db
     .select()
@@ -35,7 +35,7 @@ export const sendVerificationEmail = async ({ userId, redirectPath }: Props) => 
 
   // email verified
   if (emailInUse) {
-    throw new AppError({ status: 422, type: 'email_already_verified', severity: 'warn', entityType: 'user' });
+    throw new AppError(422, 'email_already_verified', 'warn', { entityType: 'user' });
   }
 
   // Delete previous token
@@ -49,7 +49,7 @@ export const sendVerificationEmail = async ({ userId, redirectPath }: Props) => 
   const [tokenRecord] = await db
     .insert(tokensTable)
     .values({
-      token: hashedToken,
+      secret: hashedToken,
       type: 'email-verification',
       userId: user.id,
       email,
@@ -87,9 +87,8 @@ export const sendVerificationEmail = async ({ userId, redirectPath }: Props) => 
   const subject = i18n.t(subjectText, { lng, appName: appConfig.name });
   const staticProps = { verificationLink: verificationURL.toString(), subject, lng, name: user.name };
   const recipients = [{ email }];
-  type Recipient = { email: string };
 
-  mailer.prepareEmails<EmailVerificationEmailProps, Recipient>(EmailVerificationEmail, staticProps, recipients);
+  mailer.prepareEmails(EmailVerificationEmail, staticProps, recipients);
 
   logEvent('info', 'Verification email sent', { userId: user.id });
 };

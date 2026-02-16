@@ -2,7 +2,7 @@ import { ChevronDown, PlusIcon, Settings2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { type RefObject, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import StickyBox from '~/modules/common/sticky-box';
+import { StickyBox } from '~/modules/common/sticky-box';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import type { UserMenuItem } from '~/modules/me/types';
 import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
@@ -41,7 +41,7 @@ export const MenuSectionButton = ({
           {/* Main section toggle button */}
           <Button
             onClick={() => toggleSection(options.entityType)}
-            className="flex-1 justify-between shadow-none"
+            className="flex-1 min-w-0 justify-between shadow-none"
             variant="secondary"
             asChild
           >
@@ -73,14 +73,14 @@ export const MenuSectionButton = ({
               <motion.div
                 key={`sheet-menu-settings-${options.entityType}`}
                 initial={{ width: 0, opacity: 0, marginLeft: 0 }}
-                animate={{ width: 48, opacity: 1, marginLeft: 8 }}
+                animate={{ width: '2.5rem', opacity: 1, marginLeft: '0.5rem' }}
                 exit={{ width: 0, opacity: 0, marginLeft: 0 }}
                 transition={{ bounce: 0, duration: 0.2 }}
-                className="overflow-hidden max-sm:hidden"
+                className="shrink-0 overflow-hidden max-sm:hidden"
               >
                 <TooltipButton toolTipContent={t('common:manage_content')} side="bottom" sideOffset={10}>
                   <Button
-                    className="w-12 px-2 shadow-none"
+                    className="w-10 px-2 shadow-none"
                     variant={isEditing ? 'plain' : 'secondary'}
                     size="icon"
                     onClick={() => toggleIsEditing()}
@@ -98,15 +98,15 @@ export const MenuSectionButton = ({
               <motion.div
                 key={`sheet-menu-plus-${options.entityType}`}
                 initial={{ width: 0, opacity: 0, marginLeft: 0 }}
-                animate={{ width: 48, opacity: 1, marginLeft: 8 }}
+                animate={{ width: '2.5rem', opacity: 1, marginLeft: '0.5rem' }}
                 exit={{ width: 0, opacity: 0, marginLeft: 0 }}
                 transition={{ bounce: 0, duration: 0.2 }}
-                className="overflow-hidden"
+                className="shrink-0 overflow-hidden"
               >
                 <TooltipButton toolTipContent={t('common:create')} sideOffset={22} side="right">
                   <Button
                     ref={createButtonRef}
-                    className="w-12 px-2 shadow-none"
+                    className="w-10 px-2 shadow-none"
                     variant="secondary"
                     size="icon"
                     onClick={() => handleCreateAction(createButtonRef)}

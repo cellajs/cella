@@ -1,19 +1,17 @@
 import { boolean, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
-import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
+import { maxLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
 
-/**
- * Emails table. Users can have multiple emails, each needing verification. They can be linked to tokens for verification purposes.
- */
+/** Users can have multiple emails. tokenId has no FK constraint (tokens is partitioned). */
 export const emailsTable = pgTable('emails', {
   createdAt: timestampColumns.createdAt,
-  id: varchar().primaryKey().$defaultFn(nanoid),
-  email: varchar().notNull().unique(),
+  id: varchar({ length: maxLength.id }).primaryKey().$defaultFn(nanoid),
+  email: varchar({ length: maxLength.field }).notNull().unique(),
   verified: boolean().notNull().default(false),
-  tokenId: varchar().references(() => tokensTable.id, { onDelete: 'set null' }),
-  userId: varchar()
+  tokenId: varchar({ length: maxLength.id }), // References tokens.id logically (no FK due to partitioning)
+  userId: varchar({ length: maxLength.id })
     .notNull()
     .references(() => usersTable.id, { onDelete: 'cascade' }),
   verifiedAt: timestamp({ mode: 'string' }),

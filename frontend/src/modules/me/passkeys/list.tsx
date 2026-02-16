@@ -8,7 +8,7 @@ import { meAuthQueryOptions, useCreatePasskeyMutation, useDeletePasskeyMutation 
 import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
 
-const PasskeysList = () => {
+export function PasskeysList() {
   const { t } = useTranslation();
 
   const { user, hasPasskey } = useUserStore.getState();
@@ -25,7 +25,7 @@ const PasskeysList = () => {
     if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
     if (user.mfaRequired && passkeys.length <= 1)
       return toaster(t('common:unlink_mfa_last', { method: 'the last passkey' }), 'info');
-    deletePasskey({ id });
+    deletePasskey({ path: { id } });
   };
   return (
     <div className="mb-6">
@@ -55,6 +55,4 @@ const PasskeysList = () => {
       </div>
     </div>
   );
-};
-
-export default PasskeysList;
+}

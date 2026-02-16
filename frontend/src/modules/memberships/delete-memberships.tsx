@@ -1,4 +1,4 @@
-import type { ContextEntityType } from 'config';
+import type { ContextEntityType } from 'shared';
 import { CallbackArgs } from '~/modules/common/data-table/types';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -6,27 +6,34 @@ import { useMembershipsDeleteMutation } from '~/modules/memberships/query-mutati
 import type { Member } from '~/modules/memberships/types';
 
 interface Props {
-  entityIdOrSlug: string;
-  organizationId: string;
+  entityId: string;
+  tenantId: string;
+  orgId: string;
   members: Member[];
   entityType: ContextEntityType;
   dialog?: boolean;
   callback?: (args: CallbackArgs<Member[]>) => void;
 }
 
-const DeleteMemberships = ({
+export function DeleteMemberships({
   members,
-  entityIdOrSlug,
+  entityId,
   entityType,
-  organizationId,
+  tenantId,
+  orgId,
   callback,
   dialog: isDialog,
-}: Props) => {
+}: Props) {
   const removeDialog = useDialoger((state) => state.remove);
   const { mutate: deleteMemberships, isPending } = useMembershipsDeleteMutation();
 
   const onDeleteMembers = () => {
-    deleteMemberships({ orgIdOrSlug: organizationId, idOrSlug: entityIdOrSlug, entityType, members });
+    deleteMemberships({
+      path: { tenantId, orgId },
+      body: { ids: members.map(({ id }) => id) },
+      query: { entityId, entityType },
+      members,
+    });
 
     if (isDialog) removeDialog();
     callback?.({ data: members, status: 'success' });
@@ -40,6 +47,4 @@ const DeleteMemberships = ({
       pending={isPending}
     />
   );
-};
-
-export default DeleteMemberships;
+}

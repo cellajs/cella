@@ -18,6 +18,166 @@
             }
           },
           "contentType": "application/json"
+        },
+        "example": [
+          { "date": "2026-01-01", "count": 42 },
+          { "date": "2026-01-02", "count": 58 }
+        ]
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ]
+  },
+  {
+    "operationId": "getRuntimeMetrics",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Runtime metrics",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "process": {
+              "type": "object",
+              "required": true,
+              "properties": {
+                "uptime": {
+                  "type": "number",
+                  "required": true,
+                  "description": "Process uptime in seconds"
+                },
+                "memory": {
+                  "type": "object",
+                  "required": true,
+                  "properties": {
+                    "heapUsed": {
+                      "type": "number",
+                      "required": true,
+                      "description": "Heap memory used in bytes"
+                    },
+                    "heapTotal": {
+                      "type": "number",
+                      "required": true,
+                      "description": "Total heap memory in bytes"
+                    },
+                    "external": {
+                      "type": "number",
+                      "required": true,
+                      "description": "External memory in bytes"
+                    },
+                    "rss": {
+                      "type": "number",
+                      "required": true,
+                      "description": "Resident set size in bytes"
+                    }
+                  }
+                },
+                "cpu": {
+                  "type": "object",
+                  "required": true,
+                  "properties": {
+                    "user": {
+                      "type": "number",
+                      "required": true,
+                      "description": "CPU time spent in user mode (microseconds)"
+                    },
+                    "system": {
+                      "type": "number",
+                      "required": true,
+                      "description": "CPU time spent in system mode (microseconds)"
+                    }
+                  }
+                }
+              }
+            },
+            "otel": {
+              "type": "array",
+              "required": true,
+              "description": "OpenTelemetry metrics from RuntimeNodeInstrumentation",
+              "itemType": "object",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string", "required": true },
+                  "description": { "type": "string", "required": false },
+                  "unit": { "type": "string", "required": false },
+                  "type": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["gauge", "counter", "histogram", "sum"]
+                  },
+                  "dataPoints": {
+                    "type": "array",
+                    "required": true,
+                    "itemType": "object",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "value": {
+                          "required": true,
+                          "anyOf": [
+                            { "type": "number", "required": false },
+                            { "type": "object", "required": false }
+                          ]
+                        },
+                        "attributes": { "type": "object", "required": false },
+                        "startTime": { "type": "string", "required": false },
+                        "endTime": { "type": "string", "required": false }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "contentType": "application/json"
+        },
+        "example": {
+          "process": {
+            "uptime": 86400,
+            "memory": {
+              "heapUsed": 52428800,
+              "heapTotal": 104857600,
+              "external": 2097152,
+              "rss": 134217728
+            },
+            "cpu": { "user": 150000, "system": 30000 }
+          },
+          "otel": []
         }
       },
       {
@@ -73,6 +233,235 @@
             "page": { "type": "number", "required": true }
           },
           "contentType": "application/json"
+        },
+        "example": { "user": 150, "organization": 12 }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ]
+  },
+  {
+    "operationId": "getCacheStats",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Cache statistics",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "cache": {
+              "type": "object",
+              "required": true,
+              "description": "Entity cache statistics",
+              "properties": {
+                "hits": {
+                  "type": "number",
+                  "required": true,
+                  "description": "Number of cache hits"
+                },
+                "misses": {
+                  "type": "number",
+                  "required": true,
+                  "description": "Number of cache misses"
+                },
+                "hitRate": {
+                  "type": "number",
+                  "required": true,
+                  "description": "Hit rate percentage (0-100)"
+                },
+                "invalidations": {
+                  "type": "number",
+                  "required": true,
+                  "description": "Number of cache invalidations"
+                },
+                "coalescedRequests": {
+                  "type": "number",
+                  "required": true,
+                  "description": "Number of coalesced requests (avoided duplicate fetches)"
+                },
+                "totalRequests": {
+                  "type": "number",
+                  "required": true,
+                  "description": "Total requests (hits + misses)"
+                },
+                "uptimeSeconds": {
+                  "type": "number",
+                  "required": true,
+                  "description": "Seconds since metrics were last reset"
+                },
+                "size": {
+                  "type": "number",
+                  "required": true,
+                  "description": "Current number of cached entries"
+                },
+                "indexSize": {
+                  "type": "number",
+                  "required": false,
+                  "description": "Current number of indexed entities"
+                },
+                "capacity": {
+                  "type": "number",
+                  "required": true,
+                  "description": "Maximum cache capacity"
+                },
+                "utilization": {
+                  "type": "number",
+                  "required": true,
+                  "description": "Cache utilization (0-1)"
+                }
+              }
+            }
+          },
+          "contentType": "application/json"
+        },
+        "example": {
+          "cache": {
+            "hits": 1250,
+            "misses": 85,
+            "hitRate": 93.6,
+            "invalidations": 42,
+            "coalescedRequests": 156,
+            "totalRequests": 1335,
+            "uptimeSeconds": 3600,
+            "size": 420,
+            "capacity": 1000,
+            "utilization": 0.42
+          }
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ]
+  },
+  {
+    "operationId": "getSyncMetrics",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Sync metrics",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "messagesReceived": {
+              "type": "number",
+              "required": true,
+              "description": "Total CDC messages received from worker"
+            },
+            "notificationsSent": {
+              "type": "number",
+              "required": true,
+              "description": "Total notifications sent via SSE streams"
+            },
+            "activeConnections": {
+              "type": "number",
+              "required": true,
+              "description": "Current number of active SSE connections"
+            },
+            "pgNotifyFallbacks": {
+              "type": "number",
+              "required": true,
+              "description": "Times pg_notify was used as fallback"
+            },
+            "recentSpanCount": {
+              "type": "number",
+              "required": true,
+              "description": "Number of recent spans in memory"
+            },
+            "spansByName": {
+              "type": "object",
+              "required": true,
+              "description": "Span counts by name"
+            },
+            "avgDurationByName": {
+              "type": "object",
+              "required": true,
+              "description": "Average duration by span name (ms)"
+            },
+            "errorCount": {
+              "type": "number",
+              "required": true,
+              "description": "Number of spans with error status"
+            }
+          },
+          "contentType": "application/json"
+        },
+        "example": {
+          "messagesReceived": 5420,
+          "notificationsSent": 3180,
+          "activeConnections": 24,
+          "pgNotifyFallbacks": 3,
+          "recentSpanCount": 150,
+          "spansByName": { "cdc.process": 2100, "sse.broadcast": 3180 },
+          "avgDurationByName": { "cdc.process": 12.5, "sse.broadcast": 1.2 },
+          "errorCount": 7
         }
       },
       {

@@ -15,6 +15,9 @@ function DropdownMenuTrigger({ ...props }: React.ComponentProps<typeof DropdownM
   return <DropdownMenuPrimitive.Trigger data-slot="dropdown-menu-trigger" {...props} />;
 }
 
+/**
+ * Renders dropdown content without a portal for custom layering.
+ */
 export function DropdownMenuContentNoPortal({
   className,
   sideOffset = 4,

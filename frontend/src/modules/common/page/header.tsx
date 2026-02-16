@@ -1,13 +1,12 @@
 import { Link } from '@tanstack/react-router';
-import { appConfig, ContextEntityType } from 'config';
 import { ChevronRightIcon, HomeIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { appConfig, ContextEntityType } from 'shared';
 import type { ContextEntityBase, UserBase } from '~/api.gen';
-import useScrollTo from '~/hooks/use-scroll-to';
+import { useScrollTo } from '~/hooks/use-scroll-to';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { PageCover, type PageCoverProps } from '~/modules/common/page/cover';
-import type { ContextEntityData } from '~/modules/entities/types';
 import { Badge } from '~/modules/ui/badge';
 import {
   Breadcrumb,
@@ -16,27 +15,35 @@ import {
   BreadcrumbList,
   BreadcrumbSeparator,
 } from '~/modules/ui/breadcrumb';
-import { useFindInQueryCache } from '~/query/utils/use-find-in-query-cache';
-import { baseEntityRoutes } from '~/routes-config';
+import { useFindInListCache } from '~/query/basic';
+import { useMembershipForEntity } from '~/query/membership-enrichment';
+import { getContextEntityRoute } from '~/routes-resolver';
 
 type PageHeaderProps = Omit<PageCoverProps, 'id' | 'url'> & {
-  entity: ContextEntityData | UserBase;
+  entity: ContextEntityBase | UserBase;
   panel?: React.ReactNode;
-  parent?: { idOrSlug: string; entityType: ContextEntityType | 'user' };
+  parent?: { entityId: string; entityType: ContextEntityType | 'user' };
   disableScroll?: boolean;
 };
 
-const PageHeader = ({ entity, panel, parent, disableScroll, ...coverProps }: PageHeaderProps) => {
+export function PageHeader({ entity, panel, parent, disableScroll, ...coverProps }: PageHeaderProps) {
   const { t } = useTranslation();
   const scrollToRef = useRef<HTMLDivElement>(null);
 
+  // Get membership from cache (for context entities)
+  const entityId = entity.entityType !== 'user' ? entity.id : undefined;
+  const membership = useMembershipForEntity(entityId);
+
   // Find parent entity from cache
-  const parentData = useFindInQueryCache<ContextEntityBase | UserBase>(parent ? [parent.entityType] : [], (item) =>
-    parent ? item.id === parent.idOrSlug || item.slug === parent.idOrSlug : false,
+  const parentData = useFindInListCache<ContextEntityBase>(parent ? [parent.entityType] : [], (item) =>
+    parent ? item.id === parent.entityId || item.slug === parent.entityId : false,
   );
 
   // Scroll to page header on load
   if (!disableScroll) useScrollTo(scrollToRef);
+
+  // Get parent route using app-specific resolver (handles hierarchy differences per fork)
+  const parentRoute = parentData ? getContextEntityRoute(parentData) : null;
 
   return (
     <div className="w-full relative">
@@ -61,9 +68,9 @@ const PageHeader = ({ entity, panel, parent, disableScroll, ...coverProps }: Pag
 
           <div className="flex items-center gap-2 text-sm">
             {/* Role */}
-            {'membership' in entity && entity.membership && (
+            {membership && (
               <>
-                <Badge variant="plain">{t(entity.membership.role, { ns: ['app', 'common'] })}</Badge>
+                <Badge variant="plain">{t(membership.role, { ns: ['app', 'common'] })}</Badge>
                 <div className="opacity-70 max-sm:hidden">&middot;</div>
               </>
             )}
@@ -81,11 +88,11 @@ const PageHeader = ({ entity, panel, parent, disableScroll, ...coverProps }: Pag
                 <BreadcrumbSeparator className="text-foreground/50">
                   <ChevronRightIcon size={12} />
                 </BreadcrumbSeparator>
-                {parentData && (
+                {parentData && parentRoute && (
                   <>
                     <BreadcrumbItem>
                       <BreadcrumbLink className="flex items-center text-foreground/70" asChild>
-                        <Link to={baseEntityRoutes[parentData.entityType]} params={{ idOrSlug: parentData.slug }}>
+                        <Link to={parentRoute.to} params={parentRoute.params}>
                           <span className="truncate max-sm:max-w-24">{parentData.name}</span>
                         </Link>
                       </BreadcrumbLink>
@@ -97,6 +104,9 @@ const PageHeader = ({ entity, panel, parent, disableScroll, ...coverProps }: Pag
                 )}
                 <BreadcrumbItem className="flex items-center text-foreground/70">
                   <span>{entity.entityType}</span>
+                  {appConfig.mode === 'development' && (
+                    <span className="max-sm:hidden ml-2 text-foreground/50">{entity.id}</span>
+                  )}
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
@@ -106,6 +116,4 @@ const PageHeader = ({ entity, panel, parent, disableScroll, ...coverProps }: Pag
       </div>
     </div>
   );
-};
-
-export { PageHeader };
+}

@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import useDownloader from 'react-use-downloader';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
-import Spinner from '~/modules/common/spinner';
+import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/service';
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
 import { cn } from '~/utils/cn';
@@ -62,9 +62,12 @@ export const JsonActions = ({
       {viewerUrl && (
         <ToggleGroupItem value="view" aria-label={t('common:view')} className="gap-2 flex-none" size={size} asChild>
           <Link
+            resetScroll
             to={viewerUrl}
             onClick={() => {
               isMobile && useSheeter.getState().remove();
+              // Scroll the docs main content area to top (resetScroll only handles window scroll)
+              requestAnimationFrame(() => document.querySelector('main')?.scrollTo({ top: 0 }));
             }}
           >
             <span className="group-data-[small-mode=true]/toggle-group:text-xs">{filename}</span>

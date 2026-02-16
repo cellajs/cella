@@ -4,6 +4,7 @@ import { ChevronDown } from 'lucide-react';
 import { Suspense, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
+import { StickyBox } from '~/modules/common/sticky-box';
 import { HashUrlButton } from '~/modules/docs/hash-url-button';
 import { TagOperationsList } from '~/modules/docs/operations/operation-detail';
 import { TagExpandButtonContent, TagExpandButtonLoading } from '~/modules/docs/operations/operation-responses';
@@ -17,7 +18,7 @@ import { queryClient } from '~/query/query-client';
 import { cn } from '~/utils/cn';
 import { buttonVariants } from '../../ui/button';
 
-const OperationsPage = () => {
+function OperationsPage() {
   const { t } = useTranslation();
   // Get active tag from URL search param
   const { operationTag: activeTag } = useSearch({ from: '/publicLayout/docs/operations' });
@@ -27,16 +28,10 @@ const OperationsPage = () => {
   const { data: tags } = useSuspenseQuery(tagsQueryOptions);
 
   // Tag section IDs - operation hashes are contributed by OperationDetail when rendered
-  const tagSectionIds = useMemo(() => tags.map((t) => `tag/${t.name}`), [tags]);
+  const tagSectionIds = tags.map((t) => `tag/${t.name}`);
 
-  // Enable scroll spy with tag section IDs, enable hash writing
-  // subscribeToChanges: false - this page only registers sections, doesn't need to re-render on section changes
-  useScrollSpy({
-    sectionIds: tagSectionIds,
-    enableWriteHash: true,
-    smoothScroll: false,
-    subscribeToChanges: false,
-  });
+  // Enable scroll spy with tag section IDs
+  useScrollSpy(tagSectionIds);
 
   // Pre-group operations by tag to avoid recalculating on every render
   const operationsByTag = useMemo(
@@ -58,13 +53,15 @@ const OperationsPage = () => {
 
   return (
     <div>
-      <div className="container flex items-center gap-3 mb-6">
-        <ViewModeToggle />
+      <StickyBox className="z-10 bg-background" offsetTop={0} hideOnScrollDown>
+        <div className="container flex items-center gap-3 py-3 ">
+          <ViewModeToggle />
 
-        <span className="text-sm text-muted-foreground lowercase">
-          {operations.length} {t('common:operation', { count: operations.length })}
-        </span>
-      </div>
+          <span className="text-sm text-muted-foreground lowercase">
+            {operations.length} {t('common:operation', { count: operations.length })}
+          </span>
+        </div>
+      </StickyBox>
 
       <div className="container flex flex-col gap-12 lg:gap-20">
         {tags.map((tag) => {
@@ -73,7 +70,7 @@ const OperationsPage = () => {
 
           return (
             <Collapsible key={tag.name} open={isOpen}>
-              <Card id={`tag/${tag.name}`} className="scroll-mt-4 border-0 rounded-b-none">
+              <Card id={`spy-tag/${tag.name}`} className="scroll-mt-4 border-0 rounded-b-none">
                 <CardHeader className="group">
                   <CardTitle className="text-2xl leading-12 gap-2">
                     {tag.name}
@@ -92,7 +89,10 @@ const OperationsPage = () => {
                   <div className="flex w-full justify-center">
                     <Link
                       to="."
-                      search={(prev) => ({ ...prev, operationTag: isOpen ? undefined : tag.name })}
+                      search={(prev) => ({
+                        ...prev,
+                        operationTag: isOpen ? undefined : tag.name,
+                      })}
                       replace
                       draggable={false}
                       resetScroll={false}
@@ -129,6 +129,6 @@ const OperationsPage = () => {
       </div>
     </div>
   );
-};
+}
 
 export default OperationsPage;

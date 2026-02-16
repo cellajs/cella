@@ -12,6 +12,9 @@ interface Props {
   className?: ButtonProps['className'];
 }
 
+/**
+ * Renders a dropdown action as a button or menu item based on viewport.
+ */
 export function DropdownActionItem({
   isMobile,
   onSelect,

@@ -1,20 +1,28 @@
 import { useNavigate } from '@tanstack/react-router';
-import { appConfig } from 'config';
 import { UserXIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import { stopImpersonation as breakImpersonation } from '~/api.gen';
 import { toaster } from '~/modules/common/toaster/service';
-import { TooltipButton } from '~/modules/common/tooltip-button';
 import { getAndSetMe } from '~/modules/me/helpers';
 import { getMenuData } from '~/modules/navigation/menu-sheet/helpers';
-import { Button } from '~/modules/ui/button';
+import { SidebarMenuButton, SidebarMenuItem } from '~/modules/ui/sidebar';
 import { useUIStore } from '~/store/ui';
 
-const StopImpersonation = () => {
+const { hasSidebarTextLabels } = appConfig.theme.navigation;
+
+interface StopImpersonationProps {
+  isCollapsed: boolean;
+}
+
+/**
+ * Button to stop impersonation, styled consistently with nav buttons.
+ */
+export function StopImpersonation({ isCollapsed }: StopImpersonationProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const { impersonating, setImpersonating } = useUIStore();
+  const { impersonating, setImpersonating, theme } = useUIStore();
 
   const stopImpersonation = async () => {
     await breakImpersonation();
@@ -26,13 +34,33 @@ const StopImpersonation = () => {
 
   if (!impersonating) return null;
 
-  return (
-    <TooltipButton toolTipContent={t('common:stop_impersonation')} side="right" sideOffset={10} hideWhenDetached>
-      <Button variant="ghost" className="w-12 h-12" onClick={stopImpersonation}>
-        <UserXIcon size="20" strokeWidth="1.5" />
-      </Button>
-    </TooltipButton>
-  );
-};
+  const showTooltip = isCollapsed || !hasSidebarTextLabels;
 
-export default StopImpersonation;
+  return (
+    <SidebarMenuItem className="flex transform grow-0 justify-start pb-2">
+      <SidebarMenuButton
+        size="lg"
+        data-collapsed={isCollapsed}
+        tooltip={{ children: t('common:stop_impersonation'), hidden: !showTooltip }}
+        onClick={stopImpersonation}
+        data-theme={theme}
+        className="h-14 ring-inset focus-visible:ring-offset-0 group transition-[width] duration-200 linear
+          hover:bg-background/30 text-primary-foreground data-[theme=none]:text-inherit
+          w-full data-[collapsed=true]:w-16 justify-center"
+      >
+        <UserXIcon
+          className="group-hover:scale-110 transition-transform size-5 min-w-5 min-h-5 shrink-0"
+          strokeWidth={1.8}
+        />
+        {hasSidebarTextLabels && (
+          <span
+            className="pl-1.5 font-medium whitespace-nowrap transition-[opacity,width] duration-200 linear overflow-hidden
+            opacity-100 w-auto group-data-[collapsed=true]:opacity-0 group-data-[collapsed=true]:w-0"
+          >
+            {t('common:stop_impersonation')}
+          </span>
+        )}
+      </SidebarMenuButton>
+    </SidebarMenuItem>
+  );
+}

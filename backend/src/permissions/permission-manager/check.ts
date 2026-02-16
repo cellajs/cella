@@ -1,31 +1,41 @@
-import { appConfig, type ContextEntityType, type EntityActionType, type ProductEntityType } from 'config';
+import {
+  appConfig,
+  type ContextEntityType,
+  getContextRoles,
+  hierarchy,
+  isContextEntity,
+  type ProductEntityType,
+} from 'shared';
 import { env } from '#/env';
-import { getAncestorContexts, getContextRoles, isProductEntity } from './hierarchy';
+import { getMembershipContextId } from '#/modules/memberships/helpers/context-ids';
+import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
+import { allActionsAllowed, createActionRecord } from './action-helpers';
+import { formatBatchPermissionSummary, formatPermissionDecision } from './format';
 import type {
   AccessPolicies,
   ActionAttribution,
   EntityActionPermissions,
-  HierarchyConfig,
-  MembershipForPermission,
+  PermissionCheckOptions,
   PermissionDecision,
   SubjectForPermission,
 } from './types';
+import { validateMembership, validateSubject } from './validation';
 
-// Re-export PermissionDecision as the result type (maintains backward compatibility via `can` and `membership`)
-export type { PermissionDecision };
+/** Membership index: Map from `${contextType}:${contextId}` to memberships */
+type MembershipIndex<T extends MembershipBaseModel> = Map<string, T[]>;
 
-/** @deprecated Use PermissionDecision instead */
-export type AllPermissionsResult<T extends MembershipForPermission> = PermissionDecision<T>;
+/** Policy index: Map from `${contextType}:${role}` to permissions */
+type PolicyIndex = Map<string, EntityActionPermissions>;
 
-/**
- * Builds a Map indexing memberships by `${contextType}:${contextId}` for O(1) lookup.
- * Each key maps to an array of memberships (user can have multiple roles in same context).
- */
-const buildMembershipIndex = <T extends MembershipForPermission>(memberships: T[]): Map<string, T[]> => {
-  const index = new Map<string, T[]>();
+/** Builds a Map indexing memberships by `${contextType}:${contextId}` for O(1) lookup. */
+const buildMembershipIndex = <T extends MembershipBaseModel>(memberships: T[]): MembershipIndex<T> => {
+  const index: MembershipIndex<T> = new Map();
   for (const m of memberships) {
-    const contextIdKey = appConfig.entityIdColumnKeys[m.contextType];
-    const key = `${m.contextType}:${m[contextIdKey]}`;
+    const contextId = getMembershipContextId(m, m.contextType);
+    if (!contextId) {
+      throw new Error(`[Permission] Membership missing context ID for ${m.contextType}`);
+    }
+    const key = `${m.contextType}:${contextId}`;
     const list = index.get(key) ?? [];
     list.push(m);
     index.set(key, list);
@@ -37,11 +47,8 @@ const buildMembershipIndex = <T extends MembershipForPermission>(memberships: T[
  * Builds a Map indexing policies by `${contextType}:${role}` for O(1) lookup.
  * Uses policies for a specific entityType (subject.entityType).
  */
-const buildPolicyIndex = (
-  policies: AccessPolicies,
-  entityType: ContextEntityType | ProductEntityType,
-): Map<string, EntityActionPermissions> => {
-  const index = new Map<string, EntityActionPermissions>();
+const buildPolicyIndex = (policies: AccessPolicies, entityType: ContextEntityType | ProductEntityType): PolicyIndex => {
+  const index: PolicyIndex = new Map();
   const subjectPolicies = policies[entityType] ?? [];
   for (const p of subjectPolicies) {
     index.set(`${p.contextType}:${p.role}`, p.permissions);
@@ -50,12 +57,31 @@ const buildPolicyIndex = (
 };
 
 /**
+ * Gets or creates a policy index for an entity type from the cache.
+ */
+const getOrBuildPolicyIndex = (
+  policies: AccessPolicies,
+  entityType: ContextEntityType | ProductEntityType,
+  cache: Map<ContextEntityType | ProductEntityType, PolicyIndex>,
+): PolicyIndex => {
+  const cached = cache.get(entityType);
+  if (cached) return cached;
+
+  const index = buildPolicyIndex(policies, entityType);
+  cache.set(entityType, index);
+  return index;
+};
+
+/**
  * Extracts the context ID from subject for a given contextType:
  * - If `subject.entityType === contextType` and subject has `id`: returns `subject.id`
  * - Otherwise: returns `subject[entityIdColumnKeys[contextType]]` (e.g., subject.organizationId)
  */
-const getSubjectContextId = (subject: SubjectForPermission, contextType: ContextEntityType): string | undefined => {
-  if (subject.entityType === contextType && 'id' in subject) {
+const getSubjectContextId = (
+  subject: SubjectForPermission,
+  contextType: ContextEntityType,
+): string | null | undefined => {
+  if (subject.entityType === contextType && subject.id) {
     return subject.id;
   }
   const contextIdKey = appConfig.entityIdColumnKeys[contextType];
@@ -63,113 +89,71 @@ const getSubjectContextId = (subject: SubjectForPermission, contextType: Context
 };
 
 /**
- * Returns context types to check for permissions:
- * - Product entities: `getAncestorContexts(hierarchy, entityType)` (e.g., task → [project, organization])
- * - Context entities: `[entityType, ...getAncestorContexts()]` (e.g., project → [project, organization])
- * The first element is the "primaryContextType" used for membership capture.
+ * Internal function to check permissions for a single subject using pre-built indices.
+ * This is the core logic shared by both single and batch permission checks.
  */
-const getRelevantContexts = (
-  hierarchy: HierarchyConfig,
-  entityType: ContextEntityType | ProductEntityType,
-): ContextEntityType[] => {
-  if (isProductEntity(hierarchy, entityType)) {
-    return getAncestorContexts(hierarchy, entityType);
-  }
-  return [entityType, ...getAncestorContexts(hierarchy, entityType)];
-};
-
-/**
- * Formats a PermissionDecision for debug logging.
- * Output shows the full decision tree: subject, contexts, and per-action attribution.
- */
-const formatPermissionDecision = <T extends MembershipForPermission>(decision: PermissionDecision<T>): string => {
-  const lines = [
-    `[Permission Check] entity=${decision.subject.entityType} id=${decision.subject.id}`,
-    `├─ Context IDs: ${JSON.stringify(decision.subject.contextIds)}`,
-    `├─ Relevant Contexts: [${decision.relevantContexts.join(', ')}]`,
-    `├─ Primary Context: ${decision.primaryContext}`,
-    '│',
-    '├─ Action Attribution:',
-  ];
-
-  for (const action of appConfig.entityActions) {
-    const attr = decision.actions[action];
-    const status = attr.enabled ? '✓ GRANTED' : '✗ DENIED';
-    const grants =
-      attr.grantedBy.length > 0
-        ? `by [${attr.grantedBy.map((g) => `${g.contextType}:${g.contextId}/${g.role}`).join(', ')}]`
-        : '(no grants)';
-    lines.push(`│  ├─ ${action}: ${status} ${grants}`);
-  }
-
-  lines.push('│');
-  lines.push(`├─ can: ${JSON.stringify(decision.can)}`);
-  lines.push(`└─ membership: ${decision.membership ? `role=${decision.membership.role}` : 'null'}`);
-
-  return lines.join('\n');
-};
-
-/**
- * Checks all permissions for a subject and returns a full PermissionDecision.
- *
- * The decision includes:
- * - `actions`: Per-action attribution showing which memberships granted each action
- * - `can`: Simple boolean map (true if action is enabled)
- * - `membership`: First membership from primaryContext
- *
- * ## Key concepts
- * - `relevantContexts`: Context types to check, ordered from most specific to root.
- *   For product entities (e.g., attachment): just ancestors [organization].
- *   For context entities (e.g., project): [project, organization] (self + ancestors).
- *
- * - `primaryContext`: The first context in relevantContexts. This is where we capture
- *   the user's "direct" membership to the entity. For products, this is the closest ancestor.
- *
- * - `actions` attribution: For each action, tracks all grants that enabled it.
- *   Useful for debugging ("why can user delete?") and auditing.
- *
- * ## Example: Checking "attachment" with organizationId="org1"
- * 1. relevantContexts = [organization] (attachment's ancestor)
- * 2. primaryContext = organization
- * 3. Find user's memberships where contextType=organization AND organizationId=org1
- * 4. For each membership, look up permissions and attribute each granted action
- * 5. Derive `can` from actions, capture first membership
- */
-export const checkAllPermissions = <T extends MembershipForPermission>(
-  hierarchy: HierarchyConfig,
-  policies: AccessPolicies,
-  memberships: T[],
+const checkWithIndices = <T extends MembershipBaseModel>(
+  membershipIndex: MembershipIndex<T>,
+  policyIndex: PolicyIndex,
   subject: SubjectForPermission,
+  orderedContexts: ContextEntityType[],
+  isSystemAdmin: boolean,
 ): PermissionDecision<T> => {
-  // Index memberships by "${contextType}:${contextId}" for O(1) lookup
-  const membershipIndex = buildMembershipIndex(memberships);
+  // Primary context is always the first (most specific) in the hierarchy
+  const primaryContext = orderedContexts[0];
 
-  // Index policies by "${contextType}:${role}" for this subject's entityType
-  const policyIndex = buildPolicyIndex(policies, subject.entityType);
+  // Resolve primary context membership (used by both system admin and normal flow)
+  const primaryContextId = getSubjectContextId(subject, primaryContext);
+  const primaryMemberships = primaryContextId
+    ? (membershipIndex.get(`${primaryContext}:${primaryContextId}`) ?? [])
+    : [];
+  const resolvedMembership = primaryMemberships[0] ?? null;
 
-  // Get context types to check: for product entities this is their ancestors,
-  // for context entities this is [self, ...ancestors]
-  const relevantContexts = getRelevantContexts(hierarchy, subject.entityType);
-  const primaryContext = relevantContexts[0];
+  // If system admin, grant all permissions immediately (but still return membership if exists)
+  if (isSystemAdmin) {
+    const allGranted = createActionRecord(() => ({
+      enabled: true,
+      grantedBy: [{ contextType: 'system' as ContextEntityType, contextId: 'admin', role: 'admin' }],
+    }));
+
+    const can = { ...allActionsAllowed };
+    const contextIds = primaryContextId ? { [primaryContext]: primaryContextId } : {};
+
+    return {
+      subject: { entityType: subject.entityType, id: subject.id, contextIds },
+      orderedContexts,
+      primaryContext,
+      actions: allGranted,
+      can,
+      membership: resolvedMembership,
+    };
+  }
 
   // Initialize action attribution table: each action starts denied with no grants
-  const actions = Object.fromEntries(
-    appConfig.entityActions.map((action) => [action, { enabled: false, grantedBy: [] } as ActionAttribution]),
-  ) as Record<EntityActionType, ActionAttribution>;
+  const actions = createActionRecord((): ActionAttribution => ({ enabled: false, grantedBy: [] }));
 
   // Collect resolved context IDs for debugging
   const contextIds: Partial<Record<ContextEntityType, string>> = {};
 
-  let membership: T | null = null;
-
-  // Walk through each context level (entity's own context first, then ancestors)
-  for (const contextType of relevantContexts) {
-    // Skip contexts that have no roles defined (shouldn't happen in valid config)
-    if (getContextRoles(hierarchy, contextType).length === 0) continue;
+  // Walk through each context level (most specific first, then ancestors)
+  for (const contextType of orderedContexts) {
+    // Strict: context in hierarchy must have roles defined
+    const contextRoles = getContextRoles(contextType);
+    if (contextRoles.length === 0) {
+      throw new Error(
+        `[Permission] Context "${contextType}" has no roles defined but is in hierarchy for ${subject.entityType}`,
+      );
+    }
 
     // Get the context ID from the subject for this context type
     const subjectContextId = getSubjectContextId(subject, contextType);
-    if (!subjectContextId) continue;
+    if (!subjectContextId) {
+      // This can be valid for optional context levels - log warning in debug mode
+      if (env.DEBUG) {
+        console.warn(`[Permission] ${subject.entityType}:${subject.id} missing context ID for ${contextType}`);
+      }
+      continue;
+    }
 
     // Track resolved context ID for debugging
     contextIds[contextType] = subjectContextId;
@@ -178,51 +162,145 @@ export const checkAllPermissions = <T extends MembershipForPermission>(
     const matchingMemberships = membershipIndex.get(`${contextType}:${subjectContextId}`) ?? [];
 
     for (const m of matchingMemberships) {
-      // Capture the FIRST membership from the primary context only
-      if (contextType === primaryContext && membership === null) {
-        membership = m;
-      }
-
       // Look up what permissions this role grants for this entity type in this context
       const permissions = policyIndex.get(`${contextType}:${m.role}`);
-      if (!permissions) continue;
+      if (!permissions) {
+        // Strict: role exists in membership but has no policy - likely config/data issue
+        throw new Error(
+          `[Permission] Role "${m.role}" in context ${contextType} has no policy for ${subject.entityType}`,
+        );
+      }
 
       // Attribute each granted action to this membership
       for (const action of appConfig.entityActions) {
-        if (permissions[action] === 1) {
-          actions[action].enabled = true;
-          actions[action].grantedBy.push({
-            contextType,
-            contextId: subjectContextId,
-            role: m.role,
-          });
-        }
+        if (permissions[action] !== 1) continue;
+        actions[action].enabled = true;
+        actions[action].grantedBy.push({ contextType, contextId: subjectContextId, role: m.role });
       }
     }
   }
 
   // Derive simple `can` map from actions table
-  const can = Object.fromEntries(appConfig.entityActions.map((action) => [action, actions[action].enabled])) as Record<
-    EntityActionType,
-    boolean
-  >;
+  const can = createActionRecord((action) => actions[action].enabled);
 
-  const decision: PermissionDecision<T> = {
-    subject: {
-      entityType: subject.entityType,
-      id: subject.id,
-      contextIds,
-    },
-    relevantContexts,
+  return {
+    subject: { entityType: subject.entityType, id: subject.id, contextIds },
+    orderedContexts,
     primaryContext,
     actions,
     can,
-    membership,
+    membership: resolvedMembership,
   };
+};
 
-  if (env.DEBUG) {
-    console.debug(formatPermissionDecision(decision));
+/**
+ * Checks all permissions for one or more subjects.
+ * When passed a single subject, returns a PermissionDecision.
+ * When passed an array of subjects, returns a Map keyed by subject.id.
+ *
+ * The decision includes:
+ * - `actions`: Per-action attribution showing which memberships granted each action
+ * - `can`: Simple boolean map (true if action is enabled)
+ * - `membership`: First membership from primaryContext
+ *
+ * ## Key concepts
+ * - `orderedContexts`: Context types to check, ordered from most specific to root.
+ *   For product entities (e.g., attachment): just ancestors [organization].
+ *   For context entities (e.g., project): [project, organization] (self + ancestors).
+ *
+ * - `primaryContext`: Always orderedContexts[0]. This is where we capture
+ *   the user's "direct" membership to the entity. For products, this is the closest ancestor.
+ *
+ * - `actions` attribution: For each action, tracks all grants that enabled it.
+ *   Useful for debugging ("why can user delete?") and auditing.
+ *
+ * - `options.systemRole`: If 'admin', grants all permissions regardless of memberships.
+ *
+ * ## Example: Checking "attachment" with organizationId="org1"
+ * 1. orderedContexts = [organization] (attachment's ancestor)
+ * 2. primaryContext = organization
+ * 3. Find user's memberships where contextType=organization AND organizationId=org1
+ * 4. For each membership, look up permissions and attribute each granted action
+ * 5. Derive `can` from actions, capture first membership
+ */
+export function getAllDecisions<T extends MembershipBaseModel>(
+  policies: AccessPolicies,
+  memberships: T[],
+  subjects: SubjectForPermission,
+  options?: PermissionCheckOptions,
+): PermissionDecision<T>;
+export function getAllDecisions<T extends MembershipBaseModel>(
+  policies: AccessPolicies,
+  memberships: T[],
+  subjects: SubjectForPermission[],
+  options?: PermissionCheckOptions,
+): Map<string, PermissionDecision<T>>;
+export function getAllDecisions<T extends MembershipBaseModel>(
+  policies: AccessPolicies,
+  memberships: T[],
+  subjects: SubjectForPermission | SubjectForPermission[],
+  options?: PermissionCheckOptions,
+): PermissionDecision<T> | Map<string, PermissionDecision<T>> {
+  const isSingle = !Array.isArray(subjects);
+  const subjectArray = isSingle ? [subjects] : subjects;
+  const isSystemAdmin = options?.systemRole === 'admin';
+
+  const results = new Map<string, PermissionDecision<T>>();
+
+  if (subjectArray.length === 0) {
+    return isSingle ? results.get(subjects.id ?? '_idx:0')! : results;
   }
 
-  return decision;
-};
+  // Validate all inputs before processing
+  for (let i = 0; i < subjectArray.length; i++) {
+    validateSubject(subjectArray[i], i);
+  }
+  for (let i = 0; i < memberships.length; i++) {
+    validateMembership(memberships[i], i);
+  }
+
+  // Build membership index once for all subjects
+  const membershipIndex = buildMembershipIndex(memberships);
+
+  // Cache for policy indices by entity type
+  const policyIndexCache = new Map<ContextEntityType | ProductEntityType, PolicyIndex>();
+
+  // Cache for relevant contexts by entity type
+  const contextCache = new Map<ContextEntityType | ProductEntityType, ContextEntityType[]>();
+
+  for (const subject of subjectArray) {
+    // Get or compute ordered contexts for this entity type (most specific → root).
+    // For context entities (e.g., project): [project, organization] — includes self + ancestors
+    // For product entities (e.g., attachment): [organization] — just ancestors
+    // The first element [0] is always the primary context used for membership capture.
+    let orderedContexts = contextCache.get(subject.entityType);
+
+    if (!orderedContexts) {
+      const ancestors = hierarchy.getOrderedAncestors(subject.entityType) as ContextEntityType[];
+      orderedContexts = isContextEntity(subject.entityType) ? [subject.entityType, ...ancestors] : [...ancestors];
+      contextCache.set(subject.entityType, orderedContexts);
+    }
+    // Get or build policy index for this entity type
+    const policyIndex = getOrBuildPolicyIndex(policies, subject.entityType, policyIndexCache);
+
+    // Perform the permission check using pre-built indices
+    const decision = checkWithIndices(membershipIndex, policyIndex, subject, orderedContexts, isSystemAdmin);
+    const key = subject.id ?? `_idx:${subjectArray.indexOf(subject)}`;
+    results.set(key, decision);
+  }
+
+  // Return single decision or full map based on input type
+  if (isSingle) {
+    const key = subjects.id ?? '_idx:0';
+    const decision = results.get(key);
+
+    // Should never happen
+    if (!decision) throw new Error(`[Permission] Check failed for subject ${subjects.entityType}:${subjects.id}`);
+
+    if (env.DEBUG) console.debug(formatPermissionDecision(decision));
+    return decision;
+  }
+
+  if (env.DEBUG) console.debug(formatBatchPermissionSummary(results));
+  return results;
+}

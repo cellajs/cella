@@ -4,7 +4,7 @@ import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { env } from '~/env';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
-import Spinner from '~/modules/common/spinner';
+import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/service';
 import type { UserMenuItem } from '~/modules/me/types';
 import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
@@ -27,15 +27,17 @@ export const MenuItemEdit = ({ item, icon: Icon }: MenuItemEditProps) => {
     }
 
     const updatedMembership: MutationUpdateMembership = {
-      id: item.membership.id,
-      orgIdOrSlug: item.membership.organizationId,
-      // Mutation variables
-      idOrSlug: item.id,
+      path: {
+        id: item.membership.id,
+        tenantId: item.tenantId,
+        orgId: item.membership.organizationId,
+      },
+      entityId: item.id,
       entityType: item.entityType,
     };
 
-    if (key === 'archived') updatedMembership.archived = !item.membership.archived;
-    if (key === 'muted') updatedMembership.muted = !item.membership.muted;
+    if (key === 'archived') updatedMembership.body = { archived: !item.membership.archived };
+    if (key === 'muted') updatedMembership.body = { muted: !item.membership.muted };
 
     updateMembership(updatedMembership);
   };
@@ -69,7 +71,7 @@ export const MenuItemEdit = ({ item, icon: Icon }: MenuItemEditProps) => {
 
       <div className="truncate grow text-left group-data-[submenu=false]/menuOptions:pl-0">
         <div className="truncate group-data-[subitem=true]/optionsItem:text-xs leading-5 text-md group-data-[archived=true]/optionsItem:opacity-70">
-          {item.name} {env.VITE_DEBUG_MODE && <span className="text-muted">#{item.membership.order}</span>}
+          {item.name} {env.VITE_DEBUG_MODE && <span className="text-muted">#{item.membership.displayOrder}</span>}
         </div>
         <div className="flex items-center gap-2 transition-opacity delay-500">
           <MenuItemEditButton
@@ -96,15 +98,17 @@ interface MenuItemEditButtonProps {
   onClick: () => void;
   subitem?: boolean;
 }
-const MenuItemEditButton = ({ icon: Icon, title, onClick, subitem = false }: MenuItemEditButtonProps) => (
-  <Button
-    variant="link"
-    size="sm"
-    className="py-0 px-1 font-light text-xs h-4 leading-3 opacity-80 group-hover/optionsItem:opacity-100 focus-visible:ring-offset-0 focus-visible:ring-0 focus-visible:bg-accent/50 hover:underline underline-offset-1"
-    aria-label={`Click ${title}`}
-    onClick={onClick}
-  >
-    <Icon size={subitem ? 12 : 13} strokeWidth={1.5} className="mr-1.5" />
-    {title}
-  </Button>
-);
+function MenuItemEditButton({ icon: Icon, title, onClick, subitem = false }: MenuItemEditButtonProps) {
+  return (
+    <Button
+      variant="link"
+      size="sm"
+      className="py-0 px-1 font-light text-xs h-4 leading-3 opacity-80 group-hover/optionsItem:opacity-100 focus-visible:ring-offset-0 focus-visible:ring-0 focus-visible:bg-accent/50 hover:underline underline-offset-1"
+      aria-label={`Click ${title}`}
+      onClick={onClick}
+    >
+      <Icon size={subitem ? 12 : 13} strokeWidth={1.5} className="mr-1.5" />
+      {title}
+    </Button>
+  );
+}

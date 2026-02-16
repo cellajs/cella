@@ -1,5 +1,5 @@
-import { appConfig } from 'config';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster/service';
 import { Switch } from '~/modules/ui/switch';

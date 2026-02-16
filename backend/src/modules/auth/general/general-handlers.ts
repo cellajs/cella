@@ -1,42 +1,51 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { appConfig } from 'config';
 import { and, desc, eq } from 'drizzle-orm';
 import i18n from 'i18next';
-import { nanoid } from 'nanoid';
-import { db } from '#/db/db';
+import { appConfig } from 'shared';
+import { unsafeInternalDb as db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { sessionsTable } from '#/db/schema/sessions';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
-import { type Env, getContextUser } from '#/lib/context';
-import { resolveEntity } from '#/lib/entity';
-import { AppError, ConstructedError } from '#/lib/errors';
+import { type Env } from '#/lib/context';
+import { AppError, type ErrorKey } from '#/lib/error';
 import { mailer } from '#/lib/mailer';
+import { resolveEntity } from '#/lib/resolve-entity';
+import { checkRateLimitStatus } from '#/middlewares/rate-limiter/helpers';
 import authGeneralRoutes from '#/modules/auth/general/general-routes';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { getParsedSessionCookie, setUserSession, validateSession } from '#/modules/auth/general/helpers/session';
 import { handleOAuthVerification } from '#/modules/auth/oauth/helpers/handle-oauth-verification';
 import { handleEmailVerification } from '#/modules/auth/passwords/helpers/handle-email-verification';
-import { userSelect } from '#/modules/users/helpers/select';
+import { userSelect } from '#/modules/user/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
+import { getIp } from '#/utils/get-ip';
 import { getValidSingleUseToken } from '#/utils/get-valid-single-use-token';
 import { getValidToken } from '#/utils/get-valid-token';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { logEvent } from '#/utils/logger';
+import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
-import {
-  MemberInviteWithTokenEmail,
-  type MemberInviteWithTokenEmailProps,
-  SystemInviteEmail,
-  type SystemInviteEmailProps,
-} from '../../../../emails';
+import { MemberInviteWithTokenEmail, SystemInviteEmail } from '../../../../emails';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 const authGeneralRouteHandlers = app
+  /**
+   * Auth health check with rate limit status
+   */
+  .openapi(authGeneralRoutes.health, async (ctx) => {
+    const ip = getIp(ctx);
+    const rateLimitKey = `ip:${ip}`;
+
+    // Check emailEnum rate limit status without consuming points
+    const { isLimited, retryAfter } = await checkRateLimitStatus('emailEnum_failseries', rateLimitKey);
+
+    return ctx.json({ restrictedMode: isLimited, ...(retryAfter && { retryAfter }) }, 200);
+  })
   /**
    * Check if email exists
    */
@@ -53,7 +62,7 @@ const authGeneralRouteHandlers = app
       .where(eq(emailsTable.email, normalizedEmail))
       .limit(1);
 
-    if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user' });
+    if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user' });
 
     return ctx.body(null, 204);
   })
@@ -67,11 +76,8 @@ const authGeneralRouteHandlers = app
       // Check if token exists and create a new single use token session
       const tokenRecord = await getValidToken({ ctx, token, tokenType, invokeToken: true });
       if (!tokenRecord.singleUseToken)
-        throw new AppError({
-          status: 500,
-          type: 'invalid_token',
-          severity: 'error',
-          shouldRedirect: true,
+        throw new AppError(500, 'invalid_token', 'error', {
+          willRedirect: appConfig.mode !== 'test',
           meta: { errorPagePath: '/auth/error' },
         });
 
@@ -103,10 +109,8 @@ const authGeneralRouteHandlers = app
       return ctx.redirect(redirectUrl, 302);
     } catch (err) {
       if (err instanceof AppError) {
-        throw new AppError({
-          ...err,
-          type: err.type as ConstructedError['type'],
-          shouldRedirect: true,
+        throw new AppError(err.status, err.type as ErrorKey, err.severity, {
+          willRedirect: appConfig.mode !== 'test',
           meta: { ...err.meta, errorPagePath: '/auth/error' },
         });
       }
@@ -123,7 +127,7 @@ const authGeneralRouteHandlers = app
     const tokenRecord = await getValidSingleUseToken({ ctx, tokenType });
 
     // Check if tokenId matches the one being requested
-    if (tokenRecord.id !== tokenId) throw new AppError({ status: 400, type: 'invalid_request', severity: 'warn' });
+    if (tokenRecord.id !== tokenId) throw new AppError(400, 'invalid_request', 'warn');
 
     const data = {
       email: tokenRecord.email,
@@ -151,16 +155,9 @@ const authGeneralRouteHandlers = app
 
     const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, targetUserId)).limit(1);
 
-    if (!user)
-      throw new AppError({
-        status: 404,
-        type: 'not_found',
-        severity: 'warn',
-        entityType: 'user',
-        meta: { targetUserId },
-      });
+    if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { targetUserId } });
 
-    const adminUser = getContextUser();
+    const adminUser = ctx.var.user;
     await setUserSession(ctx, user, 'password', 'impersonation');
 
     logEvent('info', 'Started impersonation', { adminId: adminUser.id, targetUserId });
@@ -175,7 +172,7 @@ const authGeneralRouteHandlers = app
     const { session } = await validateSession(sessionToken);
 
     // Only continue if session is impersonation
-    if (!adminUserId) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
+    if (!adminUserId) throw new AppError(400, 'invalid_request', 'error');
 
     const [adminsLastSession] = await db
       .select()
@@ -184,11 +181,10 @@ const authGeneralRouteHandlers = app
       .orderBy(desc(sessionsTable.expiresAt))
       .limit(1);
 
-    if (isExpiredDate(adminsLastSession.expiresAt))
-      throw new AppError({ status: 401, type: 'unauthorized', severity: 'warn' });
+    if (isExpiredDate(adminsLastSession.expiresAt)) throw new AppError(401, 'unauthorized', 'warn');
 
-    const expireTimeSpan = new TimeSpan(adminsLastSession.expiresAt.getTime() - Date.now(), 'ms');
-    const cookieContent = `${adminsLastSession.token}.${adminsLastSession.userId ?? ''}`;
+    const expireTimeSpan = new TimeSpan(new Date(adminsLastSession.expiresAt).getTime() - Date.now(), 'ms');
+    const cookieContent = `${adminsLastSession.secret}.${adminsLastSession.userId ?? ''}`;
 
     await setAuthCookie(ctx, 'session', cookieContent, expireTimeSpan);
 
@@ -208,7 +204,7 @@ const authGeneralRouteHandlers = app
 
     if (normalizedEmail) filters.push(eq(tokensTable.email, normalizedEmail));
     else if (tokenId) filters.push(eq(tokensTable.id, tokenId));
-    else throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
+    else throw new AppError(400, 'invalid_request', 'error');
 
     // Retrieve token
     const [oldToken] = await db
@@ -218,7 +214,7 @@ const authGeneralRouteHandlers = app
       .orderBy(desc(tokensTable.createdAt))
       .limit(1);
 
-    if (!oldToken) throw new AppError({ status: 404, type: 'token_not_found', severity: 'error' });
+    if (!oldToken) throw new AppError(404, 'token_not_found', 'error');
 
     const { email: userEmail } = oldToken;
 
@@ -229,7 +225,7 @@ const authGeneralRouteHandlers = app
     // Insert token first
     await db.insert(tokensTable).values({
       ...oldToken,
-      token: hashedToken,
+      secret: hashedToken,
       expiresAt: createDate(new TimeSpan(7, 'd')),
       invokedAt: null,
       singleUseToken: null,
@@ -239,7 +235,7 @@ const authGeneralRouteHandlers = app
     const recipient = {
       email: userEmail,
       name: slugFromEmail(userEmail),
-      memberInviteLink: `${appConfig.backendAuthUrl}/invoke-token/${oldToken.type}/${newToken}`,
+      inviteLink: `${appConfig.backendAuthUrl}/invoke-token/${oldToken.type}/${newToken}`,
     };
 
     // Prepare email props, default is system invite
@@ -270,12 +266,18 @@ const authGeneralRouteHandlers = app
         .from(inactiveMembershipsTable)
         .where(eq(inactiveMembershipsTable.id, oldToken.inactiveMembershipId));
 
-      const entityIdColumnKey = appConfig.entityIdColumnKeys[inactiveMembership.contextType];
-      if (!inactiveMembership[entityIdColumnKey])
-        throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
-      const entity = await resolveEntity(inactiveMembership.contextType, inactiveMembership[entityIdColumnKey]);
+      const entityIdColumnKey = appConfig.entityIdColumnKeys[
+        inactiveMembership.contextType
+      ] as keyof typeof inactiveMembership;
+      if (!inactiveMembership[entityIdColumnKey]) throw new AppError(400, 'invalid_request', 'error');
+      // Internal resolve: getting entity info for email template (no permission check needed)
+      const entity = await resolveEntity(
+        inactiveMembership.contextType,
+        inactiveMembership[entityIdColumnKey] as string,
+        db,
+      );
 
-      if (!entity) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
+      if (!entity) throw new AppError(400, 'invalid_request', 'error');
 
       defaultEmailProps.subject = i18n.t('backend:email.member_invite.subject', {
         entityName: entity.name,
@@ -288,20 +290,10 @@ const authGeneralRouteHandlers = app
         lng: 'defaultLanguage' in entity ? entity.defaultLanguage : appConfig.defaultLanguage,
       };
 
-      await mailer.prepareEmails<MemberInviteWithTokenEmailProps, typeof recipient>(
-        MemberInviteWithTokenEmail,
-        emailProps,
-        [recipient],
-        userEmail,
-      );
+      await mailer.prepareEmails(MemberInviteWithTokenEmail, emailProps, [recipient], userEmail);
       logEvent('info', 'Membership invitation has been resent', { [entityIdColumnKey]: entity.id });
     } else {
-      await mailer.prepareEmails<SystemInviteEmailProps, typeof recipient>(
-        SystemInviteEmail,
-        defaultEmailProps,
-        [recipient],
-        userEmail,
-      );
+      await mailer.prepareEmails(SystemInviteEmail, defaultEmailProps, [recipient], userEmail);
       logEvent('info', 'System invitation has been resent');
     }
 

@@ -1,8 +1,8 @@
-import { ContextEntityType } from 'config';
-import { getTableColumns } from 'drizzle-orm';
+import { getColumns } from 'drizzle-orm';
+import { ContextEntityType } from 'shared';
 import { pickColumns } from '#/db/utils/pick-columns';
-import { entityTables } from '#/entity-config';
-import { contextEntityBaseSchema } from '#/modules/entities/entities-schema-base';
+import { contextEntityBaseSchema } from '#/schemas/entity-base';
+import { entityTables } from '#/table-config';
 
 /**
  * Context entity select for base data only.
@@ -15,7 +15,7 @@ export const makeContextEntityBaseSelect = (entityType: ContextEntityType) => {
   type ContextEntityBaseKeys = keyof typeof contextEntityBaseSchema.shape;
   type ContextEntityBaseSelect = Pick<TableColumns, ContextEntityBaseKeys>;
 
-  const cols = getTableColumns(entityTable) satisfies TableColumns;
+  const cols = getColumns(entityTable) satisfies TableColumns;
   const keys = Object.keys(contextEntityBaseSchema.shape) as ContextEntityBaseKeys[];
   return pickColumns(cols, keys) satisfies ContextEntityBaseSelect;
 };

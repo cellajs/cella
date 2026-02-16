@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SearchSpinner } from '~/modules/common/search-spinner';
-import Spinner from '~/modules/common/spinner';
+import { Spinner } from '~/modules/common/spinner';
 import { JsonActions } from '~/modules/docs/json-actions';
 import { JsonViewer } from '~/modules/docs/json-viewer';
 import { getPathToNthMatch } from '~/modules/docs/json-viewer/utils';
@@ -16,7 +16,7 @@ import { cn } from '~/utils/cn';
 /**
  * Recursively counts all search matches in a value (keys and primitive values).
  */
-const countSearchMatches = (value: unknown, searchText: string): number => {
+function countSearchMatches(value: unknown, searchText: string): number {
   if (!searchText) return 0;
   const lowerSearch = searchText.toLowerCase();
   let count = 0;
@@ -43,13 +43,13 @@ const countSearchMatches = (value: unknown, searchText: string): number => {
   }
 
   return count;
-};
+}
 
 /**
  * Displays the full OpenAPI specification JSON with collapsible sections.
  * Uses custom json-viewer with 'openapi' mode for $ref click-to-scroll navigation.
  */
-const OpenApiSpecViewer = () => {
+export function OpenApiSpecViewer() {
   const { t } = useTranslation();
 
   const [searchText, setSearchText] = useState('');
@@ -123,7 +123,9 @@ const OpenApiSpecViewer = () => {
   if (error) {
     return (
       <div className="flex items-center justify-center p-12">
-        <span className="text-destructive">{t('common:docs.failed_to_load_openapi')}</span>
+        <span className="text-destructive">
+          {t('error:load_resource', { resource: t('common:docs.openapi_specification').toLowerCase() })}
+        </span>
       </div>
     );
   }
@@ -236,6 +238,4 @@ const OpenApiSpecViewer = () => {
       </div>
     </>
   );
-};
-
-export default OpenApiSpecViewer;
+}

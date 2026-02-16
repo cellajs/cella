@@ -1,8 +1,8 @@
-import type { ContextEntityType } from 'config';
 import { InfoIcon, type LucideIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { type RefObject, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { ContextEntityType } from 'shared';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { AlertWrap } from '~/modules/common/alert-wrap';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
@@ -36,7 +36,7 @@ export const MenuSheetSection = ({ data, options }: MenuSheetSectionProps) => {
   const archivedSectionType = `${options.entityType}-archived`;
   const isArchivedVisible = activeSections?.[archivedSectionType] ?? true;
   const isSectionVisible = activeSections?.[options.entityType] ?? true;
-  const archivedCount = data.filter((i) => i.membership.archived).length;
+  const archivedCount = data.filter((i) => i.membership?.archived).length;
 
   const handleCreateAction = (ref: RefObject<HTMLButtonElement | null>) => {
     if (isMobile) {

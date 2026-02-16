@@ -1,23 +1,30 @@
-import { index, pgTable, varchar } from 'drizzle-orm/pg-core';
+import { index, pgTable, primaryKey, varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from '#/db/schema/users';
+import { maxLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
 
 /**
- * Unsubscribe tokens table to manage email unsubscribe tokens for users.
+ * Email unsubscribe tokens. Multiple per user allowed, old tokens remain valid.
+ *
+ * PARTITIONING: Partitioned by createdAt via pg_partman (monthly, 90-day retention).
+ * Drizzle sees a regular table; PostgreSQL manages partitions transparently.
  */
 export const unsubscribeTokensTable = pgTable(
   'unsubscribe_tokens',
   {
-    id: varchar().primaryKey().$defaultFn(nanoid),
-    userId: varchar()
+    id: varchar({ length: maxLength.id }).notNull().$defaultFn(nanoid),
+    userId: varchar({ length: maxLength.id })
       .notNull()
-      .unique()
       .references(() => usersTable.id, { onDelete: 'cascade' }),
-    token: varchar().unique().notNull(),
+    secret: varchar({ length: maxLength.field }).notNull(),
     createdAt: timestampColumns.createdAt,
   },
-  (table) => [index('users_token_index').on(table.token)],
+  (table) => [
+    primaryKey({ columns: [table.id, table.createdAt] }),
+    index('unsubscribe_tokens_secret_idx').on(table.secret),
+    index('unsubscribe_tokens_user_id_idx').on(table.userId),
+  ],
 );
 
 export type UnsubscribeTokenModel = typeof unsubscribeTokensTable.$inferSelect;

@@ -1,20 +1,21 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { appConfig } from 'config';
 import { HistoryIcon, SearchIcon, XIcon } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { ContextEntityBase, UserBase } from '~/api.gen';
-import useFocusByRef from '~/hooks/use-focus-by-ref';
-import ContentPlaceholder from '~/modules/common/content-placeholder';
+import { appConfig } from 'shared';
+import type { UserBase } from '~/api.gen';
+import { useFocusByRef } from '~/hooks/use-focus-by-ref';
+import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import type { ContextEntity } from '~/modules/entities/types';
 import { SearchResultBlock } from '~/modules/navigation/menu-sheet/search-result-block';
 import { Button } from '~/modules/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { ScrollArea } from '~/modules/ui/scroll-area';
-import { usersQueryOptions } from '~/modules/users/query';
+import { usersListQueryOptions } from '~/modules/user/query';
 import { getContextEntityTypeToListQueries } from '~/offline-config';
-import { getEntityRoute } from '~/routes-resolver';
+import { getContextEntityRoute } from '~/routes-resolver';
 import { useNavigationStore } from '~/store/navigation';
 
 // Define searchable entity types
@@ -64,7 +65,7 @@ export const AppSearch = () => {
   };
 
   const userQ = useInfiniteQuery({
-    ...usersQueryOptions({ q: searchValue }),
+    ...usersListQueryOptions({ q: searchValue }),
     enabled: searchValue.length > 0,
   });
 
@@ -73,9 +74,9 @@ export const AppSearch = () => {
   const contextEntityResults = Object.fromEntries(
     Object.entries(contextEntityQueries).map(([entityType, queryOptions]) => [
       entityType,
-      // biome-ignore lint: queryOptions typing is complex
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       useInfiniteQuery({
-        ...queryOptions({ q: searchValue }),
+        ...(queryOptions as any)({ q: searchValue }),
         enabled: searchValue.length > 0,
       }),
     ]),
@@ -88,20 +89,26 @@ export const AppSearch = () => {
   const contextEntityData = Object.fromEntries(
     Object.entries(contextEntityResults).map(([entityType, query]) => [
       entityType,
-      searchValue.length > 0 ? (query.data?.pages.flatMap((p) => p.items) ?? []) : [],
+      // biome-ignore lint/suspicious/noExplicitAny: query data types vary per entity
+      searchValue.length > 0 ? ((query.data as any)?.pages.flatMap((p: any) => p.items) ?? []) : [],
     ]),
   );
 
-  const data: Record<string, (ContextEntityBase | UserBase)[]> = { user: users, ...contextEntityData };
+  const data: Record<string, (ContextEntity | UserBase)[]> = { user: users, ...contextEntityData };
   const notFound = users.length === 0 && Object.values(contextEntityData).every((items) => items.length === 0);
   const isFetching = userQ.isFetching || Object.values(contextEntityResults).some((q) => q.isFetching);
 
-  const onSelectItem = (item: ContextEntityBase | UserBase) => {
+  const onSelectItem = (item: ContextEntity | UserBase) => {
     // Update recent searches with the search value
     updateRecentSearches(searchValue);
 
-    const { to, params, search } = getEntityRoute(item);
-    navigate({ to, params, search, resetScroll: false });
+    // For users, open sheet
+    if (item.entityType === 'user') {
+      navigate({ to: '.', search: (prev) => ({ ...prev, userSheetId: item.id }), resetScroll: false });
+    } else {
+      const { to, params, search } = getContextEntityRoute(item);
+      navigate({ to, params, search, resetScroll: false });
+    }
 
     useDialoger.getState().remove();
   };
@@ -130,7 +137,7 @@ export const AppSearch = () => {
       />
       <ScrollArea id={'item-search'} ref={scrollAreaRef} className="sm:h-[40vh] overflow-y-auto">
         <CommandList className="h-full">
-          <CommandEmpty className="h-full sm:h-[36vh]">
+          <CommandEmpty className="h-full sm:h-[36vh]" isLoading={isFetching}>
             <ContentPlaceholder
               icon={SearchIcon}
               title={searchValue.length ? 'common:no_resource_found' : 'common:global_search.text'}

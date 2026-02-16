@@ -15,7 +15,7 @@
 import path from 'node:path';
 import { sql } from 'drizzle-orm';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
-import { db } from '#/db/db';
+import { unsafeInternalDb as db, type PgDB } from '#/db/db';
 import { activitiesTable } from '#/db/schema/activities';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -23,14 +23,14 @@ import { organizationsTable } from '#/db/schema/organizations';
 import { sessionsTable } from '#/db/schema/sessions';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
-import { eventBus } from '#/lib/event-bus';
+import { activityBus } from '#/sync/activity-bus';
 
 /**
  * Run database migrations for integration tests.
  */
 export async function migrateDatabase() {
   const migrationsFolder = path.resolve(process.cwd(), 'drizzle');
-  await migrate(db, { migrationsFolder });
+  await migrate(db as PgDB, { migrationsFolder });
 }
 
 /**
@@ -48,35 +48,25 @@ export async function clearDatabase() {
   await db.delete(organizationsTable);
 }
 
-/**
- * Start the EventBus listener.
- * Must be called once before tests that expect to receive events.
- */
-export async function startEventBus() {
-  await eventBus.start();
-}
-
-/**
- * Stop the EventBus and clean up connections.
- */
-export async function stopEventBus() {
-  await eventBus.stop();
-}
+import type { ActivityEventWithEntity } from '#/sync/activity-bus';
 
 /**
  * Helper to wait for an event with timeout.
  * @param eventType - The event type to wait for
  * @param timeoutMs - Maximum time to wait (default 10s)
  */
-export function waitForEvent<T>(eventType: Parameters<typeof eventBus.once>[0], timeoutMs = 10000): Promise<T> {
+export function waitForEvent(
+  eventType: Parameters<typeof activityBus.once>[0],
+  timeoutMs = 10000,
+): Promise<ActivityEventWithEntity> {
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
       reject(new Error(`Timeout waiting for event: ${eventType}`));
     }, timeoutMs);
 
-    eventBus.once(eventType, (event) => {
+    activityBus.once(eventType, (event) => {
       clearTimeout(timeout);
-      resolve(event as T);
+      resolve(event);
     });
   });
 }
@@ -86,8 +76,8 @@ export function waitForEvent<T>(eventType: Parameters<typeof eventBus.once>[0], 
  * In CI, these are created by the migration. This is a safety check.
  */
 export async function ensureCdcSetup() {
-  const CDC_PUBLICATION_NAME = 'cella_cdc_publication';
-  const CDC_SLOT_NAME = 'cella_cdc_slot';
+  const CDC_PUBLICATION_NAME = 'cdc_pub';
+  const CDC_SLOT_NAME = 'cdc_slot';
 
   // Check if publication exists
   const pubResult = await db.execute<{ pubname: string }>(

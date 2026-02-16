@@ -1,7 +1,7 @@
 import type { ReactNode, RefObject } from 'react';
 import { create } from 'zustand';
 
-type TriggerRef = RefObject<HTMLButtonElement | HTMLAnchorElement | null>;
+export type TriggerRef = RefObject<HTMLButtonElement | HTMLAnchorElement | null>;
 
 type SheetContainerOptions = {
   ref: RefObject<HTMLDivElement | null>;
@@ -20,6 +20,7 @@ export type SheetData = {
   modal?: boolean;
   closeSheetOnRouteChange?: boolean;
   container?: SheetContainerOptions;
+  skipAnimation?: boolean;
   onClose?: (isCleanup?: boolean) => void;
 };
 

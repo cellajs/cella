@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "target": "es2022",
+    "lib": ["es2024"],
     "useDefineForClassFields": true,
     "module": "ESNext",
     "skipLibCheck": true,
@@ -21,7 +22,6 @@
 
     /* Type checking */
     "incremental": true,
-    "composite": true,
-    "tsBuildInfoFile": "./tsconfig.tsbuildinfo"
+    "noEmit": true
   }
 }

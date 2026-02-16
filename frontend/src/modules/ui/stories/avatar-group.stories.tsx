@@ -12,8 +12,8 @@ import {
 type GroupStoryArgs = AvatarGroupProps & { peopleCount: number };
 
 type Person = { src?: string; initials: string };
-const makePeople = (n: number): Person[] =>
-  Array.from({ length: n }, (_, i) => ({
+function makePeople(n: number): Person[] {
+  return Array.from({ length: n }, (_, i) => ({
     src: [
       'https://github.com/shadcn.png',
       'https://avatars.githubusercontent.com/u/139895814?v=4',
@@ -23,6 +23,7 @@ const makePeople = (n: number): Person[] =>
     ][i % 5],
     initials: `P${i + 1}`,
   }));
+}
 
 const meta = {
   title: 'ui/Avatar/Group',
@@ -39,7 +40,7 @@ export default meta;
 
 type Story = StoryObj<GroupStoryArgs>;
 
-const GroupRender = ({ limit, className, peopleCount }: GroupStoryArgs) => {
+function GroupRender({ limit, className, peopleCount }: GroupStoryArgs) {
   const people = makePeople(peopleCount ?? 5);
   return (
     <AvatarGroup limit={limit} className={className}>
@@ -54,7 +55,7 @@ const GroupRender = ({ limit, className, peopleCount }: GroupStoryArgs) => {
       <AvatarOverflowIndicator className="size-8" />
     </AvatarGroup>
   );
-};
+}
 
 export const Default: Story = {
   args: {

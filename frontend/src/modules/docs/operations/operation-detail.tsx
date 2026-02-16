@@ -1,4 +1,4 @@
-import { Suspense, useMemo } from 'react';
+import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { HashUrlButton } from '~/modules/docs/hash-url-button';
@@ -8,7 +8,7 @@ import type { GenOperationSummary } from '~/modules/docs/types';
 import { Badge } from '~/modules/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import { cn } from '~/utils/cn';
-import Spinner from '../../common/spinner';
+import { Spinner } from '../../common/spinner';
 import { getMethodColor } from '../helpers/get-method-color';
 
 interface OperationDetailProps {
@@ -24,7 +24,7 @@ export const OperationDetail = ({ operation, className }: OperationDetailProps) 
   const { t } = useTranslation();
 
   return (
-    <Card id={operation.hash} className={cn('border-0', className)}>
+    <Card id={`spy-${operation.hash}`} className={cn('border-0', className)}>
       <CardHeader className="group">
         <div className="flex justify-between items-center">
           <CardTitle className="sm:text-xl leading-8 gap-2">
@@ -76,8 +76,8 @@ interface TagOperationsListProps {
  */
 export const TagOperationsList = ({ operations }: TagOperationsListProps) => {
   // Register all operation hashes for this tag section
-  const sectionIds = useMemo(() => operations.map((op) => op.hash), [operations]);
-  useScrollSpy({ sectionIds });
+  const sectionIds = operations.map((op) => op.hash);
+  useScrollSpy(sectionIds);
 
   return (
     <div className="border-t">

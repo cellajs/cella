@@ -1,9 +1,9 @@
-import { TokenType } from 'config';
 import { and, eq } from 'drizzle-orm';
 import { Context } from 'hono';
-import { db } from '#/db/db';
+import { TokenType } from 'shared';
+import { unsafeInternalDb as db } from '#/db/db';
 import { type TokenModel, tokensTable } from '#/db/schema/tokens';
-import { AppError } from '#/lib/errors';
+import { AppError } from '#/lib/error';
 import { getAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { isExpiredDate } from '#/utils/is-expired-date';
 
@@ -22,7 +22,7 @@ type Props = {
 export const getValidSingleUseToken = async ({ ctx, tokenType }: Props): Promise<TokenModel> => {
   // Find single use token in cookie
   const singleUseToken = await getAuthCookie(ctx, tokenType);
-  if (!singleUseToken) throw new AppError({ status: 400, type: 'invalid_token', severity: 'warn' });
+  if (!singleUseToken) throw new AppError(400, 'invalid_token', 'warn');
 
   // Get token record that matches type and singleUseToken value
   const [tokenRecord] = await db
@@ -31,11 +31,11 @@ export const getValidSingleUseToken = async ({ ctx, tokenType }: Props): Promise
     .where(and(eq(tokensTable.type, tokenType), eq(tokensTable.singleUseToken, singleUseToken)))
     .limit(1);
 
-  if (!tokenRecord) throw new AppError({ status: 404, type: `${tokenType}_not_found`, severity: 'error' });
+  if (!tokenRecord) throw new AppError(404, `${tokenType}_not_found`, 'error');
 
   // Token expired
   if (isExpiredDate(tokenRecord.expiresAt)) {
-    throw new AppError({ status: 401, type: `${tokenRecord.type}_expired`, severity: 'warn' });
+    throw new AppError(401, `${tokenRecord.type}_expired`, 'warn');
   }
 
   return tokenRecord;

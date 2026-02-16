@@ -1,19 +1,23 @@
 import { Link } from '@tanstack/react-router';
 import { t } from 'i18next';
 import { UserIcon } from 'lucide-react';
+import type { Organization } from '~/api.gen';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
-import type { ContextEntityData } from '~/modules/entities/types';
+import type { ContextEntity } from '~/modules/entities/types';
 import { Badge } from '~/modules/ui/badge';
-import { Card, CardContent } from '~/modules/ui/card';
-import { getEntityRoute } from '~/routes-resolver';
+import { Card, CardContent, CardFooter } from '~/modules/ui/card';
+import { getContextEntityRoute } from '~/routes-resolver';
 import { dateShort } from '~/utils/date-short';
 import { numberToColorClass } from '~/utils/number-to-color-class';
 
-export const EntityGridTile = ({ entity }: { entity: ContextEntityData }) => {
-  const { to, params, search } = getEntityRoute(entity);
+/**
+ * Tile component to display an entity in a grid layout.
+ */
+export const EntityGridTile = ({ entity }: { entity: ContextEntity & Pick<Organization, 'included'> }) => {
+  const { to, params, search } = getContextEntityRoute(entity);
   return (
-    <Card className="overflow-hidden p-0 transition [&:has(.tile-link:hover)]:shadow-sm shadow-xs [&:has(.tile-link:focus-visible)]:ring-2 [&:has(.tile-link:active)]:translate-y-[.05rem] [&:has(.tile-link:focus-visible)]:ring-ring [&:has(.tile-link:focus-visible)]:ring-offset-2 [&:has(.tile-link:focus-visible)]:ring-offset-background">
-      <CardContent className="p-4">
+    <Card className="overflow-hidden px-0 sm:px-0 pt-0 sm:pt-0 transition [&:has(.tile-link:hover)]:shadow-sm shadow-xs [&:has(.tile-link:focus-visible)]:ring-2 [&:has(.tile-link:active)]:translate-y-[.05rem] [&:has(.tile-link:focus-visible)]:ring-ring [&:has(.tile-link:focus-visible)]:ring-offset-2 [&:has(.tile-link:focus-visible)]:ring-offset-background">
+      <CardContent className="p-0 sm:p-0">
         <Link
           to={to}
           params={params}
@@ -22,7 +26,7 @@ export const EntityGridTile = ({ entity }: { entity: ContextEntityData }) => {
         >
           {typeof window !== 'undefined' && (
             <div
-              className={`relative flex flex-col -mx-4 -mt-6 bg-cover min-h-30 bg-center aspect-3/1 bg-opacity-80 ${
+              className={`w-full relative flex flex-col bg-cover min-h-30 bg-center aspect-3/1 bg-opacity-80 ${
                 entity.bannerUrl ? '' : numberToColorClass(entity.id)
               }`}
               style={entity.bannerUrl ? { backgroundImage: `url(${entity.bannerUrl})` } : {}}
@@ -31,7 +35,7 @@ export const EntityGridTile = ({ entity }: { entity: ContextEntityData }) => {
               <div className="flex w-full items-center backdrop-blur-xs gap-3 px-4 py-2 min-h-14 bg-background/50 group-hover:bg-background/70 transition-colors">
                 <AvatarWrap
                   className="h-10 w-10"
-                  type="organization"
+                  type={entity.entityType}
                   id={entity.id}
                   name={entity.name}
                   url={entity.thumbnailUrl}
@@ -49,16 +53,17 @@ export const EntityGridTile = ({ entity }: { entity: ContextEntityData }) => {
             </div>
           )}
         </Link>
-
-        {entity.counts && (
-          <div className="flex items-center justify-end gap-3 pt-6 text-sm opacity-80">
+      </CardContent>
+      {entity.included?.counts && (
+        <CardFooter>
+          <div className="w-full flex items-center justify-end gap-3 text-sm opacity-80">
             <div className="flex items-center gap-1">
               <UserIcon size={16} />
-              {entity.counts.membership.total}
+              {entity.included.counts.membership.total}
             </div>
           </div>
-        )}
-      </CardContent>
+        </CardFooter>
+      )}
     </Card>
   );
 };

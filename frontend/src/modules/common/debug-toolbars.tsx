@@ -1,10 +1,13 @@
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { scan } from 'react-scan';
+import { SyncDevtools } from '~/modules/common/devtools';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 import { queryClient } from '~/query/query-client';
+
+import { cn } from '~/utils/cn';
 
 interface DebugItem {
   url?: string;
@@ -14,6 +17,10 @@ interface DebugItem {
   element?: string;
 }
 
+interface DebugToolbarsProps {
+  className?: string;
+}
+
 const debugOptions: DebugItem[] = [
   { id: 'drizzle-studio', icon: '💦', url: 'https://local.drizzle.studio/' },
   { id: 'docs', icon: '🧑‍💻', url: '/docs' },
@@ -21,11 +28,19 @@ const debugOptions: DebugItem[] = [
   { id: 'tanstack-router', icon: '🌴', parent: '.TanStackRouterDevtools', element: ':scope > button' },
   { id: 'react-query', icon: '📡', parent: '.tsqd-parent-container', element: '.tsqd-open-btn' },
   { id: 'react-scan', icon: '⏱️' },
+  { id: 'sync-devtools', icon: '⚡' },
 ];
 
-const DebugToolbars = () => {
+export function DebugToolbars({ className }: DebugToolbarsProps) {
+  const [syncDevtoolsOpen, setSyncDevtoolsOpen] = useState(false);
+
   // Function to handle toggling debug options in different ways
   const debugToggle = (item: DebugItem) => {
+    if (item.id === 'sync-devtools') {
+      setSyncDevtoolsOpen((prev) => !prev);
+      return;
+    }
+
     if (item.url) return window.open(item.url);
 
     if (item.id === 'react-scan') {
@@ -59,10 +74,11 @@ const DebugToolbars = () => {
     <>
       <TanStackRouterDevtools />
       <ReactQueryDevtools client={queryClient} />
+      <SyncDevtools isOpen={syncDevtoolsOpen} onClose={() => setSyncDevtoolsOpen(false)} />
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="w-12 h-12" aria-label="toggle debug toolbar">
+          <Button variant="ghost" className={cn('w-12 h-12', className)} aria-label="toggle debug toolbar">
             🐞
           </Button>
         </DropdownMenuTrigger>
@@ -77,6 +93,4 @@ const DebugToolbars = () => {
       </DropdownMenu>
     </>
   );
-};
-
-export default DebugToolbars;
+}

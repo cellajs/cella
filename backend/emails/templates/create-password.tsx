@@ -1,16 +1,10 @@
-import { appConfig } from 'config';
 import i18n from 'i18next';
 import { Link, Text } from 'jsx-email';
+import { appConfig } from 'shared';
+import { EmailBody, EmailButton, EmailContainer, EmailHeader, EmailLogo, Footer } from '../components';
+import type { BasicTemplateType } from '../types';
 
-import type { BasicTemplateType } from '../../src/lib/mailer';
-import { AppLogo } from '../components/app-logo';
-import { EmailContainer } from '../components/container';
-import { EmailBody } from '../components/email-body';
-import { EmailButton } from '../components/email-button';
-import { EmailHeader } from '../components/email-header';
-import { Footer } from '../components/footer';
-
-export interface CreatePasswordEmailProps extends BasicTemplateType {
+interface CreatePasswordEmailProps extends BasicTemplateType {
   createPasswordLink: string;
 }
 
@@ -28,18 +22,23 @@ export const CreatePasswordEmail = ({ name, lng, createPasswordLink }: CreatePas
       <EmailBody>
         <Text>
           <p style={{ marginBottom: '4px' }}>{name && i18n.t('backend:email.hi', { lng, name })}</p>
-          <div dangerouslySetInnerHTML={{ __html: i18n.t('backend:email.create_password.text', { appName, lng }) }}
-          />
+          <div dangerouslySetInnerHTML={{ __html: i18n.t('backend:email.create_password.text', { appName, lng }) }} />
         </Text>
-        <EmailButton ButtonText={i18n.t('common:reset_resource', { resource: i18n.t('common:password').toLowerCase(), lng })} href={createPasswordLink} />
+        <EmailButton
+          ButtonText={i18n.t('common:reset_resource', { resource: i18n.t('common:password').toLowerCase(), lng })}
+          href={createPasswordLink}
+        />
 
         <Text style={{ fontSize: '0.85rem', textAlign: 'center' }}>
-          {i18n.t('backend:email.create_password.expire', { lng })} <Link href={createPasswordUrl}>{createPasswordUrl}</Link>
+          {i18n.t('backend:email.create_password.expire', { lng })}{' '}
+          <Link href={createPasswordUrl}>{createPasswordUrl}</Link>
         </Text>
 
-        <Text style={{ fontSize: '0.85rem', textAlign: 'center' }}>{i18n.t('backend:email.create_password.ignore', { lng })}</Text>
+        <Text style={{ fontSize: '0.85rem', textAlign: 'center' }}>
+          {i18n.t('backend:email.create_password.ignore', { lng })}
+        </Text>
       </EmailBody>
-      <AppLogo />
+      <EmailLogo />
       <Footer />
     </EmailContainer>
   );

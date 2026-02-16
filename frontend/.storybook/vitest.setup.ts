@@ -8,7 +8,7 @@ import * as projectAnnotations from './preview';
 const annotations = setProjectAnnotations([a11yAddonAnnotations, projectAnnotations]);
 
 // Mock console methods to suppress logs during tests
-console.log = vi.fn();
+console.info = vi.fn();
 
 // Run Storybook's beforeAll hook
 beforeAll(annotations.beforeAll);

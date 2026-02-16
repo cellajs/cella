@@ -1,4 +1,5 @@
 import type { MeUser } from '~/modules/me/types';
+import { persister, sessionPersister } from '~/query/persister';
 import { queryClient } from '~/query/query-client';
 import { useAlertStore } from '~/store/alert';
 import { useDraftStore } from '~/store/draft';
@@ -13,6 +14,8 @@ import { useUserStore } from '~/store/user';
  */
 export const flushStores = (removeAccount?: boolean) => {
   queryClient.clear();
+  sessionPersister.removeClient();
+  persister.removeClient();
   useUserStore.setState({ user: null as unknown as MeUser });
   useDraftStore.getState().clearForms();
   useUIStore.getState().setImpersonating(false);

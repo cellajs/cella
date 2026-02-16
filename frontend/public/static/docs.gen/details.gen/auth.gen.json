@@ -1,5 +1,58 @@
 [
   {
+    "operationId": "getAuthHealth",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Auth health status",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "restrictedMode": { "type": "boolean", "required": true },
+            "retryAfter": { "type": "number", "required": false }
+          },
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ]
+  },
+  {
     "operationId": "checkEmail",
     "responses": [
       { "status": 204, "description": "Email exists" },
@@ -126,7 +179,8 @@
             "inactiveMembershipId": { "type": "string", "required": false }
           },
           "contentType": "application/json"
-        }
+        },
+        "example": { "email": "ona.becker-hickle@demo.local", "userId": "ifqwn7yznn0t633emq5sbn33" }
       },
       {
         "status": 400,
@@ -172,7 +226,11 @@
             "required": true,
             "enum": ["email-verification", "oauth-verification", "password-reset", "invitation", "confirm-mfa"]
           },
-          "id": { "type": "string", "required": true }
+          "id": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          }
         }
       }
     }
@@ -392,7 +450,8 @@
             "manualKey": { "type": "string", "required": true }
           },
           "contentType": "application/json"
-        }
+        },
+        "example": { "totpUri": "otpauth://totp/Cella:user@example.com?secret=MGNEKSGGQO2Q7CMRC525Z7X2IGCP19Z3&issuer=Cella", "manualKey": "ZEEY2N36QIFGDJ3KZL2U0JTJY5GGUNL8" }
       },
       {
         "status": 400,
@@ -649,7 +708,8 @@
             "membershipInvite": { "type": "boolean", "required": true }
           },
           "contentType": "application/json"
-        }
+        },
+        "example": { "membershipInvite": true }
       },
       {
         "status": 400,
@@ -781,7 +841,8 @@
             "mfa": { "type": "boolean", "required": true }
           },
           "contentType": "application/json"
-        }
+        },
+        "example": { "mfa": false }
       },
       {
         "status": 400,
@@ -854,7 +915,8 @@
             "mfa": { "type": "boolean", "required": false }
           },
           "contentType": "application/json"
-        }
+        },
+        "example": { "emailVerified": true, "mfa": false }
       },
       {
         "status": 400,
@@ -923,11 +985,20 @@
         "schema": {
           "type": "object",
           "properties": {
-            "id": { "type": "string", "required": true },
-            "userId": { "type": "string", "required": true },
+            "id": {
+              "type": "string",
+              "required": true,
+              "maxLength": 50
+            },
+            "userId": {
+              "type": "string",
+              "required": true,
+              "maxLength": 50
+            },
             "deviceName": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 255
             },
             "deviceType": {
               "type": "string",
@@ -936,16 +1007,29 @@
             },
             "deviceOs": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 255
             },
             "browser": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 255
             },
-            "nameOnDevice": { "type": "string", "required": true },
+            "nameOnDevice": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
+            },
             "createdAt": { "type": "string", "required": true }
           },
           "contentType": "application/json"
+        },
+        "example": {
+          "id": "wi1u74x2b4g096dtzu91o9w8",
+          "userId": "zslal6vzkcqd10drzf37piml",
+          "nameOnDevice": "Chrome on Mac",
+          "userAgent": "FakerBot/2.17.17",
+          "createdAt": "2024-08-15T16:12:55.564Z"
         }
       },
       {
@@ -990,7 +1074,11 @@
         "properties": {
           "attestationObject": { "type": "string", "required": true },
           "clientDataJSON": { "type": "string", "required": true },
-          "nameOnDevice": { "type": "string", "required": true }
+          "nameOnDevice": {
+            "type": "string",
+            "required": true,
+            "maxLength": 255
+          }
         },
         "required": true,
         "contentType": "application/json"
@@ -1040,7 +1128,11 @@
     "request": {
       "path": {
         "properties": {
-          "id": { "type": "string", "required": true }
+          "id": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          }
         }
       }
     }
@@ -1063,6 +1155,10 @@
             }
           },
           "contentType": "application/json"
+        },
+        "example": {
+          "challengeBase64": "c5SiUKPbCCFqoXyIZHNC3ufdzv1sE6cuymwA9IMSiP6",
+          "credentialIds": ["3EQAejE9eLT26kT6iIsM52HWd5x3aKpV"]
         }
       },
       {
@@ -1110,7 +1206,11 @@
             "required": true,
             "enum": ["authentication", "mfa", "registration"]
           },
-          "email": { "type": "string", "required": false }
+          "email": {
+            "type": "string",
+            "required": false,
+            "maxLength": 255
+          }
         },
         "required": true,
         "contentType": "application/json"
@@ -1170,7 +1270,11 @@
             "required": true,
             "enum": ["authentication", "mfa"]
           },
-          "email": { "type": "string", "required": false }
+          "email": {
+            "type": "string",
+            "required": false,
+            "maxLength": 255
+          }
         },
         "required": true,
         "contentType": "application/json"

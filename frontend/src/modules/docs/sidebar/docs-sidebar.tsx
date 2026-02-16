@@ -1,18 +1,17 @@
-import { isNull, not, useLiveQuery } from '@tanstack/react-db';
-import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { Link, useRouterState } from '@tanstack/react-router';
-import { appConfig } from 'config';
 import { ChevronDownIcon, PencilIcon } from 'lucide-react';
 import { lazy, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import Logo from '~/modules/common/logo';
+import { Logo } from '~/modules/common/logo';
 import { JsonActions } from '~/modules/docs/json-actions';
 import { operationsQueryOptions, schemasQueryOptions, tagsQueryOptions } from '~/modules/docs/query';
 import { OperationsSidebar } from '~/modules/docs/sidebar/operations-sidebar';
 import { SchemasSidebar } from '~/modules/docs/sidebar/schemas-sidebar';
 import type { GenTagSummary } from '~/modules/docs/types';
-import type { initPagesCollection } from '~/modules/pages/collections';
+import { pagesListQueryOptions } from '~/modules/page/query';
 import { buttonVariants } from '~/modules/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';
 import {
@@ -27,14 +26,14 @@ import { queryClient } from '~/query/query-client';
 import { useUserStore } from '~/store/user';
 import { cn } from '~/utils/cn';
 import { useSheeter } from '../../common/sheeter/use-sheeter';
-import UserTheme from '../../me/user-theme';
+import { UserTheme } from '../../me/user-theme';
 import { openApiSpecQueryOptions, openApiUrl } from '../query';
 
-const DebugToolbars =
-  appConfig.mode !== 'production' ? lazy(() => import('~/modules/common/debug-toolbars')) : () => null;
+const DebugDropdown =
+  appConfig.mode !== 'production' ? lazy(() => import('~/modules/common/debug-dropdown')) : () => null;
 
 /** Suspense-wrapped JsonActions for OpenAPI spec */
-const OpenApiJsonActions = () => {
+function OpenApiJsonActions() {
   const { t } = useTranslation();
   const { data } = useSuspenseQuery(openApiSpecQueryOptions);
   return (
@@ -47,17 +46,16 @@ const OpenApiJsonActions = () => {
       viewerUrl="/docs/overview"
     />
   );
-};
+}
 
 interface DocsSidebarProps {
   tags: GenTagSummary[];
-  pagesCollection: ReturnType<typeof initPagesCollection>;
 }
 
 /**
  * Sidebar for the Docs section, including logo, Spec JSON actions, API reference (operations & schemas), and pages groups.
  */
-export function DocsSidebar({ tags, pagesCollection }: DocsSidebarProps) {
+export function DocsSidebar({ tags }: DocsSidebarProps) {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm');
 
@@ -79,15 +77,11 @@ export function DocsSidebar({ tags, pagesCollection }: DocsSidebarProps) {
   // Track if current section is forcibly collapsed
   const [forcedCollapsed, setForcedCollapsed] = useState<string | null>(null);
 
-  // Live query for pages - only published pages, ordered by name
-  const { data: pages } = useLiveQuery(
-    (liveQuery) =>
-      liveQuery
-        .from({ page: pagesCollection })
-        .where(({ page }) => not(isNull(page.id)))
-        .orderBy(({ page }) => page.name, 'asc'),
-    [],
-  );
+  // Query for pages - using React Query instead of useLiveQuery
+  const { data: pages } = useInfiniteQuery({
+    ...pagesListQueryOptions({}),
+    select: ({ pages }) => pages.flatMap(({ items }) => items),
+  });
 
   const closeSheet = () => {
     if (!isMobile) return;
@@ -246,6 +240,7 @@ export function DocsSidebar({ tags, pagesCollection }: DocsSidebarProps) {
           {systemRole && (
             <Link
               to="/docs/pages"
+              onClick={closeSheet}
               className={cn(buttonVariants({ variant: 'ghost', size: 'xs' }), 'h-7 w-8 p-0')}
               aria-label="Manage pages"
             >
@@ -260,8 +255,8 @@ export function DocsSidebar({ tags, pagesCollection }: DocsSidebarProps) {
               pages.map((page) => (
                 <SidebarMenuItem key={page.id}>
                   <Link
-                    to="/docs/page/$id/$mode"
-                    params={{ id: page.id, mode: 'view' }}
+                    to="/docs/page/$id"
+                    params={{ id: page.id }}
                     className={cn(
                       buttonVariants({ variant: 'ghost' }),
                       'w-full justify-start font-normal group px-3 lowercase',
@@ -284,9 +279,7 @@ export function DocsSidebar({ tags, pagesCollection }: DocsSidebarProps) {
       </SidebarGroup>
 
       {/* Debug Toolbars */}
-      <div className="mt-auto p-4">
-        <Suspense>{DebugToolbars ? <DebugToolbars /> : null}</Suspense>
-      </div>
+      <Suspense>{DebugDropdown ? <DebugDropdown className="absolute bottom-0 m-1" /> : null}</Suspense>
     </SidebarContent>
   );
 }

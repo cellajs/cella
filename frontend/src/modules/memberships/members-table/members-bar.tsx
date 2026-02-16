@@ -3,25 +3,30 @@ import { MailIcon, TrashIcon, XSquareIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { getMembers } from '~/api.gen';
-import ColumnsView from '~/modules/common/data-table/columns-view';
-import Export from '~/modules/common/data-table/export';
+import { ColumnsView } from '~/modules/common/data-table/columns-view';
+import { Export } from '~/modules/common/data-table/export';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
 import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
-import TableCount from '~/modules/common/data-table/table-count';
-import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
-import TableSearch from '~/modules/common/data-table/table-search';
+import { TableCount } from '~/modules/common/data-table/table-count';
+import {
+  FilterBarActions,
+  FilterBarFilters,
+  FilterBarSearch,
+  TableFilterBar,
+} from '~/modules/common/data-table/table-filter-bar';
+import { TableSearch } from '~/modules/common/data-table/table-search';
 import type { BaseTableBarProps } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
-import SelectRole from '~/modules/common/form-fields/select-role';
+import { SelectRole } from '~/modules/common/form-fields/select-role';
 import { toaster } from '~/modules/common/toaster/service';
-import UnsavedBadge from '~/modules/common/unsaved-badge';
-import DeleteMembershipsForm from '~/modules/memberships/delete-memberships';
-import type { MembersTableWrapperProps } from '~/modules/memberships/members-table';
-import { PendingMemberships } from '~/modules/memberships/pending-table/pending-memberships';
+import { UnsavedBadge } from '~/modules/common/unsaved-badge';
+import { DeleteMemberships } from '~/modules/memberships/delete-memberships';
+import type { MembersTableWrapperProps } from '~/modules/memberships/members-table/members-table';
+import { PendingMembershipsCount } from '~/modules/memberships/pending-memberships-count';
 import type { Member, MembersRouteSearchParams } from '~/modules/memberships/types';
-import InviteUsers from '~/modules/users/invite-users';
-import { useInfiniteQueryTotal } from '~/query/hooks/use-infinite-query-total';
+import { InviteUsers } from '~/modules/user/invite-users';
+import { useInfiniteQueryTotal } from '~/query/basic';
 
 type MembersTableBarProps = MembersTableWrapperProps & BaseTableBarProps<Member, MembersRouteSearchParams>;
 
@@ -48,7 +53,8 @@ export const MembersTableBar = ({
   const { q, role, order, sort } = searchVars;
 
   const isFiltered = role !== undefined || !!q;
-  const isAdmin = entity.membership?.role === 'admin';
+  // Use can.update if available for permission-based access control
+  const canUpdate = entity.can?.update ?? false;
   const entityType = entity.entityType;
 
   // Clear selected rows on search
@@ -70,9 +76,10 @@ export const MembersTableBar = ({
 
   const openDeleteDialog = () => {
     createDialog(
-      <DeleteMembershipsForm
-        organizationId={entity.organizationId || entity.id}
-        entityIdOrSlug={entity.slug}
+      <DeleteMemberships
+        tenantId={entity.tenantId}
+        orgId={entity.organizationId || entity.id}
+        entityId={entity.id}
         entityType={entity.entityType}
         dialog
         members={selected}
@@ -121,10 +128,10 @@ export const MembersTableBar = ({
         role,
         limit: String(limit),
         offset: '0',
-        idOrSlug: entity.slug,
+        entityId: entity.id,
         entityType: entity.entityType,
       },
-      path: { orgIdOrSlug: entity.organizationId || entity.id },
+      path: { tenantId: entity.tenantId, orgId: entity.organizationId || entity.id },
     });
     return items;
   };
@@ -151,7 +158,7 @@ export const MembersTableBar = ({
               </>
             ) : (
               !isFiltered &&
-              isAdmin && (
+              canUpdate && (
                 <TableBarButton
                   ref={inviteButtonRef}
                   icon={MailIcon}
@@ -162,22 +169,25 @@ export const MembersTableBar = ({
             )}
             {selected.length === 0 && (
               <TableCount count={total} label="common:member" isFiltered={isFiltered} onResetFilters={onResetFilters}>
-                {isAdmin && !isFiltered && <PendingMemberships entity={entity} />}
+                {canUpdate && !isFiltered && <PendingMembershipsCount entity={entity} />}
               </TableCount>
             )}
           </FilterBarActions>
 
           <div className="sm:grow" />
 
-          <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-left max-sm:fade-in max-sm:duration-300">
+          <FilterBarSearch>
             <TableSearch name="memberSearch" value={q} setQuery={onSearch} />
+          </FilterBarSearch>
+          {/* TODO-033 allow dropdowner here or a variantion of so it can be shown as drawer? perhaps combobox? */}
+          <FilterBarFilters>
             <SelectRole
               entity
               value={role === undefined ? 'all' : role}
               onChange={onRoleChange}
               className="h-10 w-auto sm:min-w-32"
             />
-          </FilterBarContent>
+          </FilterBarFilters>
         </TableFilterBar>
 
         {/* Columns view dropdown */}

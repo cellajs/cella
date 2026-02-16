@@ -1,14 +1,14 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { appConfig } from 'config';
 import { UndoIcon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import { Organization } from '~/api.gen';
 import { Confetti } from '~/modules/home/onboarding/confetti';
 import { onboardingFinishCallback } from '~/modules/home/onboarding/onboarding-config';
 import { useUpdateSelfFlagsMutation } from '~/modules/me/query';
-import { getContextEntityTypeToListQueries } from '~/offline-config';
-import { flattenInfiniteData } from '~/query/utils/flatten';
+import { organizationsListQueryOptions } from '~/modules/organization/query';
+import { flattenInfiniteData } from '~/query/basic';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
 
@@ -23,7 +23,7 @@ export const OnboardingCompleted = () => {
   const didRun = useRef(false);
 
   // Fetch organizations to determine the last created organization
-  const orgQuery = useInfiniteQuery(getContextEntityTypeToListQueries().organization({ userId: user.id }));
+  const orgQuery = useInfiniteQuery(organizationsListQueryOptions({ userId: user.id }));
   const organizations = flattenInfiniteData<Organization>(orgQuery.data);
 
   const lastCreatedOrganization =
@@ -53,7 +53,7 @@ export const OnboardingCompleted = () => {
         <UndoIcon
           size={400}
           strokeWidth={0.1}
-          className="max-md:hidden scale-y-75 md:-translate-x-24 -mt-52 -mb-12  text-primary rotate-[30deg]"
+          className="max-md:hidden scale-y-75 md:-translate-x-24 -mt-52 -mb-12  text-primary rotate-30"
         />
       )}
       <h1 className="text-3xl font-bold">{t('common:onboarding_completed')}</h1>

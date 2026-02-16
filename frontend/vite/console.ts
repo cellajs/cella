@@ -19,4 +19,4 @@ export const changeMark = pc.bold(pc.yellowBright('✎'));
 export const loadingMark = pc.bold(pc.cyan('↻'));
 
 /** Prefix for machine-parseable status lines */
-export const STATUS_PREFIX = '[STATUS]';
+export const STATUS_PREFIX = '[Openapi gen]';

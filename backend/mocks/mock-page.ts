@@ -1,6 +1,7 @@
 import { faker } from '@faker-js/faker';
 import type { PageModel } from '#/db/schema/pages';
-import { mockNanoid, withFakerSeed } from './utils';
+import { mockBatchResponse } from './mock-common';
+import { mockNanoid, mockPaginated, mockStx, mockTenantId, withFakerSeed } from './utils';
 
 /**
  * Generates a mock page with all fields populated.
@@ -15,6 +16,7 @@ export const mockPage = (key = 'page:default'): PageModel =>
 
     return {
       id: mockNanoid(),
+      tenantId: mockTenantId(),
       entityType: 'page' as const,
       name: faker.lorem.sentence({ min: 2, max: 5 }),
       description: JSON.stringify([
@@ -25,14 +27,27 @@ export const mockPage = (key = 'page:default'): PageModel =>
       ]),
       keywords: faker.lorem.words(3),
       status: 'unpublished' as const,
+      publicAccess: true,
       parentId: null,
       displayOrder: faker.number.float({ min: 0, max: 100, fractionDigits: 2 }),
       createdAt,
       createdBy: userId,
       modifiedAt: createdAt,
       modifiedBy: userId,
+      stx: mockStx(),
     };
   });
 
 /** Alias for API response examples (page schema matches DB schema) */
 export const mockPageResponse = mockPage;
+
+/**
+ * Generates a paginated mock page list response for getPages endpoint.
+ */
+export const mockPaginatedPagesResponse = (count = 2) => mockPaginated(mockPageResponse, count);
+
+/**
+ * Generates a mock batch pages response.
+ * Used for createPages endpoint examples.
+ */
+export const mockBatchPagesResponse = (count = 2) => mockBatchResponse(mockPageResponse, count);

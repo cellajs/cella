@@ -1,0 +1,51 @@
+{
+  "name": "@cellajs/cli",
+  "version": "0.0.1",
+  "private": false,
+  "license": "MIT",
+  "description": "CLI tooling to work with Cella.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cellajs/cella",
+    "directory": "cli/cella"
+  },
+  "homepage": "https://cellajs.com",
+  "author": "CellaJS <info@cellajs.com>",
+  "engines": {
+    "node": "24.x"
+  },
+  "type": "module",
+  "main": "index.ts",
+  "bin": {
+    "cli": "index.ts"
+  },
+  "imports": {
+    "#/*": "./src/*"
+  },
+  "scripts": {
+    "cella": "tsx index.ts",
+    "validate": "tsx index.ts --sync-service validate",
+    "check": "pnpm ts && pnpm biome check --write .",
+    "check:old": "pnpm ts:old && pnpm biome check --write .",
+    "ts": "tsgo --pretty",
+    "ts:old": "tsc --pretty",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@inquirer/core": "^11.1.3",
+    "@inquirer/prompts": "^8.2.1",
+    "commander": "^14.0.3",
+    "ora": "^9.3.0",
+    "picocolors": "^1.1.1",
+    "semver": "^7.7.4"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.13",
+    "@types/semver": "^7.7.1",
+    "tsup": "^8.5.1",
+    "tsx": "^4.21.0"
+  }
+}

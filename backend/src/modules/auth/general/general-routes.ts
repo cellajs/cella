@@ -1,14 +1,41 @@
 import { z } from '@hono/zod-openapi';
-import { appConfig } from 'config';
+import { appConfig } from 'shared';
 import { createXRoute } from '#/docs/x-routes';
-import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
+import { authGuard, publicGuard, sysAdminGuard } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { emailEnumLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { emailBodySchema, tokenWithDataSchema } from '#/modules/auth/general/general-schema';
-import { cookieSchema, emailOrTokenIdQuerySchema, idSchema, locationSchema } from '#/utils/schema/common';
-import { errorResponseRefs } from '#/utils/schema/error-responses';
+import { cookieSchema, emailOrTokenIdQuerySchema, errorResponseRefs, locationSchema, validIdSchema } from '#/schemas';
+import { mockTokenDataResponse } from '../../../../mocks/mock-auth';
 
 const authGeneralRoutes = {
+  /**
+   * Auth health check with rate limit status
+   */
+  health: createXRoute({
+    operationId: 'getAuthHealth',
+    method: 'get',
+    path: '/health',
+    xGuard: publicGuard,
+    tags: ['auth'],
+    summary: 'Auth health check',
+    description:
+      'Returns auth health status including whether the client IP is rate-limited for email enumeration protection.',
+    responses: {
+      200: {
+        description: 'Auth health status',
+        content: {
+          'application/json': {
+            schema: z.object({
+              restrictedMode: z.boolean(),
+              retryAfter: z.number().optional(),
+            }),
+          },
+        },
+      },
+      ...errorResponseRefs,
+    },
+  }),
   /**
    * Start impersonating
    */
@@ -16,7 +43,7 @@ const authGeneralRoutes = {
     operationId: 'startImpersonation',
     method: 'get',
     path: '/impersonation/start',
-    xGuard: [isAuthenticated, hasSystemAccess],
+    xGuard: [authGuard, sysAdminGuard],
     tags: ['auth'],
     summary: 'Start impersonating',
     description:
@@ -37,7 +64,7 @@ const authGeneralRoutes = {
     operationId: 'stopImpersonation',
     method: 'get',
     path: '/impersonation/stop',
-    xGuard: isAuthenticated,
+    xGuard: authGuard,
     tags: ['auth'],
     summary: 'Stop impersonating',
     description: 'Ends impersonation by clearing the current impersonation session and restoring the admin context.',
@@ -53,7 +80,7 @@ const authGeneralRoutes = {
     operationId: 'checkEmail',
     method: 'post',
     path: '/check-email',
-    xGuard: isPublicAccess,
+    xGuard: publicGuard,
     xRateLimiter: emailEnumLimiter,
     middleware: isNoBot,
     tags: ['auth'],
@@ -77,7 +104,7 @@ const authGeneralRoutes = {
     operationId: 'invokeToken',
     method: 'get',
     path: '/invoke-token/{type}/{token}',
-    xGuard: isPublicAccess,
+    xGuard: publicGuard,
     xRateLimiter: tokenLimiter('token'),
     middleware: isNoBot,
     tags: ['auth'],
@@ -102,7 +129,7 @@ const authGeneralRoutes = {
     operationId: 'getTokenData',
     method: 'get',
     path: '/token/{type}/{id}',
-    xGuard: isPublicAccess,
+    xGuard: publicGuard,
     xRateLimiter: tokenLimiter('token'),
     middleware: isNoBot,
     tags: ['auth'],
@@ -110,12 +137,12 @@ const authGeneralRoutes = {
     description:
       'Get basic token data from single-use token session, It returns basic data if the session is still valid.',
     request: {
-      params: z.object({ type: z.enum(appConfig.tokenTypes), id: idSchema }),
+      params: z.object({ type: z.enum(appConfig.tokenTypes), id: validIdSchema }),
     },
     responses: {
       200: {
         description: 'Token is valid',
-        content: { 'application/json': { schema: tokenWithDataSchema } },
+        content: { 'application/json': { schema: tokenWithDataSchema, example: mockTokenDataResponse() } },
       },
       ...errorResponseRefs,
     },
@@ -127,7 +154,7 @@ const authGeneralRoutes = {
     operationId: 'resendInvitationWithToken',
     method: 'post',
     path: '/resend-invitation',
-    xGuard: isPublicAccess,
+    xGuard: publicGuard,
     xRateLimiter: spamLimiter,
     tags: ['auth'],
     summary: 'Resend invitation',
@@ -149,7 +176,7 @@ const authGeneralRoutes = {
     operationId: 'signOut',
     method: 'post',
     path: '/sign-out',
-    xGuard: isPublicAccess,
+    xGuard: publicGuard,
     tags: ['auth'],
     summary: 'Sign out',
     description: 'Signs out the *current user* and clears the active session.',

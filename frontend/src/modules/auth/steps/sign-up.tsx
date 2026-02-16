@@ -1,11 +1,11 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { appConfig } from 'config';
 import { ArrowRightIcon, ChevronDownIcon } from 'lucide-react';
 import { lazy, Suspense } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import type { z } from 'zod';
 import {
   type SignUpData,
@@ -22,6 +22,7 @@ import { TokenData } from '~/modules/auth/types';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
+import type { MutationData } from '~/query/types';
 import { useAuthStore } from '~/store/auth';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 
@@ -36,11 +37,11 @@ type FormValues = z.infer<typeof formSchema>;
 /**
  * Handles user sign-up, including standard registration and invitation token flow.
  */
-export const SignUpStep = ({ tokenData }: { tokenData?: TokenData }) => {
+export function SignUpStep({ tokenData }: { tokenData?: TokenData }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const { email, resetSteps } = useAuthStore();
+  const { email, resetSteps, restrictedMode } = useAuthStore();
 
   const { tokenId } = useSearch({ from: '/publicLayout/authLayout/auth/authenticate' });
 
@@ -56,9 +57,9 @@ export const SignUpStep = ({ tokenData }: { tokenData?: TokenData }) => {
   const { mutate: _signUpWithToken, isPending: isPendingWithToken } = useMutation<
     SignUpWithTokenResponse,
     ApiError,
-    NonNullable<SignUpWithTokenData['body']> & SignUpWithTokenData['path']
+    MutationData<SignUpWithTokenData>
   >({
-    mutationFn: ({ tokenId, ...body }) => signUpWithToken({ body, path: { tokenId } }),
+    mutationFn: ({ path, body }) => signUpWithToken({ path, body }),
     onSuccess: ({ membershipInvite }) => {
       const to = appConfig.defaultRedirectPath;
       const search = membershipInvite ? { skipWelcome: true } : {};
@@ -74,42 +75,58 @@ export const SignUpStep = ({ tokenData }: { tokenData?: TokenData }) => {
 
   // Handle submit action
   const onSubmit = (formValues: FormValues) => {
-    if (tokenId) return _signUpWithToken({ ...formValues, tokenId });
+    if (tokenId) return _signUpWithToken({ path: { tokenId }, body: formValues });
     _signUp({ ...formValues });
+  };
+
+  // Get title based on context
+  const getTitle = () => {
+    if (restrictedMode) return t('common:sign_up');
+    if (tokenData?.inactiveMembershipId) return t('common:invite_accept_proceed');
+    if (tokenData) return t('common:invite_create_account');
+    return `${t('common:create_resource', { resource: t('common:account').toLowerCase() })}?`;
   };
 
   return (
     <Form {...form}>
-      <h1 className="text-2xl text-center">
-        {tokenData?.inactiveMembershipId
-          ? t('common:invite_accept_proceed')
-          : tokenData
-            ? t('common:invite_create_account')
-            : `${t('common:create_resource', { resource: t('common:account').toLowerCase() })}?`}{' '}
-        <br />
-        <Button
-          variant="ghost"
-          onClick={resetSteps}
-          className="mx-auto flex max-w-full truncate font-light mt-2 sm:text-xl bg-foreground/10"
-        >
-          <span className="truncate">{email}</span>
-          <ChevronDownIcon size={16} className="ml-1" />
-        </Button>
-      </h1>
+      {restrictedMode ? (
+        <h1 className="text-2xl text-center mt-4">{getTitle()}</h1>
+      ) : (
+        <h1 className="text-2xl text-center">
+          {getTitle()} <br />
+          <Button
+            variant="ghost"
+            onClick={resetSteps}
+            className="mx-auto flex max-w-full truncate font-light mt-2 sm:text-xl bg-foreground/10"
+          >
+            <span className="truncate">{email}</span>
+            <ChevronDownIcon size={16} className="ml-1" />
+          </Button>
+        </h1>
+      )}
 
-      <LegalNotice email={email} mode="signup" />
+      <LegalNotice email={email || form.getValues('email')} mode="signup" />
 
       {emailEnabled && (
-        <form onSubmit={form.handleSubmit(onSubmit, defaultOnInvalid)} className="space-y-4">
+        <form onSubmit={form.handleSubmit(onSubmit, defaultOnInvalid)} className="flex flex-col gap-4 mt-0!">
           <FormField
             control={form.control}
             name="email"
             render={({ field }) => (
-              <FormItem className="hidden">
+              <FormItem className={restrictedMode ? 'gap-0 -mb-2' : 'hidden'}>
                 <FormControl>
-                  <Input {...field} type="email" disabled={true} readOnly={true} placeholder={t('common:email')} />
+                  <Input
+                    {...field}
+                    type="email"
+                    className="h-12"
+                    disabled={!restrictedMode}
+                    readOnly={!restrictedMode}
+                    autoFocus={restrictedMode && !isMobile}
+                    autoComplete={restrictedMode ? 'email' : 'off'}
+                    placeholder={t('common:email')}
+                  />
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="mt-2" />
               </FormItem>
             )}
           />
@@ -125,7 +142,8 @@ export const SignUpStep = ({ tokenData }: { tokenData?: TokenData }) => {
                       <div className="relative">
                         <Input
                           type="password"
-                          autoFocus={!isMobile}
+                          className="h-12"
+                          autoFocus={!restrictedMode && !isMobile}
                           placeholder={t('common:new_password')}
                           autoComplete="new-password"
                           {...field}
@@ -149,4 +167,4 @@ export const SignUpStep = ({ tokenData }: { tokenData?: TokenData }) => {
       )}
     </Form>
   );
-};
+}

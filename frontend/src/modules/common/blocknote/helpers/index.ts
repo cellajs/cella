@@ -21,6 +21,33 @@ export const blocksToHTML = (srtBlocks: string) => {
   return editor.blocksToHTMLLossy(blocks);
 };
 
+/**
+ * Copies BlockNote content to clipboard with both HTML and Markdown formats.
+ * HTML is used by rich text apps, Markdown ensures code blocks work in Copilot/plain text apps.
+ */
+export const copyBlocksToClipboard = async (strBlocks: string | null): Promise<boolean> => {
+  if (!strBlocks) return false;
+
+  try {
+    const blocks = JSON.parse(strBlocks) as CustomBlock[];
+    const editor = BlockNoteEditor.create({ schema: customSchema, _headless: true });
+
+    const markdown = editor.blocksToMarkdownLossy(blocks);
+    const html = editor.blocksToHTMLLossy(blocks);
+
+    await navigator.clipboard.write([
+      new ClipboardItem({
+        'text/html': new Blob([html], { type: 'text/html' }),
+        'text/plain': new Blob([markdown], { type: 'text/plain' }),
+      }),
+    ]);
+
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 export const getRandomColor = () => {
   const letters = '0123456789ABCDEF';
   let color = '#';

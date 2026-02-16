@@ -21,11 +21,15 @@ export const alertVariants = cva(
   },
 );
 
-function Alert({ className, variant, ...props }: React.ComponentProps<'div'> & VariantProps<typeof alertVariants>) {
+export function Alert({
+  className,
+  variant,
+  ...props
+}: React.ComponentProps<'div'> & VariantProps<typeof alertVariants>) {
   return <div data-slot="alert" role="alert" className={cn(alertVariants({ variant }), className)} {...props} />;
 }
 
-function AlertTitle({ className, ...props }: React.ComponentProps<'div'>) {
+export function AlertTitle({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="alert-title"
@@ -35,10 +39,8 @@ function AlertTitle({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
-function AlertDescription({ className, ...props }: React.ComponentProps<'div'>) {
+export function AlertDescription({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div data-slot="alert-description" className={cn('justify-items-start gap-1 text-sm', className)} {...props} />
   );
 }
-
-export { Alert, AlertTitle, AlertDescription };

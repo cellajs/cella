@@ -1,12 +1,12 @@
-import type { EntityType } from 'config';
-import type { ResourceType } from '#/activities-config';
+import type { EntityType, ResourceType } from 'shared';
 import type { TableRegistryEntry } from '../types';
+import { extractContextEntityIds, type ContextEntityIds } from './extract-context-entity-ids';
 import { getRowValue } from './get-row-value';
 
-export interface ActivityContext {
+export interface ActivityContext extends ContextEntityIds {
   entityId: string | null;
   userId: string | null;
-  organizationId: string | null;
+  tenantId: string | null;
   entityType: EntityType | null;
   resourceType: ResourceType | null;
 }
@@ -14,6 +14,7 @@ export interface ActivityContext {
 /**
  * Extract common activity context from a row and table registry entry.
  * Uses the discriminated entry to determine entity vs resource type.
+ * Dynamically extracts all relatable context entity IDs.
  */
 export function extractActivityContext(
   entry: TableRegistryEntry,
@@ -33,13 +34,17 @@ export function extractActivityContext(
     getRowValue(row, 'userId') ??
     null;
 
-  // Organization ID
-  const organizationId = getRowValue(row, 'organizationId') ?? null;
+  // Dynamically extract all relatable context entity IDs
+  const contextEntityIds = extractContextEntityIds(row);
+
+  // Extract tenant ID (nullable for cross-tenant entities like users)
+  const tenantId = getRowValue(row, 'tenantId') ?? null;
 
   return {
     entityId,
     userId,
-    organizationId,
+    tenantId,
+    ...contextEntityIds,
     entityType: entityType as EntityType | null,
     resourceType: resourceType as ResourceType | null,
   };

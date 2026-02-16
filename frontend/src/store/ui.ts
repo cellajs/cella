@@ -1,4 +1,4 @@
-import { appConfig, type Theme } from 'config';
+import { appConfig, type Theme } from 'shared';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
@@ -22,6 +22,10 @@ interface UIStoreState {
   focusView: boolean; // Focused view mode state
   setFocusView: (status: boolean) => void; // Toggles focus view state
 
+  uiLocks: string[]; // Active UI lock sources
+  lockUI: (source: string) => void; // Add a UI lock
+  unlockUI: (source: string) => void; // Remove a UI lock
+
   clearUIStore: () => void; // Resets store to initial state
 }
 
@@ -29,12 +33,13 @@ interface UIStoreState {
 const browserMode = window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 
 // Default state values
-const initStore: Pick<UIStoreState, 'mode' | 'theme' | 'offlineAccess' | 'impersonating' | 'focusView'> = {
+const initStore: Pick<UIStoreState, 'mode' | 'theme' | 'offlineAccess' | 'impersonating' | 'focusView' | 'uiLocks'> = {
   mode: browserMode,
   theme: 'none',
   offlineAccess: false,
   impersonating: false,
   focusView: false,
+  uiLocks: [],
 };
 
 /**
@@ -73,6 +78,21 @@ export const useUIStore = create<UIStoreState>()(
               document.body.classList.add('focus-view-table');
             } else {
               document.body.classList.remove('focus-view-table');
+            }
+          });
+        },
+        lockUI: (source) => {
+          set((state) => {
+            if (!state.uiLocks.includes(source)) {
+              state.uiLocks.push(source);
+            }
+          });
+        },
+        unlockUI: (source) => {
+          set((state) => {
+            const index = state.uiLocks.indexOf(source);
+            if (index !== -1) {
+              state.uiLocks.splice(index, 1);
             }
           });
         },

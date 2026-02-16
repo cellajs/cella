@@ -1,59 +1,57 @@
 # @cellajs/create-cella
 
-Scaffold a new Cella project from the template.
+CLI tool to scaffold a new Cella project from the template.
+
+## Overview
+
+This CLI creates a new Cella project by downloading the latest template, setting up your development environment, and configuring git with upstream tracking for future syncs.
 
 ## Usage
 
 ```bash
-# npm
-npm create cella@latest my-app
-
-# pnpm
-pnpm create cella my-app
-
-# yarn
-yarn create cella my-app
+pnpm create @cellajs/cella my-app
 ```
 
-## Options
-
-| Flag | Description |
-|------|-------------|
-| `--skip-install` | Skip `pnpm install` |
-| `--skip-git` | Skip git initialization |
-| `--skip-generate` | Skip database migration generation |
-| `--skip-clean` | Keep template files (README, etc.) |
-| `-b, --branch <name>` | Create additional branch (e.g., `development`) |
-
-## Interactive Mode
-
-Running without arguments prompts for:
+Running without arguments starts interactive mode, prompting for:
 
 1. **Project name** – Directory name and package name
 2. **New branch** – Optionally create a dev branch alongside `main`
+3. **Directory conflict** – If target exists, choose to cancel or continue
+
+## CLI Options
+
+```bash
+pnpm create @cellajs/cella [directory] [options]
+```
 
 ## What It Does
 
 1. Downloads latest Cella template via [giget](https://github.com/unjs/giget)
 2. Cleans template files (removes cella-specific docs, configs)
-3. Updates `package.json` with your project name
-4. Initializes git repository
-5. Creates optional development branch
-6. Runs `pnpm install`
-7. Generates initial database migrations
+3. Installs dependencies with `pnpm install`
+4. Generates initial database migrations
+5. Initializes git repository with initial commit
+6. Creates optional working branch
+7. Adds Cella as upstream remote for future syncs
 
 ## Development
 
 ```bash
-pnpm ts           # Type check
-pnpm start        # Run locally (tsx)
-pnpm build        # Build for npm publish
-pnpm test-build   # Build and test
+cd cli/create-cella
+
+# Type check
+pnpm ts
+
+# Lint
+pnpm lint:fix
+
+# Run tests
+pnpm test
+
+# Run locally
+pnpm start
+
+# Build for npm publish
+pnpm build
 ```
 
-## Publishing
-
-```bash
-pnpm prepublishOnly  # Builds automatically
-npm publish
-```

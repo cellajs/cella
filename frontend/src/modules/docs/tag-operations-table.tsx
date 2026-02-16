@@ -2,7 +2,7 @@ import { Link, useNavigate } from '@tanstack/react-router';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { DataTable } from '~/modules/common/data-table';
-import HeaderCell from '~/modules/common/data-table/header-cell';
+import { HeaderCell } from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import type { GenOperationSummary } from '~/modules/docs/types';
 import { Badge } from '~/modules/ui/badge';
@@ -16,10 +16,10 @@ interface TagOperationsTableProps {
 /**
  * Columns for TagOperationsTable
  */
-const useColumns = (tagName: string): ColumnOrColumnGroup<GenOperationSummary>[] => {
+function useColumns(tagName: string): ColumnOrColumnGroup<GenOperationSummary>[] {
   const isMobile = useBreakpoints('max', 'sm', false);
   const navigate = useNavigate();
-  const { scrollToSection } = useScrollSpy({ smoothScroll: true });
+  const { scrollToSection } = useScrollSpy();
 
   // Handle operation click necessary to expand tag if not already expanded
   const handleOperationClick = (hash: string) => {
@@ -88,7 +88,7 @@ const useColumns = (tagName: string): ColumnOrColumnGroup<GenOperationSummary>[]
       renderCell: ({ row }) => <code className="text-xs truncate text-muted-foreground font-mono">{row.id}</code>,
     },
   ];
-};
+}
 
 /**
  * Simple read-only operations table for displaying operations within a tag section
@@ -110,6 +110,7 @@ export const TagOperationsTable = ({ operations, tagName }: TagOperationsTablePr
       rowHeight={36}
       hideHeader
       enableVirtualization={false}
+      readOnly
     />
   );
 };

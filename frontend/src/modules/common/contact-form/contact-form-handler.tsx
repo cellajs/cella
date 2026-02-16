@@ -1,8 +1,8 @@
 import i18n from 'i18next';
 import type { RefObject } from 'react';
-import ContactForm from '~/modules/common/contact-form/contact-form';
+import { ContactForm } from '~/modules/common/contact-form/contact-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import UnsavedBadge from '~/modules/common/unsaved-badge';
+import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 
 /**
  * Launch contact form dialog

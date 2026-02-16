@@ -43,7 +43,7 @@ describe('parseOpenApiSpec', () => {
     };
 
     // Use hash for input to detect spec changes without huge diffs
-    // - Input hash changed + output changed = spec update (run: pnpm test -u)
+    // - Input hash changed + output changed = spec update (run: pnpm test:update)
     // - Input hash same + output changed = parser bug!
     expect({ inputHash: hashSpec(spec), output: snapshotResult }).toMatchSnapshot();
   });

@@ -30,7 +30,7 @@ const iconVariants = cva('', {
   },
 });
 
-const StepIcon = React.forwardRef<HTMLDivElement, StepIconProps>((props, ref) => {
+function StepIconBase(props: StepIconProps, ref: React.ForwardedRef<HTMLDivElement>) {
   const { size } = useStepper();
 
   const {
@@ -100,6 +100,6 @@ const StepIcon = React.forwardRef<HTMLDivElement, StepIconProps>((props, ref) =>
   })();
 
   return iconContent;
-});
+}
 
-export { StepIcon };
+export const StepIcon = React.forwardRef<HTMLDivElement, StepIconProps>(StepIconBase);

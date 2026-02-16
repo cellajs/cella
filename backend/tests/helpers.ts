@@ -1,15 +1,18 @@
 import { z } from '@hono/zod-openapi';
 import { eq } from 'drizzle-orm';
-import { db } from '#/db/db';
+import { unsafeInternalDb as db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
+import { type OrganizationModel, organizationsTable } from '#/db/schema/organizations';
 import { passwordsTable } from '#/db/schema/passwords';
 import { systemRolesTable } from '#/db/schema/system-roles';
+import { tenantsTable } from '#/db/schema/tenants';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { hashPassword } from '#/modules/auth/passwords/helpers/argon2id';
-import { apiErrorSchema } from '#/utils/schema/api-error';
-import { mockPassword, mockUnsubscribeToken, mockUser } from '../mocks';
+import { apiErrorSchema } from '#/schemas';
+import { mockOrganization } from '../mocks/mock-organization';
+import { mockPassword, mockUnsubscribeToken, mockUser } from '../mocks/mock-user';
 import { pastIsoDate } from '../mocks/utils';
 
 /**
@@ -98,6 +101,7 @@ export async function createOrganizationAdminUser(
   organizationId: string,
   role: 'admin' | 'member' = 'admin',
   verified: boolean = true,
+  tenantId: string = 'test01', // Default test tenant
 ) {
   // Create regular user first
   const user = await createPasswordUser(email, password, verified);
@@ -107,12 +111,12 @@ export async function createOrganizationAdminUser(
     id: `membership-${user.id}`,
     userId: user.id,
     organizationId,
+    tenantId,
     contextType: 'organization' as const,
     role,
-    order: 1,
+    displayOrder: 1,
     createdAt: pastIsoDate(),
     createdBy: user.id,
-    uniqueKey: `${user.id}-${organizationId}`,
   };
 
   await db.insert(membershipsTable).values(membership);
@@ -125,4 +129,24 @@ export async function createOrganizationAdminUser(
  */
 export async function parseResponse<T>(response: Response): Promise<T> {
   return response.json() as Promise<T>;
+}
+
+/**
+ * Create an organization with its tenant (required for FK constraint).
+ * Returns the created organization which includes tenantId.
+ */
+export async function createTestOrganization(
+  overrides?: Partial<ReturnType<typeof mockOrganization>>,
+): Promise<OrganizationModel> {
+  // Create tenant first
+  const [tenant] = await db.insert(tenantsTable).values({ name: 'Test Tenant' }).returning();
+
+  // Create organization with tenant reference
+  const orgData = mockOrganization();
+  const [organization] = await db
+    .insert(organizationsTable)
+    .values({ ...orgData, ...overrides, tenantId: tenant.id })
+    .returning();
+
+  return organization;
 }

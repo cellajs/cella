@@ -13,7 +13,7 @@ export const defaultOnInvalid = <TFieldValues extends FieldValues>(errors: Field
   if (messages.length === 0) return;
 
   // Display a toaster with a list of validation errors
-  toaster(t('error:form.invalid_form'), 'error', {
+  toaster(t('error:form.invalid_form'), 'warning', {
     description: createElement(
       'div',
       null,

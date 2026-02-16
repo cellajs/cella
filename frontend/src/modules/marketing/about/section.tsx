@@ -16,7 +16,7 @@ export const AboutSection = ({ title, text, sectionId, children, alternate = fal
 
   return (
     <section
-      id={sectionId}
+      id={`spy-${sectionId}`}
       className={`container overflow-hidden max-w-none py-8 px-4 md:py-12 lg:py-24 ${backgroundClass}`}
     >
       <div className="mx-auto mb-12 flex max-w-3xl flex-col justify-center gap-4">

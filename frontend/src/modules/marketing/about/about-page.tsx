@@ -1,19 +1,18 @@
-import { Link, useNavigate } from '@tanstack/react-router';
 import { ArrowDownIcon, CheckIcon, CopyIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
-import CallToAction from '~/modules/marketing/about/call-to-action';
-import AboutCards from '~/modules/marketing/about/cards';
-// import Counters from '~/modules/marketing/about/counters';
-// import FAQ from '~/modules/marketing/about/faq';
-import Features from '~/modules/marketing/about/features';
+import { CallToAction } from '~/modules/marketing/about/call-to-action';
+import { AboutCards } from '~/modules/marketing/about/cards';
+// import { Counters } from '~/modules/marketing/about/counters';
+// import { FAQ } from '~/modules/marketing/about/faq';
+import { Features } from '~/modules/marketing/about/features';
 import { Hero } from '~/modules/marketing/about/hero';
-// import Pricing from '~/modules/marketing/about/pricing';
-import Showcase from '~/modules/marketing/about/showcase';
+// import { Pricing } from '~/modules/marketing/about/pricing';
+import { Showcase } from '~/modules/marketing/about/showcase';
 import '~/modules/marketing/about/glow-button.css';
 import { AboutSection } from '~/modules/marketing/about/section';
-import Why from '~/modules/marketing/about/why';
+import { Why } from '~/modules/marketing/about/why';
 import { MarketingFooter } from '~/modules/marketing/footer';
 import { MarketingNav } from '~/modules/marketing/nav';
 import { Button, buttonVariants } from '~/modules/ui/button';
@@ -24,13 +23,12 @@ export type AboutSectionId = (typeof aboutSectionIds)[number];
 
 const aboutSectionIds = ['hero', 'why', 'features', 'integrations', 'showcase', 'call-to-action'];
 
-const AboutPage = () => {
+export function AboutPage() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
 
   const { copyToClipboard, copied } = useCopyToClipboard();
 
-  useScrollSpy({ sectionIds: aboutSectionIds });
+  const { scrollToSection } = useScrollSpy(aboutSectionIds);
 
   return (
     <>
@@ -60,26 +58,15 @@ const AboutPage = () => {
               {copied ? <CheckIcon size={16} /> : <CopyIcon size={16} />}
             </Button>
           </div>
-          <Link
-            to="/about"
-            replace
-            hash="why"
-            onClick={(e) => {
-              if (window.location.hash !== '#why') return;
-
-              e.preventDefault();
-              navigate({ to: '.', hash: 'top', replace: true });
-
-              setTimeout(() => {
-                navigate({ hash: 'why', replace: true });
-              }, 20);
-            }}
+          <button
+            type="button"
+            onClick={() => scrollToSection('why')}
             className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }), 'group')}
             aria-label="Read more"
           >
             <span className="font-normal opacity-70 group-hover:opacity-100">{t('about:why')}</span>
             <ArrowDownIcon size={16} className="ml-2 animate-bounce opacity-70 group-hover:opacity-100" />
-          </Link>
+          </button>
         </Hero>
 
         <div className="my-12">
@@ -133,6 +120,4 @@ const AboutPage = () => {
       <MarketingFooter />
     </>
   );
-};
-
-export default AboutPage;
+}

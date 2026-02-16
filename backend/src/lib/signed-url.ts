@@ -1,11 +1,11 @@
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl as s3SignedUrl } from '@aws-sdk/s3-request-presigner';
-import { appConfig } from 'config';
+import { appConfig } from 'shared';
 import { env } from '#/env';
 
 const s3Client = new S3Client({
-  region: appConfig.s3Region,
-  endpoint: `https://${appConfig.s3Host}`,
+  region: appConfig.s3.region,
+  endpoint: `https://${appConfig.s3.host}`,
   credentials: {
     accessKeyId: env.S3_ACCESS_KEY_ID,
     secretAccessKey: env.S3_ACCESS_KEY_SECRET,

@@ -1,0 +1,40 @@
+# Ignore everything by default
+*
+
+# Include necessary files for build context
+
+# Root config files
+!package.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
+
+# Backend
+!backend/package.json
+!backend/src/
+!backend/drizzle/
+!backend/tsup.config.ts
+!backend/tsconfig.json
+
+# Config package
+!config/
+
+# Tracing package
+!packages/tracing/
+
+# Locales
+!locales/
+
+# JSON data
+!json/
+
+# Ignore tests and dev files
+**/*.test.ts
+**/*.spec.ts
+**/tests/
+**/.env*
+**/node_modules/
+**/.git/
+**/dist/
+**/*.md
+**/vitest*.ts
+**/.DS_Store

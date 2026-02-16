@@ -7,14 +7,14 @@ import {
   MapControl,
   useAdvancedMarkerRef,
 } from '@vis.gl/react-google-maps';
-import { appConfig } from 'config';
 import { ArrowUpRightIcon, MilestoneIcon, MinusIcon, PlusIcon, XIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { useTranslation } from 'react-i18next';
-import useMounted from '~/hooks/use-mounted';
-import ErrorNotice from '~/modules/common/error-notice';
+import { appConfig } from 'shared';
+import { useMountedState } from '~/hooks/use-mounted-state';
+import { ErrorNotice, type ErrorNoticeError } from '~/modules/common/error-notice';
 import { Button } from '~/modules/ui/button';
 import { useUIStore } from '~/store/ui';
 import Logo from '/static/logo/logo-icon-only.svg';
@@ -41,7 +41,7 @@ const mapStyles: MapConfig[] = [
   },
 ];
 
-const MarkerWithInfoWindow = ({ position }: { position: { lat: number; lng: number } }) => {
+function MarkerWithInfoWindow({ position }: { position: { lat: number; lng: number } }) {
   const { t } = useTranslation();
   const [markerRef, marker] = useAdvancedMarkerRef();
   const [infowindowOpen, setInfowindowOpen] = useState(true);
@@ -78,7 +78,7 @@ const MarkerWithInfoWindow = ({ position }: { position: { lat: number; lng: numb
       )}
     </>
   );
-};
+}
 
 type CustomZoomControlProps = {
   controlPosition: ControlPosition;
@@ -86,7 +86,7 @@ type CustomZoomControlProps = {
   onZoomChange: (zoom: number) => void;
 };
 
-const CustomZoomControl = ({ controlPosition, zoom, onZoomChange }: CustomZoomControlProps) => {
+function CustomZoomControl({ controlPosition, zoom, onZoomChange }: CustomZoomControlProps) {
   return (
     <MapControl position={controlPosition}>
       <div className="flex flex-col m-2 p-1">
@@ -104,20 +104,20 @@ const CustomZoomControl = ({ controlPosition, zoom, onZoomChange }: CustomZoomCo
       </div>
     </MapControl>
   );
-};
+}
 
-const ContactFormMap = () => {
+function ContactFormMap() {
   const mode = useUIStore((state) => state.mode);
   const [zoom, setZoom] = useState(appConfig.company.mapZoom);
   const [mapConfig] = useState<MapConfig>(mode === 'dark' ? mapStyles[1] : mapStyles[0]);
-  const { hasStarted } = useMounted();
+  const { hasStarted } = useMountedState();
 
   if (!appConfig.company.coordinates || !appConfig.googleMapsKey) return null;
 
   return (
     <ErrorBoundary
       fallbackRender={({ error, resetErrorBoundary }) => (
-        <ErrorNotice level="app" error={error} resetErrorBoundary={resetErrorBoundary} />
+        <ErrorNotice boundary="app" error={error as ErrorNoticeError} resetErrorBoundary={resetErrorBoundary} />
       )}
     >
       <div className="w-full h-full">
@@ -157,5 +157,5 @@ const ContactFormMap = () => {
       </div>
     </ErrorBoundary>
   );
-};
+}
 export default ContactFormMap;

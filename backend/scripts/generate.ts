@@ -7,10 +7,10 @@
  *   pnpm generate
  */
 
-import { appConfig } from 'config';
 import { runGenerateScripts } from './migrations/helpers/run-generate-scripts';
+import { generateScripts } from './scripts-config';
 
-runGenerateScripts(appConfig.generateScripts).catch((err) => {
+runGenerateScripts(generateScripts).catch((err) => {
   console.error('Generation failed:', err.message);
   process.exit(1);
 });

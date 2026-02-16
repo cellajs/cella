@@ -1,11 +1,11 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { CheckedState } from '@radix-ui/react-checkbox';
 import { useMutation } from '@tanstack/react-query';
-import { appConfig } from 'config';
 import { InfoIcon, SendIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import type { z } from 'zod';
 import { type SendNewsletterData, SendNewsletterResponse, sendNewsletter } from '~/api.gen';
 import { zSendNewsletterData } from '~/api.gen/zod.gen';
@@ -15,13 +15,14 @@ import { AlertWrap } from '~/modules/common/alert-wrap';
 import { blocksToHTML } from '~/modules/common/blocknote/helpers';
 import { CallbackArgs } from '~/modules/common/data-table/types';
 import BlockNoteContentField from '~/modules/common/form-fields/blocknote-content';
-import InputFormField from '~/modules/common/form-fields/input';
-import SelectRoles from '~/modules/common/form-fields/select-roles';
+import { InputFormField } from '~/modules/common/form-fields/input';
+import { SelectRoles } from '~/modules/common/form-fields/select-roles';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster/service';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
+import type { MutationData } from '~/query/types';
 import { blocknoteFieldIsDirty } from '~/utils/blocknote-field-is-dirty';
 
 const formSchema = zSendNewsletterData.shape.body;
@@ -32,7 +33,7 @@ interface CreateNewsletterFormProps {
   callback?: (args: CallbackArgs) => void;
 }
 
-const CreateNewsletterForm = ({ organizationIds, callback }: CreateNewsletterFormProps) => {
+export function CreateNewsletterForm({ organizationIds, callback }: CreateNewsletterFormProps) {
   const { t } = useTranslation();
 
   const [testOnly, setTestOnly] = useState<CheckedState>(false);
@@ -53,10 +54,10 @@ const CreateNewsletterForm = ({ organizationIds, callback }: CreateNewsletterFor
   const { mutate: _sendNewsletter, isPending } = useMutation<
     SendNewsletterResponse,
     ApiError,
-    { body: SendNewsletterData['body'] } & SendNewsletterData['query']
+    MutationData<SendNewsletterData>
   >({
-    mutationFn: async ({ body, toSelf }) => {
-      return await sendNewsletter({ body, query: { toSelf } });
+    mutationFn: async ({ body, query }) => {
+      return await sendNewsletter({ body, query });
     },
     onSuccess: () => {
       if (testOnly) return toaster(t('common:success.test_email'), 'success');
@@ -74,7 +75,7 @@ const CreateNewsletterForm = ({ organizationIds, callback }: CreateNewsletterFor
       organizationIds,
       content: blocksToHTML(data.content),
     };
-    _sendNewsletter({ body, toSelf: !!testOnly });
+    _sendNewsletter({ body, query: { toSelf: !!testOnly } });
   };
 
   const cancel = () => form.reset();
@@ -116,7 +117,7 @@ const CreateNewsletterForm = ({ organizationIds, callback }: CreateNewsletterFor
             trailingBlock: false,
             className:
               'min-h-20 pl-10 pr-6 p-3 border-input ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring max-focus-visible:ring-transparent max-focus-visible:ring-offset-0 flex w-full rounded-md border text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-effect disabled:cursor-not-allowed disabled:opacity-50',
-            baseFilePanelProps: { isPublic: true, organizationId: 'adminPreview' },
+            baseFilePanelProps: { isPublic: true, tenantId: 'public', organizationId: 'adminPreview' },
             excludeFileBlockTypes: ['video', 'audio', 'file'],
           }}
         />
@@ -173,6 +174,4 @@ const CreateNewsletterForm = ({ organizationIds, callback }: CreateNewsletterFor
       </form>
     </Form>
   );
-};
-
-export default CreateNewsletterForm;
+}

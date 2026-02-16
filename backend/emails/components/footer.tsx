@@ -1,6 +1,6 @@
-import { appConfig } from 'config';
 import i18n from 'i18next';
 import { Link, Text } from 'jsx-email';
+import { appConfig } from 'shared';
 
 /**
  * Email footer component with company address and support email link.
@@ -16,7 +16,8 @@ export const Footer = () => (
       padding: '0rem 1.5rem',
     }}
   >
-    {appConfig.name}・{appConfig.company.streetAddress}・{appConfig.company.city}・{appConfig.company.country}, {appConfig.company.postcode}・
+    {appConfig.name}・{appConfig.company.streetAddress}・{appConfig.company.city}・{appConfig.company.country},{' '}
+    {appConfig.company.postcode}・
     <Link
       style={{
         color: '#0366d6',

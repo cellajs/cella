@@ -1,9 +1,10 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { RowsChangeData } from 'react-data-grid';
-import useSearchParams from '~/hooks/use-search-params';
+import { useSearchParams } from '~/hooks/use-search-params';
+import type { RowsChangeData } from '~/modules/common/data-grid';
 import { DataTable } from '~/modules/common/data-table';
 import { FocusViewContainer } from '~/modules/common/focus-view';
+import { StickyBox } from '~/modules/common/sticky-box';
 import { OperationsTableBar } from '~/modules/docs/operations/operations-table/operations-bar';
 import { useColumns } from '~/modules/docs/operations/operations-table/operations-columns';
 import { infoQueryOptions, operationsQueryOptions } from '~/modules/docs/query';
@@ -21,7 +22,7 @@ async function updateOperationField(operationId: string, field: 'summary' | 'des
   return response.json();
 }
 
-const OperationsTable = () => {
+function OperationsTable() {
   const { search, setSearch } = useSearchParams<{ q?: string }>({ from: '/publicLayout/docs/operations/table' });
 
   const q = search.q || '';
@@ -102,15 +103,17 @@ const OperationsTable = () => {
   return (
     <FocusViewContainer className="container min-h-screen">
       <div className="flex flex-col gap-2">
-        <OperationsTableBar
-          total={filteredOperations.length}
-          searchVars={{ q }}
-          setSearch={setSearch}
-          columns={columns}
-          setColumns={setColumns}
-          isCompact={isCompact}
-          setIsCompact={setIsCompact}
-        />
+        <StickyBox className="z-10 bg-background py-3" offsetTop={0} hideOnScrollDown>
+          <OperationsTableBar
+            total={filteredOperations.length}
+            searchVars={{ q }}
+            setSearch={setSearch}
+            columns={columns}
+            setColumns={setColumns}
+            isCompact={isCompact}
+            setIsCompact={setIsCompact}
+          />
+        </StickyBox>
         <DataTable<GenOperationSummary>
           columns={columns.filter((column) => column.visible)}
           rows={filteredOperations}
@@ -127,6 +130,6 @@ const OperationsTable = () => {
       </div>
     </FocusViewContainer>
   );
-};
+}
 
 export default OperationsTable;

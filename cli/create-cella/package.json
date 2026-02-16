@@ -1,6 +1,6 @@
 {
   "name": "@cellajs/create-cella",
-  "version": "0.1.7",
+  "version": "0.2.0",
   "private": false,
   "license": "MIT",
   "description": "Cella is a TypeScript template to create web apps with sync and offline capabilities.",
@@ -19,6 +19,9 @@
   },
   "type": "module",
   "main": "./src/index.ts",
+  "imports": {
+    "#/*": "./src/*"
+  },
   "bin": {
     "create-cella": "index.js"
   },
@@ -28,20 +31,27 @@
     "build": "tsup",
     "test-build": "pnpm run build && node index.js",
     "prepublishOnly": "pnpm run build",
-    "ts": "tsc --noEmit"
+    "check": "pnpm ts && pnpm biome check --write .",
+    "check:old": "pnpm ts:old && pnpm biome check --write .",
+    "ts": "tsgo --pretty",
+    "ts:old": "tsc --pretty",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
-    "@inquirer/prompts": "^6.0.1",
-    "axios": "^1.13.2",
-    "commander": "^14.0.2",
-    "cross-spawn": "^7.0.6",
-    "giget": "^1.2.5",
+    "@inquirer/prompts": "^8.2.1",
+    "axios": "^1.13.5",
+    "commander": "^14.0.3",
+    "giget": "^3.1.2",
+    "nano-spawn": "^2.0.0",
+    "ora": "^9.3.0",
     "picocolors": "^1.1.1",
-    "validate-npm-package-name": "^5.0.1",
-    "yocto-spinner": "^0.1.2"
+    "validate-npm-package-name": "^7.0.2"
   },
   "devDependencies": {
-    "@types/cross-spawn": "^6.0.6",
+    "@types/node": "^24.10.13",
     "@types/validate-npm-package-name": "^4.0.2",
     "tsup": "^8.5.1",
     "tsx": "^4.21.0"

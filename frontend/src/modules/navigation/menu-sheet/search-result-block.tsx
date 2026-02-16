@@ -1,13 +1,14 @@
-import { appConfig, ContextEntityType } from 'config';
 import { UserIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { ContextEntityBase, UserBase } from '~/api.gen';
+import { appConfig, ContextEntityType } from 'shared';
+import type { UserBase } from '~/api.gen';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
-import StickyBox from '~/modules/common/sticky-box';
+import { StickyBox } from '~/modules/common/sticky-box';
+import type { ContextEntity } from '~/modules/entities/types';
 import { Badge } from '~/modules/ui/badge';
 import { CommandGroup, CommandItem, CommandSeparator } from '~/modules/ui/command';
 
-type SearchBlockResult = ContextEntityBase | UserBase;
+export type SearchBlockResult = ContextEntity | UserBase;
 
 type SearchBlockProps = {
   results: SearchBlockResult[];

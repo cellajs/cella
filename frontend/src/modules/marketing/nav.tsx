@@ -1,23 +1,23 @@
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
-import { Link, useNavigate } from '@tanstack/react-router';
-import { appConfig } from 'config';
+import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
-import HamburgerButton from '~/modules/common/hamburger';
-import Logo from '~/modules/common/logo';
+import { appConfig } from 'shared';
+import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
+import { HamburgerButton } from '~/modules/common/hamburger';
+import { Logo } from '~/modules/common/logo';
 import type { AboutSectionId } from '~/modules/marketing/about/about-page';
 import { GithubIcon } from '~/modules/marketing/icons/github';
 import { marketingNavConfig } from '~/modules/marketing/marketing-config';
-import UserLanguage from '~/modules/me/user-language';
-import UserTheme from '~/modules/me/user-theme';
+import { UserLanguage } from '~/modules/me/user-language';
+import { UserTheme } from '~/modules/me/user-theme';
 import { Button, buttonVariants } from '~/modules/ui/button';
 import { Sheet, SheetContent, SheetTitle } from '~/modules/ui/sheet';
 import { cn } from '~/utils/cn';
 
 export const MarketingNav = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
 
   const [activeSheet, setActiveSheet] = useState<boolean>(false);
 
@@ -26,12 +26,7 @@ export const MarketingNav = () => {
   };
 
   const handleNavClick = (target: AboutSectionId, isOpen = false) => {
-    if (window.location.hash === `#${target}`) navigate({ to: '.', hash: 'top', replace: true });
-
-    setTimeout(() => {
-      navigate({ hash: target, replace: true });
-    }, 20);
-
+    scrollToSectionById(target);
     setActiveSheet(isOpen);
   };
 
@@ -47,7 +42,6 @@ export const MarketingNav = () => {
         draggable="false"
         onClick={(e) => {
           setActiveSheet(false);
-          if (window.location.hash !== `#${hash}`) return;
           if (!hash) return;
           e.preventDefault();
           handleNavClick(hash);

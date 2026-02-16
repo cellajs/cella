@@ -1,20 +1,20 @@
-import { appConfig } from 'config';
 import { and, eq } from 'drizzle-orm';
 import i18n from 'i18next';
-import { db } from '#/db/db';
+import { appConfig } from 'shared';
+import { unsafeInternalDb as db } from '#/db/db';
 import { type EmailModel, emailsTable } from '#/db/schema/emails';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
-import { AppError } from '#/lib/errors';
+import { AppError } from '#/lib/error';
 import { mailer } from '#/lib/mailer';
 import { deleteVerificationTokens } from '#/modules/auth/general/helpers/send-verification-email';
-import { userSelect } from '#/modules/users/helpers/select';
+import { userSelect } from '#/modules/user/helpers/select';
 import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';
 import { createDate, TimeSpan } from '#/utils/time-span';
-import { OAuthVerificationEmail, type OAuthVerificationEmailProps } from '../../../../../emails';
+import { OAuthVerificationEmail } from '../../../../../emails';
 
 interface Props {
   userId: string;
@@ -30,11 +30,11 @@ export const sendOAuthVerificationEmail = async ({ userId, oauthAccountId, redir
   const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, userId)).limit(1);
 
   // User not found
-  if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user' });
+  if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user' });
 
   // OAuthAccountId is provided and doesnt exist
   const [oauthAccount] = await db.select().from(oauthAccountsTable).where(eq(oauthAccountsTable.id, oauthAccountId));
-  if (!oauthAccount) throw new AppError({ status: 404, type: 'not_found', severity: 'warn' });
+  if (!oauthAccount) throw new AppError(404, 'not_found', 'warn');
 
   const [emailInUse]: (EmailModel | undefined)[] = await db
     .select()
@@ -43,7 +43,7 @@ export const sendOAuthVerificationEmail = async ({ userId, oauthAccountId, redir
 
   // email and oauthAccount verified
   if (emailInUse && oauthAccount.verified) {
-    throw new AppError({ status: 409, type: 'email_exists', severity: 'warn', entityType: 'user' });
+    throw new AppError(409, 'email_exists', 'warn', { entityType: 'user' });
   }
 
   // Delete previous token
@@ -57,7 +57,7 @@ export const sendOAuthVerificationEmail = async ({ userId, oauthAccountId, redir
   const [tokenRecord] = await db
     .insert(tokensTable)
     .values({
-      token: hashedToken,
+      secret: hashedToken,
       type: 'oauth-verification',
       userId: user.id,
       email,
@@ -96,10 +96,9 @@ export const sendOAuthVerificationEmail = async ({ userId, oauthAccountId, redir
   const subject = i18n.t(subjectText, { lng, appName: appConfig.name });
   const staticProps = { verificationLink: verificationURL.toString(), subject, lng, name: user.name };
   const recipients = [{ email }];
-  type Recipient = { email: string };
 
   const staticOAuthProps = { ...staticProps, providerEmail: oauthAccount.email, providerName: oauthAccount.provider };
-  mailer.prepareEmails<OAuthVerificationEmailProps, Recipient>(OAuthVerificationEmail, staticOAuthProps, recipients);
+  mailer.prepareEmails(OAuthVerificationEmail, staticOAuthProps, recipients);
 
   logEvent('info', 'Verification email sent', { userId: user.id });
 };

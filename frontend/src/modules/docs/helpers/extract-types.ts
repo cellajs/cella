@@ -28,7 +28,7 @@ export const zodContentQueryOptions = queryOptions({
 
 /**
  * Convert operation ID to PascalCase.
- * e.g., 'getMe' -> 'GetMe', 'createUser' -> 'CreateUser'
+ * e.g., 'getMe' -> 'GetMe'
  */
 const toPascalCase = (str: string): string => {
   return str.charAt(0).toUpperCase() + str.slice(1);

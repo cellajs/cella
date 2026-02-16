@@ -11,11 +11,12 @@ This document describes the high-level architecture of Cella.
 ### DX aspects
  * Type safe, without overdoing it. 
  * Only build what you are going to use yourself.
- * Stay humble and remain a template, not a framework. So prevent abstraction layers and leverage libraries to the fullest extent.
+ * Prevent abstraction layers and leverage libraries to the fullest extent.
  * A narrow stack: Cella uses Drizzle ORM and will not make it replaceable with another ORM.
- * Modularity. As Cella will grow, we need to make sure you can scaffold only the modules that you need.
- * Open standards. Our long-term vision is that each Cella - as in each cell - can speak fluently with other cells.
- * Focused on client-side rendering (CSR) and static site generation (SSG). These best support the hybrid idiom to support offline and sync capabilities to reduce 'server dependency'. 
+ * Focus on proven OpenAPI and React Query patterns.
+ * Modularity: As Cella will grow, we need to make sure you can scaffold only the modules that you need.
+ * Open standards: Our long-term vision is that each Cella - as in each cell - can speak fluently with other cells.
+ * Focused on client-side rendering (CSR) and in future static site generation (SSG). These best support the hybrid idiom to support offline and sync capabilities to reduce 'server dependency'. 
 
 ### Backend
 - [nodejs](https://nodejs.org)
@@ -31,7 +32,6 @@ This document describes the high-level architecture of Cella.
 - [tanstack router](https://github.com/tanstack/router)
 - [tanstack query](https://github.com/tanstack/query)
 - [zustand](https://github.com/pmndrs/zustand)
-- [electric sync](https://electric-sql.com/)
 
 ### Frontend / UI
 - [react data grid](https://github.com/adazzle/react-data-grid)
@@ -63,7 +63,9 @@ Cella is a flat-root monorepo. In general we like to prevent deeply nested file 
 │   │   ├── lib               3rd part libs & important helpers
 │   │   ├── middlewares       Hono middlewares
 │   │   ├── modules           Modular distribution of routes, schemas etc
-│   │   ├── permissions       Setup of your authorization layer
+│   │   ├── permissions       Permission/authorization layer
+│   │   ├── schemas           Shared Zod schemas
+│   │   ├── sync              Sync engine utilities
 │   │   └── utils             Reusable functions
 ├── config                    Shared config: default, development, production
 ├── frontend                  Frontend SPA
@@ -75,12 +77,12 @@ Cella is a flat-root monorepo. In general we like to prevent deeply nested file 
 │   │   ├── json              Static JSON
 │   │   ├── lib               Library code and core helper functions
 │   │   ├── modules           Modular distribution of components
-│   │   ├── query             Tanstack query client
+│   │   ├── query             query-client including offline/realtime logic
 │   │   ├── routes            Code-based routes
 │   │   ├── store             Zustand data stores
 │   │   ├── styling           Tailwind styling
 │   │   ├── utils             Reusable functions
-├── info                      Information about cella
+├── info                      Documentation, changelog, migration plans
 └── locales                   Translations
 ```
 
@@ -93,7 +95,7 @@ Some of the db tables (check out [/backend/src/db/schema]() ) in cella are an `e
 The example cella setup has one product entity - `attachments` - and one context: `organizations`. But in a typical app you would have a context entity such as a 'bookclub' and more product entities such as 'books' and 'reviews'.
 
 ## API Design
-An OpenAPI is built with [zod-openapi](https://github.com/honojs/middleware/tree/main/packages/zod-openapi). Please read the readme in this middleware before you get started. An API reference is created using [scalar](https://github.com/scalar/scalar).
+The API runs through [zod-openapi](https://github.com/honojs/middleware/tree/main/packages/zod-openapi) to build an OpenAPI 3.1 specification. Please read the readme in this middleware before you get started.
 
 ## Modularity
 Both frontend and backend have business logic split in modules. Most of them are in both backend and frontend, such as `authentication`, `users` and `organizations`. The benefit of modularity is twofold: better code (readability, portability etc) and to pull upstream cella changes with less friction.
@@ -101,7 +103,7 @@ Both frontend and backend have business logic split in modules. Most of them are
 Zooming in on some of the frontend modules:
 * `common`: a large set of reusable react components and services 
 * `ui`: Full of shadcn UI components. They have some small tweaks, but not many.
-* `pages`: product entity module that has support for **offline, optimistic updates and realtime sync**.
+* `page`: product entity module that has support for **offline, optimistic updates and realtime sync**.
 
 ## API client
 An api client is generated in the frontend using [openapi-ts](https://github.com/hey-api/openapi-ts). It includes zod schemas, types and an sdk.
@@ -114,47 +116,3 @@ Context entities are just old-school CRUD openapi endpoints. They do not have a 
 
 Product entities are the types of data that users interact with on a daily basis. They are upgraded using a sync + offline layer with create, update and delete mutations queued (so full offline CRUD) while offline.
 
-Cella uses a layered approach to handle product entity data:
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     React Components                        │
-│              useLiveQuery / useSuspenseQuery                │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│              TanStack DB (Reactive/Relational Layer)        │
-└─────────────────────────────────────────────────────────────┘
-                              │
-          ┌───────────────────┴───────────────────┐
-          ▼                                       ▼
-┌─────────────────────────┐         ┌─────────────────────────┐
-│   Electric SQL Sync     │         │    REST API Mutations   │
-└─────────────────────────┘         └─────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│           TanStack Query (Persisted Store Layer)            │
-│  • Query cache management and deduplication                 │
-│  • Background refetching and stale-while-revalidate         │
-│  • Persisted to IndexedDB via Dexie                         │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### Layer Responsibilities
-
-**TanStack DB + Electric Collections**
-- Reactive live queries with sub-millisecond updates
-- Optimistic mutations with automatic rollback
-- Real-time sync from PostgreSQL via Electric shapes
-
-**TanStack Query + Dexie Persistence**  
-- Persisted cache layer (survives refresh, works offline)
-- Background refetching and cache invalidation
-
-## Security
-Link to valuable resources:
-* https://cheatsheetseries.owasp.org/
-* https://mvsp.dev/mvsp.en/
- 

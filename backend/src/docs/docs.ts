@@ -1,16 +1,19 @@
 import fs from 'node:fs/promises';
 import type { OpenAPIHono } from '@hono/zod-openapi';
 import { Scalar } from '@scalar/hono-api-reference';
-import { appConfig } from 'config';
+import { appConfig } from 'shared';
+import { activityErrorSchema } from '#/db/utils/activity-error-schema';
 import { buildExtensionRegistry } from '#/docs/openapi-extensions';
 import { openapiTags, registerAppSchema } from '#/docs/tags-config';
 import { getExtensionValueDescriptions } from '#/docs/x-middleware';
 import type { Env } from '#/lib/context';
-import { contextEntityBaseSchema } from '#/modules/entities/entities-schema-base';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
-import { userBaseSchema } from '#/modules/users/users-schema-base';
+import { errorResponses, registerAllErrorResponses } from '#/schemas';
+import { contextEntityBaseSchema } from '#/schemas/entity-base';
+import { streamNotificationSchema } from '#/schemas/stream-schemas';
+import { stxBaseSchema } from '#/schemas/sync-transaction-schemas';
+import { userBaseSchema } from '#/schemas/user-schema-base';
 import { checkMark } from '#/utils/console';
-import { errorResponses, registerAllErrorResponses } from '#/utils/schema/error-responses';
 
 /**
  * Generate OpenAPI documentation using hono/zod-openapi and scalar/hono-api-reference
@@ -52,6 +55,13 @@ const docs = async (app: OpenAPIHono<Env>, skipScalar = false) => {
   registry.register('UserBase', userBaseSchema);
   registry.register('ContextEntityBase', contextEntityBaseSchema);
   registry.register('MembershipBase', membershipBaseSchema);
+  registry.register('StxBase', stxBaseSchema);
+
+  // Register stream notification schema (SSE payloads, not in REST responses but useful for client typing)
+  registry.register('StreamNotification', streamNotificationSchema);
+
+  // Register CDC activity error schema (dead letter format, not in REST responses but useful for inspection)
+  registry.register('ActivityError', activityErrorSchema);
 
   // Register error responses
   registerAllErrorResponses(registry, errorResponses);
@@ -64,6 +74,7 @@ const docs = async (app: OpenAPIHono<Env>, skipScalar = false) => {
 
   // Get JSON doc and save to file
   const openApiDoc = app.getOpenAPI31Document(openApiConfig);
+
   await fs.writeFile('./openapi.cache.json', JSON.stringify(openApiDoc, null, 2));
   console.info(`${checkMark} OpenAPI document written to ./openapi.cache.json`);
 

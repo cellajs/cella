@@ -11,7 +11,7 @@ function maximize_canvas(c: HTMLCanvasElement) {
   c.height = height;
 }
 
-const BgAnimation = () => {
+function BgAnimation() {
   const { theme } = useUIStore();
 
   useEffect(() => {
@@ -28,6 +28,6 @@ const BgAnimation = () => {
   }, [document]);
 
   return <canvas id="animation-canvas" className="absolute z-[-1] w-full h-full opacity-30" />;
-};
+}
 
 export default BgAnimation;

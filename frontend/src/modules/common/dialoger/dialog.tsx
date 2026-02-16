@@ -6,7 +6,7 @@ import { cn } from '~/utils/cn';
 
 type CustomInteractOutsideEvent = CustomEvent<{ originalEvent: PointerEvent | FocusEvent }>;
 
-export default function DialogerDialog({ dialog }: { dialog: InternalDialog }) {
+export function DialogerDialog({ dialog }: { dialog: InternalDialog }) {
   const {
     id,
     content,

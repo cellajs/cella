@@ -3,7 +3,7 @@ import { MinusIcon } from 'lucide-react';
 import * as React from 'react';
 import { cn } from '~/utils/cn';
 
-function InputOTP({
+export function InputOTP({
   className,
   containerClassName,
   ...props
@@ -20,11 +20,11 @@ function InputOTP({
   );
 }
 
-function InputOTPGroup({ className, ...props }: React.ComponentProps<'div'>) {
+export function InputOTPGroup({ className, ...props }: React.ComponentProps<'div'>) {
   return <div data-slot="input-otp-group" className={cn('flex items-center', className)} {...props} />;
 }
 
-function InputOTPSlot({
+export function InputOTPSlot({
   index,
   className,
   ...props
@@ -53,7 +53,7 @@ function InputOTPSlot({
   );
 }
 
-function InputOTPSeparator({ ...props }: React.ComponentProps<'div'>) {
+export function InputOTPSeparator({ ...props }: React.ComponentProps<'div'>) {
   return (
     // biome-ignore lint/a11y/useFocusableInteractive: required for layout
     // biome-ignore lint/a11y/useSemanticElements: required for layout
@@ -63,5 +63,3 @@ function InputOTPSeparator({ ...props }: React.ComponentProps<'div'>) {
     </div>
   );
 }
-
-export { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator };

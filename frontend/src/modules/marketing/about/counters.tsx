@@ -1,7 +1,7 @@
 import { keepPreviousData, queryOptions, useQuery } from '@tanstack/react-query';
-import { appConfig, type EntityType } from 'config';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
+import { appConfig, type EntityType } from 'shared';
 import { CountUp } from 'use-count-up';
 import { getPublicCounts } from '~/api.gen';
 import { counts } from '~/modules/marketing/marketing-config';
@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '~/modules/ui/card';
 
 const countsLength = counts.length;
 
-const Counters = () => {
+export function Counters() {
   const { t } = useTranslation();
   const { ref, inView } = useInView({ triggerOnce: true, threshold: 0 });
 
@@ -57,6 +57,4 @@ const Counters = () => {
         })}
     </div>
   );
-};
-
-export default Counters;
+}

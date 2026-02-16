@@ -1,23 +1,23 @@
 import type { z } from '@hono/zod-openapi';
 import { and, eq } from 'drizzle-orm';
 import type { Context } from 'hono';
-import { db } from '#/db/db';
+import { unsafeInternalDb as db } from '#/db/db';
 import { type AuthStrategy, type SessionModel, type SessionTypes, sessionsTable } from '#/db/schema/sessions';
 import { systemRolesTable } from '#/db/schema/system-roles';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { env } from '#/env';
-import { Env, getContextUser } from '#/lib/context';
-import { AppError } from '#/lib/errors';
+import type { Env } from '#/lib/context';
+import { AppError } from '#/lib/error';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { deviceInfo } from '#/modules/auth/general/helpers/device-info';
-import { type UserWithActivity, userSelect } from '#/modules/users/helpers/select';
+import { type UserWithActivity, userSelect } from '#/modules/user/helpers/select';
+import { sessionCookieSchema } from '#/schemas';
 import { getIp } from '#/utils/get-ip';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';
-import { sessionCookieSchema } from '#/utils/schema/session-cookie';
 import { createDate, TimeSpan } from '#/utils/time-span';
 
 /**
@@ -42,8 +42,7 @@ export const setUserSession = async (
     const allowList = (env.REMOTE_SYSTEM_ACCESS_IP ?? '').split(',');
     const allowAll = allowList.includes('*');
 
-    if (!allowAll && (!ip || !allowList.includes(ip)))
-      throw new AppError({ status: 403, type: 'system_access_forbidden', severity: 'warn' });
+    if (!allowAll && (!ip || !allowList.includes(ip))) throw new AppError(403, 'system_access_forbidden', 'warn');
   }
 
   // Get device information
@@ -57,7 +56,7 @@ export const setUserSession = async (
   const timeSpan = type === 'impersonation' ? new TimeSpan(1, 'h') : new TimeSpan(1, 'w');
 
   const session = {
-    token: hashedSessionToken,
+    secret: hashedSessionToken,
     userId: user.id,
     type,
     deviceName: device.name,
@@ -72,7 +71,7 @@ export const setUserSession = async (
   // Insert session
   await db.insert(sessionsTable).values(session);
 
-  const adminUser = getContextUser();
+  const adminUser = ctx.var.user;
   const cookieContent = `${hashedSessionToken}.${type === 'impersonation' ? adminUser.id : ''}`;
 
   // Set session cookie with the unhashed version
@@ -91,7 +90,7 @@ export const setUserSession = async (
  * Validates a session by checking the provided session token.
  *
  * @param sessionToken - Hashed session token to validate.
- * @returns The session and user data if valid, otherwise null.
+ * @returns The session (without token) and user data if valid, otherwise null.
  */
 export const validateSession = async (
   hashedSessionToken: string,
@@ -99,18 +98,20 @@ export const validateSession = async (
   const [result] = await db
     .select({ session: sessionsTable, user: userSelect })
     .from(sessionsTable)
-    .where(eq(sessionsTable.token, hashedSessionToken))
+    .where(eq(sessionsTable.secret, hashedSessionToken))
     .innerJoin(usersTable, eq(sessionsTable.userId, usersTable.id));
 
   // If no result is found throw no session
-  if (!result) throw new AppError({ status: 401, type: 'no_session', severity: 'warn' });
+  if (!result) throw new AppError(401, 'no_session', 'warn');
 
-  const { session } = result;
+  const { session, user } = result;
 
   // Check if the session has expired and invalidate it if so
-  if (isExpiredDate(session.expiresAt)) throw new AppError({ status: 401, type: 'session_expired', severity: 'warn' });
+  if (isExpiredDate(session.expiresAt)) throw new AppError(401, 'session_expired', 'warn');
 
-  return result;
+  // Strip secret from session before returning
+  const { secret: _, ...safeSession } = session;
+  return { session: safeSession, user };
 };
 
 type ParseSessionCookieOptions = {
@@ -139,7 +140,7 @@ export const getParsedSessionCookie = async (
     return sessionCookieSchema.parse({ sessionToken, adminUserId });
   } catch (error) {
     if (deleteOnError) deleteAuthCookie(ctx, 'session');
-    throw new AppError({ status: 401, type: 'unauthorized', severity: 'warn' });
+    throw new AppError(401, 'unauthorized', 'warn');
   } finally {
     if (deleteAfterAttempt) deleteAuthCookie(ctx, 'session');
   }

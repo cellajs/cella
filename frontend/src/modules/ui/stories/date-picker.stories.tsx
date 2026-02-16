@@ -87,7 +87,7 @@ export const ShouldOpenPopover: Story = {
   },
 };
 
-const formatDate = (date: Date | undefined) => {
+function formatDate(date: Date | undefined) {
   return date
     ? date.toLocaleDateString('en-US', {
         day: '2-digit',
@@ -95,9 +95,11 @@ const formatDate = (date: Date | undefined) => {
         year: 'numeric',
       })
     : '';
-};
+}
 
-const isValidDate = (date: Date | undefined) => (date ? !Number.isNaN(date.getTime()) : false);
+function isValidDate(date: Date | undefined) {
+  return date ? !Number.isNaN(date.getTime()) : false;
+}
 
 /**
  * Combination of the calendar and an input field that allows typing a date.

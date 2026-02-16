@@ -1,7 +1,10 @@
 import { SearchIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import Spinner from '~/modules/common/spinner';
+import { Spinner } from '~/modules/common/spinner';
 
+/**
+ * Toggles between a spinner and search icon based on search state.
+ */
 export function SearchSpinner({ isSearching, value }: { isSearching: boolean; value: string }) {
   return (
     <AnimatePresence mode="wait" initial={false}>

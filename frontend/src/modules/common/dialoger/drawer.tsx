@@ -2,7 +2,7 @@ import { InternalDialog, useDialoger } from '~/modules/common/dialoger/use-dialo
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '~/modules/ui/drawer';
 
-export default function DialogerDrawer({ dialog }: { dialog: InternalDialog }) {
+export function DialogerDrawer({ dialog }: { dialog: InternalDialog }) {
   const { id, content, open, description, title, titleContent = title, className, headerClassName = '' } = dialog;
 
   const updateDialog = useDialoger((state) => state.update);

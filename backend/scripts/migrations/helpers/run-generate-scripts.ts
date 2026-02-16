@@ -1,13 +1,10 @@
 import { spawn } from 'node:child_process';
 import pc from 'picocolors';
 import { checkMark } from '#/utils/console';
+import type { GenerateScript } from '#/../scripts/types';
 
-export interface GenerateScript {
-  /** Human-readable name for the script */
-  name: string;
-  /** Shell command to run */
-  command: string;
-}
+// Re-export for convenience
+export type { GenerateScript } from '#/../scripts/types';
 
 /**
  * Run a shell command and return a promise.
@@ -33,19 +30,50 @@ function runCommand(command: string, cwd: string): Promise<void> {
 }
 
 /**
+ * Sleep for a given number of milliseconds.
+ */
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
  * Run all generation scripts from the backend directory.
+ *
+ * Scripts are executed in order:
+ * 1. 'drizzle' type scripts run first (schema → SQL generation)
+ * 2. 'migration' type scripts run after (custom migrations that upsert to drizzle folder)
+ *
+ * A 1-second delay is added between migration scripts to ensure unique timestamps.
+ *
  * Note: Scripts must be invoked from the backend directory (e.g., via pnpm generate).
  */
 export async function runGenerateScripts(scripts: GenerateScript[]): Promise<void> {
   const backendDir = process.cwd();
 
+  // Sort: drizzle scripts first, then migration scripts
+  const sortedScripts = [...scripts].sort((a, b) => {
+    if (a.type === 'drizzle' && b.type !== 'drizzle') return -1;
+    if (a.type !== 'drizzle' && b.type === 'drizzle') return 1;
+    return 0;
+  });
+
   console.info('');
-  console.info(pc.bold(`Running ${scripts.length} generation scripts...`));
+  console.info(pc.bold(`Running ${sortedScripts.length} generation scripts...`));
   console.info('');
 
-  for (const script of scripts) {
+  let lastWasDrizzle = false;
+  let lastWasMigration = false;
+
+  for (const script of sortedScripts) {
+    // Add 1-second delay before first migration (after Drizzle) and between migrations
+    if (script.type === 'migration' && (lastWasDrizzle || lastWasMigration)) {
+      await sleep(1000);
+    }
+
+    const typeLabel = script.type === 'drizzle' ? 'drizzle' : 'migration';
     const label = pc.cyan(`[${script.name}]`);
-    console.info(`${label} Starting...`);
+    const tagInfo = script.migrationTag ? pc.dim(` → ${script.migrationTag}`) : '';
+    console.info(`${label} ${pc.dim(`(${typeLabel})`)}${tagInfo} Starting...`);
 
     try {
       await runCommand(script.command, backendDir);
@@ -55,6 +83,9 @@ export async function runGenerateScripts(scripts: GenerateScript[]): Promise<voi
       console.error(`${label} ${pc.red('Failed')}`);
       throw err;
     }
+
+    lastWasDrizzle = script.type === 'drizzle';
+    lastWasMigration = script.type === 'migration';
   }
 
   console.info(`${checkMark} ${pc.bold('All generation scripts completed')}`);

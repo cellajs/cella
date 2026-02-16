@@ -1,14 +1,9 @@
 import i18n from 'i18next';
 import { Link, Text } from 'jsx-email';
+import { EmailBody, EmailContainer, EmailHeader, EmailLogo, Footer } from '../components';
+import type { BasicTemplateType } from '../types';
 
-import type { BasicTemplateType } from '../../src/lib/mailer';
-import { AppLogo } from '../components/app-logo';
-import { EmailContainer } from '../components/container';
-import { EmailBody } from '../components/email-body';
-import { EmailHeader } from '../components/email-header';
-import { Footer } from '../components/footer';
-
-export interface NewsletterEmailProps extends BasicTemplateType {
+interface NewsletterEmailProps extends BasicTemplateType {
   orgName: string;
   content: string;
 }
@@ -16,7 +11,14 @@ export interface NewsletterEmailProps extends BasicTemplateType {
 /**
  * Email template for newsletters sent to users in one or more organizations.
  */
-export const NewsletterEmail = ({ lng, content, subject, unsubscribeLink, orgName, testEmail }: NewsletterEmailProps) => {
+export const NewsletterEmail = ({
+  lng,
+  content,
+  subject,
+  unsubscribeLink,
+  orgName,
+  testEmail,
+}: NewsletterEmailProps) => {
   return (
     <EmailContainer previewText={subject}>
       <EmailHeader
@@ -28,7 +30,7 @@ export const NewsletterEmail = ({ lng, content, subject, unsubscribeLink, orgNam
         <Text>{testEmail && 'THIS IS A TEST'}</Text>
         <Text>{subject}</Text>
 
-        {/* biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>*/}
+        {/* biome-ignore lint/security/noDangerouslySetInnerHtml: sys admin content */}
         <div dangerouslySetInnerHTML={{ __html: content }} />
 
         <div style={{ textAlign: 'center', marginTop: '2rem' }}>
@@ -38,7 +40,7 @@ export const NewsletterEmail = ({ lng, content, subject, unsubscribeLink, orgNam
         </div>
       </EmailBody>
 
-      <AppLogo />
+      <EmailLogo />
       <Footer />
     </EmailContainer>
   );

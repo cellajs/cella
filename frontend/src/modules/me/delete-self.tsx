@@ -5,7 +5,7 @@ import { deleteMe } from '~/api.gen';
 import { CallbackArgs } from '~/modules/common/data-table/types';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { userQueryKeys } from '~/modules/users/query';
+import { userQueryKeys } from '~/modules/user/query';
 import { queryClient } from '~/query/query-client';
 import { useUserStore } from '~/store/user';
 
@@ -14,7 +14,7 @@ interface Props {
   callback?: (user: CallbackArgs<User>) => void;
 }
 
-const DeleteSelf = ({ callback, dialog: isDialog }: Props) => {
+export function DeleteSelf({ callback, dialog: isDialog }: Props) {
   const navigate = useNavigate();
   const removeDialog = useDialoger((state) => state.remove);
 
@@ -39,6 +39,4 @@ const DeleteSelf = ({ callback, dialog: isDialog }: Props) => {
   };
 
   return <DeleteForm onDelete={onDelete} onCancel={() => removeDialog()} pending={isPending} />;
-};
-
-export default DeleteSelf;
+}

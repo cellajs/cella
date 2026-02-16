@@ -19,3 +19,19 @@ export function objectEntries<T extends Record<string, unknown>>(obj: T) {
     [K in keyof T]: [K, T[K]];
   }[keyof T][];
 }
+
+/**
+ * Creates a typed record from an array of keys with computed values.
+ * Isolates the unavoidable type assertion for Object.fromEntries.
+ */
+export function recordFromKeys<K extends string, V>(keys: readonly K[], valueFn: (key: K) => V): Record<K, V> {
+  return Object.fromEntries(keys.map((k) => [k, valueFn(k)])) as Record<K, V>;
+}
+
+/**
+ * Creates a record where each key maps to itself.
+ * Useful for creating type-safe enum-like objects from string tuples.
+ */
+export function identityRecord<const T extends readonly string[]>(keys: T): { readonly [K in T[number]]: K } {
+  return Object.fromEntries(keys.map((k) => [k, k])) as { readonly [K in T[number]]: K };
+}

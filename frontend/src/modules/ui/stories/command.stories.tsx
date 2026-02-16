@@ -14,7 +14,7 @@ import {
 /**
  * Wrapper component that manages CommandInput state
  */
-const CommandWithState = ({ className }: { className?: string }) => {
+function CommandWithState({ className }: { className?: string }) {
   const [value, setValue] = useState('');
   return (
     <Command className={className}>
@@ -40,7 +40,7 @@ const CommandWithState = ({ className }: { className?: string }) => {
       </CommandList>
     </Command>
   );
-};
+}
 
 /**
  * Fast, composable, unstyled command menu for React.

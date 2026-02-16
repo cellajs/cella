@@ -4,7 +4,7 @@ import { buttonVariants } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
 import { cn } from '~/utils/cn';
 
-function Unsubscribed() {
+export function Unsubscribed() {
   const { t } = useTranslation();
   const { user } = useUserStore();
 
@@ -18,5 +18,3 @@ function Unsubscribed() {
     </div>
   );
 }
-
-export default Unsubscribed;

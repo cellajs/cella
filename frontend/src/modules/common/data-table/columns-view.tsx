@@ -21,7 +21,7 @@ interface Props<TData> {
   setIsCompact?: (isCompact: boolean) => void;
 }
 
-const ColumnsView = <TData,>({ columns, setColumns, className = '', isCompact, setIsCompact }: Props<TData>) => {
+export function ColumnsView<TData>({ columns, setColumns, className = '', isCompact, setIsCompact }: Props<TData>) {
   const { t } = useTranslation();
   const [columnSearch, setColumnSearch] = useState('');
 
@@ -89,6 +89,4 @@ const ColumnsView = <TData,>({ columns, setColumns, className = '', isCompact, s
       </DropdownMenuContent>
     </DropdownMenu>
   );
-};
-
-export default ColumnsView;
+}

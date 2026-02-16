@@ -1,7 +1,7 @@
-import type { ContextEntityType } from 'config';
 import { PlusIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { ContextEntityType } from 'shared';
 import type { UserMenuItem } from '~/modules/me/types';
 import { MenuSheetItem } from '~/modules/navigation/menu-sheet/item';
 import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
@@ -41,7 +41,7 @@ export const MenuSheetItems = ({ data, type, isArchived, options, className }: M
   const renderItems = () => {
     const filteredItems = data
       .filter((item) => (isArchived ? item.membership.archived : !item.membership.archived))
-      .sort((a, b) => a.membership.order - b.membership.order);
+      .sort((a, b) => a.membership.displayOrder - b.membership.displayOrder);
     return (
       <>
         {filteredItems.map((item) => (

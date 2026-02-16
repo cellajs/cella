@@ -1,23 +1,22 @@
-import { appConfig } from 'config';
 import { eq } from 'drizzle-orm';
 import { Context } from 'hono';
-import { db } from '#/db/db';
+import { appConfig } from 'shared';
+import { unsafeInternalDb as db } from '#/db/db';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { TokenModel } from '#/db/schema/tokens';
 import { Env } from '#/lib/context';
-import { AppError } from '#/lib/errors';
+import { AppError } from '#/lib/error';
 
 export const handleOAuthVerification = async (ctx: Context<Env>, token: TokenModel) => {
   // Token requires userId and oauthAccountId
-  if (!token.userId || !token.oauthAccountId)
-    throw new AppError({ status: 500, type: 'server_error', severity: 'error' });
+  if (!token.userId || !token.oauthAccountId) throw new AppError(500, 'server_error', 'error');
 
   const [oauthAccount] = await db
     .select()
     .from(oauthAccountsTable)
     .where(eq(oauthAccountsTable.id, token.oauthAccountId))
     .limit(1);
-  if (!oauthAccount) throw new AppError({ status: 400, type: 'invalid_request', severity: 'warn' });
+  if (!oauthAccount) throw new AppError(400, 'invalid_request', 'warn');
 
   const verifyPath = `/auth/${oauthAccount.provider}`;
   const verificationURL = new URL(verifyPath, appConfig.backendUrl);

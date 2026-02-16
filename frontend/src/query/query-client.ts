@@ -4,6 +4,10 @@ import { onSuccess } from '~/query/on-success';
 
 const queryClientConfig = { onError, onSuccess };
 
+// Stale time constants
+const defaultStaleTime = 1000 * 30 * 1; // 30 seconds
+const offlineStaleTime = Number.POSITIVE_INFINITY; // Infinite when offline
+
 /**
  * Handle online status
  */
@@ -28,16 +32,45 @@ export const queryClient = new QueryClient({
     queries: {
       networkMode: 'offlineFirst',
       gcTime: 1000 * 60 * 60 * 24 * 7, // 7 days
-      staleTime: 1000 * 60 * 1, // 1 minutes
+      staleTime: defaultStaleTime,
 
       refetchOnMount: false,
       refetchOnWindowFocus: false,
-      refetchOnReconnect: true,
+      refetchOnReconnect: true, // Automatically refetch when coming back online
 
       retry: false,
     },
     mutations: {
-      retry: false,
+      networkMode: 'offlineFirst', // Mutations fire once, then pause if offline and resume when back online
+      retry: 0,
     },
   },
 });
+
+/**
+ * Update staleTime based on offline access mode and network status.
+ * When offlineAccess is enabled AND offline, use infinite staleTime.
+ * Otherwise use normal staleTime for standard refetch behavior.
+ */
+export function updateStaleTime(offlineAccess: boolean, isOnline: boolean): void {
+  const shouldUseInfiniteStale = offlineAccess && !isOnline;
+  const newStaleTime = shouldUseInfiniteStale ? offlineStaleTime : defaultStaleTime;
+
+  queryClient.setDefaultOptions({
+    queries: {
+      ...queryClient.getDefaultOptions().queries,
+      staleTime: newStaleTime,
+    },
+  });
+
+  console.debug(`[Query] StaleTime: ${shouldUseInfiniteStale ? 'infinite (offline)' : '1min (online)'}`);
+}
+
+/**
+ * Silently revalidate active queries on reconnect.
+ * Called when transitioning from offline to online.
+ */
+export function silentRevalidateOnReconnect(): void {
+  queryClient.invalidateQueries({ refetchType: 'active' });
+  console.debug('[Query] Silent revalidation on reconnect');
+}

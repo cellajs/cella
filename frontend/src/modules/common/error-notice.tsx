@@ -5,17 +5,18 @@ import { AnimatePresence, motion } from 'motion/react';
 import { type RefObject, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ApiError } from '~/lib/api';
-import router from '~/lib/router';
 import { AppFooter } from '~/modules/common/app/app-footer';
 import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
 import { Dialoger } from '~/modules/common/dialoger/provider';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '~/modules/ui/card';
+import router from '~/routes/router';
+import type { BoundaryType } from '~/routes/types';
 
 export type ErrorNoticeError = ApiError | Error | null;
 
 interface ErrorNoticeProps {
-  level: 'root' | 'app' | 'public';
+  boundary: BoundaryType;
   error?: ErrorNoticeError;
   children?: React.ReactNode;
   resetErrorBoundary?: () => void;
@@ -30,7 +31,7 @@ export const handleAskForHelp = (ref: RefObject<HTMLButtonElement | null>) => {
 /**
  * Returns a locale key string based on the error type or query.
  */
-const getErrorLocaleKey = (error?: ErrorNoticeError, errorFromQuery?: string): string => {
+function getErrorLocaleKey(error?: ErrorNoticeError, errorFromQuery?: string): string {
   if (errorFromQuery) return errorFromQuery;
   if (!error) return 'error';
 
@@ -40,7 +41,7 @@ const getErrorLocaleKey = (error?: ErrorNoticeError, errorFromQuery?: string): s
     return error.entityType && error.type ? `resource_${error.type}` : error.type || error.name;
 
   return error.name;
-};
+}
 
 /**
  * Returns localized error info (title and message) for a given error.
@@ -77,7 +78,7 @@ export const getErrorInfo = ({ error, errorFromQuery }: { error?: ErrorNoticeErr
  * app: no footer required
  * public: show footer
  */
-const ErrorNotice = ({ error, children, resetErrorBoundary, level, homePath = '/' }: ErrorNoticeProps) => {
+export function ErrorNotice({ error, children, resetErrorBoundary, boundary, homePath = '/' }: ErrorNoticeProps) {
   const { t } = useTranslation();
   const { location } = useRouterState();
   const contactButtonRef = useRef<HTMLButtonElement>(null);
@@ -111,10 +112,10 @@ const ErrorNotice = ({ error, children, resetErrorBoundary, level, homePath = '/
 
   return (
     <>
-      {level === 'root' && <Dialoger />}
+      {boundary === 'root' && <Dialoger />}
       <div className="container flex flex-col min-h-[calc(100vh-10rem)] items-center error-notice">
-        <div className="mt-auto mb-auto">
-          <Card className="max-w-[80vw] sm:w-160 mt-8 bg-transparent border-none">
+        <div className="mx-auto my-auto">
+          <Card className="max-w-[80vw] w-[80vw] sm:w-160 mt-8 bg-transparent border-none">
             <CardHeader className="text-center p-0">
               <CardTitle className="text-2xl font-normal mb-2 justify-center">{title}</CardTitle>
               <CardDescription className="text-base text-foreground flex-col gap-2 p-0">
@@ -203,11 +204,9 @@ const ErrorNotice = ({ error, children, resetErrorBoundary, level, homePath = '/
               )}
             </CardFooter>
           </Card>
-          {level !== 'app' && <AppFooter className="items-center mt-10" />}
+          {boundary !== 'app' && <AppFooter className="items-center mt-10" />}
         </div>
       </div>
     </>
   );
-};
-
-export default ErrorNotice;
+}

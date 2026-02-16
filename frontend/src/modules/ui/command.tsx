@@ -73,11 +73,18 @@ function CommandInput({
       <CommandPrimitive.Input
         data-slot="command-input"
         className={cn(
-          'placeholder:text-muted-foreground flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-hidden disabled:cursor-not-allowed disabled:opacity-50',
+          'placeholder:text-muted-foreground flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-hidden disabled:cursor-not-allowed disabled:opacity-50 [&::-webkit-search-cancel-button]:hidden',
           className,
         )}
         value={value}
+        data-1p-ignore
+        data-lpignore="true"
         {...props}
+        ref={(el) => {
+          // Set type="search" imperatively — cmdk omits it from its types.
+          // Password managers (NordPass, etc.) skip search inputs.
+          if (el) el.type = 'search';
+        }}
       />
       {value.length > 0 && (
         <XCircleIcon
@@ -96,8 +103,17 @@ function CommandList({ className, ...props }: React.ComponentProps<typeof Comman
   return <CommandPrimitive.List data-slot="command-list" className={cn('', className)} {...props} />;
 }
 
-function CommandEmpty({ ...props }: React.ComponentProps<typeof CommandPrimitive.Empty>) {
-  return <CommandPrimitive.Empty data-slot="command-empty" className="py-6 text-center text-sm" {...props} />;
+interface CommandEmptyProps extends React.ComponentProps<typeof CommandPrimitive.Empty> {
+  /** When true, hides children to prevent flicker during async search */
+  isLoading?: boolean;
+}
+
+function CommandEmpty({ isLoading, children, ...props }: CommandEmptyProps) {
+  return (
+    <CommandPrimitive.Empty data-slot="command-empty" className="py-6 text-center text-sm" {...props}>
+      {isLoading ? null : children}
+    </CommandPrimitive.Empty>
+  );
 }
 
 function CommandGroup({ className, ...props }: React.ComponentProps<typeof CommandPrimitive.Group>) {

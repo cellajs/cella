@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { appConfig } from 'config';
+import { appConfig } from 'shared';
 
 export const totpCreateBodySchema = z.object({
   code: z

@@ -6,7 +6,7 @@ type DialogContainerOptions = {
   overlay?: boolean;
 };
 
-type TriggerRef = RefObject<HTMLButtonElement | HTMLAnchorElement | null>;
+export type TriggerRef = RefObject<HTMLButtonElement | HTMLAnchorElement | null>;
 
 export type DialogData = {
   id: number | string;

@@ -29,7 +29,7 @@ const formSchema = z.object({
   }),
 });
 
-const ProfileForm = (args: Story['args']) => {
+function ProfileForm(args: Story['args']) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -64,7 +64,7 @@ const ProfileForm = (args: Story['args']) => {
       </form>
     </Form>
   );
-};
+}
 
 /**
  * The default form of the form.

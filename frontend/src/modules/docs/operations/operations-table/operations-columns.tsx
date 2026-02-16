@@ -3,10 +3,10 @@ import { BirdIcon } from 'lucide-react';
 import { type RefObject, Suspense, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import HeaderCell from '~/modules/common/data-table/header-cell';
+import { HeaderCell } from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
-import Spinner from '~/modules/common/spinner';
+import { Spinner } from '~/modules/common/spinner';
 import { OperationDetail } from '~/modules/docs/operations/operation-detail';
 import { OperationExamples } from '~/modules/docs/operations/operation-examples';
 import type { GenExtensionDefinition, GenOperationSummary } from '~/modules/docs/types';
@@ -17,7 +17,7 @@ import { getMethodColor } from '../../helpers/get-method-color';
 /**
  * Opens a sheet with operation detail view
  */
-const openOperationSheet = (operation: GenOperationSummary, buttonRef: RefObject<HTMLButtonElement | null>) => {
+function openOperationSheet(operation: GenOperationSummary, buttonRef: RefObject<HTMLButtonElement | null>) {
   useSheeter.getState().create(
     <Suspense fallback={<Spinner className="mt-[40vh]" />}>
       <div className="container pb-[50vh] pt-3">
@@ -32,12 +32,12 @@ const openOperationSheet = (operation: GenOperationSummary, buttonRef: RefObject
       title: i18n.t('common:docs.operation_detail'),
     },
   );
-};
+}
 
 /**
  * Opens a sheet with operation examples view (ViewerGroup with example preselected)
  */
-const openExamplesSheet = (operation: GenOperationSummary, buttonRef: RefObject<HTMLButtonElement | null>) => {
+function openExamplesSheet(operation: GenOperationSummary, buttonRef: RefObject<HTMLButtonElement | null>) {
   useSheeter.getState().create(
     <Suspense fallback={<Spinner className="mt-[40vh]" />}>
       <div className="container pb-[50vh] pt-3">
@@ -49,15 +49,15 @@ const openExamplesSheet = (operation: GenOperationSummary, buttonRef: RefObject<
       triggerRef: buttonRef,
       side: 'right',
       className: 'max-w-full lg:max-w-4xl',
-      title: i18n.t('common:docs.response_examples'),
+      title: i18n.t('common:docs.success_response'),
     },
   );
-};
+}
 
 /**
  * Cell component for clickable operation path that opens detail sheet
  */
-const PathCell = ({ row }: { row: GenOperationSummary }) => {
+function PathCell({ row }: { row: GenOperationSummary }) {
   const buttonRef = useRef<HTMLButtonElement>(null);
 
   return (
@@ -70,15 +70,19 @@ const PathCell = ({ row }: { row: GenOperationSummary }) => {
       {row.path}
     </button>
   );
-};
+}
 
 /**
- * Cell component for clickable example icon that opens examples sheet
+ * Cell component for clickable example icon that opens examples sheet.
  */
-const ExampleCell = ({ row }: { row: GenOperationSummary }) => {
+function ExampleCell({ row }: { row: GenOperationSummary }) {
   const buttonRef = useRef<HTMLButtonElement>(null);
 
-  if (!row.hasExample) return <></>;
+  // No response body means examples are not applicable
+  if (!row.hasResponseBody) return <div className="w-full text-center text-muted-foreground/50">na</div>;
+
+  // Has response body but no example yet
+  if (!row.hasExample) return <div className="w-full text-center text-muted-foreground">-</div>;
 
   return (
     <button
@@ -90,7 +94,7 @@ const ExampleCell = ({ row }: { row: GenOperationSummary }) => {
       <BirdIcon className="h-4 w-4" />
     </button>
   );
-};
+}
 
 export const useColumns = (_isCompact: boolean, extensions: GenExtensionDefinition[] = []) => {
   const { t } = useTranslation();

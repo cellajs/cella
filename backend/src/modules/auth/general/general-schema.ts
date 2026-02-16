@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { userSchema } from '#/modules/users/users-schema';
+import { userSchema } from '#/modules/user/user-schema';
 
 export const emailBodySchema = z.object({
   email: userSchema.shape.email,

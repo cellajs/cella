@@ -1,19 +1,28 @@
-import { db } from '#/db/db';
+import { migrationDb } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { passwordsTable } from '#/db/schema/passwords';
+import { tenantsTable } from '#/db/schema/tenants';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { usersTable } from '#/db/schema/users';
 import { hashPassword } from '#/modules/auth/passwords/helpers/argon2id';
 import pc from 'picocolors';
-import { appConfig } from 'config';
-import { mockAdmin, mockEmail, mockPassword, mockUnsubscribeToken } from '../../../mocks';
-import { defaultAdminUser } from '../fixtures';
+import { appConfig } from 'shared';
+import { mockAdmin, mockEmail, mockPassword, mockUnsubscribeToken } from '../../../mocks/mock-user';
+import { setMockContext } from '../../../mocks/utils';
+import { defaultAdminUser, publicTenant } from '../fixtures';
 import { systemRolesTable } from '#/db/schema/system-roles';
 import { checkMark } from '#/utils/console';
 
+// Set mock context for seed script - IDs will get 'gen-' prefix (CDC worker skips these)
+setMockContext('script');
+
 const isProduction = appConfig.mode === 'production';
 
+// Seed scripts use admin connection (migrationDb) for privileged operations
+const db = migrationDb;
+
 const isUserSeeded = async () => {
+  if (!db) return true; // Skip if no admin connection
   const usersInTable = await db
     .select()
     .from(usersTable)
@@ -29,8 +38,14 @@ export const userSeed = async () => {
   // Production mode → skip seeding
   if (isProduction) return console.error('Not allowed in production.');
 
+  // Admin connection required
+  if (!db) return console.error('DATABASE_ADMIN_URL required for seeding');
+
   // Records already exist → skip seeding
   if (await isUserSeeded()) return console.warn('Users table is not empty → skip seeding');
+
+  // Create public tenant (needed for pages and other platform-wide content)
+  await db.insert(tenantsTable).values({ id: publicTenant.id, name: publicTenant.name }).onConflictDoNothing();
 
   // Hash default admin password
   const hashed = await hashPassword(defaultAdminUser.password);

@@ -1,3 +1,11 @@
+/**
+ * DataTable styling overrides for DataGrid
+ *
+ * Important: Do NOT set `grid-template-rows: none` here.
+ * The grid uses CSS Grid with explicit row templates to support page-level scrolling
+ * and virtualization. The grid-template-rows defines the full height of all rows
+ * (even non-rendered ones), which is essential for proper scroll behavior.
+ */
 .grid.rdg-wrapper > .rdg {
   --rdg-color: var(--foreground);
   --rdg-border-color: var(--border);
@@ -16,7 +24,6 @@
   --rdg-selection-color: var(--ring);
 
   border: none;
-  grid-template-rows: none !important;
 }
 
 .rdg-readonly .grid.rdg-wrapper > .rdg {

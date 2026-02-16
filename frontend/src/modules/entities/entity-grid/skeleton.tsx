@@ -1,8 +1,11 @@
-import useMounted from '~/hooks/use-mounted';
+import { useMountedState } from '~/hooks/use-mounted-state';
 import { Skeleton } from '~/modules/ui/skeleton';
 
-export const EntityGridSkeleton = () => {
-  const { hasStarted } = useMounted();
+/**
+ * Renders a loading skeleton for the entity grid.
+ */
+export function EntityGridSkeleton() {
+  const { hasStarted } = useMountedState();
 
   const items = Array.from({ length: 6 }, () => ({
     membersCount: Math.floor(Math.random() * 4) + 1,
@@ -18,9 +21,9 @@ export const EntityGridSkeleton = () => {
       ))}
     </div>
   );
-};
+}
 
-const SkeletonItem = ({ membersCount }: { membersCount: number }) => {
+function SkeletonItem({ membersCount }: { membersCount: number }) {
   return (
     <Skeleton className="overflow-hidden py-6 px-4">
       <div className="w-full relative group">
@@ -40,4 +43,4 @@ const SkeletonItem = ({ membersCount }: { membersCount: number }) => {
       </div>
     </Skeleton>
   );
-};
+}

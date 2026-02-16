@@ -1,8 +1,8 @@
 import { onlineManager } from '@tanstack/react-query';
-import { appConfig } from 'config';
 import { UploadIcon } from 'lucide-react';
 import { memo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import { toaster } from '~/modules/common/toaster/service';
 import { useUploader } from '~/modules/common/uploader/use-uploader';
 import { Button } from '~/modules/ui/button';
@@ -16,7 +16,7 @@ export interface PageCoverProps {
   coverUpdateCallback: (bannerKey: string) => void;
 }
 
-const PageCover = memo(({ id, canUpdate, organizationId, url, coverUpdateCallback }: PageCoverProps) => {
+function PageCoverBase({ id, canUpdate, organizationId, url, coverUpdateCallback }: PageCoverProps) {
   const { t } = useTranslation();
   const upload = useUploader();
 
@@ -25,7 +25,7 @@ const PageCover = memo(({ id, canUpdate, organizationId, url, coverUpdateCallbac
   const [coverUrl, setCoverUrl] = useState(url);
 
   const handleUpdateURL = (bannerKey: string) => {
-    const bannerUrl = `${appConfig.publicCDNUrl}/${bannerKey}`;
+    const bannerUrl = `${appConfig.s3.publicCDNUrl}/${bannerKey}`;
     setCoverUrl(bannerUrl);
     coverUpdateCallback(bannerUrl);
   };
@@ -69,6 +69,6 @@ const PageCover = memo(({ id, canUpdate, organizationId, url, coverUpdateCallbac
       )}
     </div>
   );
-});
+}
 
-export { PageCover };
+export const PageCover = memo(PageCoverBase);

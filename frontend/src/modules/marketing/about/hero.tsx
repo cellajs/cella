@@ -29,7 +29,7 @@ export const Hero = ({ title, subtitle, text, children, badgeText }: HeroProps) 
 
   return (
     <>
-      <section id="hero" className={sectionClass}>
+      <section id="spy-hero" className={sectionClass}>
         <header ref={ref} className={headerClass}>
           <div className="container flex max-w-5xl flex-col items-center gap-4 text-center">
             {badgeText && (
@@ -37,7 +37,7 @@ export const Hero = ({ title, subtitle, text, children, badgeText }: HeroProps) 
                 {t(badgeText)}
               </Badge>
             )}
-            <h1 className="font-heading test-primary mt-6 mb-6 text-4xl sm:text-5xl md:text-6xl lg:text-7xl">
+            <h1 className="font-heading text-primary leading-12 sm:leading-16 md:leading-20 mt-6 mb-6 text-4xl sm:text-5xl md:text-6xl lg:text-7xl">
               {title && <span>{t(title)}</span>}
               {title && subtitle && <br />}
               {subtitle && (

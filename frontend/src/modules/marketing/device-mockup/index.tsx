@@ -1,7 +1,7 @@
 import { useInView } from 'react-intersection-observer';
 
-import AttachmentsCarousel, { type CarouselItemData } from '~/modules/attachments/carousel';
-import DeviceFrame from '~/modules/marketing/device-mockup/frame';
+import { AttachmentsCarousel, type CarouselItemData } from '~/modules/attachment/carousel';
+import { DeviceFrame } from '~/modules/marketing/device-mockup/frame';
 import { useUIStore } from '~/store/ui';
 import { cn } from '~/utils/cn';
 
@@ -15,7 +15,7 @@ interface DeviceMockupProps {
   type: DeviceType;
 }
 
-const DeviceMockup = ({ lightItems, darkItems, type, className }: DeviceMockupProps) => {
+function DeviceMockup({ lightItems, darkItems, type, className }: DeviceMockupProps) {
   const mode = useUIStore((state) => state.mode);
 
   const items = mode === 'dark' ? darkItems : lightItems;
@@ -37,6 +37,6 @@ const DeviceMockup = ({ lightItems, darkItems, type, className }: DeviceMockupPr
       />
     </div>
   );
-};
+}
 
 export default DeviceMockup;

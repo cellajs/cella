@@ -1,11 +1,18 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/docs/x-routes';
-import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
-import { presignedUrlLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
-import { inviteBodySchema, preasignedURLQuerySchema, sendNewsletterBodySchema } from '#/modules/system/system-schema';
-import { booleanTransformSchema } from '#/utils/schema/common';
-import { errorResponseRefs } from '#/utils/schema/error-responses';
-import { successWithRejectedItemsSchema } from '#/utils/schema/success-responses';
+import { authGuard, publicGuard, sysAdminGuard } from '#/middlewares/guard';
+import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
+import { inviteBodySchema, sendNewsletterBodySchema } from '#/modules/system/system-schema';
+import {
+  batchResponseSchema,
+  booleanTransformSchema,
+  entityIdParamSchema,
+  errorResponseRefs,
+  idsBodySchema,
+} from '#/schemas';
+import { mockSystemInviteResponse } from '../../../mocks/mock-system';
+import { mockUserResponse } from '../../../mocks/mock-user';
+import { userSchema, userUpdateBodySchema } from '../user/user-schema';
 
 const systemRoutes = {
   /**
@@ -15,7 +22,7 @@ const systemRoutes = {
     operationId: 'systemInvite',
     method: 'post',
     path: '/invite',
-    xGuard: [isAuthenticated, hasSystemAccess],
+    xGuard: [authGuard, sysAdminGuard],
     tags: ['system'],
     summary: 'Invite to system',
     description:
@@ -30,8 +37,62 @@ const systemRoutes = {
       200: {
         description: 'Invitations are sent',
         content: {
-          'application/json': { schema: successWithRejectedItemsSchema.extend({ invitesSentCount: z.number() }) },
+          'application/json': {
+            schema: batchResponseSchema().extend({ invitesSentCount: z.number() }),
+            example: mockSystemInviteResponse(),
+          },
         },
+      },
+      ...errorResponseRefs,
+    },
+  }),
+  /**
+   * Delete users
+   */
+  deleteUsers: createXRoute({
+    operationId: 'deleteUsers',
+    method: 'delete',
+    path: '/',
+    xGuard: [authGuard, sysAdminGuard],
+    tags: ['system'],
+    summary: 'Delete users',
+    description:
+      "Deletes one or more *users* from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.",
+    request: {
+      body: {
+        required: true,
+        content: { 'application/json': { schema: idsBodySchema() } },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Success',
+        content: { 'application/json': { schema: batchResponseSchema() } },
+      },
+      ...errorResponseRefs,
+    },
+  }),
+  /**
+   * Update a user
+   */
+  updateUser: createXRoute({
+    operationId: 'updateUser',
+    method: 'put',
+    path: '/{id}',
+    xGuard: [authGuard, sysAdminGuard],
+    tags: ['system'],
+    summary: 'Update user',
+    description: 'Updates a *user* identified by ID.',
+    request: {
+      params: entityIdParamSchema,
+      body: {
+        content: { 'application/json': { schema: userUpdateBodySchema } },
+      },
+    },
+    responses: {
+      200: {
+        description: 'User',
+        content: { 'application/json': { schema: userSchema, example: mockUserResponse() } },
       },
       ...errorResponseRefs,
     },
@@ -43,7 +104,7 @@ const systemRoutes = {
     operationId: 'sendNewsletter',
     method: 'post',
     path: '/newsletter',
-    xGuard: [isAuthenticated, hasSystemAccess],
+    xGuard: [authGuard, sysAdminGuard],
     tags: ['system'],
     summary: 'Newsletter to members',
     description: 'Sends a newsletter to members of one or more specified organizations.',
@@ -62,34 +123,13 @@ const systemRoutes = {
     },
   }),
   /**
-   * Get presigned URL
-   */
-  getPresignedUrl: createXRoute({
-    operationId: 'getPresignedUrl',
-    method: 'get',
-    path: '/presigned-url',
-    xGuard: isPublicAccess,
-    xRateLimiter: presignedUrlLimiter,
-    tags: ['system'],
-    summary: 'Get presigned URL',
-    description: 'Generates and returns a presigned URL for uploading files to an S3 bucket.',
-    request: { query: preasignedURLQuerySchema },
-    responses: {
-      200: {
-        description: 'Presigned URL',
-        content: { 'application/json': { schema: z.string() } },
-      },
-      ...errorResponseRefs,
-    },
-  }),
-  /**
    * Paddle webhook (WIP)
    */
   paddleWebhook: createXRoute({
     operationId: 'paddleWebhook',
     method: 'post',
     path: '/paddle-webhook',
-    xGuard: isPublicAccess,
+    xGuard: publicGuard,
     xRateLimiter: tokenLimiter('paddle'),
     tags: ['system'],
     summary: 'Paddle webhook (WIP)',

@@ -1,12 +1,10 @@
 import { eq } from 'drizzle-orm';
 import { testClient } from 'hono/testing';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { db } from '#/db/db';
+import { unsafeInternalDb as db } from '#/db/db';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
-import { organizationsTable } from '#/db/schema/organizations';
-import { mockOrganization } from '../../mocks';
 import { defaultHeaders } from '../fixtures';
-import { createOrganizationAdminUser, createPasswordUser, parseResponse } from '../helpers';
+import { createOrganizationAdminUser, createPasswordUser, createTestOrganization, parseResponse } from '../helpers';
 import { clearDatabase, mockFetchRequest, mockRateLimiter, setTestConfig } from '../test-utils';
 
 setTestConfig({
@@ -37,9 +35,15 @@ describe('Membership Invitation', async () => {
   const client = testClient(app) as any;
 
   const createOrgAndAdmin = async () => {
-    const organizationData = mockOrganization();
-    const [organization] = await db.insert(organizationsTable).values(organizationData).returning();
-    await createOrganizationAdminUser('admin@cella.com', 'adminPassword123!', organization.id);
+    const organization = await createTestOrganization();
+    await createOrganizationAdminUser(
+      'admin@cella.com',
+      'adminPassword123!',
+      organization.id,
+      'admin',
+      true,
+      organization.tenantId,
+    );
 
     const signInRes = await client['auth']['sign-in'].$post(
       { json: { email: 'admin@cella.com', password: 'adminPassword123!' } },
@@ -51,7 +55,7 @@ describe('Membership Invitation', async () => {
 
   const makeInviteRequest = async (organizationId: string, inviteData: any, sessionCookie: string | null) => {
     return await client[organizationId]['memberships'].$post(
-      { json: inviteData, query: { idOrSlug: organizationId, entityType: 'organization' } },
+      { json: inviteData, query: { entityId: organizationId, entityType: 'organization' } },
       {
         headers: {
           ...defaultHeaders,
@@ -78,10 +82,12 @@ describe('Membership Invitation', async () => {
     );
 
     expect(res.status).toBe(200);
-    const response = await parseResponse<{ success: boolean; rejectedItems: string[]; invitesSentCount: number }>(res);
+    const response = await parseResponse<{ success: boolean; rejectedItemIds: string[]; invitesSentCount: number }>(
+      res,
+    );
     expect(response.success).toBe(true);
     expect(response.invitesSentCount).toBe(2);
-    expect(response.rejectedItems).toHaveLength(0);
+    expect(response.rejectedItemIds).toHaveLength(0);
 
     const inactiveMemberships = await getInactiveMemberships(organization.id);
     expect(inactiveMemberships).toHaveLength(2);
@@ -102,10 +108,12 @@ describe('Membership Invitation', async () => {
     );
 
     expect(res.status).toBe(200);
-    const response = await parseResponse<{ success: boolean; rejectedItems: string[]; invitesSentCount: number }>(res);
+    const response = await parseResponse<{ success: boolean; rejectedItemIds: string[]; invitesSentCount: number }>(
+      res,
+    );
     expect(response.success).toBe(true);
     expect(response.invitesSentCount).toBe(1);
-    expect(response.rejectedItems).toHaveLength(0);
+    expect(response.rejectedItemIds).toHaveLength(0);
 
     const inactiveMemberships = await getInactiveMemberships(organization.id);
     expect(inactiveMemberships).toHaveLength(1);
@@ -124,10 +132,12 @@ describe('Membership Invitation', async () => {
     );
 
     expect(res.status).toBe(200);
-    const response = await parseResponse<{ success: boolean; rejectedItems: string[]; invitesSentCount: number }>(res);
+    const response = await parseResponse<{ success: boolean; rejectedItemIds: string[]; invitesSentCount: number }>(
+      res,
+    );
     expect(response.success).toBe(true);
     expect(response.invitesSentCount).toBe(2);
-    expect(response.rejectedItems).toHaveLength(0);
+    expect(response.rejectedItemIds).toHaveLength(0);
 
     const inactiveMemberships = await getInactiveMemberships(organization.id);
     expect(inactiveMemberships).toHaveLength(2);
@@ -172,8 +182,7 @@ describe('Membership Invitation', async () => {
   });
 
   it('should reject invitations without authentication', async () => {
-    const organizationData = mockOrganization();
-    const [organization] = await db.insert(organizationsTable).values(organizationData).returning();
+    const organization = await createTestOrganization();
 
     const res = await client[organization.id]['memberships'].$post(
       { json: { emails: ['user@cella.com'], role: 'member' }, query: { entityType: 'organization' } },
@@ -184,8 +193,7 @@ describe('Membership Invitation', async () => {
   });
 
   it('should reject invitations from non-org members', async () => {
-    const organizationData = mockOrganization();
-    const [organization] = await db.insert(organizationsTable).values(organizationData).returning();
+    const organization = await createTestOrganization();
 
     await createPasswordUser('user@cella.com', 'password123!');
     const signInRes = await client['auth']['sign-in'].$post(
@@ -213,11 +221,11 @@ describe('Membership Invitation', async () => {
     const secondRes = await makeInviteRequest(organization.id, inviteData, sessionCookie);
     expect(secondRes.status).toBe(200);
 
-    const response = await parseResponse<{ success: boolean; rejectedItems: string[]; invitesSentCount: number }>(
+    const response = await parseResponse<{ success: boolean; rejectedItemIds: string[]; invitesSentCount: number }>(
       secondRes,
     );
     expect(response.success).toBe(false);
     expect(response.invitesSentCount).toBe(0);
-    expect(response.rejectedItems).toHaveLength(0);
+    expect(response.rejectedItemIds).toHaveLength(0);
   });
 });

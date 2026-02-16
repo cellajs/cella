@@ -1,8 +1,8 @@
-import { appConfig } from 'config';
 import { eq } from 'drizzle-orm';
 import { testClient } from 'hono/testing';
+import { appConfig } from 'shared';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { db } from '#/db/db';
+import { unsafeInternalDb as db } from '#/db/db';
 import { tokensTable } from '#/db/schema/tokens';
 import { totpsTable } from '#/db/schema/totps';
 import { nanoid } from '#/utils/nanoid';
@@ -124,12 +124,12 @@ describe('TOTP Authentication', async () => {
       const mfaToken = nanoid(40);
       const hashedMfaToken = encodeLowerCased(mfaToken);
       await db.insert(tokensTable).values({
-        token: hashedMfaToken,
+        secret: hashedMfaToken,
         type: 'confirm-mfa',
         userId: user.id,
         email: user.email,
         createdBy: user.id,
-        expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(), // 10 minutes
       });
 
       // Sign in with TOTP
@@ -168,12 +168,12 @@ describe('TOTP Authentication', async () => {
       const mfaToken = nanoid(40);
       const hashedMfaToken = encodeLowerCased(mfaToken);
       await db.insert(tokensTable).values({
-        token: hashedMfaToken,
+        secret: hashedMfaToken,
         type: 'confirm-mfa',
         userId: user.id,
         email: user.email,
         createdBy: user.id,
-        expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(), // 10 minutes
       });
 
       // Mock TOTP validation to fail
@@ -200,7 +200,9 @@ describe('TOTP Authentication', async () => {
         { headers: defaultHeaders },
       );
 
-      expect(res.status).toBe(302);
+      expect(res.status).toBe(401);
+      const response = await parseResponse<{ type: string }>(res);
+      expect(response.type).toBe('confirm-mfa_not_found');
     });
 
     it('should reject TOTP verification for user without TOTP', async () => {
@@ -215,12 +217,12 @@ describe('TOTP Authentication', async () => {
       const mfaToken = nanoid(40);
       const hashedMfaToken = encodeLowerCased(mfaToken);
       await db.insert(tokensTable).values({
-        token: hashedMfaToken,
+        secret: hashedMfaToken,
         type: 'confirm-mfa',
         userId: user.id,
         email: user.email,
         createdBy: user.id,
-        expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(), // 10 minutes
       });
 
       // Mock validateTOTP to throw 404 error (no TOTP found)
@@ -261,12 +263,12 @@ describe('TOTP Authentication', async () => {
       const mfaToken = nanoid(40);
       const hashedMfaToken = encodeLowerCased(mfaToken);
       await db.insert(tokensTable).values({
-        token: hashedMfaToken,
+        secret: hashedMfaToken,
         type: 'confirm-mfa',
         userId: user.id,
         email: user.email,
         createdBy: user.id,
-        expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(), // 10 minutes
       });
 
       // Test various malformed codes

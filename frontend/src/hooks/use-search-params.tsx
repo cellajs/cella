@@ -1,6 +1,6 @@
 import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
-import type router from '~/lib/router';
+import type router from '~/routes/router';
 import { objectKeys } from '~/utils/object';
 
 type RoutesById = keyof typeof router.routesById;
@@ -24,7 +24,9 @@ type SearchParams<T> = {
  *   - `search`: The current search parameters (query string).
  *   - `setSearch`: A function to update the search parameters and sync with the URL.
  */
-const useSearchParams = <T extends Record<string, string | string[] | undefined>>(searchParams?: SearchParams<T>) => {
+export function useSearchParams<T extends Record<string, string | string[] | undefined>>(
+  searchParams?: SearchParams<T>,
+) {
   const { from, defaultValues, saveDataInSearch = true, useCurrentSearch = saveDataInSearch } = searchParams ?? {};
 
   const navigate = useNavigate();
@@ -105,6 +107,4 @@ const useSearchParams = <T extends Record<string, string | string[] | undefined>
   }, [mergedSearch]);
 
   return { search: currentSearch, setSearch };
-};
-
-export default useSearchParams;
+}

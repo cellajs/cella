@@ -10,10 +10,31 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["authGuard", "sysAdminGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    }
+  },
+  {
+    "id": "getAuthHealth",
+    "hash": "tag/auth/GET/auth/health",
+    "method": "get",
+    "path": "/auth/health",
+    "tags": ["auth"],
+    "summary": "Auth health check",
+    "description": "Returns auth health status including whether the client IP is rate-limited for email enumeration protection.",
+    "deprecated": false,
+    "hasParams": false,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isAuthenticated", "hasSystemAccess"],
-      "xRateLimiter": []
+      "xGuard": ["publicGuard"],
+      "xRateLimiter": [],
+      "xCache": []
     }
   },
   {
@@ -27,10 +48,12 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
+    "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
-      "xRateLimiter": ["emailEnumLimiter"]
+      "xGuard": ["publicGuard"],
+      "xRateLimiter": ["emailEnumLimiter"],
+      "xCache": []
     }
   },
   {
@@ -44,10 +67,12 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
+    "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
-      "xRateLimiter": ["tokenLimiter"]
+      "xGuard": ["publicGuard"],
+      "xRateLimiter": ["tokenLimiter"],
+      "xCache": []
     }
   },
   {
@@ -61,10 +86,12 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
-    "hasExample": false,
+    "hasResponseBody": true,
+    "hasExample": true,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
-      "xRateLimiter": ["tokenLimiter"]
+      "xGuard": ["publicGuard"],
+      "xRateLimiter": ["tokenLimiter"],
+      "xCache": []
     }
   },
   {
@@ -78,10 +105,12 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
+    "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isAuthenticated", "hasSystemAccess"],
-      "xRateLimiter": []
+      "xGuard": ["authGuard", "sysAdminGuard"],
+      "xRateLimiter": [],
+      "xCache": []
     }
   },
   {
@@ -95,10 +124,12 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": false,
+    "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isAuthenticated"],
-      "xRateLimiter": []
+      "xGuard": ["authGuard"],
+      "xRateLimiter": [],
+      "xCache": []
     }
   },
   {
@@ -112,10 +143,12 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
+    "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
-      "xRateLimiter": ["spamLimiter"]
+      "xGuard": ["publicGuard"],
+      "xRateLimiter": ["spamLimiter"],
+      "xCache": []
     }
   },
   {
@@ -129,10 +162,12 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": false,
+    "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
-      "xRateLimiter": []
+      "xGuard": ["publicGuard"],
+      "xRateLimiter": [],
+      "xCache": []
     }
   },
   {
@@ -146,10 +181,12 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": false,
-    "hasExample": false,
+    "hasResponseBody": true,
+    "hasExample": true,
     "extensions": {
-      "xGuard": ["isAuthenticated"],
-      "xRateLimiter": []
+      "xGuard": ["authGuard"],
+      "xRateLimiter": [],
+      "xCache": []
     }
   },
   {
@@ -163,10 +200,12 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
+    "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isAuthenticated"],
-      "xRateLimiter": []
+      "xGuard": ["authGuard"],
+      "xRateLimiter": [],
+      "xCache": []
     }
   },
   {
@@ -180,10 +219,12 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": false,
+    "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isAuthenticated"],
-      "xRateLimiter": []
+      "xGuard": ["authGuard"],
+      "xRateLimiter": [],
+      "xCache": []
     }
   },
   {
@@ -197,10 +238,12 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
+    "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
-      "xRateLimiter": ["totpVerificationLimiter"]
+      "xGuard": ["publicGuard"],
+      "xRateLimiter": ["totpVerificationLimiter"],
+      "xCache": []
     }
   },
   {
@@ -214,10 +257,12 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
+    "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
-      "xRateLimiter": ["spamLimiter", "emailEnumLimiter"]
+      "xGuard": ["publicGuard"],
+      "xRateLimiter": ["spamLimiter", "emailEnumLimiter"],
+      "xCache": []
     }
   },
   {
@@ -231,10 +276,12 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": true,
-    "hasExample": false,
+    "hasResponseBody": true,
+    "hasExample": true,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
-      "xRateLimiter": ["tokenLimiter", "emailEnumLimiter"]
+      "xGuard": ["publicGuard"],
+      "xRateLimiter": ["tokenLimiter", "emailEnumLimiter"],
+      "xCache": []
     }
   },
   {
@@ -248,10 +295,12 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
+    "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
-      "xRateLimiter": ["spamLimiter", "emailEnumLimiter"]
+      "xGuard": ["publicGuard"],
+      "xRateLimiter": ["spamLimiter", "emailEnumLimiter"],
+      "xCache": []
     }
   },
   {
@@ -265,10 +314,12 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": true,
-    "hasExample": false,
+    "hasResponseBody": true,
+    "hasExample": true,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
-      "xRateLimiter": ["tokenLimiter"]
+      "xGuard": ["publicGuard"],
+      "xRateLimiter": ["tokenLimiter"],
+      "xCache": []
     }
   },
   {
@@ -282,10 +333,12 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
-    "hasExample": false,
+    "hasResponseBody": true,
+    "hasExample": true,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
-      "xRateLimiter": ["passwordLimiter"]
+      "xGuard": ["publicGuard"],
+      "xRateLimiter": ["passwordLimiter"],
+      "xCache": []
     }
   },
   {
@@ -299,10 +352,12 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
-    "hasExample": false,
+    "hasResponseBody": true,
+    "hasExample": true,
     "extensions": {
-      "xGuard": ["isAuthenticated"],
-      "xRateLimiter": []
+      "xGuard": ["authGuard"],
+      "xRateLimiter": [],
+      "xCache": []
     }
   },
   {
@@ -316,10 +371,12 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
+    "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isAuthenticated"],
-      "xRateLimiter": []
+      "xGuard": ["authGuard"],
+      "xRateLimiter": [],
+      "xCache": []
     }
   },
   {
@@ -333,10 +390,12 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
-    "hasExample": false,
+    "hasResponseBody": true,
+    "hasExample": true,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
-      "xRateLimiter": ["passkeyChallengeLimiter"]
+      "xGuard": ["publicGuard"],
+      "xRateLimiter": ["passkeyChallengeLimiter"],
+      "xCache": []
     }
   },
   {
@@ -350,10 +409,12 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
+    "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
-      "xRateLimiter": ["tokenLimiter"]
+      "xGuard": ["publicGuard"],
+      "xRateLimiter": ["tokenLimiter"],
+      "xCache": []
     }
   },
   {
@@ -367,10 +428,12 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
+    "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
-      "xRateLimiter": []
+      "xGuard": ["publicGuard"],
+      "xRateLimiter": [],
+      "xCache": []
     }
   },
   {
@@ -384,10 +447,12 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
+    "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
-      "xRateLimiter": []
+      "xGuard": ["publicGuard"],
+      "xRateLimiter": [],
+      "xCache": []
     }
   },
   {
@@ -401,10 +466,12 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
+    "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
-      "xRateLimiter": []
+      "xGuard": ["publicGuard"],
+      "xRateLimiter": [],
+      "xCache": []
     }
   },
   {
@@ -418,10 +485,12 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
+    "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
-      "xRateLimiter": ["tokenLimiter"]
+      "xGuard": ["publicGuard"],
+      "xRateLimiter": ["tokenLimiter"],
+      "xCache": []
     }
   },
   {
@@ -435,10 +504,12 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
+    "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
-      "xRateLimiter": ["tokenLimiter"]
+      "xGuard": ["publicGuard"],
+      "xRateLimiter": ["tokenLimiter"],
+      "xCache": []
     }
   },
   {
@@ -452,10 +523,12 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
+    "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
-      "xRateLimiter": ["tokenLimiter"]
+      "xGuard": ["publicGuard"],
+      "xRateLimiter": ["tokenLimiter"],
+      "xCache": []
     }
   },
   {
@@ -469,10 +542,12 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": false,
+    "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["isAuthenticated"],
-      "xRateLimiter": []
+      "xGuard": ["authGuard"],
+      "xRateLimiter": [],
+      "xCache": []
     }
   },
   {
@@ -486,10 +561,12 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
+    "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["isAuthenticated"],
-      "xRateLimiter": []
+      "xGuard": ["authGuard"],
+      "xRateLimiter": [],
+      "xCache": []
     }
   },
   {
@@ -503,10 +580,12 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": false,
+    "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isAuthenticated"],
-      "xRateLimiter": []
+      "xGuard": ["authGuard"],
+      "xRateLimiter": [],
+      "xCache": []
     }
   },
   {
@@ -520,10 +599,12 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
+    "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["isAuthenticated"],
-      "xRateLimiter": []
+      "xGuard": ["authGuard"],
+      "xRateLimiter": [],
+      "xCache": []
     }
   },
   {
@@ -537,10 +618,12 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": false,
+    "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["isAuthenticated"],
-      "xRateLimiter": []
+      "xGuard": ["authGuard"],
+      "xRateLimiter": [],
+      "xCache": []
     }
   },
   {
@@ -554,10 +637,12 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": false,
-    "hasExample": false,
+    "hasResponseBody": true,
+    "hasExample": true,
     "extensions": {
-      "xGuard": ["isAuthenticated"],
-      "xRateLimiter": []
+      "xGuard": ["authGuard"],
+      "xRateLimiter": [],
+      "xCache": []
     }
   },
   {
@@ -571,10 +656,12 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
-    "hasExample": true,
+    "hasResponseBody": true,
+    "hasExample": false,
     "extensions": {
-      "xGuard": ["isAuthenticated"],
-      "xRateLimiter": []
+      "xGuard": ["authGuard"],
+      "xRateLimiter": [],
+      "xCache": []
     }
   },
   {
@@ -588,10 +675,12 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
+    "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isAuthenticated"],
-      "xRateLimiter": []
+      "xGuard": ["authGuard"],
+      "xRateLimiter": [],
+      "xCache": []
     }
   },
   {
@@ -605,10 +694,12 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
+    "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["isAuthenticated"],
-      "xRateLimiter": []
+      "xGuard": ["authGuard"],
+      "xRateLimiter": [],
+      "xCache": []
     }
   },
   {
@@ -622,265 +713,31 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
+    "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
-      "xRateLimiter": ["tokenLimiter"]
+      "xGuard": ["publicGuard"],
+      "xRateLimiter": ["tokenLimiter"],
+      "xCache": []
     }
   },
   {
-    "id": "getUsers",
-    "hash": "tag/users/GET/users",
+    "id": "getMyMemberships",
+    "hash": "tag/me/GET/me/memberships",
     "method": "get",
-    "path": "/users",
-    "tags": ["users"],
-    "summary": "Get list of users",
-    "description": "Returns a list of *users*.",
-    "deprecated": false,
-    "hasParams": true,
-    "hasRequestBody": false,
-    "hasExample": false,
-    "extensions": {
-      "xGuard": ["isAuthenticated"],
-      "xRateLimiter": []
-    }
-  },
-  {
-    "id": "deleteUsers",
-    "hash": "tag/users/DELETE/users",
-    "method": "delete",
-    "path": "/users",
-    "tags": ["users"],
-    "summary": "Delete users",
-    "description": "Deletes one or more *users* from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.",
+    "path": "/me/memberships",
+    "tags": ["me"],
+    "summary": "Get my memberships",
+    "description": "Returns all memberships for the *current user* across all context entities.",
     "deprecated": false,
     "hasParams": false,
-    "hasRequestBody": true,
-    "hasExample": true,
-    "extensions": {
-      "xGuard": ["isAuthenticated", "hasSystemAccess"],
-      "xRateLimiter": []
-    }
-  },
-  {
-    "id": "getUser",
-    "hash": "tag/users/GET/users/{idOrSlug}",
-    "method": "get",
-    "path": "/users/{idOrSlug}",
-    "tags": ["users"],
-    "summary": "Get user",
-    "description": "Retrieves a *user* by ID or slug.",
-    "deprecated": false,
-    "hasParams": true,
     "hasRequestBody": false,
-    "hasExample": true,
-    "extensions": {
-      "xGuard": ["isAuthenticated"],
-      "xRateLimiter": []
-    }
-  },
-  {
-    "id": "updateUser",
-    "hash": "tag/users/PUT/users/{idOrSlug}",
-    "method": "put",
-    "path": "/users/{idOrSlug}",
-    "tags": ["users"],
-    "summary": "Update user",
-    "description": "Updates a *user* identified by ID or slug.",
-    "deprecated": false,
-    "hasParams": true,
-    "hasRequestBody": true,
-    "hasExample": true,
-    "extensions": {
-      "xGuard": ["isAuthenticated", "hasSystemAccess"],
-      "xRateLimiter": []
-    }
-  },
-  {
-    "id": "createOrganization",
-    "hash": "tag/organizations/POST/organizations",
-    "method": "post",
-    "path": "/organizations",
-    "tags": ["organizations"],
-    "summary": "Create organization",
-    "description": "Creates a new *organization*.",
-    "deprecated": false,
-    "hasParams": false,
-    "hasRequestBody": true,
-    "hasExample": true,
-    "extensions": {
-      "xGuard": ["isAuthenticated"],
-      "xRateLimiter": []
-    }
-  },
-  {
-    "id": "getOrganizations",
-    "hash": "tag/organizations/GET/organizations",
-    "method": "get",
-    "path": "/organizations",
-    "tags": ["organizations"],
-    "summary": "Get list of organizations",
-    "description": "Returns a list of *organizations*.",
-    "deprecated": false,
-    "hasParams": true,
-    "hasRequestBody": false,
+    "hasResponseBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isAuthenticated"],
-      "xRateLimiter": []
-    }
-  },
-  {
-    "id": "deleteOrganizations",
-    "hash": "tag/organizations/DELETE/organizations",
-    "method": "delete",
-    "path": "/organizations",
-    "tags": ["organizations"],
-    "summary": "Delete organizations",
-    "description": "Deletes one or more *organizations* by ID.",
-    "deprecated": false,
-    "hasParams": false,
-    "hasRequestBody": true,
-    "hasExample": true,
-    "extensions": {
-      "xGuard": ["isAuthenticated"],
-      "xRateLimiter": []
-    }
-  },
-  {
-    "id": "getOrganization",
-    "hash": "tag/organizations/GET/organizations/{idOrSlug}",
-    "method": "get",
-    "path": "/organizations/{idOrSlug}",
-    "tags": ["organizations"],
-    "summary": "Get organization",
-    "description": "Retrieves an *organization* by ID or slug.",
-    "deprecated": false,
-    "hasParams": true,
-    "hasRequestBody": false,
-    "hasExample": true,
-    "extensions": {
-      "xGuard": ["isAuthenticated"],
-      "xRateLimiter": []
-    }
-  },
-  {
-    "id": "updateOrganization",
-    "hash": "tag/organizations/PUT/organizations/{idOrSlug}",
-    "method": "put",
-    "path": "/organizations/{idOrSlug}",
-    "tags": ["organizations"],
-    "summary": "Update organization",
-    "description": "Updates an *organization* by ID or slug.",
-    "deprecated": false,
-    "hasParams": true,
-    "hasRequestBody": true,
-    "hasExample": true,
-    "extensions": {
-      "xGuard": ["isAuthenticated"],
-      "xRateLimiter": []
-    }
-  },
-  {
-    "id": "syncPages",
-    "hash": "tag/pages/GET/pages/sync-pages",
-    "method": "get",
-    "path": "/pages/sync-pages",
-    "tags": ["pages"],
-    "summary": "Sync pages",
-    "description": "Sync page data by proxying requests to ElectricSQL's shape endpoint for `pages` table.",
-    "deprecated": false,
-    "hasParams": true,
-    "hasRequestBody": false,
-    "hasExample": false,
-    "extensions": {
-      "xGuard": ["isPublicAccess"],
-      "xRateLimiter": []
-    }
-  },
-  {
-    "id": "createPage",
-    "hash": "tag/pages/POST/pages",
-    "method": "post",
-    "path": "/pages",
-    "tags": ["pages"],
-    "summary": "Create pages",
-    "description": "Insert one or more new *pages*.",
-    "deprecated": false,
-    "hasParams": false,
-    "hasRequestBody": true,
-    "hasExample": true,
-    "extensions": {
-      "xGuard": ["isAuthenticated", "isSystemAdmin"],
-      "xRateLimiter": []
-    }
-  },
-  {
-    "id": "getPages",
-    "hash": "tag/pages/GET/pages",
-    "method": "get",
-    "path": "/pages",
-    "tags": ["pages"],
-    "summary": "Get pages",
-    "description": "Get all matching *pages*.",
-    "deprecated": false,
-    "hasParams": true,
-    "hasRequestBody": false,
-    "hasExample": false,
-    "extensions": {
-      "xGuard": ["isPublicAccess"],
-      "xRateLimiter": []
-    }
-  },
-  {
-    "id": "deletePages",
-    "hash": "tag/pages/DELETE/pages",
-    "method": "delete",
-    "path": "/pages",
-    "tags": ["pages"],
-    "summary": "Delete pages",
-    "description": "Delete one or more *pages* by ID.",
-    "deprecated": false,
-    "hasParams": false,
-    "hasRequestBody": true,
-    "hasExample": false,
-    "extensions": {
-      "xGuard": ["isAuthenticated", "isSystemAdmin"],
-      "xRateLimiter": []
-    }
-  },
-  {
-    "id": "getPage",
-    "hash": "tag/pages/GET/pages/{id}",
-    "method": "get",
-    "path": "/pages/{id}",
-    "tags": ["pages"],
-    "summary": "Get page",
-    "description": "Get a single *page* by ID.",
-    "deprecated": false,
-    "hasParams": true,
-    "hasRequestBody": false,
-    "hasExample": true,
-    "extensions": {
-      "xGuard": ["isPublicAccess"],
-      "xRateLimiter": []
-    }
-  },
-  {
-    "id": "updatePage",
-    "hash": "tag/pages/PUT/pages/{id}",
-    "method": "put",
-    "path": "/pages/{id}",
-    "tags": ["pages"],
-    "summary": "Update page",
-    "description": "Update a single *page* by ID.",
-    "deprecated": false,
-    "hasParams": true,
-    "hasRequestBody": true,
-    "hasExample": true,
-    "extensions": {
-      "xGuard": ["isAuthenticated", "isSystemAdmin"],
-      "xRateLimiter": []
+      "xGuard": ["authGuard"],
+      "xRateLimiter": [],
+      "xCache": []
     }
   },
   {
@@ -894,10 +751,50 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
+    "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isAuthenticated"],
-      "xRateLimiter": []
+      "xGuard": ["authGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    }
+  },
+  {
+    "id": "getPublicStream",
+    "hash": "tag/entities/GET/entities/public/stream",
+    "method": "get",
+    "path": "/entities/public/stream",
+    "tags": ["entities"],
+    "summary": "Public entity stream",
+    "description": "Stream real-time changes for public entities (entities with no parent context). No authentication required. Use offset for catch-up, live=sse for SSE streaming.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["publicGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    }
+  },
+  {
+    "id": "getAppStream",
+    "hash": "tag/entities/GET/entities/app/stream",
+    "method": "get",
+    "path": "/entities/app/stream",
+    "tags": ["entities"],
+    "summary": "App event stream",
+    "description": "SSE stream for membership and entity notifications affecting the *current user*. Sends lightweight notifications - client fetches entity data via API.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["authGuard"],
+      "xRateLimiter": [],
+      "xCache": []
     }
   },
   {
@@ -911,27 +808,50 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
+    "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["isAuthenticated", "hasSystemAccess"],
-      "xRateLimiter": []
+      "xGuard": ["authGuard", "sysAdminGuard"],
+      "xRateLimiter": [],
+      "xCache": []
     }
   },
   {
-    "id": "getPresignedUrl",
-    "hash": "tag/system/GET/system/presigned-url",
-    "method": "get",
-    "path": "/system/presigned-url",
+    "id": "deleteUsers",
+    "hash": "tag/system/DELETE/system",
+    "method": "delete",
+    "path": "/system",
     "tags": ["system"],
-    "summary": "Get presigned URL",
-    "description": "Generates and returns a presigned URL for uploading files to an S3 bucket.",
+    "summary": "Delete users",
+    "description": "Deletes one or more *users* from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.",
     "deprecated": false,
-    "hasParams": true,
-    "hasRequestBody": false,
+    "hasParams": false,
+    "hasRequestBody": true,
+    "hasResponseBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
-      "xRateLimiter": ["presignedUrlLimiter"]
+      "xGuard": ["authGuard", "sysAdminGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    }
+  },
+  {
+    "id": "updateUser",
+    "hash": "tag/system/PUT/system/{id}",
+    "method": "put",
+    "path": "/system/{id}",
+    "tags": ["system"],
+    "summary": "Update user",
+    "description": "Updates a *user* identified by ID.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": true,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["authGuard", "sysAdminGuard"],
+      "xRateLimiter": [],
+      "xCache": []
     }
   },
   {
@@ -945,10 +865,12 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
+    "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
-      "xRateLimiter": ["tokenLimiter"]
+      "xGuard": ["publicGuard"],
+      "xRateLimiter": ["tokenLimiter"],
+      "xCache": []
     }
   },
   {
@@ -962,10 +884,107 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": true,
+    "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isAuthenticated", "hasSystemAccess"],
-      "xRateLimiter": []
+      "xGuard": ["authGuard", "sysAdminGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    }
+  },
+  {
+    "id": "getTenants",
+    "hash": "tag/tenants/GET/tenants",
+    "method": "get",
+    "path": "/tenants",
+    "tags": ["tenants"],
+    "summary": "Get list of tenants",
+    "description": "Returns a paginated list of tenants. System admin access required.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["authGuard", "sysAdminGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    }
+  },
+  {
+    "id": "createTenant",
+    "hash": "tag/tenants/POST/tenants",
+    "method": "post",
+    "path": "/tenants",
+    "tags": ["tenants"],
+    "summary": "Create a new tenant",
+    "description": "Creates a new tenant. System admin access required.",
+    "deprecated": false,
+    "hasParams": false,
+    "hasRequestBody": true,
+    "hasResponseBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["authGuard", "sysAdminGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    }
+  },
+  {
+    "id": "getTenantById",
+    "hash": "tag/tenants/GET/tenants/{tenantId}",
+    "method": "get",
+    "path": "/tenants/{tenantId}",
+    "tags": ["tenants"],
+    "summary": "Get tenant by ID",
+    "description": "Returns a single tenant by its ID. System admin access required.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["authGuard", "sysAdminGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    }
+  },
+  {
+    "id": "updateTenant",
+    "hash": "tag/tenants/PATCH/tenants/{tenantId}",
+    "method": "patch",
+    "path": "/tenants/{tenantId}",
+    "tags": ["tenants"],
+    "summary": "Update a tenant",
+    "description": "Updates a tenant by ID. System admin access required.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": true,
+    "hasResponseBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["authGuard", "sysAdminGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    }
+  },
+  {
+    "id": "archiveTenant",
+    "hash": "tag/tenants/DELETE/tenants/{tenantId}",
+    "method": "delete",
+    "path": "/tenants/{tenantId}",
+    "tags": ["tenants"],
+    "summary": "Archive a tenant",
+    "description": "Archives a tenant (soft delete). Sets status to \"archived\". System admin access required. Data retention period applies before permanent deletion.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["authGuard", "sysAdminGuard"],
+      "xRateLimiter": [],
+      "xCache": []
     }
   },
   {
@@ -979,10 +998,12 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
-    "hasExample": false,
+    "hasResponseBody": true,
+    "hasExample": true,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
-      "xRateLimiter": ["emailEnumLimiter", "spamLimiter"]
+      "xGuard": ["publicGuard"],
+      "xRateLimiter": ["emailEnumLimiter", "spamLimiter"],
+      "xCache": []
     }
   },
   {
@@ -996,10 +1017,12 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
-    "hasExample": false,
+    "hasResponseBody": true,
+    "hasExample": true,
     "extensions": {
-      "xGuard": ["isAuthenticated", "hasSystemAccess"],
-      "xRateLimiter": []
+      "xGuard": ["authGuard", "sysAdminGuard"],
+      "xRateLimiter": [],
+      "xCache": []
     }
   },
   {
@@ -1013,10 +1036,12 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
+    "hasResponseBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isAuthenticated", "hasSystemAccess"],
-      "xRateLimiter": []
+      "xGuard": ["authGuard", "sysAdminGuard"],
+      "xRateLimiter": [],
+      "xCache": []
     }
   },
   {
@@ -1030,10 +1055,31 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": false,
-    "hasExample": false,
+    "hasResponseBody": true,
+    "hasExample": true,
     "extensions": {
-      "xGuard": ["isAuthenticated", "hasSystemAccess"],
-      "xRateLimiter": []
+      "xGuard": ["authGuard", "sysAdminGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    }
+  },
+  {
+    "id": "getRuntimeMetrics",
+    "hash": "tag/metrics/GET/metrics/runtime",
+    "method": "get",
+    "path": "/metrics/runtime",
+    "tags": ["metrics"],
+    "summary": "Get runtime metrics",
+    "description": "Returns Node.js process health metrics and OpenTelemetry runtime instrumentation data.\n      Includes memory usage, CPU time, uptime, and event loop utilization.",
+    "deprecated": false,
+    "hasParams": false,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["authGuard", "sysAdminGuard"],
+      "xRateLimiter": [],
+      "xCache": []
     }
   },
   {
@@ -1047,197 +1093,525 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": false,
-    "hasExample": false,
+    "hasResponseBody": true,
+    "hasExample": true,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
-      "xRateLimiter": []
+      "xGuard": ["publicGuard"],
+      "xRateLimiter": [],
+      "xCache": []
     }
   },
   {
-    "id": "syncAttachments",
-    "hash": "tag/attachments/GET/{orgIdOrSlug}/attachments/sync-attachments",
+    "id": "getCacheStats",
+    "hash": "tag/metrics/GET/metrics/cache",
     "method": "get",
-    "path": "/{orgIdOrSlug}/attachments/sync-attachments",
-    "tags": ["attachments"],
-    "summary": "Sync attachments",
-    "description": "Sync attachment data by proxying requests to ElectricSQL's shape endpoint for `attachments` table.\n      Organization parameter is required to scope the data.",
+    "path": "/metrics/cache",
+    "tags": ["metrics"],
+    "summary": "Get entity cache statistics",
+    "description": "Returns entity cache statistics including hit rates, sizes, and invalidations.\n      Useful for monitoring cache performance and tuning.",
+    "deprecated": false,
+    "hasParams": false,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["authGuard", "sysAdminGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    }
+  },
+  {
+    "id": "getSyncMetrics",
+    "hash": "tag/metrics/GET/metrics/sync",
+    "method": "get",
+    "path": "/metrics/sync",
+    "tags": ["metrics"],
+    "summary": "Get sync flow metrics",
+    "description": "Returns metrics for the sync flow: CDC Worker (messages) → ActivityBus (events) → SSE (notifications).\n      Includes message/notification counts, connection stats, and tracing span data.",
+    "deprecated": false,
+    "hasParams": false,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["authGuard", "sysAdminGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    }
+  },
+  {
+    "id": "createOrganizations",
+    "hash": "tag/organizations/POST/{tenantId}/organizations",
+    "method": "post",
+    "path": "/{tenantId}/organizations",
+    "tags": ["organizations"],
+    "summary": "Create organizations",
+    "description": "Creates one or more new *organizations* within a tenant.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": true,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["authGuard", "tenantGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    }
+  },
+  {
+    "id": "deleteOrganizations",
+    "hash": "tag/organizations/DELETE/{tenantId}/organizations",
+    "method": "delete",
+    "path": "/{tenantId}/organizations",
+    "tags": ["organizations"],
+    "summary": "Delete organizations",
+    "description": "Deletes one or more *organizations* by ID within a tenant.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": true,
+    "hasResponseBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["authGuard", "tenantGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    }
+  },
+  {
+    "id": "getOrganizations",
+    "hash": "tag/organizations/GET/organizations",
+    "method": "get",
+    "path": "/organizations",
+    "tags": ["organizations"],
+    "summary": "Get list of organizations",
+    "description": "Returns a list of *organizations*.",
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
-    "hasExample": false,
+    "hasResponseBody": true,
+    "hasExample": true,
     "extensions": {
-      "xGuard": ["isAuthenticated", "hasOrgAccess"],
-      "xRateLimiter": []
+      "xGuard": ["authGuard", "crossTenantGuard"],
+      "xRateLimiter": [],
+      "xCache": []
     }
   },
   {
-    "id": "createAttachment",
-    "hash": "tag/attachments/POST/{orgIdOrSlug}/attachments",
+    "id": "getOrganization",
+    "hash": "tag/organizations/GET/{tenantId}/organizations/{organizationId}",
+    "method": "get",
+    "path": "/{tenantId}/organizations/{organizationId}",
+    "tags": ["organizations"],
+    "summary": "Get organization",
+    "description": "Retrieves an *organization* by ID within a tenant. Pass `?slug=true` to resolve by slug instead.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["authGuard", "tenantGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    }
+  },
+  {
+    "id": "updateOrganization",
+    "hash": "tag/organizations/PUT/{tenantId}/organizations/{id}",
+    "method": "put",
+    "path": "/{tenantId}/organizations/{id}",
+    "tags": ["organizations"],
+    "summary": "Update organization",
+    "description": "Updates an *organization* within a tenant.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": true,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["authGuard", "tenantGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    }
+  },
+  {
+    "id": "getPages",
+    "hash": "tag/pages/GET/pages",
+    "method": "get",
+    "path": "/pages",
+    "tags": ["pages"],
+    "summary": "Get pages",
+    "description": "Get all matching *pages*.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["publicGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    }
+  },
+  {
+    "id": "getPage",
+    "hash": "tag/pages/GET/pages/{id}",
+    "method": "get",
+    "path": "/pages/{id}",
+    "tags": ["pages"],
+    "summary": "Get page",
+    "description": "Get a single *page* by ID. Cached using LRU - first request warms cache.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["publicGuard"],
+      "xRateLimiter": [],
+      "xCache": ["publicCache"]
+    }
+  },
+  {
+    "id": "createPages",
+    "hash": "tag/pages/POST/{tenantId}/pages",
     "method": "post",
-    "path": "/{orgIdOrSlug}/attachments",
+    "path": "/{tenantId}/pages",
+    "tags": ["pages"],
+    "summary": "Create pages",
+    "description": "Insert one or more new *pages*. Returns created pages and any rejected items.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": true,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["authGuard", "tenantGuard", "sysAdminGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    }
+  },
+  {
+    "id": "deletePages",
+    "hash": "tag/pages/DELETE/{tenantId}/pages",
+    "method": "delete",
+    "path": "/{tenantId}/pages",
+    "tags": ["pages"],
+    "summary": "Delete pages",
+    "description": "Delete one or more *pages* by ID.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": true,
+    "hasResponseBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["authGuard", "tenantGuard", "sysAdminGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    }
+  },
+  {
+    "id": "updatePage",
+    "hash": "tag/pages/PUT/{tenantId}/pages/{id}",
+    "method": "put",
+    "path": "/{tenantId}/pages/{id}",
+    "tags": ["pages"],
+    "summary": "Update page",
+    "description": "Update a single *page* by ID.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": true,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["authGuard", "tenantGuard", "sysAdminGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    }
+  },
+  {
+    "id": "getUsers",
+    "hash": "tag/users/GET/users",
+    "method": "get",
+    "path": "/users",
+    "tags": ["users"],
+    "summary": "Get list of users",
+    "description": "Returns a list of *users*.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["authGuard", "crossTenantGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    }
+  },
+  {
+    "id": "getUser",
+    "hash": "tag/users/GET/users/{userId}",
+    "method": "get",
+    "path": "/users/{userId}",
+    "tags": ["users"],
+    "summary": "Get user",
+    "description": "Retrieves a *user* by ID. The requesting user must share at least one context entity membership. Pass `?slug=true` to resolve by slug instead.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["authGuard", "crossTenantGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    }
+  },
+  {
+    "id": "getAttachments",
+    "hash": "tag/attachments/GET/{tenantId}/{orgId}/attachments",
+    "method": "get",
+    "path": "/{tenantId}/{orgId}/attachments",
+    "tags": ["attachments"],
+    "summary": "Get attachments",
+    "description": "Returns a paginated list of *attachments* for the organization.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    }
+  },
+  {
+    "id": "createAttachments",
+    "hash": "tag/attachments/POST/{tenantId}/{orgId}/attachments",
+    "method": "post",
+    "path": "/{tenantId}/{orgId}/attachments",
     "tags": ["attachments"],
     "summary": "Create attachments",
     "description": "Registers one or more new *attachments* after client side upload. Includes metadata like name, type, and linked entity.",
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": true,
-    "hasExample": false,
+    "hasResponseBody": true,
+    "hasExample": true,
     "extensions": {
-      "xGuard": ["isAuthenticated", "hasOrgAccess"],
-      "xRateLimiter": []
+      "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
+      "xRateLimiter": [],
+      "xCache": []
     }
   },
   {
     "id": "deleteAttachments",
-    "hash": "tag/attachments/DELETE/{orgIdOrSlug}/attachments",
+    "hash": "tag/attachments/DELETE/{tenantId}/{orgId}/attachments",
     "method": "delete",
-    "path": "/{orgIdOrSlug}/attachments",
+    "path": "/{tenantId}/{orgId}/attachments",
     "tags": ["attachments"],
     "summary": "Delete attachments",
     "description": "Deletes one or more *attachment* records by ID. This does not delete the underlying file in storage.",
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": true,
+    "hasResponseBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    }
+  },
+  {
+    "id": "getPresignedUrl",
+    "hash": "tag/attachments/GET/{tenantId}/{orgId}/attachments/presigned-url",
+    "method": "get",
+    "path": "/{tenantId}/{orgId}/attachments/presigned-url",
+    "tags": ["attachments"],
+    "summary": "Get presigned URL",
+    "description": "Generates and returns a presigned URL for accessing a private attachment file in S3. Public files should use the public CDN URL directly. Requires organization context.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
+      "xRateLimiter": ["presignedUrlLimiter"],
+      "xCache": []
+    }
+  },
+  {
+    "id": "getAttachment",
+    "hash": "tag/attachments/GET/{tenantId}/{orgId}/attachments/{id}",
+    "method": "get",
+    "path": "/{tenantId}/{orgId}/attachments/{id}",
+    "tags": ["attachments"],
+    "summary": "Get attachment",
+    "description": "Returns a single *attachment* by ID. Supports CDC cache via X-Cache-Token header.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["isAuthenticated", "hasOrgAccess"],
-      "xRateLimiter": []
+      "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
+      "xRateLimiter": [],
+      "xCache": ["appCache"]
     }
   },
   {
     "id": "updateAttachment",
-    "hash": "tag/attachments/PUT/{orgIdOrSlug}/attachments/{id}",
+    "hash": "tag/attachments/PUT/{tenantId}/{orgId}/attachments/{id}",
     "method": "put",
-    "path": "/{orgIdOrSlug}/attachments/{id}",
+    "path": "/{tenantId}/{orgId}/attachments/{id}",
     "tags": ["attachments"],
     "summary": "Update attachment",
     "description": "Updates metadata of an *attachment*, such as its name or associated entity.",
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": true,
+    "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["isAuthenticated", "hasOrgAccess"],
-      "xRateLimiter": []
+      "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
+      "xRateLimiter": [],
+      "xCache": []
     }
   },
   {
     "id": "redirectToAttachment",
-    "hash": "tag/attachments/GET/{orgIdOrSlug}/attachments/{id}/link",
+    "hash": "tag/attachments/GET/{tenantId}/{orgId}/attachments/{id}/link",
     "method": "get",
-    "path": "/{orgIdOrSlug}/attachments/{id}/link",
+    "path": "/{tenantId}/{orgId}/attachments/{id}/link",
     "tags": ["attachments"],
     "summary": "Redirect to attachment",
     "description": "Redirects to the file's public or presigned URL, depending on storage visibility.",
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
+    "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["isPublicAccess"],
-      "xRateLimiter": ["tokenLimiter"]
+      "xGuard": ["publicGuard"],
+      "xRateLimiter": ["tokenLimiter"],
+      "xCache": []
     }
   },
   {
     "id": "membershipInvite",
-    "hash": "tag/memberships/POST/{orgIdOrSlug}/memberships",
+    "hash": "tag/memberships/POST/{tenantId}/{orgId}/memberships",
     "method": "post",
-    "path": "/{orgIdOrSlug}/memberships",
+    "path": "/{tenantId}/{orgId}/memberships",
     "tags": ["memberships"],
     "summary": "Create memberships",
     "description": "Creates one or more *memberships*, inviting users (existing or new) to a context entity such as an organization.",
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": true,
+    "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["isAuthenticated", "hasOrgAccess"],
-      "xRateLimiter": []
+      "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
+      "xRateLimiter": [],
+      "xCache": []
     }
   },
   {
     "id": "deleteMemberships",
-    "hash": "tag/memberships/DELETE/{orgIdOrSlug}/memberships",
+    "hash": "tag/memberships/DELETE/{tenantId}/{orgId}/memberships",
     "method": "delete",
-    "path": "/{orgIdOrSlug}/memberships",
+    "path": "/{tenantId}/{orgId}/memberships",
     "tags": ["memberships"],
     "summary": "Delete memberships",
     "description": "Deletes one or more *memberships* by ID. This removes the membership but does not delete the associated user(s).",
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": true,
-    "hasExample": true,
+    "hasResponseBody": true,
+    "hasExample": false,
     "extensions": {
-      "xGuard": ["isAuthenticated", "hasOrgAccess"],
-      "xRateLimiter": []
+      "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
+      "xRateLimiter": [],
+      "xCache": []
     }
   },
   {
     "id": "updateMembership",
-    "hash": "tag/memberships/PUT/{orgIdOrSlug}/memberships/{id}",
+    "hash": "tag/memberships/PUT/{tenantId}/{orgId}/memberships/{id}",
     "method": "put",
-    "path": "/{orgIdOrSlug}/memberships/{id}",
+    "path": "/{tenantId}/{orgId}/memberships/{id}",
     "tags": ["memberships"],
     "summary": "Update membership",
     "description": "Updates the *membership* metadata, such as role, `muted`, or `archived` status.",
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": true,
+    "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["isAuthenticated", "hasOrgAccess"],
-      "xRateLimiter": []
+      "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
+      "xRateLimiter": [],
+      "xCache": []
     }
   },
   {
     "id": "handleMembershipInvitation",
-    "hash": "tag/memberships/POST/{orgIdOrSlug}/memberships/{id}/{acceptOrReject}",
+    "hash": "tag/memberships/POST/{tenantId}/{orgId}/memberships/{id}/{acceptOrReject}",
     "method": "post",
-    "path": "/{orgIdOrSlug}/memberships/{id}/{acceptOrReject}",
+    "path": "/{tenantId}/{orgId}/memberships/{id}/{acceptOrReject}",
     "tags": ["memberships"],
     "summary": "Respond to membership invitation",
     "description": "Accepting activates the associated membership. Rejecting simply removes the invitation token.",
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
-    "hasExample": false,
+    "hasResponseBody": true,
+    "hasExample": true,
     "extensions": {
-      "xGuard": ["isAuthenticated"],
-      "xRateLimiter": []
+      "xGuard": ["authGuard"],
+      "xRateLimiter": [],
+      "xCache": []
     }
   },
   {
     "id": "getMembers",
-    "hash": "tag/memberships/GET/{orgIdOrSlug}/memberships/members",
+    "hash": "tag/memberships/GET/{tenantId}/{orgId}/memberships/members",
     "method": "get",
-    "path": "/{orgIdOrSlug}/memberships/members",
+    "path": "/{tenantId}/{orgId}/memberships/members",
     "tags": ["memberships"],
     "summary": "Get list of members",
-    "description": "Retrieves members (users) of a context entity by ID or slug, including their associated *membership* data.",
+    "description": "Retrieves members (users) of a context entity by ID, including their associated *membership* data.",
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
-    "hasExample": false,
+    "hasResponseBody": true,
+    "hasExample": true,
     "extensions": {
-      "xGuard": ["isAuthenticated", "hasOrgAccess"],
-      "xRateLimiter": []
+      "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
+      "xRateLimiter": [],
+      "xCache": []
     }
   },
   {
     "id": "getPendingMemberships",
-    "hash": "tag/memberships/GET/{orgIdOrSlug}/memberships/pending",
+    "hash": "tag/memberships/GET/{tenantId}/{orgId}/memberships/pending",
     "method": "get",
-    "path": "/{orgIdOrSlug}/memberships/pending",
+    "path": "/{tenantId}/{orgId}/memberships/pending",
     "tags": ["memberships"],
     "summary": "Get list of pending memberships",
-    "description": "Returns pending memberships for a context entity, identified by ID or slug. This does not include pending invitations for non-existing users.",
+    "description": "Returns pending memberships for a context entity, identified by ID. This does not include pending invitations for non-existing users.",
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
-    "hasExample": false,
+    "hasResponseBody": true,
+    "hasExample": true,
     "extensions": {
-      "xGuard": ["isAuthenticated", "hasOrgAccess"],
-      "xRateLimiter": []
+      "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
+      "xRateLimiter": [],
+      "xCache": []
     }
   }
 ]

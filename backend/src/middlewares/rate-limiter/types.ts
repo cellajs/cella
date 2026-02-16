@@ -1,4 +1,4 @@
-import { RateLimiterMemory, RateLimiterPostgres } from 'rate-limiter-flexible';
+import { RateLimiterDrizzle, RateLimiterMemory } from 'rate-limiter-flexible';
 
 export type RateLimitMode = 'limit' | 'success' | 'fail' | 'failseries';
 export type RateLimitIdentifier = 'ip' | 'email' | 'userId';
@@ -10,4 +10,14 @@ type LimiterStatusLists = {
   ignoredStatusCodes?: number[];
 };
 
-export type RateLimitOptions = Partial<RateLimiterPostgres> | (Partial<RateLimiterMemory> & LimiterStatusLists);
+export type RateLimitOptions = Partial<RateLimiterDrizzle> | (Partial<RateLimiterMemory> & LimiterStatusLists);
+
+/** Optional configuration for rate limiter middleware */
+export interface RateLimiterOpts {
+  /** Custom rate limit configuration (points, duration, blockDuration, etc.) */
+  limits?: RateLimitOptions;
+  /** Name override for OpenAPI documentation (defaults to `${key}Limiter`) */
+  name?: string;
+  /** Description for OpenAPI documentation */
+  description?: string;
+}

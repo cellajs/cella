@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import HeaderCell from '~/modules/common/data-table/header-cell';
+import { HeaderCell } from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import type { PendingMembership } from '~/modules/memberships/types';
-import { UserCellById } from '~/modules/users/user-cell';
+import { UserCellById } from '~/modules/user/user-cell';
 import { dateShort } from '~/utils/date-short';
 
 export const useColumns = () => {

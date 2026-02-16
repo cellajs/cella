@@ -3,7 +3,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
 import { cn } from '~/utils/cn';
 
-const badgeVariants = cva(
+export const badgeVariants = cva(
   'flex items-center justify-center rounded-md border px-2 py-0.5 text-xs font-medium w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-effect aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive transition-[color,box-shadow] shadow-xs overflow-hidden',
   {
     variants: {
@@ -43,7 +43,7 @@ const badgeVariants = cva(
   },
 );
 
-function Badge({
+export function Badge({
   className,
   variant,
   context,
@@ -55,5 +55,3 @@ function Badge({
 
   return <Comp data-slot="badge" className={cn(badgeVariants({ variant, size, context }), className)} {...props} />;
 }
-
-export { Badge, badgeVariants };

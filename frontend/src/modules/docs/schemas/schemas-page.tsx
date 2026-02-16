@@ -4,6 +4,8 @@ import { ChevronDownIcon } from 'lucide-react';
 import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
+import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
+import { StickyBox } from '~/modules/common/sticky-box';
 import { HashUrlButton } from '~/modules/docs/hash-url-button';
 import { schemasQueryOptions, schemaTagsQueryOptions } from '~/modules/docs/query';
 import { TagSchemasList } from '~/modules/docs/schemas/schema-detail';
@@ -16,7 +18,7 @@ import { buttonVariants } from '../../ui/button';
  * Schemas page displaying all component schemas from the OpenAPI spec.
  * Schemas are categorized into base, data, and errors tags.
  */
-const SchemasPage = () => {
+function SchemasPage() {
   const { t } = useTranslation();
   // Get active schema tag from URL search param (hash)
   const { schemaTag: activeSchemaTag } = useSearch({ from: '/publicLayout/docs/schemas' });
@@ -28,20 +30,18 @@ const SchemasPage = () => {
   // Tag section IDs - schema refs are contributed by SchemaDetail when rendered
   const schemaTagIds = schemaTags.map((t) => t.name);
 
-  // Enable scroll spy with tag section IDs, enable hash writing
-  useScrollSpy({
-    sectionIds: schemaTagIds,
-    enableWriteHash: true,
-    smoothScroll: false,
-  });
+  // Enable scroll spy with tag section IDs
+  useScrollSpy(schemaTagIds);
 
   return (
     <div className="container">
-      <div className="flex items-center gap-3 mb-6">
-        <span className="text-sm text-muted-foreground">
-          {schemas.length} {t('common:schema', { count: schemas.length })}
-        </span>
-      </div>
+      <StickyBox className="z-10 bg-background" offsetTop={0} hideOnScrollDown>
+        <div className="flex items-center gap-3 py-3">
+          <span className="text-sm text-muted-foreground">
+            {schemas.length} {t('common:schema', { count: schemas.length })}
+          </span>
+        </div>
+      </StickyBox>
 
       <div className="flex flex-col gap-12 lg:gap-20">
         {schemaTags.map((tag) => {
@@ -50,7 +50,7 @@ const SchemasPage = () => {
 
           return (
             <Collapsible key={tag.name} open={isOpen}>
-              <Card id={tag.name} className="scroll-mt-4 border-0 rounded-b-none">
+              <Card id={`spy-${tag.name}`} className="scroll-mt-4 border-0 rounded-b-none">
                 <CardHeader className="group">
                   <CardTitle className="text-2xl leading-12 gap-2">
                     {tag.name}
@@ -69,7 +69,13 @@ const SchemasPage = () => {
                         hash={schema.ref.replace(/^#/, '')}
                         replace
                         draggable={false}
+                        resetScroll={false}
                         className="flex max-w-full min-w-0 items-baseline gap-0.5 font-mono text-sm truncate"
+                        onClick={(e) => {
+                          if (e.metaKey || e.ctrlKey) return;
+                          // Wait for collapsible to open before scrolling
+                          requestAnimationFrame(() => scrollToSectionById(schema.ref.replace(/^#/, '')));
+                        }}
                       >
                         <span className="min-w-0 flex-[0_1_auto] truncate">
                           {schema.ref.split('/').slice(0, -1).join('/')}
@@ -87,6 +93,10 @@ const SchemasPage = () => {
                     replace
                     draggable={false}
                     resetScroll={false}
+                    onClick={() => {
+                      // Wait for collapsible to open before scrolling
+                      if (!isOpen) requestAnimationFrame(() => scrollToSectionById(tag.name));
+                    }}
                     className={cn(
                       buttonVariants({ variant: 'ghost', size: 'default' }),
                       'flex items-center w-fit gap-2 -ml-3',
@@ -115,6 +125,6 @@ const SchemasPage = () => {
       </div>
     </div>
   );
-};
+}
 
 export default SchemasPage;

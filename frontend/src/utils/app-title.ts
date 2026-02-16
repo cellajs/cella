@@ -1,4 +1,4 @@
-import { appConfig } from 'config';
+import { appConfig } from 'shared';
 
 /**
  * Generates a page title with the app name suffix.

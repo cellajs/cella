@@ -1,15 +1,15 @@
-import { appConfig } from 'config';
 import { eq } from 'drizzle-orm';
 import { testClient } from 'hono/testing';
+import { appConfig } from 'shared';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { db } from '#/db/db';
+import { unsafeInternalDb as db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
 import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';
-import { mockEmail, mockUser } from '../../mocks';
+import { mockEmail, mockUser } from '../../mocks/mock-user';
 import { pastIsoDate } from '../../mocks/utils';
 import { defaultHeaders, signUpUser } from '../fixtures';
 import { ErrorResponse, parseResponse } from '../helpers';
@@ -83,9 +83,10 @@ describe('Passkey Authentication', async () => {
         { json: { type: 'mfa' } },
         { headers: defaultHeaders },
       );
+      expect(res.status).toBe(401);
+      const response = await parseResponse<{ type: string }>(res);
 
-      // The endpoint should redirect to error page when confirm-mfa token is missing
-      expect(res.status).toBe(302);
+      expect(response.type).toBe('confirm-mfa_not_found');
     });
 
     it('should reject challenge generation for non-existent user', async () => {
@@ -424,12 +425,12 @@ describe('Passkey Authentication', async () => {
       const mfaToken = nanoid(40);
       const hashedMfaToken = encodeLowerCased(mfaToken);
       await db.insert(tokensTable).values({
-        token: hashedMfaToken,
+        secret: hashedMfaToken,
         type: 'confirm-mfa',
         userId: user.id,
         email: user.email,
         createdBy: user.id,
-        expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(), // 10 minutes
       });
 
       // Mock the validatePasskey function at the module level

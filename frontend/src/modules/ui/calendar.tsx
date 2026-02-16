@@ -4,7 +4,7 @@ import { DayButton, DayPicker, getDefaultClassNames } from 'react-day-picker';
 import { Button, buttonVariants } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
-function Calendar({
+export function Calendar({
   className,
   classNames,
   showOutsideDays = true,
@@ -122,7 +122,7 @@ function Calendar({
   );
 }
 
-function CalendarDayButton({ className, day, modifiers, ...props }: React.ComponentProps<typeof DayButton>) {
+export function CalendarDayButton({ className, day, modifiers, ...props }: React.ComponentProps<typeof DayButton>) {
   const defaultClassNames = getDefaultClassNames();
 
   const ref = React.useRef<HTMLButtonElement>(null);
@@ -151,5 +151,3 @@ function CalendarDayButton({ className, day, modifiers, ...props }: React.Compon
     />
   );
 }
-
-export { Calendar, CalendarDayButton };

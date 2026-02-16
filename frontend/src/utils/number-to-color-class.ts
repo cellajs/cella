@@ -1,4 +1,4 @@
-import { appConfig } from 'config';
+import { appConfig } from 'shared';
 
 /**
  * Generates a number from a string for color selection.

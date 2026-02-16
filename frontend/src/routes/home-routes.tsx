@@ -1,7 +1,7 @@
 import { createRoute, redirect } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
 import z from 'zod';
-import Home from '~/modules/home';
+import { Home } from '~/modules/home';
 import { AppLayoutRoute } from '~/routes/base-routes';
 import { useUserStore } from '~/store/user';
 import appTitle from '~/utils/app-title';

@@ -1,9 +1,9 @@
 import { onlineManager } from '@tanstack/react-query';
-import { appConfig } from 'config';
 import { TrashIcon, UploadIcon } from 'lucide-react';
 import { useRef } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import { AvatarWrap, type AvatarWrapProps } from '~/modules/common/avatar-wrap';
 import { toaster } from '~/modules/common/toaster/service';
 import { useUploader } from '~/modules/common/uploader/use-uploader';
@@ -21,7 +21,7 @@ interface Props {
   type: AvatarWrapProps['type'];
 }
 
-const AvatarFormField = ({ form, label, name, entity, type }: Props) => {
+export function AvatarFormField({ form, label, name, entity, type }: Props) {
   const { t } = useTranslation();
   const uploadButtonRef = useRef(null);
   const upload = useUploader();
@@ -30,7 +30,7 @@ const AvatarFormField = ({ form, label, name, entity, type }: Props) => {
   const url = form.getValues(name);
 
   const handleUpdateURL = (key: string | null) => {
-    const urlWithPublicCDN = key ? `${appConfig.publicCDNUrl}/${key}` : null;
+    const urlWithPublicCDN = key ? `${appConfig.s3.publicCDNUrl}/${key}` : null;
     form.setValue(name, urlWithPublicCDN, { shouldDirty: true });
   };
 
@@ -96,6 +96,4 @@ const AvatarFormField = ({ form, label, name, entity, type }: Props) => {
       )}
     />
   );
-};
-
-export default AvatarFormField;
+}

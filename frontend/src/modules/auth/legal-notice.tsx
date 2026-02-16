@@ -1,10 +1,10 @@
-import { appConfig } from 'config';
 import { type RefObject, Suspense, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import Spinner from '~/modules/common/spinner';
+import { Spinner } from '~/modules/common/spinner';
 import type { LegalSubject } from '~/modules/marketing/legal/legal-config';
-import LegalText from '~/modules/marketing/legal/legal-text';
+import { LegalText } from '~/modules/marketing/legal/legal-text';
 import { Button } from '~/modules/ui/button';
 
 export const LegalNotice = ({
@@ -37,7 +37,12 @@ export const LegalNotice = ({
 
   return (
     <p className="font-light text-center space-x-1">
-      {mode === 'signup' && <span>{t('common:legal_notice.text', { email })}</span>}
+      {mode === 'signup' &&
+        (email ? (
+          <span>{t('common:legal_notice_email.text', { email })}</span>
+        ) : (
+          <span>{t('common:legal_notice.text')}</span>
+        ))}
       {mode === 'waitlist' && <span>{t('common:legal_notice_waitlist.text', { email })}</span>}
       {mode === 'verify' && <span>{t('common:request_verification.legal_notice')}</span>}
       <Button

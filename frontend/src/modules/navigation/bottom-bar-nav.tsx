@@ -1,5 +1,5 @@
 import { Fragment } from 'react/jsx-runtime';
-import useMounted from '~/hooks/use-mounted';
+import { useMountedState } from '~/hooks/use-mounted-state';
 import { BottomBarNavButton } from '~/modules/navigation/nav-buttons';
 import type { NavItem, TriggerNavItemFn } from '~/modules/navigation/types';
 import { navItems } from '~/nav-config';
@@ -9,10 +9,10 @@ import { cn } from '~/utils/cn';
 
 // Cached base nav items
 let baseNavItems: NavItem[] | null = null;
-const getBaseNavItems = () => {
+function getBaseNavItems() {
   if (!baseNavItems) baseNavItems = navItems.filter(({ type }) => type === 'base');
   return baseNavItems;
-};
+}
 
 interface BottomBarNavProps {
   triggerNavItem: TriggerNavItemFn;
@@ -22,7 +22,7 @@ interface BottomBarNavProps {
  * Mobile bottom navigation bar.
  */
 export function BottomBarNav({ triggerNavItem }: BottomBarNavProps) {
-  const { hasStarted } = useMounted();
+  const { hasStarted } = useMountedState();
   const theme = useUIStore((state) => state.theme);
   const navSheetOpen = useNavigationStore((state) => state.navSheetOpen);
 
@@ -57,5 +57,3 @@ export function BottomBarNav({ triggerNavItem }: BottomBarNavProps) {
     </nav>
   );
 }
-
-export default BottomBarNav;

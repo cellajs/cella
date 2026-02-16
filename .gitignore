@@ -24,6 +24,7 @@ dist-ssr
 *.sln
 *.sw?
 .turbo
+.todos
 .env
 .env.*
 !.env.example
@@ -35,6 +36,7 @@ dist-ssr
 .db
 .rendered
 backend/openapi.cache.json
+backend/.openapi-manifest.json
 frontend/vite/temp-api-gen-*
 frontend/vite/temp-docs-gen-*
 frontend/vite/.generate-client.lock
@@ -43,11 +45,9 @@ frontend/vite/.generate-client.lock
 .netlify
 .wrangler
 frontend/stats.html
-.trigger
 .junie
 
 # Cella
-cella.diverged.txt
 *storybook.log
 storybook-static
 .locales-cache

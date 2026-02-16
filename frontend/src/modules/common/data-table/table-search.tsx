@@ -1,8 +1,9 @@
 import { useIsFetching } from '@tanstack/react-query';
 import { XCircleIcon } from 'lucide-react';
-import { useContext, useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDebounce } from '~/hooks/use-debounce';
+import { useFocusByRef } from '~/hooks/use-focus-by-ref';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { TableFilterBarContext } from '~/modules/common/data-table/table-filter-bar';
 import { SearchSpinner } from '~/modules/common/search-spinner';
@@ -16,13 +17,13 @@ interface TableSearchProps {
   setQuery: (value: string) => void;
 }
 
-const TableSearch = ({ name, value = '', allowOfflineSearch = false, setQuery }: TableSearchProps) => {
+export function TableSearch({ name, value = '', allowOfflineSearch = false, setQuery }: TableSearchProps) {
   const { t } = useTranslation();
   const { isOnline } = useOnlineManager();
   const { isFilterActive } = useContext(TableFilterBarContext);
   const tableFetchingCount = useIsFetching();
 
-  const inputRef = useRef<HTMLInputElement>(null);
+  const { focusRef: inputRef, setFocus } = useFocusByRef({ trigger: isFilterActive, delay: 50 });
   const [inputValue, setInputValue] = useState(value);
 
   const isSearching = tableFetchingCount > 0 && !!inputValue.length;
@@ -37,11 +38,6 @@ const TableSearch = ({ name, value = '', allowOfflineSearch = false, setQuery }:
   useEffect(() => {
     if (!inputRef.current || document.activeElement !== inputRef.current) setInputValue(value);
   }, [value]);
-
-  // Focus input when filter button is active (for mobile)
-  useEffect(() => {
-    if (isFilterActive) inputRef.current?.focus();
-  }, [isFilterActive]);
 
   return (
     <InputGroup className="w-full border-0 shadow-none focus-visible:ring-offset-0">
@@ -62,18 +58,17 @@ const TableSearch = ({ name, value = '', allowOfflineSearch = false, setQuery }:
       </InputGroupAddon>
 
       {/* Clear Button */}
-      <InputGroupAddon className="pr-2" align="inline-end">
+      <InputGroupAddon className="max-sm:hidden pr-2" align="inline-end">
         <XCircleIcon
           size={16}
           className={cn('opacity-70 hover:opacity-100 cursor-pointer', inputValue.length ? 'visible' : 'invisible')}
           onClick={() => {
             setInputValue('');
             setQuery('');
+            setFocus();
           }}
         />
       </InputGroupAddon>
     </InputGroup>
   );
-};
-
-export default TableSearch;
+}

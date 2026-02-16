@@ -1,22 +1,23 @@
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { appConfig } from 'config';
 import { FingerprintIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import { type SignInWithPasskeyData, type SignInWithPasskeyResponse, signInWithPasskey } from '~/api.gen';
 import { ApiError } from '~/lib/api';
 import { getPasskeyVerifyCredential } from '~/modules/auth/passkey-credentials';
 import type { PasskeyCredentialProps } from '~/modules/auth/types';
 import { toaster } from '~/modules/common/toaster/service';
 import { Button } from '~/modules/ui/button';
+
 import { useUIStore } from '~/store/ui';
 
-const PasskeyStrategy = ({
+export function PasskeyStrategy({
   email,
   type,
 }: Omit<PasskeyCredentialProps, 'type'> & {
   type: Exclude<PasskeyCredentialProps['type'], 'registration'>;
-}) => {
+}) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const mode = useUIStore((state) => state.mode);
@@ -60,6 +61,4 @@ const PasskeyStrategy = ({
       </Button>
     </div>
   );
-};
-
-export default PasskeyStrategy;
+}

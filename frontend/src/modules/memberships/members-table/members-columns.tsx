@@ -1,13 +1,13 @@
-import { appConfig } from 'config';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { roles } from 'shared';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
-import HeaderCell from '~/modules/common/data-table/header-cell';
+import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
+import { HeaderCell } from '~/modules/common/data-table/header-cell';
 import { renderSelect } from '~/modules/common/data-table/select-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import type { Member } from '~/modules/memberships/types';
-import { UserCell } from '~/modules/users/user-cell';
+import { UserCell } from '~/modules/user/user-cell';
 import { dateShort } from '~/utils/date-short';
 
 export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
@@ -25,14 +25,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
         sortable: true,
         resizable: true,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row, tabIndex }) => (
-          <UserCell
-            user={row}
-            tabIndex={tabIndex}
-            orgIdOrSlug={row.membership.organizationId}
-            className="font-medium"
-          />
-        ),
+        renderCell: ({ row, tabIndex }) => <UserCell user={row} tabIndex={tabIndex} className="font-medium" />,
       },
       {
         key: 'email',
@@ -80,7 +73,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
             renderSelect({
               row,
               onRowChange,
-              options: appConfig.roles.entityRoles,
+              options: roles.all,
             }),
         }),
       },

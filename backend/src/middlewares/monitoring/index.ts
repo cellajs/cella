@@ -2,7 +2,7 @@ import * as Sentry from '@sentry/node';
 import type { MiddlewareHandler } from 'hono';
 import { createMiddleware } from 'hono/factory';
 import type { Env } from '#/lib/context';
-import { AppError } from '#/lib/errors';
+import { AppError } from '#/lib/error';
 
 /**
  * Middleware to monitor and log errors and performance metrics.

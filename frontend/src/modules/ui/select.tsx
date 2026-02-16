@@ -41,6 +41,9 @@ function SelectTrigger({
   );
 }
 
+/**
+ * Renders select content without a portal for custom layering.
+ */
 export function SelectContentNoPortal({
   className,
   children,

@@ -136,7 +136,8 @@ export function resolveSchemaProperty(
       const result = resolveSchemaProperty(resolved, isRequired, spec, newVisited);
       // Add ref metadata
       result.ref = schema.$ref;
-      if (resolved.description) {
+      // Only add refDescription if the property doesn't already have the same description
+      if (resolved.description && resolved.description !== result.description) {
         result.refDescription = resolved.description;
       }
       return result;
@@ -260,7 +261,8 @@ export function resolveSchema(schema: OpenApiSchema, spec: OpenApiSpec, visited:
       const result = resolveSchema(resolved, spec, newVisited);
       // Preserve original ref info
       result.ref = schema.$ref;
-      if (resolved.description) {
+      // Only add refDescription if the schema doesn't already have the same description
+      if (resolved.description && resolved.description !== result.description) {
         result.refDescription = resolved.description;
       }
       return result;

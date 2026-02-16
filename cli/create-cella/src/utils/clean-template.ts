@@ -1,8 +1,8 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import colors from 'picocolors';
+import pc from 'picocolors';
 
-import { TO_CLEAN, TO_COPY, TO_EDIT, TO_REMOVE } from '../constants.js';
+import { TO_CLEAN, TO_COPY, TO_EDIT, TO_REMOVE } from '#/constants';
 
 /**
  * Cleans the specified template by removing designated folders and files.
@@ -105,7 +105,7 @@ export async function copyFile(src: string, dest: string): Promise<void> {
     await fs.copyFile(src, dest);
   } catch (err: any) {
     if (err.code === 'ENOENT') {
-      console.info(`\n${colors.yellow('⚠')} Source file "${src}" does not exist > Skip copy`);
+      console.info(`\n${pc.yellow('⚠')} Source file "${src}" does not exist > Skip copy`);
     } else {
       throw err;
     }
@@ -117,7 +117,10 @@ export async function copyFile(src: string, dest: string): Promise<void> {
  * @param filePath - The path of the file to edit.
  * @param edits - The list of edits to apply.
  */
-export async function editFile(filePath: string, edits: Array<{ regexMatch: RegExp; replaceWith: string }>): Promise<void> {
+export async function editFile(
+  filePath: string,
+  edits: Array<{ regexMatch: RegExp; replaceWith: string }>,
+): Promise<void> {
   try {
     await fs.access(filePath);
 
@@ -136,7 +139,7 @@ export async function editFile(filePath: string, edits: Array<{ regexMatch: RegE
     }
   } catch (err: any) {
     if (err.code === 'ENOENT') {
-      console.info(`\n${colors.yellow('⚠')} Source file "${filePath}" does not exist > Skip edit`);
+      console.info(`\n${pc.yellow('⚠')} Source file "${filePath}" does not exist > Skip edit`);
     } else {
       throw err;
     }

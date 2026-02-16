@@ -1,8 +1,8 @@
 import { onlineManager, useMutation } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { appConfig } from 'config';
 import { UserRoundXIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import { type ContextEntityBase, deleteMyMembership } from '~/api.gen';
 import { CallbackArgs } from '~/modules/common/data-table/types';
 import { toaster } from '~/modules/common/toaster/service';
@@ -28,8 +28,8 @@ export const LeaveEntityButton = ({
 
   const { mutate: leaveEntity } = useMutation({
     mutationFn: async () => {
-      const idOrSlug = entity.id;
-      return await deleteMyMembership({ query: { idOrSlug, entityType: entity.entityType } });
+      const entityId = entity.id;
+      return await deleteMyMembership({ query: { entityId, entityType: entity.entityType } });
     },
     onSuccess: () => {
       toaster(t('common:success.you_left_entity', { entity: entity.entityType }), 'success');

@@ -1,10 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { onlineManager } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { appConfig } from 'config';
 import { ArrowRightIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import type { z } from 'zod';
 import { zCreateRequestData } from '~/api.gen/zod.gen';
 import { CallbackArgs } from '~/modules/common/data-table/types';

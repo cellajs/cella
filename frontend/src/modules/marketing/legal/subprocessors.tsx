@@ -1,7 +1,7 @@
 import subprocessors from '#json/subprocessors.json';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~/modules/ui/table';
 
-const Subprocessors = () => {
+export function Subprocessors() {
   return (
     <Table title="Subprocessors" className="mt-2">
       <TableHeader>
@@ -32,6 +32,4 @@ const Subprocessors = () => {
       </TableBody>
     </Table>
   );
-};
-
-export default Subprocessors;
+}

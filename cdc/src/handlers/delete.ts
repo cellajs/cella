@@ -1,14 +1,17 @@
 import type { Pgoutput } from 'pg-logical-replication';
 import type { InsertActivityModel } from '#/db/schema/activities';
-import { nanoid } from '#/utils/nanoid';
 import { getTableName } from 'drizzle-orm';
+import type { ProcessMessageResult } from '../process-message';
 import type { TableRegistryEntry } from '../types';
-import { actionToVerb, convertRowKeys, extractActivityContext, extractRowData } from '../utils';
+import { actionToVerb, convertRowKeys, extractActivityContext, extractRowData, extractStxData } from '../utils';
 
 /**
- * Handle a DELETE message and create an activity.
+ * Handle a DELETE message and create an activity with entity data.
  */
-export function handleDelete(entry: TableRegistryEntry, message: Pgoutput.MessageDelete): InsertActivityModel {
+export function handleDelete(
+  entry: TableRegistryEntry,
+  message: Pgoutput.MessageDelete,
+): ProcessMessageResult {
   // For DELETE, we only have old row data (if REPLICA IDENTITY is set)
   const row = convertRowKeys(extractRowData(message.old));
   const ctx = extractActivityContext(entry, row);
@@ -22,16 +25,25 @@ export function handleDelete(entry: TableRegistryEntry, message: Pgoutput.Messag
   // which no longer exists. Set to null to avoid foreign key violation.
   const userId = tableName === 'users' ? null : ctx.userId;
 
-  return {
-    id: nanoid(),
+  // Extract stx data from realtime entities
+  const stx = extractStxData(row);
+
+  // Destructure known fields; remaining are dynamic context entity IDs (organizationId, projectId, etc.)
+  const { entityId, userId: _userId, tenantId, entityType, resourceType, ...contextEntityIds } = ctx;
+
+  const activity: InsertActivityModel = {
+    tenantId,
     userId,
-    entityType: ctx.entityType,
-    resourceType: ctx.resourceType,
+    entityType,
+    resourceType,
     action,
     tableName,
     type,
-    entityId: ctx.entityId,
-    organizationId: ctx.organizationId,
+    entityId,
+    ...contextEntityIds,
     changedKeys: null,
+    stx,
   };
+
+  return { activity, entityData: row, entry };
 }

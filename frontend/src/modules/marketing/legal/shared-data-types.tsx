@@ -1,7 +1,7 @@
 import sharedDataTypes from '#json/shared-data-types.json';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~/modules/ui/table';
 
-const SharedDataTypes = () => {
+export function SharedDataTypes() {
   return (
     <Table title="Shared Data Types" className="mt-2">
       <TableHeader>
@@ -26,6 +26,4 @@ const SharedDataTypes = () => {
       </TableBody>
     </Table>
   );
-};
-
-export default SharedDataTypes;
+}

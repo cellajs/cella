@@ -1,21 +1,14 @@
-import { appConfig } from 'config';
 import i18n from 'i18next';
 import { Column, Row, Text } from 'jsx-email';
+import { appConfig, type EntityRole } from 'shared';
+import { Avatar, EmailBody, EmailButton, EmailContainer, EmailHeader, EmailLogo, Footer } from '../components';
+import type { BasicTemplateType } from '../types';
 
-import type { BasicTemplateType } from '../../src/lib/mailer';
-import { AppLogo } from '../components/app-logo';
-import { Avatar } from '../components/avatar';
-import { EmailContainer } from '../components/container';
-import { EmailBody } from '../components/email-body';
-import { EmailButton } from '../components/email-button';
-import { EmailHeader } from '../components/email-header';
-import { Footer } from '../components/footer';
-
-export interface MemberInviteEmailProps extends BasicTemplateType {
+interface MemberInviteEmailProps extends BasicTemplateType {
   memberInviteLink: string;
   senderName: string;
   entityName: string;
-  role: (typeof appConfig.roles.entityRoles)[number];
+  role: EntityRole;
 }
 
 const appName = appConfig.name;
@@ -23,7 +16,14 @@ const appName = appConfig.name;
 /**
  * Email template for existing users that receive a new membership invitation.
  */
-export const MemberInviteEmail = ({ name, lng, senderName, role, entityName, memberInviteLink }: MemberInviteEmailProps) => {
+export const MemberInviteEmail = ({
+  name,
+  lng,
+  senderName,
+  role,
+  entityName,
+  memberInviteLink,
+}: MemberInviteEmailProps) => {
   return (
     <EmailContainer previewText={i18n.t('backend:email.member_invite.preview', { lng, entityName, appName })}>
       {senderName && (
@@ -42,13 +42,17 @@ export const MemberInviteEmail = ({ name, lng, senderName, role, entityName, mem
       <EmailBody>
         <Text>
           <p style={{ marginBottom: '4px' }}>{name && i18n.t('backend:email.hi', { lng, name })}</p>
-          <span dangerouslySetInnerHTML={{ __html: i18n.t('backend:email.member_invite.text', { lng, entityName, appName, senderName, role }) }} />
+          <span
+            dangerouslySetInnerHTML={{
+              __html: i18n.t('backend:email.member_invite.text', { lng, entityName, appName, senderName, role }),
+            }}
+          />
         </Text>
 
         <EmailButton ButtonText={i18n.t('common:accept', { lng })} href={memberInviteLink} />
       </EmailBody>
 
-      <AppLogo />
+      <EmailLogo />
       <Footer />
     </EmailContainer>
   );
