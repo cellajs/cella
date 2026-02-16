@@ -75,6 +75,19 @@ END $$;
 `;
 }
 
+const requiredRoles = ['runtime_role', 'cdc_role', 'admin_role'] as const;
+
+/**
+ * Fast read-only check: do all required roles already exist?
+ * Returns true if setup can be skipped (avoids catalog writes on hot-reload).
+ */
+async function rolesExist(): Promise<boolean> {
+  const result = await migrationDb!.execute(
+    sql.raw(`SELECT COUNT(*)::int AS cnt FROM pg_roles WHERE rolname IN ('${requiredRoles.join("','")}')`),
+  );
+  return (result.rows[0] as { cnt: number }).cnt === requiredRoles.length;
+}
+
 export async function createDbRoles() {
   if (env.DEV_MODE === 'basic') {
     // PGlite doesn't support roles
@@ -86,18 +99,22 @@ export async function createDbRoles() {
     process.exit(1);
   }
 
+  // Quick pre-check: skip entirely when all roles already exist (common on hot-reload)
+  if (await rolesExist()) return;
+
+  // Extract passwords from connection strings
+  const runtime = parseCredentials(env.DATABASE_URL);
+  const cdcUrl = process.env.DATABASE_CDC_URL;
+
+  // For admin_role, use a dedicated env var or fall back to same password as runtime
+  const adminPassword = process.env.DATABASE_ADMIN_ROLE_PASSWORD ?? runtime.password;
+
+  // CDC URL is optional — default to runtime password if not set (e.g., quick/core modes without CDC)
+  const cdcPassword = cdcUrl ? parseCredentials(cdcUrl).password : runtime.password;
+
+  const createRolesSql = buildCreateRolesSql(runtime.password, cdcPassword, adminPassword);
+
   try {
-    // Extract passwords from connection strings
-    const runtime = parseCredentials(env.DATABASE_URL);
-    const cdcUrl = process.env.DATABASE_CDC_URL;
-
-    // For admin_role, use a dedicated env var or fall back to same password as runtime
-    const adminPassword = process.env.DATABASE_ADMIN_ROLE_PASSWORD ?? runtime.password;
-
-    // CDC URL is optional — default to runtime password if not set (e.g., quick/core modes without CDC)
-    const cdcPassword = cdcUrl ? parseCredentials(cdcUrl).password : runtime.password;
-
-    const createRolesSql = buildCreateRolesSql(runtime.password, cdcPassword, adminPassword);
     await migrationDb.execute(sql.raw(createRolesSql));
     console.info(`${pc.green('✔')} Database roles configured`);
   } catch (error) {
