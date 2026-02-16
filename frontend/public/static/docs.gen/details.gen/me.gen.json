@@ -33,7 +33,6 @@
                   "required": true,
                   "maxLength": 255
                 },
-                "name": { "type": "string", "required": true },
                 "description": {
                   "type": ["string", "null"],
                   "required": true
@@ -43,7 +42,6 @@
                   "required": true,
                   "maxLength": 255
                 },
-                "slug": { "type": "string", "required": true },
                 "thumbnailUrl": {
                   "type": ["string", "null"],
                   "required": true,
@@ -103,13 +101,6 @@
                 "lastSeenAt": {
                   "type": ["string", "null"],
                   "required": true
-                },
-                "lastSeenAt": {
-                  "required": true,
-                  "anyOf": [
-                    { "type": "string", "required": false },
-                    { "type": "null", "required": false }
-                  ]
                 }
               },
               "ref": "#/components/schemas/User"
@@ -137,7 +128,7 @@
             "thumbnailUrl": null,
             "bannerUrl": null,
             "language": "en",
-            "newsletter": true,
+            "newsletter": false,
             "mfaRequired": false,
             "userFlags": {},
             "createdAt": "2024-07-14T22:49:14.651Z",
@@ -216,7 +207,6 @@
               "required": true,
               "maxLength": 255
             },
-            "name": { "type": "string", "required": true },
             "description": {
               "type": ["string", "null"],
               "required": true
@@ -226,7 +216,6 @@
               "required": true,
               "maxLength": 255
             },
-            "slug": { "type": "string", "required": true },
             "thumbnailUrl": {
               "type": ["string", "null"],
               "required": true,
@@ -286,13 +275,6 @@
             "lastSeenAt": {
               "type": ["string", "null"],
               "required": true
-            },
-            "lastSeenAt": {
-              "required": true,
-              "anyOf": [
-                { "type": "string", "required": false },
-                { "type": "null", "required": false }
-              ]
             }
           },
           "ref": "#/components/schemas/User",
@@ -310,7 +292,7 @@
           "thumbnailUrl": null,
           "bannerUrl": null,
           "language": "en",
-          "newsletter": true,
+          "newsletter": false,
           "mfaRequired": false,
           "userFlags": {},
           "createdAt": "2024-12-13T11:17:23.643Z",
@@ -478,7 +460,6 @@
               "required": true,
               "maxLength": 255
             },
-            "name": { "type": "string", "required": true },
             "description": {
               "type": ["string", "null"],
               "required": true
@@ -488,7 +469,6 @@
               "required": true,
               "maxLength": 255
             },
-            "slug": { "type": "string", "required": true },
             "thumbnailUrl": {
               "type": ["string", "null"],
               "required": true,
@@ -548,13 +528,6 @@
             "lastSeenAt": {
               "type": ["string", "null"],
               "required": true
-            },
-            "lastSeenAt": {
-              "required": true,
-              "anyOf": [
-                { "type": "string", "required": false },
-                { "type": "null", "required": false }
-              ]
             }
           },
           "ref": "#/components/schemas/User",
@@ -572,7 +545,7 @@
           "thumbnailUrl": null,
           "bannerUrl": null,
           "language": "en",
-          "newsletter": true,
+          "newsletter": false,
           "mfaRequired": false,
           "userFlags": {},
           "createdAt": "2024-12-13T11:17:23.643Z",
@@ -684,7 +657,6 @@
                     "required": true,
                     "maxLength": 50
                   },
-                  "userId": { "type": "string", "required": true },
                   "deviceName": {
                     "type": ["string", "null"],
                     "required": true,
@@ -898,7 +870,6 @@
                         "required": true,
                         "maxLength": 255
                       },
-                      "email": { "type": "string", "required": true },
                       "userId": {
                         "type": ["string", "null"],
                         "required": true,

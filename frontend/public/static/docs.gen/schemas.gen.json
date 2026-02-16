@@ -125,7 +125,6 @@
           "required": true,
           "maxLength": 50
         },
-        "userId": { "type": "string", "required": true },
         "role": {
           "type": "string",
           "required": true,
@@ -689,76 +688,6 @@
     }
   },
   {
-    "name": "Activity",
-    "ref": "#/components/schemas/Activity",
-    "type": "object",
-    "schema": {
-      "type": "object",
-      "properties": {
-        "id": { "type": "string", "required": true },
-        "userId": {
-          "type": ["string", "null"],
-          "required": true
-        },
-        "entityType": {
-          "type": ["string", "null"],
-          "required": true,
-          "enum": ["user", "organization", "attachment", "page", null]
-        },
-        "resourceType": {
-          "type": ["string", "null"],
-          "required": true,
-          "enum": ["request", "membership", null]
-        },
-        "action": {
-          "type": ["string", "null"],
-          "required": true,
-          "enum": ["create", "update", "delete", null]
-        },
-        "tableName": { "type": "string", "required": true },
-        "type": { "type": "string", "required": true },
-        "entityId": {
-          "type": ["string", "null"],
-          "required": true
-        },
-        "organizationId": {
-          "type": ["string", "null"],
-          "required": true
-        },
-        "createdAt": { "type": "string", "required": true },
-        "changedKeys": {
-          "required": true,
-          "anyOf": [
-            { "type": "string", "required": false },
-            { "type": "number", "required": false },
-            { "type": "boolean", "required": false },
-            { "type": "null", "required": false },
-            { "type": "object", "required": false },
-            {
-              "type": "array",
-              "required": false,
-              "itemType": "object"
-            }
-          ]
-        }
-      }
-    },
-    "schemaTag": "data",
-    "example": {
-      "id": "s933zhzgm8axl572xlcja86p",
-      "userId": "qc8osclgd1300kpvq3dotk41",
-      "entityType": "user",
-      "resourceType": null,
-      "action": "update",
-      "tableName": "memberships",
-      "type": "membership.updated",
-      "entityId": "21rs6psa9stclacdgtonoqr1",
-      "organizationId": "t2j8omleaz2pg8iwtnhw3666",
-      "createdAt": "2024-10-11T19:21:02.239Z",
-      "changedKeys": ["description", "name"]
-    }
-  },
-  {
     "name": "Me",
     "ref": "#/components/schemas/Me",
     "type": "object",
@@ -786,7 +715,6 @@
               "required": true,
               "maxLength": 255
             },
-            "name": { "type": "string", "required": true },
             "description": {
               "type": ["string", "null"],
               "required": true
@@ -796,7 +724,6 @@
               "required": true,
               "maxLength": 255
             },
-            "slug": { "type": "string", "required": true },
             "thumbnailUrl": {
               "type": ["string", "null"],
               "required": true,
@@ -856,13 +783,6 @@
             "lastSeenAt": {
               "type": ["string", "null"],
               "required": true
-            },
-            "lastSeenAt": {
-              "required": true,
-              "anyOf": [
-                { "type": "string", "required": false },
-                { "type": "null", "required": false }
-              ]
             }
           },
           "ref": "#/components/schemas/User"
@@ -890,7 +810,7 @@
         "thumbnailUrl": null,
         "bannerUrl": null,
         "language": "en",
-        "newsletter": true,
+        "newsletter": false,
         "mfaRequired": false,
         "userFlags": {},
         "createdAt": "2024-07-14T22:49:14.651Z",
@@ -926,7 +846,6 @@
           "required": true,
           "maxLength": 255
         },
-        "name": { "type": "string", "required": true },
         "description": {
           "type": ["string", "null"],
           "required": true
@@ -936,7 +855,6 @@
           "required": true,
           "maxLength": 255
         },
-        "slug": { "type": "string", "required": true },
         "thumbnailUrl": {
           "type": ["string", "null"],
           "required": true,
@@ -996,13 +914,6 @@
         "lastSeenAt": {
           "type": ["string", "null"],
           "required": true
-        },
-        "lastSeenAt": {
-          "required": true,
-          "anyOf": [
-            { "type": "string", "required": false },
-            { "type": "null", "required": false }
-          ]
         }
       }
     },
@@ -1020,7 +931,7 @@
       "thumbnailUrl": null,
       "bannerUrl": null,
       "language": "en",
-      "newsletter": true,
+      "newsletter": false,
       "mfaRequired": false,
       "userFlags": {},
       "createdAt": "2024-12-13T11:17:23.643Z",
@@ -1068,7 +979,6 @@
                 "required": true,
                 "maxLength": 50
               },
-              "userId": { "type": "string", "required": true },
               "deviceName": {
                 "type": ["string", "null"],
                 "required": true,
@@ -1200,7 +1110,6 @@
           "required": true,
           "maxLength": 255
         },
-        "email": { "type": "string", "required": true },
         "userId": {
           "type": ["string", "null"],
           "required": true,
@@ -1408,7 +1317,6 @@
           "required": true,
           "maxLength": 255
         },
-        "slug": { "type": "string", "required": true },
         "thumbnailUrl": {
           "type": ["string", "null"],
           "required": true,
@@ -1522,7 +1430,6 @@
                   "required": true,
                   "maxLength": 50
                 },
-                "userId": { "type": "string", "required": true },
                 "role": {
                   "type": "string",
                   "required": true,
@@ -1969,7 +1876,6 @@
           "required": true,
           "maxLength": 50
         },
-        "userId": { "type": "string", "required": true },
         "role": {
           "type": "string",
           "required": true,
@@ -1980,7 +1886,6 @@
           "required": true,
           "maxLength": 50
         },
-        "createdBy": { "type": "string", "required": true },
         "modifiedAt": {
           "type": ["string", "null"],
           "required": true

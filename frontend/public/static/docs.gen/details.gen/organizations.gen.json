@@ -566,7 +566,6 @@
                     "required": true,
                     "maxLength": 255
                   },
-                  "slug": { "type": "string", "required": true },
                   "thumbnailUrl": {
                     "type": ["string", "null"],
                     "required": true,
@@ -680,7 +679,6 @@
                             "required": true,
                             "maxLength": 50
                           },
-                          "userId": { "type": "string", "required": true },
                           "role": {
                             "type": "string",
                             "required": true,
@@ -922,9 +920,6 @@
             "required": false,
             "maxLength": 50
           },
-          "offset": { "type": "string", "required": false },
-          "limit": { "type": "string", "required": false },
-          "userId": { "type": "string", "required": false },
           "role": {
             "type": "string",
             "required": false,
@@ -983,7 +978,6 @@
               "required": true,
               "maxLength": 255
             },
-            "slug": { "type": "string", "required": true },
             "thumbnailUrl": {
               "type": ["string", "null"],
               "required": true,
@@ -1097,7 +1091,6 @@
                       "required": true,
                       "maxLength": 50
                     },
-                    "userId": { "type": "string", "required": true },
                     "role": {
                       "type": "string",
                       "required": true,
@@ -1322,7 +1315,6 @@
               "required": true,
               "maxLength": 255
             },
-            "slug": { "type": "string", "required": true },
             "thumbnailUrl": {
               "type": ["string", "null"],
               "required": true,
@@ -1436,7 +1428,6 @@
                       "required": true,
                       "maxLength": 50
                     },
-                    "userId": { "type": "string", "required": true },
                     "role": {
                       "type": "string",
                       "required": true,

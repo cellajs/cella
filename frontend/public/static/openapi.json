@@ -206,12 +206,6 @@
           "name": {
             "type": "string"
           },
-          "description": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
           "createdAt": {
             "type": "string"
           },
@@ -256,7 +250,6 @@
         "required": [
           "id",
           "name",
-          "description",
           "createdAt",
           "modifiedAt",
           "slug",
@@ -963,130 +956,6 @@
           "organizationId": "pg8iwtnhw3666j3aifuxshox"
         }
       },
-      "Activity": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "userId": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "entityType": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "enum": [
-              "user",
-              "organization",
-              "attachment",
-              "page",
-              null
-            ]
-          },
-          "resourceType": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "enum": [
-              "request",
-              "membership",
-              null
-            ]
-          },
-          "action": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "enum": [
-              "create",
-              "update",
-              "delete",
-              null
-            ]
-          },
-          "tableName": {
-            "type": "string"
-          },
-          "type": {
-            "type": "string"
-          },
-          "entityId": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "organizationId": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "createdAt": {
-            "type": "string"
-          },
-          "changedKeys": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "number"
-              },
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              },
-              {
-                "type": "object",
-                "additionalProperties": {}
-              },
-              {
-                "type": "array",
-                "items": {}
-              }
-            ]
-          }
-        },
-        "required": [
-          "id",
-          "userId",
-          "entityType",
-          "resourceType",
-          "action",
-          "tableName",
-          "type",
-          "entityId",
-          "organizationId",
-          "createdAt",
-          "changedKeys"
-        ],
-        "example": {
-          "id": "s933zhzgm8axl572xlcja86p",
-          "userId": "qc8osclgd1300kpvq3dotk41",
-          "entityType": "user",
-          "resourceType": null,
-          "action": "update",
-          "tableName": "memberships",
-          "type": "membership.updated",
-          "entityId": "21rs6psa9stclacdgtonoqr1",
-          "organizationId": "t2j8omleaz2pg8iwtnhw3666",
-          "createdAt": "2024-10-11T19:21:02.239Z",
-          "changedKeys": [
-            "description",
-            "name"
-          ]
-        }
-      },
       "Me": {
         "type": "object",
         "properties": {
@@ -1120,7 +989,7 @@
             "thumbnailUrl": null,
             "bannerUrl": null,
             "language": "en",
-            "newsletter": true,
+            "newsletter": false,
             "mfaRequired": false,
             "userFlags": {},
             "createdAt": "2024-07-14T22:49:14.651Z",
@@ -1249,16 +1118,6 @@
               "string",
               "null"
             ]
-          },
-          "lastSeenAt": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
           }
         },
         "required": [
@@ -1296,7 +1155,7 @@
           "thumbnailUrl": null,
           "bannerUrl": null,
           "language": "en",
-          "newsletter": true,
+          "newsletter": false,
           "mfaRequired": false,
           "userFlags": {},
           "createdAt": "2024-12-13T11:17:23.643Z",
@@ -1783,12 +1642,6 @@
               "null"
             ]
           },
-          "modifiedAt": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
           "slug": {
             "type": "string",
             "maxLength": 255
@@ -1820,18 +1673,6 @@
               "null"
             ],
             "maxLength": 50
-          },
-          "createdBy": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "modifiedBy": {
-            "type": [
-              "string",
-              "null"
-            ]
           },
           "shortName": {
             "type": [
@@ -2160,18 +2001,6 @@
             ],
             "maxLength": 50
           },
-          "createdBy": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "modifiedBy": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
           "status": {
             "type": "string",
             "enum": [
@@ -2205,7 +2034,6 @@
           "modifiedAt",
           "stx",
           "description",
-          "modifiedAt",
           "keywords",
           "createdBy",
           "modifiedBy",
@@ -4773,7 +4601,7 @@
                     "thumbnailUrl": null,
                     "bannerUrl": null,
                     "language": "en",
-                    "newsletter": true,
+                    "newsletter": false,
                     "mfaRequired": false,
                     "userFlags": {},
                     "createdAt": "2024-07-14T22:49:14.651Z",
@@ -4907,7 +4735,7 @@
                   "thumbnailUrl": null,
                   "bannerUrl": null,
                   "language": "en",
-                  "newsletter": true,
+                  "newsletter": false,
                   "mfaRequired": false,
                   "userFlags": {},
                   "createdAt": "2024-12-13T11:17:23.643Z",
@@ -5058,7 +4886,7 @@
                   "thumbnailUrl": null,
                   "bannerUrl": null,
                   "language": "en",
-                  "newsletter": true,
+                  "newsletter": false,
                   "mfaRequired": false,
                   "userFlags": {},
                   "createdAt": "2024-12-13T11:17:23.643Z",
@@ -11899,16 +11727,6 @@
                             "type": [
                               "string",
                               "null"
-                            ]
-                          },
-                          "lastSeenAt": {
-                            "anyOf": [
-                              {
-                                "type": "string"
-                              },
-                              {
-                                "type": "null"
-                              }
                             ]
                           },
                           "membership": {

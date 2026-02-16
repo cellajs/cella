@@ -10,7 +10,6 @@ export type ClientOptions = {
 export type UserBase = {
   id: string;
   name: string;
-  description: string | null;
   createdAt: string;
   modifiedAt: string | null;
   slug: string;

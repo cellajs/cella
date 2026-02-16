@@ -28,7 +28,6 @@
               "required": true,
               "maxLength": 255
             },
-            "email": { "type": "string", "required": true },
             "type": {
               "type": "string",
               "required": true,
@@ -145,7 +144,6 @@
                     "required": true,
                     "maxLength": 255
                   },
-                  "email": { "type": "string", "required": true },
                   "type": {
                     "type": "string",
                     "required": true,

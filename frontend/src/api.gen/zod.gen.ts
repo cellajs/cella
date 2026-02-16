@@ -8,7 +8,6 @@ import * as z from 'zod';
 export const zUserBase = z.object({
   id: z.string(),
   name: z.string(),
-  description: z.union([z.string(), z.null()]),
   createdAt: z.string(),
   modifiedAt: z.union([z.string(), z.null()]),
   slug: z.string(),
@@ -485,35 +484,6 @@ export const zGetAuthHealthData = z.object({
 export const zGetAuthHealthResponse = z.object({
   restrictedMode: z.boolean(),
   retryAfter: z.optional(z.number()),
-});
-
-export const zGetActivitiesData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.optional(
-    z.object({
-      q: z.optional(z.string()),
-      sort: z.optional(z.enum(['createdAt', 'type', 'tableName'])),
-      order: z.optional(z.enum(['asc', 'desc'])),
-      offset: z.optional(z.string()),
-      limit: z.optional(z.string()),
-      userId: z.optional(z.string()),
-      entityType: z.optional(z.enum(['user', 'organization', 'attachment', 'page'])),
-      resourceType: z.optional(z.enum(['request', 'membership'])),
-      action: z.optional(z.enum(['create', 'update', 'delete'])),
-      tableName: z.optional(z.string()),
-      type: z.optional(z.string()),
-      entityId: z.optional(z.string()),
-    }),
-  ),
-});
-
-/**
- * Activities
- */
-export const zGetActivitiesResponse = z.object({
-  items: z.array(zActivity),
-  total: z.number(),
 });
 
 export const zCheckEmailData = z.object({

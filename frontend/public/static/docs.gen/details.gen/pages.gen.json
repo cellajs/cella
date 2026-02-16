@@ -1051,7 +1051,6 @@
             "required": false,
             "maxLength": 100000
           },
-          "keywords": { "type": "string", "required": false },
           "displayOrder": {
             "type": "number",
             "required": false,

@@ -50,11 +50,6 @@
     "count": 5
   },
   {
-    "name": "pages",
-    "description": "Endpoints for managing *pages*, which are product entities supporting realtime sync and offline\n        capabilities. Pages can be organized hierarchically and are used in /docs.",
-    "count": 6
-  },
-  {
     "name": "metrics",
     "description": "Operations for retrieving system-level statistics and observability data. Includes public entity\n        counts (cached, with bot protection), raw system metrics, Node.js runtime metrics, entity cache\n        stats, and CDC sync pipeline metrics. Detailed metrics require system admin access.",
     "count": 5
