@@ -66,7 +66,6 @@ export default defineConfig({
       "frontend/src/menu-config.tsx",
       "frontend/src/alert-config.tsx",
       "frontend/src/offline-config.tsx",
-      "frontend/src/api.gen/*",
       "frontend/src/styling/gradients.css",
       "frontend/src/routes/route-tree.tsx",
       "frontend/src/routes/marketing-routes.tsx",
