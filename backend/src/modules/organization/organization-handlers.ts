@@ -44,7 +44,7 @@ const organizationRouteHandlers = app
       return m.contextType === 'organization' && m.createdBy === user.id ? cnt + 1 : cnt;
     }, 0);
 
-    // Organization restriction is hardcoded to max 5 for now
+    // Organization restriction is hardcoded to max 5 for now (system admins bypass this)
     const availableSlots = 5 - createdOrgsCount;
 
     // No slots - system admins can bypass this restriction
@@ -59,13 +59,9 @@ const organizationRouteHandlers = app
     const slugFiltered = filterWithRejection(items, (item) => slugAvailability.get(item.slug) === true, 'slug_exists');
 
     // Enforce org creation restriction (system admins bypass this)
-    const effectiveSlots = isSystemAdmin ? Number.POSITIVE_INFINITY : availableSlots;
-    const restrictionFiltered = takeWithRestriction(
-      slugFiltered.items,
-      effectiveSlots,
-      'org_limit_reached',
-      slugFiltered.rejectionState,
-    );
+    const restrictionFiltered = isSystemAdmin
+      ? { items: slugFiltered.items, rejectionState: slugFiltered.rejectionState }
+      : takeWithRestriction(slugFiltered.items, availableSlots, 'org_limit_reached', slugFiltered.rejectionState);
 
     // Final items to create and rejection state
     const itemsToCreate = restrictionFiltered.items;
