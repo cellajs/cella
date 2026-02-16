@@ -1,44 +1,51 @@
-import { FormattingToolbarExtension } from '@blocknote/core/extensions';
-import { useExtension } from '@blocknote/react';
-import type { CarouselItemData } from '~/modules/attachments/carousel';
-import { openAttachmentDialog } from '~/modules/attachments/dialog/lib';
+import type { CarouselItemData } from '~/modules/attachment/carousel';
+import { openAttachmentDialog } from '~/modules/attachment/dialog/lib';
 import type { CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
 
+/**
+ * Opens an attachment dialog with carousel for media in the editor.
+ * Collects all media blocks and displays them in a carousel.
+ *
+ * @param clickedSrc - Optional: the src of clicked media to start at that index
+ */
 export const openAttachment = async (
-  event: React.MouseEvent<Element>,
   editor: CustomBlockNoteEditor,
   blockNoteRef: React.RefObject<HTMLDivElement | null>,
+  clickedSrc?: string,
 ) => {
-  event.preventDefault();
-  const formattingToolbar = useExtension(FormattingToolbarExtension);
-  formattingToolbar.store.setState(false);
+  const mediaBlocks: CarouselItemData[] = [];
 
-  const {
-    block: { props },
-  } = editor.getTextCursorPosition();
-
-  if (!props || !('url' in props) || !props.url.length) return;
-
-  const newAttachments: CarouselItemData[] = [];
-
-  // Iterate through all blocks and collect attachments
+  // Collect all media blocks from the editor
   editor.forEachBlock(({ id, props, type: contentType }) => {
-    if (!('url' in props)) return true;
+    if (!('url' in props) || !props.url) return true;
 
-    const { url, name } = props;
-    if (url.length > 0) newAttachments.push({ id, url, filename: name, name, contentType });
+    const { url, name } = props as { url: string; name?: string };
+    mediaBlocks.push({ id, url, filename: name || '', name: name || '', contentType });
 
-    return true; // keep iterating
+    return true;
   });
 
-  const attachmentIndex = newAttachments.findIndex(({ url }) => url === props.url);
+  if (mediaBlocks.length === 0) return;
 
+  // Resolve all URLs (handles both cloud keys and local blob storage)
   const attachments = await Promise.all(
-    newAttachments.map(async (attachment) => ({
-      ...attachment,
-      url: editor.resolveFileUrl ? await editor.resolveFileUrl(attachment.url) : attachment.url,
+    mediaBlocks.map(async (block) => ({
+      ...block,
+      url: editor.resolveFileUrl ? await editor.resolveFileUrl(block.url) : block.url,
     })),
   );
 
-  openAttachmentDialog({ attachmentIndex, attachments, triggerRef: blockNoteRef as React.RefObject<null> });
+  // Find index of clicked media, or default to first
+  const attachmentIndex = clickedSrc
+    ? Math.max(
+        0,
+        attachments.findIndex(({ url }) => url === clickedSrc),
+      )
+    : 0;
+
+  openAttachmentDialog({
+    attachmentIndex,
+    attachments,
+    triggerRef: blockNoteRef as React.RefObject<null>,
+  });
 };

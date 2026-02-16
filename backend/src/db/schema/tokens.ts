@@ -1,38 +1,45 @@
-import { appConfig } from 'config';
-import { index, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { index, pgTable, primaryKey, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { appConfig } from 'shared';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { usersTable } from '#/db/schema/users';
+import { maxLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
 
 const tokenTypeEnum = appConfig.tokenTypes;
 
 /**
- * Tokens table contains tokens of different types: email verification, invitation, password reset.
- * Users can have multiple tokens of different types. Users can also have multiple tokens of the same type (e.g., multiple password reset requests).
- * Tokens can be associated with an email, user, oauth account, or inactive membership. Invoking a token marks it as used by setting invokedAt and creates a singleUseToken.
- * Tokens can expire based on expiresAt. TODO: implement cleanup of expired tokens 30 days after expiration.
+ * Tokens for email verification, invitation, and password reset.
  *
- * @link http://localhost:4000/docs#tag/tokens
+ * PARTITIONING: Partitioned by expiresAt via pg_partman (weekly, 30-day retention).
+ * Drizzle sees a regular table; PostgreSQL manages partitions transparently.
  */
 export const tokensTable = pgTable(
   'tokens',
   {
-    createdAt: timestampColumns.createdAt,
-    id: varchar().primaryKey().$defaultFn(nanoid),
-    token: varchar().notNull(),
-    singleUseToken: varchar(),
+    id: varchar({ length: maxLength.id }).notNull().$defaultFn(nanoid),
+    secret: varchar({ length: maxLength.field }).notNull(),
+    singleUseToken: varchar({ length: maxLength.field }),
     type: varchar({ enum: tokenTypeEnum }).notNull(),
-    email: varchar().notNull(),
-    userId: varchar().references(() => usersTable.id, { onDelete: 'cascade' }),
-    oauthAccountId: varchar().references(() => oauthAccountsTable.id, { onDelete: 'cascade' }),
-    inactiveMembershipId: varchar(),
-    createdBy: varchar().references(() => usersTable.id, { onDelete: 'cascade' }),
+    email: varchar({ length: maxLength.field }).notNull(),
+    userId: varchar({ length: maxLength.id }).references(() => usersTable.id, { onDelete: 'cascade' }),
+    oauthAccountId: varchar({ length: maxLength.id }).references(() => oauthAccountsTable.id, { onDelete: 'cascade' }),
+    inactiveMembershipId: varchar({ length: maxLength.id }),
+    createdBy: varchar({ length: maxLength.id }).references(() => usersTable.id, { onDelete: 'cascade' }),
+    createdAt: timestampColumns.createdAt,
     expiresAt: timestampColumns.expiresAt,
-    invokedAt: timestamp({ withTimezone: true, mode: 'date' }),
+    invokedAt: timestamp({ withTimezone: true, mode: 'string' }),
   },
-  (table) => [index('tokens_token_type_idx').on(table.token, table.type)],
+  (table) => [
+    primaryKey({ columns: [table.id, table.expiresAt] }),
+    index('tokens_secret_type_idx').on(table.secret, table.type),
+    index('tokens_user_id_idx').on(table.userId),
+  ],
 );
 
-export type TokenModel = typeof tokensTable.$inferSelect;
+/** Includes sensitive secret field - use only in auth internals */
+export type UnsafeTokenModel = typeof tokensTable.$inferSelect;
 export type InsertTokenModel = typeof tokensTable.$inferInsert;
+
+/** Safe token type with sensitive field omitted */
+export type TokenModel = Omit<UnsafeTokenModel, 'secret'>;

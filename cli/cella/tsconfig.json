@@ -1,0 +1,21 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "target": "ESNext",
+    "module": "ESNext",
+    "strict": true,
+    "incremental": true,
+    "tsBuildInfoFile": ".tsbuildinfo",
+    "declaration": true,
+    "composite": false,
+    "skipLibCheck": true,
+    "types": ["node"],
+    "paths": {
+      "#/*": ["./src/*"],
+      "#root/*": ["../../*"]
+    }
+  },
+  "include": ["src", "src-v2", "tests", "index.ts", "index-v2.ts"]
+}

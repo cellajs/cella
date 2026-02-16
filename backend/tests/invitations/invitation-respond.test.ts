@@ -1,13 +1,11 @@
 import { eq } from 'drizzle-orm';
 import { testClient } from 'hono/testing';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { db } from '#/db/db';
+import { unsafeInternalDb as db } from '#/db/db';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { membershipsTable } from '#/db/schema/memberships';
-import { organizationsTable } from '#/db/schema/organizations';
-import { mockOrganization } from '../../mocks';
 import { defaultHeaders } from '../fixtures';
-import { createPasswordUser } from '../helpers';
+import { createPasswordUser, createTestOrganization } from '../helpers';
 import { clearDatabase, mockFetchRequest, mockRateLimiter, setTestConfig } from '../test-utils';
 import { createMembershipInvitationToken } from './helpers';
 
@@ -28,9 +26,7 @@ describe('Invitation response', async () => {
   const client = testClient(app) as any;
 
   async function createOrg() {
-    const organizationData = mockOrganization();
-    const [organization] = await db.insert(organizationsTable).values(organizationData).returning();
-    return organization;
+    return await createTestOrganization();
   }
 
   async function signInUser(email: string, password: string) {

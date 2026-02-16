@@ -1,11 +1,10 @@
-import { Link } from '@tanstack/react-router';
-import { LogOutIcon, type LucideProps, UserRoundCogIcon, UserRoundIcon, WrenchIcon } from 'lucide-react';
+import { Link, useNavigate } from '@tanstack/react-router';
+import { LogOutIcon, type LucideProps, SettingsIcon, UserRoundIcon, WrenchIcon } from 'lucide-react';
 import type React from 'react';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useOnlineManager } from '~/hooks/use-online-manager';
-import { AppFooter } from '~/modules/common/app/app-footer';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { toaster } from '~/modules/common/toaster/service';
 import { buttonVariants } from '~/modules/ui/button';
@@ -21,7 +20,7 @@ type AccountButtonProps = {
 } & ({ offlineAccess: false; isOnline: boolean } | { offlineAccess: true; isOnline?: never });
 
 /** Create a button for each account action */
-const AccountButton = ({ offlineAccess, isOnline, icon: Icon, label, id, action }: AccountButtonProps) => {
+function AccountButton({ offlineAccess, isOnline, icon: Icon, label, id, action }: AccountButtonProps) {
   const { t } = useTranslation();
 
   const isDisabled = offlineAccess ? false : !isOnline;
@@ -44,13 +43,14 @@ const AccountButton = ({ offlineAccess, isOnline, icon: Icon, label, id, action 
       {label}
     </Link>
   );
-};
+}
 
 /**
  * Account navigation sheet content.
  */
 export const AccountSheet = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { user, systemRole } = useUserStore();
   const isMobile = useBreakpoints('max', 'sm');
   const { isOnline } = useOnlineManager();
@@ -66,7 +66,11 @@ export const AccountSheet = () => {
 
   return (
     <div ref={buttonWrapper} className="p-3 w-full flex flex-col gap-4 min-h-[calc(100vh-0.5rem)]">
-      <Link to="/user/$idOrSlug" params={{ idOrSlug: user.slug }} className="w-full relative">
+      <button
+        type="button"
+        onClick={() => navigate({ to: '.', search: (prev) => ({ ...prev, userSheetId: user.id }), resetScroll: false })}
+        className="w-full relative"
+      >
         <div
           className={`relative transition-all shadow-[inset_0_-4px_12px_rgba(0,0,0,0.15)] duration-300 hover:bg-opacity-50 hover:-mx-10 -mx-5 -mt-3 bg-cover bg-center h-24 bg-opacity-80 ${
             user.bannerUrl ? '' : numberToColorClass(user.id)
@@ -81,20 +85,26 @@ export const AccountSheet = () => {
             url={user.thumbnailUrl}
           />
         </div>
-      </Link>
+      </button>
       <div className="flex flex-col gap-1 max-sm:mt-4">
-        <AccountButton
-          offlineAccess={false}
-          isOnline={isOnline}
-          icon={UserRoundIcon}
+        <button
+          type="button"
           id="btn-profile"
-          label={t('common:view_resource', { resource: t('common:profile').toLowerCase() })}
-          action={`/user/${user.slug}`}
-        />
+          onClick={() =>
+            navigate({ to: '.', search: (prev) => ({ ...prev, userSheetId: user.id }), resetScroll: false })
+          }
+          className={cn(
+            buttonVariants({ variant: 'ghost', size: 'lg' }),
+            'hover:bg-accent/50 w-full justify-start text-left focus-effect',
+          )}
+        >
+          <UserRoundIcon className="mr-2 size-4" aria-hidden="true" />
+          {t('common:view_resource', { resource: t('common:profile').toLowerCase() })}
+        </button>
         <AccountButton
           offlineAccess={false}
           isOnline={isOnline}
-          icon={UserRoundCogIcon}
+          icon={SettingsIcon}
           id="btn-account"
           label={t('common:my_account')}
           action="/account"
@@ -118,8 +128,6 @@ export const AccountSheet = () => {
           action="/sign-out"
         />
       </div>
-      <div className="grow border-b border-dashed" />
-      <AppFooter className="items-center" />
     </div>
   );
 };

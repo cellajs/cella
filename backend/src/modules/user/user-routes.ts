@@ -1,0 +1,60 @@
+import { createXRoute } from '#/docs/x-routes';
+import { authGuard, crossTenantGuard } from '#/middlewares/guard';
+import { systemRoleBaseSchema } from '#/modules/system/system-schema';
+import { userListQuerySchema, userSchema } from '#/modules/user/user-schema';
+import { errorResponseRefs, paginationSchema, slugQuerySchema, userIdParamSchema } from '#/schemas';
+import { mockPaginatedUsersResponse, mockUserResponse } from '../../../mocks/mock-user';
+
+const userRoutes = {
+  /**
+   * Get list of users (cross-tenant)
+   */
+  getUsers: createXRoute({
+    operationId: 'getUsers',
+    method: 'get',
+    path: '/users',
+    xGuard: [authGuard, crossTenantGuard],
+    tags: ['users'],
+    summary: 'Get list of users',
+    description: 'Returns a list of *users*.',
+    request: { query: userListQuerySchema },
+    responses: {
+      200: {
+        description: 'Users',
+        content: {
+          'application/json': {
+            schema: paginationSchema(
+              userSchema.extend({
+                role: systemRoleBaseSchema.shape.role.nullable().optional(),
+              }),
+            ),
+            example: mockPaginatedUsersResponse(),
+          },
+        },
+      },
+      ...errorResponseRefs,
+    },
+  }),
+  /**
+   * Get a user by ID (cross-tenant). Pass ?slug=true to resolve by slug.
+   */
+  getUser: createXRoute({
+    operationId: 'getUser',
+    method: 'get',
+    path: '/users/{userId}',
+    xGuard: [authGuard, crossTenantGuard],
+    tags: ['users'],
+    summary: 'Get user',
+    description:
+      'Retrieves a *user* by ID. The requesting user must share at least one context entity membership. Pass `?slug=true` to resolve by slug instead.',
+    request: { params: userIdParamSchema, query: slugQuerySchema },
+    responses: {
+      200: {
+        description: 'User',
+        content: { 'application/json': { schema: userSchema, example: mockUserResponse() } },
+      },
+      ...errorResponseRefs,
+    },
+  }),
+};
+export default userRoutes;

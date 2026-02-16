@@ -1,0 +1,16 @@
+{
+  "name": "shared",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "exports": {
+    ".": "./index.ts",
+    "./upload-templates": "./upload-templates.ts",
+    "./tracing": "./src/tracing/index.ts",
+    "./builder": "./src/builder/index.ts"
+  },
+  "dependencies": {
+    "nanoid": "^5.1.6"
+  }
+}

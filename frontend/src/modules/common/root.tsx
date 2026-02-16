@@ -1,14 +1,14 @@
 import { HeadContent, Outlet } from '@tanstack/react-router';
-import { appConfig } from 'config';
 import { configure } from 'onedollarstats';
 import { Suspense, useEffect } from 'react';
-import useLazyComponent from '~/hooks/use-lazy-component'; // Adjust the import path accordingly
+import { appConfig } from 'shared';
+import { useLazyComponent } from '~/hooks/use-lazy-component';
 import { useOnlineManager } from '~/hooks/use-online-manager';
-import ReloadPrompt from '~/modules/common/reload-prompt';
+import { ReloadPrompt } from '~/modules/common/reload-prompt';
 import { ToastManager } from '~/modules/common/toaster';
 import { TooltipProvider } from '~/modules/ui/tooltip';
 
-function Root() {
+export function Root() {
   const { isOnline } = useOnlineManager();
 
   // Lazy load
@@ -35,5 +35,3 @@ function Root() {
     </TooltipProvider>
   );
 }
-
-export { Root };

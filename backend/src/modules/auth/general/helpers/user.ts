@@ -1,12 +1,12 @@
-import { appConfig } from 'config';
-import { and, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
-import { db } from '#/db/db';
+import { and, eq, inArray, isNotNull, isNull } from 'drizzle-orm';
+import { appConfig } from 'shared';
+import { unsafeInternalDb as db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { tokensTable } from '#/db/schema/tokens';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { type InsertUserModel, type UserModel, usersTable } from '#/db/schema/users';
-import { AppError } from '#/lib/errors';
+import { AppError } from '#/lib/error';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { getIsoDate } from '#/utils/iso-date';
 import { nanoid } from '#/utils/nanoid';
@@ -29,7 +29,7 @@ interface HandleCreateUserProps {
  */
 export const handleCreateUser = async ({ newUser, emailVerified }: HandleCreateUserProps): Promise<UserModel> => {
   // Check if slug is available
-  const slugAvailable = await checkSlugAvailable(newUser.slug);
+  const slugAvailable = await checkSlugAvailable(newUser.slug, db);
 
   // Insert new user into database
   try {
@@ -48,7 +48,7 @@ export const handleCreateUser = async ({ newUser, emailVerified }: HandleCreateU
 
     await db
       .insert(unsubscribeTokensTable)
-      .values({ token: generateUnsubscribeToken(normalizedEmail), userId: user.id });
+      .values({ secret: generateUnsubscribeToken(normalizedEmail), userId: user.id });
 
     // If user has invitation tokens, find the inactive membership from it
     const existingTokens = await db
@@ -89,7 +89,7 @@ export const handleCreateUser = async ({ newUser, emailVerified }: HandleCreateU
     return user;
   } catch (error) {
     // If user with this email already exists, return an error
-    throw new AppError({ status: 409, type: 'email_exists', severity: 'warn' });
+    throw new AppError(409, 'email_exists', 'warn');
   }
 };
 
@@ -103,11 +103,7 @@ export const handleCreateUser = async ({ newUser, emailVerified }: HandleCreateU
 export const handleSetUserOnInactiveMemberships = async (userId: string, inactiveMembershipIds: string[]) => {
   await db
     .update(inactiveMembershipsTable)
-    .set({
-      userId,
-      uniqueKey: sql`concat(${userId}, '-', ${inactiveMembershipsTable.contextType})`,
-      // Postgres string concatenation
-    })
+    .set({ userId })
     .where(inArray(inactiveMembershipsTable.id, inactiveMembershipIds));
 
   // Delete associated tokens

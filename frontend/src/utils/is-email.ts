@@ -90,6 +90,9 @@ function isFQDN(str: string, IFqdnOptions?: IFqdnOptions) {
   return true;
 }
 
+/**
+ * Validates whether a string is a well-formed email address.
+ */
 export function isEmail(str: string, IEmailOptions?: IEmailOptions) {
   const options = { ...defaultEmailOptions, ...IEmailOptions };
   let emailString = str;

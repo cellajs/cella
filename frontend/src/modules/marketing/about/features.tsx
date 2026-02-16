@@ -12,7 +12,7 @@ interface FeatureProps {
   invertClassName: string;
 }
 
-const Feature = ({ id, invertClassName }: FeatureProps) => {
+function Feature({ id, invertClassName }: FeatureProps) {
   const { t } = useTranslation();
   const title = `about:feature.${id}_title`;
   const text = `about:feature.${id}_text`;
@@ -31,9 +31,9 @@ const Feature = ({ id, invertClassName }: FeatureProps) => {
       </div>
     </div>
   );
-};
+}
 
-const Features = () => {
+export function Features() {
   const mode = useUIStore((state) => state.mode);
   const invertClass = mode === 'dark' ? 'invert' : '';
   const isMediumScreen = useBreakpoints('min', 'sm');
@@ -49,6 +49,4 @@ const Features = () => {
       />
     </div>
   );
-};
-
-export default Features;
+}

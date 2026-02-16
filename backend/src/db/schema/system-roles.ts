@@ -1,17 +1,15 @@
-import { appConfig } from 'config';
 import { pgTable, varchar } from 'drizzle-orm/pg-core';
+import { appConfig } from 'shared';
 import { usersTable } from '#/db/schema/users';
+import { maxLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
 
-const roleEnum = appConfig.roles.systemRoles;
+const roleEnum = appConfig.systemRoles;
 
-/**
- * System roles table to assign global roles to users that have special permissions.
- */
 export const systemRolesTable = pgTable('system_roles', {
-  id: varchar().primaryKey().$defaultFn(nanoid),
-  userId: varchar()
+  id: varchar({ length: maxLength.id }).primaryKey().$defaultFn(nanoid),
+  userId: varchar({ length: maxLength.id })
     .notNull()
     .unique()
     .references(() => usersTable.id, { onDelete: 'cascade' }),

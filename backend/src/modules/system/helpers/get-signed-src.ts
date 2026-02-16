@@ -1,4 +1,4 @@
-import { appConfig } from 'config';
+import { appConfig } from 'shared';
 import { getSignedUrlFromKey } from '#/lib/signed-url';
 
 export const replaceSignedSrcs = async (content: string): Promise<string> => {
@@ -18,7 +18,7 @@ export const replaceSignedSrcs = async (content: string): Promise<string> => {
       try {
         const signed = await getSignedUrlFromKey(src, {
           isPublic: true,
-          bucketName: appConfig.s3PublicBucket,
+          bucketName: appConfig.s3.publicBucket,
         });
         replacements.set(src, signed);
       } catch {

@@ -1,10 +1,12 @@
-import { appConfig } from 'config';
-import { lazy, type RefObject, Suspense } from 'react';
-import useBodyClass from '~/hooks/use-body-class';
+import type { CSSProperties } from 'react';
+import { lazy, Suspense } from 'react';
+import { appConfig } from 'shared';
+import { useBodyClass } from '~/hooks/use-body-class';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import useMounted from '~/hooks/use-mounted';
+import { useMountedState } from '~/hooks/use-mounted-state';
+import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { NavButton } from '~/modules/navigation/nav-buttons';
-import StopImpersonation from '~/modules/navigation/stop-impersonation';
+import { StopImpersonation } from '~/modules/navigation/stop-impersonation';
 import type { NavItem, TriggerNavItemFn } from '~/modules/navigation/types';
 import {
   Sidebar,
@@ -17,60 +19,80 @@ import {
 import { navItems } from '~/nav-config';
 import { useNavigationStore } from '~/store/navigation';
 import { useUIStore } from '~/store/ui';
-import { cn } from '~/utils/cn';
 
-const DebugToolbars =
-  appConfig.mode !== 'production' ? lazy(() => import('~/modules/common/debug-toolbars')) : () => null;
+const DebugDropdown =
+  appConfig.mode !== 'production' ? lazy(() => import('~/modules/common/debug-dropdown')) : () => null;
+
+// Sidebar dimensions from config
+const { hasSidebarTextLabels, sidebarWidthExpanded, sidebarWidthCollapsed, sheetPanelWidth } =
+  appConfig.theme.navigation;
 
 // Cached base nav items
 let baseNavItems: NavItem[] | null = null;
-const getBaseNavItems = () => {
+function getBaseNavItems() {
   if (!baseNavItems) baseNavItems = navItems.filter(({ type }) => type === 'base');
   return baseNavItems;
-};
+}
+
+// Cached footer nav items
+let footerNavItems: NavItem[] | null = null;
+function getFooterNavItems() {
+  if (!footerNavItems) footerNavItems = navItems.filter(({ type }) => (type as string) === 'footer');
+  return footerNavItems;
+}
 
 interface SidebarNavProps {
   triggerNavItem: TriggerNavItemFn;
-  sheetContainerRef: RefObject<HTMLDivElement | null>;
 }
 
 /**
- * Sidebar navigation: icon bar + sheet panel
+ * Sidebar navigation: icon bar + sheet panel.
+ * Widths are computed and set as CSS custom properties.
+ * Data attributes control non-width styling (opacity, position, pointer-events).
  */
-export function SidebarNav({ triggerNavItem, sheetContainerRef }: SidebarNavProps) {
-  const { hasStarted } = useMounted();
+export function SidebarNav({ triggerNavItem }: SidebarNavProps) {
+  const { hasStarted } = useMountedState();
   const isDesktop = useBreakpoints('min', 'xl', true);
 
   const theme = useUIStore((state) => state.theme);
   const { navSheetOpen, keepMenuOpen } = useNavigationStore();
 
+  // Check if nav-sheet is open via useSheeter
+  const navSheetExists = useSheeter((state) => state.sheets.some((s) => s.id === 'nav-sheet' && s.open));
+
   useBodyClass({ 'keep-menu-open': keepMenuOpen });
+  useBodyClass({ 'nav-sheet-open': navSheetExists });
 
-  // Desktop sidebar: xl+ shows icons+text when collapsed, sheet overlays unless keepMenuOpen
+  // State
   const isCollapsed = !!navSheetOpen;
-  const showExpandedBar = isDesktop && !isCollapsed;
-  const iconBarWidth = showExpandedBar ? 'var(--sidebar-width)' : 'var(--sidebar-width-icon)';
-  const sheetPanelWidth = isCollapsed ? '20rem' : '0px';
+  const isExpanded = hasSidebarTextLabels && isDesktop && !isCollapsed;
+  const isOverlay = !isDesktop || !keepMenuOpen;
 
-  // Sheet overlays content unless desktop + keepMenuOpen
-  const sheetOverlay = !isDesktop || !keepMenuOpen;
+  // Compute widths - spacer includes sheet width when not overlay and nav-sheet is open
+  const iconBarWidth = isExpanded ? sidebarWidthExpanded : sidebarWidthCollapsed;
+  const sidebarWidth = iconBarWidth;
+  const spacerWidth = isOverlay
+    ? hasSidebarTextLabels && isDesktop
+      ? sidebarWidthExpanded
+      : sidebarWidthCollapsed
+    : navSheetExists
+      ? `calc(${iconBarWidth} + ${sheetPanelWidth})`
+      : iconBarWidth;
 
-  // Spacer keeps content positioned (stays expanded in overlay mode)
-  const spacerWidth = sheetOverlay
-    ? isDesktop
-      ? 'var(--sidebar-width)'
-      : 'var(--sidebar-width-icon)'
-    : `calc(${iconBarWidth} + ${sheetPanelWidth})`;
-
-  const sidebarWidth = sheetOverlay ? iconBarWidth : `calc(${iconBarWidth} + ${sheetPanelWidth})`;
+  // CSS custom properties for widths
+  const cssVars = {
+    '--icon-bar-w': iconBarWidth,
+    '--sidebar-w': sidebarWidth,
+    '--spacer-w': spacerWidth,
+  } as CSSProperties;
 
   return (
-    <>
-      {/* Spacer to push content */}
+    <div className="contents" style={cssVars}>
+      {/* Spacer to push content - no animation on initial mount */}
       <div
         data-slot="sidebar-spacer"
-        className="relative bg-transparent transition-[width] duration-200 linear group-[.focus-view]/body:hidden"
-        style={{ width: spacerWidth }}
+        data-started={hasStarted}
+        className="relative bg-transparent w-(--spacer-w) data-[started=true]:transition-[width] data-[started=true]:duration-300 data-[started=true]:ease-out group-[.focus-view]/body:hidden"
       />
       {/* Fixed sidebar */}
       <Sidebar
@@ -79,17 +101,13 @@ export function SidebarNav({ triggerNavItem, sheetContainerRef }: SidebarNavProp
         data-theme={theme}
         data-started={hasStarted}
         data-collapsed={isCollapsed}
-        className="fixed inset-y-0 left-0 z-100 transition-[width] duration-200 linear border-r-0 bg-primary data-[theme=none]:bg-secondary group-[.focus-view]/body:hidden data-[started=false]:-translate-x-full"
-        style={{
-          width: sidebarWidth,
-        }}
+        data-overlay={isOverlay}
+        className="fixed inset-y-0 left-0 z-100 w-(--sidebar-w) transition-[width] duration-200 linear border-r-0 bg-primary group-[.focus-view]/body:hidden
+          data-[theme=none]:bg-secondary data-[started=false]:-translate-x-full"
       >
         <div className="flex flex-row h-full relative">
           {/* Icon bar */}
-          <div
-            className="flex flex-col h-full border-r border-r-background/20 transition-[width] duration-200 linear overflow-hidden"
-            style={{ width: iconBarWidth }}
-          >
+          <div className="flex flex-col h-full w-(--icon-bar-w) transition-[width] duration-200 linear overflow-hidden">
             <SidebarContent className="gap-1">
               <SidebarGroup className="p-0">
                 <SidebarGroupContent>
@@ -99,7 +117,7 @@ export function SidebarNav({ triggerNavItem, sheetContainerRef }: SidebarNavProp
                         key={navItem.id}
                         navItem={navItem}
                         isActive={navSheetOpen === navItem.id}
-                        isCollapsed={!showExpandedBar}
+                        isCollapsed={!isExpanded}
                         onClick={triggerNavItem}
                       />
                     ))}
@@ -107,35 +125,24 @@ export function SidebarNav({ triggerNavItem, sheetContainerRef }: SidebarNavProp
                 </SidebarGroupContent>
               </SidebarGroup>
             </SidebarContent>
-            <SidebarFooter className="p-2 gap-2">
-              <Suspense>{DebugToolbars ? <DebugToolbars /> : null}</Suspense>
-              <StopImpersonation />
+            <SidebarFooter className="p-0 gap-2">
+              <Suspense>{DebugDropdown ? <DebugDropdown className="mx-2" /> : null}</Suspense>
+              <StopImpersonation isCollapsed={!isExpanded} />
+              <SidebarMenu className="gap-1">
+                {getFooterNavItems().map((navItem: NavItem) => (
+                  <NavButton
+                    key={navItem.id}
+                    navItem={navItem}
+                    isActive={navSheetOpen === navItem.id}
+                    isCollapsed={!isExpanded}
+                    onClick={triggerNavItem}
+                  />
+                ))}
+              </SidebarMenu>
             </SidebarFooter>
-          </div>
-
-          {/* Sheet panel */}
-          <div
-            className={cn(
-              'flex flex-col bg-background h-full sm:left-16',
-              sheetOverlay
-                ? cn(
-                    'absolute top-0 z-100 w-80 transition-[left,opacity] duration-200 linear',
-                    isCollapsed ? 'left-full opacity-100' : 'left-0 opacity-0 pointer-events-none',
-                  )
-                : cn(
-                    'overflow-hidden transition-[width,opacity] duration-200 linear',
-                    isCollapsed ? 'opacity-100' : 'opacity-0',
-                  ),
-            )}
-            style={!sheetOverlay ? { width: sheetPanelWidth } : undefined}
-          >
-            {/* Sheeter portal */}
-            <div ref={sheetContainerRef} className="flex flex-col h-full min-w-80" />
           </div>
         </div>
       </Sidebar>
-    </>
+    </div>
   );
 }
-
-export default SidebarNav;

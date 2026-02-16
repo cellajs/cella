@@ -1,8 +1,213 @@
 [
   {
-    "operationId": "syncAttachments",
+    "operationId": "getAttachments",
     "responses": [
-      { "status": 200, "description": "Success" },
+      {
+        "status": 200,
+        "description": "Attachments",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "items": {
+              "type": "array",
+              "required": true,
+              "itemType": "object",
+              "ref": "#/components/schemas/Attachment",
+              "items": {
+                "type": "object",
+                "description": "A file attachment belonging to an organization.",
+                "properties": {
+                  "createdAt": { "type": "string", "required": true },
+                  "id": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 50
+                  },
+                  "entityType": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["attachment"]
+                  },
+                  "tenantId": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 24
+                  },
+                  "name": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "modifiedAt": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "stx": {
+                    "type": "object",
+                    "required": true,
+                    "description": "Sync transaction metadata stored on entities for offline and realtime support.",
+                    "properties": {
+                      "mutationId": { "type": "string", "required": true },
+                      "sourceId": { "type": "string", "required": true },
+                      "version": { "type": "integer", "required": true },
+                      "fieldVersions": { "type": "object", "required": true }
+                    },
+                    "ref": "#/components/schemas/StxBase"
+                  },
+                  "description": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "keywords": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 100000
+                  },
+                  "createdBy": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 50
+                  },
+                  "modifiedBy": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 50
+                  },
+                  "public": { "type": "boolean", "required": true },
+                  "bucketName": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "groupId": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 50
+                  },
+                  "filename": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "contentType": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "convertedContentType": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "size": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "originalKey": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 2048
+                  },
+                  "convertedKey": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 2048
+                  },
+                  "thumbnailKey": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 2048
+                  },
+                  "organizationId": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 50
+                  },
+                  "can": {
+                    "type": "object",
+                    "required": false,
+                    "properties": {
+                      "create": { "type": "boolean", "required": true },
+                      "read": { "type": "boolean", "required": true },
+                      "update": { "type": "boolean", "required": true },
+                      "delete": { "type": "boolean", "required": true },
+                      "search": { "type": "boolean", "required": true }
+                    }
+                  }
+                },
+                "ref": "#/components/schemas/Attachment"
+              }
+            },
+            "total": { "type": "number", "required": true }
+          },
+          "contentType": "application/json"
+        },
+        "example": {
+          "items": [
+            {
+              "id": "o7z71y60a882cwpxtanaxnsp",
+              "tenantId": "9nes1y",
+              "entityType": "attachment",
+              "name": "elegantly.vss",
+              "description": null,
+              "keywords": "vesco audentia angustus",
+              "public": false,
+              "bucketName": "attachments",
+              "groupId": null,
+              "filename": "elegantly.vss",
+              "contentType": "application/vnd.apple.installer+xml",
+              "convertedContentType": null,
+              "size": "9665489",
+              "originalKey": "uploads/b0gleyvjbbm5piweg2q4gqa3/elegantly.vss",
+              "convertedKey": null,
+              "thumbnailKey": null,
+              "createdAt": "2024-11-21T04:00:59.122Z",
+              "createdBy": "qqp8d07imsvjbtqtl3rtjgxd",
+              "modifiedAt": "2024-11-21T04:00:59.122Z",
+              "modifiedBy": "qqp8d07imsvjbtqtl3rtjgxd",
+              "stx": {
+                "mutationId": "vx9cfyey6mqh9hmikgme3gy3",
+                "sourceId": "src_a9lhe0ctrmzc53x7z222ydtq",
+                "version": 1,
+                "fieldVersions": {}
+              },
+              "organizationId": "57iu31mz5oaqf10oe7y51pr5"
+            },
+            {
+              "id": "yahbgyu01sr6utecq3o02wpa",
+              "tenantId": "56tpd7",
+              "entityType": "attachment",
+              "name": "woefully_bah.vsw",
+              "description": null,
+              "keywords": "auxilium non sui",
+              "public": false,
+              "bucketName": "attachments",
+              "groupId": null,
+              "filename": "woefully_bah.vsw",
+              "contentType": "audio/3gpp",
+              "convertedContentType": null,
+              "size": "1107841",
+              "originalKey": "uploads/7syiavgc67t5nr6k4huj5qv4/woefully_bah.vsw",
+              "convertedKey": null,
+              "thumbnailKey": null,
+              "createdAt": "2024-10-29T08:46:20.790Z",
+              "createdBy": "hg5ogh3yr2b2dbwf7b9eckaj",
+              "modifiedAt": "2024-10-29T08:46:20.790Z",
+              "modifiedBy": "hg5ogh3yr2b2dbwf7b9eckaj",
+              "stx": {
+                "mutationId": "k6bwmvl0e44bpmhsyauxcwuw",
+                "sourceId": "src_jsrzvzac8qx1h9s6vzhgvcj0",
+                "version": 1,
+                "fieldVersions": {}
+              },
+              "organizationId": "rs3xtuk03gxco9kzp2r8sr1z"
+            }
+          ],
+          "total": 2
+        }
+      },
       {
         "status": 400,
         "description": "Bad request: problem processing request.",
@@ -42,92 +247,479 @@
     "request": {
       "path": {
         "properties": {
-          "orgIdOrSlug": {
+          "tenantId": {
             "type": "string",
             "required": true,
-            "description": "Entity ID or slug. ID is always preferred."
+            "maxLength": 50
+          },
+          "orgId": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
           }
         }
       },
       "query": {
         "properties": {
-          "table": { "type": "string", "required": true },
-          "offset": { "type": "string", "required": true },
-          "handle": { "type": "string", "required": false },
-          "cursor": { "type": "string", "required": false },
-          "live": { "type": "string", "required": false },
-          "where": { "type": "string", "required": false }
+          "q": {
+            "type": "string",
+            "required": false,
+            "maxLength": 255
+          },
+          "sort": {
+            "type": "string",
+            "required": false,
+            "enum": ["name", "createdAt", "contentType"]
+          },
+          "order": {
+            "type": "string",
+            "required": false,
+            "enum": ["asc", "desc"]
+          },
+          "offset": { "type": "string", "required": false },
+          "limit": { "type": "string", "required": false },
+          "modifiedAfter": {
+            "type": "string",
+            "required": false,
+            "format": "date-time"
+          }
         }
       }
     }
   },
   {
-    "operationId": "createAttachment",
+    "operationId": "createAttachments",
     "responses": [
       {
-        "status": 201,
-        "description": "Attachment",
+        "status": 200,
+        "description": "Attachments already created (idempotent)",
         "contentType": "application/json",
         "schema": {
-          "type": "array",
-          "itemType": "object",
-          "ref": "#/components/schemas/Attachment",
-          "items": {
-            "type": "object",
-            "required": true,
-            "properties": {
-              "createdAt": { "type": "string", "required": true },
-              "id": { "type": "string", "required": true },
-              "entityType": {
-                "type": "string",
-                "required": true,
-                "enum": ["attachment"]
-              },
-              "name": { "type": "string", "required": true },
-              "description": {
-                "type": ["string", "null"],
-                "required": true
-              },
-              "modifiedAt": {
-                "type": ["string", "null"],
-                "required": true
-              },
-              "keywords": { "type": "string", "required": true },
-              "createdBy": {
-                "type": ["string", "null"],
-                "required": true
-              },
-              "modifiedBy": {
-                "type": ["string", "null"],
-                "required": true
-              },
-              "public": { "type": "boolean", "required": true },
-              "bucketName": { "type": "string", "required": true },
-              "groupId": {
-                "type": ["string", "null"],
-                "required": true
-              },
-              "filename": { "type": "string", "required": true },
-              "contentType": { "type": "string", "required": true },
-              "convertedContentType": {
-                "type": ["string", "null"],
-                "required": true
-              },
-              "size": { "type": "string", "required": true },
-              "originalKey": { "type": "string", "required": true },
-              "convertedKey": {
-                "type": ["string", "null"],
-                "required": true
-              },
-              "thumbnailKey": {
-                "type": ["string", "null"],
-                "required": true
-              },
-              "organizationId": { "type": "string", "required": true }
+          "type": "object",
+          "properties": {
+            "data": {
+              "type": "array",
+              "required": true,
+              "itemType": "object",
+              "ref": "#/components/schemas/Attachment",
+              "items": {
+                "type": "object",
+                "description": "A file attachment belonging to an organization.",
+                "properties": {
+                  "createdAt": { "type": "string", "required": true },
+                  "id": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 50
+                  },
+                  "entityType": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["attachment"]
+                  },
+                  "tenantId": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 24
+                  },
+                  "name": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "modifiedAt": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "stx": {
+                    "type": "object",
+                    "required": true,
+                    "description": "Sync transaction metadata stored on entities for offline and realtime support.",
+                    "properties": {
+                      "mutationId": { "type": "string", "required": true },
+                      "sourceId": { "type": "string", "required": true },
+                      "version": { "type": "integer", "required": true },
+                      "fieldVersions": { "type": "object", "required": true }
+                    },
+                    "ref": "#/components/schemas/StxBase"
+                  },
+                  "description": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "keywords": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 100000
+                  },
+                  "createdBy": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 50
+                  },
+                  "modifiedBy": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 50
+                  },
+                  "public": { "type": "boolean", "required": true },
+                  "bucketName": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "groupId": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 50
+                  },
+                  "filename": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "contentType": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "convertedContentType": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "size": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "originalKey": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 2048
+                  },
+                  "convertedKey": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 2048
+                  },
+                  "thumbnailKey": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 2048
+                  },
+                  "organizationId": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 50
+                  },
+                  "can": {
+                    "type": "object",
+                    "required": false,
+                    "properties": {
+                      "create": { "type": "boolean", "required": true },
+                      "read": { "type": "boolean", "required": true },
+                      "update": { "type": "boolean", "required": true },
+                      "delete": { "type": "boolean", "required": true },
+                      "search": { "type": "boolean", "required": true }
+                    }
+                  }
+                },
+                "ref": "#/components/schemas/Attachment"
+              }
             },
-            "ref": "#/components/schemas/Attachment"
+            "rejectedItemIds": {
+              "type": "array",
+              "required": true,
+              "description": "Identifiers of items that could not be processed",
+              "itemType": "string"
+            },
+            "rejectionReasons": {
+              "type": "object",
+              "required": false,
+              "description": "Map of reason code to rejected item IDs"
+            }
           },
           "contentType": "application/json"
+        },
+        "example": {
+          "data": [
+            {
+              "id": "slwtksu3yccsd9ihoiny6rso",
+              "tenantId": "b7j0p6",
+              "entityType": "attachment",
+              "name": "excluding_ugh_besides.svgz",
+              "description": null,
+              "keywords": "nam curatio xiphias",
+              "public": false,
+              "bucketName": "attachments",
+              "groupId": null,
+              "filename": "excluding_ugh_besides.svgz",
+              "contentType": "application/vnd.ms-fontobject",
+              "convertedContentType": null,
+              "size": "7651256",
+              "originalKey": "uploads/auzy6zwhhoizpinjn9as93qc/excluding_ugh_besides.svgz",
+              "convertedKey": null,
+              "thumbnailKey": null,
+              "createdAt": "2024-04-19T14:04:35.773Z",
+              "createdBy": "kzmv5qbhdcqeiuvwlosan0fc",
+              "modifiedAt": "2024-04-19T14:04:35.773Z",
+              "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
+              "stx": {
+                "mutationId": "b6pakf4ovzm1ne3h55lgj31d",
+                "sourceId": "src_63n9apx99a5auvr5cyj5s37i",
+                "version": 1,
+                "fieldVersions": {}
+              },
+              "organizationId": "rnjjhhc4mupuqz0iqmny8wdl"
+            },
+            {
+              "id": "pxxbqdej8622zpgo54qw5fqo",
+              "tenantId": "9wwhw5",
+              "entityType": "attachment",
+              "name": "gown.txt",
+              "description": null,
+              "keywords": "denique tum candidus",
+              "public": false,
+              "bucketName": "attachments",
+              "groupId": null,
+              "filename": "gown.txt",
+              "contentType": "application/x-sh",
+              "convertedContentType": null,
+              "size": "6125227",
+              "originalKey": "uploads/g18wbwob9s8r85nah671ybl6/gown.txt",
+              "convertedKey": null,
+              "thumbnailKey": null,
+              "createdAt": "2024-02-25T13:01:35.301Z",
+              "createdBy": "p3t0ygxx0aa83en3sk1fs1we",
+              "modifiedAt": "2024-02-25T13:01:35.301Z",
+              "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
+              "stx": {
+                "mutationId": "y4dvzpz75e03ldr2ga54hj92",
+                "sourceId": "src_yzr7v1itpc9wztvbcy21q04o",
+                "version": 1,
+                "fieldVersions": {}
+              },
+              "organizationId": "q81k5rbzt4yq63pob5r5tp1l"
+            }
+          ],
+          "rejectedItemIds": []
+        }
+      },
+      {
+        "status": 201,
+        "description": "Attachments created",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "data": {
+              "type": "array",
+              "required": true,
+              "itemType": "object",
+              "ref": "#/components/schemas/Attachment",
+              "items": {
+                "type": "object",
+                "description": "A file attachment belonging to an organization.",
+                "properties": {
+                  "createdAt": { "type": "string", "required": true },
+                  "id": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 50
+                  },
+                  "entityType": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["attachment"]
+                  },
+                  "tenantId": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 24
+                  },
+                  "name": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "modifiedAt": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "stx": {
+                    "type": "object",
+                    "required": true,
+                    "description": "Sync transaction metadata stored on entities for offline and realtime support.",
+                    "properties": {
+                      "mutationId": { "type": "string", "required": true },
+                      "sourceId": { "type": "string", "required": true },
+                      "version": { "type": "integer", "required": true },
+                      "fieldVersions": { "type": "object", "required": true }
+                    },
+                    "ref": "#/components/schemas/StxBase"
+                  },
+                  "description": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "keywords": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 100000
+                  },
+                  "createdBy": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 50
+                  },
+                  "modifiedBy": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 50
+                  },
+                  "public": { "type": "boolean", "required": true },
+                  "bucketName": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "groupId": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 50
+                  },
+                  "filename": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "contentType": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "convertedContentType": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "size": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "originalKey": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 2048
+                  },
+                  "convertedKey": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 2048
+                  },
+                  "thumbnailKey": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 2048
+                  },
+                  "organizationId": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 50
+                  },
+                  "can": {
+                    "type": "object",
+                    "required": false,
+                    "properties": {
+                      "create": { "type": "boolean", "required": true },
+                      "read": { "type": "boolean", "required": true },
+                      "update": { "type": "boolean", "required": true },
+                      "delete": { "type": "boolean", "required": true },
+                      "search": { "type": "boolean", "required": true }
+                    }
+                  }
+                },
+                "ref": "#/components/schemas/Attachment"
+              }
+            },
+            "rejectedItemIds": {
+              "type": "array",
+              "required": true,
+              "description": "Identifiers of items that could not be processed",
+              "itemType": "string"
+            },
+            "rejectionReasons": {
+              "type": "object",
+              "required": false,
+              "description": "Map of reason code to rejected item IDs"
+            }
+          },
+          "contentType": "application/json"
+        },
+        "example": {
+          "data": [
+            {
+              "id": "slwtksu3yccsd9ihoiny6rso",
+              "tenantId": "b7j0p6",
+              "entityType": "attachment",
+              "name": "excluding_ugh_besides.svgz",
+              "description": null,
+              "keywords": "nam curatio xiphias",
+              "public": false,
+              "bucketName": "attachments",
+              "groupId": null,
+              "filename": "excluding_ugh_besides.svgz",
+              "contentType": "application/vnd.ms-fontobject",
+              "convertedContentType": null,
+              "size": "7651256",
+              "originalKey": "uploads/auzy6zwhhoizpinjn9as93qc/excluding_ugh_besides.svgz",
+              "convertedKey": null,
+              "thumbnailKey": null,
+              "createdAt": "2024-04-19T14:04:35.773Z",
+              "createdBy": "kzmv5qbhdcqeiuvwlosan0fc",
+              "modifiedAt": "2024-04-19T14:04:35.773Z",
+              "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
+              "stx": {
+                "mutationId": "b6pakf4ovzm1ne3h55lgj31d",
+                "sourceId": "src_63n9apx99a5auvr5cyj5s37i",
+                "version": 1,
+                "fieldVersions": {}
+              },
+              "organizationId": "rnjjhhc4mupuqz0iqmny8wdl"
+            },
+            {
+              "id": "pxxbqdej8622zpgo54qw5fqo",
+              "tenantId": "9wwhw5",
+              "entityType": "attachment",
+              "name": "gown.txt",
+              "description": null,
+              "keywords": "denique tum candidus",
+              "public": false,
+              "bucketName": "attachments",
+              "groupId": null,
+              "filename": "gown.txt",
+              "contentType": "application/x-sh",
+              "convertedContentType": null,
+              "size": "6125227",
+              "originalKey": "uploads/g18wbwob9s8r85nah671ybl6/gown.txt",
+              "convertedKey": null,
+              "thumbnailKey": null,
+              "createdAt": "2024-02-25T13:01:35.301Z",
+              "createdBy": "p3t0ygxx0aa83en3sk1fs1we",
+              "modifiedAt": "2024-02-25T13:01:35.301Z",
+              "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
+              "stx": {
+                "mutationId": "y4dvzpz75e03ldr2ga54hj92",
+                "sourceId": "src_yzr7v1itpc9wztvbcy21q04o",
+                "version": 1,
+                "fieldVersions": {}
+              },
+              "organizationId": "q81k5rbzt4yq63pob5r5tp1l"
+            }
+          ],
+          "rejectedItemIds": []
         }
       },
       {
@@ -169,10 +761,15 @@
     "request": {
       "path": {
         "properties": {
-          "orgIdOrSlug": {
+          "tenantId": {
             "type": "string",
             "required": true,
-            "description": "Entity ID or slug. ID is always preferred."
+            "maxLength": 50
+          },
+          "orgId": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
           }
         }
       },
@@ -183,54 +780,98 @@
           "type": "object",
           "required": true,
           "properties": {
-            "createdAt": { "type": "string", "required": false },
-            "id": { "type": "string", "required": false },
-            "entityType": {
+            "id": {
               "type": "string",
               "required": false,
-              "enum": ["attachment"]
+              "maxLength": 50
             },
-            "name": { "type": "string", "required": false },
-            "description": {
-              "type": ["string", "null"],
-              "required": false
+            "name": {
+              "type": "string",
+              "required": false,
+              "maxLength": 255
             },
-            "modifiedAt": {
-              "type": ["string", "null"],
-              "required": false
+            "filename": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
             },
-            "keywords": { "type": "string", "required": true },
+            "contentType": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
+            },
+            "size": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
+            },
+            "organizationId": {
+              "type": "string",
+              "required": true,
+              "maxLength": 50
+            },
             "createdBy": {
               "type": ["string", "null"],
-              "required": false
+              "required": false,
+              "maxLength": 50
             },
-            "modifiedBy": {
-              "type": ["string", "null"],
-              "required": false
+            "originalKey": {
+              "type": "string",
+              "required": true,
+              "maxLength": 2048
+            },
+            "bucketName": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
             },
             "public": { "type": "boolean", "required": false },
-            "bucketName": { "type": "string", "required": true },
             "groupId": {
               "type": ["string", "null"],
-              "required": false
+              "required": false,
+              "maxLength": 50
             },
-            "filename": { "type": "string", "required": true },
-            "contentType": { "type": "string", "required": true },
             "convertedContentType": {
               "type": ["string", "null"],
-              "required": false
+              "required": false,
+              "maxLength": 255
             },
-            "size": { "type": "string", "required": true },
-            "originalKey": { "type": "string", "required": true },
             "convertedKey": {
               "type": ["string", "null"],
-              "required": false
+              "required": false,
+              "maxLength": 2048
             },
             "thumbnailKey": {
               "type": ["string", "null"],
-              "required": false
+              "required": false,
+              "maxLength": 2048
             },
-            "organizationId": { "type": "string", "required": true }
+            "stx": {
+              "type": "object",
+              "required": true,
+              "description": "Sync transaction metadata sent with mutations for idempotency and conflict detection.",
+              "properties": {
+                "mutationId": {
+                  "type": "string",
+                  "required": true,
+                  "description": "Unique mutation ID (nanoid)",
+                  "maxLength": 32
+                },
+                "sourceId": {
+                  "type": "string",
+                  "required": true,
+                  "description": "Tab/instance identifier for echo prevention",
+                  "maxLength": 64
+                },
+                "lastReadVersion": {
+                  "type": "integer",
+                  "required": true,
+                  "description": "Entity version when last read (for conflict detection)",
+                  "minimum": 0
+                }
+              },
+              "ref": "#/components/schemas/StxRequestBase"
+            }
           }
         },
         "minItems": 1,
@@ -246,25 +887,24 @@
       {
         "status": 200,
         "description": "Success",
-        "name": "SuccessWithRejectedItems",
-        "ref": "#/components/schemas/SuccessWithRejectedItems",
         "contentType": "application/json",
         "schema": {
           "type": "object",
           "properties": {
-            "success": { "type": "boolean", "required": true },
-            "rejectedItems": {
+            "data": { "type": "array", "required": true },
+            "rejectedItemIds": {
               "type": "array",
               "required": true,
+              "description": "Identifiers of items that could not be processed",
               "itemType": "string"
+            },
+            "rejectionReasons": {
+              "type": "object",
+              "required": false,
+              "description": "Map of reason code to rejected item IDs"
             }
           },
-          "ref": "#/components/schemas/SuccessWithRejectedItems",
           "contentType": "application/json"
-        },
-        "example": {
-          "success": true,
-          "rejectedItems": []
         }
       },
       {
@@ -306,10 +946,15 @@
     "request": {
       "path": {
         "properties": {
-          "orgIdOrSlug": {
+          "tenantId": {
             "type": "string",
             "required": true,
-            "description": "Entity ID or slug. ID is always preferred."
+            "maxLength": 50
+          },
+          "orgId": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
           }
         }
       },
@@ -322,10 +967,312 @@
             "minItems": 1,
             "maxItems": 50,
             "itemType": "string"
+          },
+          "stx": {
+            "type": "object",
+            "required": false,
+            "properties": {
+              "mutationId": { "type": "string", "required": true },
+              "sourceId": { "type": "string", "required": true }
+            }
           }
         },
         "required": true,
         "contentType": "application/json"
+      }
+    }
+  },
+  {
+    "operationId": "getPresignedUrl",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Presigned URL",
+        "contentType": "application/json",
+        "schema": { "type": "string", "contentType": "application/json" }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "tenantId": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          },
+          "orgId": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          }
+        }
+      },
+      "query": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "required": true,
+            "maxLength": 2048
+          }
+        }
+      }
+    }
+  },
+  {
+    "operationId": "getAttachment",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Attachment",
+        "name": "Attachment",
+        "ref": "#/components/schemas/Attachment",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "description": "A file attachment belonging to an organization.",
+          "properties": {
+            "createdAt": { "type": "string", "required": true },
+            "id": {
+              "type": "string",
+              "required": true,
+              "maxLength": 50
+            },
+            "entityType": {
+              "type": "string",
+              "required": true,
+              "enum": ["attachment"]
+            },
+            "tenantId": {
+              "type": "string",
+              "required": true,
+              "maxLength": 24
+            },
+            "name": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
+            },
+            "modifiedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "stx": {
+              "type": "object",
+              "required": true,
+              "description": "Sync transaction metadata stored on entities for offline and realtime support.",
+              "properties": {
+                "mutationId": { "type": "string", "required": true },
+                "sourceId": { "type": "string", "required": true },
+                "version": { "type": "integer", "required": true },
+                "fieldVersions": { "type": "object", "required": true }
+              },
+              "ref": "#/components/schemas/StxBase"
+            },
+            "description": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "keywords": {
+              "type": "string",
+              "required": true,
+              "maxLength": 100000
+            },
+            "createdBy": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 50
+            },
+            "modifiedBy": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 50
+            },
+            "public": { "type": "boolean", "required": true },
+            "bucketName": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
+            },
+            "groupId": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 50
+            },
+            "filename": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
+            },
+            "contentType": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
+            },
+            "convertedContentType": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 255
+            },
+            "size": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
+            },
+            "originalKey": {
+              "type": "string",
+              "required": true,
+              "maxLength": 2048
+            },
+            "convertedKey": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 2048
+            },
+            "thumbnailKey": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 2048
+            },
+            "organizationId": {
+              "type": "string",
+              "required": true,
+              "maxLength": 50
+            },
+            "can": {
+              "type": "object",
+              "required": false,
+              "properties": {
+                "create": { "type": "boolean", "required": true },
+                "read": { "type": "boolean", "required": true },
+                "update": { "type": "boolean", "required": true },
+                "delete": { "type": "boolean", "required": true },
+                "search": { "type": "boolean", "required": true }
+              }
+            }
+          },
+          "ref": "#/components/schemas/Attachment",
+          "contentType": "application/json"
+        },
+        "example": {
+          "id": "og9ynkm3vp2mdgi3oeicogxv",
+          "tenantId": "lphxlo",
+          "entityType": "attachment",
+          "name": "yet_rightfully_lest.ogx",
+          "description": null,
+          "keywords": "damno tenax arx",
+          "public": false,
+          "bucketName": "attachments",
+          "groupId": null,
+          "filename": "yet_rightfully_lest.ogx",
+          "contentType": "application/vnd.ms-fontobject",
+          "convertedContentType": null,
+          "size": "2524242",
+          "originalKey": "uploads/y6bqnt152wowxrfkyy8dwkbm/yet_rightfully_lest.ogx",
+          "convertedKey": null,
+          "thumbnailKey": null,
+          "createdAt": "2024-10-12T17:43:05.360Z",
+          "createdBy": "0uwim8y2tppz7th9tol75wjz",
+          "modifiedAt": "2024-10-12T17:43:05.360Z",
+          "modifiedBy": "0uwim8y2tppz7th9tol75wjz",
+          "stx": {
+            "mutationId": "pkeuemouu8t58r8fuj3tlenh",
+            "sourceId": "src_qurk6hu54pnfytf99mpmuhw0",
+            "version": 1,
+            "fieldVersions": {}
+          },
+          "organizationId": "7eswx7d6csd6xo4nqwl7k09e"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "tenantId": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          },
+          "orgId": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          },
+          "id": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          }
+        }
       }
     }
   },
@@ -340,80 +1287,158 @@
         "contentType": "application/json",
         "schema": {
           "type": "object",
+          "description": "A file attachment belonging to an organization.",
           "properties": {
             "createdAt": { "type": "string", "required": true },
-            "id": { "type": "string", "required": true },
+            "id": {
+              "type": "string",
+              "required": true,
+              "maxLength": 50
+            },
             "entityType": {
               "type": "string",
               "required": true,
               "enum": ["attachment"]
             },
-            "name": { "type": "string", "required": true },
-            "description": {
-              "type": ["string", "null"],
-              "required": true
+            "tenantId": {
+              "type": "string",
+              "required": true,
+              "maxLength": 24
+            },
+            "name": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
             },
             "modifiedAt": {
               "type": ["string", "null"],
               "required": true
             },
-            "keywords": { "type": "string", "required": true },
-            "createdBy": {
+            "stx": {
+              "type": "object",
+              "required": true,
+              "description": "Sync transaction metadata stored on entities for offline and realtime support.",
+              "properties": {
+                "mutationId": { "type": "string", "required": true },
+                "sourceId": { "type": "string", "required": true },
+                "version": { "type": "integer", "required": true },
+                "fieldVersions": { "type": "object", "required": true }
+              },
+              "ref": "#/components/schemas/StxBase"
+            },
+            "description": {
               "type": ["string", "null"],
               "required": true
+            },
+            "keywords": {
+              "type": "string",
+              "required": true,
+              "maxLength": 100000
+            },
+            "createdBy": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 50
             },
             "modifiedBy": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 50
             },
             "public": { "type": "boolean", "required": true },
-            "bucketName": { "type": "string", "required": true },
+            "bucketName": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
+            },
             "groupId": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 50
             },
-            "filename": { "type": "string", "required": true },
-            "contentType": { "type": "string", "required": true },
+            "filename": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
+            },
+            "contentType": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
+            },
             "convertedContentType": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 255
             },
-            "size": { "type": "string", "required": true },
-            "originalKey": { "type": "string", "required": true },
+            "size": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
+            },
+            "originalKey": {
+              "type": "string",
+              "required": true,
+              "maxLength": 2048
+            },
             "convertedKey": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 2048
             },
             "thumbnailKey": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 2048
             },
-            "organizationId": { "type": "string", "required": true }
+            "organizationId": {
+              "type": "string",
+              "required": true,
+              "maxLength": 50
+            },
+            "can": {
+              "type": "object",
+              "required": false,
+              "properties": {
+                "create": { "type": "boolean", "required": true },
+                "read": { "type": "boolean", "required": true },
+                "update": { "type": "boolean", "required": true },
+                "delete": { "type": "boolean", "required": true },
+                "search": { "type": "boolean", "required": true }
+              }
+            }
           },
           "ref": "#/components/schemas/Attachment",
           "contentType": "application/json"
         },
         "example": {
           "id": "og9ynkm3vp2mdgi3oeicogxv",
+          "tenantId": "lphxlo",
           "entityType": "attachment",
           "name": "yet_rightfully_lest.ogx",
           "description": null,
-          "keywords": "pectus subvenio depromo",
+          "keywords": "damno tenax arx",
           "public": false,
           "bucketName": "attachments",
           "groupId": null,
           "filename": "yet_rightfully_lest.ogx",
-          "contentType": "video/mp2t",
+          "contentType": "application/vnd.ms-fontobject",
           "convertedContentType": null,
-          "size": "6046908",
-          "originalKey": "uploads/ofr579y6bqnt152wowxrfkyy/yet_rightfully_lest.ogx",
+          "size": "2524242",
+          "originalKey": "uploads/y6bqnt152wowxrfkyy8dwkbm/yet_rightfully_lest.ogx",
           "convertedKey": null,
           "thumbnailKey": null,
           "createdAt": "2024-10-12T17:43:05.360Z",
           "createdBy": "0uwim8y2tppz7th9tol75wjz",
           "modifiedAt": "2024-10-12T17:43:05.360Z",
           "modifiedBy": "0uwim8y2tppz7th9tol75wjz",
-          "organizationId": "8dwkbmpkeuemouu8t58r8fuj"
+          "stx": {
+            "mutationId": "pkeuemouu8t58r8fuj3tlenh",
+            "sourceId": "src_qurk6hu54pnfytf99mpmuhw0",
+            "version": 1,
+            "fieldVersions": {}
+          },
+          "organizationId": "7eswx7d6csd6xo4nqwl7k09e"
         }
       },
       {
@@ -455,19 +1480,62 @@
     "request": {
       "path": {
         "properties": {
-          "id": { "type": "string", "required": true },
-          "orgIdOrSlug": {
+          "tenantId": {
             "type": "string",
             "required": true,
-            "description": "Entity ID or slug. ID is always preferred."
+            "maxLength": 50
+          },
+          "orgId": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          },
+          "id": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
           }
         }
       },
       "body": {
         "type": "object",
         "properties": {
-          "name": { "type": "string", "required": false },
-          "originalKey": { "type": "string", "required": false }
+          "name": {
+            "type": "string",
+            "required": false,
+            "maxLength": 255
+          },
+          "originalKey": {
+            "type": "string",
+            "required": false,
+            "maxLength": 2048
+          },
+          "stx": {
+            "type": "object",
+            "required": true,
+            "description": "Sync transaction metadata sent with mutations for idempotency and conflict detection.",
+            "properties": {
+              "mutationId": {
+                "type": "string",
+                "required": true,
+                "description": "Unique mutation ID (nanoid)",
+                "maxLength": 32
+              },
+              "sourceId": {
+                "type": "string",
+                "required": true,
+                "description": "Tab/instance identifier for echo prevention",
+                "maxLength": 64
+              },
+              "lastReadVersion": {
+                "type": "integer",
+                "required": true,
+                "description": "Entity version when last read (for conflict detection)",
+                "minimum": 0
+              }
+            },
+            "ref": "#/components/schemas/StxRequestBase"
+          }
         },
         "required": true,
         "contentType": "application/json"
@@ -517,7 +1585,11 @@
     "request": {
       "path": {
         "properties": {
-          "id": { "type": "string", "required": true }
+          "id": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          }
         }
       }
     }

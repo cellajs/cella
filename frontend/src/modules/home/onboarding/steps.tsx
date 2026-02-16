@@ -3,18 +3,18 @@ import { XIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Organization } from '~/api.gen';
-import useMounted from '~/hooks/use-mounted';
+import { useMountedState } from '~/hooks/use-mounted-state';
 import { CallbackArgs } from '~/modules/common/data-table/types';
 import { Step, Stepper } from '~/modules/common/stepper';
-import StepperFooter from '~/modules/home/onboarding/footer';
+import { StepperFooter } from '~/modules/home/onboarding/footer';
 import { onboardingSteps } from '~/modules/home/onboarding/onboarding-config';
 import { WelcomeText } from '~/modules/home/onboarding/welcome-text';
-import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
+import { CreateOrganizationForm } from '~/modules/organization/create-organization-form';
+import { organizationsListQueryOptions } from '~/modules/organization/query';
 import { Card, CardContent, CardDescription, CardHeader } from '~/modules/ui/card';
-import InviteUsers from '~/modules/users/invite-users';
-import UpdateUserForm from '~/modules/users/update-user-form';
-import { getContextEntityTypeToListQueries } from '~/offline-config';
-import { flattenInfiniteData } from '~/query/utils/flatten';
+import { InviteUsers } from '~/modules/user/invite-users';
+import { UpdateUserForm } from '~/modules/user/update-user-form';
+import { flattenInfiniteData } from '~/query/basic';
 import { useUserStore } from '~/store/user';
 import { cn } from '~/utils/cn';
 
@@ -25,9 +25,9 @@ interface OnboardingProps {
   setOnboardingState: (newState: Exclude<OnboardingStates, 'start'>) => void;
 }
 
-const Onboarding = ({ onboarding = 'start', setOnboardingState }: OnboardingProps) => {
+export function Onboarding({ onboarding = 'start', setOnboardingState }: OnboardingProps) {
   const { user } = useUserStore();
-  const { hasStarted } = useMounted();
+  const { hasStarted } = useMountedState();
   const { t } = useTranslation();
 
   const [steps, setSteps] = useState(onboardingSteps);
@@ -36,7 +36,7 @@ const Onboarding = ({ onboarding = 'start', setOnboardingState }: OnboardingProp
   const animateClass = `transition-all will-change-transform duration-500 ease-out ${hasStarted ? 'opacity-100' : 'opacity-0 scale-95 translate-y-4'}`;
 
   // Fetch organizations to determine if user has created any
-  const orgQuery = useInfiniteQuery(getContextEntityTypeToListQueries().organization({ userId: user.id }));
+  const orgQuery = useInfiniteQuery(organizationsListQueryOptions({ userId: user.id }));
   const organizations = flattenInfiniteData<Organization>(orgQuery.data);
   const hasOrganizations = organizations.length > 0;
 
@@ -79,7 +79,7 @@ const Onboarding = ({ onboarding = 'start', setOnboardingState }: OnboardingProp
                     )}
                     <CardContent>
                       {id === 'profile' && (
-                        <UpdateUserForm user={user} hiddenFields={['email', 'newsletter', 'slug', 'language']}>
+                        <UpdateUserForm user={user} compact>
                           <StepperFooter setOnboardingState={setOnboardingState} />
                         </UpdateUserForm>
                       )}
@@ -116,6 +116,4 @@ const Onboarding = ({ onboarding = 'start', setOnboardingState }: OnboardingProp
       </div>
     </div>
   );
-};
-
-export default Onboarding;
+}

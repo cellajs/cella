@@ -2,7 +2,7 @@ import * as AvatarPrimitive from '@radix-ui/react-avatar';
 import * as React from 'react';
 import { cn } from '~/utils/cn';
 
-function Avatar({ className, ...props }: React.ComponentProps<typeof AvatarPrimitive.Root>) {
+export function Avatar({ className, ...props }: React.ComponentProps<typeof AvatarPrimitive.Root>) {
   return (
     <AvatarPrimitive.Root
       data-slot="avatar"
@@ -12,13 +12,13 @@ function Avatar({ className, ...props }: React.ComponentProps<typeof AvatarPrimi
   );
 }
 
-function AvatarImage({ className, ...props }: React.ComponentProps<typeof AvatarPrimitive.Image>) {
+export function AvatarImage({ className, ...props }: React.ComponentProps<typeof AvatarPrimitive.Image>) {
   return (
     <AvatarPrimitive.Image data-slot="avatar-image" className={cn('aspect-square size-full', className)} {...props} />
   );
 }
 
-function AvatarFallback({ className, ...props }: React.ComponentProps<typeof AvatarPrimitive.Fallback>) {
+export function AvatarFallback({ className, ...props }: React.ComponentProps<typeof AvatarPrimitive.Fallback>) {
   return (
     <AvatarPrimitive.Fallback
       data-slot="avatar-fallback"
@@ -36,7 +36,7 @@ type AvatarGroupContextValue = {
 
 const AvatarGroupContext = React.createContext<AvatarGroupContextValue>({});
 
-const AvatarGroupProvider = ({ children, limit }: { children?: React.ReactNode; limit?: number }) => {
+function AvatarGroupProvider({ children, limit }: { children?: React.ReactNode; limit?: number }) {
   const [count, setCount] = React.useState<number>(0);
 
   return (
@@ -50,15 +50,17 @@ const AvatarGroupProvider = ({ children, limit }: { children?: React.ReactNode; 
       {children}
     </AvatarGroupContext.Provider>
   );
-};
+}
 
-const useAvatarGroupContext = () => React.useContext(AvatarGroupContext);
+function useAvatarGroupContext() {
+  return React.useContext(AvatarGroupContext);
+}
 
 export interface AvatarGroupProps extends React.HTMLAttributes<HTMLDivElement> {
   limit?: number;
 }
 
-const AvatarGroup = React.forwardRef<HTMLDivElement, AvatarGroupProps>(
+export const AvatarGroup = React.forwardRef<HTMLDivElement, AvatarGroupProps>(
   ({ children, className, limit, ...props }, ref) => {
     return (
       <AvatarGroupProvider limit={limit}>
@@ -71,7 +73,7 @@ const AvatarGroup = React.forwardRef<HTMLDivElement, AvatarGroupProps>(
 );
 AvatarGroup.displayName = 'AvatarGroup';
 
-const AvatarGroupList = ({ children }: { children?: React.ReactNode }) => {
+export function AvatarGroupList({ children }: { children?: React.ReactNode }) {
   const { limit, setCount } = useAvatarGroupContext();
 
   const childArray = React.Children.toArray(children);
@@ -86,11 +88,11 @@ const AvatarGroupList = ({ children }: { children?: React.ReactNode }) => {
   }
 
   return <>{childArray.slice(0, limit - 1)}</>; // Reserve one spot for the overflow
-};
+}
 
 export interface AvatarOverflowIndicatorProps extends React.HTMLAttributes<HTMLSpanElement> {}
 
-const AvatarOverflowIndicator = React.forwardRef<
+export const AvatarOverflowIndicator = React.forwardRef<
   HTMLSpanElement,
   React.HTMLAttributes<HTMLSpanElement> & AvatarOverflowIndicatorProps
 >(({ className, ...props }, ref) => {
@@ -111,5 +113,3 @@ const AvatarOverflowIndicator = React.forwardRef<
     </span>
   );
 });
-
-export { Avatar, AvatarImage, AvatarFallback, AvatarGroup, AvatarGroupList, AvatarOverflowIndicator };

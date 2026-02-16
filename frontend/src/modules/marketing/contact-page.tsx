@@ -1,9 +1,8 @@
-import { appConfig } from 'config';
 import { ArrowUpRightIcon, CalendarCheckIcon, MailIcon, MapPinIcon, PhoneCallIcon } from 'lucide-react';
-
 import { useTranslation } from 'react-i18next';
-import ContactFormMap from '~/modules/common/contact-form/contact-form';
-import MarketingLayout from '~/modules/marketing/layout';
+import { appConfig } from 'shared';
+import { ContactForm } from '~/modules/common/contact-form/contact-form';
+import { MarketingLayout } from '~/modules/marketing/layout';
 
 const methods = [
   {
@@ -30,7 +29,7 @@ if (appConfig.company.tel)
     text: appConfig.company.tel,
   });
 
-const ContactPage = () => {
+export function ContactPage() {
   const { t } = useTranslation();
 
   return (
@@ -40,7 +39,7 @@ const ContactPage = () => {
           {t('common:leave_message.text')}
         </h1>
         <p className="mb-8 text-muted-foreground text-center sm:text-left sm:text-lg">{t('common:contact_us.text')}</p>
-        <ContactFormMap />
+        <ContactForm />
       </div>
       <div className="container mb-12">
         <div className="flex flex-wrap justify-evenly gap-2">
@@ -73,6 +72,4 @@ const ContactPage = () => {
       </div>
     </MarketingLayout>
   );
-};
-
-export default ContactPage;
+}

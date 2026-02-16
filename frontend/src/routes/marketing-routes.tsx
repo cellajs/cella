@@ -1,8 +1,8 @@
 import { createRoute, redirect } from '@tanstack/react-router';
 import z from 'zod';
-import AboutPage from '~/modules/marketing/about/about-page';
-import AccessibilityPage from '~/modules/marketing/accessibility-page';
-import ContactPage from '~/modules/marketing/contact-page';
+import { AboutPage } from '~/modules/marketing/about/about-page';
+import { AccessibilityPage } from '~/modules/marketing/accessibility-page';
+import { ContactPage } from '~/modules/marketing/contact-page';
 import { legalConfig } from '~/modules/marketing/legal/legal-config';
 import { LegalPage } from '~/modules/marketing/legal/legal-page';
 import { PublicLayoutRoute, RootRoute } from '~/routes/base-routes';

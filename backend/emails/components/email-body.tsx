@@ -14,7 +14,17 @@ export const EmailBody = ({ children }: { children: React.ReactNode }): JSX.Elem
       color: '#404040',
     }}
   >
-    <div style={{ color: '#404040', borderRadius: '.75rem', borderStyle: 'solid', borderColor: '#eaeaea', padding: '1.5rem' }}>{children}</div>
+    <div
+      style={{
+        color: '#404040',
+        borderRadius: '.75rem',
+        borderStyle: 'solid',
+        borderColor: '#eaeaea',
+        padding: '1.5rem',
+      }}
+    >
+      {children}
+    </div>
   </Section>
 );
 

@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { appConfig } from 'config';
 import { useForm, useFormState } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import type z from 'zod';
 import { zCreateTotpData } from '~/api.gen/zod.gen';
 import { Button, SubmitButton } from '~/modules/ui/button';
@@ -19,7 +19,10 @@ interface Props {
   label?: string;
 }
 
-export const TotpConfirmationForm = ({ onSubmit, onCancel, label, isPending }: Props) => {
+/**
+ * Collects and submits a TOTP verification code.
+ */
+export function TotpConfirmationForm({ onSubmit, onCancel, label, isPending }: Props) {
   const { t } = useTranslation();
 
   const form = useForm<FormValues>({
@@ -87,4 +90,4 @@ export const TotpConfirmationForm = ({ onSubmit, onCancel, label, isPending }: P
       </form>
     </Form>
   );
-};
+}

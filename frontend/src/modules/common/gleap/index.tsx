@@ -1,6 +1,6 @@
-import { appConfig } from 'config';
 import Gleap from 'gleap';
 import { useEffect } from 'react';
+import { appConfig } from 'shared';
 import type { User } from '~/api.gen';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import '~/modules/common/gleap/style.css';
@@ -23,7 +23,7 @@ window.onoffline = () => {
 // Initialize Gleap if online
 if (navigator.onLine) Gleap.initialize(appConfig.gleapToken);
 
-const setGleapUser = (user: User) => {
+function setGleapUser(user: User) {
   if (!window.Gleap) return;
 
   window.Gleap.setLanguage(user.language || 'en');
@@ -37,9 +37,9 @@ const setGleapUser = (user: User) => {
       createdAt: new Date(user.createdAt),
     });
   }
-};
+}
 
-const GleapSupport = () => {
+export function GleapSupport() {
   const { user } = useUserStore();
   const { isOnline } = useOnlineManager();
 
@@ -72,6 +72,5 @@ const GleapSupport = () => {
   }, [isOnline, user]);
 
   return null;
-};
-
+}
 export default GleapSupport;

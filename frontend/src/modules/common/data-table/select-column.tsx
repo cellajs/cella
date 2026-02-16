@@ -1,26 +1,31 @@
 import { SelectTrigger } from '@radix-ui/react-select';
-import type { appConfig } from 'config';
 import { useTranslation } from 'react-i18next';
-import type { Organization, User } from '~/api.gen';
+import type { appConfig, roles } from 'shared';
+import type { User } from '~/api.gen';
 import type { Member } from '~/modules/memberships/types';
+import type { OrganizationWithMembership } from '~/modules/organization/types';
 import { Select, SelectContent, SelectItem, SelectValue } from '~/modules/ui/select';
 
-export const renderSelect = <TRow extends User | Member | Organization>({
+export const renderSelect = <TRow extends User | Member | OrganizationWithMembership>({
   row,
   options,
   onRowChange,
 }: {
   row: TRow;
   onRowChange: (row: TRow, commitChanges?: boolean) => void;
-  options: typeof appConfig.roles.entityRoles | typeof appConfig.roles.systemRoles;
+  options: typeof roles.all | typeof appConfig.systemRoles;
 }) => {
   const { t } = useTranslation();
 
   // SetTimeout to avoid flushSync was called from inside a lifecycle method
   const onChooseValue = (value: string) => {
-    // Member | Organization type
+    // Member type (has membership property in type)
     if ('membership' in row) {
       return setTimeout(() => onRowChange({ ...row, membership: { ...row.membership, role: value } }, true));
+    }
+    // Organization type (entityType === 'organization') - may not have membership yet
+    if ('entityType' in row && row.entityType === 'organization') {
+      return setTimeout(() => onRowChange({ ...row, membership: { ...row.membership, role: value } } as TRow, true));
     }
     // User type
     if ('role' in row) {

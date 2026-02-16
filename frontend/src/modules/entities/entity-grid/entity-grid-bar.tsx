@@ -1,13 +1,18 @@
 import type { QueryKey } from '@tanstack/react-query';
 import { ArrowDownAZIcon, CalendarIcon } from 'lucide-react';
 import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
-import TableCount from '~/modules/common/data-table/table-count';
-import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
-import TableSearch from '~/modules/common/data-table/table-search';
+import { TableCount } from '~/modules/common/data-table/table-count';
+import {
+  FilterBarActions,
+  FilterBarFilters,
+  FilterBarSearch,
+  TableFilterBar,
+} from '~/modules/common/data-table/table-filter-bar';
+import { TableSearch } from '~/modules/common/data-table/table-search';
 import { FocusView } from '~/modules/common/focus-view';
-import SelectRole from '~/modules/common/form-fields/select-role';
-import SelectSort from '~/modules/common/form-fields/select-sort';
-import { useInfiniteQueryTotal } from '~/query/hooks/use-infinite-query-total';
+import { SelectRole } from '~/modules/common/form-fields/select-role';
+import { SelectSort } from '~/modules/common/form-fields/select-sort';
+import { useInfiniteQueryTotal } from '~/query/basic';
 
 export type EntityGridBarSearch = {
   q?: string;
@@ -50,8 +55,10 @@ export const EntityGridBar = ({ queryKey, label, searchVars, setSearch, focusVie
           <TableCount count={total} label={label} isFiltered={isFiltered} onResetFilters={onResetFilters} />
         </FilterBarActions>
         <div className="sm:grow" />
-        <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-left max-sm:fade-in max-sm:duration-300">
+        <FilterBarSearch>
           <TableSearch name="entitySearch" value={q} setQuery={onSearch} />
+        </FilterBarSearch>
+        <FilterBarFilters>
           <SelectSort
             value={sort ?? 'name'}
             onChange={onSortChange}
@@ -64,7 +71,7 @@ export const EntityGridBar = ({ queryKey, label, searchVars, setSearch, focusVie
             onChange={onRoleChange}
             className="h-10 sm:min-w-32"
           />
-        </FilterBarContent>
+        </FilterBarFilters>
       </TableFilterBar>
 
       {/* Focus view */}

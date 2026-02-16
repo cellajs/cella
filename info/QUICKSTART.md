@@ -4,14 +4,7 @@ This document describes how to develop your own app based on Cella.
 
 Also read the [architecture](./ARCHITECTURE.md) info.
 
-## Run with [pglite](https://pglite.dev/)
-
-```bash
-pnpm install
-pnpm quick
-```
-
-## Run it with full postgres and [electric-sync](https://electric-sql.com/) in docker
+## Recommended: run with full postgres and CDC worker
 
 ```bash
 pnpm install
@@ -19,6 +12,22 @@ pnpm docker
 pnpm seed
 pnpm dev
 ```
+
+## Quick alternative: run with [pglite](https://pglite.dev/)
+
+```bash
+pnpm install
+pnpm quick
+```
+
+## Development modes
+
+| Mode | Database | Docker | Use Case |
+|------|----------|--------|----------|
+| `none` | None | ❌ | OpenAPI generation, basic tests |
+| `basic` | PGlite | ❌ | Fast local dev (`pnpm quick`) |
+| `core` | PostgreSQL | ✅ | Standard development (`pnpm dev:core`) |
+| `full` | PostgreSQL + CDC | ✅ | Complete features (`pnpm dev`) |
 
 ## To check your types & format + fix code style
 
@@ -41,20 +50,12 @@ pnpm check
 
 Cella CLI is currently limited to: creating a cella project, listing diverged files and pulling upstream changes. Config can be found in `cella.config.ts`.
 
-### List diverged
-
-Receive a list of files that have diverged from cella itself. The files you have ignored in cella.config.ts will not be listed.
-
-```bash
-pnpm diverged
-```
-
 ### Sync with upstream
 
 Pull and sync upstream changes from cella repository.
 
 ```bash
-pnpm sync
+pnpm cella
 ```
 
 ### Troubleshooting

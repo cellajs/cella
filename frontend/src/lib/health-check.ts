@@ -36,29 +36,29 @@ export const healthCheck = async ({
 
   while (attempts < maxAttempts) {
     if (signal?.aborted) {
-      console.debug('Health check aborted.');
+      console.debug('[HealthCheck] Aborted');
       return false;
     }
 
     attempts++;
     try {
-      console.debug(`Attempt ${attempts}: Pinging ${url}`);
+      console.debug(`[HealthCheck] Attempt ${attempts}: Pinging ${url}`);
       const response = await fetch(url);
       if (response.ok) {
-        console.debug('Health check successful!');
+        console.debug('[HealthCheck] Successful');
         return true;
       }
-      console.debug(`Health check: ${response.status}`);
+      console.debug(`[HealthCheck] Response status: ${response.status}`);
     } catch (err) {}
 
     if (delay < maxDelay * 1000) {
       delay = Math.min(maxDelay * 1000, delay * factor);
     }
 
-    console.debug(`Waiting ${delay / 1000} seconds before next attempt.`);
+    console.debug(`[HealthCheck] Waiting ${delay / 1000}s before next attempt`);
     await sleep(delay);
   }
 
-  console.debug('Maximum attempts reached. Health check failed.');
+  console.debug('[HealthCheck] Maximum attempts reached, failed');
   return false;
 };

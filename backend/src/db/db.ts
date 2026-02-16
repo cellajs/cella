@@ -1,54 +1,71 @@
 import type { PGlite } from '@electric-sql/pglite';
-import { appConfig } from 'config';
-import { type DrizzleConfig } from 'drizzle-orm';
-import { type NodePgClient, drizzle as pgDrizzle } from 'drizzle-orm/node-postgres';
-import type { PgDatabase } from 'drizzle-orm/pg-core';
-import { drizzle as pgliteDrizzle } from 'drizzle-orm/pglite';
+import type { DrizzleConfig } from 'drizzle-orm';
+
+import { type NodePgClient, type NodePgDatabase, drizzle as pgDrizzle } from 'drizzle-orm/node-postgres';
+import type { PgAsyncDatabase } from 'drizzle-orm/pg-core';
+import { type PgliteDatabase, drizzle as pgliteDrizzle } from 'drizzle-orm/pglite';
+
+import { appConfig } from 'shared';
+import * as schema from '#/db/schema';
 import { env } from '../env';
 
+export type DBSchema = typeof schema;
+
 /**
- * Database configuration for Drizzle ORM.
+ * ✅ Key change: type/satisfies DrizzleConfig WITH the schema type.
+ * If you annotate as plain `DrizzleConfig`, TS may widen schema and you get
+ * `Record<string, never> | typeof schema` in the DB type.
  */
-export const dbConfig: DrizzleConfig = {
+export const dbConfig = {
   logger: appConfig.debug,
   casing: 'snake_case',
-};
+} satisfies DrizzleConfig<DBSchema>;
 
-/**
- * Migration configuration for Drizzle ORM.
- */
 export const migrateConfig = { migrationsFolder: 'drizzle', migrationsSchema: 'drizzle-backend' };
 
-/**
- * Database connection configuration.
- */
-const connection = (() => {
-  if (process.env.AVOID_DB_CONNECTION === 'true') return {};
+export type PgDB = NodePgDatabase<DBSchema> & { $client: NodePgClient };
+export type LiteDB = PgliteDatabase<DBSchema> & { $client: PGlite };
 
-  if (env.DEV_MODE === 'basic') {
-    if (process.env.NODE_ENV === 'test') return {}; // In-memory database for tests
+// biome-ignore lint/suspicious/noExplicitAny: Common base type avoids union issues with .returning() and .execute()
+export type DB = PgAsyncDatabase<any, DBSchema> & { $client: PGlite | NodePgClient };
 
-    // PGLite for quick local development
-    return { dataDir: './.db' };
+type TxOf<D extends { transaction: (...args: any[]) => any }> = Parameters<Parameters<D['transaction']>[0]>[0];
+
+export type Tx = TxOf<DB>;
+export type DbOrTx = DB | Tx;
+
+const createPgConnection = (connectionString: string): PgDB =>
+  pgDrizzle({
+    connection: { connectionString, connectionTimeoutMillis: 10_000 },
+    schema,
+    ...dbConfig,
+  });
+
+const createPgliteConnection = (): LiteDB =>
+  pgliteDrizzle({
+    connection: { dataDir: './.db' },
+    schema,
+    ...dbConfig,
+  });
+
+const initConnections = (): { db: DB; migrationDb?: PgDB; adminDb?: PgDB } => {
+  if (env.DEV_MODE === 'none') {
+    return { db: {} as unknown as DB };
   }
 
-  // Regular Postgres connection
+  if (env.DEV_MODE === 'basic') {
+    return { db: createPgliteConnection() };
+  }
+
   return {
-    connectionString: env.DATABASE_URL,
-    connectionTimeoutMillis: 10000,
+    db: createPgConnection(env.DATABASE_URL),
+    migrationDb: createPgConnection(env.DATABASE_ADMIN_URL),
+    adminDb: createPgConnection(env.DATABASE_ADMIN_URL),
   };
-})();
+};
 
-// biome-ignore lint/suspicious/noExplicitAny: Can be two different types
-type DB = PgDatabase<any> & { $client: PGlite | NodePgClient };
+const connections = initConnections();
 
-/**
- * The database client.
- */
-export let db: DB;
-
-if (process.env.SKIP_DB === '1') db = {} as DB;
-else
-  db = (
-    env.DEV_MODE === 'basic' ? pgliteDrizzle({ connection, ...dbConfig }) : pgDrizzle({ connection, ...dbConfig })
-  ) as DB;
+export const unsafeInternalDb: DB = connections.db;
+export const migrationDb: PgDB | undefined = connections.migrationDb;
+export const unsafeInternalAdminDb: PgDB | undefined = connections.adminDb;

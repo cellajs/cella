@@ -4,25 +4,93 @@
     "responses": [
       {
         "status": 200,
-        "description": "Number of sent invitations",
+        "description": "Created memberships and invite count",
         "contentType": "application/json",
         "schema": {
           "type": "object",
           "properties": {
-            "success": { "type": "boolean", "required": true },
-            "rejectedItems": {
+            "data": {
               "type": "array",
               "required": true,
+              "itemType": "object",
+              "ref": "#/components/schemas/MembershipBase",
+              "items": {
+                "type": "object",
+                "description": "Core membership fields shared across active and inactive memberships.",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 50
+                  },
+                  "tenantId": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 24
+                  },
+                  "contextType": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["organization"]
+                  },
+                  "userId": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 50
+                  },
+                  "role": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["admin", "member"]
+                  },
+                  "archived": { "type": "boolean", "required": true },
+                  "muted": { "type": "boolean", "required": true },
+                  "displayOrder": {
+                    "type": "number",
+                    "required": true,
+                    "minimum": -140737488355328,
+                    "maximum": 140737488355327
+                  },
+                  "organizationId": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 50
+                  }
+                },
+                "ref": "#/components/schemas/MembershipBase"
+              }
+            },
+            "rejectedItemIds": {
+              "type": "array",
+              "required": true,
+              "description": "Identifiers of items that could not be processed",
               "itemType": "string"
+            },
+            "rejectionReasons": {
+              "type": "object",
+              "required": false,
+              "description": "Map of reason code to rejected item IDs"
             },
             "invitesSentCount": { "type": "number", "required": true }
           },
-          "extendsRef": "#/components/schemas/SuccessWithRejectedItems",
           "contentType": "application/json"
         },
         "example": {
-          "success": true,
-          "rejectedItems": []
+          "data": [
+            {
+              "id": "vn86f6g3ci8ybeh37sz3gscf",
+              "tenantId": "gmpj3u",
+              "contextType": "organization",
+              "userId": "avw3f7pkm7vsxl2157n34cen",
+              "organizationId": "80754cxm7om1aq3batq3hdpx",
+              "role": "admin",
+              "displayOrder": 32,
+              "muted": false,
+              "archived": false
+            }
+          ],
+          "rejectedItemIds": [],
+          "invitesSentCount": 1
         }
       },
       {
@@ -64,19 +132,24 @@
     "request": {
       "path": {
         "properties": {
-          "orgIdOrSlug": {
+          "tenantId": {
             "type": "string",
             "required": true,
-            "description": "Entity ID or slug. ID is always preferred."
+            "maxLength": 50
+          },
+          "orgId": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
           }
         }
       },
       "query": {
         "properties": {
-          "idOrSlug": {
+          "entityId": {
             "type": "string",
             "required": true,
-            "description": "Entity ID or slug. ID is always preferred."
+            "maxLength": 50
           },
           "entityType": {
             "type": "string",
@@ -96,12 +169,12 @@
             "itemType": "string",
             "format": "email",
             "minLength": 4,
-            "maxLength": 100
+            "maxLength": 255
           },
           "role": {
             "type": "string",
             "required": true,
-            "enum": ["member", "admin"]
+            "enum": ["admin", "member"]
           }
         },
         "required": true,
@@ -115,25 +188,24 @@
       {
         "status": 200,
         "description": "Success",
-        "name": "SuccessWithRejectedItems",
-        "ref": "#/components/schemas/SuccessWithRejectedItems",
         "contentType": "application/json",
         "schema": {
           "type": "object",
           "properties": {
-            "success": { "type": "boolean", "required": true },
-            "rejectedItems": {
+            "data": { "type": "array", "required": true },
+            "rejectedItemIds": {
               "type": "array",
               "required": true,
+              "description": "Identifiers of items that could not be processed",
               "itemType": "string"
+            },
+            "rejectionReasons": {
+              "type": "object",
+              "required": false,
+              "description": "Map of reason code to rejected item IDs"
             }
           },
-          "ref": "#/components/schemas/SuccessWithRejectedItems",
           "contentType": "application/json"
-        },
-        "example": {
-          "success": true,
-          "rejectedItems": []
         }
       },
       {
@@ -175,19 +247,24 @@
     "request": {
       "path": {
         "properties": {
-          "orgIdOrSlug": {
+          "tenantId": {
             "type": "string",
             "required": true,
-            "description": "Entity ID or slug. ID is always preferred."
+            "maxLength": 50
+          },
+          "orgId": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
           }
         }
       },
       "query": {
         "properties": {
-          "idOrSlug": {
+          "entityId": {
             "type": "string",
             "required": true,
-            "description": "Entity ID or slug. ID is always preferred."
+            "maxLength": 50
           },
           "entityType": {
             "type": "string",
@@ -223,19 +300,39 @@
         "contentType": "application/json",
         "schema": {
           "type": "object",
+          "description": "A user's membership in a context entity, including role and activity data.",
           "properties": {
             "createdAt": { "type": "string", "required": true },
-            "id": { "type": "string", "required": true },
+            "id": {
+              "type": "string",
+              "required": true,
+              "maxLength": 50
+            },
+            "tenantId": {
+              "type": "string",
+              "required": true,
+              "maxLength": 24
+            },
             "contextType": {
               "type": "string",
               "required": true,
               "enum": ["organization"]
             },
+            "userId": {
+              "type": "string",
+              "required": true,
+              "maxLength": 50
+            },
             "userId": { "type": "string", "required": true },
             "role": {
               "type": "string",
               "required": true,
-              "enum": ["member", "admin"]
+              "enum": ["admin", "member"]
+            },
+            "createdBy": {
+              "type": "string",
+              "required": true,
+              "maxLength": 50
             },
             "createdBy": { "type": "string", "required": true },
             "modifiedAt": {
@@ -244,18 +341,22 @@
             },
             "modifiedBy": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 50
             },
             "archived": { "type": "boolean", "required": true },
             "muted": { "type": "boolean", "required": true },
-            "order": {
+            "displayOrder": {
               "type": "number",
               "required": true,
               "minimum": -140737488355328,
               "maximum": 140737488355327
             },
-            "organizationId": { "type": "string", "required": true },
-            "uniqueKey": { "type": "string", "required": true }
+            "organizationId": {
+              "type": "string",
+              "required": true,
+              "maxLength": 50
+            }
           },
           "ref": "#/components/schemas/Membership",
           "contentType": "application/json"
@@ -265,15 +366,15 @@
           "contextType": "organization",
           "userId": "xg7596t8jiy8d0v8irrljzhy",
           "organizationId": "7ul53b62aw5h7k6x44nbu2r5",
-          "role": "member",
-          "order": 49,
+          "role": "admin",
+          "displayOrder": 49,
           "muted": false,
           "archived": false,
           "createdAt": "2024-10-28T14:52:59.502Z",
           "createdBy": "xg7596t8jiy8d0v8irrljzhy",
           "modifiedAt": "2024-10-28T14:52:59.502Z",
           "modifiedBy": null,
-          "uniqueKey": "xg7596t8jiy8d0v8irrljzhy-7ul53b62aw5h7k6x44nbu2r5"
+          "tenantId": "test01"
         }
       },
       {
@@ -315,11 +416,20 @@
     "request": {
       "path": {
         "properties": {
-          "id": { "type": "string", "required": true },
-          "orgIdOrSlug": {
+          "tenantId": {
             "type": "string",
             "required": true,
-            "description": "Entity ID or slug. ID is always preferred."
+            "maxLength": 50
+          },
+          "orgId": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          },
+          "id": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
           }
         }
       },
@@ -329,11 +439,11 @@
           "role": {
             "type": "string",
             "required": false,
-            "enum": ["member", "admin"]
+            "enum": ["admin", "member"]
           },
           "muted": { "type": "boolean", "required": false },
           "archived": { "type": "boolean", "required": false },
-          "order": { "type": "number", "required": false }
+          "displayOrder": { "type": "number", "required": false }
         },
         "required": false,
         "contentType": "application/json"
@@ -351,18 +461,16 @@
         "contentType": "application/json",
         "schema": {
           "type": "object",
+          "description": "Base schema for entities with memberships (e.g. organization).",
           "properties": {
             "id": { "type": "string", "required": true },
             "name": { "type": "string", "required": true },
-            "description": {
-              "type": ["string", "null"],
-              "required": true
-            },
             "createdAt": { "type": "string", "required": true },
             "modifiedAt": {
               "type": ["string", "null"],
               "required": true
             },
+            "tenantId": { "type": "string", "required": true },
             "entityType": {
               "type": "string",
               "required": true,
@@ -380,6 +488,17 @@
           },
           "ref": "#/components/schemas/ContextEntityBase",
           "contentType": "application/json"
+        },
+        "example": {
+          "id": "bafp6iiu2dt74olfvl618xur",
+          "createdAt": "2024-09-15T16:29:26.122Z",
+          "modifiedAt": "2024-12-04T06:32:26.983Z",
+          "tenantId": "d9wtu57tfwtfux7yivt59ywq",
+          "name": "Nolan - Jacobson",
+          "entityType": "organization",
+          "slug": "nolan---jacobson",
+          "thumbnailUrl": null,
+          "bannerUrl": null
         }
       },
       {
@@ -421,16 +540,15 @@
     "request": {
       "path": {
         "properties": {
-          "id": { "type": "string", "required": true },
+          "id": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          },
           "acceptOrReject": {
             "type": "string",
             "required": true,
             "enum": ["accept", "reject"]
-          },
-          "orgIdOrSlug": {
-            "type": "string",
-            "required": true,
-            "description": "Entity ID or slug. ID is always preferred."
           }
         }
       }
@@ -454,25 +572,41 @@
                 "type": "object",
                 "properties": {
                   "createdAt": { "type": "string", "required": true },
-                  "id": { "type": "string", "required": true },
+                  "id": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 50
+                  },
                   "entityType": {
                     "type": "string",
                     "required": true,
                     "enum": ["user"]
+                  },
+                  "name": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
                   },
                   "name": { "type": "string", "required": true },
                   "description": {
                     "type": ["string", "null"],
                     "required": true
                   },
+                  "slug": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
+                  },
                   "slug": { "type": "string", "required": true },
                   "thumbnailUrl": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 2048
                   },
                   "bannerUrl": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 2048
                   },
                   "email": {
                     "type": "string",
@@ -482,11 +616,13 @@
                   "mfaRequired": { "type": "boolean", "required": true },
                   "firstName": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 255
                   },
                   "lastName": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 255
                   },
                   "language": {
                     "type": "string",
@@ -507,6 +643,11 @@
                   },
                   "modifiedBy": {
                     "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 50
+                  },
+                  "lastSeenAt": {
+                    "type": ["string", "null"],
                     "required": true
                   },
                   "lastSeenAt": {
@@ -519,28 +660,47 @@
                   "membership": {
                     "type": "object",
                     "required": true,
+                    "description": "Core membership fields shared across active and inactive memberships.",
                     "properties": {
-                      "id": { "type": "string", "required": true },
+                      "id": {
+                        "type": "string",
+                        "required": true,
+                        "maxLength": 50
+                      },
+                      "tenantId": {
+                        "type": "string",
+                        "required": true,
+                        "maxLength": 24
+                      },
                       "contextType": {
                         "type": "string",
                         "required": true,
                         "enum": ["organization"]
                       },
+                      "userId": {
+                        "type": "string",
+                        "required": true,
+                        "maxLength": 50
+                      },
                       "userId": { "type": "string", "required": true },
                       "role": {
                         "type": "string",
                         "required": true,
-                        "enum": ["member", "admin"]
+                        "enum": ["admin", "member"]
                       },
                       "archived": { "type": "boolean", "required": true },
                       "muted": { "type": "boolean", "required": true },
-                      "order": {
+                      "displayOrder": {
                         "type": "number",
                         "required": true,
                         "minimum": -140737488355328,
                         "maximum": 140737488355327
                       },
-                      "organizationId": { "type": "string", "required": true }
+                      "organizationId": {
+                        "type": "string",
+                        "required": true,
+                        "maxLength": 50
+                      }
                     },
                     "ref": "#/components/schemas/MembershipBase"
                   }
@@ -550,6 +710,73 @@
             "total": { "type": "number", "required": true }
           },
           "contentType": "application/json"
+        },
+        "example": {
+          "items": [
+            {
+              "id": "qqp8d07imsvjbtqtl3rtjgxd",
+              "entityType": "user",
+              "name": "Dr. Lucy Brakus",
+              "firstName": "Cortney",
+              "lastName": "Bashirian",
+              "email": "estelle89@yahoo.com",
+              "slug": "elbert78",
+              "description": null,
+              "thumbnailUrl": null,
+              "bannerUrl": null,
+              "language": "en",
+              "mfaRequired": false,
+              "createdAt": "2024-11-21T04:00:59.122Z",
+              "modifiedAt": "2024-11-21T04:00:59.122Z",
+              "modifiedBy": null,
+              "lastStartedAt": "2024-11-21T04:00:59.122Z",
+              "lastSignInAt": "2024-11-21T04:00:59.122Z",
+              "lastSeenAt": "2024-11-21T04:00:59.122Z",
+              "membership": {
+                "id": "300jor4orrvsgezqoyxfckg3",
+                "tenantId": "ifex0a",
+                "contextType": "organization",
+                "userId": "gu87zf240qkfh0faoqjip69q",
+                "organizationId": "fpb1r33xdbp099f3xi8028r0",
+                "role": "member",
+                "displayOrder": 38,
+                "muted": false,
+                "archived": false
+              }
+            },
+            {
+              "id": "hg5ogh3yr2b2dbwf7b9eckaj",
+              "entityType": "user",
+              "name": "Ms. Trudie Feeney",
+              "firstName": "Ron",
+              "lastName": "Stracke",
+              "email": "ellie_koch85@hotmail.com",
+              "slug": "nichole34",
+              "description": null,
+              "thumbnailUrl": null,
+              "bannerUrl": null,
+              "language": "en",
+              "mfaRequired": false,
+              "createdAt": "2024-10-29T08:46:20.790Z",
+              "modifiedAt": "2024-10-29T08:46:20.790Z",
+              "modifiedBy": null,
+              "lastStartedAt": "2024-10-29T08:46:20.790Z",
+              "lastSignInAt": "2024-10-29T08:46:20.790Z",
+              "lastSeenAt": "2024-10-29T08:46:20.790Z",
+              "membership": {
+                "id": "1u44cckbz5av195r4h3wiruz",
+                "tenantId": "44b7wk",
+                "contextType": "organization",
+                "userId": "ilwj64zmkwsnsmrzo2zxd2hr",
+                "organizationId": "eylomg4p6xgvt4g11e2hqqxx",
+                "role": "admin",
+                "displayOrder": 7,
+                "muted": false,
+                "archived": false
+              }
+            }
+          ],
+          "total": 2
         }
       },
       {
@@ -591,16 +818,25 @@
     "request": {
       "path": {
         "properties": {
-          "orgIdOrSlug": {
+          "tenantId": {
             "type": "string",
             "required": true,
-            "description": "Entity ID or slug. ID is always preferred."
+            "maxLength": 50
+          },
+          "orgId": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
           }
         }
       },
       "query": {
         "properties": {
-          "q": { "type": "string", "required": false },
+          "q": {
+            "type": "string",
+            "required": false,
+            "maxLength": 255
+          },
           "sort": {
             "type": "string",
             "required": false,
@@ -613,10 +849,10 @@
           },
           "offset": { "type": "string", "required": false },
           "limit": { "type": "string", "required": false },
-          "idOrSlug": {
+          "entityId": {
             "type": "string",
             "required": true,
-            "description": "Entity ID or slug. ID is always preferred."
+            "maxLength": 50
           },
           "entityType": {
             "type": "string",
@@ -626,7 +862,7 @@
           "role": {
             "type": "string",
             "required": false,
-            "enum": ["member", "admin"]
+            "enum": ["admin", "member"]
           }
         }
       }
@@ -662,12 +898,13 @@
                   "role": {
                     "type": ["string", "null"],
                     "required": true,
-                    "enum": ["member", "admin", null]
+                    "enum": ["admin", "member", null]
                   },
                   "createdAt": { "type": "string", "required": true },
                   "createdBy": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 50
                   }
                 }
               }
@@ -675,6 +912,37 @@
             "total": { "type": "number", "required": true }
           },
           "contentType": "application/json"
+        },
+        "example": {
+          "items": [
+            {
+              "id": "eyvjbbm5piweg2q4gqa3vx9c",
+              "contextType": "organization",
+              "email": "troy.reichert@hotmail.com",
+              "userId": "qqp8d07imsvjbtqtl3rtjgxd",
+              "tokenId": "xtanaxnsp9nes1yx645yb0gl",
+              "role": "member",
+              "rejectedAt": null,
+              "createdAt": "2024-11-21T04:00:59.122Z",
+              "createdBy": "ikgme3gy3a9lhe0ctrmzc53x",
+              "organizationId": "9xn03u76eo7z71y60a882cwp",
+              "tenantId": "test01"
+            },
+            {
+              "id": "pi37syiavgc67t5nr6k4huj5",
+              "contextType": "organization",
+              "email": "kurt_treutel@yahoo.com",
+              "userId": "hg5ogh3yr2b2dbwf7b9eckaj",
+              "tokenId": "1sr6utecq3o02wpa56tpd77k",
+              "role": "admin",
+              "rejectedAt": null,
+              "createdAt": "2024-10-29T08:46:20.790Z",
+              "createdBy": "e44bpmhsyauxcwuwjsrzvzac",
+              "organizationId": "clxs8vayzrul7vmeyahbgyu0",
+              "tenantId": "test01"
+            }
+          ],
+          "total": 2
         }
       },
       {
@@ -716,16 +984,25 @@
     "request": {
       "path": {
         "properties": {
-          "orgIdOrSlug": {
+          "tenantId": {
             "type": "string",
             "required": true,
-            "description": "Entity ID or slug. ID is always preferred."
+            "maxLength": 50
+          },
+          "orgId": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
           }
         }
       },
       "query": {
         "properties": {
-          "q": { "type": "string", "required": false },
+          "q": {
+            "type": "string",
+            "required": false,
+            "maxLength": 255
+          },
           "sort": {
             "type": "string",
             "required": false,
@@ -738,10 +1015,10 @@
           },
           "offset": { "type": "string", "required": false },
           "limit": { "type": "string", "required": false },
-          "idOrSlug": {
+          "entityId": {
             "type": "string",
             "required": true,
-            "description": "Entity ID or slug. ID is always preferred."
+            "maxLength": 50
           },
           "entityType": {
             "type": "string",

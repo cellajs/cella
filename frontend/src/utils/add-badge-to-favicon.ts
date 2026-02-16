@@ -1,4 +1,4 @@
-import type { ConfigMode } from 'config';
+import type { ConfigMode } from 'shared';
 
 /**
  * Show badge on favicon indicating current mode of application.

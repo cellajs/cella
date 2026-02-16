@@ -1,5 +1,5 @@
 import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/dist/types/types';
-import type { ContextEntityType } from 'config';
+import type { ContextEntityType } from 'shared';
 import type { UserMenu } from '~/modules/me/types';
 import { sortAndFilterMenu } from './sort-and-filter-menu';
 
@@ -36,16 +36,16 @@ export const getRelativeItemOrder = (
   }
   // Find the relative item based on the item's position and the edge (top or bottom)
   const relativeItem = neededItems.find(({ membership }) =>
-    isEdgeTop ? membership.order < itemOrder : membership.order > itemOrder,
+    isEdgeTop ? membership.displayOrder < itemOrder : membership.displayOrder > itemOrder,
   );
 
-  // If no relative item found, return new order based on edge
-  if (!relativeItem || relativeItem.membership.order === itemOrder) {
+  // If no relative item found, return new displayOrder based on edge
+  if (!relativeItem || relativeItem.membership.displayOrder === itemOrder) {
     return Math.floor(itemOrder) + (isEdgeTop ? -10 : 10);
   }
-  // If relative item is same as item, return item's order
-  if (relativeItem.id === itemId) return relativeItem.membership.order;
+  // If relative item is same as item, return item's displayOrder
+  if (relativeItem.id === itemId) return relativeItem.membership.displayOrder;
 
   // Put the new item in the middle of two items
-  return (relativeItem.membership.order + itemOrder) / 2;
+  return (relativeItem.membership.displayOrder + itemOrder) / 2;
 };

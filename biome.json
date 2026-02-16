@@ -3,9 +3,16 @@
     "includes": [
       "backend/src/**",
       "backend/tests/**",
+      "backend/mocks/**",
+      "backend/emails/**",
       "frontend/src/**",
       "frontend/storybook/**",
       "frontend/vite/**",
+      "cli/cella/src/**",
+      "cli/cella/tests/**",
+      "cli/create-cella/src/**",
+      "cli/create-cella/tests/**",
+      "packages/data-grid/src/**",
       "src/**",
       "locales",
       "frontend/openapi-ts.config.ts"

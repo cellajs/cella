@@ -1,9 +1,9 @@
 import * as Sentry from '@sentry/react';
 import { onlineManager, useMutation } from '@tanstack/react-query';
-import { appConfig, type EnabledOAuthProvider } from 'config';
 import { CheckIcon, SendIcon, TrashIcon } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { appConfig, type EnabledOAuthProvider } from 'shared';
 import {
   type ApiError,
   type RequestPasswordData,
@@ -15,21 +15,21 @@ import { mapOAuthProviders } from '~/modules/auth/oauth-providers';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
 import { CallbackArgs } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import HelpText from '~/modules/common/help-text';
+import { HelpText } from '~/modules/common/help-text';
 import { PageAside } from '~/modules/common/page/aside';
 import { SimpleHeader } from '~/modules/common/simple-header';
-import StickyBox from '~/modules/common/sticky-box';
+import { StickyBox } from '~/modules/common/sticky-box';
 import { toaster } from '~/modules/common/toaster/service';
-import UnsavedBadge from '~/modules/common/unsaved-badge';
-import DeleteSelf from '~/modules/me/delete-self';
+import { UnsavedBadge } from '~/modules/common/unsaved-badge';
+import { DeleteSelf } from '~/modules/me/delete-self';
 import { MfaSwitch } from '~/modules/me/mfa/switch';
-import PasskeysList from '~/modules/me/passkeys/list';
-import SessionsList from '~/modules/me/sessions';
-import Totp from '~/modules/me/totp';
+import { PasskeysList } from '~/modules/me/passkeys/list';
+import { SessionsList } from '~/modules/me/sessions';
+import { Totp } from '~/modules/me/totp';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
-import UpdateUserForm from '~/modules/users/update-user-form';
+import { UpdateUserForm } from '~/modules/user/update-user-form';
 import { useUIStore } from '~/store/ui';
 import { useUserStore } from '~/store/user';
 
@@ -42,7 +42,7 @@ const tabs = [
 
 const enabledStrategies = appConfig.enabledAuthStrategies;
 
-const UserAccountPage = () => {
+function UserAccountPage() {
   const { t } = useTranslation();
   const { user } = useUserStore();
   const mode = useUIStore((state) => state.mode);
@@ -305,6 +305,6 @@ const UserAccountPage = () => {
       </div>
     </div>
   );
-};
+}
 
 export default UserAccountPage;

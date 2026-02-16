@@ -93,7 +93,7 @@ export const SetupTotp = () => {
 /**
  * A component that displays the manual TOTP setup key in a dialog.
  */
-const TotpManualKey = ({ manualKey }: { manualKey: string }) => {
+function TotpManualKey({ manualKey }: { manualKey: string }) {
   const { t } = useTranslation();
   const { copyToClipboard, copied } = useCopyToClipboard();
 
@@ -113,4 +113,4 @@ const TotpManualKey = ({ manualKey }: { manualKey: string }) => {
       </Button>
     </div>
   );
-};
+}

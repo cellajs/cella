@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/docs/x-routes';
-import { isAuthenticated, isPublicAccess } from '#/middlewares/guard';
+import { authGuard, publicGuard } from '#/middlewares/guard';
 import { passkeyChallengeLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   passkeyChallengeBodySchema,
@@ -9,8 +9,8 @@ import {
   passkeySchema,
   passkeyVerificationBodySchema,
 } from '#/modules/auth/passkeys/passkeys-schema';
-import { cookieSchema, idSchema } from '#/utils/schema/common';
-import { errorResponseRefs } from '#/utils/schema/error-responses';
+import { cookieSchema, errorResponseRefs, validIdSchema } from '#/schemas';
+import { mockPasskeyChallengeResponse, mockPasskeyResponse } from '../../../../mocks/mock-auth';
 
 const authPasskeysRoutes = {
   /**
@@ -20,7 +20,7 @@ const authPasskeysRoutes = {
     operationId: 'generatePasskeyChallenge',
     method: 'post',
     path: '/passkey/generate-challenge',
-    xGuard: isPublicAccess,
+    xGuard: publicGuard,
     xRateLimiter: passkeyChallengeLimiter,
     tags: ['auth'],
     summary: 'Generate passkey challenge',
@@ -34,7 +34,7 @@ const authPasskeysRoutes = {
     responses: {
       200: {
         description: 'Challenge generated',
-        content: { 'application/json': { schema: passkeyChallengeSchema } },
+        content: { 'application/json': { schema: passkeyChallengeSchema, example: mockPasskeyChallengeResponse() } },
       },
       ...errorResponseRefs,
     },
@@ -46,7 +46,7 @@ const authPasskeysRoutes = {
     operationId: 'createPasskey',
     method: 'post',
     path: '/passkey',
-    xGuard: isAuthenticated,
+    xGuard: authGuard,
     tags: ['auth'],
     summary: 'Create passkey',
     description:
@@ -60,7 +60,7 @@ const authPasskeysRoutes = {
     responses: {
       201: {
         description: 'Passkey created',
-        content: { 'application/json': { schema: passkeySchema } },
+        content: { 'application/json': { schema: passkeySchema, example: mockPasskeyResponse() } },
       },
       ...errorResponseRefs,
     },
@@ -72,11 +72,11 @@ const authPasskeysRoutes = {
     operationId: 'deletePasskey',
     method: 'delete',
     path: '/passkey/{id}',
-    xGuard: isAuthenticated,
+    xGuard: authGuard,
     tags: ['auth'],
     summary: 'Delete passkey',
     description: 'Delete a passkey by id from the *current user*.',
-    request: { params: z.object({ id: idSchema }) },
+    request: { params: z.object({ id: validIdSchema }) },
     responses: {
       204: {
         description: 'Passkey deleted',
@@ -91,7 +91,7 @@ const authPasskeysRoutes = {
     operationId: 'signInWithPasskey',
     method: 'post',
     path: '/passkey-verification',
-    xGuard: isPublicAccess,
+    xGuard: publicGuard,
     xRateLimiter: tokenLimiter('passkey'),
     tags: ['auth'],
     summary: 'Verify passkey',

@@ -4,7 +4,7 @@ import { ChevronDownIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { signOut } from '~/api.gen';
-import PasskeyStrategy from '~/modules/auth/passkey-strategy';
+import { PasskeyStrategy } from '~/modules/auth/passkey-strategy';
 import { TotpStrategy } from '~/modules/auth/totp-strategy';
 import { toaster } from '~/modules/common/toaster/service';
 import { Button } from '~/modules/ui/button';
@@ -13,7 +13,7 @@ import { useUserStore } from '~/store/user';
 /**
  * Handles multifactor authentication in the authentication flows.
  */
-const MfaPage = () => {
+export function MfaPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -59,6 +59,4 @@ const MfaPage = () => {
       <TotpStrategy isActive={isActive} setIsActive={setIsActive} />
     </>
   );
-};
-
-export default MfaPage;
+}

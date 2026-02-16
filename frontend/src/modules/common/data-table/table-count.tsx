@@ -15,7 +15,7 @@ interface TableCountProps {
 /**
  * Displays the count of items in a table
  */
-const TableCount = ({ count, label, className, isFiltered, children, onResetFilters }: TableCountProps) => {
+export function TableCount({ count, label, className, isFiltered, children, onResetFilters }: TableCountProps) {
   const { t } = useTranslation();
 
   return (
@@ -27,15 +27,15 @@ const TableCount = ({ count, label, className, isFiltered, children, onResetFilt
         </Button>
       )}
       {typeof count === 'number' && (
-        <div className="flex items-center gap-1 text-muted-foreground">
-          <span>{new Intl.NumberFormat('de-DE').format(count)}</span>
-          <span>{t(label, { count }).toLowerCase()}</span>
-          {isFiltered && <span>{` ${t('common:found')}`}</span>}
-        </div>
+        <>
+          <div className="flex items-center gap-1 text-muted-foreground">
+            <span>{new Intl.NumberFormat('de-DE').format(count)}</span>
+            <span>{t(label, { count }).toLowerCase()}</span>
+            {isFiltered && <span>{` ${t('common:found')}`}</span>}
+          </div>
+          {children}
+        </>
       )}
-      {children}
     </div>
   );
-};
-
-export default TableCount;
+}

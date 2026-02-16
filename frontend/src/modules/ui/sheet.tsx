@@ -4,15 +4,15 @@ import * as React from 'react';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { cn } from '~/utils/cn';
 
-function Sheet({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {
+export function Sheet({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {
   return <SheetPrimitive.Root data-slot="sheet" {...props} />;
 }
 
-function SheetTrigger({ ...props }: React.ComponentProps<typeof SheetPrimitive.Trigger>) {
+export function SheetTrigger({ ...props }: React.ComponentProps<typeof SheetPrimitive.Trigger>) {
   return <SheetPrimitive.Trigger data-slot="sheet-trigger" {...props} />;
 }
 
-function SheetClose({ ...props }: React.ComponentProps<typeof SheetPrimitive.Close>) {
+export function SheetClose({ ...props }: React.ComponentProps<typeof SheetPrimitive.Close>) {
   return <SheetPrimitive.Close data-slot="sheet-close" {...props} />;
 }
 
@@ -33,7 +33,7 @@ function SheetOverlay({ className, ...props }: React.ComponentProps<typeof Sheet
   );
 }
 
-function SheetContent({
+export function SheetContent({
   className,
   children,
   showCloseButton = true,
@@ -100,7 +100,7 @@ function SheetContent({
   );
 }
 
-function SheetHeader({ className, sticky, ...props }: React.ComponentProps<'div'> & { sticky?: boolean }) {
+export function SheetHeader({ className, sticky, ...props }: React.ComponentProps<'div'> & { sticky?: boolean }) {
   return (
     <div
       data-slot="sheet-header"
@@ -114,11 +114,11 @@ function SheetHeader({ className, sticky, ...props }: React.ComponentProps<'div'
   );
 }
 
-function SheetFooter({ className, ...props }: React.ComponentProps<'div'>) {
+export function SheetFooter({ className, ...props }: React.ComponentProps<'div'>) {
   return <div data-slot="sheet-footer" className={cn('mt-auto flex flex-col gap-2 p-4', className)} {...props} />;
 }
 
-function SheetTitle({ className, ...props }: React.ComponentProps<typeof SheetPrimitive.Title>) {
+export function SheetTitle({ className, ...props }: React.ComponentProps<typeof SheetPrimitive.Title>) {
   return (
     <SheetPrimitive.Title
       data-slot="sheet-title"
@@ -128,7 +128,7 @@ function SheetTitle({ className, ...props }: React.ComponentProps<typeof SheetPr
   );
 }
 
-function SheetDescription({ className, ...props }: React.ComponentProps<typeof SheetPrimitive.Description>) {
+export function SheetDescription({ className, ...props }: React.ComponentProps<typeof SheetPrimitive.Description>) {
   return (
     <SheetPrimitive.Description
       data-slot="sheet-description"
@@ -137,5 +137,3 @@ function SheetDescription({ className, ...props }: React.ComponentProps<typeof S
     />
   );
 }
-
-export { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger };

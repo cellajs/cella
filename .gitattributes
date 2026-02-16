@@ -1,0 +1,7 @@
+# Generated files - use "ours" strategy to avoid merge conflicts
+# Post-merge: lefthook regenerates these, then amend/commit the changes
+pnpm-lock.yaml merge=ours
+backend/openapi.yaml merge=ours
+backend/openapi.cache.json merge=ours
+frontend/src/api.gen/** merge=ours
+frontend/public/static/docs.gen/** merge=ours

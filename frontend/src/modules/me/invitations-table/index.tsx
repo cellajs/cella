@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { InfoIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AlertWrap } from '~/modules/common/alert-wrap';
 import { DataTable } from '~/modules/common/data-table';
@@ -8,32 +9,23 @@ import { useColumns } from '~/modules/me/invitations-table/invitations-columns';
 import { meInvitationsQueryOptions } from '~/modules/me/query';
 import { Invitation } from '~/modules/me/types';
 
-const InvitationsTable = () => {
+/** Stable row key getter function - defined outside component to prevent re-renders */
+function rowKeyGetter(row: Invitation) {
+  return row.inactiveMembership.id;
+}
+
+export function InvitationsTable() {
   const { t } = useTranslation();
 
   // Build columns
   const columns = useColumns();
 
+  const visibleColumns = useMemo(() => columns.filter((column) => column.visible), [columns]);
+
   const queryOptions = meInvitationsQueryOptions();
   const { data, isLoading, isFetching, error } = useQuery({
     ...queryOptions,
   });
-
-  // TODO Update rows
-  // const onRowsChange = (changedRows: Attachment[], { indexes, column }: RowsChangeData<Attachment>) => {
-  //   if (column.key !== 'name') return;
-
-  //   // If name is changed, update the attachment
-  //   for (const index of indexes) {
-  //     const attachment = changedRows[index];
-  //     attachmentUpdateMutation.mutate({
-  //       id: attachment.id,
-  //       orgIdOrSlug: entity.id,
-  //       name: attachment.name,
-  //       localUpdate: !isCDNUrl(attachment.url),
-  //     });
-  //   }
-  // };
 
   return (
     <div className="flex flex-col gap-4 h-full">
@@ -65,9 +57,9 @@ const InvitationsTable = () => {
             rows: data?.items,
             rowHeight: 52,
             // onRowsChange,
-            rowKeyGetter: (row) => row.inactiveMembership.id,
-            columns: columns.filter((column) => column.visible),
-            enableVirtualization: false,
+            rowKeyGetter,
+            columns: visibleColumns,
+            enableVirtualization: true,
             error,
             isLoading,
             isFetching,
@@ -78,6 +70,4 @@ const InvitationsTable = () => {
       </div>
     </div>
   );
-};
-
-export default InvitationsTable;
+}

@@ -1,11 +1,11 @@
 import type { FieldValues } from 'react-hook-form';
 import countries from '#json/countries.json';
-import CountryFlag from '~/modules/common/country-flag';
+import { CountryFlag } from '~/modules/common/country-flag';
 import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
-import Combobox, { type ComboboxProps } from '~/modules/ui/combobox';
+import { Combobox, type ComboboxProps } from '~/modules/ui/combobox';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 
-const SelectCountry = <TFieldValues extends FieldValues>({
+export const SelectCountry = <TFieldValues extends FieldValues>({
   control,
   name,
   disabled,
@@ -53,5 +53,3 @@ const SelectCountry = <TFieldValues extends FieldValues>({
     />
   );
 };
-
-export default SelectCountry;

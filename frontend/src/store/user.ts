@@ -1,11 +1,11 @@
-import { appConfig } from 'config';
 import i18n from 'i18next';
+import { appConfig } from 'shared';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import type { GetMeResponse, User } from '~/api.gen';
+import type { GetMeResponse, MeAuthData, User } from '~/api.gen';
 import { isDebugMode } from '~/env';
-import type { MeAuthData, MeUser } from '~/modules/me/types';
+import type { MeUser } from '~/modules/me/types';
 
 interface UserStoreState {
   user: MeUser; // Current user data
@@ -97,10 +97,11 @@ export const useUserStore = create<UserStoreState>()(
         },
       })),
       {
-        version: 4,
+        version: 6,
         name: `${appConfig.slug}-user`,
         partialize: (state) => ({
           user: state.user,
+          systemRole: state.systemRole,
           oauth: state.enabledOAuth,
           passkey: state.hasPasskey,
           totp: state.hasTotp,

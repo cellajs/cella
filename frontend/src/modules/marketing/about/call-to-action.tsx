@@ -1,10 +1,10 @@
-import { appConfig } from 'config';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
 import { Button } from '~/modules/ui/button';
 
-const CallToAction = () => {
+export function CallToAction() {
   const { t } = useTranslation();
 
   const ref = useRef(null);
@@ -44,6 +44,4 @@ const CallToAction = () => {
       </div>
     </div>
   );
-};
-
-export default CallToAction;
+}

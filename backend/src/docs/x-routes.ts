@@ -6,10 +6,13 @@ import {
   type XMiddlewareOptions,
 } from '#/docs/extensions-config';
 import { getSpecificationExtensions } from '#/docs/openapi-describer';
-import { injectResponseExamples, toMiddlewareArray } from '#/docs/utils';
-import { isPublicAccess } from '#/middlewares/guard/is-public-access';
+import type { OpenApiTagId } from '#/docs/tags-config';
+import { toMiddlewareArray } from '#/docs/utils';
+import { publicGuard } from '#/middlewares/guard/public-guard';
 
-type RouteOptions = Parameters<typeof createRoute>[0] & XMiddlewareOptions & { operationId: string };
+/** Route options with typed tags restricted to OpenApiTagId values. */
+type RouteOptions = Omit<Parameters<typeof createRoute>[0], 'tags'> &
+  XMiddlewareOptions & { operationId: string; tags?: OpenApiTagId[] };
 
 type Route<P extends string, R extends Omit<RouteOptions, 'path'> & { path: P }> = ReturnType<
   typeof createRoute<P, Omit<R, ExtensionPropId>>
@@ -18,7 +21,6 @@ type Route<P extends string, R extends Omit<RouteOptions, 'path'> & { path: P }>
 /**
  * Custom wrapper around hono/zod-openapi createRoute to extend it with extension middleware.
  * Extension middleware (xGuard, xRateLimiter) are documented in OpenAPI via x-* properties.
- * Also auto-injects response examples from the example registry based on schema names.
  *
  * @param config - Route configuration with extension middleware
  * @link https://github.com/honojs/middleware/tree/main/packages/zod-openapi#configure-middleware-for-each-endpoint
@@ -34,10 +36,7 @@ export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'pat
   const specificationExtensions = getSpecificationExtensions(middleware);
 
   // Public routes have no security, authenticated routes require cookie auth
-  const security = extensionMiddleware.includes(isPublicAccess) ? [] : [{ cookieAuth: [] }];
-
-  // Inject examples into responses based on schema names
-  const responsesWithExamples = injectResponseExamples(config.responses);
+  const security = extensionMiddleware.includes(publicGuard) ? [] : [{ cookieAuth: [] }];
 
   // Strip extension props to prevent them leaking as null in OpenAPI
   const extensionPropIds = getExtensionPropIds();
@@ -48,7 +47,6 @@ export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'pat
   return createRoute({
     security,
     ...cleanConfig,
-    responses: responsesWithExamples,
     middleware,
     ...specificationExtensions,
   });

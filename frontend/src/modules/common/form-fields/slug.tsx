@@ -1,9 +1,9 @@
 import { useMutation } from '@tanstack/react-query';
-import { appConfig, ContextEntityType } from 'config';
 import { UndoIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { type FieldValues, type Path, useFormContext, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { appConfig, ContextEntityType } from 'shared';
 import slugify from 'slugify';
 import { type CheckSlugData, CheckSlugResponse, checkSlug } from '~/api.gen';
 import { useOnlineManager } from '~/hooks/use-online-manager';

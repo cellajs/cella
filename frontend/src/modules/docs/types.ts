@@ -42,6 +42,8 @@ export interface GenOperationSummary {
   deprecated: boolean;
   hasParams: boolean;
   hasRequestBody: boolean;
+  /** Whether any response has a body (schema) */
+  hasResponseBody: boolean;
   /** Whether any response has an example value */
   hasExample: boolean;
   /** Dynamic x-extensions keyed by camelCase name */

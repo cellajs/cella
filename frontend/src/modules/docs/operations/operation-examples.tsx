@@ -13,7 +13,7 @@ import type { GenComponentSchema, GenResponseSummary, GenSchema } from '../types
 import { ViewerGroup } from '../viewer-group';
 
 /** Resolve response schema, looking up by name from prefetched schemas for error responses */
-const resolveResponseSchema = (response: GenResponseSummary, schemas: GenComponentSchema[]): GenSchema | undefined => {
+function resolveResponseSchema(response: GenResponseSummary, schemas: GenComponentSchema[]): GenSchema | undefined {
   if (response.schema) return response.schema;
   // For error responses (no embedded schema), look up by name in schemas.gen.json
   if (response.name) {
@@ -21,7 +21,7 @@ const resolveResponseSchema = (response: GenResponseSummary, schemas: GenCompone
     return schemaEntry?.schema;
   }
   return undefined;
-};
+}
 
 interface ExamplesAccordionProps {
   responses: GenResponseSummary[];
@@ -35,7 +35,7 @@ interface ExamplesAccordionProps {
  * Accordion component to display operation response examples.
  * Only shows responses that have examples, with example view preselected.
  */
-const ExamplesAccordion = ({ responses, schemas, operationId, zodContent, typesContent }: ExamplesAccordionProps) => {
+function ExamplesAccordion({ responses, schemas, operationId, zodContent, typesContent }: ExamplesAccordionProps) {
   const { t } = useTranslation();
 
   // Filter to only responses with examples
@@ -89,7 +89,7 @@ const ExamplesAccordion = ({ responses, schemas, operationId, zodContent, typesC
       })}
     </Accordion>
   );
-};
+}
 
 interface OperationExamplesProps {
   operationId: string;
@@ -111,23 +111,22 @@ export const OperationExamples = ({ operationId, tagName }: OperationExamplesPro
   const operation = operations.find((op) => op.operationId === operationId);
   const responses = operation?.responses ?? [];
 
-  // Filter to only responses with examples
-  const responsesWithExamples = responses.filter((r) => r.example !== undefined);
+  // Filter to only success responses (2xx) with examples
+  const successResponsesWithExamples = responses.filter(
+    (r) => r.status >= 200 && r.status < 300 && r.example !== undefined,
+  );
 
-  if (responsesWithExamples.length === 0) {
+  if (successResponsesWithExamples.length === 0) {
     return <div className="py-4 text-center text-muted-foreground">{t('common:docs.no_examples_defined')}</div>;
   }
 
   return (
-    <div className="mt-4">
-      <h4 className="text-sm font-medium mb-4">{t('common:docs.response_examples')}</h4>
-      <ExamplesAccordion
-        responses={responses}
-        schemas={schemas}
-        operationId={operationId}
-        zodContent={zodContent}
-        typesContent={typesContent}
-      />
-    </div>
+    <ExamplesAccordion
+      responses={responses}
+      schemas={schemas}
+      operationId={operationId}
+      zodContent={zodContent}
+      typesContent={typesContent}
+    />
   );
 };

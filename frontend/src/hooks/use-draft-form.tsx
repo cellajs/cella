@@ -56,6 +56,7 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
   const getDraftForm = useDraftStore((state) => state.getForm);
   const setDraftForm = useDraftStore((state) => state.setForm);
   const resetDraftForm = useDraftStore((state) => state.resetForm);
+  const setFormDirty = useDraftStore((state) => state.setFormDirty);
 
   const form = useForm<TFieldValues, TContext, TFieldValues>(formOptions);
 
@@ -89,10 +90,11 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
     }
   }, [allFields, isDirty, defaultValues]);
 
-  // Update dirty state UI and flag
+  // Update dirty state UI, flag, and store
   useEffect(() => {
     setUnsavedChanges(isDirty);
     toggleUnsavedBadge(isDirty);
+    setFormDirty(formId, isDirty);
   }, [isDirty]);
 
   // Restore draft on mount
@@ -117,6 +119,7 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
     // Override `reset` to also clear the draft + UI state
     reset: (values, keepStateOptions) => {
       resetDraftForm(formId);
+      setFormDirty(formId, false);
       setUnsavedChanges(false);
       toggleUnsavedBadge(false);
       form.reset(values, keepStateOptions);

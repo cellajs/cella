@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
-import Combobox from '~/modules/ui/combobox';
+import type { TKey } from '~/lib/i18n-locales';
+import { Combobox, type ComboboxProps } from '~/modules/ui/combobox';
 
 /**
  * A searchable dropdown component with virtualization support for large option lists.
@@ -160,10 +161,10 @@ export const FullWidthContent: Story = {
   },
 };
 
-const placeholders = {
-  trigger: 'Select from 1000 options...',
-  search: 'Search options...',
-  notFound: 'No options found',
+const placeholders: ComboboxProps['placeholders'] = {
+  trigger: 'common:select_resource' as TKey,
+  search: 'common:search' as TKey,
+  notFound: 'common:no_resource_found' as TKey,
 };
 
 /**
@@ -179,14 +180,7 @@ export const LargeOptions: Story = {
     const [value, setValue] = useState(args.value);
     return (
       <div className="w-80">
-        <Combobox
-          {...args}
-          options={args.options}
-          value={value}
-          onChange={setValue}
-          // @ts-ignore
-          placeholders={placeholders}
-        />
+        <Combobox {...args} options={args.options} value={value} onChange={setValue} placeholders={placeholders} />
       </div>
     );
   },
@@ -210,8 +204,11 @@ export const CustomPlaceholders: Story = {
           options={args.options}
           value={value}
           onChange={setValue}
-          // @ts-ignore
-          placeholders={{ trigger: 'Choose a person...', search: 'Search people...', notFound: 'No people found' }}
+          placeholders={{
+            trigger: 'common:select_resource' as TKey,
+            search: 'common:search' as TKey,
+            notFound: 'common:no_resource_found' as TKey,
+          }}
         />
       </div>
     );

@@ -11,9 +11,11 @@
       "description": "Authorization middleware applied to the endpoint",
       "required": true,
       "values": {
-        "isPublicAccess": { "description": "No authentication required" },
-        "hasSystemAccess": { "description": "Requires system admin + IP whitelist" },
-        "isAuthenticated": { "description": "Requires valid session" }
+        "publicGuard": { "description": "No authentication required" },
+        "authGuard": { "description": "Requires valid session" },
+        "crossTenantGuard": { "description": "Wraps handler in user RLS context for cross-tenant access" },
+        "sysAdminGuard": { "description": "Requires system admin + IP whitelist" },
+        "tenantGuard": { "description": "Validates tenant access and wraps handler in RLS-enabled transaction" }
       }
     },
     {
@@ -30,6 +32,17 @@
         "totpVerificationLimiter": { "description": "Blocks for 30 min after 5 failed TOTP attempts" },
         "passkeyChallengeLimiter": { "description": "Max 5 passkey challenges/hour per IP" },
         "tokenLimiter": { "description": "Blocks IP for 30 min after 10 consecutive token failures" }
+      }
+    },
+    {
+      "key": "x-cache",
+      "id": "xCache",
+      "translationKey": "common:docs.cache",
+      "description": "Caching strategy applied to the endpoint",
+      "required": false,
+      "values": {
+        "appCache": { "description": "TTL cache with session-signed token validation" },
+        "publicCache": { "description": "LRU cache for public page entities" }
       }
     }
   ]

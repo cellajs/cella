@@ -1,15 +1,11 @@
 import { StrictMode } from 'react';
 import ReactDOM from 'react-dom/client';
 import { Themer } from '~/modules/common/themer';
-
-// Import tailwind css
 import './styling/tailwind.css';
-
-// Boot with i18n & dayjs
 import '~/lib/dayjs';
 import '~/lib/i18n';
 
-import { appConfig, type ConfigMode } from 'config';
+import { appConfig, type ConfigMode } from 'shared';
 import { initSentry } from '~/lib/sentry';
 import { RouterWrapper } from '~/modules/common/router-wrapper';
 import { QueryClientProvider } from '~/query/provider';

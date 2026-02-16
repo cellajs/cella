@@ -39,5 +39,3 @@ export const CountryFlag = ({
     />
   );
 };
-
-export default CountryFlag;

@@ -9,7 +9,7 @@
  *
  * Examples:
  *   # From SQL file:
- *   pnpm manual-migration activity_notify_trigger ./sql/trigger.sql
+ *   pnpm manual-migration cdc_setup ./sql/cdc-setup.sql
  *
  *   # From inline SQL (use quotes):
  *   pnpm manual-migration my_index "CREATE INDEX my_idx ON users(email);"

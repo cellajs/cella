@@ -20,9 +20,10 @@ import {
 } from 'react';
 import { WebrtcProvider } from 'y-webrtc';
 import * as Y from 'yjs';
-import { getPresignedUrl } from '~/api.gen';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import router from '~/lib/router';
+import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
+import { getFileUrl } from '~/modules/attachment/helpers';
+import { findAttachmentInListCache } from '~/modules/attachment/query';
 import { customSchema } from '~/modules/common/blocknote/blocknote-config';
 import { Mention } from '~/modules/common/blocknote/custom-elements/mention';
 import { CustomFilePanel } from '~/modules/common/blocknote/custom-file-panel';
@@ -41,6 +42,7 @@ import type {
   CustomBlockRegularTypes,
   CustomBlockTypes,
 } from '~/modules/common/blocknote/types';
+import router from '~/routes/router';
 import { useUIStore } from '~/store/ui';
 
 type BlockNoteProps =
@@ -76,7 +78,7 @@ type BlockNoteProps =
       user?: never;
     });
 
-const BlockNote = ({
+function BlockNote({
   id,
   type,
   className = '',
@@ -94,6 +96,7 @@ const BlockNote = ({
   excludeBlockTypes = [], // default types
   excludeFileBlockTypes = [], // default filetypes
   members, // for mentions
+  publicFiles,
   filePanel,
   baseFilePanelProps,
   // Collaboration
@@ -105,7 +108,7 @@ const BlockNote = ({
   onEnterClick, // Trigger on Cmd+Enter
   onFocus,
   onBeforeLoad,
-}: BlockNoteProps) => {
+}: BlockNoteProps) {
   const mode = useUIStore((state) => state.mode);
   const isMobile = useBreakpoints('max', 'sm');
 
@@ -141,12 +144,42 @@ const BlockNote = ({
     trailingBlock,
     dictionary: getDictionary(),
     collaboration: collaborationConfig,
-    // TODO(BLOCKING) remove image blink (https://github.com/TypeCellOS/BlockNote/issues/1570)
-    resolveFileUrl: (key) => {
-      if (!key.length) return Promise.resolve('');
+    // Offline-first file URL resolution:
+    // 1. If key looks like an attachment ID (nanoid format), check local blob storage
+    // 2. Fall back to presigned URL from cloud (backend infers public/private from key pattern)
+    resolveFileUrl: async (key) => {
+      if (!key.length) return '';
 
-      const isPublic = String(baseFilePanelProps?.isPublic || false);
-      return getPresignedUrl({ query: { key, isPublic } });
+      // Check if this looks like an attachment ID (for offline-first lookup)
+      // Attachment IDs are nanoid format, cloud keys contain slashes
+      const isAttachmentId = !key.includes('/');
+
+      if (isAttachmentId) {
+        // Try local blob with variant fallback (converted → original → raw)
+        const localResult = await attachmentStorage.createBlobUrlWithVariant(key, 'converted', true);
+        if (localResult) {
+          return localResult.url;
+        }
+      }
+
+      // Fall back to cloud URL
+      // Use publicFiles prop if set, otherwise default to private
+      const isPublic = publicFiles ?? baseFilePanelProps?.isPublic ?? false;
+
+      // Get organizationId and tenantId from cache (if key is attachment ID) or from props
+      const cachedAttachment = isAttachmentId ? findAttachmentInListCache(key) : null;
+      const tenantId = cachedAttachment?.tenantId ?? baseFilePanelProps?.tenantId;
+      const organizationId = cachedAttachment?.organizationId ?? baseFilePanelProps?.organizationId;
+
+      if (!tenantId || !organizationId) {
+        console.error(
+          '[BlockNote] Cannot resolve private file URL: no tenantId/organizationId available for key:',
+          key,
+        );
+        return '';
+      }
+
+      return getFileUrl(key, isPublic, tenantId, organizationId);
     },
   });
 
@@ -258,15 +291,19 @@ const BlockNote = ({
 
       const target = event.target as HTMLElement;
 
-      const tagIsMedia = ['IMG', 'AUDIO', 'VIDEO'].includes(target.tagName);
-      const insideFileNameDiv = !!target.closest('.bn-file-name-with-icon');
-      const containsMedia = target.querySelector('img, video, audio');
+      // Check if click is on or inside a media element
+      const mediaElement = target.closest('img, video, audio') || target.querySelector('img, video, audio');
+      const insideFileBlock = !!target.closest('.bn-file-block-content-wrapper');
 
-      if (!tagIsMedia && !insideFileNameDiv && !containsMedia) return;
+      if (!mediaElement && !insideFileBlock) return;
 
-      openAttachment(event, editor, blockNoteRef);
+      event.preventDefault();
+
+      // Get the src of the clicked media to start carousel at that item
+      const clickedSrc = (mediaElement as HTMLMediaElement)?.src;
+      openAttachment(editor, blockNoteRef, clickedSrc);
     },
-    [editable, type],
+    [editor, clickOpensPreview, editable],
   );
 
   const passedContent = useMemo(() => getParsedContent(defaultValue), [defaultValue]);
@@ -279,7 +316,7 @@ const BlockNote = ({
     else editor.replaceBlocks(editor.document, passedContent);
   }, [passedContent]);
 
-  // TODO(BLOCKING) Autofocus issue  https://github.com/TypeCellOS/BlockNote/issues/891
+  // TODO-002(BLOCKING) Autofocus issue  https://github.com/TypeCellOS/BlockNote/issues/891
   useEffect(() => {
     if (!autoFocus || !editable || !editor) return;
 
@@ -335,6 +372,6 @@ const BlockNote = ({
       <CustomFilePanel filePanel={filePanel} baseFilePanelProps={baseFilePanelProps} />
     </BlockNoteView>
   );
-};
+}
 
 export default BlockNote;

@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
-import { appConfig, type UserFlags } from 'config';
 import { UniqueEnforcer } from 'enforce-unique';
+import { appConfig, type SystemRole, type UserFlags } from 'shared';
 import slugify from 'slugify';
 import type { InsertEmailModel } from '#/db/schema/emails';
 import type { InsertPasswordModel } from '#/db/schema/passwords';
@@ -8,7 +8,8 @@ import type { InsertUnsubscribeTokenModel } from '#/db/schema/unsubscribe-tokens
 import type { InsertUserModel, UserModel } from '#/db/schema/users';
 import { nanoid } from '#/utils/nanoid';
 import { generateUnsubscribeToken } from '#/utils/unsubscribe-token';
-import { mockNanoid, pastIsoDate, withFakerSeed } from './utils';
+import { mockMembershipBase } from './mock-membership';
+import { mockNanoid, mockPaginated, pastIsoDate, withFakerSeed } from './utils';
 
 /** Optional overrides for mock user generation */
 type MockUserOptionalOverrides = Partial<{
@@ -96,10 +97,31 @@ export const mockUserResponse = (key = 'user:default'): UserModel =>
       modifiedBy: null,
       lastStartedAt: createdAt,
       lastSignInAt: createdAt,
-      // lastSeenAt from last_seen table (populated via subquery in real queries)
       lastSeenAt: createdAt,
     };
   });
+
+/** User list item type for getUsers endpoint (includes memberships array and optional role) */
+export interface UserListItem extends UserModel {
+  memberships: ReturnType<typeof mockMembershipBase>[];
+  role?: SystemRole;
+}
+
+/**
+ * Generates a mock user list item for getUsers response.
+ * Includes user data with memberships array and optional system role.
+ */
+export const mockUserListItem = (key = 'userListItem:default'): UserListItem =>
+  withFakerSeed(key, () => ({
+    ...mockUserResponse(`${key}:user`),
+    memberships: [mockMembershipBase(`${key}:membership`)],
+    role: undefined,
+  }));
+
+/**
+ * Generates a paginated mock user list response for getUsers endpoint.
+ */
+export const mockPaginatedUsersResponse = (count = 2) => mockPaginated(mockUserListItem, count);
 
 /**
  * Generates a fixed "Admin" user with provided ID and email.
@@ -136,7 +158,7 @@ export const mockPassword = (user: UserModel, hashedPassword: string): InsertPas
  */
 export const mockUnsubscribeToken = (user: UserModel): InsertUnsubscribeTokenModel => {
   return {
-    token: generateUnsubscribeToken(user.email),
+    secret: generateUnsubscribeToken(user.email),
     userId: user.id,
     createdAt: pastIsoDate(),
   };

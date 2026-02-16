@@ -1,6 +1,6 @@
-import { appConfig } from 'config';
 import { t } from 'i18next';
 import { InfoIcon } from 'lucide-react';
+import { appConfig } from 'shared';
 import type { AlertWrap } from '~/modules/common/alert-wrap';
 
 const alerts: AlertWrap[] = [];

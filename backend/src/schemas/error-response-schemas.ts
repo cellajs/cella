@@ -1,0 +1,136 @@
+import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
+import type { createRoute } from '@hono/zod-openapi';
+import { z } from '@hono/zod-openapi';
+import { apiErrorSchema } from './api-error-schemas';
+
+type Responses = Parameters<typeof createRoute>[0]['responses'];
+
+type ZodBackedResponse = {
+  description: string;
+  content: { 'application/json': { schema: z.ZodTypeAny } };
+};
+
+type ErrorOption = (typeof errorResponseOptions)[number];
+type ErrorCode = ErrorOption['code'];
+type Ref = ErrorOption['ref'];
+
+/**
+ * Standardized error response specifications, used to generate:
+ * - Zod-backed response objects for route definitions
+ * - `$ref` objects for route definitions
+ * - OpenAPI registry components
+ */
+const errorResponseOptions = [
+  {
+    code: 400,
+    name: 'BadRequestError',
+    description: 'Bad request: problem processing request.',
+    schemaDescription: 'Error returned when the request is malformed or contains invalid data.',
+    ref: '#/components/responses/BadRequestError',
+  },
+  {
+    code: 401,
+    name: 'UnauthorizedError',
+    description: 'Unauthorized: authentication required.',
+    schemaDescription: 'Error returned when authentication is missing or invalid.',
+    ref: '#/components/responses/UnauthorizedError',
+  },
+  {
+    code: 403,
+    name: 'ForbiddenError',
+    description: 'Forbidden: insufficient permissions.',
+    schemaDescription: 'Error returned when the user lacks permission for the requested action.',
+    ref: '#/components/responses/ForbiddenError',
+  },
+  {
+    code: 404,
+    name: 'NotFoundError',
+    description: 'Not found: resource does not exist.',
+    schemaDescription: 'Error returned when the requested resource cannot be found.',
+    ref: '#/components/responses/NotFoundError',
+  },
+  {
+    code: 429,
+    name: 'TooManyRequestsError',
+    description: 'Rate limit: too many requests.',
+    schemaDescription: 'Error returned when rate limits are exceeded.',
+    ref: '#/components/responses/TooManyRequestsError',
+  },
+] as const;
+
+// Helper to create error body schemas with OpenAPI metadata
+const errorBodySchema = (code: ErrorCode) => {
+  const option = errorResponseOptions.find((o) => o.code === code);
+  return apiErrorSchema.extend({ status: z.literal(code) }).openapi(option?.name ?? 'Error', {
+    description: option?.schemaDescription,
+  });
+};
+
+// Helper that creates a numeric map for registry work (we simply *don't* include `ref` here)
+const zodErrorResponses: Partial<Record<ErrorCode, ZodBackedResponse>> = Object.fromEntries(
+  errorResponseOptions.map(({ code, description }) => [
+    code,
+    {
+      description,
+      content: { 'application/json': { schema: errorBodySchema(code) } },
+    } satisfies ZodBackedResponse,
+  ]),
+);
+
+/**
+ * Error `responses` (string-indexed) for registry work. No `ref` here.
+ */
+export const errorResponses: Responses = Object.fromEntries(
+  errorResponseOptions.map(({ code, description }) => [
+    String(code),
+    {
+      description,
+      content: { 'application/json': { schema: errorBodySchema(code) } },
+    },
+  ]),
+);
+
+/**
+ * Errors as `$ref` for route definitions — keeps OpenAPI output compact by referencing
+ * registered response components instead of inlining the full schema per route.
+ *
+ * NOTE: The type is cast to look like inline Zod-backed responses. Without this,
+ * `@hono/zod-openapi` sees `$ref` objects (no `content` key) and widens the handler
+ * return type to `Response`, silently disabling compile-time response type checking.
+ * See: https://github.com/honojs/middleware/issues — no upstream fix as of 2026-02.
+ */
+export const errorResponseRefs = errorResponseOptions.reduce(
+  (acc, { code, ref }) => {
+    acc[code] = { $ref: ref };
+    return acc;
+  },
+  {} as Record<ErrorCode, { $ref: Ref }>,
+) as unknown as Record<ErrorCode, ZodBackedResponse>;
+
+// Registry helpers
+const registerResponseFromZod = (
+  registry: OpenAPIRegistry,
+  responseName: string,
+  schemaName: string,
+  response: ZodBackedResponse,
+) => {
+  const schema = response.content['application/json'].schema;
+  registry.register(schemaName, schema);
+  registry.registerComponent('responses', responseName, {
+    description: response.description,
+    content: { 'application/json': { schema: { $ref: `#/components/schemas/${schemaName}` } } },
+  });
+};
+
+/**
+ * Register all errors in registry
+ */
+export const registerAllErrorResponses = (
+  registry: OpenAPIRegistry,
+  responses: Partial<Record<ErrorCode, ZodBackedResponse>> = zodErrorResponses,
+) => {
+  for (const { code, name } of errorResponseOptions) {
+    const r = responses[code];
+    if (r) registerResponseFromZod(registry, name, name, r);
+  }
+};

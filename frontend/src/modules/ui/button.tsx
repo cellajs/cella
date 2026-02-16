@@ -8,7 +8,7 @@ import { toaster } from '~/modules/common/toaster/service';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { cn } from '~/utils/cn';
 
-const buttonVariants = cva(
+export const buttonVariants = cva(
   'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-effect disabled:pointer-events-none [&:not(.absolute)]:active:translate-y-[.05rem] disabled:opacity-50 shadow-xs',
   {
     variants: {
@@ -27,9 +27,10 @@ const buttonVariants = cva(
         link: 'text-primary underline-offset-4 hover:underline shadow-none',
         // Add more variants here
         darkSuccess: 'bg-green-700 text-white hover:bg-green-700/80',
-        cell: 'text-regular underline-offset-4 hover:underline focus-visible:ring-offset-transparent focus-visible:ring-transparent opacity-75 hover:opacity-100 shadow-none',
+        cell: 'text-regular underline-offset-4 hover:underline focus-visible:ring-offset-transparent focus-visible:ring-transparent opacity-75 hover:opacity-100 shadow-none w-full flex gap-2 font-normal justify-start',
         plain: 'text-primary bg-primary/5 border border-primary/30 hover:bg-primary/10 hover:border-primary/50',
-        input: 'border border-input bg-background [&:not(.absolute)]:active:translate-y-0 hover:transparent',
+        input:
+          'border border-input bg-background [&:not(.absolute)]:active:translate-y-0 hover:transparent aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive',
         none: 'bg-transparent border-none shadow-none',
       },
       size: {
@@ -39,6 +40,7 @@ const buttonVariants = cva(
         sm: 'h-9 rounded-md px-3',
         lg: 'h-11 rounded-md px-4',
         icon: 'h-10 w-10',
+        cell: 'h-full px-0 py-0',
         xl: 'h-14 rounded-lg text-lg px-6',
         auto: 'h-auto',
       },
@@ -57,7 +59,14 @@ export interface ButtonProps
   asChild?: boolean;
 }
 
-function Button({ className, variant, size, asChild = false, ...props }: React.ComponentProps<'button'> & ButtonProps) {
+export function Button({
+  className,
+  variant,
+  size,
+  asChild = false,
+  loading: _loading,
+  ...props
+}: React.ComponentProps<'button'> & ButtonProps) {
   const Comp = asChild ? Slot : 'button';
   return <Comp data-slot="button" className={cn(buttonVariants({ variant, size, className }))} {...props} />;
 }
@@ -69,7 +78,7 @@ type SubmitButtonProps = Omit<ButtonProps, 'type'> & {
 /**
  * Submit button for forms that warns when offline.
  */
-function SubmitButton({
+export function SubmitButton({
   onClick,
   children,
   allowOfflineDelete = false,
@@ -110,5 +119,3 @@ function SubmitButton({
     buttonContent
   );
 }
-
-export { Button, buttonVariants, SubmitButton };

@@ -1,5 +1,5 @@
-import { appConfig, type EntityType } from 'config';
 import { Building2Icon, CloudIcon, type LucideIcon, UsersIcon } from 'lucide-react';
+import { appConfig, type EntityType } from 'shared';
 import type { AboutCard } from '~/modules/marketing/about/cards';
 import type { PricingPlan } from '~/modules/marketing/about/pricing';
 import { ShowcaseItem } from '~/modules/marketing/about/showcase';
@@ -68,7 +68,6 @@ export const features = [
   { id: 'vite' },
   { id: 'react' },
   { id: 'drizzle' },
-  { id: 'electric' },
   { id: 'shadcn' },
   { id: 'openapi' },
   { id: 'tanstack' },

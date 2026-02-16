@@ -1,44 +1,36 @@
-import { useNavigate } from '@tanstack/react-router';
-import { useEffect, useRef } from 'react';
+import { useNavigate, useRouterState } from '@tanstack/react-router';
+import { useEffect } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useHotkeys } from '~/hooks/use-hot-keys';
-import router from '~/lib/router';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
-import BottomBarNav from '~/modules/navigation/bottom-bar-nav';
-import FloatingNav from '~/modules/navigation/floating-nav';
-import SidebarNav from '~/modules/navigation/sidebar-nav';
+import { BottomBarNav } from '~/modules/navigation/bottom-bar-nav';
+import { FloatingNav, type FloatingNavItem } from '~/modules/navigation/floating-nav/floating-nav';
+import { SidebarNav } from '~/modules/navigation/sidebar-nav';
 import type { NavItem, TriggerNavItemFn } from '~/modules/navigation/types';
 import { navItems } from '~/nav-config';
 import { useNavigationStore } from '~/store/navigation';
-import { useUIStore } from '~/store/ui';
 
-// Sheet class for floating sheets
+// Sheet class for nav sheets - positioned next to sidebar icon bar on sm+, pushes content when keepMenuOpen
 export const navSheetClassName =
-  'sm:w-80 linear sm:z-105 sm:inset-0 xs:max-w-80 xl:group-[.keep-menu-open]/body:group-[.keep-menu-open]/body:shadow-none xl:group-[.keep-menu-open]/body:group-[.keep-menu-open]/body:border-r dark:shadow-[0_0_2px_5px_rgba(255,255,255,0.05)]';
+  'sm:left-16 sm:z-90 xs:max-w-80 sm:w-80 sm:group-[.keep-menu-open]/body:shadow-none sm:group-[.keep-menu-open]/body:border-r max-sm:shadow-[0_0_2px_5px_rgba(0,0,0,0.1)] dark:max-sm:shadow-[0_0_2px_5px_rgba(255,255,255,0.05)]';
 
 /** Application navigation component.
  * - Renders floating, sidebar, or bottom bar nav.
  * - Manages navigation item triggering, including routing and sheet handling.
  * - Sets up hotkeys for quick navigation access.
- * - Listens to route changes to close dialogs and sheets.
  */
-const AppNav = () => {
+export function AppNav() {
   const navigate = useNavigate();
   const isMobile = useBreakpoints('max', 'sm');
   const isDesktop = useBreakpoints('min', 'xl', true);
 
-  // Ref for the sidebar sheet container (for inline rendering on desktop)
-  const sheetContainerRef = useRef<HTMLDivElement>(null);
-
   const updateSheet = useSheeter((state) => state.update);
 
   const navSheetOpen = useNavigationStore((state) => state.navSheetOpen);
-  const setFocusView = useUIStore((state) => state.setFocusView);
-  const setNavLoading = useNavigationStore((state) => state.setNavLoading);
+  const keepOpenPreference = useNavigationStore((state) => state.keepOpenPreference);
   const setNavSheetOpen = useNavigationStore((state) => state.setNavSheetOpen);
 
-  const triggerNavItem: TriggerNavItemFn = (id, ref) => {
+  const triggerNavItem: TriggerNavItemFn = (id, ref, options) => {
     const triggerRef = ref || {
       current: document.activeElement instanceof HTMLButtonElement ? document.activeElement : null,
     };
@@ -71,10 +63,6 @@ const AppNav = () => {
 
       const sheetSide = isMobile && navItem.mirrorOnMobile ? 'right' : 'left';
 
-      // On desktop, use container to render inline in sidebar
-      // On mobile, render as drawer (no container)
-      const container = !isMobile && sheetContainerRef.current ? { ref: sheetContainerRef } : undefined;
-
       useSheeter.getState().create(navItem.sheet, {
         id: 'nav-sheet',
         triggerRef,
@@ -82,7 +70,7 @@ const AppNav = () => {
         showCloseButton: false,
         modal: isMobile,
         className: navSheetClassName,
-        container,
+        skipAnimation: options?.skipAnimation,
         onClose: () => setNavSheetOpen(null, isDesktop),
       });
     }
@@ -96,33 +84,54 @@ const AppNav = () => {
     ['Shift + M', () => triggerNavItem('menu')],
   ]);
 
-  // Listen to route changes to close dialogs and sheets
+  // Auto-open menu on mount when keepOpenPreference is enabled on desktop
   useEffect(() => {
-    router.subscribe('onBeforeLoad', ({ pathChanged }) => {
-      if (!pathChanged) return;
-
-      const uiState = useUIStore.getState();
-      if (uiState.focusView) setFocusView(false);
-
-      useDialoger.getState().remove();
-      useSheeter.getState().removeOnRouteChange({ isCleanup: true });
-
-      // Set nav bar loading state
-      setNavLoading(true);
-    });
-    router.subscribe('onLoad', () => setNavLoading(false));
+    if (isDesktop && keepOpenPreference && !navSheetOpen) {
+      triggerNavItem('menu', undefined, { skipAnimation: true });
+    }
   }, []);
+
+  // Build floating nav items from route staticData
+  const routerState = useRouterState();
+  const floatingItems: FloatingNavItem[] = [];
+
+  if (isMobile) {
+    // Collect left/right button IDs from route staticData
+    const floatingConfig = routerState.matches.reduce(
+      (acc, match) => {
+        const config = match.staticData.floatingNavButtons;
+        if (config?.left) acc.left.push(config.left);
+        if (config?.right) acc.right.push(config.right);
+        return acc;
+      },
+      { left: [] as string[], right: [] as string[] },
+    );
+
+    // Dedupe and map to FloatingNavItem
+    for (const id of [...new Set(floatingConfig.left)]) {
+      const item = navItems.find((n) => n.id === id);
+      if (item)
+        floatingItems.push({ id: item.id, icon: item.icon, onClick: () => triggerNavItem(item.id), direction: 'left' });
+    }
+    for (const id of [...new Set(floatingConfig.right)]) {
+      const item = navItems.find((n) => n.id === id);
+      if (item)
+        floatingItems.push({
+          id: item.id,
+          icon: item.icon,
+          onClick: () => triggerNavItem(item.id),
+          direction: 'right',
+        });
+    }
+  }
+
+  // Use the owning route's path as resetTrigger so floating nav resets on page change
+  const floatingNavOwner = routerState.matches.findLast((m) => m.staticData.floatingNavButtons);
 
   return (
     <>
-      <FloatingNav triggerNavItem={triggerNavItem} />
-      {isMobile ? (
-        <BottomBarNav triggerNavItem={triggerNavItem} />
-      ) : (
-        <SidebarNav triggerNavItem={triggerNavItem} sheetContainerRef={sheetContainerRef} />
-      )}
+      <FloatingNav items={floatingItems} resetTrigger={floatingNavOwner?.pathname} />
+      {isMobile ? <BottomBarNav triggerNavItem={triggerNavItem} /> : <SidebarNav triggerNavItem={triggerNavItem} />}
     </>
   );
-};
-
-export default AppNav;
+}

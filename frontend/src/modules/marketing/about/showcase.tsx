@@ -1,8 +1,8 @@
-import { appConfig } from 'config';
 import { ArrowUpRightIcon } from 'lucide-react';
 import { lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
-import Spinner from '~/modules/common/spinner';
+import { appConfig } from 'shared';
+import { Spinner } from '~/modules/common/spinner';
 import { showcaseItems } from '~/modules/marketing/marketing-config';
 
 const DeviceMockup = lazy(() => import('~/modules/marketing/device-mockup'));
@@ -14,7 +14,7 @@ export type ShowcaseItem = {
   darkItems: { id: string; url: string; contentType: string }[];
 };
 
-const Showcase = () => {
+export function Showcase() {
   const { t } = useTranslation();
 
   const lightItems = showcaseItems.flatMap((item) => item.lightItems);
@@ -57,6 +57,4 @@ const Showcase = () => {
       </div>
     </div>
   );
-};
-
-export default Showcase;
+}

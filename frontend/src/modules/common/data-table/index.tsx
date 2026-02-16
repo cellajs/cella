@@ -1,4 +1,3 @@
-import { appConfig } from 'config';
 import { type Key, type ReactNode, useRef } from 'react';
 import {
   type CellMouseArgs,
@@ -7,8 +6,9 @@ import {
   type RenderRowProps,
   type RowsChangeData,
   type SortColumn,
-} from 'react-data-grid';
-import 'react-data-grid/lib/styles.css';
+} from '~/modules/common/data-grid';
+import '~/modules/common/data-grid/style/data-grid.css';
+import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { InfiniteLoader } from '~/modules/common/data-table/infinite-loader';
 import { NoRows } from '~/modules/common/data-table/no-rows';
@@ -16,8 +16,12 @@ import '~/modules/common/data-table/style.css';
 import { DataTableSkeleton } from '~/modules/common/data-table/table-skeleton';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useTableTooltip } from '~/modules/common/data-table/use-table-tooltip';
+import { toaster } from '~/modules/common/toaster/service';
 import { Checkbox } from '~/modules/ui/checkbox';
 import { cn } from '~/utils/cn';
+
+/** Maximum number of rows that can be selected at once */
+const MAX_SELECTABLE_ROWS = 1000;
 
 interface DataTableProps<TData> {
   columns: ColumnOrColumnGroup<TData>[];
@@ -43,6 +47,8 @@ interface DataTableProps<TData> {
   onRowsChange?: (rows: TData[], data: RowsChangeData<TData>) => void;
   fetchMore?: () => Promise<unknown>;
   className?: string;
+  /** When true, hides infinite loader (for static/non-paginated tables) */
+  readOnly?: boolean;
 }
 
 /**
@@ -56,7 +62,6 @@ export const DataTable = <TData,>({
   rowKeyGetter,
   error,
   isLoading,
-  limit = appConfig.requestLimits.default,
   isFetching,
   NoRowsComponent,
   isFiltered,
@@ -72,14 +77,43 @@ export const DataTable = <TData,>({
   renderRow,
   onCellClick,
   className,
+  readOnly,
 }: DataTableProps<TData>) => {
+  const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm', false);
 
   const gridRef = useRef<HTMLDivElement | null>(null);
   useTableTooltip(gridRef, !isLoading);
 
+  // Handle infinite scroll - guards against multiple calls while fetching
+  const handleRowsEndApproaching = () => {
+    if (!fetchMore || isFetching || !hasNextPage) return;
+    fetchMore();
+  };
+
+  // Wrap selection handler to enforce max selection limit
+  const handleSelectedRowsChange = (newSelectedRows: Set<string>) => {
+    if (!onSelectedRowsChange) return;
+
+    const currentSize = selectedRows?.size ?? 0;
+    const newSize = newSelectedRows.size;
+
+    // Check if trying to select more than the limit
+    if (newSize > MAX_SELECTABLE_ROWS) {
+      // If this is a "select all" attempt (large jump in selection)
+      if (newSize - currentSize > 1) {
+        toaster(t('common:selection_limit_all', { max: MAX_SELECTABLE_ROWS }), 'warning');
+      } else {
+        toaster(t('common:selection_limit', { max: MAX_SELECTABLE_ROWS }), 'warning');
+      }
+      return;
+    }
+
+    onSelectedRowsChange(newSelectedRows);
+  };
+
   return (
-    <div className={cn('w-full h-full mb-4 md:mb-8 focus-view-scroll', className)}>
+    <div className={cn('w-full h-full mb-4 md:mb-8', enableVirtualization && 'focus-view-scroll', className)}>
       {isLoading || !rows ? (
         // Render skeleton only on initial load
         <DataTableSkeleton
@@ -96,7 +130,10 @@ export const DataTable = <TData,>({
           ) : !rows.length ? (
             <NoRows isFiltered={isFiltered} isFetching={isFetching} customComponent={NoRowsComponent} />
           ) : (
-            <div className={`grid rdg-wrapper relative ${hideHeader ? 'rdg-hide-header' : ''}`} ref={gridRef}>
+            <div
+              className={`grid rdg-wrapper relative ${hideHeader ? 'rdg-hide-header' : ''} ${readOnly ? 'rdg-readonly' : ''}`}
+              ref={gridRef}
+            >
               <DataGrid
                 rowHeight={isMobile ? rowHeight * 1.2 : rowHeight}
                 enableVirtualization={enableVirtualization}
@@ -108,9 +145,11 @@ export const DataTable = <TData,>({
                 // Hack to rerender html/css by changing width
                 style={{ blockSize: '100%', marginRight: columns.length % 2 === 0 ? '0' : '.05rem' }}
                 selectedRows={selectedRows}
-                onSelectedRowsChange={onSelectedRowsChange}
+                onSelectedRowsChange={handleSelectedRowsChange}
                 sortColumns={sortColumns}
                 onSortColumnsChange={onSortColumnsChange}
+                onRowsEndApproaching={handleRowsEndApproaching}
+                selectionMode={readOnly ? 'none' : undefined}
                 renderers={{
                   renderRow,
                   renderCheckbox: ({ onChange, ...props }) => {
@@ -136,16 +175,9 @@ export const DataTable = <TData,>({
                   },
                 }}
               />
-              <InfiniteLoader
-                hasNextPage={hasNextPage}
-                isFetching={isFetching}
-                isFetchMoreError={!!error}
-                measureStyle={{
-                  height: `${Math.min(rows.length, 200) * 0.25 * rowHeight}px`,
-                  maxHeight: `${rowHeight * limit}px`,
-                }}
-                fetchMore={fetchMore}
-              />
+              {!readOnly && (
+                <InfiniteLoader hasNextPage={hasNextPage} isFetching={isFetching} isFetchMoreError={!!error} />
+              )}
             </div>
           )}
         </>

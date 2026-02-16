@@ -1,10 +1,9 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
-import { appConfig } from 'config';
-import { and, eq, inArray, isNull, or } from 'drizzle-orm';
+import { and, eq, inArray, isNull } from 'drizzle-orm';
 import i18n from 'i18next';
-import { db } from '#/db/db';
-import { attachmentsTable } from '#/db/schema/attachments';
+import { appConfig } from 'shared';
+import { unsafeInternalDb as db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
@@ -13,27 +12,21 @@ import { tokensTable } from '#/db/schema/tokens';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { usersTable } from '#/db/schema/users';
 import { env } from '#/env';
-import { type Env, getContextUser, getContextUserSystemRole } from '#/lib/context';
-import { AppError } from '#/lib/errors';
+import { type Env } from '#/lib/context';
+import { AppError } from '#/lib/error';
 import { mailer } from '#/lib/mailer';
-import { getSignedUrlFromKey } from '#/lib/signed-url';
-import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/helpers/session';
-import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
+import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { replaceSignedSrcs } from '#/modules/system/helpers/get-signed-src';
 import systemRoutes from '#/modules/system/system-routes';
-import { isPermissionAllowed } from '#/permissions';
+import { userSelect } from '#/modules/user/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
+import { getIsoDate } from '#/utils/iso-date';
 import { logError, logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
-import {
-  NewsletterEmail,
-  type NewsletterEmailProps,
-  SystemInviteEmail,
-  type SystemInviteEmailProps,
-} from '../../../emails';
+import { NewsletterEmail, SystemInviteEmail } from '../../../emails';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
@@ -49,7 +42,7 @@ const systemRouteHandlers = app
    */
   .openapi(systemRoutes.createInvite, async (ctx) => {
     const { emails } = ctx.req.valid('json');
-    const user = getContextUser();
+    const user = ctx.var.user;
 
     const lng = user.language;
     const senderName = user.name;
@@ -58,7 +51,7 @@ const systemRouteHandlers = app
 
     // Normalize + de-dupe
     const normalizedEmails = [...new Set(emails.map((e) => e.toLowerCase().trim()))];
-    if (normalizedEmails.length === 0) throw new AppError({ status: 400, type: 'no_recipients', severity: 'warn' });
+    if (normalizedEmails.length === 0) throw new AppError(400, 'no_recipients', 'warn');
 
     const now = new Date();
 
@@ -93,7 +86,7 @@ const systemRouteHandlers = app
     const expiredTokenIdsByEmail = new Map<string, string[]>();
 
     for (const t of pendingTokens) {
-      const isActive = t.expiresAt > now;
+      const isActive = new Date(t.expiresAt) > now;
       if (isActive) activeTokenByEmail.set(t.email, { id: t.id });
       else {
         const arr = expiredTokenIdsByEmail.get(t.email) ?? [];
@@ -104,18 +97,18 @@ const systemRouteHandlers = app
 
     // 3) Decide recipients vs rejected based on scenarios
     const recipientEmails: string[] = [];
-    const rejectedItems: string[] = [];
+    const rejectedItemIds: string[] = [];
 
     for (const email of normalizedEmails) {
       if (existingEmails.has(email)) {
         // Already a user
-        rejectedItems.push(email);
+        rejectedItemIds.push(email);
         continue;
       }
 
       if (activeTokenByEmail.has(email)) {
         // Already has an active pending invite
-        rejectedItems.push(email);
+        rejectedItemIds.push(email);
         continue;
       }
 
@@ -124,7 +117,7 @@ const systemRouteHandlers = app
     }
 
     if (recipientEmails.length === 0) {
-      return ctx.json({ success: false, rejectedItems, invitesSentCount: 0 }, 200);
+      return ctx.json({ data: [] as never[], rejectedItemIds, invitesSentCount: 0 }, 200);
     }
 
     // Generate token and store hashed
@@ -133,7 +126,7 @@ const systemRouteHandlers = app
 
     // 5) Create new tokens for recipients
     const tokens = recipientEmails.map((email) => ({
-      token: hashedToken,
+      secret: hashedToken,
       type: 'invitation' as const,
       email,
       createdBy: user.id,
@@ -157,70 +150,89 @@ const systemRouteHandlers = app
       email,
       lng,
       name: slugFromEmail(email),
-      systemInviteLink: `${appConfig.backendAuthUrl}/invoke-token/${type}/${newToken}`,
+      inviteLink: `${appConfig.backendAuthUrl}/invoke-token/${type}/${newToken}`,
     }));
-    type Recipient = (typeof recipients)[number];
 
     const staticProps = { senderName, senderThumbnailUrl, subject, lng };
-    await mailer.prepareEmails<SystemInviteEmailProps, Recipient>(
-      SystemInviteEmail,
-      staticProps,
-      recipients,
-      user.email,
-    );
+    await mailer.prepareEmails(SystemInviteEmail, staticProps, recipients, user.email);
 
     logEvent('info', 'Users invited on system level', { count: recipients.length });
 
-    return ctx.json({ success: true, rejectedItems, invitesSentCount: recipients.length }, 200);
+    return ctx.json({ data: [] as never[], rejectedItemIds, invitesSentCount: recipients.length }, 200);
   })
   /**
-   * Get presigned URL
+   * Delete users (system admin only)
    */
-  .openapi(systemRoutes.getPresignedUrl, async (ctx) => {
-    const { key, isPublic: queryPublic } = ctx.req.valid('query');
+  .openapi(systemRoutes.deleteUsers, async (ctx) => {
+    const { ids } = ctx.req.valid('json');
 
-    // TODO: can this tight coupling with attachments module be prevented?
-    // Or move this handler to attachments module?
-    const [attachment] = await db
-      .select()
-      .from(attachmentsTable)
-      .where(
-        or(
-          eq(attachmentsTable.originalKey, key),
-          eq(attachmentsTable.thumbnailKey, key),
-          eq(attachmentsTable.convertedKey, key),
-        ),
-      )
-      .limit(1);
+    // Convert the user ids to an array
+    const toDeleteIds = Array.isArray(ids) ? ids : [ids];
+    if (!toDeleteIds.length) throw new AppError(400, 'invalid_request', 'error', { entityType: 'user' });
 
-    const { bucketName, public: isPublic } = attachment ?? {
-      public: queryPublic,
-      bucketName: queryPublic ? appConfig.s3PublicBucket : appConfig.s3PrivateBucket,
-    };
+    // Fetch users by IDs to verify they exist
+    const targets = await db.select({ id: usersTable.id }).from(usersTable).where(inArray(usersTable.id, toDeleteIds));
 
-    if (!isPublic) {
-      // Get session id from cookie
-      const { sessionToken } = await getParsedSessionCookie(ctx);
-      const { user } = await validateSession(sessionToken);
-      const userSystemRole = getContextUserSystemRole();
+    const foundIds = targets.map(({ id }) => id);
+    const rejectedItemIds = toDeleteIds.filter((id) => !foundIds.includes(id));
 
-      if (attachment) {
-        const memberships = await db
-          .select(membershipBaseSelect)
-          .from(membershipsTable)
-          .where(eq(membershipsTable.userId, user.id));
+    // If no valid users found, return error
+    if (!foundIds.length) throw new AppError(404, 'not_found', 'warn', { entityType: 'user' });
 
-        const isSystemAdmin = userSystemRole === 'admin';
-        const { allowed } = isPermissionAllowed(memberships, 'read', attachment);
+    // Delete users
+    await db.delete(usersTable).where(inArray(usersTable.id, foundIds));
 
-        if (!isSystemAdmin && !allowed)
-          throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', entityType: attachment.entityType });
-      }
+    logEvent('info', 'Users deleted', foundIds);
+
+    return ctx.json({ data: [] as never[], rejectedItemIds }, 200);
+  })
+  /**
+   * Update a user by id
+   */
+  .openapi(systemRoutes.updateUser, async (ctx) => {
+    const { id } = ctx.req.valid('param');
+
+    const user = ctx.var.user;
+
+    const [targetUser] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, id)).limit(1);
+
+    if (!targetUser) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { user: id } });
+
+    const { bannerUrl, firstName, lastName, language, newsletter, thumbnailUrl, slug } = ctx.req.valid('json');
+
+    // Check if slug is available
+    if (slug && slug !== targetUser.slug) {
+      const slugAvailable = await checkSlugAvailable(slug, db);
+      if (!slugAvailable) throw new AppError(409, 'slug_exists', 'warn', { entityType: 'user', meta: { slug } });
     }
 
-    const url = await getSignedUrlFromKey(key, { bucketName, isPublic });
+    const [updatedUser] = await db
+      .update(usersTable)
+      .set({
+        bannerUrl,
+        firstName,
+        lastName,
+        language,
+        newsletter,
+        thumbnailUrl,
+        slug,
+        name: [firstName, lastName].filter(Boolean).join(' ') || slug,
+        modifiedAt: getIsoDate(),
+        modifiedBy: user.id,
+      })
+      .where(eq(usersTable.id, targetUser.id))
+      .returning();
 
-    return ctx.json(url, 200);
+    logEvent('info', 'User updated', { userId: updatedUser.id });
+
+    // Re-select with userSelect to include lastSeenAt (subquery from last_seen table)
+    const [userWithActivity] = await db
+      .select(userSelect)
+      .from(usersTable)
+      .where(eq(usersTable.id, updatedUser.id))
+      .limit(1);
+
+    return ctx.json(userWithActivity, 200);
   })
   /**
    * Paddle webhook
@@ -253,14 +265,14 @@ const systemRouteHandlers = app
     const { organizationIds, subject, content, roles } = ctx.req.valid('json');
     const { toSelf } = ctx.req.valid('query');
 
-    const user = getContextUser();
+    const user = ctx.var.user;
 
     // Get members from organizations
     const recipientsRecords = await db
       .selectDistinct({
         email: usersTable.email,
         name: usersTable.name,
-        unsubscribeToken: unsubscribeTokensTable.token,
+        unsubscribeToken: unsubscribeTokensTable.secret,
         newsletter: usersTable.newsletter,
         orgName: organizationsTable.name,
       })
@@ -278,8 +290,7 @@ const systemRouteHandlers = app
       );
 
     // Stop if no recipients
-    if (!recipientsRecords.length && !toSelf)
-      throw new AppError({ status: 400, type: 'no_recipients', severity: 'warn' });
+    if (!recipientsRecords.length && !toSelf) throw new AppError(400, 'no_recipients', 'warn');
 
     // Add unsubscribe link to each recipient
     let recipients = recipientsRecords.map(({ newsletter, unsubscribeToken, ...recipient }) => ({
@@ -301,11 +312,9 @@ const systemRouteHandlers = app
     // Replace all src attributes in content
     const newContent = await replaceSignedSrcs(content);
 
-    type Recipient = (typeof recipients)[number];
-
     // Prepare emails and send them
     const staticProps = { content: newContent, subject, testEmail: toSelf, lng: user.language };
-    await mailer.prepareEmails<NewsletterEmailProps, Recipient>(NewsletterEmail, staticProps, recipients, user.email);
+    await mailer.prepareEmails(NewsletterEmail, staticProps, recipients, user.email);
 
     logEvent('info', 'Newsletter sent', { count: recipients.length });
 

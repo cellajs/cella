@@ -1,7 +1,7 @@
 import { SearchIcon } from 'lucide-react';
-import 'react-data-grid/lib/styles.css';
+import '~/modules/common/data-grid/style/data-grid.css';
 import { useTranslation } from 'react-i18next';
-import ContentPlaceholder from '~/modules/common/content-placeholder';
+import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import '~/modules/common/data-table/style.css';
 
 interface NoRowsProps {

@@ -1,0 +1,49 @@
+import { sql } from 'drizzle-orm';
+import type { DbOrTx } from '#/db/db';
+import { activitiesTable } from '#/db/schema/activities';
+
+/**
+ * Check if a transaction has already been processed.
+ * Used for idempotency - ensures replayed mutations don't create duplicates.
+ *
+ * @param stxId - The client-generated mutation ID (nanoid)
+ * @param db - Database or transaction to use (from ctx.var.db).
+ * @returns true if transaction exists in activities, false otherwise
+ */
+export async function isTransactionProcessed(stxId: string, db: DbOrTx): Promise<boolean> {
+  const existing = await db
+    .select({ id: activitiesTable.id })
+    .from(activitiesTable)
+    .where(sql`${activitiesTable.stx}->>'mutationId' = ${stxId}`)
+    .limit(1);
+
+  return existing.length > 0;
+}
+
+interface EntityReference {
+  entityType: string;
+  entityId: string;
+}
+
+/**
+ * Get the entity created/modified by a transaction.
+ * Used to return existing entity for idempotent responses.
+ *
+ * @param stxId - The client-generated mutation ID (nanoid)
+ * @param db - Database or transaction to use (from ctx.var.db).
+ * @returns Entity reference if found, null otherwise
+ */
+export async function getEntityByTransaction(stxId: string, db: DbOrTx): Promise<EntityReference | null> {
+  const [activity] = await db
+    .select({
+      entityType: activitiesTable.entityType,
+      entityId: activitiesTable.entityId,
+    })
+    .from(activitiesTable)
+    .where(sql`${activitiesTable.stx}->>'mutationId' = ${stxId}`)
+    .limit(1);
+
+  // entityType and entityId are nullable in schema, narrow before returning
+  if (!activity?.entityType || !activity?.entityId) return null;
+  return { entityType: activity.entityType, entityId: activity.entityId };
+}

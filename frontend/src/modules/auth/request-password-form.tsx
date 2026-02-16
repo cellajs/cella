@@ -1,15 +1,19 @@
+import { useMutation } from '@tanstack/react-query';
 import { SendIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type RequestPasswordResponse, requestPassword } from '~/api.gen';
-import { useMutation } from '~/hooks/use-mutations';
 import type { ApiError } from '~/lib/api';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster/service';
 import { Button, SubmitButton } from '~/modules/ui/button';
+
 import { Input } from '~/modules/ui/input';
 
-export const RequestPasswordForm = ({ email = '', onEmailChange }: { email?: string; onEmailChange?: () => void }) => {
+/**
+ * Renders the reset password request form.
+ */
+export function RequestPasswordForm({ email = '', onEmailChange }: { email?: string; onEmailChange?: () => void }) {
   const { t } = useTranslation();
 
   const isMobile = window.innerWidth < 640;
@@ -39,7 +43,7 @@ export const RequestPasswordForm = ({ email = '', onEmailChange }: { email?: str
         type="email"
         id="reset-email-field"
         autoFocus={!isMobile}
-        className="mb-4"
+        className="mb-4 h-12"
         placeholder={t('common:email')}
         value={emailValue} // Set the default value instead of value
         onChange={(e) => handleEmailChange(e.target.value)}
@@ -62,4 +66,4 @@ export const RequestPasswordForm = ({ email = '', onEmailChange }: { email?: str
       </div>
     </div>
   );
-};
+}

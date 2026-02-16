@@ -21,13 +21,13 @@ const TabsListVariants = cva(
   },
 );
 
-function Tabs({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Root>) {
+export function Tabs({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Root>) {
   return <TabsPrimitive.Root data-slot="tabs" className={cn('flex flex-col gap-2', className)} {...props} />;
 }
 
 type TabsListProps = React.ComponentProps<typeof TabsPrimitive.List> & VariantProps<typeof TabsListVariants>;
 
-function TabsList({ className, variant, ...props }: TabsListProps) {
+export function TabsList({ className, variant, ...props }: TabsListProps) {
   return (
     <TabsPrimitive.List data-slot="tabs-list" className={cn(TabsListVariants({ variant, className }))} {...props} />
   );
@@ -35,7 +35,7 @@ function TabsList({ className, variant, ...props }: TabsListProps) {
 
 type TabsTriggerProps = React.ComponentProps<typeof TabsPrimitive.Trigger>;
 
-function TabsTrigger({ className, ...props }: TabsTriggerProps) {
+export function TabsTrigger({ className, ...props }: TabsTriggerProps) {
   return (
     <TabsPrimitive.Trigger
       data-slot="tabs-trigger"
@@ -45,8 +45,6 @@ function TabsTrigger({ className, ...props }: TabsTriggerProps) {
   );
 }
 
-function TabsContent({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Content>) {
+export function TabsContent({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Content>) {
   return <TabsPrimitive.Content data-slot="tabs-content" className={cn('flex-1 outline-none', className)} {...props} />;
 }
-
-export { Tabs, TabsList, TabsTrigger, TabsContent };

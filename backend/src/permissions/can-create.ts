@@ -1,36 +1,36 @@
-import type { ContextEntityType, ProductEntityType } from 'config';
-import { getContextMemberships, getContextOrganization, getContextUserSystemRole } from '#/lib/context';
-import type { EntityModel } from '#/lib/entity';
-import { AppError } from '#/lib/errors';
-import { isPermissionAllowed } from '#/permissions';
+import type { Context } from 'hono';
+import type { Env } from '#/lib/context';
+import { AppError } from '#/lib/error';
+import { checkPermission } from '#/permissions';
+import type { SubjectForPermission } from '#/permissions/permission-manager/types';
+import { nanoid } from '#/utils/nanoid';
 
 /**
  * Checks if user has permission to create product or context entity.
- *
- * This is separate from read/update/delete checks, since the entity may not exist yet.
- *
- * @param entity - Entity that user wants to create.
+ * This is separate from read/update/delete checks, since the entity doesn't exist yet.
+ * Uses SubjectForPermission directly — id is optional for create checks.
  */
-export const canCreateEntity = <K extends Exclude<ContextEntityType, 'organization'> | ProductEntityType>(
-  entity: EntityModel<K>,
-) => {
-  const userSystemRole = getContextUserSystemRole();
-  const memberships = getContextMemberships();
+export const canCreateEntity = (ctx: Context<Env>, entity: SubjectForPermission) => {
+  const userSystemRole = ctx.var.userSystemRole;
+  const memberships = ctx.var.memberships;
 
   const { entityType } = entity;
-  const isSystemAdmin = userSystemRole === 'admin';
 
-  // Step 1: Permission check
-  const { allowed } = isPermissionAllowed(memberships, 'create', entity);
+  // Build a minimal subject for permission check (generate temp id since entity doesn't exist yet)
+  const subject = { ...entity, id: nanoid() };
 
-  if (!allowed && !isSystemAdmin) {
-    throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', entityType });
+  // Step 1: Permission check (system admin bypass is handled inside)
+  const { isAllowed } = checkPermission(memberships, 'create', subject, { systemRole: userSystemRole });
+
+  // Deny if not allowed
+  if (!isAllowed) {
+    throw new AppError(403, 'forbidden', 'warn', { entityType });
   }
 
-  const org = getContextOrganization();
+  const org = ctx.var.organization;
 
-  // Step 2: Organization ownership check
-  if (org && 'organizationId' in entity && entity.organizationId !== org.id) {
-    throw new AppError({ status: 409, type: 'organization_mismatch', severity: 'error', entityType });
+  // Defense in depth check: if entity has organizationId, it must match context organization
+  if (org && 'organizationId' in entity && entity.organizationId && entity.organizationId !== org.id) {
+    throw new AppError(409, 'organization_mismatch', 'error', { entityType });
   }
 };

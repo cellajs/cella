@@ -1,6 +1,6 @@
-import { appConfig } from 'config';
 import { ArrowDownIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import { TextEffect } from '~/modules/common/text-effect';
 import { Button } from '~/modules/ui/button';
 

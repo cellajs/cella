@@ -1,12 +1,26 @@
 import type { Pgoutput } from 'pg-logical-replication';
 import type { InsertActivityModel } from '#/db/schema/activities';
 import { handleDelete, handleInsert, handleUpdate } from './handlers';
+import type { TableRegistryEntry } from './types';
 import { getTableEntry } from './utils';
 
 /**
- * Process a pgoutput message and return an activity if applicable.
+ * Result of processing a CDC message.
+ * Includes the activity to insert, entity data for WebSocket delivery,
+ * and the table entry for seq scope calculation.
  */
-export function processMessage(message: Pgoutput.Message): InsertActivityModel | null {
+export interface ProcessMessageResult {
+  activity: InsertActivityModel;
+  entityData: Record<string, unknown>;
+  /** Old row data for UPDATE events (when REPLICA IDENTITY FULL). Used for count delta detection. */
+  oldEntityData?: Record<string, unknown>;
+  entry: TableRegistryEntry;
+}
+
+/**
+ * Process a pgoutput message and return activity + entity data if applicable.
+ */
+export function processMessage(message: Pgoutput.Message): ProcessMessageResult | null {
   // Only process insert, update, delete messages with a relation
   if (message.tag !== 'insert' && message.tag !== 'update' && message.tag !== 'delete') {
     return null;

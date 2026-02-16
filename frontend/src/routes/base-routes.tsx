@@ -1,33 +1,36 @@
 import * as Sentry from '@sentry/react';
 import { createRootRouteWithContext, createRoute, defer, redirect } from '@tanstack/react-router';
-import { appConfig } from 'config';
 import i18n from 'i18next';
 import { lazy, Suspense } from 'react';
+import { appConfig } from 'shared';
 import { z } from 'zod';
 import { zApiError } from '~/api.gen/zod.gen';
-import ErrorNotice from '~/modules/common/error-notice';
+import { ErrorNotice } from '~/modules/common/error-notice';
 import { PublicLayout } from '~/modules/common/public-layout';
 import { Root } from '~/modules/common/root';
-import Spinner from '~/modules/common/spinner';
+import { Spinner } from '~/modules/common/spinner';
 import { meQueryOptions } from '~/modules/me/query';
 import { getMenuData } from '~/modules/navigation/menu-sheet/helpers';
 import { onError } from '~/query/on-error';
 import { queryClient } from '~/query/query-client';
+import { cleanupOnBoundaryChange } from '~/routes/boundary-cleanup';
 import { useUserStore } from '~/store/user';
 import appTitle from '~/utils/app-title';
 
-// Lazy load main App component, which is behind authentication
 const AppLayout = lazy(() => import('~/modules/common/app/app-layout'));
 
+/**
+ * Defines the search params schema for error routes.
+ */
 export const errorSearchSchema = z.object({
   error: z.string().optional(),
   severity: zApiError.shape.severity.optional(),
 });
 
 export const RootRoute = createRootRouteWithContext()({
-  staticData: { isAuth: false },
+  staticData: { isAuth: false, boundary: 'root' },
   component: () => <Root />,
-  errorComponent: ({ error }) => <ErrorNotice level="root" error={error} />,
+  errorComponent: ({ error }) => <ErrorNotice boundary="root" error={error} />,
   notFoundComponent: () => {
     return (
       <ErrorNotice
@@ -38,7 +41,7 @@ export const RootRoute = createRootRouteWithContext()({
           name: i18n.t('error:page_not_found'),
           message: i18n.t('error:page_not_found.text'),
         }}
-        level="root"
+        boundary="root"
       />
     );
   },
@@ -49,17 +52,22 @@ export const RootRoute = createRootRouteWithContext()({
  */
 export const PublicLayoutRoute = createRoute({
   id: 'publicLayout',
-  staticData: { isAuth: false },
+  staticData: { isAuth: false, boundary: 'public' },
   getParentRoute: () => RootRoute,
   component: () => <PublicLayout />,
   beforeLoad: async ({ location, cause }) => {
+    if (cause === 'enter') {
+      // Clean up sheets/dialogs when entering public layout from different boundary
+      cleanupOnBoundaryChange('public');
+    }
+
     if (cause !== 'enter' || location.pathname === '/sign-out') return;
 
     try {
-      console.debug('Fetch me & menu in while entering public page ', location.pathname);
+      console.debug('[PublicLayout] Fetching me while entering public page:', location.pathname);
 
       // Fetch and set user
-      await queryClient.ensureQueryData({ ...meQueryOptions(), revalidateIfStale: true });
+      await queryClient.ensureQueryData({ ...meQueryOptions() });
     } catch (error) {
       if (error instanceof Error) {
         Sentry.captureException(error);
@@ -74,7 +82,7 @@ export const PublicLayoutRoute = createRoute({
  */
 export const AppLayoutRoute = createRoute({
   id: 'appLayout',
-  staticData: { isAuth: false },
+  staticData: { isAuth: false, boundary: 'app' },
   getParentRoute: () => RootRoute,
   component: () => (
     <Suspense fallback={<Spinner className="mt-[45vh] h-10 w-10" />}>
@@ -82,10 +90,15 @@ export const AppLayoutRoute = createRoute({
     </Suspense>
   ),
   beforeLoad: async ({ location, cause }) => {
+    if (cause === 'enter') {
+      // Clean up sheets/dialogs when entering app layout from different boundary
+      cleanupOnBoundaryChange('app');
+    }
+
     if (cause !== 'enter') return;
 
     try {
-      console.debug('Fetching me before entering app:', location.pathname);
+      console.debug('[AppLayout] Fetching me before entering app:', location.pathname);
 
       // Try to use stored user, it will still revalidate below
       const storedUser = useUserStore.getState().user;
@@ -95,7 +108,7 @@ export const AppLayoutRoute = createRoute({
       }
 
       // Fetch and set user
-      const user = await queryClient.ensureQueryData({ ...meQueryOptions(), revalidateIfStale: true });
+      const user = await queryClient.ensureQueryData({ ...meQueryOptions() });
       return { user };
     } catch (error) {
       if (error instanceof Error) {
@@ -121,10 +134,10 @@ export const AppLayoutRoute = createRoute({
     if (cause !== 'enter') return;
 
     try {
-      console.debug('Fetching menu while loading app:', location.pathname);
+      console.debug('[AppLayout] Fetching menu while loading app:', location.pathname);
 
       // Revalidate user if not already awaited above
-      if (!context?.user) await queryClient.ensureQueryData({ ...meQueryOptions(), revalidateIfStale: true });
+      if (!context?.user) await queryClient.ensureQueryData({ ...meQueryOptions() });
 
       // Get menu too but defer it so no need to hang while its being retrieved
       return await defer(getMenuData());
@@ -146,5 +159,5 @@ export const ErrorNoticeRoute = createRoute({
   staticData: { isAuth: false },
   head: () => ({ meta: [{ title: appTitle('Error') }] }),
   getParentRoute: () => PublicLayoutRoute,
-  component: () => <ErrorNotice level="public" />,
+  component: () => <ErrorNotice boundary="public" />,
 });

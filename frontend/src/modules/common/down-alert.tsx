@@ -1,19 +1,12 @@
-import { appConfig } from 'config';
 import { t } from 'i18next';
-import {
-  AlertTriangleIcon,
-  ClockAlertIcon,
-  CloudOffIcon,
-  ConstructionIcon,
-  ShieldAlertIcon,
-  XIcon,
-} from 'lucide-react';
+import { AlertTriangleIcon, ClockAlertIcon, CloudOffIcon, ConstructionIcon, ShieldAlertIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Trans } from 'react-i18next';
+import { appConfig } from 'shared';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { healthCheck } from '~/lib/health-check';
+import { CloseButton } from '~/modules/common/close-button';
 import { Alert, AlertDescription } from '~/modules/ui/alert';
-import { Button } from '~/modules/ui/button';
 import { useAlertStore } from '~/store/alert';
 import { useUIStore } from '~/store/ui';
 
@@ -117,13 +110,9 @@ export const DownAlert = () => {
   const { getTitle, getContent, icon: Icon, variant } = downAlertConfig[downAlert];
 
   return (
-    <div className="fixed z-2000 pointer-events-auto bottom-4 max-sm:bottom-20 left-4 right-4 border-0 justify-center">
+    <div className="fixed z-2000 pointer-events-auto bottom-4 in-[#appLayout]:max-sm:bottom-20 left-4 right-4 border-0 justify-center">
       <Alert variant={variant} className="border-0 w-auto">
-        {/* Dismiss Button */}
-        <Button variant="ghost" size="sm" className="absolute top-1 right-1" onClick={dismissAlert}>
-          <XIcon size={16} />
-        </Button>
-
+        <CloseButton onClick={dismissAlert} size="lg" className="absolute top-1 right-1" />
         <Icon size={16} />
         <AlertDescription className="pr-8 font-light">
           {getTitle()}

@@ -1,7 +1,7 @@
-import { appConfig, type Language } from 'config';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import CountryFlag from '~/modules/common/country-flag';
+import { appConfig, type Language } from 'shared';
+import { CountryFlag } from '~/modules/common/country-flag';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
 
 interface SelectLanguageProps {

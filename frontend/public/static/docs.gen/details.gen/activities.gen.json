@@ -16,11 +16,22 @@
               "ref": "#/components/schemas/Activity",
               "items": {
                 "type": "object",
+                "description": "An auditable event recording an entity change, used for sync and history.",
                 "properties": {
-                  "id": { "type": "string", "required": true },
+                  "id": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 50
+                  },
+                  "tenantId": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 24
+                  },
                   "userId": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 50
                   },
                   "entityType": {
                     "type": ["string", "null"],
@@ -30,37 +41,83 @@
                   "resourceType": {
                     "type": ["string", "null"],
                     "required": true,
-                    "enum": ["request", "membership", null]
+                    "enum": ["request", "membership", "inactive_membership", "tenant", null]
                   },
                   "action": {
-                    "type": ["string", "null"],
+                    "type": "string",
                     "required": true,
-                    "enum": ["create", "update", "delete", null]
+                    "enum": ["create", "update", "delete"]
                   },
-                  "tableName": { "type": "string", "required": true },
-                  "type": { "type": "string", "required": true },
+                  "tableName": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "type": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
+                  },
                   "entityId": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 50
                   },
                   "organizationId": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 50
                   },
                   "createdAt": { "type": "string", "required": true },
                   "changedKeys": {
+                    "type": ["array", "null"],
+                    "required": true,
+                    "itemType": "string"
+                  },
+                  "stx": {
                     "required": true,
                     "anyOf": [
-                      { "type": "string", "required": false },
-                      { "type": "number", "required": false },
-                      { "type": "boolean", "required": false },
-                      { "type": "null", "required": false },
-                      { "type": "object", "required": false },
                       {
-                        "type": "array",
+                        "type": "object",
                         "required": false,
-                        "itemType": "object"
-                      }
+                        "description": "Sync transaction metadata stored on entities for offline and realtime support.",
+                        "properties": {
+                          "mutationId": { "type": "string", "required": true },
+                          "sourceId": { "type": "string", "required": true },
+                          "version": { "type": "integer", "required": true },
+                          "fieldVersions": { "type": "object", "required": true }
+                        },
+                        "ref": "#/components/schemas/StxBase"
+                      },
+                      { "type": "null", "required": false }
+                    ]
+                  },
+                  "seq": {
+                    "type": ["integer", "null"],
+                    "required": true,
+                    "minimum": -2147483648,
+                    "maximum": 2147483647
+                  },
+                  "error": {
+                    "required": true,
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "required": false,
+                        "description": "Error info for failed CDC activities (dead letters).",
+                        "properties": {
+                          "lsn": { "type": "string", "required": true },
+                          "message": { "type": "string", "required": true },
+                          "code": {
+                            "type": ["string", "null"],
+                            "required": false
+                          },
+                          "retryCount": { "type": "number", "required": true },
+                          "resolved": { "type": "boolean", "required": false }
+                        },
+                        "ref": "#/components/schemas/ActivityError"
+                      },
+                      { "type": "null", "required": false }
                     ]
                   }
                 },
@@ -70,6 +127,45 @@
             "total": { "type": "number", "required": true }
           },
           "contentType": "application/json"
+        },
+        "example": {
+          "items": [
+            {
+              "id": "p8d07imsvjbtqtl3rtjgxd9x",
+              "tenantId": "n03u76",
+              "userId": "eo7z71y60a882cwpxtanaxns",
+              "entityType": "page",
+              "resourceType": null,
+              "action": "delete",
+              "tableName": "attachments",
+              "type": "attachment.deleted",
+              "entityId": "9nes1yx645yb0gleyvjbbm5p",
+              "createdAt": "2024-11-21T04:00:59.122Z",
+              "changedKeys": null,
+              "stx": null,
+              "seq": 511,
+              "error": null,
+              "organizationId": "weg2q4gqa3vx9cfyey6mqh9h"
+            },
+            {
+              "id": "5ogh3yr2b2dbwf7b9eckajcl",
+              "tenantId": "xs8vay",
+              "userId": "zrul7vmeyahbgyu01sr6utec",
+              "entityType": "page",
+              "resourceType": null,
+              "action": "update",
+              "tableName": "organizations",
+              "type": "organization.updated",
+              "entityId": "3o02wpa56tpd77kpi37syiav",
+              "createdAt": "2024-10-29T08:46:20.790Z",
+              "changedKeys": ["slug", "name", "email"],
+              "stx": null,
+              "seq": 810,
+              "error": null,
+              "organizationId": "5nr6k4huj5qv4k6bwmvl0e44"
+            }
+          ],
+          "total": 2
         }
       },
       {
@@ -111,7 +207,11 @@
     "request": {
       "query": {
         "properties": {
-          "q": { "type": "string", "required": false },
+          "q": {
+            "type": "string",
+            "required": false,
+            "maxLength": 255
+          },
           "sort": {
             "type": "string",
             "required": false,
@@ -124,7 +224,11 @@
           },
           "offset": { "type": "string", "required": false },
           "limit": { "type": "string", "required": false },
-          "userId": { "type": "string", "required": false },
+          "userId": {
+            "type": ["string", "null"],
+            "required": false,
+            "maxLength": 50
+          },
           "entityType": {
             "type": "string",
             "required": false,
@@ -133,16 +237,28 @@
           "resourceType": {
             "type": "string",
             "required": false,
-            "enum": ["request", "membership"]
+            "enum": ["request", "membership", "inactive_membership", "tenant"]
           },
           "action": {
             "type": "string",
             "required": false,
             "enum": ["create", "update", "delete"]
           },
-          "tableName": { "type": "string", "required": false },
-          "type": { "type": "string", "required": false },
-          "entityId": { "type": "string", "required": false }
+          "tableName": {
+            "type": "string",
+            "required": false,
+            "maxLength": 255
+          },
+          "type": {
+            "type": "string",
+            "required": false,
+            "maxLength": 255
+          },
+          "entityId": {
+            "type": ["string", "null"],
+            "required": false,
+            "maxLength": 50
+          }
         }
       }
     }

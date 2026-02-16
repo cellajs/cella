@@ -15,6 +15,10 @@ export const env = createEnv({
       .string()
       .default('false')
       .transform((v) => v === 'true'),
+    VITE_DEBUG_UI: z
+      .string()
+      .default('false')
+      .transform((v) => v === 'true'),
   },
   clientPrefix: 'VITE_',
   runtimeEnv: import.meta.env,

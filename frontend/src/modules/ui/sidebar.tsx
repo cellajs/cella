@@ -18,10 +18,6 @@ import { cn } from '~/utils/cn';
  * @link https://ui.shadcn.com/docs/components/sidebar
  */
 
-const SIDEBAR_WIDTH = '12rem';
-const SIDEBAR_WIDTH_ICON = '4rem';
-const SIDEBAR_KEYBOARD_SHORTCUT = 'b';
-
 type SidebarState = 'expanded' | 'collapsed';
 
 type UseSidebarReturn = {
@@ -33,7 +29,6 @@ type UseSidebarReturn = {
 };
 
 /**
- * TODO: Not used?
  * Hook to access sidebar state from the navigation store.
  * No provider required - uses the global navigation store.
  *
@@ -53,19 +48,6 @@ function useSidebar(): UseSidebarReturn {
     setKeepMenuOpen(!keepMenuOpen);
   };
 
-  // Keyboard shortcut to toggle sidebar
-  React.useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === SIDEBAR_KEYBOARD_SHORTCUT && (event.metaKey || event.ctrlKey)) {
-        event.preventDefault();
-        toggleSidebar();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [toggleSidebar]);
-
   // With nested sidebars, we always use 'collapsed' state for the outer sidebar
   // since it just shows icons. The content panel visibility is controlled separately.
   const state: SidebarState = 'collapsed';
@@ -84,13 +66,7 @@ function SidebarWrapper({ className, style, children, ...props }: React.Componen
     <TooltipProvider delayDuration={0}>
       <div
         data-slot="sidebar-wrapper"
-        style={
-          {
-            '--sidebar-width': SIDEBAR_WIDTH,
-            '--sidebar-width-icon': SIDEBAR_WIDTH_ICON,
-            ...style,
-          } as React.CSSProperties
-        }
+        style={style}
         className={cn('group/sidebar-wrapper has-data-[variant=inset]:bg-sidebar flex min-h-svh w-full', className)}
         {...props}
       >

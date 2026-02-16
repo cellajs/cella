@@ -1,6 +1,6 @@
-import { appConfig } from 'config';
 import i18n, { type InitOptions } from 'i18next';
 import { initReactI18next } from 'react-i18next';
+import { appConfig } from 'shared';
 import locales from '#/lib/i18n-locales';
 
 export type { ParseKeys } from 'i18next';

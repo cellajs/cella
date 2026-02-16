@@ -1,12 +1,12 @@
-import { appConfig } from 'config';
 import { eq } from 'drizzle-orm';
 import { testClient } from 'hono/testing';
+import { appConfig } from 'shared';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { db } from '#/db/db';
+import { unsafeInternalDb as db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { passwordsTable } from '#/db/schema/passwords';
 import { usersTable } from '#/db/schema/users';
-import { mockEmail, mockPassword, mockUser } from '../../mocks';
+import { mockEmail, mockPassword, mockUser } from '../../mocks/mock-user';
 import { pastIsoDate } from '../../mocks/utils';
 import { defaultHeaders, signUpUser } from '../fixtures';
 import { createPasswordUser, ErrorResponse, enableMFAForUser, parseResponse, verifyUserEmail } from '../helpers';

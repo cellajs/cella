@@ -1,24 +1,24 @@
-import { appConfig } from 'config';
 import { PartyPopperIcon, TrashIcon, XSquareIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
+import type { Request } from '~/api.gen';
 import { getRequests } from '~/api.gen';
-import ColumnsView from '~/modules/common/data-table/columns-view';
-import Export from '~/modules/common/data-table/export';
+import { ColumnsView } from '~/modules/common/data-table/columns-view';
+import { Export } from '~/modules/common/data-table/export';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
 import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
-import TableCount from '~/modules/common/data-table/table-count';
-import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
-import TableSearch from '~/modules/common/data-table/table-search';
+import { TableCount } from '~/modules/common/data-table/table-count';
+import { FilterBarActions, FilterBarSearch, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
+import { TableSearch } from '~/modules/common/data-table/table-search';
 import type { BaseTableBarProps, CallbackArgs } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
 import { toaster } from '~/modules/common/toaster/service';
-import DeleteRequests from '~/modules/requests/delete-requests';
+import { DeleteRequests } from '~/modules/requests/delete-requests';
 import { requestsKeys, useSendApprovalInviteMutation } from '~/modules/requests/query';
-import type { Request, RequestsRouteSearchParams } from '~/modules/requests/types';
-import { useInfiniteQueryTotal } from '~/query/hooks/use-infinite-query-total';
-import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
+import type { RequestsRouteSearchParams } from '~/modules/requests/types';
+import { useInfiniteQueryTotal, useMutateQueryData } from '~/query/basic';
 
 type RequestsTableBarProps = BaseTableBarProps<Request, RequestsRouteSearchParams>;
 
@@ -149,9 +149,9 @@ export const RequestsTableBar = ({
 
         <div className="sm:grow" />
 
-        <FilterBarContent>
+        <FilterBarSearch>
           <TableSearch name="requestSearch" value={q} setQuery={onSearch} />
-        </FilterBarContent>
+        </FilterBarSearch>
       </TableFilterBar>
 
       {/* Columns view */}

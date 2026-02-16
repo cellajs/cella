@@ -1,16 +1,17 @@
-import { db, migrateConfig } from '#/db/db';
+import { unsafeInternalDb as db, migrateConfig, migrationDb } from '#/db/db';
 import docs from '#/docs/docs';
 import '#/lib/i18n';
 import { serve } from '@hono/node-server';
 import * as Sentry from '@sentry/node';
 import { nodeProfilingIntegration } from '@sentry/profiling-node';
-import { appConfig } from 'config';
 import { migrate as pgMigrate } from 'drizzle-orm/node-postgres/migrator';
 import type { PgliteDatabase } from 'drizzle-orm/pglite';
 import { migrate as pgliteMigrate } from 'drizzle-orm/pglite/migrator';
 import pc from 'picocolors';
-import { eventBus } from '#/lib/event-bus';
+import { appConfig } from 'shared';
 import app from '#/routes';
+import { registerCacheInvalidation } from '#/sync/cache-invalidation';
+import { cdcWebSocketServer } from '#/sync/cdc-websocket';
 import { ascii } from '#/utils/ascii';
 import { env } from './env';
 
@@ -39,24 +40,32 @@ Sentry.init({
 });
 
 const main = async () => {
-  // Migrate db
+  // Create db roles if needed (dev only), then migrate
   if (isPGliteDatabase(db)) {
     await pgliteMigrate(db, migrateConfig);
+  } else if (migrationDb) {
+    const { createDbRoles } = await import('../scripts/db/create-db-roles');
+    await createDbRoles();
+    await pgMigrate(migrationDb, migrateConfig);
   } else {
-    await pgMigrate(db, migrateConfig);
+    console.error('DATABASE_ADMIN_URL required for migrations');
+    process.exit(1);
   }
 
-  // Start event bus (listens to CDC activities via pg NOTIFY)
-  await eventBus.start();
+  // Register entity cache invalidation hook
+  registerCacheInvalidation();
 
-  // Start server
-  serve(
+  // Start server with WebSocket support for CDC Worker
+  const server = serve(
     {
       fetch: app.fetch,
       hostname: '0.0.0.0',
       port: Number(env.PORT ?? '4000'),
     },
     async (info) => {
+      // Attach CDC WebSocket server to HTTP server
+      cdcWebSocketServer.attachToServer(server);
+
       const tunnelUrl = await startTunnel(info);
 
       ascii();

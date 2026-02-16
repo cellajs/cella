@@ -1,14 +1,14 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { encodeBase32UpperCase } from '@oslojs/encoding';
 import { createTOTPKeyURI } from '@oslojs/otp';
-import { appConfig } from 'config';
 import { eq } from 'drizzle-orm';
-import { db } from '#/db/db';
+import { appConfig } from 'shared';
+import { unsafeInternalDb as db } from '#/db/db';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { totpsTable } from '#/db/schema/totps';
 import { usersTable } from '#/db/schema/users';
-import { type Env, getContextUser } from '#/lib/context';
-import { AppError } from '#/lib/errors';
+import { type Env } from '#/lib/context';
+import { AppError } from '#/lib/error';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { validateConfirmMfaToken } from '#/modules/auth/general/helpers/mfa';
 import { setUserSession } from '#/modules/auth/general/helpers/session';
@@ -17,8 +17,6 @@ import { default as authTotpRoutes, default as authTotpsRoutes } from '#/modules
 import { defaultHook } from '#/utils/default-hook';
 import { TimeSpan } from '#/utils/time-span';
 
-const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
-
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 const authTotpsRouteHandlers = app
@@ -26,7 +24,7 @@ const authTotpsRouteHandlers = app
    * Create TOTP key
    */
   .openapi(authTotpsRoutes.generateTotpKey, async (ctx) => {
-    const user = getContextUser();
+    const user = ctx.var.user;
 
     // Generate a 20-byte random secret and encode it as Base32
     const secretBytes = crypto.getRandomValues(new Uint8Array(20));
@@ -53,23 +51,20 @@ const authTotpsRouteHandlers = app
    */
   .openapi(authTotpsRoutes.createTotp, async (ctx) => {
     const { code } = ctx.req.valid('json');
-    const user = getContextUser();
+    const user = ctx.var.user;
 
     // Retrieve the encoded totp secret from cookie
     const encodedSecret = await getAuthCookie(ctx, 'totp-challenge');
-    if (!encodedSecret) throw new AppError({ status: 400, type: 'invalid_credentials', severity: 'warn' });
+    if (!encodedSecret) throw new AppError(400, 'invalid_credentials', 'warn');
 
     // Verify TOTP code
     try {
       const isValid = signInWithTotp(code, encodedSecret);
-      if (!isValid) throw new AppError({ status: 403, type: 'invalid_token', severity: 'warn' });
+      if (!isValid) throw new AppError(403, 'invalid_token', 'warn');
     } catch (error) {
       if (error instanceof AppError) throw error;
 
-      throw new AppError({
-        status: 500,
-        type: 'invalid_credentials',
-        severity: 'error',
+      throw new AppError(500, 'invalid_credentials', 'error', {
         ...(error instanceof Error ? { originalError: error } : {}),
       });
     }
@@ -83,7 +78,7 @@ const authTotpsRouteHandlers = app
    * Unlink TOTP
    */
   .openapi(authTotpsRoutes.deleteTotp, async (ctx) => {
-    const user = getContextUser();
+    const user = ctx.var.user;
 
     // Remove all totps linked to this user's email
     await db.delete(totpsTable).where(eq(totpsTable.userId, user.id));
@@ -110,8 +105,8 @@ const authTotpsRouteHandlers = app
     const strategy = 'totp';
 
     // Verify if strategy allowed
-    if (!enabledStrategies.includes(strategy)) {
-      throw new AppError({ status: 400, type: 'forbidden_strategy', severity: 'error', meta: { strategy } });
+    if (!appConfig.enabledAuthStrategies.includes(strategy)) {
+      throw new AppError(400, 'forbidden_strategy', 'error', { meta: { strategy } });
     }
 
     // Define strategy and session type for metadata/logging purposes
@@ -125,10 +120,7 @@ const authTotpsRouteHandlers = app
     } catch (error) {
       if (error instanceof AppError) throw error;
 
-      throw new AppError({
-        status: 500,
-        type: 'totp_verification_failed',
-        severity: 'error',
+      throw new AppError(500, 'totp_verification_failed', 'error', {
         meta,
         ...(error instanceof Error ? { originalError: error } : {}),
       });

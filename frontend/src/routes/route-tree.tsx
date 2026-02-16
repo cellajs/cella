@@ -1,92 +1,52 @@
-import type { NavItemId } from '~/modules/navigation/types';
 import {
-  AuthErrorRoute,
-  AuthenticateRoute,
+  // Layouts
+  AppLayoutRoute,
   AuthLayoutRoute,
-  CreatePasswordWithTokenRoute,
-  EmailVerificationRoute,
-  MfaRoute,
-  RequestPasswordRoute,
-  SignOutRoute,
-  UnsubscribedRoute,
-} from '~/routes/auth-routes';
-import { AppLayoutRoute, ErrorNoticeRoute, PublicLayoutRoute, RootRoute } from '~/routes/base-routes';
-import {
+  // Base children segments
+  baseAuthChildren,
+  baseDocsChildren,
+  baseOrganizationChildren,
+  basePublicChildren,
+  baseSystemChildren,
   DocsLayoutRoute,
-  DocsOperationsRoute,
-  DocsOperationsTableRoute,
-  DocsOverviewRoute,
-  DocsPageRoute,
-  DocsPagesRoute,
-  DocsSchemasRoute,
-} from '~/routes/docs-routes';
-import { HomeAliasRoute, HomeRoute, WelcomeRoute } from '~/routes/home-routes';
-import { AboutRoute, AccessibilityRoute, ContactRoute, LegalIndexRoute, LegalRoute } from '~/routes/marketing-routes';
-import {
-  OrganizationAttachmentsRoute,
-  OrganizationMembersRoute,
+  // Individual routes
+  HomeAliasRoute,
+  HomeRoute,
+  OrganizationLayoutRoute,
   OrganizationRoute,
-  OrganizationSettingsRoute,
-} from '~/routes/organization-routes';
-import {
-  MetricsRoute,
-  OrganizationsTableRoute,
-  RequestsTableRoute,
+  PublicLayoutRoute,
+  RootRoute,
   SystemRoute,
-  UsersTableRoute,
-} from '~/routes/system-routes';
-import { UserAccountRoute, UserInOrganizationProfileRoute, UserProfileRoute } from '~/routes/user-routes';
+  UserAccountRoute,
+  WelcomeRoute,
+} from '~/routes/route-tree.base';
 
-//App-specific route imports here
-//...
+// App-specific route imports
+// ..
 
 /**
- * The route tree for the entire app
+ * The route tree for the entire app.
+ * Forks extend by spreading base segments and adding routes inline.
  */
 export const routeTree = RootRoute.addChildren([
   PublicLayoutRoute.addChildren([
-    AboutRoute,
-    ContactRoute,
-    DocsLayoutRoute.addChildren([
-      DocsOperationsRoute,
-      DocsOperationsTableRoute,
-      DocsOverviewRoute,
-      DocsSchemasRoute,
-      DocsPagesRoute,
-      DocsPageRoute,
-    ]),
-    LegalIndexRoute,
-    LegalRoute,
-    AccessibilityRoute,
-    ErrorNoticeRoute,
-    SignOutRoute,
-    AuthLayoutRoute.addChildren([
-      AuthenticateRoute,
-      MfaRoute,
-      RequestPasswordRoute,
-      CreatePasswordWithTokenRoute,
-      EmailVerificationRoute,
-      UnsubscribedRoute,
-      AuthErrorRoute,
-    ]),
+    ...basePublicChildren,
+    DocsLayoutRoute.addChildren([...baseDocsChildren]),
+    AuthLayoutRoute.addChildren([...baseAuthChildren]),
+    // Fork public routes here
   ]),
   AppLayoutRoute.addChildren([
     HomeRoute,
     HomeAliasRoute,
     WelcomeRoute,
-    SystemRoute.addChildren([UsersTableRoute, OrganizationsTableRoute, RequestsTableRoute, MetricsRoute]),
-    UserProfileRoute,
-    UserInOrganizationProfileRoute,
+    SystemRoute.addChildren([...baseSystemChildren]),
     UserAccountRoute,
-    OrganizationRoute.addChildren([OrganizationMembersRoute, OrganizationAttachmentsRoute, OrganizationSettingsRoute]),
-
-    // App-specific routes here
-    // ...
+    OrganizationLayoutRoute.addChildren([
+      OrganizationRoute.addChildren([
+        ...baseOrganizationChildren,
+        // Fork organization routes here
+      ]),
+    ]),
+    // Fork app routes here
   ]),
 ]);
-
-declare module '@tanstack/react-router' {
-  interface StaticDataRouteOption {
-    floatingNavButtons?: Array<NavItemId>;
-  }
-}

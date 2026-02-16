@@ -18,6 +18,9 @@ interface ResetBlockTypeItemProp {
   headingLevels: NonNullable<CommonBlockNoteProps['headingLevels']>;
 }
 
+/**
+ * Renders a block type selector item for the side menu.
+ */
 export function ResetBlockTypeItem({ editor, allowedTypes, headingLevels }: ResetBlockTypeItemProp) {
   // biome-ignore lint/style/noNonNullAssertion: required by author
   const Components = useComponentsContext()!;
@@ -43,7 +46,7 @@ export function ResetBlockTypeItem({ editor, allowedTypes, headingLevels }: Rese
   }, [editor, dict, selectItemsType, headingLevels]);
 
   // Determine if the current block type should be shown
-  const shouldShow = useMemo(() => filteredItems.some((item) => item.type === block.type), [block.type, filteredItems]);
+  const shouldShow = filteredItems.some((item) => item.type === block.type);
 
   // Handle item click for updating the block type
   const handleItemClick = (item: BlockTypeSelectItem & { oneInstanceOnly?: boolean }) => {

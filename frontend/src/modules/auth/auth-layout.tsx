@@ -1,17 +1,18 @@
 import { Link, Outlet } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
-import useMounted from '~/hooks/use-mounted';
+import { useMountedState } from '~/hooks/use-mounted-state';
 import { type FooterLinkProps, FooterLinks } from '~/modules/common/app/app-footer';
-import Logo from '~/modules/common/logo';
+import { Logo } from '~/modules/common/logo';
 
-// Auth footer links
-const authFooterLinks: FooterLinkProps[] = [{ id: 'about', href: '/about' }];
+const authFooterLinks: FooterLinkProps[] = [
+  { id: 'sign_in', href: '/authenticate' },
+  { id: 'about', href: '/about' },
+];
 
-// Lazy load bg animation
 const BgAnimation = lazy(() => import('~/modules/common/bg-animation'));
 
-const AuthLayout = () => {
-  const { hasStarted, hasWaited } = useMounted();
+export function AuthLayout() {
+  const { hasStarted, hasWaited } = useMountedState();
 
   return (
     <div
@@ -34,11 +35,9 @@ const AuthLayout = () => {
             <Logo height={34} />
           </Link>
 
-          <FooterLinks className="max-sm:hidden justify-center" links={authFooterLinks} />
+          <FooterLinks className="justify-center" links={authFooterLinks} />
         </div>
       </div>
     </div>
   );
-};
-
-export default AuthLayout;
+}

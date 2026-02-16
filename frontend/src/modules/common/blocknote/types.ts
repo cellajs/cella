@@ -54,6 +54,7 @@ export type IconType = (
 ) => React.ReactElement;
 
 export type BaseUppyFilePanelProps = {
+  tenantId: string;
   organizationId: string;
   isPublic?: boolean;
   onComplete?: (result: UploadedUppyFile<'attachment'>) => void;
@@ -75,6 +76,8 @@ export type CommonBlockNoteProps = {
   excludeBlockTypes?: CustomBlockRegularTypes[];
   excludeFileBlockTypes?: CustomBlockFileTypes[];
   members?: Member[]; // for mentions
+  /** Whether embedded files are public (no auth needed). Affects URL resolution in all modes. */
+  publicFiles?: boolean;
   onFocus?: () => void;
   onEscapeClick?: () => void;
   onEnterClick?: () => void;

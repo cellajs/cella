@@ -1,9 +1,9 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { generateCodeVerifier, generateState, OAuth2RequestError } from 'arctic';
-import { appConfig, type EnabledOAuthProvider } from 'config';
+import { appConfig, type EnabledOAuthProvider } from 'shared';
 import { env } from '#/env';
 import { type Env } from '#/lib/context';
-import { AppError } from '#/lib/errors';
+import { AppError } from '#/lib/error';
 import { getAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { handleOAuthCallback } from '#/modules/auth/oauth/helpers/callback';
 import { handleOAuthInitiation, type OAuthCookiePayload } from '#/modules/auth/oauth/helpers/initiation';
@@ -42,11 +42,8 @@ const authOAuthRouteHandlers = app
     const strategy = 'github' as EnabledOAuthProvider;
 
     if (!appConfig.enabledAuthStrategies.includes('oauth') || !appConfig.enabledOAuthProviders.includes(strategy)) {
-      throw new AppError({
-        status: 400,
-        type: 'unsupported_oauth',
-        severity: 'error',
-        shouldRedirect: true,
+      throw new AppError(400, 'unsupported_oauth', 'error', {
+        willRedirect: appConfig.mode !== 'test',
         meta: { errorPagePath: '/auth/error', strategy },
       });
     }
@@ -65,11 +62,8 @@ const authOAuthRouteHandlers = app
     // Check if Google OAuth is enabled
     const strategy = 'google' as EnabledOAuthProvider;
     if (!appConfig.enabledAuthStrategies.includes('oauth') || !appConfig.enabledOAuthProviders.includes(strategy)) {
-      throw new AppError({
-        status: 400,
-        type: 'unsupported_oauth',
-        severity: 'error',
-        shouldRedirect: true,
+      throw new AppError(400, 'unsupported_oauth', 'error', {
+        willRedirect: appConfig.mode !== 'test',
         meta: { errorPagePath: '/auth/error', strategy },
       });
     }
@@ -89,11 +83,8 @@ const authOAuthRouteHandlers = app
     // Check if Microsoft OAuth is enabled
     const strategy = 'microsoft' as EnabledOAuthProvider;
     if (!appConfig.enabledAuthStrategies.includes('oauth') || !appConfig.enabledOAuthProviders.includes(strategy)) {
-      throw new AppError({
-        status: 400,
-        type: 'unsupported_oauth',
-        severity: 'error',
-        shouldRedirect: true,
+      throw new AppError(400, 'unsupported_oauth', 'error', {
+        willRedirect: appConfig.mode !== 'test',
         meta: { errorPagePath: '/auth/error', strategy },
       });
     }
@@ -128,11 +119,8 @@ const authOAuthRouteHandlers = app
 
     // When something went wrong during Github OAuth, fail early.
     if (error || !code) {
-      throw new AppError({
-        status: 400,
-        type: 'oauth_failed',
-        severity: 'error',
-        shouldRedirect: true,
+      throw new AppError(400, 'oauth_failed', 'error', {
+        willRedirect: appConfig.mode !== 'test',
         meta: { errorPagePath: '/auth/error', strategy },
       });
     }
@@ -142,11 +130,8 @@ const authOAuthRouteHandlers = app
     const cookiePayload: OAuthCookiePayload | null = oauthCookie ? JSON.parse(oauthCookie) : null;
 
     if (!state || !cookiePayload) {
-      throw new AppError({
-        status: 401,
-        type: 'invalid_state',
-        severity: 'error',
-        shouldRedirect: true,
+      throw new AppError(401, 'invalid_state', 'error', {
+        willRedirect: appConfig.mode !== 'test',
         meta: { errorPagePath: '/auth/error', strategy },
       });
     }
@@ -172,11 +157,8 @@ const authOAuthRouteHandlers = app
 
       // Handle known OAuth validation errors (e.g. bad token, revoked code)
       const type = error instanceof OAuth2RequestError ? 'invalid_credentials' : 'oauth_failed';
-      throw new AppError({
-        status: 401,
-        type,
-        severity: 'error',
-        shouldRedirect: true,
+      throw new AppError(401, type, 'error', {
+        willRedirect: appConfig.mode !== 'test',
         meta: { errorPagePath: '/auth/error', strategy },
         ...(error instanceof Error ? { originalError: error } : {}),
       });
@@ -195,11 +177,8 @@ const authOAuthRouteHandlers = app
     const cookiePayload: OAuthCookiePayload | null = oauthCookie ? JSON.parse(oauthCookie) : null;
 
     if (!code || !cookiePayload || !cookiePayload.codeVerifier) {
-      throw new AppError({
-        status: 401,
-        type: 'invalid_state',
-        severity: 'error',
-        shouldRedirect: true,
+      throw new AppError(401, 'invalid_state', 'error', {
+        willRedirect: appConfig.mode !== 'test',
         meta: { errorPagePath: '/auth/error', strategy },
       });
     }
@@ -220,11 +199,8 @@ const authOAuthRouteHandlers = app
 
       // Handle known OAuth validation errors (e.g. bad token, revoked code)
       const type = error instanceof OAuth2RequestError ? 'invalid_credentials' : 'oauth_failed';
-      throw new AppError({
-        status: 401,
-        type,
-        severity: 'error',
-        shouldRedirect: true,
+      throw new AppError(401, type, 'error', {
+        willRedirect: appConfig.mode !== 'test',
         meta: { errorPagePath: '/auth/error', strategy },
         ...(error instanceof Error ? { originalError: error } : {}),
       });
@@ -242,11 +218,8 @@ const authOAuthRouteHandlers = app
     const cookiePayload: OAuthCookiePayload | null = oauthCookie ? JSON.parse(oauthCookie) : null;
 
     if (!code || !cookiePayload || !cookiePayload.codeVerifier) {
-      throw new AppError({
-        status: 401,
-        type: 'invalid_state',
-        severity: 'error',
-        shouldRedirect: true,
+      throw new AppError(401, 'invalid_state', 'error', {
+        willRedirect: appConfig.mode !== 'test',
         meta: { errorPagePath: '/auth/error', strategy },
       });
     }
@@ -267,11 +240,8 @@ const authOAuthRouteHandlers = app
 
       // Handle known OAuth validation errors (e.g. bad token, revoked code)
       const type = error instanceof OAuth2RequestError ? 'invalid_credentials' : 'oauth_failed';
-      throw new AppError({
-        status: 401,
-        type,
-        severity: 'error',
-        shouldRedirect: true,
+      throw new AppError(401, type, 'error', {
+        willRedirect: appConfig.mode !== 'test',
         meta: { errorPagePath: '/auth/error', strategy },
         ...(error instanceof Error ? { originalError: error } : {}),
       });

@@ -1,13 +1,17 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/docs/x-routes';
-import { isPublicAccess } from '#/middlewares/guard';
+import { publicGuard } from '#/middlewares/guard';
 import { hasValidSingleUseToken } from '#/middlewares/has-valid-single-use-token';
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { emailEnumLimiter, passwordLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { emailBodySchema } from '#/modules/auth/general/general-schema';
 import { emailPasswordBodySchema } from '#/modules/auth/passwords/passwords-schema';
-import { cookieSchema, locationSchema, passwordSchema } from '#/utils/schema/common';
-import { errorResponseRefs } from '#/utils/schema/error-responses';
+import { cookieSchema, errorResponseRefs, locationSchema, passwordSchema } from '#/schemas';
+import {
+  mockCreatePasswordResponse,
+  mockSignInResponse,
+  mockSignUpWithTokenResponse,
+} from '../../../../mocks/mock-auth';
 
 const authPasswordsRoutes = {
   /**
@@ -17,7 +21,7 @@ const authPasswordsRoutes = {
     operationId: 'signUp',
     method: 'post',
     path: '/sign-up',
-    xGuard: isPublicAccess,
+    xGuard: publicGuard,
     xRateLimiter: [spamLimiter, emailEnumLimiter],
     middleware: [isNoBot],
     tags: ['auth'],
@@ -48,7 +52,7 @@ const authPasswordsRoutes = {
     operationId: 'signUpWithToken',
     method: 'post',
     path: '/sign-up/{tokenId}',
-    xGuard: isPublicAccess,
+    xGuard: publicGuard,
     xRateLimiter: [tokenLimiter('signup_invitation'), emailEnumLimiter],
     middleware: [hasValidSingleUseToken('invitation')],
     tags: ['auth'],
@@ -65,7 +69,12 @@ const authPasswordsRoutes = {
       201: {
         description: 'User signed up',
         headers: z.object({ 'Set-Cookie': cookieSchema }),
-        content: { 'application/json': { schema: z.object({ membershipInvite: z.boolean() }) } },
+        content: {
+          'application/json': {
+            schema: z.object({ membershipInvite: z.boolean() }),
+            example: mockSignUpWithTokenResponse(),
+          },
+        },
       },
       ...errorResponseRefs,
     },
@@ -77,7 +86,7 @@ const authPasswordsRoutes = {
     operationId: 'requestPassword',
     method: 'post',
     path: '/request-password',
-    xGuard: isPublicAccess,
+    xGuard: publicGuard,
     xRateLimiter: [spamLimiter, emailEnumLimiter],
     tags: ['auth'],
     summary: 'Request new password',
@@ -102,7 +111,7 @@ const authPasswordsRoutes = {
     operationId: 'createPassword',
     method: 'post',
     path: '/create-password/{tokenId}',
-    xGuard: isPublicAccess,
+    xGuard: publicGuard,
     xRateLimiter: tokenLimiter('password-reset'),
     middleware: [hasValidSingleUseToken('password-reset')],
     tags: ['auth'],
@@ -119,7 +128,9 @@ const authPasswordsRoutes = {
     responses: {
       201: {
         description: 'Password created',
-        content: { 'application/json': { schema: z.object({ mfa: z.boolean() }) } },
+        content: {
+          'application/json': { schema: z.object({ mfa: z.boolean() }), example: mockCreatePasswordResponse() },
+        },
       },
       ...errorResponseRefs,
     },
@@ -131,7 +142,7 @@ const authPasswordsRoutes = {
     operationId: 'signIn',
     method: 'post',
     path: '/sign-in',
-    xGuard: isPublicAccess,
+    xGuard: publicGuard,
     xRateLimiter: passwordLimiter,
     tags: ['auth'],
     summary: 'Sign in with password',
@@ -149,6 +160,7 @@ const authPasswordsRoutes = {
         content: {
           'application/json': {
             schema: z.object({ emailVerified: z.boolean(), mfa: z.boolean().optional() }),
+            example: mockSignInResponse(),
           },
         },
       },

@@ -28,7 +28,7 @@ export const MenuSheetItemsEdit = ({
 
   const filteredItems = data
     .filter((i) => (isArchived ? i.membership.archived : !i.membership.archived))
-    .sort((a, b) => a.membership.order - b.membership.order);
+    .sort((a, b) => a.membership.displayOrder - b.membership.displayOrder);
 
   const toggleSubmenuVisibility = (itemId: string) => {
     setSubmenuVisibility((prevState) => ({

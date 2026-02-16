@@ -1,7 +1,7 @@
 import type { AvatarProps } from '@radix-ui/react-avatar';
-import type { EntityType } from 'config';
 import type { LucideIcon } from 'lucide-react';
 import { memo } from 'react';
+import type { EntityType } from 'shared';
 import { Avatar, AvatarFallback, AvatarImage } from '~/modules/ui/avatar';
 import { cn } from '~/utils/cn';
 import { numberToColorClass } from '~/utils/number-to-color-class';
@@ -15,7 +15,7 @@ export interface AvatarWrapProps extends AvatarProps {
   icon?: LucideIcon;
 }
 
-const AvatarWrap = memo(({ type, id, name, icon: Icon, url, className, ...props }: AvatarWrapProps) => {
+function AvatarWrapBase({ type, id, name, icon: Icon, url, className, ...props }: AvatarWrapProps) {
   if (Icon)
     return (
       <Avatar
@@ -51,6 +51,6 @@ const AvatarWrap = memo(({ type, id, name, icon: Icon, url, className, ...props 
       )}
     </Avatar>
   );
-});
+}
 
-export { AvatarWrap };
+export const AvatarWrap = memo(AvatarWrapBase);

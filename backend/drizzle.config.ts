@@ -1,20 +1,23 @@
 import { defineConfig } from 'drizzle-kit';
-import { dbConfig } from './src/db/db';
-import { env } from './src/env';
 
-const extendConfig = env.DEV_MODE === 'basic' ? { driver: 'pglite' } : {};
+const devMode = process.env.DEV_MODE || 'core';
+const databaseUrl = process.env.DATABASE_URL || '';
+const extendConfig = devMode === 'basic' ? { driver: 'pglite' as const } : {};
 
 /**
  * Drizzle configuration.
  * @link https://orm.drizzle.team/docs/drizzle-config-file
  */
 export default defineConfig({
-  schema: './src/db/schema/*',
+  schema: './src/db/schema/index.ts',
   out: './drizzle',
   dialect: 'postgresql',
-  casing: dbConfig.casing,
+  casing: 'snake_case',
+  entities: {
+    roles: true,
+  },
   ...extendConfig,
   dbCredentials: {
-    url: env.DEV_MODE === 'basic' ? './.db' : env.DATABASE_URL,
+    url: devMode === 'basic' ? './.db' : databaseUrl,
   },
 });

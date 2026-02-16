@@ -187,8 +187,11 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
           }
         }
 
-        // Check if any response has an example
-        const hasExample = responses.some((r) => r.example !== undefined);
+        // Check if any success response (2xx) has an example
+        const hasExample = responses.some((r) => r.status >= 200 && r.status < 300 && r.example !== undefined);
+
+        // Check if any response has a body (schema)
+        const hasResponseBody = responses.some((r) => r.schema !== undefined);
 
         // Extract extensions dynamically based on extensionDefs
         const extensions: Record<string, string[]> = {};
@@ -210,6 +213,7 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
           deprecated: op.deprecated ?? false,
           hasParams: Object.keys(op.parameters ?? {}).length > 0,
           hasRequestBody: !!op.requestBody,
+          hasResponseBody,
           hasExample,
           extensions,
         };

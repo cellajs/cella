@@ -1,21 +1,20 @@
 import { createRoute } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
-import ErrorNotice from '~/modules/common/error-notice';
-import SystemPage from '~/modules/system/system-page';
+import { ErrorNotice } from '~/modules/common/error-notice';
+import { organizationsRouteSearchParamsSchema } from '~/modules/organization/search-params-schemas';
+import { requestsRouteSearchParamsSchema } from '~/modules/requests/search-params-schemas';
+import { SystemPage } from '~/modules/system/system-page';
+import { tenantsRouteSearchParamsSchema } from '~/modules/tenants/search-params-schema';
+import { usersRouteSearchParamsSchema } from '~/modules/user/search-params-schemas';
 import { AppLayoutRoute } from '~/routes/base-routes';
-import {
-  organizationsRouteSearchParamsSchema,
-  requestsRouteSearchParamsSchema,
-  usersRouteSearchParamsSchema,
-} from '~/routes/search-params-schemas';
 import appTitle from '~/utils/app-title';
-import { noDirectAccess } from '~/utils/no-direct-access'; // Lazy-loaded route components
+import { noDirectAccess } from '~/utils/no-direct-access';
 
-// Lazy-loaded route components
-const OrganizationsTable = lazy(() => import('~/modules/organizations/table'));
-const UsersTable = lazy(() => import('~/modules/users/table'));
-const RequestsTable = lazy(() => import('~/modules/requests/table'));
+const OrganizationsTable = lazy(() => import('~/modules/organization/table/organizations-table'));
+const UsersTable = lazy(() => import('~/modules/user/table/users-table'));
+const RequestsTable = lazy(() => import('~/modules/requests/table/requests-table'));
 const RequestsPerMinute = lazy(() => import('~/modules/metrics/requests-per-minute'));
+const TenantsTable = lazy(() => import('~/modules/tenants/table/tenants-table'));
 
 /**
  * System admin panel for platform-wide management.
@@ -28,7 +27,7 @@ export const SystemRoute = createRoute({
   },
   getParentRoute: () => AppLayoutRoute,
   component: () => <SystemPage />,
-  errorComponent: ({ error }) => <ErrorNotice level="app" error={error} />,
+  errorComponent: ({ error }) => <ErrorNotice boundary="app" error={error} />,
 });
 
 /**
@@ -37,10 +36,9 @@ export const SystemRoute = createRoute({
 export const UsersTableRoute = createRoute({
   path: '/users',
   validateSearch: usersRouteSearchParamsSchema,
-  staticData: { isAuth: true },
+  staticData: { isAuth: true, navTab: { id: 'users', label: 'common:users' } },
   head: () => ({ meta: [{ title: appTitle('Users') }] }),
   getParentRoute: () => SystemRoute,
-  loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
   component: () => (
     <Suspense>
       <UsersTable />
@@ -54,10 +52,9 @@ export const UsersTableRoute = createRoute({
 export const OrganizationsTableRoute = createRoute({
   path: '/organizations',
   validateSearch: organizationsRouteSearchParamsSchema,
-  staticData: { isAuth: true },
+  staticData: { isAuth: true, navTab: { id: 'organizations', label: 'common:organizations' } },
   head: () => ({ meta: [{ title: appTitle('Organizations') }] }),
   getParentRoute: () => SystemRoute,
-  loaderDeps: ({ search: { q, sort, order } }) => ({ q, sort, order }),
   component: () => (
     <Suspense>
       <OrganizationsTable />
@@ -71,10 +68,9 @@ export const OrganizationsTableRoute = createRoute({
 export const RequestsTableRoute = createRoute({
   path: '/requests',
   validateSearch: requestsRouteSearchParamsSchema,
-  staticData: { isAuth: true },
+  staticData: { isAuth: true, navTab: { id: 'requests', label: 'common:requests' } },
   head: () => ({ meta: [{ title: appTitle('Requests') }] }),
   getParentRoute: () => SystemRoute,
-  loaderDeps: ({ search: { q, sort, order } }) => ({ q, sort, order }),
   component: () => (
     <Suspense>
       <RequestsTable />
@@ -87,12 +83,28 @@ export const RequestsTableRoute = createRoute({
  */
 export const MetricsRoute = createRoute({
   path: '/metrics',
-  staticData: { isAuth: true },
+  staticData: { isAuth: true, navTab: { id: 'metrics', label: 'common:metrics' } },
   head: () => ({ meta: [{ title: appTitle('Metrics') }] }),
   getParentRoute: () => SystemRoute,
   component: () => (
     <Suspense>
       <RequestsPerMinute />
+    </Suspense>
+  ),
+});
+
+/**
+ * System tenants table for managing multi-tenant isolation.
+ */
+export const TenantsTableRoute = createRoute({
+  path: '/tenants',
+  validateSearch: tenantsRouteSearchParamsSchema,
+  staticData: { isAuth: true, navTab: { id: 'tenants', label: 'common:tenants' } },
+  head: () => ({ meta: [{ title: appTitle('Tenants') }] }),
+  getParentRoute: () => SystemRoute,
+  component: () => (
+    <Suspense>
+      <TenantsTable />
     </Suspense>
   ),
 });

@@ -176,7 +176,7 @@ jobs:
         run: pnpm --filter @cellajs/sync test
 
       - name: Run sync analysis (dry-run)
-        run: pnpm sync --sync-service analyze --yes
+        run: pnpm cella --sync-service analyze --yes
 
   # Generates draft release notes (for testing only)
   draft-release-notes:

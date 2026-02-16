@@ -1,6 +1,14 @@
 import { faker } from '@faker-js/faker';
 import type { AttachmentModel } from '#/db/schema/attachments';
-import { generateMockContextEntityIdColumns, mockNanoid, withFakerSeed } from './utils';
+import { mockBatchResponse } from './mock-common';
+import {
+  generateMockContextEntityIdColumns,
+  mockNanoid,
+  mockPaginated,
+  mockStx,
+  mockTenantId,
+  withFakerSeed,
+} from './utils';
 
 /**
  * Generates a mock attachment with all fields populated.
@@ -16,6 +24,7 @@ export const mockAttachment = (key = 'attachment:default'): AttachmentModel =>
 
     return {
       id: mockNanoid(),
+      tenantId: mockTenantId(),
       entityType: 'attachment' as const,
       name: filename,
       description: null,
@@ -34,9 +43,21 @@ export const mockAttachment = (key = 'attachment:default'): AttachmentModel =>
       createdBy: userId,
       modifiedAt: createdAt,
       modifiedBy: userId,
+      stx: mockStx(),
       ...generateMockContextEntityIdColumns('relatable'),
     };
   });
 
 /** Alias for API response examples (attachment schema matches DB schema) */
 export const mockAttachmentResponse = mockAttachment;
+
+/**
+ * Generates a paginated mock attachment list response for getAttachments endpoint.
+ */
+export const mockPaginatedAttachmentsResponse = (count = 2) => mockPaginated(mockAttachmentResponse, count);
+
+/**
+ * Generates a mock batch attachments response.
+ * Used for createAttachments endpoint examples.
+ */
+export const mockBatchAttachmentsResponse = (count = 2) => mockBatchResponse(mockAttachmentResponse, count);

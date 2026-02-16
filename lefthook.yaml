@@ -1,8 +1,16 @@
+---
+# Regenerate lock file and generated API files after merge/pull
+post-merge:
+  commands:
+    generate:
+      run: pnpm generate:openapi
+    install:
+      run: pnpm install --frozen-lockfile || pnpm install
 pre-commit:
   commands:
+    biome:
+      glob: '*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc}'
+      run: pnpm biome check --write --no-errors-on-unmatched --files-ignore-unknown=true {staged_files} && git update-index --again
     typescript:
       run: pnpm generate:openapi && pnpm ts
-    biome:
-      glob: "*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc}"
-      run: pnpm biome check --write --no-errors-on-unmatched --files-ignore-unknown=true {staged_files} && git update-index --again
   parallel: false

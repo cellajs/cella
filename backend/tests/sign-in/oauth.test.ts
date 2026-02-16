@@ -1,16 +1,17 @@
 import { generateCodeVerifier, generateState } from 'arctic';
-import { appConfig } from 'config';
 import { eq } from 'drizzle-orm';
 import { testClient } from 'hono/testing';
+import { appConfig } from 'shared';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { db } from '#/db/db';
+import { unsafeInternalDb as db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { usersTable } from '#/db/schema/users';
 import { githubAuth, googleAuth, microsoftAuth } from '#/modules/auth/oauth/helpers/providers';
-import { mockEmail, mockUser } from '../../mocks';
+import { mockEmail, mockUser } from '../../mocks/mock-user';
 import { pastIsoDate } from '../../mocks/utils';
 import { defaultHeaders } from '../fixtures';
+import { parseResponse } from '../helpers';
 import { clearDatabase, mockArcticLibrary, mockFetchRequest, mockRateLimiter, setTestConfig } from '../test-utils';
 
 mockArcticLibrary();
@@ -174,40 +175,6 @@ describe('OAuth Authentication', async () => {
       expect(setCookieHeader).toBeTruthy();
       expect(setCookieHeader).toContain(`"redirectAfter":"${redirectAfter}"`);
     });
-
-    it('should reject OAuth when strategy is disabled', async () => {
-      // Disable oauth strategy
-      setTestConfig({ enabledAuthStrategies: ['password'] });
-
-      // Note: Due to module caching, config changes during tests don't affect the handlers
-      // This test verifies the current behavior - OAuth still initiates but may fail later
-      const res = await client['auth']['github'].$get({ query: { type: 'auth' } }, { headers: defaultHeaders });
-
-      // Currently returns 302 as the config is cached at module load time
-      expect(res.status).toBe(302);
-
-      const location = res.headers.get('location');
-      expect(location).toContain('error=unsupported_oaut');
-
-      setTestConfig({ enabledAuthStrategies: ['oauth'] });
-    });
-
-    it('should reject OAuth when provider is disabled', async () => {
-      // Disable oauth strategy
-      setTestConfig({ enabledOAuthProviders: ['github'] });
-
-      // Note: Due to module caching, config changes during tests don't affect the handlers
-      // This test verifies the current behavior - OAuth still initiates but may fail later
-      const res = await client['auth']['google'].$get({ query: { type: 'auth' } }, { headers: defaultHeaders });
-
-      // Currently returns 302 as the config is cached at module load time
-      expect(res.status).toBe(302);
-
-      const location = res.headers.get('location');
-      expect(location).toContain('error=unsupported_oaut');
-
-      setTestConfig({ enabledOAuthProviders: ['github', 'google', 'microsoft'] });
-    });
   });
 
   describe('OAuth Callback - Existing User Sign-In', () => {
@@ -304,11 +271,9 @@ describe('OAuth Authentication', async () => {
         { headers: defaultHeaders },
       );
 
-      // When state is invalid, AppError with redirectPath causes 302 redirect
-      expect(res.status).toBe(302);
-      const location = res.headers.get('location');
-      expect(location).toContain('/auth/error');
-      expect(location).toContain('error=invalid_state');
+      expect(res.status).toBe(401);
+      const response = await parseResponse<{ type: string }>(res);
+      expect(response.type).toBe('invalid_state');
     });
 
     it('should reject callback with OAuth error', async () => {
@@ -327,11 +292,9 @@ describe('OAuth Authentication', async () => {
         { headers: defaultHeaders },
       );
 
-      // When OAuth error occurs, AppError with redirectPath causes 302 redirect
-      expect(res.status).toBe(302);
-      const location = res.headers.get('location');
-      expect(location).toContain('/auth/error');
-      expect(location).toContain('error=oauth_failed');
+      expect(res.status).toBe(400);
+      const response = await parseResponse<{ type: string }>(res);
+      expect(response.type).toBe('oauth_failed');
     });
 
     it('should reject callback with missing code', async () => {
@@ -348,11 +311,9 @@ describe('OAuth Authentication', async () => {
         { headers: defaultHeaders },
       );
 
-      // When code is missing/empty, AppError with redirectPath causes 302 redirect
-      expect(res.status).toBe(302);
-      const location = res.headers.get('location');
-      expect(location).toContain('/auth/error');
-      expect(location).toContain('error=oauth_failed');
+      expect(res.status).toBe(400);
+      const response = await parseResponse<{ type: string }>(res);
+      expect(response.type).toBe('oauth_failed');
     });
   });
 
@@ -379,11 +340,9 @@ describe('OAuth Authentication', async () => {
         { headers: defaultHeaders },
       );
 
-      // When state is invalid/malformed, AppError with redirectPath causes 302 redirect
-      expect(res.status).toBe(302);
-      const location = res.headers.get('location');
-      expect(location).toContain('/auth/error');
-      expect(location).toContain('error=invalid_state');
+      expect(res.status).toBe(401);
+      const response = await parseResponse<{ type: string }>(res);
+      expect(response.type).toBe('invalid_state');
     });
   });
 

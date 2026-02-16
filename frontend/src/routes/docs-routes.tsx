@@ -1,6 +1,6 @@
-import { createRoute, useLoaderData } from '@tanstack/react-router';
+import { createRoute, useParams } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
-import ErrorNotice from '~/modules/common/error-notice';
+import { ErrorNotice } from '~/modules/common/error-notice';
 import {
   infoQueryOptions,
   openApiSpecQueryOptions,
@@ -10,14 +10,14 @@ import {
   tagDetailsQueryOptions,
   tagsQueryOptions,
 } from '~/modules/docs/query';
-import { initPagesCollection } from '~/modules/pages/collections';
-import { queryClient } from '~/query/query-client';
-import { PublicLayoutRoute } from '~/routes/base-routes';
 import {
   operationsRouteSearchParamsSchema,
-  pagesRouteSearchParamsSchema,
   schemasRouteSearchParamsSchema,
-} from '~/routes/search-params-schemas';
+} from '~/modules/docs/search-params-schemas';
+import { pagesListQueryOptions } from '~/modules/page/query';
+import { pagesRouteSearchParamsSchema } from '~/modules/page/search-params-schemas';
+import { queryClient } from '~/query/query-client';
+import { PublicLayoutRoute } from '~/routes/base-routes';
 import appTitle from '~/utils/app-title';
 import { noDirectAccess } from '~/utils/no-direct-access';
 import { stripParams } from '~/utils/strip-search-params';
@@ -27,8 +27,9 @@ const OverviewPage = lazy(() => import('~/modules/docs/overview-page'));
 const OperationsPage = lazy(() => import('~/modules/docs/operations/operations-page'));
 const OperationsTable = lazy(() => import('~/modules/docs/operations/operations-table'));
 const SchemasPage = lazy(() => import('~/modules/docs/schemas/schemas-page'));
-const PagesTable = lazy(() => import('~/modules/pages/table'));
-const PagePage = lazy(() => import('~/modules/pages/page-page'));
+const PagesTable = lazy(() => import('~/modules/page/table/pages-table'));
+const ViewPage = lazy(() => import('~/modules/page/view-page'));
+const UpdatePage = lazy(() => import('~/modules/page/update-page'));
 
 /**
  * Documentation layout route for API reference and developer guides.
@@ -41,16 +42,15 @@ export const DocsLayoutRoute = createRoute({
     noDirectAccess(DocsLayoutRoute.to, DocsOperationsRoute.to);
   },
   getParentRoute: () => PublicLayoutRoute,
-  errorComponent: ({ error }) => <ErrorNotice level="public" error={error} homePath="/docs" />,
-  notFoundComponent: () => <ErrorNotice level="public" error={new Error('Page not found')} homePath="/docs" />,
+  errorComponent: ({ error }) => <ErrorNotice boundary="public" error={error} homePath="/docs" />,
+  notFoundComponent: () => <ErrorNotice boundary="public" error={new Error('Page not found')} homePath="/docs" />,
   loader: async () => {
-    const pagesCollection = initPagesCollection();
-    // Prefetch tags and schemas (schemas used for error response deduplication)
+    // Prefetch tags, schemas (used for error response deduplication), and pages
     await Promise.all([
       queryClient.ensureQueryData(tagsQueryOptions),
       queryClient.ensureQueryData(schemasQueryOptions),
+      queryClient.prefetchInfiniteQuery(pagesListQueryOptions({})),
     ]);
-    return { pagesCollection };
   },
   component: () => (
     <Suspense>
@@ -165,10 +165,6 @@ export const DocsPagesRoute = createRoute({
   staticData: { isAuth: false },
   head: () => ({ meta: [{ title: appTitle('Pages') }] }),
   getParentRoute: () => DocsLayoutRoute,
-  async loader() {
-    const pagesCollection = initPagesCollection();
-    return { pagesCollection };
-  },
   component: () => (
     <Suspense>
       <PagesTable />
@@ -177,26 +173,40 @@ export const DocsPagesRoute = createRoute({
 });
 
 /**
- * Single page route - displays an individual documentation page.
+ * View page route - displays an individual documentation page.
  */
 export const DocsPageRoute = createRoute({
-  path: '/page/$id/$mode',
+  path: '/page/$id',
   staticData: { isAuth: false },
-  loader: ({ params: { id } }) => {
-    const pagesCollection = initPagesCollection();
-    return { pageId: id, pagesCollection };
-  },
   head: () => ({ meta: [{ title: appTitle('Page') }] }),
   getParentRoute: () => DocsLayoutRoute,
-  errorComponent: ({ error }) => <ErrorNotice level="public" error={error} homePath="/docs" />,
-  notFoundComponent: () => <ErrorNotice level="public" error={new Error('Page not found')} homePath="/docs" />,
+  errorComponent: ({ error }) => <ErrorNotice boundary="public" error={error} homePath="/docs" />,
+  notFoundComponent: () => <ErrorNotice boundary="public" error={new Error('Page not found')} homePath="/docs" />,
   component: () => {
-    const { pageId, pagesCollection } = useLoaderData({ from: DocsPageRoute.id });
-    const { mode } = DocsPageRoute.useParams();
-    const resolvedMode = mode === 'edit' ? 'edit' : 'view';
+    const { id } = useParams({ from: DocsPageRoute.id });
     return (
       <Suspense>
-        <PagePage key={pageId} pageId={pageId} pagesCollection={pagesCollection} mode={resolvedMode} />
+        <ViewPage key={id} pageId={id} />
+      </Suspense>
+    );
+  },
+});
+
+/**
+ * Edit page route - displays the page edit form.
+ */
+export const DocsPageEditRoute = createRoute({
+  path: '/page/$id/edit',
+  staticData: { isAuth: false },
+  head: () => ({ meta: [{ title: appTitle('Edit Page') }] }),
+  getParentRoute: () => DocsLayoutRoute,
+  errorComponent: ({ error }) => <ErrorNotice boundary="public" error={error} homePath="/docs" />,
+  notFoundComponent: () => <ErrorNotice boundary="public" error={new Error('Page not found')} homePath="/docs" />,
+  component: () => {
+    const { id } = useParams({ from: DocsPageEditRoute.id });
+    return (
+      <Suspense>
+        <UpdatePage key={id} pageId={id} />
       </Suspense>
     );
   },

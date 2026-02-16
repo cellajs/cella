@@ -1,45 +1,40 @@
-import yoctoSpinner from 'yocto-spinner';
-import { CELLA_REMOTE_URL } from './constants.js';
-import { runGitCommand } from './utils/run-git-command.js';
+import { CELLA_REMOTE_URL } from '#/constants';
+import type { AddRemoteOptions } from '#/modules/cli';
+import { gitRemoteAdd, gitRemoteGetUrl, gitRemoteRemove } from '#/utils/git';
 
-interface AddRemoteOptions {
-  targetFolder: string;
-  remoteUrl?: string; // Optional, defaults to CELLA_REMOTE_URL
-  remoteName?: string; // Optional, defaults to 'upstream'
-}
-
-export async function addRemote({ targetFolder, remoteUrl = CELLA_REMOTE_URL, remoteName = 'upstream' }: AddRemoteOptions): Promise<void> {
-  // Spinner for adding remote
-  const remoteSpinner = yoctoSpinner({
-    text: 'Adding remote',
-  }).start();
-
+/**
+ * Adds or updates the upstream remote for the Cella template.
+ * @param options - Configuration options
+ * @param options.silent - If true, don't throw on failure (used when called from progress tracker)
+ */
+export async function addRemote({
+  targetFolder,
+  remoteUrl = CELLA_REMOTE_URL,
+  remoteName = 'upstream',
+  silent = false,
+}: AddRemoteOptions): Promise<void> {
   try {
     // Check if the remote exists
     let remote: string | null = null;
 
     try {
-      remote = await runGitCommand({ targetFolder, command: `remote get-url ${remoteName}` });
-    } catch (error: any) {
+      remote = await gitRemoteGetUrl(targetFolder, remoteName);
+    } catch {
       // If the remote doesn't exist, it throws a fatal error
       remote = null;
     }
 
     // Add or update the remote if it doesn't exist or differs from `remoteUrl`
     if (!remote) {
-      await runGitCommand({ targetFolder, command: `remote add ${remoteName} ${remoteUrl}` });
-      remoteSpinner.success('Remote added successfully.');
+      await gitRemoteAdd(targetFolder, remoteName, remoteUrl);
     } else if (remote !== remoteUrl) {
       // Remove existing remote and set the new URL
-      await runGitCommand({ targetFolder, command: `remote remove ${remoteName}` });
-      await runGitCommand({ targetFolder, command: `remote add ${remoteName} ${remoteUrl}` });
-      remoteSpinner.success('Remote updated successfully.');
-    } else {
-      remoteSpinner.success('Remote is already configured correctly.');
+      await gitRemoteRemove(targetFolder, remoteName);
+      await gitRemoteAdd(targetFolder, remoteName, remoteUrl);
     }
   } catch (error) {
-    console.error(error);
-    remoteSpinner.error('Failed to add remote.');
-    process.exit(1);
+    if (!silent) {
+      throw error;
+    }
   }
 }

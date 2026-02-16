@@ -5,15 +5,28 @@
       {
         "status": 201,
         "description": "Requests",
+        "name": "Request",
+        "ref": "#/components/schemas/Request",
         "contentType": "application/json",
         "schema": {
           "type": "object",
+          "description": "A contact or waitlist submission from an unauthenticated user.",
           "properties": {
             "createdAt": { "type": "string", "required": true },
-            "id": { "type": "string", "required": true },
+            "id": {
+              "type": "string",
+              "required": true,
+              "maxLength": 50
+            },
             "message": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 255
+            },
+            "email": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
             },
             "email": { "type": "string", "required": true },
             "type": {
@@ -23,7 +36,16 @@
             },
             "wasInvited": { "type": "boolean", "required": true }
           },
+          "ref": "#/components/schemas/Request",
           "contentType": "application/json"
+        },
+        "example": {
+          "id": "wejsiq864y0sbytrzsnlr9a0",
+          "email": "marlin62@yahoo.com",
+          "type": "contact",
+          "message": "Terreo amiculum comitatus necessitatibus candidus cursim.",
+          "createdAt": "2024-02-10T18:46:44.143Z",
+          "wasInvited": true
         }
       },
       {
@@ -69,7 +91,8 @@
           "email": {
             "type": "string",
             "required": true,
-            "format": "email"
+            "format": "email",
+            "maxLength": 255
           },
           "type": {
             "type": "string",
@@ -78,7 +101,8 @@
           },
           "message": {
             "type": ["string", "null"],
-            "required": true
+            "required": true,
+            "maxLength": 255
           }
         },
         "required": true,
@@ -100,14 +124,26 @@
               "type": "array",
               "required": true,
               "itemType": "object",
+              "ref": "#/components/schemas/Request",
               "items": {
                 "type": "object",
+                "description": "A contact or waitlist submission from an unauthenticated user.",
                 "properties": {
                   "createdAt": { "type": "string", "required": true },
-                  "id": { "type": "string", "required": true },
+                  "id": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 50
+                  },
                   "message": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "email": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
                   },
                   "email": { "type": "string", "required": true },
                   "type": {
@@ -116,12 +152,34 @@
                     "enum": ["waitlist", "newsletter", "contact"]
                   },
                   "wasInvited": { "type": "boolean", "required": true }
-                }
+                },
+                "ref": "#/components/schemas/Request"
               }
             },
             "total": { "type": "number", "required": true }
           },
           "contentType": "application/json"
+        },
+        "example": {
+          "items": [
+            {
+              "id": "vqqp8d07imsvjbtqtl3rtjgx",
+              "email": "lucy.stamm@hotmail.com",
+              "type": "contact",
+              "message": "Bene voro avarus adfero vis audacia abundans claro.",
+              "createdAt": "2024-03-27T17:11:37.653Z",
+              "wasInvited": false
+            },
+            {
+              "id": "thg5ogh3yr2b2dbwf7b9ecka",
+              "email": "trudie97@hotmail.com",
+              "type": "contact",
+              "message": "Turba pauci beneficium urbanus ratione cupiditate virga cognomen deprimo.",
+              "createdAt": "2024-04-30T21:08:34.063Z",
+              "wasInvited": false
+            }
+          ],
+          "total": 2
         }
       },
       {
@@ -163,7 +221,11 @@
     "request": {
       "query": {
         "properties": {
-          "q": { "type": "string", "required": false },
+          "q": {
+            "type": "string",
+            "required": false,
+            "maxLength": 255
+          },
           "sort": {
             "type": "string",
             "required": false,
@@ -183,7 +245,29 @@
   {
     "operationId": "deleteRequests",
     "responses": [
-      { "status": 204, "description": "Requests deleted" },
+      {
+        "status": 200,
+        "description": "Success",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "data": { "type": "array", "required": true },
+            "rejectedItemIds": {
+              "type": "array",
+              "required": true,
+              "description": "Identifiers of items that could not be processed",
+              "itemType": "string"
+            },
+            "rejectionReasons": {
+              "type": "object",
+              "required": false,
+              "description": "Map of reason code to rejected item IDs"
+            }
+          },
+          "contentType": "application/json"
+        }
+      },
       {
         "status": 400,
         "description": "Bad request: problem processing request.",

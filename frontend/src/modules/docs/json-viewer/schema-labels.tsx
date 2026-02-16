@@ -18,10 +18,10 @@ interface SchemaLabelsProps {
 }
 
 /** Returns the appropriate color class for a JSON Schema type keyword */
-const getTypeColorClass = (
+function getTypeColorClass(
   typeValue: string,
   theme: { string: string; number: string; boolean: string; null: string },
-): string => {
+): string {
   switch (typeValue) {
     case 'string':
       return theme.string;
@@ -35,7 +35,7 @@ const getTypeColorClass = (
     default:
       return 'text-purple-600 dark:text-purple-400'; // for array/object
   }
-};
+}
 
 /**
  * Renders type, ref, and contentType labels for OpenAPI schema mode.

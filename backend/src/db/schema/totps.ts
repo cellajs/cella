@@ -1,17 +1,15 @@
 import { pgTable, varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from '#/db/schema/users';
+import { maxLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
 
-/**
- * TOTPs table to store Time-based One-Time Password (TOTP) secrets for users.
- */
 export const totpsTable = pgTable('totps', {
-  id: varchar().primaryKey().$defaultFn(nanoid),
-  userId: varchar()
+  id: varchar({ length: maxLength.id }).primaryKey().$defaultFn(nanoid),
+  userId: varchar({ length: maxLength.id })
     .notNull()
     .references(() => usersTable.id, { onDelete: 'cascade' }),
-  secret: varchar().notNull(),
+  secret: varchar({ length: maxLength.field }).notNull(),
   createdAt: timestampColumns.createdAt,
 });
 

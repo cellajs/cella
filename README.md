@@ -70,7 +70,7 @@ git clone git@github.com:cellajs/cella.git && cd cella
 ### A. Quick setup
 
 Run your db using a local pglite. Its fast to build and to clean up. Simply remove `backend/.db`. However, you need to
-use the full setup to run electric-sync.
+use the full setup to run with the sync engine.
 
 ```bash
 pnpm install && pnpm quick
@@ -78,7 +78,7 @@ pnpm install && pnpm quick
 
 ### B. Full setup
 
-For a full setup with sync capabilities, you need to run postgres + electric-sync.
+For a full setup with sync engine, you need to run postgres + CDC worker.
 Install [Orbstack](https://orbstack.dev/) or [Docker](https://docs.docker.com/get-docker/).
 
 ```bash
@@ -100,4 +100,4 @@ with [local.drizzle.studio](http://local.drizzle.studio).
 <p>&nbsp;</p>
 
 💙💛 Big thank you
-to [drizzle](https://github.com/drizzle-team/drizzle-orm), [hono](https://github.com/honojs/hono), [tanstack-router](https://github.com/tanstack/router) & [electric](https://github.com/electric-sql/electric).
+to [drizzle](https://github.com/drizzle-team/drizzle-orm), [hono](https://github.com/honojs/hono), [tanstack-router](https://github.com/tanstack/router), [react-query](https://github.com/tanstack/query)

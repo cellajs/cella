@@ -1,4 +1,4 @@
-import type { SortColumn } from 'react-data-grid';
+import type { SortColumn } from '~/modules/common/data-grid';
 
 type Sort = SortColumn['columnKey'];
 type Order = 'asc' | 'desc';

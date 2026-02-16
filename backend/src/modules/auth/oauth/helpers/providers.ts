@@ -1,5 +1,5 @@
 import { GitHub, Google, MicrosoftEntraId } from 'arctic';
-import { appConfig, type EnabledOAuthProvider } from 'config';
+import { appConfig, type EnabledOAuthProvider } from 'shared';
 import { env } from '../../../../env';
 
 export const githubAuth = new GitHub(

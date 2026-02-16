@@ -1,33 +1,35 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { appConfig } from 'config';
-import { and, count, eq, getTableColumns, ilike, inArray, type SQL, sql } from 'drizzle-orm';
+import { and, count, eq, getColumns, ilike, inArray, type SQL, sql } from 'drizzle-orm';
 import i18n from 'i18next';
-import { db } from '#/db/db';
+import { appConfig } from 'shared';
+import { unsafeInternalDb as db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { type RequestModel, requestsTable } from '#/db/schema/requests';
 import { usersTable } from '#/db/schema/users';
 import type { Env } from '#/lib/context';
-import { AppError } from '#/lib/errors';
+import { AppError } from '#/lib/error';
 import { mailer } from '#/lib/mailer';
 import { sendMatrixMessage } from '#/lib/notifications/send-matrix-message';
 import requestRoutes from '#/modules/requests/requests-routes';
-import { userSelect } from '#/modules/users/helpers/select';
+import { userSelect } from '#/modules/user/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
-import { RequestInfoEmail, RequestResponseEmail, type RequestResponseEmailProps } from '../../../emails';
+import { RequestInfoEmail, RequestResponseEmail } from '../../../emails';
 
 // These requests are only allowed to be created if user has none yet
 const uniqueRequests: RequestModel['type'][] = ['waitlist', 'newsletter'];
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
-const requestRouteHandlers = app
+const requestsRouteHandlers = app
   /**
    *  Create request
    */
   .openapi(requestRoutes.createRequest, async (ctx) => {
-    const { email, type, message } = ctx.req.valid('json');
+    const { email, type: requestType, message } = ctx.req.valid('json');
+    // Cast type to proper literal union for Drizzle v1 strict types
+    const type = requestType as RequestModel['type'];
 
     const normalizedEmail = email.toLowerCase().trim();
 
@@ -39,7 +41,7 @@ const requestRouteHandlers = app
         .where(eq(emailsTable.email, normalizedEmail))
         .limit(1);
 
-      if (existingUser) throw new AppError({ status: 400, type: 'request_email_is_user' });
+      if (existingUser) throw new AppError(400, 'request_email_is_user', 'info');
     }
 
     // Check if not duplicate for unique requests
@@ -48,9 +50,9 @@ const requestRouteHandlers = app
         .select()
         .from(requestsTable)
         .where(and(eq(requestsTable.email, normalizedEmail), inArray(requestsTable.type, uniqueRequests)));
-      if (existingRequest?.type === type) throw new AppError({ status: 409, type: 'request_exists' });
+      if (existingRequest?.type === type) throw new AppError(409, 'request_exists', 'info');
     }
-    const { tokenId, ...requestsSelect } = getTableColumns(requestsTable);
+    const { tokenId, ...requestsSelect } = getColumns(requestsTable);
 
     const [createdRequest] = await db
       .insert(requestsTable)
@@ -74,6 +76,9 @@ const requestRouteHandlers = app
         textMessage = `Contact Request\nMessage: "${message}"\nEmail: ${normalizedEmail}`;
         title = `Request for contact with message: "${message}"`;
         break;
+      default:
+        textMessage = `Request\nEmail: ${normalizedEmail}`;
+        title = 'Request received';
     }
 
     // Send message to Matrix
@@ -86,14 +91,10 @@ const requestRouteHandlers = app
     const recipients = [{ email: normalizedEmail }];
 
     if (!matrixResp || !matrixResp.ok) {
-      mailer.prepareEmails<RequestResponseEmailProps, Recipient>(RequestInfoEmail, { ...staticProps, subject: title }, [
-        { email: appConfig.company.email },
-      ]);
+      mailer.prepareEmails(RequestInfoEmail, { ...staticProps, subject: title }, [{ email: appConfig.company.email }]);
     }
 
-    type Recipient = { email: string };
-
-    mailer.prepareEmails<RequestResponseEmailProps, Recipient>(RequestResponseEmail, staticProps, recipients);
+    mailer.prepareEmails(RequestResponseEmail, staticProps, recipients);
 
     const data = {
       ...createdRequest,
@@ -110,7 +111,7 @@ const requestRouteHandlers = app
 
     const filter: SQL | undefined = q ? ilike(requestsTable.email, prepareStringForILikeFilter(q)) : undefined;
 
-    const { tokenId, ...requestsSelect } = getTableColumns(requestsTable);
+    const { tokenId, ...requestsSelect } = getColumns(requestsTable);
 
     const requestsQuery = db
       .select({
@@ -122,17 +123,12 @@ const requestRouteHandlers = app
 
     const [{ total }] = await db.select({ total: count() }).from(requestsQuery.as('requests'));
 
-    const orderColumn = getOrderColumn(
-      {
-        id: requestsTable.id,
-        email: requestsTable.email,
-        createdAt: requestsTable.createdAt,
-        type: requestsTable.type,
-      },
-      sort,
-      requestsTable.id,
-      order,
-    );
+    const orderColumn = getOrderColumn(sort, requestsTable.id, order, {
+      id: requestsTable.id,
+      email: requestsTable.email,
+      createdAt: requestsTable.createdAt,
+      type: requestsTable.type,
+    });
 
     const items = await db.select().from(requestsQuery.as('requests')).orderBy(orderColumn).limit(limit).offset(offset);
 
@@ -146,12 +142,12 @@ const requestRouteHandlers = app
 
     // Convert the ids to an array
     const toDeleteIds = Array.isArray(ids) ? ids : [ids];
-    if (!toDeleteIds.length) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
+    if (!toDeleteIds.length) throw new AppError(400, 'invalid_request', 'error');
 
     // Delete the requests
     await db.delete(requestsTable).where(inArray(requestsTable.id, toDeleteIds));
 
-    return ctx.body(null, 204);
+    return ctx.json({ data: [], rejectedItemIds: [] }, 200);
   });
 
-export default requestRouteHandlers;
+export default requestsRouteHandlers;

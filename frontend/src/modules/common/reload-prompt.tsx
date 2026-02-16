@@ -2,21 +2,20 @@ import { useRegisterSW } from 'virtual:pwa-register/react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
 
-const ReloadPrompt = () => {
+export function ReloadPrompt() {
   const { t } = useTranslation();
 
   // replaced dynamically
   const buildDate = '__DATE__';
   // replaced dynamically
-  const reloadSW = '__RELOAD_SW__';
+  const reloadSW: string = '__RELOAD_SW__';
 
   const {
     needRefresh: [needRefresh, setNeedRefresh],
     updateServiceWorker,
   } = useRegisterSW({
     onRegisteredSW(swUrl, r) {
-      console.debug(`Service Worker at: ${swUrl}`);
-      // @ts-expect-error just ignore
+      console.debug(`[ServiceWorker] Registered at: ${swUrl}`);
       if (reloadSW === 'true') {
         r &&
           setInterval(() => {
@@ -24,7 +23,7 @@ const ReloadPrompt = () => {
             r.update();
           }, 20000 /* 20s for testing purposes */);
       } else {
-        console.debug('SW Registered');
+        console.debug('[ServiceWorker] Registered');
       }
     },
     onRegisterError(error) {
@@ -54,6 +53,4 @@ const ReloadPrompt = () => {
       <div className="hidden">{buildDate}</div>
     </>
   );
-};
-
-export default ReloadPrompt;
+}

@@ -1,9 +1,9 @@
 import { and, eq } from 'drizzle-orm';
 import { Context } from 'hono';
-import { db } from '#/db/db';
+import { unsafeInternalDb as db } from '#/db/db';
 import { type TokenModel, tokensTable } from '#/db/schema/tokens';
 import { Env } from '#/lib/context';
-import { AppError } from '#/lib/errors';
+import { AppError } from '#/lib/error';
 import { getAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/helpers/session';
 import { isExpiredDate } from '#/utils/is-expired-date';
@@ -36,10 +36,10 @@ export const getValidToken = async ({ ctx, token, tokenType, invokeToken = true 
   let [tokenRecord] = await db
     .select()
     .from(tokensTable)
-    .where(and(eq(tokensTable.token, hashedToken), eq(tokensTable.type, tokenType)))
+    .where(and(eq(tokensTable.secret, hashedToken), eq(tokensTable.type, tokenType)))
     .limit(1);
 
-  if (!tokenRecord) throw new AppError({ status: 401, type: `${tokenType}_not_found`, severity: 'warn' });
+  if (!tokenRecord) throw new AppError(401, `${tokenType}_not_found`, 'warn');
 
   // If token doesn't match a possible existing auth session, abort
   let existingSessionToken: string | null = null;
@@ -50,27 +50,30 @@ export const getValidToken = async ({ ctx, token, tokenType, invokeToken = true 
   if (existingSessionToken) {
     // Get user from valid session
     const { user } = await validateSession(existingSessionToken);
-    if (user?.id && tokenRecord.userId !== user.id)
-      throw new AppError({ status: 400, type: 'user_mismatch', severity: 'warn' });
+    if (user?.id && tokenRecord.userId !== user.id) throw new AppError(400, 'user_mismatch', 'warn');
   }
 
   // Token expired
   if (isExpiredDate(tokenRecord.expiresAt)) {
-    throw new AppError({ status: 401, type: `${tokenRecord.type}_expired`, severity: 'warn' });
+    throw new AppError(401, `${tokenRecord.type}_expired`, 'warn');
   }
 
   // If token already invoked but not expired, last resort is to check if user still has the single use token session
   // If that isnt present anymore, we consider the token expired anyways
   if (tokenRecord.invokedAt) {
     const singleUseToken = await getAuthCookie(ctx, tokenType);
-    if (!singleUseToken) throw new AppError({ status: 401, type: `${tokenRecord.type}_expired`, severity: 'warn' });
+    if (!singleUseToken) throw new AppError(401, `${tokenRecord.type}_expired`, 'warn');
   }
 
   // Create single use session token, mark token as invoked, and update expiresAt to 5 min from now
   if (invokeToken) {
     const [invokedTokenRecord] = await db
       .update(tokensTable)
-      .set({ singleUseToken: nanoid(40), invokedAt: new Date(), expiresAt: createDate(new TimeSpan(5, 'm')) })
+      .set({
+        singleUseToken: nanoid(40),
+        invokedAt: new Date().toISOString(),
+        expiresAt: createDate(new TimeSpan(5, 'm')),
+      })
       .where(eq(tokensTable.id, tokenRecord.id))
       .returning();
     return invokedTokenRecord;

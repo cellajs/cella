@@ -11,7 +11,7 @@ import { useAuthStore } from '~/store/auth';
  * - Legal notice specific to the waitlist
  * - Waitlist form with a request access button
  */
-export const WaitlistStep = () => {
+export function WaitlistStep() {
   const { t } = useTranslation();
 
   const { email, resetSteps } = useAuthStore();
@@ -45,4 +45,4 @@ export const WaitlistStep = () => {
       />
     </>
   );
-};
+}

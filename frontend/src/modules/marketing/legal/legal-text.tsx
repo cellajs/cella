@@ -6,9 +6,7 @@ export type LegalTexts = Record<string, { component: React.LazyExoticComponent<(
 /**
  * Component to render legal text based on the given subject.
  */
-const LegalText = ({ subject }: { subject: LegalSubject }) => {
+export function LegalText({ subject }: { subject: LegalSubject }) {
   const { component: SubjectText } = legalConfig[subject];
   return <SubjectText />;
-};
-
-export default LegalText;
+}

@@ -1,9 +1,9 @@
-import { appConfig } from 'config';
 import i18n, { type InitOptions } from 'i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 import { HMRPlugin } from 'i18next-hmr/plugin';
 import Backend from 'i18next-http-backend';
 import { initReactI18next } from 'react-i18next';
+import { appConfig } from 'shared';
 import { env } from '~/env';
 import locales from '~/lib/i18n-locales';
 

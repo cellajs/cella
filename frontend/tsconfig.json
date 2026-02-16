@@ -4,7 +4,7 @@
     "noEmit": true,
 
     "target": "es2022",
-    "lib": ["es2022", "DOM", "DOM.Iterable"],
+    "lib": ["es2024", "DOM", "DOM.Iterable"],
     "types": ["vite/client", "vite-plugin-pwa/client"],
 
     "allowArbitraryExtensions": true,
@@ -15,6 +15,6 @@
     }
   },
 
-  "include": ["src/**/*", "vite.config.ts", "../config/*", "../json/*", "../locales/*", "openapi-ts.config.ts", "script", "vite/**/*"],
+  "include": ["src/**/*", "vite.config.ts", "../shared/*", "../json/*", "../locales/*", "openapi-ts.config.ts", "script", "vite/**/*"],
   "exclude": ["**/node_modules", "**/dist", "**/.*/"]
 }

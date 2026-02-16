@@ -1,16 +1,16 @@
 import { onlineManager, useMutation, useSuspenseQuery } from '@tanstack/react-query';
 import { ZapOffIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import type { MeAuthData } from '~/api.gen';
 import { deleteMySessions } from '~/api.gen';
 import { ExpandableList } from '~/modules/common/expandable-list';
 import { toaster } from '~/modules/common/toaster/service';
 import { meAuthQueryOptions } from '~/modules/me/query';
 import { SessionTile } from '~/modules/me/sessions/tile';
-import type { MeAuthData } from '~/modules/me/types';
 import { Button } from '~/modules/ui/button';
 import { queryClient } from '~/query/query-client';
 
-const SessionsList = () => {
+export function SessionsList() {
   const { t } = useTranslation();
 
   const queryOptions = meAuthQueryOptions();
@@ -83,6 +83,4 @@ const SessionsList = () => {
       </div>
     </>
   );
-};
-
-export default SessionsList;
+}

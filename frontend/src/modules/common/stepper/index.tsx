@@ -14,7 +14,7 @@ const VARIABLE_SIZES = {
   lg: '2.75rem',
 };
 
-const Stepper = React.forwardRef<HTMLDivElement, StepperProps>((props, ref: React.Ref<HTMLDivElement>) => {
+function StepperBase(props: StepperProps, ref: React.Ref<HTMLDivElement>) {
   const {
     className,
     children,
@@ -108,9 +108,11 @@ const Stepper = React.forwardRef<HTMLDivElement, StepperProps>((props, ref: Reac
       {footer}
     </StepperProvider>
   );
-});
+}
 
-const VerticalContent = ({ children }: { children: React.ReactNode }) => {
+export const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(StepperBase);
+
+function VerticalContent({ children }: { children: React.ReactNode }) {
   const { activeStep } = useStepper();
 
   const childArr = React.Children.toArray(children);
@@ -141,9 +143,9 @@ const VerticalContent = ({ children }: { children: React.ReactNode }) => {
       })}
     </>
   );
-};
+}
 
-const HorizontalContent = ({ children }: { children: React.ReactNode }) => {
+function HorizontalContent({ children }: { children: React.ReactNode }) {
   const { activeStep } = useStepper();
   const childArr = React.Children.toArray(children);
 
@@ -161,7 +163,7 @@ const HorizontalContent = ({ children }: { children: React.ReactNode }) => {
       })}
     </>
   );
-};
+}
 
-export { Step, Stepper, useStepper };
+export { Step, useStepper };
 export type { StepItem, StepProps, StepperProps };

@@ -1,5 +1,5 @@
-import { entityTables } from '#/entity-config';
-import { resourceTables } from '#/activities-config';
+import { entityTables } from '#/table-config';
+import { resourceTables } from '#/table-config';
 import { getTableName } from 'drizzle-orm';
 import type { EntityTableEntry, ResourceTableEntry, TableRegistryEntry } from './types';
 
@@ -34,7 +34,4 @@ function buildTableRegistry(): Map<string, TableRegistryEntry> {
 
 /** Registry of all tracked tables, keyed by Drizzle table name */
 export const tableRegistry = buildTableRegistry();
-
-/** Array of tracked table names (for use in SQL generation) */
-export const trackedTableNames = Array.from(tableRegistry.keys());
 

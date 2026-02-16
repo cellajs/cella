@@ -1,3 +1,4 @@
+import { resolve } from 'node:path';
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
@@ -12,11 +13,11 @@ export default defineConfig({
   dts: false,
   esbuildOptions(options) {
     options.alias = {
-      '#': './src',
+      '#': resolve(__dirname, './src'),
     };
-    options.platform = 'node'; // Ensure the platform is set to Node.js
-    options.mainFields = ['module', 'main']; // Prioritize ESM entry points
-    options.conditions = ['module']; // Enforce use of ESM
+    options.platform = 'node';
+    options.mainFields = ['module', 'main'];
+    options.conditions = ['module'];
   },
   external: [],
 });

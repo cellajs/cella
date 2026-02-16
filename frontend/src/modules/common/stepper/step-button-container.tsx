@@ -7,7 +7,7 @@ type StepButtonContainerProps = StepSharedProps & {
   children?: React.ReactNode;
 };
 
-const StepButtonContainer = ({
+export function StepButtonContainer({
   isCurrentStep,
   isCompletedStep,
   children,
@@ -15,7 +15,7 @@ const StepButtonContainer = ({
   index,
   isLoading: isLoadingProp,
   onClickStep,
-}: StepButtonContainerProps) => {
+}: StepButtonContainerProps) {
   const {
     clickable,
     isLoading: isLoadingContext,
@@ -63,6 +63,4 @@ const StepButtonContainer = ({
       {children}
     </Button>
   );
-};
-
-export { StepButtonContainer };
+}

@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useRef } from 'react';
 
 /**
  * Custom hook to conditionally add/remove body classes based on the provided class mappings.
@@ -9,32 +9,34 @@ import { useEffect, useMemo } from 'react';
  *
  * @param classMappings - An object where keys are class names and values are booleans indicating whether the class should be applied or not.
  */
-function useBodyClass(classMappings: { [key: string]: boolean }) {
-  // Memoize classMappings to prevent unnecessary re-renders
-  const stableClassMappings = useMemo(() => classMappings, [JSON.stringify(classMappings)]);
+export function useBodyClass(classMappings: { [key: string]: boolean }) {
+  // Use ref to track which classes this hook instance has added
+  const addedClassesRef = useRef<Set<string>>(new Set());
+
+  // Serialize for stable dependency (only recompute when values change)
+  const serialized = JSON.stringify(classMappings);
 
   useEffect(() => {
     const bodyClassList = document.body.classList;
-    const classNames = Object.keys(stableClassMappings);
+    const addedClasses = addedClassesRef.current;
 
-    // Use a for loop to add/remove classes
-    for (let i = 0; i < classNames.length; i++) {
-      const className = classNames[i];
-      if (stableClassMappings[className]) {
-        if (!bodyClassList.contains(className)) bodyClassList.add(className);
+    // Apply current mappings
+    for (const className in classMappings) {
+      if (classMappings[className]) {
+        bodyClassList.add(className);
+        addedClasses.add(className);
       } else {
-        if (bodyClassList.contains(className)) bodyClassList.remove(className);
+        bodyClassList.remove(className);
+        addedClasses.delete(className);
       }
     }
 
-    // Cleanup: remove all added classes on unmount
+    // Cleanup: remove only classes this hook instance added
     return () => {
-      for (let i = 0; i < classNames.length; i++) {
-        const className = classNames[i];
-        if (bodyClassList.contains(className)) bodyClassList.remove(className);
+      for (const className of addedClasses) {
+        bodyClassList.remove(className);
       }
+      addedClasses.clear();
     };
-  }, [stableClassMappings]);
+  }, [serialized]);
 }
-
-export default useBodyClass;

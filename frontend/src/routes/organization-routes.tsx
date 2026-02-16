@@ -1,67 +1,103 @@
-import { onlineManager } from '@tanstack/react-query';
-import { createRoute, redirect, useLoaderData } from '@tanstack/react-router';
+import { onlineManager, useSuspenseQuery } from '@tanstack/react-query';
+import { createRoute, Outlet, redirect } from '@tanstack/react-router';
 import i18n from 'i18next';
 import { lazy, Suspense } from 'react';
-import { initAttachmentsCollection, initLocalAttachmentsCollection } from '~/modules/attachments/collections';
-import ErrorNotice from '~/modules/common/error-notice';
+import { getOrganization, type Organization } from '~/api.gen';
+import { attachmentsRouteSearchParamsSchema } from '~/modules/attachment/search-params-schemas';
+import { ErrorNotice } from '~/modules/common/error-notice';
+import { membersRouteSearchParamsSchema } from '~/modules/memberships/search-params-schemas';
 import {
   findOrganizationInListCache,
   organizationQueryKeys,
   organizationQueryOptions,
-} from '~/modules/organizations/query';
+} from '~/modules/organization/query';
+import { fetchSlugCacheId } from '~/query/fetch-slug-cache-id';
 import { queryClient } from '~/query/query-client';
 import { AppLayoutRoute } from '~/routes/base-routes';
-import { attachmentsRouteSearchParamsSchema, membersRouteSearchParamsSchema } from '~/routes/search-params-schemas';
 import { useToastStore } from '~/store/toast';
 import appTitle from '~/utils/app-title';
 import { noDirectAccess } from '~/utils/no-direct-access';
+import { rewriteUrlToSlug } from '~/utils/rewrite-url-to-slug';
 
-//Lazy-loaded components
-const OrganizationPage = lazy(() => import('~/modules/organizations/organization-page'));
-const MembersTable = lazy(() => import('~/modules/memberships/members-table'));
-const AttachmentsTable = lazy(() => import('~/modules/attachments/table'));
-const OrganizationSettings = lazy(() => import('~/modules/organizations/organization-settings'));
+const OrganizationPage = lazy(() => import('~/modules/organization/organization-page'));
+const MembersTable = lazy(() => import('~/modules/memberships/members-table/members-table'));
+const AttachmentsTable = lazy(() => import('~/modules/attachment/table/attachments-table'));
+const OrganizationSettings = lazy(() => import('~/modules/organization/organization-settings'));
 
 /**
- * Main organization page with details and navigation.
+ * Layout route for tenant and organization-scoped pages.
+ * Captures $tenantId and $orgSlug params, validates tenant access,
+ * fetches org, and provides context for all nested routes.
+ * Forks can nest additional routes (workspace, project, etc.) under this layout.
  */
-export const OrganizationRoute = createRoute({
-  path: '/organization/$idOrSlug',
+export const OrganizationLayoutRoute = createRoute({
+  path: '/$tenantId/$orgSlug',
   staticData: { isAuth: true },
-  beforeLoad: async ({ params: { idOrSlug } }) => {
-    noDirectAccess(OrganizationRoute.to, OrganizationMembersRoute.to);
+  getParentRoute: () => AppLayoutRoute,
+  beforeLoad: async ({ params, cause }) => {
+    // TODO not working Only revalidate on initial entry — search param changes are handled by child useSuspenseQuery
+    const shouldRevalidate = cause === 'enter';
+
+    const { tenantId, orgSlug } = params;
     const isOnline = onlineManager.isOnline();
 
-    const bootstrap = organizationQueryOptions(idOrSlug);
-    const bootstrapWithRevalidate = { ...bootstrap, revalidateIfStale: true };
+    // Resolve slug to ID via list cache (from menu), or fetch if not cached
+    const cached = findOrganizationInListCache(orgSlug);
+    const orgId = cached?.id;
 
-    const organization = isOnline
-      ? await queryClient.ensureQueryData(bootstrapWithRevalidate)
-      : (queryClient.getQueryData(bootstrap.queryKey) ?? findOrganizationInListCache(idOrSlug));
+    // If we have the ID from cache, use ID-based query; otherwise fetch by slug first
+    let organization: Organization | undefined;
+
+    if (orgId) {
+      const orgOptions = organizationQueryOptions(orgId, tenantId);
+
+      // Seed detail cache from list cache so ensureQueryData returns immediately
+      // instead of blocking on a fetch. It will still revalidate in background if stale.
+      if (cached && !queryClient.getQueryData(orgOptions.queryKey)) {
+        queryClient.setQueryData(orgOptions.queryKey, cached);
+      }
+
+      organization = await queryClient.ensureQueryData({ ...orgOptions, revalidateIfStale: shouldRevalidate });
+    } else if (isOnline) {
+      organization = await fetchSlugCacheId(
+        () => getOrganization({ path: { tenantId, organizationId: orgSlug }, query: { slug: true } }),
+        organizationQueryKeys.detail.byId,
+      );
+    }
 
     if (!organization) {
       if (!isOnline) useToastStore.getState().showToast(i18n.t('common:offline_cache_miss.text'), 'warning');
       throw redirect({ to: '/home', replace: true });
     }
 
-    // Canonical cache entry (always ID), remove slug entry
-    queryClient.setQueryData(organizationQueryKeys.detail.byId(organization.id), organization);
-    queryClient.removeQueries({ queryKey: bootstrap.queryKey, exact: true });
+    // Rewrite URL to use slug if user navigated with ID
+    rewriteUrlToSlug(params, { tenantId, orgSlug: organization.slug }, OrganizationLayoutRoute.to);
 
-    return { organization };
+    return { organization, tenantId };
   },
-  loader: ({ context: { organization } }) => organization,
-  head: (ctx) => {
-    const organization = ctx.match.loaderData;
-    return { meta: [{ title: appTitle(organization?.name) }] };
-  },
-  getParentRoute: () => AppLayoutRoute,
-  errorComponent: ({ error }) => <ErrorNotice level="app" error={error} />,
+  component: () => <Outlet />,
+});
+
+/**
+ * Main organization page with details and navigation.
+ */
+export const OrganizationRoute = createRoute({
+  path: '/organization',
+  staticData: { isAuth: true, floatingNavButtons: { left: 'menu' } },
+  beforeLoad: ({ context: { organization, tenantId } }) =>
+    noDirectAccess(
+      `/${tenantId}/${organization.slug}/organization`,
+      `/${tenantId}/${organization.slug}/organization/members`,
+    ),
+  head: ({ match }) => ({ meta: [{ title: appTitle(match.context.organization?.name) }] }),
+  getParentRoute: () => OrganizationLayoutRoute,
+  errorComponent: ({ error }) => <ErrorNotice boundary="app" error={error} />,
   component: () => {
-    const organization = useLoaderData({ from: OrganizationRoute.id });
+    const { organization, tenantId } = OrganizationRoute.useRouteContext();
+    const { data } = useSuspenseQuery(organizationQueryOptions(organization.id, tenantId));
     return (
       <Suspense>
-        <OrganizationPage key={organization.slug} organizationId={organization.id} />
+        <OrganizationPage key={data.id} organizationId={data.id} tenantId={tenantId} />
       </Suspense>
     );
   },
@@ -73,15 +109,14 @@ export const OrganizationRoute = createRoute({
 export const OrganizationMembersRoute = createRoute({
   path: '/members',
   validateSearch: membersRouteSearchParamsSchema,
-  staticData: { isAuth: true },
+  staticData: { isAuth: true, navTab: { id: 'members', label: 'common:members' } },
   getParentRoute: () => OrganizationRoute,
-  loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
   component: () => {
-    const organization = useLoaderData({ from: OrganizationRoute.id });
-    if (!organization) return;
+    const { organization, tenantId } = OrganizationMembersRoute.useRouteContext();
+    const { data } = useSuspenseQuery(organizationQueryOptions(organization.id, tenantId));
     return (
       <Suspense>
-        <MembersTable key={organization.id} entity={organization} />
+        <MembersTable key={data.id} entity={data} />
       </Suspense>
     );
   },
@@ -93,25 +128,14 @@ export const OrganizationMembersRoute = createRoute({
 export const OrganizationAttachmentsRoute = createRoute({
   path: '/attachments',
   validateSearch: attachmentsRouteSearchParamsSchema,
-  staticData: { isAuth: true },
+  staticData: { isAuth: true, navTab: { id: 'attachments', label: 'common:attachments' } },
   getParentRoute: () => OrganizationRoute,
-  // Note: Don't use loaderDeps here - collections are created once and live queries
-  // react to search param changes automatically. Using loaderDeps would recreate
-  // collections on every search param change, breaking the sync connection.
-  async loader({ params: { idOrSlug } }) {
-    const attachmentsCollection = initAttachmentsCollection(idOrSlug);
-    const localAttachmentsCollection = initLocalAttachmentsCollection(idOrSlug);
-    // Note: Don't call .preload() on collections with electric sync - they use on-demand mode
-    // where data is loaded via live queries. Calling preload() is a no-op in on-demand mode.
-    // See: https://tanstack.com/blog/tanstack-db-0.5-query-driven-sync
-    return { attachmentsCollection, localAttachmentsCollection };
-  },
   component: () => {
-    const organization = useLoaderData({ from: OrganizationRoute.id });
-    if (!organization) return;
+    const { organization, tenantId } = OrganizationAttachmentsRoute.useRouteContext();
+    const { data } = useSuspenseQuery(organizationQueryOptions(organization.id, tenantId));
     return (
       <Suspense>
-        <AttachmentsTable canUpload={true} key={organization.id} entity={organization} />
+        <AttachmentsTable canUpload={true} key={data.id} entity={data} />
       </Suspense>
     );
   },
@@ -122,14 +146,14 @@ export const OrganizationAttachmentsRoute = createRoute({
  */
 export const OrganizationSettingsRoute = createRoute({
   path: '/settings',
-  staticData: { isAuth: true },
+  staticData: { isAuth: true, navTab: { id: 'settings', label: 'common:settings' } },
   getParentRoute: () => OrganizationRoute,
   component: () => {
-    const organization = useLoaderData({ from: OrganizationRoute.id });
-    if (!organization) return;
+    const { organization, tenantId } = OrganizationSettingsRoute.useRouteContext();
+    const { data } = useSuspenseQuery(organizationQueryOptions(organization.id, tenantId));
     return (
       <Suspense>
-        <OrganizationSettings organization={organization} />
+        <OrganizationSettings organization={data} />
       </Suspense>
     );
   },

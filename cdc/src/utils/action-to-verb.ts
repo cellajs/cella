@@ -1,4 +1,4 @@
-import { ActivityAction } from "#/activities-config";
+import type { ActivityAction } from '#/sync/activity-bus';
 
 /**
  * Convert an action to past tense verb for the activity type.

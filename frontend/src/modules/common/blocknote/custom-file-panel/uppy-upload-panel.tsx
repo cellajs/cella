@@ -11,11 +11,11 @@ import ScreenCapture from '@uppy/screen-capture';
 import { COMPANION_ALLOWED_HOSTS, COMPANION_URL } from '@uppy/transloadit';
 import Url from '@uppy/url';
 import Webcam, { type WebcamOptions } from '@uppy/webcam';
-import { appConfig } from 'config';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import { useOnlineManager } from '~/hooks/use-online-manager';
-import { parseUploadedAttachments } from '~/modules/attachments/helpers';
+import { parseUploadedAttachments } from '~/modules/attachment/helpers';
 import { customSchema } from '~/modules/common/blocknote/blocknote-config';
 import { focusEditor } from '~/modules/common/blocknote/helpers/focus';
 import type { BaseUppyFilePanelProps } from '~/modules/common/blocknote/types';
@@ -25,6 +25,8 @@ import { generateRestrictionNote } from '~/modules/common/uploader/helpers/restr
 import type { CustomUppy, CustomUppyOpt, UploadedUppyFile } from '~/modules/common/uploader/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
 import { useUIStore } from '~/store/ui';
+
+import '~/modules/common/uploader/uppy-styles';
 
 const basicBlockTypes = {
   image: {
@@ -45,13 +47,13 @@ const basicBlockTypes = {
   },
 };
 
-const UppyFilePanel = ({
+export function UppyFilePanel({
   onComplete,
   onError,
   organizationId,
   blockId,
   isPublic = false,
-}: BaseUppyFilePanelProps & FilePanelProps) => {
+}: BaseUppyFilePanelProps & FilePanelProps) {
   const { t } = useTranslation();
   const mode = useUIStore((state) => state.mode);
   const { isOnline } = useOnlineManager();
@@ -181,6 +183,4 @@ const UppyFilePanel = ({
       </DialogContent>
     </Dialog>
   );
-};
-
-export default UppyFilePanel;
+}

@@ -1,7 +1,7 @@
-import { appConfig, TokenType } from 'config';
 import type { Context } from 'hono';
 import { deleteCookie, getCookie, getSignedCookie, setCookie, setSignedCookie } from 'hono/cookie';
 import type { CookieOptions } from 'hono/utils/cookie';
+import { appConfig, TokenType } from 'shared';
 import { Env } from '#/lib/context';
 import type { TimeSpan } from '#/utils/time-span';
 import { env } from '../../../../env';

@@ -1,11 +1,11 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { appConfig } from 'config';
 import { ArrowRightIcon, ChevronDownIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import type { z } from 'zod';
 import { type SignInData, type SignInResponse, signIn } from '~/api.gen';
 import { zSignUpData } from '~/api.gen/zod.gen';
@@ -28,10 +28,10 @@ type FormValues = z.infer<typeof formSchema>;
 /**
  * Handles user sign-in, including standard password login and token-based invitation flow.
  */
-export const SignInStep = () => {
+export function SignInStep() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { email, resetSteps } = useAuthStore();
+  const { email, resetSteps, restrictedMode, setStep } = useAuthStore();
 
   const passwordRef = useRef<HTMLInputElement>(null);
 
@@ -52,7 +52,7 @@ export const SignInStep = () => {
     mutationFn: (body) => signIn({ body }),
     onSuccess: ({ emailVerified, mfa }) => {
       if (mfa || !emailVerified) {
-        if (mfa) setLastUser({ email, mfaRequired: true });
+        if (mfa) setLastUser({ email: form.getValues('email'), mfaRequired: true });
         const navigateInfo = !emailVerified
           ? { to: EmailVerificationRoute.to, params: { reason: 'signin' } }
           : { to: MfaRoute.to };
@@ -74,9 +74,10 @@ export const SignInStep = () => {
       });
     },
     onError: (error: ApiError) => {
-      if (error?.status === 404) return resetSteps();
+      // In restricted mode, don't reset steps on 404 (user not found) to avoid email enumeration
+      if (error?.status === 404 && !restrictedMode) return resetSteps();
 
-      if (error.type !== 'invalid_password') return;
+      if (error.type !== 'invalid_password' && error.type !== 'invalid_credentials') return;
       if (!isMobile) passwordRef.current?.focus();
       form.reset(form.getValues());
     },
@@ -89,31 +90,66 @@ export const SignInStep = () => {
     resetSteps();
   };
 
+  // In restricted mode, show different title
+  const getTitle = () => {
+    if (restrictedMode) return t('common:sign_in');
+    if (tokenId) return t('common:invite_sign_in');
+    if (lastUser) return t('common:welcome_back');
+    return t('common:sign_in_as');
+  };
+
   return (
     <Form {...form}>
-      <h1 className="text-2xl text-center">
-        {tokenId ? t('common:invite_sign_in') : lastUser ? t('common:welcome_back') : t('common:sign_in_as')} <br />
-        <Button
-          variant="ghost"
-          onClick={resetAuth}
-          disabled={!!tokenId}
-          className="mx-auto flex max-w-full truncate font-light mt-2 sm:text-xl bg-foreground/10"
-        >
-          <span className="truncate">{email}</span>
-          {!tokenId && <ChevronDownIcon size={16} className="ml-1" />}
-        </Button>
-      </h1>
+      {restrictedMode ? (
+        <>
+          <h1 className="text-2xl text-center mt-4">{getTitle()}</h1>
+          {appConfig.has.registrationEnabled && (
+            <p className="text-center font-light">
+              {t('common:new_here')}{' '}
+              <Button
+                type="button"
+                variant="link"
+                className="p-0 text-base h-auto"
+                onClick={() => setStep('signUp', form.getValues('email'))}
+              >
+                {t('common:sign_up')}
+              </Button>
+            </p>
+          )}
+        </>
+      ) : (
+        <h1 className="text-2xl text-center">
+          {getTitle()} <br />
+          <Button
+            variant="ghost"
+            onClick={resetAuth}
+            disabled={!!tokenId}
+            className="mx-auto flex max-w-full truncate font-light mt-2 sm:text-xl bg-foreground/10"
+          >
+            <span className="truncate">{email}</span>
+            {!tokenId && <ChevronDownIcon size={16} className="ml-1" />}
+          </Button>
+        </h1>
+      )}
+
       {emailEnabled && (
         <form onSubmit={form.handleSubmit(onSubmit, defaultOnInvalid)} className="flex flex-col gap-4 mt-0!">
           <FormField
             control={form.control}
             name="email"
             render={({ field }) => (
-              <FormItem className="hidden">
+              <FormItem className={restrictedMode ? 'gap-0 -mb-2' : 'hidden'}>
                 <FormControl>
-                  <Input {...field} disabled type="email" autoComplete="off" placeholder={t('common:email')} />
+                  <Input
+                    {...field}
+                    disabled={!restrictedMode}
+                    type="email"
+                    className="h-12"
+                    autoFocus={restrictedMode && !isMobile}
+                    autoComplete={restrictedMode ? 'email' : 'off'}
+                    placeholder={t('common:email')}
+                  />
                 </FormControl>
-                <FormMessage />
               </FormItem>
             )}
           />
@@ -129,7 +165,8 @@ export const SignInStep = () => {
                       <Input
                         type="password"
                         id="password-field"
-                        autoFocus={!isMobile}
+                        className="h-12"
+                        autoFocus={!restrictedMode && !isMobile}
                         {...field}
                         ref={passwordRef}
                         autoComplete="current-password"
@@ -145,7 +182,7 @@ export const SignInStep = () => {
                 {t('common:sign_in')}
                 <ArrowRightIcon size={16} className="ml-2" />
               </SubmitButton>
-              <RequestPasswordDialog email={email} onEmailChange={resetSteps}>
+              <RequestPasswordDialog email={email || form.getValues('email')} onEmailChange={resetSteps}>
                 <Button variant="ghost" size="sm" className="w-full font-normal">
                   {t('common:forgot_password')}
                 </Button>
@@ -156,4 +193,4 @@ export const SignInStep = () => {
       )}
     </Form>
   );
-};
+}

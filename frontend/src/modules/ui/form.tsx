@@ -12,6 +12,7 @@ import {
   useFormContext,
   useFormState,
 } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
 import { Label } from '~/modules/ui/label';
 import { cn } from '~/utils/cn';
@@ -30,7 +31,7 @@ type FormProps<
   labelDirection?: LabelDirectionType;
 };
 
-const Form = <
+export const Form = <
   TFieldValues extends FieldValues,
   TContext = unknown,
   TTransformedValues extends FieldValues = TFieldValues,
@@ -58,20 +59,18 @@ type FormFieldContextValue<
 
 const FormFieldContext = React.createContext<FormFieldContextValue>({} as FormFieldContextValue);
 
-const FormField = <
+export function FormField<
   TFieldValues extends FieldValues = FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
->({
-  ...props
-}: ControllerProps<TFieldValues, TName>) => {
+>({ ...props }: ControllerProps<TFieldValues, TName>) {
   return (
     <FormFieldContext.Provider value={{ name: props.name }}>
       <Controller {...props} />
     </FormFieldContext.Provider>
   );
-};
+}
 
-const useFormField = () => {
+export function useFormField() {
   const fieldContext = React.useContext(FormFieldContext);
   const itemContext = React.useContext(FormItemContext);
 
@@ -95,14 +94,14 @@ const useFormField = () => {
     formMessageId: `${formItemId}-message`,
     ...fieldState,
   };
-};
+}
 
 type FormItemContextValue = { id: string };
 
 const FormItemContext = React.createContext<FormItemContextValue>({} as FormItemContextValue);
 
 // INFO: added to support targeting the entire form item (for example to hide)
-function FormItem({ className, name, ...props }: React.ComponentProps<'div'> & { name?: string }) {
+export function FormItem({ className, name, ...props }: React.ComponentProps<'div'> & { name?: string }) {
   const id = React.useId();
   const labelDirection = React.useContext(LabelDirectionContext);
 
@@ -118,14 +117,14 @@ function FormItem({ className, name, ...props }: React.ComponentProps<'div'> & {
   );
 }
 
-function FormLabel({ className, ...props }: React.ComponentProps<typeof LabelPrimitive.Root>) {
+export function FormLabel({ className, ...props }: React.ComponentProps<typeof LabelPrimitive.Root>) {
   const { error, formItemId } = useFormField();
   return (
     <Label data-slot="form-label" data-error={!!error} className={cn('', className)} htmlFor={formItemId} {...props} />
   );
 }
 
-function FormControl({ ...props }: React.ComponentProps<typeof Slot>) {
+export function FormControl({ ...props }: React.ComponentProps<typeof Slot>) {
   const { error, formItemId, formDescriptionId, formMessageId } = useFormField();
   return (
     <Slot
@@ -138,7 +137,7 @@ function FormControl({ ...props }: React.ComponentProps<typeof Slot>) {
   );
 }
 
-function FormDescription({ className, children, ...props }: React.ComponentProps<'p'>) {
+export function FormDescription({ className, children, ...props }: React.ComponentProps<'p'>) {
   const { formDescriptionId } = useFormField();
   const [collapsed, setCollapsed] = React.useState(true);
 
@@ -171,10 +170,12 @@ function FormDescription({ className, children, ...props }: React.ComponentProps
   );
 }
 
-function FormMessage({ className, ...props }: React.ComponentProps<'p'>) {
+export function FormMessage({ className, ...props }: React.ComponentProps<'p'>) {
+  const { t, i18n } = useTranslation();
   const { error, formMessageId, invalid } = useFormField();
-  const body = error ? String(error?.message ?? '') : props.children;
-  // const body = error ? String(Array.isArray(error) ? error.find((err) => err?.message)?.message : error?.message) : props.children;
+  const message = error?.message ?? '';
+  // Translate error messages that are i18n keys (e.g. 'error:form.required')
+  const body = error ? (message && i18n.exists(message) ? t(message) : message) : props.children;
 
   if (!body || !invalid) return null;
 
@@ -184,5 +185,3 @@ function FormMessage({ className, ...props }: React.ComponentProps<'p'>) {
     </p>
   );
 }
-
-export { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage, useFormField };

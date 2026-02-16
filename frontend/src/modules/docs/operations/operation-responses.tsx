@@ -17,7 +17,7 @@ import type { GenComponentSchema, GenResponseSummary, GenSchema } from '../types
 import { ViewerGroup } from '../viewer-group';
 
 /** Resolve response schema, looking up by name from prefetched schemas for error responses */
-const resolveResponseSchema = (response: GenResponseSummary, schemas: GenComponentSchema[]): GenSchema | undefined => {
+function resolveResponseSchema(response: GenResponseSummary, schemas: GenComponentSchema[]): GenSchema | undefined {
   if (response.schema) return response.schema;
   // For error responses (no embedded schema), look up by name in schemas.gen.json
   if (response.name) {
@@ -25,7 +25,7 @@ const resolveResponseSchema = (response: GenResponseSummary, schemas: GenCompone
     return schemaEntry?.schema;
   }
   return undefined;
-};
+}
 
 interface ResponsesAccordionProps {
   responses: GenResponseSummary[];
@@ -38,7 +38,7 @@ interface ResponsesAccordionProps {
 /**
  * Accordion component to display operation responses.
  */
-const ResponsesAccordion = ({ responses, schemas, operationId, zodContent, typesContent }: ResponsesAccordionProps) => {
+function ResponsesAccordion({ responses, schemas, operationId, zodContent, typesContent }: ResponsesAccordionProps) {
   const { t } = useTranslation();
 
   if (responses.length === 0) {
@@ -85,7 +85,7 @@ const ResponsesAccordion = ({ responses, schemas, operationId, zodContent, types
       })}
     </Accordion>
   );
-};
+}
 
 interface OperationResponsesProps {
   operationId: string;
@@ -149,12 +149,10 @@ export const TagExpandButtonContent = ({ tagName, isOpen }: TagExpandButtonProps
   useSuspenseQuery(tagDetailsQueryOptions(tagName));
 
   return (
-    <>
+    <span className="contents group" data-open={isOpen}>
       {t('common:docs.hide_details')}
-      <ChevronDown
-        className={cn('ml-2 h-4 w-4 transition-transform duration-200 opacity-50', isOpen && 'rotate-180')}
-      />
-    </>
+      <ChevronDown className="ml-2 h-4 w-4 transition-transform duration-200 opacity-50 group-data-[open=true]:rotate-180" />
+    </span>
   );
 };
 

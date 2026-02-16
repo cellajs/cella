@@ -1,4 +1,4 @@
-import { appConfig } from 'config';
+import { appConfig } from 'shared';
 import type { CustomUppyOpt } from '~/modules/common/uploader/types';
 
 const typeMap: Record<string, string[]> = {

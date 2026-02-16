@@ -1,5 +1,5 @@
-import { appConfig } from 'config';
 import { useSyncExternalStore } from 'react';
+import { appConfig } from 'shared';
 
 // Sort breakpoints once for efficiency
 const breakpoints: { [key: string]: string } = appConfig.theme.screenSizes;
@@ -8,7 +8,7 @@ const sortedBreakpoints = Object.keys(breakpoints).sort(
 );
 
 // Function to get the matched breakpoint based on window width
-const getMatchedBreakpoints = () => {
+function getMatchedBreakpoints() {
   if (typeof window === 'undefined') return sortedBreakpoints[0];
 
   const width = window.innerWidth;
@@ -26,14 +26,14 @@ const getMatchedBreakpoints = () => {
     }
   }
   return matched;
-};
+}
 
 // Store global state in a module-level variable - initialize immediately
 let currentBreakpoint = getMatchedBreakpoints();
 const listeners = new Set<() => void>();
 
 // Function to update global breakpoint state (runs only when necessary)
-const updateGlobalBreakpoint = () => {
+function updateGlobalBreakpoint() {
   const newBreakpoint = getMatchedBreakpoints();
   if (newBreakpoint !== currentBreakpoint) {
     currentBreakpoint = newBreakpoint;
@@ -41,22 +41,70 @@ const updateGlobalBreakpoint = () => {
       listener();
     }
   }
-};
+}
 
 // Attach the listener once per app lifecycle
 if (typeof window !== 'undefined') {
   window.addEventListener('resize', updateGlobalBreakpoint);
 }
 
-// Subscribe function for useSyncExternalStore
-const subscribe = (callback: () => void) => {
+/**
+ * Subscribe to breakpoint changes (works outside React components).
+ * @param callback - Function to call when breakpoint changes
+ * @returns Unsubscribe function
+ */
+export function subscribeToBreakpointChanges(callback: () => void) {
   listeners.add(callback);
   return () => listeners.delete(callback);
-};
+}
+
+/**
+ * Get the current breakpoint snapshot (works outside React components).
+ */
+export function getBreakpointSnapshot() {
+  return currentBreakpoint;
+}
+
+// Subscribe function for useSyncExternalStore (internal use)
+function subscribe(callback: () => void) {
+  listeners.add(callback);
+  return () => listeners.delete(callback);
+}
 
 // Snapshot functions for useSyncExternalStore
-const getSnapshot = () => currentBreakpoint;
-const getServerSnapshot = () => sortedBreakpoints[0];
+function getSnapshot() {
+  return currentBreakpoint;
+}
+
+function getServerSnapshot() {
+  return sortedBreakpoints[0];
+}
+
+/** Breakpoint key type for responsive utilities. */
+export type BreakpointKey = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+
+/**
+ * Hook to get the current breakpoint key based on viewport width.
+ * Uses useSyncExternalStore for efficient single subscription.
+ */
+export function useCurrentBreakpoint(enableReactivity = true): BreakpointKey {
+  const breakpointState = useSyncExternalStore(
+    enableReactivity ? subscribe : () => () => {},
+    getSnapshot,
+    getServerSnapshot,
+  );
+  // Handle 'xs' case when breakpoint is smaller than 'sm'
+  const smIndex = sortedBreakpoints.indexOf('sm');
+  const currentIndex = sortedBreakpoints.indexOf(breakpointState);
+  if (
+    currentIndex <= smIndex &&
+    typeof window !== 'undefined' &&
+    window.innerWidth < Number.parseInt(breakpoints.sm, 10)
+  ) {
+    return 'xs';
+  }
+  return breakpointState as BreakpointKey;
+}
 
 /**
  * Breakpoint hook to determine if the current viewport matches the specified breakpoint condition.
@@ -67,11 +115,7 @@ const getServerSnapshot = () => sortedBreakpoints[0];
  * @example
  * const isMobile = useBreakpoints('max', 'sm', false); // Non-reactive
  */
-export const useBreakpoints = (
-  mustBe: 'min' | 'max',
-  breakpoint: keyof typeof breakpoints,
-  enableReactivity = true,
-) => {
+export function useBreakpoints(mustBe: 'min' | 'max', breakpoint: keyof typeof breakpoints, enableReactivity = true) {
   // useSyncExternalStore provides tear-free reads from external state
   const breakpointState = useSyncExternalStore(
     enableReactivity ? subscribe : () => () => {},
@@ -85,4 +129,4 @@ export const useBreakpoints = (
   return mustBe === 'min'
     ? currentBreakpointIndex > targetBreakpointIndex
     : currentBreakpointIndex <= targetBreakpointIndex;
-};
+}

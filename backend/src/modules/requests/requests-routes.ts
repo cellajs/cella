@@ -1,11 +1,10 @@
 import { createXRoute } from '#/docs/x-routes';
-import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
+import { authGuard, publicGuard, sysAdminGuard } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { emailEnumLimiter, spamLimiter } from '#/middlewares/rate-limiter/limiters';
 import { requestCreateBodySchema, requestListQuerySchema, requestSchema } from '#/modules/requests/requests-schema';
-import { idsBodySchema } from '#/utils/schema/common';
-import { errorResponseRefs } from '#/utils/schema/error-responses';
-import { paginationSchema } from '#/utils/schema/success-responses';
+import { batchResponseSchema, errorResponseRefs, idsBodySchema, paginationSchema } from '#/schemas';
+import { mockPaginatedRequestsResponse, mockRequestResponse } from '../../../mocks/mock-request';
 
 const requestRoutes = {
   /**
@@ -15,7 +14,7 @@ const requestRoutes = {
     operationId: 'createRequest',
     method: 'post',
     path: '/',
-    xGuard: isPublicAccess,
+    xGuard: publicGuard,
     xRateLimiter: [emailEnumLimiter, spamLimiter],
     middleware: [isNoBot],
     tags: ['requests'],
@@ -31,7 +30,7 @@ const requestRoutes = {
     responses: {
       201: {
         description: 'Requests',
-        content: { 'application/json': { schema: requestSchema } },
+        content: { 'application/json': { schema: requestSchema, example: mockRequestResponse() } },
       },
       ...errorResponseRefs,
     },
@@ -43,7 +42,7 @@ const requestRoutes = {
     operationId: 'getRequests',
     method: 'get',
     path: '/',
-    xGuard: [isAuthenticated, hasSystemAccess],
+    xGuard: [authGuard, sysAdminGuard],
     tags: ['requests'],
     summary: 'Get list of requests',
     description: 'Returns a list of submitted *requests* across all types: contact form, newsletter, and waitlist.',
@@ -54,6 +53,7 @@ const requestRoutes = {
         content: {
           'application/json': {
             schema: paginationSchema(requestSchema),
+            example: mockPaginatedRequestsResponse(),
           },
         },
       },
@@ -67,7 +67,7 @@ const requestRoutes = {
     operationId: 'deleteRequests',
     method: 'delete',
     path: '/',
-    xGuard: [isAuthenticated, hasSystemAccess],
+    xGuard: [authGuard, sysAdminGuard],
     tags: ['requests'],
     summary: 'Delete requests',
     description: 'Deletes one or more *requests* from the system by their IDs.',
@@ -78,8 +78,9 @@ const requestRoutes = {
       },
     },
     responses: {
-      204: {
-        description: 'Requests deleted',
+      200: {
+        description: 'Success',
+        content: { 'application/json': { schema: batchResponseSchema() } },
       },
       ...errorResponseRefs,
     },

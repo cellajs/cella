@@ -10,21 +10,23 @@
  * These functions are intended to be used in test files to keep setup DRY and consistent.
  */
 
-import { appConfig } from 'config';
 import { sql } from 'drizzle-orm';
 import { Context, Next } from 'hono';
+import { appConfig } from 'shared';
 import { vi } from 'vitest';
-import { db } from '#/db/db';
-import { resetOrganizationMockEnforcers, resetUserMockEnforcers } from '../mocks';
+import { unsafeInternalDb as db } from '#/db/db';
+import { resetOrganizationMockEnforcers } from '../mocks/mock-organization';
+import { resetUserMockEnforcers } from '../mocks/mock-user';
 
 /**
  * Types
  */
 type AuthStrategy = 'password' | 'passkey' | 'oauth' | 'totp';
+type OAuthProvider = 'github' | 'google' | 'microsoft';
 
 type ConfigOverride = {
   enabledAuthStrategies?: AuthStrategy[];
-  enabledOAuthProviders?: string[];
+  enabledOAuthProviders?: OAuthProvider[];
   registrationEnabled?: boolean;
 };
 
@@ -125,17 +127,15 @@ export function mockArcticLibrary() {
  */
 export function setTestConfig(overrides: ConfigOverride) {
   if (overrides.enabledAuthStrategies) {
-    // Maybe not the best way to cast, but config.enabledAuthStrategies is a readonly fixed
-    appConfig.enabledAuthStrategies =
-      overrides.enabledAuthStrategies as unknown as typeof appConfig.enabledAuthStrategies;
+    appConfig.enabledAuthStrategies = overrides.enabledAuthStrategies;
   }
 
   if (overrides.enabledOAuthProviders) {
-    appConfig.enabledOAuthProviders =
-      overrides.enabledOAuthProviders as unknown as typeof appConfig.enabledOAuthProviders;
+    // Config type is narrowed by `satisfies` in default-config, so cast needed to widen
+    appConfig.enabledOAuthProviders = overrides.enabledOAuthProviders as typeof appConfig.enabledOAuthProviders;
   }
 
   if (overrides.registrationEnabled !== undefined) {
-    appConfig.has.registrationEnabled = overrides.registrationEnabled;
+    (appConfig.has as { registrationEnabled: boolean }).registrationEnabled = overrides.registrationEnabled;
   }
 }

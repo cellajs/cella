@@ -1,18 +1,20 @@
-import { MenuSection } from 'config';
-import type { GetMyAuthResponse, GetMyInvitationsResponse, GetUploadTokenData, User } from '~/api.gen';
-import type { ContextEntityData } from '~/modules/entities/types';
+import { appConfig } from 'shared';
+import type { GetMyInvitationsResponse, GetUploadTokenData, MeAuthData, User } from '~/api.gen';
+import type { ContextEntity } from '~/modules/entities/types';
 
-export type MeAuthData = GetMyAuthResponse;
 export type Session = MeAuthData['sessions'][number];
 export type Passkey = MeAuthData['passkeys'][number];
 
 export type MeUser = User;
-export type UserMenu = Record<MenuSection['entityType'], UserMenuItem[]>;
 
-export type ContextEntityDataWithMembership = Omit<ContextEntityData, 'membership'> & {
-  membership: NonNullable<ContextEntityData['membership']>;
+/** Extracts only the top-level entityType values from menuStructure (excludes subentityType) */
+type MenuEntityType = (typeof appConfig.menuStructure)[number]['entityType'];
+export type UserMenu = Record<MenuEntityType, UserMenuItem[]>;
+
+export type ContextEntityWithMembership = Omit<ContextEntity, 'membership'> & {
+  membership: NonNullable<ContextEntity['membership']>;
 };
-export type UserMenuItem = ContextEntityDataWithMembership & { submenu?: ContextEntityDataWithMembership[] };
+export type UserMenuItem = ContextEntityWithMembership & { submenu?: ContextEntityWithMembership[] };
 
 export type UploadTokenQuery = GetUploadTokenData['query'] & { public: boolean };
 

@@ -1,8 +1,8 @@
 import { execSync } from 'node:child_process';
-import { appConfig } from 'config';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
-import { db, migrateConfig } from '#/db/db';
+import { migrateConfig, migrationDb } from '#/db/db';
 import { env } from '#/env';
+import { createDbRoles } from './db/create-db-roles';
 
 if (env.DEV_MODE === 'basic') {
   console.info(' ');
@@ -11,13 +11,23 @@ if (env.DEV_MODE === 'basic') {
   process.exit(0);
 }
 
-// Migrate db
-await migrate(db, migrateConfig);
+if (!migrationDb) {
+  console.error('DATABASE_ADMIN_URL required for migrations');
+  process.exit(1);
+}
+
+// Create db roles first
+await createDbRoles();
+
+// Migrate db using admin connection (applies RLS grants)
+await migrate(migrationDb, migrateConfig);
+
+import { seedScripts } from './scripts-config';
 
 /**
- * Run seed scripts array from config
+ * Run seed scripts array from scripts-config
  */
-for (const cmd of appConfig.seedScripts) {
+for (const cmd of seedScripts) {
   try {
     // Execute the command
     execSync(cmd, { stdio: 'inherit' });

@@ -1,23 +1,12 @@
 import { useTranslation } from 'react-i18next';
-import {
-  ApiError,
-  GetMyInvitationsResponse,
-  HandleMembershipInvitationData,
-  HandleMembershipInvitationResponse,
-  handleMembershipInvitation,
-} from '~/api.gen';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import { useMutation } from '~/hooks/use-mutations';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
-import HeaderCell from '~/modules/common/data-table/header-cell';
+import { HeaderCell } from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
-import { toaster } from '~/modules/common/toaster/service';
-import { meKeys } from '~/modules/me/query';
-import { Invitation } from '~/modules/me/types';
-import { getMenuData } from '~/modules/navigation/menu-sheet/helpers';
+import { useHandleInvitationMutation } from '~/modules/me/query';
+import type { Invitation } from '~/modules/me/types';
 import { Button } from '~/modules/ui/button';
-import { UserCellById } from '~/modules/users/user-cell';
-import { queryClient } from '~/query/query-client';
+import { UserCellById } from '~/modules/user/user-cell';
 import { dateShort } from '~/utils/date-short';
 
 export const useColumns = () => {
@@ -30,27 +19,7 @@ export const useColumns = () => {
     { label: t('common:reject'), variant: 'destructive', action: 'reject' },
   ] as const;
 
-  const { mutate: handleInvitation } = useMutation<
-    HandleMembershipInvitationResponse,
-    ApiError,
-    HandleMembershipInvitationData['path']
-  >({
-    mutationFn: ({ id, acceptOrReject, orgIdOrSlug }) =>
-      handleMembershipInvitation({ path: { id, acceptOrReject, orgIdOrSlug } }),
-    onSuccess: async (settledEntity, { acceptOrReject }) => {
-      await getMenuData();
-
-      queryClient.setQueryData<GetMyInvitationsResponse>(meKeys.invites, (oldData) => {
-        if (!oldData) return oldData;
-        return { ...oldData, items: oldData.items.filter((invite) => invite.entity.id !== settledEntity.id) };
-      });
-
-      toaster(
-        t(`common:invitation_settled`, { action: acceptOrReject === 'accept' ? 'accepted' : 'rejected' }),
-        'success',
-      );
-    },
-  });
+  const { mutate: handleInvitation } = useHandleInvitationMutation();
 
   const columns: ColumnOrColumnGroup<Invitation>[] = [
     {
@@ -139,9 +108,7 @@ export const useColumns = () => {
               variant={variant}
               onClick={() =>
                 handleInvitation({
-                  id: row.inactiveMembership.id,
-                  acceptOrReject: action,
-                  orgIdOrSlug: row.inactiveMembership.organizationId,
+                  path: { id: row.inactiveMembership.id, acceptOrReject: action },
                 })
               }
             >

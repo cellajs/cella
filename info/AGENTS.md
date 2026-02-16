@@ -7,7 +7,7 @@ Cella is a TypeScript template for building collaborative web apps with sync and
 
 ## Tech Stack
 - **Backend**: Node.js (v24), Hono, Drizzle ORM, PostgreSQL (or PGlite for local dev), Scalar (API Docs).
-- **Frontend**: React, TanStack Router, TanStack Query, Zustand, Electric Sync, Shadcn UI, Tailwind CSS.
+- **Frontend**: React, TanStack Router, TanStack Query, Zustand, Shadcn UI, Tailwind CSS.
 - **Tools**: Pnpm (workspaces), Biome (lint/format), Vitest (testing), Vite.
 - **IDE Support**: Development with VSCode and WebStorm/JetBrains should be supported.  
 
@@ -52,10 +52,12 @@ Cella is a TypeScript template for building collaborative web apps with sync and
 - **Database**: Drizzle ORM is mandatory. Schema definitions are in `backend/src/db/schema/`. Use `pnpm generate` in the root or backend to create migrations.
 
 ## Coding Patterns
-- **Sync/Offline**: Leverage Electric Sync for realtime and offline capabilities using `useLiveQuery`. Look at the `pages` module for a reference implementation.
 - **Entities**: Entities are categorized into `ContextEntityType` (has memberships, like organizations) and `ProductEntityType` (content-related). See `info/ARCHITECTURE.md` for details.
 - **Environment**: Check `.env` and `config/default.ts` for configuration.
 - **Debug Mode**: Set `VITE_DEBUG_MODE=true` in `frontend/.env` to enable debug features:
+- **Stores, no Providers**: The code base favours Stores over react Provider pattern due to DX and render performance.
+- **OpenAPI nullable schemas**: When making a named OpenAPI schema nullable, use `z.union([namedSchema, z.null()])` instead of `namedSchema.nullable()`. The `.nullable()` approach generates an `allOf` intersection in OpenAPI, resulting in `Type & ({[key: string]: unknown} | null)` in generated types. Using `z.union()` generates a proper `anyOf`, resulting in clean `Type | null`.
+- **OpenAPI schema naming**: Only register schemas as named OpenAPI components (`.openapi('Name')`) when they represent core entity responses or shared base types. Inline enums (e.g., status values) and request body schemas should not be registered — they get inlined at usage sites. Named schemas are categorized automatically by the docs UI: names containing "Base" → base, "Error" → errors, everything else → data. Use a single shared schema when the shape is identical across contexts (e.g., `StreamNotification` used by both app and public streams). Use consistent prefixes only when schemas genuinely differ.
 
 ## Coding Style & Naming Conventions
 - Formatter/Linter: Biome (see `biome.json`). Run it with `pnpm lint` or `pnpm lint:fix`.
@@ -64,12 +66,12 @@ Cella is a TypeScript template for building collaborative web apps with sync and
 - Type assertions: Avoid `as` type assertions. Prefer type-safe patterns like `Object.assign` for intersection types, factory functions with `satisfies`, or const assertions (`as const`). When unavoidable, isolate assertions in well-documented helper functions.
 - Prefer feature-oriented folders; test files near code or under `tests/`.
 - Zod v4 only: `import { z } from 'zod'`. However, in backend due to using hono/zod-openapi, `import { z } from '@hono/zod-openapi'` is required.
-- camelCase for variables and functions, PascalCase for React components. File names should be kebab-case. Language translation keys should be snake_case.
-- Documentation: Add JSDoc block comments to all exported functions and components. Keep comments concise (1-3 lines) describing the purpose and key behavior. In backend we usually add a full JSDoc including params and response, in frontend we limit it to 1-3 text lines, unless its complex and critical functionality.
+- camelCase for variables and functions (including constants - no UPPER_CASE), PascalCase for React components. File names should be kebab-case. Language translation keys should be snake_case.
+- Documentation: Add JSDoc block comments to all exported functions and components. Keep comments concise (1-3 lines) describing the purpose and key behavior. In backend we usually add a full JSDoc including params and response, in frontend we limit it to 1-3 text lines, unless its complex and critical functionality. Do not add standalone file-level comments above imports — place descriptive comments as JSDoc on the nearest export instead.
 - Storybook: Stories should be placed in a central `stories/` folder within the module (e.g., `frontend/src/modules/ui/stories/` or `frontend/src/modules/common/stories/`), not alongside component files. Name stories `<component-filename>.stories.tsx`.
 - Icons: We use lucide icons and import them using Icon suffix, such as `PencilIcon`.
 - Code comment: when iterating keep comments intact as they provide valuable history. They should be cleaned only when explicitly requested.
-- Console logging: Use `console.log` only for temporary debugging (remove before commit). Use `console.debug` for persistent debug statements as Vite strips them in production builds. For debug-mode-gated logging, use helpers from `~/lib/debug`.
+- Console logging: Use `console.log` for temporary debugging (remove before commit), `console.info` for basic logging.  Use `console.debug` for development debug statements as Vite strips them in production builds. For debug-mode-gated logging, use helpers from `~/lib/debug`.
 
 
 - Links as buttons: For buttons that link to directly targetable online resources, use TanStack Router `<Link>` with `buttonVariants()` instead of `<button>`. Also when the primary action is opening a sheet, if the data targetable by url, allow end-user to open it in a new tab.
@@ -85,22 +87,22 @@ Cella is a TypeScript template for building collaborative web apps with sync and
 - See [info/TESTING.md](./TESTING.md) for detailed test mode documentation.
 
 ## Commits & Pull Requests
+- Use `git` and `gh` CLI wherever possible. Do not use GitKraken or other third-party git tools.
 - Use Conventional Commits: `feat:`, `fix:`, `chore:`, `refactor:`; optional scope (e.g., `feat(web): ...`).
 - PRs must include: concise description, linked issues (`#123`), screenshots for UI, and passing checks (build, typecheck, lint, tests).
 - Keep changes scoped; update docs and `.env.example` when config changes.
 
 ## Commands
-- `pnpm dev`: Start development with PostgreSQL (DEV_MODE=core).
+- `pnpm dev`: Start development with PostgreSQL + CDC Worker (DEV_MODE=full).
+- `pnpm dev:core`: Start development with PostgreSQL only (DEV_MODE=core, no CDC).
 - `pnpm quick`: Start development with PGlite (DEV_MODE=basic, fast, no Docker).
-- `pnpm dev:full`: Start development with PostgreSQL and optional workers (DEV_MODE=full).
 - `pnpm test`: Run all tests across the monorepo (alias for `pnpm test:core`).
 - `pnpm test:basic`: Fast unit tests only (no Docker required).
 - `pnpm test:core`: Standard tests with PostgreSQL (requires Docker).
 - `pnpm test:full`: Complete test suite including CDC integration tests.
+- `pnpm test:update`: Update Vitest snapshots in backend and frontend.
 - `pnpm check`: Comprehensive validation. Runs `generate:openapi`, `ts` (type check), and `lint:fix`.
 - `pnpm generate`: Generate new Drizzle migrations based on schema changes in `backend/src/db/schema/`.
 - `pnpm generate:openapi`: Regenerate backend OpenAPI spec and update the frontend `api.gen` client.
 - `pnpm seed`: Seed the database with initial/test data.
-- `pnpm diverged`: List files that have diverged from the upstream Cella template.
-- `pnpm upstream:pull`: Pull changes from the upstream Cella template (automatically undoes changes in ignored files).
-- `pnpm sync`: Orchestrates the full execution flow of the Cella Sync Engine (boilerplate/fork sync).
+- `pnpm cella`: Orchestrates the full execution flow of the Cella sync CLI (boilerplate/fork sync).

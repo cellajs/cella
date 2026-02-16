@@ -1,23 +1,20 @@
 import { index, pgTable, varchar } from 'drizzle-orm/pg-core';
-import { tokensTable } from '#/db/schema/tokens';
+import { maxLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
 
-const requestTypeEnum = ['waitlist', 'newsletter', 'contact'] as const;
+export const requestTypeEnum = ['waitlist', 'newsletter', 'contact'] as const;
 
-/**
- * Requests table to store various types of end-user requests.
- * Includes waitlist signups, newsletter subscriptions, and contact form messages.
- */
+/** Waitlist signups, newsletter subscriptions, and contact form messages. */
 export const requestsTable = pgTable(
   'requests',
   {
     createdAt: timestampColumns.createdAt,
-    id: varchar().primaryKey().$defaultFn(nanoid),
-    message: varchar(),
-    email: varchar().notNull(),
+    id: varchar({ length: maxLength.id }).primaryKey().$defaultFn(nanoid),
+    message: varchar({ length: maxLength.field }),
+    email: varchar({ length: maxLength.field }).notNull(),
     type: varchar({ enum: requestTypeEnum }).notNull(),
-    tokenId: varchar().references(() => tokensTable.id, { onDelete: 'cascade' }),
+    tokenId: varchar({ length: maxLength.id }), // References tokens.id logically (no FK due to partitioning)
   },
   (table) => [index('requests_emails').on(table.email.desc()), index('requests_created_at').on(table.createdAt.desc())],
 );

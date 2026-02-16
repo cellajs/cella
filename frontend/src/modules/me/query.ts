@@ -1,11 +1,22 @@
 import { queryOptions, useMutation } from '@tanstack/react-query';
 import { t } from 'i18next';
-import type { DeletePasskeyData, DeletePasskeyResponse, ToggleMfaData, User } from '~/api.gen';
+import type {
+  DeletePasskeyData,
+  DeletePasskeyResponse,
+  GetMyInvitationsResponse,
+  HandleMembershipInvitationData,
+  HandleMembershipInvitationResponse,
+  MeAuthData,
+  ToggleMfaData,
+  User,
+} from '~/api.gen';
 import {
   createPasskey,
   deletePasskey,
   deleteTotp,
   getMyInvitations,
+  getMyMemberships,
+  handleMembershipInvitation,
   toggleMfa,
   type UpdateMeData,
   updateMe,
@@ -14,9 +25,11 @@ import type { ApiError } from '~/lib/api';
 import { getPasskeyRegistrationCredential } from '~/modules/auth/passkey-credentials';
 import { toaster } from '~/modules/common/toaster/service';
 import { getAndSetMe, getAndSetMeAuthData } from '~/modules/me/helpers';
-import type { MeAuthData, Passkey } from '~/modules/me/types';
-import { userQueryKeys } from '~/modules/users/query';
+import type { Passkey } from '~/modules/me/types';
+import { getMenuData } from '~/modules/navigation/menu-sheet/helpers';
+import { userQueryKeys } from '~/modules/user/query';
 import { queryClient } from '~/query/query-client';
+import type { MutationData } from '~/query/types';
 import { useUserStore } from '~/store/user';
 
 /**
@@ -28,6 +41,7 @@ export const meKeys = {
   menu: ['me', 'menu'],
   auth: ['me', 'auth'],
   invites: ['me', 'invites'],
+  memberships: ['me', 'memberships'],
   register: {
     passkey: ['me', 'register', 'passkey'],
   },
@@ -146,10 +160,10 @@ export const useCreatePasskeyMutation = () => {
  * @returns The mutation hook for deleting passkey.
  */
 export const useDeletePasskeyMutation = () => {
-  return useMutation<DeletePasskeyResponse, ApiError, DeletePasskeyData['path']>({
+  return useMutation<DeletePasskeyResponse, ApiError, MutationData<DeletePasskeyData>>({
     mutationKey: meKeys.delete.passkey,
-    mutationFn: ({ id }) => deletePasskey({ path: { id } }),
-    onSuccess: (_data, { id }) => {
+    mutationFn: ({ path }) => deletePasskey({ path }),
+    onSuccess: (_data, { path: { id } }) => {
       queryClient.setQueryData<MeAuthData>(meKeys.auth, (oldData) => {
         if (!oldData) return oldData;
         return {
@@ -192,3 +206,35 @@ const updateOnSuccesses = (updatedUser: User) => {
   queryClient.setQueryData(userQueryKeys.detail.byId(updatedUser.id), updatedUser);
   updateUser(updatedUser);
 };
+
+/**
+ * Query options to fetch all memberships for the current user.
+ * This is the source of truth for user memberships in the frontend.
+ */
+export const myMembershipsQueryOptions = () =>
+  queryOptions({
+    queryKey: meKeys.memberships,
+    queryFn: async ({ signal }) => getMyMemberships({ signal }),
+  });
+
+/**
+ * Mutation hook to accept or reject a membership invitation.
+ * Removes the settled invite from cache and refreshes the menu.
+ */
+export const useHandleInvitationMutation = () =>
+  useMutation<HandleMembershipInvitationResponse, ApiError, MutationData<HandleMembershipInvitationData>>({
+    mutationFn: ({ path }) => handleMembershipInvitation({ path }),
+    onSuccess: async (settledEntity, { path: { acceptOrReject } }) => {
+      await getMenuData();
+
+      queryClient.setQueryData<GetMyInvitationsResponse>(meKeys.invites, (oldData) => {
+        if (!oldData) return oldData;
+        return { ...oldData, items: oldData.items.filter((invite) => invite.entity.id !== settledEntity.id) };
+      });
+
+      toaster(
+        t('common:invitation_settled', { action: acceptOrReject === 'accept' ? 'accepted' : 'rejected' }),
+        'success',
+      );
+    },
+  });

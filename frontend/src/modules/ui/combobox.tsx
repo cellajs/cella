@@ -7,7 +7,7 @@ import { useDebounce } from '~/hooks/use-debounce';
 import { useMeasure } from '~/hooks/use-measure';
 import { TKey } from '~/lib/i18n-locales';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
-import ContentPlaceholder from '~/modules/common/content-placeholder';
+import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { Button } from '~/modules/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
@@ -35,7 +35,7 @@ export interface ComboboxProps {
   };
 }
 
-const Combobox = ({
+export function Combobox({
   options,
   value,
   onChange,
@@ -43,8 +43,8 @@ const Combobox = ({
   renderAvatar = false,
   contentWidthMatchInput = true,
   disabled = false,
-  placeholders: passedPlaseholders = {},
-}: ComboboxProps) => {
+  placeholders: passedPlaceholders = {},
+}: ComboboxProps) {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm');
 
@@ -59,12 +59,12 @@ const Combobox = ({
 
   const debouncedSearchQuery = useDebounce(searchValue, 300);
 
-  const placeholders: Record<keyof typeof passedPlaseholders, TKey> = {
+  const placeholders: Record<keyof typeof passedPlaceholders, TKey> = {
     trigger: 'common:select',
     search: 'common:placeholder.search',
     notFound: 'common:no_resource_found',
     resource: 'common:item',
-    ...passedPlaseholders,
+    ...passedPlaceholders,
   };
 
   const filteredOptions = options.filter(({ label }) =>
@@ -110,7 +110,9 @@ const Combobox = ({
               {renderOption(selectedOption)}
             </div>
           ) : (
-            <span className="truncate text-muted-foreground">{t(placeholders.trigger)}</span>
+            <span className="truncate text-muted-foreground">
+              {t(placeholders.trigger, { resource: t(placeholders.resource).toLowerCase() })}
+            </span>
           )}
           <ChevronDownIcon
             className={`ml-2 size-4 shrink-0 opacity-50 transition-transform ${open ? '-rotate-90' : 'rotate-0'}`}
@@ -175,6 +177,4 @@ const Combobox = ({
       </PopoverContent>
     </Popover>
   );
-};
-
-export default Combobox;
+}

@@ -1,8 +1,17 @@
-import type { EntityActionType, ProductEntityType } from 'config';
-import { getContextMemberships, getContextUserSystemRole } from '#/lib/context';
-import { type EntityModel, resolveEntity } from '#/lib/entity';
-import { AppError } from '#/lib/errors';
-import { isPermissionAllowed } from '#/permissions';
+import type { Context } from 'hono';
+import type { EntityActionType, ProductEntityType } from 'shared';
+import type { Env } from '#/lib/context';
+import { AppError } from '#/lib/error';
+import { type EntityModel, resolveEntity } from '#/lib/resolve-entity';
+import { checkPermission, type PermissionResult } from '#/permissions';
+
+/**
+ * Result type for product entity validation including the can object.
+ */
+export interface ValidProductEntityResult<K extends ProductEntityType> {
+  entity: EntityModel<K>;
+  can: PermissionResult['can'];
+}
 
 /**
  * Checks if current user has permission to perform a given action on a product entity.
@@ -10,35 +19,35 @@ import { isPermissionAllowed } from '#/permissions';
  * Resolves product entity based on provided type and ID/slug, and verifies user permissions
  * (including system admin overrides).
  *
- * Returns resolved product entity if access is granted, otherwise throws an error.
+ * Returns resolved product entity and a `can` object with all action permissions.
+ * Throws an error if entity cannot be found or user lacks required permissions.
  *
- * @param idOrSlug - Product's unique ID or slug.
+ * @param id - Product's unique ID.
  * @param entityType - Type of product entity.
- * @param contextEntityType - Type of context entity that the product entity belongs to (e.g., "organization", "project").
  * @param action - The action to check (e.g., `"read" | "update" | "delete"`).
- * @returns Resolved product entity.
+ * @returns An object containing resolved entity and can object.
  */
 export const getValidProductEntity = async <K extends ProductEntityType>(
-  idOrSlug: string,
+  ctx: Context<Env>,
+  id: string,
   entityType: K,
   action: Exclude<EntityActionType, 'create'>,
-): Promise<EntityModel<K>> => {
+): Promise<ValidProductEntityResult<K>> => {
   // Get current user role and memberships from request context
-  const userSystemRole = getContextUserSystemRole();
-  const memberships = getContextMemberships();
-
-  const isSystemAdmin = userSystemRole === 'admin';
+  const userSystemRole = ctx.var.userSystemRole;
+  const memberships = ctx.var.memberships;
+  const db = ctx.var.db;
 
   // Step 1: Resolve target entity by ID or slug
-  const entity = await resolveEntity(entityType, idOrSlug);
-  if (!entity) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType });
+  const entity = await resolveEntity(entityType, id, db);
+  if (!entity) throw new AppError(404, 'not_found', 'warn', { entityType });
 
-  // Step 2: Check permission for the requested action
-  const { allowed } = isPermissionAllowed(memberships, action, entity);
+  // Step 2: Check permission for the requested action (system admin bypass is handled inside)
+  const { isAllowed, can } = checkPermission(memberships, action, entity, { systemRole: userSystemRole });
 
-  if (!allowed && !isSystemAdmin) {
-    throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', entityType, meta: { action } });
+  if (!isAllowed) {
+    throw new AppError(403, 'forbidden', 'warn', { entityType, meta: { action } });
   }
 
-  return entity;
+  return { entity, can };
 };

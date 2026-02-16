@@ -1,4 +1,4 @@
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -203,7 +203,7 @@ const run = async () => {
     // Format temp output with biome before comparing
     // Use try-catch to handle cases where biome may not process files (e.g., new directories)
     try {
-      execSync(`pnpm biome check --write ${tempOutputPath}`, {
+      execFileSync('pnpm', ['biome', 'check', '--write', tempOutputPath], {
         cwd: frontendDir,
         stdio: 'pipe',
       });

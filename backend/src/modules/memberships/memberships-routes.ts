@@ -1,26 +1,34 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/docs/x-routes';
-import { hasOrgAccess, isAuthenticated } from '#/middlewares/guard';
-import { contextEntityBaseSchema } from '#/modules/entities/entities-schema-base';
+import { authGuard, orgGuard, tenantGuard } from '#/middlewares/guard';
 import {
   memberListQuerySchema,
+  membershipBaseSchema,
   membershipCreateBodySchema,
   membershipSchema,
   membershipUpdateBodySchema,
   pendingMembershipListQuerySchema,
   pendingMembershipSchema,
 } from '#/modules/memberships/memberships-schema';
-import { memberSchema } from '#/modules/users/users-schema';
+import { memberSchema } from '#/modules/user/user-schema';
 import {
+  batchResponseSchema,
   entityWithTypeQuerySchema,
-  idInOrgParamSchema,
-  idOrSlugSchema,
-  idSchema,
+  errorResponseRefs,
+  idInTenantOrgParamSchema,
   idsBodySchema,
-  inOrgParamSchema,
-} from '#/utils/schema/common';
-import { errorResponseRefs } from '#/utils/schema/error-responses';
-import { paginationSchema, successWithRejectedItemsSchema } from '#/utils/schema/success-responses';
+  paginationSchema,
+  tenantOrgParamSchema,
+  validIdSchema,
+} from '#/schemas';
+import { contextEntityBaseSchema } from '#/schemas/entity-base';
+import { mockContextEntityBase } from '../../../mocks/mock-entity-base';
+import {
+  mockMembershipInviteResponse,
+  mockMembershipResponse,
+  mockPaginatedInactiveMembershipsResponse,
+  mockPaginatedMembersResponse,
+} from '../../../mocks/mock-membership';
 
 const membershipRoutes = {
   /**
@@ -30,13 +38,13 @@ const membershipRoutes = {
     operationId: 'membershipInvite',
     method: 'post',
     path: '/',
-    xGuard: [isAuthenticated, hasOrgAccess],
+    xGuard: [authGuard, tenantGuard, orgGuard],
     tags: ['memberships'],
     summary: 'Create memberships',
     description:
       'Creates one or more *memberships*, inviting users (existing or new) to a context entity such as an organization.',
     request: {
-      params: inOrgParamSchema,
+      params: tenantOrgParamSchema,
       query: entityWithTypeQuerySchema,
       body: {
         required: true,
@@ -45,9 +53,12 @@ const membershipRoutes = {
     },
     responses: {
       200: {
-        description: 'Number of sent invitations',
+        description: 'Created memberships and invite count',
         content: {
-          'application/json': { schema: successWithRejectedItemsSchema.extend({ invitesSentCount: z.number() }) },
+          'application/json': {
+            schema: batchResponseSchema(membershipBaseSchema).extend({ invitesSentCount: z.number() }),
+            example: mockMembershipInviteResponse(),
+          },
         },
       },
       ...errorResponseRefs,
@@ -60,13 +71,13 @@ const membershipRoutes = {
     operationId: 'deleteMemberships',
     method: 'delete',
     path: '/',
-    xGuard: [isAuthenticated, hasOrgAccess],
+    xGuard: [authGuard, tenantGuard, orgGuard],
     tags: ['memberships'],
     summary: 'Delete memberships',
     description:
       'Deletes one or more *memberships* by ID. This removes the membership but does not delete the associated user(s).',
     request: {
-      params: inOrgParamSchema,
+      params: tenantOrgParamSchema,
       query: entityWithTypeQuerySchema,
       body: {
         required: true,
@@ -78,7 +89,7 @@ const membershipRoutes = {
         description: 'Success',
         content: {
           'application/json': {
-            schema: successWithRejectedItemsSchema,
+            schema: batchResponseSchema(),
           },
         },
       },
@@ -92,12 +103,12 @@ const membershipRoutes = {
     operationId: 'updateMembership',
     method: 'put',
     path: '/{id}',
-    xGuard: [isAuthenticated, hasOrgAccess],
+    xGuard: [authGuard, tenantGuard, orgGuard],
     tags: ['memberships'],
     summary: 'Update membership',
     description: 'Updates the *membership* metadata, such as role, `muted`, or `archived` status.',
     request: {
-      params: idInOrgParamSchema,
+      params: idInTenantOrgParamSchema,
       body: {
         content: { 'application/json': { schema: membershipUpdateBodySchema } },
       },
@@ -105,7 +116,7 @@ const membershipRoutes = {
     responses: {
       200: {
         description: 'Membership updated',
-        content: { 'application/json': { schema: membershipSchema } },
+        content: { 'application/json': { schema: membershipSchema, example: mockMembershipResponse() } },
       },
       ...errorResponseRefs,
     },
@@ -117,17 +128,17 @@ const membershipRoutes = {
     operationId: 'handleMembershipInvitation',
     method: 'post',
     path: '/{id}/{acceptOrReject}',
-    xGuard: [isAuthenticated],
+    xGuard: [authGuard],
     tags: ['memberships'],
     summary: 'Respond to membership invitation',
     description: 'Accepting activates the associated membership. Rejecting simply removes the invitation token.',
     request: {
-      params: z.object({ id: idSchema, acceptOrReject: z.enum(['accept', 'reject']), orgIdOrSlug: idOrSlugSchema }),
+      params: z.object({ id: validIdSchema, acceptOrReject: z.enum(['accept', 'reject']) }),
     },
     responses: {
       200: {
         description: 'Invitation was accepted',
-        content: { 'application/json': { schema: contextEntityBaseSchema } },
+        content: { 'application/json': { schema: contextEntityBaseSchema, example: mockContextEntityBase() } },
       },
       ...errorResponseRefs,
     },
@@ -139,13 +150,12 @@ const membershipRoutes = {
     operationId: 'getMembers',
     method: 'get',
     path: '/members',
-    xGuard: [isAuthenticated, hasOrgAccess],
+    xGuard: [authGuard, tenantGuard, orgGuard],
     tags: ['memberships'],
     summary: 'Get list of members',
-    description:
-      'Retrieves members (users) of a context entity by ID or slug, including their associated *membership* data.',
+    description: 'Retrieves members (users) of a context entity by ID, including their associated *membership* data.',
     request: {
-      params: inOrgParamSchema,
+      params: tenantOrgParamSchema,
       query: memberListQuerySchema,
     },
     responses: {
@@ -154,6 +164,7 @@ const membershipRoutes = {
         content: {
           'application/json': {
             schema: paginationSchema(memberSchema),
+            example: mockPaginatedMembersResponse(),
           },
         },
       },
@@ -167,13 +178,13 @@ const membershipRoutes = {
     operationId: 'getPendingMemberships',
     method: 'get',
     path: '/pending',
-    xGuard: [isAuthenticated, hasOrgAccess],
+    xGuard: [authGuard, tenantGuard, orgGuard],
     tags: ['memberships'],
     summary: 'Get list of pending memberships',
     description:
-      'Returns pending memberships for a context entity, identified by ID or slug. This does not include pending invitations for non-existing users.',
+      'Returns pending memberships for a context entity, identified by ID. This does not include pending invitations for non-existing users.',
     request: {
-      params: inOrgParamSchema,
+      params: tenantOrgParamSchema,
       query: pendingMembershipListQuerySchema,
     },
     responses: {
@@ -182,6 +193,7 @@ const membershipRoutes = {
         content: {
           'application/json': {
             schema: paginationSchema(pendingMembershipSchema),
+            example: mockPaginatedInactiveMembershipsResponse(),
           },
         },
       },

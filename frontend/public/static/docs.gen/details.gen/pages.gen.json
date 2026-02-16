@@ -1,176 +1,5 @@
 [
   {
-    "operationId": "syncPages",
-    "responses": [
-      { "status": 200, "description": "Success" },
-      {
-        "status": 400,
-        "description": "Bad request: problem processing request.",
-        "name": "BadRequestError",
-        "ref": "#/components/responses/BadRequestError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 401,
-        "description": "Unauthorized: authentication required.",
-        "name": "UnauthorizedError",
-        "ref": "#/components/responses/UnauthorizedError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 403,
-        "description": "Forbidden: insufficient permissions.",
-        "name": "ForbiddenError",
-        "ref": "#/components/responses/ForbiddenError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 404,
-        "description": "Not found: resource does not exist.",
-        "name": "NotFoundError",
-        "ref": "#/components/responses/NotFoundError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 429,
-        "description": "Rate limit: too many requests.",
-        "name": "TooManyRequestsError",
-        "ref": "#/components/responses/TooManyRequestsError",
-        "contentType": "application/json"
-      }
-    ],
-    "request": {
-      "query": {
-        "properties": {
-          "table": { "type": "string", "required": true },
-          "offset": { "type": "string", "required": true },
-          "handle": { "type": "string", "required": false },
-          "cursor": { "type": "string", "required": false },
-          "live": { "type": "string", "required": false },
-          "where": { "type": "string", "required": false }
-        }
-      }
-    }
-  },
-  {
-    "operationId": "createPage",
-    "responses": [
-      {
-        "status": 201,
-        "description": "Page",
-        "name": "Page",
-        "ref": "#/components/schemas/Page",
-        "contentType": "application/json",
-        "schema": {
-          "type": "object",
-          "properties": {
-            "createdAt": { "type": "string", "required": true },
-            "id": { "type": "string", "required": true },
-            "entityType": {
-              "type": "string",
-              "required": true,
-              "enum": ["page"]
-            },
-            "name": { "type": "string", "required": true },
-            "description": {
-              "type": ["string", "null"],
-              "required": true
-            },
-            "modifiedAt": {
-              "type": ["string", "null"],
-              "required": true
-            },
-            "keywords": { "type": "string", "required": true },
-            "createdBy": {
-              "type": ["string", "null"],
-              "required": true
-            },
-            "modifiedBy": {
-              "type": ["string", "null"],
-              "required": true
-            },
-            "status": {
-              "type": "string",
-              "required": true,
-              "enum": ["unpublished", "published", "archived"]
-            },
-            "parentId": {
-              "type": ["string", "null"],
-              "required": true
-            },
-            "displayOrder": {
-              "type": "number",
-              "required": true,
-              "minimum": -140737488355328,
-              "maximum": 140737488355327
-            }
-          },
-          "ref": "#/components/schemas/Page",
-          "contentType": "application/json"
-        },
-        "example": {
-          "id": "co96vrmic3wbowmxzbqa1e9f",
-          "entityType": "page",
-          "name": "Infit pauci optio demo.",
-          "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Adhaero torrens adfectus incidunt voluptates cornu tempus eaque universe volubilis. Cubo sponte utpote crux pecco. Cunctatio dolorum vallum ut adimpleo summa valde strenuus attonbitus eligendi.\\nVel cado vitae cibus dolores decet surgo. Accusamus praesentium cibus subito. Vox nemo ipsa video tremo molestias charisma clam ipsa suscipit.\",\"styles\":{}}],\"children\":[]}]",
-          "keywords": "solvo atrox tendo",
-          "status": "unpublished",
-          "parentId": null,
-          "displayOrder": 32.69,
-          "createdAt": "2024-08-06T10:28:33.226Z",
-          "createdBy": "0f0ak5vkrrl687pmkwpa1vju",
-          "modifiedAt": "2024-08-06T10:28:33.226Z",
-          "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju"
-        }
-      },
-      {
-        "status": 400,
-        "description": "Bad request: problem processing request.",
-        "name": "BadRequestError",
-        "ref": "#/components/responses/BadRequestError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 401,
-        "description": "Unauthorized: authentication required.",
-        "name": "UnauthorizedError",
-        "ref": "#/components/responses/UnauthorizedError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 403,
-        "description": "Forbidden: insufficient permissions.",
-        "name": "ForbiddenError",
-        "ref": "#/components/responses/ForbiddenError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 404,
-        "description": "Not found: resource does not exist.",
-        "name": "NotFoundError",
-        "ref": "#/components/responses/NotFoundError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 429,
-        "description": "Rate limit: too many requests.",
-        "name": "TooManyRequestsError",
-        "ref": "#/components/responses/TooManyRequestsError",
-        "contentType": "application/json"
-      }
-    ],
-    "request": {
-      "body": {
-        "type": "object",
-        "properties": {
-          "name": { "type": "string", "required": false }
-        },
-        "required": true,
-        "contentType": "application/json"
-      }
-    }
-  },
-  {
     "operationId": "getPages",
     "responses": [
       {
@@ -187,40 +16,74 @@
               "ref": "#/components/schemas/Page",
               "items": {
                 "type": "object",
+                "description": "A content page belonging to an organization.",
                 "properties": {
                   "createdAt": { "type": "string", "required": true },
-                  "id": { "type": "string", "required": true },
+                  "id": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 50
+                  },
                   "entityType": {
                     "type": "string",
                     "required": true,
                     "enum": ["page"]
                   },
-                  "name": { "type": "string", "required": true },
-                  "description": {
-                    "type": ["string", "null"],
-                    "required": true
+                  "tenantId": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 24
+                  },
+                  "name": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
                   },
                   "modifiedAt": {
                     "type": ["string", "null"],
                     "required": true
                   },
-                  "keywords": { "type": "string", "required": true },
-                  "createdBy": {
+                  "stx": {
+                    "type": "object",
+                    "required": true,
+                    "description": "Sync transaction metadata stored on entities for offline and realtime support.",
+                    "properties": {
+                      "mutationId": { "type": "string", "required": true },
+                      "sourceId": { "type": "string", "required": true },
+                      "version": { "type": "integer", "required": true },
+                      "fieldVersions": { "type": "object", "required": true }
+                    },
+                    "ref": "#/components/schemas/StxBase"
+                  },
+                  "description": {
                     "type": ["string", "null"],
                     "required": true
                   },
+                  "keywords": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 100000
+                  },
+                  "createdBy": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 50
+                  },
                   "modifiedBy": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 50
                   },
                   "status": {
                     "type": "string",
                     "required": true,
                     "enum": ["unpublished", "published", "archived"]
                   },
+                  "publicAccess": { "type": "boolean", "required": true },
                   "parentId": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 50
                   },
                   "displayOrder": {
                     "type": "number",
@@ -235,6 +98,55 @@
             "total": { "type": "number", "required": true }
           },
           "contentType": "application/json"
+        },
+        "example": {
+          "items": [
+            {
+              "id": "9xn03u76eo7z71y60a882cwp",
+              "tenantId": "xtanax",
+              "entityType": "page",
+              "name": "Tersus summa caterva socius.",
+              "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Tergo adhuc virtus vesco audentia angustus. Voco commodi abduco deduco. Cubicularis volo utroque in comminor concedo quae.\\nSumptus dolorem varius crudelis. Advoco surgo angulus demens tabella clibanus. Valens vester cavus.\",\"styles\":{}}],\"children\":[]}]",
+              "keywords": "contego debeo volubilis",
+              "status": "unpublished",
+              "publicAccess": true,
+              "parentId": null,
+              "displayOrder": 40.67,
+              "createdAt": "2024-11-21T04:00:59.122Z",
+              "createdBy": "qqp8d07imsvjbtqtl3rtjgxd",
+              "modifiedAt": "2024-11-21T04:00:59.122Z",
+              "modifiedBy": "qqp8d07imsvjbtqtl3rtjgxd",
+              "stx": {
+                "mutationId": "y6mqh9hmikgme3gy3a9lhe0c",
+                "sourceId": "src_trmzc53x7z222ydtq57iu31m",
+                "version": 1,
+                "fieldVersions": {}
+              }
+            },
+            {
+              "id": "clxs8vayzrul7vmeyahbgyu0",
+              "tenantId": "1sr6ut",
+              "entityType": "page",
+              "name": "Conitor suspendo aiunt.",
+              "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Acidus advoco ventus sub cogito argentum attonbitus trans. Crapula bestia auxilium non sui desino amor barba. Vitiosus eligendi clementia usus demens conor auctor basium tolero.\\nSoluta temporibus aut labore. Depono ultio explicabo ascit. Utpote amplexus nihil aut concedo vel praesentium universe.\",\"styles\":{}}],\"children\":[]}]",
+              "keywords": "pecus accusator cubitum",
+              "status": "unpublished",
+              "publicAccess": true,
+              "parentId": null,
+              "displayOrder": 11.43,
+              "createdAt": "2024-10-29T08:46:20.790Z",
+              "createdBy": "hg5ogh3yr2b2dbwf7b9eckaj",
+              "modifiedAt": "2024-10-29T08:46:20.790Z",
+              "modifiedBy": "hg5ogh3yr2b2dbwf7b9eckaj",
+              "stx": {
+                "mutationId": "4bpmhsyauxcwuwjsrzvzac8q",
+                "sourceId": "src_x1h9s6vzhgvcj0rs3xtuk03g",
+                "version": 1,
+                "fieldVersions": {}
+              }
+            }
+          ],
+          "total": 2
         }
       },
       {
@@ -276,7 +188,11 @@
     "request": {
       "query": {
         "properties": {
-          "q": { "type": "string", "required": false },
+          "q": {
+            "type": "string",
+            "required": false,
+            "maxLength": 255
+          },
           "sort": {
             "type": "string",
             "required": false,
@@ -288,15 +204,129 @@
             "enum": ["asc", "desc"]
           },
           "offset": { "type": "string", "required": false },
-          "limit": { "type": "string", "required": false }
+          "limit": { "type": "string", "required": false },
+          "modifiedAfter": {
+            "type": "string",
+            "required": false,
+            "format": "date-time"
+          }
         }
       }
     }
   },
   {
-    "operationId": "deletePages",
+    "operationId": "getPage",
     "responses": [
-      { "status": 204, "description": "Page(s) deleted" },
+      {
+        "status": 200,
+        "description": "Page",
+        "name": "Page",
+        "ref": "#/components/schemas/Page",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "description": "A content page belonging to an organization.",
+          "properties": {
+            "createdAt": { "type": "string", "required": true },
+            "id": {
+              "type": "string",
+              "required": true,
+              "maxLength": 50
+            },
+            "entityType": {
+              "type": "string",
+              "required": true,
+              "enum": ["page"]
+            },
+            "tenantId": {
+              "type": "string",
+              "required": true,
+              "maxLength": 24
+            },
+            "name": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
+            },
+            "modifiedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "stx": {
+              "type": "object",
+              "required": true,
+              "description": "Sync transaction metadata stored on entities for offline and realtime support.",
+              "properties": {
+                "mutationId": { "type": "string", "required": true },
+                "sourceId": { "type": "string", "required": true },
+                "version": { "type": "integer", "required": true },
+                "fieldVersions": { "type": "object", "required": true }
+              },
+              "ref": "#/components/schemas/StxBase"
+            },
+            "description": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "keywords": {
+              "type": "string",
+              "required": true,
+              "maxLength": 100000
+            },
+            "createdBy": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 50
+            },
+            "modifiedBy": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 50
+            },
+            "status": {
+              "type": "string",
+              "required": true,
+              "enum": ["unpublished", "published", "archived"]
+            },
+            "publicAccess": { "type": "boolean", "required": true },
+            "parentId": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 50
+            },
+            "displayOrder": {
+              "type": "number",
+              "required": true,
+              "minimum": -140737488355328,
+              "maximum": 140737488355327
+            }
+          },
+          "ref": "#/components/schemas/Page",
+          "contentType": "application/json"
+        },
+        "example": {
+          "id": "co96vrmic3wbowmxzbqa1e9f",
+          "tenantId": "ijllhz",
+          "entityType": "page",
+          "name": "Torrens adfectus.",
+          "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Voluptates cornu tempus eaque universe volubilis conturbo. Sponte utpote crux pecco vulticulus cunctatio. Vallum ut adimpleo summa valde strenuus attonbitus.\\nMollitia vel cado vitae cibus dolores decet. Aptus accusamus praesentium cibus subito viscus vox nemo. Video tremo molestias charisma clam ipsa suscipit.\",\"styles\":{}}],\"children\":[]}]",
+          "keywords": "solvo atrox tendo",
+          "status": "unpublished",
+          "publicAccess": true,
+          "parentId": null,
+          "displayOrder": 32.69,
+          "createdAt": "2024-08-06T10:28:33.226Z",
+          "createdBy": "0f0ak5vkrrl687pmkwpa1vju",
+          "modifiedAt": "2024-08-06T10:28:33.226Z",
+          "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju",
+          "stx": {
+            "mutationId": "4tufkeho7gg1xwx21e333ngq",
+            "sourceId": "src_ujcbpukfple60p8h3tnk9zpo",
+            "version": 1,
+            "fieldVersions": {}
+          }
+        }
+      },
       {
         "status": 400,
         "description": "Bad request: problem processing request.",
@@ -334,6 +364,495 @@
       }
     ],
     "request": {
+      "path": {
+        "properties": {
+          "id": { "type": "string", "required": true }
+        }
+      }
+    }
+  },
+  {
+    "operationId": "createPages",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Pages already created (idempotent)",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "data": {
+              "type": "array",
+              "required": true,
+              "itemType": "object",
+              "ref": "#/components/schemas/Page",
+              "items": {
+                "type": "object",
+                "description": "A content page belonging to an organization.",
+                "properties": {
+                  "createdAt": { "type": "string", "required": true },
+                  "id": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 50
+                  },
+                  "entityType": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["page"]
+                  },
+                  "tenantId": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 24
+                  },
+                  "name": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "modifiedAt": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "stx": {
+                    "type": "object",
+                    "required": true,
+                    "description": "Sync transaction metadata stored on entities for offline and realtime support.",
+                    "properties": {
+                      "mutationId": { "type": "string", "required": true },
+                      "sourceId": { "type": "string", "required": true },
+                      "version": { "type": "integer", "required": true },
+                      "fieldVersions": { "type": "object", "required": true }
+                    },
+                    "ref": "#/components/schemas/StxBase"
+                  },
+                  "description": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "keywords": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 100000
+                  },
+                  "createdBy": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 50
+                  },
+                  "modifiedBy": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 50
+                  },
+                  "status": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["unpublished", "published", "archived"]
+                  },
+                  "publicAccess": { "type": "boolean", "required": true },
+                  "parentId": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 50
+                  },
+                  "displayOrder": {
+                    "type": "number",
+                    "required": true,
+                    "minimum": -140737488355328,
+                    "maximum": 140737488355327
+                  }
+                },
+                "ref": "#/components/schemas/Page"
+              }
+            },
+            "rejectedItemIds": {
+              "type": "array",
+              "required": true,
+              "description": "Identifiers of items that could not be processed",
+              "itemType": "string"
+            },
+            "rejectionReasons": {
+              "type": "object",
+              "required": false,
+              "description": "Map of reason code to rejected item IDs"
+            }
+          },
+          "contentType": "application/json"
+        },
+        "example": {
+          "data": [
+            {
+              "id": "wgpaj0cfyc7n2sjn5fpfkbrs",
+              "tenantId": "lwtksu",
+              "entityType": "page",
+              "name": "Voluntarius contra.",
+              "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Tergo crepusculum certe desparatus depromo. Dolor somnus vobis atavus tergiversatio tersus suadeo colo. Id abduco supplanto asporto.\\nCuratio xiphias auxilium teneo claudeo unde vulgo. Atavus vorax vergo deputo deprimo statim eos vulnero subito eligendi. Exercitationem somnus cattus cilicium textilis cervus alo tactus.\",\"styles\":{}}],\"children\":[]}]",
+              "keywords": "confido colligo audio",
+              "status": "unpublished",
+              "publicAccess": true,
+              "parentId": null,
+              "displayOrder": 70.17,
+              "createdAt": "2024-04-19T14:04:35.773Z",
+              "createdBy": "kzmv5qbhdcqeiuvwlosan0fc",
+              "modifiedAt": "2024-04-19T14:04:35.773Z",
+              "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
+              "stx": {
+                "mutationId": "akf4ovzm1ne3h55lgj31d63n",
+                "sourceId": "src_9apx99a5auvr5cyj5s37irnj",
+                "version": 1,
+                "fieldVersions": {}
+              }
+            },
+            {
+              "id": "74l7581dwpxxbqdej8622zpg",
+              "tenantId": "o54qw5",
+              "entityType": "page",
+              "name": "Taedium spargo cetera.",
+              "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Vehemens deprecator ventus ascit denique tum candidus curvo perspiciatis defendo. Carpo verecundia cometes. Sortitus colligo ceno terra cado temptatio carmen arx sequi cicuta.\\nAttollo autem adipisci vinitor comminor odit. Virga aptus corrupti utpote. Subseco vomica auxilium ascit cuppedia abbas amo patior credo tenus.\",\"styles\":{}}],\"children\":[]}]",
+              "keywords": "aestus degero cicuta",
+              "status": "unpublished",
+              "publicAccess": true,
+              "parentId": null,
+              "displayOrder": 14.28,
+              "createdAt": "2024-02-25T13:01:35.301Z",
+              "createdBy": "p3t0ygxx0aa83en3sk1fs1we",
+              "modifiedAt": "2024-02-25T13:01:35.301Z",
+              "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
+              "stx": {
+                "mutationId": "4hj92yzr7v1itpc9wztvbcy2",
+                "sourceId": "src_1q04oq81k5rbzt4yq63pob5r",
+                "version": 1,
+                "fieldVersions": {}
+              }
+            }
+          ],
+          "rejectedItemIds": []
+        }
+      },
+      {
+        "status": 201,
+        "description": "Pages created",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "data": {
+              "type": "array",
+              "required": true,
+              "itemType": "object",
+              "ref": "#/components/schemas/Page",
+              "items": {
+                "type": "object",
+                "description": "A content page belonging to an organization.",
+                "properties": {
+                  "createdAt": { "type": "string", "required": true },
+                  "id": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 50
+                  },
+                  "entityType": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["page"]
+                  },
+                  "tenantId": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 24
+                  },
+                  "name": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "modifiedAt": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "stx": {
+                    "type": "object",
+                    "required": true,
+                    "description": "Sync transaction metadata stored on entities for offline and realtime support.",
+                    "properties": {
+                      "mutationId": { "type": "string", "required": true },
+                      "sourceId": { "type": "string", "required": true },
+                      "version": { "type": "integer", "required": true },
+                      "fieldVersions": { "type": "object", "required": true }
+                    },
+                    "ref": "#/components/schemas/StxBase"
+                  },
+                  "description": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "keywords": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 100000
+                  },
+                  "createdBy": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 50
+                  },
+                  "modifiedBy": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 50
+                  },
+                  "status": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["unpublished", "published", "archived"]
+                  },
+                  "publicAccess": { "type": "boolean", "required": true },
+                  "parentId": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 50
+                  },
+                  "displayOrder": {
+                    "type": "number",
+                    "required": true,
+                    "minimum": -140737488355328,
+                    "maximum": 140737488355327
+                  }
+                },
+                "ref": "#/components/schemas/Page"
+              }
+            },
+            "rejectedItemIds": {
+              "type": "array",
+              "required": true,
+              "description": "Identifiers of items that could not be processed",
+              "itemType": "string"
+            },
+            "rejectionReasons": {
+              "type": "object",
+              "required": false,
+              "description": "Map of reason code to rejected item IDs"
+            }
+          },
+          "contentType": "application/json"
+        },
+        "example": {
+          "data": [
+            {
+              "id": "wgpaj0cfyc7n2sjn5fpfkbrs",
+              "tenantId": "lwtksu",
+              "entityType": "page",
+              "name": "Voluntarius contra.",
+              "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Tergo crepusculum certe desparatus depromo. Dolor somnus vobis atavus tergiversatio tersus suadeo colo. Id abduco supplanto asporto.\\nCuratio xiphias auxilium teneo claudeo unde vulgo. Atavus vorax vergo deputo deprimo statim eos vulnero subito eligendi. Exercitationem somnus cattus cilicium textilis cervus alo tactus.\",\"styles\":{}}],\"children\":[]}]",
+              "keywords": "confido colligo audio",
+              "status": "unpublished",
+              "publicAccess": true,
+              "parentId": null,
+              "displayOrder": 70.17,
+              "createdAt": "2024-04-19T14:04:35.773Z",
+              "createdBy": "kzmv5qbhdcqeiuvwlosan0fc",
+              "modifiedAt": "2024-04-19T14:04:35.773Z",
+              "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
+              "stx": {
+                "mutationId": "akf4ovzm1ne3h55lgj31d63n",
+                "sourceId": "src_9apx99a5auvr5cyj5s37irnj",
+                "version": 1,
+                "fieldVersions": {}
+              }
+            },
+            {
+              "id": "74l7581dwpxxbqdej8622zpg",
+              "tenantId": "o54qw5",
+              "entityType": "page",
+              "name": "Taedium spargo cetera.",
+              "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Vehemens deprecator ventus ascit denique tum candidus curvo perspiciatis defendo. Carpo verecundia cometes. Sortitus colligo ceno terra cado temptatio carmen arx sequi cicuta.\\nAttollo autem adipisci vinitor comminor odit. Virga aptus corrupti utpote. Subseco vomica auxilium ascit cuppedia abbas amo patior credo tenus.\",\"styles\":{}}],\"children\":[]}]",
+              "keywords": "aestus degero cicuta",
+              "status": "unpublished",
+              "publicAccess": true,
+              "parentId": null,
+              "displayOrder": 14.28,
+              "createdAt": "2024-02-25T13:01:35.301Z",
+              "createdBy": "p3t0ygxx0aa83en3sk1fs1we",
+              "modifiedAt": "2024-02-25T13:01:35.301Z",
+              "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
+              "stx": {
+                "mutationId": "4hj92yzr7v1itpc9wztvbcy2",
+                "sourceId": "src_1q04oq81k5rbzt4yq63pob5r",
+                "version": 1,
+                "fieldVersions": {}
+              }
+            }
+          ],
+          "rejectedItemIds": []
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "tenantId": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          }
+        }
+      },
+      "body": {
+        "type": "array",
+        "itemType": "object",
+        "items": {
+          "type": "object",
+          "required": true,
+          "properties": {
+            "name": {
+              "type": "string",
+              "required": false,
+              "maxLength": 255
+            },
+            "stx": {
+              "type": "object",
+              "required": true,
+              "description": "Sync transaction metadata sent with mutations for idempotency and conflict detection.",
+              "properties": {
+                "mutationId": {
+                  "type": "string",
+                  "required": true,
+                  "description": "Unique mutation ID (nanoid)",
+                  "maxLength": 32
+                },
+                "sourceId": {
+                  "type": "string",
+                  "required": true,
+                  "description": "Tab/instance identifier for echo prevention",
+                  "maxLength": 64
+                },
+                "lastReadVersion": {
+                  "type": "integer",
+                  "required": true,
+                  "description": "Entity version when last read (for conflict detection)",
+                  "minimum": 0
+                }
+              },
+              "ref": "#/components/schemas/StxRequestBase"
+            }
+          }
+        },
+        "minItems": 1,
+        "maxItems": 50,
+        "required": true,
+        "contentType": "application/json"
+      }
+    }
+  },
+  {
+    "operationId": "deletePages",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Success",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "data": { "type": "array", "required": true },
+            "rejectedItemIds": {
+              "type": "array",
+              "required": true,
+              "description": "Identifiers of items that could not be processed",
+              "itemType": "string"
+            },
+            "rejectionReasons": {
+              "type": "object",
+              "required": false,
+              "description": "Map of reason code to rejected item IDs"
+            }
+          },
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "tenantId": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          }
+        }
+      },
       "body": {
         "type": "object",
         "properties": {
@@ -351,121 +870,6 @@
     }
   },
   {
-    "operationId": "getPage",
-    "responses": [
-      {
-        "status": 200,
-        "description": "Page",
-        "name": "Page",
-        "ref": "#/components/schemas/Page",
-        "contentType": "application/json",
-        "schema": {
-          "type": "object",
-          "properties": {
-            "createdAt": { "type": "string", "required": true },
-            "id": { "type": "string", "required": true },
-            "entityType": {
-              "type": "string",
-              "required": true,
-              "enum": ["page"]
-            },
-            "name": { "type": "string", "required": true },
-            "description": {
-              "type": ["string", "null"],
-              "required": true
-            },
-            "modifiedAt": {
-              "type": ["string", "null"],
-              "required": true
-            },
-            "keywords": { "type": "string", "required": true },
-            "createdBy": {
-              "type": ["string", "null"],
-              "required": true
-            },
-            "modifiedBy": {
-              "type": ["string", "null"],
-              "required": true
-            },
-            "status": {
-              "type": "string",
-              "required": true,
-              "enum": ["unpublished", "published", "archived"]
-            },
-            "parentId": {
-              "type": ["string", "null"],
-              "required": true
-            },
-            "displayOrder": {
-              "type": "number",
-              "required": true,
-              "minimum": -140737488355328,
-              "maximum": 140737488355327
-            }
-          },
-          "ref": "#/components/schemas/Page",
-          "contentType": "application/json"
-        },
-        "example": {
-          "id": "co96vrmic3wbowmxzbqa1e9f",
-          "entityType": "page",
-          "name": "Infit pauci optio demo.",
-          "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Adhaero torrens adfectus incidunt voluptates cornu tempus eaque universe volubilis. Cubo sponte utpote crux pecco. Cunctatio dolorum vallum ut adimpleo summa valde strenuus attonbitus eligendi.\\nVel cado vitae cibus dolores decet surgo. Accusamus praesentium cibus subito. Vox nemo ipsa video tremo molestias charisma clam ipsa suscipit.\",\"styles\":{}}],\"children\":[]}]",
-          "keywords": "solvo atrox tendo",
-          "status": "unpublished",
-          "parentId": null,
-          "displayOrder": 32.69,
-          "createdAt": "2024-08-06T10:28:33.226Z",
-          "createdBy": "0f0ak5vkrrl687pmkwpa1vju",
-          "modifiedAt": "2024-08-06T10:28:33.226Z",
-          "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju"
-        }
-      },
-      {
-        "status": 400,
-        "description": "Bad request: problem processing request.",
-        "name": "BadRequestError",
-        "ref": "#/components/responses/BadRequestError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 401,
-        "description": "Unauthorized: authentication required.",
-        "name": "UnauthorizedError",
-        "ref": "#/components/responses/UnauthorizedError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 403,
-        "description": "Forbidden: insufficient permissions.",
-        "name": "ForbiddenError",
-        "ref": "#/components/responses/ForbiddenError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 404,
-        "description": "Not found: resource does not exist.",
-        "name": "NotFoundError",
-        "ref": "#/components/responses/NotFoundError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 429,
-        "description": "Rate limit: too many requests.",
-        "name": "TooManyRequestsError",
-        "ref": "#/components/responses/TooManyRequestsError",
-        "contentType": "application/json"
-      }
-    ],
-    "request": {
-      "path": {
-        "properties": {
-          "id": { "type": "string", "required": true }
-        }
-      }
-    }
-  },
-  {
     "operationId": "updatePage",
     "responses": [
       {
@@ -476,40 +880,74 @@
         "contentType": "application/json",
         "schema": {
           "type": "object",
+          "description": "A content page belonging to an organization.",
           "properties": {
             "createdAt": { "type": "string", "required": true },
-            "id": { "type": "string", "required": true },
+            "id": {
+              "type": "string",
+              "required": true,
+              "maxLength": 50
+            },
             "entityType": {
               "type": "string",
               "required": true,
               "enum": ["page"]
             },
-            "name": { "type": "string", "required": true },
-            "description": {
-              "type": ["string", "null"],
-              "required": true
+            "tenantId": {
+              "type": "string",
+              "required": true,
+              "maxLength": 24
+            },
+            "name": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
             },
             "modifiedAt": {
               "type": ["string", "null"],
               "required": true
             },
-            "keywords": { "type": "string", "required": true },
-            "createdBy": {
+            "stx": {
+              "type": "object",
+              "required": true,
+              "description": "Sync transaction metadata stored on entities for offline and realtime support.",
+              "properties": {
+                "mutationId": { "type": "string", "required": true },
+                "sourceId": { "type": "string", "required": true },
+                "version": { "type": "integer", "required": true },
+                "fieldVersions": { "type": "object", "required": true }
+              },
+              "ref": "#/components/schemas/StxBase"
+            },
+            "description": {
               "type": ["string", "null"],
               "required": true
             },
+            "keywords": {
+              "type": "string",
+              "required": true,
+              "maxLength": 100000
+            },
+            "createdBy": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 50
+            },
             "modifiedBy": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 50
             },
             "status": {
               "type": "string",
               "required": true,
               "enum": ["unpublished", "published", "archived"]
             },
+            "publicAccess": { "type": "boolean", "required": true },
             "parentId": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 50
             },
             "displayOrder": {
               "type": "number",
@@ -523,17 +961,25 @@
         },
         "example": {
           "id": "co96vrmic3wbowmxzbqa1e9f",
+          "tenantId": "ijllhz",
           "entityType": "page",
-          "name": "Infit pauci optio demo.",
-          "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Adhaero torrens adfectus incidunt voluptates cornu tempus eaque universe volubilis. Cubo sponte utpote crux pecco. Cunctatio dolorum vallum ut adimpleo summa valde strenuus attonbitus eligendi.\\nVel cado vitae cibus dolores decet surgo. Accusamus praesentium cibus subito. Vox nemo ipsa video tremo molestias charisma clam ipsa suscipit.\",\"styles\":{}}],\"children\":[]}]",
+          "name": "Torrens adfectus.",
+          "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Voluptates cornu tempus eaque universe volubilis conturbo. Sponte utpote crux pecco vulticulus cunctatio. Vallum ut adimpleo summa valde strenuus attonbitus.\\nMollitia vel cado vitae cibus dolores decet. Aptus accusamus praesentium cibus subito viscus vox nemo. Video tremo molestias charisma clam ipsa suscipit.\",\"styles\":{}}],\"children\":[]}]",
           "keywords": "solvo atrox tendo",
           "status": "unpublished",
+          "publicAccess": true,
           "parentId": null,
           "displayOrder": 32.69,
           "createdAt": "2024-08-06T10:28:33.226Z",
           "createdBy": "0f0ak5vkrrl687pmkwpa1vju",
           "modifiedAt": "2024-08-06T10:28:33.226Z",
-          "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju"
+          "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju",
+          "stx": {
+            "mutationId": "4tufkeho7gg1xwx21e333ngq",
+            "sourceId": "src_ujcbpukfple60p8h3tnk9zpo",
+            "version": 1,
+            "fieldVersions": {}
+          }
         }
       },
       {
@@ -575,16 +1021,35 @@
     "request": {
       "path": {
         "properties": {
-          "id": { "type": "string", "required": true }
+          "tenantId": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          },
+          "id": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          }
         }
       },
       "body": {
         "type": "object",
         "properties": {
-          "name": { "type": "string", "required": false },
+          "name": {
+            "type": "string",
+            "required": false,
+            "maxLength": 255
+          },
           "description": {
             "type": ["string", "null"],
-            "required": false
+            "required": false,
+            "maxLength": 100000
+          },
+          "keywords": {
+            "type": "string",
+            "required": false,
+            "maxLength": 100000
           },
           "keywords": { "type": "string", "required": false },
           "displayOrder": {
@@ -600,7 +1065,34 @@
           },
           "parentId": {
             "type": ["string", "null"],
-            "required": false
+            "required": false,
+            "maxLength": 50
+          },
+          "stx": {
+            "type": "object",
+            "required": true,
+            "description": "Sync transaction metadata sent with mutations for idempotency and conflict detection.",
+            "properties": {
+              "mutationId": {
+                "type": "string",
+                "required": true,
+                "description": "Unique mutation ID (nanoid)",
+                "maxLength": 32
+              },
+              "sourceId": {
+                "type": "string",
+                "required": true,
+                "description": "Tab/instance identifier for echo prevention",
+                "maxLength": 64
+              },
+              "lastReadVersion": {
+                "type": "integer",
+                "required": true,
+                "description": "Entity version when last read (for conflict detection)",
+                "minimum": 0
+              }
+            },
+            "ref": "#/components/schemas/StxRequestBase"
           }
         },
         "required": true,

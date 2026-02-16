@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { testClient } from 'hono/testing';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { db } from '#/db/db';
+import { unsafeInternalDb as db } from '#/db/db';
 import { tokensTable } from '#/db/schema/tokens';
 import { defaultHeaders } from '../fixtures';
 import { createPasswordUser, createSystemAdminUser, parseResponse } from '../helpers';
@@ -59,12 +59,12 @@ describe('System Invitation', async () => {
       expect(res.status).toBe(200);
       const response = (await parseResponse(res)) as {
         success: boolean;
-        rejectedItems: string[];
+        rejectedItemIds: string[];
         invitesSentCount: number;
       };
       expect(response.success).toBe(true);
       expect(response.invitesSentCount).toBe(2);
-      expect(response.rejectedItems).toHaveLength(0);
+      expect(response.rejectedItemIds).toHaveLength(0);
 
       // Verify invitation tokens were created
       const tokens = await db.select().from(tokensTable).where(eq(tokensTable.type, 'invitation'));
@@ -79,12 +79,12 @@ describe('System Invitation', async () => {
       expect(res.status).toBe(200);
       const response = (await parseResponse(res)) as {
         success: boolean;
-        rejectedItems: string[];
+        rejectedItemIds: string[];
         invitesSentCount: number;
       };
       expect(response.success).toBe(true);
       expect(response.invitesSentCount).toBe(1); // Only new user
-      expect(response.rejectedItems).toContain('existing@cella.com');
+      expect(response.rejectedItemIds).toContain('existing@cella.com');
     });
 
     it('should handle duplicate emails in single request', async () => {
@@ -94,12 +94,12 @@ describe('System Invitation', async () => {
       expect(res.status).toBe(200);
       const response = (await parseResponse(res)) as {
         success: boolean;
-        rejectedItems: string[];
+        rejectedItemIds: string[];
         invitesSentCount: number;
       };
       expect(response.success).toBe(true);
       expect(response.invitesSentCount).toBe(1); // Only one invitation sent
-      expect(response.rejectedItems).toHaveLength(0);
+      expect(response.rejectedItemIds).toHaveLength(0);
     });
   });
 
@@ -152,12 +152,12 @@ describe('System Invitation', async () => {
       const secondRes = await makeInviteRequest(['user@cella.com'], sessionCookie);
       expect(secondRes.status).toBe(200);
 
-      const response = await parseResponse<{ success: boolean; rejectedItems: string[]; invitesSentCount: number }>(
+      const response = await parseResponse<{ success: boolean; rejectedItemIds: string[]; invitesSentCount: number }>(
         secondRes,
       );
       expect(response.success).toBe(false); // No new invitations
       expect(response.invitesSentCount).toBe(0);
-      expect(response.rejectedItems).toContain('user@cella.com');
+      expect(response.rejectedItemIds).toContain('user@cella.com');
     });
 
     it('should handle multiple valid emails efficiently', async () => {
@@ -168,12 +168,12 @@ describe('System Invitation', async () => {
       expect(res.status).toBe(200);
       const response = (await parseResponse(res)) as {
         success: boolean;
-        rejectedItems: string[];
+        rejectedItemIds: string[];
         invitesSentCount: number;
       };
       expect(response.success).toBe(true);
       expect(response.invitesSentCount).toBe(3);
-      expect(response.rejectedItems).toHaveLength(0);
+      expect(response.rejectedItemIds).toHaveLength(0);
     });
   });
 });
