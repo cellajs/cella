@@ -68,10 +68,9 @@ class WebSocketClient {
 
     this._wsState = 'connecting';
 
-    const headers: Record<string, string> = {};
-    if (env.CDC_INTERNAL_SECRET) {
-      headers['x-cdc-secret'] = env.CDC_INTERNAL_SECRET;
-    }
+    const headers: Record<string, string> = {
+      'x-cdc-secret': env.CDC_INTERNAL_SECRET,
+    };
 
     logEvent('info', 'CDC WebSocket connecting...', { url: this.url, attempt: this.reconnectAttempt + 1 });
 

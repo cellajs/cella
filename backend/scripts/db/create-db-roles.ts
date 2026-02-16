@@ -1,14 +1,39 @@
+import { sql } from 'drizzle-orm';
 import { migrationDb } from '#/db/db';
 import { env } from '#/env';
 import pc from 'picocolors';
 
 /**
- * Creates database roles for RLS tenant isolation (dev only).
- * In production, roles should be pre-created via infrastructure (Terraform/Pulumi).
- * This script is idempotent - skips if roles already exist.
+ * Creates database roles for RLS tenant isolation.
+ * Passwords are extracted from DATABASE_URL and DATABASE_CDC_URL connection strings.
+ * Works in all environments (dev + production). Idempotent — skips existing roles.
+ *
+ * Requires DATABASE_ADMIN_URL (superuser) to create roles.
+ * In Neon, this should be the neondb_owner connection string.
  */
 
-const createDbRolesSql = `
+/**
+ * Parse username and password from a PostgreSQL connection string.
+ * Supports both `postgres://user:pass@host/db` and `postgresql://user:pass@host/db`.
+ */
+function parseCredentials(connectionString: string): { username: string; password: string } {
+  const url = new URL(connectionString);
+  return {
+    username: decodeURIComponent(url.username),
+    password: decodeURIComponent(url.password),
+  };
+}
+
+/**
+ * Build idempotent SQL to create roles with passwords from connection strings.
+ * Neon doesn't support REPLICATION on custom roles, so we skip it for cdc_role
+ * and let Neon handle logical replication at the project level.
+ */
+function buildCreateRolesSql(runtimePassword: string, cdcPassword: string, adminPassword: string): string {
+  // Escape single quotes for SQL injection safety
+  const escSql = (s: string) => s.replace(/'/g, "''");
+
+  return `
 DO $$
 BEGIN
   -- Check if we can create roles (not available in PGlite)
@@ -19,20 +44,27 @@ BEGIN
 
   -- runtime_role: Normal authenticated requests, subject to RLS
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'runtime_role') THEN
-    CREATE ROLE runtime_role WITH LOGIN PASSWORD 'dev_password';
+    CREATE ROLE runtime_role WITH LOGIN PASSWORD '${escSql(runtimePassword)}';
     RAISE NOTICE 'Created role runtime_role';
+  ELSE
+    ALTER ROLE runtime_role WITH PASSWORD '${escSql(runtimePassword)}';
   END IF;
 
-  -- cdc_role: CDC worker, REPLICATION + INSERT on activities only
+  -- cdc_role: CDC worker, INSERT on activities only
+  -- Note: REPLICATION is skipped (not supported on Neon/some managed providers)
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'cdc_role') THEN
-    CREATE ROLE cdc_role WITH LOGIN REPLICATION PASSWORD 'dev_password';
+    CREATE ROLE cdc_role WITH LOGIN PASSWORD '${escSql(cdcPassword)}';
     RAISE NOTICE 'Created role cdc_role';
+  ELSE
+    ALTER ROLE cdc_role WITH PASSWORD '${escSql(cdcPassword)}';
   END IF;
 
   -- admin_role: Migrations, seeds, system admin, BYPASSRLS
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'admin_role') THEN
-    CREATE ROLE admin_role WITH LOGIN BYPASSRLS PASSWORD 'dev_password';
+    CREATE ROLE admin_role WITH LOGIN BYPASSRLS PASSWORD '${escSql(adminPassword)}';
     RAISE NOTICE 'Created role admin_role';
+  ELSE
+    ALTER ROLE admin_role WITH PASSWORD '${escSql(adminPassword)}';
   END IF;
 
   -- Grant schema access
@@ -41,12 +73,9 @@ BEGIN
   GRANT ALL ON SCHEMA public TO admin_role;
 END $$;
 `;
-
-const isProduction = env.NODE_ENV === 'production';
+}
 
 export async function createDbRoles() {
-    if (isProduction) return console.error('Not allowed in production.');
-
   if (env.DEV_MODE === 'basic') {
     // PGlite doesn't support roles
     return;
@@ -58,7 +87,18 @@ export async function createDbRoles() {
   }
 
   try {
-    await migrationDb.execute(createDbRolesSql);
+    // Extract passwords from connection strings
+    const runtime = parseCredentials(env.DATABASE_URL);
+    const cdcUrl = process.env.DATABASE_CDC_URL;
+
+    // For admin_role, use a dedicated env var or fall back to same password as runtime
+    const adminPassword = process.env.DATABASE_ADMIN_ROLE_PASSWORD ?? runtime.password;
+
+    // CDC URL is optional — default to runtime password if not set (e.g., quick/core modes without CDC)
+    const cdcPassword = cdcUrl ? parseCredentials(cdcUrl).password : runtime.password;
+
+    const createRolesSql = buildCreateRolesSql(runtime.password, cdcPassword, adminPassword);
+    await migrationDb.execute(sql.raw(createRolesSql));
     console.info(`${pc.green('✔')} Database roles configured`);
   } catch (error) {
     console.error('Failed to setup roles:', error);

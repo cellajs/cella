@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { appConfig } from 'shared';
-import { activityActions } from '#/sync/activity-bus';
+import { activityActions } from '#/sync/activity-actions';
 import { mockStreamNotification } from '../../mocks/mock-entity-base';
 import { stxBaseSchema } from './sync-transaction-schemas';
 

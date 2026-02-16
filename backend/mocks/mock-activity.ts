@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker';
 import { appConfig } from 'shared';
 import type { ActivityModel } from '#/db/schema/activities';
-import { activityActions } from '#/sync/activity-bus';
+import { activityActions } from '#/sync/activity-actions';
 import { entityTableNames } from '#/table-config';
 import { generateMockContextEntityIdColumns, mockNanoid, mockPaginated, mockTenantId, withFakerSeed } from './utils';
 
