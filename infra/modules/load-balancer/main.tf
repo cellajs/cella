@@ -98,7 +98,7 @@ resource "scaleway_lb_backend" "api" {
   server_ips = [] # Will use forward_port_algorithm with external target
 
   health_check_http {
-    uri    = "/ping"
+    uri    = "/health"
     method = "GET"
     code   = 200
   }

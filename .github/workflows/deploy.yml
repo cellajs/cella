@@ -291,7 +291,7 @@ jobs:
 
       - name: Check backend health
         run: |
-          HEALTH_URL="${{ vars.BACKEND_URL }}/ping"
+          HEALTH_URL="${{ vars.BACKEND_URL }}/health"
           echo "Checking health at $HEALTH_URL"
           
           for i in {1..10}; do

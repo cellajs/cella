@@ -21,7 +21,7 @@ output "backend_url" {
 
 output "api_health_url" {
   description = "Backend health check URL"
-  value       = "https://${var.api_domain}/api/ping"
+  value       = "https://${var.api_domain}/api/health"
 }
 
 # -----------------------------------------------------------------------------

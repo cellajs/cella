@@ -13,7 +13,7 @@ services:
     # preDeployCommand: pnpm predeploy
     startCommand: pnpm start
     numInstances: 1
-    healthCheckPath: /ping
+    healthCheckPath: /health
     previews:
       generation: manual
     envVars:

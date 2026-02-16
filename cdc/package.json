@@ -8,7 +8,7 @@
   "scripts": {
     "start": "node dist/index.js",
     "start:dev": "tsx src/index.ts",
-    "dev": "cross-env NODE_ENV=development wait-on -i 2000 -t 60000 http://localhost:4000/ping && tsx watch --env-file=../backend/.env src/index.ts",
+    "dev": "cross-env NODE_ENV=development wait-on -i 2000 -t 60000 http://localhost:4000/health && tsx watch --env-file=../backend/.env src/index.ts",
     "build": "cross-env NODE_ENV=production tsup",
     "ts": "tsgo --pretty",
     "ts:old": "tsc --pretty",
