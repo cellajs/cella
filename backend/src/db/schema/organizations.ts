@@ -28,7 +28,7 @@ export const organizationsTable = pgTable(
     color: varchar({ length: maxLength.field }),
     logoUrl: varchar({ length: maxLength.url }),
     websiteUrl: varchar({ length: maxLength.url }),
-    welcomeText: varchar(),
+    welcomeText: varchar({ length: maxLength.html }),
     authStrategies: json().$type<AuthStrategy[]>().notNull().default([]),
     chatSupport: boolean().notNull().default(false),
   },
