@@ -1,12 +1,4 @@
 import { faker } from '@faker-js/faker';
-import { appConfig, type ContextEntityType } from 'config';
-import { relatableContextEntityTables } from '#/relatable-config';
-
-/**
- * Generates an ID matching nanoid config (lowercase alphanumeric, 24 chars).
- * Uses faker's seeded RNG for deterministic output.
- */
-export const mockNanoid = (length = 24) => faker.string.alphanumeric({ length, casing: 'lower' });
 
 /**
  * Converts a string key to a numeric seed for faker.
