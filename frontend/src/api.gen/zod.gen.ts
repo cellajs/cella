@@ -324,7 +324,7 @@ export const zOrganization = z.object({
   color: z.union([z.string().max(255), z.null()]),
   logoUrl: z.union([z.string().max(2048), z.null()]),
   websiteUrl: z.union([z.string().max(2048), z.null()]),
-  welcomeText: z.union([z.string(), z.null()]),
+  welcomeText: z.union([z.string().max(100000), z.null()]),
   authStrategies: z.array(z.enum(['github', 'google', 'microsoft', 'password', 'passkey', 'totp', 'email'])),
   chatSupport: z.boolean(),
   included: z.optional(

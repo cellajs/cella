@@ -1,2 +1,0 @@
-ALTER TABLE "attachments" ALTER COLUMN "keywords" SET DATA TYPE varchar(100000) USING "keywords"::varchar(100000);--> statement-breakpoint
-ALTER TABLE "pages" ALTER COLUMN "keywords" SET DATA TYPE varchar(100000) USING "keywords"::varchar(100000);

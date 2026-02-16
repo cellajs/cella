@@ -110,9 +110,9 @@ export const DownAlert = () => {
   const { getTitle, getContent, icon: Icon, variant } = downAlertConfig[downAlert];
 
   return (
-    <div className="fixed z-2000 pointer-events-auto bottom-4 max-sm:bottom-20 left-4 right-4 border-0 justify-center">
+    <div className="fixed z-2000 pointer-events-auto bottom-4 in-[#appLayout]:max-sm:bottom-20 left-4 right-4 border-0 justify-center">
       <Alert variant={variant} className="border-0 w-auto">
-        <CloseButton onClick={dismissAlert} size="sm" className="absolute top-1 right-1" />
+        <CloseButton onClick={dismissAlert} size="lg" className="absolute top-1 right-1" />
         <Icon size={16} />
         <AlertDescription className="pr-8 font-light">
           {getTitle()}

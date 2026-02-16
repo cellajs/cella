@@ -1,9 +1,9 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "7b3f07e8-8abe-4f2e-a360-fdab27e623bf",
+  "id": "020657e5-1020-4f24-bbc7-c1e715521e04",
   "prevIds": [
-    "4837bb50-762a-45cb-b414-2de55097a39e"
+    "00000000-0000-0000-0000-000000000000"
   ],
   "ddl": [
     {
@@ -1508,7 +1508,7 @@
       "table": "organizations"
     },
     {
-      "type": "varchar",
+      "type": "varchar(100000)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,

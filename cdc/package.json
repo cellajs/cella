@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.19.9",
-    "dotenv": "^17.2.4",
+    "dotenv": "^17.3.1",
     "drizzle-orm": "1.0.0-beta.15-859cf75",
     "hono": "^4.11.9",
     "nanoid": "^5.1.6",

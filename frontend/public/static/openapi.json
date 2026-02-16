@@ -1751,7 +1751,8 @@
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "maxLength": 100000
           },
           "authStrategies": {
             "type": "array",

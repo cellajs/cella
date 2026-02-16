@@ -1391,7 +1391,8 @@
         },
         "welcomeText": {
           "type": ["string", "null"],
-          "required": true
+          "required": true,
+          "maxLength": 100000
         },
         "authStrategies": {
           "type": "array",
