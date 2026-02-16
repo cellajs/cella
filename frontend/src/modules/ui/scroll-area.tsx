@@ -18,9 +18,9 @@ export function ScrollArea({
       <ScrollAreaPrimitive.Viewport
         id={`${id}-viewport`}
         // to prevent warning on autoscroll set from Pragmatic DnD
-        style={{ overflowY: 'scroll', display: 'flex', flexDirection: 'column', height: '100%' }}
+        style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', height: '100%' }}
         ref={viewportRef}
-        className={cn('h-full w-full [&>div]:block! rounded-[inherit]', viewportClassName)}
+        className={cn('h-full w-full [&>div]:block! rounded-[inherit] touch-pan-y', viewportClassName)}
       >
         {children}
       </ScrollAreaPrimitive.Viewport>
@@ -40,7 +40,7 @@ export function ScrollBar({
       data-slot="scroll-area-scrollbar"
       orientation={orientation}
       className={cn(
-        'z-20 flex touch-none p-px transition-colors select-none',
+        'z-20 flex p-px transition-colors select-none',
         orientation === 'vertical' && 'h-full w-2.5 border-l border-l-transparent',
         orientation === 'horizontal' && 'h-2.5 flex-col border-t border-t-transparent',
         className,
