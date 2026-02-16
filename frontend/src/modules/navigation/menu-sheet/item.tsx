@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { toaster } from '~/modules/common/toaster/service';
 import type { UserMenuItem } from '~/modules/me/types';
-import { getContextEntityRoute } from '~/routes-resolver';
+import { baseEntityRoutes } from '~/routes-config';
 import { useUIStore } from '~/store/ui';
 import { cn } from '~/utils/cn';
 
@@ -25,8 +25,10 @@ export const MenuSheetItem = ({ item, icon: Icon, className, searchResults }: Me
   const canAccess = offlineAccess ? (isOnline ? true : !item.membership.archived) : true;
   const isSubitem = !searchResults && !item.submenu;
 
-  // Build route path for the entity
-  const { to, params, search } = getContextEntityRoute(item, isSubitem);
+  // Build route path for the entity - use membership slug first, fallback to entity slug/id
+  const entitySlug = item.membership.organizationSlug ?? item.slug ?? item.id;
+  const to = baseEntityRoutes[item.entityType];
+  const params = { tenantId: item.tenantId, orgSlug: entitySlug };
 
   return (
     <Link
@@ -39,7 +41,6 @@ export const MenuSheetItem = ({ item, icon: Icon, className, searchResults }: Me
       draggable="false"
       to={to}
       params={params}
-      search={search}
       resetScroll={false}
       activeOptions={{ exact: false, includeHash: false, includeSearch: isSubitem }}
       activeProps={{ 'data-link-active': true }}

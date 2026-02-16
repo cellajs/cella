@@ -61,7 +61,6 @@ export default defineConfig({
       "frontend/public/favicon.svg",
       "frontend/public/static/openapi.json",
       "frontend/src/nav-config.tsx",
-      "frontend/src/routes-resolver.ts",
       "frontend/src/routes-config.tsx",
       "frontend/src/menu-config.tsx",
       "frontend/src/alert-config.tsx",

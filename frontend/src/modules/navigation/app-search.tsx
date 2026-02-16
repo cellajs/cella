@@ -15,7 +15,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { usersListQueryOptions } from '~/modules/user/query';
 import { getContextEntityTypeToListQueries } from '~/offline-config';
-import { getContextEntityRoute } from '~/routes-resolver';
+import { baseEntityRoutes } from '~/routes-config';
 import { useNavigationStore } from '~/store/navigation';
 
 // Define searchable entity types
@@ -106,8 +106,12 @@ export const AppSearch = () => {
     if (item.entityType === 'user') {
       navigate({ to: '.', search: (prev) => ({ ...prev, userSheetId: item.id }), resetScroll: false });
     } else {
-      const { to, params, search } = getContextEntityRoute(item);
-      navigate({ to, params, search, resetScroll: false });
+      // Build route - use membership slug first, fallback to entity slug/id
+      const entity = item as ContextEntity;
+      const entitySlug = entity.membership?.organizationSlug ?? entity.slug ?? entity.id;
+      const to = baseEntityRoutes[entity.entityType];
+      const params = { tenantId: entity.tenantId, orgSlug: entitySlug };
+      navigate({ to, params, resetScroll: false });
     }
 
     useDialoger.getState().remove();

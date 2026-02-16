@@ -17,7 +17,7 @@ import {
 } from '~/modules/ui/breadcrumb';
 import { useFindInListCache } from '~/query/basic';
 import { useMembershipForEntity } from '~/query/membership-enrichment';
-import { getContextEntityRoute } from '~/routes-resolver';
+import { baseEntityRoutes } from '~/routes-config';
 
 type PageHeaderProps = Omit<PageCoverProps, 'id' | 'url'> & {
   entity: ContextEntityBase | UserBase;
@@ -42,8 +42,20 @@ export function PageHeader({ entity, panel, parent, disableScroll, ...coverProps
   // Scroll to page header on load
   if (!disableScroll) useScrollTo(scrollToRef);
 
-  // Get parent route using app-specific resolver (handles hierarchy differences per fork)
-  const parentRoute = parentData ? getContextEntityRoute(parentData) : null;
+  // Build parent route - use membership slug first, fallback to entity slug/id
+  const parentRoute = parentData
+    ? {
+        to: baseEntityRoutes[parentData.entityType],
+        params: {
+          tenantId: parentData.tenantId,
+          orgSlug:
+            (parentData as unknown as { membership?: { organizationSlug?: string | null } }).membership
+              ?.organizationSlug ??
+            parentData.slug ??
+            parentData.id,
+        },
+      }
+    : null;
 
   return (
     <div className="w-full relative">

@@ -6,7 +6,7 @@ import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import type { ContextEntity } from '~/modules/entities/types';
 import { Badge } from '~/modules/ui/badge';
 import { Card, CardContent, CardFooter } from '~/modules/ui/card';
-import { getContextEntityRoute } from '~/routes-resolver';
+import { baseEntityRoutes } from '~/routes-config';
 import { dateShort } from '~/utils/date-short';
 import { numberToColorClass } from '~/utils/number-to-color-class';
 
@@ -14,14 +14,16 @@ import { numberToColorClass } from '~/utils/number-to-color-class';
  * Tile component to display an entity in a grid layout.
  */
 export const EntityGridTile = ({ entity }: { entity: ContextEntity & Pick<Organization, 'included'> }) => {
-  const { to, params, search } = getContextEntityRoute(entity);
+  // Build route - use membership slug first, fallback to entity slug/id
+  const entitySlug = entity.membership?.organizationSlug ?? entity.slug ?? entity.id;
+  const to = baseEntityRoutes[entity.entityType];
+  const params = { tenantId: entity.tenantId, orgSlug: entitySlug };
   return (
     <Card className="overflow-hidden px-0 sm:px-0 pt-0 sm:pt-0 transition [&:has(.tile-link:hover)]:shadow-sm shadow-xs [&:has(.tile-link:focus-visible)]:ring-2 [&:has(.tile-link:active)]:translate-y-[.05rem] [&:has(.tile-link:focus-visible)]:ring-ring [&:has(.tile-link:focus-visible)]:ring-offset-2 [&:has(.tile-link:focus-visible)]:ring-offset-background">
       <CardContent className="p-0 sm:p-0">
         <Link
           to={to}
           params={params}
-          search={search}
           className="w-full relative group tile-link focus-visible:outline-none focus-visible:ring-0"
         >
           {typeof window !== 'undefined' && (
