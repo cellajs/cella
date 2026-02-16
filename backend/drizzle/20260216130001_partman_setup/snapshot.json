@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "020657e5-1020-4f24-bbc7-c1e715521e04",
+  "id": "61002ab9-5a20-41e2-9e1e-563371cb446d",
   "prevIds": [
     "00000000-0000-0000-0000-000000000000"
   ],
@@ -923,6 +923,19 @@
       "table": "inactive_memberships"
     },
     {
+      "type": "varchar(255)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "organization_slug",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "inactive_memberships"
+    },
+    {
       "type": "varchar(50)",
       "typeSchema": null,
       "notNull": true,
@@ -1113,6 +1126,19 @@
       "generated": null,
       "identity": null,
       "name": "organization_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "memberships"
+    },
+    {
+      "type": "varchar(255)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "organization_slug",
       "entityType": "columns",
       "schema": "public",
       "table": "memberships"
@@ -3208,6 +3234,27 @@
       "nameExplicit": true,
       "columns": [
         {
+          "value": "organization_slug",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "inactive_memberships_organizationSlug_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "inactive_memberships"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
           "value": "user_id",
           "isExpression": false,
           "asc": true,
@@ -3298,6 +3345,27 @@
       "method": "btree",
       "concurrently": false,
       "name": "memberships_context_org_role_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "memberships"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "organization_slug",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "memberships_organizationSlug_idx",
       "entityType": "indexes",
       "schema": "public",
       "table": "memberships"

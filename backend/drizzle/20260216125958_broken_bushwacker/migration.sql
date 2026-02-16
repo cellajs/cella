@@ -74,6 +74,7 @@ CREATE TABLE "inactive_memberships" (
 	"rejected_at" timestamp,
 	"created_by" varchar(50) NOT NULL,
 	"organization_id" varchar(50) NOT NULL,
+	"organization_slug" varchar(255),
 	CONSTRAINT "inactive_memberships_tenant_email_ctx" UNIQUE NULLS NOT DISTINCT("tenant_id","email","context_type","organization_id")
 );
 --> statement-breakpoint
@@ -97,6 +98,7 @@ CREATE TABLE "memberships" (
 	"muted" boolean DEFAULT false NOT NULL,
 	"display_order" double precision NOT NULL,
 	"organization_id" varchar(50) NOT NULL,
+	"organization_slug" varchar(255),
 	CONSTRAINT "memberships_tenant_user_ctx" UNIQUE NULLS NOT DISTINCT("tenant_id","user_id","context_type","organization_id")
 );
 --> statement-breakpoint
@@ -300,10 +302,12 @@ CREATE INDEX "inactive_memberships_organization_id_idx" ON "inactive_memberships
 CREATE INDEX "inactive_memberships_tenant_id_idx" ON "inactive_memberships" ("tenant_id");--> statement-breakpoint
 CREATE INDEX "inactive_memberships_email_idx" ON "inactive_memberships" ("email");--> statement-breakpoint
 CREATE INDEX "inactive_memberships_org_pending_idx" ON "inactive_memberships" ("organization_id","rejected_at");--> statement-breakpoint
+CREATE INDEX "inactive_memberships_organizationSlug_idx" ON "inactive_memberships" ("organization_slug");--> statement-breakpoint
 CREATE INDEX "memberships_user_id_idx" ON "memberships" ("user_id");--> statement-breakpoint
 CREATE INDEX "memberships_organization_id_idx" ON "memberships" ("organization_id");--> statement-breakpoint
 CREATE INDEX "memberships_tenant_id_idx" ON "memberships" ("tenant_id");--> statement-breakpoint
 CREATE INDEX "memberships_context_org_role_idx" ON "memberships" ("context_type","organization_id","role");--> statement-breakpoint
+CREATE INDEX "memberships_organizationSlug_idx" ON "memberships" ("organization_slug");--> statement-breakpoint
 CREATE INDEX "organizations_name_index" ON "organizations" ("name" DESC NULLS LAST);--> statement-breakpoint
 CREATE INDEX "organizations_created_at_index" ON "organizations" ("created_at" DESC NULLS LAST);--> statement-breakpoint
 CREATE INDEX "organizations_tenant_id_index" ON "organizations" ("tenant_id");--> statement-breakpoint
