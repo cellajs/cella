@@ -382,6 +382,13 @@
           "organizationId": {
             "type": "string",
             "maxLength": 50
+          },
+          "organizationSlug": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 255
           }
         },
         "required": [
@@ -393,7 +400,8 @@
           "archived",
           "muted",
           "displayOrder",
-          "organizationId"
+          "organizationId",
+          "organizationSlug"
         ],
         "description": "Core membership fields shared across active and inactive memberships.",
         "example": {
@@ -402,6 +410,7 @@
           "contextType": "organization",
           "userId": "avw3f7pkm7vsxl2157n34cen",
           "organizationId": "80754cxm7om1aq3batq3hdpx",
+          "organizationSlug": "mock-organization-slug",
           "role": "admin",
           "displayOrder": 32,
           "muted": false,
@@ -1422,6 +1431,13 @@
           "organizationId": {
             "type": "string",
             "maxLength": 50
+          },
+          "organizationSlug": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 255
           }
         },
         "required": [
@@ -1435,7 +1451,8 @@
           "role",
           "rejectedAt",
           "createdBy",
-          "organizationId"
+          "organizationId",
+          "organizationSlug"
         ],
         "description": "A membership record for a user who has not yet accepted an invitation.",
         "example": {
@@ -1449,6 +1466,7 @@
           "createdAt": "2024-02-08T11:19:07.168Z",
           "createdBy": "n0dfrh6s450ooxn5tb992nwz",
           "organizationId": "9angnio9zojjlzk3croh621f",
+          "organizationSlug": "mock-organization-slug",
           "tenantId": "test01"
         }
       },
@@ -1924,6 +1942,7 @@
               "contextType": "organization",
               "userId": "36vxzq0rzt4pucvepsu63uw1",
               "organizationId": "hmo9fwr239kqavr3yur671kl",
+              "organizationSlug": "mock-organization-slug",
               "role": "admin",
               "displayOrder": 69,
               "muted": false,
@@ -2354,6 +2373,13 @@
           "organizationId": {
             "type": "string",
             "maxLength": 50
+          },
+          "organizationSlug": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 255
           }
         },
         "required": [
@@ -2369,7 +2395,8 @@
           "archived",
           "muted",
           "displayOrder",
-          "organizationId"
+          "organizationId",
+          "organizationSlug"
         ],
         "description": "A user's membership in a context entity, including role and activity data.",
         "example": {
@@ -2377,6 +2404,7 @@
           "contextType": "organization",
           "userId": "xg7596t8jiy8d0v8irrljzhy",
           "organizationId": "7ul53b62aw5h7k6x44nbu2r5",
+          "organizationSlug": "mock-organization-slug",
           "role": "admin",
           "displayOrder": 49,
           "muted": false,
@@ -5065,6 +5093,7 @@
                         "createdAt": "2024-11-13T18:39:21.444Z",
                         "createdBy": "5w1ul2bx3ld4na8k0ts708fo",
                         "organizationId": "ft7nt6w77qphfz9detwtt178",
+                        "organizationSlug": "mock-organization-slug",
                         "tenantId": "test01"
                       }
                     },
@@ -5091,6 +5120,7 @@
                         "createdAt": "2024-04-12T10:35:38.557Z",
                         "createdBy": "gtt9htxwawq5tdvqh553onul",
                         "organizationId": "okmsol2r5n4cy72j57t1tgy0",
+                        "organizationSlug": "mock-organization-slug",
                         "tenantId": "test01"
                       }
                     }
@@ -7817,6 +7847,7 @@
                               "contextType": "organization",
                               "userId": "36vxzq0rzt4pucvepsu63uw1",
                               "organizationId": "hmo9fwr239kqavr3yur671kl",
+                              "organizationSlug": "mock-organization-slug",
                               "role": "admin",
                               "displayOrder": 69,
                               "muted": false,
@@ -7905,6 +7936,7 @@
                           "contextType": "organization",
                           "userId": "1t4n7coocr6ixfzcb6x5wab0",
                           "organizationId": "kzmv5qbhdcqeiuvwlosan0fc",
+                          "organizationSlug": "mock-organization-slug",
                           "role": "member",
                           "displayOrder": 95,
                           "muted": false,
@@ -7966,6 +7998,7 @@
                           "contextType": "organization",
                           "userId": "u4oy2u1m55abgsmrl1zezeoj",
                           "organizationId": "p3t0ygxx0aa83en3sk1fs1we",
+                          "organizationSlug": "mock-organization-slug",
                           "role": "admin",
                           "displayOrder": 20,
                           "muted": false,
@@ -8297,6 +8330,7 @@
                           "contextType": "organization",
                           "userId": "gu87zf240qkfh0faoqjip69q",
                           "organizationId": "qqp8d07imsvjbtqtl3rtjgxd",
+                          "organizationSlug": "mock-organization-slug",
                           "role": "member",
                           "displayOrder": 38,
                           "muted": false,
@@ -8358,6 +8392,7 @@
                           "contextType": "organization",
                           "userId": "ilwj64zmkwsnsmrzo2zxd2hr",
                           "organizationId": "hg5ogh3yr2b2dbwf7b9eckaj",
+                          "organizationSlug": "mock-organization-slug",
                           "role": "admin",
                           "displayOrder": 7,
                           "muted": false,
@@ -8506,6 +8541,7 @@
                       "contextType": "organization",
                       "userId": "36vxzq0rzt4pucvepsu63uw1",
                       "organizationId": "hmo9fwr239kqavr3yur671kl",
+                      "organizationSlug": "mock-organization-slug",
                       "role": "admin",
                       "displayOrder": 69,
                       "muted": false,
@@ -8771,6 +8807,7 @@
                       "contextType": "organization",
                       "userId": "36vxzq0rzt4pucvepsu63uw1",
                       "organizationId": "hmo9fwr239kqavr3yur671kl",
+                      "organizationSlug": "mock-organization-slug",
                       "role": "admin",
                       "displayOrder": 69,
                       "muted": false,
@@ -9746,6 +9783,7 @@
                           "contextType": "organization",
                           "userId": "gu87zf240qkfh0faoqjip69q",
                           "organizationId": "fpb1r33xdbp099f3xi8028r0",
+                          "organizationSlug": "mock-organization-slug",
                           "role": "member",
                           "displayOrder": 38,
                           "muted": false,
@@ -9781,6 +9819,7 @@
                           "contextType": "organization",
                           "userId": "ilwj64zmkwsnsmrzo2zxd2hr",
                           "organizationId": "eylomg4p6xgvt4g11e2hqqxx",
+                          "organizationSlug": "mock-organization-slug",
                           "role": "admin",
                           "displayOrder": 7,
                           "muted": false,
@@ -11121,6 +11160,7 @@
                       "contextType": "organization",
                       "userId": "avw3f7pkm7vsxl2157n34cen",
                       "organizationId": "80754cxm7om1aq3batq3hdpx",
+                      "organizationSlug": "mock-organization-slug",
                       "role": "admin",
                       "displayOrder": 32,
                       "muted": false,
@@ -11377,6 +11417,7 @@
                   "contextType": "organization",
                   "userId": "xg7596t8jiy8d0v8irrljzhy",
                   "organizationId": "7ul53b62aw5h7k6x44nbu2r5",
+                  "organizationSlug": "mock-organization-slug",
                   "role": "admin",
                   "displayOrder": 49,
                   "muted": false,
@@ -11792,6 +11833,7 @@
                         "contextType": "organization",
                         "userId": "gu87zf240qkfh0faoqjip69q",
                         "organizationId": "fpb1r33xdbp099f3xi8028r0",
+                        "organizationSlug": "mock-organization-slug",
                         "role": "member",
                         "displayOrder": 38,
                         "muted": false,
@@ -11823,6 +11865,7 @@
                         "contextType": "organization",
                         "userId": "ilwj64zmkwsnsmrzo2zxd2hr",
                         "organizationId": "eylomg4p6xgvt4g11e2hqqxx",
+                        "organizationSlug": "mock-organization-slug",
                         "role": "admin",
                         "displayOrder": 7,
                         "muted": false,
@@ -12043,6 +12086,7 @@
                       "createdAt": "2024-11-21T04:00:59.122Z",
                       "createdBy": "ikgme3gy3a9lhe0ctrmzc53x",
                       "organizationId": "9xn03u76eo7z71y60a882cwp",
+                      "organizationSlug": "mock-organization-slug",
                       "tenantId": "test01"
                     },
                     {
@@ -12056,6 +12100,7 @@
                       "createdAt": "2024-10-29T08:46:20.790Z",
                       "createdBy": "e44bpmhsyauxcwuwjsrzvzac",
                       "organizationId": "clxs8vayzrul7vmeyahbgyu0",
+                      "organizationSlug": "mock-organization-slug",
                       "tenantId": "test01"
                     }
                   ],

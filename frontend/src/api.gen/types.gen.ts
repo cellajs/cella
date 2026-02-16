@@ -48,6 +48,7 @@ export type MembershipBase = {
   muted: boolean;
   displayOrder: number;
   organizationId: string;
+  organizationSlug: string | null;
 };
 
 /**
@@ -251,6 +252,7 @@ export type InactiveMembership = {
   rejectedAt: string | null;
   createdBy: string;
   organizationId: string;
+  organizationSlug: string | null;
 };
 
 /**
@@ -447,6 +449,7 @@ export type Membership = {
   muted: boolean;
   displayOrder: number;
   organizationId: string;
+  organizationSlug: string | null;
 };
 
 export type GetActivitiesData = {

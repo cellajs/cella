@@ -46,6 +46,7 @@ export const zMembershipBase = z.object({
   muted: z.boolean(),
   displayOrder: z.number().gte(-140737488355328).lte(140737488355327),
   organizationId: z.string().max(50),
+  organizationSlug: z.union([z.string().max(255), z.null()]),
 });
 
 /**
@@ -255,6 +256,7 @@ export const zInactiveMembership = z.object({
   rejectedAt: z.union([z.string(), z.null()]),
   createdBy: z.string().max(50),
   organizationId: z.string().max(50),
+  organizationSlug: z.union([z.string().max(255), z.null()]),
 });
 
 /**
@@ -441,6 +443,7 @@ export const zMembership = z.object({
   muted: z.boolean(),
   displayOrder: z.number().gte(-140737488355328).lte(140737488355327),
   organizationId: z.string().max(50),
+  organizationSlug: z.union([z.string().max(255), z.null()]),
 });
 
 export const zGetActivitiesData = z.object({

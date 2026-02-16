@@ -177,6 +177,11 @@
                             "type": "string",
                             "required": true,
                             "maxLength": 50
+                          },
+                          "organizationSlug": {
+                            "type": ["string", "null"],
+                            "required": true,
+                            "maxLength": 255
                           }
                         },
                         "ref": "#/components/schemas/MembershipBase"
@@ -276,6 +281,7 @@
                   "contextType": "organization",
                   "userId": "1t4n7coocr6ixfzcb6x5wab0",
                   "organizationId": "kzmv5qbhdcqeiuvwlosan0fc",
+                  "organizationSlug": "mock-organization-slug",
                   "role": "member",
                   "displayOrder": 95,
                   "muted": false,
@@ -330,6 +336,7 @@
                   "contextType": "organization",
                   "userId": "u4oy2u1m55abgsmrl1zezeoj",
                   "organizationId": "p3t0ygxx0aa83en3sk1fs1we",
+                  "organizationSlug": "mock-organization-slug",
                   "role": "admin",
                   "displayOrder": 20,
                   "muted": false,
@@ -696,6 +703,11 @@
                             "type": "string",
                             "required": true,
                             "maxLength": 50
+                          },
+                          "organizationSlug": {
+                            "type": ["string", "null"],
+                            "required": true,
+                            "maxLength": 255
                           }
                         },
                         "ref": "#/components/schemas/MembershipBase"
@@ -785,6 +797,7 @@
                   "contextType": "organization",
                   "userId": "gu87zf240qkfh0faoqjip69q",
                   "organizationId": "qqp8d07imsvjbtqtl3rtjgxd",
+                  "organizationSlug": "mock-organization-slug",
                   "role": "member",
                   "displayOrder": 38,
                   "muted": false,
@@ -839,6 +852,7 @@
                   "contextType": "organization",
                   "userId": "ilwj64zmkwsnsmrzo2zxd2hr",
                   "organizationId": "hg5ogh3yr2b2dbwf7b9eckaj",
+                  "organizationSlug": "mock-organization-slug",
                   "role": "admin",
                   "displayOrder": 7,
                   "muted": false,
@@ -1108,6 +1122,11 @@
                       "type": "string",
                       "required": true,
                       "maxLength": 50
+                    },
+                    "organizationSlug": {
+                      "type": ["string", "null"],
+                      "required": true,
+                      "maxLength": 255
                     }
                   },
                   "ref": "#/components/schemas/MembershipBase"
@@ -1191,6 +1210,7 @@
               "contextType": "organization",
               "userId": "36vxzq0rzt4pucvepsu63uw1",
               "organizationId": "hmo9fwr239kqavr3yur671kl",
+              "organizationSlug": "mock-organization-slug",
               "role": "admin",
               "displayOrder": 69,
               "muted": false,
@@ -1445,6 +1465,11 @@
                       "type": "string",
                       "required": true,
                       "maxLength": 50
+                    },
+                    "organizationSlug": {
+                      "type": ["string", "null"],
+                      "required": true,
+                      "maxLength": 255
                     }
                   },
                   "ref": "#/components/schemas/MembershipBase"
@@ -1528,6 +1553,7 @@
               "contextType": "organization",
               "userId": "36vxzq0rzt4pucvepsu63uw1",
               "organizationId": "hmo9fwr239kqavr3yur671kl",
+              "organizationSlug": "mock-organization-slug",
               "role": "admin",
               "displayOrder": 69,
               "muted": false,

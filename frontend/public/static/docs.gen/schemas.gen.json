@@ -142,6 +142,11 @@
           "type": "string",
           "required": true,
           "maxLength": 50
+        },
+        "organizationSlug": {
+          "type": ["string", "null"],
+          "required": true,
+          "maxLength": 255
         }
       }
     },
@@ -153,6 +158,7 @@
       "contextType": "organization",
       "userId": "avw3f7pkm7vsxl2157n34cen",
       "organizationId": "80754cxm7om1aq3batq3hdpx",
+      "organizationSlug": "mock-organization-slug",
       "role": "admin",
       "displayOrder": 32,
       "muted": false,
@@ -1138,6 +1144,11 @@
           "type": "string",
           "required": true,
           "maxLength": 50
+        },
+        "organizationSlug": {
+          "type": ["string", "null"],
+          "required": true,
+          "maxLength": 255
         }
       }
     },
@@ -1154,6 +1165,7 @@
       "createdAt": "2024-02-08T11:19:07.168Z",
       "createdBy": "n0dfrh6s450ooxn5tb992nwz",
       "organizationId": "9angnio9zojjlzk3croh621f",
+      "organizationSlug": "mock-organization-slug",
       "tenantId": "test01"
     }
   },
@@ -1447,6 +1459,11 @@
                   "type": "string",
                   "required": true,
                   "maxLength": 50
+                },
+                "organizationSlug": {
+                  "type": ["string", "null"],
+                  "required": true,
+                  "maxLength": 255
                 }
               },
               "ref": "#/components/schemas/MembershipBase"
@@ -1530,6 +1547,7 @@
           "contextType": "organization",
           "userId": "36vxzq0rzt4pucvepsu63uw1",
           "organizationId": "hmo9fwr239kqavr3yur671kl",
+          "organizationSlug": "mock-organization-slug",
           "role": "admin",
           "displayOrder": 69,
           "muted": false,
@@ -1907,6 +1925,11 @@
           "type": "string",
           "required": true,
           "maxLength": 50
+        },
+        "organizationSlug": {
+          "type": ["string", "null"],
+          "required": true,
+          "maxLength": 255
         }
       }
     },
@@ -1917,6 +1940,7 @@
       "contextType": "organization",
       "userId": "xg7596t8jiy8d0v8irrljzhy",
       "organizationId": "7ul53b62aw5h7k6x44nbu2r5",
+      "organizationSlug": "mock-organization-slug",
       "role": "admin",
       "displayOrder": 49,
       "muted": false,

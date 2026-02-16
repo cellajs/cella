@@ -898,6 +898,11 @@
                         "type": "string",
                         "required": true,
                         "maxLength": 50
+                      },
+                      "organizationSlug": {
+                        "type": ["string", "null"],
+                        "required": true,
+                        "maxLength": 255
                       }
                     },
                     "ref": "#/components/schemas/InactiveMembership"
@@ -934,6 +939,7 @@
                 "createdAt": "2024-11-13T18:39:21.444Z",
                 "createdBy": "5w1ul2bx3ld4na8k0ts708fo",
                 "organizationId": "ft7nt6w77qphfz9detwtt178",
+                "organizationSlug": "mock-organization-slug",
                 "tenantId": "test01"
               }
             },
@@ -960,6 +966,7 @@
                 "createdAt": "2024-04-12T10:35:38.557Z",
                 "createdBy": "gtt9htxwawq5tdvqh553onul",
                 "organizationId": "okmsol2r5n4cy72j57t1tgy0",
+                "organizationSlug": "mock-organization-slug",
                 "tenantId": "test01"
               }
             }
@@ -1354,6 +1361,11 @@
                     "type": "string",
                     "required": true,
                     "maxLength": 50
+                  },
+                  "organizationSlug": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 255
                   }
                 },
                 "ref": "#/components/schemas/MembershipBase"
