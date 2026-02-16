@@ -591,6 +591,8 @@ activityBus.onAny((event) => {
 });
 ```
 
+// TODO-016 we need to consider a variant for a list of items because SSE could also trigger a lot of paginated requests.
+
 **On delete:** Just invalidate. No tombstone needed — let DB return 404 if client missed SSE.
 
 ### Endpoint-first caching

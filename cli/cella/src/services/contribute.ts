@@ -100,13 +100,20 @@ export async function pushContribBranch(driftedFiles: AnalyzedFile[], config: Ru
     // Update branch ref without checkout
     await git(['update-ref', `refs/heads/${branchName}`, commitHash], upstreamPath);
 
-    // Fetch remote branch first so --force-with-lease has a tracking ref
+    // Prune stale tracking refs (handles branches deleted on remote)
+    await git(['remote', 'prune', 'origin'], upstreamPath, { ignoreErrors: true });
+
+    // Fetch remote branch so --force-with-lease has a current tracking ref
     await git(['fetch', 'origin', `${branchName}:refs/remotes/origin/${branchName}`], upstreamPath, {
       ignoreErrors: true,
     });
 
-    // Force-push with lease
-    await git(['push', '--force-with-lease', '-u', 'origin', branchName], upstreamPath);
+    // Force-push with lease; fall back to --force if lease is stale (branch was deleted & recreated)
+    try {
+      await git(['push', '--force-with-lease', '-u', 'origin', branchName], upstreamPath);
+    } catch {
+      await git(['push', '--force', '-u', 'origin', branchName], upstreamPath);
+    }
 
     spinnerSuccess(`pushed ${fileList.length} files to ${pc.cyan(branchName)}`);
 
