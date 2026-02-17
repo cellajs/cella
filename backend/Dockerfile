@@ -25,6 +25,7 @@ FROM base AS deps
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY backend/package.json ./backend/
 COPY config/package.json ./config/
+COPY shared/package.json ./shared/
 COPY packages/tracing/package.json ./packages/tracing/
 
 # Install production dependencies only
@@ -39,6 +40,7 @@ FROM base AS builder
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY backend/package.json ./backend/
 COPY config/package.json ./config/
+COPY shared/package.json ./shared/
 COPY packages/tracing/package.json ./packages/tracing/
 
 # Install all dependencies (including dev for build)
@@ -47,6 +49,7 @@ RUN pnpm install --frozen-lockfile --filter @cella/backend...
 # Copy source code
 COPY backend/ ./backend/
 COPY config/ ./config/
+COPY shared/ ./shared/
 COPY packages/tracing/ ./packages/tracing/
 COPY locales/ ./locales/
 COPY json/ ./json/
@@ -75,7 +78,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/backend/node_modules ./backend/node_modules
 
 # Copy config and shared packages
-COPY --from=builder /app/config ./config
+COPY --from=builder /app/shared ./shared
 COPY --from=builder /app/packages/tracing ./packages/tracing
 COPY --from=builder /app/locales ./locales
 COPY --from=builder /app/json ./json

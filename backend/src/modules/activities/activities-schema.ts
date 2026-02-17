@@ -5,7 +5,7 @@ import { activityErrorSchema } from '#/db/utils/activity-error-schema';
 import { createSelectSchema } from '#/db/utils/drizzle-schema';
 import { paginationQuerySchema } from '#/schemas';
 import { stxBaseSchema } from '#/schemas/sync-transaction-schemas';
-import { activityActions } from '#/sync/activity-bus';
+import { activityActions } from '#/sync/activity-actions';
 import { mockActivityResponse } from '../../../mocks/mock-activity';
 
 /** Schema for activity actions enum - uses literal types from activityActions */

@@ -5,7 +5,7 @@ import type { ActivityError } from '#/db/utils/activity-error-schema';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import type { StxBase } from '#/schemas/sync-transaction-schemas';
-import { activityActions } from '#/sync/activity-bus';
+import { activityActions } from '#/sync/activity-actions';
 import { nanoid } from '#/utils/nanoid';
 import { organizationsTable } from './organizations';
 import { tenantsTable } from './tenants';

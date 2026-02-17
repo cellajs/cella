@@ -5,12 +5,10 @@ import { type TrackedModel, type TrackedType } from '#/table-config';
 import { logEvent } from '#/utils/logger';
 import { eventAttrs, recordMessageReceived, type SyncTraceContext, startSyncSpan, syncSpanNames } from './sync-metrics';
 
-/**
- * Activity actions aligned with HTTP methods (excluding 'read').
- */
-export const activityActions = ['create', 'update', 'delete'] as const;
+// Re-export from activity-actions for backward compatibility
+export { type ActivityAction, activityActions } from './activity-actions';
 
-export type ActivityAction = (typeof activityActions)[number];
+import { type ActivityAction, activityActions } from './activity-actions';
 
 /**
  * All possible tracked types (entities + resources) for event type generation.

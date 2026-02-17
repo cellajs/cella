@@ -76,10 +76,13 @@ class CdcWebSocketServer {
         return;
       }
 
-      // Validate shared secret (skip in basic mode or if not configured)
+      // Validate shared secret - always required for security
       const secret = request.headers['x-cdc-secret'];
-      if (env.CDC_INTERNAL_SECRET && secret !== env.CDC_INTERNAL_SECRET) {
-        logEvent('warn', 'CDC WebSocket auth failed', { ip: request.socket.remoteAddress });
+      if (!env.CDC_INTERNAL_SECRET || secret !== env.CDC_INTERNAL_SECRET) {
+        logEvent('warn', 'CDC WebSocket auth failed', {
+          ip: request.socket.remoteAddress,
+          reason: !env.CDC_INTERNAL_SECRET ? 'CDC_INTERNAL_SECRET not configured' : 'invalid secret',
+        });
         socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
         socket.destroy();
         return;

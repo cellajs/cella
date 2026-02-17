@@ -44,7 +44,7 @@ services:
     runtime: node
     region: frankfurt
     rootDir: cdc
-    buildCommand: pnpm install
+    buildCommand: pnpm install && pnpm build
     startCommand: pnpm start
     numInstances: 1
     previews:

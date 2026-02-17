@@ -1,5 +1,5 @@
 import type { InsertActivityModel } from '#/db/schema/activities';
-import type { ActivityAction } from '#/sync/activity-bus';
+import type { ActivityAction } from '#/sync/activity-actions';
 import { getTableName } from 'drizzle-orm';
 import type { TableRegistryEntry } from '../types';
 import { actionToVerb, extractActivityContext, extractStxData } from '../utils';

@@ -25,36 +25,55 @@ FROM base AS deps
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY cdc/package.json ./cdc/
 COPY config/package.json ./config/
+COPY shared/package.json ./shared/
 COPY packages/tracing/package.json ./packages/tracing/
 
 # Install production dependencies only
 RUN pnpm install --frozen-lockfile --prod --filter @cella/cdc...
 
 # -----------------------------------------------------------------------------
-# Stage 3: Production image
+# Stage 3: Build application
+# -----------------------------------------------------------------------------
+FROM base AS builder
+
+# Copy workspace configuration
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY cdc/package.json ./cdc/
+COPY config/package.json ./config/
+COPY shared/package.json ./shared/
+COPY packages/tracing/package.json ./packages/tracing/
+
+# Install all dependencies (including dev for build)
+RUN pnpm install --frozen-lockfile --filter @cella/cdc...
+
+# Copy source code
+COPY cdc/ ./cdc/
+COPY backend/src ./backend/src
+COPY config/ ./config/
+COPY shared/ ./shared/
+COPY packages/tracing/ ./packages/tracing/
+
+# Build CDC worker (bundles backend imports via tsup)
+WORKDIR /app/cdc
+RUN pnpm build
+
+# -----------------------------------------------------------------------------
+# Stage 4: Production image
 # -----------------------------------------------------------------------------
 FROM node:24-alpine AS production
 
-# Add non-root user for security
 RUN addgroup --system --gid 1001 cella && \
     adduser --system --uid 1001 cella
 
 WORKDIR /app
 
-# Copy package files
-COPY cdc/package.json ./cdc/
+# Copy built application from builder
+COPY --from=builder /app/cdc/dist ./cdc/dist
+COPY --from=builder /app/cdc/package.json ./cdc/
 
-# Copy dependencies from deps stage
+# Copy production dependencies from deps stage
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/cdc/node_modules ./cdc/node_modules
-
-# Copy source code (CDC runs with tsx, not compiled)
-COPY cdc/src ./cdc/src
-COPY cdc/tsconfig.json ./cdc/
-
-# Copy config and shared packages
-COPY config/ ./config/
-COPY packages/tracing/ ./packages/tracing/
 
 # Set ownership
 RUN chown -R cella:cella /app
@@ -75,4 +94,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
 
 # Start the CDC worker
 WORKDIR /app/cdc
-CMD ["npx", "tsx", "src/index.ts"]
+CMD ["node", "dist/index.js"]

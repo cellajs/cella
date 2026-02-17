@@ -48,9 +48,6 @@ export const env = createEnv({
     PADDLE_API_KEY: z.string().optional(),
     PADDLE_WEBHOOK_KEY: z.string().optional(),
 
-    BETTERSTACK_SOURCE_TOKEN: z.string().optional(),
-    BETTERSTACK_INGESTING_HOST: z.string().optional(),
-
     GITHUB_CLIENT_ID: z.string().optional(),
     GITHUB_CLIENT_SECRET: z.string().optional(),
     GOOGLE_CLIENT_ID: z.string().optional(),
