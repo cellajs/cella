@@ -1,13 +1,12 @@
 import { useQueries } from '@tanstack/react-query';
 import { useMemo } from 'react';
-import { appConfig, type ContextEntityType } from 'shared';
-import type { UserMenuItem } from '~/modules/me/types';
 import { getContextEntityTypeToListQueries } from '~/offline-config';
-import { flattenInfiniteData } from '~/query/basic';
-import { buildMenu } from './build-menu';
+import { buildMenuFromCache, menuEntityTypes } from './build-menu-from-cache';
 
 /**
  * React hook that fetches and builds the user menu based on their memberships.
+ * Subscribes to entity list queries for granular reactivity — when the cache
+ * subscriber enriches data, useQueries detects the update and re-builds the menu.
  *
  * @param userId - The ID of the user to fetch menu data for (optional - queries disabled when undefined)
  * @param opts - Optional configuration for building detailed menu with submenus
@@ -19,18 +18,10 @@ export function useMenu(userId: string | undefined, opts?: { detailedMenu?: bool
   // Memoize registry so useQueries sees stable configs across renders
   const contextEntityQueryRegistry = useMemo(() => getContextEntityTypeToListQueries(), []);
 
-  // Types must be memoized to prevent useQueries from creating new query instances on every render
-  const types = useMemo(
-    () =>
-      Array.from(
-        new Set(appConfig.menuStructure.flatMap((s) => [s.entityType, s.subentityType].filter(Boolean))),
-      ) as ContextEntityType[],
-    [],
-  );
-
+  // Subscribe to each entity list query for granular reactivity
   const results = useQueries({
     // @ts-expect-error useQueries types don't support infinite query options, but it works at runtime
-    queries: types.map((t) => ({
+    queries: menuEntityTypes.map((t) => ({
       ...contextEntityQueryRegistry[t]?.({ userId: userId ?? '' }),
       enabled: !!userId,
     })),
@@ -39,23 +30,11 @@ export function useMenu(userId: string | undefined, opts?: { detailedMenu?: bool
   // Stable recompute key when query data changes
   const recomputeKey = results.map((r) => r.dataUpdatedAt).join('|');
 
-  // Build menu from query results - memoized to prevent infinite re-renders
-  const menu = useMemo(() => {
-    const byType = new Map<ContextEntityType, UserMenuItem[]>();
-
-    types.forEach((t, i) => {
-      const data = results[i]?.data;
-      // biome-ignore lint/suspicious/noExplicitAny: useQueries union types don't narrow per-index
-      const items = data ? flattenInfiniteData<UserMenuItem>(data as any) : [];
-      // Filter out items without membership (can happen during cache enrichment)
-      byType.set(
-        t,
-        items.filter((item) => !!item.membership),
-      );
-    });
-
-    return buildMenu(byType, appConfig.menuStructure, { detailedMenu });
-  }, [detailedMenu, types, recomputeKey]);
+  // Build menu from cache — shared logic with getMenuData
+  const menu = useMemo(
+    () => (userId ? buildMenuFromCache(userId, { detailedMenu }) : buildMenuFromCache('', { detailedMenu })),
+    [userId, detailedMenu, recomputeKey],
+  );
 
   const isLoading = results.some((r) => r.isLoading || r.isPending);
   const error = results.find((r) => r.error)?.error;

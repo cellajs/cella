@@ -1,6 +1,6 @@
 import type { Query } from '@tanstack/react-query';
 import { useSyncExternalStore } from 'react';
-import { appConfig } from 'shared';
+import { appConfig, hierarchy } from 'shared';
 import type { MembershipBase } from '~/api.gen';
 import { meKeys } from '~/modules/me/query';
 import { queryClient } from '~/query/query-client';
@@ -60,7 +60,9 @@ function hasMembershipChanged(a: MembershipBase | null | undefined, b: Membershi
 /** Entity shape expected in infinite query pages */
 interface EnrichableEntity {
   id: string;
+  slug?: string;
   membership?: MembershipBase | null;
+  ancestorSlugs?: Record<string, string>;
 }
 
 /** Infinite query data shape: pages of items */
@@ -69,10 +71,75 @@ interface InfiniteData {
 }
 
 /**
- * Enrich infinite query data with memberships in a single pass.
+ * Find a context entity's slug by searching list caches for that entity type.
+ * Scans all list queries for the given entity type to find the slug by ID.
+ */
+function findEntitySlugInCache(entityType: string, entityId: string): string | undefined {
+  for (const query of queryClient.getQueryCache().getAll()) {
+    if (query.queryKey[0] !== entityType || query.queryKey[1] !== 'list') continue;
+    const data = query.state.data as InfiniteData | undefined;
+    if (!data?.pages) continue;
+    for (const page of data.pages) {
+      const found = page.items?.find((item) => item.id === entityId);
+      if (found?.slug) return found.slug;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Build ancestor slugs map for an entity using the hierarchy config.
+ * Walks up the ancestor chain, resolving each ancestor's slug from its list cache.
+ * Falls back to the ancestor ID when slug isn't cached — this ensures route params
+ * are always populated, and rewriteUrlToSlug in beforeLoad corrects the URL.
+ */
+function buildAncestorSlugs(
+  item: EnrichableEntity,
+  membership: MembershipBase | null | undefined,
+  ancestors: readonly string[],
+): Record<string, string> | undefined {
+  if (ancestors.length === 0) return undefined;
+
+  const slugs: Record<string, string> = {};
+  let found = false;
+
+  for (const ancestorType of ancestors) {
+    const idKey = (appConfig.entityIdColumnKeys as Record<string, string>)[ancestorType];
+    if (!idKey) continue;
+    // Try getting ancestor ID from membership first, then entity itself
+    const ancestorId =
+      (membership as unknown as Record<string, unknown>)?.[idKey] ??
+      (item as unknown as Record<string, unknown>)[idKey];
+    if (typeof ancestorId !== 'string') continue;
+
+    // Prefer slug from cache, fall back to ID so route params are always populated
+    const slug = findEntitySlugInCache(ancestorType, ancestorId) ?? ancestorId;
+    slugs[ancestorType] = slug;
+    found = true;
+  }
+
+  return found ? slugs : undefined;
+}
+
+/** Check if ancestor slugs maps differ */
+function hasAncestorSlugsChanged(
+  a: Record<string, string> | undefined,
+  b: Record<string, string> | undefined,
+): boolean {
+  if (!a && !b) return false;
+  if (!a || !b) return true;
+  const aKeys = Object.keys(a);
+  const bKeys = Object.keys(b);
+  if (aKeys.length !== bKeys.length) return true;
+  return aKeys.some((k) => a[k] !== b[k]);
+}
+
+/**
+ * Enrich infinite query data with memberships and ancestor slugs in a single pass.
  * Returns the same reference when nothing changed (avoids unnecessary re-renders).
  */
-function enrichInfiniteData(data: InfiniteData, memberships: MembershipBase[]): InfiniteData {
+function enrichInfiniteData(data: InfiniteData, memberships: MembershipBase[], entityType: string): InfiniteData {
+  const ancestors = hierarchy.getOrderedAncestors(entityType);
   let dataChanged = false;
 
   const newPages = data.pages.map((page) => {
@@ -81,10 +148,23 @@ function enrichInfiniteData(data: InfiniteData, memberships: MembershipBase[]): 
     let pageChanged = false;
     const newItems = page.items.map((item) => {
       if (!item.id) return item;
-      const membership = findMembership(memberships, item.id);
-      if (!membership || !hasMembershipChanged(item.membership, membership)) return item;
+
+      // Look up from memberships cache, fallback to included.membership on the entity itself
+      const membership = findMembership(memberships, item.id) ?? (item as any).included?.membership;
+      const membershipChanged = membership && hasMembershipChanged(item.membership, membership);
+
+      // Build ancestor slugs from hierarchy
+      const newAncestorSlugs = buildAncestorSlugs(item, membership ?? item.membership, ancestors);
+      const ancestorSlugsChanged = hasAncestorSlugsChanged(item.ancestorSlugs, newAncestorSlugs);
+
+      if (!membershipChanged && !ancestorSlugsChanged) return item;
+
       pageChanged = true;
-      return { ...item, membership };
+      return {
+        ...item,
+        ...(membershipChanged && { membership }),
+        ...(ancestorSlugsChanged && { ancestorSlugs: newAncestorSlugs }),
+      };
     });
 
     if (!pageChanged) return page;
@@ -98,12 +178,13 @@ function enrichInfiniteData(data: InfiniteData, memberships: MembershipBase[]): 
 /** Flag to prevent re-entrancy during enrichment */
 let isEnriching = false;
 
-/** Enrich a query's data with memberships if anything changed */
+/** Enrich a query's data with memberships and ancestor slugs if anything changed */
 function enrichQuery(query: Query, memberships: MembershipBase[]): void {
   const data = query.state.data as InfiniteData | undefined;
   if (!data?.pages) return;
 
-  const enriched = enrichInfiniteData(data, memberships);
+  const entityType = query.queryKey[0] as string;
+  const enriched = enrichInfiniteData(data, memberships, entityType);
   if (enriched === data) return;
 
   isEnriching = true;
@@ -117,7 +198,8 @@ function enrichQuery(query: Query, memberships: MembershipBase[]): void {
 /**
  * Subscribe to query cache to auto-enrich context entities.
  * Call this once during app initialization.
- * It enriches queries with membership data from the cache whenever memberships or relevant queries update.
+ * It enriches queries with membership data and ancestor slugs from the cache
+ * whenever memberships or relevant queries update.
  */
 export function initContextEntityEnrichment(): () => void {
   return queryClient.getQueryCache().subscribe((event) => {
@@ -136,9 +218,20 @@ export function initContextEntityEnrichment(): () => void {
       return;
     }
 
-    // When an enrichable list query updates, enrich it
+    // When an enrichable list query updates, enrich it and re-enrich child entity lists
     if (isEnrichableListQuery(queryKey) && memberships?.length) {
       enrichQuery(query, memberships);
+
+      // Re-enrich child entity lists whose ancestors include this entity type
+      // (e.g., when organizations load, re-enrich projects/workspaces that need orgSlug)
+      const updatedType = queryKey[0] as string;
+      for (const q of queryClient.getQueryCache().getAll()) {
+        if (q === query || !isEnrichableListQuery(q.queryKey)) continue;
+        const childType = q.queryKey[0] as string;
+        if (hierarchy.hasAncestor(childType, updatedType)) {
+          enrichQuery(q as Query, memberships);
+        }
+      }
     }
   });
 }

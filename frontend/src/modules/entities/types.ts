@@ -20,6 +20,8 @@ export type ContextEntity = ContextEntityBase & {
   organizationId?: string;
   /** Membership data - populated via cache enrichment from myMemberships */
   membership?: MembershipBase | null;
+  /** Ancestor context entity slugs for URL building - populated via cache enrichment */
+  ancestorSlugs?: Record<string, string>;
   /** Entity action permissions from detail response */
   can?: EntityCan;
 };

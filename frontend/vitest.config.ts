@@ -20,6 +20,22 @@ export default defineConfig({
           setupFiles: ['./vitest.setup.ts'],
         },
       },
+      // Unit tests for frontend src (query, modules, etc.)
+      {
+        extends: true,
+        test: {
+          name: 'unit',
+          include: ['src/**/*.test.ts'],
+          environment: 'node',
+          setupFiles: ['./vitest.setup.ts'],
+        },
+        resolve: {
+          alias: {
+            '~': path.resolve(dirname, './src'),
+            '#json': path.resolve(dirname, '../json'),
+          },
+        },
+      },
       // Storybook browser tests
       {
         extends: true,
