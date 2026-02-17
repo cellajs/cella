@@ -1,18 +1,19 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { BirdIcon } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Page } from '~/api.gen';
 import { useSearchParams } from '~/hooks/use-search-params';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
+import type { RowsChangeData } from '~/modules/common/data-grid';
 import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { FocusViewContainer } from '~/modules/common/focus-view';
 import { StickyBox } from '~/modules/common/sticky-box';
-import { pagesLimit, pagesListQueryOptions } from '~/modules/page/query';
+import { pagesLimit, pagesListQueryOptions, usePageUpdateMutation } from '~/modules/page/query';
+import { PagesTableBar } from '~/modules/page/table/pages-bar';
+import { usePagesTableColumns } from '~/modules/page/table/pages-columns';
 import type { PagesRouteSearchParams } from '~/modules/page/types';
-import { PagesTableBar } from './pages-bar';
-import { usePagesTableColumns } from './pages-columns';
 
 /** Stable row key getter function - defined outside component to prevent re-renders */
 function rowKeyGetter(row: Page) {
@@ -58,6 +59,32 @@ function PagesTable() {
     await fetchNextPage();
   };
 
+  // Page update mutation
+  const updateMutation = usePageUpdateMutation();
+
+  // Handle row changes for editable cells
+  const onRowsChange = useCallback(
+    (changedRows: Page[], { indexes, column }: RowsChangeData<Page>) => {
+      if (column.key !== 'status' && column.key !== 'displayOrder') return;
+
+      for (const index of indexes) {
+        const page = changedRows[index];
+        const originalPage = rows?.find((p) => p.id === page.id);
+
+        if (!originalPage) continue;
+
+        // Handle status changes
+        if (column.key === 'status' && page.status !== originalPage.status) {
+          updateMutation.mutate({
+            id: page.id,
+            data: { status: page.status },
+          });
+        }
+      }
+    },
+    [rows, updateMutation],
+  );
+
   // Handle row selection
   const onSelectedRowsChange = (selectedIds: Set<string>) => {
     if (rows) {
@@ -102,6 +129,7 @@ function PagesTable() {
         onSelectedRowsChange={onSelectedRowsChange}
         sortColumns={sortColumns}
         onSortColumnsChange={setSortColumns}
+        onRowsChange={onRowsChange}
         NoRowsComponent={
           <ContentPlaceholder
             icon={BirdIcon}
