@@ -6,7 +6,7 @@ import { uploadService } from '~/modules/attachment/upload-service';
 import type { UserMenuItem } from '~/modules/me/types';
 import { getMenuData } from '~/modules/navigation/menu-sheet/helpers/get-menu-data';
 import { entityToPrefetchQueries } from '~/offline-config';
-import { setupMembershipEnrichment } from '~/query/membership-enrichment';
+import { initContextEntityEnrichment } from '~/query/membership-enrichment';
 import { initMutationDefaults } from '~/query/mutation-registry';
 import '~/modules/attachment/query';
 import '~/modules/page/query';
@@ -15,6 +15,7 @@ import { queryClient, silentRevalidateOnReconnect, updateStaleTime } from '~/que
 import { useTabCoordinatorStore } from '~/query/realtime/tab-coordinator';
 import { useUIStore } from '~/store/ui';
 import { useUserStore } from '~/store/user';
+import { waitFor } from '~/utils/wait-for';
 
 /**
  * Initialize mutation defaults BEFORE any cache restoration.
@@ -27,9 +28,9 @@ import { useUserStore } from '~/store/user';
 initMutationDefaults(queryClient);
 
 /**
- * Setup membership enrichment to auto-attach membership data to context entities.
+ * Init context entity enrichment.
  */
-setupMembershipEnrichment();
+initContextEntityEnrichment();
 
 /**
  * Start offline services for background blob caching and upload sync.
@@ -44,14 +45,6 @@ export const offlineQueryConfig = {
     offlinePrefetch: true,
   },
 };
-
-/**
- * Wait for a given number of milliseconds.
- *
- * @param ms - Number of milliseconds to wait.
- * @returns Promise that resolves after the given number of milliseconds.
- */
-export const waitFor = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
  * QueryClientProvider wrapper handling cache persistence and offline capabilities.

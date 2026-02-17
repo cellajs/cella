@@ -56,7 +56,7 @@ jobs:
     steps:
       - name: Determine environment
         id: set-env
-        run: |
+      - key: NODE_VERSION
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
           else

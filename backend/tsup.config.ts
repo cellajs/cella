@@ -9,6 +9,7 @@ export default defineConfig({
   format: ['esm'],
   target: 'esnext',
   minify: false,
+  noExternal: ['shared'],
   esbuildOptions(options) {
     options.alias = {
       '#': './src',
