@@ -196,7 +196,7 @@ Pre-configured views:
 
 | Endpoint | Description |
 |----------|-------------|
-| `https://api.{domain}/ping` | Backend health |
+| `https://api.{domain}/health` | Backend health |
 | `https://api.{domain}/cdc/health` | CDC worker health |
 
 ## Troubleshooting

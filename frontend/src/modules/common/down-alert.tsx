@@ -94,7 +94,7 @@ export const DownAlert = () => {
 
     (async () => {
       const isBackendResponsive = await healthCheck({
-        url: `${appConfig.backendUrl}/ping`,
+        url: `${appConfig.backendUrl}/health`,
         initDelay: 5000,
         factor: 1,
         signal: controller.signal,

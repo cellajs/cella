@@ -2,6 +2,7 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { appConfig } from 'shared';
 import type { Env } from '#/lib/context';
 import { AppError, appErrorHandler } from '#/lib/error';
+import { getHealthResponse } from '#/lib/health';
 import middlewares from '#/middlewares/app';
 
 const baseApp = new OpenAPIHono<Env>();
@@ -12,8 +13,11 @@ baseApp.get('/favicon.ico', (c) => c.redirect(`${appConfig.frontendUrl}/favicon.
 // Add global middleware
 baseApp.route('/', middlewares);
 
-// Health check for render.com
-baseApp.get('/ping', (c) => c.text('pong'));
+// Health check endpoint
+baseApp.get('/health', async (c) => {
+  const { response, httpStatus } = await getHealthResponse();
+  return c.json(response, httpStatus as 200);
+});
 
 // Not found handler
 baseApp.notFound(() => {

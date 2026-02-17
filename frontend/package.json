@@ -7,9 +7,9 @@
   },
   "scripts": {
     "quick": "cross-env VITE_QUICK=true pnpm dev",
-    "dev": "wait-on http://localhost:4000/ping && pnpm generate-client && pnpm concurrently --names \"VITE,STORY\" --prefix name \"pnpm dev:run\" \"pnpm storybook\"",
+    "dev": "wait-on http://localhost:4000/health && pnpm generate-client && pnpm concurrently --names \"VITE,STORY\" --prefix name \"pnpm dev:run\" \"pnpm storybook\"",
     "dev:run": "cross-env NODE_ENV=development vite --mode development",
-    "tunnel": "wait-on http://localhost:4000/ping && cross-env NODE_ENV=tunnel vite --mode tunnel",
+    "tunnel": "wait-on http://localhost:4000/health && cross-env NODE_ENV=tunnel vite --mode tunnel",
     "start": "cross-env NODE_ENV=production pnpm preview",
     "test": "vitest run",
     "ts": "tsgo --pretty",

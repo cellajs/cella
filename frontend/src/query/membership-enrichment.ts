@@ -115,10 +115,11 @@ function enrichQuery(query: Query, memberships: MembershipBase[]): void {
 }
 
 /**
- * Subscribe to query cache to auto-enrich context entities with membership data.
+ * Subscribe to query cache to auto-enrich context entities.
  * Call this once during app initialization.
+ * It enriches queries with membership data from the cache whenever memberships or relevant queries update.
  */
-export function setupMembershipEnrichment(): () => void {
+export function initContextEntityEnrichment(): () => void {
   return queryClient.getQueryCache().subscribe((event) => {
     if (event.type !== 'updated' || isEnriching) return;
 
