@@ -1,6 +1,7 @@
 import {
   appConfig,
   type ContextEntityType,
+  configureAccessPolicies,
   type EntityRole,
   getContextRoles,
   hierarchy,
@@ -8,7 +9,6 @@ import {
   isProductEntity,
 } from 'shared';
 import { describe, expect, it } from 'vitest';
-import { configureAccessPolicies } from './access-policies';
 import { getAllDecisions } from './check';
 import type { SubjectForPermission } from './types';
 

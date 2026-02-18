@@ -1,4 +1,4 @@
-import type { EntityActionType } from 'shared';
+import { accessPolicies, type EntityActionType } from 'shared';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import {
   getAllDecisions,
@@ -6,7 +6,6 @@ import {
   type PermissionDecision,
   type SubjectForPermission,
 } from './permission-manager';
-import { accessPolicies } from './permissions-config';
 
 /**
  * Permission result containing membership and action permissions.
@@ -16,8 +15,6 @@ export interface PermissionResult {
   isAllowed: boolean;
   /** The user's membership for this entity, if any */
   membership: MembershipBaseModel | null;
-  /** Object containing permission state for all entity actions */
-  can: Record<EntityActionType, boolean>;
 }
 
 /**
@@ -66,15 +63,14 @@ export function checkPermission(
 
   if (isSingle) {
     const { can, membership } = getAllDecisions(accessPolicies, memberships, entityOrEntities, options);
-    return { isAllowed: can[action], membership, can };
+    return { isAllowed: can[action], membership };
   }
 
   const decisions = getAllDecisions(accessPolicies, memberships, entityOrEntities, options);
   const results = new Map<string, PermissionResult>();
 
   for (const [id, decision] of decisions) {
-    const can = decision.can;
-    results.set(id, { isAllowed: can[action], membership: decision.membership, can });
+    results.set(id, { isAllowed: decision.can[action], membership: decision.membership });
   }
 
   return { results, decisions };

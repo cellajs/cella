@@ -44,33 +44,21 @@ export const streamNotificationSchema = z
 export type StreamNotification = z.infer<typeof streamNotificationSchema>;
 
 /**
- * Base query parameters for SSE streams.
- * Offset determines where to start: 'now' for live-only, activity ID for catch-up.
+ * Body schema for stream catchup POST requests.
+ * Replaces the previous query-param approach for cleaner typed payloads.
  */
-export const streamQuerySchema = z.object({
-  offset: z.string().optional().openapi({
-    description: "Starting offset: 'now' for live-only, or activity ID to receive missed notifications",
-    example: 'now',
+export const streamCatchupBodySchema = z.object({
+  cursor: z.string().optional().openapi({
+    description: 'Last activity cursor received by the client. Omit on first sync.',
+    example: '0-54F6250',
   }),
-  live: z.enum(['sse', 'catchup']).optional().openapi({
-    description: "Connection mode: 'sse' for streaming, 'catchup' for one-time fetch",
-    example: 'sse',
-  }),
-  seqs: z.string().optional().openapi({
-    description:
-      'JSON-encoded client seqs for gap detection: {"scopeId":42}. Unchanged scopes are excluded from the response.',
-    example: '{}',
-  }),
-});
-
-/**
- * Query schema for public streams (SSE only, no catchup mode).
- */
-export const publicStreamQuerySchema = streamQuerySchema.extend({
-  live: z.enum(['sse']).optional().openapi({
-    description: 'Set to "sse" for live updates (SSE stream)',
-    example: 'sse',
-  }),
+  seqs: z
+    .record(z.string(), z.number().int())
+    .optional()
+    .openapi({
+      description: 'Client-side sequence numbers per scope: { "orgId": 42, "orgId:m": 5 }',
+      example: { abc123: 10, 'abc123:m': 3 },
+    }),
 });
 
 /**

@@ -332,7 +332,7 @@ export type Organization = {
   welcomeText: string | null;
   authStrategies: Array<'github' | 'google' | 'microsoft' | 'password' | 'passkey' | 'totp' | 'email'>;
   chatSupport: boolean;
-  included?: {
+  included: {
     membership?: MembershipBase;
     counts?: {
       membership: {
@@ -346,13 +346,6 @@ export type Organization = {
         page: number;
       };
     };
-  };
-  can?: {
-    create: boolean;
-    read: boolean;
-    update: boolean;
-    delete: boolean;
-    search: boolean;
   };
 };
 
@@ -421,13 +414,6 @@ export type Attachment = {
   convertedKey: string | null;
   thumbnailKey: string | null;
   organizationId: string;
-  can?: {
-    create: boolean;
-    read: boolean;
-    update: boolean;
-    delete: boolean;
-    search: boolean;
-  };
 };
 
 /**
@@ -2193,20 +2179,7 @@ export type CheckSlugResponse = CheckSlugResponses[keyof CheckSlugResponses];
 export type GetPublicStreamData = {
   body?: never;
   path?: never;
-  query?: {
-    /**
-     * Starting offset: 'now' for live-only, or activity ID to receive missed notifications
-     */
-    offset?: string;
-    /**
-     * Set to "sse" for live updates (SSE stream)
-     */
-    live?: 'sse';
-    /**
-     * JSON-encoded client seqs for gap detection: {"scopeId":42}. Unchanged scopes are excluded from the response.
-     */
-    seqs?: string;
-  };
+  query?: never;
   url: '/entities/public/stream';
 };
 
@@ -2237,7 +2210,57 @@ export type GetPublicStreamError = GetPublicStreamErrors[keyof GetPublicStreamEr
 
 export type GetPublicStreamResponses = {
   /**
-   * Catch-up summary or SSE stream started
+   * SSE stream started
+   */
+  200: unknown;
+};
+
+export type PostPublicCatchupData = {
+  body: {
+    /**
+     * Last activity cursor received by the client. Omit on first sync.
+     */
+    cursor?: string;
+    /**
+     * Client-side sequence numbers per scope: { "orgId": 42, "orgId:m": 5 }
+     */
+    seqs?: {
+      [key: string]: number;
+    };
+  };
+  path?: never;
+  query?: never;
+  url: '/entities/public/stream';
+};
+
+export type PostPublicCatchupErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type PostPublicCatchupError = PostPublicCatchupErrors[keyof PostPublicCatchupErrors];
+
+export type PostPublicCatchupResponses = {
+  /**
+   * Catchup summary
    */
   200: {
     /**
@@ -2257,25 +2280,12 @@ export type GetPublicStreamResponses = {
   };
 };
 
-export type GetPublicStreamResponse = GetPublicStreamResponses[keyof GetPublicStreamResponses];
+export type PostPublicCatchupResponse = PostPublicCatchupResponses[keyof PostPublicCatchupResponses];
 
 export type GetAppStreamData = {
   body?: never;
   path?: never;
-  query?: {
-    /**
-     * Starting offset: 'now' for live-only, or activity ID to receive missed notifications
-     */
-    offset?: string;
-    /**
-     * Connection mode: 'sse' for streaming, 'catchup' for one-time fetch
-     */
-    live?: 'sse' | 'catchup';
-    /**
-     * JSON-encoded client seqs for gap detection: {"scopeId":42}. Unchanged scopes are excluded from the response.
-     */
-    seqs?: string;
-  };
+  query?: never;
   url: '/entities/app/stream';
 };
 
@@ -2306,7 +2316,57 @@ export type GetAppStreamError = GetAppStreamErrors[keyof GetAppStreamErrors];
 
 export type GetAppStreamResponses = {
   /**
-   * SSE stream or catchup summary response
+   * SSE stream started
+   */
+  200: unknown;
+};
+
+export type PostAppCatchupData = {
+  body: {
+    /**
+     * Last activity cursor received by the client. Omit on first sync.
+     */
+    cursor?: string;
+    /**
+     * Client-side sequence numbers per scope: { "orgId": 42, "orgId:m": 5 }
+     */
+    seqs?: {
+      [key: string]: number;
+    };
+  };
+  path?: never;
+  query?: never;
+  url: '/entities/app/stream';
+};
+
+export type PostAppCatchupErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type PostAppCatchupError = PostAppCatchupErrors[keyof PostAppCatchupErrors];
+
+export type PostAppCatchupResponses = {
+  /**
+   * Catchup summary
    */
   200: {
     /**
@@ -2326,7 +2386,7 @@ export type GetAppStreamResponses = {
   };
 };
 
-export type GetAppStreamResponse = GetAppStreamResponses[keyof GetAppStreamResponses];
+export type PostAppCatchupResponse = PostAppCatchupResponses[keyof PostAppCatchupResponses];
 
 export type SystemInviteData = {
   body: {
@@ -3437,7 +3497,7 @@ export type CreateOrganizationsResponses = {
      */
     data: Array<
       Organization & {
-        included: {
+        included?: {
           membership: MembershipBase;
           counts?: {
             membership: {
@@ -3531,6 +3591,7 @@ export type GetOrganizationData = {
   };
   query?: {
     slug?: string | boolean;
+    include?: string;
   };
   url: '/{tenantId}/organizations/{organizationId}';
 };

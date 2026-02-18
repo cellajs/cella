@@ -5,7 +5,7 @@ import './styling/tailwind.css';
 import '~/lib/dayjs';
 import '~/lib/i18n';
 
-import { appConfig, type ConfigMode } from 'shared';
+import { appConfig } from 'shared';
 import { initSentry } from '~/lib/sentry';
 import { RouterWrapper } from '~/modules/common/router-wrapper';
 import { QueryClientProvider } from '~/query/provider';
@@ -23,7 +23,7 @@ if (!root) throw new Error('Root element not found');
 renderAscii();
 
 // Add badge to favicon based on config mode
-addBadgeToFavicon(appConfig.mode as ConfigMode);
+addBadgeToFavicon(appConfig.mode);
 
 // Initialize Sentry
 initSentry();

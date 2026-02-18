@@ -1826,33 +1826,6 @@
                 ]
               }
             }
-          },
-          "can": {
-            "type": "object",
-            "properties": {
-              "create": {
-                "type": "boolean"
-              },
-              "read": {
-                "type": "boolean"
-              },
-              "update": {
-                "type": "boolean"
-              },
-              "delete": {
-                "type": "boolean"
-              },
-              "search": {
-                "type": "boolean"
-              }
-            },
-            "required": [
-              "create",
-              "read",
-              "update",
-              "delete",
-              "search"
-            ]
           }
         },
         "required": [
@@ -1879,7 +1852,8 @@
           "websiteUrl",
           "welcomeText",
           "authStrategies",
-          "chatSupport"
+          "chatSupport",
+          "included"
         ],
         "description": "An organization with settings, restrictions, and membership context.",
         "example": {
@@ -2208,33 +2182,6 @@
           "organizationId": {
             "type": "string",
             "maxLength": 50
-          },
-          "can": {
-            "type": "object",
-            "properties": {
-              "create": {
-                "type": "boolean"
-              },
-              "read": {
-                "type": "boolean"
-              },
-              "update": {
-                "type": "boolean"
-              },
-              "delete": {
-                "type": "boolean"
-              },
-              "search": {
-                "type": "boolean"
-              }
-            },
-            "required": [
-              "create",
-              "read",
-              "update",
-              "delete",
-              "search"
-            ]
           }
         },
         "required": [
@@ -5561,54 +5508,83 @@
         "tags": [
           "entities"
         ],
-        "summary": "Public entity stream",
-        "description": "Stream real-time changes for public entities (entities with no parent context). No authentication required. Use offset for catch-up, live=sse for SSE streaming.",
+        "summary": "Public entity SSE stream",
+        "description": "SSE stream for real-time public entity changes. No authentication required.",
         "x-guard": [
           "publicGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "description": "Starting offset: 'now' for live-only, or activity ID to receive missed notifications",
-              "example": "now"
-            },
-            "required": false,
-            "description": "Starting offset: 'now' for live-only, or activity ID to receive missed notifications",
-            "name": "offset",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": [
-                "sse"
-              ],
-              "description": "Set to \"sse\" for live updates (SSE stream)",
-              "example": "sse"
-            },
-            "required": false,
-            "description": "Set to \"sse\" for live updates (SSE stream)",
-            "name": "live",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "description": "JSON-encoded client seqs for gap detection: {\"scopeId\":42}. Unchanged scopes are excluded from the response.",
-              "example": "{}"
-            },
-            "required": false,
-            "description": "JSON-encoded client seqs for gap detection: {\"scopeId\":42}. Unchanged scopes are excluded from the response.",
-            "name": "seqs",
-            "in": "query"
-          }
-        ],
         "responses": {
           "200": {
-            "description": "Catch-up summary or SSE stream started",
+            "description": "SSE stream started",
+            "content": {
+              "text/event-stream": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      },
+      "post": {
+        "security": [],
+        "operationId": "postPublicCatchup",
+        "tags": [
+          "entities"
+        ],
+        "summary": "Public entity catchup",
+        "description": "Fetch missed public entity changes since last sync. Send cursor and per-scope seqs in the body.",
+        "x-guard": [
+          "publicGuard"
+        ],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "cursor": {
+                    "type": "string",
+                    "description": "Last activity cursor received by the client. Omit on first sync.",
+                    "example": "0-54F6250"
+                  },
+                  "seqs": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "integer"
+                    },
+                    "description": "Client-side sequence numbers per scope: { \"orgId\": 42, \"orgId:m\": 5 }",
+                    "example": {
+                      "abc123": 10,
+                      "abc123:m": 3
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Catchup summary",
             "content": {
               "application/json": {
                 "schema": {
@@ -5684,59 +5660,88 @@
         "tags": [
           "entities"
         ],
-        "summary": "App event stream",
-        "description": "SSE stream for membership and entity notifications affecting the *current user*. Sends lightweight notifications - client fetches entity data via API.",
+        "summary": "App event SSE stream",
+        "description": "SSE stream for membership and entity notifications affecting the current user. Sends lightweight notifications.",
         "x-guard": [
           "authGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "description": "Starting offset: 'now' for live-only, or activity ID to receive missed notifications",
-              "example": "now"
-            },
-            "required": false,
-            "description": "Starting offset: 'now' for live-only, or activity ID to receive missed notifications",
-            "name": "offset",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": [
-                "sse",
-                "catchup"
-              ],
-              "description": "Connection mode: 'sse' for streaming, 'catchup' for one-time fetch",
-              "example": "sse"
-            },
-            "required": false,
-            "description": "Connection mode: 'sse' for streaming, 'catchup' for one-time fetch",
-            "name": "live",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "description": "JSON-encoded client seqs for gap detection: {\"scopeId\":42}. Unchanged scopes are excluded from the response.",
-              "example": "{}"
-            },
-            "required": false,
-            "description": "JSON-encoded client seqs for gap detection: {\"scopeId\":42}. Unchanged scopes are excluded from the response.",
-            "name": "seqs",
-            "in": "query"
-          }
-        ],
         "responses": {
           "200": {
-            "description": "SSE stream or catchup summary response",
+            "description": "SSE stream started",
             "content": {
               "text/event-stream": {
                 "schema": {}
-              },
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      },
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "postAppCatchup",
+        "tags": [
+          "entities"
+        ],
+        "summary": "App event catchup",
+        "description": "Fetch missed entity and membership changes since last sync. Send cursor and per-scope seqs in the body.",
+        "x-guard": [
+          "authGuard"
+        ],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "cursor": {
+                    "type": "string",
+                    "description": "Last activity cursor received by the client. Omit on first sync.",
+                    "example": "0-54F6250"
+                  },
+                  "seqs": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "integer"
+                    },
+                    "description": "Client-side sequence numbers per scope: { \"orgId\": 42, \"orgId:m\": 5 }",
+                    "example": {
+                      "abc123": 10,
+                      "abc123:m": 3
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Catchup summary",
+            "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
@@ -7768,10 +7773,7 @@
                                   "membership"
                                 ]
                               }
-                            },
-                            "required": [
-                              "included"
-                            ]
+                            }
                           }
                         ],
                         "description": "An organization with settings, restrictions, and membership context.",
@@ -8453,6 +8455,14 @@
             },
             "required": false,
             "name": "slug",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "include",
             "in": "query"
           }
         ],

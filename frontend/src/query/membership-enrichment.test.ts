@@ -2,12 +2,19 @@ import { QueryClient } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Use vi.hoisted so vi.mock factory (which is hoisted) can reference these values
-const { mockAppConfig, mockHierarchy } = vi.hoisted(() => {
+const { mockAppConfig, mockHierarchy, mockComputeCan, mockAccessPolicies } = vi.hoisted(() => {
   // Minimal hierarchy mock that implements the methods used by enrichment
   const parentMap: Record<string, string | null> = {
     organization: null,
     project: 'organization',
   };
+
+  const childrenMap: Record<string, string[]> = {
+    organization: ['project'],
+    project: [],
+  };
+
+  const entityActions = ['create', 'read', 'update', 'delete', 'search'] as string[];
 
   const mockHierarchy = {
     getOrderedAncestors(entityType: string): string[] {
@@ -22,20 +29,46 @@ const { mockAppConfig, mockHierarchy } = vi.hoisted(() => {
     hasAncestor(entityType: string, ancestor: string): boolean {
       return this.getOrderedAncestors(entityType).includes(ancestor);
     },
+    getOrderedDescendants(contextType: string): string[] {
+      const descendants: string[] = [];
+      const queue = [...(childrenMap[contextType] ?? [])];
+      let i = 0;
+      while (i < queue.length) {
+        const current = queue[i++];
+        descendants.push(current);
+        queue.push(...(childrenMap[current] ?? []));
+      }
+      return descendants;
+    },
+  };
+
+  const mockComputeCan = (contextType: string) => {
+    const denied = Object.fromEntries(entityActions.map((a) => [a, false]));
+    const map: Record<string, Record<string, boolean>> = { [contextType]: { ...denied } };
+    for (const d of mockHierarchy.getOrderedDescendants(contextType)) {
+      map[d] = { ...denied };
+    }
+    return map;
   };
 
   return {
     mockAppConfig: {
       contextEntityTypes: ['organization', 'project'] as string[],
       entityIdColumnKeys: { organization: 'organizationId', project: 'projectId' } as Record<string, string>,
+      entityActions,
     },
     mockHierarchy,
+    mockComputeCan,
+    mockAccessPolicies: {},
   };
 });
 
 vi.mock('shared', () => ({
   appConfig: mockAppConfig,
   hierarchy: mockHierarchy,
+  isContextEntity: (type: string) => mockAppConfig.contextEntityTypes.includes(type),
+  computeCan: mockComputeCan,
+  accessPolicies: mockAccessPolicies,
 }));
 
 // We mock queryClient and meKeys to be controlled from tests
@@ -47,7 +80,7 @@ vi.mock('~/query/query-client', () => ({ queryClient }));
 vi.mock('~/modules/me/query', () => ({ meKeys: { memberships: ['me', 'memberships'] } }));
 
 // Now import the module under test — mocks must be set up first
-const { initContextEntityEnrichment } = await import('~/query/membership-enrichment');
+const { initContextEntityEnrichment } = await import('~/query/enrichment/init');
 
 // --- Test helpers ---
 

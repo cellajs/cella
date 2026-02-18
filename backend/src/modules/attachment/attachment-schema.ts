@@ -1,14 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { attachmentsTable } from '#/db/schema/attachments';
 import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schema';
-import {
-  batchResponseSchema,
-  entityCanSchema,
-  maxLength,
-  paginationQuerySchema,
-  stxBaseSchema,
-  stxRequestSchema,
-} from '#/schemas';
+import { batchResponseSchema, maxLength, paginationQuerySchema, stxBaseSchema, stxRequestSchema } from '#/schemas';
 import { mockAttachmentResponse } from '../../../mocks/mock-attachment';
 
 const attachmentInsertSchema = createInsertSchema(attachmentsTable);
@@ -18,7 +11,6 @@ export const attachmentSchema = z
   .object({
     ...attachmentSelectSchema.shape,
     stx: stxBaseSchema,
-    can: entityCanSchema.optional(),
   })
   .openapi('Attachment', {
     description: 'A file attachment belonging to an organization.',

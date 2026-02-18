@@ -7,7 +7,7 @@ import type {
   MembershipInviteData,
   UpdateMembershipData,
 } from '~/api.gen';
-import type { ContextEntity } from '~/modules/entities/types';
+import type { EnrichedContextEntity } from '~/modules/entities/types';
 import type { membersRouteSearchParamsSchema } from '~/modules/memberships/search-params-schemas';
 import type { ContextQueryProp, InfiniteQueryData, MutationData, QueryData } from '~/query/types';
 
@@ -26,7 +26,7 @@ export type EntityMembershipContextProp = {
   entityType?: ContextEntityType;
 };
 
-export type InviteMember = MutationData<MembershipInviteData> & { entity: ContextEntity };
+export type InviteMember = MutationData<MembershipInviteData> & { entity: EnrichedContextEntity };
 
 export type MutationUpdateMembership = MutationData<UpdateMembershipData> & {
   entityId: string;

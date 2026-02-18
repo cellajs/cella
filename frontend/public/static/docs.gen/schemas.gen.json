@@ -1403,7 +1403,7 @@
         "chatSupport": { "type": "boolean", "required": true },
         "included": {
           "type": "object",
-          "required": false,
+          "required": true,
           "properties": {
             "membership": {
               "type": "object",
@@ -1475,17 +1475,6 @@
                 }
               }
             }
-          }
-        },
-        "can": {
-          "type": "object",
-          "required": false,
-          "properties": {
-            "create": { "type": "boolean", "required": true },
-            "read": { "type": "boolean", "required": true },
-            "update": { "type": "boolean", "required": true },
-            "delete": { "type": "boolean", "required": true },
-            "search": { "type": "boolean", "required": true }
           }
         }
       }
@@ -1802,17 +1791,6 @@
           "type": "string",
           "required": true,
           "maxLength": 50
-        },
-        "can": {
-          "type": "object",
-          "required": false,
-          "properties": {
-            "create": { "type": "boolean", "required": true },
-            "read": { "type": "boolean", "required": true },
-            "update": { "type": "boolean", "required": true },
-            "delete": { "type": "boolean", "required": true },
-            "search": { "type": "boolean", "required": true }
-          }
         }
       }
     },

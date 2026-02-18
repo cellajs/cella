@@ -8,7 +8,7 @@ import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import type { RowsChangeData } from '~/modules/common/data-grid';
 import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
-import type { ContextEntity } from '~/modules/entities/types';
+import type { EnrichedContextEntity } from '~/modules/entities/types';
 import { MembersTableBar } from '~/modules/memberships/members-table/members-bar';
 import { useColumns } from '~/modules/memberships/members-table/members-columns';
 import { membersListQueryOptions } from '~/modules/memberships/query';
@@ -24,7 +24,7 @@ function rowKeyGetter(row: Member) {
 }
 
 export interface MembersTableWrapperProps {
-  entity: ContextEntity;
+  entity: EnrichedContextEntity;
   isSheet?: boolean;
   children?: React.ReactNode;
 }
@@ -43,8 +43,8 @@ function MembersTable({ entity, isSheet = false, children }: MembersTableWrapper
   const tenantId = organization.tenantId;
   const orgId = organization.id;
 
-  // TODO-034 can should always be here? Use can.update if available for permission-based access control
-  const canUpdate = entity.can?.update ?? false;
+  // Check if user can update this context entity (and thus manage its members)
+  const canUpdate = entity.can?.[entity.entityType]?.update ?? false;
 
   // Table state
   const { q, role, sort, order } = search;

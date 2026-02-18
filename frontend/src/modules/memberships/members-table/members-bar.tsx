@@ -53,8 +53,8 @@ export const MembersTableBar = ({
   const { q, role, order, sort } = searchVars;
 
   const isFiltered = role !== undefined || !!q;
-  // Use can.update if available for permission-based access control
-  const canUpdate = entity.can?.update ?? false;
+  // Check if user can update this context entity (and thus manage its members)
+  const canUpdate = entity.can?.[entity.entityType]?.update ?? false;
   const entityType = entity.entityType;
 
   // Clear selected rows on search

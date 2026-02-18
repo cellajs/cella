@@ -19,12 +19,12 @@ import { toaster } from '~/modules/common/toaster/service';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import { CreateOrganizationForm } from '~/modules/organization/create-organization-form';
 import { DeleteOrganizations } from '~/modules/organization/delete-organizations';
-import type { OrganizationsRouteSearchParams, OrganizationWithMembership } from '~/modules/organization/types';
+import type { EnrichedOrganization, OrganizationsRouteSearchParams } from '~/modules/organization/types';
 import { CreateNewsletterForm } from '~/modules/system/create-newsletter-form';
 import { NewsletterPreview } from '~/modules/system/newsletter-preview';
 import { useInfiniteQueryTotal } from '~/query/basic';
 
-type OrganizationsTableBarProps = BaseTableBarProps<OrganizationWithMembership, OrganizationsRouteSearchParams> & {
+type OrganizationsTableBarProps = BaseTableBarProps<EnrichedOrganization, OrganizationsRouteSearchParams> & {
   isCompact: boolean;
   setIsCompact: (isCompact: boolean) => void;
 };
@@ -70,7 +70,7 @@ export const OrganizationsTableBar = ({
   };
 
   const openDeleteDialog = () => {
-    const callback = (args: CallbackArgs<OrganizationWithMembership[]>) => {
+    const callback = (args: CallbackArgs<EnrichedOrganization[]>) => {
       if (args.status === 'success') {
         const message =
           args.data.length === 1

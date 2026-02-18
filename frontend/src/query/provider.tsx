@@ -4,9 +4,8 @@ import { appConfig } from 'shared';
 import { downloadService } from '~/modules/attachment/download-service';
 import { uploadService } from '~/modules/attachment/upload-service';
 import type { UserMenuItem } from '~/modules/me/types';
-import { getMenuData } from '~/modules/navigation/menu-sheet/helpers/get-menu-data';
 import { entityToPrefetchQueries } from '~/offline-config';
-import { initContextEntityEnrichment } from '~/query/membership-enrichment';
+import { initContextEntityEnrichment } from '~/query/enrichment/init';
 import { initMutationDefaults } from '~/query/mutation-registry';
 import '~/modules/attachment/query';
 import '~/modules/page/query';
@@ -28,9 +27,15 @@ import { waitFor } from '~/utils/wait-for';
 initMutationDefaults(queryClient);
 
 /**
- * Init context entity enrichment.
+ * Init context entity enrichment — guarded to prevent duplicate subscribers during HMR.
  */
-initContextEntityEnrichment();
+let unsubscribeEnrichment = initContextEntityEnrichment();
+
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    unsubscribeEnrichment();
+  });
+}
 
 /**
  * Start offline services for background blob caching and upload sync.
@@ -116,7 +121,8 @@ export function QueryClientProvider({ children }: { children: React.ReactNode })
       await waitFor(1000); // Avoid overloading server with requests
       if (isCancelled) return; // If request was aborted, exit early
 
-      // Get menu from already-cached entity lists
+      // Get menu from already-cached entity lists (dynamic import to avoid HMR coupling with menu-sheet helpers)
+      const { getMenuData } = await import('~/modules/navigation/menu-sheet/helpers/get-menu-data');
       const menu = await getMenuData();
 
       // Recursive function to prefetch content data based on menu items

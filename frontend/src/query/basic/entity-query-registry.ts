@@ -3,7 +3,7 @@ import type { EntityType } from 'shared';
 /** Minimal query keys interface needed by stream handlers. */
 export interface EntityQueryKeys {
   list: { base: readonly unknown[] };
-  detail: { byId: (id: string) => readonly unknown[] };
+  detail: { base: readonly unknown[]; byId: (id: string) => readonly unknown[] };
 }
 
 /**

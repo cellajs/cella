@@ -216,7 +216,7 @@ const attachmentRouteHandlers = app
     const { id } = ctx.req.valid('param');
     const { stx, ...updatedFields } = ctx.req.valid('json');
 
-    const { entity, can } = await getValidProductEntity(ctx, id, 'attachment', 'update');
+    const { entity } = await getValidProductEntity(ctx, id, 'attachment', 'update');
 
     const user = ctx.var.user;
 
@@ -251,8 +251,8 @@ const attachmentRouteHandlers = app
 
     logEvent('info', 'Attachment updated', { attachmentId: updatedAttachment.id });
 
-    // Return entity directly with can permissions (stx embedded for client tracking)
-    return ctx.json({ ...updatedAttachment, can }, 200);
+    // Return entity directly (stx embedded for client tracking)
+    return ctx.json({ ...updatedAttachment }, 200);
   })
   /**
    * Delete attachments by ids

@@ -1,5 +1,5 @@
 import { appConfig, type ContextEntityType } from 'shared';
-import type { ContextEntityWithMembership, UserMenu } from '~/modules/me/types';
+import type { UserMenu, UserMenuItem } from '~/modules/me/types';
 import { getContextEntityTypeToListQueries } from '~/offline-config';
 import { flattenInfiniteData } from '~/query/basic';
 import { queryClient } from '~/query/query-client';
@@ -19,7 +19,7 @@ const menuEntityTypes = Array.from(
  */
 export function buildMenuFromCache(userId: string, opts?: { detailedMenu?: boolean }): UserMenu {
   const registry = getContextEntityTypeToListQueries();
-  const byType = new Map<ContextEntityType, ContextEntityWithMembership[]>();
+  const byType = new Map<ContextEntityType, UserMenuItem[]>();
 
   for (const entityType of menuEntityTypes) {
     const factory = registry[entityType];
@@ -34,7 +34,7 @@ export function buildMenuFromCache(userId: string, opts?: { detailedMenu?: boole
 
     byType.set(
       entityType,
-      items.filter((item: any): item is ContextEntityWithMembership => !!item.membership),
+      items.filter((item: any): item is UserMenuItem => !!item.membership),
     );
   }
 

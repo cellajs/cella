@@ -102,27 +102,11 @@ const entitiesRouteHandlers = app
     return slugAvailable ? ctx.body(null, 204) : ctx.body(null, 409);
   })
   /**
-   * Public stream for public entity changes (no auth required)
+   * Public SSE stream (live updates only)
    */
   .openapi(entityRoutes.publicStream, async (ctx) => {
-    const { offset, live, seqs: seqsParam } = ctx.req.valid('query');
+    const cursor = await getLatestPublicActivityId();
 
-    // Resolve cursor from offset parameter
-    let cursor: string | null = null;
-    if (offset === 'now') {
-      cursor = await getLatestPublicActivityId();
-    } else if (offset) {
-      cursor = offset;
-    }
-
-    // Non-SSE request: return catchup summary
-    if (live !== 'sse') {
-      const clientSeqs = seqsParam ? (JSON.parse(seqsParam) as Record<string, number>) : undefined;
-      const summary = await fetchPublicCatchupSummary(cursor, clientSeqs);
-      return ctx.json(summary);
-    }
-
-    // SSE streaming mode - live only, no catch-up (client catches up first)
     return streamSSE(ctx, async (stream) => {
       ctx.header('Content-Encoding', '');
 
@@ -154,32 +138,27 @@ const entitiesRouteHandlers = app
     }) as any;
   })
   /**
-   * App stream (authenticated App stream for membership and entity updates)
+   * Public catchup (POST with body)
+   */
+  .openapi(entityRoutes.publicCatchup, async (ctx) => {
+    const { cursor, seqs } = ctx.req.valid('json');
+    const resolvedCursor = cursor ?? null;
+    const summary = await fetchPublicCatchupSummary(resolvedCursor, seqs);
+    return ctx.json(summary);
+  })
+  /**
+   * App SSE stream (live updates only, authenticated)
    */
   .openapi(entityRoutes.appStream, async (ctx) => {
-    const { offset, live, seqs: seqsParam } = ctx.req.valid('query');
     const user = ctx.var.user;
     const memberships = ctx.var.memberships;
     const userSystemRole = ctx.var.userSystemRole;
     const sessionToken = ctx.var.sessionToken;
     const orgIds = new Set(memberships.map((m) => m.organizationId));
 
-    // Resolve cursor from offset parameter
-    let cursor: string | null = null;
-    if (offset === 'now') {
-      cursor = await getLatestUserActivityId(user.id, orgIds);
-    } else if (offset) {
-      cursor = offset;
-    }
+    const cursor = await getLatestUserActivityId(user.id, orgIds);
 
-    // Non-streaming catch-up request
-    if (live !== 'sse') {
-      const clientSeqs = seqsParam ? (JSON.parse(seqsParam) as Record<string, number>) : undefined;
-      const summary = await fetchUserCatchupSummary(user.id, orgIds, cursor, clientSeqs);
-      return ctx.json(summary);
-    }
-
-    // SSE streaming mode — no inline catchup, client catches up first via non-SSE request
+    // SSE streaming mode — no inline catchup, client catches up first via POST
     return streamSSE(ctx, async (stream) => {
       ctx.header('Content-Encoding', '');
 
@@ -221,6 +200,18 @@ const entitiesRouteHandlers = app
       await keepAlive(stream);
       // biome-ignore lint/suspicious/noExplicitAny: streamSSE returns Response, not TypedResponse expected by OpenAPI handler
     }) as any;
+  })
+  /**
+   * App catchup (POST with body)
+   */
+  .openapi(entityRoutes.appCatchup, async (ctx) => {
+    const { cursor, seqs } = ctx.req.valid('json');
+    const user = ctx.var.user;
+    const memberships = ctx.var.memberships;
+    const orgIds = new Set(memberships.map((m) => m.organizationId));
+    const resolvedCursor = cursor ?? null;
+    const summary = await fetchUserCatchupSummary(user.id, orgIds, resolvedCursor, seqs);
+    return ctx.json(summary);
   });
 
 export default entitiesRouteHandlers;

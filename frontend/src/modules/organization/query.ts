@@ -13,7 +13,7 @@ import {
   updateOrganization,
 } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
-import type { OrganizationWithMembership } from '~/modules/organization/types';
+import type { EnrichedOrganization } from '~/modules/organization/types';
 import {
   baseInfiniteQueryOptions,
   createEntityKeys,
@@ -47,7 +47,7 @@ export const findOrganizationInListCache = (idOrSlug: string) =>
 export const organizationQueryOptions = (id: string, tenantId: string) =>
   queryOptions({
     queryKey: keys.detail.byId(id),
-    queryFn: async () => getOrganization({ path: { tenantId, organizationId: id } }),
+    queryFn: async () => getOrganization({ path: { tenantId, organizationId: id }, query: { include: 'counts' } }),
     placeholderData: () => findOrganizationInListCache(id),
   });
 
@@ -102,7 +102,7 @@ export const useOrganizationCreateMutation = () => {
   const queryClient = useQueryClient();
   const mutateCache = useMutateQueryData(keys.list.base);
 
-  return useMutation<OrganizationWithMembership, ApiError, MutationData<CreateOrganizationsData>>({
+  return useMutation<EnrichedOrganization, ApiError, MutationData<CreateOrganizationsData>>({
     mutationKey: keys.create,
     mutationFn: async ({ path, body }) => {
       const result = await createOrganizations({ path, body });
@@ -116,7 +116,7 @@ export const useOrganizationCreateMutation = () => {
       }
 
       // Return the first created organization (currently only single creation supported)
-      return result.data[0] as OrganizationWithMembership;
+      return result.data[0] as EnrichedOrganization;
     },
     onSuccess: (createdOrganization) => {
       mutateCache.create([createdOrganization]);

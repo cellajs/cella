@@ -12,12 +12,12 @@ import { useChangeEntityRoleMutation } from '~/modules/memberships/query-mutatio
 import { organizationsListQueryOptions } from '~/modules/organization/query';
 import { OrganizationsTableBar } from '~/modules/organization/table/organizations-bar';
 import { useColumns } from '~/modules/organization/table/organizations-columns';
-import type { OrganizationsRouteSearchParams, OrganizationWithMembership } from '~/modules/organization/types';
+import type { EnrichedOrganization, OrganizationsRouteSearchParams } from '~/modules/organization/types';
 
 const LIMIT = appConfig.requestLimits.organizations;
 
 /** Stable row key getter function - defined outside component to prevent re-renders */
-function rowKeyGetter(row: OrganizationWithMembership) {
+function rowKeyGetter(row: EnrichedOrganization) {
   return row.id;
 }
 
@@ -36,7 +36,7 @@ function OrganizationsTable() {
   const [isCompact, setIsCompact] = useState(false);
 
   // Build columns
-  const [selected, setSelected] = useState<OrganizationWithMembership[]>([]);
+  const [selected, setSelected] = useState<EnrichedOrganization[]>([]);
   const [columns, setColumns] = useColumns(isCompact);
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
@@ -55,8 +55,8 @@ function OrganizationsTable() {
   });
 
   const onRowsChange = (
-    changedRows: OrganizationWithMembership[],
-    { column, indexes }: RowsChangeData<OrganizationWithMembership>,
+    changedRows: EnrichedOrganization[],
+    { column, indexes }: RowsChangeData<EnrichedOrganization>,
   ) => {
     if (column.key !== 'role') return;
 
@@ -94,9 +94,9 @@ function OrganizationsTable() {
         isCompact={isCompact}
         setIsCompact={setIsCompact}
       />
-      <DataTable<OrganizationWithMembership>
+      <DataTable<EnrichedOrganization>
         {...{
-          rows: rows as OrganizationWithMembership[] | undefined,
+          rows: rows as EnrichedOrganization[] | undefined,
           rowHeight: 52,
           onRowsChange,
           rowKeyGetter,

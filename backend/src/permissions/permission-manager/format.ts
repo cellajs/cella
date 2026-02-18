@@ -1,6 +1,5 @@
-import { appConfig, type EntityActionType } from 'shared';
+import { appConfig, createActionRecord, type EntityActionType } from 'shared';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
-import { createActionRecord } from './action-helpers';
 import type { PermissionDecision } from './types';
 
 /**

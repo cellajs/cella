@@ -3,6 +3,7 @@ import { authGuard, crossTenantGuard, tenantGuard } from '#/middlewares/guard';
 import {
   organizationCreateBodySchema,
   organizationListQuerySchema,
+  organizationQuerySchema,
   organizationSchema,
   organizationUpdateBodySchema,
   organizationWithMembershipSchema,
@@ -12,7 +13,6 @@ import {
   errorResponseRefs,
   idsBodySchema,
   paginationSchema,
-  slugQuerySchema,
   tenantIdParamSchema,
   tenantOnlyParamSchema,
   tenantOrganizationIdParamSchema,
@@ -91,7 +91,7 @@ const organizationRoutes = {
     tags: ['organizations'],
     summary: 'Get organization',
     description: 'Retrieves an *organization* by ID within a tenant. Pass `?slug=true` to resolve by slug instead.',
-    request: { params: tenantOrganizationIdParamSchema, query: slugQuerySchema },
+    request: { params: tenantOrganizationIdParamSchema, query: organizationQuerySchema },
     responses: {
       200: {
         description: 'Organization',

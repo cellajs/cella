@@ -30,15 +30,6 @@ export const productEntityTypeSchema = z.enum(appConfig.productEntityTypes);
  * Common properties schemas
  ************************************************************************************************/
 
-/** Schema for entity action permissions (`can` object) */
-export const entityCanSchema = z.object({
-  create: z.boolean(),
-  read: z.boolean(),
-  update: z.boolean(),
-  delete: z.boolean(),
-  search: z.boolean(),
-});
-
 /*************************************************************************************************
  * Common param schemas
  ************************************************************************************************/

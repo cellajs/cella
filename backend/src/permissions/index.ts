@@ -1,4 +1,3 @@
-export { addPermission, type WithAllowance } from './add-permission';
 export { canCreateEntity } from './can-create';
 export {
   type BatchPermissionResult,

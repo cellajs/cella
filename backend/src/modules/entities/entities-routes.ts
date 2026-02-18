@@ -6,8 +6,7 @@ import {
   appCatchupResponseSchema,
   errorResponseRefs,
   publicCatchupResponseSchema,
-  publicStreamQuerySchema,
-  streamQuerySchema,
+  streamCatchupBodySchema,
 } from '#/schemas';
 import { mockStreamResponse } from '../../../mocks/mock-me';
 
@@ -39,7 +38,7 @@ const entityRoutes = {
   }),
 
   /**
-   * Public stream for all public entity changes (no auth required)
+   * Public SSE stream (live updates, no auth required)
    */
   publicStream: createXRoute({
     operationId: 'getPublicStream',
@@ -47,13 +46,39 @@ const entityRoutes = {
     path: '/public/stream',
     xGuard: publicGuard,
     tags: ['entities'],
-    summary: 'Public entity stream',
-    description:
-      'Stream real-time changes for public entities (entities with no parent context). No authentication required. Use offset for catch-up, live=sse for SSE streaming.',
-    request: { query: publicStreamQuerySchema },
+    summary: 'Public entity SSE stream',
+    description: 'SSE stream for real-time public entity changes. No authentication required.',
     responses: {
       200: {
-        description: 'Catch-up summary or SSE stream started',
+        description: 'SSE stream started',
+        content: {
+          'text/event-stream': { schema: z.any() },
+        },
+      },
+      ...errorResponseRefs,
+    },
+  }),
+
+  /**
+   * Public catchup (POST with body)
+   */
+  publicCatchup: createXRoute({
+    operationId: 'postPublicCatchup',
+    method: 'post',
+    path: '/public/stream',
+    xGuard: publicGuard,
+    tags: ['entities'],
+    summary: 'Public entity catchup',
+    description: 'Fetch missed public entity changes since last sync. Send cursor and per-scope seqs in the body.',
+    request: {
+      body: {
+        required: true,
+        content: { 'application/json': { schema: streamCatchupBodySchema } },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Catchup summary',
         content: {
           'application/json': {
             schema: publicCatchupResponseSchema,
@@ -65,7 +90,7 @@ const entityRoutes = {
   }),
 
   /**
-   * App event stream (authenticated user stream)
+   * App SSE stream (live updates, authenticated)
    */
   appStream: createXRoute({
     operationId: 'getAppStream',
@@ -73,17 +98,42 @@ const entityRoutes = {
     path: '/app/stream',
     xGuard: authGuard,
     tags: ['entities'],
-    summary: 'App event stream',
+    summary: 'App event SSE stream',
     description:
-      'SSE stream for membership and entity notifications affecting the *current user*. Sends lightweight notifications - client fetches entity data via API.',
+      'SSE stream for membership and entity notifications affecting the current user. Sends lightweight notifications.',
+    responses: {
+      200: {
+        description: 'SSE stream started',
+        content: {
+          'text/event-stream': { schema: z.any() },
+        },
+      },
+      ...errorResponseRefs,
+    },
+  }),
+
+  /**
+   * App catchup (POST with body)
+   */
+  appCatchup: createXRoute({
+    operationId: 'postAppCatchup',
+    method: 'post',
+    path: '/app/stream',
+    xGuard: authGuard,
+    tags: ['entities'],
+    summary: 'App event catchup',
+    description:
+      'Fetch missed entity and membership changes since last sync. Send cursor and per-scope seqs in the body.',
     request: {
-      query: streamQuerySchema,
+      body: {
+        required: true,
+        content: { 'application/json': { schema: streamCatchupBodySchema } },
+      },
     },
     responses: {
       200: {
-        description: 'SSE stream or catchup summary response',
+        description: 'Catchup summary',
         content: {
-          'text/event-stream': { schema: z.any() },
           'application/json': {
             schema: appCatchupResponseSchema,
             example: mockStreamResponse(),

@@ -62,7 +62,7 @@ export const DownAlert = () => {
   const { downAlert, setDownAlert } = useAlertStore();
 
   // Track if user manually dismissed alert
-  const [dismissedAlerts, setDismissedAlerts] = useState({} as Record<AlertKeys, boolean>);
+  const [dismissedAlerts, setDismissedAlerts] = useState<Partial<Record<AlertKeys, boolean>>>({});
 
   const dismissAlert = () => {
     if (!downAlert) return;

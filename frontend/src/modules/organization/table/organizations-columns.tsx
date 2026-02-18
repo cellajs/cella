@@ -10,7 +10,7 @@ import { HeaderCell } from '~/modules/common/data-table/header-cell';
 import { renderSelect } from '~/modules/common/data-table/select-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { UpdateRow } from '~/modules/organization/table/update-row';
-import type { OrganizationWithMembership } from '~/modules/organization/types';
+import type { EnrichedOrganization } from '~/modules/organization/types';
 import { buttonVariants } from '~/modules/ui/button';
 import { UserCellById } from '~/modules/user/user-cell';
 import { dateShort } from '~/utils/date-short';
@@ -20,7 +20,7 @@ export const useColumns = (isCompact: boolean) => {
   const isMobile = useBreakpoints('max', 'sm', false);
 
   const columns = useMemo(() => {
-    const cols: ColumnOrColumnGroup<OrganizationWithMembership>[] = [
+    const cols: ColumnOrColumnGroup<EnrichedOrganization>[] = [
       CheckboxColumn,
       {
         key: 'name',
@@ -56,7 +56,7 @@ export const useColumns = (isCompact: boolean) => {
         visible: true,
         width: 32,
         renderCell: ({ row, tabIndex }) => {
-          if ((row.included?.counts?.membership.admin ?? 0) > 0 || (row.included?.counts?.membership.member ?? 0) > 0)
+          if ((row.included.counts?.membership.admin ?? 0) > 0 || (row.included.counts?.membership.member ?? 0) > 0)
             return <UpdateRow organization={row} tabIndex={tabIndex} />;
         },
       },
@@ -124,7 +124,7 @@ export const useColumns = (isCompact: boolean) => {
         renderCell: ({ row }) => (
           <>
             <UserRoundIcon className="mr-2 opacity-50" size={16} />
-            {row.included?.counts?.membership.member ?? '-'}
+            {row.included.counts?.membership.member ?? '-'}
           </>
         ),
       },
@@ -138,7 +138,7 @@ export const useColumns = (isCompact: boolean) => {
         renderCell: ({ row }) => (
           <>
             <ShieldIcon className="mr-2 opacity-50" size={16} />
-            {row.included?.counts?.membership.admin ?? '-'}
+            {row.included.counts?.membership.admin ?? '-'}
           </>
         ),
       },
@@ -147,5 +147,5 @@ export const useColumns = (isCompact: boolean) => {
     return cols;
   }, [isCompact]);
 
-  return useState<ColumnOrColumnGroup<OrganizationWithMembership>[]>(columns);
+  return useState<ColumnOrColumnGroup<EnrichedOrganization>[]>(columns);
 };

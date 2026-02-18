@@ -327,34 +327,23 @@ export const zOrganization = z.object({
   welcomeText: z.union([z.string().max(100000), z.null()]),
   authStrategies: z.array(z.enum(['github', 'google', 'microsoft', 'password', 'passkey', 'totp', 'email'])),
   chatSupport: z.boolean(),
-  included: z.optional(
-    z.object({
-      membership: z.optional(zMembershipBase),
-      counts: z.optional(
-        z.object({
-          membership: z.object({
-            admin: z.number(),
-            member: z.number(),
-            pending: z.number(),
-            total: z.number(),
-          }),
-          entities: z.object({
-            attachment: z.number(),
-            page: z.number(),
-          }),
+  included: z.object({
+    membership: z.optional(zMembershipBase),
+    counts: z.optional(
+      z.object({
+        membership: z.object({
+          admin: z.number(),
+          member: z.number(),
+          pending: z.number(),
+          total: z.number(),
         }),
-      ),
-    }),
-  ),
-  can: z.optional(
-    z.object({
-      create: z.boolean(),
-      read: z.boolean(),
-      update: z.boolean(),
-      delete: z.boolean(),
-      search: z.boolean(),
-    }),
-  ),
+        entities: z.object({
+          attachment: z.number(),
+          page: z.number(),
+        }),
+      }),
+    ),
+  }),
 });
 
 /**
@@ -413,15 +402,6 @@ export const zAttachment = z.object({
   convertedKey: z.union([z.string().max(2048), z.null()]),
   thumbnailKey: z.union([z.string().max(2048), z.null()]),
   organizationId: z.string().max(50),
-  can: z.optional(
-    z.object({
-      create: z.boolean(),
-      read: z.boolean(),
-      update: z.boolean(),
-      delete: z.boolean(),
-      search: z.boolean(),
-    }),
-  ),
 });
 
 /**
@@ -1024,19 +1004,22 @@ export const zCheckSlugResponse = z.void();
 export const zGetPublicStreamData = z.object({
   body: z.optional(z.never()),
   path: z.optional(z.never()),
-  query: z.optional(
-    z.object({
-      offset: z.optional(z.string()),
-      live: z.optional(z.enum(['sse'])),
-      seqs: z.optional(z.string()),
-    }),
-  ),
+  query: z.optional(z.never()),
+});
+
+export const zPostPublicCatchupData = z.object({
+  body: z.object({
+    cursor: z.optional(z.string()),
+    seqs: z.optional(z.record(z.string(), z.int())),
+  }),
+  path: z.optional(z.never()),
+  query: z.optional(z.never()),
 });
 
 /**
- * Catch-up summary or SSE stream started
+ * Catchup summary
  */
-export const zGetPublicStreamResponse = z.object({
+export const zPostPublicCatchupResponse = z.object({
   changes: z.record(
     z.string(),
     z.object({
@@ -1051,19 +1034,22 @@ export const zGetPublicStreamResponse = z.object({
 export const zGetAppStreamData = z.object({
   body: z.optional(z.never()),
   path: z.optional(z.never()),
-  query: z.optional(
-    z.object({
-      offset: z.optional(z.string()),
-      live: z.optional(z.enum(['sse', 'catchup'])),
-      seqs: z.optional(z.string()),
-    }),
-  ),
+  query: z.optional(z.never()),
+});
+
+export const zPostAppCatchupData = z.object({
+  body: z.object({
+    cursor: z.optional(z.string()),
+    seqs: z.optional(z.record(z.string(), z.int())),
+  }),
+  path: z.optional(z.never()),
+  query: z.optional(z.never()),
 });
 
 /**
- * SSE stream or catchup summary response
+ * Catchup summary
  */
-export const zGetAppStreamResponse = z.object({
+export const zPostAppCatchupResponse = z.object({
   changes: z.record(
     z.string(),
     z.object({
@@ -1463,23 +1449,25 @@ export const zCreateOrganizationsResponse = z.object({
   data: z.array(
     zOrganization.and(
       z.object({
-        included: z.object({
-          membership: zMembershipBase,
-          counts: z.optional(
-            z.object({
-              membership: z.object({
-                admin: z.number(),
-                member: z.number(),
-                pending: z.number(),
-                total: z.number(),
+        included: z.optional(
+          z.object({
+            membership: zMembershipBase,
+            counts: z.optional(
+              z.object({
+                membership: z.object({
+                  admin: z.number(),
+                  member: z.number(),
+                  pending: z.number(),
+                  total: z.number(),
+                }),
+                entities: z.object({
+                  attachment: z.number(),
+                  page: z.number(),
+                }),
               }),
-              entities: z.object({
-                attachment: z.number(),
-                page: z.number(),
-              }),
-            }),
-          ),
-        }),
+            ),
+          }),
+        ),
       }),
     ),
   ),
@@ -1522,6 +1510,7 @@ export const zGetOrganizationData = z.object({
   query: z.optional(
     z.object({
       slug: z.optional(z.union([z.string(), z.boolean()])).default('false'),
+      include: z.optional(z.string()),
     }),
   ),
 });

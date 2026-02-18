@@ -6,7 +6,6 @@ export {
   contextEntityTypeSchema,
   cookieSchema,
   emailOrTokenIdQuerySchema,
-  entityCanSchema,
   entityIdParamSchema,
   entityTypeSchema,
   entityWithTypeQuerySchema,
@@ -61,10 +60,9 @@ export {
   catchupChangeSummarySchema,
   type PublicCatchupResponse,
   publicCatchupResponseSchema,
-  publicStreamQuerySchema,
   type StreamNotification,
+  streamCatchupBodySchema,
   streamNotificationSchema,
-  streamQuerySchema,
 } from './stream-schemas';
 
 // Success response schemas

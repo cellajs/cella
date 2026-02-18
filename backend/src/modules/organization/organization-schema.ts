@@ -6,9 +6,8 @@ import { authStrategiesEnum } from '#/db/schema/sessions';
 import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schema';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
 import {
-  entityCanSchema,
+  booleanTransformSchema,
   excludeArchivedQuerySchema,
-  fullCountsSchema,
   includeQuerySchema,
   languageSchema,
   maxLength,
@@ -21,13 +20,8 @@ import {
   validTempIdSchema,
   validUrlSchema,
 } from '#/schemas';
+import { contextEntityIncludedSchema } from '#/schemas/context-entity-included';
 import { mockOrganizationResponse } from '../../../mocks/mock-organization';
-
-/** Schema for optional included data (requested via include query param) */
-export const organizationIncludedSchema = z.object({
-  membership: membershipBaseSchema.optional(),
-  counts: fullCountsSchema.optional(),
-});
 
 export const organizationSchema = z
   .object({
@@ -35,8 +29,7 @@ export const organizationSchema = z
     languages: z.array(languageSchema).min(1),
     emailDomains: z.array(z.string()),
     authStrategies: z.array(z.enum(authStrategiesEnum)),
-    included: organizationIncludedSchema.optional(),
-    can: entityCanSchema.optional(),
+    included: contextEntityIncludedSchema,
   })
   .openapi('Organization', {
     description: 'An organization with settings, restrictions, and membership context.',
@@ -44,7 +37,7 @@ export const organizationSchema = z
   });
 
 export const organizationWithMembershipSchema = organizationSchema.extend({
-  included: organizationIncludedSchema.extend({ membership: membershipBaseSchema }),
+  included: contextEntityIncludedSchema.extend({ membership: membershipBaseSchema }),
 });
 
 const organizationCreateItemSchema = z.object({
@@ -94,6 +87,11 @@ export const organizationUpdateBodySchema = createInsertSchema(organizationsTabl
     chatSupport: true,
   })
   .partial();
+
+export const organizationQuerySchema = z.object({
+  slug: booleanTransformSchema.optional(),
+  include: includeQuerySchema,
+});
 
 export const organizationListQuerySchema = paginationQuerySchema.extend({
   sort: z.enum(['id', 'name', 'createdAt']).default('createdAt').optional(),

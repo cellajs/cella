@@ -8,7 +8,7 @@ import type { UserBase } from '~/api.gen';
 import { useFocusByRef } from '~/hooks/use-focus-by-ref';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import type { ContextEntity } from '~/modules/entities/types';
+import type { EnrichedContextEntity } from '~/modules/entities/types';
 import { SearchResultBlock } from '~/modules/navigation/menu-sheet/search-result-block';
 import { Button } from '~/modules/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
@@ -94,11 +94,11 @@ export const AppSearch = () => {
     ]),
   );
 
-  const data: Record<string, (ContextEntity | UserBase)[]> = { user: users, ...contextEntityData };
+  const data: Record<string, (EnrichedContextEntity | UserBase)[]> = { user: users, ...contextEntityData };
   const notFound = users.length === 0 && Object.values(contextEntityData).every((items) => items.length === 0);
   const isFetching = userQ.isFetching || Object.values(contextEntityResults).some((q) => q.isFetching);
 
-  const onSelectItem = (item: ContextEntity | UserBase) => {
+  const onSelectItem = (item: EnrichedContextEntity | UserBase) => {
     // Update recent searches with the search value
     updateRecentSearches(searchValue);
 

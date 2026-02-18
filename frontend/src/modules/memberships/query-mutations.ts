@@ -12,7 +12,7 @@ import {
 } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import { toaster } from '~/modules/common/toaster/service';
-import type { ContextEntity } from '~/modules/entities/types';
+import type { EnrichedContextEntity } from '~/modules/entities/types';
 import { meKeys } from '~/modules/me/query';
 import { memberQueryKeys } from '~/modules/memberships/query';
 import type {
@@ -25,7 +25,7 @@ import type {
   MemberQueryData,
   MutationUpdateMembership,
 } from '~/modules/memberships/types';
-import { getMenuData } from '~/modules/navigation/menu-sheet/helpers';
+import { getMenuData } from '~/modules/navigation/menu-sheet/helpers/get-menu-data';
 import {
   changeInfiniteQueryData,
   changeQueryData,
@@ -107,7 +107,7 @@ export const useInviteMemberMutation = () =>
           if (orgKeys) {
             const orgDetailQueryKey = orgKeys.detail.byId(organizationId);
             queryClient.setQueryData<Organization>(orgDetailQueryKey, (oldOrg) => {
-              if (!oldOrg?.included?.counts) return oldOrg;
+              if (!oldOrg?.included.counts) return oldOrg;
               return updateMembershipCounts(oldOrg, invitesSentCount);
             });
           }
@@ -124,7 +124,7 @@ export const useInviteMemberMutation = () =>
         if (entityKeys) {
           const detailQueryKey = entityKeys.detail.byId(entityId);
           queryClient.setQueryData<Organization>(detailQueryKey, (oldEntity) => {
-            if (!oldEntity?.included?.counts) return oldEntity;
+            if (!oldEntity?.included.counts) return oldEntity;
             return updateMembershipCounts(oldEntity, invitesSentCount);
           });
         }
@@ -168,7 +168,7 @@ export const useMemberUpdateMutation = () =>
       } else if (body?.displayOrder !== undefined)
         context.toastMessage = t('common:success.update_item', { item: t('common:order') });
 
-      // Update membership in the separate myMemberships cache
+      // Update myMemberships cache — global subscriber enriches entity lists automatically
       updateMyMembershipCache(membershipInfo);
 
       // Get affected queries
@@ -196,7 +196,7 @@ export const useMemberUpdateMutation = () =>
       return context;
     },
     onSuccess: async (updatedMembership, { entityId, entityType, path: { tenantId, orgId } }, { toastMessage }) => {
-      // Update membership in the separate myMemberships cache with server response
+      // Update myMemberships cache — global subscriber enriches entity lists automatically
       updateMyMembershipCache(updatedMembership);
 
       // Get affected queries
@@ -298,14 +298,14 @@ const deletedMembers = (members: Member[], ids: string[]) => {
       if (ids.includes(member.id)) return null;
       return member;
     })
-    .filter(Boolean) as Member[];
+    .filter((m): m is Member => m !== null);
 };
 
 /**
  * Update the memberships and pending membership count in the cache for a given entity.
  */
 const updateMembershipCounts = (oldEntity: Organization | undefined, updateCount: number): Organization | undefined => {
-  if (!oldEntity?.included?.counts) return oldEntity;
+  if (!oldEntity?.included.counts) return oldEntity;
 
   return {
     ...oldEntity,
@@ -324,12 +324,12 @@ const updateMembershipCounts = (oldEntity: Organization | undefined, updateCount
 
 /** Variables for changing a user's role on a context entity from an entity table */
 type ChangeEntityRoleVariables = {
-  entity: ContextEntity;
+  entity: EnrichedContextEntity;
   role: MembershipBase['role'];
 };
 
 type ChangeEntityRoleResult = {
-  entity: ContextEntity;
+  entity: EnrichedContextEntity;
   membership: MembershipBase;
   wasNew: boolean;
 };
@@ -374,13 +374,13 @@ export const useChangeEntityRoleMutation = () =>
       return { entity, membership: created, wasNew: true };
     },
     onSuccess: ({ entity, membership, wasNew }) => {
+      // Update myMemberships cache — global subscriber enriches entity lists automatically
+      if (wasNew) addMyMembershipCache(membership);
+      else updateMyMembershipCache(membership);
+
       // Update entity list cache with the new/updated membership
       const updatedEntity = { ...entity, membership };
       updateEntityInListCache(entity.entityType, [updatedEntity]);
-
-      // Update myMemberships cache
-      if (wasNew) addMyMembershipCache(membership);
-      else updateMyMembershipCache(membership);
 
       toaster(t('common:success.role_updated'), 'success');
     },

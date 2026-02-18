@@ -1,4 +1,4 @@
-import type { ContextEntity } from '~/modules/entities/types';
+import type { EnrichedContextEntity } from '~/modules/entities/types';
 import type { EntityRoute } from '~/modules/navigation/types';
 import { baseEntityRoutes, routeParamMap } from '~/routes-config';
 
@@ -11,7 +11,7 @@ import { baseEntityRoutes, routeParamMap } from '~/routes-config';
  * When ancestor slugs are unavailable (cache miss), the route's `beforeLoad` + `rewriteUrlToSlug`
  * handles the fallback by redirecting to the slug-based URL after data loads.
  */
-export const getContextEntityRoute = (item: ContextEntity, _isSubitem?: boolean): EntityRoute => {
+export const getContextEntityRoute = (item: EnrichedContextEntity, _isSubitem?: boolean): EntityRoute => {
   const { entityType, slug, tenantId, ancestorSlugs = {} } = item;
 
   const to = baseEntityRoutes[entityType];

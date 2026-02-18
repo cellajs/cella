@@ -27,7 +27,7 @@
   {
     "name": "entities",
     "description": "Cross-cutting operations that apply across multiple entity types. Includes slug availability\n        checking and real-time SSE streaming (both a public stream for unauthenticated entity updates and\n        an authenticated app stream for per-user entity and membership notifications).",
-    "count": 3
+    "count": 5
   },
   {
     "name": "system",

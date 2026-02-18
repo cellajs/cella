@@ -13,8 +13,10 @@ export type CreateAttachmentParams = {
   localCreation: boolean;
   attachments: CreateAttachmentsData['body'];
 } & CreateAttachmentsData['path'];
+
 export type UpdateAttachmentParams = UpdateAttachmentData['body'] &
   UpdateAttachmentData['path'] & { localUpdate: boolean };
+
 export type DeleteAttachmentsParams = {
   localDeletionIds: string[];
   serverDeletionIds: string[];

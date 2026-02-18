@@ -8,7 +8,7 @@
 import type { ContextEntityType } from 'shared';
 import { getAndSetMe } from '~/modules/me/helpers';
 import { memberQueryKeys } from '~/modules/memberships/query';
-import { getMenuData } from '~/modules/navigation/menu-sheet/helpers';
+import { getMenuData } from '~/modules/navigation/menu-sheet/helpers/get-menu-data';
 import { getContextEntityTypeToListQueries } from '~/offline-config';
 import { queryClient } from '~/query/query-client';
 import { useUserStore } from '~/store/user';

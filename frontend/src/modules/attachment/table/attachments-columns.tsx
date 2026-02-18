@@ -8,17 +8,17 @@ import { SyncStatusCell } from '~/modules/attachment/table/sync-status-cell';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
 import { HeaderCell } from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
-import type { ContextEntity } from '~/modules/entities/types';
+import type { EnrichedContextEntity } from '~/modules/entities/types';
 import { Input } from '~/modules/ui/input';
 import { UserCellById } from '~/modules/user/user-cell';
 import { dateShort } from '~/utils/date-short';
 
-export const useColumns = (entity: ContextEntity, isSheet: boolean, isCompact: boolean) => {
+export const useColumns = (entity: EnrichedContextEntity, isSheet: boolean, isCompact: boolean) => {
   const { t } = useTranslation();
 
   const isMobile = useBreakpoints('max', 'sm', false);
-  // Use can.update if available, fallback to role check for backwards compatibility
-  const canUpdate = entity.can?.update ?? false;
+  // Check attachment permissions on the parent context entity
+  const canUpdate = entity.can?.attachment?.update ?? false;
 
   const columns: ColumnOrColumnGroup<Attachment>[] = useMemo(
     () => [

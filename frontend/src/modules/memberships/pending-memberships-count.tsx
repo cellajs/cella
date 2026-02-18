@@ -4,16 +4,19 @@ import { useTranslation } from 'react-i18next';
 import type { Organization } from '~/api.gen';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster/service';
-import type { ContextEntity } from '~/modules/entities/types';
+import type { EnrichedContextEntity } from '~/modules/entities/types';
 import { Button } from '~/modules/ui/button';
 
 const PendingMembershipsTable = lazy(() => import('~/modules/memberships/pending-table/pending-memberships-table'));
+
+type EntityWithIncluded = EnrichedContextEntity & Pick<Organization, 'included'>;
+const hasIncluded = (entity: EnrichedContextEntity): entity is EntityWithIncluded => 'included' in entity;
 
 /**
  * Component to display pending memberships count.
  * Users can click to open them in a table in a sheet.
  */
-export const PendingMembershipsCount = ({ entity }: { entity: ContextEntity & Pick<Organization, 'included'> }) => {
+export const PendingMembershipsCount = ({ entity }: { entity: EnrichedContextEntity }) => {
   const { t } = useTranslation();
   const buttonRef = useRef(null);
 
@@ -42,7 +45,7 @@ export const PendingMembershipsCount = ({ entity }: { entity: ContextEntity & Pi
     );
   };
 
-  if (!entity.included?.counts) return null;
+  if (!hasIncluded(entity) || !entity.included.counts) return null;
 
   return (
     <Button
