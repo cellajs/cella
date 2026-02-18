@@ -32,13 +32,12 @@ export function usePagesTableColumns(isCompact: boolean) {
       name: t('common:title'),
       visible: true,
       minWidth: 200,
-      sortable: true,
+      sortable: false,
       resizable: true,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row, tabIndex }) => (
         <Link
           to="/docs/page/$id"
-          draggable="false"
           tabIndex={tabIndex}
           params={{ id: row.id }}
           className="flex space-x-2 items-center outline-0 ring-0 group"
@@ -84,7 +83,7 @@ export function usePagesTableColumns(isCompact: boolean) {
       name: t('common:status'),
       editable: true,
       visible: !isMobile,
-      sortable: true,
+      sortable: false,
       resizable: true,
       width: 160,
       renderHeaderCell: HeaderCell,
@@ -128,7 +127,7 @@ export function usePagesTableColumns(isCompact: boolean) {
     {
       key: 'createdAt',
       name: t('common:created_at'),
-      sortable: true,
+      sortable: false,
       visible: !isMobile,
       resizable: true,
       minWidth: 160,

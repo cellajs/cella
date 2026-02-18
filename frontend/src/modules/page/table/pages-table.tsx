@@ -5,12 +5,12 @@ import { useTranslation } from 'react-i18next';
 import type { Page } from '~/api.gen';
 import { useSearchParams } from '~/hooks/use-search-params';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
-import type { RowsChangeData } from '~/modules/common/data-grid';
+import type { CellRendererProps, RowsChangeData } from '~/modules/common/data-grid';
 import { DataTable } from '~/modules/common/data-table';
-import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { FocusViewContainer } from '~/modules/common/focus-view';
 import { StickyBox } from '~/modules/common/sticky-box';
 import { pagesLimit, pagesListQueryOptions, usePageUpdateMutation } from '~/modules/page/query';
+import { DraggableCellRenderer } from '~/modules/page/table/draggable-cell-renderer';
 import { PagesTableBar } from '~/modules/page/table/pages-bar';
 import { usePagesTableColumns } from '~/modules/page/table/pages-columns';
 import type { PagesRouteSearchParams } from '~/modules/page/types';
@@ -30,15 +30,14 @@ function PagesTable() {
   const { search, setSearch } = useSearchParams<PagesRouteSearchParams>();
 
   // Table state
-  const { q, sort, order } = search;
+  const { q } = search;
   const limit = pagesLimit;
 
   // Build columns
   const [selected, setSelected] = useState<Page[]>([]);
   const { columns, visibleColumns, setColumns } = usePagesTableColumns(isCompact);
-  const { sortColumns, setSortColumns } = useSortColumns(sort, order, setSearch);
 
-  const queryOptions = pagesListQueryOptions({ q, sort, order, limit });
+  const queryOptions = pagesListQueryOptions({ q, limit });
 
   // Infinite query for paginated data
   const {
@@ -50,7 +49,11 @@ function PagesTable() {
     hasNextPage,
   } = useInfiniteQuery({
     ...queryOptions,
-    select: ({ pages }) => pages.flatMap(({ items }) => items),
+    select: ({ pages }) => {
+      const items = pages.flatMap(({ items }) => items);
+      // Sort by displayOrder for drag-and-drop reordering to work correctly
+      return items.toSorted((a, b) => a.displayOrder - b.displayOrder);
+    },
   });
 
   // Fetch more on scroll
@@ -97,6 +100,45 @@ function PagesTable() {
 
   const clearSelection = () => setSelected([]);
 
+  // Custom renderCell that enables drag-and-drop row reordering
+  const renderCell = useCallback(
+    (key: React.Key, props: CellRendererProps<Page, unknown>) => {
+      function onRowReorder(fromIndex: number, toIndex: number) {
+        if (fromIndex === toIndex || !rows) return;
+
+        const draggedPage = rows[fromIndex];
+        const targetPage = rows[toIndex];
+
+        if (!draggedPage || !targetPage) return;
+
+        // Calculate new displayOrder using fractional ordering
+        // This inserts between adjacent items without reordering all items
+        let newOrder: number;
+
+        if (fromIndex < toIndex) {
+          // Dragging down - insert after target
+          const nextPage = rows[toIndex + 1];
+          newOrder = nextPage ? (targetPage.displayOrder + nextPage.displayOrder) / 2 : targetPage.displayOrder + 10;
+        } else {
+          // Dragging up - insert before target
+          const prevPage = rows[toIndex - 1];
+          newOrder = prevPage ? (prevPage.displayOrder + targetPage.displayOrder) / 2 : targetPage.displayOrder - 10;
+        }
+
+        // Only update if order changed
+        if (newOrder !== draggedPage.displayOrder) {
+          updateMutation.mutate({
+            id: draggedPage.id,
+            data: { displayOrder: newOrder },
+          });
+        }
+      }
+
+      return <DraggableCellRenderer key={key} {...props} onRowReorder={onRowReorder} />;
+    },
+    [rows, updateMutation],
+  );
+
   return (
     <FocusViewContainer data-is-compact={isCompact} className="container min-h-screen flex flex-col gap-4">
       <StickyBox className="z-10 bg-background" offsetTop={0} hideOnScrollDown>
@@ -127,9 +169,8 @@ function PagesTable() {
         fetchMore={fetchMore}
         selectedRows={selectedRowIds}
         onSelectedRowsChange={onSelectedRowsChange}
-        sortColumns={sortColumns}
-        onSortColumnsChange={setSortColumns}
         onRowsChange={onRowsChange}
+        renderCell={renderCell}
         NoRowsComponent={
           <ContentPlaceholder
             icon={BirdIcon}

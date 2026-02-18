@@ -2,6 +2,7 @@ import { type Key, type ReactNode, useRef } from 'react';
 import {
   type CellMouseArgs,
   type CellMouseEvent,
+  type CellRendererProps,
   DataGrid,
   type RenderRowProps,
   type RowsChangeData,
@@ -34,6 +35,7 @@ interface DataTableProps<TData> {
   limit?: number;
   isFiltered?: boolean;
   renderRow?: (key: Key, props: RenderRowProps<TData, unknown>) => ReactNode;
+  renderCell?: (key: Key, props: CellRendererProps<TData, unknown>) => ReactNode;
   NoRowsComponent?: React.ReactNode;
   overflowNoRows?: boolean;
   onCellClick?: (args: CellMouseArgs<TData, unknown>, event: CellMouseEvent) => void;
@@ -75,6 +77,7 @@ export const DataTable = <TData,>({
   onRowsChange,
   fetchMore,
   renderRow,
+  renderCell,
   onCellClick,
   className,
   readOnly,
@@ -152,6 +155,7 @@ export const DataTable = <TData,>({
                 selectionMode={readOnly ? 'none' : undefined}
                 renderers={{
                   renderRow,
+                  renderCell,
                   renderCheckbox: ({ onChange, ...props }) => {
                     const withShift = useRef(false);
 
