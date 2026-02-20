@@ -12,8 +12,7 @@ const PUBLIC_TENANT_ID = 'public';
  * @param next - The next middleware or route handler.
  */
 export const publicGuard = xMiddleware(
-  'publicGuard',
-  'x-guard',
+  { functionName: 'publicGuard', type: 'x-guard', name: 'public', description: 'No authentication required' },
   async (ctx, next) => {
     // Wrap remaining middleware chain in public RLS context with public tenant
     return setPublicRlsContext(PUBLIC_TENANT_ID, async (tx) => {
@@ -23,5 +22,4 @@ export const publicGuard = xMiddleware(
       await next();
     });
   },
-  'No authentication required',
 );

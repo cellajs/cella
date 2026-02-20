@@ -1959,7 +1959,7 @@ export const createOrganizations = <ThrowOnError extends boolean = true>(
  * @param {enum=} options.query.order - `enum` (optional)
  * @param {string=} options.query.offset - `string` (optional)
  * @param {string=} options.query.limit - `string` (optional)
- * @param {string=} options.query.userid - `string` (optional)
+ * @param {string=} options.query.relatableuserid - `string` (optional)
  * @param {enum=} options.query.role - `enum` (optional)
  * @param {enum=} options.query.excludearchived - `enum` (optional)
  * @param {string=} options.query.include - `string` (optional)
@@ -2230,12 +2230,12 @@ export const getUsers = <ThrowOnError extends boolean = true>(options?: Options<
 /**
  * Get user
  *
- * Retrieves a *user* by ID. The requesting user must share at least one context entity membership. Pass `?slug=true` to resolve by slug instead.
+ * Retrieves a *user* by ID. The requesting user must share at least one organization membership. Pass `?slug=true` to resolve by slug instead.
  *
- * **GET /users/{userId}** ·· [getUser](https://api.cellajs.com/docs#tag/users/get/users/{userId}) ·· _users_
+ * **GET /users/{relatableUserId}** ·· [getUser](https://api.cellajs.com/docs#tag/users/get/users/{relatableUserId}) ·· _users_
  *
  * @param {getUserData} options
- * @param {string} options.path.userid - `string`
+ * @param {string} options.path.relatableuserid - `string`
  * @param {string | boolean=} options.query.slug - `string | boolean` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
@@ -2249,7 +2249,7 @@ export const getUser = <ThrowOnError extends boolean = true>(options: Options<Ge
         type: 'apiKey',
       },
     ],
-    url: '/users/{userId}',
+    url: '/users/{relatableUserId}',
     ...options,
   });
 

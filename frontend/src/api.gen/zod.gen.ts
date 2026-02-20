@@ -1485,7 +1485,7 @@ export const zGetOrganizationsData = z.object({
       order: z.optional(z.enum(['asc', 'desc'])),
       offset: z.optional(z.string()),
       limit: z.optional(z.string()),
-      userId: z.optional(z.string().max(50)),
+      relatableUserId: z.optional(z.string().max(50)),
       role: z.optional(z.enum(['admin', 'member'])),
       excludeArchived: z.optional(z.enum(['true', 'false'])),
       include: z.optional(z.string()),
@@ -1694,7 +1694,7 @@ export const zGetUsersResponse = z.object({
 export const zGetUserData = z.object({
   body: z.optional(z.never()),
   path: z.object({
-    userId: z.string().max(50),
+    relatableUserId: z.string().max(50),
   }),
   query: z.optional(
     z.object({

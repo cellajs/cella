@@ -18,7 +18,9 @@ function UserProfileContent({ isSheet, user }: Props) {
   const hasOrgContext = !!orgSlug;
 
   if (!hasOrgContext)
-    return <OrganizationsGrid fixedQuery={{ userId: user.id }} saveDataInSearch={!isSheet} focusView={!isSheet} />;
+    return (
+      <OrganizationsGrid fixedQuery={{ relatableUserId: user.id }} saveDataInSearch={!isSheet} focusView={!isSheet} />
+    );
 
   return (
     <ContentPlaceholder

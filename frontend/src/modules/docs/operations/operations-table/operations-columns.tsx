@@ -104,7 +104,10 @@ export const useColumns = (_isCompact: boolean, extensions: GenExtensionDefiniti
     // Generate extension columns dynamically from extension definitions
     const extensionColumns: ColumnOrColumnGroup<GenOperationSummary>[] = extensions.map((ext) => ({
       key: ext.id,
-      name: t(ext.translationKey),
+      name: ext.key
+        .replace('x-', '')
+        .replace(/-/g, ' ')
+        .replace(/^\w/, (c) => c.toUpperCase()),
       visible: !isMobile,
       sortable: false,
       resizable: true,
@@ -114,11 +117,14 @@ export const useColumns = (_isCompact: boolean, extensions: GenExtensionDefiniti
         const values = row.extensions[ext.id];
         return values?.length ? (
           <div className="font-mono text-[11px] flex flex-wrap gap-1 truncate">
-            {values.map((value: string) => (
-              <code key={value} className="truncate inline-block">
-                {value}
-              </code>
-            ))}
+            {values.map((value: string) => {
+              const label = ext.values?.[value]?.name ?? value;
+              return (
+                <code key={value} className="truncate inline-block" title={value}>
+                  {label}
+                </code>
+              );
+            })}
           </div>
         ) : (
           <span className="text-muted-foreground">-</span>

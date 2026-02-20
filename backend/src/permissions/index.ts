@@ -1,3 +1,4 @@
+export { canAccessEntity } from './can-access';
 export { canCreateEntity } from './can-create';
 export {
   type BatchPermissionResult,

@@ -420,7 +420,7 @@
     "request": {
       "path": {
         "properties": {
-          "userId": {
+          "relatableUserId": {
             "type": "string",
             "required": true,
             "maxLength": 50

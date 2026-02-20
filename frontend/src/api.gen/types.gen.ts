@@ -3538,7 +3538,7 @@ export type GetOrganizationsData = {
     order?: 'asc' | 'desc';
     offset?: string;
     limit?: string;
-    userId?: string;
+    relatableUserId?: string;
     role?: 'admin' | 'member';
     excludeArchived?: 'true' | 'false';
     include?: string;
@@ -4030,12 +4030,12 @@ export type GetUsersResponse = GetUsersResponses[keyof GetUsersResponses];
 export type GetUserData = {
   body?: never;
   path: {
-    userId: string;
+    relatableUserId: string;
   };
   query?: {
     slug?: string | boolean;
   };
-  url: '/users/{userId}';
+  url: '/users/{relatableUserId}';
 };
 
 export type GetUserErrors = {

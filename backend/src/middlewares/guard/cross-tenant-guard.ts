@@ -21,8 +21,12 @@ import { AppError } from '#/lib/error';
  * @returns Continues to next handler with user RLS context set
  */
 export const crossTenantGuard = xMiddleware(
-  'crossTenantGuard',
-  'x-guard',
+  {
+    functionName: 'crossTenantGuard',
+    type: 'x-guard',
+    name: 'crossTenant',
+    description: 'Wraps handler in user RLS context for cross-tenant access',
+  },
   async (ctx, next) => {
     const user = ctx.var.user;
     const memberships = ctx.var.memberships;
@@ -40,5 +44,4 @@ export const crossTenantGuard = xMiddleware(
       await next();
     });
   },
-  'Wraps handler in user RLS context for cross-tenant access',
 );

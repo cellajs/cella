@@ -28,7 +28,7 @@ export const findUserInListCache = (entityId: string) =>
 export const userQueryOptions = (id: string) =>
   queryOptions({
     queryKey: keys.detail.byId(id),
-    queryFn: async () => getUser({ path: { userId: id } }),
+    queryFn: async () => getUser({ path: { relatableUserId: id } }),
     placeholderData: () => findUserInListCache(id),
   });
 

@@ -5,7 +5,7 @@ import { appConfig } from 'shared';
 import { activityErrorSchema } from '#/db/utils/activity-error-schema';
 import { buildExtensionRegistry } from '#/docs/openapi-extensions';
 import { openapiTags, registerAppSchema } from '#/docs/tags-config';
-import { getExtensionValueDescriptions } from '#/docs/x-middleware';
+import { getExtensionValueMetadata } from '#/docs/x-middleware';
 import type { Env } from '#/lib/context';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
 import { errorResponses, registerAllErrorResponses } from '#/schemas';
@@ -26,8 +26,8 @@ import { checkMark } from '#/utils/console';
 const docs = async (app: OpenAPIHono<Env>, skipScalar = false) => {
   const registry = app.openAPIRegistry;
 
-  // Build extension registry with collected value descriptions
-  const extensionRegistry = buildExtensionRegistry(getExtensionValueDescriptions());
+  // Build extension registry with collected value metadata
+  const extensionRegistry = buildExtensionRegistry(getExtensionValueMetadata());
 
   // OpenAPI configuration
   const openApiConfig = {

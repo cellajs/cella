@@ -65,7 +65,7 @@ export const organizationsListQueryOptions = (params: OrganizationsListParams) =
     q = '',
     sort = 'createdAt',
     order = 'desc',
-    userId,
+    relatableUserId,
     excludeArchived,
     role,
     include,
@@ -75,7 +75,7 @@ export const organizationsListQueryOptions = (params: OrganizationsListParams) =
   const limit = String(baseLimit);
 
   // Exclude `include` from cache key so queries with/without counts share the same cache
-  const keyFilters = { q, sort, order, userId, excludeArchived, role };
+  const keyFilters = { q, sort, order, relatableUserId, excludeArchived, role };
 
   const queryKey = keys.list.filtered(keyFilters);
   const baseQuery = { ...keyFilters, include, limit };

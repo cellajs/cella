@@ -138,17 +138,17 @@ const organizationRouteHandlers = app
    * Get list of organizations
    */
   .openapi(organizationRoutes.getOrganizations, async (ctx) => {
-    const { q, sort, order, offset, limit, userId, role, excludeArchived, include } = ctx.req.valid('query');
+    const { q, sort, order, offset, limit, relatableUserId, role, excludeArchived, include } = ctx.req.valid('query');
 
     const entityType = 'organization';
 
     const user = ctx.var.user;
     const userSystemRole = ctx.var.userSystemRole;
     const memberships = ctx.var.memberships;
-    const isSystemAdmin = userSystemRole === 'admin' && !userId;
+    const isSystemAdmin = userSystemRole === 'admin' && !relatableUserId;
 
-    // TODO-003 We should only allow this if you have a relationship to the target user
-    const targetUserId = userId ?? user.id;
+    // relatableGuard already verified shared org membership if relatableUserId is provided
+    const targetUserId = relatableUserId ?? user.id;
 
     // Determine what to include
     const includeCounts = include.includes('counts');

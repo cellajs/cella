@@ -35,7 +35,7 @@ export function invalidateContextList(contextType: ContextEntityType | null): vo
   const queryFactory = contextType ? getContextEntityTypeToListQueries()[contextType] : null;
 
   if (queryFactory) {
-    const queryKey = queryFactory({ userId }).queryKey;
+    const queryKey = queryFactory({ relatableUserId: userId }).queryKey;
     queryClient.invalidateQueries({ queryKey, refetchType: 'active' });
   } else {
     invalidateAllContextDetails();

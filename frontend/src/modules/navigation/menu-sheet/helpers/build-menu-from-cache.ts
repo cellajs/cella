@@ -28,7 +28,7 @@ export function buildMenuFromCache(userId: string, opts?: { detailedMenu?: boole
       continue;
     }
 
-    const data = queryClient.getQueryData(factory({ userId }).queryKey);
+    const data = queryClient.getQueryData(factory({ relatableUserId: userId }).queryKey);
     // biome-ignore lint/suspicious/noExplicitAny: query data shape is heterogeneous
     const items = data ? flattenInfiniteData<any>(data as any) : [];
 

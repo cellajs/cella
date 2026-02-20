@@ -11,7 +11,7 @@ import { AppError } from '#/lib/error';
 import { getSignedUrlFromKey } from '#/lib/signed-url';
 import attachmentRoutes from '#/modules/attachment/attachment-routes';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
-import { checkPermission } from '#/permissions';
+import { canAccessEntity, canCreateEntity, checkPermission } from '#/permissions';
 import { getValidProductEntity } from '#/permissions/get-product-entity';
 import { splitByPermission } from '#/permissions/split-by-permission';
 import { isTransactionProcessed } from '#/sync';
@@ -37,6 +37,9 @@ const attachmentRouteHandlers = app
     const { q, sort, order, limit, offset, modifiedAfter } = ctx.req.valid('query');
 
     const organization = ctx.var.organization;
+
+    // Permission check: verify user can read attachments in this organization
+    canAccessEntity(ctx, 'read', { entityType: 'attachment', organizationId: organization.id });
 
     const filters: SQL[] = [eq(attachmentsTable.organizationId, organization.id)];
 
@@ -150,6 +153,11 @@ const attachmentRouteHandlers = app
     const newAttachments = ctx.req.valid('json');
     const tenantDb = ctx.var.db;
 
+    const organization = ctx.var.organization;
+
+    // Permission check: verify user can create attachments in this organization
+    canCreateEntity(ctx, { entityType: 'attachment', organizationId: organization.id });
+
     // Idempotency check - use first item's stx.mutationId to check entire batch
     const batchStxId = newAttachments[0].stx.mutationId;
     if (await isTransactionProcessed(batchStxId, tenantDb)) {
@@ -163,7 +171,6 @@ const attachmentRouteHandlers = app
       }
     }
 
-    const organization = ctx.var.organization;
     const user = ctx.var.user;
     const attachmentRestrictions = organization.restrictions.attachment;
 
@@ -216,6 +223,7 @@ const attachmentRouteHandlers = app
     const { id } = ctx.req.valid('param');
     const { stx, ...updatedFields } = ctx.req.valid('json');
 
+    // Get attachment with permission check
     const { entity } = await getValidProductEntity(ctx, id, 'attachment', 'update');
 
     const user = ctx.var.user;

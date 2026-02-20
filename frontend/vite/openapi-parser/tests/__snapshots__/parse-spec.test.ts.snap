@@ -16,7 +16,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "id": "xGuard",
           "key": "x-guard",
           "required": true,
-          "translationKey": "common:docs.guard",
           "values": {
             "authGuard": {
               "description": "Requires valid session",
@@ -40,7 +39,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "id": "xRateLimiter",
           "key": "x-rate-limiter",
           "required": false,
-          "translationKey": "common:docs.rate_limiter",
           "values": {
             "emailEnumLimiter": {
               "description": "Blocks IP for 30 min after 10 consecutive failures",
@@ -70,7 +68,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "id": "xCache",
           "key": "x-cache",
           "required": false,
-          "translationKey": "common:docs.cache",
           "values": {
             "appCache": {
               "description": "TTL cache with session-signed token validation",

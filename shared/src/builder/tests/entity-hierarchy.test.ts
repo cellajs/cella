@@ -198,10 +198,10 @@ describe('EntityHierarchyBuilder', () => {
       })
       .product('task', {
         parent: 'project',
-        publicAccess: { inherits: 'project', actions: ['read', 'search'] },
+        publicAccess: { inherits: 'project', actions: ['read'] },
       })
       .product('attachment', { parent: 'project' }) // No public access
-      .product('page', { parent: null, publicAccess: { actions: ['read', 'search'] } }) // Standalone public
+      .product('page', { parent: null, publicAccess: { actions: ['read'] } }) // Standalone public
       .build();
 
     it('canBePublic returns true for entities with publicAccess', () => {
@@ -215,8 +215,8 @@ describe('EntityHierarchyBuilder', () => {
 
     it('getPublicActions returns configured actions', () => {
       expect(publicHierarchy.getPublicActions('project')).toEqual(['read']);
-      expect(publicHierarchy.getPublicActions('task')).toEqual(['read', 'search']);
-      expect(publicHierarchy.getPublicActions('page')).toEqual(['read', 'search']);
+      expect(publicHierarchy.getPublicActions('task')).toEqual(['read']);
+      expect(publicHierarchy.getPublicActions('page')).toEqual(['read']);
       expect(publicHierarchy.getPublicActions('attachment')).toEqual([]);
       expect(publicHierarchy.getPublicActions('unknown')).toEqual([]);
     });
@@ -253,7 +253,7 @@ describe('EntityHierarchyBuilder', () => {
       expect(publicHierarchy.getPublicAccessConfig('project')).toEqual({ actions: ['read'] });
       expect(publicHierarchy.getPublicAccessConfig('task')).toEqual({
         inherits: 'project',
-        actions: ['read', 'search'],
+        actions: ['read'],
       });
       expect(publicHierarchy.getPublicAccessConfig('attachment')).toBeUndefined();
     });
@@ -268,7 +268,7 @@ describe('EntityHierarchyBuilder', () => {
 
     it('getProductConfig includes publicAccess', () => {
       const taskConfig = publicHierarchy.getProductConfig('task');
-      expect(taskConfig?.publicAccess).toEqual({ inherits: 'project', actions: ['read', 'search'] });
+      expect(taskConfig?.publicAccess).toEqual({ inherits: 'project', actions: ['read'] });
 
       const attachmentConfig = publicHierarchy.getProductConfig('attachment');
       expect(attachmentConfig?.publicAccess).toBeUndefined();

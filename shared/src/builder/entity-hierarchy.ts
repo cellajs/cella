@@ -1,6 +1,6 @@
 /** Entity hierarchy builder with compile-time validation, parent inheritance, and public access config. */
 
-export type PublicAction = 'read' | 'search';
+export type PublicAction = 'read';
 
 /** Context entities that can be set public. */
 export interface PublicAccessSource {

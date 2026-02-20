@@ -893,7 +893,7 @@
           },
           "offset": { "type": "string", "required": false },
           "limit": { "type": "string", "required": false },
-          "userId": {
+          "relatableUserId": {
             "type": "string",
             "required": false,
             "maxLength": 50

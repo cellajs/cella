@@ -1,11 +1,13 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { and, count, eq, ilike, or, sql } from 'drizzle-orm';
+import { and, count, eq, exists, ilike, inArray, or, sql } from 'drizzle-orm';
+import { appConfig } from 'shared';
 import { lastSeenTable } from '#/db/schema/last-seen';
+import { membershipsTable } from '#/db/schema/memberships';
 import { systemRolesTable } from '#/db/schema/system-roles';
 import { usersTable } from '#/db/schema/users';
 import { type Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
-import { userSelect } from '#/modules/user/helpers/select';
+import { memberSelect } from '#/modules/user/helpers/select';
 import userRoutes from '#/modules/user/user-routes';
 import { defaultHook } from '#/utils/default-hook';
 import { getOrderColumn } from '#/utils/order-column';
@@ -16,15 +18,34 @@ const app = new OpenAPIHono<Env>({ defaultHook });
 const userRouteHandlers = app
   /**
    * Get list of users (cross-tenant).
-   * Users table has no RLS — all authenticated users can list users.
-   * No memberships join; memberships are fetched separately when needed.
+   * Non-admin users only see users who share at least one organization.
    */
   .openapi(userRoutes.getUsers, async (ctx) => {
     const { q, sort, order, offset, limit, role } = ctx.req.valid('query');
 
     const db = ctx.var.db;
+    const userSystemRole = ctx.var.userSystemRole;
+    const memberships = ctx.var.memberships;
+    const isSystemAdmin = userSystemRole === 'admin';
+
+    // Non-admins: only see users who share at least one organization
+    const myOrgIds = [...new Set(memberships.map((m) => m.organizationId))];
+    const relatableFilter =
+      !isSystemAdmin && myOrgIds.length > 0
+        ? [
+            exists(
+              db
+                .select({ id: membershipsTable.id })
+                .from(membershipsTable)
+                .where(
+                  and(eq(membershipsTable.userId, usersTable.id), inArray(membershipsTable.organizationId, myOrgIds)),
+                ),
+            ),
+          ]
+        : [];
 
     const filters = [
+      ...relatableFilter,
       ...(role ? [eq(systemRolesTable.role, role)] : []),
       ...(q
         ? [
@@ -45,7 +66,7 @@ const userRouteHandlers = app
       role: systemRolesTable.role,
     });
 
-    const usersQuerySelect = { ...userSelect, role: systemRolesTable.role };
+    const usersQuerySelect = { ...memberSelect, role: systemRolesTable.role };
 
     const usersQuery = db
       .select(usersQuerySelect)
@@ -55,7 +76,10 @@ const userRouteHandlers = app
       .orderBy(orderColumn);
 
     const [{ total }] = await db.select({ total: count() }).from(usersQuery.as('users'));
-    const users = await usersQuery.limit(limit).offset(offset);
+    const result = await usersQuery.limit(limit).offset(offset);
+
+    // Return safe defaults for fields omitted by memberSelect
+    const users = result.map((u) => ({ ...u, newsletter: false, userFlags: appConfig.defaultUserFlags }));
 
     return ctx.json({ items: users, total }, 200);
   })
@@ -63,24 +87,50 @@ const userRouteHandlers = app
    * Get a user by id (cross-tenant). Pass ?slug=true to resolve by slug.
    */
   .openapi(userRoutes.getUser, async (ctx) => {
-    const { userId } = ctx.req.valid('param');
+    const { relatableUserId } = ctx.req.valid('param');
     const { slug: bySlug } = ctx.req.valid('query');
     const requestingUser = ctx.var.user;
     const db = ctx.var.db;
 
-    // Check if requesting self (by id or slug)
-    if (userId === requestingUser.id || (bySlug && userId === requestingUser.slug)) {
-      const [self] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, requestingUser.id)).limit(1);
-      return ctx.json(self, 200);
-    }
+    const userCondition = bySlug ? eq(usersTable.slug, relatableUserId) : eq(usersTable.id, relatableUserId);
 
-    // Resolve user by ID or slug (users table has no RLS)
-    const userCondition = bySlug ? eq(usersTable.slug, userId) : eq(usersTable.id, userId);
-    const [targetUser] = await db.select(userSelect).from(usersTable).where(userCondition).limit(1);
+    // Check if requesting self (by id or slug) — skip relatable filter
+    const isSelf = relatableUserId === requestingUser.id || (bySlug && relatableUserId === requestingUser.slug);
 
-    if (!targetUser) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { user: userId } });
+    // Defense in depth: verify shared org membership at query level (mirrors relatableGuard)
+    const userSystemRole = ctx.var.userSystemRole;
+    const isSystemAdmin = userSystemRole === 'admin';
+    const memberships = ctx.var.memberships;
+    const myOrgIds = [...new Set(memberships.map((m) => m.organizationId))];
 
-    return ctx.json(targetUser, 200);
+    const filters = [
+      userCondition,
+      ...(!isSelf && !isSystemAdmin && myOrgIds.length > 0
+        ? [
+            exists(
+              db
+                .select({ id: membershipsTable.id })
+                .from(membershipsTable)
+                .where(
+                  and(eq(membershipsTable.userId, usersTable.id), inArray(membershipsTable.organizationId, myOrgIds)),
+                ),
+            ),
+          ]
+        : []),
+    ];
+
+    // Use memberSelect for all lookups (omits newsletter, userFlags)
+    const [targetUser] = await db
+      .select(memberSelect)
+      .from(usersTable)
+      .where(and(...filters))
+      .limit(1);
+
+    if (!targetUser)
+      throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { user: relatableUserId } });
+
+    // Return with safe defaults for fields omitted by memberSelect
+    return ctx.json({ ...targetUser, newsletter: false, userFlags: appConfig.defaultUserFlags }, 200);
   });
 
 export default userRouteHandlers;

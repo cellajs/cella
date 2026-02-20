@@ -1,5 +1,5 @@
 import { createXRoute } from '#/docs/x-routes';
-import { authGuard, crossTenantGuard, tenantGuard } from '#/middlewares/guard';
+import { authGuard, crossTenantGuard, relatableGuard, tenantGuard } from '#/middlewares/guard';
 import {
   organizationCreateBodySchema,
   organizationListQuerySchema,
@@ -62,7 +62,7 @@ const organizationRoutes = {
     operationId: 'getOrganizations',
     method: 'get',
     path: '/organizations',
-    xGuard: [authGuard, crossTenantGuard],
+    xGuard: [authGuard, crossTenantGuard, relatableGuard],
     tags: ['organizations'],
     summary: 'Get list of organizations',
     description: 'Returns a list of *organizations*.',

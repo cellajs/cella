@@ -12,23 +12,35 @@
       {
         "key": "x-guard",
         "id": "xGuard",
-        "translationKey": "common:docs.guard",
         "description": "Authorization middleware applied to the endpoint",
         "required": true,
         "values": {
           "publicGuard": {
+            "name": "public",
             "description": "No authentication required"
           },
           "authGuard": {
+            "name": "auth",
             "description": "Requires valid session"
           },
           "crossTenantGuard": {
+            "name": "crossTenant",
             "description": "Wraps handler in user RLS context for cross-tenant access"
           },
+          "orgGuard": {
+            "name": "org",
+            "description": "Validates organization membership within tenant context"
+          },
+          "relatableGuard": {
+            "name": "relatable",
+            "description": "Checks that the requesting user shares at least one organization with the target user"
+          },
           "sysAdminGuard": {
+            "name": "sysAdmin",
             "description": "Requires system admin + IP whitelist"
           },
           "tenantGuard": {
+            "name": "tenant",
             "description": "Validates tenant access and wraps handler in RLS-enabled transaction"
           }
         }
@@ -36,29 +48,35 @@
       {
         "key": "x-rate-limiter",
         "id": "xRateLimiter",
-        "translationKey": "common:docs.rate_limiter",
         "description": "Rate limiting rules applied to the endpoint",
         "required": false,
         "values": {
           "spamLimiter": {
+            "name": "spam",
             "description": "Max 10 requests/hour per IP for email-sending endpoints"
           },
           "emailEnumLimiter": {
+            "name": "emailEnum",
             "description": "Blocks IP for 30 min after 10 consecutive failures"
           },
           "passwordLimiter": {
+            "name": "password",
             "description": "Blocks email/IP for 30 min after 10 consecutive failures"
           },
           "presignedUrlLimiter": {
+            "name": "presignedUrl",
             "description": "Max 2000 requests/hour per user/IP for presigned URLs"
           },
           "totpVerificationLimiter": {
+            "name": "totpVerification",
             "description": "Blocks for 30 min after 5 failed TOTP attempts"
           },
           "passkeyChallengeLimiter": {
+            "name": "passkeyChallenge",
             "description": "Max 5 passkey challenges/hour per IP"
           },
           "tokenLimiter": {
+            "name": "token",
             "description": "Blocks IP for 30 min after 10 consecutive token failures"
           }
         }
@@ -66,14 +84,15 @@
       {
         "key": "x-cache",
         "id": "xCache",
-        "translationKey": "common:docs.cache",
         "description": "Caching strategy applied to the endpoint",
         "required": false,
         "values": {
           "appCache": {
+            "name": "app",
             "description": "TTL cache with session-signed token validation"
           },
           "publicCache": {
+            "name": "public",
             "description": "LRU cache for public page entities"
           }
         }
@@ -8133,7 +8152,8 @@
         "description": "Returns a list of *organizations*.",
         "x-guard": [
           "authGuard",
-          "crossTenantGuard"
+          "crossTenantGuard",
+          "relatableGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -8196,7 +8216,7 @@
               "maxLength": 50
             },
             "required": false,
-            "name": "userId",
+            "name": "relatableUserId",
             "in": "query"
           },
           {
@@ -9822,7 +9842,7 @@
         }
       }
     },
-    "/users/{userId}": {
+    "/users/{relatableUserId}": {
       "get": {
         "security": [
           {
@@ -9834,10 +9854,11 @@
           "users"
         ],
         "summary": "Get user",
-        "description": "Retrieves a *user* by ID. The requesting user must share at least one context entity membership. Pass `?slug=true` to resolve by slug instead.",
+        "description": "Retrieves a *user* by ID. The requesting user must share at least one organization membership. Pass `?slug=true` to resolve by slug instead.",
         "x-guard": [
           "authGuard",
-          "crossTenantGuard"
+          "crossTenantGuard",
+          "relatableGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -9848,7 +9869,7 @@
               "maxLength": 50
             },
             "required": true,
-            "name": "userId",
+            "name": "relatableUserId",
             "in": "path"
           },
           {

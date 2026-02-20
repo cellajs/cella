@@ -1229,7 +1229,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["authGuard", "crossTenantGuard"],
+      "xGuard": ["authGuard", "crossTenantGuard", "relatableGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -1388,19 +1388,19 @@
   },
   {
     "id": "getUser",
-    "hash": "tag/users/GET/users/{userId}",
+    "hash": "tag/users/GET/users/{relatableUserId}",
     "method": "get",
-    "path": "/users/{userId}",
+    "path": "/users/{relatableUserId}",
     "tags": ["users"],
     "summary": "Get user",
-    "description": "Retrieves a *user* by ID. The requesting user must share at least one context entity membership. Pass `?slug=true` to resolve by slug instead.",
+    "description": "Retrieves a *user* by ID. The requesting user must share at least one organization membership. Pass `?slug=true` to resolve by slug instead.",
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["authGuard", "crossTenantGuard"],
+      "xGuard": ["authGuard", "crossTenantGuard", "relatableGuard"],
       "xRateLimiter": [],
       "xCache": []
     }

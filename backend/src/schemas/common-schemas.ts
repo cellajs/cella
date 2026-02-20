@@ -111,9 +111,9 @@ export const userIdInTenantOrgParamSchema = z.object({
   userId: validIdSchema,
 });
 
-/** Schema for user id param (cross-tenant getUser route) */
-export const userIdParamSchema = z.object({
-  userId: validIdSchema,
+/** Schema for relatable user id param (cross-tenant routes with relatability check) */
+export const relatableUserIdParamSchema = z.object({
+  relatableUserId: validIdSchema,
 });
 
 /*************************************************************************************************

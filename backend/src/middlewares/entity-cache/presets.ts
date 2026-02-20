@@ -33,8 +33,12 @@ import { publicEntityCache } from './public-entity-cache';
  */
 export const publicCache = (entityType: ProductEntityType, idParam = 'id'): MiddlewareHandler<Env> =>
   xMiddleware(
-    'publicCache',
-    'x-cache',
+    {
+      functionName: 'publicCache',
+      type: 'x-cache',
+      name: 'public',
+      description: `LRU cache for public ${entityType} entities`,
+    },
     async (ctx, next) => {
       // Extract entity ID from route params
       const entityId = ctx.req.param(idParam);
@@ -67,7 +71,6 @@ export const publicCache = (entityType: ProductEntityType, idParam = 'id'): Midd
         ctx.header('X-Cache', 'MISS');
       }
     },
-    `LRU cache for public ${entityType} entities`,
   );
 
 /**
@@ -83,8 +86,12 @@ export const publicCache = (entityType: ProductEntityType, idParam = 'id'): Midd
  */
 export const appCache = (): MiddlewareHandler<Env> =>
   xMiddleware(
-    'appCache',
-    'x-cache',
+    {
+      functionName: 'appCache',
+      type: 'x-cache',
+      name: 'app',
+      description: 'TTL cache with session-signed token validation',
+    },
     async (ctx, next) => {
       const signedToken = ctx.req.header('X-Cache-Token');
       const sessionToken = ctx.get('sessionToken');
@@ -142,5 +149,4 @@ export const appCache = (): MiddlewareHandler<Env> =>
         entityCache.set(baseToken, entityData);
       }
     },
-    'TTL cache with session-signed token validation',
   );

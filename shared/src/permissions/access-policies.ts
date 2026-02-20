@@ -53,8 +53,8 @@ const createContextBuilders = (entries: AccessPolicyEntry[]): Record<ContextEnti
  * const policies = configureAccessPolicies(entityTypes, ({ subject, contexts }) => {
  *   switch (subject.name) {
  *     case 'organization':
- *       contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1, search: 1 });
- *       contexts.organization.member({ create: 0, read: 1, update: 0, delete: 0, search: 1 });
+ *       contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
+ *       contexts.organization.member({ create: 0, read: 1, update: 0, delete: 0 });
  *       break;
  *   }
  * });

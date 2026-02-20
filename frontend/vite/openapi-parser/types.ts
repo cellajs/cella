@@ -49,7 +49,6 @@ export type OpenApiSpec = {
     'x-extensions'?: Array<{
       key: string;
       id: string;
-      translationKey: string;
       description: string;
     }>;
   };

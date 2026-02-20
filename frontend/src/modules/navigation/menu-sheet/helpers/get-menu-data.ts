@@ -26,7 +26,7 @@ export async function getMenuData(opts?: { detailedMenu?: boolean }) {
     appConfig.contextEntityTypes.map(async (entityType) => {
       const factory = getContextEntityTypeToListQueries()[entityType];
       if (!factory) return;
-      const queryOpts = factory({ userId });
+      const queryOpts = factory({ relatableUserId: userId });
       await queryClient.ensureInfiniteQueryData({ ...queryOpts, revalidateIfStale: true } as any);
     }),
   );

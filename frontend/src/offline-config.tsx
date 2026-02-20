@@ -22,7 +22,7 @@ import { organizationsListQueryOptions } from '~/modules/organization/query';
  *   }) satisfies ContextEntityQueryRegistry;
  * ```
  */
-export type ContextEntityQueryFactory = (params: { userId: string }) => {
+export type ContextEntityQueryFactory = (params: { relatableUserId: string }) => {
   queryKey: readonly unknown[];
 };
 

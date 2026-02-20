@@ -32,7 +32,7 @@ export interface BatchPermissionResult {
  * Accepts a single entity or array of entities.
  *
  * @param memberships - User's memberships to check against
- * @param action - The action to check (create, read, update, delete, search)
+ * @param action - The action to check (create, read, update, delete)
  * @param entityOrEntities - Single entity or array of entities to check
  * @param options - Optional settings (e.g., systemRole for admin bypass)
  * @returns Single entity: `PermissionResult` with `{ allowed, membership, can }`
