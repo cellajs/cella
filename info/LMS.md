@@ -87,6 +87,370 @@ backend/src/lib/lms/
 
 The architecture follows Option C+E: Abstract Base + Request Builder Separation.
 
+### Configuration Types
+
+All configuration interfaces for controlling scheduler, throttling, retries, and error handling.
+
+#### Scheduler Configuration
+
+```typescript
+interface SchedulerConfig {
+  /** Concurrency configuration */
+  concurrency?: ConcurrencyConfig
+  /** Throttling/rate limit configuration */
+  throttling?: ThrottlingConfig
+  /** Retry configuration for failed requests */
+  retry?: RetryConfig
+}
+
+interface ConcurrencyConfig {
+  /**
+   * Maximum concurrent requests to the LMS instance (default: 10)
+   * This is shared across ALL users/clients hitting this LMS.
+   */
+  maxConcurrent?: number
+  /**
+   * Maximum queue size before rejecting new requests (default: 1000)
+   */
+  maxQueueSize?: number
+  /**
+   * Timeout for waiting in queue in ms (default: 60000)
+   * If a request waits longer than this, it's rejected.
+   */
+  queueTimeout?: number
+}
+```
+
+#### Throttling Configuration
+
+Canvas uses a cost-based rate limiting system:
+- `X-Request-Cost`: The cost of the request (typically 1, bulk operations cost more)
+- `X-Rate-Limit-Remaining`: Remaining budget before throttling kicks in
+- **429 Too Many Requests**: Returned when rate limit exceeded
+
+```typescript
+interface ThrottlingConfig {
+  /**
+   * What to do when a 429 is received.
+   * - 'retry': Wait and retry (default)
+   * - 'error': Throw immediately
+   */
+  onThrottled?: 'retry' | 'error'
+
+  /**
+   * Maximum number of retries when throttled (default: 5)
+   */
+  maxThrottleRetries?: number
+
+  /**
+   * Initial delay in ms before first retry after 429 (default: 1000)
+   * Subsequent retries use exponential backoff.
+   */
+  initialDelayMs?: number
+
+  /**
+   * Maximum delay between throttle retries in ms (default: 60000)
+   */
+  maxDelayMs?: number
+
+  /**
+   * Backoff multiplier for exponential backoff (default: 2)
+   */
+  backoffMultiplier?: number
+
+  /**
+   * Add random jitter to backoff delays to prevent thundering herd (default: true)
+   */
+  jitter?: boolean
+
+  /**
+   * Proactive throttling: start delaying requests when remaining budget
+   * falls below this threshold (default: 50)
+   */
+  lowBudgetThreshold?: number
+
+  /**
+   * Delay to add when budget is low in ms (default: 100)
+   */
+  lowBudgetDelayMs?: number
+}
+```
+
+#### Retry Configuration
+
+For handling transient failures (network issues, 5xx errors, timeouts).
+
+```typescript
+interface RetryConfig {
+  /**
+   * Maximum retry attempts for transient failures (default: 3)
+   * Set to 0 to disable retries.
+   */
+  maxRetries?: number
+
+  /**
+   * Initial delay before first retry in ms (default: 500)
+   */
+  initialDelayMs?: number
+
+  /**
+   * Maximum delay between retries in ms (default: 10000)
+   */
+  maxDelayMs?: number
+
+  /**
+   * Backoff multiplier (default: 2)
+   */
+  backoffMultiplier?: number
+
+  /**
+   * Which HTTP status codes should trigger a retry (default: [408, 500, 502, 503, 504])
+   * 429 is handled separately by throttling config.
+   */
+  retryableStatusCodes?: number[]
+
+  /**
+   * Whether to retry on network errors (ECONNRESET, ETIMEDOUT, etc.) (default: true)
+   */
+  retryOnNetworkError?: boolean
+
+  /**
+   * Whether to retry on timeout (default: true)
+   */
+  retryOnTimeout?: boolean
+}
+```
+
+#### Multi-Operation Error Strategy
+
+Unified error handling for pagination, batch GET/POST/PUT/DELETE operations.
+
+```typescript
+interface MultiOperationConfig {
+  /**
+   * How to handle errors during multi-request operations.
+   * Applies to: pagination, batch GET/POST/PUT/DELETE
+   */
+  onError?: MultiOperationErrorStrategy
+
+  /**
+   * Maximum errors to collect before stopping (only for 'collect' strategy)
+   * Default: 10
+   */
+  maxCollectedErrors?: number
+
+  /**
+   * Callback for each error (useful for logging/monitoring)
+   */
+  onEachError?: (error: LmsOperationError, context: OperationContext) => void
+}
+
+type MultiOperationErrorStrategy =
+  /** Stop immediately and throw the error (default) */
+  | 'stop'
+  /** Collect errors and continue, return results + errors at end */
+  | 'collect'
+  /** Skip failed operations and continue, log warning */
+  | 'skip'
+
+interface OperationContext {
+  /** Type of operation */
+  operationType: 'pagination' | 'batch-get' | 'batch-post' | 'batch-put' | 'batch-delete'
+  /** Index in batch (for batch ops) or page number (for pagination) */
+  index: number
+  /** Total operations expected (if known) */
+  total?: number
+  /** The request that failed */
+  request: { method: string; path: string; body?: unknown }
+}
+
+/** Result for any multi-operation request */
+interface MultiOperationResult<T> {
+  /** Successfully completed items */
+  data: T[]
+  /** Errors encountered (populated when strategy is 'collect') */
+  errors: LmsOperationError[]
+  /** Whether all operations completed successfully */
+  complete: boolean
+  /** Statistics */
+  stats: {
+    total: number
+    succeeded: number
+    failed: number
+    skipped: number
+  }
+}
+```
+
+#### HTTP Client Configuration
+
+```typescript
+interface HttpClientConfig {
+  /** Base URL of the LMS API (e.g., https://institution.instructure.com) */
+  baseUrl: string
+
+  /** OAuth2 access token for this user */
+  accessToken: string
+
+  /** OAuth2 refresh token for automatic token renewal */
+  refreshToken?: string
+
+  /** Callback when tokens are refreshed - use to persist new tokens */
+  onTokenRefresh?: (newTokens: TokenPair) => Promise<void>
+
+  /** Multi-operation error strategy (for pagination AND batching) */
+  multiOperationStrategy?: MultiOperationConfig
+
+  /** Request timeout in milliseconds (default: 30000) */
+  timeout?: number
+
+  /** Pagination settings */
+  pagination?: PaginationConfig
+}
+
+interface PaginationConfig {
+  /**
+   * Default items per page (default: 100, Canvas allows higher than default 10)
+   */
+  defaultPerPage?: number
+
+  /**
+   * Maximum items per page to request (default: 100)
+   */
+  maxPerPage?: number
+}
+```
+
+#### Error Types
+
+```typescript
+/** Base LMS error */
+class LmsError extends Error {
+  constructor(
+    message: string,
+    public code: LmsErrorCode,
+    public statusCode?: number,
+    public provider?: LmsProviderType,
+    public retryable: boolean = false
+  ) {
+    super(message)
+    this.name = 'LmsError'
+  }
+}
+
+/** Error from a specific operation in a batch/pagination */
+class LmsOperationError extends LmsError {
+  constructor(
+    message: string,
+    code: LmsErrorCode,
+    public context: OperationContext,
+    statusCode?: number
+  ) {
+    super(message, code, statusCode)
+    this.name = 'LmsOperationError'
+  }
+}
+
+/** Thrown when rate limit exceeded and all retries exhausted */
+class LmsThrottleError extends LmsError {
+  constructor(message: string, public retryAfterMs?: number) {
+    super(message, 'RATE_LIMITED', 429, undefined, true)
+    this.name = 'LmsThrottleError'
+  }
+}
+
+/** Thrown on network failures */
+class LmsNetworkError extends LmsError {
+  constructor(message: string, public cause?: Error) {
+    super(message, 'NETWORK_ERROR', undefined, undefined, true)
+    this.name = 'LmsNetworkError'
+  }
+}
+
+/** Thrown on request timeout */
+class LmsTimeoutError extends LmsError {
+  constructor(message: string, public timeoutMs: number) {
+    super(message, 'TIMEOUT', undefined, undefined, true)
+    this.name = 'LmsTimeoutError'
+  }
+}
+
+/** Thrown when token refresh fails */
+class LmsTokenError extends LmsError {
+  constructor(message: string, public tokenErrorType: 'expired' | 'invalid' | 'refresh_failed') {
+    super(message, 'TOKEN_ERROR', 401, undefined, false)
+    this.name = 'LmsTokenError'
+  }
+}
+
+/** Thrown when queue is full or timeout waiting for slot */
+class LmsQueueError extends LmsError {
+  constructor(message: string, public queueSize: number) {
+    super(message, 'QUEUE_FULL', undefined, undefined, true)
+    this.name = 'LmsQueueError'
+  }
+}
+
+type LmsErrorCode =
+  | 'AUTHENTICATION_FAILED'
+  | 'TOKEN_ERROR'
+  | 'RATE_LIMITED'
+  | 'NOT_FOUND'
+  | 'FORBIDDEN'
+  | 'INVALID_REQUEST'
+  | 'PROVIDER_ERROR'
+  | 'NETWORK_ERROR'
+  | 'TIMEOUT'
+  | 'QUEUE_FULL'
+  | 'QUEUE_TIMEOUT'
+  | 'OPERATION_FAILED'
+```
+
+#### Default Configuration Values
+
+```typescript
+const DEFAULT_SCHEDULER_CONFIG: SchedulerConfig = {
+  concurrency: {
+    maxConcurrent: 10,
+    maxQueueSize: 1000,
+    queueTimeout: 60000,
+  },
+  throttling: {
+    onThrottled: 'retry',
+    maxThrottleRetries: 5,
+    initialDelayMs: 1000,
+    maxDelayMs: 60000,
+    backoffMultiplier: 2,
+    jitter: true,
+    lowBudgetThreshold: 50,
+    lowBudgetDelayMs: 100,
+  },
+  retry: {
+    maxRetries: 3,
+    initialDelayMs: 500,
+    maxDelayMs: 10000,
+    backoffMultiplier: 2,
+    retryableStatusCodes: [408, 500, 502, 503, 504],
+    retryOnNetworkError: true,
+    retryOnTimeout: true,
+  },
+}
+
+const DEFAULT_CLIENT_CONFIG = {
+  timeout: 30000,
+  multiOperationStrategy: {
+    onError: 'stop' as const,
+    maxCollectedErrors: 10,
+  },
+  pagination: {
+    defaultPerPage: 100,
+    maxPerPage: 100,
+  },
+}
+```
+
+---
+
 ### Layer 1: Request Scheduler (`request-scheduler.ts`)
 
 Global request queue shared per LMS base URL. Manages concurrency and throttle state across all users.
@@ -264,12 +628,54 @@ class CanvasHttpClient extends LmsHttpClientBase {
 
 Knows Canvas API endpoints, parameters, and body shapes. Pure functions, no HTTP logic.
 
+**Parameter pattern:** Single object with path params flat, `query`/`payload` as reserved nested keys.
+- Path params (courseId, assignmentId, etc.) at top level
+- `query` key for GET filter/pagination options
+- `payload` key for POST/PUT body data
+- Methods without options stay simple: `getUser({ userId })`
+
 ```typescript
 interface LmsRequest {
   method: 'GET' | 'POST' | 'PUT' | 'DELETE'
   path: string
-  params?: Record<string, string | string[]>
+  query?: Record<string, string | string[]>
   body?: unknown
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Query Types (nested under `query` key)
+// ═══════════════════════════════════════════════════════════════
+
+interface ListCoursesQuery {
+  enrollmentType?: 'teacher' | 'student' | 'ta' | 'observer' | 'designer'
+  enrollmentState?: 'active' | 'invited_or_pending' | 'completed'
+  state?: ('unpublished' | 'available' | 'completed' | 'deleted')[]
+  include?: ('total_students' | 'teachers' | 'term' | 'course_image')[]
+  perPage?: number
+}
+
+interface GetCourseQuery {
+  include?: ('total_students' | 'teachers' | 'term' | 'course_image' | 'syllabus_body')[]
+}
+
+interface ListUsersQuery {
+  enrollmentType?: ('teacher' | 'student' | 'ta' | 'observer')[]
+  include?: ('email' | 'enrollments' | 'avatar_url')[]
+  perPage?: number
+}
+
+interface ListAssignmentsQuery {
+  include?: ('submission' | 'all_dates' | 'overrides')[]
+  searchTerm?: string
+  orderBy?: 'position' | 'name' | 'due_at'
+  perPage?: number
+}
+
+interface ListEnrollmentsQuery {
+  type?: ('StudentEnrollment' | 'TeacherEnrollment' | 'TaEnrollment')[]
+  state?: ('active' | 'invited' | 'completed')[]
+  include?: ('avatar_url' | 'group_ids')[]
+  perPage?: number
 }
 
 class CanvasRequestBuilder {
@@ -277,19 +683,19 @@ class CanvasRequestBuilder {
   // Courses
   // ═══════════════════════════════════════════════════════════════
 
-  getCourse(courseId: string, options?: { include?: CanvasCourseInclude[] }): LmsRequest {
+  getCourse({ courseId, query }: { courseId: string; query?: GetCourseQuery }): LmsRequest {
     return {
       method: 'GET',
       path: `/api/v1/courses/${courseId}`,
-      params: options?.include ? { 'include[]': options.include } : undefined,
+      query: this.toQueryParams(query),
     }
   }
 
-  listCourses(options?: CanvasListCoursesOptions): LmsRequest {
+  listCourses({ query }: { query?: ListCoursesQuery } = {}): LmsRequest {
     return {
       method: 'GET',
       path: '/api/v1/courses',
-      params: this.buildListCoursesParams(options),
+      query: this.toQueryParams(query),
     }
   }
 
@@ -297,18 +703,18 @@ class CanvasRequestBuilder {
   // Users
   // ═══════════════════════════════════════════════════════════════
 
-  listCourseUsers(courseId: string, options?: CanvasListUsersOptions): LmsRequest {
-    return {
-      method: 'GET',
-      path: `/api/v1/courses/${courseId}/users`,
-      params: this.buildListUsersParams(options),
-    }
-  }
-
-  getUser(userId: string): LmsRequest {
+  getUser({ userId }: { userId: string }): LmsRequest {
     return {
       method: 'GET',
       path: `/api/v1/users/${userId}`,
+    }
+  }
+
+  listCourseUsers({ courseId, query }: { courseId: string; query?: ListUsersQuery }): LmsRequest {
+    return {
+      method: 'GET',
+      path: `/api/v1/courses/${courseId}/users`,
+      query: this.toQueryParams(query),
     }
   }
 
@@ -316,38 +722,38 @@ class CanvasRequestBuilder {
   // Assignments
   // ═══════════════════════════════════════════════════════════════
 
-  listAssignments(courseId: string, options?: CanvasListAssignmentsOptions): LmsRequest {
-    return {
-      method: 'GET',
-      path: `/api/v1/courses/${courseId}/assignments`,
-      params: options,
-    }
-  }
-
-  getAssignment(courseId: string, assignmentId: string): LmsRequest {
+  getAssignment({ courseId, assignmentId }: { courseId: string; assignmentId: string }): LmsRequest {
     return {
       method: 'GET',
       path: `/api/v1/courses/${courseId}/assignments/${assignmentId}`,
     }
   }
 
-  createAssignment(courseId: string, data: CanvasCreateAssignmentInput): LmsRequest {
+  listAssignments({ courseId, query }: { courseId: string; query?: ListAssignmentsQuery }): LmsRequest {
+    return {
+      method: 'GET',
+      path: `/api/v1/courses/${courseId}/assignments`,
+      query: this.toQueryParams(query),
+    }
+  }
+
+  createAssignment({ courseId, payload }: { courseId: string; payload: CanvasCreateAssignmentInput }): LmsRequest {
     return {
       method: 'POST',
       path: `/api/v1/courses/${courseId}/assignments`,
-      body: { assignment: data },
+      body: { assignment: payload },
     }
   }
 
-  updateAssignment(courseId: string, assignmentId: string, data: CanvasUpdateAssignmentInput): LmsRequest {
+  updateAssignment({ courseId, assignmentId, payload }: { courseId: string; assignmentId: string; payload: CanvasUpdateAssignmentInput }): LmsRequest {
     return {
       method: 'PUT',
       path: `/api/v1/courses/${courseId}/assignments/${assignmentId}`,
-      body: { assignment: data },
+      body: { assignment: payload },
     }
   }
 
-  deleteAssignment(courseId: string, assignmentId: string): LmsRequest {
+  deleteAssignment({ courseId, assignmentId }: { courseId: string; assignmentId: string }): LmsRequest {
     return {
       method: 'DELETE',
       path: `/api/v1/courses/${courseId}/assignments/${assignmentId}`,
@@ -358,66 +764,116 @@ class CanvasRequestBuilder {
   // Submissions
   // ═══════════════════════════════════════════════════════════════
 
-  listSubmissions(courseId: string, assignmentId: string): LmsRequest {
+  getSubmission({ courseId, assignmentId, userId }: { courseId: string; assignmentId: string; userId: string }): LmsRequest {
+    return {
+      method: 'GET',
+      path: `/api/v1/courses/${courseId}/assignments/${assignmentId}/submissions/${userId}`,
+    }
+  }
+
+  listSubmissions({ courseId, assignmentId }: { courseId: string; assignmentId: string }): LmsRequest {
     return {
       method: 'GET',
       path: `/api/v1/courses/${courseId}/assignments/${assignmentId}/submissions`,
     }
   }
 
-  getSubmission(courseId: string, assignmentId: string, userId: string): LmsRequest {
-    return {
-      method: 'GET',
-      path: `/api/v1/courses/${courseId}/assignments/${assignmentId}/submissions/${userId}`,
-    }
-  }
-
-  gradeSubmission(courseId: string, assignmentId: string, userId: string, data: CanvasGradeInput): LmsRequest {
+  gradeSubmission({ courseId, assignmentId, userId, payload }: { courseId: string; assignmentId: string; userId: string; payload: CanvasGradeInput }): LmsRequest {
     return {
       method: 'PUT',
       path: `/api/v1/courses/${courseId}/assignments/${assignmentId}/submissions/${userId}`,
-      body: { submission: data },
+      body: { submission: payload },
     }
   }
 
   // ═══════════════════════════════════════════════════════════════
-  // Canvas-specific endpoints
+  // Canvas-specific endpoints (Modules, Enrollments)
   // ═══════════════════════════════════════════════════════════════
 
-  listModules(courseId: string): LmsRequest {
+  listModules({ courseId }: { courseId: string }): LmsRequest {
     return {
       method: 'GET',
       path: `/api/v1/courses/${courseId}/modules`,
     }
   }
 
-  listModuleItems(courseId: string, moduleId: string): LmsRequest {
+  listModuleItems({ courseId, moduleId }: { courseId: string; moduleId: string }): LmsRequest {
     return {
       method: 'GET',
       path: `/api/v1/courses/${courseId}/modules/${moduleId}/items`,
     }
   }
 
-  listEnrollments(courseId: string, options?: CanvasListEnrollmentsOptions): LmsRequest {
+  listEnrollments({ courseId, query }: { courseId: string; query?: ListEnrollmentsQuery }): LmsRequest {
     return {
       method: 'GET',
       path: `/api/v1/courses/${courseId}/enrollments`,
-      params: options,
+      query: this.toQueryParams(query),
     }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // Helpers
+  // ═══════════════════════════════════════════════════════════════
+
+  private toQueryParams(query?: Record<string, unknown>): Record<string, string | string[]> | undefined {
+    if (!query) return undefined
+    
+    const result: Record<string, string | string[]> = {}
+    for (const [key, value] of Object.entries(query)) {
+      if (value === undefined) continue
+      
+      // Convert camelCase to snake_case for Canvas API
+      const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`)
+      
+      // Handle arrays (Canvas uses param[] syntax)
+      if (Array.isArray(value)) {
+        result[`${snakeKey}[]`] = value.map(String)
+      } else {
+        result[snakeKey] = String(value)
+      }
+    }
+    return Object.keys(result).length > 0 ? result : undefined
   }
 }
 ```
 
-**Benefits of separation:**
-- Request builder can be unit tested without any HTTP mocking
-- Easy to see all supported endpoints in one place
-- Could be auto-generated from OpenAPI specs
+**Usage examples:**
+```typescript
+// Simple - just path params
+builder.getUser({ userId: '123' })
+builder.getAssignment({ courseId: '1', assignmentId: '42' })
+builder.deleteAssignment({ courseId: '1', assignmentId: '42' })
+
+// With query options
+builder.getCourse({ courseId: '123', query: { include: ['teachers', 'term'] } })
+builder.listCourses({ query: { enrollmentType: 'teacher', perPage: 50 } })
+builder.listAssignments({ courseId: '1', query: { orderBy: 'due_at' } })
+
+// With payload (POST/PUT)
+builder.createAssignment({ courseId: '1', payload: { name: 'Quiz 1', points_possible: 100 } })
+builder.updateAssignment({ courseId: '1', assignmentId: '42', payload: { name: 'Updated Quiz' } })
+builder.gradeSubmission({ courseId: '1', assignmentId: '42', userId: '999', payload: { posted_grade: 'A' } })
+
+// Easy to spread options
+const defaults = { perPage: 100, include: ['email'] }
+builder.listCourseUsers({ courseId: '1', query: { ...defaults, enrollmentType: ['student'] } })
+```
+
+**Benefits:**
+- **One param:** Always just one object to pass
+- **Clear separation:** Path params at top, `query`/`payload` nested
+- **Simple calls stay simple:** `getUser({ userId })` - no empty objects
+- **Easy spreading:** Merge query options naturally
+- **Type-safe:** TypeScript enforces required vs optional fields
 
 ---
 
 ### Layer 5: Canvas API (`canvas/api.ts`)
 
 Combines Request Builder + HTTP Client. This is what users interact with for raw Canvas data.
+
+The public API mirrors the builder's single-param pattern for consistency.
 
 ```typescript
 class CanvasApi {
@@ -430,13 +886,13 @@ class CanvasApi {
   // Courses
   // ═══════════════════════════════════════════════════════════════
 
-  async getCourse(courseId: string, options?: { include?: CanvasCourseInclude[] }): Promise<CanvasCourse> {
-    const request = this.builder.getCourse(courseId, options)
+  async getCourse({ courseId, query }: { courseId: string; query?: GetCourseQuery }): Promise<CanvasCourse> {
+    const request = this.builder.getCourse({ courseId, query })
     return this.http.execute(request)
   }
 
-  async *listCourses(options?: CanvasListCoursesOptions): AsyncGenerator<CanvasCourse> {
-    const request = this.builder.listCourses(options)
+  async *listCourses({ query }: { query?: ListCoursesQuery } = {}): AsyncGenerator<CanvasCourse> {
+    const request = this.builder.listCourses({ query })
     yield* this.http.executePaginated(request)
   }
 
@@ -444,58 +900,107 @@ class CanvasApi {
   // Users
   // ═══════════════════════════════════════════════════════════════
 
-  async *listCourseUsers(courseId: string, options?: CanvasListUsersOptions): AsyncGenerator<CanvasUser> {
-    const request = this.builder.listCourseUsers(courseId, options)
-    yield* this.http.executePaginated(request)
+  async getUser({ userId }: { userId: string }): Promise<CanvasUser> {
+    const request = this.builder.getUser({ userId })
+    return this.http.execute(request)
   }
 
-  async getUser(userId: string): Promise<CanvasUser> {
-    const request = this.builder.getUser(userId)
-    return this.http.execute(request)
+  async *listCourseUsers({ courseId, query }: { courseId: string; query?: ListUsersQuery }): AsyncGenerator<CanvasUser> {
+    const request = this.builder.listCourseUsers({ courseId, query })
+    yield* this.http.executePaginated(request)
   }
 
   // ═══════════════════════════════════════════════════════════════
   // Assignments
   // ═══════════════════════════════════════════════════════════════
 
-  async *listAssignments(courseId: string, options?: CanvasListAssignmentsOptions): AsyncGenerator<CanvasAssignment> {
-    const request = this.builder.listAssignments(courseId, options)
+  async getAssignment({ courseId, assignmentId }: { courseId: string; assignmentId: string }): Promise<CanvasAssignment> {
+    const request = this.builder.getAssignment({ courseId, assignmentId })
+    return this.http.execute(request)
+  }
+
+  async *listAssignments({ courseId, query }: { courseId: string; query?: ListAssignmentsQuery }): AsyncGenerator<CanvasAssignment> {
+    const request = this.builder.listAssignments({ courseId, query })
     yield* this.http.executePaginated(request)
   }
 
-  async getAssignment(courseId: string, assignmentId: string): Promise<CanvasAssignment> {
-    const request = this.builder.getAssignment(courseId, assignmentId)
+  async createAssignment({ courseId, payload }: { courseId: string; payload: CanvasCreateAssignmentInput }): Promise<CanvasAssignment> {
+    const request = this.builder.createAssignment({ courseId, payload })
     return this.http.execute(request)
   }
 
-  async createAssignment(courseId: string, data: CanvasCreateAssignmentInput): Promise<CanvasAssignment> {
-    const request = this.builder.createAssignment(courseId, data)
+  async updateAssignment({ courseId, assignmentId, payload }: { courseId: string; assignmentId: string; payload: CanvasUpdateAssignmentInput }): Promise<CanvasAssignment> {
+    const request = this.builder.updateAssignment({ courseId, assignmentId, payload })
     return this.http.execute(request)
   }
 
-  async updateAssignment(courseId: string, assignmentId: string, data: CanvasUpdateAssignmentInput): Promise<CanvasAssignment> {
-    const request = this.builder.updateAssignment(courseId, assignmentId, data)
-    return this.http.execute(request)
-  }
-
-  async deleteAssignment(courseId: string, assignmentId: string): Promise<void> {
-    const request = this.builder.deleteAssignment(courseId, assignmentId)
+  async deleteAssignment({ courseId, assignmentId }: { courseId: string; assignmentId: string }): Promise<void> {
+    const request = this.builder.deleteAssignment({ courseId, assignmentId })
     await this.http.execute(request)
   }
 
   // ═══════════════════════════════════════════════════════════════
-  // Batch operations
+  // Submissions
+  // ═══════════════════════════════════════════════════════════════
+
+  async getSubmission({ courseId, assignmentId, userId }: { courseId: string; assignmentId: string; userId: string }): Promise<CanvasSubmission> {
+    const request = this.builder.getSubmission({ courseId, assignmentId, userId })
+    return this.http.execute(request)
+  }
+
+  async *listSubmissions({ courseId, assignmentId }: { courseId: string; assignmentId: string }): AsyncGenerator<CanvasSubmission> {
+    const request = this.builder.listSubmissions({ courseId, assignmentId })
+    yield* this.http.executePaginated(request)
+  }
+
+  async gradeSubmission({ courseId, assignmentId, userId, payload }: { courseId: string; assignmentId: string; userId: string; payload: CanvasGradeInput }): Promise<CanvasSubmission> {
+    const request = this.builder.gradeSubmission({ courseId, assignmentId, userId, payload })
+    return this.http.execute(request)
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // Batch Operations
   // ═══════════════════════════════════════════════════════════════
 
   async batchUpdateAssignments(
-    updates: Array<{ courseId: string; assignmentId: string; data: CanvasUpdateAssignmentInput }>
+    updates: Array<{ courseId: string; assignmentId: string; payload: CanvasUpdateAssignmentInput }>
   ): Promise<MultiOperationResult<CanvasAssignment>> {
-    const requests = updates.map(u => this.builder.updateAssignment(u.courseId, u.assignmentId, u.data))
+    const requests = updates.map(u => this.builder.updateAssignment(u))
     return this.http.batchExecute(requests)
   }
 
-  // ... more batch methods
+  async batchGradeSubmissions(
+    grades: Array<{ courseId: string; assignmentId: string; userId: string; payload: CanvasGradeInput }>
+  ): Promise<MultiOperationResult<CanvasSubmission>> {
+    const requests = grades.map(g => this.builder.gradeSubmission(g))
+    return this.http.batchExecute(requests)
+  }
 }
+```
+
+**Usage examples:**
+```typescript
+const api = new CanvasApi(builder, httpClient)
+
+// Simple calls
+const user = await api.getUser({ userId: '123' })
+const assignment = await api.getAssignment({ courseId: '1', assignmentId: '42' })
+
+// With query options
+const course = await api.getCourse({ courseId: '123', query: { include: ['teachers'] } })
+for await (const user of api.listCourseUsers({ courseId: '1', query: { include: ['email'] } })) {
+  console.log(user.email)
+}
+
+// Mutations
+await api.createAssignment({ courseId: '1', payload: { name: 'Final Exam', points_possible: 100 } })
+await api.gradeSubmission({ courseId: '1', assignmentId: '42', userId: '999', payload: { posted_grade: 'A' } })
+
+// Batch operations - array items match the single-call signature
+const result = await api.batchUpdateAssignments([
+  { courseId: '1', assignmentId: '1', payload: { name: 'Quiz 1 (Updated)' } },
+  { courseId: '1', assignmentId: '2', payload: { name: 'Quiz 2 (Updated)' } },
+])
 ```
 
 ---
