@@ -110,3 +110,36 @@
   pointer-events: none;
   border-right: 2px solid var(--accent);
 }
+
+/* Drag handle cell styles */
+[data-dragging="true"] {
+  opacity: 0.5;
+}
+
+/* Row drag-and-drop styles for native HTML5 drag-and-drop
+ * Classes are applied to cells directly since rows use display:contents.
+ * We use :has() to style the entire row when any cell in it has the class.
+ */
+
+/* All cells in the row being dragged - semi-transparent */
+.rdg-row:has(.rdg-row-dragging) > .rdg-cell {
+  opacity: 0.4;
+  background-color: var(--rdg-row-selected-background-color);
+}
+
+/* Drop indicator - highlight entire row with a top border line */
+.rdg-row:has(.rdg-row-drag-over) > .rdg-cell {
+  background-color: oklch(from var(--primary) l c h / 0.08);
+}
+
+/* Show a prominent line indicator at the drop position */
+.rdg-row:has(.rdg-row-drag-over) > .rdg-cell::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: hsl(var(--primary));
+  z-index: 10;
+}

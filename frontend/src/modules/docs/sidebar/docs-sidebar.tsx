@@ -78,9 +78,10 @@ export function DocsSidebar({ tags }: DocsSidebarProps) {
   const [forcedCollapsed, setForcedCollapsed] = useState<string | null>(null);
 
   // Query for pages - using React Query instead of useLiveQuery
+  // Only show published pages in sidebar
   const { data: pages } = useInfiniteQuery({
     ...pagesListQueryOptions({}),
-    select: ({ pages }) => pages.flatMap(({ items }) => items),
+    select: ({ pages }) => pages.flatMap(({ items }) => items).filter((page) => page.status === 'published'),
   });
 
   const closeSheet = () => {
