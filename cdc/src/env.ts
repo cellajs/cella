@@ -1,8 +1,13 @@
-import { config } from 'dotenv';
+import { env as dotenv } from '@dotenv-run/core';
+import { appConfig } from 'shared';
 import { z } from 'zod';
 
-// Load .env from backend directory
-config({ path: '../backend/.env' });
+// Load .env from backend directory (same .env file, shared across monorepo)
+dotenv({
+  root: '../backend',
+  verbose: appConfig.debug,
+  files: ['.env'],
+});
 
 /**
  * Zod schema for CDC Worker environment variables.

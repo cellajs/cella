@@ -360,13 +360,22 @@ export async function startCdcWorker(): Promise<void> {
     } catch (error) {
       consecutiveFailures++;
       const errorMessage = error instanceof Error ? error.message : String(error);
+      const isSlotActive = errorMessage.includes('is active for PID');
+
       logEvent('warn', `${LOG_PREFIX} CDC subscription error, retrying in ${reconnection.retryDelayMs / 1000}s...`, {
         error: errorMessage,
         consecutiveFailures,
       });
       replicationState.markStopped();
 
-      // If we have persistent failures, try terminating stale connections and recreating the slot
+      if (isSlotActive) {
+        // Another worker instance holds the slot (e.g., during rolling deployment).
+        // Don't try to steal it — this instance should exit and let the active one run.
+        logEvent('error', `${LOG_PREFIX} Replication slot is held by another worker. Exiting to avoid conflict.`);
+        process.exit(1);
+      }
+
+      // If we have persistent failures (non-active-slot errors), try reclaiming
       if (consecutiveFailures >= reconnection.maxFailuresBeforeRecreate) {
         logEvent('warn', `${LOG_PREFIX} Too many failures, attempting to reclaim replication slot...`);
         try {
