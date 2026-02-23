@@ -63,7 +63,7 @@ export const slashMenu = (
   // Scroll to the selected item when it changes
   useEffect(() => {
     const selectedItem = itemRefs.current[selectedIndex || 0];
-    selectedItem?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    selectedItem?.scrollIntoView({ behavior: 'instant', block: 'nearest' });
   }, [selectedIndex]);
 
   const menuContent = (
