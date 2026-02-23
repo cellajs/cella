@@ -23,22 +23,24 @@ await createDbRoles();
 // Migrate db using admin connection (applies RLS grants)
 await migrate(migrationDb, migrateConfig);
 
-import { seedAdminScripts, seedScripts } from './scripts-config';
-
 const isProduction = appConfig.mode === 'production';
 
 /**
- * In production only seed the admin user.
+ * In production only seed the admin user (inline to avoid spawning a heavy subprocess).
  * In development seed all data (users, organizations, data, counters).
  */
-const scripts = isProduction ? seedAdminScripts : seedScripts;
+if (isProduction) {
+  const { userSeed } = await import('./seeds/user/seed');
+  await userSeed();
+} else {
+  const { seedScripts } = await import('./scripts-config');
 
-for (const cmd of scripts) {
-  try {
-    // Execute the command
-    execSync(cmd, { stdio: 'inherit' });
-  } catch (error) {
-    console.error(`Error executing command: ${cmd}`, error);
-    process.exit(1);
+  for (const cmd of seedScripts) {
+    try {
+      execSync(cmd, { stdio: 'inherit' });
+    } catch (error) {
+      console.error(`Error executing command: ${cmd}`, error);
+      process.exit(1);
+    }
   }
 }

@@ -661,6 +661,9 @@ importers:
       dexie:
         specifier: ^4.3.0
         version: 4.3.0(patch_hash=536f00666597037835aba27bb01fa6f52e09e7787a805f3a693ac56b8f1c86d0)
+      dexie-react-hooks:
+        specifier: ^4.2.0
+        version: 4.2.0(@types/react@19.2.14)(dexie@4.3.0(patch_hash=536f00666597037835aba27bb01fa6f52e09e7787a805f3a693ac56b8f1c86d0))(react@19.2.4)
       embla-carousel-autoplay:
         specifier: ^8.6.0
         version: 8.6.0(embla-carousel@8.6.0)
@@ -7052,6 +7055,13 @@ packages:
 
   devlop@1.1.0:
     resolution: {integrity: sha512-RWmIqhcFf1lRYBvNmr7qTNuyCt/7/ns2jbpp1+PalgE/rDQcBT0fioSMUpJ93irlUhC5hrg4cYqe6U+0ImW0rA==}
+
+  dexie-react-hooks@4.2.0:
+    resolution: {integrity: sha512-u7KqTX9JpBQK8+tEyA9X0yMGXlSCsbm5AU64N6gjvGk/IutYDpLBInMYEAEC83s3qhIvryFS+W+sqLZUBEvePQ==}
+    peerDependencies:
+      '@types/react': '>=16'
+      dexie: '>=4.2.0-alpha.1 <5.0.0'
+      react: '>=16'
 
   dexie@4.3.0:
     resolution: {integrity: sha512-5EeoQpJvMKHe6zWt/FSIIuRa3CWlZeIl6zKXt+Lz7BU6RoRRLgX9dZEynRfXrkLcldKYCBiz7xekTEylnie1Ug==}
@@ -18255,6 +18265,12 @@ snapshots:
   devlop@1.1.0:
     dependencies:
       dequal: 2.0.3
+
+  dexie-react-hooks@4.2.0(@types/react@19.2.14)(dexie@4.3.0(patch_hash=536f00666597037835aba27bb01fa6f52e09e7787a805f3a693ac56b8f1c86d0))(react@19.2.4):
+    dependencies:
+      '@types/react': 19.2.14
+      dexie: 4.3.0(patch_hash=536f00666597037835aba27bb01fa6f52e09e7787a805f3a693ac56b8f1c86d0)
+      react: 19.2.4
 
   dexie@4.3.0(patch_hash=536f00666597037835aba27bb01fa6f52e09e7787a805f3a693ac56b8f1c86d0): {}
 

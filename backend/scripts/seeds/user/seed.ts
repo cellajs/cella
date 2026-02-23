@@ -5,7 +5,7 @@ import { tenantsTable } from '#/db/schema/tenants';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { usersTable } from '#/db/schema/users';
 import { env } from '#/env';
-import { hashPassword } from '#/modules/auth/passwords/helpers/argon2id';
+// hashPassword is imported lazily below (only needed in dev, avoids loading argon2 in production)
 import pc from 'picocolors';
 import { appConfig } from 'shared';
 import { mockAdmin, mockEmail, mockPassword, mockUnsubscribeToken } from '../../../mocks/mock-user';
@@ -71,6 +71,7 @@ export const userSeed = async () => {
 
   // In dev, set a default password. In production, skip password (use "forgot password" or OAuth to sign in)
   if (!isProduction) {
+    const { hashPassword } = await import('#/modules/auth/passwords/helpers/argon2id');
     const hashed = await hashPassword(defaultAdminUser.password);
     const passwordRecord = mockPassword(adminUser, hashed);
     await db.insert(passwordsTable).values(passwordRecord).onConflictDoNothing();
