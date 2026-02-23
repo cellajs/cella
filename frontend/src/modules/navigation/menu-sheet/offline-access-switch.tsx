@@ -30,7 +30,7 @@ export const OfflineAccessSwitch = () => {
         id="offlineMode"
         checked={offlineAccess}
         onCheckedChange={onCheckedChange}
-        aria-label={t('common:keep_menu_open')}
+        aria-label={t('common:offline_access')}
       />
       <label htmlFor="offlineMode" className="cursor-pointer select-none text-sm font-medium leading-none">
         {t('common:offline_access')}

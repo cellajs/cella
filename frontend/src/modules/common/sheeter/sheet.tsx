@@ -83,7 +83,7 @@ export const SheeterSheet = ({ sheet }: { sheet: InternalSheet }) => {
     // Nav sheet in keep open mode shouldnt close
     if (sheet.id === 'nav-sheet') {
       const navState = useNavigationStore.getState();
-      if (navState.keepMenuOpen && navState.navSheetOpen === 'menu') return event.preventDefault();
+      if (navState.keepNavOpen && navState.navSheetOpen) return event.preventDefault();
     }
 
     // Close sheet if no modal and clicked ouside any sheet + floating content

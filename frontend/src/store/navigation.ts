@@ -13,8 +13,8 @@ interface NavigationStoreState {
   navSheetOpen: NavItemId | null; // Currently open navigation sheet
   setNavSheetOpen: (sheet: NavItemId | null, isDesktop?: boolean) => void; // Sets navigation sheet
 
-  keepMenuOpen: boolean; // Menu remains open state
-  setKeepMenuOpen: (status: boolean) => void; // Toggles menu open state
+  keepNavOpen: boolean; // Nav sheet remains open state
+  setKeepNavOpen: (status: boolean) => void; // Toggles nav open state
 
   keepOpenPreference: boolean; // User Preference for keeping the menu open
   toggleKeepOpenPreference: (status: boolean, isDesktop?: boolean) => void; // Toggles keep-open preference
@@ -34,7 +34,7 @@ interface InitStore
   extends Pick<
     NavigationStoreState,
     | 'recentSearches'
-    | 'keepMenuOpen'
+    | 'keepNavOpen'
     | 'detailedMenu'
     | 'navLoading'
     | 'activeSections'
@@ -46,7 +46,7 @@ interface InitStore
 const initStore: InitStore = {
   recentSearches: [],
   navSheetOpen: null,
-  keepMenuOpen: window.innerWidth > 1280, // Auto-open menu on wider screens
+  keepNavOpen: window.innerWidth > 1280, // Auto-open nav on wider screens
   keepOpenPreference: false,
   detailedMenu: false,
   navLoading: false,
@@ -67,9 +67,9 @@ export const useNavigationStore = create<NavigationStoreState>()(
               const wasMenu = state.navSheetOpen === 'menu';
               const isMenu = sheet === 'menu';
               state.navSheetOpen = sheet;
-              // Update keepMenuOpen when on desktop with preference enabled
+              // Update keepNavOpen when on desktop with preference enabled
               if (isDesktop !== undefined) {
-                state.keepMenuOpen = isDesktop && state.keepOpenPreference && (isMenu || wasMenu);
+                state.keepNavOpen = isDesktop && state.keepOpenPreference && (isMenu || wasMenu);
               }
             });
           },
@@ -78,17 +78,17 @@ export const useNavigationStore = create<NavigationStoreState>()(
               state.recentSearches = searchValues;
             });
           },
-          setKeepMenuOpen: (status) => {
+          setKeepNavOpen: (status) => {
             set((state) => {
-              state.keepMenuOpen = status;
+              state.keepNavOpen = status;
             });
           },
           toggleKeepOpenPreference: (status, isDesktop) => {
             set((state) => {
               state.keepOpenPreference = status;
-              // Also update keepMenuOpen if we know isDesktop and menu is open
-              if (isDesktop !== undefined && state.navSheetOpen === 'menu') {
-                state.keepMenuOpen = isDesktop && status;
+              // Also update keepNavOpen if we know isDesktop and a nav sheet is open
+              if (isDesktop !== undefined && state.navSheetOpen) {
+                state.keepNavOpen = isDesktop && status;
               }
             });
           },

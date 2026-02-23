@@ -34,18 +34,18 @@ type UseSidebarReturn = {
  *
  * With nested sidebars (sidebar-09 pattern), the outer sidebar stays at icon width
  * and the content panel expands/collapses. This hook is simplified to just track
- * the keepMenuOpen state for keyboard shortcuts.
+ * the keepNavOpen state for keyboard shortcuts.
  *
  * Note: Mobile sheets are handled by the sheeter service, not the sidebar.
  */
 function useSidebar(): UseSidebarReturn {
   const isMobile = useBreakpoints('max', 'sm');
 
-  const keepMenuOpen = useNavigationStore((state) => state.keepMenuOpen);
-  const setKeepMenuOpen = useNavigationStore((state) => state.setKeepMenuOpen);
+  const keepNavOpen = useNavigationStore((state) => state.keepNavOpen);
+  const setKeepNavOpen = useNavigationStore((state) => state.setKeepNavOpen);
 
   const toggleSidebar = () => {
-    setKeepMenuOpen(!keepMenuOpen);
+    setKeepNavOpen(!keepNavOpen);
   };
 
   // With nested sidebars, we always use 'collapsed' state for the outer sidebar
@@ -54,8 +54,8 @@ function useSidebar(): UseSidebarReturn {
 
   return {
     state,
-    open: keepMenuOpen,
-    setOpen: setKeepMenuOpen,
+    open: keepNavOpen,
+    setOpen: setKeepNavOpen,
     isMobile,
     toggleSidebar,
   };

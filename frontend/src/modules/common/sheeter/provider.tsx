@@ -49,7 +49,7 @@ export const Sheeter = () => {
       const sheetsToClose = useSheeter.getState().sheets.filter((s) => s.closeSheetOnRouteChange !== false);
       if (!sheetsToClose.length) return;
 
-      if (!navState.navSheetOpen || navState.navSheetOpen !== 'menu' || !navState.keepMenuOpen) {
+      if (!navState.navSheetOpen || !navState.keepNavOpen) {
         useSheeter.getState().removeOnRouteChange({ isCleanup: true });
         return;
       }

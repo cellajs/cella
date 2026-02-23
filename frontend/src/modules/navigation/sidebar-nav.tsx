@@ -55,18 +55,18 @@ export function SidebarNav({ triggerNavItem }: SidebarNavProps) {
   const isDesktop = useBreakpoints('min', 'xl', true);
 
   const theme = useUIStore((state) => state.theme);
-  const { navSheetOpen, keepMenuOpen } = useNavigationStore();
+  const { navSheetOpen, keepNavOpen } = useNavigationStore();
 
   // Check if nav-sheet is open via useSheeter
   const navSheetExists = useSheeter((state) => state.sheets.some((s) => s.id === 'nav-sheet' && s.open));
 
-  useBodyClass({ 'keep-menu-open': keepMenuOpen });
+  useBodyClass({ 'keep-nav-open': keepNavOpen });
   useBodyClass({ 'nav-sheet-open': navSheetExists });
 
   // State
   const isCollapsed = !!navSheetOpen;
   const isExpanded = hasSidebarTextLabels && isDesktop && !isCollapsed;
-  const isOverlay = !isDesktop || !keepMenuOpen;
+  const isOverlay = !isDesktop || !keepNavOpen;
 
   // Compute widths - spacer includes sheet width when not overlay and nav-sheet is open
   const iconBarWidth = isExpanded ? sidebarWidthExpanded : sidebarWidthCollapsed;
