@@ -78,8 +78,13 @@ const main = async () => {
     console.info('[startup] Creating DB roles...');
     const { createDbRoles } = await import('../scripts/db/create-db-roles');
     await createDbRoles();
-    console.info('[startup] Running migrations...');
-    await pgMigrate(migrationDb, migrateConfig);
+    process.stderr.write('[startup] Running migrations...\n');
+    const migratePromise = pgMigrate(migrationDb, migrateConfig);
+    const migrateTimeout = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Migration timed out after 30s')), 30_000),
+    );
+    await Promise.race([migratePromise, migrateTimeout]);
+    process.stderr.write('[startup] Migrations complete\n');
   } else {
     throw new Error('DATABASE_ADMIN_URL required for migrations');
   }
