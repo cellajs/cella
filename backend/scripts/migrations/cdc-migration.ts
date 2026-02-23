@@ -45,16 +45,19 @@ BEGIN
     RETURN;
   END IF;
 
-  -- 1. Create publication (separate block so later failures don't roll it back)
+  -- 1. Create or update publication
   BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = '${CDC_PUBLICATION_NAME}') THEN
       CREATE PUBLICATION ${CDC_PUBLICATION_NAME} FOR TABLE ${tableList};
       RAISE NOTICE 'Created publication ${CDC_PUBLICATION_NAME}';
     ELSE
-      RAISE NOTICE 'Publication ${CDC_PUBLICATION_NAME} already exists';
+      -- Publication exists — ensure all tracked tables are included
+      RAISE NOTICE 'Publication ${CDC_PUBLICATION_NAME} already exists, syncing tables...';
+${trackedTableNames.map((table) => `      BEGIN ALTER PUBLICATION ${CDC_PUBLICATION_NAME} ADD TABLE ${table}; EXCEPTION WHEN duplicate_object THEN NULL; END;`).join('\n')}
+      RAISE NOTICE 'Publication tables synced';
     END IF;
   EXCEPTION WHEN OTHERS THEN
-    RAISE NOTICE 'Publication setup failed: %. Continuing...', SQLERRM;
+    RAISE WARNING 'Publication setup failed: % (SQLSTATE: %)', SQLERRM, SQLSTATE;
   END;
 
   -- 2. Set REPLICA IDENTITY FULL (separate block)
@@ -62,7 +65,7 @@ BEGIN
 ${trackedTableNames.map((table) => `    ALTER TABLE ${table} REPLICA IDENTITY FULL;`).join('\n')}
     RAISE NOTICE 'REPLICA IDENTITY FULL set on all tracked tables';
   EXCEPTION WHEN OTHERS THEN
-    RAISE NOTICE 'REPLICA IDENTITY setup failed: %. Continuing...', SQLERRM;
+    RAISE WARNING 'REPLICA IDENTITY setup failed: % (SQLSTATE: %)', SQLERRM, SQLSTATE;
   END;
 
   -- 3. Create replication slot (separate block - may fail on managed providers)
@@ -74,7 +77,7 @@ ${trackedTableNames.map((table) => `    ALTER TABLE ${table} REPLICA IDENTITY FU
       RAISE NOTICE 'Replication slot ${CDC_SLOT_NAME} already exists';
     END IF;
   EXCEPTION WHEN OTHERS THEN
-    RAISE NOTICE 'Replication slot setup failed: %. Worker will create it at startup.', SQLERRM;
+    RAISE WARNING 'Replication slot setup failed: % (SQLSTATE: %). Worker will create it at startup.', SQLERRM, SQLSTATE;
   END;
 
   RAISE NOTICE 'CDC setup complete.';

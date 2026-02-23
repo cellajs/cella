@@ -66,16 +66,6 @@ export const RESOURCE_LIMITS = {
   reconnection: {
     /** Delay before retrying replication subscription (ms) */
     retryDelayMs: 5000,
-    /** Max consecutive failures before recreating slot */
-    maxFailuresBeforeRecreate: 3,
-  },
-
-  // Slot takeover during rolling deployments
-  slotTakeover: {
-    /** Max attempts to take over an active slot before giving up */
-    maxAttempts: 12,
-    /** Delay between takeover attempts (ms) */
-    retryDelayMs: 5000,
   },
 
   // WAL guard monitoring

@@ -11,16 +11,25 @@ BEGIN
     RETURN;
   END IF;
 
-  -- 1. Create publication (separate block so later failures don't roll it back)
+  -- 1. Create or update publication
   BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'cdc_pub') THEN
       CREATE PUBLICATION cdc_pub FOR TABLE users, organizations, attachments, pages, requests, memberships, inactive_memberships;
       RAISE NOTICE 'Created publication cdc_pub';
     ELSE
-      RAISE NOTICE 'Publication cdc_pub already exists';
+      -- Publication exists — ensure all tracked tables are included
+      RAISE NOTICE 'Publication cdc_pub already exists, syncing tables...';
+      BEGIN ALTER PUBLICATION cdc_pub ADD TABLE users; EXCEPTION WHEN duplicate_object THEN NULL; END;
+      BEGIN ALTER PUBLICATION cdc_pub ADD TABLE organizations; EXCEPTION WHEN duplicate_object THEN NULL; END;
+      BEGIN ALTER PUBLICATION cdc_pub ADD TABLE attachments; EXCEPTION WHEN duplicate_object THEN NULL; END;
+      BEGIN ALTER PUBLICATION cdc_pub ADD TABLE pages; EXCEPTION WHEN duplicate_object THEN NULL; END;
+      BEGIN ALTER PUBLICATION cdc_pub ADD TABLE requests; EXCEPTION WHEN duplicate_object THEN NULL; END;
+      BEGIN ALTER PUBLICATION cdc_pub ADD TABLE memberships; EXCEPTION WHEN duplicate_object THEN NULL; END;
+      BEGIN ALTER PUBLICATION cdc_pub ADD TABLE inactive_memberships; EXCEPTION WHEN duplicate_object THEN NULL; END;
+      RAISE NOTICE 'Publication tables synced';
     END IF;
   EXCEPTION WHEN OTHERS THEN
-    RAISE NOTICE 'Publication setup failed: %. Continuing...', SQLERRM;
+    RAISE WARNING 'Publication setup failed: % (SQLSTATE: %)', SQLERRM, SQLSTATE;
   END;
 
   -- 2. Set REPLICA IDENTITY FULL (separate block)
@@ -34,7 +43,7 @@ BEGIN
     ALTER TABLE inactive_memberships REPLICA IDENTITY FULL;
     RAISE NOTICE 'REPLICA IDENTITY FULL set on all tracked tables';
   EXCEPTION WHEN OTHERS THEN
-    RAISE NOTICE 'REPLICA IDENTITY setup failed: %. Continuing...', SQLERRM;
+    RAISE WARNING 'REPLICA IDENTITY setup failed: % (SQLSTATE: %)', SQLERRM, SQLSTATE;
   END;
 
   -- 3. Create replication slot (separate block - may fail on managed providers)
@@ -46,7 +55,7 @@ BEGIN
       RAISE NOTICE 'Replication slot cdc_slot already exists';
     END IF;
   EXCEPTION WHEN OTHERS THEN
-    RAISE NOTICE 'Replication slot setup failed: %. Worker will create it at startup.', SQLERRM;
+    RAISE WARNING 'Replication slot setup failed: % (SQLSTATE: %). Worker will create it at startup.', SQLERRM, SQLSTATE;
   END;
 
   RAISE NOTICE 'CDC setup complete.';
