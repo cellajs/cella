@@ -50,14 +50,24 @@ BEGIN
     ALTER ROLE runtime_role WITH PASSWORD '${escSql(runtimePassword)}';
   END IF;
 
-  -- cdc_role: CDC worker, INSERT on activities only
-  -- Note: REPLICATION is skipped (not supported on Neon/some managed providers)
-  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'cdc_role') THEN
-    CREATE ROLE cdc_role WITH LOGIN PASSWORD '${escSql(cdcPassword)}';
-    RAISE NOTICE 'Created role cdc_role';
-  ELSE
-    ALTER ROLE cdc_role WITH PASSWORD '${escSql(cdcPassword)}';
-  END IF;
+  -- cdc_role: CDC worker, INSERT on activities only + REPLICATION for logical replication
+  BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'cdc_role') THEN
+      CREATE ROLE cdc_role WITH LOGIN REPLICATION PASSWORD '${escSql(cdcPassword)}';
+      RAISE NOTICE 'Created role cdc_role with REPLICATION';
+    ELSE
+      ALTER ROLE cdc_role WITH REPLICATION PASSWORD '${escSql(cdcPassword)}';
+    END IF;
+  EXCEPTION WHEN insufficient_privilege THEN
+    -- Some managed providers (e.g., Neon) don't allow REPLICATION on custom roles.
+    -- Fall back to creating without REPLICATION; the CDC URL must then use a role that has it.
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'cdc_role') THEN
+      CREATE ROLE cdc_role WITH LOGIN PASSWORD '${escSql(cdcPassword)}';
+      RAISE NOTICE 'Created role cdc_role without REPLICATION (managed provider)';
+    ELSE
+      ALTER ROLE cdc_role WITH PASSWORD '${escSql(cdcPassword)}';
+    END IF;
+  END;
 
   -- admin_role: Migrations, seeds, system admin, BYPASSRLS
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'admin_role') THEN

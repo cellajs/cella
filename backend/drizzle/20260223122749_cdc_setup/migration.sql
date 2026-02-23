@@ -29,7 +29,16 @@ BEGIN
     ALTER TABLE memberships REPLICA IDENTITY FULL;
     ALTER TABLE inactive_memberships REPLICA IDENTITY FULL;
 
-    RAISE NOTICE 'CDC setup complete. Replication slot will be created by CDC worker on startup.';
+    -- Create replication slot (requires superuser/REPLICATION attribute).
+    -- Created here under admin so cdc_role doesn't need elevated privileges at startup.
+    IF NOT EXISTS (SELECT 1 FROM pg_replication_slots WHERE slot_name = 'cdc_slot') THEN
+      PERFORM pg_create_logical_replication_slot('cdc_slot', 'pgoutput');
+      RAISE NOTICE 'Created replication slot cdc_slot';
+    ELSE
+      RAISE NOTICE 'Replication slot cdc_slot already exists';
+    END IF;
+
+    RAISE NOTICE 'CDC setup complete.';
   EXCEPTION WHEN OTHERS THEN
     RAISE NOTICE 'CDC setup failed: %. Skipping - CDC will not be available.', SQLERRM;
   END;

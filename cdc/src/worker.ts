@@ -20,8 +20,36 @@ const LOG_PREFIX = '[worker]';
 const { reconnection } = RESOURCE_LIMITS;
 
 /**
- * Ensure the replication slot exists, creating it if necessary.
- * If the slot exists but is invalid, recreate it.
+ * Verify that the current database role has the REPLICATION attribute.
+ * Required for creating/using logical replication slots.
+ */
+async function verifyReplicationPermission(): Promise<void> {
+  const result = await cdcDb.execute<{ rolreplication: boolean }>(
+    sql`SELECT rolreplication FROM pg_roles WHERE rolname = current_user`,
+  );
+
+  if (result.rows.length === 0) {
+    throw new Error('Could not determine current database role');
+  }
+
+  if (!result.rows[0].rolreplication) {
+    const currentUser = await cdcDb.execute<{ current_user: string }>(sql`SELECT current_user`);
+    const roleName = currentUser.rows[0]?.current_user ?? 'unknown';
+    throw new Error(
+      `Role '${roleName}' lacks REPLICATION attribute. ` +
+        `For Neon: enable logical replication in project settings (Console > Settings > Logical Replication). ` +
+        `For self-hosted: ALTER ROLE ${roleName} WITH REPLICATION; (requires superuser). ` +
+        `Without this, CDC cannot use logical replication slots.`,
+    );
+  }
+
+  logEvent('info', `${LOG_PREFIX} Replication permission verified`);
+}
+
+/**
+ * Verify the replication slot exists and is valid.
+ * The slot should be created by the CDC migration (under admin/superuser).
+ * If forceRecreate is true (error recovery), attempt to drop and recreate.
  */
 async function ensureReplicationSlot(forceRecreate = false): Promise<void> {
   const result = await cdcDb.execute<{ slot_name: string; plugin: string }>(
@@ -37,9 +65,20 @@ async function ensureReplicationSlot(forceRecreate = false): Promise<void> {
   }
 
   if (!slotExists || forceRecreate) {
+    // Slot doesn't exist — try to create it (requires REPLICATION attribute).
+    // On first deploy this is normally created by the CDC migration under admin.
     logEvent('info', `${LOG_PREFIX} Creating replication slot...`, { slotName: CDC_SLOT_NAME });
-    await cdcDb.execute(sql`SELECT pg_create_logical_replication_slot(${CDC_SLOT_NAME}, 'pgoutput')`);
-    logEvent('info', `${LOG_PREFIX} Replication slot created`, { slotName: CDC_SLOT_NAME });
+    try {
+      await cdcDb.execute(sql`SELECT pg_create_logical_replication_slot(${CDC_SLOT_NAME}, 'pgoutput')`);
+      logEvent('info', `${LOG_PREFIX} Replication slot created`, { slotName: CDC_SLOT_NAME });
+    } catch (error) {
+      throw new Error(
+        `Failed to create replication slot '${CDC_SLOT_NAME}'. ` +
+          `Ensure the CDC migration has run (creates slot under admin), ` +
+          `or grant REPLICATION to the CDC role. ` +
+          `Original error: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
   } else if (!isValid) {
     logEvent('warn', `${LOG_PREFIX} Slot exists with wrong plugin, recreating...`, {
       slotName: CDC_SLOT_NAME,
@@ -250,6 +289,7 @@ export async function startCdcWorker(): Promise<void> {
   setShutdownHandler(emergencyShutdown);
 
   await configureWalLimits();
+  await verifyReplicationPermission();
   await ensureReplicationSlot();
   await verifyPublication();
 

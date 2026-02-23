@@ -14,14 +14,18 @@ declare global {
 
 window.ononline = () => {
   Gleap.initialize(appConfig.gleapToken);
+  Gleap.showFeedbackButton(false);
 };
 
 window.onoffline = () => {
   Gleap.destroy();
 };
 
-// Initialize Gleap if online
-if (navigator.onLine) Gleap.initialize(appConfig.gleapToken);
+// Initialize Gleap if online (with button hidden)
+if (navigator.onLine) {
+  Gleap.initialize(appConfig.gleapToken);
+  Gleap.showFeedbackButton(false);
+}
 
 function setGleapUser(user: User) {
   if (!window.Gleap) return;
@@ -36,6 +40,13 @@ function setGleapUser(user: User) {
       name: user.name || user.email,
       createdAt: new Date(user.createdAt),
     });
+  }
+}
+
+/** Open the Gleap support widget from a custom button */
+export function openGleapSupport() {
+  if (window.Gleap) {
+    Gleap.open();
   }
 }
 

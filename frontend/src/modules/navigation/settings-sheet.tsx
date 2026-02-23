@@ -97,7 +97,7 @@ export const SettingsSheet = () => {
             className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }), 'w-full justify-start text-left')}
           >
             <LifeBuoyIcon className="mr-2 size-4" aria-hidden="true" />
-            {t('common:contact_support')}
+            {t('common:support')}
           </button>
         )}
         <button
