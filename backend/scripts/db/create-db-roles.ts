@@ -99,7 +99,12 @@ export async function createDbRoles() {
   }
 
   // Quick pre-check: skip entirely when all roles already exist (common on hot-reload)
-  if (await rolesExist()) return;
+  console.info('[roles] Checking if roles exist...');
+  if (await rolesExist()) {
+    console.info('[roles] All roles exist, skipping');
+    return;
+  }
+  console.info('[roles] Some roles missing, creating...');
 
   // Extract passwords from connection strings
   const runtime = parseCredentials(env.DATABASE_URL);
@@ -114,6 +119,7 @@ export async function createDbRoles() {
   const createRolesSql = buildCreateRolesSql(runtime.password, cdcPassword, adminPassword);
 
   try {
+    console.info('[roles] Executing CREATE ROLE SQL...');
     await migrationDb.execute(sql.raw(createRolesSql));
     console.info(`${pc.green('✔')} Database roles configured`);
   } catch (error) {
