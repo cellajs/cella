@@ -1986,6 +1986,9 @@ interface LmsClientConfig<P extends LmsProviderType> {
   baseUrl: string
   accessToken: string
   refreshToken?: string
+  /** OAuth2 client credentials (stored per org, not in env) */
+  clientId: string
+  clientSecret: string
   onTokenRefresh?: (tokens: TokenPair) => Promise<void>
   multiOperationStrategy?: MultiOperationConfig
 }
@@ -2117,9 +2120,9 @@ See the comprehensive error types defined in [Configuration Types > Error Types]
 
 OAuth2 token handling for Canvas:
 
-1. **Initial connection**: User authorizes via Canvas OAuth2 flow
-2. **Token storage**: Access token + refresh token stored in DB (separate `lms_connections` table, associated with user/org)
-3. **Auto-refresh**: When 401 received, automatically use refresh token
+1. **Initial connection**: Org admin configures Canvas OAuth app credentials in `lms_providers` table
+2. **User authorization**: User completes Canvas OAuth2 flow; access token + refresh token stored in `lms_connections` table
+3. **Auto-refresh**: When 401 received, automatically use refresh token (using org-level `client_id`/`client_secret`)
 4. **Callback**: `onTokenRefresh` callback to persist new tokens
 
 ### Token validation strategy
@@ -2151,6 +2154,8 @@ async function handleLmsRequest(ctx) {
     baseUrl: lmsConnection.baseUrl,
     accessToken: lmsConnection.accessToken,
     refreshToken: lmsConnection.refreshToken,
+    clientId: lmsConnection.clientId,
+    clientSecret: lmsConnection.clientSecret,
     onTokenRefresh: async (newTokens) => {
       await db.updateLmsTokens(lmsConnection.id, newTokens)
     },
@@ -2175,13 +2180,13 @@ async function handleLmsRequest(ctx) {
 ### Token refresh flow
 
 ```typescript
-async function handleTokenRefresh(refreshToken: string): Promise<TokenPair> {
-  const response = await fetch(`${baseUrl}/login/oauth2/token`, {
+async function handleTokenRefresh(config: LmsClientConfig, refreshToken: string): Promise<TokenPair> {
+  const response = await fetch(`${config.baseUrl}/login/oauth2/token`, {
     method: 'POST',
     body: new URLSearchParams({
       grant_type: 'refresh_token',
-      client_id: env.CANVAS_CLIENT_ID,
-      client_secret: env.CANVAS_CLIENT_SECRET,
+      client_id: config.clientId,
+      client_secret: config.clientSecret,
       refresh_token: refreshToken,
     }),
   })
@@ -2299,19 +2304,105 @@ const moodleClient = createLmsClient({ provider: 'moodle', ...config })
 moodleClient.api.getCourse('123')  // Returns MoodleCourse (different shape)
 ```
 
+## Multi-tenancy
+
+The LMS integration is designed for multi-tenant use where each organization can connect to its own Canvas instance (or share one).
+
+### Data model
+
+Two tables handle the multi-tenant LMS data:
+
+```
+lms_providers                          lms_connections
+┌──────────────────────────────┐       ┌──────────────────────────────┐
+│ id (PK)                      │       │ id (PK)                      │
+│ organization_id (FK → orgs)  │       │ lms_provider_id (FK)         │
+│ provider_type ('canvas')     │       │ user_id (FK → users)         │
+│ base_url                     │       │ access_token (encrypted)     │
+│ client_id (encrypted)        │       │ refresh_token (encrypted)    │
+│ client_secret (encrypted)    │       │ token_expires_at             │
+│ display_name                 │       │ created_at                   │
+│ created_at                   │       │ updated_at                   │
+│ updated_at                   │       └──────────────────────────────┘
+└──────────────────────────────┘
+```
+
+- **`lms_providers`** — One row per organization's Canvas setup. Stores the OAuth app credentials (`client_id`, `client_secret`) and the Canvas `base_url`. An org admin configures this once.
+- **`lms_connections`** — One row per user who has authorized via OAuth. Stores the user's `access_token` and `refresh_token`. Created when a user completes the OAuth flow.
+
+This separation means:
+- Multiple organizations can connect to the **same** Canvas instance with different OAuth apps
+- Multiple organizations can connect to **different** Canvas instances
+- Each user within an org has their own token pair
+- OAuth app credentials are never exposed to individual users
+
+### How layers handle multi-tenancy
+
+| Layer | Multi-tenant behavior |
+|-------|----------------------|
+| **RequestScheduler** | Singleton per `base_url`. If two orgs use the same Canvas instance, they share one scheduler — correct, because Canvas rate limits are per-instance. |
+| **CanvasHttpClient** | One instance per request/user. Receives `accessToken`, `refreshToken`, `clientId`, `clientSecret` from the handler — all sourced from DB, not env. |
+| **Token refresh** | Uses `clientId`/`clientSecret` from `LmsClientConfig` (loaded from `lms_providers`). No env vars needed. |
+| **OAuth flow** | Backend reads `client_id` + `base_url` from `lms_providers` to construct the authorization URL. After callback, stores tokens in `lms_connections`. |
+
+### Backend handler flow (multi-tenant)
+
+```typescript
+async function handleLmsRequest(ctx) {
+  const { userId, orgId } = ctx
+
+  // 1. Load org-level LMS provider config
+  const provider = await db.getLmsProvider(orgId)
+  if (!provider) {
+    return ctx.json({ code: 'LMS_NOT_CONFIGURED' }, 403)
+  }
+
+  // 2. Load user-level connection (tokens)
+  const connection = await db.getLmsConnection(provider.id, userId)
+  if (!connection) {
+    return ctx.json({ code: 'LMS_NOT_CONNECTED' }, 403)
+  }
+
+  // 3. Create client with org credentials + user tokens
+  const client = createLmsClient({
+    provider: provider.providerType,
+    baseUrl: provider.baseUrl,
+    clientId: provider.clientId,
+    clientSecret: provider.clientSecret,
+    accessToken: connection.accessToken,
+    refreshToken: connection.refreshToken,
+    onTokenRefresh: async (newTokens) => {
+      await db.updateLmsTokens(connection.id, newTokens)
+    },
+  })
+
+  // 4. Use client (scheduler is shared per base_url automatically)
+  try {
+    const courses: LmsCourse[] = []
+    for await (const course of client.listCourses()) {
+      courses.push(course)
+    }
+    return ctx.json(courses)
+  } catch (error) {
+    if (error instanceof LmsTokenError) {
+      return ctx.json({ code: 'LMS_REAUTH_REQUIRED' }, 403)
+    }
+    throw error
+  }
+}
+```
+
 ## Configuration
 
-Environment variables needed:
+Environment variables (only rate limit defaults — no OAuth credentials):
 
 ```env
-# Canvas OAuth2 (for token refresh)
-CANVAS_CLIENT_ID=your_client_id
-CANVAS_CLIENT_SECRET=your_client_secret
-
 # Optional: Default rate limit settings
 LMS_RATE_LIMIT_REQUESTS_PER_MINUTE=300
 LMS_REQUEST_TIMEOUT_MS=30000
 ```
+
+OAuth credentials (`client_id`, `client_secret`) and Canvas `base_url` are stored per organization in the `lms_providers` table, not in env vars.
 
 ## Testing Strategy
 
@@ -2327,14 +2418,14 @@ LMS_REQUEST_TIMEOUT_MS=30000
 
 ## Open Questions
 
-1. ~~**Token storage**: Where to store LMS tokens? Separate table? Organization settings?~~ → **Decided**: Separate `lms_connections` table per user/org. API layer checks existence only; the LMS module handles token refresh internally. See [Token Management](#token-management).
-2. **Multi-tenant**: How to handle multiple Canvas instances per organization?
+1. ~~**Token storage**: Where to store LMS tokens? Separate table? Organization settings?~~ → **Decided**: Separate `lms_providers` table (org-level OAuth credentials) and `lms_connections` table (user-level tokens). See [Multi-tenancy](#multi-tenancy) and [Token Management](#token-management).
+2. ~~**Multi-tenant**: How to handle multiple Canvas instances per organization?~~ → **Decided**: Each org has its own row in `lms_providers` with `base_url` + `client_id` + `client_secret`. Users authorize per-org. See [Multi-tenancy](#multi-tenancy).
 3. **Webhooks**: Should we support Canvas webhooks for real-time updates?
 4. **Sync strategy**: One-time fetch vs. periodic sync vs. webhook-driven?
 5. **Caching**: Cache course/user data? TTL strategy?
 6. **Logging**: How verbose should HTTP client logging be? Integrate with existing Pino logger?
 7. **Scheduler persistence**: Should scheduler state survive server restarts? (queue, rate limit budget)
-8. **Scheduler scope**: One scheduler per LMS base URL, or per LMS + organization?
+8. ~~**Scheduler scope**: One scheduler per LMS base URL, or per LMS + organization?~~ → **Decided**: Per base URL. Canvas rate limits are per-instance, not per-OAuth-app, so orgs sharing a Canvas instance should share the scheduler. See [Multi-tenancy](#multi-tenancy).
 9. **Queue priority**: Should some requests have priority? (e.g., single GET over large batch)
 10. **Graceful degradation**: How to handle when queue is full? Reject new requests? Shed load?
 
