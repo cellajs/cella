@@ -31,7 +31,7 @@ export const env = createEnv({
       z.literal('tunnel'),
       z.literal('test'),
     ]),
-    PORT: z.string().optional(),
+    PORT: z.string().default('4000'),
     UNSUBSCRIBE_SECRET: z.string(),
 
     TUNNEL_URL: z.string().default(''),
