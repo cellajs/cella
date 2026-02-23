@@ -183,12 +183,12 @@ class CdcWebSocketServer {
         _trace: message._trace,
       } as ActivityEventWithEntity;
 
-      activityBus.emit(activityEvent);
-
       logEvent('debug', 'CDC message processed', {
         type: message.activity.type,
         entityId: message.activity.entityId,
       });
+
+      activityBus.emit(activityEvent);
     } catch (err) {
       this._parseErrors++;
       logEvent('error', 'Failed to parse CDC message', { error: err });

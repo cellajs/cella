@@ -26,11 +26,13 @@ export const userSchema = createSelectSchema(usersTable, {
   userFlags: userFlagsSchema,
 })
   .extend({
-    // lastSeenAt from last_seen table (populated via subquery in userSelect)
+    // Activity timestamps from user_activity table (populated via subqueries in userSelect)
     lastSeenAt: z.string().nullable(),
+    lastStartedAt: z.string().nullable(),
+    lastSignInAt: z.string().nullable(),
   })
   .openapi('User', {
-    description: 'A user with profile data and last-seen activity timestamp.',
+    description: 'A user with profile data and activity timestamps.',
     example: mockUserResponse(),
   });
 

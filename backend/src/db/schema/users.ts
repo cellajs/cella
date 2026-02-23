@@ -1,4 +1,4 @@
-import { boolean, foreignKey, index, jsonb, pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { boolean, foreignKey, index, jsonb, pgTable, text, varchar } from 'drizzle-orm/pg-core';
 import { appConfig, type UserFlags } from 'shared';
 import { maxLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
@@ -31,8 +31,6 @@ export const usersTable = pgTable(
       .notNull()
       .default({} as UserFlags),
     modifiedAt: timestampColumns.modifiedAt,
-    lastStartedAt: timestamp({ mode: 'string' }), // Last time GET /me was called
-    lastSignInAt: timestamp({ mode: 'string' }), // Last time user completed authentication flow
     modifiedBy: varchar({ length: maxLength.id }),
   },
   (table) => [

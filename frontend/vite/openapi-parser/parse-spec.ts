@@ -3,6 +3,7 @@
  * Separated from plugin handler for testability.
  */
 
+import { config } from '../../../shared/default-config';
 import type {
   GenComponentSchema,
   GenExtensionDefinition,
@@ -20,6 +21,9 @@ import { getSchemaTag } from './categorize';
 import { generateOperationHash } from './file-generators';
 import { resolveSchema, resolveSchemaProperty } from './schema-resolvers';
 import type { OpenApiParameter, OpenApiRequestBody, OpenApiSchema, OpenApiSpec } from './types';
+
+/** Map from pluralized tag names to singular entity types (e.g., 'users' -> 'user') */
+const tagToEntityType = new Map<string, string>(config.entityTypes.map((entityType) => [`${entityType}s`, entityType]));
 
 /**
  * Result of parsing an OpenAPI spec.
@@ -202,6 +206,9 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
           }
         }
 
+        // Derive entityType from the first tag that matches a known entity type
+        const entityType = opTags.map((tag) => tagToEntityType.get(tag)).find(Boolean);
+
         const operationSummary: GenOperationSummary = {
           id: op.operationId,
           hash: generateOperationHash(method, path, opTags),
@@ -216,6 +223,7 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
           hasResponseBody,
           hasExample,
           extensions,
+          ...(entityType && { entityType }),
         };
 
         operations.push(operationSummary);

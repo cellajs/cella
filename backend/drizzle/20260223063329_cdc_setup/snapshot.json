@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "020657e5-1020-4f24-bbc7-c1e715521e04",
+  "id": "aac0a4bf-1d8c-48b4-a030-30cd1519029c",
   "prevIds": [
     "00000000-0000-0000-0000-000000000000"
   ],
@@ -43,12 +43,6 @@
     {
       "isRlsEnabled": true,
       "name": "inactive_memberships",
-      "entityType": "tables",
-      "schema": "public"
-    },
-    {
-      "isRlsEnabled": false,
-      "name": "last_seen",
       "entityType": "tables",
       "schema": "public"
     },
@@ -133,6 +127,12 @@
     {
       "isRlsEnabled": false,
       "name": "unsubscribe_tokens",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "user_activity",
       "entityType": "tables",
       "schema": "public"
     },
@@ -921,32 +921,6 @@
       "entityType": "columns",
       "schema": "public",
       "table": "inactive_memberships"
-    },
-    {
-      "type": "varchar(50)",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "user_id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "last_seen"
-    },
-    {
-      "type": "timestamp",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "last_seen_at",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "last_seen"
     },
     {
       "type": "timestamp",
@@ -2587,6 +2561,58 @@
       "table": "unsubscribe_tokens"
     },
     {
+      "type": "varchar(50)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "user_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "user_activity"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "last_seen_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "user_activity"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "last_started_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "user_activity"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "last_sign_in_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "user_activity"
+    },
+    {
       "type": "timestamp",
       "typeSchema": null,
       "notNull": true,
@@ -2790,32 +2816,6 @@
       "generated": null,
       "identity": null,
       "name": "modified_at",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "users"
-    },
-    {
-      "type": "timestamp",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "last_started_at",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "users"
-    },
-    {
-      "type": "timestamp",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "last_sign_in_at",
       "entityType": "columns",
       "schema": "public",
       "table": "users"
@@ -3930,23 +3930,6 @@
     {
       "nameExplicit": false,
       "columns": [
-        "user_id"
-      ],
-      "schemaTo": "public",
-      "tableTo": "users",
-      "columnsTo": [
-        "id"
-      ],
-      "onUpdate": "NO ACTION",
-      "onDelete": "CASCADE",
-      "name": "last_seen_user_id_users_id_fkey",
-      "entityType": "fks",
-      "schema": "public",
-      "table": "last_seen"
-    },
-    {
-      "nameExplicit": false,
-      "columns": [
         "tenant_id"
       ],
       "schemaTo": "public",
@@ -4340,6 +4323,23 @@
     {
       "nameExplicit": false,
       "columns": [
+        "user_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "users",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "user_activity_user_id_users_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "user_activity"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
         "modified_by"
       ],
       "schemaTo": "public",
@@ -4436,16 +4436,6 @@
       "name": "inactive_memberships_pkey",
       "schema": "public",
       "table": "inactive_memberships",
-      "entityType": "pks"
-    },
-    {
-      "columns": [
-        "user_id"
-      ],
-      "nameExplicit": false,
-      "name": "last_seen_pkey",
-      "schema": "public",
-      "table": "last_seen",
       "entityType": "pks"
     },
     {
@@ -4556,6 +4546,16 @@
       "name": "totps_pkey",
       "schema": "public",
       "table": "totps",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "user_id"
+      ],
+      "nameExplicit": false,
+      "name": "user_activity_pkey",
+      "schema": "public",
+      "table": "user_activity",
       "entityType": "pks"
     },
     {

@@ -177,7 +177,7 @@ export type Me = {
 };
 
 /**
- * A user with profile data and last-seen activity timestamp.
+ * A user with profile data and activity timestamps.
  */
 export type User = {
   createdAt: string;
@@ -198,10 +198,10 @@ export type User = {
     finishedOnboarding: boolean;
   };
   modifiedAt: string | null;
-  lastStartedAt: string | null;
-  lastSignInAt: string | null;
   modifiedBy: string | null;
   lastSeenAt: string | null;
+  lastStartedAt: string | null;
+  lastSignInAt: string | null;
 };
 
 /**
@@ -4014,7 +4014,7 @@ export type GetUsersResponses = {
    */
   200: {
     /**
-     * A user with profile data and last-seen activity timestamp.
+     * A user with profile data and activity timestamps.
      */
     items: Array<
       User & {
@@ -4740,10 +4740,10 @@ export type GetMembersResponses = {
       lastName: string | null;
       language: 'en' | 'nl';
       modifiedAt: string | null;
-      lastStartedAt: string | null;
-      lastSignInAt: string | null;
       modifiedBy: string | null;
       lastSeenAt: string | null;
+      lastStartedAt: string | null;
+      lastSignInAt: string | null;
       membership: MembershipBase;
     }>;
     total: number;

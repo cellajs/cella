@@ -65,11 +65,11 @@
     "deps:outdated": "pnpm --filter @cellajs/cli cella -- --service audit"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.0",
+    "@biomejs/biome": "^2.4.4",
     "@evilmartians/lefthook": "^2.1.1",
-    "@typescript/native-preview": "7.0.0-dev.20260215.1",
+    "@typescript/native-preview": "7.0.0-dev.20260222.1",
     "cross-env": "^10.1.0",
-    "knip": "^5.83.1",
+    "knip": "^5.85.0",
     "rimraf": "^6.1.3",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
@@ -91,6 +91,10 @@
           "zod": "*"
         }
       }
+    },
+    "patchedDependencies": {
+      "slugify@1.6.6": "patches/slugify@1.6.6.patch",
+      "dexie@4.3.0": "patches/dexie@4.3.0.patch"
     }
   }
 }

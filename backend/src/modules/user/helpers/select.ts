@@ -1,21 +1,23 @@
 import { getColumns, sql } from 'drizzle-orm';
 import { appConfig, type UserFlags } from 'shared';
-import { lastSeenTable } from '#/db/schema/last-seen';
+import { userActivityTable } from '#/db/schema/user-activity';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { pickColumns } from '#/db/utils/pick-columns';
 import { userBaseSchema } from '#/schemas/user-schema-base';
 
 /**
- * User with lastSeenAt from last_seen table.
+ * User with activity timestamps from user_activity table.
  * Used when selecting users with userSelect.
  */
 export type UserWithActivity = UserModel & {
   lastSeenAt: string | null;
+  lastStartedAt: string | null;
+  lastSignInAt: string | null;
 };
 
 /**
  * User select that merges userFlags with default ones.
- * lastSeenAt is fetched via subquery from last_seen table to avoid CDC noise.
+ * Activity timestamps are fetched via subqueries from user_activity table to avoid CDC noise.
  */
 export const userSelect = (() => {
   const { userFlags: _uf, ...safeUserSelect } = getColumns(usersTable);
@@ -24,10 +26,16 @@ export const userSelect = (() => {
     ...safeUserSelect,
     // Merge defaults flags with DB ones
     userFlags: sql<UserFlags>` ${JSON.stringify(appConfig.defaultUserFlags)}::jsonb  || ${usersTable.userFlags}`,
-    // lastSeenAt from last_seen table (subquery to avoid CDC noise on frequent updates)
+    // Activity timestamps from user_activity table (subqueries to avoid CDC noise on frequent updates)
     lastSeenAt: sql<
       string | null
-    >`(SELECT ${lastSeenTable.lastSeenAt} FROM ${lastSeenTable} WHERE ${lastSeenTable.userId} = ${usersTable.id})`,
+    >`(SELECT ${userActivityTable.lastSeenAt} FROM ${userActivityTable} WHERE ${userActivityTable.userId} = ${usersTable.id})`,
+    lastStartedAt: sql<
+      string | null
+    >`(SELECT ${userActivityTable.lastStartedAt} FROM ${userActivityTable} WHERE ${userActivityTable.userId} = ${usersTable.id})`,
+    lastSignInAt: sql<
+      string | null
+    >`(SELECT ${userActivityTable.lastSignInAt} FROM ${userActivityTable} WHERE ${userActivityTable.userId} = ${usersTable.id})`,
   };
 })();
 

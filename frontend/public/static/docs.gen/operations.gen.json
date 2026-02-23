@@ -1194,7 +1194,8 @@
       "xGuard": ["authGuard", "tenantGuard"],
       "xRateLimiter": [],
       "xCache": []
-    }
+    },
+    "entityType": "organization"
   },
   {
     "id": "deleteOrganizations",
@@ -1213,7 +1214,8 @@
       "xGuard": ["authGuard", "tenantGuard"],
       "xRateLimiter": [],
       "xCache": []
-    }
+    },
+    "entityType": "organization"
   },
   {
     "id": "getOrganizations",
@@ -1232,7 +1234,8 @@
       "xGuard": ["authGuard", "crossTenantGuard", "relatableGuard"],
       "xRateLimiter": [],
       "xCache": []
-    }
+    },
+    "entityType": "organization"
   },
   {
     "id": "getOrganization",
@@ -1251,7 +1254,8 @@
       "xGuard": ["authGuard", "tenantGuard"],
       "xRateLimiter": [],
       "xCache": []
-    }
+    },
+    "entityType": "organization"
   },
   {
     "id": "updateOrganization",
@@ -1270,7 +1274,8 @@
       "xGuard": ["authGuard", "tenantGuard"],
       "xRateLimiter": [],
       "xCache": []
-    }
+    },
+    "entityType": "organization"
   },
   {
     "id": "getPages",
@@ -1289,7 +1294,8 @@
       "xGuard": ["publicGuard"],
       "xRateLimiter": [],
       "xCache": []
-    }
+    },
+    "entityType": "page"
   },
   {
     "id": "getPage",
@@ -1308,7 +1314,8 @@
       "xGuard": ["publicGuard"],
       "xRateLimiter": [],
       "xCache": ["publicCache"]
-    }
+    },
+    "entityType": "page"
   },
   {
     "id": "createPages",
@@ -1327,7 +1334,8 @@
       "xGuard": ["authGuard", "tenantGuard", "sysAdminGuard"],
       "xRateLimiter": [],
       "xCache": []
-    }
+    },
+    "entityType": "page"
   },
   {
     "id": "deletePages",
@@ -1346,7 +1354,8 @@
       "xGuard": ["authGuard", "tenantGuard", "sysAdminGuard"],
       "xRateLimiter": [],
       "xCache": []
-    }
+    },
+    "entityType": "page"
   },
   {
     "id": "updatePage",
@@ -1365,7 +1374,8 @@
       "xGuard": ["authGuard", "tenantGuard", "sysAdminGuard"],
       "xRateLimiter": [],
       "xCache": []
-    }
+    },
+    "entityType": "page"
   },
   {
     "id": "getUsers",
@@ -1384,7 +1394,8 @@
       "xGuard": ["authGuard", "crossTenantGuard"],
       "xRateLimiter": [],
       "xCache": []
-    }
+    },
+    "entityType": "user"
   },
   {
     "id": "getUser",
@@ -1403,7 +1414,8 @@
       "xGuard": ["authGuard", "crossTenantGuard", "relatableGuard"],
       "xRateLimiter": [],
       "xCache": []
-    }
+    },
+    "entityType": "user"
   },
   {
     "id": "getAttachments",
@@ -1422,7 +1434,8 @@
       "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
       "xRateLimiter": [],
       "xCache": []
-    }
+    },
+    "entityType": "attachment"
   },
   {
     "id": "createAttachments",
@@ -1441,7 +1454,8 @@
       "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
       "xRateLimiter": [],
       "xCache": []
-    }
+    },
+    "entityType": "attachment"
   },
   {
     "id": "deleteAttachments",
@@ -1460,7 +1474,8 @@
       "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
       "xRateLimiter": [],
       "xCache": []
-    }
+    },
+    "entityType": "attachment"
   },
   {
     "id": "getPresignedUrl",
@@ -1479,7 +1494,8 @@
       "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
       "xRateLimiter": ["presignedUrlLimiter"],
       "xCache": []
-    }
+    },
+    "entityType": "attachment"
   },
   {
     "id": "getAttachment",
@@ -1498,7 +1514,8 @@
       "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
       "xRateLimiter": [],
       "xCache": ["appCache"]
-    }
+    },
+    "entityType": "attachment"
   },
   {
     "id": "updateAttachment",
@@ -1517,7 +1534,8 @@
       "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
       "xRateLimiter": [],
       "xCache": []
-    }
+    },
+    "entityType": "attachment"
   },
   {
     "id": "redirectToAttachment",
@@ -1536,7 +1554,8 @@
       "xGuard": ["publicGuard"],
       "xRateLimiter": ["tokenLimiter"],
       "xCache": []
-    }
+    },
+    "entityType": "attachment"
   },
   {
     "id": "membershipInvite",

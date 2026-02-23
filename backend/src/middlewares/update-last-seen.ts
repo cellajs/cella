@@ -1,5 +1,5 @@
 import { unsafeInternalDb as db } from '#/db/db';
-import { lastSeenTable } from '#/db/schema/last-seen';
+import { userActivityTable } from '#/db/schema/user-activity';
 import { getIsoDate } from '#/utils/iso-date';
 import { TimeSpan } from '#/utils/time-span';
 
@@ -15,10 +15,10 @@ export const updateLastSeenAt = async (userId: string, currentLastSeenAt: string
   if (shouldUpdate) {
     const timestamp = getIsoDate();
     await db
-      .insert(lastSeenTable)
+      .insert(userActivityTable)
       .values({ userId, lastSeenAt: timestamp })
       .onConflictDoUpdate({
-        target: lastSeenTable.userId,
+        target: userActivityTable.userId,
         set: { lastSeenAt: timestamp },
       });
     return true;

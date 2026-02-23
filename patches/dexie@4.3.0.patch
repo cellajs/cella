@@ -1,0 +1,13 @@
+diff --git a/dist/dexie.d.ts b/dist/dexie.d.ts
+index 80565aa7b9ec52ee88e1f4b28cdcf324eccf10b9..0efa90b86c503ff1d9706072ca959d4074625b2b 100644
+--- a/dist/dexie.d.ts
++++ b/dist/dexie.d.ts
+@@ -1199,7 +1199,7 @@ export interface _Collection<T, TKey> extends Collection<T, TKey> {
+ }
+ // Besides being the only exported value, let Dexie also be
+ // a namespace for types...
+-export declare module Dexie {
++export declare namespace Dexie {
+ 	// The "Dexie.Promise" type.
+ 	type Promise<T = any> = PromiseExtended<T>; // Because many samples have been Dexie.Promise.
+ 	// The "Dexie.Table" interface. Same as named exported interface Table.

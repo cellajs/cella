@@ -1113,18 +1113,6 @@
               "null"
             ]
           },
-          "lastStartedAt": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "lastSignInAt": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
           "modifiedBy": {
             "type": [
               "string",
@@ -1133,6 +1121,18 @@
             "maxLength": 50
           },
           "lastSeenAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lastStartedAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lastSignInAt": {
             "type": [
               "string",
               "null"
@@ -1156,12 +1156,12 @@
           "newsletter",
           "userFlags",
           "modifiedAt",
-          "lastStartedAt",
-          "lastSignInAt",
           "modifiedBy",
-          "lastSeenAt"
+          "lastSeenAt",
+          "lastStartedAt",
+          "lastSignInAt"
         ],
-        "description": "A user with profile data and last-seen activity timestamp.",
+        "description": "A user with profile data and activity timestamps.",
         "example": {
           "id": "7sfzetbhjls7m9dg1xzavv78",
           "entityType": "user",
@@ -9712,7 +9712,7 @@
                             }
                           }
                         ],
-                        "description": "A user with profile data and last-seen activity timestamp.",
+                        "description": "A user with profile data and activity timestamps.",
                         "example": {
                           "id": "7sfzetbhjls7m9dg1xzavv78",
                           "entityType": "user",
@@ -11735,18 +11735,6 @@
                               "null"
                             ]
                           },
-                          "lastStartedAt": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
-                          },
-                          "lastSignInAt": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
-                          },
                           "modifiedBy": {
                             "type": [
                               "string",
@@ -11755,6 +11743,18 @@
                             "maxLength": 50
                           },
                           "lastSeenAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "lastStartedAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "lastSignInAt": {
                             "type": [
                               "string",
                               "null"
@@ -11779,10 +11779,10 @@
                           "lastName",
                           "language",
                           "modifiedAt",
-                          "lastStartedAt",
-                          "lastSignInAt",
                           "modifiedBy",
                           "lastSeenAt",
+                          "lastStartedAt",
+                          "lastSignInAt",
                           "membership"
                         ]
                       }

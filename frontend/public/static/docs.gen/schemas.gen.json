@@ -697,7 +697,7 @@
         "user": {
           "type": "object",
           "required": true,
-          "description": "A user with profile data and last-seen activity timestamp.",
+          "description": "A user with profile data and activity timestamps.",
           "properties": {
             "createdAt": { "type": "string", "required": true },
             "id": {
@@ -767,20 +767,20 @@
               "type": ["string", "null"],
               "required": true
             },
-            "lastStartedAt": {
-              "type": ["string", "null"],
-              "required": true
-            },
-            "lastSignInAt": {
-              "type": ["string", "null"],
-              "required": true
-            },
             "modifiedBy": {
               "type": ["string", "null"],
               "required": true,
               "maxLength": 50
             },
             "lastSeenAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "lastStartedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "lastSignInAt": {
               "type": ["string", "null"],
               "required": true
             }
@@ -898,14 +898,6 @@
           "type": ["string", "null"],
           "required": true
         },
-        "lastStartedAt": {
-          "type": ["string", "null"],
-          "required": true
-        },
-        "lastSignInAt": {
-          "type": ["string", "null"],
-          "required": true
-        },
         "modifiedBy": {
           "type": ["string", "null"],
           "required": true,
@@ -914,11 +906,19 @@
         "lastSeenAt": {
           "type": ["string", "null"],
           "required": true
+        },
+        "lastStartedAt": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "lastSignInAt": {
+          "type": ["string", "null"],
+          "required": true
         }
       }
     },
     "schemaTag": "data",
-    "description": "A user with profile data and last-seen activity timestamp.",
+    "description": "A user with profile data and activity timestamps.",
     "example": {
       "id": "7sfzetbhjls7m9dg1xzavv78",
       "entityType": "user",

@@ -21,8 +21,11 @@ export const SessionTile = ({ session, handleDeleteSessions, isPending }: Sessio
   const DeviceIcon = session.deviceType === 'desktop' ? MonitorIcon : SmartphoneIcon;
 
   return (
-    <Card className="w-full group/tile sm:has-[button:focus]:ring-2 transition-all py-0" data-expanded={expanded}>
-      <CardContent className="flex !p-2 sm:!p-3 lg:items-center gap-2 sm:gap-3">
+    <Card
+      className="w-full group/tile sm:has-[button:focus]:ring-2 transition-all py-0 sm:py-0"
+      data-expanded={expanded}
+    >
+      <CardContent className="flex p-2! sm:p-3! lg:items-center gap-2 sm:gap-3">
         <DeviceIcon className="size-4 sm:w-8 sm:h-8 max-sm:mt-0.5" strokeWidth={1.5} />
         <div className="flex flex-col gap-1 w-full overflow-hidden">
           <div className="flex max-xs:flex-col gap-1 xs:gap-2">
@@ -56,7 +59,7 @@ export const SessionTile = ({ session, handleDeleteSessions, isPending }: Sessio
             )}
             <p
               className="truncate hidden lg:inline max-lg:group-data-[expanded=true]/tile:inline"
-              aria-describedby={t('common:os')}
+              aria-describedby="os"
             >
               {session.deviceOs}
             </p>

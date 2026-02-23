@@ -178,6 +178,7 @@
   "enable_resource": "Enable {{resource}}",
   "enforce": "Enforce",
   "entered_focus.text": "Focus view activated",
+  "entities_only": "Entities only",
   "entity": "Entity",
   "errors": "Errors",
   "example": "Example",

@@ -169,7 +169,7 @@ export const zActivity = z.object({
 });
 
 /**
- * A user with profile data and last-seen activity timestamp.
+ * A user with profile data and activity timestamps.
  */
 export const zUser = z.object({
   createdAt: z.string(),
@@ -190,10 +190,10 @@ export const zUser = z.object({
     finishedOnboarding: z.boolean(),
   }),
   modifiedAt: z.union([z.string(), z.null()]),
-  lastStartedAt: z.union([z.string(), z.null()]),
-  lastSignInAt: z.union([z.string(), z.null()]),
   modifiedBy: z.union([z.string().max(50), z.null()]),
   lastSeenAt: z.union([z.string(), z.null()]),
+  lastStartedAt: z.union([z.string(), z.null()]),
+  lastSignInAt: z.union([z.string(), z.null()]),
 });
 
 /**
@@ -1983,10 +1983,10 @@ export const zGetMembersResponse = z.object({
       lastName: z.union([z.string().max(255), z.null()]),
       language: z.enum(['en', 'nl']),
       modifiedAt: z.union([z.string(), z.null()]),
-      lastStartedAt: z.union([z.string(), z.null()]),
-      lastSignInAt: z.union([z.string(), z.null()]),
       modifiedBy: z.union([z.string().max(50), z.null()]),
       lastSeenAt: z.union([z.string(), z.null()]),
+      lastStartedAt: z.union([z.string(), z.null()]),
+      lastSignInAt: z.union([z.string(), z.null()]),
       membership: zMembershipBase,
     }),
   ),

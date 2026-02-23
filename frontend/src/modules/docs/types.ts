@@ -47,6 +47,8 @@ export interface GenOperationSummary {
   hasExample: boolean;
   /** Dynamic x-extensions keyed by camelCase name */
   extensions: Record<string, string[]>;
+  /** Entity type derived from tag (e.g., 'user', 'organization'). Only set for entity-related operations. */
+  entityType?: string;
 }
 
 /**
