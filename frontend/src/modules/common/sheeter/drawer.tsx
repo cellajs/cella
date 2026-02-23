@@ -3,7 +3,8 @@ import { type InternalSheet, useSheeter } from '~/modules/common/sheeter/use-she
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '~/modules/ui/drawer';
 
 export const SheeterDrawer = ({ sheet }: { sheet: InternalSheet }) => {
-  const { modal = true, id, side, description, title, titleContent = title, className, content, open = true } = sheet;
+  // Drawers on mobile are always modal (overlay + outside click to close)
+  const { id, side, description, title, titleContent = title, className, content, open = true } = sheet;
 
   const updateSheet = useSheeter.getState().update;
 
@@ -21,7 +22,7 @@ export const SheeterDrawer = ({ sheet }: { sheet: InternalSheet }) => {
   return (
     <Drawer
       key={id}
-      modal={modal}
+      modal
       open={open}
       dismissible={!isDropdownOpen}
       direction={side}

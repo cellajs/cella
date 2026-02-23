@@ -1,13 +1,10 @@
 import { useMatch, useNavigate, useSearch } from '@tanstack/react-router';
 import { type ReactNode, useEffect } from 'react';
-import type { DialogData } from '~/modules/common/dialoger/use-dialoger';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import type { SheetData } from '~/modules/common/sheeter/use-sheeter';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { fallbackContentRef } from '~/utils/fallback-content-ref';
 
 type SheetOptions = Omit<SheetData, 'id' | 'triggerRef' | 'onClose'>;
-type DialogOptions = Omit<DialogData, 'id' | 'triggerRef' | 'onClose'>;
 
 interface OverlayConfig<TOptions> {
   /** The search param key to watch (e.g., 'userSheetId') */
@@ -18,15 +15,11 @@ interface OverlayConfig<TOptions> {
   renderContent: (id: string, orgId: string | undefined) => ReactNode;
   /** Called after close (not during cleanup). Receives the search param value. */
   onAfterClose?: (id: string) => void;
-  /** Use a stable overlay ID instead of value-based ID. Prevents overlay recreation when the
-   *  search param value changes (e.g., carousel navigation updating attachmentDialogId). */
-  stableId?: boolean;
   /** Overlay configuration options */
   options: TOptions;
 }
 
 export type UseUrlSheetConfig = OverlayConfig<SheetOptions>;
-export type UseUrlDialogConfig = OverlayConfig<DialogOptions>;
 
 /** Navigate to clear search params (always replace, no history.back) */
 function useCloseOverlay(searchParamKey: string, additionalParamKeys: string[] = []) {
@@ -83,52 +76,4 @@ export function useUrlSheet(config: UseUrlSheetConfig) {
       useSheeter.getState().remove(id, { isCleanup: true });
     };
   }, [value, orgId]);
-}
-
-/**
- * Manages a URL-driven dialog overlay.
- * Opens a dialog when the search param is present, closes it when removed.
- */
-export function useUrlDialog(config: UseUrlDialogConfig) {
-  const { searchParamKey, additionalSearchParamKeys, stableId, renderContent, onAfterClose, options } = config;
-
-  const searchParams = useSearch({ strict: false }) as Record<string, string | undefined>;
-  const orgMatch = useMatch({ from: '/appLayout/$tenantId/$orgSlug', shouldThrow: false });
-  const orgId = orgMatch?.context?.organization?.id;
-  const value = searchParams[searchParamKey] ?? null;
-  const close = useCloseOverlay(searchParamKey, additionalSearchParamKeys);
-
-  // With stableId, only react to presence (open/close), not value changes.
-  // This prevents the dialog from being destroyed and recreated when the
-  // search param value changes (e.g., carousel navigation).
-  const isOpen = !!value;
-  const id = stableId ? searchParamKey : `${searchParamKey}-${value}`;
-
-  useEffect(() => {
-    if (!isOpen) return;
-
-    if (useDialoger.getState().get(id)) return;
-
-    const handleClose = (isCleanup?: boolean) => {
-      if (!isCleanup) {
-        const currentValue = new URLSearchParams(window.location.search).get(searchParamKey) ?? '';
-        onAfterClose?.(currentValue);
-        close();
-      }
-    };
-
-    queueMicrotask(() => {
-      const currentValue = value ?? '';
-      useDialoger.getState().create(renderContent(currentValue, orgId), {
-        id,
-        triggerRef: fallbackContentRef,
-        onClose: handleClose,
-        ...options,
-      });
-    });
-
-    return () => {
-      useDialoger.getState().remove(id, { isCleanup: true });
-    };
-  }, [stableId ? isOpen : value, orgId]);
 }
