@@ -26,6 +26,10 @@ process.on('uncaughtException', (err) => {
   // Give stderr time to flush before exit
   setTimeout(() => process.exit(1), 500);
 });
+process.on('SIGTERM', () => {
+  process.stderr.write('[startup] Received SIGTERM — process killed (likely by Render timeout)\n');
+  setTimeout(() => process.exit(1), 200);
+});
 
 const startTunnel = appConfig.mode === 'tunnel' ? (await import('#/lib/start-tunnel')).default : () => null;
 
@@ -57,6 +61,20 @@ const main = async () => {
   if (isPGliteDatabase(db)) {
     await pgliteMigrate(db, migrateConfig);
   } else if (migrationDb) {
+    // Test DB connectivity before proceeding (fail fast instead of hanging)
+    console.info('[startup] Testing database connection...');
+    const { sql } = await import('drizzle-orm');
+    const connTest = migrationDb.execute(sql`SELECT 1 AS ok`);
+    const timeout = new Promise((_, reject) =>
+      setTimeout(
+        () =>
+          reject(new Error('Database connection timed out after 15s — check DATABASE_ADMIN_URL and network access')),
+        15_000,
+      ),
+    );
+    await Promise.race([connTest, timeout]);
+    console.info('[startup] Database connected successfully');
+
     console.info('[startup] Creating DB roles...');
     const { createDbRoles } = await import('../scripts/db/create-db-roles');
     await createDbRoles();
