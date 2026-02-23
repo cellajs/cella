@@ -168,7 +168,7 @@ class AttachmentStorageService {
       throw new Error('File data must be a Blob');
     }
 
-    const blobData = file.data as Blob;
+    const blobData = file.data;
     const size = file.size ?? blobData.size ?? 0;
 
     // Use provided attachmentId or fall back to file.id for temp storage

@@ -33,7 +33,7 @@ export const config = {
   } as const,
 
   /** Available CRUD actions for permission checks */
-  entityActions: ['create', 'read', 'update', 'delete', 'search'] as const,
+  entityActions: ['create', 'read', 'update', 'delete'] as const,
 
   /** Resource types that are not entities but have activities logged */
   resourceTypes: ['request', 'membership', 'inactive_membership', 'tenant'] as const,

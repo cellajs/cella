@@ -3,11 +3,13 @@ import { maxLength } from '#/db/utils/constraints';
 import { usersTable } from './users';
 
 /** Separated from users table to avoid triggering CDC on frequent updates. */
-export const lastSeenTable = pgTable(
-  'last_seen',
+export const userActivityTable = pgTable(
+  'user_activity',
   {
     userId: varchar({ length: maxLength.id }).primaryKey(),
     lastSeenAt: timestamp({ mode: 'string' }),
+    lastStartedAt: timestamp({ mode: 'string' }), // Last time GET /me was called
+    lastSignInAt: timestamp({ mode: 'string' }), // Last time user completed authentication flow
   },
   (table) => [
     foreignKey({
@@ -17,5 +19,5 @@ export const lastSeenTable = pgTable(
   ],
 );
 
-export type LastSeenModel = typeof lastSeenTable.$inferSelect;
-export type InsertLastSeenModel = typeof lastSeenTable.$inferInsert;
+export type UserActivityModel = typeof userActivityTable.$inferSelect;
+export type InsertUserActivityModel = typeof userActivityTable.$inferInsert;

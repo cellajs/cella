@@ -60,7 +60,53 @@
     "responses": [
       {
         "status": 200,
-        "description": "Catch-up summary or SSE stream started",
+        "description": "SSE stream started",
+        "contentType": "text/event-stream",
+        "schema": { "type": "object", "contentType": "text/event-stream" }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ]
+  },
+  {
+    "operationId": "postPublicCatchup",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Catchup summary",
         "contentType": "application/json",
         "schema": {
           "type": "object",
@@ -116,25 +162,22 @@
       }
     ],
     "request": {
-      "query": {
+      "body": {
+        "type": "object",
         "properties": {
-          "offset": {
+          "cursor": {
             "type": "string",
             "required": false,
-            "description": "Starting offset: 'now' for live-only, or activity ID to receive missed notifications"
-          },
-          "live": {
-            "type": "string",
-            "required": false,
-            "description": "Set to \"sse\" for live updates (SSE stream)",
-            "enum": ["sse"]
+            "description": "Last activity cursor received by the client. Omit on first sync."
           },
           "seqs": {
-            "type": "string",
+            "type": "object",
             "required": false,
-            "description": "JSON-encoded client seqs for gap detection: {\"scopeId\":42}. Unchanged scopes are excluded from the response."
+            "description": "Client-side sequence numbers per scope: { \"orgId\": 42, \"orgId:m\": 5 }"
           }
-        }
+        },
+        "required": true,
+        "contentType": "application/json"
       }
     }
   },
@@ -143,7 +186,53 @@
     "responses": [
       {
         "status": 200,
-        "description": "SSE stream or catchup summary response",
+        "description": "SSE stream started",
+        "contentType": "text/event-stream",
+        "schema": { "type": "object", "contentType": "text/event-stream" }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ]
+  },
+  {
+    "operationId": "postAppCatchup",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Catchup summary",
         "contentType": "application/json",
         "schema": {
           "type": "object",
@@ -208,25 +297,22 @@
       }
     ],
     "request": {
-      "query": {
+      "body": {
+        "type": "object",
         "properties": {
-          "offset": {
+          "cursor": {
             "type": "string",
             "required": false,
-            "description": "Starting offset: 'now' for live-only, or activity ID to receive missed notifications"
-          },
-          "live": {
-            "type": "string",
-            "required": false,
-            "description": "Connection mode: 'sse' for streaming, 'catchup' for one-time fetch",
-            "enum": ["sse", "catchup"]
+            "description": "Last activity cursor received by the client. Omit on first sync."
           },
           "seqs": {
-            "type": "string",
+            "type": "object",
             "required": false,
-            "description": "JSON-encoded client seqs for gap detection: {\"scopeId\":42}. Unchanged scopes are excluded from the response."
+            "description": "Client-side sequence numbers per scope: { \"orgId\": 42, \"orgId:m\": 5 }"
           }
-        }
+        },
+        "required": true,
+        "contentType": "application/json"
       }
     }
   }

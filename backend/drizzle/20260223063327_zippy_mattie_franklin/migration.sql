@@ -78,11 +78,6 @@ CREATE TABLE "inactive_memberships" (
 );
 --> statement-breakpoint
 ALTER TABLE "inactive_memberships" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
-CREATE TABLE "last_seen" (
-	"user_id" varchar(50) PRIMARY KEY,
-	"last_seen_at" timestamp
-);
---> statement-breakpoint
 CREATE TABLE "memberships" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"id" varchar(50) PRIMARY KEY,
@@ -261,6 +256,13 @@ CREATE TABLE "unsubscribe_tokens" (
 	CONSTRAINT "unsubscribe_tokens_pkey" PRIMARY KEY("id","created_at")
 );
 --> statement-breakpoint
+CREATE TABLE "user_activity" (
+	"user_id" varchar(50) PRIMARY KEY,
+	"last_seen_at" timestamp,
+	"last_started_at" timestamp,
+	"last_sign_in_at" timestamp
+);
+--> statement-breakpoint
 CREATE TABLE "users" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"id" varchar(50) PRIMARY KEY,
@@ -278,8 +280,6 @@ CREATE TABLE "users" (
 	"newsletter" boolean DEFAULT false NOT NULL,
 	"user_flags" jsonb DEFAULT '{}' NOT NULL,
 	"modified_at" timestamp,
-	"last_started_at" timestamp,
-	"last_sign_in_at" timestamp,
 	"modified_by" varchar(50)
 );
 --> statement-breakpoint
@@ -336,7 +336,6 @@ ALTER TABLE "inactive_memberships" ADD CONSTRAINT "inactive_memberships_user_id_
 ALTER TABLE "inactive_memberships" ADD CONSTRAINT "inactive_memberships_created_by_users_id_fkey" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "inactive_memberships" ADD CONSTRAINT "inactive_memberships_organization_id_organizations_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations"("id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "inactive_memberships" ADD CONSTRAINT "inactive_memberships_gmmCA2ACknk4_fkey" FOREIGN KEY ("tenant_id","organization_id") REFERENCES "organizations"("tenant_id","id") ON DELETE CASCADE;--> statement-breakpoint
-ALTER TABLE "last_seen" ADD CONSTRAINT "last_seen_user_id_users_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "memberships" ADD CONSTRAINT "memberships_tenant_id_tenants_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id");--> statement-breakpoint
 ALTER TABLE "memberships" ADD CONSTRAINT "memberships_user_id_users_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "memberships" ADD CONSTRAINT "memberships_created_by_users_id_fkey" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON DELETE SET NULL;--> statement-breakpoint
@@ -360,6 +359,7 @@ ALTER TABLE "tokens" ADD CONSTRAINT "tokens_oauth_account_id_oauth_accounts_id_f
 ALTER TABLE "tokens" ADD CONSTRAINT "tokens_created_by_users_id_fkey" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "totps" ADD CONSTRAINT "totps_user_id_users_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "unsubscribe_tokens" ADD CONSTRAINT "unsubscribe_tokens_user_id_users_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE;--> statement-breakpoint
+ALTER TABLE "user_activity" ADD CONSTRAINT "user_activity_user_id_users_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "users" ADD CONSTRAINT "users_modified_by_users_id_fkey" FOREIGN KEY ("modified_by") REFERENCES "users"("id");--> statement-breakpoint
 CREATE POLICY "attachments_select_policy" ON "attachments" AS PERMISSIVE FOR SELECT TO public USING (
   

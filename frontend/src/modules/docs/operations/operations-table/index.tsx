@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from '~/hooks/use-search-params';
 import type { RowsChangeData } from '~/modules/common/data-grid';
 import { DataTable } from '~/modules/common/data-table';
+import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { FocusViewContainer } from '~/modules/common/focus-view';
 import { StickyBox } from '~/modules/common/sticky-box';
 import { OperationsTableBar } from '~/modules/docs/operations/operations-table/operations-bar';
@@ -23,11 +24,17 @@ async function updateOperationField(operationId: string, field: 'summary' | 'des
 }
 
 function OperationsTable() {
-  const { search, setSearch } = useSearchParams<{ q?: string }>({ from: '/publicLayout/docs/operations/table' });
+  const { search, setSearch } = useSearchParams<{ q?: string; sort?: string; order?: 'asc' | 'desc' }>({
+    from: '/publicLayout/docs/operations/table',
+  });
 
   const q = search.q || '';
 
+  // Sort state backed by URL search params
+  const { sortColumns, setSortColumns } = useSortColumns(search.sort, search.order, setSearch);
+
   const [isCompact, setIsCompact] = useState(false);
+  const [isEntityOnly, setIsEntityOnly] = useState(false);
 
   // Fetch info to get extension definitions
   const { data: info } = useSuspenseQuery(infoQueryOptions);
@@ -49,11 +56,18 @@ function OperationsTable() {
   // Filter operations based on search query (searches all text fields)
   // Multiple space-separated terms are treated as AND conditions
   const filteredOperations = useMemo(() => {
-    if (!q) return localOperations;
-    const terms = q.toLowerCase().split(/\s+/).filter(Boolean);
-    if (terms.length === 0) return localOperations;
+    let ops = localOperations;
 
-    return localOperations.filter((op) => {
+    // Filter to entity-related operations only
+    if (isEntityOnly) {
+      ops = ops.filter((op) => op.entityType);
+    }
+
+    if (!q) return ops;
+    const terms = q.toLowerCase().split(/\s+/).filter(Boolean);
+    if (terms.length === 0) return ops;
+
+    return ops.filter((op) => {
       // Check if a single term matches any field in the operation
       const matchesTerm = (term: string) =>
         op.summary.toLowerCase().includes(term) ||
@@ -68,7 +82,21 @@ function OperationsTable() {
       // All terms must match (AND logic)
       return terms.every(matchesTerm);
     });
-  }, [q, localOperations]);
+  }, [q, localOperations, isEntityOnly]);
+
+  // Client-side sorting
+  const sortedOperations = useMemo(() => {
+    if (!sortColumns.length) return filteredOperations;
+
+    const { columnKey, direction } = sortColumns[0];
+    const modifier = direction === 'ASC' ? 1 : -1;
+
+    return [...filteredOperations].sort((a, b) => {
+      const aVal = String(a[columnKey as keyof GenOperationSummary] ?? '');
+      const bVal = String(b[columnKey as keyof GenOperationSummary] ?? '');
+      return aVal.localeCompare(bVal) * modifier;
+    });
+  }, [filteredOperations, sortColumns]);
 
   // Handle row changes for editable cells
   const onRowsChange = useCallback(
@@ -112,20 +140,24 @@ function OperationsTable() {
             setColumns={setColumns}
             isCompact={isCompact}
             setIsCompact={setIsCompact}
+            isEntityOnly={isEntityOnly}
+            setIsEntityOnly={setIsEntityOnly}
           />
         </StickyBox>
         <DataTable<GenOperationSummary>
           columns={columns.filter((column) => column.visible)}
-          rows={filteredOperations}
+          rows={sortedOperations}
           onRowsChange={onRowsChange}
           hasNextPage={false}
           rowKeyGetter={(row) => row.hash}
           isLoading={false}
           isFetching={false}
-          limit={filteredOperations.length}
+          limit={sortedOperations.length}
           isFiltered={!!q}
           rowHeight={42}
           enableVirtualization={false}
+          sortColumns={sortColumns}
+          onSortColumnsChange={setSortColumns}
         />
       </div>
     </FocusViewContainer>

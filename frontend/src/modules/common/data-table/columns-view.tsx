@@ -19,9 +19,19 @@ interface Props<TData> {
   className?: string;
   isCompact?: boolean;
   setIsCompact?: (isCompact: boolean) => void;
+  isEntityOnly?: boolean;
+  setIsEntityOnly?: (isEntityOnly: boolean) => void;
 }
 
-export function ColumnsView<TData>({ columns, setColumns, className = '', isCompact, setIsCompact }: Props<TData>) {
+export function ColumnsView<TData>({
+  columns,
+  setColumns,
+  className = '',
+  isCompact,
+  setIsCompact,
+  isEntityOnly,
+  setIsEntityOnly,
+}: Props<TData>) {
   const { t } = useTranslation();
   const [columnSearch, setColumnSearch] = useState('');
 
@@ -84,6 +94,18 @@ export function ColumnsView<TData>({ columns, setColumns, className = '', isComp
             aria-label={t('common:detailed_menu')}
           >
             {t('common:compact_view')}
+          </DropdownMenuCheckboxItem>
+        )}
+
+        {/* Filter to entity-related operations only */}
+        {setIsEntityOnly && isEntityOnly !== undefined && (
+          <DropdownMenuCheckboxItem
+            className="min-h-8"
+            onSelect={(e) => e.preventDefault()}
+            checked={isEntityOnly}
+            onCheckedChange={() => setIsEntityOnly(!isEntityOnly)}
+          >
+            {t('common:entities_only')}
           </DropdownMenuCheckboxItem>
         )}
       </DropdownMenuContent>

@@ -9,8 +9,6 @@ export type { MiddlewareArray };
 export type ExtensionMetadata = {
   /** Identifier for route property names, e.g., 'xGuard' */
   id: string;
-  /** Translation key for i18n support */
-  translationKey: string;
   /** Description of the extension's purpose */
   description: string;
   /** Whether this extension is required on every route */
@@ -26,19 +24,16 @@ export type ExtensionMetadata = {
 export const extensionRegistryMap = {
   'x-guard': {
     id: 'xGuard',
-    translationKey: 'common:docs.guard',
     description: 'Authorization middleware applied to the endpoint',
     required: true,
   },
   'x-rate-limiter': {
     id: 'xRateLimiter',
-    translationKey: 'common:docs.rate_limiter',
     description: 'Rate limiting rules applied to the endpoint',
     required: false,
   },
   'x-cache': {
     id: 'xCache',
-    translationKey: 'common:docs.cache',
     description: 'Caching strategy applied to the endpoint',
     required: false,
   },

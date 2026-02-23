@@ -3,14 +3,13 @@ import type { EntityActionType, ProductEntityType } from 'shared';
 import type { Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
 import { type EntityModel, resolveEntity } from '#/lib/resolve-entity';
-import { checkPermission, type PermissionResult } from '#/permissions';
+import { checkPermission } from '#/permissions';
 
 /**
  * Result type for product entity validation including the can object.
  */
 export interface ValidProductEntityResult<K extends ProductEntityType> {
   entity: EntityModel<K>;
-  can: PermissionResult['can'];
 }
 
 /**
@@ -43,11 +42,11 @@ export const getValidProductEntity = async <K extends ProductEntityType>(
   if (!entity) throw new AppError(404, 'not_found', 'warn', { entityType });
 
   // Step 2: Check permission for the requested action (system admin bypass is handled inside)
-  const { isAllowed, can } = checkPermission(memberships, action, entity, { systemRole: userSystemRole });
+  const { isAllowed } = checkPermission(memberships, action, entity, { systemRole: userSystemRole });
 
   if (!isAllowed) {
     throw new AppError(403, 'forbidden', 'warn', { entityType, meta: { action } });
   }
 
-  return { entity, can };
+  return { entity };
 };

@@ -34,9 +34,9 @@ const combinedMiddleware: MiddlewareHandler = every(
   }),
 );
 
-export const sysAdminGuard = setMiddlewareExtension(
-  combinedMiddleware,
-  'sysAdminGuard',
-  'x-guard',
-  'Requires system admin + IP whitelist',
-);
+export const sysAdminGuard = setMiddlewareExtension(combinedMiddleware, {
+  functionName: 'sysAdminGuard',
+  type: 'x-guard',
+  name: 'sysAdmin',
+  description: 'Requires system admin + IP whitelist',
+});

@@ -4,6 +4,7 @@ import type { Context } from 'hono';
 import { unsafeInternalDb as db } from '#/db/db';
 import { type AuthStrategy, type SessionModel, type SessionTypes, sessionsTable } from '#/db/schema/sessions';
 import { systemRolesTable } from '#/db/schema/system-roles';
+import { userActivityTable } from '#/db/schema/user-activity';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { env } from '#/env';
 import type { Env } from '#/lib/context';
@@ -80,9 +81,12 @@ export const setUserSession = async (
   // Exit early if it's impersonation
   if (type === 'impersonation') return;
 
-  // Update user last signIn
+  // Update user last signIn in user_activity table (avoids CDC noise on users table)
   const lastSignInAt = getIsoDate();
-  await db.update(usersTable).set({ lastSignInAt }).where(eq(usersTable.id, user.id));
+  await db.insert(userActivityTable).values({ userId: user.id, lastSignInAt }).onConflictDoUpdate({
+    target: userActivityTable.userId,
+    set: { lastSignInAt },
+  });
   logEvent('info', 'User signed in', { userId: user.id, strategy });
 };
 

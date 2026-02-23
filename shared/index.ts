@@ -69,5 +69,21 @@ export {
 // Utility functions
 export { hasKey, recordFromKeys, identityRecord } from './src/builder/utils';
 
+// Permissions
+export type {
+  AccessPolicies,
+  AccessPolicyCallback,
+  AccessPolicyConfiguration,
+  AccessPolicyEntry,
+  ContextPolicyBuilder,
+  EntityActionPermissions,
+  PermissionValue,
+  SubjectAccessPolicies,
+} from './src/permissions';
+export { configureAccessPolicies, getPolicyPermissions, getSubjectPolicies } from './src/permissions';
+export { allActionsAllowed, allActionsDenied, createActionRecord } from './src/permissions';
+export { accessPolicies, computeCan } from './src/permissions';
+export type { EntityCanMap } from './src/permissions';
+
 // Side-effect import: compile-time validation that config matches hierarchy
 import './src/builder/config-validation';

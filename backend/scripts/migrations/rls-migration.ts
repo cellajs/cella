@@ -24,7 +24,7 @@ const rlsTables = [...entityTableNames, ...membershipTables];
 const fullCrudTables = [
   'users',
   'sessions',
-  'last_seen',
+  'user_activity',
   'tokens',
   'passkeys',
   'oauth_accounts',

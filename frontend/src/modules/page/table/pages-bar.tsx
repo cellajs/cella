@@ -43,7 +43,7 @@ export const PagesTableBar = ({
   const createButtonRef = useRef(null);
   const deleteButtonRef = useRef(null);
 
-  const { q, order, sort } = searchVars;
+  const { q } = searchVars;
 
   const isFiltered = !!q;
   // Drop selected rows on search
@@ -81,7 +81,7 @@ export const PagesTableBar = ({
 
   const fetchExport = async (limit: number) => {
     const response = await getPages({
-      query: { limit: String(limit), q, sort: sort || 'createdAt', order: order || 'asc', offset: '0' },
+      query: { limit: String(limit), q, offset: '0' },
     });
     return response.items;
   };

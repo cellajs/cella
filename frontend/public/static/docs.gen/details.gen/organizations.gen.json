@@ -206,17 +206,6 @@
                         }
                       }
                     }
-                  },
-                  "can": {
-                    "type": "object",
-                    "required": false,
-                    "properties": {
-                      "create": { "type": "boolean", "required": true },
-                      "read": { "type": "boolean", "required": true },
-                      "update": { "type": "boolean", "required": true },
-                      "delete": { "type": "boolean", "required": true },
-                      "search": { "type": "boolean", "required": true }
-                    }
                   }
                 },
                 "extendsRef": "#/components/schemas/Organization"
@@ -652,7 +641,7 @@
                   "chatSupport": { "type": "boolean", "required": true },
                   "included": {
                     "type": "object",
-                    "required": false,
+                    "required": true,
                     "properties": {
                       "membership": {
                         "type": "object",
@@ -724,17 +713,6 @@
                           }
                         }
                       }
-                    }
-                  },
-                  "can": {
-                    "type": "object",
-                    "required": false,
-                    "properties": {
-                      "create": { "type": "boolean", "required": true },
-                      "read": { "type": "boolean", "required": true },
-                      "update": { "type": "boolean", "required": true },
-                      "delete": { "type": "boolean", "required": true },
-                      "search": { "type": "boolean", "required": true }
                     }
                   }
                 },
@@ -915,7 +893,7 @@
           },
           "offset": { "type": "string", "required": false },
           "limit": { "type": "string", "required": false },
-          "userId": {
+          "relatableUserId": {
             "type": "string",
             "required": false,
             "maxLength": 50
@@ -1064,7 +1042,7 @@
             "chatSupport": { "type": "boolean", "required": true },
             "included": {
               "type": "object",
-              "required": false,
+              "required": true,
               "properties": {
                 "membership": {
                   "type": "object",
@@ -1136,17 +1114,6 @@
                     }
                   }
                 }
-              }
-            },
-            "can": {
-              "type": "object",
-              "required": false,
-              "properties": {
-                "create": { "type": "boolean", "required": true },
-                "read": { "type": "boolean", "required": true },
-                "update": { "type": "boolean", "required": true },
-                "delete": { "type": "boolean", "required": true },
-                "search": { "type": "boolean", "required": true }
               }
             }
           },
@@ -1267,7 +1234,8 @@
               { "type": "string", "required": false },
               { "type": "boolean", "required": false }
             ]
-          }
+          },
+          "include": { "type": "string", "required": false }
         }
       }
     }
@@ -1401,7 +1369,7 @@
             "chatSupport": { "type": "boolean", "required": true },
             "included": {
               "type": "object",
-              "required": false,
+              "required": true,
               "properties": {
                 "membership": {
                   "type": "object",
@@ -1473,17 +1441,6 @@
                     }
                   }
                 }
-              }
-            },
-            "can": {
-              "type": "object",
-              "required": false,
-              "properties": {
-                "create": { "type": "boolean", "required": true },
-                "read": { "type": "boolean", "required": true },
-                "update": { "type": "boolean", "required": true },
-                "delete": { "type": "boolean", "required": true },
-                "search": { "type": "boolean", "required": true }
               }
             }
           },

@@ -5,10 +5,10 @@ import i18n from 'i18next';
 import { appConfig, hierarchy } from 'shared';
 import { emailsTable } from '#/db/schema/emails';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
-import { lastSeenTable } from '#/db/schema/last-seen';
 import { membershipsTable } from '#/db/schema/memberships';
 import { requestsTable } from '#/db/schema/requests';
 import { tokensTable } from '#/db/schema/tokens';
+import { userActivityTable } from '#/db/schema/user-activity';
 import { usersTable } from '#/db/schema/users';
 import { type Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
@@ -582,7 +582,7 @@ const membershipsRouteHandlers = app
       name: usersTable.name,
       email: usersTable.email,
       createdAt: usersTable.createdAt,
-      lastSeenAt: sql`(SELECT ${lastSeenTable.lastSeenAt} FROM ${lastSeenTable} WHERE ${lastSeenTable.userId} = ${usersTable.id})`,
+      lastSeenAt: sql`(SELECT ${userActivityTable.lastSeenAt} FROM ${userActivityTable} WHERE ${userActivityTable.userId} = ${usersTable.id})`,
       role: membershipsTable.role,
     });
 

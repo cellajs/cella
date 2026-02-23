@@ -32,7 +32,7 @@ BEGIN
   GRANT SELECT, INSERT, UPDATE, DELETE ON inactive_memberships TO runtime_role;
   GRANT SELECT, INSERT, UPDATE, DELETE ON users TO runtime_role;
   GRANT SELECT, INSERT, UPDATE, DELETE ON sessions TO runtime_role;
-  GRANT SELECT, INSERT, UPDATE, DELETE ON last_seen TO runtime_role;
+  GRANT SELECT, INSERT, UPDATE, DELETE ON user_activity TO runtime_role;
   GRANT SELECT, INSERT, UPDATE, DELETE ON tokens TO runtime_role;
   GRANT SELECT, INSERT, UPDATE, DELETE ON passkeys TO runtime_role;
   GRANT SELECT, INSERT, UPDATE, DELETE ON oauth_accounts TO runtime_role;

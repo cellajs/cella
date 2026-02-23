@@ -34,19 +34,21 @@ export function createSpecificationExtensions(getValue: (key: ExtensionType) => 
 }
 
 /**
- * Builds extension registry with values populated from the collected descriptions.
+ * Builds extension registry with values populated from the collected metadata.
  *
- * @param valueDescriptions - Map of "extensionType:name" to description strings.
+ * @param valueMetadata - Map of "extensionType:functionName" to metadata objects.
  * @returns Array of ExtensionRegistryEntry with values populated.
  */
-export function buildExtensionRegistry(valueDescriptions: Map<string, string>): ExtensionRegistryEntry[] {
+export function buildExtensionRegistry(
+  valueMetadata: Map<string, { name?: string; description: string }>,
+): ExtensionRegistryEntry[] {
   return Object.entries(extensionRegistryMap).map(([key, metadata]) => {
     // Collect values for this extension type
     const values: Record<string, ExtensionValueMetadata> = {};
-    for (const [mapKey, description] of valueDescriptions) {
-      const [extType, name] = mapKey.split(':');
-      if (extType === key && name) {
-        values[name] = { description };
+    for (const [mapKey, meta] of valueMetadata) {
+      const [extType, functionName] = mapKey.split(':');
+      if (extType === key && functionName) {
+        values[functionName] = { ...(meta.name ? { name: meta.name } : {}), description: meta.description };
       }
     }
 

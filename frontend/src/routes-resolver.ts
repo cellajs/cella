@@ -1,22 +1,32 @@
-import type { ContextEntityBase } from '~/api.gen';
+import type { EnrichedContextEntity } from '~/modules/entities/types';
 import type { EntityRoute } from '~/modules/navigation/types';
-import { baseEntityRoutes } from '~/routes-config';
+import { baseEntityRoutes, routeParamMap } from '~/routes-config';
 
 /**
- * App-specific context entity path resolver
+ * Entity-agnostic context entity path resolver.
  *
- * Since each app has its own entity structure or hierarchy, we need to resolve them dynamically in some cases.
- * For example to get/search entities and for items in the menu sheet.
+ * Uses `ancestorSlugs` (populated via cache enrichment) to map parent entity slugs
+ * to route params. The `routeParamMap` config maps entity types to param names.
  *
- * Note: Currently cella only has 'organization' as a context entity.
- * When adding new context entity types, update baseEntityRoutes and add corresponding param handling.
+ * When ancestor slugs are unavailable (cache miss), the route's `beforeLoad` + `rewriteUrlToSlug`
+ * handles the fallback by redirecting to the slug-based URL after data loads.
  */
-export const getContextEntityRoute = (item: ContextEntityBase, _isSubitem?: boolean): EntityRoute => {
-  const { entityType, id, slug, tenantId } = item;
+export const getContextEntityRoute = (item: EnrichedContextEntity, _isSubitem?: boolean): EntityRoute => {
+  const { entityType, slug, tenantId, ancestorSlugs = {} } = item;
 
   const to = baseEntityRoutes[entityType];
+  const params: Record<string, string> = { tenantId, slug };
 
-  // Organization routes use tenantId and orgSlug params
-  // Currently cella only has organization as context entity type
-  return { to, params: { tenantId, orgSlug: slug || id }, search: {} };
+  // Map ancestor slugs to route param names via config
+  for (const [type, ancestorSlug] of Object.entries(ancestorSlugs)) {
+    const paramKey = routeParamMap[type];
+    if (paramKey) params[paramKey] = ancestorSlug;
+  }
+
+  // Organization uses its own slug as orgSlug (it has no ancestors)
+  if (entityType === 'organization') {
+    params.orgSlug = slug;
+  }
+
+  return { to, params, search: {} };
 };

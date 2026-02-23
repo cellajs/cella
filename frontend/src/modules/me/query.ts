@@ -26,7 +26,7 @@ import { getPasskeyRegistrationCredential } from '~/modules/auth/passkey-credent
 import { toaster } from '~/modules/common/toaster/service';
 import { getAndSetMe, getAndSetMeAuthData } from '~/modules/me/helpers';
 import type { Passkey } from '~/modules/me/types';
-import { getMenuData } from '~/modules/navigation/menu-sheet/helpers';
+import { getMenuData } from '~/modules/navigation/menu-sheet/helpers/get-menu-data';
 import { userQueryKeys } from '~/modules/user/query';
 import { queryClient } from '~/query/query-client';
 import type { MutationData } from '~/query/types';

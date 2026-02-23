@@ -1,0 +1,13 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+deleted file mode 100644
+index 2211ddbfe9f14925128ec55c07c06ae93edeaa26..0000000000000000000000000000000000000000
+diff --git a/slugify.d.ts b/slugify.d.ts
+index e20f7957498f3e3ef3a0406bf65b30b49009e83f..4f745b628c90eeae14a751c767bdfbb3b77b2f6e 100644
+--- a/slugify.d.ts
++++ b/slugify.d.ts
+@@ -1,4 +1,4 @@
+-declare module slugify {
++declare namespace slugify {
+   type ExtendArgs = {
+     [key: string]: any;
+   }

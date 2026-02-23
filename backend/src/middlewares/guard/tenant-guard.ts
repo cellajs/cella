@@ -26,8 +26,12 @@ import { AppError } from '#/lib/error';
  * @returns Error response or continues to next handler with tenant context set
  */
 export const tenantGuard = xMiddleware(
-  'tenantGuard',
-  'x-guard',
+  {
+    functionName: 'tenantGuard',
+    type: 'x-guard',
+    name: 'tenant',
+    description: 'Validates tenant access and wraps handler in RLS-enabled transaction',
+  },
   async (ctx, next) => {
     const rawTenantId = ctx.req.param('tenantId');
 
@@ -71,5 +75,4 @@ export const tenantGuard = xMiddleware(
       },
     );
   },
-  'Validates tenant access and wraps handler in RLS-enabled transaction',
 );

@@ -30,15 +30,6 @@ export const productEntityTypeSchema = z.enum(appConfig.productEntityTypes);
  * Common properties schemas
  ************************************************************************************************/
 
-/** Schema for entity action permissions (`can` object) */
-export const entityCanSchema = z.object({
-  create: z.boolean(),
-  read: z.boolean(),
-  update: z.boolean(),
-  delete: z.boolean(),
-  search: z.boolean(),
-});
-
 /*************************************************************************************************
  * Common param schemas
  ************************************************************************************************/
@@ -120,9 +111,9 @@ export const userIdInTenantOrgParamSchema = z.object({
   userId: validIdSchema,
 });
 
-/** Schema for user id param (cross-tenant getUser route) */
-export const userIdParamSchema = z.object({
-  userId: validIdSchema,
+/** Schema for relatable user id param (cross-tenant routes with relatability check) */
+export const relatableUserIdParamSchema = z.object({
+  relatableUserId: validIdSchema,
 });
 
 /*************************************************************************************************

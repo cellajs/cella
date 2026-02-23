@@ -185,6 +185,12 @@ import type {
   PaddleWebhookData,
   PaddleWebhookErrors,
   PaddleWebhookResponses,
+  PostAppCatchupData,
+  PostAppCatchupErrors,
+  PostAppCatchupResponses,
+  PostPublicCatchupData,
+  PostPublicCatchupErrors,
+  PostPublicCatchupResponses,
   RedirectToAttachmentData,
   RedirectToAttachmentErrors,
   RedirectToAttachmentResponses,
@@ -1275,42 +1281,61 @@ export const checkSlug = <ThrowOnError extends boolean = true>(options: Options<
   });
 
 /**
- * Public entity stream
+ * Public entity SSE stream
  *
- * Stream real-time changes for public entities (entities with no parent context). No authentication required. Use offset for catch-up, live=sse for SSE streaming.
+ * SSE stream for real-time public entity changes. No authentication required.
  *
  * **GET /entities/public/stream** ·· [getPublicStream](https://api.cellajs.com/docs#tag/entities/get/entities/public/stream) ·· _entities_
  *
  * @param {getPublicStreamData} options
- * @param {string=} options.query.offset - `string` (optional)
- * @param {enum=} options.query.live - `enum` (optional)
- * @param {string=} options.query.seqs - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getPublicStream = <ThrowOnError extends boolean = true>(
   options?: Options<GetPublicStreamData, ThrowOnError>,
 ) =>
-  (options?.client ?? client).get<GetPublicStreamResponses, GetPublicStreamErrors, ThrowOnError, 'data'>({
+  (options?.client ?? client).sse.get<GetPublicStreamResponses, GetPublicStreamErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/entities/public/stream',
     ...options,
   });
 
 /**
- * App event stream
+ * Public entity catchup
  *
- * SSE stream for membership and entity notifications affecting the *current user*. Sends lightweight notifications - client fetches entity data via API.
+ * Fetch missed public entity changes since last sync. Send cursor and per-scope seqs in the body.
+ *
+ * **POST /entities/public/stream** ·· [postPublicCatchup](https://api.cellajs.com/docs#tag/entities/post/entities/public/stream) ·· _entities_
+ *
+ * @param {postPublicCatchupData} options
+ * @param {string=} options.body.cursor - `string` (optional)
+ * @param {object=} options.body.seqs - `object` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const postPublicCatchup = <ThrowOnError extends boolean = true>(
+  options: Options<PostPublicCatchupData, ThrowOnError>,
+) =>
+  (options.client ?? client).post<PostPublicCatchupResponses, PostPublicCatchupErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/entities/public/stream',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * App event SSE stream
+ *
+ * SSE stream for membership and entity notifications affecting the current user. Sends lightweight notifications.
  *
  * **GET /entities/app/stream** ·· [getAppStream](https://api.cellajs.com/docs#tag/entities/get/entities/app/stream) ·· _entities_
  *
  * @param {getAppStreamData} options
- * @param {string=} options.query.offset - `string` (optional)
- * @param {enum=} options.query.live - `enum` (optional)
- * @param {string=} options.query.seqs - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getAppStream = <ThrowOnError extends boolean = true>(options?: Options<GetAppStreamData, ThrowOnError>) =>
-  (options?.client ?? client).get<GetAppStreamResponses, GetAppStreamErrors, ThrowOnError, 'data'>({
+  (options?.client ?? client).sse.get<GetAppStreamResponses, GetAppStreamErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -1321,6 +1346,38 @@ export const getAppStream = <ThrowOnError extends boolean = true>(options?: Opti
     ],
     url: '/entities/app/stream',
     ...options,
+  });
+
+/**
+ * App event catchup
+ *
+ * Fetch missed entity and membership changes since last sync. Send cursor and per-scope seqs in the body.
+ *
+ * **POST /entities/app/stream** ·· [postAppCatchup](https://api.cellajs.com/docs#tag/entities/post/entities/app/stream) ·· _entities_
+ *
+ * @param {postAppCatchupData} options
+ * @param {string=} options.body.cursor - `string` (optional)
+ * @param {object=} options.body.seqs - `object` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const postAppCatchup = <ThrowOnError extends boolean = true>(
+  options: Options<PostAppCatchupData, ThrowOnError>,
+) =>
+  (options.client ?? client).post<PostAppCatchupResponses, PostAppCatchupErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/entities/app/stream',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
   });
 
 /**
@@ -1902,7 +1959,7 @@ export const createOrganizations = <ThrowOnError extends boolean = true>(
  * @param {enum=} options.query.order - `enum` (optional)
  * @param {string=} options.query.offset - `string` (optional)
  * @param {string=} options.query.limit - `string` (optional)
- * @param {string=} options.query.userid - `string` (optional)
+ * @param {string=} options.query.relatableuserid - `string` (optional)
  * @param {enum=} options.query.role - `enum` (optional)
  * @param {enum=} options.query.excludearchived - `enum` (optional)
  * @param {string=} options.query.include - `string` (optional)
@@ -1935,6 +1992,7 @@ export const getOrganizations = <ThrowOnError extends boolean = true>(
  * @param {string} options.path.tenantid - `string`
  * @param {string} options.path.organizationid - `string`
  * @param {string | boolean=} options.query.slug - `string | boolean` (optional)
+ * @param {string=} options.query.include - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getOrganization = <ThrowOnError extends boolean = true>(
@@ -2172,12 +2230,12 @@ export const getUsers = <ThrowOnError extends boolean = true>(options?: Options<
 /**
  * Get user
  *
- * Retrieves a *user* by ID. The requesting user must share at least one context entity membership. Pass `?slug=true` to resolve by slug instead.
+ * Retrieves a *user* by ID. The requesting user must share at least one organization membership. Pass `?slug=true` to resolve by slug instead.
  *
- * **GET /users/{userId}** ·· [getUser](https://api.cellajs.com/docs#tag/users/get/users/{userId}) ·· _users_
+ * **GET /users/{relatableUserId}** ·· [getUser](https://api.cellajs.com/docs#tag/users/get/users/{relatableUserId}) ·· _users_
  *
  * @param {getUserData} options
- * @param {string} options.path.userid - `string`
+ * @param {string} options.path.relatableuserid - `string`
  * @param {string | boolean=} options.query.slug - `string | boolean` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
@@ -2191,7 +2249,7 @@ export const getUser = <ThrowOnError extends boolean = true>(options: Options<Ge
         type: 'apiKey',
       },
     ],
-    url: '/users/{userId}',
+    url: '/users/{relatableUserId}',
     ...options,
   });
 

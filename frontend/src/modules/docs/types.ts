@@ -8,6 +8,7 @@
  * Metadata for an individual extension value (e.g., a specific limiter or guard)
  */
 export interface GenExtensionValueMetadata {
+  name?: string;
   description: string;
 }
 
@@ -20,8 +21,6 @@ export interface GenExtensionDefinition {
   key: string;
   /** Identifier for frontend property names, e.g., 'xGuard' */
   id: string;
-  /** Translation key for i18n support */
-  translationKey: string;
   /** Description of the extension's purpose */
   description: string;
   /** Optional metadata for each value (e.g., each limiter's description) */
@@ -48,6 +47,8 @@ export interface GenOperationSummary {
   hasExample: boolean;
   /** Dynamic x-extensions keyed by camelCase name */
   extensions: Record<string, string[]>;
+  /** Entity type derived from tag (e.g., 'user', 'organization'). Only set for entity-related operations. */
+  entityType?: string;
 }
 
 /**

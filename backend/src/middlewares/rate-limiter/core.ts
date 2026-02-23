@@ -51,14 +51,13 @@ export const rateLimiter = (
   identifiers: RateLimitIdentifier[],
   opts?: RateLimiterOpts,
 ): MiddlewareHandler<Env> => {
-  const { limits, name, description } = opts ?? {};
+  const { limits, functionName, name, description } = opts ?? {};
   const config = { ...defaultOptions, ...limits };
   const limiter = getRateLimiterInstance({ ...config, keyPrefix: `${key}_${mode}` });
   const slowLimiter = getRateLimiterInstance({ ...slowOptions, keyPrefix: `${key}_${mode}:slow` });
 
   return xMiddleware(
-    name ?? `${key}Limiter`,
-    'x-rate-limiter',
+    { functionName: functionName ?? `${key}Limiter`, type: 'x-rate-limiter', name: name ?? key, description },
     async (ctx, next) => {
       // Extract identifiers from multiple sources
       const extractedIdentifiers = await extractIdentifiers(ctx, identifiers);
@@ -146,6 +145,5 @@ export const rateLimiter = (
         } catch {}
       }
     },
-    description,
   );
 };

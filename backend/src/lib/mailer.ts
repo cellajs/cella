@@ -1,13 +1,10 @@
-import brevo from '@getbrevo/brevo';
+import { BrevoClient } from '@getbrevo/brevo';
 import { render } from 'jsx-email';
 import { appConfig } from 'shared';
 import { env } from '#/env';
 import { sanitizeEmailSubject } from '#/utils/sanitize-email-subject';
 
-const apiInstance = new brevo.TransactionalEmailsApi();
-
-// Check if the API key is set
-if (!!env.BREVO_API_KEY) apiInstance.setApiKey(0, env.BREVO_API_KEY);
+const brevoClient = env.BREVO_API_KEY ? new BrevoClient({ apiKey: env.BREVO_API_KEY }) : undefined;
 
 /* ---------------------------------- Types --------------------------------- */
 
@@ -65,21 +62,19 @@ export const mailer: Mailer = {
    * @param replyTo - Optional, email address for the "Reply-To" field.
    */
   async send(to: string, subject: string, html: string, replyTo?: string) {
-    if (!env.BREVO_API_KEY) {
+    if (!brevoClient) {
       console.info(`Email to ${to} not sent: BREVO_API_KEY missing.`);
       return;
     }
 
-    const sendSmtpEmail = new brevo.SendSmtpEmail();
-
-    sendSmtpEmail.subject = sanitizeEmailSubject(subject || `${appConfig.name} message`);
-    sendSmtpEmail.htmlContent = html;
-    sendSmtpEmail.to = [{ email: env.SEND_ALL_TO_EMAIL || to }];
-    sendSmtpEmail.replyTo = { email: replyTo || appConfig.supportEmail };
-    sendSmtpEmail.sender = { email: appConfig.notificationsEmail };
-
     try {
-      await apiInstance.sendTransacEmail(sendSmtpEmail);
+      await brevoClient.transactionalEmails.sendTransacEmail({
+        subject: sanitizeEmailSubject(subject || `${appConfig.name} message`),
+        htmlContent: html,
+        to: [{ email: env.SEND_ALL_TO_EMAIL || to }],
+        replyTo: { email: replyTo || appConfig.supportEmail },
+        sender: { email: appConfig.notificationsEmail },
+      });
     } catch (err) {
       console.warn('Failed to send email:\n', err);
     }

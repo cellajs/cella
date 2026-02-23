@@ -1,25 +1,30 @@
+import type { ContextEntityType, EntityCanMap } from 'shared';
 import type { ContextEntityBase, MembershipBase } from '~/api.gen';
 
-/** Standard CRUD+search permissions object returned by entity detail endpoints */
-// TODO clean this up when we refactored permission manager and move it to shared to directly
-// use it here in frontend
-export type EntityCan = {
-  create: boolean;
-  read: boolean;
-  update: boolean;
-  delete: boolean;
-  search: boolean;
+/** Ancestor context entity slugs for URL building — populated via cache enrichment */
+export type AncestorSlugs = Partial<Record<ContextEntityType, string>>;
+
+/** Entity-type-keyed permission map — computed on the frontend from membership + access policies */
+export type EntityCan = EntityCanMap;
+
+/** Makes specified keys required and non-nullable */
+export type WithRequired<T, K extends keyof T> = T & { [P in K]-?: NonNullable<T[P]> };
+
+/** Fields added by the frontend cache enrichment pipeline (membership, permissions, ancestor slugs) */
+export type EntityEnrichment = {
+  /** Parent organization ID - used by sub-context-entities (e.g. workspace) in forks */
+  organizationId?: string;
+  /** Membership data - populated via cache enrichment from myMemberships */
+  membership?: MembershipBase | null;
+  /** Ancestor context entity slugs for URL building - populated via cache enrichment */
+  ancestorSlugs?: AncestorSlugs;
+  /** Entity action permissions - populated via cache enrichment from membership + policies */
+  can?: EntityCan;
 };
 
 /**
  * Frontend-enriched context entity type.
- * Extends the API base with client-side data (membership from cache, can from detail responses).
+ * Extends the API base with client-side data populated via cache enrichment.
  * Use `ContextEntityBase` from `~/api.gen` when you only need the base fields.
  */
-export type ContextEntity = ContextEntityBase & {
-  organizationId?: string;
-  /** Membership data - populated via cache enrichment from myMemberships */
-  membership?: MembershipBase | null;
-  /** Entity action permissions from detail response */
-  can?: EntityCan;
-};
+export type EnrichedContextEntity = ContextEntityBase & EntityEnrichment;

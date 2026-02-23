@@ -23,7 +23,7 @@ export const OnboardingCompleted = () => {
   const didRun = useRef(false);
 
   // Fetch organizations to determine the last created organization
-  const orgQuery = useInfiniteQuery(organizationsListQueryOptions({ userId: user.id }));
+  const orgQuery = useInfiniteQuery(organizationsListQueryOptions({ relatableUserId: user.id }));
   const organizations = flattenInfiniteData<Organization>(orgQuery.data);
 
   const lastCreatedOrganization =

@@ -6,7 +6,6 @@ export {
   contextEntityTypeSchema,
   cookieSchema,
   emailOrTokenIdQuerySchema,
-  entityCanSchema,
   entityIdParamSchema,
   entityTypeSchema,
   entityWithTypeQuerySchema,
@@ -26,6 +25,7 @@ export {
   paginationQuerySchema,
   passwordSchema,
   productEntityTypeSchema,
+  relatableUserIdParamSchema,
   sessionCookieSchema,
   slugQuerySchema,
   tenantIdParamSchema,
@@ -33,7 +33,6 @@ export {
   tenantOrganizationIdParamSchema,
   tenantOrgParamSchema,
   userIdInTenantOrgParamSchema,
-  userIdParamSchema,
   validCDNUrlSchema,
   validDomainsSchema,
   validEmailSchema,
@@ -61,10 +60,9 @@ export {
   catchupChangeSummarySchema,
   type PublicCatchupResponse,
   publicCatchupResponseSchema,
-  publicStreamQuerySchema,
   type StreamNotification,
+  streamCatchupBodySchema,
   streamNotificationSchema,
-  streamQuerySchema,
 } from './stream-schemas';
 
 // Success response schemas

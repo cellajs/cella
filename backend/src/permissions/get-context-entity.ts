@@ -4,7 +4,7 @@ import type { Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
 import { type EntityModel, resolveEntity } from '#/lib/resolve-entity';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
-import { checkPermission, type PermissionResult } from '#/permissions';
+import { checkPermission } from '#/permissions';
 
 /**
  * Result type for context entity validation including the can object.
@@ -12,7 +12,6 @@ import { checkPermission, type PermissionResult } from '#/permissions';
 export interface ValidContextEntityResult<T extends ContextEntityType> {
   entity: EntityModel<T>;
   membership: MembershipBaseModel | null;
-  can: PermissionResult['can'];
 }
 
 /**
@@ -53,11 +52,11 @@ export const getValidContextEntity = async <T extends ContextEntityType>(
   if (!entity) throw new AppError(404, 'not_found', 'warn', { entityType });
 
   // Step 2: Check permission for the requested action (system admin bypass is handled inside)
-  const { isAllowed, membership, can } = checkPermission(memberships, action, entity, { systemRole: userSystemRole });
+  const { isAllowed, membership } = checkPermission(memberships, action, entity, { systemRole: userSystemRole });
 
   if (!isAllowed) {
     throw new AppError(403, 'forbidden', 'warn', { entityType, meta: { action } });
   }
 
-  return { entity, membership, can };
+  return { entity, membership };
 };

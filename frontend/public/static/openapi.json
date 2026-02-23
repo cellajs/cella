@@ -12,23 +12,35 @@
       {
         "key": "x-guard",
         "id": "xGuard",
-        "translationKey": "common:docs.guard",
         "description": "Authorization middleware applied to the endpoint",
         "required": true,
         "values": {
           "publicGuard": {
+            "name": "public",
             "description": "No authentication required"
           },
           "authGuard": {
+            "name": "auth",
             "description": "Requires valid session"
           },
           "crossTenantGuard": {
+            "name": "crossTenant",
             "description": "Wraps handler in user RLS context for cross-tenant access"
           },
+          "orgGuard": {
+            "name": "org",
+            "description": "Validates organization membership within tenant context"
+          },
+          "relatableGuard": {
+            "name": "relatable",
+            "description": "Checks that the requesting user shares at least one organization with the target user"
+          },
           "sysAdminGuard": {
+            "name": "sysAdmin",
             "description": "Requires system admin + IP whitelist"
           },
           "tenantGuard": {
+            "name": "tenant",
             "description": "Validates tenant access and wraps handler in RLS-enabled transaction"
           }
         }
@@ -36,29 +48,35 @@
       {
         "key": "x-rate-limiter",
         "id": "xRateLimiter",
-        "translationKey": "common:docs.rate_limiter",
         "description": "Rate limiting rules applied to the endpoint",
         "required": false,
         "values": {
           "spamLimiter": {
+            "name": "spam",
             "description": "Max 10 requests/hour per IP for email-sending endpoints"
           },
           "emailEnumLimiter": {
+            "name": "emailEnum",
             "description": "Blocks IP for 30 min after 10 consecutive failures"
           },
           "passwordLimiter": {
+            "name": "password",
             "description": "Blocks email/IP for 30 min after 10 consecutive failures"
           },
           "presignedUrlLimiter": {
+            "name": "presignedUrl",
             "description": "Max 2000 requests/hour per user/IP for presigned URLs"
           },
           "totpVerificationLimiter": {
+            "name": "totpVerification",
             "description": "Blocks for 30 min after 5 failed TOTP attempts"
           },
           "passkeyChallengeLimiter": {
+            "name": "passkeyChallenge",
             "description": "Max 5 passkey challenges/hour per IP"
           },
           "tokenLimiter": {
+            "name": "token",
             "description": "Blocks IP for 30 min after 10 consecutive token failures"
           }
         }
@@ -66,14 +84,15 @@
       {
         "key": "x-cache",
         "id": "xCache",
-        "translationKey": "common:docs.cache",
         "description": "Caching strategy applied to the endpoint",
         "required": false,
         "values": {
           "appCache": {
+            "name": "app",
             "description": "TTL cache with session-signed token validation"
           },
           "publicCache": {
+            "name": "public",
             "description": "LRU cache for public page entities"
           }
         }
@@ -1094,18 +1113,6 @@
               "null"
             ]
           },
-          "lastStartedAt": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "lastSignInAt": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
           "modifiedBy": {
             "type": [
               "string",
@@ -1114,6 +1121,18 @@
             "maxLength": 50
           },
           "lastSeenAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lastStartedAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lastSignInAt": {
             "type": [
               "string",
               "null"
@@ -1137,12 +1156,12 @@
           "newsletter",
           "userFlags",
           "modifiedAt",
-          "lastStartedAt",
-          "lastSignInAt",
           "modifiedBy",
-          "lastSeenAt"
+          "lastSeenAt",
+          "lastStartedAt",
+          "lastSignInAt"
         ],
-        "description": "A user with profile data and last-seen activity timestamp.",
+        "description": "A user with profile data and activity timestamps.",
         "example": {
           "id": "7sfzetbhjls7m9dg1xzavv78",
           "entityType": "user",
@@ -1826,33 +1845,6 @@
                 ]
               }
             }
-          },
-          "can": {
-            "type": "object",
-            "properties": {
-              "create": {
-                "type": "boolean"
-              },
-              "read": {
-                "type": "boolean"
-              },
-              "update": {
-                "type": "boolean"
-              },
-              "delete": {
-                "type": "boolean"
-              },
-              "search": {
-                "type": "boolean"
-              }
-            },
-            "required": [
-              "create",
-              "read",
-              "update",
-              "delete",
-              "search"
-            ]
           }
         },
         "required": [
@@ -1879,7 +1871,8 @@
           "websiteUrl",
           "welcomeText",
           "authStrategies",
-          "chatSupport"
+          "chatSupport",
+          "included"
         ],
         "description": "An organization with settings, restrictions, and membership context.",
         "example": {
@@ -2208,33 +2201,6 @@
           "organizationId": {
             "type": "string",
             "maxLength": 50
-          },
-          "can": {
-            "type": "object",
-            "properties": {
-              "create": {
-                "type": "boolean"
-              },
-              "read": {
-                "type": "boolean"
-              },
-              "update": {
-                "type": "boolean"
-              },
-              "delete": {
-                "type": "boolean"
-              },
-              "search": {
-                "type": "boolean"
-              }
-            },
-            "required": [
-              "create",
-              "read",
-              "update",
-              "delete",
-              "search"
-            ]
           }
         },
         "required": [
@@ -5561,54 +5527,83 @@
         "tags": [
           "entities"
         ],
-        "summary": "Public entity stream",
-        "description": "Stream real-time changes for public entities (entities with no parent context). No authentication required. Use offset for catch-up, live=sse for SSE streaming.",
+        "summary": "Public entity SSE stream",
+        "description": "SSE stream for real-time public entity changes. No authentication required.",
         "x-guard": [
           "publicGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "description": "Starting offset: 'now' for live-only, or activity ID to receive missed notifications",
-              "example": "now"
-            },
-            "required": false,
-            "description": "Starting offset: 'now' for live-only, or activity ID to receive missed notifications",
-            "name": "offset",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": [
-                "sse"
-              ],
-              "description": "Set to \"sse\" for live updates (SSE stream)",
-              "example": "sse"
-            },
-            "required": false,
-            "description": "Set to \"sse\" for live updates (SSE stream)",
-            "name": "live",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "description": "JSON-encoded client seqs for gap detection: {\"scopeId\":42}. Unchanged scopes are excluded from the response.",
-              "example": "{}"
-            },
-            "required": false,
-            "description": "JSON-encoded client seqs for gap detection: {\"scopeId\":42}. Unchanged scopes are excluded from the response.",
-            "name": "seqs",
-            "in": "query"
-          }
-        ],
         "responses": {
           "200": {
-            "description": "Catch-up summary or SSE stream started",
+            "description": "SSE stream started",
+            "content": {
+              "text/event-stream": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      },
+      "post": {
+        "security": [],
+        "operationId": "postPublicCatchup",
+        "tags": [
+          "entities"
+        ],
+        "summary": "Public entity catchup",
+        "description": "Fetch missed public entity changes since last sync. Send cursor and per-scope seqs in the body.",
+        "x-guard": [
+          "publicGuard"
+        ],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "cursor": {
+                    "type": "string",
+                    "description": "Last activity cursor received by the client. Omit on first sync.",
+                    "example": "0-54F6250"
+                  },
+                  "seqs": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "integer"
+                    },
+                    "description": "Client-side sequence numbers per scope: { \"orgId\": 42, \"orgId:m\": 5 }",
+                    "example": {
+                      "abc123": 10,
+                      "abc123:m": 3
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Catchup summary",
             "content": {
               "application/json": {
                 "schema": {
@@ -5684,59 +5679,88 @@
         "tags": [
           "entities"
         ],
-        "summary": "App event stream",
-        "description": "SSE stream for membership and entity notifications affecting the *current user*. Sends lightweight notifications - client fetches entity data via API.",
+        "summary": "App event SSE stream",
+        "description": "SSE stream for membership and entity notifications affecting the current user. Sends lightweight notifications.",
         "x-guard": [
           "authGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "description": "Starting offset: 'now' for live-only, or activity ID to receive missed notifications",
-              "example": "now"
-            },
-            "required": false,
-            "description": "Starting offset: 'now' for live-only, or activity ID to receive missed notifications",
-            "name": "offset",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": [
-                "sse",
-                "catchup"
-              ],
-              "description": "Connection mode: 'sse' for streaming, 'catchup' for one-time fetch",
-              "example": "sse"
-            },
-            "required": false,
-            "description": "Connection mode: 'sse' for streaming, 'catchup' for one-time fetch",
-            "name": "live",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "description": "JSON-encoded client seqs for gap detection: {\"scopeId\":42}. Unchanged scopes are excluded from the response.",
-              "example": "{}"
-            },
-            "required": false,
-            "description": "JSON-encoded client seqs for gap detection: {\"scopeId\":42}. Unchanged scopes are excluded from the response.",
-            "name": "seqs",
-            "in": "query"
-          }
-        ],
         "responses": {
           "200": {
-            "description": "SSE stream or catchup summary response",
+            "description": "SSE stream started",
             "content": {
               "text/event-stream": {
                 "schema": {}
-              },
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      },
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "postAppCatchup",
+        "tags": [
+          "entities"
+        ],
+        "summary": "App event catchup",
+        "description": "Fetch missed entity and membership changes since last sync. Send cursor and per-scope seqs in the body.",
+        "x-guard": [
+          "authGuard"
+        ],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "cursor": {
+                    "type": "string",
+                    "description": "Last activity cursor received by the client. Omit on first sync.",
+                    "example": "0-54F6250"
+                  },
+                  "seqs": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "integer"
+                    },
+                    "description": "Client-side sequence numbers per scope: { \"orgId\": 42, \"orgId:m\": 5 }",
+                    "example": {
+                      "abc123": 10,
+                      "abc123:m": 3
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Catchup summary",
+            "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
@@ -7768,10 +7792,7 @@
                                   "membership"
                                 ]
                               }
-                            },
-                            "required": [
-                              "included"
-                            ]
+                            }
                           }
                         ],
                         "description": "An organization with settings, restrictions, and membership context.",
@@ -8131,7 +8152,8 @@
         "description": "Returns a list of *organizations*.",
         "x-guard": [
           "authGuard",
-          "crossTenantGuard"
+          "crossTenantGuard",
+          "relatableGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -8194,7 +8216,7 @@
               "maxLength": 50
             },
             "required": false,
-            "name": "userId",
+            "name": "relatableUserId",
             "in": "query"
           },
           {
@@ -8453,6 +8475,14 @@
             },
             "required": false,
             "name": "slug",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "include",
             "in": "query"
           }
         ],
@@ -9682,7 +9712,7 @@
                             }
                           }
                         ],
-                        "description": "A user with profile data and last-seen activity timestamp.",
+                        "description": "A user with profile data and activity timestamps.",
                         "example": {
                           "id": "7sfzetbhjls7m9dg1xzavv78",
                           "entityType": "user",
@@ -9812,7 +9842,7 @@
         }
       }
     },
-    "/users/{userId}": {
+    "/users/{relatableUserId}": {
       "get": {
         "security": [
           {
@@ -9824,10 +9854,11 @@
           "users"
         ],
         "summary": "Get user",
-        "description": "Retrieves a *user* by ID. The requesting user must share at least one context entity membership. Pass `?slug=true` to resolve by slug instead.",
+        "description": "Retrieves a *user* by ID. The requesting user must share at least one organization membership. Pass `?slug=true` to resolve by slug instead.",
         "x-guard": [
           "authGuard",
-          "crossTenantGuard"
+          "crossTenantGuard",
+          "relatableGuard"
         ],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -9838,7 +9869,7 @@
               "maxLength": 50
             },
             "required": true,
-            "name": "userId",
+            "name": "relatableUserId",
             "in": "path"
           },
           {
@@ -11704,18 +11735,6 @@
                               "null"
                             ]
                           },
-                          "lastStartedAt": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
-                          },
-                          "lastSignInAt": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
-                          },
                           "modifiedBy": {
                             "type": [
                               "string",
@@ -11724,6 +11743,18 @@
                             "maxLength": 50
                           },
                           "lastSeenAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "lastStartedAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "lastSignInAt": {
                             "type": [
                               "string",
                               "null"
@@ -11748,10 +11779,10 @@
                           "lastName",
                           "language",
                           "modifiedAt",
-                          "lastStartedAt",
-                          "lastSignInAt",
                           "modifiedBy",
                           "lastSeenAt",
+                          "lastStartedAt",
+                          "lastSignInAt",
                           "membership"
                         ]
                       }

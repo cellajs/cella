@@ -17,6 +17,8 @@ interface OperationsTableBarProps {
   setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<GenOperationSummary>[]>>;
   isCompact: boolean;
   setIsCompact: (isCompact: boolean) => void;
+  isEntityOnly: boolean;
+  setIsEntityOnly: (isEntityOnly: boolean) => void;
 }
 
 export const OperationsTableBar = ({
@@ -27,6 +29,8 @@ export const OperationsTableBar = ({
   setColumns,
   isCompact,
   setIsCompact,
+  isEntityOnly,
+  setIsEntityOnly,
 }: OperationsTableBarProps) => {
   const onSearch = (searchString: string) => {
     setSearch({ q: searchString });
@@ -59,6 +63,8 @@ export const OperationsTableBar = ({
         setColumns={setColumns}
         isCompact={isCompact}
         setIsCompact={setIsCompact}
+        isEntityOnly={isEntityOnly}
+        setIsEntityOnly={setIsEntityOnly}
       />
       <FocusView iconOnly />
     </TableBarContainer>

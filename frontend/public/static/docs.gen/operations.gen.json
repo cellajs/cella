@@ -765,11 +765,30 @@
     "method": "get",
     "path": "/entities/public/stream",
     "tags": ["entities"],
-    "summary": "Public entity stream",
-    "description": "Stream real-time changes for public entities (entities with no parent context). No authentication required. Use offset for catch-up, live=sse for SSE streaming.",
+    "summary": "Public entity SSE stream",
+    "description": "SSE stream for real-time public entity changes. No authentication required.",
     "deprecated": false,
-    "hasParams": true,
+    "hasParams": false,
     "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["publicGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    }
+  },
+  {
+    "id": "postPublicCatchup",
+    "hash": "tag/entities/POST/entities/public/stream",
+    "method": "post",
+    "path": "/entities/public/stream",
+    "tags": ["entities"],
+    "summary": "Public entity catchup",
+    "description": "Fetch missed public entity changes since last sync. Send cursor and per-scope seqs in the body.",
+    "deprecated": false,
+    "hasParams": false,
+    "hasRequestBody": true,
     "hasResponseBody": true,
     "hasExample": false,
     "extensions": {
@@ -784,11 +803,30 @@
     "method": "get",
     "path": "/entities/app/stream",
     "tags": ["entities"],
-    "summary": "App event stream",
-    "description": "SSE stream for membership and entity notifications affecting the *current user*. Sends lightweight notifications - client fetches entity data via API.",
+    "summary": "App event SSE stream",
+    "description": "SSE stream for membership and entity notifications affecting the current user. Sends lightweight notifications.",
     "deprecated": false,
-    "hasParams": true,
+    "hasParams": false,
     "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["authGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    }
+  },
+  {
+    "id": "postAppCatchup",
+    "hash": "tag/entities/POST/entities/app/stream",
+    "method": "post",
+    "path": "/entities/app/stream",
+    "tags": ["entities"],
+    "summary": "App event catchup",
+    "description": "Fetch missed entity and membership changes since last sync. Send cursor and per-scope seqs in the body.",
+    "deprecated": false,
+    "hasParams": false,
+    "hasRequestBody": true,
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
@@ -1156,7 +1194,8 @@
       "xGuard": ["authGuard", "tenantGuard"],
       "xRateLimiter": [],
       "xCache": []
-    }
+    },
+    "entityType": "organization"
   },
   {
     "id": "deleteOrganizations",
@@ -1175,7 +1214,8 @@
       "xGuard": ["authGuard", "tenantGuard"],
       "xRateLimiter": [],
       "xCache": []
-    }
+    },
+    "entityType": "organization"
   },
   {
     "id": "getOrganizations",
@@ -1191,10 +1231,11 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["authGuard", "crossTenantGuard"],
+      "xGuard": ["authGuard", "crossTenantGuard", "relatableGuard"],
       "xRateLimiter": [],
       "xCache": []
-    }
+    },
+    "entityType": "organization"
   },
   {
     "id": "getOrganization",
@@ -1213,7 +1254,8 @@
       "xGuard": ["authGuard", "tenantGuard"],
       "xRateLimiter": [],
       "xCache": []
-    }
+    },
+    "entityType": "organization"
   },
   {
     "id": "updateOrganization",
@@ -1232,7 +1274,8 @@
       "xGuard": ["authGuard", "tenantGuard"],
       "xRateLimiter": [],
       "xCache": []
-    }
+    },
+    "entityType": "organization"
   },
   {
     "id": "getPages",
@@ -1251,7 +1294,8 @@
       "xGuard": ["publicGuard"],
       "xRateLimiter": [],
       "xCache": []
-    }
+    },
+    "entityType": "page"
   },
   {
     "id": "getPage",
@@ -1270,7 +1314,8 @@
       "xGuard": ["publicGuard"],
       "xRateLimiter": [],
       "xCache": ["publicCache"]
-    }
+    },
+    "entityType": "page"
   },
   {
     "id": "createPages",
@@ -1289,7 +1334,8 @@
       "xGuard": ["authGuard", "tenantGuard", "sysAdminGuard"],
       "xRateLimiter": [],
       "xCache": []
-    }
+    },
+    "entityType": "page"
   },
   {
     "id": "deletePages",
@@ -1308,7 +1354,8 @@
       "xGuard": ["authGuard", "tenantGuard", "sysAdminGuard"],
       "xRateLimiter": [],
       "xCache": []
-    }
+    },
+    "entityType": "page"
   },
   {
     "id": "updatePage",
@@ -1327,7 +1374,8 @@
       "xGuard": ["authGuard", "tenantGuard", "sysAdminGuard"],
       "xRateLimiter": [],
       "xCache": []
-    }
+    },
+    "entityType": "page"
   },
   {
     "id": "getUsers",
@@ -1346,26 +1394,28 @@
       "xGuard": ["authGuard", "crossTenantGuard"],
       "xRateLimiter": [],
       "xCache": []
-    }
+    },
+    "entityType": "user"
   },
   {
     "id": "getUser",
-    "hash": "tag/users/GET/users/{userId}",
+    "hash": "tag/users/GET/users/{relatableUserId}",
     "method": "get",
-    "path": "/users/{userId}",
+    "path": "/users/{relatableUserId}",
     "tags": ["users"],
     "summary": "Get user",
-    "description": "Retrieves a *user* by ID. The requesting user must share at least one context entity membership. Pass `?slug=true` to resolve by slug instead.",
+    "description": "Retrieves a *user* by ID. The requesting user must share at least one organization membership. Pass `?slug=true` to resolve by slug instead.",
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["authGuard", "crossTenantGuard"],
+      "xGuard": ["authGuard", "crossTenantGuard", "relatableGuard"],
       "xRateLimiter": [],
       "xCache": []
-    }
+    },
+    "entityType": "user"
   },
   {
     "id": "getAttachments",
@@ -1384,7 +1434,8 @@
       "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
       "xRateLimiter": [],
       "xCache": []
-    }
+    },
+    "entityType": "attachment"
   },
   {
     "id": "createAttachments",
@@ -1403,7 +1454,8 @@
       "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
       "xRateLimiter": [],
       "xCache": []
-    }
+    },
+    "entityType": "attachment"
   },
   {
     "id": "deleteAttachments",
@@ -1422,7 +1474,8 @@
       "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
       "xRateLimiter": [],
       "xCache": []
-    }
+    },
+    "entityType": "attachment"
   },
   {
     "id": "getPresignedUrl",
@@ -1441,7 +1494,8 @@
       "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
       "xRateLimiter": ["presignedUrlLimiter"],
       "xCache": []
-    }
+    },
+    "entityType": "attachment"
   },
   {
     "id": "getAttachment",
@@ -1460,7 +1514,8 @@
       "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
       "xRateLimiter": [],
       "xCache": ["appCache"]
-    }
+    },
+    "entityType": "attachment"
   },
   {
     "id": "updateAttachment",
@@ -1479,7 +1534,8 @@
       "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
       "xRateLimiter": [],
       "xCache": []
-    }
+    },
+    "entityType": "attachment"
   },
   {
     "id": "redirectToAttachment",
@@ -1498,7 +1554,8 @@
       "xGuard": ["publicGuard"],
       "xRateLimiter": ["tokenLimiter"],
       "xCache": []
-    }
+    },
+    "entityType": "attachment"
   },
   {
     "id": "membershipInvite",

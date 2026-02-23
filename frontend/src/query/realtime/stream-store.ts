@@ -2,7 +2,7 @@ import { appConfig } from 'shared';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import type { StreamNotification } from '~/api.gen';
-import { getAppStream, getPublicStream } from '~/api.gen';
+import { postAppCatchup, postPublicCatchup } from '~/api.gen';
 import { isDebugMode } from '~/env';
 import { useSyncStore } from '~/store/sync';
 import { handleAppStreamNotification } from './app-stream-handler';
@@ -189,8 +189,6 @@ class StreamManager {
     const { debugLabel, endpoint, withCredentials, useTabCoordination } = this.config;
 
     const sseUrl = new URL(endpoint);
-    sseUrl.searchParams.set('live', 'sse');
-    sseUrl.searchParams.set('offset', 'now');
 
     this.store.getState().setState('connecting');
     const eventSource = new EventSource(sseUrl.toString(), { withCredentials });
@@ -342,9 +340,9 @@ const publicStreamConfig: StreamConfig = {
   useTabCoordination: false,
   fetchAndProcessCatchup: async (offset) => {
     const seqs = useSyncStore.getState().seqs;
-    const seqsParam = Object.keys(seqs).length > 0 ? JSON.stringify(seqs) : undefined;
-    const response = await getPublicStream({
-      query: { offset: offset ?? undefined, seqs: seqsParam },
+    const seqsParam = Object.keys(seqs).length > 0 ? seqs : undefined;
+    const response = await postPublicCatchup({
+      body: { cursor: offset ?? undefined, seqs: seqsParam },
     });
     processPublicCatchup(response);
     return response.cursor ?? null;
@@ -366,9 +364,9 @@ const appStreamConfig: StreamConfig = {
   useTabCoordination: true,
   fetchAndProcessCatchup: async (offset) => {
     const seqs = useSyncStore.getState().seqs;
-    const seqsParam = Object.keys(seqs).length > 0 ? JSON.stringify(seqs) : undefined;
-    const response = await getAppStream({
-      query: { offset: offset ?? undefined, seqs: seqsParam },
+    const seqsParam = Object.keys(seqs).length > 0 ? seqs : undefined;
+    const response = await postAppCatchup({
+      body: { cursor: offset ?? undefined, seqs: seqsParam },
     });
     processAppCatchup(response);
     return response.cursor ?? null;

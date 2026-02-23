@@ -1,6 +1,6 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { and, eq, getColumns, ilike, inArray, type SQL, sql } from 'drizzle-orm';
-import { appConfig, recordFromKeys } from 'shared';
+import { appConfig } from 'shared';
 import { unsafeInternalDb as db } from '#/db/db';
 import { contextCountersTable } from '#/db/schema/context-counters';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -14,7 +14,7 @@ import { initContextCounters } from '#/modules/entities/helpers/init-context-cou
 import { insertMemberships } from '#/modules/memberships/helpers';
 import { type MembershipBaseModel, toMembershipBase } from '#/modules/memberships/helpers/select';
 import organizationRoutes from '#/modules/organization/organization-routes';
-import { addPermission, getValidContextEntity } from '#/permissions';
+import { getValidContextEntity } from '#/permissions';
 import { splitByPermission } from '#/permissions/split-by-permission';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
@@ -117,9 +117,6 @@ const organizationRouteHandlers = app
     // Build counts for response
     const counts = buildZeroCounts('organization');
 
-    // Creator is admin, grant all permissions
-    const can = recordFromKeys(appConfig.entityActions, () => true);
-
     // Map memberships by organizationId
     const membershipByOrgId = new Map(createdMemberships.map((m) => [m.organizationId, m]));
 
@@ -132,7 +129,6 @@ const organizationRouteHandlers = app
           membership: toMembershipBase(membership),
           counts,
         },
-        can,
       };
     });
 
@@ -142,17 +138,17 @@ const organizationRouteHandlers = app
    * Get list of organizations
    */
   .openapi(organizationRoutes.getOrganizations, async (ctx) => {
-    const { q, sort, order, offset, limit, userId, role, excludeArchived, include } = ctx.req.valid('query');
+    const { q, sort, order, offset, limit, relatableUserId, role, excludeArchived, include } = ctx.req.valid('query');
 
     const entityType = 'organization';
 
     const user = ctx.var.user;
     const userSystemRole = ctx.var.userSystemRole;
     const memberships = ctx.var.memberships;
-    const isSystemAdmin = userSystemRole === 'admin' && !userId;
+    const isSystemAdmin = userSystemRole === 'admin' && !relatableUserId;
 
-    // TODO-003 We should only allow this if you have a relationship to the target user
-    const targetUserId = userId ?? user.id;
+    // relatableGuard already verified shared org membership if relatableUserId is provided
+    const targetUserId = relatableUserId ?? user.id;
 
     // Determine what to include
     const includeCounts = include.includes('counts');
@@ -235,14 +231,12 @@ const organizationRouteHandlers = app
 
       return {
         ...orgData,
-        ...(Object.keys(included).length > 0 && { included }),
+        included,
       };
     });
 
-    // Enrich organizations with can object using batch permission check
-    const itemsWithCan = addPermission(ctx, 'read', items);
-
-    return ctx.json({ items: itemsWithCan, total }, 200);
+    // Enrich organizations with membership data
+    return ctx.json({ items, total }, 200);
   })
 
   /**
@@ -250,33 +244,45 @@ const organizationRouteHandlers = app
    */
   .openapi(organizationRoutes.getOrganization, async (ctx) => {
     const { tenantId, organizationId } = ctx.req.valid('param');
-    const { slug: bySlug } = ctx.req.valid('query');
+    const { slug: bySlug, include } = ctx.req.valid('query');
 
     // Validate tenantId is provided (early explicit error)
     if (!tenantId) {
       throw new AppError(400, 'invalid_request', 'warn', { meta: { reason: 'Missing tenantId parameter' } });
     }
 
-    const {
-      entity: organization,
-      membership,
-      can,
-    } = await getValidContextEntity(ctx, organizationId, 'organization', 'read', bySlug);
+    const { entity: organization, membership } = await getValidContextEntity(
+      ctx,
+      organizationId,
+      'organization',
+      'read',
+      bySlug,
+    );
 
     // Validate organization belongs to the specified tenant
     if (organization.tenantId !== tenantId) {
       throw new AppError(403, 'forbidden', 'warn', { entityType: 'organization', meta: { reason: 'Tenant mismatch' } });
     }
 
-    const counts = await getEntityCounts(organization.entityType, organization.id);
+    // Determine what to include (default: nothing)
+    const includeCounts = include.includes('counts');
+    const includeMembership = include.includes('membership');
 
-    // Build included object with membership and counts
-    const included = {
-      ...(membership && { membership: toMembershipBase(membership) }),
-      counts,
+    // Build included object based on what was requested
+    const included: Record<string, unknown> = {};
+
+    if (includeCounts) {
+      included.counts = await getEntityCounts(organization.entityType, organization.id);
+    }
+
+    if (includeMembership && membership) {
+      included.membership = toMembershipBase(membership);
+    }
+
+    const data = {
+      ...organization,
+      included,
     };
-
-    const data = { ...organization, included, can };
 
     return ctx.json(data, 200);
   })
@@ -291,7 +297,7 @@ const organizationRouteHandlers = app
       throw new AppError(400, 'invalid_request', 'warn', { meta: { reason: 'Missing tenantId parameter' } });
     }
 
-    const { entity: organization, membership, can } = await getValidContextEntity(ctx, id, 'organization', 'update');
+    const { entity: organization, membership } = await getValidContextEntity(ctx, id, 'organization', 'update');
 
     // Validate organization belongs to the specified tenant
     if (organization.tenantId !== tenantId) {
@@ -334,7 +340,7 @@ const organizationRouteHandlers = app
       counts,
     };
 
-    const data = { ...updatedOrganization, included, can };
+    const data = { ...updatedOrganization, included };
 
     return ctx.json(data, 200);
   })

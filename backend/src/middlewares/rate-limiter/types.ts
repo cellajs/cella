@@ -16,7 +16,9 @@ export type RateLimitOptions = Partial<RateLimiterDrizzle> | (Partial<RateLimite
 export interface RateLimiterOpts {
   /** Custom rate limit configuration (points, duration, blockDuration, etc.) */
   limits?: RateLimitOptions;
-  /** Name override for OpenAPI documentation (defaults to `${key}Limiter`) */
+  /** Function name override for OpenAPI documentation (defaults to `${key}Limiter`) */
+  functionName?: string;
+  /** Short human-readable label for OpenAPI documentation */
   name?: string;
   /** Description for OpenAPI documentation */
   description?: string;

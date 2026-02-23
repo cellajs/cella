@@ -7,7 +7,7 @@ import { PageHeader } from '~/modules/common/page/header';
 import { PageTabNav } from '~/modules/common/page/tab-nav';
 import { toaster } from '~/modules/common/toaster/service';
 import { organizationQueryOptions, useOrganizationUpdateMutation } from '~/modules/organization/query';
-import type { OrganizationWithMembership } from '~/modules/organization/types';
+import type { EnrichedOrganization } from '~/modules/organization/types';
 import { OrganizationRoute } from '~/routes/organization-routes';
 
 const LeaveOrgButton = lazy(() => import('~/modules/organization/leave-organization'));
@@ -25,9 +25,9 @@ function OrganizationPage({ organizationId, tenantId }: Props) {
 
   const orgQueryOptions = organizationQueryOptions(organizationId, tenantId);
   // Organization is enriched with membership via cache subscription
-  const { data: organization } = useSuspenseQuery(orgQueryOptions) as { data: OrganizationWithMembership };
+  const { data: organization } = useSuspenseQuery(orgQueryOptions) as { data: EnrichedOrganization };
 
-  const canUpdate = organization.can?.update ?? false;
+  const canUpdate = organization.can?.organization?.update ?? false;
 
   // Filter tabs based on permissions - users who can't update don't see settings
   const filterTabIds = useMemo(() => (canUpdate ? undefined : ['members', 'attachments']), [canUpdate]);

@@ -10,7 +10,7 @@ import { PublicLayout } from '~/modules/common/public-layout';
 import { Root } from '~/modules/common/root';
 import { Spinner } from '~/modules/common/spinner';
 import { meQueryOptions } from '~/modules/me/query';
-import { getMenuData } from '~/modules/navigation/menu-sheet/helpers';
+import { getMenuData } from '~/modules/navigation/menu-sheet/helpers/get-menu-data';
 import { onError } from '~/query/on-error';
 import { queryClient } from '~/query/query-client';
 import { cleanupOnBoundaryChange } from '~/routes/boundary-cleanup';

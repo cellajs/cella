@@ -225,7 +225,7 @@ const systemRouteHandlers = app
 
     logEvent('info', 'User updated', { userId: updatedUser.id });
 
-    // Re-select with userSelect to include lastSeenAt (subquery from last_seen table)
+    // Re-select with userSelect to include activity timestamps (subqueries from user_activity table)
     const [userWithActivity] = await db
       .select(userSelect)
       .from(usersTable)

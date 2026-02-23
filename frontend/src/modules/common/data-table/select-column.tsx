@@ -3,10 +3,10 @@ import { useTranslation } from 'react-i18next';
 import type { appConfig, roles } from 'shared';
 import type { User } from '~/api.gen';
 import type { Member } from '~/modules/memberships/types';
-import type { OrganizationWithMembership } from '~/modules/organization/types';
+import type { EnrichedOrganization } from '~/modules/organization/types';
 import { Select, SelectContent, SelectItem, SelectValue } from '~/modules/ui/select';
 
-export const renderSelect = <TRow extends User | Member | OrganizationWithMembership>({
+export const renderSelect = <TRow extends User | Member | EnrichedOrganization>({
   row,
   options,
   onRowChange,

@@ -6,7 +6,7 @@ import { STUDIO_PORT } from './port';
 import { checkMark } from '../../src/utils/console';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const parentDir = resolve(__dirname, '..');
+const parentDir = resolve(__dirname, '../..');
 
 // Load .env variables from the parent directory
 dotenv.config({ path: resolve(parentDir, '.env') });

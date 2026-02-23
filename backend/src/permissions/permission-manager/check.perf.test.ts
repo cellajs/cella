@@ -1,6 +1,5 @@
-import { appConfig, type ContextEntityType, type EntityRole } from 'shared';
+import { appConfig, type ContextEntityType, configureAccessPolicies, type EntityRole } from 'shared';
 import { describe, expect, it } from 'vitest';
-import { configureAccessPolicies } from './access-policies';
 import { getAllDecisions } from './check';
 import type { SubjectForPermission } from './types';
 
@@ -33,16 +32,16 @@ type TestMembership = {
 const policies = configureAccessPolicies(appConfig.entityTypes, ({ subject, contexts }) => {
   switch (subject.name) {
     case 'organization':
-      contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1, search: 1 });
-      contexts.organization.member({ create: 0, read: 1, update: 0, delete: 0, search: 1 });
+      contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
+      contexts.organization.member({ create: 0, read: 1, update: 0, delete: 0 });
       break;
     case 'attachment':
-      contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1, search: 1 });
-      contexts.organization.member({ create: 1, read: 1, update: 0, delete: 0, search: 1 });
+      contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
+      contexts.organization.member({ create: 1, read: 1, update: 0, delete: 0 });
       break;
     case 'page':
-      contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1, search: 1 });
-      contexts.organization.member({ create: 1, read: 1, update: 1, delete: 0, search: 1 });
+      contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
+      contexts.organization.member({ create: 1, read: 1, update: 1, delete: 0 });
       break;
   }
 });

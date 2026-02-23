@@ -32,8 +32,8 @@ entityConfig: {
 export const accessPolicies = configureAccessPolicies(entityTypes, ({ subject, contexts }) => {
   switch (subject.name) {
     case 'attachment':
-      contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1, search: 1 });
-      contexts.organization.member({ create: 1, read: 1, update: 0, delete: 1, search: 1 });
+      contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
+      contexts.organization.member({ create: 1, read: 1, update: 0, delete: 1 });
       break;
   }
 });

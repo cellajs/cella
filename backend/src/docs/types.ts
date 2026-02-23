@@ -19,6 +19,7 @@ export type SpecificationExtensions = Record<ExtensionType, string[]>;
 
 /** Value metadata for individual extension values (e.g., each limiter or guard) */
 export type ExtensionValueMetadata = {
+  name?: string;
   description: string;
 };
 
@@ -26,7 +27,6 @@ export type ExtensionValueMetadata = {
 export type ExtensionRegistryEntry = {
   key: string;
   id: string;
-  translationKey: string;
   description: string;
   values?: Record<string, ExtensionValueMetadata>;
 };

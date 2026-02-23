@@ -1,8 +1,8 @@
 import { createXRoute } from '#/docs/x-routes';
-import { authGuard, crossTenantGuard } from '#/middlewares/guard';
+import { authGuard, crossTenantGuard, relatableGuard } from '#/middlewares/guard';
 import { systemRoleBaseSchema } from '#/modules/system/system-schema';
 import { userListQuerySchema, userSchema } from '#/modules/user/user-schema';
-import { errorResponseRefs, paginationSchema, slugQuerySchema, userIdParamSchema } from '#/schemas';
+import { errorResponseRefs, paginationSchema, relatableUserIdParamSchema, slugQuerySchema } from '#/schemas';
 import { mockPaginatedUsersResponse, mockUserResponse } from '../../../mocks/mock-user';
 
 const userRoutes = {
@@ -41,13 +41,13 @@ const userRoutes = {
   getUser: createXRoute({
     operationId: 'getUser',
     method: 'get',
-    path: '/users/{userId}',
-    xGuard: [authGuard, crossTenantGuard],
+    path: '/users/{relatableUserId}',
+    xGuard: [authGuard, crossTenantGuard, relatableGuard],
     tags: ['users'],
     summary: 'Get user',
     description:
-      'Retrieves a *user* by ID. The requesting user must share at least one context entity membership. Pass `?slug=true` to resolve by slug instead.',
-    request: { params: userIdParamSchema, query: slugQuerySchema },
+      'Retrieves a *user* by ID. The requesting user must share at least one organization membership. Pass `?slug=true` to resolve by slug instead.',
+    request: { params: relatableUserIdParamSchema, query: slugQuerySchema },
     responses: {
       200: {
         description: 'User',

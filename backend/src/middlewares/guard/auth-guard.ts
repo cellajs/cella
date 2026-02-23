@@ -20,8 +20,7 @@ import { updateLastSeenAt } from '../update-last-seen';
  * @returns Error response or undefined if the user is allowed to proceed.
  */
 export const authGuard = xMiddleware(
-  'authGuard',
-  'x-guard',
+  { functionName: 'authGuard', type: 'x-guard', name: 'auth', description: 'Requires valid session' },
   async (ctx, next) => {
     // Validate session
     try {
@@ -71,5 +70,4 @@ export const authGuard = xMiddleware(
 
     await next();
   },
-  'Requires valid session',
 );

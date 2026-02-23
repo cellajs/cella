@@ -7,6 +7,7 @@ import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { membershipsTable } from '#/db/schema/memberships';
 import { AuthStrategy, sessionsTable } from '#/db/schema/sessions';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
+import { userActivityTable } from '#/db/schema/user-activity';
 import { usersTable } from '#/db/schema/users';
 import { env } from '#/env';
 import { type Env } from '#/lib/context';
@@ -46,10 +47,14 @@ const meRouteHandlers = app
     const user = ctx.var.user;
     const systemRole = ctx.var.userSystemRole ?? ('user' as const);
 
-    // Update last visit date
-    await db.update(usersTable).set({ lastStartedAt: getIsoDate() }).where(eq(usersTable.id, user.id));
+    // Update last visit date in user_activity table (avoids CDC noise on users table)
+    const lastStartedAt = getIsoDate();
+    await db.insert(userActivityTable).values({ userId: user.id, lastStartedAt }).onConflictDoUpdate({
+      target: userActivityTable.userId,
+      set: { lastStartedAt },
+    });
 
-    // Re-select with userSelect to include lastSeenAt (subquery from last_seen table)
+    // Re-select with userSelect to include activity timestamps (subqueries from user_activity table)
     const [userWithActivity] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, user.id)).limit(1);
 
     return ctx.json({ user: userWithActivity, systemRole }, 200);
@@ -98,7 +103,7 @@ const meRouteHandlers = app
       await setUserSession(ctx, user, strategy, 'mfa');
     }
 
-    // Re-select with userSelect to include lastSeenAt (subquery from last_seen table)
+    // Re-select with userSelect to include activity timestamps (subqueries from user_activity table)
     const [userWithActivity] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, user.id)).limit(1);
 
     return ctx.json(userWithActivity, 200);
@@ -219,7 +224,7 @@ const meRouteHandlers = app
 
     await db.update(usersTable).set(updateData).where(eq(usersTable.id, user.id));
 
-    // Re-select with userSelect to include lastSeenAt (subquery from last_seen table)
+    // Re-select with userSelect to include activity timestamps (subqueries from user_activity table)
     const [userWithActivity] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, user.id)).limit(1);
 
     return ctx.json(userWithActivity, 200);

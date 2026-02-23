@@ -629,20 +629,20 @@
                     "type": ["string", "null"],
                     "required": true
                   },
-                  "lastStartedAt": {
-                    "type": ["string", "null"],
-                    "required": true
-                  },
-                  "lastSignInAt": {
-                    "type": ["string", "null"],
-                    "required": true
-                  },
                   "modifiedBy": {
                     "type": ["string", "null"],
                     "required": true,
                     "maxLength": 50
                   },
                   "lastSeenAt": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "lastStartedAt": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "lastSignInAt": {
                     "type": ["string", "null"],
                     "required": true
                   },

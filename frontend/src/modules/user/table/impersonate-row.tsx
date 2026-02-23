@@ -5,7 +5,7 @@ import type { User } from '~/api.gen';
 import { startImpersonation } from '~/api.gen';
 import { toaster } from '~/modules/common/toaster/service';
 import { getAndSetMe } from '~/modules/me/helpers';
-import { getMenuData } from '~/modules/navigation/menu-sheet/helpers';
+import { getMenuData } from '~/modules/navigation/menu-sheet/helpers/get-menu-data';
 import { Button } from '~/modules/ui/button';
 import router from '~/routes/router';
 import { useUIStore } from '~/store/ui';

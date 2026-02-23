@@ -36,7 +36,7 @@ export function Onboarding({ onboarding = 'start', setOnboardingState }: Onboard
   const animateClass = `transition-all will-change-transform duration-500 ease-out ${hasStarted ? 'opacity-100' : 'opacity-0 scale-95 translate-y-4'}`;
 
   // Fetch organizations to determine if user has created any
-  const orgQuery = useInfiniteQuery(organizationsListQueryOptions({ userId: user.id }));
+  const orgQuery = useInfiniteQuery(organizationsListQueryOptions({ relatableUserId: user.id }));
   const organizations = flattenInfiniteData<Organization>(orgQuery.data);
   const hasOrganizations = organizations.length > 0;
 

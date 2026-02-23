@@ -109,6 +109,7 @@ async function persistAndSendActivity(
       entityId: processResult.activity.entityId,
       activityId,
       lsn,
+      ...(processResult.activity.changedKeys && { changedKeys: processResult.activity.changedKeys }),
     });
 
     sendMessageToApi(activityWithId, processResult.entityData, traceCtx, seq);

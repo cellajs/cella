@@ -1,6 +1,7 @@
 import {
   appConfig,
   type ContextEntityType,
+  configureAccessPolicies,
   type EntityRole,
   getContextRoles,
   hierarchy,
@@ -8,7 +9,6 @@ import {
   isProductEntity,
 } from 'shared';
 import { describe, expect, it } from 'vitest';
-import { configureAccessPolicies } from './access-policies';
 import { getAllDecisions } from './check';
 import type { SubjectForPermission } from './types';
 
@@ -98,12 +98,12 @@ describe('configureAccessPolicies', () => {
     const policies = configureAccessPolicies(appConfig.entityTypes, ({ subject, contexts }) => {
       switch (subject.name) {
         case 'organization':
-          contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1, search: 1 });
-          contexts.organization.member({ create: 0, read: 1, update: 0, delete: 0, search: 1 });
+          contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
+          contexts.organization.member({ create: 0, read: 1, update: 0, delete: 0 });
           break;
         case 'attachment':
-          contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1, search: 1 });
-          contexts.organization.member({ create: 1, read: 1, update: 0, delete: 0, search: 1 });
+          contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
+          contexts.organization.member({ create: 1, read: 1, update: 0, delete: 0 });
           break;
       }
     });
@@ -127,16 +127,16 @@ describe('checkPermission', () => {
   const policies = configureAccessPolicies(appConfig.entityTypes, ({ subject, contexts }) => {
     switch (subject.name) {
       case 'organization':
-        contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1, search: 1 });
-        contexts.organization.member({ create: 0, read: 1, update: 0, delete: 0, search: 1 });
+        contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
+        contexts.organization.member({ create: 0, read: 1, update: 0, delete: 0 });
         break;
       case 'attachment':
-        contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1, search: 1 });
-        contexts.organization.member({ create: 1, read: 1, update: 0, delete: 0, search: 1 });
+        contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
+        contexts.organization.member({ create: 1, read: 1, update: 0, delete: 0 });
         break;
       case 'page':
-        contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1, search: 1 });
-        contexts.organization.member({ create: 1, read: 1, update: 1, delete: 0, search: 1 });
+        contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
+        contexts.organization.member({ create: 1, read: 1, update: 1, delete: 0 });
         break;
     }
   });
@@ -198,8 +198,8 @@ describe('permission inheritance from organization context', () => {
   const policies = configureAccessPolicies(appConfig.entityTypes, ({ subject, contexts }) => {
     switch (subject.name) {
       case 'attachment':
-        contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1, search: 1 });
-        contexts.organization.member({ create: 1, read: 1, update: 0, delete: 0, search: 1 });
+        contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
+        contexts.organization.member({ create: 1, read: 1, update: 0, delete: 0 });
         break;
     }
   });
@@ -229,8 +229,8 @@ describe('PermissionDecision action attribution', () => {
   const policies = configureAccessPolicies(appConfig.entityTypes, ({ subject, contexts }) => {
     switch (subject.name) {
       case 'attachment':
-        contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1, search: 1 });
-        contexts.organization.member({ create: 1, read: 1, update: 0, delete: 0, search: 1 });
+        contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
+        contexts.organization.member({ create: 1, read: 1, update: 0, delete: 0 });
         break;
     }
   });

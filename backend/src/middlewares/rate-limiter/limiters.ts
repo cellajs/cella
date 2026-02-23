@@ -28,7 +28,8 @@ export const passwordLimiter = rateLimiter('failseries', 'password', ['email', '
  */
 export const tokenLimiter = (tokenType: string): MiddlewareHandler<Env> =>
   rateLimiter('failseries', `token_${tokenType}`, ['ip'], {
-    name: 'tokenLimiter',
+    functionName: 'tokenLimiter',
+    name: 'token',
     description: 'Blocks IP for 30 min after 10 consecutive token failures',
   });
 

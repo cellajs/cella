@@ -4,11 +4,11 @@ import { appConfig, ContextEntityType } from 'shared';
 import type { UserBase } from '~/api.gen';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { StickyBox } from '~/modules/common/sticky-box';
-import type { ContextEntity } from '~/modules/entities/types';
+import type { EnrichedContextEntity } from '~/modules/entities/types';
 import { Badge } from '~/modules/ui/badge';
 import { CommandGroup, CommandItem, CommandSeparator } from '~/modules/ui/command';
 
-export type SearchBlockResult = ContextEntity | UserBase;
+export type SearchBlockResult = EnrichedContextEntity | UserBase;
 
 type SearchBlockProps = {
   results: SearchBlockResult[];
