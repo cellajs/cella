@@ -68,7 +68,7 @@ This document outlines the architecture and implementation plan for integrating 
 backend/src/lib/lms/
 ├── index.ts                    # createLmsClient(), main exports
 ├── types.ts                    # Generic LMS interfaces (LmsCourse, LmsUser, etc.)
-├── errors.ts                   # LMS-specific error types
+├── errors.ts                   # LMS-specific error keys + helper functions (uses AppError)
 ├── request-scheduler.ts        # Global request queue, concurrency control
 ├── http-client-base.ts         # Abstract base class for HTTP clients
 ├── client.ts                   # LmsClient (unified entry point)
@@ -242,7 +242,7 @@ interface MultiOperationConfig {
   /**
    * Callback for each error (useful for logging/monitoring)
    */
-  onEachError?: (error: LmsOperationError, context: OperationContext) => void
+  onEachError?: (error: AppError, context: OperationContext) => void
 }
 
 type MultiOperationErrorStrategy =
@@ -269,7 +269,7 @@ interface MultiOperationResult<T> {
   /** Successfully completed items */
   data: T[]
   /** Errors encountered (populated when strategy is 'collect') */
-  errors: LmsOperationError[]
+  errors: AppError[]
   /** Whether all operations completed successfully */
   complete: boolean
   /** Statistics */
@@ -321,90 +321,96 @@ interface PaginationConfig {
 }
 ```
 
-#### Error Types
+#### Error handling
+
+The LMS module reuses Cella's existing `AppError` class (`backend/src/lib/error.ts`) instead of defining custom error classes. Each error scenario maps to a specific error key that gets added to the i18n error locales. LMS-specific context is passed via the `meta` field.
+
+**New error keys** (add to `locales/en/error.json`):
+
+```json
+{
+  "lms_rate_limited": "LMS rate limit exceeded",
+  "lms_rate_limited.text": "The LMS API rate limit has been exceeded. Please try again later.",
+  "lms_token_error": "LMS authentication failed",
+  "lms_token_error.text": "Could not authenticate with the LMS. Please reconnect your account.",
+  "lms_network_error": "LMS connection failed",
+  "lms_network_error.text": "Could not connect to the LMS. Please check your connection and try again.",
+  "lms_timeout": "LMS request timed out",
+  "lms_timeout.text": "The LMS did not respond in time. Please try again later.",
+  "lms_queue_full": "LMS request queue full",
+  "lms_queue_full.text": "Too many LMS requests in progress. Please try again later.",
+  "lms_not_found": "LMS resource not found",
+  "lms_not_found.text": "The requested resource was not found on the LMS.",
+  "lms_provider_error": "LMS provider error",
+  "lms_provider_error.text": "The LMS returned an unexpected error. Please try again later.",
+  "lms_operation_failed": "LMS operation failed",
+  "lms_operation_failed.text": "One or more LMS operations failed during a batch or paginated request.",
+  "lms_not_configured": "LMS not configured",
+  "lms_not_configured.text": "Your organization has not configured an LMS integration. Please contact your administrator.",
+  "lms_not_connected": "LMS not connected",
+  "lms_not_connected.text": "You have not connected your LMS account. Please connect it in your settings.",
+  "lms_reauth_required": "LMS re-authorization required",
+  "lms_reauth_required.text": "Your LMS session has expired. Please reconnect your account."
+}
+```
+
+**Usage pattern:**
 
 ```typescript
-/** Base LMS error */
-class LmsError extends Error {
-  constructor(
-    message: string,
-    public code: LmsErrorCode,
-    public statusCode?: number,
-    public provider?: LmsProviderType,
-    public retryable: boolean = false
-  ) {
-    super(message)
-    this.name = 'LmsError'
-  }
-}
+import { AppError } from '#/lib/error'
 
-/** Error from a specific operation in a batch/pagination */
-class LmsOperationError extends LmsError {
-  constructor(
-    message: string,
-    code: LmsErrorCode,
-    public context: OperationContext,
-    statusCode?: number
-  ) {
-    super(message, code, statusCode)
-    this.name = 'LmsOperationError'
-  }
-}
+// Rate limit exceeded (429)
+throw new AppError(429, 'lms_rate_limited', 'warn', {
+  meta: { provider: 'canvas', retryAfterMs: 5000 },
+})
 
-/** Thrown when rate limit exceeded and all retries exhausted */
-class LmsThrottleError extends LmsError {
-  constructor(message: string, public retryAfterMs?: number) {
-    super(message, 'RATE_LIMITED', 429, undefined, true)
-    this.name = 'LmsThrottleError'
-  }
-}
+// Token refresh failed (401)
+throw new AppError(401, 'lms_token_error', 'warn', {
+  meta: { provider: 'canvas', tokenErrorType: 'refresh_failed' },
+})
 
-/** Thrown on network failures */
-class LmsNetworkError extends LmsError {
-  constructor(message: string, public cause?: Error) {
-    super(message, 'NETWORK_ERROR', undefined, undefined, true)
-    this.name = 'LmsNetworkError'
-  }
-}
+// Network error
+throw new AppError(502, 'lms_network_error', 'error', {
+  meta: { provider: 'canvas' },
+  originalError: cause,
+})
 
-/** Thrown on request timeout */
-class LmsTimeoutError extends LmsError {
-  constructor(message: string, public timeoutMs: number) {
-    super(message, 'TIMEOUT', undefined, undefined, true)
-    this.name = 'LmsTimeoutError'
-  }
-}
+// Request timeout
+throw new AppError(504, 'lms_timeout', 'warn', {
+  meta: { provider: 'canvas', timeoutMs: 30000 },
+})
 
-/** Thrown when token refresh fails */
-class LmsTokenError extends LmsError {
-  constructor(message: string, public tokenErrorType: 'expired' | 'invalid' | 'refresh_failed') {
-    super(message, 'TOKEN_ERROR', 401, undefined, false)
-    this.name = 'LmsTokenError'
-  }
-}
+// Queue full
+throw new AppError(503, 'lms_queue_full', 'warn', {
+  meta: { provider: 'canvas', queueSize: 1000 },
+})
 
-/** Thrown when queue is full or timeout waiting for slot */
-class LmsQueueError extends LmsError {
-  constructor(message: string, public queueSize: number) {
-    super(message, 'QUEUE_FULL', undefined, undefined, true)
-    this.name = 'LmsQueueError'
-  }
-}
+// Operation failed in batch/pagination
+throw new AppError(500, 'lms_operation_failed', 'error', {
+  meta: {
+    provider: 'canvas',
+    operationType: 'pagination',
+    index: 3,
+    path: '/api/v1/courses/1/users',
+  },
+})
 
-type LmsErrorCode =
-  | 'AUTHENTICATION_FAILED'
-  | 'TOKEN_ERROR'
-  | 'RATE_LIMITED'
-  | 'NOT_FOUND'
-  | 'FORBIDDEN'
-  | 'INVALID_REQUEST'
-  | 'PROVIDER_ERROR'
-  | 'NETWORK_ERROR'
-  | 'TIMEOUT'
-  | 'QUEUE_FULL'
-  | 'QUEUE_TIMEOUT'
-  | 'OPERATION_FAILED'
+// Not connected (handler level)
+throw new AppError(403, 'lms_not_connected', 'warn')
+
+// Re-auth required (after token refresh failure)
+throw new AppError(403, 'lms_reauth_required', 'warn', {
+  meta: { provider: 'canvas' },
+})
 ```
+
+**Benefits of reusing `AppError`:**
+- Errors automatically flow through the existing `appErrorHandler` (Sentry, structured JSON, logging)
+- i18n support out of the box for every error type
+- `meta` field carries all LMS-specific context (provider, retryAfterMs, timeoutMs, etc.)
+- `originalError` field wraps underlying causes (network errors, etc.)
+- No parallel error class hierarchy to maintain
+- Handler code checks `error.type` instead of `instanceof`
 
 #### Default Configuration Values
 
@@ -514,7 +520,7 @@ abstract class LmsHttpClientBase {
   async *executePaginated<T>(request: LmsRequest): AsyncGenerator<T, MultiOperationResult<T>> {
     let nextUrl: string | null = this.buildUrl(request)
     const results: T[] = []
-    const errors: LmsError[] = []
+    const errors: AppError[] = []
 
     while (nextUrl) {
       try {
@@ -531,7 +537,7 @@ abstract class LmsHttpClientBase {
       } catch (error) {
         // Handle based on multiOperationStrategy
         if (this.config.multiOperationStrategy?.onError === 'collect') {
-          errors.push(error as LmsError)
+          errors.push(error as AppError)
         } else if (this.config.multiOperationStrategy?.onError === 'skip') {
           // Log and continue
         } else {
@@ -558,8 +564,8 @@ abstract class LmsHttpClientBase {
   /** Parse pagination info from response headers */
   protected abstract parsePagination(headers: Headers): PaginationInfo
 
-  /** Parse error response into LmsError */
-  protected abstract parseError(response: Response): LmsError
+  /** Parse error response into AppError */
+  protected abstract parseError(response: Response): AppError
 
   /** Get authorization header */
   protected abstract getAuthHeader(): Record<string, string>
@@ -604,9 +610,9 @@ class CanvasHttpClient extends LmsHttpClientBase {
   /**
    * Parse Canvas error response.
    */
-  protected parseError(response: Response): LmsError {
+  protected parseError(response: Response): AppError {
     // Canvas returns { errors: [{ message: string }] } or { message: string }
-    // Parse and return appropriate LmsError subclass
+    // Parse and return appropriate AppError with lms_* error key
   }
 
   protected getAuthHeader(): Record<string, string> {
@@ -2107,14 +2113,23 @@ const result = await canvasClient.api.batchUpdateAssignments([
 ])
 ```
 
-## Error Handling
+## Error handling
 
-See the comprehensive error types defined in [Configuration Types > Error Types](#error-types) above, including:
-- `LmsError` - Base error with code, status, and retryable flag
-- `LmsThrottleError` - Rate limiting (429 responses)
-- `LmsNetworkError` - Network failures
-- `LmsTimeoutError` - Request timeouts
-- `LmsTokenError` - Authentication/token issues
+All LMS errors use Cella's existing `AppError` class with LMS-specific error keys. See [Configuration Types > Error handling](#error-handling) for the full list of keys and usage patterns.
+
+| Error key | Status | Scenario |
+|-----------|--------|----------|
+| `lms_rate_limited` | 429 | Rate limit exceeded after retries |
+| `lms_token_error` | 401 | Token refresh failed |
+| `lms_network_error` | 502 | Network/connection failure |
+| `lms_timeout` | 504 | Request timed out |
+| `lms_queue_full` | 503 | Scheduler queue at capacity |
+| `lms_not_found` | 404 | Canvas resource not found |
+| `lms_provider_error` | 500 | Unexpected Canvas error |
+| `lms_operation_failed` | 500 | Batch/pagination partial failure |
+| `lms_not_configured` | 403 | Organization has no LMS provider |
+| `lms_not_connected` | 403 | User has no LMS connection |
+| `lms_reauth_required` | 403 | Re-authorization needed |
 
 ## Token Management
 
@@ -2130,9 +2145,9 @@ OAuth2 token handling for Canvas:
 The API layer and the LMS module have distinct responsibilities:
 
 - **API route level (backend handler)**: Only checks that LMS tokens **exist** in the database — i.e., the user has connected their LMS account. This is a simple DB lookup, not a Canvas API call. No pre-validation of token validity happens here.
-- **LMS module level (HttpClient)**: Owns the full token lifecycle. It attaches the `accessToken` to outgoing requests, and on a **401** response automatically attempts a refresh using the `refreshToken`. On success it calls the `onTokenRefresh` callback to persist the new tokens and retries the original request. On failure it throws `LmsTokenError` with `tokenErrorType: 'refresh_failed'`.
-- **Backend response**: Maps `LmsTokenError` to a specific API response (e.g. `403` with `{ code: 'LMS_REAUTH_REQUIRED' }`).
-- **Frontend**: Listens for the `LMS_REAUTH_REQUIRED` error code and redirects the user to the Canvas OAuth2 authorization flow to re-establish the connection.
+- **LMS module level (HttpClient)**: Owns the full token lifecycle. It attaches the `accessToken` to outgoing requests, and on a **401** response automatically attempts a refresh using the `refreshToken`. On success it calls the `onTokenRefresh` callback to persist the new tokens and retries the original request. On failure it throws `AppError(401, 'lms_token_error', 'warn', { meta: { tokenErrorType: 'refresh_failed' } })`.
+- **Backend response**: Catches `lms_token_error` and re-throws as `AppError(403, 'lms_reauth_required', 'warn')` so the frontend can prompt re-authorization.
+- **Frontend**: Listens for the `lms_reauth_required` error type and redirects the user to the Canvas OAuth2 authorization flow to re-establish the connection.
 
 **Why not pre-validate tokens at the API level?**
 - A token can expire between a validation call and the actual request, so pre-validation doesn't guarantee success.
@@ -2145,7 +2160,7 @@ async function handleLmsRequest(ctx) {
   // 1. API level: check tokens exist
   const lmsConnection = await db.getLmsConnection(ctx.userId, ctx.orgId)
   if (!lmsConnection) {
-    return ctx.json({ code: 'LMS_NOT_CONNECTED' }, 403)
+    throw new AppError(403, 'lms_not_connected', 'warn')
   }
 
   // 2. Create client — module owns token refresh internally
@@ -2168,9 +2183,9 @@ async function handleLmsRequest(ctx) {
     }
     return ctx.json(courses)
   } catch (error) {
-    if (error instanceof LmsTokenError) {
+    if (error instanceof AppError && error.type === 'lms_token_error') {
       // 3. Refresh failed — tell the frontend to re-authorize
-      return ctx.json({ code: 'LMS_REAUTH_REQUIRED' }, 403)
+      throw new AppError(403, 'lms_reauth_required', 'warn', { meta: { provider: 'canvas' } })
     }
     throw error
   }
@@ -2198,7 +2213,7 @@ async function handleTokenRefresh(config: LmsClientConfig, refreshToken: string)
 
 ### Phase 1: Foundation
 - [ ] Create folder structure (`backend/src/lib/lms/`)
-- [ ] Implement `errors.ts` with all error types
+- [ ] Implement `errors.ts` with LMS error keys and helper functions (using `AppError`)
 - [ ] Define generic LMS types (`types.ts`)
 - [ ] Add shared configuration interfaces
 
@@ -2437,13 +2452,13 @@ async function handleLmsRequest(ctx) {
   // 1. Load org-level LMS provider config
   const provider = await db.getLmsProvider(orgId)
   if (!provider) {
-    return ctx.json({ code: 'LMS_NOT_CONFIGURED' }, 403)
+    throw new AppError(403, 'lms_not_configured', 'warn')
   }
 
   // 2. Load user-level connection (tokens)
   const connection = await db.getLmsConnection(provider.id, userId)
   if (!connection) {
-    return ctx.json({ code: 'LMS_NOT_CONNECTED' }, 403)
+    throw new AppError(403, 'lms_not_connected', 'warn')
   }
 
   // 3. Create client with org credentials + user tokens
@@ -2467,8 +2482,8 @@ async function handleLmsRequest(ctx) {
     }
     return ctx.json(courses)
   } catch (error) {
-    if (error instanceof LmsTokenError) {
-      return ctx.json({ code: 'LMS_REAUTH_REQUIRED' }, 403)
+    if (error instanceof AppError && error.type === 'lms_token_error') {
+      throw new AppError(403, 'lms_reauth_required', 'warn', { meta: { provider: 'canvas' } })
     }
     throw error
   }
