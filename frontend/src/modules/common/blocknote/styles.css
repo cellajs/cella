@@ -7,7 +7,7 @@
   --foreground: 0 0% 95%;
   --card: 240 10% 14%;
   --card-foreground: 0 0% 95%;
-  --popover: 240 10% 9%;
+  --popover: hsl(240 10% 9%);
   --popover-foreground: 0 0% 95%;
   --primary: 0 0% 98%;
   --primary-foreground: 240 5.9% 16%;
@@ -220,7 +220,7 @@
 .slash-menu {
   max-height: 40vh;
   overflow-y: auto;
-  background-color: var(--popover);
+  background-color: var(--popover) !important;
   border: 0.05rem solid var(--border) !important;
   border-radius: 0.5rem;
   box-shadow: 0 0.05rem 0.3rem 0 rgb(0 0 0 / 0.1) !important;
