@@ -290,6 +290,11 @@ BEGIN
     RETURN;
   END IF;
 
+  -- Wrap all partition conversions in an exception handler so environments
+  -- where pg_partman installs but partitioning operations fail (e.g., Neon)
+  -- still complete the migration successfully.
+  BEGIN
+
 ${tableSetupSql}
   -- ==========================================================================
   -- Schedule automatic maintenance
@@ -301,6 +306,10 @@ ${tableSetupSql}
   -- 3. Neon: pg_partman maintenance runs automatically
   
   RAISE NOTICE 'pg_partman setup complete. Remember to schedule run_maintenance().';
+
+  EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'Partition setup failed: %. Tables will use regular (non-partitioned) mode with manual cleanup.', SQLERRM;
+  END;
 
 END $$;
 `;

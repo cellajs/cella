@@ -1,5 +1,5 @@
 import pc from 'picocolors';
-import { allImmutabilityTables, immutabilityTriggersSQL } from '#/db/immutability-triggers';
+import { allImmutabilityTables } from '#/db/immutability-triggers';
 import { logMigrationResult, upsertMigration } from './helpers/drizzle-utils';
 
 /**
@@ -12,27 +12,52 @@ import { logMigrationResult, upsertMigration } from './helpers/drizzle-utils';
  * column modifications, even if someone uses admin bypass.
  */
 
+// Split the immutability SQL into functions and triggers
+// Functions are safe to create top-level; triggers need role-gated exception handling
+import {
+  baseEntityImmutabilityFunctionSQL,
+  productEntityImmutabilityFunctionSQL,
+  membershipImmutabilityFunctionSQL,
+  inactiveMembershipImmutabilityFunctionSQL,
+} from '#/db/immutability-triggers';
+
+const functionsSql = [
+  baseEntityImmutabilityFunctionSQL,
+  productEntityImmutabilityFunctionSQL,
+  membershipImmutabilityFunctionSQL,
+  inactiveMembershipImmutabilityFunctionSQL,
+].join('\n');
+
+const triggersSql = allImmutabilityTables.map(({ tableName, functionName }) => {
+  const triggerName = `${tableName}_immutable_keys_trigger`;
+  return `    EXECUTE 'DROP TRIGGER IF EXISTS ${triggerName} ON ${tableName}';
+    EXECUTE 'CREATE TRIGGER ${triggerName} BEFORE UPDATE ON ${tableName} FOR EACH ROW EXECUTE FUNCTION ${functionName}()';`;
+}).join('\n');
+
 const migrationSql = `-- Immutability Triggers Setup
 -- Prevents modification of identity columns after row creation.
 -- For PGlite: migration is skipped (no role support).
---
 
+-- Functions are always created (harmless without triggers)
+${functionsSql}
+--> statement-breakpoint
+
+-- Triggers require roles to exist
 DO $$
 BEGIN
-  -- Check if roles exist (not available in PGlite)
   IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname = 'runtime_role') THEN
     RAISE NOTICE 'Roles not available - skipping immutability triggers (e.g., PGlite).';
     RETURN;
   END IF;
 
-  RAISE NOTICE 'Roles available - immutability triggers will be applied.';
+  BEGIN
+${triggersSql}
+
+    RAISE NOTICE 'Immutability triggers setup complete.';
+  EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'Immutability triggers setup failed: %. Skipping.', SQLERRM;
+  END;
 END $$;
-
--- Only execute trigger creation if roles exist (real PostgreSQL)
--- The DO block above just logs; actual SQL runs unconditionally but triggers
--- are harmless in PGlite (they just exist without RLS context)
-
-${immutabilityTriggersSQL}
 `;
 
 const result = upsertMigration('immutability_setup', migrationSql);

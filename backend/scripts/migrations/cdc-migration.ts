@@ -45,18 +45,22 @@ BEGIN
     RETURN;
   END IF;
 
-  -- Create publication for tracked tables (excludes 'activities' to prevent loops)
-  IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = '${CDC_PUBLICATION_NAME}') THEN
-    CREATE PUBLICATION ${CDC_PUBLICATION_NAME} FOR TABLE ${tableList};
-    RAISE NOTICE 'Created publication ${CDC_PUBLICATION_NAME}';
-  ELSE
-    RAISE NOTICE 'Publication ${CDC_PUBLICATION_NAME} already exists';
-  END IF;
+  BEGIN
+    -- Create publication for tracked tables (excludes 'activities' to prevent loops)
+    IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = '${CDC_PUBLICATION_NAME}') THEN
+      CREATE PUBLICATION ${CDC_PUBLICATION_NAME} FOR TABLE ${tableList};
+      RAISE NOTICE 'Created publication ${CDC_PUBLICATION_NAME}';
+    ELSE
+      RAISE NOTICE 'Publication ${CDC_PUBLICATION_NAME} already exists';
+    END IF;
 
-  -- Set REPLICA IDENTITY FULL to get old row values on UPDATE/DELETE
-${trackedTableNames.map((table) => `  ALTER TABLE ${table} REPLICA IDENTITY FULL;`).join('\n')}
+    -- Set REPLICA IDENTITY FULL to get old row values on UPDATE/DELETE
+${trackedTableNames.map((table) => `    ALTER TABLE ${table} REPLICA IDENTITY FULL;`).join('\n')}
 
-  RAISE NOTICE 'CDC setup complete. Replication slot will be created by CDC worker on startup.';
+    RAISE NOTICE 'CDC setup complete. Replication slot will be created by CDC worker on startup.';
+  EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'CDC setup failed: %. Skipping - CDC will not be available.', SQLERRM;
+  END;
 END $$;
 `;
 

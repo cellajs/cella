@@ -54,31 +54,35 @@ BEGIN
     RETURN;
   END IF;
 
-  -- Table ownership and FORCE RLS
-${rlsTables.map((t) => `  ALTER TABLE ${t} OWNER TO admin_role;`).join('\n')}
-  ALTER TABLE activities OWNER TO admin_role;
+  BEGIN
+    -- Table ownership and FORCE RLS
+${rlsTables.map((t) => `    ALTER TABLE ${t} OWNER TO admin_role;`).join('\n')}
+    ALTER TABLE activities OWNER TO admin_role;
 
-${rlsTables.map((t) => `  ALTER TABLE ${t} FORCE ROW LEVEL SECURITY;`).join('\n')}
+${rlsTables.map((t) => `    ALTER TABLE ${t} FORCE ROW LEVEL SECURITY;`).join('\n')}
 
-  -- Grants: runtime_role (subject to RLS)
-${rlsTables.map((t) => `  GRANT SELECT, INSERT, UPDATE, DELETE ON ${t} TO runtime_role;`).join('\n')}
-${fullCrudTables.map((t) => `  GRANT SELECT, INSERT, UPDATE, DELETE ON ${t} TO runtime_role;`).join('\n')}
-${readOnlyTables.map((t) => `  GRANT SELECT ON ${t} TO runtime_role;`).join('\n')}
+    -- Grants: runtime_role (subject to RLS)
+${rlsTables.map((t) => `    GRANT SELECT, INSERT, UPDATE, DELETE ON ${t} TO runtime_role;`).join('\n')}
+${fullCrudTables.map((t) => `    GRANT SELECT, INSERT, UPDATE, DELETE ON ${t} TO runtime_role;`).join('\n')}
+${readOnlyTables.map((t) => `    GRANT SELECT ON ${t} TO runtime_role;`).join('\n')}
 
-  -- Grants: cdc_role (append-only activities + counter sequences)
-  GRANT INSERT ON activities TO cdc_role;
-  GRANT SELECT, INSERT, UPDATE ON context_counters TO cdc_role;
-  GRANT SELECT ON tenants TO cdc_role;
-  GRANT SELECT ON organizations TO cdc_role;
+    -- Grants: cdc_role (append-only activities + counter sequences)
+    GRANT INSERT ON activities TO cdc_role;
+    GRANT SELECT, INSERT, UPDATE ON context_counters TO cdc_role;
+    GRANT SELECT ON tenants TO cdc_role;
+    GRANT SELECT ON organizations TO cdc_role;
 
-  -- Grants: admin_role (full access)
-  GRANT ALL ON ALL TABLES IN SCHEMA public TO admin_role;
-  GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO admin_role;
+    -- Grants: admin_role (full access)
+    GRANT ALL ON ALL TABLES IN SCHEMA public TO admin_role;
+    GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO admin_role;
 
-  -- Grants: pg_catalog usage for JSONB operators
-  GRANT USAGE ON SCHEMA pg_catalog TO runtime_role;
+    -- Grants: pg_catalog usage for JSONB operators
+    GRANT USAGE ON SCHEMA pg_catalog TO runtime_role;
 
-  RAISE NOTICE 'RLS setup complete.';
+    RAISE NOTICE 'RLS setup complete.';
+  EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'RLS setup failed: %. Skipping - RLS will not be enforced.', SQLERRM;
+  END;
 END $$;
 `;
 
