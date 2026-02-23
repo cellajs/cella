@@ -127,8 +127,4 @@ export async function createDbRoles() {
   }
 }
 
-// Run if executed directly
-if (import.meta.url === `file://${process.argv[1]}`) {
-  await createDbRoles();
-  process.exit(0);
-}
+// To run directly: tsx scripts/db/create-db-roles.ts
