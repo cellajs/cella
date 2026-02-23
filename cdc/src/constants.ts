@@ -70,6 +70,14 @@ export const RESOURCE_LIMITS = {
     maxFailuresBeforeRecreate: 3,
   },
 
+  // Slot takeover during rolling deployments
+  slotTakeover: {
+    /** Max attempts to take over an active slot before giving up */
+    maxAttempts: 12,
+    /** Delay between takeover attempts (ms) */
+    retryDelayMs: 5000,
+  },
+
   // WAL guard monitoring
   walGuard: {
     /** Interval for pause warning checks (ms) */

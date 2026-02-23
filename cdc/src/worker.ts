@@ -295,7 +295,7 @@ function createReplicationService(connectionUrl: URL): LogicalReplicationService
   });
 
   service.on('heartbeat', async (lsn: string, _timestamp: number, shouldRespond: boolean) => {
-    logEvent('info', `${LOG_PREFIX} Heartbeat received`, { lsn, shouldRespond, wsConnected: wsClient.isConnected() });
+    logEvent('debug', `${LOG_PREFIX} Heartbeat received`, { lsn, shouldRespond, wsConnected: wsClient.isConnected() });
     if (shouldRespond) {
       await service.acknowledge(lsn);
     }
@@ -370,10 +370,17 @@ export async function startCdcWorker(): Promise<void> {
       replicationState.markStopped();
 
       if (isSlotActive) {
-        // Another worker instance holds the slot (e.g., during rolling deployment).
-        // Don't try to steal it — this instance should exit and let the active one run.
-        logEvent('error', `${LOG_PREFIX} Replication slot is held by another worker. Exiting to avoid conflict.`);
-        process.exit(1);
+        // During rolling deployment the old worker still holds the slot.
+        // Retry with slot termination attempts — old worker will be killed by the platform.
+        const { slotTakeover } = RESOURCE_LIMITS;
+        if (consecutiveFailures >= slotTakeover.maxAttempts) {
+          logEvent('error', `${LOG_PREFIX} Could not acquire replication slot after ${consecutiveFailures} attempts. Exiting.`);
+          process.exit(1);
+        }
+        logEvent('warn', `${LOG_PREFIX} Slot held by another worker, attempting takeover (${consecutiveFailures}/${slotTakeover.maxAttempts})...`);
+        await terminateStaleSlotConnection();
+        await new Promise((resolve) => setTimeout(resolve, slotTakeover.retryDelayMs));
+        continue;
       }
 
       // If we have persistent failures (non-active-slot errors), try reclaiming

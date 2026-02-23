@@ -107,7 +107,7 @@ export const MenuSheetHeader = ({ searchTerm, setSearchTerm, isSearchActive, set
                 'size-10 relative transition-opacity',
                 !hasWaited && 'opacity-0!',
                 !isSearchActive &&
-                  'group-[.keep-menu-open]/body:opacity-0 group-[.keep-menu-open]/body:group-hover/menu:opacity-100 group-[.keep-menu-open]/body:group-focus-within/menu:opacity-100 group-[.keep-menu-open]/body:group-has-data-[state=open]/actions:opacity-100',
+                  'group-[.keep-nav-open]/body:opacity-0 group-[.keep-nav-open]/body:group-hover/menu:opacity-100 group-[.keep-nav-open]/body:group-focus-within/menu:opacity-100 group-[.keep-nav-open]/body:group-has-data-[state=open]/actions:opacity-100',
               )}
             >
               <AnimatePresence mode="wait">
@@ -148,7 +148,7 @@ export const MenuSheetHeader = ({ searchTerm, setSearchTerm, isSearchActive, set
                 'size-10 transition-opacity',
                 !hasWaited && 'opacity-0!',
                 !isSearchActive &&
-                  'group-[.keep-menu-open]/body:opacity-0 group-[.keep-menu-open]/body:group-hover/menu:opacity-100 group-[.keep-menu-open]/body:group-focus-within/menu:opacity-100 group-[.keep-menu-open]/body:data-[state=open]:opacity-100',
+                  'group-[.keep-nav-open]/body:opacity-0 group-[.keep-nav-open]/body:group-hover/menu:opacity-100 group-[.keep-nav-open]/body:group-focus-within/menu:opacity-100 group-[.keep-nav-open]/body:data-[state=open]:opacity-100',
               )}
             />
           </motion.div>

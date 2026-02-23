@@ -41,13 +41,13 @@ export const SettingsSheet = () => {
         <h3 className="text-sm font-medium text-muted-foreground/70 lowercase">{t('common:menu')}</h3>
         <div className="max-xl:hidden flex items-center gap-4 ml-1">
           <Switch
-            id="keepMenuOpen"
+            id="keepNavOpen"
             checked={keepOpenPreference}
             onCheckedChange={(checked) => toggleKeepOpenPreference(checked, isDesktop)}
-            aria-label={t('common:keep_menu_open')}
+            aria-label={t('common:keep_nav_open')}
           />
-          <label htmlFor="keepMenuOpen" className="cursor-pointer select-none text-sm font-medium leading-none">
-            {t('common:keep_menu_open')}
+          <label htmlFor="keepNavOpen" className="cursor-pointer select-none text-sm font-medium leading-none">
+            {t('common:keep_nav_open')}
           </label>
         </div>
         {showDesktopMenuOption && (
