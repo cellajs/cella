@@ -5,7 +5,7 @@ import { type FooterLinkProps, FooterLinks } from '~/modules/common/app/app-foot
 import { Logo } from '~/modules/common/logo';
 
 const authFooterLinks: FooterLinkProps[] = [
-  { id: 'sign_in', href: '/authenticate' },
+  { id: 'sign_in', href: '/auth/authenticate' },
   { id: 'about', href: '/about' },
 ];
 
