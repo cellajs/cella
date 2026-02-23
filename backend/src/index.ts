@@ -17,12 +17,22 @@ import { env } from './env';
 
 // import { sdk } from './tracing';
 
+// Catch unhandled errors that bypass try/catch (e.g., DB pool 'error' events)
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled rejection:', reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught exception:', err);
+  // Give stdout time to flush before exit
+  setTimeout(() => process.exit(1), 200);
+});
+
 const startTunnel = appConfig.mode === 'tunnel' ? (await import('#/lib/start-tunnel')).default : () => null;
 
 const isPGliteDatabase = (_db: unknown): _db is PgliteDatabase => env.DEV_MODE === 'basic';
 
 // Init OpenAPI docs
-docs(app);
+await docs(app);
 
 // Init monitoring instance
 Sentry.init({
@@ -48,8 +58,7 @@ const main = async () => {
     await createDbRoles();
     await pgMigrate(migrationDb, migrateConfig);
   } else {
-    console.error('DATABASE_ADMIN_URL required for migrations');
-    process.exit(1);
+    throw new Error('DATABASE_ADMIN_URL required for migrations');
   }
 
   // Register entity cache invalidation hook
@@ -87,5 +96,6 @@ Storybook: ${pc.cyanBright(`http://localhost:6006/`)}`);
 main().catch((e) => {
   console.error('Failed to start server');
   console.error(e);
-  process.exit(1);
+  // Allow stdout/stderr to flush before exiting
+  setTimeout(() => process.exit(1), 200);
 });

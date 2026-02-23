@@ -95,8 +95,7 @@ export async function createDbRoles() {
   }
 
   if (!migrationDb) {
-    console.error('DATABASE_ADMIN_URL required for role setup');
-    process.exit(1);
+    throw new Error('DATABASE_ADMIN_URL required for role setup');
   }
 
   // Quick pre-check: skip entirely when all roles already exist (common on hot-reload)
@@ -118,8 +117,7 @@ export async function createDbRoles() {
     await migrationDb.execute(sql.raw(createRolesSql));
     console.info(`${pc.green('✔')} Database roles configured`);
   } catch (error) {
-    console.error('Failed to setup roles:', error);
-    process.exit(1);
+    throw new Error(`Failed to setup roles: ${error}`);
   }
 }
 
