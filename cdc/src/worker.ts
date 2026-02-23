@@ -47,6 +47,35 @@ async function verifyReplicationPermission(): Promise<void> {
 }
 
 /**
+ * Terminate any stale backend process holding the replication slot.
+ * This handles the case where a previous worker didn't disconnect cleanly (e.g., during redeployment).
+ */
+async function terminateStaleSlotConnection(): Promise<void> {
+  const result = await cdcDb.execute<{ active: boolean; active_pid: number | null }>(
+    sql`SELECT active, active_pid FROM pg_replication_slots WHERE slot_name = ${CDC_SLOT_NAME}`,
+  );
+
+  if (result.rows.length === 0 || !result.rows[0].active || !result.rows[0].active_pid) return;
+
+  const stalePid = result.rows[0].active_pid;
+  logEvent('warn', `${LOG_PREFIX} Replication slot held by stale PID ${stalePid}, terminating...`, {
+    slotName: CDC_SLOT_NAME,
+    stalePid,
+  });
+
+  try {
+    await cdcDb.execute(sql`SELECT pg_terminate_backend(${stalePid})`);
+    // Give PostgreSQL a moment to release the slot
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    logEvent('info', `${LOG_PREFIX} Stale connection terminated`, { stalePid });
+  } catch (error) {
+    logEvent('warn', `${LOG_PREFIX} Could not terminate stale PID ${stalePid}`, {
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
+
+/**
  * Verify the replication slot exists and is valid.
  * The slot should be created by the CDC migration (under admin/superuser).
  * If forceRecreate is true (error recovery), attempt to drop and recreate.
@@ -290,6 +319,7 @@ export async function startCdcWorker(): Promise<void> {
 
   await configureWalLimits();
   await verifyReplicationPermission();
+  await terminateStaleSlotConnection();
   await ensureReplicationSlot();
   await verifyPublication();
 
@@ -336,10 +366,11 @@ export async function startCdcWorker(): Promise<void> {
       });
       replicationState.markStopped();
 
-      // If we have persistent failures, try recreating the slot
+      // If we have persistent failures, try terminating stale connections and recreating the slot
       if (consecutiveFailures >= reconnection.maxFailuresBeforeRecreate) {
-        logEvent('warn', `${LOG_PREFIX} Too many failures, attempting to recreate replication slot...`);
+        logEvent('warn', `${LOG_PREFIX} Too many failures, attempting to reclaim replication slot...`);
         try {
+          await terminateStaleSlotConnection();
           await ensureReplicationSlot(true);
           consecutiveFailures = 0;
         } catch (recreateError) {
