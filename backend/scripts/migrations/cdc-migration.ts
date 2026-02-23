@@ -15,7 +15,7 @@ import pc from 'picocolors';
 import { getTableName } from 'drizzle-orm';
 import { resourceTables } from '#/table-config';
 import { entityTables } from '#/table-config';
-import { CDC_PUBLICATION_NAME } from '../../../cdc/src/constants';
+import { CDC_PUBLICATION_NAME, CDC_SLOT_NAME } from '../../../cdc/src/constants';
 import { logMigrationResult, upsertMigration } from './helpers/drizzle-utils';
 
 // Build table names directly from backend imports
@@ -57,7 +57,16 @@ BEGIN
     -- Set REPLICA IDENTITY FULL to get old row values on UPDATE/DELETE
 ${trackedTableNames.map((table) => `    ALTER TABLE ${table} REPLICA IDENTITY FULL;`).join('\n')}
 
-    RAISE NOTICE 'CDC setup complete. Replication slot will be created by CDC worker on startup.';
+    -- Create replication slot (requires superuser/REPLICATION attribute).
+    -- Created here under admin so cdc_role doesn't need elevated privileges at startup.
+    IF NOT EXISTS (SELECT 1 FROM pg_replication_slots WHERE slot_name = '${CDC_SLOT_NAME}') THEN
+      PERFORM pg_create_logical_replication_slot('${CDC_SLOT_NAME}', 'pgoutput');
+      RAISE NOTICE 'Created replication slot ${CDC_SLOT_NAME}';
+    ELSE
+      RAISE NOTICE 'Replication slot ${CDC_SLOT_NAME} already exists';
+    END IF;
+
+    RAISE NOTICE 'CDC setup complete.';
   EXCEPTION WHEN OTHERS THEN
     RAISE NOTICE 'CDC setup failed: %. Skipping - CDC will not be available.', SQLERRM;
   END;
