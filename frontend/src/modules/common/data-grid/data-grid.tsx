@@ -405,6 +405,11 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   // Get current breakpoint for responsive features
   const currentBreakpoint = useCurrentBreakpoint();
 
+  // Disable row selection on mobile breakpoints (xs, sm)
+  const isMobileBreakpoint = currentBreakpoint === 'xs' || currentBreakpoint === 'sm';
+  const effectiveSelectedRows = isMobileBreakpoint ? undefined : selectedRows;
+  const effectiveOnSelectedRowsChange = isMobileBreakpoint ? undefined : onSelectedRowsChange;
+
   // Evaluate touch mode and mobile sub-rows based on current breakpoint
   const isTouchModeActive = evaluateTouchMode(rawTouchMode ?? false, currentBreakpoint);
   const isMobileSubRowsActive = evaluateMobileSubRows(rawEnableMobileSubRows ?? false, currentBreakpoint);
@@ -516,7 +521,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   const headerRowsHeight = headerRowsCount * headerRowHeight;
   const summaryRowsHeight = summaryRowsCount * summaryRowHeight;
   const clientHeight = viewportHeight - headerRowsHeight - summaryRowsHeight;
-  const isSelectable = selectedRows != null && onSelectedRowsChange != null;
+  const isSelectable = effectiveSelectedRows != null && effectiveOnSelectedRowsChange != null;
   const { leftKey, rightKey } = getLeftRightKey(direction);
   const ariaRowCount = rawAriaRowCount ?? headerRowsCount + rows.length + summaryRowsCount;
 
@@ -542,9 +547,9 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     let hasSelectedRow = false;
     let hasUnselectedRow = false;
 
-    if (rowKeyGetter != null && selectedRows != null && selectedRows.size > 0) {
+    if (rowKeyGetter != null && effectiveSelectedRows != null && effectiveSelectedRows.size > 0) {
       for (const row of rows) {
-        if (selectedRows.has(rowKeyGetter(row))) {
+        if (effectiveSelectedRows.has(rowKeyGetter(row))) {
           hasSelectedRow = true;
         } else {
           hasUnselectedRow = true;
@@ -558,7 +563,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
       isRowSelected: hasSelectedRow && !hasUnselectedRow,
       isIndeterminate: hasSelectedRow && hasUnselectedRow,
     };
-  }, [rows, selectedRows, rowKeyGetter, selectionMode]);
+  }, [rows, effectiveSelectedRows, rowKeyGetter, selectionMode]);
 
   const {
     rowOverscanStartIdx,
@@ -710,13 +715,13 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
    * event handlers
    */
   function selectHeaderRow(args: SelectHeaderRowEvent) {
-    if (!onSelectedRowsChange) return;
+    if (!effectiveOnSelectedRowsChange) return;
     // Only 'row-multi' mode supports header selection (select all)
     if (selectionMode !== 'row-multi') return;
 
     assertIsValidKeyGetter<R, K>(rowKeyGetter);
 
-    const newSelectedRows = new Set(selectedRows);
+    const newSelectedRows = new Set(effectiveSelectedRows);
     for (const row of rows) {
       if (isRowSelectionDisabled?.(row) === true) continue;
       const rowKey = rowKeyGetter(row);
@@ -726,11 +731,11 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
         newSelectedRows.delete(rowKey);
       }
     }
-    onSelectedRowsChange(newSelectedRows);
+    effectiveOnSelectedRowsChange(newSelectedRows);
   }
 
   function selectRow(args: SelectRowEvent<R>) {
-    if (!onSelectedRowsChange) return;
+    if (!effectiveOnSelectedRowsChange) return;
     // Row selection only works in 'row' and 'row-multi' modes
     if (selectionMode !== 'row' && selectionMode !== 'row-multi') return;
 
@@ -742,12 +747,12 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     if (selectionMode === 'row') {
       const rowKey = rowKeyGetter(row);
       const newSelectedRows = checked ? new Set([rowKey]) : new Set<K>();
-      onSelectedRowsChange(newSelectedRows);
+      effectiveOnSelectedRowsChange(newSelectedRows);
       return;
     }
 
     // 'row-multi' mode - default behavior
-    const newSelectedRows = new Set(selectedRows);
+    const newSelectedRows = new Set(effectiveSelectedRows);
     const rowKey = rowKeyGetter(row);
     const rowIdx = rows.indexOf(row);
     setPreviousRowIdx(rowIdx);
@@ -771,7 +776,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
       }
     }
 
-    onSelectedRowsChange(newSelectedRows);
+    effectiveOnSelectedRowsChange(newSelectedRows);
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
@@ -868,7 +873,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     if (isSelectable && shiftKey && key === ' ') {
       assertIsValidKeyGetter<R, K>(rowKeyGetter);
       const rowKey = rowKeyGetter(row);
-      selectRow({ row, checked: !selectedRows.has(rowKey), isShiftClick: false });
+      selectRow({ row, checked: !effectiveSelectedRows.has(rowKey), isShiftClick: false });
       // prevent scrolling
       event.preventDefault();
       return;
@@ -1270,7 +1275,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
       let isRowSelected = false;
       if (typeof rowKeyGetter === 'function') {
         key = rowKeyGetter(row);
-        isRowSelected = selectedRows?.has(key) ?? false;
+        isRowSelected = effectiveSelectedRows?.has(key) ?? false;
       }
 
       rowElements.push(

@@ -237,19 +237,53 @@ async function handleDataMessage(lsn: string, message: unknown): Promise<void> {
 }
 
 /**
- * Verify that the CDC publication exists in the database.
+ * Verify that the CDC publication exists and log diagnostic details.
  */
 async function verifyPublication(): Promise<void> {
   const pubCheck = await cdcDb.execute<{ pubname: string }>(
     sql`SELECT pubname FROM pg_publication WHERE pubname = ${CDC_PUBLICATION_NAME}`,
   );
+
   if (pubCheck.rows.length === 0) {
-    logEvent('error', `${LOG_PREFIX} Publication '${CDC_PUBLICATION_NAME}' not found in database. Run CDC migration first.`, {
+    logEvent('error', `${LOG_PREFIX} Publication '${CDC_PUBLICATION_NAME}' not found. The CDC migration may have failed silently. Check migration logs.`, {
       databaseUrl: env.DATABASE_CDC_URL.replace(/:[^:@]+@/, ':****@'),
     });
     throw new Error(`Publication '${CDC_PUBLICATION_NAME}' does not exist`);
   }
-  logEvent('info', `${LOG_PREFIX} Publication verified`, { publicationName: CDC_PUBLICATION_NAME });
+
+  // Log which tables are in the publication
+  const pubTables = await cdcDb.execute<{ tablename: string }>(
+    sql`SELECT tablename FROM pg_publication_tables WHERE pubname = ${CDC_PUBLICATION_NAME}`,
+  );
+  const tableNames = pubTables.rows.map((r) => r.tablename);
+  logEvent('info', `${LOG_PREFIX} Publication verified`, {
+    publicationName: CDC_PUBLICATION_NAME,
+    tables: tableNames,
+    tableCount: tableNames.length,
+  });
+
+  if (tableNames.length === 0) {
+    logEvent('error', `${LOG_PREFIX} Publication has NO tables! CDC will not receive any data events.`);
+  }
+
+  // Log wal_level to confirm logical replication is enabled
+  const walLevel = await cdcDb.execute<{ wal_level: string }>(sql`SHOW wal_level`);
+  logEvent('info', `${LOG_PREFIX} Database config`, { walLevel: walLevel.rows[0]?.wal_level });
+
+  // Log replication slot position
+  const slotInfo = await cdcDb.execute<{ restart_lsn: string; confirmed_flush_lsn: string }>(
+    sql`SELECT restart_lsn, confirmed_flush_lsn FROM pg_replication_slots WHERE slot_name = ${CDC_SLOT_NAME}`,
+  );
+  if (slotInfo.rows.length > 0) {
+    logEvent('info', `${LOG_PREFIX} Slot position`, {
+      restartLsn: slotInfo.rows[0].restart_lsn,
+      confirmedFlushLsn: slotInfo.rows[0].confirmed_flush_lsn,
+    });
+  }
+
+  // Log current WAL position for comparison
+  const currentLsn = await cdcDb.execute<{ lsn: string }>(sql`SELECT pg_current_wal_lsn()::text as lsn`);
+  logEvent('info', `${LOG_PREFIX} Current WAL position`, { currentLsn: currentLsn.rows[0]?.lsn });
 }
 
 /**
@@ -288,7 +322,11 @@ function createReplicationService(connectionUrl: URL): LogicalReplicationService
     },
   );
 
-  service.on('data', handleDataMessage);
+  service.on('data', (lsn: string, message: unknown) => {
+    const msg = message as Pgoutput.Message;
+    logEvent('info', `${LOG_PREFIX} Raw data event`, { lsn, tag: msg.tag, relation: 'relation' in msg ? msg.relation?.name : undefined });
+    handleDataMessage(lsn, message);
+  });
 
   service.on('error', (error: Error) => {
     logEvent('error', `${LOG_PREFIX} CDC replication error`, { error: error.message });

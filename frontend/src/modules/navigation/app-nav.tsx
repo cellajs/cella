@@ -37,7 +37,7 @@ export function AppNav() {
 
     // If nav item is already open, close it
     if (id === navSheetOpen) {
-      setNavSheetOpen(null, isDesktop);
+      setNavSheetOpen(null);
       updateSheet('nav-sheet', { open: false });
       return;
     }
@@ -51,7 +51,7 @@ export function AppNav() {
     // If its a route, navigate to it
     if (navItem.href) {
       if (!useNavigationStore.getState().keepNavOpen) {
-        setNavSheetOpen(null, isDesktop);
+        setNavSheetOpen(null);
         updateSheet('nav-sheet', { open: false });
       }
       return navigate({ to: navItem.href });
@@ -59,7 +59,7 @@ export function AppNav() {
 
     // If it has a sheet, use sheeter service (both mobile and desktop)
     if (navItem.sheet) {
-      setNavSheetOpen(navItem.id, isDesktop);
+      setNavSheetOpen(navItem.id);
 
       const sheetSide = isMobile && navItem.mirrorOnMobile ? 'right' : 'left';
 
@@ -71,7 +71,7 @@ export function AppNav() {
         modal: isMobile,
         className: navSheetClassName,
         skipAnimation: options?.skipAnimation,
-        onClose: () => setNavSheetOpen(null, isDesktop),
+        onClose: () => setNavSheetOpen(null),
       });
     }
   };
@@ -84,12 +84,20 @@ export function AppNav() {
     ['Shift + M', () => triggerNavItem('menu')],
   ]);
 
-  // Auto-open menu on mount when keepOpenPreference is enabled on desktop
+  // Auto-open menu on desktop when keepOpen preference is enabled
   useEffect(() => {
     if (isDesktop && keepOpenPreference && !navSheetOpen) {
       triggerNavItem('menu', undefined, { skipAnimation: true });
     }
-  }, []);
+  }, [isDesktop, keepOpenPreference]);
+
+  // Sync keepNavOpen: pinned only when desktop + preference + a sheet is open
+  useEffect(() => {
+    const shouldPin = isDesktop && keepOpenPreference && !!navSheetOpen;
+    if (useNavigationStore.getState().keepNavOpen !== shouldPin) {
+      useNavigationStore.getState().setKeepNavOpen(shouldPin);
+    }
+  }, [isDesktop, keepOpenPreference, navSheetOpen]);
 
   // Build floating nav items from route staticData
   const routerState = useRouterState();

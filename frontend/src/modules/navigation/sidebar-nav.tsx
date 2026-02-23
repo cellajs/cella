@@ -52,10 +52,11 @@ interface SidebarNavProps {
  */
 export function SidebarNav({ triggerNavItem }: SidebarNavProps) {
   const { hasStarted } = useMountedState();
-  const isDesktop = useBreakpoints('min', 'xl', true);
+  const isDesktop = useBreakpoints('min', 'xl');
 
   const theme = useUIStore((state) => state.theme);
-  const { navSheetOpen, keepNavOpen } = useNavigationStore();
+  const navSheetOpen = useNavigationStore((state) => state.navSheetOpen);
+  const keepNavOpen = useNavigationStore((state) => state.keepNavOpen);
 
   // Check if nav-sheet is open via useSheeter
   const navSheetExists = useSheeter((state) => state.sheets.some((s) => s.id === 'nav-sheet' && s.open));

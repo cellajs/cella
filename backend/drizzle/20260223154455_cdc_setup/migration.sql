@@ -11,16 +11,20 @@ BEGIN
     RETURN;
   END IF;
 
+  -- 1. Create publication (separate block so later failures don't roll it back)
   BEGIN
-    -- Create publication for tracked tables (excludes 'activities' to prevent loops)
     IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'cdc_pub') THEN
       CREATE PUBLICATION cdc_pub FOR TABLE users, organizations, attachments, pages, requests, memberships, inactive_memberships;
       RAISE NOTICE 'Created publication cdc_pub';
     ELSE
       RAISE NOTICE 'Publication cdc_pub already exists';
     END IF;
+  EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'Publication setup failed: %. Continuing...', SQLERRM;
+  END;
 
-    -- Set REPLICA IDENTITY FULL to get old row values on UPDATE/DELETE
+  -- 2. Set REPLICA IDENTITY FULL (separate block)
+  BEGIN
     ALTER TABLE users REPLICA IDENTITY FULL;
     ALTER TABLE organizations REPLICA IDENTITY FULL;
     ALTER TABLE attachments REPLICA IDENTITY FULL;
@@ -28,18 +32,22 @@ BEGIN
     ALTER TABLE requests REPLICA IDENTITY FULL;
     ALTER TABLE memberships REPLICA IDENTITY FULL;
     ALTER TABLE inactive_memberships REPLICA IDENTITY FULL;
+    RAISE NOTICE 'REPLICA IDENTITY FULL set on all tracked tables';
+  EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'REPLICA IDENTITY setup failed: %. Continuing...', SQLERRM;
+  END;
 
-    -- Create replication slot (requires superuser/REPLICATION attribute).
-    -- Created here under admin so cdc_role doesn't need elevated privileges at startup.
+  -- 3. Create replication slot (separate block - may fail on managed providers)
+  BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_replication_slots WHERE slot_name = 'cdc_slot') THEN
       PERFORM pg_create_logical_replication_slot('cdc_slot', 'pgoutput');
       RAISE NOTICE 'Created replication slot cdc_slot';
     ELSE
       RAISE NOTICE 'Replication slot cdc_slot already exists';
     END IF;
-
-    RAISE NOTICE 'CDC setup complete.';
   EXCEPTION WHEN OTHERS THEN
-    RAISE NOTICE 'CDC setup failed: %. Skipping - CDC will not be available.', SQLERRM;
+    RAISE NOTICE 'Replication slot setup failed: %. Worker will create it at startup.', SQLERRM;
   END;
+
+  RAISE NOTICE 'CDC setup complete.';
 END $$;

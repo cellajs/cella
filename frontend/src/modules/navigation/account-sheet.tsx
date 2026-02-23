@@ -52,7 +52,7 @@ export const AccountSheet = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, systemRole } = useUserStore();
-  const isMobile = useBreakpoints('max', 'sm');
+  const isMobile = useBreakpoints('max', 'sm', false);
   const { isOnline } = useOnlineManager();
 
   const isSystemAdmin = systemRole === 'admin';

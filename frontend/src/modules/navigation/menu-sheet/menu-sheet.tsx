@@ -48,6 +48,8 @@ export const MenuSheet = () => {
     const viewportEl = document.getElementById('nav-sheet-viewport');
     if (!viewportEl) return;
 
+    console.debug('Initializing drag-and-drop monitoring for menu sheet');
+
     return combine(
       autoScrollForElements({
         element: viewportEl,

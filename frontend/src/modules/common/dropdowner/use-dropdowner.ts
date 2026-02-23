@@ -38,6 +38,9 @@ export const useDropdowner = create<DropdownStoreState>((set, get) => ({
       return data.id;
     }
 
+    // Blur active element to prevent aria-hidden conflict when modal sets aria-hidden on ancestors
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+
     set({
       dropdown: { content, align: 'start', modal: true, ...data, key: Date.now() },
     });

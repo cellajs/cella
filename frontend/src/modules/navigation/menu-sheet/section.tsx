@@ -27,7 +27,7 @@ interface MenuSheetSectionProps {
 
 export const MenuSheetSection = ({ data, options }: MenuSheetSectionProps) => {
   const { t } = useTranslation();
-  const isMobile = useBreakpoints('max', 'sm');
+  const isMobile = useBreakpoints('max', 'sm', false);
   const { toggleSection, setNavSheetOpen } = useNavigationStore.getState();
   const activeSections = useNavigationStore((state) => state.activeSections);
 

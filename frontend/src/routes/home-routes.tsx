@@ -16,6 +16,11 @@ export const HomeRoute = createRoute({
   head: () => ({ meta: [{ title: appTitle('Home') }] }),
   staticData: { isAuth: true },
   getParentRoute: () => AppLayoutRoute,
+  onEnter: ({ cause }) => {
+    if (cause !== 'enter') return;
+    const { user } = useUserStore.getState();
+    if (!user.userFlags.finishedOnboarding) throw redirect({ to: '/welcome' });
+  },
   component: () => (
     <Suspense>
       <Home />

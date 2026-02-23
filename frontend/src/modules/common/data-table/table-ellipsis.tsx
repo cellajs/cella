@@ -53,9 +53,9 @@ export function TableEllipsis<T extends { id: string }>({ row, tabIndex, options
     <Button
       ref={triggerRef}
       variant="cell"
-      size="icon"
+      size="cell"
       tabIndex={tabIndex}
-      className="h-full w-full"
+      className="justify-center"
       onClick={openDropdown}
     >
       <EllipsisVerticalIcon size={16} />

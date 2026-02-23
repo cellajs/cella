@@ -3,7 +3,6 @@ import { BookOpenIcon, InfoIcon, LifeBuoyIcon, MailIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { AlertWrap } from '~/modules/common/alert-wrap';
 import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
 import { handleAskForHelp } from '~/modules/common/error-notice';
@@ -20,7 +19,6 @@ const pwaEnabled = appConfig.has.pwa;
  */
 export const SettingsSheet = () => {
   const { t } = useTranslation();
-  const isDesktop = useBreakpoints('min', 'xl', true);
   const supportRef = useRef<HTMLButtonElement | null>(null);
   const contactRef = useRef<HTMLButtonElement | null>(null);
 
@@ -43,7 +41,7 @@ export const SettingsSheet = () => {
           <Switch
             id="keepNavOpen"
             checked={keepOpenPreference}
-            onCheckedChange={(checked) => toggleKeepOpenPreference(checked, isDesktop)}
+            onCheckedChange={(checked) => toggleKeepOpenPreference(checked)}
             aria-label={t('common:keep_nav_open')}
           />
           <label htmlFor="keepNavOpen" className="cursor-pointer select-none text-sm font-medium leading-none">

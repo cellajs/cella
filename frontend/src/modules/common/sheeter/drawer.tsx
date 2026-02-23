@@ -1,5 +1,5 @@
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
-import { InternalSheet, useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { type InternalSheet, useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '~/modules/ui/drawer';
 
 export const SheeterDrawer = ({ sheet }: { sheet: InternalSheet }) => {
