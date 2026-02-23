@@ -295,7 +295,8 @@ function createReplicationService(connectionUrl: URL): LogicalReplicationService
   });
 
   service.on('heartbeat', async (lsn: string, _timestamp: number, shouldRespond: boolean) => {
-    if (shouldRespond && wsClient.isConnected()) {
+    logEvent('debug', `${LOG_PREFIX} Heartbeat received`, { lsn, shouldRespond, wsConnected: wsClient.isConnected() });
+    if (shouldRespond) {
       await service.acknowledge(lsn);
     }
   });
