@@ -475,14 +475,7 @@ class LmsRequestScheduler {
   resume(): void
 }
 
-interface SchedulerConfig {
-  /** Max concurrent requests (default: 10) */
-  maxConcurrent?: number
-  /** Max queue size (default: 1000) */
-  maxQueueSize?: number
-  /** Queue timeout in ms (default: 60000) */
-  queueTimeout?: number
-}
+// Uses the SchedulerConfig defined above (concurrency, throttling, retry)
 ```
 
 **Key behavior:**
@@ -646,43 +639,198 @@ interface LmsRequest {
 // Query Types (nested under `query` key)
 // ═══════════════════════════════════════════════════════════════
 
+// ═══════════════════════════════════════════════════════════════
+// Query Types (nested under `query` key)
+// ═══════════════════════════════════════════════════════════════
+
+// --- Accounts ---
+
+interface GetAccountQuery {
+  include?: ('lti_guid' | 'registration_settings' | 'services')[]
+}
+
+// --- Courses ---
+
 interface ListCoursesQuery {
   enrollmentType?: 'teacher' | 'student' | 'ta' | 'observer' | 'designer'
+  enrollmentRole?: string
   enrollmentState?: 'active' | 'invited_or_pending' | 'completed'
+  excludeBlueprintCourses?: boolean
   state?: ('unpublished' | 'available' | 'completed' | 'deleted')[]
-  include?: ('total_students' | 'teachers' | 'term' | 'course_image')[]
+  include?: ('needs_grading_count' | 'syllabus_body' | 'public_description' | 'total_scores' | 'current_grading_period_scores' | 'term' | 'account' | 'course_progress' | 'sections' | 'storage_quota_used_mb' | 'total_students' | 'passback_status' | 'favorites' | 'teachers' | 'observed_users' | 'course_image' | 'banner_image' | 'concluded')[]
   perPage?: number
 }
 
 interface GetCourseQuery {
-  include?: ('total_students' | 'teachers' | 'term' | 'course_image' | 'syllabus_body')[]
+  include?: ('needs_grading_count' | 'syllabus_body' | 'public_description' | 'total_scores' | 'current_grading_period_scores' | 'term' | 'account' | 'course_progress' | 'sections' | 'storage_quota_used_mb' | 'total_students' | 'passback_status' | 'favorites' | 'teachers' | 'observed_users' | 'tabs' | 'course_image' | 'banner_image' | 'concluded' | 'grading_periods')[]
 }
 
-interface ListUsersQuery {
-  enrollmentType?: ('teacher' | 'student' | 'ta' | 'observer')[]
-  include?: ('email' | 'enrollments' | 'avatar_url')[]
-  perPage?: number
-}
+// --- Users ---
 
-interface ListAssignmentsQuery {
-  include?: ('submission' | 'all_dates' | 'overrides')[]
+interface ListAccountUsersQuery {
   searchTerm?: string
-  orderBy?: 'position' | 'name' | 'due_at'
+  enrollmentType?: 'teacher' | 'student' | 'ta' | 'observer' | 'designer'
+  sort?: 'username' | 'email' | 'sis_id' | 'integration_id' | 'last_login'
+  order?: 'asc' | 'desc'
+  include?: ('email' | 'enrollments' | 'avatar_url' | 'last_login' | 'uuid')[]
   perPage?: number
 }
+
+interface ListCourseUsersQuery {
+  searchTerm?: string
+  sort?: 'username' | 'last_login' | 'email' | 'sis_id'
+  enrollmentType?: ('teacher' | 'student' | 'ta' | 'observer' | 'designer')[]
+  enrollmentRole?: string
+  enrollmentState?: ('active' | 'invited' | 'rejected' | 'completed' | 'inactive')[]
+  include?: ('enrollments' | 'locked' | 'avatar_url' | 'bio' | 'test_student' | 'custom_links' | 'current_grading_period_scores' | 'uuid' | 'email')[]
+  userId?: string
+  userIds?: string[]
+  perPage?: number
+}
+
+// --- Sections ---
+
+interface ListSectionsQuery {
+  include?: ('students' | 'avatar_url' | 'enrollments' | 'total_students' | 'passback_status' | 'permissions')[]
+  perPage?: number
+}
+
+// --- Enrollments ---
 
 interface ListEnrollmentsQuery {
-  type?: ('StudentEnrollment' | 'TeacherEnrollment' | 'TaEnrollment')[]
-  state?: ('active' | 'invited' | 'completed')[]
-  include?: ('avatar_url' | 'group_ids')[]
+  type?: ('StudentEnrollment' | 'TeacherEnrollment' | 'TaEnrollment' | 'DesignerEnrollment' | 'ObserverEnrollment')[]
+  role?: string[]
+  state?: ('active' | 'invited' | 'creation_pending' | 'deleted' | 'rejected' | 'completed' | 'inactive' | 'current_and_invited' | 'current_and_future' | 'current_and_concluded')[]
+  include?: ('avatar_url' | 'group_ids' | 'locked' | 'observed_users' | 'can_be_removed' | 'uuid' | 'current_points')[]
+  userId?: string
+  gradingPeriodId?: string
+  perPage?: number
+}
+
+// --- Groups ---
+
+interface ListGroupCategoriesQuery {
+  perPage?: number
+}
+
+interface ListGroupsQuery {
+  include?: ('users' | 'permissions' | 'group_category' | 'observed_users')[]
+  perPage?: number
+}
+
+interface ListGroupUsersQuery {
+  searchTerm?: string
+  include?: ('avatar_url')[]
+  perPage?: number
+}
+
+// --- Assignment Groups ---
+
+interface ListAssignmentGroupsQuery {
+  include?: ('assignments' | 'discussion_topic' | 'all_dates' | 'assignment_visibility' | 'overrides' | 'submission' | 'observed_users' | 'score_statistics')[]
+  excludeAssignmentSubmissionTypes?: ('online_quiz' | 'discussion_topic' | 'wiki_page' | 'external_tool')[]
+  overrideAssignmentDates?: boolean
+  gradingPeriodId?: string
+  scopeAssignmentsToStudent?: boolean
+  perPage?: number
+}
+
+// --- Assignments ---
+
+interface ListAssignmentsQuery {
+  include?: ('submission' | 'all_dates' | 'overrides' | 'observed_users' | 'can_edit' | 'score_statistics')[]
+  searchTerm?: string
+  overrideAssignmentDates?: boolean
+  needsGradingCountBySection?: boolean
+  bucket?: 'past' | 'overdue' | 'undated' | 'ungraded' | 'unsubmitted' | 'upcoming' | 'future'
+  assignmentIds?: string[]
+  orderBy?: 'position' | 'name' | 'due_at'
+  postToSis?: boolean
+  perPage?: number
+}
+
+interface ListUserAssignmentsQuery {
+  include?: ('submission' | 'all_dates' | 'overrides')[]
+  orderBy?: 'position' | 'name' | 'due_at'
+  courseAssignments?: boolean
+  perPage?: number
+}
+
+// --- Submissions ---
+
+interface ListSubmissionsQuery {
+  include?: ('submission_history' | 'submission_comments' | 'rubric_assessment' | 'assignment' | 'visibility' | 'course' | 'user' | 'group' | 'read_status')[]
+  grouped?: boolean
+  perPage?: number
+}
+
+interface ListStudentSubmissionsQuery {
+  studentIds?: string[]
+  assignmentIds?: string[]
+  grouped?: boolean
+  include?: ('submission_history' | 'submission_comments' | 'rubric_assessment' | 'assignment' | 'total_scores' | 'visibility' | 'course' | 'user' | 'read_status')[]
+  order?: 'id' | 'graded_at'
+  orderDirection?: 'ascending' | 'descending'
+  workflowState?: 'submitted' | 'unsubmitted' | 'graded' | 'pending_review'
+  perPage?: number
+}
+
+// --- External Tools ---
+
+interface ListExternalToolsQuery {
+  searchTerm?: string
+  selectable?: boolean
+  includeParents?: boolean
+  perPage?: number
+}
+
+// --- Outcomes ---
+
+interface ListOutcomeGroupsQuery {
+  perPage?: number
+}
+
+interface ListOutcomeGroupOutcomesQuery {
+  outcomeStyle?: 'full' | 'abbrev'
   perPage?: number
 }
 
 class CanvasRequestBuilder {
   // ═══════════════════════════════════════════════════════════════
+  // Accounts
+  // ═══════════════════════════════════════════════════════════════
+
+  /**
+   * Get a single account.
+   * @see {@link https://canvas.instructure.com/doc/api/accounts.html#method.accounts.show Canvas}
+   */
+  getAccount({ accountId, query }: { accountId: string; query?: GetAccountQuery }): LmsRequest {
+    return {
+      method: 'GET',
+      path: `/api/v1/accounts/${accountId}`,
+      query: this.toQueryParams(query),
+    }
+  }
+
+  /**
+   * List accounts that the current user can view or manage.
+   * @see {@link https://canvas.instructure.com/doc/api/accounts.html#method.accounts.manageable_accounts Canvas}
+   */
+  listManageableAccounts(): LmsRequest {
+    return {
+      method: 'GET',
+      path: '/api/v1/manageable_accounts',
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
   // Courses
   // ═══════════════════════════════════════════════════════════════
 
+  /**
+   * Get a single course by ID.
+   * @see {@link https://canvas.instructure.com/doc/api/courses.html#method.courses.show Canvas}
+   */
   getCourse({ courseId, query }: { courseId: string; query?: GetCourseQuery }): LmsRequest {
     return {
       method: 'GET',
@@ -691,6 +839,10 @@ class CanvasRequestBuilder {
     }
   }
 
+  /**
+   * List courses for the current user.
+   * @see {@link https://canvas.instructure.com/doc/api/courses.html#method.courses.user_index Canvas}
+   */
   listCourses({ query }: { query?: ListCoursesQuery } = {}): LmsRequest {
     return {
       method: 'GET',
@@ -699,10 +851,26 @@ class CanvasRequestBuilder {
     }
   }
 
+  /**
+   * List courses for a specific user.
+   * @see {@link https://canvas.instructure.com/doc/api/courses.html#method.courses.user_index Canvas}
+   */
+  listUserCourses({ userId, query }: { userId: string; query?: ListCoursesQuery }): LmsRequest {
+    return {
+      method: 'GET',
+      path: `/api/v1/users/${userId}/courses`,
+      query: this.toQueryParams(query),
+    }
+  }
+
   // ═══════════════════════════════════════════════════════════════
   // Users
   // ═══════════════════════════════════════════════════════════════
 
+  /**
+   * Get a single user by ID.
+   * @see {@link https://canvas.instructure.com/doc/api/users.html#method.users.api_show Canvas}
+   */
   getUser({ userId }: { userId: string }): LmsRequest {
     return {
       method: 'GET',
@@ -710,7 +878,23 @@ class CanvasRequestBuilder {
     }
   }
 
-  listCourseUsers({ courseId, query }: { courseId: string; query?: ListUsersQuery }): LmsRequest {
+  /**
+   * List users in an account.
+   * @see {@link https://canvas.instructure.com/doc/api/users.html#method.users.api_index Canvas}
+   */
+  listAccountUsers({ accountId, query }: { accountId: string; query?: ListAccountUsersQuery }): LmsRequest {
+    return {
+      method: 'GET',
+      path: `/api/v1/accounts/${accountId}/users`,
+      query: this.toQueryParams(query),
+    }
+  }
+
+  /**
+   * List users enrolled in a course.
+   * @see {@link https://canvas.instructure.com/doc/api/courses.html#method.courses.users Canvas}
+   */
+  listCourseUsers({ courseId, query }: { courseId: string; query?: ListCourseUsersQuery }): LmsRequest {
     return {
       method: 'GET',
       path: `/api/v1/courses/${courseId}/users`,
@@ -719,9 +903,113 @@ class CanvasRequestBuilder {
   }
 
   // ═══════════════════════════════════════════════════════════════
+  // Sections
+  // ═══════════════════════════════════════════════════════════════
+
+  /**
+   * List course sections.
+   * @see {@link https://canvas.instructure.com/doc/api/sections.html#method.sections.index Canvas}
+   */
+  listSections({ courseId, query }: { courseId: string; query?: ListSectionsQuery }): LmsRequest {
+    return {
+      method: 'GET',
+      path: `/api/v1/courses/${courseId}/sections`,
+      query: this.toQueryParams(query),
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // Enrollments
+  // ═══════════════════════════════════════════════════════════════
+
+  /**
+   * List enrollments for a course.
+   * @see {@link https://canvas.instructure.com/doc/api/enrollments.html Canvas}
+   */
+  listCourseEnrollments({ courseId, query }: { courseId: string; query?: ListEnrollmentsQuery }): LmsRequest {
+    return {
+      method: 'GET',
+      path: `/api/v1/courses/${courseId}/enrollments`,
+      query: this.toQueryParams(query),
+    }
+  }
+
+  /**
+   * List enrollments for a user.
+   * @see {@link https://canvas.instructure.com/doc/api/enrollments.html Canvas}
+   */
+  listUserEnrollments({ userId, query }: { userId: string; query?: ListEnrollmentsQuery }): LmsRequest {
+    return {
+      method: 'GET',
+      path: `/api/v1/users/${userId}/enrollments`,
+      query: this.toQueryParams(query),
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // Groups
+  // ═══════════════════════════════════════════════════════════════
+
+  /**
+   * List group categories for a course.
+   * @see {@link https://canvas.instructure.com/doc/api/group_categories.html#method.group_categories.index Canvas}
+   */
+  listGroupCategories({ courseId, query }: { courseId: string; query?: ListGroupCategoriesQuery }): LmsRequest {
+    return {
+      method: 'GET',
+      path: `/api/v1/courses/${courseId}/group_categories`,
+      query: this.toQueryParams(query),
+    }
+  }
+
+  /**
+   * List groups in a group category.
+   * @see {@link https://canvas.instructure.com/doc/api/groups.html#method.groups.context_index Canvas}
+   */
+  listGroups({ groupCategoryId, query }: { groupCategoryId: string; query?: ListGroupsQuery }): LmsRequest {
+    return {
+      method: 'GET',
+      path: `/api/v1/group_categories/${groupCategoryId}/groups`,
+      query: this.toQueryParams(query),
+    }
+  }
+
+  /**
+   * List users in a group.
+   * @see {@link https://canvas.instructure.com/doc/api/groups.html#method.groups.users Canvas}
+   */
+  listGroupUsers({ groupId, query }: { groupId: string; query?: ListGroupUsersQuery }): LmsRequest {
+    return {
+      method: 'GET',
+      path: `/api/v1/groups/${groupId}/users`,
+      query: this.toQueryParams(query),
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // Assignment Groups
+  // ═══════════════════════════════════════════════════════════════
+
+  /**
+   * List assignment groups for a course.
+   * @see {@link https://canvas.instructure.com/doc/api/assignment_groups.html#method.assignment_groups.index Canvas}
+   */
+  listAssignmentGroups({ courseId, query }: { courseId: string; query?: ListAssignmentGroupsQuery }): LmsRequest {
+    return {
+      method: 'GET',
+      path: `/api/v1/courses/${courseId}/assignment_groups`,
+      query: this.toQueryParams(query),
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
   // Assignments
   // ═══════════════════════════════════════════════════════════════
 
+  /**
+   * Get a single assignment.
+   * @see {@link https://canvas.instructure.com/doc/api/assignments.html#method.assignments_api.show Canvas}
+   */
   getAssignment({ courseId, assignmentId }: { courseId: string; assignmentId: string }): LmsRequest {
     return {
       method: 'GET',
@@ -729,6 +1017,10 @@ class CanvasRequestBuilder {
     }
   }
 
+  /**
+   * List assignments for a course.
+   * @see {@link https://canvas.instructure.com/doc/api/assignments.html#method.assignments_api.index Canvas}
+   */
   listAssignments({ courseId, query }: { courseId: string; query?: ListAssignmentsQuery }): LmsRequest {
     return {
       method: 'GET',
@@ -737,6 +1029,19 @@ class CanvasRequestBuilder {
     }
   }
 
+  /**
+   * List assignments for a specific user in a course.
+   * @see {@link https://canvas.instructure.com/doc/api/assignments.html#method.assignments_api.user_index Canvas}
+   */
+  listUserAssignments({ userId, courseId, query }: { userId: string; courseId: string; query?: ListUserAssignmentsQuery }): LmsRequest {
+    return {
+      method: 'GET',
+      path: `/api/v1/users/${userId}/courses/${courseId}/assignments`,
+      query: this.toQueryParams(query),
+    }
+  }
+
+  /** Create an assignment in a course. */
   createAssignment({ courseId, payload }: { courseId: string; payload: CanvasCreateAssignmentInput }): LmsRequest {
     return {
       method: 'POST',
@@ -745,6 +1050,7 @@ class CanvasRequestBuilder {
     }
   }
 
+  /** Update an assignment. */
   updateAssignment({ courseId, assignmentId, payload }: { courseId: string; assignmentId: string; payload: CanvasUpdateAssignmentInput }): LmsRequest {
     return {
       method: 'PUT',
@@ -753,6 +1059,7 @@ class CanvasRequestBuilder {
     }
   }
 
+  /** Delete an assignment. */
   deleteAssignment({ courseId, assignmentId }: { courseId: string; assignmentId: string }): LmsRequest {
     return {
       method: 'DELETE',
@@ -764,6 +1071,7 @@ class CanvasRequestBuilder {
   // Submissions
   // ═══════════════════════════════════════════════════════════════
 
+  /** Get a single submission. */
   getSubmission({ courseId, assignmentId, userId }: { courseId: string; assignmentId: string; userId: string }): LmsRequest {
     return {
       method: 'GET',
@@ -771,13 +1079,31 @@ class CanvasRequestBuilder {
     }
   }
 
-  listSubmissions({ courseId, assignmentId }: { courseId: string; assignmentId: string }): LmsRequest {
+  /**
+   * List submissions for an assignment.
+   * @see {@link https://canvas.instructure.com/doc/api/submissions.html#method.submissions_api.index Canvas}
+   */
+  listSubmissions({ courseId, assignmentId, query }: { courseId: string; assignmentId: string; query?: ListSubmissionsQuery }): LmsRequest {
     return {
       method: 'GET',
       path: `/api/v1/courses/${courseId}/assignments/${assignmentId}/submissions`,
+      query: this.toQueryParams(query),
     }
   }
 
+  /**
+   * List submissions for multiple students across assignments in a course.
+   * @see {@link https://canvas.instructure.com/doc/api/submissions.html#method.submissions_api.for_students Canvas}
+   */
+  listStudentSubmissions({ courseId, query }: { courseId: string; query?: ListStudentSubmissionsQuery }): LmsRequest {
+    return {
+      method: 'GET',
+      path: `/api/v1/courses/${courseId}/students/submissions`,
+      query: this.toQueryParams(query),
+    }
+  }
+
+  /** Grade or comment on a submission. */
   gradeSubmission({ courseId, assignmentId, userId, payload }: { courseId: string; assignmentId: string; userId: string; payload: CanvasGradeInput }): LmsRequest {
     return {
       method: 'PUT',
@@ -787,9 +1113,91 @@ class CanvasRequestBuilder {
   }
 
   // ═══════════════════════════════════════════════════════════════
-  // Canvas-specific endpoints (Modules, Enrollments)
+  // External Tools
   // ═══════════════════════════════════════════════════════════════
 
+  /**
+   * List external tools for a course.
+   * @see {@link https://canvas.instructure.com/doc/api/external_tools.html#method.external_tools.index Canvas}
+   */
+  listExternalTools({ courseId, query }: { courseId: string; query?: ListExternalToolsQuery }): LmsRequest {
+    return {
+      method: 'GET',
+      path: `/api/v1/courses/${courseId}/external_tools`,
+      query: this.toQueryParams(query),
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // Outcomes
+  // ═══════════════════════════════════════════════════════════════
+
+  /**
+   * Redirect to root outcome group for a course.
+   * @see {@link https://canvas.instructure.com/doc/api/outcome_groups.html#method.outcome_groups_api.redirect Canvas}
+   */
+  getRootOutcomeGroup({ courseId }: { courseId: string }): LmsRequest {
+    return {
+      method: 'GET',
+      path: `/api/v1/courses/${courseId}/root_outcome_group`,
+    }
+  }
+
+  /**
+   * List outcome groups for a course.
+   * @see {@link https://canvas.instructure.com/doc/api/outcome_groups.html#method.outcome_groups_api.index Canvas}
+   */
+  listOutcomeGroups({ courseId, query }: { courseId: string; query?: ListOutcomeGroupsQuery }): LmsRequest {
+    return {
+      method: 'GET',
+      path: `/api/v1/courses/${courseId}/outcome_groups`,
+      query: this.toQueryParams(query),
+    }
+  }
+
+  /**
+   * List linked outcomes for an outcome group.
+   * @see {@link https://canvas.instructure.com/doc/api/outcome_groups.html#method.outcome_groups_api.outcomes Canvas}
+   */
+  listOutcomeGroupOutcomes({ courseId, outcomeGroupId, query }: { courseId: string; outcomeGroupId: string; query?: ListOutcomeGroupOutcomesQuery }): LmsRequest {
+    return {
+      method: 'GET',
+      path: `/api/v1/courses/${courseId}/outcome_groups/${outcomeGroupId}/outcomes`,
+      query: this.toQueryParams(query),
+    }
+  }
+
+  /**
+   * Show details for a specific outcome.
+   * @see {@link https://canvas.instructure.com/doc/api/outcomes.html#method.outcomes_api.show Canvas}
+   */
+  getOutcome({ outcomeId }: { outcomeId: string }): LmsRequest {
+    return {
+      method: 'GET',
+      path: `/api/v1/outcomes/${outcomeId}`,
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // Proficiency
+  // ═══════════════════════════════════════════════════════════════
+
+  /**
+   * Get outcome proficiency ratings for an account.
+   * @see {@link https://canvas.instructure.com/doc/api/proficiency_ratings.html#method.outcome_proficiency_api.show Canvas}
+   */
+  getOutcomeProficiency({ accountId }: { accountId: string }): LmsRequest {
+    return {
+      method: 'GET',
+      path: `/api/v1/accounts/${accountId}/outcome_proficiency`,
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // Modules
+  // ═══════════════════════════════════════════════════════════════
+
+  /** List modules for a course. */
   listModules({ courseId }: { courseId: string }): LmsRequest {
     return {
       method: 'GET',
@@ -797,18 +1205,11 @@ class CanvasRequestBuilder {
     }
   }
 
+  /** List items in a module. */
   listModuleItems({ courseId, moduleId }: { courseId: string; moduleId: string }): LmsRequest {
     return {
       method: 'GET',
       path: `/api/v1/courses/${courseId}/modules/${moduleId}/items`,
-    }
-  }
-
-  listEnrollments({ courseId, query }: { courseId: string; query?: ListEnrollmentsQuery }): LmsRequest {
-    return {
-      method: 'GET',
-      path: `/api/v1/courses/${courseId}/enrollments`,
-      query: this.toQueryParams(query),
     }
   }
 
@@ -848,7 +1249,18 @@ builder.deleteAssignment({ courseId: '1', assignmentId: '42' })
 // With query options
 builder.getCourse({ courseId: '123', query: { include: ['teachers', 'term'] } })
 builder.listCourses({ query: { enrollmentType: 'teacher', perPage: 50 } })
-builder.listAssignments({ courseId: '1', query: { orderBy: 'due_at' } })
+builder.listAssignments({ courseId: '1', query: { orderBy: 'due_at', bucket: 'upcoming' } })
+
+// New endpoints
+builder.getAccount({ accountId: '1' })
+builder.listSections({ courseId: '1', query: { include: ['total_students'] } })
+builder.listGroupCategories({ courseId: '1' })
+builder.listGroups({ groupCategoryId: '5' })
+builder.listAssignmentGroups({ courseId: '1', query: { include: ['assignments'] } })
+builder.listStudentSubmissions({ courseId: '1', query: { studentIds: ['all'], grouped: true } })
+builder.listExternalTools({ courseId: '1', query: { searchTerm: 'turnitin' } })
+builder.listOutcomeGroups({ courseId: '1' })
+builder.getOutcomeProficiency({ accountId: '1' })
 
 // With payload (POST/PUT)
 builder.createAssignment({ courseId: '1', payload: { name: 'Quiz 1', points_possible: 100 } })
@@ -856,7 +1268,7 @@ builder.updateAssignment({ courseId: '1', assignmentId: '42', payload: { name: '
 builder.gradeSubmission({ courseId: '1', assignmentId: '42', userId: '999', payload: { posted_grade: 'A' } })
 
 // Easy to spread options
-const defaults = { perPage: 100, include: ['email'] }
+const defaults = { perPage: 100, include: ['email'] as const }
 builder.listCourseUsers({ courseId: '1', query: { ...defaults, enrollmentType: ['student'] } })
 ```
 
@@ -883,16 +1295,40 @@ class CanvasApi {
   ) {}
 
   // ═══════════════════════════════════════════════════════════════
+  // Accounts
+  // ═══════════════════════════════════════════════════════════════
+
+  /** @see {@link https://canvas.instructure.com/doc/api/accounts.html#method.accounts.show Canvas} */
+  async getAccount({ accountId, query }: { accountId: string; query?: GetAccountQuery }): Promise<CanvasAccount> {
+    const request = this.builder.getAccount({ accountId, query })
+    return this.http.execute(request)
+  }
+
+  /** @see {@link https://canvas.instructure.com/doc/api/accounts.html#method.accounts.manageable_accounts Canvas} */
+  async *listManageableAccounts(): AsyncGenerator<CanvasAccount> {
+    const request = this.builder.listManageableAccounts()
+    yield* this.http.executePaginated(request)
+  }
+
+  // ═══════════════════════════════════════════════════════════════
   // Courses
   // ═══════════════════════════════════════════════════════════════
 
+  /** @see {@link https://canvas.instructure.com/doc/api/courses.html#method.courses.show Canvas} */
   async getCourse({ courseId, query }: { courseId: string; query?: GetCourseQuery }): Promise<CanvasCourse> {
     const request = this.builder.getCourse({ courseId, query })
     return this.http.execute(request)
   }
 
+  /** @see {@link https://canvas.instructure.com/doc/api/courses.html#method.courses.user_index Canvas} */
   async *listCourses({ query }: { query?: ListCoursesQuery } = {}): AsyncGenerator<CanvasCourse> {
     const request = this.builder.listCourses({ query })
+    yield* this.http.executePaginated(request)
+  }
+
+  /** @see {@link https://canvas.instructure.com/doc/api/courses.html#method.courses.user_index Canvas} */
+  async *listUserCourses({ userId, query }: { userId: string; query?: ListCoursesQuery }): AsyncGenerator<CanvasCourse> {
+    const request = this.builder.listUserCourses({ userId, query })
     yield* this.http.executePaginated(request)
   }
 
@@ -900,13 +1336,79 @@ class CanvasApi {
   // Users
   // ═══════════════════════════════════════════════════════════════
 
+  /** @see {@link https://canvas.instructure.com/doc/api/users.html#method.users.api_show Canvas} */
   async getUser({ userId }: { userId: string }): Promise<CanvasUser> {
     const request = this.builder.getUser({ userId })
     return this.http.execute(request)
   }
 
-  async *listCourseUsers({ courseId, query }: { courseId: string; query?: ListUsersQuery }): AsyncGenerator<CanvasUser> {
+  /** @see {@link https://canvas.instructure.com/doc/api/users.html#method.users.api_index Canvas} */
+  async *listAccountUsers({ accountId, query }: { accountId: string; query?: ListAccountUsersQuery }): AsyncGenerator<CanvasUser> {
+    const request = this.builder.listAccountUsers({ accountId, query })
+    yield* this.http.executePaginated(request)
+  }
+
+  /** @see {@link https://canvas.instructure.com/doc/api/courses.html#method.courses.users Canvas} */
+  async *listCourseUsers({ courseId, query }: { courseId: string; query?: ListCourseUsersQuery }): AsyncGenerator<CanvasUser> {
     const request = this.builder.listCourseUsers({ courseId, query })
+    yield* this.http.executePaginated(request)
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // Sections
+  // ═══════════════════════════════════════════════════════════════
+
+  /** @see {@link https://canvas.instructure.com/doc/api/sections.html#method.sections.index Canvas} */
+  async *listSections({ courseId, query }: { courseId: string; query?: ListSectionsQuery }): AsyncGenerator<CanvasSection> {
+    const request = this.builder.listSections({ courseId, query })
+    yield* this.http.executePaginated(request)
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // Enrollments
+  // ═══════════════════════════════════════════════════════════════
+
+  /** @see {@link https://canvas.instructure.com/doc/api/enrollments.html Canvas} */
+  async *listCourseEnrollments({ courseId, query }: { courseId: string; query?: ListEnrollmentsQuery }): AsyncGenerator<CanvasEnrollment> {
+    const request = this.builder.listCourseEnrollments({ courseId, query })
+    yield* this.http.executePaginated(request)
+  }
+
+  /** @see {@link https://canvas.instructure.com/doc/api/enrollments.html Canvas} */
+  async *listUserEnrollments({ userId, query }: { userId: string; query?: ListEnrollmentsQuery }): AsyncGenerator<CanvasEnrollment> {
+    const request = this.builder.listUserEnrollments({ userId, query })
+    yield* this.http.executePaginated(request)
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // Groups
+  // ═══════════════════════════════════════════════════════════════
+
+  /** @see {@link https://canvas.instructure.com/doc/api/group_categories.html#method.group_categories.index Canvas} */
+  async *listGroupCategories({ courseId, query }: { courseId: string; query?: ListGroupCategoriesQuery }): AsyncGenerator<CanvasGroupCategory> {
+    const request = this.builder.listGroupCategories({ courseId, query })
+    yield* this.http.executePaginated(request)
+  }
+
+  /** @see {@link https://canvas.instructure.com/doc/api/groups.html#method.groups.context_index Canvas} */
+  async *listGroups({ groupCategoryId, query }: { groupCategoryId: string; query?: ListGroupsQuery }): AsyncGenerator<CanvasGroup> {
+    const request = this.builder.listGroups({ groupCategoryId, query })
+    yield* this.http.executePaginated(request)
+  }
+
+  /** @see {@link https://canvas.instructure.com/doc/api/groups.html#method.groups.users Canvas} */
+  async *listGroupUsers({ groupId, query }: { groupId: string; query?: ListGroupUsersQuery }): AsyncGenerator<CanvasUser> {
+    const request = this.builder.listGroupUsers({ groupId, query })
+    yield* this.http.executePaginated(request)
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // Assignment Groups
+  // ═══════════════════════════════════════════════════════════════
+
+  /** @see {@link https://canvas.instructure.com/doc/api/assignment_groups.html#method.assignment_groups.index Canvas} */
+  async *listAssignmentGroups({ courseId, query }: { courseId: string; query?: ListAssignmentGroupsQuery }): AsyncGenerator<CanvasAssignmentGroup> {
+    const request = this.builder.listAssignmentGroups({ courseId, query })
     yield* this.http.executePaginated(request)
   }
 
@@ -914,13 +1416,21 @@ class CanvasApi {
   // Assignments
   // ═══════════════════════════════════════════════════════════════
 
+  /** @see {@link https://canvas.instructure.com/doc/api/assignments.html#method.assignments_api.show Canvas} */
   async getAssignment({ courseId, assignmentId }: { courseId: string; assignmentId: string }): Promise<CanvasAssignment> {
     const request = this.builder.getAssignment({ courseId, assignmentId })
     return this.http.execute(request)
   }
 
+  /** @see {@link https://canvas.instructure.com/doc/api/assignments.html#method.assignments_api.index Canvas} */
   async *listAssignments({ courseId, query }: { courseId: string; query?: ListAssignmentsQuery }): AsyncGenerator<CanvasAssignment> {
     const request = this.builder.listAssignments({ courseId, query })
+    yield* this.http.executePaginated(request)
+  }
+
+  /** @see {@link https://canvas.instructure.com/doc/api/assignments.html#method.assignments_api.user_index Canvas} */
+  async *listUserAssignments({ userId, courseId, query }: { userId: string; courseId: string; query?: ListUserAssignmentsQuery }): AsyncGenerator<CanvasAssignment> {
+    const request = this.builder.listUserAssignments({ userId, courseId, query })
     yield* this.http.executePaginated(request)
   }
 
@@ -948,14 +1458,83 @@ class CanvasApi {
     return this.http.execute(request)
   }
 
-  async *listSubmissions({ courseId, assignmentId }: { courseId: string; assignmentId: string }): AsyncGenerator<CanvasSubmission> {
-    const request = this.builder.listSubmissions({ courseId, assignmentId })
+  /** @see {@link https://canvas.instructure.com/doc/api/submissions.html#method.submissions_api.index Canvas} */
+  async *listSubmissions({ courseId, assignmentId, query }: { courseId: string; assignmentId: string; query?: ListSubmissionsQuery }): AsyncGenerator<CanvasSubmission> {
+    const request = this.builder.listSubmissions({ courseId, assignmentId, query })
+    yield* this.http.executePaginated(request)
+  }
+
+  /** @see {@link https://canvas.instructure.com/doc/api/submissions.html#method.submissions_api.for_students Canvas} */
+  async *listStudentSubmissions({ courseId, query }: { courseId: string; query?: ListStudentSubmissionsQuery }): AsyncGenerator<CanvasSubmission> {
+    const request = this.builder.listStudentSubmissions({ courseId, query })
     yield* this.http.executePaginated(request)
   }
 
   async gradeSubmission({ courseId, assignmentId, userId, payload }: { courseId: string; assignmentId: string; userId: string; payload: CanvasGradeInput }): Promise<CanvasSubmission> {
     const request = this.builder.gradeSubmission({ courseId, assignmentId, userId, payload })
     return this.http.execute(request)
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // External Tools
+  // ═══════════════════════════════════════════════════════════════
+
+  /** @see {@link https://canvas.instructure.com/doc/api/external_tools.html#method.external_tools.index Canvas} */
+  async *listExternalTools({ courseId, query }: { courseId: string; query?: ListExternalToolsQuery }): AsyncGenerator<CanvasExternalTool> {
+    const request = this.builder.listExternalTools({ courseId, query })
+    yield* this.http.executePaginated(request)
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // Outcomes
+  // ═══════════════════════════════════════════════════════════════
+
+  /** @see {@link https://canvas.instructure.com/doc/api/outcome_groups.html#method.outcome_groups_api.redirect Canvas} */
+  async getRootOutcomeGroup({ courseId }: { courseId: string }): Promise<CanvasOutcomeGroup> {
+    const request = this.builder.getRootOutcomeGroup({ courseId })
+    return this.http.execute(request)
+  }
+
+  /** @see {@link https://canvas.instructure.com/doc/api/outcome_groups.html#method.outcome_groups_api.index Canvas} */
+  async *listOutcomeGroups({ courseId, query }: { courseId: string; query?: ListOutcomeGroupsQuery }): AsyncGenerator<CanvasOutcomeGroup> {
+    const request = this.builder.listOutcomeGroups({ courseId, query })
+    yield* this.http.executePaginated(request)
+  }
+
+  /** @see {@link https://canvas.instructure.com/doc/api/outcome_groups.html#method.outcome_groups_api.outcomes Canvas} */
+  async *listOutcomeGroupOutcomes({ courseId, outcomeGroupId, query }: { courseId: string; outcomeGroupId: string; query?: ListOutcomeGroupOutcomesQuery }): AsyncGenerator<CanvasOutcomeLink> {
+    const request = this.builder.listOutcomeGroupOutcomes({ courseId, outcomeGroupId, query })
+    yield* this.http.executePaginated(request)
+  }
+
+  /** @see {@link https://canvas.instructure.com/doc/api/outcomes.html#method.outcomes_api.show Canvas} */
+  async getOutcome({ outcomeId }: { outcomeId: string }): Promise<CanvasOutcome> {
+    const request = this.builder.getOutcome({ outcomeId })
+    return this.http.execute(request)
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // Proficiency
+  // ═══════════════════════════════════════════════════════════════
+
+  /** @see {@link https://canvas.instructure.com/doc/api/proficiency_ratings.html#method.outcome_proficiency_api.show Canvas} */
+  async getOutcomeProficiency({ accountId }: { accountId: string }): Promise<CanvasOutcomeProficiency> {
+    const request = this.builder.getOutcomeProficiency({ accountId })
+    return this.http.execute(request)
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // Modules
+  // ═══════════════════════════════════════════════════════════════
+
+  async *listModules({ courseId }: { courseId: string }): AsyncGenerator<CanvasModule> {
+    const request = this.builder.listModules({ courseId })
+    yield* this.http.executePaginated(request)
+  }
+
+  async *listModuleItems({ courseId, moduleId }: { courseId: string; moduleId: string }): AsyncGenerator<CanvasModuleItem> {
+    const request = this.builder.listModuleItems({ courseId, moduleId })
+    yield* this.http.executePaginated(request)
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -985,11 +1564,23 @@ const api = new CanvasApi(builder, httpClient)
 // Simple calls
 const user = await api.getUser({ userId: '123' })
 const assignment = await api.getAssignment({ courseId: '1', assignmentId: '42' })
+const account = await api.getAccount({ accountId: '1' })
 
 // With query options
 const course = await api.getCourse({ courseId: '123', query: { include: ['teachers'] } })
 for await (const user of api.listCourseUsers({ courseId: '1', query: { include: ['email'] } })) {
   console.log(user.email)
+}
+
+// New endpoints
+for await (const section of api.listSections({ courseId: '1' })) {
+  console.log(section.name)
+}
+for await (const group of api.listAssignmentGroups({ courseId: '1', query: { include: ['assignments'] } })) {
+  console.log(group.name, group.assignments?.length)
+}
+for await (const sub of api.listStudentSubmissions({ courseId: '1', query: { studentIds: ['all'] } })) {
+  console.log(sub.user_id, sub.score)
 }
 
 // Mutations
@@ -1011,16 +1602,32 @@ Raw Canvas API types exactly as returned by the Canvas API.
 
 ```typescript
 // Canvas returns these exact shapes
+
+interface CanvasAccount {
+  id: number
+  name: string
+  parent_account_id: number | null
+  root_account_id: number
+  workflow_state: 'active' | 'deleted'
+  default_storage_quota_mb: number
+  default_user_storage_quota_mb: number
+}
+
 interface CanvasCourse {
   id: number
   name: string
   course_code: string
   workflow_state: 'unpublished' | 'available' | 'completed' | 'deleted'
   account_id: number
+  root_account_id: number
   start_at: string | null
   end_at: string | null
   enrollments?: CanvasEnrollment[]
   total_students?: number
+  teachers?: CanvasUser[]
+  term?: CanvasEnrollmentTerm
+  syllabus_body?: string
+  needs_grading_count?: number
   // ... many more Canvas-specific fields
 }
 
@@ -1032,6 +1639,76 @@ interface CanvasUser {
   login_id: string
   email?: string
   avatar_url: string
+  locale?: string | null
+  last_login?: string | null
+}
+
+interface CanvasSection {
+  id: number
+  name: string
+  course_id: number
+  sis_section_id: string | null
+  start_at: string | null
+  end_at: string | null
+  total_students?: number
+}
+
+interface CanvasEnrollment {
+  id: number
+  course_id: number
+  user_id: number
+  type: 'StudentEnrollment' | 'TeacherEnrollment' | 'TaEnrollment' | 'DesignerEnrollment' | 'ObserverEnrollment'
+  enrollment_state: 'active' | 'invited' | 'inactive' | 'completed' | 'deleted'
+  role: string
+  grades?: {
+    current_score: number | null
+    final_score: number | null
+    current_grade: string | null
+    final_grade: string | null
+  }
+  user?: CanvasUser
+}
+
+interface CanvasEnrollmentTerm {
+  id: number
+  name: string
+  start_at: string | null
+  end_at: string | null
+}
+
+interface CanvasGroupCategory {
+  id: number
+  name: string
+  context_type: 'Course' | 'Account'
+  group_limit: number | null
+  auto_leader: 'first' | 'random' | null
+  self_signup: 'enabled' | 'restricted' | null
+  groups_count: number
+  unassigned_users_count: number
+}
+
+interface CanvasGroup {
+  id: number
+  name: string
+  description: string | null
+  group_category_id: number
+  context_type: 'Course' | 'Account'
+  course_id?: number
+  members_count: number
+  join_level: 'parent_context_auto_join' | 'parent_context_request' | 'invitation_only'
+}
+
+interface CanvasAssignmentGroup {
+  id: number
+  name: string
+  position: number
+  group_weight: number
+  assignments?: CanvasAssignment[]
+  rules?: {
+    drop_lowest?: number
+    drop_highest?: number
+    never_drop?: number[]
+  }
 }
 
 interface CanvasAssignment {
@@ -1043,6 +1720,11 @@ interface CanvasAssignment {
   grading_type: 'pass_fail' | 'percent' | 'letter_grade' | 'gpa_scale' | 'points' | 'not_graded'
   submission_types: string[]
   published: boolean
+  assignment_group_id: number
+  position: number
+  course_id: number
+  has_submitted_submissions: boolean
+  needs_grading_count?: number
 }
 
 interface CanvasSubmission {
@@ -1053,6 +1735,59 @@ interface CanvasSubmission {
   grade: string | null
   score: number | null
   workflow_state: 'submitted' | 'graded' | 'pending_review' | 'unsubmitted'
+  late: boolean
+  missing: boolean
+  attempt: number | null
+  submission_type: string | null
+}
+
+interface CanvasExternalTool {
+  id: number
+  name: string
+  description: string | null
+  url: string | null
+  domain: string | null
+  consumer_key: string
+  privacy_level: 'anonymous' | 'name_only' | 'email_only' | 'public'
+  custom_fields: Record<string, string>
+  workflow_state: 'public' | 'anonymous' | 'name_only' | 'email_only'
+}
+
+interface CanvasOutcomeGroup {
+  id: number
+  title: string
+  description: string | null
+  vendor_guid: string | null
+  parent_outcome_group?: { id: number; title: string }
+  context_id: number
+  context_type: 'Course' | 'Account'
+}
+
+interface CanvasOutcome {
+  id: number
+  title: string
+  description: string | null
+  display_name: string | null
+  vendor_guid: string | null
+  points_possible: number
+  mastery_points: number
+  calculation_method: 'decaying_average' | 'n_mastery' | 'latest' | 'highest' | 'average'
+  calculation_int: number | null
+  ratings: Array<{ description: string; points: number }>
+}
+
+interface CanvasOutcomeLink {
+  outcome_group: { id: number; title: string }
+  outcome: CanvasOutcome
+}
+
+interface CanvasOutcomeProficiency {
+  ratings: Array<{
+    description: string
+    points: number
+    mastery: boolean
+    color: string
+  }>
 }
 
 // Canvas-specific types (no generic equivalent)
@@ -1061,6 +1796,17 @@ interface CanvasModule {
   name: string
   position: number
   items_count: number
+  workflow_state: 'active' | 'deleted'
+}
+
+interface CanvasModuleItem {
+  id: number
+  module_id: number
+  title: string
+  position: number
+  type: 'File' | 'Page' | 'Discussion' | 'Assignment' | 'Quiz' | 'SubHeader' | 'ExternalUrl' | 'ExternalTool'
+  content_id: number
+  html_url: string
 }
 ```
 
@@ -1079,7 +1825,7 @@ class CanvasAdapter {
   // ═══════════════════════════════════════════════════════════════
 
   async getCourse(courseId: string): Promise<LmsCourse> {
-    const canvas = await this.api.getCourse(courseId)
+    const canvas = await this.api.getCourse({ courseId })
     return this.transformCourse(canvas)
   }
 
@@ -1352,15 +2098,15 @@ const rawCourse = await canvasClient.api.getCourse('123')  // Returns: CanvasCou
 console.log(rawCourse.workflow_state)                      // Canvas-specific field
 
 // 3. Batch operations through raw API
-const assignments = ['1', '2', '3'].map(id => ({
-  path: `/api/v1/courses/123/assignments/${id}`,
-}))
-const result = await canvasClient.api.httpClient.batchGet(assignments)
+const result = await canvasClient.api.batchUpdateAssignments([
+  { courseId: '123', assignmentId: '1', payload: { name: 'Updated 1' } },
+  { courseId: '123', assignmentId: '2', payload: { name: 'Updated 2' } },
+])
 ```
 
 ## Error Handling
 
-See the comprehensive error types defined in [Layer 1: HTTP Client](#layer-1-http-client-http-clientts) above, including:
+See the comprehensive error types defined in [Configuration Types > Error Types](#error-types) above, including:
 - `LmsError` - Base error with code, status, and retryable flag
 - `LmsThrottleError` - Rate limiting (429 responses)
 - `LmsNetworkError` - Network failures
@@ -1372,12 +2118,63 @@ See the comprehensive error types defined in [Layer 1: HTTP Client](#layer-1-htt
 OAuth2 token handling for Canvas:
 
 1. **Initial connection**: User authorizes via Canvas OAuth2 flow
-2. **Token storage**: Access token + refresh token stored (likely in DB, associated with user/org)
+2. **Token storage**: Access token + refresh token stored in DB (separate `lms_connections` table, associated with user/org)
 3. **Auto-refresh**: When 401 received, automatically use refresh token
 4. **Callback**: `onTokenRefresh` callback to persist new tokens
 
+### Token validation strategy
+
+The API layer and the LMS module have distinct responsibilities:
+
+- **API route level (backend handler)**: Only checks that LMS tokens **exist** in the database — i.e., the user has connected their LMS account. This is a simple DB lookup, not a Canvas API call. No pre-validation of token validity happens here.
+- **LMS module level (HttpClient)**: Owns the full token lifecycle. It attaches the `accessToken` to outgoing requests, and on a **401** response automatically attempts a refresh using the `refreshToken`. On success it calls the `onTokenRefresh` callback to persist the new tokens and retries the original request. On failure it throws `LmsTokenError` with `tokenErrorType: 'refresh_failed'`.
+- **Backend response**: Maps `LmsTokenError` to a specific API response (e.g. `403` with `{ code: 'LMS_REAUTH_REQUIRED' }`).
+- **Frontend**: Listens for the `LMS_REAUTH_REQUIRED` error code and redirects the user to the Canvas OAuth2 authorization flow to re-establish the connection.
+
+**Why not pre-validate tokens at the API level?**
+- A token can expire between a validation call and the actual request, so pre-validation doesn't guarantee success.
+- It adds an unnecessary extra roundtrip to Canvas on every request.
+- The LMS module already handles 401s with retry logic, so pre-validation is redundant.
+
 ```typescript
-// Token refresh flow
+// Example: backend handler wiring
+async function handleLmsRequest(ctx) {
+  // 1. API level: check tokens exist
+  const lmsConnection = await db.getLmsConnection(ctx.userId, ctx.orgId)
+  if (!lmsConnection) {
+    return ctx.json({ code: 'LMS_NOT_CONNECTED' }, 403)
+  }
+
+  // 2. Create client — module owns token refresh internally
+  const client = createLmsClient({
+    provider: 'canvas',
+    baseUrl: lmsConnection.baseUrl,
+    accessToken: lmsConnection.accessToken,
+    refreshToken: lmsConnection.refreshToken,
+    onTokenRefresh: async (newTokens) => {
+      await db.updateLmsTokens(lmsConnection.id, newTokens)
+    },
+  })
+
+  try {
+    const courses: LmsCourse[] = []
+    for await (const course of client.listCourses()) {
+      courses.push(course)
+    }
+    return ctx.json(courses)
+  } catch (error) {
+    if (error instanceof LmsTokenError) {
+      // 3. Refresh failed — tell the frontend to re-authorize
+      return ctx.json({ code: 'LMS_REAUTH_REQUIRED' }, 403)
+    }
+    throw error
+  }
+}
+```
+
+### Token refresh flow
+
+```typescript
 async function handleTokenRefresh(refreshToken: string): Promise<TokenPair> {
   const response = await fetch(`${baseUrl}/login/oauth2/token`, {
     method: 'POST',
@@ -1530,7 +2327,7 @@ LMS_REQUEST_TIMEOUT_MS=30000
 
 ## Open Questions
 
-1. **Token storage**: Where to store LMS tokens? Separate table? Organization settings?
+1. ~~**Token storage**: Where to store LMS tokens? Separate table? Organization settings?~~ → **Decided**: Separate `lms_connections` table per user/org. API layer checks existence only; the LMS module handles token refresh internally. See [Token Management](#token-management).
 2. **Multi-tenant**: How to handle multiple Canvas instances per organization?
 3. **Webhooks**: Should we support Canvas webhooks for real-time updates?
 4. **Sync strategy**: One-time fetch vs. periodic sync vs. webhook-driven?
@@ -1543,6 +2340,38 @@ LMS_REQUEST_TIMEOUT_MS=30000
 
 ## References
 
+### General
 - [Canvas REST API Documentation](https://canvas.instructure.com/doc/api/)
 - [Canvas OAuth2 Documentation](https://canvas.instructure.com/doc/api/file.oauth.html)
 - [Canvas Rate Limiting](https://canvas.instructure.com/doc/api/file.throttling.html)
+
+### Endpoint documentation (initial GET endpoints)
+
+| Category | Endpoint | Canvas docs |
+|----------|----------|-------------|
+| Accounts | `GET /api/v1/accounts/:id` | [accounts.show](https://canvas.instructure.com/doc/api/accounts.html#method.accounts.show) |
+| Accounts | `GET /api/v1/manageable_accounts` | [accounts.manageable_accounts](https://canvas.instructure.com/doc/api/accounts.html#method.accounts.manageable_accounts) |
+| Courses | `GET /api/v1/courses/:id` | [courses.show](https://canvas.instructure.com/doc/api/courses.html#method.courses.show) |
+| Courses | `GET /api/v1/courses` | [courses.user_index](https://canvas.instructure.com/doc/api/courses.html#method.courses.user_index) |
+| Courses | `GET /api/v1/users/:user_id/courses` | [courses.user_index](https://canvas.instructure.com/doc/api/courses.html#method.courses.user_index) |
+| Users | `GET /api/v1/users/:id` | [users.api_show](https://canvas.instructure.com/doc/api/users.html#method.users.api_show) |
+| Users | `GET /api/v1/accounts/:account_id/users` | [users.api_index](https://canvas.instructure.com/doc/api/users.html#method.users.api_index) |
+| Users | `GET /api/v1/courses/:course_id/users` | [courses.users](https://canvas.instructure.com/doc/api/courses.html#method.courses.users) |
+| Sections | `GET /api/v1/courses/:course_id/sections` | [sections.index](https://canvas.instructure.com/doc/api/sections.html#method.sections.index) |
+| Enrollments | `GET /api/v1/courses/:course_id/enrollments` | [enrollments](https://canvas.instructure.com/doc/api/enrollments.html) |
+| Enrollments | `GET /api/v1/users/:user_id/enrollments` | [enrollments](https://canvas.instructure.com/doc/api/enrollments.html) |
+| Groups | `GET /api/v1/courses/:course_id/group_categories` | [group_categories.index](https://canvas.instructure.com/doc/api/group_categories.html#method.group_categories.index) |
+| Groups | `GET /api/v1/group_categories/:id/groups` | [groups.context_index](https://canvas.instructure.com/doc/api/groups.html#method.groups.context_index) |
+| Groups | `GET /api/v1/groups/:group_id/users` | [groups.users](https://canvas.instructure.com/doc/api/groups.html#method.groups.users) |
+| Assignment Groups | `GET /api/v1/courses/:course_id/assignment_groups` | [assignment_groups.index](https://canvas.instructure.com/doc/api/assignment_groups.html#method.assignment_groups.index) |
+| Assignments | `GET /api/v1/courses/:course_id/assignments/:id` | [assignments_api.show](https://canvas.instructure.com/doc/api/assignments.html#method.assignments_api.show) |
+| Assignments | `GET /api/v1/courses/:course_id/assignments` | [assignments_api.index](https://canvas.instructure.com/doc/api/assignments.html#method.assignments_api.index) |
+| Assignments | `GET /api/v1/users/:user_id/courses/:course_id/assignments` | [assignments_api.user_index](https://canvas.instructure.com/doc/api/assignments.html#method.assignments_api.user_index) |
+| Submissions | `GET /api/v1/courses/:course_id/assignments/:id/submissions` | [submissions_api.index](https://canvas.instructure.com/doc/api/submissions.html#method.submissions_api.index) |
+| Submissions | `GET /api/v1/courses/:course_id/students/submissions` | [submissions_api.for_students](https://canvas.instructure.com/doc/api/submissions.html#method.submissions_api.for_students) |
+| External Tools | `GET /api/v1/courses/:course_id/external_tools` | [external_tools.index](https://canvas.instructure.com/doc/api/external_tools.html#method.external_tools.index) |
+| Outcomes | `GET /api/v1/courses/:course_id/root_outcome_group` | [outcome_groups_api.redirect](https://canvas.instructure.com/doc/api/outcome_groups.html#method.outcome_groups_api.redirect) |
+| Outcomes | `GET /api/v1/courses/:course_id/outcome_groups` | [outcome_groups_api.index](https://canvas.instructure.com/doc/api/outcome_groups.html#method.outcome_groups_api.index) |
+| Outcomes | `GET /api/v1/courses/:course_id/outcome_groups/:id/outcomes` | [outcome_groups_api.outcomes](https://canvas.instructure.com/doc/api/outcome_groups.html#method.outcome_groups_api.outcomes) |
+| Outcomes | `GET /api/v1/outcomes/:id` | [outcomes_api.show](https://canvas.instructure.com/doc/api/outcomes.html#method.outcomes_api.show) |
+| Proficiency | `GET /api/v1/accounts/:account_id/outcome_proficiency` | [outcome_proficiency_api.show](https://canvas.instructure.com/doc/api/proficiency_ratings.html#method.outcome_proficiency_api.show) |
