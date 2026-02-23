@@ -2310,25 +2310,108 @@ The LMS integration is designed for multi-tenant use where each organization can
 
 ### Data model
 
-Two tables handle the multi-tenant LMS data:
+Two tables handle the multi-tenant LMS data. Schema files: `backend/src/db/schema/lms-providers.ts` and `backend/src/db/schema/lms-connections.ts`.
 
-```
-lms_providers                          lms_connections
-┌──────────────────────────────┐       ┌──────────────────────────────┐
-│ id (PK)                      │       │ id (PK)                      │
-│ organization_id (FK → orgs)  │       │ lms_provider_id (FK)         │
-│ provider_type ('canvas')     │       │ user_id (FK → users)         │
-│ base_url                     │       │ access_token (encrypted)     │
-│ client_id (encrypted)        │       │ refresh_token (encrypted)    │
-│ client_secret (encrypted)    │       │ token_expires_at             │
-│ display_name                 │       │ created_at                   │
-│ created_at                   │       │ updated_at                   │
-│ updated_at                   │       └──────────────────────────────┘
-└──────────────────────────────┘
+#### `lms_providers` — Organization-level LMS configuration
+
+One row per organization's Canvas setup. Stores the OAuth app credentials and the Canvas base URL. An org admin configures this once.
+
+```typescript
+// backend/src/db/schema/lms-providers.ts
+import { index, pgTable, timestamp, unique, varchar } from 'drizzle-orm/pg-core';
+import { organizationsTable } from '#/db/schema/organizations';
+import { usersTable } from '#/db/schema/users';
+import { maxLength } from '#/db/utils/constraints';
+import { timestampColumns } from '#/db/utils/timestamp-columns';
+import { nanoid } from '#/utils/nanoid';
+
+export const lmsProviderTypes = ['canvas'] as const;
+export type LmsProviderType = (typeof lmsProviderTypes)[number];
+
+/** Organization-level LMS provider configuration (OAuth app credentials + base URL). */
+export const lmsProvidersTable = pgTable(
+  'lms_providers',
+  {
+    createdAt: timestampColumns.createdAt,
+    id: varchar({ length: maxLength.id }).primaryKey().$defaultFn(nanoid),
+    organizationId: varchar({ length: maxLength.id })
+      .notNull()
+      .references(() => organizationsTable.id, { onDelete: 'cascade' }),
+    providerType: varchar({ enum: lmsProviderTypes }).notNull(),
+    baseUrl: varchar({ length: maxLength.url }).notNull(),
+    clientId: varchar({ length: maxLength.field }).notNull(),
+    clientSecret: varchar({ length: maxLength.field }).notNull(),
+    displayName: varchar({ length: maxLength.field }),
+    createdBy: varchar({ length: maxLength.id }).references(() => usersTable.id, { onDelete: 'set null' }),
+    modifiedAt: timestampColumns.modifiedAt,
+    modifiedBy: varchar({ length: maxLength.id }).references(() => usersTable.id, { onDelete: 'set null' }),
+  },
+  (table) => [
+    index('lms_providers_organization_id_idx').on(table.organizationId),
+    unique('lms_providers_org_provider_type').on(table.organizationId, table.providerType),
+  ],
+);
+
+/** Includes sensitive fields (clientId, clientSecret) — use only in LMS internals. */
+export type UnsafeLmsProviderModel = typeof lmsProvidersTable.$inferSelect;
+export type InsertLmsProviderModel = typeof lmsProvidersTable.$inferInsert;
+
+/** Safe provider type with credentials omitted for API responses. */
+export type LmsProviderModel = Omit<UnsafeLmsProviderModel, 'clientId' | 'clientSecret'>;
 ```
 
-- **`lms_providers`** — One row per organization's Canvas setup. Stores the OAuth app credentials (`client_id`, `client_secret`) and the Canvas `base_url`. An org admin configures this once.
-- **`lms_connections`** — One row per user who has authorized via OAuth. Stores the user's `access_token` and `refresh_token`. Created when a user completes the OAuth flow.
+#### `lms_connections` — User-level OAuth tokens
+
+One row per user who has authorized via OAuth. Stores the user's access and refresh tokens. Created when a user completes the OAuth flow.
+
+```typescript
+// backend/src/db/schema/lms-connections.ts
+import { index, pgTable, timestamp, unique, varchar } from 'drizzle-orm/pg-core';
+import { lmsProvidersTable } from '#/db/schema/lms-providers';
+import { usersTable } from '#/db/schema/users';
+import { maxLength } from '#/db/utils/constraints';
+import { timestampColumns } from '#/db/utils/timestamp-columns';
+import { nanoid } from '#/utils/nanoid';
+
+/** User-level LMS connection with OAuth tokens. */
+export const lmsConnectionsTable = pgTable(
+  'lms_connections',
+  {
+    createdAt: timestampColumns.createdAt,
+    id: varchar({ length: maxLength.id }).primaryKey().$defaultFn(nanoid),
+    lmsProviderId: varchar({ length: maxLength.id })
+      .notNull()
+      .references(() => lmsProvidersTable.id, { onDelete: 'cascade' }),
+    userId: varchar({ length: maxLength.id })
+      .notNull()
+      .references(() => usersTable.id, { onDelete: 'cascade' }),
+    accessToken: varchar({ length: maxLength.field }).notNull(),
+    refreshToken: varchar({ length: maxLength.field }),
+    tokenExpiresAt: timestamp({ mode: 'string' }),
+    modifiedAt: timestampColumns.modifiedAt,
+  },
+  (table) => [
+    index('lms_connections_lms_provider_id_idx').on(table.lmsProviderId),
+    index('lms_connections_user_id_idx').on(table.userId),
+    unique('lms_connections_provider_user').on(table.lmsProviderId, table.userId),
+  ],
+);
+
+/** Includes sensitive fields (accessToken, refreshToken) — use only in LMS internals. */
+export type UnsafeLmsConnectionModel = typeof lmsConnectionsTable.$inferSelect;
+export type InsertLmsConnectionModel = typeof lmsConnectionsTable.$inferInsert;
+
+/** Safe connection type with tokens omitted for API responses. */
+export type LmsConnectionModel = Omit<UnsafeLmsConnectionModel, 'accessToken' | 'refreshToken'>;
+```
+
+#### Design notes
+
+- **`lms_providers`** has a `unique('lms_providers_org_provider_type')` constraint — one Canvas setup per org. If an org later needs a second Canvas instance, the constraint can be relaxed.
+- **`lms_connections`** has a `unique('lms_connections_provider_user')` constraint — one token pair per user per provider.
+- Both tables use the standard `nanoid` PK, `timestampColumns`, and `maxLength` constraints from Cella's schema utilities.
+- `clientId`/`clientSecret` and `accessToken`/`refreshToken` are sensitive — the `Unsafe*` / safe type split follows the same `tokens` and `sessions` pattern in the codebase.
+- No `tenantId` column: tenant isolation is enforced through the `organizationId` FK (organizations already carry `tenantId`). RLS policies can join through `organizations` if needed.
 
 This separation means:
 - Multiple organizations can connect to the **same** Canvas instance with different OAuth apps
