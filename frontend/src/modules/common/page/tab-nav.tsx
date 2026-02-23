@@ -115,7 +115,7 @@ export const PageTabNav = ({
                     if (el) tabRefs.current[id] = el;
                   }}
                   resetScroll={false}
-                  className="relative last:mr-4 p-2 lg:px-4 rounded-sm font-medium focus-effect ring-inset ring-offset-0 group"
+                  className="relative last:mr-4 p-2 lg:px-4 rounded-sm font-medium focus-effect ring-inset ring-offset-0 group opacity-70 hover:opacity-100 data-[active=true]:opacity-100 transition-opacity"
                   to={path}
                   draggable="false"
                   data-active={fallbackToFirst && index === 0 ? true : undefined}

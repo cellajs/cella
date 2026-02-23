@@ -65,7 +65,7 @@ export const AccountSheet = () => {
   }, []);
 
   return (
-    <div ref={buttonWrapper} className="p-3 w-full flex flex-col gap-4 min-h-[calc(100vh-0.5rem)]">
+    <div ref={buttonWrapper} className="p-3 bg-card w-full flex flex-col gap-4 min-h-screen">
       <button
         type="button"
         onClick={() => navigate({ to: '.', search: (prev) => ({ ...prev, userSheetId: user.id }), resetScroll: false })}

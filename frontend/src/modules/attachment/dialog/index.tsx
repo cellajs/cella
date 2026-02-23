@@ -1,10 +1,11 @@
+import { useQuery } from '@tanstack/react-query';
 import { useMatch, useSearch } from '@tanstack/react-router';
 import { t } from 'i18next';
 import { FlameKindlingIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { AttachmentsCarousel, type CarouselItemData } from '~/modules/attachment/carousel';
 import { useResolvedAttachments } from '~/modules/attachment/hooks/use-resolved-attachments';
-import { findAttachmentInListCache, useGroupAttachments } from '~/modules/attachment/query';
+import { attachmentQueryOptions, useGroupAttachments } from '~/modules/attachment/query';
 import { CloseButton } from '~/modules/common/close-button';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -40,10 +41,19 @@ export function AttachmentDialog() {
   // Reactively subscribe to group attachments - re-renders when cache updates
   const groupAttachments = useGroupAttachments(tenantId, orgId, groupId);
 
+  // Reactively fetch single attachment metadata - handles page reload race condition
+  // where the list cache hasn't populated yet when the dialog opens
+  const { data: singleAttachment } = useQuery({
+    ...attachmentQueryOptions(tenantId ?? '', orgId ?? '', initialAttachmentId),
+    enabled: !!tenantId && !!orgId && !!initialAttachmentId && !groupAttachments,
+  });
+
+  // When groupId is present, wait for group data to avoid a 1→N item transition
+  // that causes Embla to reinit and flash other slides
+  const awaitingGroup = !!groupId && !groupAttachments;
+
   // Build items array: use group attachments if available, otherwise single attachment
-  const attachments: AttachmentDialogItem[] = groupAttachments ?? [
-    findAttachmentInListCache(initialAttachmentId) ?? { id: initialAttachmentId },
-  ];
+  const attachments: AttachmentDialogItem[] = groupAttachments ?? [singleAttachment ?? { id: initialAttachmentId }];
 
   // Resolve URLs for any items that don't have them
   const { items: resolvedItems, isLoading, hasErrors, errorIds } = useResolvedAttachments(attachments);
@@ -51,8 +61,8 @@ export function AttachmentDialog() {
   const index = resolvedItems.findIndex(({ id }) => id === initialAttachmentId);
   const itemIndex = index === -1 ? 0 : index;
 
-  // Loading state - still resolving URLs
-  if (isLoading) {
+  // Loading state - still resolving URLs or waiting for group data
+  if (isLoading || awaitingGroup) {
     return (
       <div className="flex items-center justify-center h-screen">
         <Spinner className="h-12 w-12" />

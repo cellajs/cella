@@ -123,12 +123,12 @@ export const mockUserListItem = (key = 'userListItem:default'): UserListItem =>
 export const mockPaginatedUsersResponse = (count = 2) => mockPaginated(mockUserListItem, count);
 
 /**
- * Generates a fixed "Admin" user with provided ID and email.
+ * Generates a fixed "Admin" user with provided email and optional ID.
  * Used for default admin seeding.
  */
-export const mockAdmin = (id: string, email: string): InsertUserModel => {
+export const mockAdmin = (id: string | undefined, email: string): InsertUserModel => {
   return {
-    id,
+    ...(id ? { id } : {}),
     firstName: 'Admin',
     lastName: 'User',
     name: 'Admin User',

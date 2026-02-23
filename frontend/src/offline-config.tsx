@@ -61,6 +61,7 @@ export const entityToPrefetchQueries = (
           tenantId: tenantId,
           orgId: entityId,
           entityType: entityType,
+          limit: 200,
         }),
       ];
 

@@ -18,6 +18,9 @@ interface OverlayConfig<TOptions> {
   renderContent: (id: string, orgId: string | undefined) => ReactNode;
   /** Called after close (not during cleanup). Receives the search param value. */
   onAfterClose?: (id: string) => void;
+  /** Use a stable overlay ID instead of value-based ID. Prevents overlay recreation when the
+   *  search param value changes (e.g., carousel navigation updating attachmentDialogId). */
+  stableId?: boolean;
   /** Overlay configuration options */
   options: TOptions;
 }
@@ -87,7 +90,7 @@ export function useUrlSheet(config: UseUrlSheetConfig) {
  * Opens a dialog when the search param is present, closes it when removed.
  */
 export function useUrlDialog(config: UseUrlDialogConfig) {
-  const { searchParamKey, additionalSearchParamKeys, renderContent, onAfterClose, options } = config;
+  const { searchParamKey, additionalSearchParamKeys, stableId, renderContent, onAfterClose, options } = config;
 
   const searchParams = useSearch({ strict: false }) as Record<string, string | undefined>;
   const orgMatch = useMatch({ from: '/appLayout/$tenantId/$orgSlug', shouldThrow: false });
@@ -95,27 +98,37 @@ export function useUrlDialog(config: UseUrlDialogConfig) {
   const value = searchParams[searchParamKey] ?? null;
   const close = useCloseOverlay(searchParamKey, additionalSearchParamKeys);
 
-  useEffect(() => {
-    if (!value) return;
+  // With stableId, only react to presence (open/close), not value changes.
+  // This prevents the dialog from being destroyed and recreated when the
+  // search param value changes (e.g., carousel navigation).
+  const isOpen = !!value;
+  const id = stableId ? searchParamKey : `${searchParamKey}-${value}`;
 
-    const id = `${searchParamKey}-${value}`;
+  useEffect(() => {
+    if (!isOpen) return;
+
     if (useDialoger.getState().get(id)) return;
 
     const handleClose = (isCleanup?: boolean) => {
       if (!isCleanup) {
-        onAfterClose?.(value);
+        const currentValue = new URLSearchParams(window.location.search).get(searchParamKey) ?? '';
+        onAfterClose?.(currentValue);
         close();
       }
     };
 
     queueMicrotask(() => {
-      useDialoger
-        .getState()
-        .create(renderContent(value, orgId), { id, triggerRef: fallbackContentRef, onClose: handleClose, ...options });
+      const currentValue = value ?? '';
+      useDialoger.getState().create(renderContent(currentValue, orgId), {
+        id,
+        triggerRef: fallbackContentRef,
+        onClose: handleClose,
+        ...options,
+      });
     });
 
     return () => {
       useDialoger.getState().remove(id, { isCleanup: true });
     };
-  }, [value, orgId]);
+  }, [stableId ? isOpen : value, orgId]);
 }

@@ -41,31 +41,50 @@ export function useResolvedAttachments(
       return;
     }
 
-    // Cleanup previous blob URLs
-    for (const url of blobUrlsRef.current.values()) URL.revokeObjectURL(url);
-    blobUrlsRef.current.clear();
-
     let cancelled = false;
 
     const resolveAll = async () => {
-      setIsLoading(true);
+      // Only show loading on initial resolve, not metadata updates
+      if (!resolvedItems.length) setIsLoading(true);
+
       const errors: string[] = [];
       const resolved: CarouselItemData[] = [];
+      const newBlobUrls = new Map<string, string>();
 
       for (const item of items) {
         if (cancelled) break;
 
         // Already has URL - use directly
         if (item.url) {
-          resolved.push(item as CarouselItemData);
+          resolved.push({ ...item, url: item.url });
           continue;
         }
 
+        // Reuse existing blob URL if available — avoids revoking URLs
+        // still referenced by mounted <img> elements
+        const existingBlobUrl = blobUrlsRef.current.get(item.id);
+
         try {
+          if (existingBlobUrl) {
+            // Keep existing blob URL, just update metadata from latest cache
+            newBlobUrls.set(item.id, existingBlobUrl);
+            const cached = findAttachmentInListCache(item.id);
+            resolved.push({
+              id: item.id,
+              url: existingBlobUrl,
+              name: item.name ?? cached?.name ?? item.filename ?? 'Attachment',
+              filename: item.filename ?? cached?.filename,
+              contentType: item.contentType ?? cached?.contentType,
+              convertedUrl: cached?.convertedKey ? undefined : null,
+              convertedContentType: item.convertedContentType ?? cached?.convertedContentType,
+            });
+            continue;
+          }
+
           const result = await resolveAttachmentUrl(item.id, null, { preferredVariant: 'converted' });
 
           if (result) {
-            if (result.isLocal) blobUrlsRef.current.set(item.id, result.url);
+            if (result.isLocal) newBlobUrls.set(item.id, result.url);
 
             // Get metadata from cache for display
             const cached = findAttachmentInListCache(item.id);
@@ -88,6 +107,12 @@ export function useResolvedAttachments(
       }
 
       if (!cancelled) {
+        // Revoke only blob URLs no longer in use
+        for (const [id, url] of blobUrlsRef.current) {
+          if (!newBlobUrls.has(id)) URL.revokeObjectURL(url);
+        }
+        blobUrlsRef.current = newBlobUrls;
+
         setResolvedItems(resolved);
         setErrorIds(errors);
         setIsLoading(false);
@@ -98,10 +123,16 @@ export function useResolvedAttachments(
 
     return () => {
       cancelled = true;
+    };
+  }, [items.map((i) => `${i.id}:${i.url ?? ''}:${i.name ?? ''}`).join(','), isRestoring]);
+
+  // Revoke all blob URLs only on unmount
+  useEffect(() => {
+    return () => {
       for (const url of blobUrlsRef.current.values()) URL.revokeObjectURL(url);
       blobUrlsRef.current.clear();
     };
-  }, [items.map((i) => `${i.id}:${i.url ?? ''}`).join(','), isRestoring]);
+  }, []);
 
   return { items: resolvedItems, isLoading, hasErrors: errorIds.length > 0, errorIds };
 }

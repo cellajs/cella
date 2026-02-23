@@ -3,7 +3,7 @@ import { UndoIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { type FieldValues, type Path, useFormContext, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { appConfig, ContextEntityType } from 'shared';
+import { type ContextEntityType } from 'shared';
 import slugify from 'slugify';
 import { type CheckSlugData, CheckSlugResponse, checkSlug } from '~/api.gen';
 import { useOnlineManager } from '~/hooks/use-online-manager';
@@ -15,10 +15,11 @@ import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from '~/
 import { cn } from '~/utils/cn';
 
 type SlugFieldProps<TFieldValues extends FieldValues> = Omit<BaseFormFieldProps<TFieldValues>, 'name'> & {
+  entityType: ContextEntityType | 'user';
   nameValue?: string;
   description?: string;
   previousSlug?: string;
-  entityType: ContextEntityType | 'user';
+  prefix?: string;
 };
 
 export const SlugFormField = <TFieldValues extends FieldValues>({
@@ -28,6 +29,7 @@ export const SlugFormField = <TFieldValues extends FieldValues>({
   description,
   nameValue,
   entityType,
+  prefix: customPrefix,
 }: SlugFieldProps<TFieldValues>) => {
   const { t } = useTranslation();
   const { isOnline } = useOnlineManager();
@@ -37,7 +39,7 @@ export const SlugFormField = <TFieldValues extends FieldValues>({
   const [isDeviating, setDeviating] = useState(false);
   const [isSlugAvailable, setSlugAvailable] = useState<'available' | 'blank' | 'notAvailable'>('blank');
 
-  const prefix = `${appConfig.frontendUrl.replace(/^https?:\/\//, '')}/${entityType}/`;
+  const prefix = customPrefix;
 
   const inputClassName = `${isSlugAvailable !== 'blank' && 'ring-2 sm:focus-visible:ring-2'}
                           ${isSlugAvailable === 'available' && 'ring-green-500 focus-visible:ring-green-500'}
@@ -113,11 +115,13 @@ export const SlugFormField = <TFieldValues extends FieldValues>({
                 value={formFieldValue || ''}
                 {...rest}
               />
-              <InputGroupAddon>
-                <InputGroupText id="slug-prefix" className="text-xs" style={{ opacity: formFieldValue ? 1 : 0.5 }}>
-                  {prefix}
-                </InputGroupText>
-              </InputGroupAddon>
+              {prefix && (
+                <InputGroupAddon>
+                  <InputGroupText id="slug-prefix" className="text-xs" style={{ opacity: formFieldValue ? 1 : 0.5 }}>
+                    {prefix}
+                  </InputGroupText>
+                </InputGroupAddon>
+              )}
 
               {previousSlug && previousSlug !== slug && (
                 <InputGroupAddon align="inline-end">

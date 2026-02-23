@@ -10,6 +10,7 @@ function AttachmentDialogHandlerBase() {
   useUrlDialog({
     searchParamKey: 'attachmentDialogId',
     additionalSearchParamKeys: ['groupId'],
+    stableId: true,
     renderContent: () => <AttachmentDialog />,
     options: {
       drawerOnMobile: false,

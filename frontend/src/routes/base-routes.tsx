@@ -30,6 +30,22 @@ export const errorSearchSchema = z.object({
 export const RootRoute = createRootRouteWithContext()({
   staticData: { isAuth: false, boundary: 'root' },
   component: () => <Root />,
+  beforeLoad: async ({ matches, location }) => {
+    // Enforce isAuth globally: if the leaf route requires auth, verify the user session
+    const leafMatch = matches[matches.length - 1];
+    if (!leafMatch?.staticData?.isAuth) return;
+
+    const storedUser = useUserStore.getState().user;
+    if (storedUser) return;
+
+    try {
+      await queryClient.ensureQueryData({ ...meQueryOptions() });
+    } catch {
+      console.info('[RootRoute] Not authenticated -> redirect to sign in');
+      const redirectPath = location.pathname + location.searchStr;
+      throw redirect({ to: '/auth/authenticate', search: { fromRoot: true, redirect: redirectPath } });
+    }
+  },
   errorComponent: ({ error }) => <ErrorNotice boundary="root" error={error} />,
   notFoundComponent: () => {
     return (

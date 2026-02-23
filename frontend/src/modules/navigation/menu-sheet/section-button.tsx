@@ -36,7 +36,7 @@ export const MenuSectionButton = ({
 
   return (
     <StickyBox className="z-10">
-      <div className="flex items-center z-10 py-3 pb-1 bg-background">
+      <div className="flex items-center z-10 py-3 pb-1 bg-card">
         <motion.div layout="size" transition={{ bounce: 0, duration: 0.2 }} className="flex items-center w-full">
           {/* Main section toggle button */}
           <Button

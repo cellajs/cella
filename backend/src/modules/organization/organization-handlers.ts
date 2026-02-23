@@ -2,6 +2,7 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { and, eq, getColumns, ilike, inArray, type SQL, sql } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import { unsafeInternalDb as db } from '#/db/db';
+import { activitiesTable } from '#/db/schema/activities';
 import { contextCountersTable } from '#/db/schema/context-counters';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
@@ -35,14 +36,21 @@ const organizationRouteHandlers = app
     const { tenantId } = ctx.req.valid('param');
 
     const user = ctx.var.user;
-    const memberships = ctx.var.memberships;
     const userSystemRole = ctx.var.userSystemRole;
     const isSystemAdmin = userSystemRole === 'admin';
 
-    // Count user's existing created orgs
-    const createdOrgsCount = memberships.reduce((cnt, m) => {
-      return m.contextType === 'organization' && m.createdBy === user.id ? cnt + 1 : cnt;
-    }, 0);
+    // Count user's org creations from activities (includes deleted orgs)
+    const [orgCountResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(activitiesTable)
+      .where(
+        and(
+          eq(activitiesTable.userId, user.id),
+          eq(activitiesTable.tableName, 'organizations'),
+          eq(activitiesTable.action, 'create'),
+        ),
+      );
+    const createdOrgsCount = orgCountResult?.count ?? 0;
 
     // Organization restriction is hardcoded to max 5 for now (system admins bypass this)
     const availableSlots = 5 - createdOrgsCount;

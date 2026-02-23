@@ -34,13 +34,15 @@ export const env = createEnv({
     PORT: z.string().default('4000'),
     UNSUBSCRIBE_SECRET: z.string(),
 
-    TUNNEL_URL: z.string().default(''),
-    TUNNEL_AUTH_TOKEN: z.string().default(''),
-
     ARGON_SECRET: z.string(),
     COOKIE_SECRET: z.string(),
 
     REMOTE_SYSTEM_ACCESS_IP: z.string(),
+
+    ADMIN_EMAIL: z.email(),
+
+    TUNNEL_URL: z.string().default(''),
+    TUNNEL_AUTH_TOKEN: z.string().default(''),
 
     SEND_ALL_TO_EMAIL: z.string().optional(),
     BREVO_API_KEY: z.string().optional(),

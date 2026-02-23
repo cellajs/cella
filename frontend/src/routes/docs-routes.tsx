@@ -162,7 +162,7 @@ export const DocsPagesRoute = createRoute({
   search: {
     middlewares: [stripParams('operationTag', 'schemaTag')],
   },
-  staticData: { isAuth: false },
+  staticData: { isAuth: true },
   head: () => ({ meta: [{ title: appTitle('Pages') }] }),
   getParentRoute: () => DocsLayoutRoute,
   component: () => (
@@ -197,7 +197,7 @@ export const DocsPageRoute = createRoute({
  */
 export const DocsPageEditRoute = createRoute({
   path: '/page/$id/edit',
-  staticData: { isAuth: false },
+  staticData: { isAuth: true },
   head: () => ({ meta: [{ title: appTitle('Edit Page') }] }),
   getParentRoute: () => DocsLayoutRoute,
   errorComponent: ({ error }) => <ErrorNotice boundary="public" error={error} homePath="/docs" />,

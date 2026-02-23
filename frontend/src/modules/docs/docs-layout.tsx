@@ -120,7 +120,7 @@ function DocsLayout() {
   // Desktop layout with resizable panels
   return (
     <>
-      <div className="h-screen [--card:oklch(0.987_0.0013_285.76)] dark:[--card:oklch(0.232_0.0095_285.56)]">
+      <div className="h-screen">
         <ResizableGroup orientation="horizontal" className="h-screen">
           {!focusView && (
             <>

@@ -41,7 +41,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
             <a
               href={`mailto:${row.email}`}
               tabIndex={tabIndex}
-              className="truncate hover:underline underline-offset-4 outline-0 ring-0 font-light"
+              className="truncate hover:underline underline-offset-4 decoration-foreground/20 outline-0 ring-0 font-light"
             >
               {row.email}
             </a>
