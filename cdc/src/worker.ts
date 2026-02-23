@@ -207,7 +207,7 @@ async function handleDataMessage(lsn: string, message: unknown): Promise<void> {
       recordCdcMetric('messagesProcessed');
       recordCdcMetric('lastProcessedAt');
 
-      logEvent('debug', `${LOG_PREFIX} CDC message received`, { lsn, tag, table: tableName });
+      logEvent('info', `${LOG_PREFIX} CDC message received`, { lsn, tag, table: tableName });
 
       const processResult = processMessage(msg);
 
@@ -295,7 +295,7 @@ function createReplicationService(connectionUrl: URL): LogicalReplicationService
   });
 
   service.on('heartbeat', async (lsn: string, _timestamp: number, shouldRespond: boolean) => {
-    logEvent('debug', `${LOG_PREFIX} Heartbeat received`, { lsn, shouldRespond, wsConnected: wsClient.isConnected() });
+    logEvent('info', `${LOG_PREFIX} Heartbeat received`, { lsn, shouldRespond, wsConnected: wsClient.isConnected() });
     if (shouldRespond) {
       await service.acknowledge(lsn);
     }
