@@ -12,7 +12,7 @@
     "tunnel": "wait-on http://localhost:4000/health && cross-env NODE_ENV=tunnel vite --mode tunnel",
     "start": "cross-env NODE_ENV=production pnpm preview",
     "test": "vitest run",
-    "ts": "tsgo --pretty",
+    "ts": "cd .. && tsgo -p frontend/tsconfig.json --pretty",
     "ts:old": "tsc --pretty",
     "tsperf": "rm -rf tsconfig.tsbuildinfo && cross-env NODE_ENV=development tsgo --noEmit --extendedDiagnostics",
     "tsperf:old": "rm -rf tsconfig.tsbuildinfo && cross-env NODE_ENV=development tsc --noEmit --extendedDiagnostics",
