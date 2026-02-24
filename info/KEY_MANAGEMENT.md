@@ -105,6 +105,118 @@ export function decryptPrivateKey(encryptedData: string): string {
 }
 ```
 
+## RSA Key Generation
+
+Generate RSA key pairs using Node.js crypto module:
+
+```typescript
+import { generateKeyPairSync, randomUUID } from 'node:crypto'
+import { encryptPrivateKey } from './encryption'
+
+interface GeneratedKeyPair {
+  keyId: string
+  publicKey: string   // PEM format
+  privateKey: string  // Encrypted PEM
+  algorithm: string
+}
+
+export function generateRSAKeyPair(purpose: string = 'lti'): GeneratedKeyPair {
+  // Generate RSA 2048-bit key pair
+  const { publicKey, privateKey } = generateKeyPairSync('rsa', {
+    modulusLength: 2048,
+    publicKeyEncoding: {
+      type: 'spki',
+      format: 'pem',
+    },
+    privateKeyEncoding: {
+      type: 'pkcs8',
+      format: 'pem',
+    },
+  })
+
+  // Encrypt private key before storage
+  const encryptedPrivateKey = encryptPrivateKey(privateKey)
+
+  return {
+    keyId: randomUUID(),
+    publicKey,
+    privateKey: encryptedPrivateKey,
+    algorithm: 'RS256',
+  }
+}
+```
+
+### Auto-generation on Startup
+
+```typescript
+// backend/src/lib/keys/init.ts
+import { db } from '../db'
+import { signingKeys } from '../db/schema'
+import { generateRSAKeyPair } from './generate'
+import { eq, and } from 'drizzle-orm'
+
+export async function ensureActiveKey(purpose: string): Promise<void> {
+  // Check if an active key exists for this purpose
+  const existingKey = await db.query.signingKeys.findFirst({
+    where: and(
+      eq(signingKeys.purpose, purpose),
+      eq(signingKeys.status, 'active')
+    ),
+  })
+
+  if (existingKey) {
+    console.log(`Active ${purpose} key exists: ${existingKey.keyId}`)
+    return
+  }
+
+  // Generate new key pair
+  console.log(`No active ${purpose} key found, generating new key pair...`)
+  const keyPair = generateRSAKeyPair(purpose)
+
+  await db.insert(signingKeys).values({
+    keyId: keyPair.keyId,
+    publicKey: keyPair.publicKey,
+    privateKeyEncrypted: keyPair.privateKey,
+    algorithm: keyPair.algorithm,
+    purpose,
+    status: 'active',
+    createdAt: new Date(),
+    expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+  })
+
+  console.log(`Generated new ${purpose} key: ${keyPair.keyId}`)
+}
+
+// Called during application startup
+export async function initializeKeys(): Promise<void> {
+  await ensureActiveKey('lti')
+  // Add more purposes as needed:
+  // await ensureActiveKey('webhook')
+  // await ensureActiveKey('api')
+}
+```
+
+### Usage in Application Entry Point
+
+```typescript
+// backend/src/index.ts
+import { initializeKeys } from './lib/keys/init'
+import { initializeSecrets } from './lib/secrets'
+
+async function bootstrap() {
+  // First, load secrets (including SIGNING_KEY_SECRET)
+  await initializeSecrets()
+  
+  // Then, ensure we have active signing keys
+  await initializeKeys()
+  
+  // Start the server
+  // ...
+}
+
+bootstrap()
+```
+
 ## Secret Manager Options
 
 The `SIGNING_KEY_SECRET` can be stored in different ways depending on your security requirements.
