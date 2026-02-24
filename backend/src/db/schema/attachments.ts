@@ -1,5 +1,5 @@
 import { boolean, foreignKey, index, pgTable, varchar } from 'drizzle-orm/pg-core';
-import { membershipCrudPolicies } from '#/db/rls-helpers';
+import { orgScopedCrudPolicies } from '#/db/rls-helpers';
 import { organizationsTable } from '#/db/schema/organizations';
 import { maxLength } from '#/db/utils/constraints';
 import { productEntityColumns } from '#/db/utils/product-entity-columns';
@@ -33,7 +33,7 @@ export const attachmentsTable = pgTable(
       columns: [table.tenantId, table.organizationId],
       foreignColumns: [organizationsTable.tenantId, organizationsTable.id],
     }).onDelete('cascade'),
-    ...membershipCrudPolicies('attachments', table),
+    ...orgScopedCrudPolicies('attachments', table),
   ],
 );
 

@@ -80,8 +80,8 @@ export const publicAccessSelectCondition = (t: { tenantId: unknown; publicAccess
   AND ${publicOrAuthenticated(t)}
 `;
 
-/** Standard CRUD policies for membership-verified tables (select, insert, update, delete). */
-export const membershipCrudPolicies = (name: string, table: { tenantId: unknown; organizationId: unknown }) => {
+/** Org-scoped CRUD policies for product entities scoped to an organization (e.g., attachments, tasks). Requires org membership for all operations. */
+export const orgScopedCrudPolicies = (name: string, table: { tenantId: unknown; organizationId: unknown }) => {
   const condition = membershipWriteCondition(table);
   return [
     pgPolicy(`${name}_select_policy`, { for: 'select', using: condition }),
@@ -92,11 +92,11 @@ export const membershipCrudPolicies = (name: string, table: { tenantId: unknown;
 };
 
 /**
- * CRUD policies for context entities (projects, workspaces, etc.).
+ * Org-owned CRUD policies for context entities (projects, workspaces, etc.).
  * SELECT includes createdBy match for RETURNING after INSERT (before membership exists).
  * INSERT requires tenant match + auth. UPDATE/DELETE require membership.
  */
-export const contextEntityCrudPolicies = (
+export const orgOwnedCrudPolicies = (
   name: string,
   table: { tenantId: unknown; organizationId: unknown; createdBy: unknown },
 ) => {
@@ -124,6 +124,34 @@ export const contextEntityCrudPolicies = (
     pgPolicy(`${name}_delete_policy`, {
       for: 'delete',
       using: sql`${tenantMatch(table)} AND ${isAuthenticated} AND ${membershipExists(table)}`,
+    }),
+  ] as const;
+};
+
+/**
+ * Public-access CRUD policies for public product entities (pages, docs, etc.).
+ * SELECT: tenant match + (authenticated OR public access).
+ * INSERT/UPDATE/DELETE: tenant match + authenticated.
+ */
+export const publicAccessCrudPolicies = (name: string, table: { tenantId: unknown; publicAccess: unknown }) => {
+  const writeCondition = tenantWriteCondition(table);
+  return [
+    pgPolicy(`${name}_select_policy`, {
+      for: 'select',
+      using: sql`${publicAccessSelectCondition(table)}`,
+    }),
+    pgPolicy(`${name}_insert_policy`, {
+      for: 'insert',
+      withCheck: sql`${writeCondition}`,
+    }),
+    pgPolicy(`${name}_update_policy`, {
+      for: 'update',
+      using: sql`${writeCondition}`,
+      withCheck: sql`${writeCondition}`,
+    }),
+    pgPolicy(`${name}_delete_policy`, {
+      for: 'delete',
+      using: sql`${writeCondition}`,
     }),
   ] as const;
 };

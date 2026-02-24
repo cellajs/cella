@@ -24,6 +24,7 @@ import {
 import {
   batchGitRm,
   batchRestoreToHead,
+  batchUnstageFiles,
   checkoutFromRef,
   countCommitsBetween,
   createWorktree,
@@ -38,6 +39,7 @@ import {
   getFileChanges,
   getFileHashesAtRef,
   getRemoteUrl,
+  getStagedNewFiles,
   gitMv,
   gitRm,
   merge,
@@ -292,6 +294,20 @@ async function applyDirectMerge(
 
   // Get remaining conflicts (these have markers for IDE)
   const remainingConflicts = await getConflictedFiles(forkPath);
+
+  // Phase 6: Safety net — clean up any ignored files still staged after merge.
+  // During a merge, batchGitRm can silently fail on newly-added files, leaving
+  // them as "Added in index, Deleted from working tree" (AD status). This catches
+  // any ignored files that slipped through the earlier resolution phases.
+  const stagedNewFiles = await getStagedNewFiles(forkPath);
+  const staleIgnoredFiles = stagedNewFiles.filter((f) => isIgnored(f, config));
+  if (staleIgnoredFiles.length > 0) {
+    onProgress?.(`cleaning up ${staleIgnoredFiles.length} ignored files still in index...`);
+    await batchUnstageFiles(forkPath, staleIgnoredFiles);
+    for (const filePath of staleIgnoredFiles) {
+      await removeFileFromWorktree(forkPath, filePath);
+    }
+  }
 
   return { resolved, remainingConflicts, analyzedFiles };
 }

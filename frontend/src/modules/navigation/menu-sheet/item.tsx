@@ -45,20 +45,22 @@ export const MenuSheetItem = ({ item, icon: Icon, className, searchResults }: Me
       activeProps={{ 'data-link-active': true }}
       className={cn(
         'relative group/menuItem h-12 w-full flex items-start justify-start space-x-1 rounded-sm p-0 focus:outline-hidden ring-2 ring-inset ring-transparent focus-visible:ring-foreground sm:hover:bg-accent/30 sm:hover:text-accent-foreground data-[subitem=true]:h-10 ',
-        'data-[link-active=true]:ring-transparent sm:opacity-80 data-[link-active=true]:opacity-100',
+        'data-[link-active=true]:ring-transparent',
         className,
       )}
     >
       <span className="absolute left-0 top-3 h-[calc(100%-1.5rem)] w-1 rounded-lg bg-primary transition-opacity opacity-0 group-data-[link-active=true]/menuItem:opacity-100" />
-      <AvatarWrap
-        className="z-1 items-center m-2 mx-3 text-sm group-hover/menuItem:font-bold group-data-[subitem=true]/menuItem:my-2 group-data-[subitem=true]/menuItem:mx-4 group-data-[subitem=true]/menuItem:text-xs size-8 group-data-[subitem=true]/menuItem:size-6"
-        type={item.entityType}
-        id={item.id}
-        icon={Icon}
-        name={item.name}
-        url={item.thumbnailUrl}
-      />
-      <div className="truncate grow flex flex-col justify-center pr-2 text-left group-data-[subitem=true]/menuItem:pl-0">
+      <span className="z-1 shrink-0 bg-background rounded-full m-2 mx-3 group-data-[subitem=true]/menuItem:my-2 group-data-[subitem=true]/menuItem:mx-4 size-8 group-data-[subitem=true]/menuItem:size-6">
+        <AvatarWrap
+          className="items-center text-sm group-hover/menuItem:font-bold group-data-[subitem=true]/menuItem:text-xs size-8 group-data-[subitem=true]/menuItem:size-6 sm:opacity-80 group-data-[link-active=true]/menuItem:opacity-100"
+          type={item.entityType}
+          id={item.id}
+          icon={Icon}
+          name={item.name}
+          url={item.thumbnailUrl}
+        />
+      </span>
+      <div className="truncate grow flex flex-col justify-center pr-2 text-left group-data-[subitem=true]/menuItem:pl-0 sm:opacity-80 group-data-[link-active=true]/menuItem:opacity-100">
         <div
           className={cn(
             'truncate leading-5 transition-spacing text-md group-hover/menuItem:delay-300 pt-1 duration-100 ease-in-out',

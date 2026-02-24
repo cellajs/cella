@@ -1,15 +1,5 @@
-import { sql } from 'drizzle-orm';
-import {
-  type AnyPgColumn,
-  boolean,
-  doublePrecision,
-  index,
-  pgPolicy,
-  pgTable,
-  unique,
-  varchar,
-} from 'drizzle-orm/pg-core';
-import { publicAccessSelectCondition, tenantWriteCondition } from '#/db/rls-helpers';
+import { type AnyPgColumn, boolean, doublePrecision, index, pgTable, unique, varchar } from 'drizzle-orm/pg-core';
+import { publicAccessCrudPolicies } from '#/db/rls-helpers';
 import { maxLength } from '#/db/utils/constraints';
 import { productEntityColumns } from '#/db/utils/product-entity-columns';
 
@@ -35,23 +25,7 @@ export const pagesTable = pgTable(
   (table) => [
     index('pages_tenant_id_idx').on(table.tenantId),
     unique('pages_group_order').on(table.parentId, table.displayOrder),
-    pgPolicy('pages_select_policy', {
-      for: 'select',
-      using: sql`${publicAccessSelectCondition(table)}`,
-    }),
-    pgPolicy('pages_insert_policy', {
-      for: 'insert',
-      withCheck: sql`${tenantWriteCondition(table)}`,
-    }),
-    pgPolicy('pages_update_policy', {
-      for: 'update',
-      using: sql`${tenantWriteCondition(table)}`,
-      withCheck: sql`${tenantWriteCondition(table)}`,
-    }),
-    pgPolicy('pages_delete_policy', {
-      for: 'delete',
-      using: sql`${tenantWriteCondition(table)}`,
-    }),
+    ...publicAccessCrudPolicies('pages', table),
   ],
 );
 

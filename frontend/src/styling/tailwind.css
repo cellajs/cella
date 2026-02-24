@@ -82,7 +82,7 @@
 
 @utility submenu-section {
   &:before {
-    border-left: 2px dotted hsl(var(--foreground));
+    border-left: 2px dotted var(--foreground);
     content: "";
     display: block;
     position: absolute;

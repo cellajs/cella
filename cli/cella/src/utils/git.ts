@@ -425,6 +425,24 @@ export async function batchGitRm(cwd: string, filePaths: string[]): Promise<void
 }
 
 /**
+ * Get files staged as new additions in the index (diff-filter=A vs HEAD).
+ * These are files that don't exist at HEAD but were brought in by a merge.
+ */
+export async function getStagedNewFiles(cwd: string): Promise<string[]> {
+  const output = await git(['diff', '--cached', '--name-only', '--diff-filter=A'], cwd, { ignoreErrors: true });
+  return output ? output.split('\n').filter(Boolean) : [];
+}
+
+/**
+ * Remove files from the index only (--cached), leaving the working tree untouched.
+ * Useful for cleaning up files staged by a merge that shouldn't be committed.
+ */
+export async function batchUnstageFiles(cwd: string, filePaths: string[]): Promise<void> {
+  if (filePaths.length === 0) return;
+  await git(['rm', '--cached', '-f', '--', ...filePaths], cwd, { ignoreErrors: true });
+}
+
+/**
  * Move/rename a file using git mv.
  * Creates parent directories if needed and preserves git history.
  */
