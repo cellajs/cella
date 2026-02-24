@@ -4,7 +4,7 @@
 
 ## Overview
 
-The **hybrid sync engine** extends Cella's **OpenAPI + React Query** infrastructure with sync and offline capabilities. It is "hybrid" because standard REST/OpenAPI endpoints remain the default, while entity modules *can* be 'upgraded' with transaction tracking, offline support, and realtime streaming.
+The **hybrid sync engine** extends Cella's **OpenAPI + React Query** infrastructure with sync and offline capabilities. It is "hybrid" because standard REST/OpenAPI endpoints remain the default, while entity modules *can* be 'upgraded' with transaction tracking, offline support, and realtime streaming. The core sync concept is a classic push-pull sync: A worker notifies the client, which then fetches the new data.
 
 | Mode | Entity type | Features | Example |
 |------|-------------|----------|---------|
@@ -61,7 +61,8 @@ By internalizing the sync engine, cella can make unique combos: audit trail func
 - **Logical replication** - CDC Worker receives WAL changes, persists activities to `activitiesTable`, sends messages to API
 - **ActivityBus** - Receives CDC messages via WebSocket, emits events to internal handlers
 - **Live stream** - SSE sends lightweight notifications to clients (no entity data)
-- **Catchup-then-SSE pattern** - Catch-up via REST fetch, then SSE for live-only notifications
+- **Catchup is now handled by standard list fetches** - Clients use normal REST list queries (e.g., `/pages`, `/attachments`) to catch up, not the `/stream` endpoint.
+- **Stream endpoints are for live notifications only** - SSE endpoints provide real-time updates.
 - **Notify + fetch pattern** - SSE notifications trigger priority-based entity fetches; TTL cache enables efficient fan-out
 - **React Query as merge point** - Initial/prefetch load and notification-triggered fetches feed into the same cache
 
@@ -135,70 +136,7 @@ This architecture uses a persistent WebSocket connection from CDC Worker to API 
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-> **CLIENT**: Catchup-then-SSE pattern with priority-based fetching
-
-Two-phase connection: fetch catch-up batch, then SSE for live-only. Stream sends lightweight notifications. Client determines fetch priority based on current view, then fetches entity data via REST.
-
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                           Frontend                                      │
-├─────────────────────────────────────────────────────────────────────────┤
-│                                                                         │
-│  Connection (catchup-then-SSE)                                          │
-│                                                                         │
-│  ┌────────────────────────────────────────────────────────────────────┐ │
-│  │ 1. Catchup: GET /entities/app/stream?offset=<cursor>              │ │
-│  │    → Returns per-org summary: { seq, deletedIds } per org         │ │
-│  │    → processAppCatchup(): seq delta, deletes, membership          │ │
-│  │                                                                    │ │
-│  │ 2. SSE: GET /entities/app/stream?offset=now&live=sse              │ │
-│  │    → Live notifications only (no catch-up in SSE)                  │ │
-│  │    → Server sends offset marker immediately                        │ │
-│  └────────────────────────────────────────────────────────────────────┘ │
-│                                                                         │
-│  Data Flow                                                              │
-│                                                                         │
-│  ┌──────────────┐              ┌──────────────────────────────────────┐ │
-│  │ useQuery()   │              │  SSE Stream (live-only)              │ │
-│  │ pagesQuery   │              │                                      │ │
-│  └──────┬───────┘              │  event: change                       │ │
-│         │                      │  data: { entityType: 'page',         │ │
-│         ▼                      │          entityId: 'abc',            │ │
-│  GET /pages?q=X&sort=Y         │          action: 'update',           │ │
-│  (full query, pagination)      │          seq: 42 }                   │ │
-│         │                      └──────────────┬───────────────────────┘ │
-│         │                                     ▼                         │
-│         │                      ┌──────────────────────────────────────┐ │
-│         │                      │  Determine Priority                  │ │
-│         │                      │                                      │ │
-│         │                      │  high: viewing this entity/context   │ │
-│         │                      │  medium: same org, different view    │ │
-│         │                      │  low: elsewhere                      │ │
-│         │                      └──────────────┬───────────────────────┘ │
-│         │                      ┌──────────────┴───────────────┐         │
-│         │                      ▼              ▼               ▼         │
-│         │                   [high]        [medium]         [low]        │
-│         │                   immediate     debounced       invalidate    │
-│         │                      │          (500ms)          only         │
-│         │                      │              │               │         │
-│         │                      └──────┬───────┘               │         │
-│         │                             │                       │         │
-│         │                             ▼                       │         │
-│         │                      GET /pages/{id}                │         │
-│         │                      (single entity fetch)          │         │
-│         │                             │                       │         │
-│         ▼                             ▼                       ▼         │
-│     ┌───────────────────────────────────────────────────────────────┐   │
-│     │                    React Query Cache                          │   │
-│     │                                                               │   │
-│     │  Initial load populates list ──────────────────────────────►  │   │
-│     │  Notification fetch updates single entity ─────────────────►  │   │
-│     │  Low priority: stale on next access ───────────────────────►  │   │
-│     └───────────────────────────────────────────────────────────────┘   │
-│                                                                         │
-└─────────────────────────────────────────────────────────────────────────┘
-```
-
+> **CLIENT**: Prefetch --> SSE/live --> fetch updates pattern with priority-based fetching
 
 
 ## Stream notification format
@@ -231,17 +169,19 @@ Cella has two stream types with different characteristics:
 
 ### App stream (`/entities/app/stream`)
 
+
 Authenticated stream for all user-scoped entities and memberships.
 
 | Aspect | Implementation |
 |--------|----------------|
 | **Auth** | Requires authentication (session cookie) |
 | **Scope** | All orgs user belongs to + memberships |
-| **Catch-up** | Summary-based: per-org `{ seq, deletedIds }` + membership flags |
-| **Processing** | `processAppCatchup()` - seq delta analysis, deletes, membership refresh |
+| **Catch-up** | Handled by standard REST list fetches (not /stream) |
+| **Processing** | Standard list fetches update cache; SSE triggers fetches |
 | **Cursor storage** | Persisted in sync store (survives refresh) |
 
 ### Public stream (`/entities/public/stream`)
+
 
 Unauthenticated stream for public entities (e.g., pages).
 
@@ -249,8 +189,8 @@ Unauthenticated stream for public entities (e.g., pages).
 |--------|----------------|
 | **Auth** | No authentication required |
 | **Scope** | All public entity types (from `hierarchy.publicAccessTypes`) |
-| **Catch-up** | Summary-based: per-entityType `{ seq, deletedIds }` |
-| **Processing** | `processPublicCatchup()` - seq delta analysis, deletes, list invalidation |
+| **Catch-up** | Handled by standard REST list fetches (not /stream) |
+| **Processing** | Standard list fetches update cache; SSE triggers fetches |
 | **Cursor storage** | In-memory only (module-level variable) |
 
 **How catchup works:**
@@ -268,29 +208,6 @@ The client compares `serverSeq` with its stored `clientSeq`:
 - `delta == deletedIds.length` → only deletes happened, remove from cache
 - `delta > deletedIds.length` → creates/updates happened → invalidate entity lists
 
-### Catchup-then-SSE pattern (both streams)
-
-Both streams use the same two-phase connection pattern:
-
-```
-1. Catchup phase: GET /stream?offset=<cursor>
-   └── Returns batch of activities as JSON
-   └── Process: deletes, invalidations, etc.
-   └── Get new cursor from response
-
-2. SSE phase: GET /stream?offset=now&live=sse
-   └── Server sends offset marker immediately
-   └── Live notifications only (no catch-up in SSE)
-   └── Updates cursor on each notification
-```
-
-**Benefits:**
-- Catch-up as efficient batch (one HTTP request)
-- SSE connection is lightweight (live-only)
-- No race between catch-up and live events
-- Cursor always up-to-date before SSE starts
-
----
 
 ## Conflict handling
 
