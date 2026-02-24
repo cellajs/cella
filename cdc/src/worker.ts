@@ -1,22 +1,33 @@
 import { LogicalReplicationService, type Pgoutput, PgoutputPlugin } from 'pg-logical-replication';
+import { sql } from 'drizzle-orm';
 import { appConfig } from 'shared';
+
 import { activitiesTable } from '#/db/schema/activities';
+
 import { CDC_PUBLICATION_NAME, CDC_SLOT_NAME, RESOURCE_LIMITS } from './constants';
 import { cdcDb } from './db';
 import { env } from './env';
+import { logEvent } from './pino';
+
 import { generateActivityId, recordDeadLetter, sendMessageToApi } from './lib/activity-service';
+import { getErrorMessage } from './lib/get-error-message';
 import { replicationState } from './lib/replication-state';
 import { configureWalLimits } from './lib/resource-monitor';
 import { getErrorCode, withRetry } from './lib/retry';
 import { emergencyShutdown, setShutdownHandler, startPauseWarningInterval, stopPauseWarningInterval } from './lib/wal-guard';
-import { logEvent } from './pino';
+
+import type { ProcessMessageResult } from './process-message';
 import { processMessage } from './process-message';
-import { activityAttrs, cdcAttrs, cdcSpanNames, recordCdcMetric, withSpan } from './tracing';
+import { activityAttrs, cdcAttrs, cdcSpanNames, recordCdcMetric, withSpan, type TraceContext } from './tracing';
 import { getNextSeq, getSeqScope, getCountDeltas, updateContextCounts } from './utils';
 import { wsClient } from './websocket-client';
 
 const LOG_PREFIX = '[worker]';
 const { reconnection } = RESOURCE_LIMITS;
+
+// ================================
+// Message helpers
+// ================================
 
 /**
  * Check if a message is from seeded data (gen- prefix) and should be skipped.
@@ -29,13 +40,28 @@ function isSeededData(msg: Pgoutput.Message): boolean {
 }
 
 /**
+ * Acknowledge LSN if WebSocket is connected, otherwise log a hold.
+ */
+async function acknowledgeLsn(lsn: string): Promise<void> {
+  if (wsClient.isConnected()) {
+    await replicationState.service?.acknowledge(lsn);
+  } else {
+    logEvent('debug', `${LOG_PREFIX} Holding LSN acknowledgment - WebSocket disconnected`, { lsn });
+  }
+}
+
+// ================================
+// Activity persistence
+// ================================
+
+/**
  * Persist an activity to DB and send it via WebSocket.
  */
 async function persistAndSendActivity(
-  processResult: NonNullable<ReturnType<typeof processMessage>>,
+  processResult: ProcessMessageResult,
   activityId: string,
   lsn: string,
-  traceCtx: Parameters<typeof sendMessageToApi>[2],
+  traceCtx: TraceContext,
 ): Promise<void> {
   const activityWithId = { ...processResult.activity, id: activityId };
 
@@ -83,18 +109,21 @@ async function persistAndSendActivity(
   });
 }
 
+// ================================
+// Replication message handler
+// ================================
+
 /**
  * Handle incoming replication data message.
  */
 async function handleDataMessage(lsn: string, message: unknown): Promise<void> {
-  const service = replicationState.service;
   const msg = message as Pgoutput.Message;
   const tag = msg.tag;
   const tableName = 'relation' in msg ? msg.relation?.name : undefined;
 
   // Early exit for seeded data (gen- prefix) - no logging to avoid flooding during seed scripts
   if (isSeededData(msg)) {
-    if (wsClient.isConnected()) await service?.acknowledge(lsn);
+    if (wsClient.isConnected()) await replicationState.service?.acknowledge(lsn);
     return;
   }
 
@@ -109,21 +138,15 @@ async function handleDataMessage(lsn: string, message: unknown): Promise<void> {
       logEvent('info', `${LOG_PREFIX} CDC message received`, { lsn, tag, table: tableName });
 
       const processResult = processMessage(msg);
-
       if (processResult) {
         await persistAndSendActivity(processResult, activityId, lsn, traceCtx);
       }
 
-      if (wsClient.isConnected()) {
-        await service?.acknowledge(lsn);
-      } else {
-        logEvent('debug', `${LOG_PREFIX} Holding LSN acknowledgment - WebSocket disconnected`, { lsn });
-      }
+      await acknowledgeLsn(lsn);
     });
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
     logEvent('error', `${LOG_PREFIX} Error processing CDC message - LSN NOT acknowledged`, {
-      error: errorMessage,
+      error: getErrorMessage(error),
       errorCode: getErrorCode(error),
       stack: error instanceof Error ? error.stack : undefined,
       lsn,
@@ -134,6 +157,10 @@ async function handleDataMessage(lsn: string, message: unknown): Promise<void> {
     recordCdcMetric('errors');
   }
 }
+
+// ================================
+// Replication service setup
+// ================================
 
 /**
  * Build the replication connection URL from the CDC database URL.
@@ -179,32 +206,37 @@ function createReplicationService(connectionUrl: URL): LogicalReplicationService
   return service;
 }
 
+// ================================
+// Slot management
+// ================================
+
 /**
- * CDC Worker that subscribes to PostgreSQL logical replication
- * and writes activities to the activities table.
- * Implements backpressure: pauses replication when WebSocket is disconnected.
+ * Ensure the replication slot exists, creating it if necessary.
  */
-export async function startCdcWorker(): Promise<void> {
-  logEvent('info', `${LOG_PREFIX} CDC worker starting...`, {
-    publicationName: CDC_PUBLICATION_NAME,
-    slotName: CDC_SLOT_NAME,
-  });
+async function ensureReplicationSlot(): Promise<void> {
+  try {
+    const slotCheck = await cdcDb.execute(
+      sql`SELECT 1 FROM pg_replication_slots WHERE slot_name = ${CDC_SLOT_NAME}`,
+    );
+    if (slotCheck.rows.length === 0) {
+      logEvent('info', `${LOG_PREFIX} Replication slot '${CDC_SLOT_NAME}' not found, creating...`);
+      await cdcDb.execute(sql`SELECT pg_create_logical_replication_slot(${CDC_SLOT_NAME}, 'pgoutput')`);
+      logEvent('info', `${LOG_PREFIX} Replication slot '${CDC_SLOT_NAME}' created`);
+    }
+  } catch (error) {
+    logEvent('warn', `${LOG_PREFIX} Could not verify/create replication slot: ${getErrorMessage(error)}`);
+  }
+}
 
-  // Configure shutdown handler for WAL guard
-  setShutdownHandler(emergencyShutdown);
+// ================================
+// Backpressure
+// ================================
 
-  await configureWalLimits();
-
-  const replicationUrl = buildReplicationUrl();
-  const service = createReplicationService(replicationUrl);
-  replicationState.service = service;
-
-  const plugin = new PgoutputPlugin({
-    protoVersion: 1,
-    publicationNames: [CDC_PUBLICATION_NAME],
-  });
-
-  // Set up WebSocket callbacks for backpressure
+/**
+ * Wire up WebSocket callbacks for replication backpressure.
+ * Pauses acknowledgment when WebSocket is disconnected.
+ */
+function setupBackpressure(): void {
   wsClient.setCallbacks({
     onConnect: () => {
       logEvent('info', `${LOG_PREFIX} WebSocket connected - resuming replication acknowledgment`);
@@ -217,22 +249,61 @@ export async function startCdcWorker(): Promise<void> {
       startPauseWarningInterval();
     },
   });
+}
 
-  wsClient.connect();
+// ================================
+// Subscription loop
+// ================================
 
-  // Subscribe with reconnection loop
+/**
+ * Subscribe to the replication slot with automatic reconnection.
+ */
+async function subscribeWithReconnect(service: LogicalReplicationService, plugin: PgoutputPlugin): Promise<never> {
   while (true) {
     try {
       logEvent('info', `${LOG_PREFIX} Subscribing to replication slot...`);
       replicationState.replicationState = wsClient.isConnected() ? 'active' : 'paused';
       await service.subscribe(plugin, CDC_SLOT_NAME);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      logEvent('warn', `${LOG_PREFIX} Subscription error, retrying in ${reconnection.retryDelayMs / 1000}s...`, { error: errorMessage });
+      logEvent('warn', `${LOG_PREFIX} Subscription error, retrying in ${reconnection.retryDelayMs / 1000}s...`, { error: getErrorMessage(error) });
       replicationState.markStopped();
       await new Promise((resolve) => setTimeout(resolve, reconnection.retryDelayMs));
     }
   }
+}
+
+// ================================
+// Public API
+// ================================
+
+/**
+ * CDC Worker that subscribes to PostgreSQL logical replication
+ * and writes activities to the activities table.
+ * Implements backpressure: pauses replication when WebSocket is disconnected.
+ */
+export async function startCdcWorker(): Promise<void> {
+  logEvent('info', `${LOG_PREFIX} CDC worker starting...`, {
+    publicationName: CDC_PUBLICATION_NAME,
+    slotName: CDC_SLOT_NAME,
+  });
+
+  setShutdownHandler(emergencyShutdown);
+  await configureWalLimits();
+  await ensureReplicationSlot();
+
+  const replicationUrl = buildReplicationUrl();
+  const service = createReplicationService(replicationUrl);
+  replicationState.service = service;
+
+  const plugin = new PgoutputPlugin({
+    protoVersion: 1,
+    publicationNames: [CDC_PUBLICATION_NAME],
+  });
+
+  setupBackpressure();
+  wsClient.connect();
+
+  await subscribeWithReconnect(service, plugin);
 }
 
 /**
