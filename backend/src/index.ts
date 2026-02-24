@@ -61,30 +61,10 @@ const main = async () => {
   if (isPGliteDatabase(db)) {
     await pgliteMigrate(db, migrateConfig);
   } else if (migrationDb) {
-    // Test DB connectivity before proceeding (fail fast instead of hanging)
-    console.info('[startup] Testing database connection...');
-    const { sql } = await import('drizzle-orm');
-    const connTest = migrationDb.execute(sql`SELECT 1 AS ok`);
-    const timeout = new Promise((_, reject) =>
-      setTimeout(
-        () =>
-          reject(new Error('Database connection timed out after 15s — check DATABASE_ADMIN_URL and network access')),
-        15_000,
-      ),
-    );
-    await Promise.race([connTest, timeout]);
-    console.info('[startup] Database connected successfully');
-
-    console.info('[startup] Creating DB roles...');
     const { createDbRoles } = await import('../scripts/db/create-db-roles');
     await createDbRoles();
-    process.stderr.write('[startup] Running migrations...\n');
-    const migratePromise = pgMigrate(migrationDb, migrateConfig);
-    const migrateTimeout = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Migration timed out after 30s')), 30_000),
-    );
-    await Promise.race([migratePromise, migrateTimeout]);
-    process.stderr.write('[startup] Migrations complete\n');
+    console.info('[startup] Running migrations...');
+    await pgMigrate(migrationDb, migrateConfig);
   } else {
     throw new Error('DATABASE_ADMIN_URL required for migrations');
   }

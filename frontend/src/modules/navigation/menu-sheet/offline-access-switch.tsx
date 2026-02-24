@@ -1,15 +1,12 @@
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
-import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster/service';
 import { Switch } from '~/modules/ui/switch';
-import { useNavigationStore } from '~/store/navigation';
 import { useUIStore } from '~/store/ui';
 
 export const OfflineAccessSwitch = () => {
   const { t } = useTranslation();
   const { offlineAccess, toggleOfflineAccess } = useUIStore();
-  const setNavSheetOpen = useNavigationStore((state) => state.setNavSheetOpen);
 
   const onCheckedChange = (isOffline: boolean) => {
     // setTimeout is used to show the toast after the switch is toggled (QueryProvider updates)
@@ -18,14 +15,10 @@ export const OfflineAccessSwitch = () => {
     }, 0);
 
     toggleOfflineAccess();
-
-    // Close the navigation sheet & set it state to null
-    useSheeter.getState().remove('nav-sheet');
-    setNavSheetOpen(null);
   };
 
   return (
-    <div className="flex items-center gap-4 ml-1">
+    <div className="flex items-center gap-4 px-4">
       <Switch
         id="offlineMode"
         checked={offlineAccess}

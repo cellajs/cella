@@ -94,6 +94,7 @@ export function UpdateOrganizationForm({ organization, callback, sheet: isSheet 
           label={t('common:resource_handle', { resource: t('common:organization') })}
           description={t('common:resource_handle.text', { resource: t('common:organization').toLowerCase() })}
           previousSlug={organization.slug}
+          prefix={`/${organization.tenantId}/`}
         />
         <DomainsFormField
           control={form.control}

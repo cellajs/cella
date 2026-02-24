@@ -11,13 +11,13 @@ interface NavigationStoreState {
   setRecentSearches: (searchValue: string[]) => void; // Updates recent searches
 
   navSheetOpen: NavItemId | null; // Currently open navigation sheet
-  setNavSheetOpen: (sheet: NavItemId | null, isDesktop?: boolean) => void; // Sets navigation sheet
+  setNavSheetOpen: (sheet: NavItemId | null) => void; // Sets navigation sheet
 
   keepNavOpen: boolean; // Nav sheet remains open state
   setKeepNavOpen: (status: boolean) => void; // Toggles nav open state
 
   keepOpenPreference: boolean; // User Preference for keeping the menu open
-  toggleKeepOpenPreference: (status: boolean, isDesktop?: boolean) => void; // Toggles keep-open preference
+  toggleKeepOpenPreference: (status: boolean) => void; // Toggles keep-open preference
 
   detailedMenu: boolean; // Hides submenu state(for Menu sheet)
   toggleDetailedMenu: (status: boolean) => void; // Toggles submenu visibility
@@ -46,7 +46,7 @@ interface InitStore
 const initStore: InitStore = {
   recentSearches: [],
   navSheetOpen: null,
-  keepNavOpen: window.innerWidth > 1280, // Auto-open nav on wider screens
+  keepNavOpen: false, // Managed reactively by app-nav effect
   keepOpenPreference: false,
   detailedMenu: false,
   navLoading: false,
@@ -62,15 +62,9 @@ export const useNavigationStore = create<NavigationStoreState>()(
       persist(
         (set) => ({
           ...initStore,
-          setNavSheetOpen: (sheet, isDesktop) => {
+          setNavSheetOpen: (sheet) => {
             set((state) => {
-              const wasMenu = state.navSheetOpen === 'menu';
-              const isMenu = sheet === 'menu';
               state.navSheetOpen = sheet;
-              // Update keepNavOpen when on desktop with preference enabled
-              if (isDesktop !== undefined) {
-                state.keepNavOpen = isDesktop && state.keepOpenPreference && (isMenu || wasMenu);
-              }
             });
           },
           setRecentSearches: (searchValues: string[]) => {
@@ -83,13 +77,9 @@ export const useNavigationStore = create<NavigationStoreState>()(
               state.keepNavOpen = status;
             });
           },
-          toggleKeepOpenPreference: (status, isDesktop) => {
+          toggleKeepOpenPreference: (status) => {
             set((state) => {
               state.keepOpenPreference = status;
-              // Also update keepNavOpen if we know isDesktop and a nav sheet is open
-              if (isDesktop !== undefined && state.navSheetOpen) {
-                state.keepNavOpen = isDesktop && status;
-              }
             });
           },
           toggleDetailedMenu: (status) => {

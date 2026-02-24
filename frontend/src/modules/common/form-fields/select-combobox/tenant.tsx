@@ -17,7 +17,8 @@ type SelectTenantProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TF
 
 /**
  * Form field for selecting a tenant.
- * Filters tenants to only show those where the user has a membership (unless system admin).
+ * System admins see all tenants (fetched from the API).
+ * Regular users see only tenants they belong to (derived from their memberships).
  */
 export const SelectTenantFormField = <TFieldValues extends FieldValues>({
   control,
@@ -31,22 +32,25 @@ export const SelectTenantFormField = <TFieldValues extends FieldValues>({
   const systemRole = useUserStore((s) => s.systemRole);
   const isSystemAdmin = systemRole === 'admin';
 
-  // Fetch all tenants
-  const tenantsQuery = useInfiniteQuery(tenantsListQueryOptions({}));
+  // System admins: fetch all tenants from API (includes tenant names)
+  const tenantsQuery = useInfiniteQuery({ ...tenantsListQueryOptions({}), enabled: isSystemAdmin });
   const allTenants = flattenInfiniteData<{ id: string; name: string }>(tenantsQuery.data);
 
-  // Fetch user's memberships to filter tenants
+  // Fetch user's memberships to derive tenant access
   const membershipsQuery = useQuery(myMembershipsQueryOptions());
-  const memberTenantIds = useMemo(() => {
-    if (!membershipsQuery.data?.items) return new Set<string>();
-    return new Set(membershipsQuery.data.items.map((m) => m.tenantId));
+
+  // For regular users: derive unique tenants from memberships (no API access to /tenants)
+  const memberTenants = useMemo(() => {
+    if (!membershipsQuery.data?.items) return [];
+    const tenantMap = new Map<string, string>();
+    for (const m of membershipsQuery.data.items) {
+      if (!tenantMap.has(m.tenantId)) tenantMap.set(m.tenantId, m.tenantId);
+    }
+    return Array.from(tenantMap, ([id]) => ({ id, name: id }));
   }, [membershipsQuery.data]);
 
-  // Filter tenants: system admins see all, others only see their membership tenants
-  const filteredTenants = useMemo(() => {
-    if (isSystemAdmin) return allTenants;
-    return allTenants.filter((t) => memberTenantIds.has(t.id));
-  }, [allTenants, memberTenantIds, isSystemAdmin]);
+  // System admins see all tenants with names; regular users see their membership tenants
+  const filteredTenants = isSystemAdmin ? allTenants : memberTenants;
 
   const options =
     opts ??

@@ -1,5 +1,6 @@
 import type { ReactNode, RefObject } from 'react';
 import { create } from 'zustand';
+import { fallbackContentRef } from '~/utils/fallback-content-ref';
 
 export type TriggerRef = RefObject<HTMLButtonElement | HTMLAnchorElement | null>;
 
@@ -53,6 +54,12 @@ export const useSheeter = create<SheetStoreState>()((set, get) => ({
   triggerRefs: {},
 
   create: (content, data) => {
+    // Capture and blur active element to prevent aria-hidden conflict when modal sets aria-hidden on ancestors
+    if (document.activeElement instanceof HTMLButtonElement || document.activeElement instanceof HTMLAnchorElement) {
+      fallbackContentRef.current = document.activeElement;
+      document.activeElement.blur();
+    }
+
     // Add defaults and a key for reactivity
     const defaults = {
       drawerOnMobile: true,

@@ -4,7 +4,8 @@ import { passwordsTable } from '#/db/schema/passwords';
 import { tenantsTable } from '#/db/schema/tenants';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { usersTable } from '#/db/schema/users';
-import { hashPassword } from '#/modules/auth/passwords/helpers/argon2id';
+import { env } from '#/env';
+// hashPassword is imported lazily below (only needed in dev, avoids loading argon2 in production)
 import pc from 'picocolors';
 import { appConfig } from 'shared';
 import { mockAdmin, mockEmail, mockPassword, mockUnsubscribeToken } from '../../../mocks/mock-user';
@@ -29,14 +30,22 @@ const isUserSeeded = async () => {
     .limit(1);
 
   return usersInTable.length > 0;
-}
+};
 
 /**
- * Seed an admin user to access app first time
+ * Seed an admin user to access app first time.
+ * Works in all environments:
+ * - Development: uses fixtures (admin-test@cellajs.com / 12345678)
+ * - Production: uses ADMIN_EMAIL env var, no password (use "forgot password" or OAuth to sign in)
  */
 export const userSeed = async () => {
-  // Production mode → skip seeding
-  if (isProduction) return console.error('Not allowed in production.');
+  // Determine admin email: env var takes precedence, then fixture default
+  const adminEmail = env.ADMIN_EMAIL ?? defaultAdminUser.email;
+
+  // In production, ADMIN_EMAIL is required
+  if (isProduction && !env.ADMIN_EMAIL) {
+    return console.error('ADMIN_EMAIL environment variable is required for production seeding.');
+  }
 
   // Admin connection required
   if (!db) return console.error('DATABASE_ADMIN_URL required for seeding');
@@ -47,11 +56,9 @@ export const userSeed = async () => {
   // Create public tenant (needed for pages and other platform-wide content)
   await db.insert(tenantsTable).values({ id: publicTenant.id, name: publicTenant.name }).onConflictDoNothing();
 
-  // Hash default admin password
-  const hashed = await hashPassword(defaultAdminUser.password);
-
-  // Make admin user → Insert into the database  
-  const adminRecord = mockAdmin(defaultAdminUser.id, defaultAdminUser.email);
+  // Make admin user → Insert into the database
+  const adminId = isProduction ? undefined : defaultAdminUser.id;
+  const adminRecord = mockAdmin(adminId, adminEmail);
 
   const [adminUser] = await db
     .insert(usersTable)
@@ -62,9 +69,13 @@ export const userSeed = async () => {
   // Insert system role record into the database
   await db.insert(systemRolesTable).values({ userId: adminUser.id, role: 'admin' }).onConflictDoNothing();
 
-  // Make password record → Insert into the database
-  const passwordRecord = mockPassword(adminUser, hashed);
-  await db.insert(passwordsTable).values(passwordRecord).onConflictDoNothing();
+  // In dev, set a default password. In production, skip password (use "forgot password" or OAuth to sign in)
+  if (!isProduction) {
+    const { hashPassword } = await import('#/modules/auth/passwords/helpers/argon2id');
+    const hashed = await hashPassword(defaultAdminUser.password);
+    const passwordRecord = mockPassword(adminUser, hashed);
+    await db.insert(passwordsTable).values(passwordRecord).onConflictDoNothing();
+  }
 
   // Make unsubscribeToken record → Insert into the database
   const unsubscribeTokenRecord = mockUnsubscribeToken(adminUser);
@@ -77,7 +88,13 @@ export const userSeed = async () => {
     .values(emailRecord)
     .onConflictDoNothing();
 
-  console.info(
-    ` \n${checkMark} Created admin user with verified email ${pc.bold(pc.greenBright(adminUser.email))} and password ${pc.bold(pc.greenBright(defaultAdminUser.password))}.\n `,
-  );
+  if (isProduction) {
+    console.info(
+      ` \n${checkMark} Created admin user with email ${pc.bold(pc.greenBright(adminUser.email))}. Use "forgot password" or OAuth to sign in.\n `,
+    );
+  } else {
+    console.info(
+      ` \n${checkMark} Created admin user with verified email ${pc.bold(pc.greenBright(adminUser.email))} and password ${pc.bold(pc.greenBright(defaultAdminUser.password))}.\n `,
+    );
+  }
 };

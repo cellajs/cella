@@ -5,8 +5,10 @@ import { appConfig } from 'shared';
 import { stopImpersonation as breakImpersonation } from '~/api.gen';
 import { toaster } from '~/modules/common/toaster/service';
 import { getAndSetMe } from '~/modules/me/helpers';
+import { meKeys } from '~/modules/me/query';
 import { getMenuData } from '~/modules/navigation/menu-sheet/helpers/get-menu-data';
 import { SidebarMenuButton, SidebarMenuItem } from '~/modules/ui/sidebar';
+import { queryClient } from '~/query/query-client';
 import { useUIStore } from '~/store/ui';
 
 const { hasSidebarTextLabels } = appConfig.theme.navigation;
@@ -27,7 +29,10 @@ export function StopImpersonation({ isCollapsed }: StopImpersonationProps) {
   const stopImpersonation = async () => {
     await breakImpersonation();
     setImpersonating(false);
-    await Promise.all([getAndSetMe(), getMenuData()]);
+    await getAndSetMe();
+    // Remove stale memberships (key is not user-specific) so getMenuData refetches for the restored user
+    queryClient.removeQueries({ queryKey: meKeys.memberships });
+    await getMenuData();
     navigate({ to: appConfig.defaultRedirectPath, replace: true });
     toaster(t('common:success.stopped_impersonation'), 'success');
   };

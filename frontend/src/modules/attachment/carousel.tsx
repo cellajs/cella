@@ -70,6 +70,16 @@ export function AttachmentsCarousel({
     return index !== -1 ? index : itemIndex;
   })();
 
+  // Track startIndex to prevent Embla reInit flashes during carousel navigation.
+  // Updates when the item set changes (e.g., group data arrives), but stays stable
+  // when only the URL changes from slide navigation.
+  const startIndexRef = useRef<number | null>(null);
+  const itemCountRef = useRef(items.length);
+  if (startIndexRef.current === null || itemCountRef.current !== items.length) {
+    startIndexRef.current = currentItemIndex;
+    itemCountRef.current = items.length;
+  }
+
   const updateSearchParam = (newItem: CarouselItemData | undefined) => {
     if (!saveInSearchParams) return;
 
@@ -98,7 +108,7 @@ export function AttachmentsCarousel({
   return (
     <BaseCarousel
       isDialog={isDialog}
-      opts={{ duration: 20, loop: true, startIndex: currentItemIndex, watchDrag }}
+      opts={{ duration: 20, loop: true, startIndex: startIndexRef.current ?? 0, watchDrag }}
       plugins={isDialog ? [] : [Autoplay({ delay: 4000, stopOnInteraction: true, stopOnMouseEnter: true })]}
       className="w-full h-full group"
       setApi={(api) => {

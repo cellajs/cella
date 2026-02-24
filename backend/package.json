@@ -23,6 +23,7 @@
     "sentry:sourcemaps": "sentry-cli sourcemaps inject --org cella --project backend dist && sentry-cli sourcemaps upload --org cella --project backend dist",
     "build:sourcemaps": "cross-env NODE_ENV=production tsup && pnpm sentry:sourcemaps",
     "seed:user": "tsx scripts/seeds/user/run.ts",
+    "seed:admin": "tsx scripts/seeds/user/run.ts",
     "seed:organizations": "tsx scripts/seeds/organizations/run.ts",
     "seed:data": "tsx scripts/seeds/data/run.ts",
     "seed:counters": "tsx scripts/seeds/counters/run.ts",

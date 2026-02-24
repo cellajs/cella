@@ -1,6 +1,7 @@
 /**
  * Hook to resolve URLs for multiple attachments (carousel/dialog use case).
  * Uses resolveAttachmentUrl() core function with cache restoration awareness.
+ * Reuses existing blob URLs to prevent flashes from URL.revokeObjectURL.
  */
 import { useIsRestoring } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
@@ -13,6 +14,20 @@ export interface ResolvedAttachmentsResult {
   isLoading: boolean;
   hasErrors: boolean;
   errorIds: string[];
+}
+
+/** Build CarouselItemData with metadata from cache */
+function buildItemData(item: Partial<CarouselItemData> & { id: string }, url: string): CarouselItemData {
+  const cached = findAttachmentInListCache(item.id);
+  return {
+    id: item.id,
+    url,
+    name: item.name ?? cached?.name ?? item.filename ?? 'Attachment',
+    filename: item.filename ?? cached?.filename,
+    contentType: item.contentType ?? cached?.contentType,
+    convertedUrl: cached?.convertedKey ? undefined : null,
+    convertedContentType: item.convertedContentType ?? cached?.convertedContentType,
+  };
 }
 
 /**
@@ -41,43 +56,37 @@ export function useResolvedAttachments(
       return;
     }
 
-    // Cleanup previous blob URLs
-    for (const url of blobUrlsRef.current.values()) URL.revokeObjectURL(url);
-    blobUrlsRef.current.clear();
-
     let cancelled = false;
 
     const resolveAll = async () => {
-      setIsLoading(true);
+      if (!resolvedItems.length) setIsLoading(true);
+
       const errors: string[] = [];
       const resolved: CarouselItemData[] = [];
+      const newBlobUrls = new Map<string, string>();
 
       for (const item of items) {
         if (cancelled) break;
 
-        // Already has URL - use directly
+        // Already has URL — use directly
         if (item.url) {
-          resolved.push(item as CarouselItemData);
+          resolved.push(buildItemData(item, item.url));
+          continue;
+        }
+
+        // Reuse existing blob URL to avoid revoking URLs still shown in <img> elements
+        const existingUrl = blobUrlsRef.current.get(item.id);
+        if (existingUrl) {
+          newBlobUrls.set(item.id, existingUrl);
+          resolved.push(buildItemData(item, existingUrl));
           continue;
         }
 
         try {
           const result = await resolveAttachmentUrl(item.id, null, { preferredVariant: 'converted' });
-
           if (result) {
-            if (result.isLocal) blobUrlsRef.current.set(item.id, result.url);
-
-            // Get metadata from cache for display
-            const cached = findAttachmentInListCache(item.id);
-            resolved.push({
-              id: item.id,
-              url: result.url,
-              name: item.name ?? cached?.name ?? item.filename ?? 'Attachment',
-              filename: item.filename ?? cached?.filename,
-              contentType: item.contentType ?? cached?.contentType,
-              convertedUrl: cached?.convertedKey ? undefined : null,
-              convertedContentType: item.convertedContentType ?? cached?.convertedContentType,
-            });
+            if (result.isLocal) newBlobUrls.set(item.id, result.url);
+            resolved.push(buildItemData(item, result.url));
           } else {
             errors.push(item.id);
           }
@@ -88,6 +97,11 @@ export function useResolvedAttachments(
       }
 
       if (!cancelled) {
+        // Revoke only blob URLs no longer in use
+        for (const [id, url] of blobUrlsRef.current) {
+          if (!newBlobUrls.has(id)) URL.revokeObjectURL(url);
+        }
+        blobUrlsRef.current = newBlobUrls;
         setResolvedItems(resolved);
         setErrorIds(errors);
         setIsLoading(false);
@@ -95,13 +109,18 @@ export function useResolvedAttachments(
     };
 
     resolveAll();
-
     return () => {
       cancelled = true;
+    };
+  }, [items.map((i) => `${i.id}:${i.url ?? ''}:${i.name ?? ''}`).join(','), isRestoring]);
+
+  // Revoke all blob URLs only on unmount
+  useEffect(() => {
+    return () => {
       for (const url of blobUrlsRef.current.values()) URL.revokeObjectURL(url);
       blobUrlsRef.current.clear();
     };
-  }, [items.map((i) => `${i.id}:${i.url ?? ''}`).join(','), isRestoring]);
+  }, []);
 
   return { items: resolvedItems, isLoading, hasErrors: errorIds.length > 0, errorIds };
 }

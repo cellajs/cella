@@ -1,4 +1,3 @@
-import { sql } from 'drizzle-orm';
 import { LogicalReplicationService, type Pgoutput, PgoutputPlugin } from 'pg-logical-replication';
 import { appConfig } from 'shared';
 import { activitiesTable } from '#/db/schema/activities';
@@ -18,106 +17,6 @@ import { wsClient } from './websocket-client';
 
 const LOG_PREFIX = '[worker]';
 const { reconnection } = RESOURCE_LIMITS;
-
-/**
- * Verify that the current database role has the REPLICATION attribute.
- * Required for creating/using logical replication slots.
- */
-async function verifyReplicationPermission(): Promise<void> {
-  const result = await cdcDb.execute<{ rolreplication: boolean }>(
-    sql`SELECT rolreplication FROM pg_roles WHERE rolname = current_user`,
-  );
-
-  if (result.rows.length === 0) {
-    throw new Error('Could not determine current database role');
-  }
-
-  if (!result.rows[0].rolreplication) {
-    const currentUser = await cdcDb.execute<{ current_user: string }>(sql`SELECT current_user`);
-    const roleName = currentUser.rows[0]?.current_user ?? 'unknown';
-    throw new Error(
-      `Role '${roleName}' lacks REPLICATION attribute. ` +
-        `For Neon: enable logical replication in project settings (Console > Settings > Logical Replication). ` +
-        `For self-hosted: ALTER ROLE ${roleName} WITH REPLICATION; (requires superuser). ` +
-        `Without this, CDC cannot use logical replication slots.`,
-    );
-  }
-
-  logEvent('info', `${LOG_PREFIX} Replication permission verified`);
-}
-
-/**
- * Terminate any stale backend process holding the replication slot.
- * This handles the case where a previous worker didn't disconnect cleanly (e.g., during redeployment).
- */
-async function terminateStaleSlotConnection(): Promise<void> {
-  const result = await cdcDb.execute<{ active: boolean; active_pid: number | null }>(
-    sql`SELECT active, active_pid FROM pg_replication_slots WHERE slot_name = ${CDC_SLOT_NAME}`,
-  );
-
-  if (result.rows.length === 0 || !result.rows[0].active || !result.rows[0].active_pid) return;
-
-  const stalePid = result.rows[0].active_pid;
-  logEvent('warn', `${LOG_PREFIX} Replication slot held by stale PID ${stalePid}, terminating...`, {
-    slotName: CDC_SLOT_NAME,
-    stalePid,
-  });
-
-  try {
-    await cdcDb.execute(sql`SELECT pg_terminate_backend(${stalePid})`);
-    // Give PostgreSQL a moment to release the slot
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    logEvent('info', `${LOG_PREFIX} Stale connection terminated`, { stalePid });
-  } catch (error) {
-    logEvent('warn', `${LOG_PREFIX} Could not terminate stale PID ${stalePid}`, {
-      error: error instanceof Error ? error.message : String(error),
-    });
-  }
-}
-
-/**
- * Verify the replication slot exists and is valid.
- * The slot should be created by the CDC migration (under admin/superuser).
- * If forceRecreate is true (error recovery), attempt to drop and recreate.
- */
-async function ensureReplicationSlot(forceRecreate = false): Promise<void> {
-  const result = await cdcDb.execute<{ slot_name: string; plugin: string }>(
-    sql`SELECT slot_name, plugin FROM pg_replication_slots WHERE slot_name = ${CDC_SLOT_NAME}`,
-  );
-
-  const slotExists = result.rows.length > 0;
-  const isValid = slotExists && result.rows[0].plugin === 'pgoutput';
-
-  if (forceRecreate && slotExists) {
-    logEvent('info', `${LOG_PREFIX} Dropping invalid replication slot...`, { slotName: CDC_SLOT_NAME });
-    await cdcDb.execute(sql`SELECT pg_drop_replication_slot(${CDC_SLOT_NAME})`);
-  }
-
-  if (!slotExists || forceRecreate) {
-    // Slot doesn't exist — try to create it (requires REPLICATION attribute).
-    // On first deploy this is normally created by the CDC migration under admin.
-    logEvent('info', `${LOG_PREFIX} Creating replication slot...`, { slotName: CDC_SLOT_NAME });
-    try {
-      await cdcDb.execute(sql`SELECT pg_create_logical_replication_slot(${CDC_SLOT_NAME}, 'pgoutput')`);
-      logEvent('info', `${LOG_PREFIX} Replication slot created`, { slotName: CDC_SLOT_NAME });
-    } catch (error) {
-      throw new Error(
-        `Failed to create replication slot '${CDC_SLOT_NAME}'. ` +
-          `Ensure the CDC migration has run (creates slot under admin), ` +
-          `or grant REPLICATION to the CDC role. ` +
-          `Original error: ${error instanceof Error ? error.message : String(error)}`,
-      );
-    }
-  } else if (!isValid) {
-    logEvent('warn', `${LOG_PREFIX} Slot exists with wrong plugin, recreating...`, {
-      slotName: CDC_SLOT_NAME,
-      plugin: result.rows[0].plugin,
-    });
-    await ensureReplicationSlot(true);
-  } else {
-    logEvent('info', `${LOG_PREFIX} Replication slot already exists`, { slotName: CDC_SLOT_NAME });
-  }
-}
 
 /**
  * Check if a message is from seeded data (gen- prefix) and should be skipped.
@@ -237,22 +136,6 @@ async function handleDataMessage(lsn: string, message: unknown): Promise<void> {
 }
 
 /**
- * Verify that the CDC publication exists in the database.
- */
-async function verifyPublication(): Promise<void> {
-  const pubCheck = await cdcDb.execute<{ pubname: string }>(
-    sql`SELECT pubname FROM pg_publication WHERE pubname = ${CDC_PUBLICATION_NAME}`,
-  );
-  if (pubCheck.rows.length === 0) {
-    logEvent('error', `${LOG_PREFIX} Publication '${CDC_PUBLICATION_NAME}' not found in database. Run CDC migration first.`, {
-      databaseUrl: env.DATABASE_CDC_URL.replace(/:[^:@]+@/, ':****@'),
-    });
-    throw new Error(`Publication '${CDC_PUBLICATION_NAME}' does not exist`);
-  }
-  logEvent('info', `${LOG_PREFIX} Publication verified`, { publicationName: CDC_PUBLICATION_NAME });
-}
-
-/**
  * Build the replication connection URL from the CDC database URL.
  */
 function buildReplicationUrl(): URL {
@@ -260,16 +143,6 @@ function buildReplicationUrl(): URL {
   if (!replicationUrl.searchParams.has('replication')) {
     replicationUrl.searchParams.set('replication', 'database');
   }
-
-  const maskedUrl = new URL(replicationUrl.toString());
-  maskedUrl.password = '****';
-  logEvent('info', `${LOG_PREFIX} Replication connection`, {
-    url: maskedUrl.toString(),
-    host: replicationUrl.hostname,
-    port: replicationUrl.port,
-    database: replicationUrl.pathname.slice(1),
-  });
-
   return replicationUrl;
 }
 
@@ -288,7 +161,9 @@ function createReplicationService(connectionUrl: URL): LogicalReplicationService
     },
   );
 
-  service.on('data', handleDataMessage);
+  service.on('data', (lsn: string, message: unknown) => {
+    handleDataMessage(lsn, message);
+  });
 
   service.on('error', (error: Error) => {
     logEvent('error', `${LOG_PREFIX} CDC replication error`, { error: error.message });
@@ -319,10 +194,6 @@ export async function startCdcWorker(): Promise<void> {
   setShutdownHandler(emergencyShutdown);
 
   await configureWalLimits();
-  await verifyReplicationPermission();
-  await terminateStaleSlotConnection();
-  await ensureReplicationSlot();
-  await verifyPublication();
 
   const replicationUrl = buildReplicationUrl();
   const service = createReplicationService(replicationUrl);
@@ -350,53 +221,15 @@ export async function startCdcWorker(): Promise<void> {
   wsClient.connect();
 
   // Subscribe with reconnection loop
-  let consecutiveFailures = 0;
-
   while (true) {
     try {
       logEvent('info', `${LOG_PREFIX} Subscribing to replication slot...`);
       replicationState.replicationState = wsClient.isConnected() ? 'active' : 'paused';
       await service.subscribe(plugin, CDC_SLOT_NAME);
-      consecutiveFailures = 0;
     } catch (error) {
-      consecutiveFailures++;
       const errorMessage = error instanceof Error ? error.message : String(error);
-      const isSlotActive = errorMessage.includes('is active for PID');
-
-      logEvent('warn', `${LOG_PREFIX} CDC subscription error, retrying in ${reconnection.retryDelayMs / 1000}s...`, {
-        error: errorMessage,
-        consecutiveFailures,
-      });
+      logEvent('warn', `${LOG_PREFIX} Subscription error, retrying in ${reconnection.retryDelayMs / 1000}s...`, { error: errorMessage });
       replicationState.markStopped();
-
-      if (isSlotActive) {
-        // During rolling deployment the old worker still holds the slot.
-        // Retry with slot termination attempts — old worker will be killed by the platform.
-        const { slotTakeover } = RESOURCE_LIMITS;
-        if (consecutiveFailures >= slotTakeover.maxAttempts) {
-          logEvent('error', `${LOG_PREFIX} Could not acquire replication slot after ${consecutiveFailures} attempts. Exiting.`);
-          process.exit(1);
-        }
-        logEvent('warn', `${LOG_PREFIX} Slot held by another worker, attempting takeover (${consecutiveFailures}/${slotTakeover.maxAttempts})...`);
-        await terminateStaleSlotConnection();
-        await new Promise((resolve) => setTimeout(resolve, slotTakeover.retryDelayMs));
-        continue;
-      }
-
-      // If we have persistent failures (non-active-slot errors), try reclaiming
-      if (consecutiveFailures >= reconnection.maxFailuresBeforeRecreate) {
-        logEvent('warn', `${LOG_PREFIX} Too many failures, attempting to reclaim replication slot...`);
-        try {
-          await terminateStaleSlotConnection();
-          await ensureReplicationSlot(true);
-          consecutiveFailures = 0;
-        } catch (recreateError) {
-          logEvent('error', `${LOG_PREFIX} Failed to recreate slot`, {
-            error: recreateError instanceof Error ? recreateError.message : String(recreateError),
-          });
-        }
-      }
-
       await new Promise((resolve) => setTimeout(resolve, reconnection.retryDelayMs));
     }
   }

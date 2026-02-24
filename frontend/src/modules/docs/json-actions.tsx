@@ -33,7 +33,7 @@ export const JsonActions = ({
   viewerUrl,
 }: JsonActionsProps) => {
   const { t } = useTranslation();
-  const isMobile = useBreakpoints('max', 'sm');
+  const isMobile = useBreakpoints('max', 'sm', false);
 
   const { copyToClipboard, copied } = useCopyToClipboard();
   const { download, isInProgress } = useDownloader();

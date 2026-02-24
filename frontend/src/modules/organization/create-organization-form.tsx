@@ -50,6 +50,7 @@ export function CreateOrganizationForm({ labelDirection = 'top', children, callb
 
   // Watch to update slug field
   const name = useWatch({ control: form.control, name: 'name' });
+  const tenantId = useWatch({ control: form.control, name: 'tenantId' });
 
   const { mutate, isPending } = useOrganizationCreateMutation();
 
@@ -94,6 +95,7 @@ export function CreateOrganizationForm({ labelDirection = 'top', children, callb
           label={t('common:resource_handle', { resource: t('common:organization') })}
           description={t('common:resource_handle.text', { resource: t('common:organization').toLowerCase() })}
           nameValue={name}
+          prefix={`/${tenantId || '~'}/`}
         />
 
         <div className="flex flex-col sm:flex-row gap-2">

@@ -31,7 +31,7 @@ export const AlertWrap = ({ id, icon: Icon, children, className = '', title = ''
 
   return (
     <Alert variant={variant} className={cn('relative', className)}>
-      <CloseButton onClick={setAsSeen} size="sm" className="absolute top-1 right-1" />
+      <CloseButton onClick={setAsSeen} size="md" className="absolute top-2 right-2" />
       {Icon && <Icon size={16} />}
       {title && <AlertTitle className="pr-8">{t(title)}</AlertTitle>}
 

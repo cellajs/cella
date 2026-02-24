@@ -107,7 +107,7 @@
   .bn-container.bn-shadcn {
     --background: oklch(1 0 0);
     --foreground: oklch(0.2067 0.01 285.49);
-    --card: oklch(1 0 0);
+    --card: oklch(0.987 0.0013 285.76);
     --card-foreground: oklch(0.2067 0.01 285.49);
     --popover: oklch(1 0 0);
     --popover-foreground: oklch(0.1155 0 0);
@@ -141,7 +141,7 @@
   .bn-container.bn-shadcn.dark {
     --background: oklch(0.1963 0.0092 285.53);
     --foreground: oklch(0.9627 0 0);
-    --card: oklch(0.2439 0.0093 285.66);
+    --card: oklch(0.232 0.0095 285.56);
     --card-foreground: oklch(0.9627 0 0);
     --popover: oklch(0.1963 0.0092 285.53);
     --popover-foreground: oklch(0.9627 0 0);

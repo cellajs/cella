@@ -48,7 +48,7 @@ export const MenuSheetHeader = ({ searchTerm, setSearchTerm, isSearchActive, set
             transition={{ duration: 0.15 }}
             className="absolute inset-0 right-12 z-10"
           >
-            <InputGroup className="h-full border-0 shadow-none focus-visible:ring-offset-0">
+            <InputGroup className="h-full border-0 bg-transparent shadow-none focus-visible:ring-offset-0">
               <InputGroupInput
                 className="pl-0!"
                 id="nav-sheet-search"

@@ -107,12 +107,13 @@ export const useOrganizationCreateMutation = () => {
     mutationFn: async ({ path, body }) => {
       const result = await createOrganizations({ path, body });
 
-      // Check for rejection reasons and throw if org limit reached
-      if (result.rejectionReasons) {
-        const reasons = Object.keys(result.rejectionReasons);
+      // If the org was not created (empty data), check rejection reasons
+      if (!result.data.length) {
+        const reasons = result.rejectionReasons ? Object.keys(result.rejectionReasons) : [];
         if (reasons.includes('org_limit_reached')) {
           throw new Error('org_limit_reached');
         }
+        throw new Error('create_resource');
       }
 
       // Return the first created organization (currently only single creation supported)

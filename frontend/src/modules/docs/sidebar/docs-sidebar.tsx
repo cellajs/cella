@@ -57,7 +57,7 @@ interface DocsSidebarProps {
  */
 export function DocsSidebar({ tags }: DocsSidebarProps) {
   const { t } = useTranslation();
-  const isMobile = useBreakpoints('max', 'sm');
+  const isMobile = useBreakpoints('max', 'sm', false);
 
   const { systemRole } = useUserStore();
 
@@ -75,7 +75,17 @@ export function DocsSidebar({ tags }: DocsSidebarProps) {
   const expandedSection = isOperationsRoute ? 'operations' : isSchemasRoute ? 'schemas' : null;
 
   // Track if current section is forcibly collapsed
-  const [forcedCollapsed, setForcedCollapsed] = useState<string | null>(null);
+  // Start collapsed when landing directly via URL without search params
+  const searchParams = location.search as Record<string, unknown>;
+  const hasOperationSearchParams = !!searchParams.operationTag || !!searchParams.q;
+  const hasSchemasSearchParams = !!searchParams.schemaTag;
+  const [forcedCollapsed, setForcedCollapsed] = useState<string | null>(
+    isOperationsRoute && !hasOperationSearchParams
+      ? 'operations'
+      : isSchemasRoute && !hasSchemasSearchParams
+        ? 'schemas'
+        : null,
+  );
 
   // Query for pages - using React Query instead of useLiveQuery
   // Only show published pages in sidebar

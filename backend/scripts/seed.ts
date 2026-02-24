@@ -2,6 +2,7 @@ import { execSync } from 'node:child_process';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { migrateConfig, migrationDb } from '#/db/db';
 import { env } from '#/env';
+import { appConfig } from 'shared';
 import { createDbRoles } from './db/create-db-roles';
 
 if (env.DEV_MODE === 'basic') {
@@ -22,17 +23,24 @@ await createDbRoles();
 // Migrate db using admin connection (applies RLS grants)
 await migrate(migrationDb, migrateConfig);
 
-import { seedScripts } from './scripts-config';
+const isProduction = appConfig.mode === 'production';
 
 /**
- * Run seed scripts array from scripts-config
+ * In production only seed the admin user (inline to avoid spawning a heavy subprocess).
+ * In development seed all data (users, organizations, data, counters).
  */
-for (const cmd of seedScripts) {
-  try {
-    // Execute the command
-    execSync(cmd, { stdio: 'inherit' });
-  } catch (error) {
-    console.error(`Error executing command: ${cmd}`, error);
-    process.exit(1);
+if (isProduction) {
+  const { userSeed } = await import('./seeds/user/seed');
+  await userSeed();
+} else {
+  const { seedScripts } = await import('./scripts-config');
+
+  for (const cmd of seedScripts) {
+    try {
+      execSync(cmd, { stdio: 'inherit' });
+    } catch (error) {
+      console.error(`Error executing command: ${cmd}`, error);
+      process.exit(1);
+    }
   }
 }

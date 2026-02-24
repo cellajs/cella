@@ -66,8 +66,6 @@ export const RESOURCE_LIMITS = {
   reconnection: {
     /** Delay before retrying replication subscription (ms) */
     retryDelayMs: 5000,
-    /** Max consecutive failures before recreating slot */
-    maxFailuresBeforeRecreate: 3,
   },
 
   // Slot takeover during rolling deployments

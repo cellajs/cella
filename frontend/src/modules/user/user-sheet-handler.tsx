@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { useUrlSheet } from '~/hooks/use-url-overlay';
+import { useUrlSheet } from '~/hooks/use-url-sheet';
 import { UserSheet } from '~/modules/user/user-sheet';
 
 /**

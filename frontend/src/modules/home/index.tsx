@@ -1,20 +1,17 @@
-import { useEffect } from 'react';
+import { ShieldAlertIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
+import { AlertWrap } from '~/modules/common/alert-wrap';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import { InvitationsTable } from '~/modules/me/invitations-table';
 import { Card, CardContent, CardHeader, CardTitle } from '~/modules/ui/card';
-import { useAlertStore } from '~/store/alert';
 import { useUserStore } from '~/store/user';
 
 export function Home() {
   const { t } = useTranslation();
-  const { setDownAlert } = useAlertStore();
+  const { user, systemRole } = useUserStore();
 
-  useEffect(() => {
-    const { user, systemRole } = useUserStore.getState();
-    if (systemRole === 'admin' && !user.mfaRequired && appConfig.mode === 'production') setDownAlert('enable_mfa');
-  }, []);
+  const showMfaAlert = systemRole === 'admin' && !user.mfaRequired;
 
   return (
     <div className="container">
@@ -23,6 +20,11 @@ export function Home() {
         text={t('common:home.text', { appName: appConfig.name })}
         className="pt-4 md:pt-6"
       />
+      {showMfaAlert && (
+        <AlertWrap id="enable_mfa" variant="plain" icon={ShieldAlertIcon} className="mt-4">
+          {t('common:require_mfa.text')}
+        </AlertWrap>
+      )}
       <div className="mt-6 mb-24 hidden has-[div[role='grid']]:block">
         <Card className="pb-0">
           <CardHeader>

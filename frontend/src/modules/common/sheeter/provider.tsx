@@ -9,14 +9,8 @@ import router from '~/routes/router';
 import { useNavigationStore } from '~/store/navigation';
 import { useUIStore } from '~/store/ui';
 
-// Static callbacks for boundary cleanup - no deps, call store directly
-const getItemsToCloseOnResize = () =>
-  useSheeter
-    .getState()
-    .sheets.filter((s) => !s.container)
-    .map((s) => s.id);
+// Static callback for boundary cleanup - no deps, call store directly
 const closeAll = () => useSheeter.getState().remove(undefined, { isCleanup: true });
-const closeById = (id: string | number) => useSheeter.getState().remove(String(id), { isCleanup: true });
 
 /**
  * Sheeter provider to render drawers on mobile, sheets on desktop.
@@ -38,7 +32,7 @@ export const Sheeter = () => {
     }
   }, [sheets.length > 0]);
 
-  useBoundaryCleanup(getItemsToCloseOnResize, closeAll, closeById);
+  useBoundaryCleanup(closeAll);
 
   // Handle route changes (respects nav menu keepOpen preference)
   useEffect(() => {

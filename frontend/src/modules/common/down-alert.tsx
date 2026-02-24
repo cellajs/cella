@@ -1,5 +1,5 @@
 import { t } from 'i18next';
-import { AlertTriangleIcon, ClockAlertIcon, CloudOffIcon, ConstructionIcon, ShieldAlertIcon } from 'lucide-react';
+import { AlertTriangleIcon, ClockAlertIcon, CloudOffIcon, ConstructionIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Trans } from 'react-i18next';
 import { appConfig } from 'shared';
@@ -42,12 +42,6 @@ const downAlertConfig = {
     icon: AlertTriangleIcon,
     getTitle: () => <Trans t={t} className="font-bold" i18nKey="common:auth_unavailable" />,
     getContent: () => <Trans t={t} className="max-sm:hidden" i18nKey="common:auth_unavailable.text" />,
-    variant: 'plain',
-  },
-  enable_mfa: {
-    icon: ShieldAlertIcon,
-    getTitle: () => <Trans t={t} className="font-bold" i18nKey="common:require_mfa" />,
-    getContent: () => <Trans t={t} className="max-sm:hidden" i18nKey="common:require_mfa.text" />,
     variant: 'plain',
   },
 } as const;
@@ -106,13 +100,13 @@ export const DownAlert = () => {
     return () => controller.abort(); // Cleanup any pending health check
   }, [isOnline, downAlert, dismissedAlerts.backend_not_ready]);
 
-  if (!downAlert || dismissedAlerts[downAlert]) return null; // Nothing to show
+  if (!downAlert || dismissedAlerts[downAlert] || !(downAlert in downAlertConfig)) return null; // Nothing to show
   const { getTitle, getContent, icon: Icon, variant } = downAlertConfig[downAlert];
 
   return (
-    <div className="fixed z-2000 pointer-events-auto bottom-4 in-[#appLayout]:max-sm:bottom-20 left-4 right-4 border-0 justify-center">
-      <Alert variant={variant} className="border-0 w-auto">
-        <CloseButton onClick={dismissAlert} size="lg" className="absolute top-1 right-1" />
+    <div className="fixed z-2000 pointer-events-auto bottom-4 in-[#appLayout]:max-sm:bottom-20 left-4 right-4 justify-center">
+      <Alert variant={variant} className="w-auto">
+        <CloseButton onClick={dismissAlert} size="lg" className="absolute top-1.5 right-1.5" />
         <Icon size={16} />
         <AlertDescription className="pr-8 font-light">
           {getTitle()}

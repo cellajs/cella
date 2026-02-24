@@ -45,31 +45,42 @@ BEGIN
     RETURN;
   END IF;
 
+  -- 1. Create or update publication
   BEGIN
-    -- Create publication for tracked tables (excludes 'activities' to prevent loops)
     IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = '${CDC_PUBLICATION_NAME}') THEN
       CREATE PUBLICATION ${CDC_PUBLICATION_NAME} FOR TABLE ${tableList};
       RAISE NOTICE 'Created publication ${CDC_PUBLICATION_NAME}';
     ELSE
-      RAISE NOTICE 'Publication ${CDC_PUBLICATION_NAME} already exists';
+      -- Publication exists — ensure all tracked tables are included
+      RAISE NOTICE 'Publication ${CDC_PUBLICATION_NAME} already exists, syncing tables...';
+${trackedTableNames.map((table) => `      BEGIN ALTER PUBLICATION ${CDC_PUBLICATION_NAME} ADD TABLE ${table}; EXCEPTION WHEN duplicate_object THEN NULL; END;`).join('\n')}
+      RAISE NOTICE 'Publication tables synced';
     END IF;
+  EXCEPTION WHEN OTHERS THEN
+    RAISE WARNING 'Publication setup failed: % (SQLSTATE: %)', SQLERRM, SQLSTATE;
+  END;
 
-    -- Set REPLICA IDENTITY FULL to get old row values on UPDATE/DELETE
+  -- 2. Set REPLICA IDENTITY FULL (separate block)
+  BEGIN
 ${trackedTableNames.map((table) => `    ALTER TABLE ${table} REPLICA IDENTITY FULL;`).join('\n')}
+    RAISE NOTICE 'REPLICA IDENTITY FULL set on all tracked tables';
+  EXCEPTION WHEN OTHERS THEN
+    RAISE WARNING 'REPLICA IDENTITY setup failed: % (SQLSTATE: %)', SQLERRM, SQLSTATE;
+  END;
 
-    -- Create replication slot (requires superuser/REPLICATION attribute).
-    -- Created here under admin so cdc_role doesn't need elevated privileges at startup.
+  -- 3. Create replication slot (separate block - may fail on managed providers)
+  BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_replication_slots WHERE slot_name = '${CDC_SLOT_NAME}') THEN
       PERFORM pg_create_logical_replication_slot('${CDC_SLOT_NAME}', 'pgoutput');
       RAISE NOTICE 'Created replication slot ${CDC_SLOT_NAME}';
     ELSE
       RAISE NOTICE 'Replication slot ${CDC_SLOT_NAME} already exists';
     END IF;
-
-    RAISE NOTICE 'CDC setup complete.';
   EXCEPTION WHEN OTHERS THEN
-    RAISE NOTICE 'CDC setup failed: %. Skipping - CDC will not be available.', SQLERRM;
+    RAISE WARNING 'Replication slot setup failed: % (SQLSTATE: %). Worker will create it at startup.', SQLERRM, SQLSTATE;
   END;
+
+  RAISE NOTICE 'CDC setup complete.';
 END $$;
 `;
 

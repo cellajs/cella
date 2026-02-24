@@ -3,7 +3,6 @@ import { BookOpenIcon, InfoIcon, LifeBuoyIcon, MailIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { AlertWrap } from '~/modules/common/alert-wrap';
 import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
 import { handleAskForHelp } from '~/modules/common/error-notice';
@@ -11,6 +10,7 @@ import { OfflineAccessSwitch } from '~/modules/navigation/menu-sheet/offline-acc
 import { buttonVariants } from '~/modules/ui/button';
 import { Switch } from '~/modules/ui/switch';
 import { useNavigationStore } from '~/store/navigation';
+import { useUIStore } from '~/store/ui';
 import { cn } from '~/utils/cn';
 
 const pwaEnabled = appConfig.has.pwa;
@@ -20,7 +20,6 @@ const pwaEnabled = appConfig.has.pwa;
  */
 export const SettingsSheet = () => {
   const { t } = useTranslation();
-  const isDesktop = useBreakpoints('min', 'xl', true);
   const supportRef = useRef<HTMLButtonElement | null>(null);
   const contactRef = useRef<HTMLButtonElement | null>(null);
 
@@ -31,19 +30,37 @@ export const SettingsSheet = () => {
 
   const showDesktopMenuOption = appConfig.menuStructure.some(({ subentityType }) => subentityType);
 
-  return (
-    <div className="w-full py-3 px-3 min-h-[calc(100vh-0.5rem)] flex flex-col">
-      {/* Usage settings */}
-      <h2 className="text-lg font-semibold mb-4 px-2 py-1.5">{t('common:usage_settings')}</h2>
+  const { mode, setMode } = useUIStore();
+  const hasThemeColors = Object.keys(appConfig.theme.colors).length > 0;
 
-      {/* Menu */}
-      <div className={cn('flex flex-col gap-4 mx-2 mb-6', !showDesktopMenuOption && 'max-xl:hidden')}>
-        <h3 className="text-sm font-medium text-muted-foreground/70 lowercase">{t('common:menu')}</h3>
-        <div className="max-xl:hidden flex items-center gap-4 ml-1">
+  return (
+    <div className="w-full bg-card py-3 px-3 min-h-screen flex flex-col">
+      {/* Usage settings */}
+      <h2 className="text-lg font-semibold mb-4 px-2 py-1.5">{t('common:preferences')}</h2>
+
+      {/* Appearance */}
+      <div
+        className={cn('flex flex-col gap-4 mx-2 mb-6', !showDesktopMenuOption && !hasThemeColors && 'max-xl:hidden')}
+      >
+        <h3 className="text-sm font-medium text-muted-foreground/70 lowercase px-4">{t('common:appearance')}</h3>
+
+        <div className="flex items-center gap-4 px-4">
+          <Switch
+            id="darkMode"
+            checked={mode === 'dark'}
+            onCheckedChange={(checked) => setMode(checked ? 'dark' : 'light')}
+            aria-label={t('common:dark_mode')}
+          />
+          <label htmlFor="darkMode" className="cursor-pointer select-none text-sm font-medium leading-none">
+            {t('common:dark_mode')}
+          </label>
+        </div>
+
+        <div className="max-xl:hidden flex items-center gap-4 px-4">
           <Switch
             id="keepNavOpen"
             checked={keepOpenPreference}
-            onCheckedChange={(checked) => toggleKeepOpenPreference(checked, isDesktop)}
+            onCheckedChange={(checked) => toggleKeepOpenPreference(checked)}
             aria-label={t('common:keep_nav_open')}
           />
           <label htmlFor="keepNavOpen" className="cursor-pointer select-none text-sm font-medium leading-none">
@@ -51,7 +68,7 @@ export const SettingsSheet = () => {
           </label>
         </div>
         {showDesktopMenuOption && (
-          <div className="flex items-center gap-4 ml-1">
+          <div className="flex items-center gap-4 px-4">
             <Switch
               id="detailedMenu"
               checked={detailedMenu}
@@ -69,7 +86,7 @@ export const SettingsSheet = () => {
       {pwaEnabled && (
         <>
           <div className="flex flex-col gap-4 mx-2">
-            <h3 className="text-sm font-medium text-muted-foreground/70 lowercase">{t('common:offline')}</h3>
+            <h3 className="text-sm font-medium text-muted-foreground/70 lowercase px-4">{t('common:offline')}</h3>
             <OfflineAccessSwitch />
             <AlertWrap id="offline_access" variant="plain" icon={InfoIcon}>
               {t('common:offline_access.text')}
@@ -80,7 +97,7 @@ export const SettingsSheet = () => {
 
       {/* Support options */}
       <div className="flex flex-col gap-1 mt-auto mx-2 pt-6">
-        <h3 className="text-sm font-medium text-muted-foreground/70 lowercase mb-2">{t('common:support')}</h3>
+        <h3 className="text-sm font-medium text-muted-foreground/70 lowercase mb-2 px-4">{t('common:support')}</h3>
         <Link
           to="/docs"
           draggable="false"

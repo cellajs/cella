@@ -243,7 +243,7 @@
   "items": "Items",
   "join": "Join",
   "joined": "Joined",
-  "keep_nav_open": "Keep open",
+  "keep_nav_open": "Keep menu open",
   "language": "Language",
   "last_edited": "Last edited",
   "languages": "Languages",
@@ -297,7 +297,7 @@
   "more_sessions": "More sessions",
   "mute": "Mute",
   "my_account": "My account",
-  "my_account.text": "Update your account settings and preferences",
+  "my_account.text": "Manage your account and authentication settings.",
   "name": "Name",
   "new_passkey": "New passkey",
   "new_password": "New password",
@@ -617,5 +617,7 @@
   "year": "year",
   "your_repositories": "Your repositories",
   "your_role": "Your role",
-  "usage_settings": "Usage settings"
+  "preferences": "Preferences",
+  "appearance": "Appearance",
+  "dark_mode": "Dark mode"
 }

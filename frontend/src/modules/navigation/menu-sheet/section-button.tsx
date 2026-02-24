@@ -36,8 +36,8 @@ export const MenuSectionButton = ({
 
   return (
     <StickyBox className="z-10">
-      <div className="flex items-center z-10 py-3 pb-1 bg-background">
-        <motion.div layout transition={{ bounce: 0, duration: 0.2 }} className="flex items-center w-full">
+      <div className="flex items-center z-10 py-3 pb-1 bg-card">
+        <motion.div layout="size" transition={{ bounce: 0, duration: 0.2 }} className="flex items-center w-full">
           {/* Main section toggle button */}
           <Button
             onClick={() => toggleSection(options.entityType)}
@@ -45,7 +45,7 @@ export const MenuSectionButton = ({
             variant="secondary"
             asChild
           >
-            <motion.button layout transition={{ bounce: 0, duration: 0.2 }}>
+            <motion.button layout="size" transition={{ bounce: 0, duration: 0.2 }}>
               <div className="flex items-center">
                 <span className="flex items-center">{t(options.label)}</span>
                 {/* Item count badge */}

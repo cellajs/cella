@@ -57,6 +57,9 @@ export function useCalculatedColumns<R, SR>({
   const defaultResizable = defaultColumnOptions?.resizable ?? false;
   const defaultDraggable = defaultColumnOptions?.draggable ?? false;
 
+  // Disable resizing on mobile breakpoints (xs, sm) since it's not useful on touch devices
+  const isMobile = currentBreakpoint === 'xs' || currentBreakpoint === 'sm';
+
   const { columns, colSpanColumns, lastFrozenColumnIndex, headerRowsCount, subColumns } = useMemo((): {
     readonly columns: readonly CalculatedColumn<R, SR>[];
     readonly colSpanColumns: readonly CalculatedColumn<R, SR>[];
@@ -109,7 +112,7 @@ export function useCalculatedColumns<R, SR>({
           minWidth: rawColumn.minWidth ?? defaultMinWidth,
           maxWidth: rawColumn.maxWidth ?? defaultMaxWidth,
           sortable: rawColumn.sortable ?? defaultSortable,
-          resizable: rawColumn.resizable ?? defaultResizable,
+          resizable: isMobile ? false : (rawColumn.resizable ?? defaultResizable),
           draggable: rawColumn.draggable ?? defaultDraggable,
           renderCell: rawColumn.renderCell ?? defaultRenderCell,
           renderHeaderCell: rawColumn.renderHeaderCell ?? defaultRenderHeaderCell,
