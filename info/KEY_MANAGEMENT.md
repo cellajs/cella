@@ -105,6 +105,207 @@ export function decryptPrivateKey(encryptedData: string): string {
 }
 ```
 
+## Secret Manager Options
+
+The `SIGNING_KEY_SECRET` can be stored in different ways depending on your security requirements.
+
+### Option 1: Environment Variable (Default)
+
+```bash
+# .env or server environment
+SIGNING_KEY_SECRET=your-32-byte-base64-encoded-secret
+```
+
+| Pros | Cons |
+|------|------|
+| Simple setup | Secret in plaintext on server |
+| No external dependencies | No audit trail |
+| Works everywhere | Manual rotation |
+
+**Best for**: Development, small deployments, single-server setups.
+
+### Option 2: External Secret Manager
+
+Store `SIGNING_KEY_SECRET` in a managed secret service and fetch at runtime.
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                       Secret Manager                                 │
+│            (Scaleway, AWS, HashiCorp Vault, etc.)                   │
+│                                                                      │
+│  - Hardware-backed encryption (HSM)                                 │
+│  - Access control via IAM                                           │
+│  - Audit logging                                                    │
+│  - Version history                                                  │
+└──────────────────────────────┬──────────────────────────────────────┘
+                               │ Fetch at startup
+                               ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                          Cella Backend                               │
+│                                                                      │
+│  SIGNING_KEY_SECRET = await secretManager.get('signing-key-secret') │
+│  // Then decrypt private keys from database as normal               │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+| Pros | Cons |
+|------|------|
+| No secrets in env files | Added latency (mitigated by caching) |
+| Hardware-backed encryption | External dependency |
+| Audit logging & compliance | Cost per secret/access |
+| Centralized management | Vendor lock-in |
+| Fine-grained access control | More complex setup |
+
+**Best for**: Production, multi-environment, compliance requirements (SOC2, HIPAA).
+
+### Supported Secret Managers
+
+#### Scaleway Secret Manager
+
+```typescript
+import { SecretManager } from '@scaleway/sdk'
+
+const client = new SecretManager({
+  accessKey: process.env.SCW_ACCESS_KEY,
+  secretKey: process.env.SCW_SECRET_KEY,
+  projectId: process.env.SCW_PROJECT_ID,
+})
+
+async function getSecret(name: string): Promise<string> {
+  const secret = await client.accessSecretVersion({
+    secretId: name,
+    revision: 'latest',
+  })
+  return Buffer.from(secret.data, 'base64').toString('utf-8')
+}
+```
+
+#### AWS Secrets Manager
+
+```typescript
+import { SecretsManager } from '@aws-sdk/client-secrets-manager'
+
+const client = new SecretsManager({ region: 'eu-west-1' })
+
+async function getSecret(name: string): Promise<string> {
+  const response = await client.getSecretValue({ SecretId: name })
+  return response.SecretString!
+}
+```
+
+#### HashiCorp Vault
+
+```typescript
+import Vault from 'node-vault'
+
+const vault = Vault({
+  endpoint: process.env.VAULT_ADDR,
+  token: process.env.VAULT_TOKEN,
+})
+
+async function getSecret(path: string): Promise<string> {
+  const { data } = await vault.read(`secret/data/${path}`)
+  return data.data.value
+}
+```
+
+### Implementation Pattern
+
+Make the secret source configurable:
+
+```typescript
+// backend/src/lib/secrets/index.ts
+
+type SecretProvider = 'env' | 'scaleway' | 'aws' | 'vault'
+
+interface SecretsConfig {
+  provider: SecretProvider
+  // Provider-specific options
+  scaleway?: { projectId: string }
+  aws?: { region: string }
+  vault?: { endpoint: string }
+}
+
+export async function getSigningKeySecret(): Promise<string> {
+  const provider = config.secrets?.provider || 'env'
+  
+  switch (provider) {
+    case 'scaleway':
+      return await scaleway.getSecret('cella/signing-key-secret')
+    case 'aws':
+      return await aws.getSecret('cella/signing-key-secret')
+    case 'vault':
+      return await vault.getSecret('cella/signing-key-secret')
+    case 'env':
+    default:
+      const secret = process.env.SIGNING_KEY_SECRET
+      if (!secret) throw new Error('SIGNING_KEY_SECRET not set')
+      return secret
+  }
+}
+
+// On application startup
+export async function initializeSecrets(): Promise<void> {
+  // Fetch and cache the master encryption key
+  const signingKeySecret = await getSigningKeySecret()
+  
+  // Store in memory (not process.env for security)
+  secretsCache.set('SIGNING_KEY_SECRET', signingKeySecret)
+  
+  console.log(`Secrets initialized from provider: ${config.secrets?.provider || 'env'}`)
+}
+```
+
+### Configuration
+
+```typescript
+// cella.config.ts
+export default {
+  secrets: {
+    // 'env' | 'scaleway' | 'aws' | 'vault'
+    provider: process.env.SECRETS_PROVIDER || 'env',
+    
+    // Scaleway-specific
+    scaleway: {
+      projectId: process.env.SCW_PROJECT_ID,
+    },
+    
+    // AWS-specific
+    aws: {
+      region: process.env.AWS_REGION || 'eu-west-1',
+    },
+    
+    // Vault-specific
+    vault: {
+      endpoint: process.env.VAULT_ADDR,
+    },
+  },
+}
+```
+
+### When to Use What
+
+| Scenario | Recommendation |
+|----------|----------------|
+| Local development | Environment variable |
+| Single production server | Environment variable (secure the server) |
+| Multi-environment (dev/staging/prod) | Secret manager for easier management |
+| Multiple services | Secret manager for centralization |
+| Compliance requirements (SOC2, HIPAA) | Secret manager for audit trail |
+| High-security (financial, healthcare) | Secret manager + consider HSM |
+| Kubernetes/container orchestration | K8s Secrets or external secret manager |
+
+### Cost Considerations
+
+| Provider | Pricing (approximate) |
+|----------|----------------------|
+| Scaleway | ~€0.10/secret/month + €0.03/10k accesses |
+| AWS Secrets Manager | ~$0.40/secret/month + $0.05/10k accesses |
+| HashiCorp Vault | Self-hosted (free) or Cloud (~$0.03/secret/hour) |
+| Environment variable | Free |
+
+For Cella with ~5 secrets accessed at startup, expect ~€1-5/month on managed services.
+
 ## Database Schema
 
 ```typescript
