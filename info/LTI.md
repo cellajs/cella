@@ -184,15 +184,31 @@ interface DeepLinkingClaim {
 | 3 | Cella as Consumer | Medium |
 | 4 | LTI Advantage for Consumer | Low |
 
+## Key Management (shared)
+
+Both LTI roles share the same signing key infrastructure. Keys are **auto-generated** on startup - no manual certificate creation needed.
+
+```
+ACTIVE (30 days) → DEPRECATED (7 days grace) → REMOVED
+```
+
+- **Private keys**: Encrypted at rest (AES-256-GCM) with master key from environment
+- **JWKS endpoint**: `/.well-known/jwks.json?use=lti` serves public keys
+- **Rotation**: Automatic background job handles key lifecycle
+- **Admin controls**: Manual deprecate, revoke, or generate keys
+
+See [KEY_MANAGEMENT.md](./KEY_MANAGEMENT.md) for full implementation details.
+
 ## Security Considerations
 
 See role-specific documents for detailed security requirements:
 - JWT validation, nonce handling, state management
-- Key rotation and JWKS serving
+- Key rotation and JWKS serving (see above)
 - Session binding and context isolation
 
 ## Related Documentation
 
+- [KEY_MANAGEMENT.md](./KEY_MANAGEMENT.md) - RSA key generation, rotation, and encryption
 - [IMS Global LTI 1.3 Specification](https://www.imsglobal.org/spec/lti/v1p3/)
 - [LTI Advantage](https://www.imsglobal.org/lti-advantage-overview)
 - [LMS Integration](./LMS.md) - For direct LMS API integration (separate from LTI)
@@ -202,6 +218,5 @@ See role-specific documents for detailed security requirements:
 1. **User linking strategy**: Auto-create users on first LTI launch, or require pre-registration?
 2. **Role mapping**: How to map LTI roles to Cella membership roles?
 3. **Multi-organization**: How to handle launches that target different organizations?
-4. **Key storage**: Environment variables vs database vs external KMS?
-5. **State store**: Database vs Redis for production?
+4. **State store**: Database vs Redis for production?
 

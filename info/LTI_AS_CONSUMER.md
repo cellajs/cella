@@ -170,62 +170,48 @@ export const ltiResourceLinks = pgTable('lti_resource_links', {
 
 ## Key Management
 
-As a platform, Cella needs to **sign JWTs** that tools will validate.
+As a platform, Cella needs to **sign JWTs** that tools will validate. Keys are **auto-generated** on startup - no manual certificate creation required.
 
-### Key Storage Options
+### Overview
 
-| Option | Pros | Cons |
-|--------|------|------|
-| Environment variables | Simple, secure | No rotation without restart |
-| Database | Rotation support, multiple keys | Need to encrypt at rest |
-| External KMS | Best security | Infrastructure dependency |
-
-### Key Rotation
-
-```typescript
-export const ltiPlatformKeys = pgTable('lti_platform_keys', {
-  id: varchar('id', { length: nanoidLength }).primaryKey(),
-  
-  // Key material
-  publicKey: text('public_key').notNull(),
-  privateKey: text('private_key').notNull(),  // Encrypted at rest
-  algorithm: varchar('algorithm', { length: 16 }).default('RS256'),
-  
-  // Key lifecycle
-  isPrimary: boolean('is_primary').default(false),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  expiresAt: timestamp('expires_at'),
-  revokedAt: timestamp('revoked_at'),
-});
+```
+ACTIVE (30 days) → DEPRECATED (7 days grace) → REMOVED
 ```
 
-Rotation strategy:
-1. Generate new key pair
-2. Mark new key as primary
-3. Keep old key active for grace period (tools cache JWKS)
-4. Remove old key from JWKS after grace period
+| State | Signs tokens | Verifies tokens | In JWKS |
+|-------|--------------|-----------------|---------|
+| **Active** | ✅ (primary only) | ✅ | ✅ |
+| **Deprecated** | ❌ | ✅ | ✅ |
+| **Removed** | ❌ | ❌ | ❌ |
 
-### JWKS Endpoint
+### Key Features
+
+- **Auto-generation**: 2-3 RSA keys created on startup if none exist
+- **Encrypted storage**: Private keys encrypted at rest (AES-256-GCM)
+- **Environment variable**: Requires `SIGNING_KEY_SECRET` for encryption
+- **Automatic rotation**: Background job handles deprecation and removal
+- **Shared JWKS**: `/.well-known/jwks.json?use=lti` serves public keys
+- **Admin controls**: Manual deprecate, revoke, or generate keys
+
+### LTI-Specific Usage
 
 ```typescript
-// GET /.well-known/jwks.json
-app.get('/.well-known/jwks.json', async (ctx) => {
-  const keys = await db.query.ltiPlatformKeys.findMany({
-    where: isNull(ltiPlatformKeys.revokedAt)
-  })
+// Sign id_token with primary LTI key
+async function signLtiToken(claims: LtiClaims): Promise<string> {
+  const { id, privateKey } = await getPrimarySigningKey('lti')
   
-  return ctx.json({
-    keys: keys.map(key => ({
-      kty: 'RSA',
-      alg: 'RS256',
-      use: 'sig',
-      kid: key.id,
-      n: extractModulus(key.publicKey),
-      e: extractExponent(key.publicKey),
-    }))
+  return jwt.sign(claims, privateKey, {
+    algorithm: 'RS256',
+    keyid: id,  // kid header for tools to find correct key
   })
-})
+}
 ```
+
+See [KEY_MANAGEMENT.md](./KEY_MANAGEMENT.md) for full implementation details including:
+- Database schema (`signing_keys` table)
+- Encryption implementation
+- Rotation logic
+- Admin API endpoints
 
 ## Building the id_token
 
@@ -466,10 +452,13 @@ app.post('/lti/platform/deep-link/callback', async (ctx) => {
   - [ ] Build and sign id_token
   - [ ] Auto-submit form to tool
 
-- [ ] Key management
-  - [ ] Generate RSA key pair
-  - [ ] Store keys (database or env)
-  - [ ] Serve JWKS endpoint
+- [ ] Key management (see [KEY_MANAGEMENT.md](./KEY_MANAGEMENT.md))
+  - [ ] `signing_keys` table with purpose tagging
+  - [ ] Auto-generate keys on startup (`purpose: 'lti'`)
+  - [ ] Private key encryption (AES-256-GCM)
+  - [ ] `GET /.well-known/jwks.json?use=lti` - Serve public keys
+  - [ ] Background job for rotation
+  - [ ] Admin API for manual controls
 
 ### Phase 2: LTI Advantage
 

@@ -367,9 +367,10 @@ interface Member {
   - [ ] Create session
   - [ ] Redirect to target resource
 
-- [ ] `GET /.well-known/jwks.json` - Serve our public keys
-  - [ ] Generate RSA key pair
-  - [ ] Serve public key in JWKS format
+- [ ] `GET /.well-known/jwks.json?use=lti` - Serve our public keys
+  - [ ] Shared key management (see [KEY_MANAGEMENT.md](./KEY_MANAGEMENT.md))
+  - [ ] Auto-generated keys, encrypted at rest
+  - [ ] Automatic rotation with deprecation lifecycle
 
 - [ ] Platform registration
   - [ ] Database schema
