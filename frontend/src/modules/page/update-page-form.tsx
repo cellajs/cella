@@ -22,8 +22,8 @@ import { Form } from '~/modules/ui/form';
 
 const BlockNoteContentField = lazy(() => import('~/modules/common/form-fields/blocknote-content'));
 
-// Use only the data portion (not the tx wrapper) - body has tx embedded directly
-const formSchema = zUpdatePageData.shape.body.omit({ stx: true });
+// Pick only the fields this form manages
+const formSchema = zUpdatePageData.shape.body.pick({ name: true, description: true });
 
 type FormValues = z.infer<typeof formSchema>;
 

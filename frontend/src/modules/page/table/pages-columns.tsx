@@ -3,6 +3,7 @@ import { CloudIcon, CloudOffIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Page } from '~/api.gen';
+import { zPage } from '~/api.gen/zod.gen';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
 import { HeaderCell } from '~/modules/common/data-table/header-cell';
@@ -11,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~
 import { UserCellById } from '~/modules/user/user-cell';
 import { dateShort } from '~/utils/date-short';
 
-const pageStatuses = ['unpublished', 'published', 'archived'] as const;
+const pageStatuses = zPage.shape.status.options;
 
 /** Check if a page is local-only (not yet synced to server) */
 function isLocalPage(page: Page) {
@@ -42,13 +43,6 @@ export function usePagesTableColumns(isCompact: boolean) {
           params={{ id: row.id }}
           className="flex space-x-2 items-center outline-0 ring-0 group"
         >
-          {/* <AvatarWrap
-            type="organization"
-            className="h-8 w-8 group-active:translate-y-[.05rem]"
-            id={row.id}
-            name={row.name}
-            url={row.thumbnailUrl}
-          /> */}
           <span className="group-hover:underline underline-offset-3 decoration-foreground/20 group-active:decoration-foreground/50 group-active:translate-y-[.05rem] truncate font-medium">
             {row.name}
           </span>
@@ -122,6 +116,7 @@ export function usePagesTableColumns(isCompact: boolean) {
       minWidth: isCompact ? null : 120,
       width: isCompact ? 50 : null,
       renderHeaderCell: HeaderCell,
+      // TODO revisit user cell since often no avatar
       renderCell: ({ row, tabIndex }) => <UserCellById userId={row.createdBy} cacheOnly={false} tabIndex={tabIndex} />,
     },
     {

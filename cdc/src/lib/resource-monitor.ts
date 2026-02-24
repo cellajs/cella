@@ -2,6 +2,7 @@ import { execSync } from 'node:child_process';
 import { sql } from 'drizzle-orm';
 import { CDC_SLOT_NAME, RESOURCE_LIMITS } from '../constants';
 import { cdcDb } from '../db';
+import { getErrorMessage } from './get-error-message';
 import { logEvent } from '../pino';
 
 const { wal: WAL, startup } = RESOURCE_LIMITS;
@@ -42,8 +43,7 @@ export async function getWalBytes(): Promise<number | null> {
     // pg_wal_lsn_diff returns bytes as bigint
     return Number(result.rows[0].pg_wal_lsn_diff);
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    logEvent('error', `${LOG_PREFIX} Failed to query WAL bytes`, { error: errorMessage });
+    logEvent('error', `${LOG_PREFIX} Failed to query WAL bytes`, { error: getErrorMessage(error) });
     return null;
   }
 }
@@ -99,7 +99,7 @@ export async function configureWalLimits(): Promise<void> {
   } catch (err) {
     // Expected to fail if cdc_role lacks superuser privilege - log and continue
     logEvent('warn', `${LOG_PREFIX} Could not configure WAL limits (requires superuser)`, {
-      error: err instanceof Error ? err.message : String(err),
+      error: getErrorMessage(err),
     });
   }
 }

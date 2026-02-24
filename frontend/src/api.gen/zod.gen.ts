@@ -9,11 +9,11 @@ export const zUserBase = z.object({
   id: z.string(),
   name: z.string(),
   createdAt: z.string(),
-  modifiedAt: z.union([z.string(), z.null()]),
+  modifiedAt: z.string().nullable(),
   slug: z.string(),
-  thumbnailUrl: z.union([z.string(), z.null()]),
-  bannerUrl: z.union([z.string(), z.null()]),
-  description: z.union([z.string(), z.null()]),
+  thumbnailUrl: z.string().nullable(),
+  bannerUrl: z.string().nullable(),
+  description: z.string().nullable(),
   email: z.email(),
   entityType: z.enum(['user']),
 });
@@ -25,12 +25,12 @@ export const zContextEntityBase = z.object({
   id: z.string(),
   name: z.string(),
   createdAt: z.string(),
-  modifiedAt: z.union([z.string(), z.null()]),
+  modifiedAt: z.string().nullable(),
   tenantId: z.string(),
   entityType: z.enum(['organization']),
   slug: z.string(),
-  thumbnailUrl: z.union([z.string(), z.null()]),
-  bannerUrl: z.union([z.string(), z.null()]),
+  thumbnailUrl: z.string().nullable(),
+  bannerUrl: z.string().nullable(),
 });
 
 /**
@@ -63,14 +63,14 @@ export const zStxBase = z.object({
  */
 export const zStreamNotification = z.object({
   action: z.enum(['create', 'update', 'delete']),
-  entityType: z.nullable(z.enum(['attachment', 'page'])),
-  resourceType: z.nullable(z.enum(['request', 'membership', 'inactive_membership', 'tenant'])),
+  entityType: z.enum(['attachment', 'page']).nullable(),
+  resourceType: z.enum(['request', 'membership', 'inactive_membership', 'tenant']).nullable(),
   entityId: z.string(),
-  organizationId: z.union([z.string(), z.null()]),
-  contextType: z.nullable(z.enum(['organization'])),
-  seq: z.union([z.int(), z.null()]),
-  stx: zStxBase.and(z.union([z.record(z.string(), z.unknown()), z.null()])),
-  cacheToken: z.union([z.string(), z.null()]),
+  organizationId: z.string().nullable(),
+  contextType: z.enum(['organization']).nullable(),
+  seq: z.int().nullable(),
+  stx: zStxBase.and(z.record(z.string(), z.unknown())).nullable(),
+  cacheToken: z.string().nullable(),
 });
 
 /**
@@ -79,9 +79,9 @@ export const zStreamNotification = z.object({
 export const zActivityError = z.object({
   lsn: z.string(),
   message: z.string(),
-  code: z.optional(z.union([z.string(), z.null()])),
+  code: z.string().nullish(),
   retryCount: z.number(),
-  resolved: z.optional(z.boolean()),
+  resolved: z.boolean().optional(),
 });
 
 /**
@@ -93,13 +93,13 @@ export const zApiError = z.object({
   type: z.string(),
   status: z.int().gte(400).lte(599),
   severity: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']),
-  entityType: z.optional(z.enum(['user', 'organization', 'attachment', 'page'])),
-  logId: z.optional(z.string()),
-  path: z.optional(z.string()),
-  method: z.optional(z.string()),
-  timestamp: z.optional(z.string()),
-  userId: z.optional(z.string()),
-  organizationId: z.optional(z.string()),
+  entityType: z.enum(['user', 'organization', 'attachment', 'page']).optional(),
+  logId: z.string().optional(),
+  path: z.string().optional(),
+  method: z.string().optional(),
+  timestamp: z.string().optional(),
+  userId: z.string().optional(),
+  organizationId: z.string().optional(),
 });
 
 /**
@@ -107,7 +107,7 @@ export const zApiError = z.object({
  */
 export const zBadRequestError = zApiError.and(
   z.object({
-    status: z.optional(z.literal(400)),
+    status: z.literal(400).optional(),
   }),
 );
 
@@ -116,7 +116,7 @@ export const zBadRequestError = zApiError.and(
  */
 export const zUnauthorizedError = zApiError.and(
   z.object({
-    status: z.optional(z.literal(401)),
+    status: z.literal(401).optional(),
   }),
 );
 
@@ -125,7 +125,7 @@ export const zUnauthorizedError = zApiError.and(
  */
 export const zForbiddenError = zApiError.and(
   z.object({
-    status: z.optional(z.literal(403)),
+    status: z.literal(403).optional(),
   }),
 );
 
@@ -134,7 +134,7 @@ export const zForbiddenError = zApiError.and(
  */
 export const zNotFoundError = zApiError.and(
   z.object({
-    status: z.optional(z.literal(404)),
+    status: z.literal(404).optional(),
   }),
 );
 
@@ -143,7 +143,7 @@ export const zNotFoundError = zApiError.and(
  */
 export const zTooManyRequestsError = zApiError.and(
   z.object({
-    status: z.optional(z.literal(429)),
+    status: z.literal(429).optional(),
   }),
 );
 
@@ -152,20 +152,20 @@ export const zTooManyRequestsError = zApiError.and(
  */
 export const zActivity = z.object({
   id: z.string().max(50),
-  tenantId: z.union([z.string().max(24), z.null()]),
-  userId: z.union([z.string().max(50), z.null()]),
-  entityType: z.nullable(z.enum(['user', 'organization', 'attachment', 'page'])),
-  resourceType: z.nullable(z.enum(['request', 'membership', 'inactive_membership', 'tenant'])),
+  tenantId: z.string().max(24).nullable(),
+  userId: z.string().max(50).nullable(),
+  entityType: z.enum(['user', 'organization', 'attachment', 'page']).nullable(),
+  resourceType: z.enum(['request', 'membership', 'inactive_membership', 'tenant']).nullable(),
   action: z.enum(['create', 'update', 'delete']),
   tableName: z.string().max(255),
   type: z.string().max(255),
-  entityId: z.union([z.string().max(50), z.null()]),
-  organizationId: z.union([z.string().max(50), z.null()]),
+  entityId: z.string().max(50).nullable(),
+  organizationId: z.string().max(50).nullable(),
   createdAt: z.string(),
-  changedKeys: z.union([z.array(z.string()), z.null()]),
-  stx: z.union([zStxBase, z.null()]),
-  seq: z.union([z.int().gte(-2147483648).lte(2147483647), z.null()]),
-  error: z.union([zActivityError, z.null()]),
+  changedKeys: z.array(z.string()).nullable(),
+  stx: zStxBase.nullable(),
+  seq: z.int().gte(-2147483648).lte(2147483647).nullable(),
+  error: zActivityError.nullable(),
 });
 
 /**
@@ -176,24 +176,24 @@ export const zUser = z.object({
   id: z.string().max(50),
   entityType: z.enum(['user']),
   name: z.string().max(255),
-  description: z.union([z.string(), z.null()]),
+  description: z.string().nullable(),
   slug: z.string().max(255),
-  thumbnailUrl: z.union([z.string().max(2048), z.null()]),
-  bannerUrl: z.union([z.string().max(2048), z.null()]),
+  thumbnailUrl: z.string().max(2048).nullable(),
+  bannerUrl: z.string().max(2048).nullable(),
   email: z.email(),
   mfaRequired: z.boolean(),
-  firstName: z.union([z.string().max(255), z.null()]),
-  lastName: z.union([z.string().max(255), z.null()]),
+  firstName: z.string().max(255).nullable(),
+  lastName: z.string().max(255).nullable(),
   language: z.enum(['en', 'nl']),
   newsletter: z.boolean(),
   userFlags: z.object({
     finishedOnboarding: z.boolean(),
   }),
-  modifiedAt: z.union([z.string(), z.null()]),
-  modifiedBy: z.union([z.string().max(50), z.null()]),
-  lastSeenAt: z.union([z.string(), z.null()]),
-  lastStartedAt: z.union([z.string(), z.null()]),
-  lastSignInAt: z.union([z.string(), z.null()]),
+  modifiedAt: z.string().nullable(),
+  modifiedBy: z.string().max(50).nullable(),
+  lastSeenAt: z.string().nullable(),
+  lastStartedAt: z.string().nullable(),
+  lastSignInAt: z.string().nullable(),
 });
 
 /**
@@ -216,10 +216,10 @@ export const zMeAuthData = z.object({
       id: z.string().max(50),
       type: z.enum(['regular', 'impersonation', 'mfa']),
       userId: z.string().max(50),
-      deviceName: z.union([z.string().max(255), z.null()]),
+      deviceName: z.string().max(255).nullable(),
       deviceType: z.enum(['desktop', 'mobile']),
-      deviceOs: z.union([z.string().max(255), z.null()]),
-      browser: z.union([z.string().max(255), z.null()]),
+      deviceOs: z.string().max(255).nullable(),
+      browser: z.string().max(255).nullable(),
       authStrategy: z.enum(['github', 'google', 'microsoft', 'password', 'passkey', 'totp', 'email']),
       createdAt: z.string(),
       expiresAt: z.string(),
@@ -230,10 +230,10 @@ export const zMeAuthData = z.object({
     z.object({
       id: z.string().max(50),
       userId: z.string().max(50),
-      deviceName: z.union([z.string().max(255), z.null()]),
+      deviceName: z.string().max(255).nullable(),
       deviceType: z.enum(['desktop', 'mobile']),
-      deviceOs: z.union([z.string().max(255), z.null()]),
-      browser: z.union([z.string().max(255), z.null()]),
+      deviceOs: z.string().max(255).nullable(),
+      browser: z.string().max(255).nullable(),
       nameOnDevice: z.string().max(255),
       createdAt: z.string(),
     }),
@@ -249,10 +249,10 @@ export const zInactiveMembership = z.object({
   tenantId: z.string().max(24),
   contextType: z.enum(['organization']),
   email: z.string().max(255),
-  userId: z.union([z.string().max(50), z.null()]),
-  tokenId: z.union([z.string().max(50), z.null()]),
+  userId: z.string().max(50).nullable(),
+  tokenId: z.string().max(50).nullable(),
   role: z.enum(['admin', 'member']),
-  rejectedAt: z.union([z.string(), z.null()]),
+  rejectedAt: z.string().nullable(),
   createdBy: z.string().max(50),
   organizationId: z.string().max(50),
 });
@@ -264,16 +264,15 @@ export const zUploadToken = z.object({
   public: z.boolean(),
   sub: z.string(),
   s3: z.boolean(),
-  signature: z.union([z.string(), z.null()]),
-  params: z.union([
-    z.object({
+  signature: z.string().nullable(),
+  params: z
+    .object({
       auth: z.object({
         key: z.string(),
-        expires: z.optional(z.string()),
+        expires: z.string().optional(),
       }),
-    }),
-    z.null(),
-  ]),
+    })
+    .nullable(),
 });
 
 /**
@@ -284,7 +283,7 @@ export const zTenant = z.object({
   name: z.string(),
   status: z.enum(['active', 'suspended', 'archived']),
   createdAt: z.string(),
-  modifiedAt: z.union([z.string(), z.null()]),
+  modifiedAt: z.string().nullable(),
 });
 
 /**
@@ -293,7 +292,7 @@ export const zTenant = z.object({
 export const zRequest = z.object({
   createdAt: z.string(),
   id: z.string().max(50),
-  message: z.union([z.string().max(255), z.null()]),
+  message: z.string().max(255).nullable(),
   email: z.string().max(255),
   type: z.enum(['waitlist', 'newsletter', 'contact']),
   wasInvited: z.boolean(),
@@ -308,29 +307,29 @@ export const zOrganization = z.object({
   entityType: z.enum(['organization']),
   tenantId: z.string().max(24),
   name: z.string().max(255),
-  modifiedAt: z.union([z.string(), z.null()]),
+  modifiedAt: z.string().nullable(),
   slug: z.string().max(255),
-  thumbnailUrl: z.union([z.string().max(2048), z.null()]),
-  bannerUrl: z.union([z.string().max(2048), z.null()]),
-  createdBy: z.union([z.string().max(50), z.null()]),
-  modifiedBy: z.union([z.string().max(50), z.null()]),
-  shortName: z.union([z.string().max(255), z.null()]),
-  country: z.union([z.string().max(255), z.null()]),
-  timezone: z.union([z.string().max(255), z.null()]),
+  thumbnailUrl: z.string().max(2048).nullable(),
+  bannerUrl: z.string().max(2048).nullable(),
+  createdBy: z.string().max(50).nullable(),
+  modifiedBy: z.string().max(50).nullable(),
+  shortName: z.string().max(255).nullable(),
+  country: z.string().max(255).nullable(),
+  timezone: z.string().max(255).nullable(),
   defaultLanguage: z.enum(['en', 'nl']),
   languages: z.array(z.enum(['en', 'nl'])).min(1),
-  notificationEmail: z.union([z.string().max(255), z.null()]),
+  notificationEmail: z.string().max(255).nullable(),
   emailDomains: z.array(z.string()),
-  color: z.union([z.string().max(255), z.null()]),
-  logoUrl: z.union([z.string().max(2048), z.null()]),
-  websiteUrl: z.union([z.string().max(2048), z.null()]),
-  welcomeText: z.union([z.string().max(100000), z.null()]),
+  color: z.string().max(255).nullable(),
+  logoUrl: z.string().max(2048).nullable(),
+  websiteUrl: z.string().max(2048).nullable(),
+  welcomeText: z.string().max(1000000).nullable(),
   authStrategies: z.array(z.enum(['github', 'google', 'microsoft', 'password', 'passkey', 'totp', 'email'])),
   chatSupport: z.boolean(),
   included: z.object({
-    membership: z.optional(zMembershipBase),
-    counts: z.optional(
-      z.object({
+    membership: zMembershipBase.optional(),
+    counts: z
+      .object({
         membership: z.object({
           admin: z.number(),
           member: z.number(),
@@ -341,8 +340,8 @@ export const zOrganization = z.object({
           attachment: z.number(),
           page: z.number(),
         }),
-      }),
-    ),
+      })
+      .optional(),
   }),
 });
 
@@ -355,15 +354,15 @@ export const zPage = z.object({
   entityType: z.enum(['page']),
   tenantId: z.string().max(24),
   name: z.string().max(255),
-  modifiedAt: z.union([z.string(), z.null()]),
+  modifiedAt: z.string().nullable(),
   stx: zStxBase,
-  description: z.union([z.string(), z.null()]),
-  keywords: z.string().max(100000),
-  createdBy: z.union([z.string().max(50), z.null()]),
-  modifiedBy: z.union([z.string().max(50), z.null()]),
+  description: z.string().max(1000000).nullable(),
+  keywords: z.string().max(1000000),
+  createdBy: z.string().max(50).nullable(),
+  modifiedBy: z.string().max(50).nullable(),
   status: z.enum(['unpublished', 'published', 'archived']),
   publicAccess: z.boolean(),
-  parentId: z.union([z.string().max(50), z.null()]),
+  parentId: z.string().max(50).nullable(),
   displayOrder: z.number().gte(-140737488355328).lte(140737488355327),
 });
 
@@ -385,22 +384,22 @@ export const zAttachment = z.object({
   entityType: z.enum(['attachment']),
   tenantId: z.string().max(24),
   name: z.string().max(255),
-  modifiedAt: z.union([z.string(), z.null()]),
+  modifiedAt: z.string().nullable(),
   stx: zStxBase,
-  description: z.union([z.string(), z.null()]),
-  keywords: z.string().max(100000),
-  createdBy: z.union([z.string().max(50), z.null()]),
-  modifiedBy: z.union([z.string().max(50), z.null()]),
+  description: z.string().max(1000000).nullable(),
+  keywords: z.string().max(1000000),
+  createdBy: z.string().max(50).nullable(),
+  modifiedBy: z.string().max(50).nullable(),
   public: z.boolean(),
   bucketName: z.string().max(255),
-  groupId: z.union([z.string().max(50), z.null()]),
+  groupId: z.string().max(50).nullable(),
   filename: z.string().max(255),
   contentType: z.string().max(255),
-  convertedContentType: z.union([z.string().max(255), z.null()]),
+  convertedContentType: z.string().max(255).nullable(),
   size: z.string().max(255),
   originalKey: z.string().max(2048),
-  convertedKey: z.union([z.string().max(2048), z.null()]),
-  thumbnailKey: z.union([z.string().max(2048), z.null()]),
+  convertedKey: z.string().max(2048).nullable(),
+  thumbnailKey: z.string().max(2048).nullable(),
   organizationId: z.string().max(50),
 });
 
@@ -415,8 +414,8 @@ export const zMembership = z.object({
   userId: z.string().max(50),
   role: z.enum(['admin', 'member']),
   createdBy: z.string().max(50),
-  modifiedAt: z.union([z.string(), z.null()]),
-  modifiedBy: z.union([z.string().max(50), z.null()]),
+  modifiedAt: z.string().nullable(),
+  modifiedBy: z.string().max(50).nullable(),
   archived: z.boolean(),
   muted: z.boolean(),
   displayOrder: z.number().gte(-140737488355328).lte(140737488355327),
@@ -424,24 +423,24 @@ export const zMembership = z.object({
 });
 
 export const zGetActivitiesData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.optional(
-    z.object({
-      q: z.optional(z.string().max(255)),
-      sort: z.optional(z.enum(['createdAt', 'type', 'tableName'])),
-      order: z.optional(z.enum(['asc', 'desc'])),
-      offset: z.optional(z.string()),
-      limit: z.optional(z.string()),
-      userId: z.optional(z.union([z.string().max(50), z.null()])),
-      entityType: z.optional(z.enum(['user', 'organization', 'attachment', 'page'])),
-      resourceType: z.optional(z.enum(['request', 'membership', 'inactive_membership', 'tenant'])),
-      action: z.optional(z.enum(['create', 'update', 'delete'])),
-      tableName: z.optional(z.string().max(255)),
-      type: z.optional(z.string().max(255)),
-      entityId: z.optional(z.union([z.string().max(50), z.null()])),
-    }),
-  ),
+  body: z.never().optional(),
+  path: z.never().optional(),
+  query: z
+    .object({
+      q: z.string().max(255).optional(),
+      sort: z.enum(['createdAt', 'type', 'tableName']).optional(),
+      order: z.enum(['asc', 'desc']).optional(),
+      offset: z.string().optional(),
+      limit: z.string().optional(),
+      userId: z.string().max(50).nullish(),
+      entityType: z.enum(['user', 'organization', 'attachment', 'page']).optional(),
+      resourceType: z.enum(['request', 'membership', 'inactive_membership', 'tenant']).optional(),
+      action: z.enum(['create', 'update', 'delete']).optional(),
+      tableName: z.string().max(255).optional(),
+      type: z.string().max(255).optional(),
+      entityId: z.string().max(50).nullish(),
+    })
+    .optional(),
 });
 
 /**
@@ -453,9 +452,9 @@ export const zGetActivitiesResponse = z.object({
 });
 
 export const zGetAuthHealthData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  body: z.never().optional(),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 /**
@@ -463,15 +462,15 @@ export const zGetAuthHealthData = z.object({
  */
 export const zGetAuthHealthResponse = z.object({
   restrictedMode: z.boolean(),
-  retryAfter: z.optional(z.number()),
+  retryAfter: z.number().optional(),
 });
 
 export const zCheckEmailData = z.object({
   body: z.object({
     email: z.email(),
   }),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 /**
@@ -480,21 +479,21 @@ export const zCheckEmailData = z.object({
 export const zCheckEmailResponse = z.void();
 
 export const zInvokeTokenData = z.object({
-  body: z.optional(z.never()),
+  body: z.never().optional(),
   path: z.object({
     type: z.enum(['email-verification', 'oauth-verification', 'password-reset', 'invitation', 'confirm-mfa']),
     token: z.string(),
   }),
-  query: z.optional(z.never()),
+  query: z.never().optional(),
 });
 
 export const zGetTokenDataData = z.object({
-  body: z.optional(z.never()),
+  body: z.never().optional(),
   path: z.object({
     type: z.enum(['email-verification', 'oauth-verification', 'password-reset', 'invitation', 'confirm-mfa']),
     id: z.string().max(50),
   }),
-  query: z.optional(z.never()),
+  query: z.never().optional(),
 });
 
 /**
@@ -502,13 +501,13 @@ export const zGetTokenDataData = z.object({
  */
 export const zGetTokenDataResponse = z.object({
   email: z.email(),
-  userId: z.optional(z.string()),
-  inactiveMembershipId: z.optional(z.string()),
+  userId: z.string().optional(),
+  inactiveMembershipId: z.string().optional(),
 });
 
 export const zStartImpersonationData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
+  body: z.never().optional(),
+  path: z.never().optional(),
   query: z.object({
     targetUserId: z.string(),
   }),
@@ -520,9 +519,9 @@ export const zStartImpersonationData = z.object({
 export const zStartImpersonationResponse = z.void();
 
 export const zStopImpersonationData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  body: z.never().optional(),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 /**
@@ -534,15 +533,15 @@ export const zResendInvitationWithTokenData = z.object({
   body: z.union([
     z.object({
       email: z.email(),
-      tokenId: z.optional(z.string()),
+      tokenId: z.string().optional(),
     }),
     z.object({
-      email: z.optional(z.email()),
+      email: z.email().optional(),
       tokenId: z.string(),
     }),
   ]),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 /**
@@ -551,9 +550,9 @@ export const zResendInvitationWithTokenData = z.object({
 export const zResendInvitationWithTokenResponse = z.void();
 
 export const zSignOutData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  body: z.never().optional(),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 /**
@@ -562,9 +561,9 @@ export const zSignOutData = z.object({
 export const zSignOutResponse = z.void();
 
 export const zGenerateTotpKeyData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  body: z.never().optional(),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 /**
@@ -576,9 +575,9 @@ export const zGenerateTotpKeyResponse = z.object({
 });
 
 export const zDeleteTotpData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  body: z.never().optional(),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 /**
@@ -590,16 +589,16 @@ export const zCreateTotpData = z.object({
   body: z.object({
     code: z.string().regex(/^\d{6}$/),
   }),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 export const zSignInWithTotpData = z.object({
   body: z.object({
     code: z.string().regex(/^\d{6}$/),
   }),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 /**
@@ -608,14 +607,14 @@ export const zSignInWithTotpData = z.object({
 export const zSignInWithTotpResponse = z.void();
 
 export const zSignUpData = z.object({
-  body: z.optional(
-    z.object({
+  body: z
+    .object({
       email: z.email(),
       password: z.string().min(8).max(100),
-    }),
-  ),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+    })
+    .optional(),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 export const zSignUpWithTokenData = z.object({
@@ -626,7 +625,7 @@ export const zSignUpWithTokenData = z.object({
   path: z.object({
     tokenId: z.string(),
   }),
-  query: z.optional(z.never()),
+  query: z.never().optional(),
 });
 
 /**
@@ -640,8 +639,8 @@ export const zRequestPasswordData = z.object({
   body: z.object({
     email: z.email(),
   }),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 /**
@@ -656,7 +655,7 @@ export const zCreatePasswordData = z.object({
   path: z.object({
     tokenId: z.string(),
   }),
-  query: z.optional(z.never()),
+  query: z.never().optional(),
 });
 
 /**
@@ -671,8 +670,8 @@ export const zSignInData = z.object({
     email: z.email(),
     password: z.string().min(8).max(100),
   }),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 /**
@@ -680,7 +679,7 @@ export const zSignInData = z.object({
  */
 export const zSignInResponse = z.object({
   emailVerified: z.boolean(),
-  mfa: z.optional(z.boolean()),
+  mfa: z.boolean().optional(),
 });
 
 export const zCreatePasskeyData = z.object({
@@ -689,8 +688,8 @@ export const zCreatePasskeyData = z.object({
     clientDataJSON: z.string(),
     nameOnDevice: z.string().max(255),
   }),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 /**
@@ -699,20 +698,20 @@ export const zCreatePasskeyData = z.object({
 export const zCreatePasskeyResponse = z.object({
   id: z.string().max(50),
   userId: z.string().max(50),
-  deviceName: z.union([z.string().max(255), z.null()]),
+  deviceName: z.string().max(255).nullable(),
   deviceType: z.enum(['desktop', 'mobile']),
-  deviceOs: z.union([z.string().max(255), z.null()]),
-  browser: z.union([z.string().max(255), z.null()]),
+  deviceOs: z.string().max(255).nullable(),
+  browser: z.string().max(255).nullable(),
   nameOnDevice: z.string().max(255),
   createdAt: z.string(),
 });
 
 export const zDeletePasskeyData = z.object({
-  body: z.optional(z.never()),
+  body: z.never().optional(),
   path: z.object({
     id: z.string().max(50),
   }),
-  query: z.optional(z.never()),
+  query: z.never().optional(),
 });
 
 /**
@@ -723,10 +722,10 @@ export const zDeletePasskeyResponse = z.void();
 export const zGeneratePasskeyChallengeData = z.object({
   body: z.object({
     type: z.enum(['authentication', 'mfa', 'registration']),
-    email: z.optional(z.string().max(255)),
+    email: z.string().max(255).optional(),
   }),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 /**
@@ -744,10 +743,10 @@ export const zSignInWithPasskeyData = z.object({
     authenticatorObject: z.string(),
     signature: z.string(),
     type: z.enum(['authentication', 'mfa']),
-    email: z.optional(z.string().max(255)),
+    email: z.string().max(255).optional(),
   }),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 /**
@@ -756,53 +755,53 @@ export const zSignInWithPasskeyData = z.object({
 export const zSignInWithPasskeyResponse = z.void();
 
 export const zGithubData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.optional(
-    z.object({
-      type: z.optional(z.enum(['auth', 'connect', 'invite', 'verify'])),
-      redirectAfter: z.optional(z.string()),
-    }),
-  ),
+  body: z.never().optional(),
+  path: z.never().optional(),
+  query: z
+    .object({
+      type: z.enum(['auth', 'connect', 'invite', 'verify']).optional(),
+      redirectAfter: z.string().optional(),
+    })
+    .optional(),
 });
 
 export const zGoogleData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.optional(
-    z.object({
-      type: z.optional(z.enum(['auth', 'connect', 'invite', 'verify'])),
-      redirectAfter: z.optional(z.string()),
-    }),
-  ),
+  body: z.never().optional(),
+  path: z.never().optional(),
+  query: z
+    .object({
+      type: z.enum(['auth', 'connect', 'invite', 'verify']).optional(),
+      redirectAfter: z.string().optional(),
+    })
+    .optional(),
 });
 
 export const zMicrosoftData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.optional(
-    z.object({
-      type: z.optional(z.enum(['auth', 'connect', 'invite', 'verify'])),
-      redirectAfter: z.optional(z.string()),
-    }),
-  ),
+  body: z.never().optional(),
+  path: z.never().optional(),
+  query: z
+    .object({
+      type: z.enum(['auth', 'connect', 'invite', 'verify']).optional(),
+      redirectAfter: z.string().optional(),
+    })
+    .optional(),
 });
 
 export const zGithubCallbackData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
+  body: z.never().optional(),
+  path: z.never().optional(),
   query: z.object({
     code: z.string(),
     state: z.string(),
-    error: z.optional(z.string()),
-    error_description: z.optional(z.string()),
-    error_uri: z.optional(z.string()),
+    error: z.string().optional(),
+    error_description: z.string().optional(),
+    error_uri: z.string().optional(),
   }),
 });
 
 export const zGoogleCallbackData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
+  body: z.never().optional(),
+  path: z.never().optional(),
   query: z.object({
     code: z.string(),
     state: z.string(),
@@ -810,8 +809,8 @@ export const zGoogleCallbackData = z.object({
 });
 
 export const zMicrosoftCallbackData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
+  body: z.never().optional(),
+  path: z.never().optional(),
   query: z.object({
     code: z.string(),
     state: z.string(),
@@ -819,9 +818,9 @@ export const zMicrosoftCallbackData = z.object({
 });
 
 export const zDeleteMeData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  body: z.never().optional(),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 /**
@@ -830,9 +829,9 @@ export const zDeleteMeData = z.object({
 export const zDeleteMeResponse = z.void();
 
 export const zGetMeData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  body: z.never().optional(),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 /**
@@ -842,21 +841,21 @@ export const zGetMeResponse = zMe;
 
 export const zUpdateMeData = z.object({
   body: z.object({
-    bannerUrl: z.optional(z.union([z.string().max(2048), z.null()])),
-    firstName: z.optional(z.union([z.string().min(2).max(255), z.null()])),
-    lastName: z.optional(z.union([z.string().min(2).max(255), z.null()])),
-    language: z.optional(z.enum(['en', 'nl'])),
-    newsletter: z.optional(z.boolean()),
-    thumbnailUrl: z.optional(z.union([z.string().max(2048), z.null()])),
-    slug: z.optional(z.string().min(2).max(255)),
-    userFlags: z.optional(
-      z.object({
-        finishedOnboarding: z.optional(z.boolean()),
-      }),
-    ),
+    bannerUrl: z.string().max(2048).nullish(),
+    firstName: z.string().min(2).max(255).nullish(),
+    lastName: z.string().min(2).max(255).nullish(),
+    language: z.enum(['en', 'nl']).optional(),
+    newsletter: z.boolean().optional(),
+    thumbnailUrl: z.string().max(2048).nullish(),
+    slug: z.string().min(2).max(255).optional(),
+    userFlags: z
+      .object({
+        finishedOnboarding: z.boolean().optional(),
+      })
+      .optional(),
   }),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 /**
@@ -865,22 +864,25 @@ export const zUpdateMeData = z.object({
 export const zUpdateMeResponse = zUser;
 
 export const zToggleMfaData = z.object({
-  body: z.optional(
-    z.object({
-      passkeyData: z.optional(
-        z.object({
+  body: z
+    .object({
+      passkeyData: z
+        .object({
           credentialId: z.string(),
           clientDataJSON: z.string(),
           authenticatorObject: z.string(),
           signature: z.string(),
-        }),
-      ),
-      totpCode: z.optional(z.string().regex(/^\d{6}$/)),
+        })
+        .optional(),
+      totpCode: z
+        .string()
+        .regex(/^\d{6}$/)
+        .optional(),
       mfaRequired: z.boolean(),
-    }),
-  ),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+    })
+    .optional(),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 /**
@@ -889,9 +891,9 @@ export const zToggleMfaData = z.object({
 export const zToggleMfaResponse = zUser;
 
 export const zGetMyAuthData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  body: z.never().optional(),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 /**
@@ -900,9 +902,9 @@ export const zGetMyAuthData = z.object({
 export const zGetMyAuthResponse = zMeAuthData;
 
 export const zGetMyInvitationsData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  body: z.never().optional(),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 /**
@@ -919,13 +921,13 @@ export const zGetMyInvitationsResponse = z.object({
 });
 
 export const zDeleteMySessionsData = z.object({
-  body: z.optional(
-    z.object({
+  body: z
+    .object({
       ids: z.array(z.string()).min(1).max(50),
-    }),
-  ),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+    })
+    .optional(),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 /**
@@ -934,12 +936,12 @@ export const zDeleteMySessionsData = z.object({
 export const zDeleteMySessionsResponse = z.object({
   data: z.array(z.unknown()),
   rejectedItemIds: z.array(z.string()),
-  rejectionReasons: z.optional(z.record(z.string(), z.array(z.string()))),
+  rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
 });
 
 export const zDeleteMyMembershipData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
+  body: z.never().optional(),
+  path: z.never().optional(),
   query: z.object({
     entityId: z.string().max(50),
     entityType: z.enum(['organization']),
@@ -952,11 +954,11 @@ export const zDeleteMyMembershipData = z.object({
 export const zDeleteMyMembershipResponse = z.void();
 
 export const zGetUploadTokenData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
+  body: z.never().optional(),
+  path: z.never().optional(),
   query: z.object({
-    public: z.optional(z.union([z.string(), z.boolean()])).default('false'),
-    organizationId: z.optional(z.string()),
+    public: z.union([z.string(), z.boolean()]).optional().default('false'),
+    organizationId: z.string().optional(),
     templateId: z.enum(['avatar', 'cover', 'attachment']),
   }),
 });
@@ -967,17 +969,17 @@ export const zGetUploadTokenData = z.object({
 export const zGetUploadTokenResponse = zUploadToken;
 
 export const zUnsubscribeMeData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
+  body: z.never().optional(),
+  path: z.never().optional(),
   query: z.object({
     token: z.string(),
   }),
 });
 
 export const zGetMyMembershipsData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  body: z.never().optional(),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 /**
@@ -992,8 +994,8 @@ export const zCheckSlugData = z.object({
     slug: z.string(),
     entityType: z.enum(['user', 'organization']),
   }),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 /**
@@ -1002,18 +1004,18 @@ export const zCheckSlugData = z.object({
 export const zCheckSlugResponse = z.void();
 
 export const zGetPublicStreamData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  body: z.never().optional(),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 export const zPostPublicCatchupData = z.object({
   body: z.object({
-    cursor: z.optional(z.string()),
-    seqs: z.optional(z.record(z.string(), z.int())),
+    cursor: z.string().optional(),
+    seqs: z.record(z.string(), z.int()).optional(),
   }),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 /**
@@ -1025,25 +1027,25 @@ export const zPostPublicCatchupResponse = z.object({
     z.object({
       seq: z.int(),
       deletedIds: z.array(z.string()),
-      mSeq: z.optional(z.int()),
+      mSeq: z.int().optional(),
     }),
   ),
-  cursor: z.union([z.string(), z.null()]),
+  cursor: z.string().nullable(),
 });
 
 export const zGetAppStreamData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  body: z.never().optional(),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 export const zPostAppCatchupData = z.object({
   body: z.object({
-    cursor: z.optional(z.string()),
-    seqs: z.optional(z.record(z.string(), z.int())),
+    cursor: z.string().optional(),
+    seqs: z.record(z.string(), z.int()).optional(),
   }),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 /**
@@ -1055,18 +1057,18 @@ export const zPostAppCatchupResponse = z.object({
     z.object({
       seq: z.int(),
       deletedIds: z.array(z.string()),
-      mSeq: z.optional(z.int()),
+      mSeq: z.int().optional(),
     }),
   ),
-  cursor: z.union([z.string(), z.null()]),
+  cursor: z.string().nullable(),
 });
 
 export const zSystemInviteData = z.object({
   body: z.object({
     emails: z.array(z.email()).min(1).max(50),
   }),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 /**
@@ -1075,7 +1077,7 @@ export const zSystemInviteData = z.object({
 export const zSystemInviteResponse = z.object({
   data: z.array(z.unknown()),
   rejectedItemIds: z.array(z.string()),
-  rejectionReasons: z.optional(z.record(z.string(), z.array(z.string()))),
+  rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
   invitesSentCount: z.number(),
 });
 
@@ -1083,8 +1085,8 @@ export const zDeleteUsersData = z.object({
   body: z.object({
     ids: z.array(z.string()).min(1).max(50),
   }),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 /**
@@ -1093,25 +1095,25 @@ export const zDeleteUsersData = z.object({
 export const zDeleteUsersResponse = z.object({
   data: z.array(z.unknown()),
   rejectedItemIds: z.array(z.string()),
-  rejectionReasons: z.optional(z.record(z.string(), z.array(z.string()))),
+  rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
 });
 
 export const zUpdateUserData = z.object({
-  body: z.optional(
-    z.object({
-      bannerUrl: z.optional(z.union([z.string().max(2048), z.null()])),
-      firstName: z.optional(z.union([z.string().min(2).max(255), z.null()])),
-      lastName: z.optional(z.union([z.string().min(2).max(255), z.null()])),
-      language: z.optional(z.enum(['en', 'nl'])),
-      newsletter: z.optional(z.boolean()),
-      thumbnailUrl: z.optional(z.union([z.string().max(2048), z.null()])),
-      slug: z.optional(z.string().min(2).max(255)),
-    }),
-  ),
+  body: z
+    .object({
+      bannerUrl: z.string().max(2048).nullish(),
+      firstName: z.string().min(2).max(255).nullish(),
+      lastName: z.string().min(2).max(255).nullish(),
+      language: z.enum(['en', 'nl']).optional(),
+      newsletter: z.boolean().optional(),
+      thumbnailUrl: z.string().max(2048).nullish(),
+      slug: z.string().min(2).max(255).optional(),
+    })
+    .optional(),
   path: z.object({
     id: z.string().max(50),
   }),
-  query: z.optional(z.never()),
+  query: z.never().optional(),
 });
 
 /**
@@ -1120,9 +1122,9 @@ export const zUpdateUserData = z.object({
 export const zUpdateUserResponse = zUser;
 
 export const zPaddleWebhookData = z.object({
-  body: z.optional(z.unknown()),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  body: z.unknown().optional(),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 /**
@@ -1135,14 +1137,14 @@ export const zSendNewsletterData = z.object({
     organizationIds: z.array(z.string().max(50)),
     roles: z.array(z.enum(['admin', 'member'])).min(1),
     subject: z.string().max(255),
-    content: z.string().max(100000),
+    content: z.string().max(1000000),
   }),
-  path: z.optional(z.never()),
-  query: z.optional(
-    z.object({
-      toSelf: z.optional(z.union([z.string(), z.boolean()])).default('false'),
-    }),
-  ),
+  path: z.never().optional(),
+  query: z
+    .object({
+      toSelf: z.union([z.string(), z.boolean()]).optional().default('false'),
+    })
+    .optional(),
 });
 
 /**
@@ -1151,18 +1153,18 @@ export const zSendNewsletterData = z.object({
 export const zSendNewsletterResponse = z.void();
 
 export const zGetTenantsData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.optional(
-    z.object({
-      q: z.optional(z.string()),
-      status: z.optional(z.enum(['active', 'suspended', 'archived'])),
-      limit: z.optional(z.string()).default('50'),
-      offset: z.optional(z.string()).default('0'),
-      sort: z.optional(z.enum(['createdAt', 'name'])),
-      order: z.optional(z.enum(['asc', 'desc'])),
-    }),
-  ),
+  body: z.never().optional(),
+  path: z.never().optional(),
+  query: z
+    .object({
+      q: z.string().optional(),
+      status: z.enum(['active', 'suspended', 'archived']).optional(),
+      limit: z.string().optional().default('50'),
+      offset: z.string().optional().default('0'),
+      sort: z.enum(['createdAt', 'name']).optional(),
+      order: z.enum(['asc', 'desc']).optional(),
+    })
+    .optional(),
 });
 
 /**
@@ -1176,10 +1178,10 @@ export const zGetTenantsResponse = z.object({
 export const zCreateTenantData = z.object({
   body: z.object({
     name: z.string().min(1).max(255),
-    status: z.optional(z.enum(['active', 'suspended', 'archived'])),
+    status: z.enum(['active', 'suspended', 'archived']).optional(),
   }),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 /**
@@ -1188,11 +1190,11 @@ export const zCreateTenantData = z.object({
 export const zCreateTenantResponse = zTenant;
 
 export const zArchiveTenantData = z.object({
-  body: z.optional(z.never()),
+  body: z.never().optional(),
   path: z.object({
     tenantId: z.string().max(24),
   }),
-  query: z.optional(z.never()),
+  query: z.never().optional(),
 });
 
 /**
@@ -1203,11 +1205,11 @@ export const zArchiveTenantResponse = z.object({
 });
 
 export const zGetTenantByIdData = z.object({
-  body: z.optional(z.never()),
+  body: z.never().optional(),
   path: z.object({
     tenantId: z.string().max(24),
   }),
-  query: z.optional(z.never()),
+  query: z.never().optional(),
 });
 
 /**
@@ -1217,13 +1219,13 @@ export const zGetTenantByIdResponse = zTenant;
 
 export const zUpdateTenantData = z.object({
   body: z.object({
-    name: z.optional(z.string().min(1).max(255)),
-    status: z.optional(z.enum(['active', 'suspended', 'archived'])),
+    name: z.string().min(1).max(255).optional(),
+    status: z.enum(['active', 'suspended', 'archived']).optional(),
   }),
   path: z.object({
     tenantId: z.string().max(24),
   }),
-  query: z.optional(z.never()),
+  query: z.never().optional(),
 });
 
 /**
@@ -1235,8 +1237,8 @@ export const zDeleteRequestsData = z.object({
   body: z.object({
     ids: z.array(z.string()).min(1).max(50),
   }),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 /**
@@ -1245,21 +1247,21 @@ export const zDeleteRequestsData = z.object({
 export const zDeleteRequestsResponse = z.object({
   data: z.array(z.unknown()),
   rejectedItemIds: z.array(z.string()),
-  rejectionReasons: z.optional(z.record(z.string(), z.array(z.string()))),
+  rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
 });
 
 export const zGetRequestsData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.optional(
-    z.object({
-      q: z.optional(z.string().max(255)),
-      sort: z.optional(z.enum(['id', 'email', 'type', 'createdAt'])),
-      order: z.optional(z.enum(['asc', 'desc'])),
-      offset: z.optional(z.string()),
-      limit: z.optional(z.string()),
-    }),
-  ),
+  body: z.never().optional(),
+  path: z.never().optional(),
+  query: z
+    .object({
+      q: z.string().max(255).optional(),
+      sort: z.enum(['id', 'email', 'type', 'createdAt']).optional(),
+      order: z.enum(['asc', 'desc']).optional(),
+      offset: z.string().optional(),
+      limit: z.string().optional(),
+    })
+    .optional(),
 });
 
 /**
@@ -1274,10 +1276,10 @@ export const zCreateRequestData = z.object({
   body: z.object({
     email: z.email().max(255),
     type: z.enum(['waitlist', 'newsletter', 'contact']),
-    message: z.union([z.string().max(255), z.null()]),
+    message: z.string().max(255).nullable(),
   }),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 /**
@@ -1286,9 +1288,9 @@ export const zCreateRequestData = z.object({
 export const zCreateRequestResponse = zRequest;
 
 export const zGetMetricsData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  body: z.never().optional(),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 /**
@@ -1302,9 +1304,9 @@ export const zGetMetricsResponse = z.array(
 );
 
 export const zGetRuntimeMetricsData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  body: z.never().optional(),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 /**
@@ -1327,15 +1329,15 @@ export const zGetRuntimeMetricsResponse = z.object({
   otel: z.array(
     z.object({
       name: z.string(),
-      description: z.optional(z.string()),
-      unit: z.optional(z.string()),
+      description: z.string().optional(),
+      unit: z.string().optional(),
       type: z.enum(['gauge', 'counter', 'histogram', 'sum']),
       dataPoints: z.array(
         z.object({
           value: z.union([z.number(), z.record(z.string(), z.number())]),
-          attributes: z.optional(z.record(z.string(), z.string())),
-          startTime: z.optional(z.string()),
-          endTime: z.optional(z.string()),
+          attributes: z.record(z.string(), z.string()).optional(),
+          startTime: z.string().optional(),
+          endTime: z.string().optional(),
         }),
       ),
     }),
@@ -1343,9 +1345,9 @@ export const zGetRuntimeMetricsResponse = z.object({
 });
 
 export const zGetPublicCountsData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  body: z.never().optional(),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 /**
@@ -1359,9 +1361,9 @@ export const zGetPublicCountsResponse = z.object({
 });
 
 export const zGetCacheStatsData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  body: z.never().optional(),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 /**
@@ -1377,16 +1379,16 @@ export const zGetCacheStatsResponse = z.object({
     totalRequests: z.number(),
     uptimeSeconds: z.number(),
     size: z.number(),
-    indexSize: z.optional(z.number()),
+    indexSize: z.number().optional(),
     capacity: z.number(),
     utilization: z.number(),
   }),
 });
 
 export const zGetSyncMetricsData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  body: z.never().optional(),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 /**
@@ -1410,7 +1412,7 @@ export const zDeleteOrganizationsData = z.object({
   path: z.object({
     tenantId: z.string().max(50),
   }),
-  query: z.optional(z.never()),
+  query: z.never().optional(),
 });
 
 /**
@@ -1419,7 +1421,7 @@ export const zDeleteOrganizationsData = z.object({
 export const zDeleteOrganizationsResponse = z.object({
   data: z.array(z.unknown()),
   rejectedItemIds: z.array(z.string()),
-  rejectionReasons: z.optional(z.record(z.string(), z.array(z.string()))),
+  rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
 });
 
 export const zCreateOrganizationsData = z.object({
@@ -1439,7 +1441,7 @@ export const zCreateOrganizationsData = z.object({
   path: z.object({
     tenantId: z.string().max(50),
   }),
-  query: z.optional(z.never()),
+  query: z.never().optional(),
 });
 
 /**
@@ -1449,11 +1451,11 @@ export const zCreateOrganizationsResponse = z.object({
   data: z.array(
     zOrganization.and(
       z.object({
-        included: z.optional(
-          z.object({
+        included: z
+          .object({
             membership: zMembershipBase,
-            counts: z.optional(
-              z.object({
+            counts: z
+              .object({
                 membership: z.object({
                   admin: z.number(),
                   member: z.number(),
@@ -1464,33 +1466,33 @@ export const zCreateOrganizationsResponse = z.object({
                   attachment: z.number(),
                   page: z.number(),
                 }),
-              }),
-            ),
-          }),
-        ),
+              })
+              .optional(),
+          })
+          .optional(),
       }),
     ),
   ),
   rejectedItemIds: z.array(z.string()),
-  rejectionReasons: z.optional(z.record(z.string(), z.array(z.string()))),
+  rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
 });
 
 export const zGetOrganizationsData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.optional(
-    z.object({
-      q: z.optional(z.string().max(255)),
-      sort: z.optional(z.enum(['id', 'name', 'createdAt'])),
-      order: z.optional(z.enum(['asc', 'desc'])),
-      offset: z.optional(z.string()),
-      limit: z.optional(z.string()),
-      relatableUserId: z.optional(z.string().max(50)),
-      role: z.optional(z.enum(['admin', 'member'])),
-      excludeArchived: z.optional(z.enum(['true', 'false'])),
-      include: z.optional(z.string()),
-    }),
-  ),
+  body: z.never().optional(),
+  path: z.never().optional(),
+  query: z
+    .object({
+      q: z.string().max(255).optional(),
+      sort: z.enum(['id', 'name', 'createdAt']).optional(),
+      order: z.enum(['asc', 'desc']).optional(),
+      offset: z.string().optional(),
+      limit: z.string().optional(),
+      relatableUserId: z.string().max(50).optional(),
+      role: z.enum(['admin', 'member']).optional(),
+      excludeArchived: z.enum(['true', 'false']).optional(),
+      include: z.string().optional(),
+    })
+    .optional(),
 });
 
 /**
@@ -1502,17 +1504,17 @@ export const zGetOrganizationsResponse = z.object({
 });
 
 export const zGetOrganizationData = z.object({
-  body: z.optional(z.never()),
+  body: z.never().optional(),
   path: z.object({
     tenantId: z.string().max(50),
     organizationId: z.string().max(50),
   }),
-  query: z.optional(
-    z.object({
-      slug: z.optional(z.union([z.string(), z.boolean()])).default('false'),
-      include: z.optional(z.string()),
-    }),
-  ),
+  query: z
+    .object({
+      slug: z.union([z.string(), z.boolean()]).optional().default('false'),
+      include: z.string().optional(),
+    })
+    .optional(),
 });
 
 /**
@@ -1521,34 +1523,37 @@ export const zGetOrganizationData = z.object({
 export const zGetOrganizationResponse = zOrganization;
 
 export const zUpdateOrganizationData = z.object({
-  body: z.optional(
-    z.object({
-      slug: z.optional(z.string().min(2).max(255)),
-      name: z.optional(z.string().min(2).max(255)),
-      shortName: z.optional(z.union([z.string().min(2).max(255), z.null()])),
-      country: z.optional(z.union([z.string().max(255), z.null()])),
-      timezone: z.optional(z.union([z.string().max(255), z.null()])),
-      defaultLanguage: z.optional(z.enum(['en', 'nl'])),
-      languages: z.optional(z.array(z.enum(['en', 'nl'])).min(1)),
-      notificationEmail: z.optional(z.union([z.string().max(255), z.null()])),
-      emailDomains: z.optional(z.array(z.string().min(4).max(255))),
-      color: z.optional(z.union([z.string().max(255), z.null()])),
-      thumbnailUrl: z.optional(z.union([z.string().max(2048), z.null()])),
-      logoUrl: z.optional(z.union([z.string().max(2048), z.null()])),
-      bannerUrl: z.optional(z.union([z.string().max(2048), z.null()])),
-      websiteUrl: z.optional(z.union([z.string().max(2048), z.null()])),
-      welcomeText: z.optional(z.union([z.string().max(100000), z.null()])),
-      authStrategies: z.optional(
-        z.array(z.enum(['github', 'google', 'microsoft', 'password', 'passkey', 'totp', 'email'])),
-      ),
-      chatSupport: z.optional(z.boolean()),
-    }),
-  ),
+  body: z
+    .object({
+      slug: z.string().min(2).max(255).optional(),
+      name: z.string().min(2).max(255).optional(),
+      shortName: z.string().min(2).max(255).nullish(),
+      country: z.string().max(255).nullish(),
+      timezone: z.string().max(255).nullish(),
+      defaultLanguage: z.enum(['en', 'nl']).optional(),
+      languages: z
+        .array(z.enum(['en', 'nl']))
+        .min(1)
+        .optional(),
+      notificationEmail: z.string().max(255).nullish(),
+      emailDomains: z.array(z.string().min(4).max(255)).optional(),
+      color: z.string().max(255).nullish(),
+      thumbnailUrl: z.string().max(2048).nullish(),
+      logoUrl: z.string().max(2048).nullish(),
+      bannerUrl: z.string().max(2048).nullish(),
+      websiteUrl: z.string().max(2048).nullish(),
+      welcomeText: z.string().max(1000000).nullish(),
+      authStrategies: z
+        .array(z.enum(['github', 'google', 'microsoft', 'password', 'passkey', 'totp', 'email']))
+        .optional(),
+      chatSupport: z.boolean().optional(),
+    })
+    .optional(),
   path: z.object({
     tenantId: z.string().max(50),
     id: z.string().max(50),
   }),
-  query: z.optional(z.never()),
+  query: z.never().optional(),
 });
 
 /**
@@ -1557,18 +1562,18 @@ export const zUpdateOrganizationData = z.object({
 export const zUpdateOrganizationResponse = zOrganization;
 
 export const zGetPagesData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.optional(
-    z.object({
-      q: z.optional(z.string().max(255)),
-      sort: z.optional(z.enum(['name', 'status', 'createdAt'])),
-      order: z.optional(z.enum(['asc', 'desc'])),
-      offset: z.optional(z.string()),
-      limit: z.optional(z.string()),
-      modifiedAfter: z.optional(z.iso.datetime()),
-    }),
-  ),
+  body: z.never().optional(),
+  path: z.never().optional(),
+  query: z
+    .object({
+      q: z.string().max(255).optional(),
+      sort: z.enum(['name', 'status', 'createdAt']).optional(),
+      order: z.enum(['asc', 'desc']).optional(),
+      offset: z.string().optional(),
+      limit: z.string().optional(),
+      modifiedAfter: z.iso.datetime().optional(),
+    })
+    .optional(),
 });
 
 /**
@@ -1580,11 +1585,11 @@ export const zGetPagesResponse = z.object({
 });
 
 export const zGetPageData = z.object({
-  body: z.optional(z.never()),
+  body: z.never().optional(),
   path: z.object({
     id: z.string(),
   }),
-  query: z.optional(z.never()),
+  query: z.never().optional(),
 });
 
 /**
@@ -1599,7 +1604,7 @@ export const zDeletePagesData = z.object({
   path: z.object({
     tenantId: z.string().max(50),
   }),
-  query: z.optional(z.never()),
+  query: z.never().optional(),
 });
 
 /**
@@ -1608,14 +1613,14 @@ export const zDeletePagesData = z.object({
 export const zDeletePagesResponse = z.object({
   data: z.array(z.unknown()),
   rejectedItemIds: z.array(z.string()),
-  rejectionReasons: z.optional(z.record(z.string(), z.array(z.string()))),
+  rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
 });
 
 export const zCreatePagesData = z.object({
   body: z
     .array(
       z.object({
-        name: z.optional(z.string().max(255)),
+        name: z.string().max(255).optional(),
         stx: zStxRequestBase,
       }),
     )
@@ -1624,37 +1629,37 @@ export const zCreatePagesData = z.object({
   path: z.object({
     tenantId: z.string().max(50),
   }),
-  query: z.optional(z.never()),
+  query: z.never().optional(),
 });
 
 export const zCreatePagesResponse = z.union([
   z.object({
     data: z.array(zPage),
     rejectedItemIds: z.array(z.string()),
-    rejectionReasons: z.optional(z.record(z.string(), z.array(z.string()))),
+    rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
   }),
   z.object({
     data: z.array(zPage),
     rejectedItemIds: z.array(z.string()),
-    rejectionReasons: z.optional(z.record(z.string(), z.array(z.string()))),
+    rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
   }),
 ]);
 
 export const zUpdatePageData = z.object({
   body: z.object({
-    name: z.optional(z.string().max(255)),
-    description: z.optional(z.union([z.string().max(100000), z.null()])),
-    keywords: z.optional(z.string().max(100000)),
-    displayOrder: z.optional(z.number().gte(-140737488355328).lte(140737488355327)),
-    status: z.optional(z.enum(['unpublished', 'published', 'archived'])),
-    parentId: z.optional(z.union([z.string().max(50), z.null()])),
+    name: z.string().max(255).optional(),
+    description: z.string().max(1000000).nullish(),
+    keywords: z.string().max(1000000).optional(),
+    displayOrder: z.number().gte(-140737488355328).lte(140737488355327).optional(),
+    status: z.enum(['unpublished', 'published', 'archived']).optional(),
+    parentId: z.string().max(50).nullish(),
     stx: zStxRequestBase,
   }),
   path: z.object({
     tenantId: z.string().max(50),
     id: z.string().max(50),
   }),
-  query: z.optional(z.never()),
+  query: z.never().optional(),
 });
 
 /**
@@ -1663,18 +1668,18 @@ export const zUpdatePageData = z.object({
 export const zUpdatePageResponse = zPage;
 
 export const zGetUsersData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.optional(
-    z.object({
-      q: z.optional(z.string().max(255)),
-      sort: z.optional(z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt'])),
-      order: z.optional(z.enum(['asc', 'desc'])),
-      offset: z.optional(z.string()),
-      limit: z.optional(z.string()),
-      role: z.optional(z.enum(['admin'])),
-    }),
-  ),
+  body: z.never().optional(),
+  path: z.never().optional(),
+  query: z
+    .object({
+      q: z.string().max(255).optional(),
+      sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt']).optional(),
+      order: z.enum(['asc', 'desc']).optional(),
+      offset: z.string().optional(),
+      limit: z.string().optional(),
+      role: z.enum(['admin']).optional(),
+    })
+    .optional(),
 });
 
 /**
@@ -1684,7 +1689,7 @@ export const zGetUsersResponse = z.object({
   items: z.array(
     zUser.and(
       z.object({
-        role: z.optional(z.nullable(z.enum(['admin']))),
+        role: z.enum(['admin']).nullish(),
       }),
     ),
   ),
@@ -1692,15 +1697,15 @@ export const zGetUsersResponse = z.object({
 });
 
 export const zGetUserData = z.object({
-  body: z.optional(z.never()),
+  body: z.never().optional(),
   path: z.object({
     relatableUserId: z.string().max(50),
   }),
-  query: z.optional(
-    z.object({
-      slug: z.optional(z.union([z.string(), z.boolean()])).default('false'),
-    }),
-  ),
+  query: z
+    .object({
+      slug: z.union([z.string(), z.boolean()]).optional().default('false'),
+    })
+    .optional(),
 });
 
 /**
@@ -1711,18 +1716,18 @@ export const zGetUserResponse = zUser;
 export const zDeleteAttachmentsData = z.object({
   body: z.object({
     ids: z.array(z.string()).min(1).max(50),
-    stx: z.optional(
-      z.object({
+    stx: z
+      .object({
         mutationId: z.string(),
         sourceId: z.string(),
-      }),
-    ),
+      })
+      .optional(),
   }),
   path: z.object({
     tenantId: z.string().max(50),
     orgId: z.string().max(50),
   }),
-  query: z.optional(z.never()),
+  query: z.never().optional(),
 });
 
 /**
@@ -1731,25 +1736,25 @@ export const zDeleteAttachmentsData = z.object({
 export const zDeleteAttachmentsResponse = z.object({
   data: z.array(z.unknown()),
   rejectedItemIds: z.array(z.string()),
-  rejectionReasons: z.optional(z.record(z.string(), z.array(z.string()))),
+  rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
 });
 
 export const zGetAttachmentsData = z.object({
-  body: z.optional(z.never()),
+  body: z.never().optional(),
   path: z.object({
     tenantId: z.string().max(50),
     orgId: z.string().max(50),
   }),
-  query: z.optional(
-    z.object({
-      q: z.optional(z.string().max(255)),
-      sort: z.optional(z.enum(['name', 'createdAt', 'contentType'])),
-      order: z.optional(z.enum(['asc', 'desc'])),
-      offset: z.optional(z.string()),
-      limit: z.optional(z.string()),
-      modifiedAfter: z.optional(z.iso.datetime()),
-    }),
-  ),
+  query: z
+    .object({
+      q: z.string().max(255).optional(),
+      sort: z.enum(['name', 'createdAt', 'contentType']).optional(),
+      order: z.enum(['asc', 'desc']).optional(),
+      offset: z.string().optional(),
+      limit: z.string().optional(),
+      modifiedAfter: z.iso.datetime().optional(),
+    })
+    .optional(),
 });
 
 /**
@@ -1764,20 +1769,20 @@ export const zCreateAttachmentsData = z.object({
   body: z
     .array(
       z.object({
-        id: z.optional(z.string().max(50)),
-        name: z.optional(z.string().max(255)),
+        id: z.string().max(50).optional(),
+        name: z.string().max(255).optional(),
         filename: z.string().max(255),
         contentType: z.string().max(255),
         size: z.string().max(255),
         organizationId: z.string().max(50),
-        createdBy: z.optional(z.union([z.string().max(50), z.null()])),
+        createdBy: z.string().max(50).nullish(),
         originalKey: z.string().max(2048),
         bucketName: z.string().max(255),
-        public: z.optional(z.boolean()),
-        groupId: z.optional(z.union([z.string().max(50), z.null()])),
-        convertedContentType: z.optional(z.union([z.string().max(255), z.null()])),
-        convertedKey: z.optional(z.union([z.string().max(2048), z.null()])),
-        thumbnailKey: z.optional(z.union([z.string().max(2048), z.null()])),
+        public: z.boolean().optional(),
+        groupId: z.string().max(50).nullish(),
+        convertedContentType: z.string().max(255).nullish(),
+        convertedKey: z.string().max(2048).nullish(),
+        thumbnailKey: z.string().max(2048).nullish(),
         stx: zStxRequestBase,
       }),
     )
@@ -1787,24 +1792,24 @@ export const zCreateAttachmentsData = z.object({
     tenantId: z.string().max(50),
     orgId: z.string().max(50),
   }),
-  query: z.optional(z.never()),
+  query: z.never().optional(),
 });
 
 export const zCreateAttachmentsResponse = z.union([
   z.object({
     data: z.array(zAttachment),
     rejectedItemIds: z.array(z.string()),
-    rejectionReasons: z.optional(z.record(z.string(), z.array(z.string()))),
+    rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
   }),
   z.object({
     data: z.array(zAttachment),
     rejectedItemIds: z.array(z.string()),
-    rejectionReasons: z.optional(z.record(z.string(), z.array(z.string()))),
+    rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
   }),
 ]);
 
 export const zGetPresignedUrlData = z.object({
-  body: z.optional(z.never()),
+  body: z.never().optional(),
   path: z.object({
     tenantId: z.string().max(50),
     orgId: z.string().max(50),
@@ -1820,13 +1825,13 @@ export const zGetPresignedUrlData = z.object({
 export const zGetPresignedUrlResponse = z.string();
 
 export const zGetAttachmentData = z.object({
-  body: z.optional(z.never()),
+  body: z.never().optional(),
   path: z.object({
     tenantId: z.string().max(50),
     orgId: z.string().max(50),
     id: z.string().max(50),
   }),
-  query: z.optional(z.never()),
+  query: z.never().optional(),
 });
 
 /**
@@ -1836,8 +1841,8 @@ export const zGetAttachmentResponse = zAttachment;
 
 export const zUpdateAttachmentData = z.object({
   body: z.object({
-    name: z.optional(z.string().max(255)),
-    originalKey: z.optional(z.string().max(2048)),
+    name: z.string().max(255).optional(),
+    originalKey: z.string().max(2048).optional(),
     stx: zStxRequestBase,
   }),
   path: z.object({
@@ -1845,7 +1850,7 @@ export const zUpdateAttachmentData = z.object({
     orgId: z.string().max(50),
     id: z.string().max(50),
   }),
-  query: z.optional(z.never()),
+  query: z.never().optional(),
 });
 
 /**
@@ -1854,11 +1859,11 @@ export const zUpdateAttachmentData = z.object({
 export const zUpdateAttachmentResponse = zAttachment;
 
 export const zRedirectToAttachmentData = z.object({
-  body: z.optional(z.never()),
+  body: z.never().optional(),
   path: z.object({
     id: z.string().max(50),
   }),
-  query: z.optional(z.never()),
+  query: z.never().optional(),
 });
 
 export const zDeleteMembershipsData = z.object({
@@ -1881,7 +1886,7 @@ export const zDeleteMembershipsData = z.object({
 export const zDeleteMembershipsResponse = z.object({
   data: z.array(z.unknown()),
   rejectedItemIds: z.array(z.string()),
-  rejectionReasons: z.optional(z.record(z.string(), z.array(z.string()))),
+  rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
 });
 
 export const zMembershipInviteData = z.object({
@@ -1905,25 +1910,25 @@ export const zMembershipInviteData = z.object({
 export const zMembershipInviteResponse = z.object({
   data: z.array(zMembershipBase),
   rejectedItemIds: z.array(z.string()),
-  rejectionReasons: z.optional(z.record(z.string(), z.array(z.string()))),
+  rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
   invitesSentCount: z.number(),
 });
 
 export const zUpdateMembershipData = z.object({
-  body: z.optional(
-    z.object({
-      role: z.optional(z.enum(['admin', 'member'])),
-      muted: z.optional(z.boolean()),
-      archived: z.optional(z.boolean()),
-      displayOrder: z.optional(z.number()),
-    }),
-  ),
+  body: z
+    .object({
+      role: z.enum(['admin', 'member']).optional(),
+      muted: z.boolean().optional(),
+      archived: z.boolean().optional(),
+      displayOrder: z.number().optional(),
+    })
+    .optional(),
   path: z.object({
     tenantId: z.string().max(50),
     orgId: z.string().max(50),
     id: z.string().max(50),
   }),
-  query: z.optional(z.never()),
+  query: z.never().optional(),
 });
 
 /**
@@ -1932,12 +1937,12 @@ export const zUpdateMembershipData = z.object({
 export const zUpdateMembershipResponse = zMembership;
 
 export const zHandleMembershipInvitationData = z.object({
-  body: z.optional(z.never()),
+  body: z.never().optional(),
   path: z.object({
     id: z.string().max(50),
     acceptOrReject: z.enum(['accept', 'reject']),
   }),
-  query: z.optional(z.never()),
+  query: z.never().optional(),
 });
 
 /**
@@ -1946,20 +1951,20 @@ export const zHandleMembershipInvitationData = z.object({
 export const zHandleMembershipInvitationResponse = zContextEntityBase;
 
 export const zGetMembersData = z.object({
-  body: z.optional(z.never()),
+  body: z.never().optional(),
   path: z.object({
     tenantId: z.string().max(50),
     orgId: z.string().max(50),
   }),
   query: z.object({
-    q: z.optional(z.string().max(255)),
-    sort: z.optional(z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt'])),
-    order: z.optional(z.enum(['asc', 'desc'])),
-    offset: z.optional(z.string()),
-    limit: z.optional(z.string()),
+    q: z.string().max(255).optional(),
+    sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt']).optional(),
+    order: z.enum(['asc', 'desc']).optional(),
+    offset: z.string().optional(),
+    limit: z.string().optional(),
     entityId: z.string().max(50),
     entityType: z.enum(['organization']),
-    role: z.optional(z.enum(['admin', 'member'])),
+    role: z.enum(['admin', 'member']).optional(),
   }),
 });
 
@@ -1973,20 +1978,20 @@ export const zGetMembersResponse = z.object({
       id: z.string().max(50),
       entityType: z.enum(['user']),
       name: z.string().max(255),
-      description: z.union([z.string(), z.null()]),
+      description: z.string().nullable(),
       slug: z.string().max(255),
-      thumbnailUrl: z.union([z.string().max(2048), z.null()]),
-      bannerUrl: z.union([z.string().max(2048), z.null()]),
+      thumbnailUrl: z.string().max(2048).nullable(),
+      bannerUrl: z.string().max(2048).nullable(),
       email: z.email(),
       mfaRequired: z.boolean(),
-      firstName: z.union([z.string().max(255), z.null()]),
-      lastName: z.union([z.string().max(255), z.null()]),
+      firstName: z.string().max(255).nullable(),
+      lastName: z.string().max(255).nullable(),
       language: z.enum(['en', 'nl']),
-      modifiedAt: z.union([z.string(), z.null()]),
-      modifiedBy: z.union([z.string().max(50), z.null()]),
-      lastSeenAt: z.union([z.string(), z.null()]),
-      lastStartedAt: z.union([z.string(), z.null()]),
-      lastSignInAt: z.union([z.string(), z.null()]),
+      modifiedAt: z.string().nullable(),
+      modifiedBy: z.string().max(50).nullable(),
+      lastSeenAt: z.string().nullable(),
+      lastStartedAt: z.string().nullable(),
+      lastSignInAt: z.string().nullable(),
       membership: zMembershipBase,
     }),
   ),
@@ -1994,17 +1999,17 @@ export const zGetMembersResponse = z.object({
 });
 
 export const zGetPendingMembershipsData = z.object({
-  body: z.optional(z.never()),
+  body: z.never().optional(),
   path: z.object({
     tenantId: z.string().max(50),
     orgId: z.string().max(50),
   }),
   query: z.object({
-    q: z.optional(z.string().max(255)),
-    sort: z.optional(z.enum(['createdAt'])),
-    order: z.optional(z.enum(['asc', 'desc'])),
-    offset: z.optional(z.string()),
-    limit: z.optional(z.string()),
+    q: z.string().max(255).optional(),
+    sort: z.enum(['createdAt']).optional(),
+    order: z.enum(['asc', 'desc']).optional(),
+    offset: z.string().optional(),
+    limit: z.string().optional(),
     entityId: z.string().max(50),
     entityType: z.enum(['organization']),
   }),
@@ -2018,10 +2023,10 @@ export const zGetPendingMembershipsResponse = z.object({
     z.object({
       id: z.string(),
       email: z.email(),
-      thumbnailUrl: z.union([z.string(), z.null()]),
-      role: z.nullable(z.enum(['admin', 'member'])),
+      thumbnailUrl: z.string().nullable(),
+      role: z.enum(['admin', 'member']).nullable(),
       createdAt: z.string(),
-      createdBy: z.union([z.string().max(50), z.null()]),
+      createdBy: z.string().max(50).nullable(),
     }),
   ),
   total: z.number(),

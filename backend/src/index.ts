@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm';
 import { unsafeInternalDb as db, migrateConfig, migrationDb } from '#/db/db';
 import docs from '#/docs/docs';
 import '#/lib/i18n';
@@ -61,6 +62,14 @@ const main = async () => {
   if (isPGliteDatabase(db)) {
     await pgliteMigrate(db, migrateConfig);
   } else if (migrationDb) {
+    // Verify database connectivity before any DB work
+    try {
+      await migrationDb.execute(sql`SELECT 1`);
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      throw new Error(`Could not connect to PostgreSQL. Is Docker running? Try: pnpm docker\n  Original error: ${msg}`);
+    }
+
     const { createDbRoles } = await import('../scripts/db/create-db-roles');
     await createDbRoles();
     console.info('[startup] Running migrations...');

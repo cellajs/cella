@@ -1,4 +1,5 @@
 import { RESOURCE_LIMITS } from '../constants';
+import { getErrorMessage } from './get-error-message';
 import { logEvent } from '../pino';
 import { wsClient } from '../websocket-client';
 import { replicationState } from './replication-state';
@@ -138,8 +139,7 @@ export async function emergencyShutdown(reason: string): Promise<never> {
 
     logEvent('fatal', `${LOG_PREFIX} Emergency shutdown complete`, { reason });
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    logEvent('error', `${LOG_PREFIX} Error during emergency shutdown`, { error: errorMessage });
+    logEvent('error', `${LOG_PREFIX} Error during emergency shutdown`, { error: getErrorMessage(error) });
   }
 
   // Exit with error code so orchestrator can restart with fresh state

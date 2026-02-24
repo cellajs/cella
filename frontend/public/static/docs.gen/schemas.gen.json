@@ -1392,7 +1392,7 @@
         "welcomeText": {
           "type": ["string", "null"],
           "required": true,
-          "maxLength": 100000
+          "maxLength": 1000000
         },
         "authStrategies": {
           "type": "array",
@@ -1582,12 +1582,13 @@
         },
         "description": {
           "type": ["string", "null"],
-          "required": true
+          "required": true,
+          "maxLength": 1000000
         },
         "keywords": {
           "type": "string",
           "required": true,
-          "maxLength": 100000
+          "maxLength": 1000000
         },
         "createdBy": {
           "type": ["string", "null"],
@@ -1724,12 +1725,13 @@
         },
         "description": {
           "type": ["string", "null"],
-          "required": true
+          "required": true,
+          "maxLength": 1000000
         },
         "keywords": {
           "type": "string",
           "required": true,
-          "maxLength": 100000
+          "maxLength": 1000000
         },
         "createdBy": {
           "type": ["string", "null"],

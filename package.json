@@ -67,7 +67,7 @@
   "devDependencies": {
     "@biomejs/biome": "^2.4.4",
     "@evilmartians/lefthook": "^2.1.1",
-    "@typescript/native-preview": "7.0.0-dev.20260222.1",
+    "@typescript/native-preview": "7.0.0-dev.20260223.1",
     "cross-env": "^10.1.0",
     "knip": "^5.85.0",
     "rimraf": "^6.1.3",
