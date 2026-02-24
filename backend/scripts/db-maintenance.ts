@@ -17,7 +17,7 @@
 
 import { sql } from 'drizzle-orm';
 import pc from 'picocolors';
-import { unsafeInternalDb as db } from '#/db/db';
+import { baseDb as db } from '#/db/db';
 
 const checkMark = pc.greenBright('✓');
 const crossMark = pc.redBright('✗');

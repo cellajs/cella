@@ -20,7 +20,7 @@ const pageSelectSchema = z.object({
 
 export const pageSchema = z
   .object({ ...pageSelectSchema.shape, stx: stxBaseSchema })
-  .openapi('Page', { description: 'A content page belonging to an organization.', example: mockPageResponse() });
+  .openapi('Page', { description: 'A content page for documentation purposes.', example: mockPageResponse() });
 
 export const pageCreateBodySchema = pageInsertSchema.pick({
   name: true,
@@ -41,7 +41,8 @@ export const pageUpdateBodySchema = pageInsertSchema
     status: true,
     parentId: true,
   })
-  .partial();
+  .partial()
+  .extend({ status: pageStatusSchema.optional() });
 
 /** Update body with stx embedded */
 export const pageUpdateStxBodySchema = pageUpdateBodySchema.extend({ stx: stxRequestSchema });
@@ -54,5 +55,5 @@ const pageSortKeys = pageSelectSchema.keyof().extract(['name', 'status', 'create
 export const pageListQuerySchema = paginationQuerySchema.extend({
   sort: pageSortKeys.default('createdAt').optional(),
   /** ISO timestamp filter for delta sync - returns pages modified at or after this time */
-  modifiedAfter: z.string().datetime().optional(),
+  modifiedAfter: z.iso.datetime().optional(),
 });

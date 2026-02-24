@@ -1219,7 +1219,7 @@
             "required": true,
             "maxLength": 50
           },
-          "organizationId": {
+          "id": {
             "type": "string",
             "required": true,
             "maxLength": 50

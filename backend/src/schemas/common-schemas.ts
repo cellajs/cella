@@ -64,12 +64,6 @@ export const entityIdParamSchema = z.object({ id: validIdSchema });
 /** Schema for optional slug query flag — when true, resolve entity by slug instead of ID */
 export const slugQuerySchema = z.object({ slug: booleanTransformSchema.optional() });
 
-/** Schema for tenant-scoped organization id (for getOrganization route) */
-export const tenantOrganizationIdParamSchema = z.object({
-  tenantId: validIdSchema,
-  organizationId: validIdSchema,
-});
-
 /** Schema for tenant-scoped entity id (for organization routes) */
 export const tenantIdParamSchema = z.object({
   tenantId: validIdSchema,
@@ -229,6 +223,12 @@ export const refineWithType = <T>(check: (val: T) => boolean, errorType: string)
     }
   };
 };
+
+/** Schema for a client-provided nanoid: lowercase alphanumeric, 12-50 chars */
+export const validNanoidSchema = z
+  .string()
+  .max(maxLength.id)
+  .superRefine(refineWithType((s) => /^[a-z0-9]{12,50}$/.test(s), 'invalid_id'));
 
 /** Refinement that rejects arrays with duplicate slug values */
 export const noDuplicateSlugsRefine = (items: { slug: string }[]) =>

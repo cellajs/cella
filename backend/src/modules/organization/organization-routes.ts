@@ -15,7 +15,6 @@ import {
   paginationSchema,
   tenantIdParamSchema,
   tenantOnlyParamSchema,
-  tenantOrganizationIdParamSchema,
 } from '#/schemas';
 import {
   mockBatchOrganizationsResponse,
@@ -86,12 +85,12 @@ const organizationRoutes = {
   getOrganization: createXRoute({
     operationId: 'getOrganization',
     method: 'get',
-    path: '/{tenantId}/organizations/{organizationId}',
+    path: '/{tenantId}/organizations/{id}',
     xGuard: [authGuard, tenantGuard],
     tags: ['organizations'],
     summary: 'Get organization',
     description: 'Retrieves an *organization* by ID within a tenant. Pass `?slug=true` to resolve by slug instead.',
-    request: { params: tenantOrganizationIdParamSchema, query: organizationQuerySchema },
+    request: { params: tenantIdParamSchema, query: organizationQuerySchema },
     responses: {
       200: {
         description: 'Organization',

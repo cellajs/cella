@@ -3,17 +3,13 @@ import { and, count, eq, getColumns, gte, ilike, inArray, or, SQL } from 'drizzl
 import type { PageModel } from '#/db/schema/pages';
 import { pagesTable } from '#/db/schema/pages';
 import { usersTable } from '#/db/schema/users';
+import { setPublicRlsContext } from '#/db/tenant-context';
 import { type Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
 import pagesRoutes from '#/modules/page/page-routes';
 import { getValidProductEntity } from '#/permissions/get-product-entity';
-import { getEntityByTransaction, isTransactionProcessed } from '#/sync';
-import {
-  buildFieldVersions,
-  checkFieldConflicts,
-  getChangedTrackedFields,
-  throwIfConflicts,
-} from '#/sync/field-versions';
+import { buildStx, getEntityByTransaction, isTransactionProcessed } from '#/sync';
+import { checkFieldConflicts, getChangedTrackedFields, throwIfConflicts } from '#/sync/field-versions';
 import { defaultHook } from '#/utils/default-hook';
 import { extractKeywords } from '#/utils/extract-keywords';
 import { getIsoDate } from '#/utils/iso-date';
@@ -24,93 +20,87 @@ import { prepareStringForILikeFilter } from '#/utils/sql';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
-/**
- * Page route handlers (mounted at /)
- */
 const pageRouteHandlers = app
   /**
-   * Get Pages
+   * Get list of pages
    */
   .openapi(pagesRoutes.getPages, async (ctx) => {
     const { q, sort, order, limit, offset, modifiedAfter } = ctx.req.valid('query');
 
-    const matchMode = 'all';
+    return setPublicRlsContext('public', async (tenantDb) => {
+      const matchMode = 'all';
 
-    const filters: SQL[] = [];
+      const filters: SQL[] = [];
 
-    // Delta sync filter: only return pages modified at or after the given timestamp
-    if (modifiedAfter) {
-      filters.push(gte(pagesTable.modifiedAt, modifiedAfter));
-    }
+      // Delta sync filter
+      if (modifiedAfter) {
+        filters.push(gte(pagesTable.modifiedAt, modifiedAfter));
+      }
 
-    const trimmedQuery = q?.trim();
-    if (trimmedQuery) {
-      const searchTerms = trimmedQuery.split(/\s+/).filter(Boolean);
+      const trimmedQuery = q?.trim();
+      if (trimmedQuery) {
+        const searchTerms = trimmedQuery.split(/\s+/).filter(Boolean);
 
-      const queryToken = prepareStringForILikeFilter(trimmedQuery);
-      const qFilters =
-        matchMode === 'all' || searchTerms.length === 1
-          ? [
-              ilike(pagesTable.name, queryToken),
-              ilike(pagesTable.keywords, queryToken),
-              ilike(pagesTable.description, queryToken),
-              ilike(usersTable.name, queryToken),
-              ilike(usersTable.email, queryToken),
-            ]
-          : [
-              // this seems stricter
-              inArray(pagesTable.name, searchTerms),
-              inArray(pagesTable.keywords, searchTerms),
-              inArray(pagesTable.description, searchTerms),
-              inArray(usersTable.name, searchTerms),
-              inArray(usersTable.email, searchTerms),
-            ];
+        const queryToken = prepareStringForILikeFilter(trimmedQuery);
+        const qFilters =
+          matchMode === 'all' || searchTerms.length === 1
+            ? [
+                ilike(pagesTable.name, queryToken),
+                ilike(pagesTable.keywords, queryToken),
+                ilike(pagesTable.description, queryToken),
+                ilike(usersTable.name, queryToken),
+                ilike(usersTable.email, queryToken),
+              ]
+            : [
+                inArray(pagesTable.name, searchTerms),
+                inArray(pagesTable.keywords, searchTerms),
+                inArray(pagesTable.description, searchTerms),
+                inArray(usersTable.name, searchTerms),
+                inArray(usersTable.email, searchTerms),
+              ];
 
-      filters.push(...qFilters);
-    }
+        filters.push(...qFilters);
+      }
 
-    const orderColumn = getOrderColumn(sort, pagesTable.status, order, {
-      status: pagesTable.status,
-      createdAt: pagesTable.createdAt,
-      name: pagesTable.name,
+      const orderColumn = getOrderColumn(sort, pagesTable.status, order, {
+        status: pagesTable.status,
+        createdAt: pagesTable.createdAt,
+        name: pagesTable.name,
+      });
+
+      const pagesQuery = tenantDb
+        .select(getColumns(pagesTable))
+        .from(pagesTable)
+        .leftJoin(usersTable, eq(usersTable.id, pagesTable.createdBy))
+        .where(and(or(...filters)));
+
+      const promises: [Promise<PageModel[]>, Promise<number>] = [
+        pagesQuery.orderBy(orderColumn).limit(limit).offset(offset),
+        tenantDb
+          .select({ total: count() })
+          .from(pagesQuery.as('pages'))
+          .then(([{ total }]) => total),
+      ];
+
+      const [items, total] = await Promise.all(promises);
+
+      return ctx.json({ items, total }, 200);
     });
-
-    // Use tenant-scoped db from publicGuard middleware (RLS context already set)
-    const tenantDb = ctx.var.db;
-    const pagesQuery = tenantDb
-      .select(getColumns(pagesTable))
-      .from(pagesTable)
-      .leftJoin(usersTable, eq(usersTable.id, pagesTable.createdBy))
-      .where(and(or(...filters)));
-
-    const promises: [Promise<PageModel[]>, Promise<number>] = [
-      pagesQuery.orderBy(orderColumn).limit(limit).offset(offset),
-      tenantDb
-        .select({ total: count() })
-        .from(pagesQuery.as('pages'))
-        .then(([{ total }]) => total),
-    ];
-
-    const [items, total] = await Promise.all(promises);
-
-    return ctx.json({ items, total }, 200);
   })
   /**
-   * Get page by id.
-   * Cache middleware (xCache) handles HIT. On MISS, handler fetches and sets entityCacheData.
+   * Get single page by ID
    */
   .openapi(pagesRoutes.getPage, async (ctx) => {
     const { id } = ctx.req.valid('param');
 
-    // Use tenant-scoped db from publicGuard middleware (RLS context already set)
-    const tenantDb = ctx.var.db;
-    const [page] = await tenantDb.select().from(pagesTable).where(eq(pagesTable.id, id));
-    if (!page) throw new AppError(404, 'not_found', 'warn', { entityType: 'page' });
+    return setPublicRlsContext('public', async (tenantDb) => {
+      const [page] = await tenantDb.select().from(pagesTable).where(eq(pagesTable.id, id));
+      if (!page) throw new AppError(404, 'not_found', 'warn', { entityType: 'page' });
 
-    // Set data for cache middleware to store
-    ctx.set('entityCacheData', page);
+      ctx.set('entityCacheData', page);
 
-    return ctx.json(page, 200);
+      return ctx.json(page, 200);
+    });
   })
   /**
    * Create one or more pages
@@ -119,12 +109,11 @@ const pageRouteHandlers = app
     const newPages = ctx.req.valid('json');
     const tenantDb = ctx.var.db;
 
-    // Idempotency check - use first item's stx.mutationId
+    // Idempotency check
     const firstStx = newPages[0].stx;
     if (await isTransactionProcessed(firstStx.mutationId, tenantDb)) {
       const ref = await getEntityByTransaction(firstStx.mutationId, tenantDb);
       if (ref) {
-        // For batch create, the first page ID is stored - fetch all from that batch
         const existing = await tenantDb.select().from(pagesTable).where(eq(pagesTable.id, ref.entityId));
         if (existing.length > 0) {
           return ctx.json({ data: existing, rejectedItemIds: [] }, 200);
@@ -135,39 +124,27 @@ const pageRouteHandlers = app
     const user = ctx.var.user;
     const tenantId = ctx.var.tenantId;
 
-    // Prepare pages with stx metadata for CDC
     const pagesToInsert = newPages.map(({ stx, ...pageData }) => ({
       ...pageData,
       tenantId,
       id: nanoid(),
-      entityType: 'page' as const,
       createdAt: getIsoDate(),
       createdBy: user.id,
-      description: '',
+      // TODO not yet implemented.
       displayOrder: 3,
       keywords: extractKeywords(pageData.name),
-      modifiedAt: null,
-      modifiedBy: null,
-      publicAccess: true, // Pages are publicly readable by default
-      // Sync: write transient stx metadata for CDC Worker
-      stx: {
-        mutationId: stx.mutationId,
-        sourceId: stx.sourceId,
-        version: 1,
-        fieldVersions: {},
-      },
+      publicAccess: true,
+      stx: buildStx(stx),
     }));
 
-    // Insert using tenant-scoped db (RLS context already set)
     const createdPages = await tenantDb.insert(pagesTable).values(pagesToInsert).returning();
 
     logEvent('info', `${createdPages.length} pages have been created`);
 
-    // Return with stx on each item (for client-side tracking)
     return ctx.json({ data: createdPages, rejectedItemIds: [] }, 201);
   })
   /**
-   * Update page by id
+   * Update a page by id
    */
   .openapi(pagesRoutes.updatePage, async (ctx) => {
     const { id } = ctx.req.valid('param');
@@ -177,19 +154,13 @@ const pageRouteHandlers = app
     const { stx, ...pageData } = ctx.req.valid('json');
     const user = ctx.var.user;
 
-    // Get all tracked fields that are being updated
+    // Field-level conflict detection
     const trackedFields = ['name', 'content', 'status'] as const;
     const changedFields = getChangedTrackedFields(pageData, trackedFields);
-
-    // Field-level conflict detection - check ALL changed fields
     const { conflicts } = checkFieldConflicts(changedFields, entity.stx, stx.lastReadVersion);
     throwIfConflicts('page', conflicts);
 
-    const newVersion = (entity.stx?.version ?? 0) + 1;
-
-    // Use tenant-scoped db from tenantGuard middleware (RLS context already set)
     const tenantDb = ctx.var.db;
-    // Rebuild keywords from current + updated fields
     const updatedName = pageData.name ?? entity.name;
     const updatedDescription = pageData.description ?? entity.description;
 
@@ -200,20 +171,13 @@ const pageRouteHandlers = app
         keywords: extractKeywords(updatedName, updatedDescription),
         modifiedAt: getIsoDate(),
         modifiedBy: user.id,
-        // Sync: write transient stx metadata for CDC Worker + client tracking
-        stx: {
-          mutationId: stx.mutationId,
-          sourceId: stx.sourceId,
-          version: newVersion,
-          fieldVersions: buildFieldVersions(entity.stx?.fieldVersions, changedFields, newVersion),
-        },
+        stx: buildStx(stx, entity, changedFields),
       })
       .where(eq(pagesTable.id, id))
       .returning();
 
     logEvent('info', 'Page updated', { pageId: page.id });
 
-    // Return entity directly (stx embedded for client tracking)
     return ctx.json(page, 200);
   })
   /**
@@ -223,7 +187,6 @@ const pageRouteHandlers = app
     const { ids } = ctx.req.valid('json');
     if (!ids.length) throw new AppError(400, 'invalid_request', 'warn', { entityType: 'page' });
 
-    // Use tenant-scoped db from tenantGuard middleware (RLS context already set)
     const tenantDb = ctx.var.db;
     await tenantDb.delete(pagesTable).where(inArray(pagesTable.id, ids));
 

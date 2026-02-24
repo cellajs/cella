@@ -1,6 +1,7 @@
 import { eq, sql } from 'drizzle-orm';
 import { type ContextEntityType, hierarchy, roles } from 'shared';
 import type z from 'zod';
+import type { DbOrTx } from '#/db/db';
 import { contextCountersTable } from '#/db/schema/context-counters';
 import type { membershipCountSchema } from '#/schemas';
 
@@ -48,14 +49,19 @@ export const getEntityCountsSelect = (entityType: ContextEntityType) => {
 /**
  * Fetches aggregated counts for a specific entity from contextCountersTable.
  * Single LEFT JOIN on pre-computed JSONB — no COUNT(*) subqueries.
+ *
+ * @param entityType - Type of the context entity
+ * @param entityId - ID of the entity to fetch counts for
+ * @param db - Optional db/tx to reuse an existing connection (avoids pool round-trip).
+ *             Falls back to baseDb via lazy import if not provided.
  */
-export const getEntityCounts = async (entityType: ContextEntityType, entityId: string) => {
+export const getEntityCounts = async (entityType: ContextEntityType, entityId: string, db?: DbOrTx) => {
   const { countsSelect } = getEntityCountsSelect(entityType);
 
-  // Import db lazily to avoid circular imports
-  const { unsafeInternalDb } = await import('#/db/db');
+  // Use provided db or fall back to baseDb (lazy import to avoid circular deps)
+  const queryDb = db ?? (await import('#/db/db')).baseDb;
 
-  const [counts] = await unsafeInternalDb
+  const [counts] = await queryDb
     .select(countsSelect)
     .from(contextCountersTable)
     .where(eq(contextCountersTable.contextKey, entityId));

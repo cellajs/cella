@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { toaster } from '~/modules/common/toaster/service';
 import type { UserMenuItem } from '~/modules/me/types';
+import { useUnseenCount } from '~/modules/seen/use-unseen-count';
 import { getContextEntityRoute } from '~/routes-resolver';
 import { useUIStore } from '~/store/ui';
 import { cn } from '~/utils/cn';
@@ -24,6 +25,12 @@ export const MenuSheetItem = ({ item, icon: Icon, className, searchResults }: Me
 
   const canAccess = offlineAccess ? (isOnline ? true : !item.membership.archived) : true;
   const isSubitem = !searchResults && !item.submenu;
+
+  // Unseen count for this org — suppressed for muted/archived memberships
+  const isMuted = item.membership.muted;
+  const isArchived = item.membership.archived;
+  const unseenCount = useUnseenCount(item.entityType === 'organization' ? item.id : undefined);
+  const showBadge = unseenCount > 0 && !isMuted && !isArchived;
 
   // Build route path for the entity
   const { to, params, search } = getContextEntityRoute(item, isSubitem);
@@ -93,6 +100,11 @@ export const MenuSheetItem = ({ item, icon: Icon, className, searchResults }: Me
           </span>
         </div>
       </div>
+      {showBadge && (
+        <span className="shrink-0 self-center mr-3 min-w-5 h-5 flex items-center justify-center rounded-full bg-primary/15 text-primary text-xs font-medium px-1.5">
+          {unseenCount > 99 ? '99+' : unseenCount}
+        </span>
+      )}
     </Link>
   );
 };

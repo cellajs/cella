@@ -121,9 +121,11 @@ export const appErrorHandler: ErrorHandler<Env> = (err, ctx) => {
   const organization = ctx.get('organization');
   const detailsRequired = severitiesRequiringDetails.has(severity);
 
-  const includeStack = severity === 'error' || severity === 'fatal';
+  const logId = ctx.get('requestId');
+  const timestamp = getIsoDate();
 
-  const detailedError = {
+  // Full error details for server-side logging only (never sent to client)
+  const serverError = {
     message,
     name,
     status,
@@ -131,25 +133,25 @@ export const appErrorHandler: ErrorHandler<Env> = (err, ctx) => {
     severity,
     entityType,
     cause: err.cause,
-    logId: ctx.get('requestId'),
-    ...(includeStack && { stack: err.stack }),
+    logId,
+    stack: err.stack,
     path: ctx.req.path,
     method: ctx.req.method,
     userId: user?.id,
     organizationId: organization?.id,
-    timestamp: getIsoDate(),
+    timestamp,
     meta,
     ...(pgError && { pgCode: pgError.code, pgDetail: pgError.detail, pgConstraint: pgError.constraint }),
   };
 
   if (detailsRequired) {
-    Sentry.captureException(detailedError, { level: severity === 'warn' ? 'warning' : 'error' });
+    Sentry.captureException(serverError, { level: severity === 'warn' ? 'warning' : 'error' });
   }
 
   // Log with full details for warn/error/fatal, minimal for info
   const logPayload = detailsRequired
-    ? { msg: detailedError.name, error: detailedError, ...(isProduction && meta) }
-    : { msg: detailedError.name };
+    ? { msg: serverError.name, error: serverError, ...(isProduction && meta) }
+    : { msg: serverError.name };
 
   // Log through event logger
   eventLogger[severity](logPayload);
@@ -162,5 +164,17 @@ export const appErrorHandler: ErrorHandler<Env> = (err, ctx) => {
     return ctx.redirect(redirectUrl, 302);
   }
 
-  return ctx.json(detailedError, detailedError.status as ContentfulStatusCode);
+  const clientError = {
+    message: isProduction && status >= 500 ? 'Internal server error' : message,
+    name,
+    status,
+    type,
+    severity,
+    entityType,
+    logId,
+    timestamp,
+    meta,
+  };
+
+  return ctx.json(clientError, clientError.status as ContentfulStatusCode);
 };

@@ -3,7 +3,6 @@ import { EventName, Paddle } from '@paddle/paddle-node-sdk';
 import { and, eq, inArray, isNull } from 'drizzle-orm';
 import i18n from 'i18next';
 import { appConfig } from 'shared';
-import { unsafeInternalDb as db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
@@ -41,6 +40,7 @@ const systemRouteHandlers = app
    * 3. email exists in emailsTable AND in tokensTable -> remove from recipients.
    */
   .openapi(systemRoutes.createInvite, async (ctx) => {
+    const db = ctx.var.db;
     const { emails } = ctx.req.valid('json');
     const user = ctx.var.user;
 
@@ -164,6 +164,7 @@ const systemRouteHandlers = app
    * Delete users (system admin only)
    */
   .openapi(systemRoutes.deleteUsers, async (ctx) => {
+    const db = ctx.var.db;
     const { ids } = ctx.req.valid('json');
 
     // Convert the user ids to an array
@@ -190,6 +191,7 @@ const systemRouteHandlers = app
    * Update a user by id
    */
   .openapi(systemRoutes.updateUser, async (ctx) => {
+    const db = ctx.var.db;
     const { id } = ctx.req.valid('param');
 
     const user = ctx.var.user;
@@ -262,6 +264,7 @@ const systemRouteHandlers = app
    * Send newsletter to members of one or more organizations matching one ore more roles.
    */
   .openapi(systemRoutes.sendNewsletter, async (ctx) => {
+    const db = ctx.var.db;
     const { organizationIds, subject, content, roles } = ctx.req.valid('json');
     const { toSelf } = ctx.req.valid('query');
 

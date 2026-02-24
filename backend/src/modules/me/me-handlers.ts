@@ -1,10 +1,10 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
+import { and, count, eq, gte, inArray, isNull, notExists, sql } from 'drizzle-orm';
 import type { EnabledOAuthProvider } from 'shared';
 import { appConfig } from 'shared';
-import { unsafeInternalDb as db } from '#/db/db';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { membershipsTable } from '#/db/schema/memberships';
+import { seenByTable } from '#/db/schema/seen-by';
 import { AuthStrategy, sessionsTable } from '#/db/schema/sessions';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { userActivityTable } from '#/db/schema/user-activity';
@@ -44,6 +44,7 @@ const meRouteHandlers = app
    * Get me
    */
   .openapi(meRoutes.getMe, async (ctx) => {
+    const db = ctx.var.db;
     const user = ctx.var.user;
     const systemRole = ctx.var.userSystemRole ?? ('user' as const);
 
@@ -63,6 +64,7 @@ const meRouteHandlers = app
    * Toggle MFA require for me auth
    */
   .openapi(meRoutes.toggleMfa, async (ctx) => {
+    const db = ctx.var.db;
     const { mfaRequired, passkeyData, totpCode } = ctx.req.valid('json');
     const user = ctx.var.user;
 
@@ -132,6 +134,7 @@ const meRouteHandlers = app
    * Get my invitations - a list with a combination of pending membership and entity data
    */
   .openapi(meRoutes.getMyInvitations, async (ctx) => {
+    const db = ctx.var.db;
     const user = ctx.var.user;
 
     const pendingInvites = await Promise.all(
@@ -171,6 +174,7 @@ const meRouteHandlers = app
    * Terminate one or more of my sessions
    */
   .openapi(meRoutes.deleteMySessions, async (ctx) => {
+    const db = ctx.var.db;
     const { ids } = ctx.req.valid('json');
     const user = ctx.var.user;
 
@@ -199,6 +203,7 @@ const meRouteHandlers = app
    * Update current user (me)
    */
   .openapi(meRoutes.updateMe, async (ctx) => {
+    const db = ctx.var.db;
     const user = ctx.var.user;
 
     if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { user: 'self' } });
@@ -233,6 +238,7 @@ const meRouteHandlers = app
    * Delete current user (me)
    */
   .openapi(meRoutes.deleteMe, async (ctx) => {
+    const db = ctx.var.db;
     const user = ctx.var.user;
 
     // Check if user exists
@@ -250,6 +256,7 @@ const meRouteHandlers = app
    * Delete one of my entity memberships
    */
   .openapi(meRoutes.deleteMyMembership, async (ctx) => {
+    const db = ctx.var.db;
     const user = ctx.var.user;
 
     const { entityType, entityId } = ctx.req.valid('query');
@@ -311,6 +318,7 @@ const meRouteHandlers = app
    * Unsubscribe myself by token from receiving newsletters
    */
   .openapi(meRoutes.unsubscribeMe, async (ctx) => {
+    const db = ctx.var.db;
     const { token } = ctx.req.valid('query');
 
     // Check if token exists
@@ -343,6 +351,77 @@ const meRouteHandlers = app
     const items = memberships.map(({ createdBy, ...rest }) => rest);
 
     return ctx.json({ items }, 200);
+  })
+  /**
+   * Get unseen counts per org per entity type
+   *
+   * For each org the user is a member of, counts product entities created within
+   * the last 90 days that have no seenBy record for this user.
+   */
+  .openapi(meRoutes.getMyUnseenCounts, async (ctx) => {
+    const db = ctx.var.db;
+    const user = ctx.var.user;
+    const memberships = ctx.var.memberships;
+    // Org-scoped product entity types (exclude parentless types like pages)
+    const orgScopedTypes = appConfig.productEntityTypes.filter(
+      (t) => !(appConfig.parentlessProductEntityTypes as readonly string[]).includes(t),
+    );
+
+    // Unique org IDs from user's memberships
+    const orgIds = [...new Set(memberships.map((m) => m.organizationId))];
+
+    if (orgIds.length === 0 || orgScopedTypes.length === 0) {
+      return ctx.json({ counts: [] }, 200);
+    }
+
+    const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
+
+    // Build unseen count queries per org × entityType
+    const results: {
+      organizationId: string;
+      entityType: (typeof appConfig.productEntityTypes)[number];
+      unseenCount: number;
+    }[] = [];
+
+    for (const entityType of orgScopedTypes) {
+      const entityTable = entityTables[entityType as keyof typeof entityTables];
+      if (!entityTable || !('organizationId' in entityTable)) continue;
+
+      const entityTableTyped = entityTable as typeof entityTable & { organizationId: any; createdAt: any; id: any };
+
+      // Single query: count unseen entities across all orgs, grouped by organizationId
+      const rows = await db
+        .select({
+          organizationId: entityTableTyped.organizationId,
+          unseenCount: count(),
+        })
+        .from(entityTable)
+        .where(
+          and(
+            inArray(entityTableTyped.organizationId, orgIds),
+            gte(entityTableTyped.createdAt, ninetyDaysAgo),
+            notExists(
+              db
+                .select({ one: sql`1` })
+                .from(seenByTable)
+                .where(and(eq(seenByTable.entityId, entityTableTyped.id), eq(seenByTable.userId, user.id))),
+            ),
+          ),
+        )
+        .groupBy(entityTableTyped.organizationId);
+
+      for (const row of rows) {
+        if (row.unseenCount > 0) {
+          results.push({
+            organizationId: row.organizationId as string,
+            entityType: entityType as (typeof appConfig.productEntityTypes)[number],
+            unseenCount: row.unseenCount,
+          });
+        }
+      }
+    }
+
+    return ctx.json({ counts: results }, 200);
   });
 
 export default meRouteHandlers;

@@ -402,6 +402,7 @@ export interface Renderers<TRow, TSummaryRow> {
 export interface SelectCellOptions {
   enableEditor?: Maybe<boolean>;
   shouldFocusCell?: Maybe<boolean>;
+  extendSelection?: Maybe<boolean>;
 }
 
 export interface ColumnWidth {

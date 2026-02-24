@@ -79,6 +79,10 @@ function OrganizationsTable() {
 
   const selectedRowIds = useMemo(() => new Set(selected.map((s) => s.id)), [selected]);
 
+  // When orgs are selected, lock selection to that tenant (cross-tenant batch delete is not supported)
+  const selectedTenantId = selected.length > 0 ? selected[0].tenantId : null;
+  const isRowSelectionDisabled = (row: EnrichedOrganization) => !!selectedTenantId && row.tenantId !== selectedTenantId;
+
   const visibleColumns = useMemo(() => columns.filter((column) => column.visible), [columns]);
 
   return (
@@ -111,6 +115,7 @@ function OrganizationsTable() {
           fetchMore,
           selectedRows: selectedRowIds,
           onSelectedRowsChange,
+          isRowSelectionDisabled,
           sortColumns,
           onSortColumnsChange,
           NoRowsComponent: (

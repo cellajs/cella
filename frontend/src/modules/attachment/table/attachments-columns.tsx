@@ -108,6 +108,19 @@ export const useColumns = (entity: EnrichedContextEntity, isSheet: boolean, isCo
         ),
       },
       {
+        key: 'viewCount',
+        name: t('common:views'),
+        sortable: false,
+        visible: !isMobile && !isSheet,
+        minWidth: 80,
+        renderHeaderCell: HeaderCell,
+        renderCell: ({ row }) => (
+          <div className="inline-flex items-center gap-1 relative font-light group h-full w-full opacity-50">
+            {(row as Attachment & { viewCount?: number }).viewCount ?? 0}
+          </div>
+        ),
+      },
+      {
         key: 'createdAt',
         name: t('common:created_at'),
         sortable: true,

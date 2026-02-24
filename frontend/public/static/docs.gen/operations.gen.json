@@ -741,6 +741,25 @@
     }
   },
   {
+    "id": "getMyUnseenCounts",
+    "hash": "tag/me/GET/me/unseen-counts",
+    "method": "get",
+    "path": "/me/unseen-counts",
+    "tags": ["me"],
+    "summary": "Get unseen counts",
+    "description": "Returns the number of unseen product entities per organization and entity type for the *current user*. Only entities created within the last 90 days are considered.",
+    "deprecated": false,
+    "hasParams": false,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["authGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    }
+  },
+  {
     "id": "checkSlug",
     "hash": "tag/entities/POST/entities/check-slug",
     "method": "post",
@@ -989,8 +1008,8 @@
   },
   {
     "id": "updateTenant",
-    "hash": "tag/tenants/PATCH/tenants/{tenantId}",
-    "method": "patch",
+    "hash": "tag/tenants/PUT/tenants/{tenantId}",
+    "method": "put",
     "path": "/tenants/{tenantId}",
     "tags": ["tenants"],
     "summary": "Update a tenant",
@@ -1239,9 +1258,9 @@
   },
   {
     "id": "getOrganization",
-    "hash": "tag/organizations/GET/{tenantId}/organizations/{organizationId}",
+    "hash": "tag/organizations/GET/{tenantId}/organizations/{id}",
     "method": "get",
-    "path": "/{tenantId}/organizations/{organizationId}",
+    "path": "/{tenantId}/organizations/{id}",
     "tags": ["organizations"],
     "summary": "Get organization",
     "description": "Retrieves an *organization* by ID within a tenant. Pass `?slug=true` to resolve by slug instead.",
@@ -1665,6 +1684,25 @@
     "hasRequestBody": false,
     "hasResponseBody": true,
     "hasExample": true,
+    "extensions": {
+      "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    }
+  },
+  {
+    "id": "markSeen",
+    "hash": "tag/seen/POST/{tenantId}/{orgId}/seen",
+    "method": "post",
+    "path": "/{tenantId}/{orgId}/seen",
+    "tags": ["seen"],
+    "summary": "Mark entities as seen",
+    "description": "Records that the current user has viewed one or more product entities. Deduplicates against existing records. Updates entity view counts for newly seen entities.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": true,
+    "hasResponseBody": true,
+    "hasExample": false,
     "extensions": {
       "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
       "xRateLimiter": [],

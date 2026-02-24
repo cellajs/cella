@@ -19,7 +19,7 @@
 import { sql } from 'drizzle-orm';
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { unsafeInternalDb as adminDb } from '#/db/db';
+import { baseDb as adminDb } from '#/db/db';
 import { setPublicRlsContext, setTenantRlsContext, setUserRlsContext } from '#/db/tenant-context';
 import { nanoidTenant } from '#/utils/nanoid';
 

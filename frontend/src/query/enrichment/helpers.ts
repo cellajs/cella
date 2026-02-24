@@ -39,3 +39,20 @@ export function getMembershipEntityId(m: MembershipBase): string | null {
 export function findMembership(memberships: MembershipBase[], entityId: string): MembershipBase | undefined {
   return memberships.find((m) => getMembershipEntityId(m) === entityId);
 }
+
+/**
+ * Get menu parent types for a given entity type from menuStructure config.
+ * These are context entity types that host this entity as a subentity in the menu,
+ * even if they aren't hierarchy ancestors (e.g. workspace hosts project).
+ */
+export function getMenuParentTypes(entityType: string): ContextEntityType[] {
+  return appConfig.menuStructure.filter((s) => s.subentityType === entityType).map((s) => s.entityType);
+}
+
+/**
+ * Check if a context entity type is a menu parent of another.
+ * Used to propagate ancestor slug re-enrichment when a menu parent's cache updates.
+ */
+export function isMenuParentOf(parentType: string, childType: string): boolean {
+  return appConfig.menuStructure.some((s) => s.entityType === parentType && s.subentityType === childType);
+}

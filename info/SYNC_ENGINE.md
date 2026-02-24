@@ -260,7 +260,7 @@ Server rejects conflicting mutations with 409 status. Client must refetch, rebas
 
 ### Idempotency
 
-Replaying the same mutation (same `stx.id`) produces the same result without side effects. Critical for:
+Replaying the same mutation (same `stx.mutationId`) produces the same result without side effects. Critical for:
 - **Network retries**: Request succeeds but response is lost
 - **Offline queue replay**: Some mutations may have reached server before disconnect
 - **Crash recovery**: Pending transactions replay from IndexedDB

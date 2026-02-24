@@ -8,9 +8,11 @@
     ".": "./index.ts",
     "./upload-templates": "./upload-templates.ts",
     "./tracing": "./src/tracing/index.ts",
-    "./builder": "./src/builder/index.ts"
+    "./builder": "./src/builder/index.ts",
+    "./blocknote": "./src/utils/text-from-block.ts"
   },
   "dependencies": {
+    "@blocknote/core": "^0.47.0",
     "nanoid": "^5.1.6"
   }
 }

@@ -11,6 +11,7 @@ import {
   uploadTokenSchema,
 } from '#/modules/me/me-schema';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
+import { unseenCountsResponseSchema } from '#/modules/seen/seen-schema';
 import { userFlagsSchema, userSchema, userUpdateBodySchema } from '#/modules/user/user-schema';
 import {
   batchResponseSchema,
@@ -273,6 +274,27 @@ const meRoutes = {
             schema: z.object({ items: z.array(membershipBaseSchema) }),
           },
         },
+      },
+      ...errorResponseRefs,
+    },
+  }),
+  /**
+   * Get unseen counts
+   */
+  getMyUnseenCounts: createXRoute({
+    operationId: 'getMyUnseenCounts',
+    method: 'get',
+    path: '/unseen-counts',
+    xGuard: authGuard,
+    tags: ['me'],
+    summary: 'Get unseen counts',
+    description:
+      'Returns the number of unseen product entities per organization and entity type for the *current user*. ' +
+      'Only entities created within the last 90 days are considered.',
+    responses: {
+      200: {
+        description: 'Unseen counts per org per entity type',
+        content: { 'application/json': { schema: unseenCountsResponseSchema } },
       },
       ...errorResponseRefs,
     },

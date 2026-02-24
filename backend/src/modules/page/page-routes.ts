@@ -19,8 +19,6 @@ import {
   pageUpdateStxBodySchema,
 } from './page-schema';
 
-// NOTE: Public stream route has been moved to entities module (/entities/public/stream)
-
 const pagesRoutes = {
   /**
    * Create one or more pages

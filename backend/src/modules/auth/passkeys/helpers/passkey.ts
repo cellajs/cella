@@ -20,7 +20,7 @@ import {
 import { and, eq } from 'drizzle-orm';
 import { Context } from 'hono';
 import { appConfig } from 'shared';
-import { unsafeInternalDb as db } from '#/db/db';
+import { baseDb as db } from '#/db/db';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { AppError } from '#/lib/error';
 import { deleteAuthCookie, getAuthCookie } from '#/modules/auth/general/helpers/cookie';

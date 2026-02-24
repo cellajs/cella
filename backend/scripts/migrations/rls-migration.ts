@@ -35,6 +35,8 @@ const fullCrudTables = [
   'emails',
   'rate_limits',
   'context_counters',
+  'seen_by',
+  'seen_counts',
 ];
 const readOnlyTables = ['tenants', 'system_roles', 'activities'];
 

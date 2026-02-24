@@ -12,6 +12,7 @@ import metricsRouteHandlers from '#/modules/metrics/metrics-handlers';
 import organizationRouteHandlers from '#/modules/organization/organization-handlers';
 import pageRouteHandlers from '#/modules/page/page-handlers';
 import requestsRouteHandlers from '#/modules/requests/requests-handlers';
+import seenRouteHandlers from '#/modules/seen/seen-handlers';
 import systemRouteHandlers from '#/modules/system/system-handlers';
 import tenantRouteHandlers from '#/modules/tenants/tenants-handlers';
 import userRouteHandlers from '#/modules/user/user-handlers';
@@ -36,6 +37,7 @@ const app = baseApp
   .route('/', userRouteHandlers)
   // Tenant-scoped routes: /:tenantId/:orgId/...
   .route('/:tenantId/:orgId/attachments', attachmentRouteHandlers)
-  .route('/:tenantId/:orgId/memberships', membershipsRouteHandlers);
+  .route('/:tenantId/:orgId/memberships', membershipsRouteHandlers)
+  .route('/:tenantId/:orgId/seen', seenRouteHandlers);
 
 export default app;

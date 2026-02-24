@@ -16,7 +16,7 @@
               "ref": "#/components/schemas/Page",
               "items": {
                 "type": "object",
-                "description": "A content page belonging to an organization.",
+                "description": "A content page for documentation purposes.",
                 "properties": {
                   "createdAt": { "type": "string", "required": true },
                   "id": {
@@ -226,7 +226,7 @@
         "contentType": "application/json",
         "schema": {
           "type": "object",
-          "description": "A content page belonging to an organization.",
+          "description": "A content page for documentation purposes.",
           "properties": {
             "createdAt": { "type": "string", "required": true },
             "id": {
@@ -390,7 +390,7 @@
               "ref": "#/components/schemas/Page",
               "items": {
                 "type": "object",
-                "description": "A content page belonging to an organization.",
+                "description": "A content page for documentation purposes.",
                 "properties": {
                   "createdAt": { "type": "string", "required": true },
                   "id": {
@@ -548,7 +548,7 @@
               "ref": "#/components/schemas/Page",
               "items": {
                 "type": "object",
-                "description": "A content page belonging to an organization.",
+                "description": "A content page for documentation purposes.",
                 "properties": {
                   "createdAt": { "type": "string", "required": true },
                   "id": {
@@ -884,7 +884,7 @@
         "contentType": "application/json",
         "schema": {
           "type": "object",
-          "description": "A content page belonging to an organization.",
+          "description": "A content page for documentation purposes.",
           "properties": {
             "createdAt": { "type": "string", "required": true },
             "id": {

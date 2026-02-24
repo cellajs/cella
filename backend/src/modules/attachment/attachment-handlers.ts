@@ -2,10 +2,10 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { and, count, eq, getColumns, gte, ilike, inArray, or, type SQL, sql } from 'drizzle-orm';
 import { html, raw } from 'hono/html';
 import { appConfig } from 'shared';
-import { unsafeInternalDb as db } from '#/db/db';
 import { attachmentsTable } from '#/db/schema/attachments';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
+import { seenCountsTable } from '#/db/schema/seen-counts';
 import { type Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
 import { getSignedUrlFromKey } from '#/lib/signed-url';
@@ -14,13 +14,8 @@ import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import { canAccessEntity, canCreateEntity, checkPermission } from '#/permissions';
 import { getValidProductEntity } from '#/permissions/get-product-entity';
 import { splitByPermission } from '#/permissions/split-by-permission';
-import { isTransactionProcessed } from '#/sync';
-import {
-  buildFieldVersions,
-  checkFieldConflicts,
-  getChangedTrackedFields,
-  throwIfConflicts,
-} from '#/sync/field-versions';
+import { buildStx, isTransactionProcessed } from '#/sync';
+import { checkFieldConflicts, getChangedTrackedFields, throwIfConflicts } from '#/sync/field-versions';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
@@ -38,12 +33,11 @@ const attachmentRouteHandlers = app
 
     const organization = ctx.var.organization;
 
-    // Permission check: verify user can read attachments in this organization
     canAccessEntity(ctx, 'read', { entityType: 'attachment', organizationId: organization.id });
 
     const filters: SQL[] = [eq(attachmentsTable.organizationId, organization.id)];
 
-    // Delta sync filter: only return attachments modified at or after the given timestamp
+    // Delta sync filter
     if (modifiedAfter) {
       filters.push(gte(attachmentsTable.modifiedAt, modifiedAfter));
     }
@@ -65,11 +59,14 @@ const attachmentRouteHandlers = app
       contentType: attachmentsTable.contentType,
     });
 
-    // Use tenant-scoped db from tenantGuard middleware (RLS context already set)
     const tenantDb = ctx.var.db;
     const attachmentsQuery = tenantDb
-      .select(getColumns(attachmentsTable))
+      .select({
+        ...getColumns(attachmentsTable),
+        viewCount: sql<number>`coalesce(${seenCountsTable.viewCount}, 0)`.as('view_count'),
+      })
       .from(attachmentsTable)
+      .leftJoin(seenCountsTable, eq(seenCountsTable.entityId, attachmentsTable.id))
       .where(and(...filters));
 
     const [items, [{ total }]] = await Promise.all([
@@ -86,7 +83,6 @@ const attachmentRouteHandlers = app
   .openapi(attachmentRoutes.getPresignedUrl, async (ctx) => {
     const { key } = ctx.req.valid('query');
 
-    // Use tenant-scoped db from tenantGuard middleware (RLS context already set)
     const tenantDb = ctx.var.db;
 
     const [attachment] = await tenantDb
@@ -101,10 +97,8 @@ const attachmentRouteHandlers = app
       )
       .limit(1);
 
-    // Determine bucket - use attachment record if found, otherwise assume private
     const bucketName = attachment?.bucketName ?? appConfig.s3.privateBucket;
 
-    // Permission check: verify user has access to this attachment
     if (attachment) {
       const user = ctx.var.user;
       const userSystemRole = ctx.var.userSystemRole;
@@ -133,15 +127,12 @@ const attachmentRouteHandlers = app
     const { id } = ctx.req.valid('param');
     const organization = ctx.var.organization;
 
-    // Get attachment with permission check
     const { entity: attachment } = await getValidProductEntity(ctx, id, 'attachment', 'read');
 
-    // Verify attachment belongs to the organization context
     if (attachment.organizationId !== organization.id) {
       throw new AppError(404, 'not_found', 'warn', { entityType: 'attachment' });
     }
 
-    // Set cache data for passthrough pattern (appCache middleware will cache this)
     ctx.set('entityCacheData', attachment as Record<string, unknown>);
 
     return ctx.json(attachment, 200);
@@ -155,13 +146,12 @@ const attachmentRouteHandlers = app
 
     const organization = ctx.var.organization;
 
-    // Permission check: verify user can create attachments in this organization
     canCreateEntity(ctx, { entityType: 'attachment', organizationId: organization.id });
 
-    // Idempotency check - use first item's stx.mutationId to check entire batch
+    // Idempotency check
     const batchStxId = newAttachments[0].stx.mutationId;
+
     if (await isTransactionProcessed(batchStxId, tenantDb)) {
-      // Fetch all items from same batch by querying stx.mutationId in JSONB column
       const existingBatch = await tenantDb
         .select()
         .from(attachmentsTable)
@@ -174,7 +164,6 @@ const attachmentRouteHandlers = app
     const user = ctx.var.user;
     const attachmentRestrictions = organization.restrictions.attachment;
 
-    // Check restriction limits
     if (attachmentRestrictions !== 0 && newAttachments.length > attachmentRestrictions) {
       throw new AppError(403, 'restrict_by_org', 'warn', { entityType: 'attachment' });
     }
@@ -188,32 +177,19 @@ const attachmentRouteHandlers = app
       throw new AppError(403, 'restrict_by_org', 'warn', { entityType: 'attachment' });
     }
 
-    // Prepare attachments with stx metadata for CDC
     const attachmentsToInsert = newAttachments.map(({ stx, ...att }) => ({
       ...att,
       tenantId: organization.tenantId,
       organizationId: organization.id,
-      entityType: 'attachment' as const,
       createdAt: getIsoDate(),
       createdBy: user.id,
-      modifiedAt: null,
-      modifiedBy: null,
-      keywords: '', // Required by productEntityColumns
-      description: '', // Required by baseEntityColumns
-      stx: {
-        mutationId: stx.mutationId,
-        sourceId: stx.sourceId,
-        version: 1,
-        fieldVersions: {},
-      },
+      stx: buildStx(stx),
     }));
 
-    // Insert using tenant-scoped db (RLS context already set)
     const createdAttachments = await tenantDb.insert(attachmentsTable).values(attachmentsToInsert).returning();
 
     logEvent('info', `${createdAttachments.length} attachments have been created`);
 
-    // Return entities with stx embedded (for client tracking)
     return ctx.json({ data: createdAttachments, rejectedItemIds: [] }, 201);
   })
   /**
@@ -223,60 +199,44 @@ const attachmentRouteHandlers = app
     const { id } = ctx.req.valid('param');
     const { stx, ...updatedFields } = ctx.req.valid('json');
 
-    // Get attachment with permission check
     const { entity } = await getValidProductEntity(ctx, id, 'attachment', 'update');
 
     const user = ctx.var.user;
 
-    // Get all tracked fields that are being updated
+    // Field-level conflict detection
     const trackedFields = ['name', 'filename', 'contentType'] as const;
     const changedFields = getChangedTrackedFields(updatedFields, trackedFields);
-
-    // Field-level conflict detection - check ALL changed fields
     const { conflicts } = checkFieldConflicts(changedFields, entity.stx, stx.lastReadVersion);
     throwIfConflicts('attachment', conflicts);
 
-    const newVersion = (entity.stx?.version ?? 0) + 1;
-
-    // Use tenant-scoped db from tenantGuard middleware (RLS context already set)
     const tenantDb = ctx.var.db;
+
     const [updatedAttachment] = await tenantDb
       .update(attachmentsTable)
       .set({
         ...updatedFields,
         modifiedAt: getIsoDate(),
         modifiedBy: user.id,
-        // Sync: write transient stx metadata for CDC Worker + client tracking
-        stx: {
-          mutationId: stx.mutationId,
-          sourceId: stx.sourceId,
-          version: newVersion,
-          fieldVersions: buildFieldVersions(entity.stx?.fieldVersions, changedFields, newVersion),
-        },
+        stx: buildStx(stx, entity, changedFields),
       })
       .where(eq(attachmentsTable.id, id))
       .returning();
 
     logEvent('info', 'Attachment updated', { attachmentId: updatedAttachment.id });
 
-    // Return entity directly (stx embedded for client tracking)
     return ctx.json({ ...updatedAttachment }, 200);
   })
-  /**
-   * Delete attachments by ids
-   */
+  // Delete attachments
   .openapi(attachmentRoutes.deleteAttachments, async (ctx) => {
     const { ids, stx } = ctx.req.valid('json');
 
     const memberships = ctx.var.memberships;
 
-    // stx is available for CDC echo prevention (sourceId tracking)
-    // CDC will read stx from the deleted row's old data
+    // Log stx for CDC echo prevention
     if (stx) {
       logEvent('debug', 'Delete with stx metadata', { stxId: stx.mutationId, sourceId: stx.sourceId });
     }
 
-    // Convert the ids to an array
     const toDeleteIds = Array.isArray(ids) ? ids : [ids];
     if (!toDeleteIds.length) throw new AppError(400, 'invalid_request', 'warn', { entityType: 'attachment' });
 
@@ -290,7 +250,6 @@ const attachmentRouteHandlers = app
 
     if (!allowedIds.length) throw new AppError(403, 'forbidden', 'warn', { entityType: 'attachment' });
 
-    // Use tenant-scoped db from tenantGuard middleware (RLS context already set)
     const tenantDb = ctx.var.db;
     await tenantDb.delete(attachmentsTable).where(inArray(attachmentsTable.id, allowedIds));
 
@@ -302,6 +261,7 @@ const attachmentRouteHandlers = app
    * Redirect to attachment
    */
   .openapi(attachmentRoutes.redirectToAttachment, async (ctx) => {
+    const db = ctx.var.db;
     const { id } = ctx.req.valid('param');
 
     const [attachment] = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, id));

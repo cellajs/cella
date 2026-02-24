@@ -2,7 +2,6 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { and, count, eq, getColumns, ilike, inArray, type SQL, sql } from 'drizzle-orm';
 import i18n from 'i18next';
 import { appConfig } from 'shared';
-import { unsafeInternalDb as db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { type RequestModel, requestsTable } from '#/db/schema/requests';
 import { usersTable } from '#/db/schema/users';
@@ -27,6 +26,7 @@ const requestsRouteHandlers = app
    *  Create request
    */
   .openapi(requestRoutes.createRequest, async (ctx) => {
+    const db = ctx.var.db;
     const { email, type: requestType, message } = ctx.req.valid('json');
     // Cast type to proper literal union for Drizzle v1 strict types
     const type = requestType as RequestModel['type'];
@@ -107,6 +107,7 @@ const requestsRouteHandlers = app
    *  Get list of requests for system admins
    */
   .openapi(requestRoutes.getRequests, async (ctx) => {
+    const db = ctx.var.db;
     const { q, sort, order, offset, limit } = ctx.req.valid('query');
 
     const filter: SQL | undefined = q ? ilike(requestsTable.email, prepareStringForILikeFilter(q)) : undefined;
@@ -138,6 +139,7 @@ const requestsRouteHandlers = app
    *  Delete requests
    */
   .openapi(requestRoutes.deleteRequests, async (ctx) => {
+    const db = ctx.var.db;
     const { ids } = ctx.req.valid('json');
 
     // Convert the ids to an array

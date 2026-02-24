@@ -30,7 +30,7 @@ export const tenantGuard = xMiddleware(
     functionName: 'tenantGuard',
     type: 'x-guard',
     name: 'tenant',
-    description: 'Validates tenant access and wraps handler in RLS-enabled transaction',
+    description: 'Requires authGuard, validates tenant access, and sets tenant-scoped RLS db context',
   },
   async (ctx, next) => {
     const rawTenantId = ctx.req.param('tenantId');

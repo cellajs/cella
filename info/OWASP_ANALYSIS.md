@@ -75,12 +75,17 @@ Good security headers and CORS configuration, but some configuration issues need
 | Environment validation | [backend/src/env.ts](backend/src/env.ts) | `@t3-oss/env-core` with Zod validation for required secrets |
 | CORS restricted | [backend/src/server.ts](backend/src/server.ts) | Single origin, not wildcard |
 
-### 🔴 Critical Issues
+### ✅ Resolved Issues
 
-| Issue | Location | Risk | Recommendation |
-|-------|----------|------|----------------|
-| Stack traces in API responses | [backend/src/middlewares/error-handler.ts](backend/src/middlewares/error-handler.ts) | High | Never include stack traces in client responses |
-| Hardcoded API keys | [config/default.ts](config/default.ts), [config/production.ts](config/production.ts) | High | Move to environment variables |
+| Issue | Location | Resolution |
+|-------|----------|------------|
+| ~~Stack traces in API responses~~ | [backend/src/lib/error.ts](backend/src/lib/error.ts) | Fixed: client responses now only include safe fields; stack traces, user/org IDs, PG errors stay server-side. Production 500s return generic message. |
+
+### ℹ️ Notes
+
+| Issue | Location | Risk | Notes |
+|-------|----------|------|-------|
+| Public frontend keys in config | [shared/default-config.ts](shared/default-config.ts), [shared/production-config.ts](shared/production-config.ts) | Low | `googleMapsKey`, `sentryDsn`, `gleapToken` are public client-side tokens embedded in the browser bundle. Protection is at provider level (domain restrictions). Not secrets. |
 
 ### ⚠️ Medium Issues
 
@@ -359,8 +364,8 @@ Good global error handler and frontend error boundaries, but some concerns with 
 
 | Practice | Location | Description |
 |----------|----------|-------------|
-| Centralized error handler | [backend/src/middlewares/error-handler.ts](backend/src/middlewares/error-handler.ts) | Global handler with AppError class, Sentry integration |
-| Custom AppError class | [backend/src/lib/errors.ts](backend/src/lib/errors.ts) | Structured error with status, type, severity, entityType |
+| Centralized error handler | [backend/src/lib/error.ts](backend/src/lib/error.ts) | Global handler with AppError class, Sentry integration. Client responses exclude stack traces, internal IDs, and PG details. |
+| Custom AppError class | [backend/src/lib/error.ts](backend/src/lib/error.ts) | Structured error with status, type, severity, entityType |
 | Fail-closed authentication | [backend/src/middlewares/guard/authenticated-guard.ts](backend/src/middlewares/guard/authenticated-guard.ts) | Fails closed on session validation failure |
 | Fail-closed authorization | [backend/src/middlewares/guard/org-guard.ts](backend/src/middlewares/guard/org-guard.ts) | Denies by default when no permission |
 | Resource cleanup | Various files | Finally blocks used for cookie cleanup, Sentry spans |
@@ -369,12 +374,12 @@ Good global error handler and frontend error boundaries, but some concerns with 
 | Frontend API error handler | [frontend/src/query/query-client.ts](frontend/src/query/query-client.ts) | Global QueryClient error handling |
 | Optimistic update rollback | [frontend/src/modules/attachments/query-mutations.ts](frontend/src/modules/attachments/query-mutations.ts) | Rollback on mutation failure |
 
-### 🔴 Issues
+### ✅ Resolved Issues
 
-| Issue | Location | Risk | Recommendation |
-|-------|----------|------|----------------|
-| Stack traces in responses | [backend/src/middlewares/error-handler.ts](backend/src/middlewares/error-handler.ts) | High | Never include stack traces in client responses in production |
-| Detailed error info returned | [backend/src/middlewares/error-handler.ts](backend/src/middlewares/error-handler.ts) | High | Remove userId, organizationId, path from client responses |
+| Issue | Location | Resolution |
+|-------|----------|------------|
+| ~~Stack traces in responses~~ | [backend/src/lib/error.ts](backend/src/lib/error.ts) | Fixed: stack traces excluded from client responses |
+| ~~Detailed error info returned~~ | [backend/src/lib/error.ts](backend/src/lib/error.ts) | Fixed: userId, organizationId, path, PG details excluded from client responses |
 
 ### ⚠️ Medium Issues
 
@@ -399,11 +404,11 @@ These files have empty catch blocks that silently swallow errors:
 
 ### 🔴 Critical (Address Immediately)
 
-1. **Remove stack traces from production error responses** - [backend/src/middlewares/error-handler.ts](backend/src/middlewares/error-handler.ts)
+1. ~~**Remove stack traces from production error responses**~~ - ✅ Fixed in [backend/src/lib/error.ts](backend/src/lib/error.ts)
 2. **Fix account enumeration** - Use generic error messages for auth failures in [backend/src/modules/auth/handlers.ts](backend/src/modules/auth/handlers.ts)
 3. **Add dependency vulnerability scanning** - Add Dependabot or Snyk to CI
 4. **Strengthen password policy** - Add complexity requirements in [backend/src/schemas/user.ts](backend/src/schemas/user.ts)
-5. **Move hardcoded API keys to environment** - [config/default.ts](config/default.ts), [config/production.ts](config/production.ts)
+5. ~~**Move hardcoded API keys to environment**~~ - ℹ️ Downgraded: these are public frontend tokens (Google Maps, Sentry, Gleap), not secrets
 
 ### ⚠️ High Priority
 

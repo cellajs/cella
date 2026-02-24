@@ -1,6 +1,6 @@
 import { and, eq } from 'drizzle-orm';
 import { Context } from 'hono';
-import { unsafeInternalDb as db } from '#/db/db';
+import { baseDb as db } from '#/db/db';
 import { type TokenModel, tokensTable } from '#/db/schema/tokens';
 import { Env } from '#/lib/context';
 import { AppError } from '#/lib/error';

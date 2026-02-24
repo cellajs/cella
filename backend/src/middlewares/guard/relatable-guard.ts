@@ -1,5 +1,5 @@
 import { and, eq, inArray } from 'drizzle-orm';
-import { unsafeInternalDb as db } from '#/db/db';
+import { baseDb as db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { xMiddleware } from '#/docs/x-middleware';
 import { AppError } from '#/lib/error';

@@ -26,8 +26,8 @@ CREATE TABLE "attachments" (
 	"name" varchar(255) DEFAULT 'New attachment' NOT NULL,
 	"modified_at" timestamp,
 	"stx" jsonb NOT NULL,
-	"description" text,
-	"keywords" varchar(100000) NOT NULL,
+	"description" varchar(1000000) DEFAULT '',
+	"keywords" varchar(1000000) DEFAULT '' NOT NULL,
 	"created_by" varchar(50),
 	"modified_by" varchar(50),
 	"public" boolean DEFAULT false NOT NULL,
@@ -131,7 +131,7 @@ CREATE TABLE "organizations" (
 	"color" varchar(255),
 	"logo_url" varchar(2048),
 	"website_url" varchar(2048),
-	"welcome_text" varchar(100000),
+	"welcome_text" varchar(1000000),
 	"auth_strategies" json DEFAULT '[]' NOT NULL,
 	"chat_support" boolean DEFAULT false NOT NULL,
 	CONSTRAINT "organizations_tenant_id_unique" UNIQUE("tenant_id","id")
@@ -146,8 +146,8 @@ CREATE TABLE "pages" (
 	"name" varchar(255) DEFAULT 'New page' NOT NULL,
 	"modified_at" timestamp,
 	"stx" jsonb NOT NULL,
-	"description" text,
-	"keywords" varchar(100000) NOT NULL,
+	"description" varchar(1000000) DEFAULT '',
+	"keywords" varchar(1000000) DEFAULT '' NOT NULL,
 	"created_by" varchar(50),
 	"modified_by" varchar(50),
 	"status" varchar DEFAULT 'unpublished' NOT NULL,
@@ -192,6 +192,27 @@ CREATE TABLE "requests" (
 	"email" varchar(255) NOT NULL,
 	"type" varchar NOT NULL,
 	"token_id" varchar(50)
+);
+--> statement-breakpoint
+CREATE TABLE "seen_by" (
+	"id" varchar(50),
+	"user_id" varchar(50) NOT NULL,
+	"entity_id" varchar(50) NOT NULL,
+	"entity_type" varchar NOT NULL,
+	"organization_id" varchar(50) NOT NULL,
+	"tenant_id" varchar(24) NOT NULL,
+	"created_at" timestamp DEFAULT now(),
+	CONSTRAINT "seen_by_pkey" PRIMARY KEY("id","created_at"),
+	CONSTRAINT "seen_by_user_entity_unique" UNIQUE("user_id","entity_id")
+);
+--> statement-breakpoint
+CREATE TABLE "seen_counts" (
+	"entity_id" varchar(50),
+	"entity_type" varchar NOT NULL,
+	"view_count" integer DEFAULT 0 NOT NULL,
+	"entity_created_at" timestamp,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "seen_counts_pkey" PRIMARY KEY("entity_id","entity_created_at")
 );
 --> statement-breakpoint
 CREATE TABLE "sessions" (
@@ -310,6 +331,9 @@ CREATE INDEX "organizations_tenant_id_index" ON "organizations" ("tenant_id");--
 CREATE INDEX "pages_tenant_id_idx" ON "pages" ("tenant_id");--> statement-breakpoint
 CREATE INDEX "requests_emails" ON "requests" ("email" DESC NULLS LAST);--> statement-breakpoint
 CREATE INDEX "requests_created_at" ON "requests" ("created_at" DESC NULLS LAST);--> statement-breakpoint
+CREATE INDEX "seen_by_user_org_type_index" ON "seen_by" ("user_id","organization_id","entity_type");--> statement-breakpoint
+CREATE INDEX "seen_by_entity_id_index" ON "seen_by" ("entity_id");--> statement-breakpoint
+CREATE INDEX "seen_by_tenant_id_index" ON "seen_by" ("tenant_id");--> statement-breakpoint
 CREATE INDEX "sessions_secret_idx" ON "sessions" ("secret");--> statement-breakpoint
 CREATE INDEX "sessions_user_id_idx" ON "sessions" ("user_id");--> statement-breakpoint
 CREATE INDEX "tenants_status_index" ON "tenants" ("status");--> statement-breakpoint
@@ -352,6 +376,9 @@ ALTER TABLE "pages" ADD CONSTRAINT "pages_modified_by_users_id_fkey" FOREIGN KEY
 ALTER TABLE "pages" ADD CONSTRAINT "pages_parent_id_pages_id_fkey" FOREIGN KEY ("parent_id") REFERENCES "pages"("id") ON DELETE SET NULL;--> statement-breakpoint
 ALTER TABLE "passkeys" ADD CONSTRAINT "passkeys_user_id_users_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "passwords" ADD CONSTRAINT "passwords_user_id_users_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE;--> statement-breakpoint
+ALTER TABLE "seen_by" ADD CONSTRAINT "seen_by_user_id_users_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE;--> statement-breakpoint
+ALTER TABLE "seen_by" ADD CONSTRAINT "seen_by_tenant_id_tenants_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE CASCADE;--> statement-breakpoint
+ALTER TABLE "seen_by" ADD CONSTRAINT "seen_by_organization_id_organizations_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations"("id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_users_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "system_roles" ADD CONSTRAINT "system_roles_user_id_users_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "tokens" ADD CONSTRAINT "tokens_user_id_users_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE;--> statement-breakpoint

@@ -17,15 +17,15 @@
         "values": {
           "publicGuard": {
             "name": "public",
-            "description": "No authentication required"
+            "description": "No authentication required; provides baseDb without RLS context"
           },
           "authGuard": {
             "name": "auth",
-            "description": "Requires valid session"
+            "description": "Requires valid session and sets auth context (user, memberships, baseDb)"
           },
           "crossTenantGuard": {
             "name": "crossTenant",
-            "description": "Wraps handler in user RLS context for cross-tenant access"
+            "description": "Requires authGuard and sets user-scoped RLS db context for cross-tenant access"
           },
           "orgGuard": {
             "name": "org",
@@ -41,7 +41,7 @@
           },
           "tenantGuard": {
             "name": "tenant",
-            "description": "Validates tenant access and wraps handler in RLS-enabled transaction"
+            "description": "Requires authGuard, validates tenant access, and sets tenant-scoped RLS db context"
           }
         }
       },
@@ -152,6 +152,10 @@
     {
       "name": "tenants",
       "description": "System admin operations for managing tenants. Tenants are top-level isolation boundaries used by\n        Row-Level Security (RLS) to partition data. Supports listing, retrieving, creating, updating, and\n        soft-deleting (archiving) tenants."
+    },
+    {
+      "name": "seen",
+      "description": "Operations for tracking which product entities a user has viewed. Supports batch marking entities\n        as seen (deduplicating against existing records) and incrementing view counts. Used to power unseen\n        count badges in navigation and view count columns in entity lists."
     }
   ],
   "components": {
@@ -2036,7 +2040,7 @@
           "parentId",
           "displayOrder"
         ],
-        "description": "A content page belonging to an organization.",
+        "description": "A content page for documentation purposes.",
         "example": {
           "id": "co96vrmic3wbowmxzbqa1e9f",
           "tenantId": "ijllhz",
@@ -2203,6 +2207,10 @@
           "organizationId": {
             "type": "string",
             "maxLength": 50
+          },
+          "viewCount": {
+            "type": "integer",
+            "minimum": 0
           }
         },
         "required": [
@@ -5456,6 +5464,85 @@
         }
       }
     },
+    "/me/unseen-counts": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getMyUnseenCounts",
+        "tags": [
+          "me"
+        ],
+        "summary": "Get unseen counts",
+        "description": "Returns the number of unseen product entities per organization and entity type for the *current user*. Only entities created within the last 90 days are considered.",
+        "x-guard": [
+          "authGuard"
+        ],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "responses": {
+          "200": {
+            "description": "Unseen counts per org per entity type",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "counts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "organizationId": {
+                            "type": "string"
+                          },
+                          "entityType": {
+                            "type": "string",
+                            "enum": [
+                              "attachment",
+                              "page"
+                            ]
+                          },
+                          "unseenCount": {
+                            "type": "integer",
+                            "minimum": 0
+                          }
+                        },
+                        "required": [
+                          "organizationId",
+                          "entityType",
+                          "unseenCount"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "counts"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
     "/entities/check-slug": {
       "post": {
         "security": [
@@ -6596,7 +6683,7 @@
           }
         }
       },
-      "patch": {
+      "put": {
         "security": [
           {
             "cookieAuth": []
@@ -8425,7 +8512,7 @@
         }
       }
     },
-    "/{tenantId}/organizations/{organizationId}": {
+    "/{tenantId}/organizations/{id}": {
       "get": {
         "security": [
           {
@@ -8460,7 +8547,7 @@
               "maxLength": 50
             },
             "required": true,
-            "name": "organizationId",
+            "name": "id",
             "in": "path"
           },
           {
@@ -8576,9 +8663,7 @@
             "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
-      }
-    },
-    "/{tenantId}/organizations/{id}": {
+      },
       "put": {
         "security": [
           {
@@ -9524,8 +9609,7 @@
                       "unpublished",
                       "published",
                       "archived"
-                    ],
-                    "default": "unpublished"
+                    ]
                   },
                   "parentId": {
                     "type": [
@@ -10217,17 +10301,6 @@
                       "type": "string",
                       "maxLength": 255
                     },
-                    "organizationId": {
-                      "type": "string",
-                      "maxLength": 50
-                    },
-                    "createdBy": {
-                      "type": [
-                        "string",
-                        "null"
-                      ],
-                      "maxLength": 50
-                    },
                     "originalKey": {
                       "type": "string",
                       "maxLength": 2048
@@ -10275,7 +10348,6 @@
                     "filename",
                     "contentType",
                     "size",
-                    "organizationId",
                     "originalKey",
                     "bucketName",
                     "stx"
@@ -12093,6 +12165,119 @@
                     }
                   ],
                   "total": 2
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/{tenantId}/{orgId}/seen": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "markSeen",
+        "tags": [
+          "seen"
+        ],
+        "summary": "Mark entities as seen",
+        "description": "Records that the current user has viewed one or more product entities. Deduplicates against existing records. Updates entity view counts for newly seen entities.",
+        "x-guard": [
+          "authGuard",
+          "tenantGuard",
+          "orgGuard"
+        ],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "orgId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "entityIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 50
+                    },
+                    "minItems": 1,
+                    "maxItems": 500,
+                    "description": "Entity IDs the user has viewed since last batch"
+                  },
+                  "entityType": {
+                    "type": "string",
+                    "enum": [
+                      "attachment",
+                      "page"
+                    ],
+                    "description": "Entity type for all IDs in this batch"
+                  }
+                },
+                "required": [
+                  "entityIds",
+                  "entityType"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Seen records processed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "newCount": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Number of entities newly marked as seen (deduped)"
+                    }
+                  },
+                  "required": [
+                    "newCount"
+                  ]
                 }
               }
             }

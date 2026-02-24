@@ -1,7 +1,7 @@
 import { and, eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { appConfig, type EnabledOAuthProvider } from 'shared';
-import { unsafeInternalDb as db } from '#/db/db';
+import { baseDb as db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { type OAuthAccountModel, oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import type { UserModel } from '#/db/schema/users';

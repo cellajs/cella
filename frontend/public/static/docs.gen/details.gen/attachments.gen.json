@@ -125,6 +125,11 @@
                     "type": "string",
                     "required": true,
                     "maxLength": 50
+                  },
+                  "viewCount": {
+                    "type": "integer",
+                    "required": false,
+                    "minimum": 0
                   }
                 },
                 "ref": "#/components/schemas/Attachment"
@@ -403,6 +408,11 @@
                     "type": "string",
                     "required": true,
                     "maxLength": 50
+                  },
+                  "viewCount": {
+                    "type": "integer",
+                    "required": false,
+                    "minimum": 0
                   }
                 },
                 "ref": "#/components/schemas/Attachment"
@@ -609,6 +619,11 @@
                     "type": "string",
                     "required": true,
                     "maxLength": 50
+                  },
+                  "viewCount": {
+                    "type": "integer",
+                    "required": false,
+                    "minimum": 0
                   }
                 },
                 "ref": "#/components/schemas/Attachment"
@@ -774,16 +789,6 @@
               "type": "string",
               "required": true,
               "maxLength": 255
-            },
-            "organizationId": {
-              "type": "string",
-              "required": true,
-              "maxLength": 50
-            },
-            "createdBy": {
-              "type": ["string", "null"],
-              "required": false,
-              "maxLength": 50
             },
             "originalKey": {
               "type": "string",
@@ -1143,6 +1148,11 @@
               "type": "string",
               "required": true,
               "maxLength": 50
+            },
+            "viewCount": {
+              "type": "integer",
+              "required": false,
+              "minimum": 0
             }
           },
           "ref": "#/components/schemas/Attachment",
@@ -1356,6 +1366,11 @@
               "type": "string",
               "required": true,
               "maxLength": 50
+            },
+            "viewCount": {
+              "type": "integer",
+              "required": false,
+              "minimum": 0
             }
           },
           "ref": "#/components/schemas/Attachment",

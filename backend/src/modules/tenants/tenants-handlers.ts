@@ -9,7 +9,6 @@
 
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { and, asc, count, desc, eq, ilike } from 'drizzle-orm';
-import { unsafeInternalDb as db } from '#/db/db';
 import { tenantsTable } from '#/db/schema/tenants';
 import { type Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
@@ -26,6 +25,7 @@ const tenantHandlers = app
    * Get paginated list of tenants.
    */
   .openapi(tenantRoutes.getTenants, async (ctx) => {
+    const db = ctx.var.db;
     const { q, status, limit, offset, sort, order } = ctx.req.valid('query');
     const limitNum = Math.min(Number(limit) || 50, 100);
     const offsetNum = Number(offset) || 0;
@@ -65,6 +65,7 @@ const tenantHandlers = app
    * Get a single tenant by ID.
    */
   .openapi(tenantRoutes.getTenantById, async (ctx) => {
+    const db = ctx.var.db;
     const { tenantId } = ctx.req.valid('param');
 
     const [tenant] = await db.select().from(tenantsTable).where(eq(tenantsTable.id, tenantId)).limit(1);
@@ -80,6 +81,7 @@ const tenantHandlers = app
    * Create a new tenant.
    */
   .openapi(tenantRoutes.createTenant, async (ctx) => {
+    const db = ctx.var.db;
     const { name, status } = ctx.req.valid('json');
     const user = ctx.var.user;
 
@@ -100,6 +102,7 @@ const tenantHandlers = app
    * Update a tenant.
    */
   .openapi(tenantRoutes.updateTenant, async (ctx) => {
+    const db = ctx.var.db;
     const { tenantId } = ctx.req.valid('param');
     const updates = ctx.req.valid('json');
     const user = ctx.var.user;
@@ -129,6 +132,7 @@ const tenantHandlers = app
    * Archive a tenant (soft delete).
    */
   .openapi(tenantRoutes.archiveTenant, async (ctx) => {
+    const db = ctx.var.db;
     const { tenantId } = ctx.req.valid('param');
     const user = ctx.var.user;
 

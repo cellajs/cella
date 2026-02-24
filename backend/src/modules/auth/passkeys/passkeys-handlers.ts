@@ -3,7 +3,6 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { encodeBase64 } from '@oslojs/encoding';
 import { and, eq, getColumns } from 'drizzle-orm';
 import { appConfig } from 'shared';
-import { unsafeInternalDb as db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { totpsTable } from '#/db/schema/totps';
@@ -27,6 +26,7 @@ const authPasskeysRouteHandlers = app
    * Register passkey
    */
   .openapi(authPasskeysRoutes.createPasskey, async (ctx) => {
+    const db = ctx.var.db;
     const { attestationObject, clientDataJSON, nameOnDevice } = ctx.req.valid('json');
     const user = ctx.var.user;
 
@@ -64,6 +64,7 @@ const authPasskeysRouteHandlers = app
    * Delete passkey
    */
   .openapi(authPasskeysRoutes.deletePasskey, async (ctx) => {
+    const db = ctx.var.db;
     const { id } = ctx.req.valid('param');
     const user = ctx.var.user;
 
@@ -87,6 +88,7 @@ const authPasskeysRouteHandlers = app
    * Passkey challenge
    */
   .openapi(authPasskeysRoutes.generatePasskeyChallenge, async (ctx) => {
+    const db = ctx.var.db;
     const { email, type } = ctx.req.valid('json');
 
     const strategy = 'passkey';
@@ -139,6 +141,7 @@ const authPasskeysRouteHandlers = app
    * Sign in using passkey
    */
   .openapi(authPasskeysRoutes.signInWithPasskey, async (ctx) => {
+    const db = ctx.var.db;
     const { email, type, ...passkeyData } = ctx.req.valid('json');
     // Define strategy and session type for metadata/logging purposes
     const meta = { strategy: 'passkey', sessionType: type === 'mfa' ? 'mfa' : 'regular' } as const;

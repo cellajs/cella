@@ -28,6 +28,7 @@ const mockEntityQueryRegistry = new Map<string, ReturnType<typeof createMockEnti
 
 // Register the test context entity types
 mockEntityQueryRegistry.set('organization', createMockEntityKeys('organization'));
+mockEntityQueryRegistry.set('workspace', createMockEntityKeys('workspace'));
 mockEntityQueryRegistry.set('project', createMockEntityKeys('project'));
 
 export function mockGetEntityQueryKeys(entityType: string) {
@@ -75,18 +76,27 @@ export function makeInfiniteData(items: { id: string; membership?: TestMembershi
 }
 
 export const mockAppConfig = {
-  contextEntityTypes: ['organization', 'project'] as string[],
-  entityIdColumnKeys: { organization: 'organizationId', project: 'projectId' } as Record<string, string>,
+  contextEntityTypes: ['organization', 'workspace', 'project'] as string[],
+  entityIdColumnKeys: { organization: 'organizationId', workspace: 'workspaceId', project: 'projectId' } as Record<
+    string,
+    string
+  >,
   entityActions: ['create', 'read', 'update', 'delete', 'search'] as string[],
+  menuStructure: [
+    { entityType: 'organization', subentityType: null },
+    { entityType: 'workspace', subentityType: 'project' },
+  ] as { entityType: string; subentityType: string | null }[],
 };
 
 const parentMap: Record<string, string | null> = {
   organization: null,
+  workspace: 'organization',
   project: 'organization',
 };
 
 const childrenMap: Record<string, string[]> = {
-  organization: ['project'],
+  organization: ['workspace', 'project'],
+  workspace: [],
   project: [],
 };
 

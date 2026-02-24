@@ -346,7 +346,7 @@ export const zOrganization = z.object({
 });
 
 /**
- * A content page belonging to an organization.
+ * A content page for documentation purposes.
  */
 export const zPage = z.object({
   createdAt: z.string(),
@@ -401,6 +401,7 @@ export const zAttachment = z.object({
   convertedKey: z.string().max(2048).nullable(),
   thumbnailKey: z.string().max(2048).nullable(),
   organizationId: z.string().max(50),
+  viewCount: z.int().gte(0).optional(),
 });
 
 /**
@@ -989,6 +990,25 @@ export const zGetMyMembershipsResponse = z.object({
   items: z.array(zMembershipBase),
 });
 
+export const zGetMyUnseenCountsData = z.object({
+  body: z.never().optional(),
+  path: z.never().optional(),
+  query: z.never().optional(),
+});
+
+/**
+ * Unseen counts per org per entity type
+ */
+export const zGetMyUnseenCountsResponse = z.object({
+  counts: z.array(
+    z.object({
+      organizationId: z.string(),
+      entityType: z.enum(['attachment', 'page']),
+      unseenCount: z.int().gte(0),
+    }),
+  ),
+});
+
 export const zCheckSlugData = z.object({
   body: z.object({
     slug: z.string(),
@@ -1507,7 +1527,7 @@ export const zGetOrganizationData = z.object({
   body: z.never().optional(),
   path: z.object({
     tenantId: z.string().max(50),
-    organizationId: z.string().max(50),
+    id: z.string().max(50),
   }),
   query: z
     .object({
@@ -1774,8 +1794,6 @@ export const zCreateAttachmentsData = z.object({
         filename: z.string().max(255),
         contentType: z.string().max(255),
         size: z.string().max(255),
-        organizationId: z.string().max(50),
-        createdBy: z.string().max(50).nullish(),
         originalKey: z.string().max(2048),
         bucketName: z.string().max(255),
         public: z.boolean().optional(),
@@ -2030,4 +2048,23 @@ export const zGetPendingMembershipsResponse = z.object({
     }),
   ),
   total: z.number(),
+});
+
+export const zMarkSeenData = z.object({
+  body: z.object({
+    entityIds: z.array(z.string().max(50)).min(1).max(500),
+    entityType: z.enum(['attachment', 'page']),
+  }),
+  path: z.object({
+    tenantId: z.string().max(50),
+    orgId: z.string().max(50),
+  }),
+  query: z.never().optional(),
+});
+
+/**
+ * Seen records processed
+ */
+export const zMarkSeenResponse = z.object({
+  newCount: z.int().gte(0),
 });

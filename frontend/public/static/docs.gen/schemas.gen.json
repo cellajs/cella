@@ -1620,7 +1620,7 @@
       }
     },
     "schemaTag": "data",
-    "description": "A content page belonging to an organization.",
+    "description": "A content page for documentation purposes.",
     "example": {
       "id": "co96vrmic3wbowmxzbqa1e9f",
       "tenantId": "ijllhz",
@@ -1793,6 +1793,11 @@
           "type": "string",
           "required": true,
           "maxLength": 50
+        },
+        "viewCount": {
+          "type": "integer",
+          "required": false,
+          "minimum": 0
         }
       }
     },

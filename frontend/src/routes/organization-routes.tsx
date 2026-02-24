@@ -60,8 +60,7 @@ export const OrganizationLayoutRoute = createRoute({
       organization = await queryClient.ensureQueryData({ ...orgOptions, revalidateIfStale: shouldRevalidate });
     } else if (isOnline) {
       organization = await fetchSlugCacheId(
-        () =>
-          getOrganization({ path: { tenantId, organizationId: orgSlug }, query: { slug: true, include: 'counts' } }),
+        () => getOrganization({ path: { tenantId, id: orgSlug }, query: { slug: true, include: 'counts' } }),
         organizationQueryKeys.detail.byId,
       );
     }

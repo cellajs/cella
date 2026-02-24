@@ -24,8 +24,11 @@ export const PasskeyTile = ({ passkey, handleUnlinkPasskey, isPending, onlyPassk
   const DeviceIcon = passkey.deviceType === 'desktop' ? MonitorIcon : SmartphoneIcon;
 
   return (
-    <Card className="w-full group/tile py-0 sm:has-[button:focus]:ring-2 transition-all" data-expanded={expanded}>
-      <CardContent className="flex !p-2 sm:!p-3 lg:items-center gap-2 sm:gap-3">
+    <Card
+      className="w-full group/tile py-0 sm:py-0 sm:has-[button:focus]:ring-2 transition-all"
+      data-expanded={expanded}
+    >
+      <CardContent className="flex p-2! sm:p-3! lg:items-center gap-2 sm:gap-3">
         <DeviceIcon className="size-4 sm:w-8 sm:h-8 max-sm:mt-0.5" strokeWidth={1.5} />
 
         <div className="flex flex-col gap-1 w-full overflow-hidden">

@@ -11,6 +11,8 @@ export * from './passkeys';
 export * from './passwords';
 export * from './rate-limits';
 export * from './requests';
+export * from './seen-by';
+export * from './seen-counts';
 export * from './sessions';
 export * from './system-roles';
 export * from './tenants';

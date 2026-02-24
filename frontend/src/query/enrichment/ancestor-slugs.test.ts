@@ -104,6 +104,67 @@ describe('ancestor slug enrichment', () => {
     expect(data.pages[0].items[0].ancestorSlugs?.organization).toBe('acme-corp');
   });
 
+  it('enriches project with workspace slug from menu parent via membership.workspaceId', () => {
+    unsubscribe = initContextEntityEnrichment();
+
+    queryClient.setQueryData(['organization', 'list'], makeInfiniteData([{ id: 'org-1', slug: 'acme-corp' } as any]));
+    queryClient.setQueryData(['workspace', 'list'], makeInfiniteData([{ id: 'ws-1', slug: 'my-workspace' } as any]));
+
+    queryClient.setQueryData(['me', 'memberships'], {
+      items: [
+        makeMembership('org-1'),
+        makeMembership('ws-1', { contextType: 'workspace', organizationId: 'org-1', workspaceId: 'ws-1' }),
+        makeMembership('proj-1', {
+          contextType: 'project',
+          organizationId: 'org-1',
+          projectId: 'proj-1',
+          workspaceId: 'ws-1',
+        }),
+      ],
+    });
+
+    queryClient.setQueryData(
+      ['project', 'list'],
+      makeInfiniteData([{ id: 'proj-1', slug: 'my-project', organizationId: 'org-1' } as any]),
+    );
+
+    const data = queryClient.getQueryData(['project', 'list']) as any;
+    const item = data.pages[0].items[0];
+    expect(item.ancestorSlugs.organization).toBe('acme-corp');
+    expect(item.ancestorSlugs.workspace).toBe('my-workspace');
+  });
+
+  it('updates project workspace slug when workspace list cache loads later', () => {
+    unsubscribe = initContextEntityEnrichment();
+
+    queryClient.setQueryData(['me', 'memberships'], {
+      items: [
+        makeMembership('org-1'),
+        makeMembership('proj-1', {
+          contextType: 'project',
+          organizationId: 'org-1',
+          projectId: 'proj-1',
+          workspaceId: 'ws-1',
+        }),
+      ],
+    });
+
+    queryClient.setQueryData(
+      ['project', 'list'],
+      makeInfiniteData([{ id: 'proj-1', slug: 'my-project', organizationId: 'org-1' } as any]),
+    );
+
+    // Before workspace loads, falls back to ID
+    let data = queryClient.getQueryData(['project', 'list']) as any;
+    expect(data.pages[0].items[0].ancestorSlugs?.workspace).toBe('ws-1');
+
+    // Workspace list loads — project should get re-enriched with slug
+    queryClient.setQueryData(['workspace', 'list'], makeInfiniteData([{ id: 'ws-1', slug: 'my-workspace' } as any]));
+
+    data = queryClient.getQueryData(['project', 'list']) as any;
+    expect(data.pages[0].items[0].ancestorSlugs?.workspace).toBe('my-workspace');
+  });
+
   it('preserves reference when ancestor slugs have not changed', () => {
     unsubscribe = initContextEntityEnrichment();
 

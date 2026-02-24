@@ -2,7 +2,13 @@ import type { Query } from '@tanstack/react-query';
 import { type ContextEntityType, hierarchy } from 'shared';
 import type { MembershipBase } from '~/api.gen';
 import { enrichWithAncestorSlugs } from '~/query/enrichment/ancestor-slugs';
-import { getCachedMemberships, getContextEntityKeys, getRegisteredContextEntities } from '~/query/enrichment/helpers';
+import {
+  getCachedMemberships,
+  getContextEntityKeys,
+  getMenuParentTypes,
+  getRegisteredContextEntities,
+  isMenuParentOf,
+} from '~/query/enrichment/helpers';
 import { enrichWithMembership } from '~/query/enrichment/membership';
 import { enrichWithPermissions } from '~/query/enrichment/permissions';
 import type { EnrichableEntity, InfiniteData } from '~/query/enrichment/types';
@@ -10,6 +16,36 @@ import { queryClient } from '~/query/query-client';
 
 /** Re-entrancy guard: prevents the subscriber from reacting to its own cache writes */
 let isEnriching = false;
+
+/** Cache of extended ancestors (hierarchy + menu parents) per entity type */
+const extendedAncestorsCache = new Map<ContextEntityType, readonly ContextEntityType[]>();
+
+/**
+ * Get ancestors including menu parent types for URL building.
+ * Hierarchy ancestors come first, then menu parents not already in the list.
+ * E.g. for project: ['organization'] (hierarchy) + ['workspace'] (menu parent).
+ */
+function getExtendedAncestors(entityType: ContextEntityType): readonly ContextEntityType[] {
+  const cached = extendedAncestorsCache.get(entityType);
+  if (cached) return cached;
+
+  const hierarchyAncestors = hierarchy.getOrderedAncestors(entityType);
+  const menuParents = getMenuParentTypes(entityType);
+  if (menuParents.length === 0) {
+    extendedAncestorsCache.set(entityType, hierarchyAncestors);
+    return hierarchyAncestors;
+  }
+
+  const seen = new Set(hierarchyAncestors);
+  const combined = [...hierarchyAncestors];
+  for (const mp of menuParents) {
+    if (!seen.has(mp)) combined.push(mp);
+  }
+
+  const frozen = Object.freeze(combined);
+  extendedAncestorsCache.set(entityType, frozen);
+  return frozen;
+}
 
 /**
  * Run all enrichers on a single item in sequence.
@@ -36,7 +72,7 @@ function enrichListData(
   memberships: MembershipBase[],
   entityType: ContextEntityType,
 ): InfiniteData {
-  const ancestors = hierarchy.getOrderedAncestors(entityType);
+  const ancestors = getExtendedAncestors(entityType);
   let dataChanged = false;
 
   const newPages = data.pages.map((page) => {
@@ -65,7 +101,7 @@ function enrichDetailQuery(query: Query, memberships: MembershipBase[], entityTy
   const data = (query.state.data ?? null) as EnrichableEntity | null;
   if (!data?.id) return;
 
-  const ancestors = hierarchy.getOrderedAncestors(entityType);
+  const ancestors = getExtendedAncestors(entityType);
   const enriched = enrichItem(data, memberships, entityType, ancestors);
   if (enriched === data) return;
 
@@ -156,9 +192,10 @@ export function initContextEntityEnrichment(): () => void {
       enrichListQueriesForType(entry.type, entry.keys.list.base, memberships);
 
       // Re-enrich child types that depend on this type for ancestor slugs
+      // Includes both hierarchy children and menu subentity types
       for (const { type: childType, keys: childKeys } of getRegisteredContextEntities()) {
         if (childType === entry.type) continue;
-        if (hierarchy.hasAncestor(childType, entry.type)) {
+        if (hierarchy.hasAncestor(childType, entry.type) || isMenuParentOf(entry.type, childType)) {
           enrichListQueriesForType(childType, childKeys.list.base, memberships);
         }
       }

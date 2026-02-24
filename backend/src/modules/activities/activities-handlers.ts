@@ -1,6 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { and, count, eq, ilike } from 'drizzle-orm';
-import { unsafeInternalDb as db } from '#/db/db';
 import { activitiesTable } from '#/db/schema/activities';
 import type { Env } from '#/lib/context';
 import activityRoutes from '#/modules/activities/activities-routes';
@@ -15,6 +14,7 @@ const activitiesRouteHandlers = app
    * Get list of activities
    */
   .openapi(activityRoutes.getActivities, async (ctx) => {
+    const db = ctx.var.db;
     const { q, sort, order, offset, limit, userId, entityType, resourceType, action, tableName, type, entityId } =
       ctx.req.valid('query');
 

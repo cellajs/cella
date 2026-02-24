@@ -2,7 +2,6 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { and, eq } from 'drizzle-orm';
 import i18n from 'i18next';
 import { appConfig } from 'shared';
-import { unsafeInternalDb as db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { passwordsTable } from '#/db/schema/passwords';
 import { tokensTable } from '#/db/schema/tokens';
@@ -37,6 +36,7 @@ const authPasswordsRouteHandlers = app
    * Only when invited to a new organization (context), user will proceed to accept this first after signing up.
    */
   .openapi(authPasswordsRoutes.signUp, async (ctx) => {
+    const db = ctx.var.db;
     const { email, password } = ctx.req.valid('json');
 
     // Verify if strategy allowed
@@ -68,6 +68,7 @@ const authPasswordsRouteHandlers = app
    * Only for organization membership invitations, user will proceed to accept after signing up.
    */
   .openapi(authPasswordsRoutes.signUpWithToken, async (ctx) => {
+    const db = ctx.var.db;
     const { password } = ctx.req.valid('json');
 
     const validToken = ctx.var.token;
@@ -100,6 +101,7 @@ const authPasswordsRouteHandlers = app
    * Request reset password email
    */
   .openapi(authPasswordsRoutes.requestPassword, async (ctx) => {
+    const db = ctx.var.db;
     const { email } = ctx.req.valid('json');
 
     const strategy = 'password';
@@ -153,6 +155,7 @@ const authPasswordsRouteHandlers = app
    * Create password with single use session token in cookie
    */
   .openapi(authPasswordsRoutes.createPasswordWithToken, async (ctx) => {
+    const db = ctx.var.db;
     const { password } = ctx.req.valid('json');
     const token = ctx.var.token;
 
@@ -193,6 +196,7 @@ const authPasswordsRouteHandlers = app
    * after signing in, we proceed to accept the invitation.
    */
   .openapi(authPasswordsRoutes.signIn, async (ctx) => {
+    const db = ctx.var.db;
     const { email, password } = ctx.req.valid('json');
 
     // Verify if strategy allowed

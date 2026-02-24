@@ -148,6 +148,7 @@ function OperationsTable() {
           columns={columns.filter((column) => column.visible)}
           rows={sortedOperations}
           onRowsChange={onRowsChange}
+          selectionMode="none"
           hasNextPage={false}
           rowKeyGetter={(row) => row.hash}
           isLoading={false}

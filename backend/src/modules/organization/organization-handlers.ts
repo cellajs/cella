@@ -1,7 +1,7 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { and, eq, getColumns, ilike, inArray, type SQL, sql } from 'drizzle-orm';
 import { appConfig } from 'shared';
-import { unsafeInternalDb as db } from '#/db/db';
+import { baseDb } from '#/db/db';
 import { activitiesTable } from '#/db/schema/activities';
 import { contextCountersTable } from '#/db/schema/context-counters';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -40,7 +40,7 @@ const organizationRouteHandlers = app
     const isSystemAdmin = userSystemRole === 'admin';
 
     // Count user's org creations from activities (includes deleted orgs)
-    const [orgCountResult] = await db
+    const [orgCountResult] = await baseDb
       .select({ count: sql<number>`count(*)::int` })
       .from(activitiesTable)
       .where(
@@ -61,7 +61,7 @@ const organizationRouteHandlers = app
 
     // Check slug availability in database
     const slugs = items.map((item) => item.slug);
-    const slugAvailability = slugs.length > 0 ? await checkSlugsAvailable(slugs, db) : new Map();
+    const slugAvailability = slugs.length > 0 ? await checkSlugsAvailable(slugs, baseDb) : new Map();
 
     // Filter by slug availability, track rejections
     const slugFiltered = filterWithRejection(items, (item) => slugAvailability.get(item.slug) === true, 'slug_exists');
@@ -251,7 +251,7 @@ const organizationRouteHandlers = app
    * Get organization by id (tenant-scoped). Pass ?slug=true to resolve by slug.
    */
   .openapi(organizationRoutes.getOrganization, async (ctx) => {
-    const { tenantId, organizationId } = ctx.req.valid('param');
+    const { tenantId, id: organizationId } = ctx.req.valid('param');
     const { slug: bySlug, include } = ctx.req.valid('query');
 
     // Validate tenantId is provided (early explicit error)
@@ -280,7 +280,7 @@ const organizationRouteHandlers = app
     const included: Record<string, unknown> = {};
 
     if (includeCounts) {
-      included.counts = await getEntityCounts(organization.entityType, organization.id);
+      included.counts = await getEntityCounts(organization.entityType, organization.id, ctx.var.db);
     }
 
     if (includeMembership && membership) {
@@ -318,7 +318,7 @@ const organizationRouteHandlers = app
     const slug = updatedFields.slug;
 
     if (slug && slug !== organization.slug) {
-      const slugAvailable = await checkSlugAvailable(slug, db);
+      const slugAvailable = await checkSlugAvailable(slug, baseDb);
       if (!slugAvailable)
         throw new AppError(409, 'slug_exists', 'warn', { entityType: 'organization', meta: { slug } });
     }
@@ -340,7 +340,7 @@ const organizationRouteHandlers = app
 
     logEvent('info', 'Organization updated', { organizationId: updatedOrganization.id });
 
-    const counts = await getEntityCounts(organization.entityType, organization.id);
+    const counts = await getEntityCounts(organization.entityType, organization.id, tx);
 
     // Build included object with membership and counts
     const included = {
@@ -377,7 +377,7 @@ const organizationRouteHandlers = app
     if (!allowedIds.length) throw new AppError(403, 'forbidden', 'warn', { entityType: 'organization' });
 
     // Delete the organizations
-    await db.delete(organizationsTable).where(inArray(organizationsTable.id, allowedIds));
+    await baseDb.delete(organizationsTable).where(inArray(organizationsTable.id, allowedIds));
 
     logEvent('info', 'Organizations deleted', allowedIds);
 
