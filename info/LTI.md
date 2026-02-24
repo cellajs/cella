@@ -3,7 +3,7 @@
 This document provides an overview of LTI 1.3 concepts and how Cella will support both roles. For implementation details, see the role-specific documents:
 
 - [LTI_AS_TOOL.md](./LTI_AS_TOOL.md) - Cella launched from external platforms (Canvas, Moodle, etc.)
-- [LTI_AS_CONSUMER.md](./LTI_AS_CONSUMER.md) - Cella launching external tools (H5P, Turnitin, etc.)
+- [LTI_AS_CONSUMER.md](./LTI_AS_CONSUMER.md) - Cella launching external tools (Zoom, Miro, H5P, Padlet, etc.)
 
 ## What is LTI?
 
@@ -15,7 +15,7 @@ This document provides an overview of LTI 1.3 concepts and how Cella will suppor
 2. **IMS Global compliant**: LTI 1.3 / LTI Advantage certification-ready
 3. **Secure by default**: Proper JWT validation, nonce handling, state management
 4. **Multi-tenancy**: Support multiple platform/tool registrations per Cella instance
-5. **Service integration**: Support AGS, NRPS, and Deep Linking services
+5. **Flexible service integration**: Optional support for LTI Advantage services based on use case
 
 ## Terminology
 
@@ -26,13 +26,17 @@ This document provides an overview of LTI 1.3 concepts and how Cella will suppor
 | **Deployment** | Installation | A specific tool installation within a platform |
 | **OIDC Launch** | - | OpenID Connect-based secure launch flow |
 
-### LTI Advantage Services
+### LTI Advantage Services (optional)
 
-| Service | Abbreviation | Description |
-|---------|--------------|-------------|
-| Assignment and Grade Services | AGS | Grade passback from tool to platform |
-| Names and Role Provisioning | NRPS | Roster/membership sync from platform |
-| Deep Linking | DL | Content item selection and embedding |
+LTI Advantage extends core LTI 1.3 with additional services. These are **optional** and depend on your use case:
+
+| Service | Abbreviation | Description | When useful |
+|---------|--------------|-------------|-------------|
+| Deep Linking | DL | Content item selection and embedding | Always useful - embed external content |
+| Names and Role Provisioning | NRPS | Roster/membership sync from platform | User sync between systems |
+| Assignment and Grade Services | AGS | Grade passback from tool to platform | Educational/LMS contexts only |
+
+> **Note**: Cella can be used for B2B collaboration, learning platforms, or other contexts. AGS is primarily relevant when integrated with educational systems that track grades.
 
 ## Cella's Two Roles
 
@@ -50,10 +54,14 @@ Canvas (Platform) ──launches──> Cella (Tool)
 
 Cella launches external tools. Users click a button in Cella and are taken to a third-party tool with their context preserved.
 
-**Use case**: Cella users can launch H5P for interactive content or Turnitin for plagiarism checking.
+**Use cases**:
+- Launch **Zoom** or **Microsoft Teams** for video meetings
+- Open **Miro** or **Padlet** for collaborative whiteboards
+- Embed **H5P** for interactive content
+- Use **Canva** for design collaboration
 
 ```
-Cella (Platform) ──launches──> H5P, Turnitin (Tools)
+Cella (Platform) ──launches──> Zoom, Miro, H5P, Padlet (Tools)
 ```
 
 ## LTI 1.3 Launch Flow Overview

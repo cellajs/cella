@@ -1,8 +1,12 @@
 # Cella as LTI Consumer (Platform)
 
-This document covers the implementation of Cella **launching external tools** like H5P, Turnitin, or other LTI-compliant applications.
+This document covers the implementation of Cella **launching external tools** like Zoom, Miro, H5P, or other LTI-compliant applications.
 
-**Use case**: Users in Cella can click a button to launch an external tool (e.g., H5P for interactive content) with their identity and context passed through.
+**Use cases**:
+- Launch video conferencing (Zoom, Microsoft Teams)
+- Open collaborative whiteboards (Miro, Padlet)
+- Embed interactive content (H5P, Canva)
+- Integrate specialized tools based on context
 
 See also: [LTI.md](./LTI.md) (general overview) | [LTI_AS_TOOL.md](./LTI_AS_TOOL.md) (being launched by platforms)
 
@@ -539,17 +543,23 @@ Admin interface to:
 
 ## Common Tools to Support
 
-| Tool | Description | LTI Support |
-|------|-------------|-------------|
-| H5P | Interactive content | Full LTI 1.3 |
-| Turnitin | Plagiarism detection | LTI Advantage |
-| Kaltura | Video platform | LTI 1.3 |
-| Padlet | Collaborative boards | LTI 1.3 |
-| Panopto | Video hosting | LTI 1.3 |
+| Tool | Description | LTI Support | Category |
+|------|-------------|-------------|----------|
+| Zoom | Video conferencing | LTI 1.3 | Communication |
+| Microsoft Teams | Video & chat | LTI 1.3 | Communication |
+| Miro | Collaborative whiteboard | LTI 1.3 | Collaboration |
+| Padlet | Collaborative boards | LTI 1.3 | Collaboration |
+| H5P | Interactive content | Full LTI 1.3 | Content |
+| Canva | Design collaboration | LTI 1.3 | Content |
+| Kaltura | Video platform | LTI 1.3 | Media |
+| Panopto | Video hosting | LTI 1.3 | Media |
+| Turnitin | Plagiarism detection | LTI Advantage | Education-specific |
+
+> **Note**: Not all tools require all LTI Advantage services. Many B2B tools only need core LTI 1.3 launch.
 
 ## Open Questions
 
 1. **Iframe vs popup**: How should tools be displayed? (configurable per tool?)
-2. **Grade sync**: Where do grades from tools go in Cella?
+2. **Data sync**: How to handle data returned from tools? (context-dependent)
 3. **Content embedding**: How to show Deep Linking selections in Cella UI?
 4. **Multi-tenancy**: Should organizations have separate tool registrations?
