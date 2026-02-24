@@ -1771,7 +1771,7 @@
               "string",
               "null"
             ],
-            "maxLength": 100000
+            "maxLength": 1000000
           },
           "authStrategies": {
             "type": "array",
@@ -1974,11 +1974,12 @@
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "maxLength": 1000000
           },
           "keywords": {
             "type": "string",
-            "maxLength": 100000
+            "maxLength": 1000000
           },
           "createdBy": {
             "type": [
@@ -2127,11 +2128,12 @@
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "maxLength": 1000000
           },
           "keywords": {
             "type": "string",
-            "maxLength": 100000
+            "maxLength": 1000000
           },
           "createdBy": {
             "type": [
@@ -6289,7 +6291,7 @@
                   },
                   "content": {
                     "type": "string",
-                    "maxLength": 100000
+                    "maxLength": 1000000
                   }
                 },
                 "required": [
@@ -8726,7 +8728,7 @@
                       "string",
                       "null"
                     ],
-                    "maxLength": 100000
+                    "maxLength": 1000000
                   },
                   "authStrategies": {
                     "type": "array",
@@ -9505,11 +9507,11 @@
                       "string",
                       "null"
                     ],
-                    "maxLength": 100000
+                    "maxLength": 1000000
                   },
                   "keywords": {
                     "type": "string",
-                    "maxLength": 100000
+                    "maxLength": 1000000
                   },
                   "displayOrder": {
                     "type": "number",

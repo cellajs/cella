@@ -75,6 +75,9 @@ importers:
       '@aws-sdk/s3-request-presigner':
         specifier: ^3.996.0
         version: 3.996.0
+      '@blocknote/core':
+        specifier: ^0.47.0
+        version: 0.47.0(@hocuspocus/provider@2.15.2(y-protocols@1.0.7(yjs@13.6.29))(yjs@13.6.29))(@types/hast@3.0.4)(highlight.js@11.11.1)(lowlight@3.3.0)
       '@dotenv-run/core':
         specifier: ^1.3.8
         version: 1.3.8

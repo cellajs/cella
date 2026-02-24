@@ -57,12 +57,13 @@
                   },
                   "description": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 1000000
                   },
                   "keywords": {
                     "type": "string",
                     "required": true,
-                    "maxLength": 100000
+                    "maxLength": 1000000
                   },
                   "createdBy": {
                     "type": ["string", "null"],
@@ -266,12 +267,13 @@
             },
             "description": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 1000000
             },
             "keywords": {
               "type": "string",
               "required": true,
-              "maxLength": 100000
+              "maxLength": 1000000
             },
             "createdBy": {
               "type": ["string", "null"],
@@ -429,12 +431,13 @@
                   },
                   "description": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 1000000
                   },
                   "keywords": {
                     "type": "string",
                     "required": true,
-                    "maxLength": 100000
+                    "maxLength": 1000000
                   },
                   "createdBy": {
                     "type": ["string", "null"],
@@ -586,12 +589,13 @@
                   },
                   "description": {
                     "type": ["string", "null"],
-                    "required": true
+                    "required": true,
+                    "maxLength": 1000000
                   },
                   "keywords": {
                     "type": "string",
                     "required": true,
-                    "maxLength": 100000
+                    "maxLength": 1000000
                   },
                   "createdBy": {
                     "type": ["string", "null"],
@@ -921,12 +925,13 @@
             },
             "description": {
               "type": ["string", "null"],
-              "required": true
+              "required": true,
+              "maxLength": 1000000
             },
             "keywords": {
               "type": "string",
               "required": true,
-              "maxLength": 100000
+              "maxLength": 1000000
             },
             "createdBy": {
               "type": ["string", "null"],
@@ -1044,12 +1049,12 @@
           "description": {
             "type": ["string", "null"],
             "required": false,
-            "maxLength": 100000
+            "maxLength": 1000000
           },
           "keywords": {
             "type": "string",
             "required": false,
-            "maxLength": 100000
+            "maxLength": 1000000
           },
           "displayOrder": {
             "type": "number",

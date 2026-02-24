@@ -10,7 +10,7 @@ export const maxLength = {
   /** Max length for standard text fields (name, email, slug, etc.) */
   field: 255,
   /** Max length for rich text / HTML content */
-  html: 100_000,
+  html: 1_000_000,
   /** Max length for URLs and storage keys */
   url: 2048,
 } as const;

@@ -15,6 +15,7 @@ import {
   throwIfConflicts,
 } from '#/sync/field-versions';
 import { defaultHook } from '#/utils/default-hook';
+import { extractKeywords } from '#/utils/extract-keywords';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
@@ -144,7 +145,7 @@ const pageRouteHandlers = app
       createdBy: user.id,
       description: '',
       displayOrder: 3,
-      keywords: '',
+      keywords: extractKeywords(pageData.name),
       modifiedAt: null,
       modifiedBy: null,
       publicAccess: true, // Pages are publicly readable by default
@@ -188,10 +189,15 @@ const pageRouteHandlers = app
 
     // Use tenant-scoped db from tenantGuard middleware (RLS context already set)
     const tenantDb = ctx.var.db;
+    // Rebuild keywords from current + updated fields
+    const updatedName = pageData.name ?? entity.name;
+    const updatedDescription = pageData.description ?? entity.description;
+
     const [page] = await tenantDb
       .update(pagesTable)
       .set({
         ...pageData,
+        keywords: extractKeywords(updatedName, updatedDescription),
         modifiedAt: getIsoDate(),
         modifiedBy: user.id,
         // Sync: write transient stx metadata for CDC Worker + client tracking

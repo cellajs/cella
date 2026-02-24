@@ -323,7 +323,7 @@ export const zOrganization = z.object({
   color: z.string().max(255).nullable(),
   logoUrl: z.string().max(2048).nullable(),
   websiteUrl: z.string().max(2048).nullable(),
-  welcomeText: z.string().max(100000).nullable(),
+  welcomeText: z.string().max(1000000).nullable(),
   authStrategies: z.array(z.enum(['github', 'google', 'microsoft', 'password', 'passkey', 'totp', 'email'])),
   chatSupport: z.boolean(),
   included: z.object({
@@ -356,8 +356,8 @@ export const zPage = z.object({
   name: z.string().max(255),
   modifiedAt: z.string().nullable(),
   stx: zStxBase,
-  description: z.string().nullable(),
-  keywords: z.string().max(100000),
+  description: z.string().max(1000000).nullable(),
+  keywords: z.string().max(1000000),
   createdBy: z.string().max(50).nullable(),
   modifiedBy: z.string().max(50).nullable(),
   status: z.enum(['unpublished', 'published', 'archived']),
@@ -386,8 +386,8 @@ export const zAttachment = z.object({
   name: z.string().max(255),
   modifiedAt: z.string().nullable(),
   stx: zStxBase,
-  description: z.string().nullable(),
-  keywords: z.string().max(100000),
+  description: z.string().max(1000000).nullable(),
+  keywords: z.string().max(1000000),
   createdBy: z.string().max(50).nullable(),
   modifiedBy: z.string().max(50).nullable(),
   public: z.boolean(),
@@ -1137,7 +1137,7 @@ export const zSendNewsletterData = z.object({
     organizationIds: z.array(z.string().max(50)),
     roles: z.array(z.enum(['admin', 'member'])).min(1),
     subject: z.string().max(255),
-    content: z.string().max(100000),
+    content: z.string().max(1000000),
   }),
   path: z.never().optional(),
   query: z
@@ -1542,7 +1542,7 @@ export const zUpdateOrganizationData = z.object({
       logoUrl: z.string().max(2048).nullish(),
       bannerUrl: z.string().max(2048).nullish(),
       websiteUrl: z.string().max(2048).nullish(),
-      welcomeText: z.string().max(100000).nullish(),
+      welcomeText: z.string().max(1000000).nullish(),
       authStrategies: z
         .array(z.enum(['github', 'google', 'microsoft', 'password', 'passkey', 'totp', 'email']))
         .optional(),
@@ -1648,8 +1648,8 @@ export const zCreatePagesResponse = z.union([
 export const zUpdatePageData = z.object({
   body: z.object({
     name: z.string().max(255).optional(),
-    description: z.string().max(100000).nullish(),
-    keywords: z.string().max(100000).optional(),
+    description: z.string().max(1000000).nullish(),
+    keywords: z.string().max(1000000).optional(),
     displayOrder: z.number().gte(-140737488355328).lte(140737488355327).optional(),
     status: z.enum(['unpublished', 'published', 'archived']).optional(),
     parentId: z.string().max(50).nullish(),
