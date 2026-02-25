@@ -2,7 +2,7 @@ import { onlineManager } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { UserBase } from '~/api.gen';
+import type { UserBase, UserMinimalBase } from '~/api.gen';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster/service';
@@ -19,7 +19,7 @@ interface BaseProps {
 /**
  * Render a user cell with avatar and name, wrapped in a link to open user sheet.
  */
-export const UserCell = ({ user, tabIndex, compactable, className }: BaseProps & { user: UserBase }) => {
+export const UserCell = ({ user, tabIndex, compactable, className }: BaseProps & { user: UserMinimalBase }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const cellRef = useRef<HTMLButtonElement | null>(null);

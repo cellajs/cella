@@ -546,6 +546,10 @@ CREATE POLICY "inactive_memberships_delete_policy" ON "inactive_memberships" AS 
   )
 
 );--> statement-breakpoint
+CREATE POLICY "inactive_memberships_select_own_policy" ON "inactive_memberships" AS PERMISSIVE FOR SELECT TO public USING (current_setting('app.is_authenticated', true)::boolean = true AND 
+  COALESCE(current_setting('app.user_id', true), '') != ''
+  AND "inactive_memberships"."user_id" = current_setting('app.user_id', true)::text
+);--> statement-breakpoint
 CREATE POLICY "memberships_context_guard" ON "memberships" AS RESTRICTIVE FOR SELECT TO public USING (COALESCE(current_setting('app.tenant_id', true), '') != '' OR COALESCE(current_setting('app.user_id', true), '') != '');--> statement-breakpoint
 CREATE POLICY "memberships_select_own_policy" ON "memberships" AS PERMISSIVE FOR SELECT TO public USING (current_setting('app.is_authenticated', true)::boolean = true AND 
   COALESCE(current_setting('app.user_id', true), '') != ''
@@ -580,6 +584,12 @@ CREATE POLICY "organizations_select_policy" ON "organizations" AS PERMISSIVE FOR
             WHERE m.organization_id = "organizations"."id"
             AND m.user_id = current_setting('app.user_id', true)::text
             AND m.tenant_id = "organizations"."tenant_id"
+          )
+          OR EXISTS (
+            SELECT 1 FROM inactive_memberships im
+            WHERE im.organization_id = "organizations"."id"
+            AND im.user_id = current_setting('app.user_id', true)::text
+            AND im.rejected_at IS NULL
           )
         )
       );--> statement-breakpoint

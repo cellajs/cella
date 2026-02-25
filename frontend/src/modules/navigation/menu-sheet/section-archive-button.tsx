@@ -1,15 +1,22 @@
 import { ArchiveIcon, ChevronDownIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
+import { useUnseenCount } from '~/modules/seen/use-unseen-count';
 import { Button } from '~/modules/ui/button';
 
 interface SectionArchiveButtonProps {
   archiveToggleClick: () => void;
   archivedCount: number;
+  archivedOrgIds?: string[];
 }
 
-export const SectionArchiveButton = ({ archiveToggleClick, archivedCount }: SectionArchiveButtonProps) => {
+export const SectionArchiveButton = ({
+  archiveToggleClick,
+  archivedCount,
+  archivedOrgIds = [],
+}: SectionArchiveButtonProps) => {
   const { t } = useTranslation();
+  const archivedUnseenCount = useUnseenCount(archivedOrgIds);
 
   return (
     <motion.div layout>
@@ -29,7 +36,13 @@ export const SectionArchiveButton = ({ archiveToggleClick, archivedCount }: Sect
             className="inline-block px-2 py-1 font-light text-xs text-muted-foreground 
           group-data-[archived-visible=true]/archived:hidden"
           >
-            {archivedCount}
+            {archivedUnseenCount > 0 ? (
+              <span className="inline-flex items-center justify-center min-w-4 h-4 rounded-full bg-background text-primary text-[0.6rem] font-bold px-1 leading-none">
+                {archivedUnseenCount > 99 ? '99+' : archivedUnseenCount}
+              </span>
+            ) : (
+              archivedCount
+            )}
           </span>
         </div>
         <div className="px-3">

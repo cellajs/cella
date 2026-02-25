@@ -5,6 +5,18 @@ export type ClientOptions = {
 };
 
 /**
+ * Minimal user data for references (e.g. createdBy, modifiedBy).
+ */
+export type UserMinimalBase = {
+  id: string;
+  name: string;
+  slug: string;
+  thumbnailUrl: string | null;
+  email: string;
+  entityType: 'user';
+};
+
+/**
  * Base user schema with essential fields for identification and display.
  */
 export type UserBase = {
@@ -249,7 +261,10 @@ export type InactiveMembership = {
   tokenId: string | null;
   role: 'admin' | 'member';
   rejectedAt: string | null;
-  createdBy: string;
+  createdBy: UserMinimalBase &
+    ({
+      [key: string]: unknown;
+    } | null);
   organizationId: string;
 };
 
@@ -317,8 +332,14 @@ export type Organization = {
   slug: string;
   thumbnailUrl: string | null;
   bannerUrl: string | null;
-  createdBy: string | null;
-  modifiedBy: string | null;
+  createdBy: UserMinimalBase &
+    ({
+      [key: string]: unknown;
+    } | null);
+  modifiedBy: UserMinimalBase &
+    ({
+      [key: string]: unknown;
+    } | null);
   shortName: string | null;
   country: string | null;
   timezone: string | null;
@@ -362,8 +383,14 @@ export type Page = {
   stx: StxBase;
   description: string | null;
   keywords: string;
-  createdBy: string | null;
-  modifiedBy: string | null;
+  createdBy: UserMinimalBase &
+    ({
+      [key: string]: unknown;
+    } | null);
+  modifiedBy: UserMinimalBase &
+    ({
+      [key: string]: unknown;
+    } | null);
   status: 'unpublished' | 'published' | 'archived';
   publicAccess: boolean;
   parentId: string | null;
@@ -401,8 +428,14 @@ export type Attachment = {
   stx: StxBase;
   description: string | null;
   keywords: string;
-  createdBy: string | null;
-  modifiedBy: string | null;
+  createdBy: UserMinimalBase &
+    ({
+      [key: string]: unknown;
+    } | null);
+  modifiedBy: UserMinimalBase &
+    ({
+      [key: string]: unknown;
+    } | null);
   public: boolean;
   bucketName: string;
   groupId: string | null;
@@ -2133,14 +2166,14 @@ export type GetMyMembershipsResponses = {
 
 export type GetMyMembershipsResponse = GetMyMembershipsResponses[keyof GetMyMembershipsResponses];
 
-export type GetMyUnseenCountsData = {
+export type GetUnseenCountsData = {
   body?: never;
   path?: never;
   query?: never;
-  url: '/me/unseen-counts';
+  url: '/unseen/counts';
 };
 
-export type GetMyUnseenCountsErrors = {
+export type GetUnseenCountsErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -2163,22 +2196,20 @@ export type GetMyUnseenCountsErrors = {
   429: TooManyRequestsError;
 };
 
-export type GetMyUnseenCountsError = GetMyUnseenCountsErrors[keyof GetMyUnseenCountsErrors];
+export type GetUnseenCountsError = GetUnseenCountsErrors[keyof GetUnseenCountsErrors];
 
-export type GetMyUnseenCountsResponses = {
+export type GetUnseenCountsResponses = {
   /**
    * Unseen counts per org per entity type
    */
   200: {
-    counts: Array<{
-      organizationId: string;
-      entityType: 'attachment' | 'page';
-      unseenCount: number;
-    }>;
+    [key: string]: {
+      [key: string]: number;
+    };
   };
 };
 
-export type GetMyUnseenCountsResponse = GetMyUnseenCountsResponses[keyof GetMyUnseenCountsResponses];
+export type GetUnseenCountsResponse = GetUnseenCountsResponses[keyof GetUnseenCountsResponses];
 
 export type CheckSlugData = {
   body: {
@@ -3967,12 +3998,8 @@ export type CreatePagesResponse = CreatePagesResponses[keyof CreatePagesResponse
 
 export type UpdatePageData = {
   body: {
-    name?: string;
-    description?: string | null;
-    keywords?: string;
-    displayOrder?: number;
-    status?: 'unpublished' | 'published' | 'archived';
-    parentId?: string | null;
+    key: 'name' | 'description' | 'keywords' | 'displayOrder' | 'status' | 'parentId';
+    data: string | number | boolean | Array<string> | null;
     stx: StxRequestBase;
   };
   path: {
@@ -4415,8 +4442,8 @@ export type GetAttachmentResponse = GetAttachmentResponses[keyof GetAttachmentRe
 
 export type UpdateAttachmentData = {
   body: {
-    name?: string;
-    originalKey?: string;
+    key: 'name' | 'originalKey';
+    data: string | null;
     stx: StxRequestBase;
   };
   path: {
@@ -4852,7 +4879,10 @@ export type GetPendingMembershipsResponses = {
       thumbnailUrl: string | null;
       role: 'admin' | 'member' | null;
       createdAt: string;
-      createdBy: string | null;
+      createdBy: UserMinimalBase &
+        ({
+          [key: string]: unknown;
+        } | null);
     }>;
     total: number;
   };

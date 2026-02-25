@@ -12,6 +12,7 @@ import { errorResponses, registerAllErrorResponses } from '#/schemas';
 import { contextEntityBaseSchema } from '#/schemas/entity-base';
 import { streamNotificationSchema } from '#/schemas/stream-schemas';
 import { stxBaseSchema } from '#/schemas/sync-transaction-schemas';
+import { userMinimalBaseSchema } from '#/schemas/user-minimal-base';
 import { userBaseSchema } from '#/schemas/user-schema-base';
 import { checkMark } from '#/utils/console';
 
@@ -52,6 +53,7 @@ const docs = async (app: OpenAPIHono<Env>, skipScalar = false) => {
   });
 
   // Register base schemas (not auto-registered as they're only used for extending other schemas)
+  registry.register('UserMinimalBase', userMinimalBaseSchema);
   registry.register('UserBase', userBaseSchema);
   registry.register('ContextEntityBase', contextEntityBaseSchema);
   registry.register('MembershipBase', membershipBaseSchema);

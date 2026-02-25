@@ -12,7 +12,7 @@ import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { UpdateRow } from '~/modules/organization/table/update-row';
 import type { EnrichedOrganization } from '~/modules/organization/types';
 import { buttonVariants } from '~/modules/ui/button';
-import { UserCellById } from '~/modules/user/user-cell';
+import { UserCell } from '~/modules/user/user-cell';
 import { dateShort } from '~/utils/date-short';
 
 export const useColumns = (isCompact: boolean) => {
@@ -110,9 +110,12 @@ export const useColumns = (isCompact: boolean) => {
         minWidth: isCompact ? null : 120,
         width: isCompact ? 50 : null,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row, tabIndex }) => (
-          <UserCellById userId={row.createdBy} cacheOnly={false} tabIndex={tabIndex} />
-        ),
+        renderCell: ({ row, tabIndex }) =>
+          row.createdBy ? (
+            <UserCell compactable user={row.createdBy} tabIndex={tabIndex} />
+          ) : (
+            <span className="text-muted">-</span>
+          ),
       },
       {
         key: 'memberCount',

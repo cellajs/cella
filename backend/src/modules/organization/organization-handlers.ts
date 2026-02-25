@@ -15,6 +15,14 @@ import { initContextCounters } from '#/modules/entities/helpers/init-context-cou
 import { insertMemberships } from '#/modules/memberships/helpers';
 import { type MembershipBaseModel, toMembershipBase } from '#/modules/memberships/helpers/select';
 import organizationRoutes from '#/modules/organization/organization-routes';
+import {
+  auditUserSelect,
+  coalesceAuditUsers,
+  createdByUser,
+  modifiedByUser,
+  toUserMinimalBase,
+  withAuditUsers,
+} from '#/modules/user/helpers/audit-user';
 import { getValidContextEntity } from '#/permissions';
 import { splitByPermission } from '#/permissions/split-by-permission';
 import { defaultHook } from '#/utils/default-hook';
@@ -128,7 +136,11 @@ const organizationRouteHandlers = app
     // Map memberships by organizationId
     const membershipByOrgId = new Map(createdMemberships.map((m) => [m.organizationId, m]));
 
-    const data = createdOrganizations.map((org) => {
+    const userMinimal = toUserMinimalBase(user);
+    const knownUsers = new Map([[user.id, userMinimal]]);
+    const populatedOrgs = await withAuditUsers(createdOrganizations, tx, knownUsers);
+
+    const data = populatedOrgs.map((org) => {
       // Membership must exist — we just inserted it above
       const membership = membershipByOrgId.get(org.id)!;
       return {
@@ -195,8 +207,10 @@ const organizationRouteHandlers = app
     // They use LEFT JOIN since they may not have a membership row for every org.
     // Regular users use INNER JOIN on memberships (only see orgs they're members of).
     const countData = includeCounts ? getEntityCountsSelect(entityType) : null;
+    const { createdBy: _cb, modifiedBy: _mb, ...orgCols } = getColumns(organizationsTable);
     const selectShape = {
-      ...getColumns(organizationsTable),
+      ...orgCols,
+      ...auditUserSelect,
       ...(countData && { counts: countData.countsSelect }),
       total: sql<number>`count(*) over()`.mapWith(Number),
     } as const;
@@ -207,8 +221,15 @@ const organizationRouteHandlers = app
       : tx.select(selectShape).from(organizationsTable).innerJoin(membershipsTable, membershipOn);
 
     if (countData) {
-      query = query.leftJoin(contextCountersTable, eq(organizationsTable.id, contextCountersTable.contextKey));
+      query = query.leftJoin(
+        contextCountersTable,
+        eq(organizationsTable.id, contextCountersTable.contextKey),
+      ) as typeof query;
     }
+
+    query = query
+      .leftJoin(createdByUser, eq(createdByUser.id, organizationsTable.createdBy))
+      .leftJoin(modifiedByUser, eq(modifiedByUser.id, organizationsTable.modifiedBy)) as unknown as typeof query;
 
     const organizations = await query
       .where(and(...orgWhere))
@@ -228,9 +249,7 @@ const organizationRouteHandlers = app
       if (includeMembership) {
         // Find membership from context memberships
         const membership = memberships.find((m) => m.contextType === entityType && m.organizationId === org.id);
-        if (membership) {
-          included.membership = toMembershipBase(membership);
-        }
+        if (membership) included.membership = toMembershipBase(membership);
       }
 
       if (includeCounts && counts) {
@@ -244,7 +263,7 @@ const organizationRouteHandlers = app
     });
 
     // Enrich organizations with membership data
-    return ctx.json({ items, total }, 200);
+    return ctx.json({ items: coalesceAuditUsers(items), total }, 200);
   })
 
   /**
@@ -292,7 +311,9 @@ const organizationRouteHandlers = app
       included,
     };
 
-    return ctx.json(data, 200);
+    const [populated] = await withAuditUsers([data], ctx.var.db);
+
+    return ctx.json(populated, 200);
   })
   /**
    * Update an organization by id (tenant-scoped)
@@ -350,7 +371,11 @@ const organizationRouteHandlers = app
 
     const data = { ...updatedOrganization, included };
 
-    return ctx.json(data, 200);
+    const userMinimal = toUserMinimalBase(user);
+    const knownUsers = new Map([[user.id, userMinimal]]);
+    const [populated] = await withAuditUsers([data], tx, knownUsers);
+
+    return ctx.json(populated, 200);
   })
   /**
    * Delete organizations by ids (tenant-scoped)

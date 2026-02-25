@@ -102,6 +102,14 @@ export const inactiveMembershipImmutabilityFunctionSQL = buildImmutabilityFuncti
   inactiveMembershipImmutableColumns,
 );
 
+/** Immutability function for append-only tables (e.g., activities) - blocks ALL updates */
+export const appendOnlyImmutabilityFunctionSQL = `
+CREATE OR REPLACE FUNCTION append_only_immutable_row() RETURNS TRIGGER AS $$
+BEGIN
+  RAISE EXCEPTION 'Table % is append-only: updates are not allowed', TG_TABLE_NAME;
+END;
+$$ LANGUAGE plpgsql;`;
+
 // ============================================================================
 // Table Configuration - Derived from appConfig
 // ============================================================================
@@ -143,12 +151,18 @@ const membershipTableConfigs: TableImmutabilityConfig[] = [
   { tableName: 'inactive_memberships', functionName: 'inactive_membership_immutable_keys' },
 ];
 
+/** Append-only tables - block all updates */
+const appendOnlyTableConfigs: TableImmutabilityConfig[] = [
+  { tableName: 'activities', functionName: 'append_only_immutable_row' },
+];
+
 /** All tables with immutability triggers */
 export const allImmutabilityTables = [
   ...contextEntityTableConfigs,
   ...parentlessProductEntityTableConfigs,
   ...productEntityTableConfigs,
   ...membershipTableConfigs,
+  ...appendOnlyTableConfigs,
 ];
 
 // ============================================================================
@@ -181,6 +195,9 @@ ${membershipImmutabilityFunctionSQL}
 
 -- Inactive memberships
 ${inactiveMembershipImmutabilityFunctionSQL}
+
+-- Append-only tables (${appendOnlyTableConfigs.map((t) => t.tableName).join(', ')})
+${appendOnlyImmutabilityFunctionSQL}
 
 -- ==========================================================================
 -- Apply Triggers to Tables (${allImmutabilityTables.length} tables)

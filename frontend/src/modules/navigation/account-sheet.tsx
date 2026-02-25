@@ -3,6 +3,7 @@ import { LogOutIcon, type LucideProps, SettingsIcon, UserRoundIcon, WrenchIcon }
 import type React from 'react';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
@@ -87,6 +88,10 @@ export const AccountSheet = () => {
         </div>
       </button>
       <div className="flex flex-col gap-1 max-sm:mt-4">
+        {appConfig.mode === 'development' && (
+          <div className="max-sm:hidden text-center text-sm text-foreground/50 mb-4">{user.id}</div>
+        )}
+
         <button
           type="button"
           id="btn-profile"

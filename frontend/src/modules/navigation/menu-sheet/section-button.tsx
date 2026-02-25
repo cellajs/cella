@@ -6,6 +6,7 @@ import { StickyBox } from '~/modules/common/sticky-box';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import type { UserMenuItem } from '~/modules/me/types';
 import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
+import { useUnseenCount } from '~/modules/seen/use-unseen-count';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
 
@@ -32,6 +33,12 @@ export const MenuSectionButton = ({
   const { t } = useTranslation();
   const toggleSection = useNavigationStore((state) => state.toggleSection);
 
+  // Cumulative unseen count for non-archived, non-muted orgs in this section
+  const orgIds = data
+    .filter((i) => i.entityType === 'organization' && !i.membership.muted && !i.membership.archived)
+    .map((i) => i.id);
+  const sectionUnseenCount = useUnseenCount(orgIds);
+
   const createButtonRef = useRef(null);
 
   return (
@@ -48,7 +55,7 @@ export const MenuSectionButton = ({
             <motion.button layout="size" transition={{ bounce: 0, duration: 0.2 }}>
               <div className="flex items-center">
                 <span className="flex items-center">{t(options.label)}</span>
-                {/* Item count badge */}
+                {/* Unseen count badge or item count when section is collapsed */}
                 <motion.span
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -56,7 +63,13 @@ export const MenuSectionButton = ({
                   transition={{ duration: 0.25 }}
                   className="inline-block group-data-[visible=true]/menuSection:hidden px-2 py-1 text-xs font-light text-muted-foreground"
                 >
-                  {data.filter((i) => !i.membership.archived).length}
+                  {sectionUnseenCount > 0 ? (
+                    <span className="inline-flex items-center justify-center min-w-4 h-4 rounded-full bg-background text-primary text-[0.6rem] font-bold px-1 leading-none">
+                      {sectionUnseenCount > 99 ? '99+' : sectionUnseenCount}
+                    </span>
+                  ) : (
+                    data.filter((i) => !i.membership.archived).length
+                  )}
                 </motion.span>
               </div>
 

@@ -37,6 +37,9 @@ export const MenuSheetSection = ({ data, options }: MenuSheetSectionProps) => {
   const isArchivedVisible = activeSections?.[archivedSectionType] ?? true;
   const isSectionVisible = activeSections?.[options.entityType] ?? true;
   const archivedCount = data.filter((i) => i.membership?.archived).length;
+  const archivedOrgIds = data
+    .filter((i) => i.membership?.archived && i.entityType === 'organization' && !i.membership.muted)
+    .map((i) => i.id);
 
   const handleCreateAction = (ref: RefObject<HTMLButtonElement | null>) => {
     if (isMobile) {
@@ -104,7 +107,11 @@ export const MenuSheetSection = ({ data, options }: MenuSheetSectionProps) => {
                 data-archived-visible={isArchivedVisible}
               >
                 {(!!archivedCount || isEditing) && (
-                  <SectionArchiveButton archiveToggleClick={archiveToggleClick} archivedCount={archivedCount} />
+                  <SectionArchiveButton
+                    archiveToggleClick={archiveToggleClick}
+                    archivedCount={archivedCount}
+                    archivedOrgIds={archivedOrgIds}
+                  />
                 )}
                 <AnimatePresence initial={false}>
                   {isArchivedVisible && (

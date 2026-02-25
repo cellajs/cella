@@ -890,9 +890,29 @@
                         "required": true
                       },
                       "createdBy": {
-                        "type": "string",
+                        "type": ["object", "null"],
                         "required": true,
-                        "maxLength": 50
+                        "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                        "properties": {
+                          "id": { "type": "string", "required": true },
+                          "name": { "type": "string", "required": true },
+                          "slug": { "type": "string", "required": true },
+                          "thumbnailUrl": {
+                            "type": ["string", "null"],
+                            "required": true
+                          },
+                          "email": {
+                            "type": "string",
+                            "required": true,
+                            "format": "email"
+                          },
+                          "entityType": {
+                            "type": "string",
+                            "required": true,
+                            "enum": ["user"]
+                          }
+                        },
+                        "extendsRef": "#/components/schemas/UserMinimalBase"
                       },
                       "organizationId": {
                         "type": "string",
@@ -1357,78 +1377,6 @@
                   }
                 },
                 "ref": "#/components/schemas/MembershipBase"
-              }
-            }
-          },
-          "contentType": "application/json"
-        }
-      },
-      {
-        "status": 400,
-        "description": "Bad request: problem processing request.",
-        "name": "BadRequestError",
-        "ref": "#/components/responses/BadRequestError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 401,
-        "description": "Unauthorized: authentication required.",
-        "name": "UnauthorizedError",
-        "ref": "#/components/responses/UnauthorizedError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 403,
-        "description": "Forbidden: insufficient permissions.",
-        "name": "ForbiddenError",
-        "ref": "#/components/responses/ForbiddenError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 404,
-        "description": "Not found: resource does not exist.",
-        "name": "NotFoundError",
-        "ref": "#/components/responses/NotFoundError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 429,
-        "description": "Rate limit: too many requests.",
-        "name": "TooManyRequestsError",
-        "ref": "#/components/responses/TooManyRequestsError",
-        "contentType": "application/json"
-      }
-    ]
-  },
-  {
-    "operationId": "getMyUnseenCounts",
-    "responses": [
-      {
-        "status": 200,
-        "description": "Unseen counts per org per entity type",
-        "contentType": "application/json",
-        "schema": {
-          "type": "object",
-          "properties": {
-            "counts": {
-              "type": "array",
-              "required": true,
-              "itemType": "object",
-              "items": {
-                "type": "object",
-                "properties": {
-                  "organizationId": { "type": "string", "required": true },
-                  "entityType": {
-                    "type": "string",
-                    "required": true,
-                    "enum": ["attachment", "page"]
-                  },
-                  "unseenCount": {
-                    "type": "integer",
-                    "required": true,
-                    "minimum": 0
-                  }
-                }
               }
             }
           },

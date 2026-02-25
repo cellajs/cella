@@ -21,11 +21,14 @@ import {
   validUrlSchema,
 } from '#/schemas';
 import { contextEntityIncludedSchema } from '#/schemas/context-entity-included';
+import { userMinimalBaseSchema } from '#/schemas/user-minimal-base';
 import { mockOrganizationResponse } from '../../../mocks/mock-organization';
 
 export const organizationSchema = z
   .object({
     ...createSelectSchema(organizationsTable).omit({ restrictions: true }).shape,
+    createdBy: userMinimalBaseSchema.nullable(),
+    modifiedBy: userMinimalBaseSchema.nullable(),
     languages: z.array(languageSchema).min(1),
     emailDomains: z.array(z.string()),
     authStrategies: z.array(z.enum(authStrategiesEnum)),

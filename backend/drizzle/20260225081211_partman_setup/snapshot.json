@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "0d8e550c-ec7b-4d67-b7c4-50be8f9a604b",
+  "id": "7df36047-8483-4b48-b990-1323de404fee",
   "prevIds": [
     "00000000-0000-0000-0000-000000000000"
   ],
@@ -5134,6 +5134,19 @@
       "table": "inactive_memberships"
     },
     {
+      "as": "PERMISSIVE",
+      "for": "SELECT",
+      "roles": [
+        "public"
+      ],
+      "using": "current_setting('app.is_authenticated', true)::boolean = true AND \n  COALESCE(current_setting('app.user_id', true), '') != ''\n  AND \"inactive_memberships\".\"user_id\" = current_setting('app.user_id', true)::text\n",
+      "withCheck": null,
+      "name": "inactive_memberships_select_own_policy",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "inactive_memberships"
+    },
+    {
       "as": "RESTRICTIVE",
       "for": "SELECT",
       "roles": [
@@ -5217,7 +5230,7 @@
       "roles": [
         "public"
       ],
-      "using": "\n        current_setting('app.is_authenticated', true)::boolean = true\n        AND COALESCE(current_setting('app.user_id', true), '') != ''\n        AND (\n          \"organizations\".\"created_by\" = current_setting('app.user_id', true)::text\n          OR EXISTS (\n            SELECT 1 FROM memberships m\n            WHERE m.organization_id = \"organizations\".\"id\"\n            AND m.user_id = current_setting('app.user_id', true)::text\n            AND m.tenant_id = \"organizations\".\"tenant_id\"\n          )\n        )\n      ",
+      "using": "\n        current_setting('app.is_authenticated', true)::boolean = true\n        AND COALESCE(current_setting('app.user_id', true), '') != ''\n        AND (\n          \"organizations\".\"created_by\" = current_setting('app.user_id', true)::text\n          OR EXISTS (\n            SELECT 1 FROM memberships m\n            WHERE m.organization_id = \"organizations\".\"id\"\n            AND m.user_id = current_setting('app.user_id', true)::text\n            AND m.tenant_id = \"organizations\".\"tenant_id\"\n          )\n          OR EXISTS (\n            SELECT 1 FROM inactive_memberships im\n            WHERE im.organization_id = \"organizations\".\"id\"\n            AND im.user_id = current_setting('app.user_id', true)::text\n            AND im.rejected_at IS NULL\n          )\n        )\n      ",
       "withCheck": null,
       "name": "organizations_select_policy",
       "entityType": "policies",

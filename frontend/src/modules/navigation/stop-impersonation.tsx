@@ -9,6 +9,7 @@ import { meKeys } from '~/modules/me/query';
 import { getMenuData } from '~/modules/navigation/menu-sheet/helpers/get-menu-data';
 import { SidebarMenuButton, SidebarMenuItem } from '~/modules/ui/sidebar';
 import { queryClient } from '~/query/query-client';
+import { appStreamManager } from '~/query/realtime/stream-store';
 import { useUIStore } from '~/store/ui';
 
 const { hasSidebarTextLabels } = appConfig.theme.navigation;
@@ -29,10 +30,13 @@ export function StopImpersonation({ isCollapsed }: StopImpersonationProps) {
   const stopImpersonation = async () => {
     await breakImpersonation();
     setImpersonating(false);
-    await getAndSetMe();
-    // Remove stale memberships (key is not user-specific) so getMenuData refetches for the restored user
+    // Remove stale user and membership caches so fresh data is fetched for the restored admin user
+    queryClient.removeQueries({ queryKey: meKeys.all });
     queryClient.removeQueries({ queryKey: meKeys.memberships });
+    await getAndSetMe();
     await getMenuData();
+    // Reconnect SSE so the subscriber uses the restored admin's role and memberships
+    appStreamManager.reconnect();
     navigate({ to: appConfig.defaultRedirectPath, replace: true });
     toaster(t('common:success.stopped_impersonation'), 'success');
   };

@@ -74,10 +74,12 @@ export async function updateContextCounts(delta: CountDelta): Promise<void> {
 
   // Build the SET expression for ON CONFLICT: chain jsonb || for each key
   // Each key: jsonb_build_object('key', GREATEST(0, COALESCE((counts->>'key')::int, 0) + delta))
-  const setClauses = entries.map(
-    ([key, value]) =>
-      sql`jsonb_build_object(${key}, GREATEST(0, COALESCE((${contextCountersTable.counts}->>${key})::int, 0) + ${value}))`,
-  );
+  // Note: We use sql.raw() for literal key strings and explicit ::int cast for the delta
+  // because PGlite cannot infer parameter types inside jsonb_build_object / GREATEST / COALESCE.
+  const setClauses = entries.map(([key, value]) => {
+    const safeKey = key.replace(/'/g, "''");
+    return sql`jsonb_build_object(${sql.raw(`'${safeKey}'`)}, GREATEST(0, COALESCE((${contextCountersTable.counts}->>${sql.raw(`'${safeKey}'`)})::int, 0) + ${value}::int))`;
+  });
 
   // Chain with || operator: counts || obj1 || obj2 || ...
   let countsExpr = sql`${contextCountersTable.counts}`;
@@ -89,6 +91,8 @@ export async function updateContextCounts(delta: CountDelta): Promise<void> {
     .insert(contextCountersTable)
     .values({
       contextKey: delta.contextKey,
+      seq: 0,
+      mSeq: 0,
       counts: initialCounts,
       updatedAt: new Date(),
     })

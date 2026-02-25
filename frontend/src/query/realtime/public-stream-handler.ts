@@ -31,10 +31,6 @@ export function handlePublicStreamNotification(message: StreamNotification): voi
 
   // Use registry for dynamic lookup (keys registered at module load time by entity modules)
   const keys = getEntityQueryKeys(entityType);
-  if (!keys) {
-    console.debug(`[PublicStreamHandler] No query keys registered for entity type: ${entityType}`);
-    return;
-  }
 
   switch (action) {
     case 'create':

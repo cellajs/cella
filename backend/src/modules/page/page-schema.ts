@@ -2,6 +2,8 @@ import { z } from '@hono/zod-openapi';
 import { pagesTable } from '#/db/schema/pages';
 import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schema';
 import { batchResponseSchema, maxLength, paginationQuerySchema, stxBaseSchema, stxRequestSchema } from '#/schemas';
+import { userMinimalBaseSchema } from '#/schemas/user-minimal-base';
+import { createUpdateSchema } from '#/sync';
 import { mockPageResponse } from '../../../mocks/mock-page';
 
 /** Page status enum - matches pages table status column */
@@ -19,7 +21,12 @@ const pageSelectSchema = z.object({
 });
 
 export const pageSchema = z
-  .object({ ...pageSelectSchema.shape, stx: stxBaseSchema })
+  .object({
+    ...pageSelectSchema.shape,
+    createdBy: userMinimalBaseSchema.nullable(),
+    modifiedBy: userMinimalBaseSchema.nullable(),
+    stx: stxBaseSchema,
+  })
   .openapi('Page', { description: 'A content page for documentation purposes.', example: mockPageResponse() });
 
 export const pageCreateBodySchema = pageInsertSchema.pick({
@@ -32,20 +39,15 @@ export const pageCreateStxBodySchema = pageCreateBodySchema.extend({ stx: stxReq
 /** Array schema for batch creates (1-50 pages per request), each with own stx */
 export const pageCreateManyStxBodySchema = pageCreateStxBodySchema.array().min(1).max(50);
 
-export const pageUpdateBodySchema = pageInsertSchema
-  .pick({
-    name: true,
-    description: true,
-    keywords: true,
-    displayOrder: true,
-    status: true,
-    parentId: true,
-  })
-  .partial()
-  .extend({ status: pageStatusSchema.optional() });
-
-/** Update body with stx embedded */
-export const pageUpdateStxBodySchema = pageUpdateBodySchema.extend({ stx: stxRequestSchema });
+/** Update body using key/data pattern for single-field updates with conflict detection */
+export const pageUpdateStxBodySchema = createUpdateSchema([
+  z.literal('name'),
+  z.literal('description'),
+  z.literal('keywords'),
+  z.literal('displayOrder'),
+  z.literal('status'),
+  z.literal('parentId'),
+]);
 
 // Response schemas: batch operations use { data, rejectedItems }, single returns entity directly
 export const pageCreateResponseSchema = batchResponseSchema(pageSchema);

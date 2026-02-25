@@ -640,7 +640,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["authGuard"],
+      "xGuard": ["authGuard", "crossTenantGuard"],
       "xRateLimiter": [],
       "xCache": []
     }
@@ -741,11 +741,11 @@
     }
   },
   {
-    "id": "getMyUnseenCounts",
-    "hash": "tag/me/GET/me/unseen-counts",
+    "id": "getUnseenCounts",
+    "hash": "tag/seen/GET/unseen/counts",
     "method": "get",
-    "path": "/me/unseen-counts",
-    "tags": ["me"],
+    "path": "/unseen/counts",
+    "tags": ["seen"],
     "summary": "Get unseen counts",
     "description": "Returns the number of unseen product entities per organization and entity type for the *current user*. Only entities created within the last 90 days are considered.",
     "deprecated": false,
@@ -1647,7 +1647,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["authGuard"],
+      "xGuard": ["authGuard", "crossTenantGuard"],
       "xRateLimiter": [],
       "xCache": []
     }

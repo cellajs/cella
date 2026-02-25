@@ -11,11 +11,19 @@ import { AppError } from '#/lib/error';
 import { getSignedUrlFromKey } from '#/lib/signed-url';
 import attachmentRoutes from '#/modules/attachment/attachment-routes';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
+import {
+  auditUserSelect,
+  coalesceAuditUsers,
+  createdByUser,
+  modifiedByUser,
+  toUserMinimalBase,
+  withAuditUsers,
+} from '#/modules/user/helpers/audit-user';
 import { canAccessEntity, canCreateEntity, checkPermission } from '#/permissions';
 import { getValidProductEntity } from '#/permissions/get-product-entity';
 import { splitByPermission } from '#/permissions/split-by-permission';
 import { buildStx, isTransactionProcessed } from '#/sync';
-import { checkFieldConflicts, getChangedTrackedFields, throwIfConflicts } from '#/sync/field-versions';
+import { checkFieldConflicts, throwIfConflicts } from '#/sync/field-versions';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
@@ -60,13 +68,17 @@ const attachmentRouteHandlers = app
     });
 
     const tenantDb = ctx.var.db;
+    const { createdBy: _cb, modifiedBy: _mb, ...attachmentCols } = getColumns(attachmentsTable);
     const attachmentsQuery = tenantDb
       .select({
-        ...getColumns(attachmentsTable),
+        ...attachmentCols,
+        ...auditUserSelect,
         viewCount: sql<number>`coalesce(${seenCountsTable.viewCount}, 0)`.as('view_count'),
       })
       .from(attachmentsTable)
       .leftJoin(seenCountsTable, eq(seenCountsTable.entityId, attachmentsTable.id))
+      .leftJoin(createdByUser, eq(createdByUser.id, attachmentsTable.createdBy))
+      .leftJoin(modifiedByUser, eq(modifiedByUser.id, attachmentsTable.modifiedBy))
       .where(and(...filters));
 
     const [items, [{ total }]] = await Promise.all([
@@ -74,7 +86,7 @@ const attachmentRouteHandlers = app
       tenantDb.select({ total: count() }).from(attachmentsQuery.as('attachments')),
     ]);
 
-    return ctx.json({ items, total }, 200);
+    return ctx.json({ items: coalesceAuditUsers(items), total }, 200);
   })
   /**
    * Get presigned URL for private attachment.
@@ -133,9 +145,12 @@ const attachmentRouteHandlers = app
       throw new AppError(404, 'not_found', 'warn', { entityType: 'attachment' });
     }
 
-    ctx.set('entityCacheData', attachment as Record<string, unknown>);
+    const tenantDb = ctx.var.db;
+    const [populated] = await withAuditUsers([attachment], tenantDb);
 
-    return ctx.json(attachment, 200);
+    ctx.set('entityCacheData', populated as Record<string, unknown>);
+
+    return ctx.json(populated, 200);
   })
   /**
    * Create one or more attachments
@@ -157,7 +172,8 @@ const attachmentRouteHandlers = app
         .from(attachmentsTable)
         .where(sql`${attachmentsTable.stx}->>'mutationId' = ${batchStxId}`);
       if (existingBatch.length > 0) {
-        return ctx.json({ data: existingBatch, rejectedItemIds: [] }, 200);
+        const data = await withAuditUsers(existingBatch, tenantDb);
+        return ctx.json({ data, rejectedItemIds: [] }, 200);
       }
     }
 
@@ -190,22 +206,25 @@ const attachmentRouteHandlers = app
 
     logEvent('info', `${createdAttachments.length} attachments have been created`);
 
-    return ctx.json({ data: createdAttachments, rejectedItemIds: [] }, 201);
+    const userMinimal = toUserMinimalBase(user);
+    const knownUsers = new Map([[user.id, userMinimal]]);
+    const data = await withAuditUsers(createdAttachments, tenantDb, knownUsers);
+
+    return ctx.json({ data, rejectedItemIds: [] }, 201);
   })
   /**
    * Update an attachment by id
    */
   .openapi(attachmentRoutes.updateAttachment, async (ctx) => {
     const { id } = ctx.req.valid('param');
-    const { stx, ...updatedFields } = ctx.req.valid('json');
+    const { key, data: updateData, stx } = ctx.req.valid('json');
 
     const { entity } = await getValidProductEntity(ctx, id, 'attachment', 'update');
 
     const user = ctx.var.user;
 
     // Field-level conflict detection
-    const trackedFields = ['name', 'filename', 'contentType'] as const;
-    const changedFields = getChangedTrackedFields(updatedFields, trackedFields);
+    const changedFields = key ? [key] : [];
     const { conflicts } = checkFieldConflicts(changedFields, entity.stx, stx.lastReadVersion);
     throwIfConflicts('attachment', conflicts);
 
@@ -214,7 +233,7 @@ const attachmentRouteHandlers = app
     const [updatedAttachment] = await tenantDb
       .update(attachmentsTable)
       .set({
-        ...updatedFields,
+        [key]: updateData,
         modifiedAt: getIsoDate(),
         modifiedBy: user.id,
         stx: buildStx(stx, entity, changedFields),
@@ -224,7 +243,11 @@ const attachmentRouteHandlers = app
 
     logEvent('info', 'Attachment updated', { attachmentId: updatedAttachment.id });
 
-    return ctx.json({ ...updatedAttachment }, 200);
+    const userMinimal = toUserMinimalBase(user);
+    const knownUsers = new Map([[user.id, userMinimal]]);
+    const [populated] = await withAuditUsers([updatedAttachment], tenantDb, knownUsers);
+
+    return ctx.json(populated, 200);
   })
   // Delete attachments
   .openapi(attachmentRoutes.deleteAttachments, async (ctx) => {

@@ -11,6 +11,7 @@ import { Root } from '~/modules/common/root';
 import { Spinner } from '~/modules/common/spinner';
 import { meQueryOptions } from '~/modules/me/query';
 import { getMenuData } from '~/modules/navigation/menu-sheet/helpers/get-menu-data';
+import { unseenCountsQueryOptions } from '~/modules/seen/query';
 import { onError } from '~/query/on-error';
 import { queryClient } from '~/query/query-client';
 import { cleanupOnBoundaryChange } from '~/routes/boundary-cleanup';
@@ -154,6 +155,9 @@ export const AppLayoutRoute = createRoute({
 
       // Revalidate user if not already awaited above
       if (!context?.user) await queryClient.ensureQueryData({ ...meQueryOptions() });
+
+      // Prefetch unseen counts alongside menu data
+      queryClient.prefetchQuery(unseenCountsQueryOptions());
 
       // Get menu too but defer it so no need to hang while its being retrieved
       return await defer(getMenuData());

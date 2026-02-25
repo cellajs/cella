@@ -1,7 +1,11 @@
 import type { ContextEntityType, ProductEntityType } from 'shared';
+import { isProductEntity } from 'shared';
+import type { GetUnseenCountsResponse } from '~/api.gen';
 import { syncSpanNames, withSpanSync } from '~/lib/tracing';
+import { seenKeys } from '~/modules/seen/query';
 import { type EntityQueryKeys, getEntityQueryKeys } from '~/query/basic';
 import { sourceId } from '~/query/offline';
+import { queryClient } from '~/query/query-client';
 import { useSyncStore } from '~/store/sync';
 import * as cacheOps from './cache-ops';
 import * as membershipOps from './membership-ops';
@@ -35,13 +39,13 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
       return;
     }
 
-    // Realtime entity events - use registry for dynamic lookup
-    if (entityType) {
-      const keys = getEntityQueryKeys(entityType);
-      if (keys) {
-        handleEntityNotification(entityType as ProductEntityType, entityId, action, stx, organizationId, seq, keys);
-      }
-    }
+    if (!isProductEntity(entityType))
+      return console.error('Unknown entityType in app stream notification:', entityType);
+
+    const keys = getEntityQueryKeys(entityType);
+    if (!organizationId) return console.error('Missing organizationId for product entity event:', entityType, entityId);
+
+    handleEntityNotification(entityType, entityId, action, stx, organizationId, seq, keys);
   });
 }
 
@@ -89,7 +93,7 @@ function handleEntityNotification(
   entityId: string,
   action: AppStreamNotification['action'],
   stx: AppStreamNotification['stx'],
-  organizationId: string | null,
+  organizationId: string,
   seq: number | null,
   keys: EntityQueryKeys,
 ): void {
@@ -100,7 +104,7 @@ function handleEntityNotification(
   }
 
   // Track seq for gap detection — scoped per org for app stream
-  if (seq !== null && organizationId) {
+  if (seq !== null) {
     useSyncStore.getState().setSeq(organizationId, seq);
   }
 
@@ -118,14 +122,36 @@ function handleEntityNotification(
         // Fetch single entity and patch both detail and list caches
         cacheOps.fetchEntityAndUpdateList(entityId, keys, action);
       }
+
+      // Optimistically increment unseen count for new entities from other users
+      if (action === 'create') {
+        incrementUnseenCount(organizationId, entityType);
+      }
       break;
 
     case 'delete':
       // Remove from detail and list caches directly (no refetch needed)
       cacheOps.removeEntityFromCache(entityType, entityId);
       cacheOps.removeEntityFromListCache(entityId, keys);
+
+      // Invalidate unseen counts — can't know if deleted entity was unseen
+      queryClient.invalidateQueries({ queryKey: seenKeys.unseenCounts });
       break;
   }
 
   console.debug(`[handleEntityNotification] ${entityType}:${action} priority=${priority}`);
+}
+
+/**
+ * Optimistically increment the unseen count when a new entity is created via SSE.
+ * Always correct since the user can't have seen a brand-new entity yet.
+ */
+function incrementUnseenCount(orgId: string, entityType: string): void {
+  queryClient.setQueryData<GetUnseenCountsResponse>(seenKeys.unseenCounts, (old) => {
+    if (!old) return old;
+    return {
+      ...old,
+      [orgId]: { ...(old[orgId] ?? {}), [entityType]: (old[orgId]?.[entityType] ?? 0) + 1 },
+    };
+  });
 }

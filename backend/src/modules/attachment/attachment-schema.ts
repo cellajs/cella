@@ -9,6 +9,8 @@ import {
   stxRequestSchema,
   validNanoidSchema,
 } from '#/schemas';
+import { userMinimalBaseSchema } from '#/schemas/user-minimal-base';
+import { createUpdateSchema } from '#/sync';
 import { mockAttachmentResponse } from '../../../mocks/mock-attachment';
 
 const attachmentInsertSchema = createInsertSchema(attachmentsTable);
@@ -17,6 +19,8 @@ const attachmentSelectSchema = createSelectSchema(attachmentsTable);
 export const attachmentSchema = z
   .object({
     ...attachmentSelectSchema.shape,
+    createdBy: userMinimalBaseSchema.nullable(),
+    modifiedBy: userMinimalBaseSchema.nullable(),
     stx: stxBaseSchema,
     viewCount: z.number().int().min(0).optional(),
   })
@@ -50,15 +54,11 @@ export const attachmentCreateStxBodySchema = attachmentCreateBodySchema.extend({
 /** Array schema for batch creates (1-50 attachments per request), each with own stx */
 export const attachmentCreateManyStxBodySchema = attachmentCreateStxBodySchema.array().min(1).max(50);
 
-export const attachmentUpdateBodySchema = attachmentInsertSchema
-  .pick({
-    name: true,
-    originalKey: true,
-  })
-  .partial();
-
-/** Update body with stx embedded */
-export const attachmentUpdateStxBodySchema = attachmentUpdateBodySchema.extend({ stx: stxRequestSchema });
+/** Update body using key/data pattern for single-field updates with conflict detection */
+export const attachmentUpdateStxBodySchema = createUpdateSchema(
+  [z.literal('name'), z.literal('originalKey')],
+  z.string().nullable(),
+);
 
 // Response schemas: batch operations use { data, rejectedItemIds }, single returns entity directly
 export const attachmentCreateResponseSchema = batchResponseSchema(attachmentSchema);

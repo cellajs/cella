@@ -9,6 +9,7 @@ import { meKeys } from '~/modules/me/query';
 import { getMenuData } from '~/modules/navigation/menu-sheet/helpers/get-menu-data';
 import { Button } from '~/modules/ui/button';
 import { queryClient } from '~/query/query-client';
+import { appStreamManager } from '~/query/realtime/stream-store';
 import router from '~/routes/router';
 import { useUIStore } from '~/store/ui';
 
@@ -21,10 +22,13 @@ async function handleStartImpersonation(targetUserId: string) {
   try {
     await startImpersonation({ query: { targetUserId } });
     useUIStore.getState().setImpersonating(true);
-    await getAndSetMe();
-    // Remove stale memberships (key is not user-specific) so getMenuData refetches for the impersonated user
+    // Remove stale user and membership caches so fresh data is fetched for the impersonated user
+    queryClient.removeQueries({ queryKey: meKeys.all });
     queryClient.removeQueries({ queryKey: meKeys.memberships });
+    await getAndSetMe();
     await getMenuData();
+    // Reconnect SSE so the subscriber uses the impersonated user's role and memberships
+    appStreamManager.reconnect();
     toaster(i18n.t('common:success.impersonated'), 'success');
     router.navigate({ to: appConfig.defaultRedirectPath, replace: true });
   } catch (error) {
