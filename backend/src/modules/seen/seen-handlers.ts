@@ -6,7 +6,7 @@ import { seenCountsTable } from '#/db/schema/seen-counts';
 import { setTenantRlsContext } from '#/db/tenant-context';
 import type { Env } from '#/lib/context';
 import seenRoutes from '#/modules/seen/seen-routes';
-import { entityTables } from '#/table-config';
+import { entityTables, type OrgScopedEntityTable } from '#/table-config';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
@@ -52,15 +52,18 @@ const seenRouteHandlers = app
 
     const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
 
+    // Narrow to org-scoped table shape (all org-scoped product tables have these columns)
+    const orgTable = entityTable as OrgScopedEntityTable;
+
     // Filter to only entities that exist, belong to this org, and are within 90-day window
-    const validEntities = await tenantDb
-      .select({ id: entityTable.id, createdAt: (entityTable as any).createdAt as typeof entityTable.id })
+    const validEntities: { id: string; createdAt: string }[] = await tenantDb
+      .select({ id: orgTable.id, createdAt: orgTable.createdAt })
       .from(entityTable)
       .where(
         and(
-          inArray(entityTable.id, entityIds),
-          eq((entityTable as any).organizationId, organization.id),
-          gte((entityTable as any).createdAt, ninetyDaysAgo),
+          inArray(orgTable.id, entityIds),
+          eq(orgTable.organizationId, organization.id),
+          gte(orgTable.createdAt, ninetyDaysAgo),
         ),
       );
 
@@ -161,33 +164,32 @@ export const unseenRouteHandlers = unseenApp.openapi(seenRoutes.getUnseenCounts,
         const entityTable = entityTables[entityType as keyof typeof entityTables];
         if (!entityTable || !('organizationId' in entityTable)) continue;
 
-        const entityTableTyped = entityTable as typeof entityTable & { organizationId: any; createdAt: any; id: any };
+        const orgTable = entityTable as OrgScopedEntityTable;
 
-        const rows = await tx
+        const rows: { organizationId: string; unseenCount: number }[] = await tx
           .select({
-            organizationId: entityTableTyped.organizationId,
+            organizationId: orgTable.organizationId,
             unseenCount: count(),
           })
           .from(entityTable)
           .where(
             and(
-              inArray(entityTableTyped.organizationId, uniqueOrgIds),
-              gte(entityTableTyped.createdAt, ninetyDaysAgo),
+              inArray(orgTable.organizationId, uniqueOrgIds),
+              gte(orgTable.createdAt, ninetyDaysAgo),
               notExists(
                 tx
                   .select({ one: sql`1` })
                   .from(seenByTable)
-                  .where(and(eq(seenByTable.entityId, entityTableTyped.id), eq(seenByTable.userId, user.id))),
+                  .where(and(eq(seenByTable.entityId, orgTable.id), eq(seenByTable.userId, user.id))),
               ),
             ),
           )
-          .groupBy(entityTableTyped.organizationId);
+          .groupBy(orgTable.organizationId);
 
         for (const row of rows) {
           if (row.unseenCount > 0) {
-            const contextId = row.organizationId as string;
-            if (!results[contextId]) results[contextId] = {};
-            results[contextId][entityType] = row.unseenCount;
+            if (!results[row.organizationId]) results[row.organizationId] = {};
+            results[row.organizationId][entityType] = row.unseenCount;
           }
         }
       }

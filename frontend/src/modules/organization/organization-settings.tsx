@@ -1,4 +1,4 @@
-import { useNavigate, useParams } from '@tanstack/react-router';
+import { useNavigate } from '@tanstack/react-router';
 import { TrashIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
@@ -17,6 +17,7 @@ import { UpdateOrganizationDetailsForm } from '~/modules/organization/update-org
 import { UpdateOrganizationForm } from '~/modules/organization/update-organization-form';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
+import { OrganizationLayoutRoute } from '~/routes/organization-routes';
 
 const tabs = [
   { id: 'general', label: 'common:general' },
@@ -28,7 +29,7 @@ const tabs = [
 function OrganizationSettings({ organization }: { organization: Organization }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { tenantId, orgSlug } = useParams({ from: '/appLayout/$tenantId/$orgSlug/organization/settings' });
+  const { tenantId } = OrganizationLayoutRoute.useRouteContext();
 
   const deleteButtonRef = useRef(null);
 
@@ -59,7 +60,7 @@ function OrganizationSettings({ organization }: { organization: Organization }) 
   };
 
   const callback = (args: CallbackArgs<Organization>) => {
-    if (args.status === 'success' && orgSlug !== args.data.slug) {
+    if (args.status === 'success' && organization.slug !== args.data.slug) {
       navigate({
         to: '/$tenantId/$orgSlug/organization/settings',
         params: { tenantId, orgSlug: args.data.slug },

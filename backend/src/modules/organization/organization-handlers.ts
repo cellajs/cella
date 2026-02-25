@@ -20,7 +20,7 @@ import {
   coalesceAuditUsers,
   createdByUser,
   modifiedByUser,
-  toUserMinimalBase,
+  withAuditUser,
   withAuditUsers,
 } from '#/modules/user/helpers/audit-user';
 import { getValidContextEntity } from '#/permissions';
@@ -93,7 +93,7 @@ const organizationRouteHandlers = app
     const tx = ctx.var.db;
 
     // Insert organizations with proper RLS context (all in same tenant from path)
-    const createdOrganizations = await tx
+    const organizationRecords = await tx
       .insert(organizationsTable)
       .values(
         itemsToCreate.map((item) => ({
@@ -112,11 +112,11 @@ const organizationRouteHandlers = app
     logEvent(
       'info',
       'Organizations created',
-      createdOrganizations.map((org) => org.id),
+      organizationRecords.map((org) => org.id),
     );
 
     // Insert memberships (using RLS-enabled db from middleware)
-    const membershipInserts = createdOrganizations.map((org) => ({
+    const membershipInserts = organizationRecords.map((org) => ({
       userId: user.id,
       createdBy: user.id,
       role: 'admin' as const,
@@ -128,7 +128,7 @@ const organizationRouteHandlers = app
     // Initialize context counters (prevents race with CDC processing)
     await initContextCounters(
       'organization',
-      createdOrganizations.map((org) => org.id),
+      organizationRecords.map((org) => org.id),
     );
 
     // Build counts for response
@@ -137,11 +137,9 @@ const organizationRouteHandlers = app
     // Map memberships by organizationId
     const membershipByOrgId = new Map(createdMemberships.map((m) => [m.organizationId, m]));
 
-    const userMinimal = toUserMinimalBase(user);
-    const knownUsers = new Map([[user.id, userMinimal]]);
-    const populatedOrgs = await withAuditUsers(createdOrganizations, tx, knownUsers);
+    const orgsWithAudit = await withAuditUsers(organizationRecords, tx, user);
 
-    const data = populatedOrgs.map((org) => {
+    const organizationResponses = orgsWithAudit.map((org) => {
       // Membership must exist — we just inserted it above
       const membership = membershipByOrgId.get(org.id)!;
       return {
@@ -153,7 +151,7 @@ const organizationRouteHandlers = app
       };
     });
 
-    return ctx.json({ data, ...rejectionState }, 201);
+    return ctx.json({ data: organizationResponses, ...rejectionState }, 201);
   })
   /**
    * Get list of organizations
@@ -201,7 +199,6 @@ const organizationRouteHandlers = app
       userSystemRole: membershipsTable.role,
     });
 
-    // Get RLS-enabled db from crossTenantGuard middleware
     const tx = ctx.var.db;
 
     // System admins see all orgs they have RLS access to (via createdBy or membership)
@@ -307,14 +304,9 @@ const organizationRouteHandlers = app
       included.membership = toMembershipBase(membership);
     }
 
-    const data = {
-      ...organization,
-      included,
-    };
+    const organizationWithAudit = await withAuditUser(organization, ctx.var.db);
 
-    const [populated] = await withAuditUsers([data], ctx.var.db);
-
-    return ctx.json(populated, 200);
+    return ctx.json({ ...organizationWithAudit, included }, 200);
   })
   /**
    * Update an organization by id (tenant-scoped)
@@ -335,7 +327,6 @@ const organizationRouteHandlers = app
     }
 
     const user = ctx.var.user;
-    const tx = ctx.var.db;
 
     const updatedFields = ctx.req.valid('json');
     const slug = updatedFields.slug;
@@ -357,7 +348,9 @@ const organizationRouteHandlers = app
       }
     }
 
-    const [updatedOrganization] = await tx
+    const tx = ctx.var.db;
+
+    const [updatedOrganizationRecord] = await tx
       .update(organizationsTable)
       .set({
         ...updatedFields,
@@ -367,7 +360,7 @@ const organizationRouteHandlers = app
       .where(eq(organizationsTable.id, organization.id))
       .returning();
 
-    logEvent('info', 'Organization updated', { organizationId: updatedOrganization.id });
+    logEvent('info', 'Organization updated', { organizationId: updatedOrganizationRecord.id });
 
     const counts = await getEntityCounts(organization.entityType, organization.id, tx);
 
@@ -377,13 +370,9 @@ const organizationRouteHandlers = app
       counts,
     };
 
-    const data = { ...updatedOrganization, included };
+    const organizationWithAudit = await withAuditUser(updatedOrganizationRecord, tx, user);
 
-    const userMinimal = toUserMinimalBase(user);
-    const knownUsers = new Map([[user.id, userMinimal]]);
-    const [populated] = await withAuditUsers([data], tx, knownUsers);
-
-    return ctx.json(populated, 200);
+    return ctx.json({ ...organizationWithAudit, included }, 200);
   })
   /**
    * Delete organizations by ids (tenant-scoped)
@@ -401,13 +390,10 @@ const organizationRouteHandlers = app
 
     // Convert the ids to an array
     const toDeleteIds = Array.isArray(ids) ? ids : [ids];
-    if (!toDeleteIds.length) throw new AppError(400, 'invalid_request', 'error', { entityType: 'organization' });
 
     // Split ids into allowed and disallowed
     const result = await splitByPermission(ctx, 'delete', 'organization', toDeleteIds, memberships);
     const { allowedIds, disallowedIds: rejectedItemIds } = result;
-
-    if (!allowedIds.length) throw new AppError(403, 'forbidden', 'warn', { entityType: 'organization' });
 
     // Delete the organizations
     await baseDb.delete(organizationsTable).where(inArray(organizationsTable.id, allowedIds));

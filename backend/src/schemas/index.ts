@@ -28,6 +28,7 @@ export {
   refineWithType,
   relatableUserIdParamSchema,
   sessionCookieSchema,
+  slugIncludeQuerySchema,
   slugQuerySchema,
   tenantIdParamSchema,
   tenantOnlyParamSchema,

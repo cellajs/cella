@@ -18,6 +18,13 @@ export type TableWithId = AnyPgTable & { id: PgColumn<any> };
 export type TableWithIdAndSlug = TableWithId & { slug: PgColumn<any> };
 export type ResolvableTable = TableWithId | TableWithIdAndSlug;
 
+/** Table shape for org-scoped product entities (have organizationId + createdAt columns). */
+export type OrgScopedEntityTable = AnyPgTable & {
+  id: PgColumn<any>;
+  organizationId: PgColumn<any>;
+  createdAt: PgColumn<any>;
+};
+
 export function hasSlug(table: ResolvableTable): table is TableWithIdAndSlug {
   return 'slug' in table;
 }

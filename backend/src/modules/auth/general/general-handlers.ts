@@ -130,23 +130,23 @@ const authGeneralRouteHandlers = app
     // Check if tokenId matches the one being requested
     if (tokenRecord.id !== tokenId) throw new AppError(400, 'invalid_request', 'warn');
 
-    const data = {
+    const tokenResponse = {
       email: tokenRecord.email,
       userId: tokenRecord.userId || '',
       inactiveMembershipId: tokenRecord.inactiveMembershipId || '',
     };
 
     // If its NOT an membership invitation, return base data
-    if (!tokenRecord.inactiveMembershipId) return ctx.json(data, 200);
+    if (!tokenRecord.inactiveMembershipId) return ctx.json(tokenResponse, 200);
 
     // If it is a membership invitation, check if a new user has been created since invitation was sent (without verifying email)
     const [existingUser] = await db.select(userSelect).from(usersTable).where(eq(usersTable.email, tokenRecord.email));
     if (!tokenRecord.userId && existingUser) {
       await db.update(tokensTable).set({ userId: existingUser.id }).where(eq(tokensTable.id, tokenRecord.id));
-      data.userId = existingUser.id;
+      tokenResponse.userId = existingUser.id;
     }
 
-    return ctx.json(data, 200);
+    return ctx.json(tokenResponse, 200);
   })
   /**
    * Start impersonation

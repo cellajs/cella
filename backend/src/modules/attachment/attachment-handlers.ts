@@ -16,7 +16,7 @@ import {
   coalesceAuditUsers,
   createdByUser,
   modifiedByUser,
-  toUserMinimalBase,
+  withAuditUser,
   withAuditUsers,
 } from '#/modules/user/helpers/audit-user';
 import { canAccessEntity, canCreateEntity, checkPermission } from '#/permissions';
@@ -146,11 +146,11 @@ const attachmentRouteHandlers = app
     }
 
     const tenantDb = ctx.var.db;
-    const [populated] = await withAuditUsers([attachment], tenantDb);
+    const attachmentResponse = await withAuditUser(attachment, tenantDb);
 
-    ctx.set('entityCacheData', populated as Record<string, unknown>);
+    ctx.set('entityCacheData', attachmentResponse as Record<string, unknown>);
 
-    return ctx.json(populated, 200);
+    return ctx.json(attachmentResponse, 200);
   })
   /**
    * Create one or more attachments
@@ -172,8 +172,8 @@ const attachmentRouteHandlers = app
         .from(attachmentsTable)
         .where(sql`${attachmentsTable.stx}->>'mutationId' = ${batchStxId}`);
       if (existingBatch.length > 0) {
-        const data = await withAuditUsers(existingBatch, tenantDb);
-        return ctx.json({ data, rejectedItemIds: [] }, 200);
+        const attachmentResponses = await withAuditUsers(existingBatch, tenantDb);
+        return ctx.json({ data: attachmentResponses, rejectedItemIds: [] }, 200);
       }
     }
 
@@ -206,11 +206,9 @@ const attachmentRouteHandlers = app
 
     logEvent('info', `${createdAttachments.length} attachments have been created`);
 
-    const userMinimal = toUserMinimalBase(user);
-    const knownUsers = new Map([[user.id, userMinimal]]);
-    const data = await withAuditUsers(createdAttachments, tenantDb, knownUsers);
+    const attachmentResponses = await withAuditUsers(createdAttachments, tenantDb, user);
 
-    return ctx.json({ data, rejectedItemIds: [] }, 201);
+    return ctx.json({ data: attachmentResponses, rejectedItemIds: [] }, 201);
   })
   /**
    * Update an attachment by id
@@ -230,7 +228,7 @@ const attachmentRouteHandlers = app
 
     const tenantDb = ctx.var.db;
 
-    const [updatedAttachment] = await tenantDb
+    const [updatedAttachmentRecord] = await tenantDb
       .update(attachmentsTable)
       .set({
         [key]: updateData,
@@ -241,13 +239,11 @@ const attachmentRouteHandlers = app
       .where(eq(attachmentsTable.id, id))
       .returning();
 
-    logEvent('info', 'Attachment updated', { attachmentId: updatedAttachment.id });
+    logEvent('info', 'Attachment updated', { attachmentId: updatedAttachmentRecord.id });
 
-    const userMinimal = toUserMinimalBase(user);
-    const knownUsers = new Map([[user.id, userMinimal]]);
-    const [populated] = await withAuditUsers([updatedAttachment], tenantDb, knownUsers);
+    const attachmentResponse = await withAuditUser(updatedAttachmentRecord, tenantDb, user);
 
-    return ctx.json(populated, 200);
+    return ctx.json(attachmentResponse, 200);
   })
   // Delete attachments
   .openapi(attachmentRoutes.deleteAttachments, async (ctx) => {
@@ -261,7 +257,6 @@ const attachmentRouteHandlers = app
     }
 
     const toDeleteIds = Array.isArray(ids) ? ids : [ids];
-    if (!toDeleteIds.length) throw new AppError(400, 'invalid_request', 'warn', { entityType: 'attachment' });
 
     const { allowedIds, disallowedIds: rejectedItemIds } = await splitByPermission(
       ctx,
@@ -270,8 +265,6 @@ const attachmentRouteHandlers = app
       toDeleteIds,
       memberships,
     );
-
-    if (!allowedIds.length) throw new AppError(403, 'forbidden', 'warn', { entityType: 'attachment' });
 
     const tenantDb = ctx.var.db;
     await tenantDb.delete(attachmentsTable).where(inArray(attachmentsTable.id, allowedIds));

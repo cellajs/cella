@@ -169,7 +169,6 @@ const systemRouteHandlers = app
 
     // Convert the user ids to an array
     const toDeleteIds = Array.isArray(ids) ? ids : [ids];
-    if (!toDeleteIds.length) throw new AppError(400, 'invalid_request', 'error', { entityType: 'user' });
 
     // Fetch users by IDs to verify they exist
     const targets = await db.select({ id: usersTable.id }).from(usersTable).where(inArray(usersTable.id, toDeleteIds));

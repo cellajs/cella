@@ -119,12 +119,12 @@ const requestsRouteHandlers = app
 
     mailer.prepareEmails(RequestResponseEmail, staticProps, recipients);
 
-    const data = {
+    const requestResponse = {
       ...createdRequest,
       wasInvited: false,
     };
 
-    return ctx.json(data, 201);
+    return ctx.json(requestResponse, 201);
   })
   /**
    *  Get list of requests for system admins
@@ -167,7 +167,6 @@ const requestsRouteHandlers = app
 
     // Convert the ids to an array
     const toDeleteIds = Array.isArray(ids) ? ids : [ids];
-    if (!toDeleteIds.length) throw new AppError(400, 'invalid_request', 'error');
 
     // Delete the requests
     await db.delete(requestsTable).where(inArray(requestsTable.id, toDeleteIds));

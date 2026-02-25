@@ -161,6 +161,12 @@ export const includeQuerySchema = z
   .transform((val) => (val ? val.split(',').map((s) => s.trim()) : []))
   .pipe(z.array(z.enum(includeOptions)));
 
+/** Schema for slug + include query params — used by single-get context entity routes */
+export const slugIncludeQuerySchema = z.object({
+  slug: booleanTransformSchema.optional(),
+  include: includeQuerySchema,
+});
+
 export const emailOrTokenIdQuerySchema = z.union([
   z.object({ email: z.email({ message: t('error:invalid_email') }), tokenId: z.string().optional() }),
   z.object({ email: z.email().optional(), tokenId: z.string() }),
