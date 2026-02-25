@@ -1,3 +1,11 @@
+terraform {
+  required_providers {
+    scaleway = {
+      source = "scaleway/scaleway"
+    }
+  }
+}
+
 # DNS Module - Scaleway Domains
 
 variable "dns_zone" {

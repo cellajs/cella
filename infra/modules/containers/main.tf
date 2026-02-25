@@ -1,3 +1,11 @@
+terraform {
+  required_providers {
+    scaleway = {
+      source = "scaleway/scaleway"
+    }
+  }
+}
+
 # Serverless Containers Module - Backend API + CDC Worker
 
 variable "name_prefix" {
@@ -44,12 +52,22 @@ variable "backend_max_scale" {
 
 variable "backend_memory" {
   type    = number
-  default = 512
+  default = 1024 # Scaleway requires min 1000 MB for 1000 mvCPU
 }
 
 variable "cdc_memory" {
   type    = number
-  default = 256
+  default = 512 # Scaleway requires min 500 MB for 500 mvCPU
+}
+
+variable "backend_cpu" {
+  type    = number
+  default = 1000 # 1 vCPU in mvCPU
+}
+
+variable "cdc_cpu" {
+  type    = number
+  default = 500 # 0.5 vCPU in mvCPU
 }
 
 variable "frontend_url" {
@@ -84,7 +102,7 @@ resource "scaleway_container" "backend" {
   region          = var.region
   registry_image  = "${var.registry_endpoint}/backend:${var.backend_image_tag}"
   port            = 4000
-  cpu_limit       = 1000 # 1 vCPU
+  cpu_limit       = var.backend_cpu
   memory_limit    = var.backend_memory
   min_scale       = var.backend_min_scale
   max_scale       = var.backend_max_scale
@@ -96,11 +114,11 @@ resource "scaleway_container" "backend" {
   deploy          = true
 
   environment_variables = {
-    NODE_ENV          = var.env == "prod" ? "production" : var.env
-    TZ                = "UTC"
-    FRONTEND_URL      = var.frontend_url
-    BACKEND_URL       = var.backend_url
-    DEV_MODE          = "core" # core mode for serverless (no local CDC)
+    NODE_ENV     = var.env == "prod" ? "production" : var.env
+    TZ           = "UTC"
+    FRONTEND_URL = var.frontend_url
+    BACKEND_URL  = var.backend_url
+    DEV_MODE     = "core" # core mode for serverless (no local CDC)
   }
 
   # Reference secrets from Secret Manager
@@ -123,7 +141,7 @@ resource "scaleway_container" "cdc" {
   region          = var.region
   registry_image  = "${var.registry_endpoint}/cdc:${var.cdc_image_tag}"
   port            = 4001
-  cpu_limit       = 500 # 0.5 vCPU
+  cpu_limit       = var.cdc_cpu
   memory_limit    = var.cdc_memory
   min_scale       = 1   # Always on - required for logical replication slot
   max_scale       = 1   # Only one instance for replication slot
@@ -134,8 +152,8 @@ resource "scaleway_container" "cdc" {
   deploy          = true
 
   environment_variables = {
-    NODE_ENV       = var.env == "prod" ? "production" : var.env
-    TZ             = "UTC"
+    NODE_ENV        = var.env == "prod" ? "production" : var.env
+    TZ              = "UTC"
     CDC_HEALTH_PORT = "4001"
     # Backend WebSocket URL for CDC to connect to
     CDC_BACKEND_WS_URL = "wss://${replace(var.backend_url, "https://", "")}/cdc"

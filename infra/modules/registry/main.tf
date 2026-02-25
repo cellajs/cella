@@ -1,3 +1,11 @@
+terraform {
+  required_providers {
+    scaleway = {
+      source = "scaleway/scaleway"
+    }
+  }
+}
+
 # Container Registry Module
 
 variable "name_prefix" {

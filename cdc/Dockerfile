@@ -1,8 +1,7 @@
 # =============================================================================
 # Cella CDC Worker - Production Dockerfile
 # =============================================================================
-# Lightweight Node.js 24 container for CDC (Change Data Capture) worker
-# Connects to PostgreSQL logical replication and forwards to backend WebSocket
+# Multi-stage build for CDC worker with PostgreSQL logical replication
 # =============================================================================
 
 # -----------------------------------------------------------------------------
@@ -23,10 +22,10 @@ FROM base AS deps
 
 # Copy workspace configuration files
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY prepare.js ./
+COPY patches/ ./patches/
 COPY cdc/package.json ./cdc/
-COPY config/package.json ./config/
 COPY shared/package.json ./shared/
-COPY packages/tracing/package.json ./packages/tracing/
 
 # Install production dependencies only
 RUN pnpm install --frozen-lockfile --prod --filter @cella/cdc...
@@ -38,22 +37,23 @@ FROM base AS builder
 
 # Copy workspace configuration
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY prepare.js ./
+COPY patches/ ./patches/
 COPY cdc/package.json ./cdc/
-COPY config/package.json ./config/
+COPY backend/package.json ./backend/
 COPY shared/package.json ./shared/
-COPY packages/tracing/package.json ./packages/tracing/
+COPY locales/package.json ./locales/
 
 # Install all dependencies (including dev for build)
 RUN pnpm install --frozen-lockfile --filter @cella/cdc...
 
-# Copy source code
+# Copy source code (CDC depends on backend schemas via path aliases)
 COPY cdc/ ./cdc/
-COPY backend/src ./backend/src
-COPY config/ ./config/
+COPY backend/ ./backend/
 COPY shared/ ./shared/
-COPY packages/tracing/ ./packages/tracing/
+COPY locales/ ./locales/
 
-# Build CDC worker (bundles backend imports via tsup)
+# Build the CDC worker
 WORKDIR /app/cdc
 RUN pnpm build
 
@@ -62,6 +62,7 @@ RUN pnpm build
 # -----------------------------------------------------------------------------
 FROM node:24-alpine AS production
 
+# Add non-root user for security
 RUN addgroup --system --gid 1001 cella && \
     adduser --system --uid 1001 cella
 
@@ -71,9 +72,12 @@ WORKDIR /app
 COPY --from=builder /app/cdc/dist ./cdc/dist
 COPY --from=builder /app/cdc/package.json ./cdc/
 
-# Copy production dependencies from deps stage
+# Copy dependencies from deps stage
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/cdc/node_modules ./cdc/node_modules
+
+# Copy shared package
+COPY --from=builder /app/shared ./shared
 
 # Set ownership
 RUN chown -R cella:cella /app

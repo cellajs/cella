@@ -1,3 +1,11 @@
+terraform {
+  required_providers {
+    scaleway = {
+      source = "scaleway/scaleway"
+    }
+  }
+}
+
 # Secrets Module - Scaleway Secret Manager
 
 variable "name_prefix" {
@@ -51,7 +59,7 @@ variable "tags" {
 # -----------------------------------------------------------------------------
 
 resource "scaleway_secret" "database_url_direct" {
-  name        = "${var.env}/cella/database-url-direct"
+  name        = "${var.env}_cella_database-url-direct"
   description = "PostgreSQL direct connection string (for CDC and migrations)"
   region      = var.region
   tags        = var.tags
@@ -63,7 +71,7 @@ resource "scaleway_secret_version" "database_url_direct" {
 }
 
 resource "scaleway_secret" "database_url_pooled" {
-  name        = "${var.env}/cella/database-url-pooled"
+  name        = "${var.env}_cella_database-url-pooled"
   description = "PostgreSQL pooled connection string (for backend API)"
   region      = var.region
   tags        = var.tags
@@ -75,7 +83,7 @@ resource "scaleway_secret_version" "database_url_pooled" {
 }
 
 resource "scaleway_secret" "argon_secret" {
-  name        = "${var.env}/cella/argon-secret"
+  name        = "${var.env}_cella_argon-secret"
   description = "Argon2id password hashing secret"
   region      = var.region
   tags        = var.tags
@@ -87,7 +95,7 @@ resource "scaleway_secret_version" "argon_secret" {
 }
 
 resource "scaleway_secret" "cookie_secret" {
-  name        = "${var.env}/cella/cookie-secret"
+  name        = "${var.env}_cella_cookie-secret"
   description = "Cookie signing secret"
   region      = var.region
   tags        = var.tags
@@ -99,7 +107,7 @@ resource "scaleway_secret_version" "cookie_secret" {
 }
 
 resource "scaleway_secret" "unsubscribe_token_secret" {
-  name        = "${var.env}/cella/unsubscribe-token-secret"
+  name        = "${var.env}_cella_unsubscribe-token-secret"
   description = "Email unsubscribe token secret"
   region      = var.region
   tags        = var.tags
@@ -111,7 +119,7 @@ resource "scaleway_secret_version" "unsubscribe_token_secret" {
 }
 
 resource "scaleway_secret" "cdc_ws_secret" {
-  name        = "${var.env}/cella/cdc-ws-secret"
+  name        = "${var.env}_cella_cdc-ws-secret"
   description = "CDC WebSocket authentication secret"
   region      = var.region
   tags        = var.tags

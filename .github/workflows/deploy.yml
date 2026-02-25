@@ -5,7 +5,7 @@
 # Triggered on pushes to main (prod) or manually for other environments
 # =============================================================================
 
-export const stxRequestSchema = z
+name: Deploy to Scaleway
 
 permissions:
   contents: read
@@ -43,6 +43,7 @@ concurrency:
 env:
   SCW_REGION: nl-ams
   TERRAFORM_VERSION: '1.7.0'
+  NODE_VERSION: '24'
 
 jobs:
   # -------------------------------------------------------------------------
@@ -56,7 +57,7 @@ jobs:
     steps:
       - name: Determine environment
         id: set-env
-      - key: NODE_VERSION
+        run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
           else
@@ -146,7 +147,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
-          node-version: 24
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
 
       - name: Install dependencies
@@ -158,10 +159,34 @@ jobs:
           VITE_BACKEND_URL: ${{ vars.BACKEND_URL }}
           VITE_FRONTEND_URL: ${{ vars.FRONTEND_URL }}
 
+      - name: Configure AWS CLI for Scaleway S3
+        run: |
+          aws configure set aws_access_key_id ${{ secrets.SCW_ACCESS_KEY }}
+          aws configure set aws_secret_access_key ${{ secrets.SCW_SECRET_KEY }}
+          aws configure set default.region ${{ env.SCW_REGION }}
+
+      - name: Upload frontend to Object Storage
+        run: |
+          BUCKET_NAME="${{ needs.setup.outputs.environment }}-cella-frontend"
+          S3_ENDPOINT="https://s3.${{ env.SCW_REGION }}.scw.cloud"
+          
+          # Sync all files to S3
+          aws s3 sync frontend/dist "s3://$BUCKET_NAME/" \
+            --endpoint-url "$S3_ENDPOINT" \
+            --delete \
+            --cache-control "public, max-age=31536000, immutable" \
+            --exclude "index.html" \
+            --exclude "*.html"
+          
+          # Upload HTML files with no-cache
+          aws s3 cp frontend/dist/index.html "s3://$BUCKET_NAME/index.html" \
+            --endpoint-url "$S3_ENDPOINT" \
+            --cache-control "no-cache, no-store, must-revalidate" \
+            --content-type "text/html"
+
       - name: Install Scaleway CLI
         run: |
           curl -s https://raw.githubusercontent.com/scaleway/scaleway-cli/master/scripts/get.sh | sh
-          scw version
 
       - name: Configure Scaleway CLI
         run: |
@@ -170,41 +195,16 @@ jobs:
           scw config set default-project-id=${{ secrets.SCW_PROJECT_ID }}
           scw config set default-region=${{ env.SCW_REGION }}
 
-      - name: Upload frontend to Object Storage
-        run: |
-          BUCKET_NAME="${{ needs.setup.outputs.environment }}-cella-frontend"
-          
-          # Sync all files with appropriate cache headers
-          # Hashed assets get immutable caching
-          for file in frontend/dist/assets/*; do
-            scw object put "$file" \
-              --bucket "$BUCKET_NAME" \
-              --key "assets/$(basename $file)" \
-              --cache-control "public, max-age=31536000, immutable"
-          done
-          
-          # index.html gets no-cache to always fetch latest
-          scw object put frontend/dist/index.html \
-            --bucket "$BUCKET_NAME" \
-            --key "index.html" \
-            --cache-control "no-cache, no-store, must-revalidate"
-          
-          # Other static files
-          for file in frontend/dist/*.{js,css,ico,svg,png,jpg,webp} 2>/dev/null || true; do
-            [ -f "$file" ] && scw object put "$file" \
-              --bucket "$BUCKET_NAME" \
-              --key "$(basename $file)" \
-              --cache-control "public, max-age=86400"
-          done
-
-      - name: Purge Edge Services cache for index.html
+      - name: Purge Edge Services cache
         run: |
           # Purge only index.html - hashed assets don't need purging
-          PIPELINE_ID=$(scw edge-services pipeline list -o json | jq -r '.[] | select(.name | contains("${{ needs.setup.outputs.environment }}-cella")) | .id')
-          if [ -n "$PIPELINE_ID" ]; then
+          PIPELINE_ID=$(scw edge-services pipeline list -o json | jq -r '.[] | select(.name | contains("${{ needs.setup.outputs.environment }}-cella")) | .id' || echo "")
+          if [ -n "$PIPELINE_ID" ] && [ "$PIPELINE_ID" != "null" ]; then
             scw edge-services purge-request create \
               pipeline-id="$PIPELINE_ID" \
-              assets.0="index.html"
+              assets.0="index.html" || echo "Cache purge skipped"
+          else
+            echo "No Edge Services pipeline found, skipping cache purge"
           fi
 
   # -------------------------------------------------------------------------
@@ -239,7 +239,7 @@ jobs:
             -backend-config="bucket=cella-terraform-state" \
             -backend-config="key=${{ needs.setup.outputs.environment }}/terraform.tfstate" \
             -backend-config="region=${{ env.SCW_REGION }}" \
-            -backend-config="endpoint=s3.${{ env.SCW_REGION }}.scw.cloud" \
+            -backend-config="endpoint=https://s3.${{ env.SCW_REGION }}.scw.cloud" \
             -backend-config="access_key=${{ secrets.SCW_ACCESS_KEY }}" \
             -backend-config="secret_key=${{ secrets.SCW_SECRET_KEY }}" \
             -backend-config="skip_credentials_validation=true" \
@@ -257,6 +257,7 @@ jobs:
             -var-file="environments/${{ needs.setup.outputs.environment }}.tfvars" \
             -var="backend_image_tag=${{ needs.setup.outputs.image_tag }}" \
             -var="cdc_image_tag=${{ needs.setup.outputs.image_tag }}" \
+            -var="db_password=${{ secrets.DB_PASSWORD }}" \
             -var="argon_secret=${{ secrets.ARGON_SECRET }}" \
             -var="cookie_secret=${{ secrets.COOKIE_SECRET }}" \
             -var="unsubscribe_token_secret=${{ secrets.UNSUBSCRIBE_TOKEN_SECRET }}" \
@@ -268,15 +269,14 @@ jobs:
 
       - name: Output deployment info
         run: |
-          echo "## Deployment Complete 🚀" >> $GITHUB_STEP_SUMMARY
+          echo "## Deployment Complete" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Environment:** ${{ needs.setup.outputs.environment }}" >> $GITHUB_STEP_SUMMARY
           echo "**Image Tag:** ${{ needs.setup.outputs.image_tag }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### URLs" >> $GITHUB_STEP_SUMMARY
-          terraform output -raw frontend_url >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          terraform output -raw backend_url >> $GITHUB_STEP_SUMMARY
+          echo "### Endpoints" >> $GITHUB_STEP_SUMMARY
+          echo "- App: $(terraform output -raw app_url)" >> $GITHUB_STEP_SUMMARY
+          echo "- API: $(terraform output -raw api_url)" >> $GITHUB_STEP_SUMMARY
 
   # -------------------------------------------------------------------------
   # Post-deployment health check
@@ -297,14 +297,14 @@ jobs:
           for i in {1..10}; do
             response=$(curl -s -o /dev/null -w "%{http_code}" "$HEALTH_URL" || echo "000")
             if [ "$response" = "200" ]; then
-              echo "✅ Backend is healthy!"
+              echo "Backend is healthy!"
               exit 0
             fi
             echo "Attempt $i: Got $response, waiting..."
             sleep 10
           done
           
-          echo "❌ Backend health check failed"
+          echo "Backend health check failed after 10 attempts"
           exit 1
 
       - name: Check frontend availability
@@ -314,7 +314,7 @@ jobs:
           
           response=$(curl -s -o /dev/null -w "%{http_code}" "$FRONTEND_URL" || echo "000")
           if [ "$response" = "200" ]; then
-            echo "✅ Frontend is available!"
+            echo "Frontend is available!"
           else
-            echo "⚠️ Frontend returned $response"
+            echo "Warning: Frontend returned $response"
           fi

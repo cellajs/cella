@@ -1,4 +1,14 @@
-# Edge Services Module - CDN + WAF for frontend
+# =============================================================================
+# Edge Services Module - CDN + WAF for Frontend
+# =============================================================================
+
+terraform {
+  required_providers {
+    scaleway = {
+      source = "scaleway/scaleway"
+    }
+  }
+}
 
 variable "name_prefix" {
   type = string
@@ -18,7 +28,7 @@ variable "app_domain" {
 
 variable "enable_waf" {
   type    = bool
-  default = true
+  default = false
 }
 
 # -----------------------------------------------------------------------------
@@ -31,14 +41,14 @@ resource "scaleway_edge_services_pipeline" "frontend" {
 }
 
 # -----------------------------------------------------------------------------
-# Backend Stage (Object Storage)
+# Backend Stage (Object Storage origin)
 # -----------------------------------------------------------------------------
 
 resource "scaleway_edge_services_backend_stage" "frontend" {
   pipeline_id = scaleway_edge_services_pipeline.frontend.id
 
   s3_backend_config {
-    bucket_name   = split("/", var.frontend_bucket_id)[1] # Extract bucket name
+    bucket_name   = split("/", var.frontend_bucket_id)[1]
     bucket_region = var.region
   }
 }
@@ -50,56 +60,35 @@ resource "scaleway_edge_services_backend_stage" "frontend" {
 resource "scaleway_edge_services_cache_stage" "frontend" {
   pipeline_id      = scaleway_edge_services_pipeline.frontend.id
   backend_stage_id = scaleway_edge_services_backend_stage.frontend.id
-
-  # Default fallback TTL if no Cache-Control header
-  fallback_ttl = "1h"
+  fallback_ttl     = 3600 # 1 hour in seconds
 }
 
 # -----------------------------------------------------------------------------
-# WAF Stage (optional)
+# WAF Stage (optional - production only)
 # -----------------------------------------------------------------------------
 
 resource "scaleway_edge_services_waf_stage" "frontend" {
-  count       = var.enable_waf ? 1 : 0
-  pipeline_id = scaleway_edge_services_pipeline.frontend.id
-
-  # OWASP Core Rule Set
-  waf_config {
-    paranoia_level = 1 # 1-4, higher = more strict
-  }
+  count          = var.enable_waf ? 1 : 0
+  pipeline_id    = scaleway_edge_services_pipeline.frontend.id
+  paranoia_level = 1 # 1-4, higher = more strict
 }
 
 # -----------------------------------------------------------------------------
-# DNS Stage (Custom Domain)
+# DNS Stage (Custom Domain with TLS)
 # -----------------------------------------------------------------------------
 
 resource "scaleway_edge_services_dns_stage" "frontend" {
   pipeline_id    = scaleway_edge_services_pipeline.frontend.id
   cache_stage_id = scaleway_edge_services_cache_stage.frontend.id
+  fqdns          = [var.app_domain]
 
-  fqdns = [var.app_domain]
-
-  # Let's Encrypt certificate
-  tls_stage {
-    managed_certificate = true
-  }
+  tls_stage_id = scaleway_edge_services_tls_stage.frontend.id
 }
 
-# -----------------------------------------------------------------------------
-# Purge Rule (for deployments)
-# -----------------------------------------------------------------------------
-
-resource "scaleway_edge_services_purge_request" "index" {
-  pipeline_id = scaleway_edge_services_pipeline.frontend.id
-
-  # This resource is for reference - actual purge is done via API during deploy
-  # Purge only index.html on deploy, not all assets
-  assets = ["index.html"]
-
-  # Lifecycle to prevent re-purging on every apply
-  lifecycle {
-    ignore_changes = [assets]
-  }
+# TLS Stage for managed certificates
+resource "scaleway_edge_services_tls_stage" "frontend" {
+  pipeline_id         = scaleway_edge_services_pipeline.frontend.id
+  managed_certificate = true
 }
 
 # -----------------------------------------------------------------------------
@@ -111,7 +100,7 @@ output "pipeline_id" {
 }
 
 output "endpoint" {
-  value = scaleway_edge_services_dns_stage.frontend.fqdns[0]
+  value = var.app_domain
 }
 
 output "cache_stage_id" {

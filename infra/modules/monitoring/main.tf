@@ -1,4 +1,14 @@
-# Monitoring Module - Scaleway Cockpit
+# =============================================================================
+# Monitoring Module - Scaleway Cockpit Observability
+# =============================================================================
+
+terraform {
+  required_providers {
+    scaleway = {
+      source = "scaleway/scaleway"
+    }
+  }
+}
 
 variable "name_prefix" {
   type = string
@@ -9,14 +19,12 @@ variable "tags" {
 }
 
 # -----------------------------------------------------------------------------
-# Cockpit (Observability)
+# Cockpit (Observability Platform)
+# Note: Cockpit is automatically enabled at the project level
 # -----------------------------------------------------------------------------
 
-# Note: Cockpit is automatically enabled at the project level
-# This module configures data sources and dashboards
-
 resource "scaleway_cockpit" "main" {
-  # Cockpit is a singleton per project
+  # Cockpit is a singleton per project, no additional config needed
 }
 
 # -----------------------------------------------------------------------------
@@ -26,20 +34,6 @@ resource "scaleway_cockpit" "main" {
 resource "scaleway_cockpit_grafana_user" "admin" {
   login = "${var.name_prefix}-admin"
   role  = "editor"
-}
-
-# -----------------------------------------------------------------------------
-# Alert Manager (optional)
-# -----------------------------------------------------------------------------
-
-resource "scaleway_cockpit_alert_manager" "main" {
-  enable_managed_alerts = true
-
-  contact_points {
-    email {
-      to = "alerts@cellajs.com" # Configure via variable in production
-    }
-  }
 }
 
 # -----------------------------------------------------------------------------

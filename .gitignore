@@ -51,3 +51,13 @@ frontend/stats.html
 *storybook.log
 storybook-static
 .locales-cache
+
+# Terraform
+infra/.terraform/
+infra/*.tfstate
+infra/*.tfstate.*
+infra/.terraform.lock.hcl
+infra/*.tfplan
+infra/tfplan
+*.auto.tfvars
+secrets.tfvars

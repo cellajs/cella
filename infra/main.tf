@@ -1,10 +1,12 @@
-# Cella Scaleway Infrastructure
-#
-# Single project deployment with environment-prefixed resources.
-# Usage:
-#   terraform init
-#   terraform workspace new dev (or staging, prod)
-#   terraform apply -var-file="environments/dev.tfvars"
+# =============================================================================
+# Cella Infrastructure - Scaleway Terraform
+# =============================================================================
+# Complete infrastructure for deploying Cella:
+# - PostgreSQL 17 Database (with CDC/logical replication)
+# - Backend API (Serverless Container)
+# - CDC Worker (Serverless Container)
+# - Frontend (Object Storage + Edge Services CDN)
+# =============================================================================
 
 terraform {
   required_version = ">= 1.5.0"
@@ -16,18 +18,16 @@ terraform {
     }
   }
 
-  # Remote state in Scaleway Object Storage
-  # Configure via environment variables or backend config file
-  backend "s3" {
-    # Set via -backend-config or environment:
-    # bucket         = "cella-terraform-state"
-    # key            = "terraform.tfstate"
-    # region         = "nl-ams"
-    # endpoint       = "s3.nl-ams.scw.cloud"
-    # skip_credentials_validation = true
-    # skip_region_validation      = true
-    # skip_metadata_api_check     = true
-  }
+  # Uncomment to use remote state (recommended for team environments)
+  # backend "s3" {
+  #   bucket                      = "cella-terraform-state"
+  #   key                         = "cella/terraform.tfstate"
+  #   region                      = "nl-ams"
+  #   endpoint                    = "https://s3.nl-ams.scw.cloud"
+  #   skip_credentials_validation = true
+  #   skip_region_validation      = true
+  #   skip_metadata_api_check     = true
+  # }
 }
 
 provider "scaleway" {
@@ -35,24 +35,22 @@ provider "scaleway" {
   zone   = var.zone
 }
 
-# Current workspace as environment identifier
+# -----------------------------------------------------------------------------
+# Local Variables
+# -----------------------------------------------------------------------------
+
 locals {
-  env = terraform.workspace
+  tags        = ["app:cella", "env:${var.environment}", "managed-by:terraform"]
+  name_prefix = "${var.environment}-cella"
 
-  # Resource naming convention: {env}-cella-{resource}
-  name_prefix = "${local.env}-cella"
-
-  # Common tags for all resources
-  tags = [
-    "env:${local.env}",
-    "app:cella",
-    "managed-by:terraform"
-  ]
+  # URLs for the services (will be updated after containers are created)
+  frontend_url = var.enable_custom_domain ? "https://${var.app_domain}" : "https://${local.name_prefix}-frontend.s3-website.${var.region}.scw.cloud"
+  backend_url  = var.enable_custom_domain ? "https://${var.api_domain}" : "https://placeholder.functions.fnc.${var.region}.scw.cloud"
 }
 
-# -----------------------------------------------------------------------------
-# Networking
-# -----------------------------------------------------------------------------
+# =============================================================================
+# NETWORKING
+# =============================================================================
 
 module "network" {
   source = "./modules/network"
@@ -62,24 +60,24 @@ module "network" {
   tags        = local.tags
 }
 
-# -----------------------------------------------------------------------------
-# Database (PostgreSQL with logical replication)
-# -----------------------------------------------------------------------------
+# =============================================================================
+# DATABASE - PostgreSQL 17 with CDC Support
+# =============================================================================
 
 module "database" {
   source = "./modules/database"
 
-  name_prefix       = local.name_prefix
-  region            = var.region
-  node_type         = var.db_node_type
-  volume_size_gb    = var.db_volume_size_gb
+  name_prefix        = local.name_prefix
+  region             = var.region
+  node_type          = var.db_node_type
+  volume_size_gb     = var.db_volume_size_gb
   private_network_id = module.network.private_network_id
-  tags              = local.tags
+  tags               = local.tags
 }
 
-# -----------------------------------------------------------------------------
-# Container Registry
-# -----------------------------------------------------------------------------
+# =============================================================================
+# CONTAINER REGISTRY
+# =============================================================================
 
 module "registry" {
   source = "./modules/registry"
@@ -88,133 +86,134 @@ module "registry" {
   region      = var.region
 }
 
-# -----------------------------------------------------------------------------
-# Secrets Manager
-# -----------------------------------------------------------------------------
+# =============================================================================
+# SECRETS MANAGER
+# =============================================================================
 
 module "secrets" {
   source = "./modules/secrets"
 
-  name_prefix = local.name_prefix
-  env         = local.env
-  region      = var.region
-
-  # Database URLs from database module
-  database_url_direct = module.database.connection_string_direct
-  database_url_pooled = module.database.connection_string_pooled
-
-  # Application secrets (passed via tfvars or CI/CD)
-  argon_secret              = var.argon_secret
-  cookie_secret             = var.cookie_secret
-  unsubscribe_token_secret  = var.unsubscribe_token_secret
-  cdc_ws_secret             = var.cdc_ws_secret
-
-  tags = local.tags
+  name_prefix              = local.name_prefix
+  env                      = var.environment
+  region                   = var.region
+  database_url_pooled      = module.database.connection_string_pooled
+  database_url_direct      = module.database.connection_string_direct
+  argon_secret             = var.argon_secret
+  cookie_secret            = var.cookie_secret
+  unsubscribe_token_secret = var.unsubscribe_token_secret
+  cdc_ws_secret            = var.cdc_ws_secret
+  tags                     = local.tags
 }
 
-# -----------------------------------------------------------------------------
-# Serverless Containers (Backend API + CDC Worker)
-# -----------------------------------------------------------------------------
+# =============================================================================
+# SERVERLESS CONTAINERS - Backend API + CDC Worker
+# =============================================================================
 
 module "containers" {
   source = "./modules/containers"
 
   name_prefix        = local.name_prefix
-  env                = local.env
+  env                = var.environment
   region             = var.region
   registry_endpoint  = module.registry.endpoint
   private_network_id = module.network.private_network_id
 
-  # Image tags (passed from CI/CD)
+  # Backend configuration
   backend_image_tag = var.backend_image_tag
-  cdc_image_tag     = var.cdc_image_tag
-
-  # Secret references
-  secret_ids = module.secrets.secret_ids
-
-  # Container configuration
   backend_min_scale = var.backend_min_scale
   backend_max_scale = var.backend_max_scale
   backend_memory    = var.backend_memory
-  cdc_memory        = var.cdc_memory
+  backend_cpu       = var.backend_cpu
 
-  # URLs for container environment
-  frontend_url = "https://${var.app_domain}"
-  backend_url  = "https://${var.api_domain}"
+  # CDC configuration
+  cdc_image_tag = var.cdc_image_tag
+  cdc_memory    = var.cdc_memory
+  cdc_cpu       = var.cdc_cpu
+
+  # URLs (will use container's own domain if no custom domain)
+  frontend_url = local.frontend_url
+  backend_url  = local.backend_url
+
+  # Secret references (from secrets module)
+  secret_ids = module.secrets.secret_ids
 
   tags = local.tags
+
+  depends_on = [module.database, module.secrets]
 }
 
-# -----------------------------------------------------------------------------
-# Object Storage (Frontend static files)
-# -----------------------------------------------------------------------------
+# =============================================================================
+# OBJECT STORAGE - Frontend Static Files + Uploads
+# =============================================================================
 
 module "storage" {
   source = "./modules/storage"
 
-  name_prefix = local.name_prefix
-  region      = var.region
-  tags        = local.tags
+  name_prefix   = local.name_prefix
+  region        = var.region
+  project_id    = var.scaleway_project_id
+  bucket_suffix = "-v2" # Suffix to avoid locked buckets from failed deployment
+  tags          = local.tags
 }
 
-# -----------------------------------------------------------------------------
-# Load Balancer (Production routing)
-# -----------------------------------------------------------------------------
+# =============================================================================
+# EDGE SERVICES - CDN + WAF for Frontend (Optional - requires custom domain)
+# =============================================================================
 
-module "load_balancer" {
-  source = "./modules/load-balancer"
+module "edge" {
+  count  = var.enable_custom_domain ? 1 : 0
+  source = "./modules/edge"
 
   name_prefix        = local.name_prefix
   region             = var.region
-  zone               = var.zone
-  private_network_id = module.network.private_network_id
+  frontend_bucket_id = module.storage.frontend_bucket_id
+  app_domain         = var.app_domain
+  enable_waf         = var.enable_waf
+}
 
-  # Backend targets
+# =============================================================================
+# LOAD BALANCER - API Routing (Optional - requires custom domain)
+# =============================================================================
+
+module "load_balancer" {
+  count  = var.enable_custom_domain ? 1 : 0
+  source = "./modules/load-balancer"
+
+  name_prefix                = local.name_prefix
+  region                     = var.region
+  zone                       = var.zone
+  private_network_id         = module.network.private_network_id
   backend_container_endpoint = module.containers.backend_endpoint
   cdc_container_endpoint     = module.containers.cdc_endpoint
   frontend_bucket_endpoint   = module.storage.frontend_bucket_website_endpoint
+  api_domain                 = var.api_domain
+  app_domain                 = var.app_domain
+  ssl_certificate_id         = var.ssl_certificate_id
+  tags                       = local.tags
 
-  # Domain configuration
-  api_domain = var.api_domain
-  app_domain = var.app_domain
-
-  # SSL configuration
-  ssl_certificate_id = var.ssl_certificate_id
-
-  tags = local.tags
+  depends_on = [module.containers]
 }
 
-# -----------------------------------------------------------------------------
-# Edge Services (CDN + WAF for frontend)
-# -----------------------------------------------------------------------------
-
-module "edge" {
-  source = "./modules/edge"
-
-  name_prefix              = local.name_prefix
-  region                   = var.region
-  frontend_bucket_id       = module.storage.frontend_bucket_id
-  app_domain               = var.app_domain
-  enable_waf               = var.enable_waf
-}
-
-# -----------------------------------------------------------------------------
-# DNS Records
-# -----------------------------------------------------------------------------
+# =============================================================================
+# DNS RECORDS (Optional - requires custom domain)
+# =============================================================================
 
 module "dns" {
+  count  = var.enable_custom_domain ? 1 : 0
   source = "./modules/dns"
 
   dns_zone               = var.dns_zone
   api_domain             = var.api_domain
   app_domain             = var.app_domain
-  load_balancer_ip       = module.load_balancer.ip_address
-  edge_services_endpoint = module.edge.endpoint
+  load_balancer_ip       = module.load_balancer[0].ip_address
+  edge_services_endpoint = module.edge[0].endpoint
+
+  depends_on = [module.load_balancer, module.edge]
 }
 
-# -----------------------------------------------------------------------------
-# Monitoring (Cockpit)
-# -----------------------------------------------------------------------------
+# =============================================================================
+# MONITORING - Cockpit Observability
+# =============================================================================
 
 module "monitoring" {
   source = "./modules/monitoring"

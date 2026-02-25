@@ -1,3 +1,11 @@
+terraform {
+  required_providers {
+    scaleway = {
+      source = "scaleway/scaleway"
+    }
+  }
+}
+
 # Load Balancer Module - Production routing layer
 
 variable "name_prefix" {
@@ -69,12 +77,12 @@ resource "scaleway_lb_private_network" "main" {
 # -----------------------------------------------------------------------------
 
 resource "scaleway_lb_certificate" "main" {
-  count  = var.ssl_certificate_id == null ? 1 : 0
-  lb_id  = scaleway_lb.main.id
-  name   = "${var.name_prefix}-cert"
+  count = var.ssl_certificate_id == null ? 1 : 0
+  lb_id = scaleway_lb.main.id
+  name  = "${var.name_prefix}-cert"
 
   letsencrypt {
-    common_name = var.api_domain
+    common_name              = var.api_domain
     subject_alternative_name = [var.app_domain]
   }
 }
@@ -88,11 +96,11 @@ locals {
 # -----------------------------------------------------------------------------
 
 resource "scaleway_lb_backend" "api" {
-  lb_id             = scaleway_lb.main.id
-  name              = "${var.name_prefix}-api-backend"
-  forward_protocol  = "http"
-  forward_port      = 443
-  proxy_protocol    = "none"
+  lb_id            = scaleway_lb.main.id
+  name             = "${var.name_prefix}-api-backend"
+  forward_protocol = "http"
+  forward_port     = 443
+  proxy_protocol   = "none"
 
   # Target the Serverless Container endpoint
   server_ips = [] # Will use forward_port_algorithm with external target
@@ -103,8 +111,8 @@ resource "scaleway_lb_backend" "api" {
     code   = 200
   }
 
-  health_check_timeout    = "5s"
-  health_check_delay      = "10s"
+  health_check_timeout     = "5s"
+  health_check_delay       = "10s"
   health_check_max_retries = 3
 
   # Timeouts
@@ -121,11 +129,11 @@ resource "scaleway_lb_backend" "api" {
 # -----------------------------------------------------------------------------
 
 resource "scaleway_lb_backend" "cdc" {
-  lb_id             = scaleway_lb.main.id
-  name              = "${var.name_prefix}-cdc-backend"
-  forward_protocol  = "http"
-  forward_port      = 443
-  proxy_protocol    = "none"
+  lb_id            = scaleway_lb.main.id
+  name             = "${var.name_prefix}-cdc-backend"
+  forward_protocol = "http"
+  forward_port     = 443
+  proxy_protocol   = "none"
 
   server_ips = []
 
@@ -135,8 +143,8 @@ resource "scaleway_lb_backend" "cdc" {
     code   = 200
   }
 
-  health_check_timeout    = "5s"
-  health_check_delay      = "30s"
+  health_check_timeout     = "5s"
+  health_check_delay       = "30s"
   health_check_max_retries = 3
 
   timeout_server  = "10s"
@@ -154,8 +162,9 @@ resource "scaleway_lb_frontend" "https" {
   name           = "${var.name_prefix}-https"
   inbound_port   = 443
   backend_id     = scaleway_lb_backend.api.id # Default to API
-  certificate_id = local.certificate_id
   timeout_client = "30s"
+
+  certificate_ids = var.ssl_certificate_id != null ? [var.ssl_certificate_id] : [scaleway_lb_certificate.main[0].id]
 }
 
 # -----------------------------------------------------------------------------
@@ -164,15 +173,15 @@ resource "scaleway_lb_frontend" "https" {
 
 # Route /api/* to Backend API
 resource "scaleway_lb_route" "api" {
-  frontend_id = scaleway_lb_frontend.https.id
-  backend_id  = scaleway_lb_backend.api.id
+  frontend_id       = scaleway_lb_frontend.https.id
+  backend_id        = scaleway_lb_backend.api.id
   match_host_header = var.api_domain
 }
 
 # Route /cdc/* to CDC Worker
 resource "scaleway_lb_route" "cdc" {
-  frontend_id = scaleway_lb_frontend.https.id
-  backend_id  = scaleway_lb_backend.cdc.id
+  frontend_id       = scaleway_lb_frontend.https.id
+  backend_id        = scaleway_lb_backend.cdc.id
   match_host_header = var.api_domain
   # Note: Scaleway routes match on host header, URL path routing 
   # is handled via separate subdomains or ACL rules
@@ -183,10 +192,10 @@ resource "scaleway_lb_route" "cdc" {
 # -----------------------------------------------------------------------------
 
 resource "scaleway_lb_frontend" "http_redirect" {
-  lb_id        = scaleway_lb.main.id
-  name         = "${var.name_prefix}-http-redirect"
-  inbound_port = 80
-  backend_id   = scaleway_lb_backend.api.id # Placeholder, will redirect
+  lb_id          = scaleway_lb.main.id
+  name           = "${var.name_prefix}-http-redirect"
+  inbound_port   = 80
+  backend_id     = scaleway_lb_backend.api.id # Placeholder, will redirect
   timeout_client = "5s"
 }
 

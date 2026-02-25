@@ -1,4 +1,14 @@
-# Object Storage Module - Frontend static files + uploads
+# =============================================================================
+# Storage Module - Object Storage for Frontend + Uploads
+# =============================================================================
+
+terraform {
+  required_providers {
+    scaleway = {
+      source = "scaleway/scaleway"
+    }
+  }
+}
 
 variable "name_prefix" {
   type = string
@@ -12,27 +22,40 @@ variable "tags" {
   type = list(string)
 }
 
+variable "project_id" {
+  type        = string
+  description = "Scaleway project ID for bucket ownership"
+}
+
+variable "bucket_suffix" {
+  type        = string
+  description = "Suffix to append to bucket names (for recreating locked buckets)"
+  default     = ""
+}
+
 # -----------------------------------------------------------------------------
 # Frontend Static Files Bucket (website hosting)
 # -----------------------------------------------------------------------------
 
 resource "scaleway_object_bucket" "frontend" {
-  name   = "${var.name_prefix}-frontend"
-  region = var.region
-  tags   = { for tag in var.tags : split(":", tag)[0] => split(":", tag)[1] }
+  name       = "${var.name_prefix}-frontend${var.bucket_suffix}"
+  region     = var.region
+  project_id = var.project_id
+  tags       = { for tag in var.tags : split(":", tag)[0] => split(":", tag)[1] }
 
-  # Enable versioning for rollback capability
+  # Use public-read ACL instead of bucket policy to avoid locking out owner
+  acl = "public-read"
+
   versioning {
     enabled = true
   }
 
-  # Lifecycle rules for cleanup
   lifecycle_rule {
     id      = "cleanup-old-versions"
     enabled = true
 
-    noncurrent_version_expiration {
-      days = 30
+    expiration {
+      days = 90
     }
   }
 }
@@ -49,25 +72,8 @@ resource "scaleway_object_bucket_website_configuration" "frontend" {
   error_document {
     key = "index.html" # SPA fallback - all routes serve index.html
   }
-}
 
-# Public read access for frontend bucket
-resource "scaleway_object_bucket_policy" "frontend_public" {
-  bucket = scaleway_object_bucket.frontend.name
-  region = var.region
-
-  policy = jsonencode({
-    Version = "2023-04-17"
-    Statement = [
-      {
-        Sid       = "PublicRead"
-        Effect    = "Allow"
-        Principal = "*"
-        Action    = ["s3:GetObject"]
-        Resource  = ["${scaleway_object_bucket.frontend.name}/*"]
-      }
-    ]
-  })
+  depends_on = [scaleway_object_bucket.frontend]
 }
 
 # -----------------------------------------------------------------------------
@@ -75,39 +81,24 @@ resource "scaleway_object_bucket_policy" "frontend_public" {
 # -----------------------------------------------------------------------------
 
 resource "scaleway_object_bucket" "public_uploads" {
-  name   = "${var.name_prefix}-public"
-  region = var.region
-  tags   = { for tag in var.tags : split(":", tag)[0] => split(":", tag)[1] }
+  name       = "${var.name_prefix}-public-uploads${var.bucket_suffix}"
+  region     = var.region
+  project_id = var.project_id
+  tags       = { for tag in var.tags : split(":", tag)[0] => split(":", tag)[1] }
+
+  # Use public-read ACL instead of bucket policy to avoid locking out owner
+  acl = "public-read"
 
   versioning {
     enabled = false
   }
 
-  # CORS configuration for uploads
   cors_rule {
     allowed_headers = ["*"]
     allowed_methods = ["GET", "PUT", "POST"]
-    allowed_origins = ["*"] # Will be restricted by backend
+    allowed_origins = ["*"]
     max_age_seconds = 3600
   }
-}
-
-resource "scaleway_object_bucket_policy" "public_uploads" {
-  bucket = scaleway_object_bucket.public_uploads.name
-  region = var.region
-
-  policy = jsonencode({
-    Version = "2023-04-17"
-    Statement = [
-      {
-        Sid       = "PublicRead"
-        Effect    = "Allow"
-        Principal = "*"
-        Action    = ["s3:GetObject"]
-        Resource  = ["${scaleway_object_bucket.public_uploads.name}/*"]
-      }
-    ]
-  })
 }
 
 # -----------------------------------------------------------------------------
@@ -115,24 +106,27 @@ resource "scaleway_object_bucket_policy" "public_uploads" {
 # -----------------------------------------------------------------------------
 
 resource "scaleway_object_bucket" "private_uploads" {
-  name   = "${var.name_prefix}-private"
-  region = var.region
-  tags   = { for tag in var.tags : split(":", tag)[0] => split(":", tag)[1] }
+  name       = "${var.name_prefix}-private-uploads${var.bucket_suffix}"
+  region     = var.region
+  project_id = var.project_id
+  tags       = { for tag in var.tags : split(":", tag)[0] => split(":", tag)[1] }
+
+  # Private bucket - no public access
+  acl = "private"
 
   versioning {
     enabled = false
   }
 
-  # CORS configuration for uploads
   cors_rule {
     allowed_headers = ["*"]
     allowed_methods = ["GET", "PUT", "POST"]
-    allowed_origins = ["*"] # Will be restricted by backend
+    allowed_origins = ["*"]
     max_age_seconds = 3600
   }
 }
 
-# Private bucket - no public policy, access via signed URLs only
+# Private bucket - access via signed URLs only (no policy needed)
 
 # -----------------------------------------------------------------------------
 # Outputs

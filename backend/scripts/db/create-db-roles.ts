@@ -70,12 +70,23 @@ BEGIN
   END;
 
   -- admin_role: Migrations, seeds, system admin, BYPASSRLS
-  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'admin_role') THEN
-    CREATE ROLE admin_role WITH LOGIN BYPASSRLS PASSWORD '${escSql(adminPassword)}';
-    RAISE NOTICE 'Created role admin_role';
-  ELSE
-    ALTER ROLE admin_role WITH PASSWORD '${escSql(adminPassword)}';
-  END IF;
+  BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'admin_role') THEN
+      CREATE ROLE admin_role WITH LOGIN BYPASSRLS PASSWORD '${escSql(adminPassword)}';
+      RAISE NOTICE 'Created role admin_role with BYPASSRLS';
+    ELSE
+      ALTER ROLE admin_role WITH BYPASSRLS PASSWORD '${escSql(adminPassword)}';
+    END IF;
+  EXCEPTION WHEN insufficient_privilege THEN
+    -- Some managed providers (e.g., Scaleway) don't allow BYPASSRLS on custom roles.
+    -- Fall back to creating without BYPASSRLS; RLS policies must allow admin access explicitly.
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'admin_role') THEN
+      CREATE ROLE admin_role WITH LOGIN PASSWORD '${escSql(adminPassword)}';
+      RAISE NOTICE 'Created role admin_role without BYPASSRLS (managed provider)';
+    ELSE
+      ALTER ROLE admin_role WITH PASSWORD '${escSql(adminPassword)}';
+    END IF;
+  END;
 
   -- Grant schema access
   GRANT USAGE ON SCHEMA public TO runtime_role;
