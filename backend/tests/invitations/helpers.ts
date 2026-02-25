@@ -12,7 +12,7 @@ export async function createMembershipInvitationToken(
   user: UserModel,
   organizationId: string,
   role: 'admin' | 'member' = 'member',
-  tenantId: string = 'test01', // Default test tenant
+  tenantId: string,
 ) {
   // Create inactive membership first
   const inactiveMembership = {

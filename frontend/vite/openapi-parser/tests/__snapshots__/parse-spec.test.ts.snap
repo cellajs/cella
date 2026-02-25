@@ -2,7 +2,7 @@
 
 exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
 {
-  "inputHash": "3187e314becb9409",
+  "inputHash": "d8e22c2deaa65394",
   "output": {
     "info": {
       "description": "⚠️ ATTENTION: PRERELEASE!  
@@ -18,11 +18,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "required": true,
           "values": {
             "authGuard": {
-              "description": "Requires valid session",
+              "description": "Requires valid session and sets auth context (user, memberships, baseDb)",
               "name": "auth",
             },
             "crossTenantGuard": {
-              "description": "Wraps handler in user RLS context for cross-tenant access",
+              "description": "Requires authGuard and sets user-scoped RLS db context for cross-tenant access",
               "name": "crossTenant",
             },
             "orgGuard": {
@@ -30,7 +30,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "name": "org",
             },
             "publicGuard": {
-              "description": "No authentication required",
+              "description": "No authentication required; provides baseDb without RLS context",
               "name": "public",
             },
             "relatableGuard": {
@@ -42,7 +42,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "name": "sysAdmin",
             },
             "tenantGuard": {
-              "description": "Validates tenant access and wraps handler in RLS-enabled transaction",
+              "description": "Requires authGuard, validates tenant access, and sets tenant-scoped RLS db context",
               "name": "tenant",
             },
           },
@@ -906,6 +906,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "xCache": [],
           "xGuard": [
             "authGuard",
+            "crossTenantGuard",
           ],
           "xRateLimiter": [],
         },
@@ -1037,6 +1038,29 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "summary": "Get my memberships",
         "tags": [
           "me",
+        ],
+      },
+      {
+        "deprecated": false,
+        "description": "Returns the number of unseen product entities per organization and entity type for the *current user*. Only entities created within the last 90 days are considered.",
+        "extensions": {
+          "xCache": [],
+          "xGuard": [
+            "authGuard",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": false,
+        "hasParams": false,
+        "hasRequestBody": false,
+        "hasResponseBody": true,
+        "hash": "tag/seen/GET/unseen/counts",
+        "id": "getUnseenCounts",
+        "method": "get",
+        "path": "/unseen/counts",
+        "summary": "Get unseen counts",
+        "tags": [
+          "seen",
         ],
       },
       {
@@ -1363,9 +1387,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasParams": true,
         "hasRequestBody": true,
         "hasResponseBody": true,
-        "hash": "tag/tenants/PATCH/tenants/{tenantId}",
+        "hash": "tag/tenants/PUT/tenants/{tenantId}",
         "id": "updateTenant",
-        "method": "patch",
+        "method": "put",
         "path": "/tenants/{tenantId}",
         "summary": "Update a tenant",
         "tags": [
@@ -1686,10 +1710,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasParams": true,
         "hasRequestBody": false,
         "hasResponseBody": true,
-        "hash": "tag/organizations/GET/{tenantId}/organizations/{organizationId}",
+        "hash": "tag/organizations/GET/{tenantId}/organizations/{id}",
         "id": "getOrganization",
         "method": "get",
-        "path": "/{tenantId}/organizations/{organizationId}",
+        "path": "/{tenantId}/organizations/{id}",
         "summary": "Get organization",
         "tags": [
           "organizations",
@@ -2167,6 +2191,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "xCache": [],
           "xGuard": [
             "authGuard",
+            "crossTenantGuard",
           ],
           "xRateLimiter": [],
         },
@@ -2233,10 +2258,35 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "memberships",
         ],
       },
+      {
+        "deprecated": false,
+        "description": "Records that the current user has viewed one or more product entities. Deduplicates against existing records. Updates entity view counts for newly seen entities.",
+        "extensions": {
+          "xCache": [],
+          "xGuard": [
+            "authGuard",
+            "tenantGuard",
+            "orgGuard",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": false,
+        "hasParams": true,
+        "hasRequestBody": true,
+        "hasResponseBody": true,
+        "hash": "tag/seen/POST/{tenantId}/{orgId}/seen",
+        "id": "markSeen",
+        "method": "post",
+        "path": "/{tenantId}/{orgId}/seen",
+        "summary": "Mark entities as seen",
+        "tags": [
+          "seen",
+        ],
+      },
     ],
     "schemaTags": [
       {
-        "count": 5,
+        "count": 6,
         "description": "Schemas with base fields only",
         "name": "base",
       },
@@ -2252,6 +2302,57 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
       },
     ],
     "schemas": [
+      {
+        "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+        "example": {
+          "email": "amani_waelchi17@gmail.com",
+          "entityType": "user",
+          "id": "tdwtujxm90dt2d0yptja1h94",
+          "name": "Amani Waelchi",
+          "slug": "amani.waelchi72",
+          "thumbnailUrl": null,
+        },
+        "name": "UserMinimalBase",
+        "ref": "#/components/schemas/UserMinimalBase",
+        "schema": {
+          "properties": {
+            "email": {
+              "format": "email",
+              "required": true,
+              "type": "string",
+            },
+            "entityType": {
+              "enum": [
+                "user",
+              ],
+              "required": true,
+              "type": "string",
+            },
+            "id": {
+              "required": true,
+              "type": "string",
+            },
+            "name": {
+              "required": true,
+              "type": "string",
+            },
+            "slug": {
+              "required": true,
+              "type": "string",
+            },
+            "thumbnailUrl": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+          },
+          "type": "object",
+        },
+        "schemaTag": "base",
+        "type": "object",
+      },
       {
         "description": "Base user schema with essential fields for identification and display.",
         "example": {
@@ -3452,7 +3553,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "type": "string",
             },
             "user": {
-              "description": "A user with profile data and last-seen activity timestamp.",
+              "description": "A user with profile data and activity timestamps.",
               "properties": {
                 "bannerUrl": {
                   "maxLength": 2048,
@@ -3598,7 +3699,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "type": "object",
       },
       {
-        "description": "A user with profile data and last-seen activity timestamp.",
+        "description": "A user with profile data and activity timestamps.",
         "example": {
           "bannerUrl": null,
           "createdAt": "2024-12-13T11:17:23.643Z",
@@ -3992,9 +4093,46 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "type": "string",
             },
             "createdBy": {
-              "maxLength": 50,
+              "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+              "extendsRef": "#/components/schemas/UserMinimalBase",
+              "properties": {
+                "email": {
+                  "format": "email",
+                  "required": true,
+                  "type": "string",
+                },
+                "entityType": {
+                  "enum": [
+                    "user",
+                  ],
+                  "required": true,
+                  "type": "string",
+                },
+                "id": {
+                  "required": true,
+                  "type": "string",
+                },
+                "name": {
+                  "required": true,
+                  "type": "string",
+                },
+                "slug": {
+                  "required": true,
+                  "type": "string",
+                },
+                "thumbnailUrl": {
+                  "required": true,
+                  "type": [
+                    "string",
+                    "null",
+                  ],
+                },
+              },
               "required": true,
-              "type": "string",
+              "type": [
+                "object",
+                "null",
+              ],
             },
             "email": {
               "maxLength": 255,
@@ -4337,10 +4475,44 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "type": "string",
             },
             "createdBy": {
-              "maxLength": 50,
+              "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+              "extendsRef": "#/components/schemas/UserMinimalBase",
+              "properties": {
+                "email": {
+                  "format": "email",
+                  "required": true,
+                  "type": "string",
+                },
+                "entityType": {
+                  "enum": [
+                    "user",
+                  ],
+                  "required": true,
+                  "type": "string",
+                },
+                "id": {
+                  "required": true,
+                  "type": "string",
+                },
+                "name": {
+                  "required": true,
+                  "type": "string",
+                },
+                "slug": {
+                  "required": true,
+                  "type": "string",
+                },
+                "thumbnailUrl": {
+                  "required": true,
+                  "type": [
+                    "string",
+                    "null",
+                  ],
+                },
+              },
               "required": true,
               "type": [
-                "string",
+                "object",
                 "null",
               ],
             },
@@ -4500,10 +4672,44 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               ],
             },
             "modifiedBy": {
-              "maxLength": 50,
+              "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+              "extendsRef": "#/components/schemas/UserMinimalBase",
+              "properties": {
+                "email": {
+                  "format": "email",
+                  "required": true,
+                  "type": "string",
+                },
+                "entityType": {
+                  "enum": [
+                    "user",
+                  ],
+                  "required": true,
+                  "type": "string",
+                },
+                "id": {
+                  "required": true,
+                  "type": "string",
+                },
+                "name": {
+                  "required": true,
+                  "type": "string",
+                },
+                "slug": {
+                  "required": true,
+                  "type": "string",
+                },
+                "thumbnailUrl": {
+                  "required": true,
+                  "type": [
+                    "string",
+                    "null",
+                  ],
+                },
+              },
               "required": true,
               "type": [
-                "string",
+                "object",
                 "null",
               ],
             },
@@ -4563,7 +4769,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               ],
             },
             "welcomeText": {
-              "maxLength": 100000,
+              "maxLength": 1000000,
               "required": true,
               "type": [
                 "string",
@@ -4577,7 +4783,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "type": "object",
       },
       {
-        "description": "A content page belonging to an organization.",
+        "description": "A content page for documentation purposes.",
         "example": {
           "createdAt": "2024-08-06T10:28:33.226Z",
           "createdBy": "0f0ak5vkrrl687pmkwpa1vju",
@@ -4609,14 +4815,49 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "type": "string",
             },
             "createdBy": {
-              "maxLength": 50,
+              "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+              "extendsRef": "#/components/schemas/UserMinimalBase",
+              "properties": {
+                "email": {
+                  "format": "email",
+                  "required": true,
+                  "type": "string",
+                },
+                "entityType": {
+                  "enum": [
+                    "user",
+                  ],
+                  "required": true,
+                  "type": "string",
+                },
+                "id": {
+                  "required": true,
+                  "type": "string",
+                },
+                "name": {
+                  "required": true,
+                  "type": "string",
+                },
+                "slug": {
+                  "required": true,
+                  "type": "string",
+                },
+                "thumbnailUrl": {
+                  "required": true,
+                  "type": [
+                    "string",
+                    "null",
+                  ],
+                },
+              },
               "required": true,
               "type": [
-                "string",
+                "object",
                 "null",
               ],
             },
             "description": {
+              "maxLength": 1000000,
               "required": true,
               "type": [
                 "string",
@@ -4642,7 +4883,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "type": "string",
             },
             "keywords": {
-              "maxLength": 100000,
+              "maxLength": 1000000,
               "required": true,
               "type": "string",
             },
@@ -4654,10 +4895,44 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               ],
             },
             "modifiedBy": {
-              "maxLength": 50,
+              "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+              "extendsRef": "#/components/schemas/UserMinimalBase",
+              "properties": {
+                "email": {
+                  "format": "email",
+                  "required": true,
+                  "type": "string",
+                },
+                "entityType": {
+                  "enum": [
+                    "user",
+                  ],
+                  "required": true,
+                  "type": "string",
+                },
+                "id": {
+                  "required": true,
+                  "type": "string",
+                },
+                "name": {
+                  "required": true,
+                  "type": "string",
+                },
+                "slug": {
+                  "required": true,
+                  "type": "string",
+                },
+                "thumbnailUrl": {
+                  "required": true,
+                  "type": [
+                    "string",
+                    "null",
+                  ],
+                },
+              },
               "required": true,
               "type": [
-                "string",
+                "object",
                 "null",
               ],
             },
@@ -4823,14 +5098,49 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "type": "string",
             },
             "createdBy": {
-              "maxLength": 50,
+              "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+              "extendsRef": "#/components/schemas/UserMinimalBase",
+              "properties": {
+                "email": {
+                  "format": "email",
+                  "required": true,
+                  "type": "string",
+                },
+                "entityType": {
+                  "enum": [
+                    "user",
+                  ],
+                  "required": true,
+                  "type": "string",
+                },
+                "id": {
+                  "required": true,
+                  "type": "string",
+                },
+                "name": {
+                  "required": true,
+                  "type": "string",
+                },
+                "slug": {
+                  "required": true,
+                  "type": "string",
+                },
+                "thumbnailUrl": {
+                  "required": true,
+                  "type": [
+                    "string",
+                    "null",
+                  ],
+                },
+              },
               "required": true,
               "type": [
-                "string",
+                "object",
                 "null",
               ],
             },
             "description": {
+              "maxLength": 1000000,
               "required": true,
               "type": [
                 "string",
@@ -4863,7 +5173,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "type": "string",
             },
             "keywords": {
-              "maxLength": 100000,
+              "maxLength": 1000000,
               "required": true,
               "type": "string",
             },
@@ -4875,10 +5185,44 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               ],
             },
             "modifiedBy": {
-              "maxLength": 50,
+              "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+              "extendsRef": "#/components/schemas/UserMinimalBase",
+              "properties": {
+                "email": {
+                  "format": "email",
+                  "required": true,
+                  "type": "string",
+                },
+                "entityType": {
+                  "enum": [
+                    "user",
+                  ],
+                  "required": true,
+                  "type": "string",
+                },
+                "id": {
+                  "required": true,
+                  "type": "string",
+                },
+                "name": {
+                  "required": true,
+                  "type": "string",
+                },
+                "slug": {
+                  "required": true,
+                  "type": "string",
+                },
+                "thumbnailUrl": {
+                  "required": true,
+                  "type": [
+                    "string",
+                    "null",
+                  ],
+                },
+              },
               "required": true,
               "type": [
-                "string",
+                "object",
                 "null",
               ],
             },
@@ -4942,6 +5286,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 "string",
                 "null",
               ],
+            },
+            "viewCount": {
+              "minimum": 0,
+              "required": false,
+              "type": "integer",
             },
           },
           "type": "object",
@@ -5597,14 +5946,49 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "type": "string",
                         },
                         "createdBy": {
-                          "maxLength": 50,
+                          "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                          "extendsRef": "#/components/schemas/UserMinimalBase",
+                          "properties": {
+                            "email": {
+                              "format": "email",
+                              "required": true,
+                              "type": "string",
+                            },
+                            "entityType": {
+                              "enum": [
+                                "user",
+                              ],
+                              "required": true,
+                              "type": "string",
+                            },
+                            "id": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "name": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "slug": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "thumbnailUrl": {
+                              "required": true,
+                              "type": [
+                                "string",
+                                "null",
+                              ],
+                            },
+                          },
                           "required": true,
                           "type": [
-                            "string",
+                            "object",
                             "null",
                           ],
                         },
                         "description": {
+                          "maxLength": 1000000,
                           "required": true,
                           "type": [
                             "string",
@@ -5637,7 +6021,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "type": "string",
                         },
                         "keywords": {
-                          "maxLength": 100000,
+                          "maxLength": 1000000,
                           "required": true,
                           "type": "string",
                         },
@@ -5649,10 +6033,44 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           ],
                         },
                         "modifiedBy": {
-                          "maxLength": 50,
+                          "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                          "extendsRef": "#/components/schemas/UserMinimalBase",
+                          "properties": {
+                            "email": {
+                              "format": "email",
+                              "required": true,
+                              "type": "string",
+                            },
+                            "entityType": {
+                              "enum": [
+                                "user",
+                              ],
+                              "required": true,
+                              "type": "string",
+                            },
+                            "id": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "name": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "slug": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "thumbnailUrl": {
+                              "required": true,
+                              "type": [
+                                "string",
+                                "null",
+                              ],
+                            },
+                          },
                           "required": true,
                           "type": [
-                            "string",
+                            "object",
                             "null",
                           ],
                         },
@@ -5716,6 +6134,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                             "string",
                             "null",
                           ],
+                        },
+                        "viewCount": {
+                          "minimum": 0,
+                          "required": false,
+                          "type": "integer",
                         },
                       },
                       "ref": "#/components/schemas/Attachment",
@@ -5805,14 +6228,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                       "null",
                     ],
                   },
-                  "createdBy": {
-                    "maxLength": 50,
-                    "required": false,
-                    "type": [
-                      "string",
-                      "null",
-                    ],
-                  },
                   "filename": {
                     "maxLength": 255,
                     "required": true,
@@ -5834,11 +6249,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "name": {
                     "maxLength": 255,
                     "required": false,
-                    "type": "string",
-                  },
-                  "organizationId": {
-                    "maxLength": 50,
-                    "required": true,
                     "type": "string",
                   },
                   "originalKey": {
@@ -6019,14 +6429,49 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "type": "string",
                         },
                         "createdBy": {
-                          "maxLength": 50,
+                          "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                          "extendsRef": "#/components/schemas/UserMinimalBase",
+                          "properties": {
+                            "email": {
+                              "format": "email",
+                              "required": true,
+                              "type": "string",
+                            },
+                            "entityType": {
+                              "enum": [
+                                "user",
+                              ],
+                              "required": true,
+                              "type": "string",
+                            },
+                            "id": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "name": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "slug": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "thumbnailUrl": {
+                              "required": true,
+                              "type": [
+                                "string",
+                                "null",
+                              ],
+                            },
+                          },
                           "required": true,
                           "type": [
-                            "string",
+                            "object",
                             "null",
                           ],
                         },
                         "description": {
+                          "maxLength": 1000000,
                           "required": true,
                           "type": [
                             "string",
@@ -6059,7 +6504,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "type": "string",
                         },
                         "keywords": {
-                          "maxLength": 100000,
+                          "maxLength": 1000000,
                           "required": true,
                           "type": "string",
                         },
@@ -6071,10 +6516,44 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           ],
                         },
                         "modifiedBy": {
-                          "maxLength": 50,
+                          "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                          "extendsRef": "#/components/schemas/UserMinimalBase",
+                          "properties": {
+                            "email": {
+                              "format": "email",
+                              "required": true,
+                              "type": "string",
+                            },
+                            "entityType": {
+                              "enum": [
+                                "user",
+                              ],
+                              "required": true,
+                              "type": "string",
+                            },
+                            "id": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "name": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "slug": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "thumbnailUrl": {
+                              "required": true,
+                              "type": [
+                                "string",
+                                "null",
+                              ],
+                            },
+                          },
                           "required": true,
                           "type": [
-                            "string",
+                            "object",
                             "null",
                           ],
                         },
@@ -6138,6 +6617,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                             "string",
                             "null",
                           ],
+                        },
+                        "viewCount": {
+                          "minimum": 0,
+                          "required": false,
+                          "type": "integer",
                         },
                       },
                       "ref": "#/components/schemas/Attachment",
@@ -6268,14 +6752,49 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "type": "string",
                         },
                         "createdBy": {
-                          "maxLength": 50,
+                          "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                          "extendsRef": "#/components/schemas/UserMinimalBase",
+                          "properties": {
+                            "email": {
+                              "format": "email",
+                              "required": true,
+                              "type": "string",
+                            },
+                            "entityType": {
+                              "enum": [
+                                "user",
+                              ],
+                              "required": true,
+                              "type": "string",
+                            },
+                            "id": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "name": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "slug": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "thumbnailUrl": {
+                              "required": true,
+                              "type": [
+                                "string",
+                                "null",
+                              ],
+                            },
+                          },
                           "required": true,
                           "type": [
-                            "string",
+                            "object",
                             "null",
                           ],
                         },
                         "description": {
+                          "maxLength": 1000000,
                           "required": true,
                           "type": [
                             "string",
@@ -6308,7 +6827,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "type": "string",
                         },
                         "keywords": {
-                          "maxLength": 100000,
+                          "maxLength": 1000000,
                           "required": true,
                           "type": "string",
                         },
@@ -6320,10 +6839,44 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           ],
                         },
                         "modifiedBy": {
-                          "maxLength": 50,
+                          "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                          "extendsRef": "#/components/schemas/UserMinimalBase",
+                          "properties": {
+                            "email": {
+                              "format": "email",
+                              "required": true,
+                              "type": "string",
+                            },
+                            "entityType": {
+                              "enum": [
+                                "user",
+                              ],
+                              "required": true,
+                              "type": "string",
+                            },
+                            "id": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "name": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "slug": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "thumbnailUrl": {
+                              "required": true,
+                              "type": [
+                                "string",
+                                "null",
+                              ],
+                            },
+                          },
                           "required": true,
                           "type": [
-                            "string",
+                            "object",
                             "null",
                           ],
                         },
@@ -6387,6 +6940,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                             "string",
                             "null",
                           ],
+                        },
+                        "viewCount": {
+                          "minimum": 0,
+                          "required": false,
+                          "type": "integer",
                         },
                       },
                       "ref": "#/components/schemas/Attachment",
@@ -6726,14 +7284,49 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "type": "string",
                   },
                   "createdBy": {
-                    "maxLength": 50,
+                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                    "extendsRef": "#/components/schemas/UserMinimalBase",
+                    "properties": {
+                      "email": {
+                        "format": "email",
+                        "required": true,
+                        "type": "string",
+                      },
+                      "entityType": {
+                        "enum": [
+                          "user",
+                        ],
+                        "required": true,
+                        "type": "string",
+                      },
+                      "id": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "name": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "slug": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "thumbnailUrl": {
+                        "required": true,
+                        "type": [
+                          "string",
+                          "null",
+                        ],
+                      },
+                    },
                     "required": true,
                     "type": [
-                      "string",
+                      "object",
                       "null",
                     ],
                   },
                   "description": {
+                    "maxLength": 1000000,
                     "required": true,
                     "type": [
                       "string",
@@ -6766,7 +7359,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "type": "string",
                   },
                   "keywords": {
-                    "maxLength": 100000,
+                    "maxLength": 1000000,
                     "required": true,
                     "type": "string",
                   },
@@ -6778,10 +7371,44 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     ],
                   },
                   "modifiedBy": {
-                    "maxLength": 50,
+                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                    "extendsRef": "#/components/schemas/UserMinimalBase",
+                    "properties": {
+                      "email": {
+                        "format": "email",
+                        "required": true,
+                        "type": "string",
+                      },
+                      "entityType": {
+                        "enum": [
+                          "user",
+                        ],
+                        "required": true,
+                        "type": "string",
+                      },
+                      "id": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "name": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "slug": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "thumbnailUrl": {
+                        "required": true,
+                        "type": [
+                          "string",
+                          "null",
+                        ],
+                      },
+                    },
                     "required": true,
                     "type": [
-                      "string",
+                      "object",
                       "null",
                     ],
                   },
@@ -6846,6 +7473,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                       "null",
                     ],
                   },
+                  "viewCount": {
+                    "minimum": 0,
+                    "required": false,
+                    "type": "integer",
+                  },
                 },
                 "ref": "#/components/schemas/Attachment",
                 "type": "object",
@@ -6895,15 +7527,31 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "body": {
               "contentType": "application/json",
               "properties": {
-                "name": {
-                  "maxLength": 255,
-                  "required": false,
-                  "type": "string",
+                "data": {
+                  "required": true,
+                  "type": [
+                    "string",
+                    "null",
+                  ],
                 },
-                "originalKey": {
-                  "maxLength": 2048,
-                  "required": false,
-                  "type": "string",
+                "key": {
+                  "anyOf": [
+                    {
+                      "enum": [
+                        "name",
+                      ],
+                      "required": false,
+                      "type": "string",
+                    },
+                    {
+                      "enum": [
+                        "originalKey",
+                      ],
+                      "required": false,
+                      "type": "string",
+                    },
+                  ],
+                  "required": true,
                 },
                 "stx": {
                   "description": "Sync transaction metadata sent with mutations for idempotency and conflict detection.",
@@ -7025,14 +7673,49 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "type": "string",
                   },
                   "createdBy": {
-                    "maxLength": 50,
+                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                    "extendsRef": "#/components/schemas/UserMinimalBase",
+                    "properties": {
+                      "email": {
+                        "format": "email",
+                        "required": true,
+                        "type": "string",
+                      },
+                      "entityType": {
+                        "enum": [
+                          "user",
+                        ],
+                        "required": true,
+                        "type": "string",
+                      },
+                      "id": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "name": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "slug": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "thumbnailUrl": {
+                        "required": true,
+                        "type": [
+                          "string",
+                          "null",
+                        ],
+                      },
+                    },
                     "required": true,
                     "type": [
-                      "string",
+                      "object",
                       "null",
                     ],
                   },
                   "description": {
+                    "maxLength": 1000000,
                     "required": true,
                     "type": [
                       "string",
@@ -7065,7 +7748,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "type": "string",
                   },
                   "keywords": {
-                    "maxLength": 100000,
+                    "maxLength": 1000000,
                     "required": true,
                     "type": "string",
                   },
@@ -7077,10 +7760,44 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     ],
                   },
                   "modifiedBy": {
-                    "maxLength": 50,
+                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                    "extendsRef": "#/components/schemas/UserMinimalBase",
+                    "properties": {
+                      "email": {
+                        "format": "email",
+                        "required": true,
+                        "type": "string",
+                      },
+                      "entityType": {
+                        "enum": [
+                          "user",
+                        ],
+                        "required": true,
+                        "type": "string",
+                      },
+                      "id": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "name": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "slug": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "thumbnailUrl": {
+                        "required": true,
+                        "type": [
+                          "string",
+                          "null",
+                        ],
+                      },
+                    },
                     "required": true,
                     "type": [
-                      "string",
+                      "object",
                       "null",
                     ],
                   },
@@ -7144,6 +7861,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                       "string",
                       "null",
                     ],
+                  },
+                  "viewCount": {
+                    "minimum": 0,
+                    "required": false,
+                    "type": "integer",
                   },
                 },
                 "ref": "#/components/schemas/Attachment",
@@ -9460,7 +10182,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "type": "string",
                   },
                   "user": {
-                    "description": "A user with profile data and last-seen activity timestamp.",
+                    "description": "A user with profile data and activity timestamps.",
                     "properties": {
                       "bannerUrl": {
                         "maxLength": 2048,
@@ -9745,7 +10467,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "ref": "#/components/schemas/User",
               "schema": {
                 "contentType": "application/json",
-                "description": "A user with profile data and last-seen activity timestamp.",
+                "description": "A user with profile data and activity timestamps.",
                 "properties": {
                   "bannerUrl": {
                     "maxLength": 2048,
@@ -10037,7 +10759,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "ref": "#/components/schemas/User",
               "schema": {
                 "contentType": "application/json",
-                "description": "A user with profile data and last-seen activity timestamp.",
+                "description": "A user with profile data and activity timestamps.",
                 "properties": {
                   "bannerUrl": {
                     "maxLength": 2048,
@@ -10596,9 +11318,46 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                               "type": "string",
                             },
                             "createdBy": {
-                              "maxLength": 50,
+                              "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                              "extendsRef": "#/components/schemas/UserMinimalBase",
+                              "properties": {
+                                "email": {
+                                  "format": "email",
+                                  "required": true,
+                                  "type": "string",
+                                },
+                                "entityType": {
+                                  "enum": [
+                                    "user",
+                                  ],
+                                  "required": true,
+                                  "type": "string",
+                                },
+                                "id": {
+                                  "required": true,
+                                  "type": "string",
+                                },
+                                "name": {
+                                  "required": true,
+                                  "type": "string",
+                                },
+                                "slug": {
+                                  "required": true,
+                                  "type": "string",
+                                },
+                                "thumbnailUrl": {
+                                  "required": true,
+                                  "type": [
+                                    "string",
+                                    "null",
+                                  ],
+                                },
+                              },
                               "required": true,
-                              "type": "string",
+                              "type": [
+                                "object",
+                                "null",
+                              ],
                             },
                             "email": {
                               "maxLength": 255,
@@ -11878,6 +12637,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "required": false,
                   "type": "string",
                 },
+                "userIds": {
+                  "required": false,
+                  "type": "string",
+                },
               },
             },
           },
@@ -12295,10 +13058,44 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "type": "string",
                         },
                         "createdBy": {
-                          "maxLength": 50,
+                          "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                          "extendsRef": "#/components/schemas/UserMinimalBase",
+                          "properties": {
+                            "email": {
+                              "format": "email",
+                              "required": true,
+                              "type": "string",
+                            },
+                            "entityType": {
+                              "enum": [
+                                "user",
+                              ],
+                              "required": true,
+                              "type": "string",
+                            },
+                            "id": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "name": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "slug": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "thumbnailUrl": {
+                              "required": true,
+                              "type": [
+                                "string",
+                                "null",
+                              ],
+                            },
+                          },
                           "required": true,
                           "type": [
-                            "string",
+                            "object",
                             "null",
                           ],
                         },
@@ -13184,10 +13981,44 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "type": "string",
                         },
                         "createdBy": {
-                          "maxLength": 50,
+                          "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                          "extendsRef": "#/components/schemas/UserMinimalBase",
+                          "properties": {
+                            "email": {
+                              "format": "email",
+                              "required": true,
+                              "type": "string",
+                            },
+                            "entityType": {
+                              "enum": [
+                                "user",
+                              ],
+                              "required": true,
+                              "type": "string",
+                            },
+                            "id": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "name": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "slug": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "thumbnailUrl": {
+                              "required": true,
+                              "type": [
+                                "string",
+                                "null",
+                              ],
+                            },
+                          },
                           "required": true,
                           "type": [
-                            "string",
+                            "object",
                             "null",
                           ],
                         },
@@ -13347,10 +14178,44 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           ],
                         },
                         "modifiedBy": {
-                          "maxLength": 50,
+                          "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                          "extendsRef": "#/components/schemas/UserMinimalBase",
+                          "properties": {
+                            "email": {
+                              "format": "email",
+                              "required": true,
+                              "type": "string",
+                            },
+                            "entityType": {
+                              "enum": [
+                                "user",
+                              ],
+                              "required": true,
+                              "type": "string",
+                            },
+                            "id": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "name": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "slug": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "thumbnailUrl": {
+                              "required": true,
+                              "type": [
+                                "string",
+                                "null",
+                              ],
+                            },
+                          },
                           "required": true,
                           "type": [
-                            "string",
+                            "object",
                             "null",
                           ],
                         },
@@ -13410,7 +14275,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           ],
                         },
                         "welcomeText": {
-                          "maxLength": 100000,
+                          "maxLength": 1000000,
                           "required": true,
                           "type": [
                             "string",
@@ -13816,10 +14681,44 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "type": "string",
                         },
                         "createdBy": {
-                          "maxLength": 50,
+                          "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                          "extendsRef": "#/components/schemas/UserMinimalBase",
+                          "properties": {
+                            "email": {
+                              "format": "email",
+                              "required": true,
+                              "type": "string",
+                            },
+                            "entityType": {
+                              "enum": [
+                                "user",
+                              ],
+                              "required": true,
+                              "type": "string",
+                            },
+                            "id": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "name": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "slug": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "thumbnailUrl": {
+                              "required": true,
+                              "type": [
+                                "string",
+                                "null",
+                              ],
+                            },
+                          },
                           "required": true,
                           "type": [
-                            "string",
+                            "object",
                             "null",
                           ],
                         },
@@ -13979,10 +14878,44 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           ],
                         },
                         "modifiedBy": {
-                          "maxLength": 50,
+                          "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                          "extendsRef": "#/components/schemas/UserMinimalBase",
+                          "properties": {
+                            "email": {
+                              "format": "email",
+                              "required": true,
+                              "type": "string",
+                            },
+                            "entityType": {
+                              "enum": [
+                                "user",
+                              ],
+                              "required": true,
+                              "type": "string",
+                            },
+                            "id": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "name": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "slug": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "thumbnailUrl": {
+                              "required": true,
+                              "type": [
+                                "string",
+                                "null",
+                              ],
+                            },
+                          },
                           "required": true,
                           "type": [
-                            "string",
+                            "object",
                             "null",
                           ],
                         },
@@ -14042,7 +14975,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           ],
                         },
                         "welcomeText": {
-                          "maxLength": 100000,
+                          "maxLength": 1000000,
                           "required": true,
                           "type": [
                             "string",
@@ -14108,7 +15041,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "request": {
             "path": {
               "properties": {
-                "organizationId": {
+                "id": {
                   "maxLength": 50,
                   "required": true,
                   "type": "string",
@@ -14260,10 +15193,44 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "type": "string",
                   },
                   "createdBy": {
-                    "maxLength": 50,
+                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                    "extendsRef": "#/components/schemas/UserMinimalBase",
+                    "properties": {
+                      "email": {
+                        "format": "email",
+                        "required": true,
+                        "type": "string",
+                      },
+                      "entityType": {
+                        "enum": [
+                          "user",
+                        ],
+                        "required": true,
+                        "type": "string",
+                      },
+                      "id": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "name": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "slug": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "thumbnailUrl": {
+                        "required": true,
+                        "type": [
+                          "string",
+                          "null",
+                        ],
+                      },
+                    },
                     "required": true,
                     "type": [
-                      "string",
+                      "object",
                       "null",
                     ],
                   },
@@ -14423,10 +15390,44 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     ],
                   },
                   "modifiedBy": {
-                    "maxLength": 50,
+                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                    "extendsRef": "#/components/schemas/UserMinimalBase",
+                    "properties": {
+                      "email": {
+                        "format": "email",
+                        "required": true,
+                        "type": "string",
+                      },
+                      "entityType": {
+                        "enum": [
+                          "user",
+                        ],
+                        "required": true,
+                        "type": "string",
+                      },
+                      "id": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "name": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "slug": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "thumbnailUrl": {
+                        "required": true,
+                        "type": [
+                          "string",
+                          "null",
+                        ],
+                      },
+                    },
                     "required": true,
                     "type": [
-                      "string",
+                      "object",
                       "null",
                     ],
                   },
@@ -14486,7 +15487,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     ],
                   },
                   "welcomeText": {
-                    "maxLength": 100000,
+                    "maxLength": 1000000,
                     "required": true,
                     "type": [
                       "string",
@@ -14671,7 +15672,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   ],
                 },
                 "welcomeText": {
-                  "maxLength": 100000,
+                  "maxLength": 1000000,
                   "required": false,
                   "type": [
                     "string",
@@ -14815,10 +15816,44 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "type": "string",
                   },
                   "createdBy": {
-                    "maxLength": 50,
+                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                    "extendsRef": "#/components/schemas/UserMinimalBase",
+                    "properties": {
+                      "email": {
+                        "format": "email",
+                        "required": true,
+                        "type": "string",
+                      },
+                      "entityType": {
+                        "enum": [
+                          "user",
+                        ],
+                        "required": true,
+                        "type": "string",
+                      },
+                      "id": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "name": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "slug": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "thumbnailUrl": {
+                        "required": true,
+                        "type": [
+                          "string",
+                          "null",
+                        ],
+                      },
+                    },
                     "required": true,
                     "type": [
-                      "string",
+                      "object",
                       "null",
                     ],
                   },
@@ -14978,10 +16013,44 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     ],
                   },
                   "modifiedBy": {
-                    "maxLength": 50,
+                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                    "extendsRef": "#/components/schemas/UserMinimalBase",
+                    "properties": {
+                      "email": {
+                        "format": "email",
+                        "required": true,
+                        "type": "string",
+                      },
+                      "entityType": {
+                        "enum": [
+                          "user",
+                        ],
+                        "required": true,
+                        "type": "string",
+                      },
+                      "id": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "name": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "slug": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "thumbnailUrl": {
+                        "required": true,
+                        "type": [
+                          "string",
+                          "null",
+                        ],
+                      },
+                    },
                     "required": true,
                     "type": [
-                      "string",
+                      "object",
                       "null",
                     ],
                   },
@@ -15041,7 +16110,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     ],
                   },
                   "welcomeText": {
-                    "maxLength": 100000,
+                    "maxLength": 1000000,
                     "required": true,
                     "type": [
                       "string",
@@ -15195,21 +16264,56 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "items": {
                     "itemType": "object",
                     "items": {
-                      "description": "A content page belonging to an organization.",
+                      "description": "A content page for documentation purposes.",
                       "properties": {
                         "createdAt": {
                           "required": true,
                           "type": "string",
                         },
                         "createdBy": {
-                          "maxLength": 50,
+                          "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                          "extendsRef": "#/components/schemas/UserMinimalBase",
+                          "properties": {
+                            "email": {
+                              "format": "email",
+                              "required": true,
+                              "type": "string",
+                            },
+                            "entityType": {
+                              "enum": [
+                                "user",
+                              ],
+                              "required": true,
+                              "type": "string",
+                            },
+                            "id": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "name": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "slug": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "thumbnailUrl": {
+                              "required": true,
+                              "type": [
+                                "string",
+                                "null",
+                              ],
+                            },
+                          },
                           "required": true,
                           "type": [
-                            "string",
+                            "object",
                             "null",
                           ],
                         },
                         "description": {
+                          "maxLength": 1000000,
                           "required": true,
                           "type": [
                             "string",
@@ -15235,7 +16339,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "type": "string",
                         },
                         "keywords": {
-                          "maxLength": 100000,
+                          "maxLength": 1000000,
                           "required": true,
                           "type": "string",
                         },
@@ -15247,10 +16351,44 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           ],
                         },
                         "modifiedBy": {
-                          "maxLength": 50,
+                          "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                          "extendsRef": "#/components/schemas/UserMinimalBase",
+                          "properties": {
+                            "email": {
+                              "format": "email",
+                              "required": true,
+                              "type": "string",
+                            },
+                            "entityType": {
+                              "enum": [
+                                "user",
+                              ],
+                              "required": true,
+                              "type": "string",
+                            },
+                            "id": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "name": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "slug": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "thumbnailUrl": {
+                              "required": true,
+                              "type": [
+                                "string",
+                                "null",
+                              ],
+                            },
+                          },
                           "required": true,
                           "type": [
-                            "string",
+                            "object",
                             "null",
                           ],
                         },
@@ -15405,21 +16543,56 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "ref": "#/components/schemas/Page",
               "schema": {
                 "contentType": "application/json",
-                "description": "A content page belonging to an organization.",
+                "description": "A content page for documentation purposes.",
                 "properties": {
                   "createdAt": {
                     "required": true,
                     "type": "string",
                   },
                   "createdBy": {
-                    "maxLength": 50,
+                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                    "extendsRef": "#/components/schemas/UserMinimalBase",
+                    "properties": {
+                      "email": {
+                        "format": "email",
+                        "required": true,
+                        "type": "string",
+                      },
+                      "entityType": {
+                        "enum": [
+                          "user",
+                        ],
+                        "required": true,
+                        "type": "string",
+                      },
+                      "id": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "name": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "slug": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "thumbnailUrl": {
+                        "required": true,
+                        "type": [
+                          "string",
+                          "null",
+                        ],
+                      },
+                    },
                     "required": true,
                     "type": [
-                      "string",
+                      "object",
                       "null",
                     ],
                   },
                   "description": {
+                    "maxLength": 1000000,
                     "required": true,
                     "type": [
                       "string",
@@ -15445,7 +16618,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "type": "string",
                   },
                   "keywords": {
-                    "maxLength": 100000,
+                    "maxLength": 1000000,
                     "required": true,
                     "type": "string",
                   },
@@ -15457,10 +16630,44 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     ],
                   },
                   "modifiedBy": {
-                    "maxLength": 50,
+                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                    "extendsRef": "#/components/schemas/UserMinimalBase",
+                    "properties": {
+                      "email": {
+                        "format": "email",
+                        "required": true,
+                        "type": "string",
+                      },
+                      "entityType": {
+                        "enum": [
+                          "user",
+                        ],
+                        "required": true,
+                        "type": "string",
+                      },
+                      "id": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "name": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "slug": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "thumbnailUrl": {
+                        "required": true,
+                        "type": [
+                          "string",
+                          "null",
+                        ],
+                      },
+                    },
                     "required": true,
                     "type": [
-                      "string",
+                      "object",
                       "null",
                     ],
                   },
@@ -15679,21 +16886,56 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "data": {
                     "itemType": "object",
                     "items": {
-                      "description": "A content page belonging to an organization.",
+                      "description": "A content page for documentation purposes.",
                       "properties": {
                         "createdAt": {
                           "required": true,
                           "type": "string",
                         },
                         "createdBy": {
-                          "maxLength": 50,
+                          "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                          "extendsRef": "#/components/schemas/UserMinimalBase",
+                          "properties": {
+                            "email": {
+                              "format": "email",
+                              "required": true,
+                              "type": "string",
+                            },
+                            "entityType": {
+                              "enum": [
+                                "user",
+                              ],
+                              "required": true,
+                              "type": "string",
+                            },
+                            "id": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "name": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "slug": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "thumbnailUrl": {
+                              "required": true,
+                              "type": [
+                                "string",
+                                "null",
+                              ],
+                            },
+                          },
                           "required": true,
                           "type": [
-                            "string",
+                            "object",
                             "null",
                           ],
                         },
                         "description": {
+                          "maxLength": 1000000,
                           "required": true,
                           "type": [
                             "string",
@@ -15719,7 +16961,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "type": "string",
                         },
                         "keywords": {
-                          "maxLength": 100000,
+                          "maxLength": 1000000,
                           "required": true,
                           "type": "string",
                         },
@@ -15731,10 +16973,44 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           ],
                         },
                         "modifiedBy": {
-                          "maxLength": 50,
+                          "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                          "extendsRef": "#/components/schemas/UserMinimalBase",
+                          "properties": {
+                            "email": {
+                              "format": "email",
+                              "required": true,
+                              "type": "string",
+                            },
+                            "entityType": {
+                              "enum": [
+                                "user",
+                              ],
+                              "required": true,
+                              "type": "string",
+                            },
+                            "id": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "name": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "slug": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "thumbnailUrl": {
+                              "required": true,
+                              "type": [
+                                "string",
+                                "null",
+                              ],
+                            },
+                          },
                           "required": true,
                           "type": [
-                            "string",
+                            "object",
                             "null",
                           ],
                         },
@@ -15875,21 +17151,56 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "data": {
                     "itemType": "object",
                     "items": {
-                      "description": "A content page belonging to an organization.",
+                      "description": "A content page for documentation purposes.",
                       "properties": {
                         "createdAt": {
                           "required": true,
                           "type": "string",
                         },
                         "createdBy": {
-                          "maxLength": 50,
+                          "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                          "extendsRef": "#/components/schemas/UserMinimalBase",
+                          "properties": {
+                            "email": {
+                              "format": "email",
+                              "required": true,
+                              "type": "string",
+                            },
+                            "entityType": {
+                              "enum": [
+                                "user",
+                              ],
+                              "required": true,
+                              "type": "string",
+                            },
+                            "id": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "name": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "slug": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "thumbnailUrl": {
+                              "required": true,
+                              "type": [
+                                "string",
+                                "null",
+                              ],
+                            },
+                          },
                           "required": true,
                           "type": [
-                            "string",
+                            "object",
                             "null",
                           ],
                         },
                         "description": {
+                          "maxLength": 1000000,
                           "required": true,
                           "type": [
                             "string",
@@ -15915,7 +17226,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "type": "string",
                         },
                         "keywords": {
-                          "maxLength": 100000,
+                          "maxLength": 1000000,
                           "required": true,
                           "type": "string",
                         },
@@ -15927,10 +17238,44 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           ],
                         },
                         "modifiedBy": {
-                          "maxLength": 50,
+                          "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                          "extendsRef": "#/components/schemas/UserMinimalBase",
+                          "properties": {
+                            "email": {
+                              "format": "email",
+                              "required": true,
+                              "type": "string",
+                            },
+                            "entityType": {
+                              "enum": [
+                                "user",
+                              ],
+                              "required": true,
+                              "type": "string",
+                            },
+                            "id": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "name": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "slug": {
+                              "required": true,
+                              "type": "string",
+                            },
+                            "thumbnailUrl": {
+                              "required": true,
+                              "type": [
+                                "string",
+                                "null",
+                              ],
+                            },
+                          },
                           "required": true,
                           "type": [
-                            "string",
+                            "object",
                             "null",
                           ],
                         },
@@ -16147,46 +17492,78 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "body": {
               "contentType": "application/json",
               "properties": {
-                "description": {
-                  "maxLength": 100000,
-                  "required": false,
-                  "type": [
-                    "string",
-                    "null",
+                "data": {
+                  "anyOf": [
+                    {
+                      "required": false,
+                      "type": "string",
+                    },
+                    {
+                      "required": false,
+                      "type": "number",
+                    },
+                    {
+                      "required": false,
+                      "type": "boolean",
+                    },
+                    {
+                      "itemType": "string",
+                      "required": false,
+                      "type": "array",
+                    },
+                    {
+                      "required": false,
+                      "type": "null",
+                    },
                   ],
+                  "required": true,
                 },
-                "displayOrder": {
-                  "maximum": 140737488355327,
-                  "minimum": -140737488355328,
-                  "required": false,
-                  "type": "number",
-                },
-                "keywords": {
-                  "maxLength": 100000,
-                  "required": false,
-                  "type": "string",
-                },
-                "name": {
-                  "maxLength": 255,
-                  "required": false,
-                  "type": "string",
-                },
-                "parentId": {
-                  "maxLength": 50,
-                  "required": false,
-                  "type": [
-                    "string",
-                    "null",
+                "key": {
+                  "anyOf": [
+                    {
+                      "enum": [
+                        "name",
+                      ],
+                      "required": false,
+                      "type": "string",
+                    },
+                    {
+                      "enum": [
+                        "description",
+                      ],
+                      "required": false,
+                      "type": "string",
+                    },
+                    {
+                      "enum": [
+                        "keywords",
+                      ],
+                      "required": false,
+                      "type": "string",
+                    },
+                    {
+                      "enum": [
+                        "displayOrder",
+                      ],
+                      "required": false,
+                      "type": "string",
+                    },
+                    {
+                      "enum": [
+                        "status",
+                      ],
+                      "required": false,
+                      "type": "string",
+                    },
+                    {
+                      "enum": [
+                        "parentId",
+                      ],
+                      "required": false,
+                      "type": "string",
+                    },
                   ],
-                },
-                "status": {
-                  "enum": [
-                    "unpublished",
-                    "published",
-                    "archived",
-                  ],
-                  "required": false,
-                  "type": "string",
+                  "required": true,
                 },
                 "stx": {
                   "description": "Sync transaction metadata sent with mutations for idempotency and conflict detection.",
@@ -16263,21 +17640,56 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "ref": "#/components/schemas/Page",
               "schema": {
                 "contentType": "application/json",
-                "description": "A content page belonging to an organization.",
+                "description": "A content page for documentation purposes.",
                 "properties": {
                   "createdAt": {
                     "required": true,
                     "type": "string",
                   },
                   "createdBy": {
-                    "maxLength": 50,
+                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                    "extendsRef": "#/components/schemas/UserMinimalBase",
+                    "properties": {
+                      "email": {
+                        "format": "email",
+                        "required": true,
+                        "type": "string",
+                      },
+                      "entityType": {
+                        "enum": [
+                          "user",
+                        ],
+                        "required": true,
+                        "type": "string",
+                      },
+                      "id": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "name": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "slug": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "thumbnailUrl": {
+                        "required": true,
+                        "type": [
+                          "string",
+                          "null",
+                        ],
+                      },
+                    },
                     "required": true,
                     "type": [
-                      "string",
+                      "object",
                       "null",
                     ],
                   },
                   "description": {
+                    "maxLength": 1000000,
                     "required": true,
                     "type": [
                       "string",
@@ -16303,7 +17715,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "type": "string",
                   },
                   "keywords": {
-                    "maxLength": 100000,
+                    "maxLength": 1000000,
                     "required": true,
                     "type": "string",
                   },
@@ -16315,10 +17727,44 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     ],
                   },
                   "modifiedBy": {
-                    "maxLength": 50,
+                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                    "extendsRef": "#/components/schemas/UserMinimalBase",
+                    "properties": {
+                      "email": {
+                        "format": "email",
+                        "required": true,
+                        "type": "string",
+                      },
+                      "entityType": {
+                        "enum": [
+                          "user",
+                        ],
+                        "required": true,
+                        "type": "string",
+                      },
+                      "id": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "name": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "slug": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "thumbnailUrl": {
+                        "required": true,
+                        "type": [
+                          "string",
+                          "null",
+                        ],
+                      },
+                    },
                     "required": true,
                     "type": [
-                      "string",
+                      "object",
                       "null",
                     ],
                   },
@@ -16796,6 +18242,155 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           ],
         },
       ],
+      "seen": [
+        {
+          "operationId": "getUnseenCounts",
+          "responses": [
+            {
+              "contentType": "application/json",
+              "description": "Unseen counts per org per entity type",
+              "schema": {
+                "contentType": "application/json",
+                "type": "object",
+              },
+              "status": 200,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Bad request: problem processing request.",
+              "name": "BadRequestError",
+              "ref": "#/components/responses/BadRequestError",
+              "status": 400,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Unauthorized: authentication required.",
+              "name": "UnauthorizedError",
+              "ref": "#/components/responses/UnauthorizedError",
+              "status": 401,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Forbidden: insufficient permissions.",
+              "name": "ForbiddenError",
+              "ref": "#/components/responses/ForbiddenError",
+              "status": 403,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Not found: resource does not exist.",
+              "name": "NotFoundError",
+              "ref": "#/components/responses/NotFoundError",
+              "status": 404,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Rate limit: too many requests.",
+              "name": "TooManyRequestsError",
+              "ref": "#/components/responses/TooManyRequestsError",
+              "status": 429,
+            },
+          ],
+        },
+        {
+          "operationId": "markSeen",
+          "request": {
+            "body": {
+              "contentType": "application/json",
+              "properties": {
+                "entityIds": {
+                  "description": "Entity IDs the user has viewed since last batch",
+                  "itemType": "string",
+                  "maxItems": 500,
+                  "maxLength": 50,
+                  "minItems": 1,
+                  "required": true,
+                  "type": "array",
+                },
+                "entityType": {
+                  "description": "Entity type for all IDs in this batch",
+                  "enum": [
+                    "attachment",
+                    "page",
+                  ],
+                  "required": true,
+                  "type": "string",
+                },
+              },
+              "required": true,
+              "type": "object",
+            },
+            "path": {
+              "properties": {
+                "orgId": {
+                  "maxLength": 50,
+                  "required": true,
+                  "type": "string",
+                },
+                "tenantId": {
+                  "maxLength": 50,
+                  "required": true,
+                  "type": "string",
+                },
+              },
+            },
+          },
+          "responses": [
+            {
+              "contentType": "application/json",
+              "description": "Seen records processed",
+              "schema": {
+                "contentType": "application/json",
+                "properties": {
+                  "newCount": {
+                    "description": "Number of entities newly marked as seen (deduped)",
+                    "minimum": 0,
+                    "required": true,
+                    "type": "integer",
+                  },
+                },
+                "type": "object",
+              },
+              "status": 200,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Bad request: problem processing request.",
+              "name": "BadRequestError",
+              "ref": "#/components/responses/BadRequestError",
+              "status": 400,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Unauthorized: authentication required.",
+              "name": "UnauthorizedError",
+              "ref": "#/components/responses/UnauthorizedError",
+              "status": 401,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Forbidden: insufficient permissions.",
+              "name": "ForbiddenError",
+              "ref": "#/components/responses/ForbiddenError",
+              "status": 403,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Not found: resource does not exist.",
+              "name": "NotFoundError",
+              "ref": "#/components/responses/NotFoundError",
+              "status": 404,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Rate limit: too many requests.",
+              "name": "TooManyRequestsError",
+              "ref": "#/components/responses/TooManyRequestsError",
+              "status": 429,
+            },
+          ],
+        },
+      ],
       "system": [
         {
           "operationId": "systemInvite",
@@ -17073,7 +18668,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "ref": "#/components/schemas/User",
               "schema": {
                 "contentType": "application/json",
-                "description": "A user with profile data and last-seen activity timestamp.",
+                "description": "A user with profile data and activity timestamps.",
                 "properties": {
                   "bannerUrl": {
                     "maxLength": 2048,
@@ -17308,7 +18903,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "contentType": "application/json",
               "properties": {
                 "content": {
-                  "maxLength": 100000,
+                  "maxLength": 1000000,
                   "required": true,
                   "type": "string",
                 },
@@ -18074,7 +19669,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "items": {
                     "itemType": "object",
                     "items": {
-                      "description": "A user with profile data and last-seen activity timestamp.",
+                      "description": "A user with profile data and activity timestamps.",
                       "extendsRef": "#/components/schemas/User",
                       "properties": {
                         "bannerUrl": {
@@ -18332,7 +19927,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "ref": "#/components/schemas/User",
               "schema": {
                 "contentType": "application/json",
-                "description": "A user with profile data and last-seen activity timestamp.",
+                "description": "A user with profile data and activity timestamps.",
                 "properties": {
                   "bannerUrl": {
                     "maxLength": 2048,
@@ -18602,6 +20197,13 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         Row-Level Security (RLS) to partition data. Supports listing, retrieving, creating, updating, and
         soft-deleting (archiving) tenants.",
         "name": "tenants",
+      },
+      {
+        "count": 2,
+        "description": "Operations for tracking which product entities a user has viewed. Supports batch marking entities
+        as seen (deduplicating against existing records) and incrementing view counts. Used to power unseen
+        count badges in navigation and view count columns in entity lists.",
+        "name": "seen",
       },
     ],
   },
