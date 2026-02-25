@@ -17,6 +17,9 @@ type SeenMeta = { tenantId: string; orgId: string; entityType: ProductEntityType
 const elementMeta = new WeakMap<Element, SeenMeta>();
 const markedIds = new Set<string>();
 
+// Pre-populate with IDs successfully flushed in previous sessions (persisted in Zustand store)
+for (const id of useSeenStore.getState().flushedIds) markedIds.add(id);
+
 let sharedObserver: IntersectionObserver | null = null;
 let observerRefCount = 0;
 
@@ -26,27 +29,10 @@ function getSharedObserver(): IntersectionObserver {
       (entries) => {
         const markEntitySeen = useSeenStore.getState().markEntitySeen;
 
-        if (import.meta.env.DEV) {
-          console.debug(
-            '[SeenMark] observer callback:',
-            entries.length,
-            'entries',
-            entries.map((e) => `${e.isIntersecting ? '✓' : '✗'} ratio=${e.intersectionRatio.toFixed(2)}`),
-          );
-        }
-
         for (const entry of entries) {
-          const meta = elementMeta.get(entry.target);
-          const dataId = (entry.target as HTMLElement).dataset.entityId;
-
-          if (import.meta.env.DEV) {
-            console.debug(
-              `[SeenMark] entry: intersecting=${entry.isIntersecting} meta=${meta?.entityId?.slice(0, 8) ?? 'NONE'} data-id=${dataId?.slice(0, 8) ?? 'NONE'} inMarked=${meta ? markedIds.has(meta.entityId) : 'n/a'}`,
-            );
-          }
-
           if (!entry.isIntersecting) continue;
 
+          const meta = elementMeta.get(entry.target);
           if (!meta) continue;
 
           // Skip if already marked this session
@@ -55,9 +41,7 @@ function getSharedObserver(): IntersectionObserver {
             continue;
           }
 
-          if (import.meta.env.DEV) {
-            console.debug('[SeenMark] intersected:', meta.entityType, meta.entityId.slice(0, 8));
-          }
+          console.debug('[SeenMark] intersected:', meta.entityType, meta.entityId.slice(0, 8));
 
           try {
             markEntitySeen(meta.tenantId, meta.orgId, meta.entityType, meta.entityId);

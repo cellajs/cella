@@ -1,9 +1,10 @@
 import { useEffect } from 'react';
+import { appConfig } from 'shared';
 import { setupSeenBeaconFlush, useSeenStore } from '~/store/seen';
 
 /**
  * Invisible component that initializes the seen-tracking system.
- * - Starts the periodic flush interval (10 min).
+ * - Starts the periodic flush interval (1 min).
  * - Registers sendBeacon flush on page unload.
  * - Cleans up on unmount.
  *
@@ -15,8 +16,10 @@ export function SeenTracker() {
     startFlushInterval();
     const cleanupBeacon = setupSeenBeaconFlush();
 
+    const isDev = appConfig.mode === 'development';
+
     // Expose manual flush in dev for debugging
-    if (import.meta.env.DEV) {
+    if (isDev) {
       (window as any).__flushSeen = flush;
       console.debug('[SeenTracker] initialized — call window.__flushSeen() to flush manually');
     }
@@ -24,7 +27,7 @@ export function SeenTracker() {
     return () => {
       stopFlushInterval();
       cleanupBeacon();
-      if (import.meta.env.DEV) {
+      if (isDev) {
         delete (window as any).__flushSeen;
       }
     };

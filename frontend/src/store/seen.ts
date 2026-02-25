@@ -1,6 +1,6 @@
-import type { ProductEntityType } from 'shared';
+import { appConfig, type ProductEntityType } from 'shared';
 import { create } from 'zustand';
-import { devtools } from 'zustand/middleware';
+import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import type { GetUnseenCountsResponse } from '~/api.gen';
 import { markSeen } from '~/api.gen';
 import { isDebugMode } from '~/env';
@@ -17,6 +17,8 @@ interface SeenBatch {
 interface SeenStoreState {
   /** Pending seen IDs per org+entityType key */
   pending: Map<string, SeenBatch>;
+  /** Entity IDs successfully flushed to the server (persisted across sessions) */
+  flushedIds: Set<string>;
   /** Interval ID for periodic flush */
   flushIntervalId: ReturnType<typeof setInterval> | null;
 
@@ -28,11 +30,11 @@ interface SeenStoreState {
   stopFlushInterval: () => void;
   /** Flush all pending seen records to the server */
   flush: () => Promise<void>;
-  /** Clear all pending data */
+  /** Clear all pending + persisted data (call on sign-out) */
   clear: () => void;
 }
 
-const FLUSH_INTERVAL_MS = import.meta.env.DEV ? 10 * 1000 : 60 * 1000; // 10s in dev, 1min in prod
+const FLUSH_INTERVAL_MS = appConfig.mode === 'development' ? 10 * 1000 : 60 * 1000; // 10s in dev, 1min in prod
 
 /** Build a key for the pending map */
 const batchKey = (orgId: string, entityType: string) => `${orgId}:${entityType}`;
@@ -41,115 +43,117 @@ const batchKey = (orgId: string, entityType: string) => `${orgId}:${entityType}`
  * Store for tracking "seen" entities in the viewport.
  *
  * Entities observed via IntersectionObserver are queued here, then batch-flushed
- * to POST /:tenantId/:orgId/seen every 10 minutes (or on page unload via sendBeacon).
+ * to POST /:tenantId/:orgId/seen periodically (or on page unload via sendBeacon).
  *
- * No persistence — seen data is transient per session. If the flush fails,
- * pending IDs are retained for the next interval.
+ * Successfully flushed IDs are kept in `flushedIds` and persisted to localStorage
+ * via Zustand's persist middleware, so they are not re-sent on subsequent sessions.
+ * If a flush fails, pending IDs are retained for the next interval.
  */
 export const useSeenStore = create<SeenStoreState>()(
   devtools(
-    (set, get) => ({
-      pending: new Map(),
-      flushIntervalId: null,
+    persist(
+      (set, get) => ({
+        pending: new Map(),
+        flushedIds: new Set(),
+        flushIntervalId: null,
 
-      markEntitySeen: (tenantId, orgId, entityType, entityId) => {
-        const pending = get().pending;
-        const key = batchKey(orgId, entityType);
-        const existing = pending.get(key);
-        const entityIds = existing?.entityIds ?? new Set<string>();
+        markEntitySeen: (tenantId, orgId, entityType, entityId) => {
+          // Skip if already flushed to server in a previous session
+          if (get().flushedIds.has(entityId)) return;
 
-        // Dedup — already queued this session
-        if (entityIds.has(entityId)) return;
+          const pending = get().pending;
+          const key = batchKey(orgId, entityType);
+          const existing = pending.get(key);
+          const entityIds = existing?.entityIds ?? new Set<string>();
 
-        const newSet = new Set(entityIds);
-        newSet.add(entityId);
+          // Dedup — already queued this session
+          if (entityIds.has(entityId)) return;
 
-        const newMap = new Map(pending);
-        newMap.set(key, { tenantId, orgId, entityType, entityIds: newSet });
-        set({ pending: newMap });
+          const newSet = new Set(entityIds);
+          newSet.add(entityId);
 
-        // Optimistically decrement unseen count in query cache for instant badge update
-        queryClient.setQueryData<GetUnseenCountsResponse>(['me', 'unseen', 'counts'], (old) => {
-          if (!old) {
-            if (import.meta.env.DEV) console.debug('[SeenStore] no cache data to decrement');
-            return old;
-          }
-          const current = old[orgId]?.[entityType];
-          if (!current) return old;
+          const newMap = new Map(pending);
+          newMap.set(key, { tenantId, orgId, entityType, entityIds: newSet });
+          set({ pending: newMap });
 
-          const updated = { ...old, [orgId]: { ...old[orgId], [entityType]: current - 1 } };
-          // Remove zero entries
-          if (updated[orgId][entityType] <= 0) {
-            const { [entityType]: _, ...rest } = updated[orgId];
-            if (Object.keys(rest).length === 0) {
-              const { [orgId]: __, ...withoutOrg } = updated;
-              return withoutOrg;
+          // Optimistically decrement unseen count in query cache for instant badge update
+          queryClient.setQueryData<GetUnseenCountsResponse>(['me', 'unseen', 'counts'], (old) => {
+            if (!old) return old;
+            const current = old[orgId]?.[entityType];
+            if (!current) return old;
+
+            const updated = { ...old, [orgId]: { ...old[orgId], [entityType]: current - 1 } };
+            // Remove zero entries
+            if (updated[orgId][entityType] <= 0) {
+              const { [entityType]: _, ...rest } = updated[orgId];
+              if (Object.keys(rest).length === 0) {
+                const { [orgId]: __, ...withoutOrg } = updated;
+                return withoutOrg;
+              }
+              updated[orgId] = rest;
             }
-            updated[orgId] = rest;
-          }
-          if (import.meta.env.DEV) console.debug('[SeenStore] cache after decrement:', JSON.stringify(updated));
-          return updated;
-        });
+            return updated;
+          });
 
-        if (import.meta.env.DEV) {
           const total = Array.from(get().pending.values()).reduce((sum, b) => sum + b.entityIds.size, 0);
           console.debug('[SeenStore] queued:', entityType, entityId.slice(0, 8), `(${total} pending)`);
-        }
-      },
+        },
 
-      startFlushInterval: () => {
-        const existing = get().flushIntervalId;
-        if (existing) return;
+        startFlushInterval: () => {
+          const existing = get().flushIntervalId;
+          if (existing) return;
 
-        const id = setInterval(() => {
-          get().flush();
-        }, FLUSH_INTERVAL_MS);
+          const id = setInterval(() => {
+            get().flush();
+          }, FLUSH_INTERVAL_MS);
 
-        set({ flushIntervalId: id });
-      },
+          set({ flushIntervalId: id });
+        },
 
-      stopFlushInterval: () => {
-        const id = get().flushIntervalId;
-        if (id) {
-          clearInterval(id);
-          set({ flushIntervalId: null });
-        }
-      },
+        stopFlushInterval: () => {
+          const id = get().flushIntervalId;
+          if (id) {
+            clearInterval(id);
+            set({ flushIntervalId: null });
+          }
+        },
 
-      flush: async () => {
-        const { pending } = get();
-        if (pending.size === 0) return;
+        flush: async () => {
+          const { pending } = get();
+          if (pending.size === 0) return;
 
-        // Snapshot and clear pending
-        const batches = Array.from(pending.entries()).map(([key, batch]) => ({
-          key,
-          tenantId: batch.tenantId,
-          orgId: batch.orgId,
-          entityType: batch.entityType,
-          entityIds: Array.from(batch.entityIds),
-        }));
+          // Snapshot and clear pending
+          const batches = Array.from(pending.entries()).map(([key, batch]) => ({
+            key,
+            tenantId: batch.tenantId,
+            orgId: batch.orgId,
+            entityType: batch.entityType,
+            entityIds: Array.from(batch.entityIds),
+          }));
 
-        if (import.meta.env.DEV) {
           console.debug(
             '[SeenStore] flushing',
             batches.map((b) => `${b.entityType}:${b.orgId.slice(0, 8)}(${b.entityIds.length})`),
           );
-        }
 
-        // Clear pending optimistically — failed batches will be re-added
-        set({ pending: new Map() });
+          // Clear pending optimistically — failed batches will be re-added
+          set({ pending: new Map() });
 
-        let hasSuccessfulFlush = false;
+          let hasSuccessfulFlush = false;
 
-        for (const batch of batches) {
-          if (batch.entityIds.length === 0) continue;
+          for (const batch of batches) {
+            if (batch.entityIds.length === 0) continue;
 
-          try {
-            const result = await markSeen({
-              path: { tenantId: batch.tenantId, orgId: batch.orgId },
-              body: { entityIds: batch.entityIds, entityType: batch.entityType },
-            });
-            if (import.meta.env.DEV) {
+            try {
+              const result = await markSeen({
+                path: { tenantId: batch.tenantId, orgId: batch.orgId },
+                body: { entityIds: batch.entityIds, entityType: batch.entityType },
+              });
+              // Track flushed IDs so next session skips them
+              const newFlushed = new Set(get().flushedIds);
+              for (const id of batch.entityIds) newFlushed.add(id);
+              set({ flushedIds: newFlushed });
+
               console.debug(
                 '[SeenStore] flush OK:',
                 batch.entityType,
@@ -157,46 +161,55 @@ export const useSeenStore = create<SeenStoreState>()(
                 'newCount:',
                 result.newCount,
               );
-            }
-            hasSuccessfulFlush = true;
-          } catch (error) {
-            if (import.meta.env.DEV) {
+              hasSuccessfulFlush = true;
+            } catch (error) {
               console.error('[SeenStore] flush failed:', batch.entityType, batch.orgId.slice(0, 8), error);
+              // Re-add failed batch IDs for next flush
+              const current = get().pending;
+              const key = batchKey(batch.orgId, batch.entityType);
+              const prev = current.get(key);
+              const merged = new Set(prev?.entityIds ?? []);
+              for (const id of batch.entityIds) merged.add(id);
+
+              const newMap = new Map(current);
+              newMap.set(key, {
+                tenantId: batch.tenantId,
+                orgId: batch.orgId,
+                entityType: batch.entityType,
+                entityIds: merged,
+              });
+              set({ pending: newMap });
             }
-            // Re-add failed batch IDs for next flush
-            const current = get().pending;
-            const key = batchKey(batch.orgId, batch.entityType);
-            const prev = current.get(key);
-            const merged = new Set(prev?.entityIds ?? []);
-            for (const id of batch.entityIds) merged.add(id);
-
-            const newMap = new Map(current);
-            newMap.set(key, {
-              tenantId: batch.tenantId,
-              orgId: batch.orgId,
-              entityType: batch.entityType,
-              entityIds: merged,
-            });
-            set({ pending: newMap });
           }
-        }
 
-        // Refresh unseen counts and entity lists after successful flush
-        if (hasSuccessfulFlush) {
-          queryClient.invalidateQueries({ queryKey: ['me', 'unseen', 'counts'] });
-          // Refetch entity lists to update viewCount
-          for (const batch of batches) {
-            queryClient.invalidateQueries({ queryKey: [batch.entityType, 'list'] });
+          // Refresh unseen counts and entity lists after successful flush
+          if (hasSuccessfulFlush) {
+            queryClient.invalidateQueries({ queryKey: ['me', 'unseen', 'counts'] });
+            // Refetch entity lists to update viewCount
+            for (const batch of batches) {
+              queryClient.invalidateQueries({ queryKey: [batch.entityType, 'list'] });
+            }
           }
-        }
-      },
+        },
 
-      clear: () => {
-        const id = get().flushIntervalId;
-        if (id) clearInterval(id);
-        set({ pending: new Map(), flushIntervalId: null });
+        clear: () => {
+          const id = get().flushIntervalId;
+          if (id) clearInterval(id);
+          set({ pending: new Map(), flushedIds: new Set(), flushIntervalId: null });
+        },
+      }),
+      {
+        name: `${appConfig.slug}-seen`,
+        storage: createJSONStorage(() => localStorage),
+        // Only persist flushedIds — store as array for JSON compatibility
+        partialize: (state) => ({ flushedIds: [...state.flushedIds] }),
+        // Rehydrate array back to Set
+        merge: (persisted, current) => ({
+          ...current,
+          flushedIds: new Set((persisted as { flushedIds?: string[] })?.flushedIds ?? []),
+        }),
       },
-    }),
+    ),
     { enabled: isDebugMode, name: 'seen store' },
   ),
 );
