@@ -52,6 +52,12 @@ export const organizationsTable = pgTable(
             AND m.user_id = current_setting('app.user_id', true)::text
             AND m.tenant_id = ${table.tenantId}
           )
+          OR EXISTS (
+            SELECT 1 FROM inactive_memberships im
+            WHERE im.organization_id = ${table.id}
+            AND im.user_id = current_setting('app.user_id', true)::text
+            AND im.rejected_at IS NULL
+          )
         )
       `,
     }),

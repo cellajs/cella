@@ -4,5 +4,6 @@
     "sync_failed": "Synchronisatie mislukt",
     "synced": "Gesynchroniseerd",
     "syncing": "Synchroniseren",
-    "pending_sync": "Wacht op synchronisatie"
+    "pending_sync": "Wacht op synchronisatie",
+    "views": "Weergaven"
 }

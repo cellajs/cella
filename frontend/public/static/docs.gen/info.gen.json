@@ -10,13 +10,13 @@
       "description": "Authorization middleware applied to the endpoint",
       "required": true,
       "values": {
-        "publicGuard": { "name": "public", "description": "No authentication required" },
-        "authGuard": { "name": "auth", "description": "Requires valid session" },
-        "crossTenantGuard": { "name": "crossTenant", "description": "Wraps handler in user RLS context for cross-tenant access" },
+        "publicGuard": { "name": "public", "description": "No authentication required; provides baseDb without RLS context" },
+        "authGuard": { "name": "auth", "description": "Requires valid session and sets auth context (user, memberships, baseDb)" },
+        "crossTenantGuard": { "name": "crossTenant", "description": "Requires authGuard and sets user-scoped RLS db context for cross-tenant access" },
         "orgGuard": { "name": "org", "description": "Validates organization membership within tenant context" },
         "relatableGuard": { "name": "relatable", "description": "Checks that the requesting user shares at least one organization with the target user" },
         "sysAdminGuard": { "name": "sysAdmin", "description": "Requires system admin + IP whitelist" },
-        "tenantGuard": { "name": "tenant", "description": "Validates tenant access and wraps handler in RLS-enabled transaction" }
+        "tenantGuard": { "name": "tenant", "description": "Requires authGuard, validates tenant access, and sets tenant-scoped RLS db context" }
       }
     },
     {

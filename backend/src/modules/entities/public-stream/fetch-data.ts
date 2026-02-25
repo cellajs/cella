@@ -5,7 +5,7 @@
 
 import { and, desc, gt, inArray, sql } from 'drizzle-orm';
 import { hierarchy } from 'shared';
-import { unsafeInternalDb as db } from '#/db/db';
+import { baseDb as db } from '#/db/db';
 import { activitiesTable } from '#/db/schema/activities';
 import { contextCountersTable } from '#/db/schema/context-counters';
 import type { PublicCatchupResponse } from '#/schemas';

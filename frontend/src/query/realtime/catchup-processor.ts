@@ -11,7 +11,7 @@
  * Public stream: scoped per entityType
  */
 
-import { getEntityQueryKeys } from '~/query/basic';
+import { getEntityQueryKeys, hasEntityQueryKeys } from '~/query/basic';
 import { useSyncStore } from '~/store/sync';
 import * as cacheOps from './cache-ops';
 import * as membershipOps from './membership-ops';
@@ -117,8 +117,8 @@ export function processPublicCatchup(response: PublicCatchupResponse): void {
     const clientSeq = syncStore.getSeq(entityType);
     const delta = serverSeq - clientSeq;
 
+    if (!hasEntityQueryKeys(entityType)) continue;
     const keys = getEntityQueryKeys(entityType);
-    if (!keys) continue;
 
     // Phase 1: Remove deleted entities from cache
     for (const entityId of deletedIds) {

@@ -9,7 +9,7 @@ import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
 import { HeaderCell } from '~/modules/common/data-table/header-cell';
 import { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
-import { UserCellById } from '~/modules/user/user-cell';
+import { UserCell } from '~/modules/user/user-cell';
 import { dateShort } from '~/utils/date-short';
 
 const pageStatuses = zPage.shape.status.options;
@@ -117,7 +117,12 @@ export function usePagesTableColumns(isCompact: boolean) {
       width: isCompact ? 50 : null,
       renderHeaderCell: HeaderCell,
       // TODO revisit user cell since often no avatar
-      renderCell: ({ row, tabIndex }) => <UserCellById userId={row.createdBy} cacheOnly={false} tabIndex={tabIndex} />,
+      renderCell: ({ row, tabIndex }) =>
+        row.createdBy ? (
+          <UserCell compactable user={row.createdBy} tabIndex={tabIndex} />
+        ) : (
+          <span className="text-muted">-</span>
+        ),
     },
     {
       key: 'createdAt',

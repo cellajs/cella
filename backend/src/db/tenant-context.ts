@@ -10,11 +10,10 @@
  * - app.user_id: Current authenticated user ID
  * - app.is_authenticated: Boolean auth status flag
  *
- * @see info/RLS.md for full architecture documentation
  */
 
 import { sql } from 'drizzle-orm';
-import { type Tx, unsafeInternalDb } from './db';
+import { baseDb, type Tx } from './db';
 
 /**
  * Tenant context options for authenticated routes.
@@ -57,7 +56,7 @@ export interface UserRlsOptions {
  * ```
  */
 export async function setTenantRlsContext<T>(options: TenantRlsOptions, fn: (tx: Tx) => Promise<T>): Promise<T> {
-  return unsafeInternalDb.transaction(async (tx) => {
+  return baseDb.transaction(async (tx) => {
     // Set session variables (transaction-scoped)
     await tx.execute(sql`SELECT set_config('app.tenant_id', ${options.tenantId}, true)`);
     await tx.execute(sql`SELECT set_config('app.user_id', ${options.userId}, true)`);
@@ -88,7 +87,7 @@ export async function setTenantRlsContext<T>(options: TenantRlsOptions, fn: (tx:
  * ```
  */
 export async function setUserRlsContext<T>(options: UserRlsOptions, fn: (tx: Tx) => Promise<T>): Promise<T> {
-  return unsafeInternalDb.transaction(async (tx) => {
+  return baseDb.transaction(async (tx) => {
     // Set user context only (no tenant context for cross-tenant reads)
     await tx.execute(sql`SELECT set_config('app.tenant_id', '', true)`);
     await tx.execute(sql`SELECT set_config('app.user_id', ${options.userId}, true)`);
@@ -109,7 +108,7 @@ export async function setUserRlsContext<T>(options: UserRlsOptions, fn: (tx: Tx)
  * @returns Promise resolving to the operation result
  */
 export async function setPublicRlsContext<T>(tenantId: string, fn: (tx: Tx) => Promise<T>): Promise<T> {
-  return unsafeInternalDb.transaction(async (tx) => {
+  return baseDb.transaction(async (tx) => {
     // Set tenant context only (no user context for public access)
     await tx.execute(sql`SELECT set_config('app.tenant_id', ${tenantId}, true)`);
     await tx.execute(sql`SELECT set_config('app.user_id', '', true)`);

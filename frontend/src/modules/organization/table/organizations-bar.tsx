@@ -84,8 +84,7 @@ export const OrganizationsTableBar = ({
       clearSelection();
     };
 
-    // TODO-021: Handle batch delete across different tenants - currently assumes all selected orgs are in same tenant
-    // Maybe as soon as one is selected we disable all orgs from other tenants.
+    // Selection is already constrained to one tenant at a time (see isRowSelectionDisabled in organizations-table)
     const tenantId = selected[0]?.tenantId ?? '';
     createDialog(<DeleteOrganizations tenantId={tenantId} organizations={selected} dialog callback={callback} />, {
       id: 'delete-organizations',

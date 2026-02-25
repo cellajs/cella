@@ -9,6 +9,8 @@
  * - tokens: partitioned by expires_at (weekly, 30-day retention)
  * - unsubscribe_tokens: partitioned by created_at (monthly, 90-day retention)
  * - activities: partitioned by created_at (weekly, 90-day retention)
+ * - seen_by: partitioned by created_at (weekly, 90-day retention)
+ * - seen_counts: partitioned by entity_created_at (weekly, 90-day retention)
  *
  * The activities table uses PostgreSQL's LIKE clause to clone whatever structure
  * Drizzle created, making it robust to schema changes and fork customizations.
@@ -128,6 +130,23 @@ const partitionConfigs: PartitionConfig[] = [
     createTableSql: null, // Use LIKE clause instead
     indexesSql: [], // Indexes are cloned from original table
   },
+  // Seen tables use LIKE clause (same as activities)
+  {
+    name: 'seen_by',
+    partitionColumn: 'created_at',
+    interval: '1 week',
+    retention: '90 days',
+    createTableSql: null,
+    indexesSql: [],
+  },
+  {
+    name: 'seen_counts',
+    partitionColumn: 'entity_created_at',
+    interval: '1 week',
+    retention: '90 days',
+    createTableSql: null,
+    indexesSql: [],
+  },
 ];
 
 /**
@@ -238,8 +257,9 @@ const tableSetupSql = partitionConfigs.map(generateTablePartitionSql).join('\n')
 const migrationSql = `-- =============================================================================
 -- Migration: pg_partman Setup for Token/Session/Activity Tables
 -- =============================================================================
--- This migration converts sessions, tokens, unsubscribe_tokens, and activities to
--- partitioned tables managed by pg_partman for automatic cleanup.
+-- This migration converts sessions, tokens, unsubscribe_tokens, activities,
+-- seen_by, and seen_counts to partitioned tables managed by pg_partman for
+-- automatic cleanup.
 --
 -- IMPORTANT: This creates a schema drift between Drizzle and the actual DB:
 -- - Drizzle sees: regular tables with composite PKs
@@ -253,6 +273,8 @@ const migrationSql = `-- =======================================================
 -- - tokens: partitioned by expires_at (weekly, 30-day retention)  
 -- - unsubscribe_tokens: partitioned by created_at (monthly, 90-day retention)
 -- - activities: partitioned by created_at (weekly, 90-day retention)
+-- - seen_by: partitioned by created_at (weekly, 90-day retention)
+-- - seen_counts: partitioned by entity_created_at (weekly, 90-day retention)
 --
 -- For environments without pg_partman (PGlite, etc.): migration is skipped,
 -- manual cleanup via db-maintenance.ts handles expired records.

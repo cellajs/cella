@@ -1,0 +1,143 @@
+[
+  {
+    "operationId": "getUnseenCounts",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Unseen counts per org per entity type",
+        "contentType": "application/json",
+        "schema": { "type": "object", "contentType": "application/json" }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ]
+  },
+  {
+    "operationId": "markSeen",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Seen records processed",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "newCount": {
+              "type": "integer",
+              "required": true,
+              "description": "Number of entities newly marked as seen (deduped)",
+              "minimum": 0
+            }
+          },
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "tenantId": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          },
+          "orgId": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          }
+        }
+      },
+      "body": {
+        "type": "object",
+        "properties": {
+          "entityIds": {
+            "type": "array",
+            "required": true,
+            "description": "Entity IDs the user has viewed since last batch",
+            "minItems": 1,
+            "maxItems": 500,
+            "itemType": "string",
+            "maxLength": 50
+          },
+          "entityType": {
+            "type": "string",
+            "required": true,
+            "description": "Entity type for all IDs in this batch",
+            "enum": ["attachment", "page"]
+          }
+        },
+        "required": true,
+        "contentType": "application/json"
+      }
+    }
+  }
+]

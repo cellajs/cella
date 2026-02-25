@@ -3,7 +3,6 @@ import { encodeBase32UpperCase } from '@oslojs/encoding';
 import { createTOTPKeyURI } from '@oslojs/otp';
 import { eq } from 'drizzle-orm';
 import { appConfig } from 'shared';
-import { unsafeInternalDb as db } from '#/db/db';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { totpsTable } from '#/db/schema/totps';
 import { usersTable } from '#/db/schema/users';
@@ -50,6 +49,7 @@ const authTotpsRouteHandlers = app
    * Create TOTP in database
    */
   .openapi(authTotpsRoutes.createTotp, async (ctx) => {
+    const db = ctx.var.db;
     const { code } = ctx.req.valid('json');
     const user = ctx.var.user;
 
@@ -78,6 +78,7 @@ const authTotpsRouteHandlers = app
    * Unlink TOTP
    */
   .openapi(authTotpsRoutes.deleteTotp, async (ctx) => {
+    const db = ctx.var.db;
     const user = ctx.var.user;
 
     // Remove all totps linked to this user's email

@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "6ae63f68-e20a-4e7a-a46d-5e6c39f8d5ca",
+  "id": "7df36047-8483-4b48-b990-1323de404fee",
   "prevIds": [
     "00000000-0000-0000-0000-000000000000"
   ],
@@ -91,6 +91,18 @@
     {
       "isRlsEnabled": false,
       "name": "requests",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "seen_by",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "seen_counts",
       "entityType": "tables",
       "schema": "public"
     },
@@ -429,11 +441,11 @@
       "table": "attachments"
     },
     {
-      "type": "text",
+      "type": "varchar(1000000)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
-      "default": null,
+      "default": "''",
       "generated": null,
       "identity": null,
       "name": "description",
@@ -442,11 +454,11 @@
       "table": "attachments"
     },
     {
-      "type": "varchar(100000)",
+      "type": "varchar(1000000)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
-      "default": null,
+      "default": "''",
       "generated": null,
       "identity": null,
       "name": "keywords",
@@ -1482,7 +1494,7 @@
       "table": "organizations"
     },
     {
-      "type": "varchar(100000)",
+      "type": "varchar(1000000)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -1612,11 +1624,11 @@
       "table": "pages"
     },
     {
-      "type": "text",
+      "type": "varchar(1000000)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
-      "default": null,
+      "default": "''",
       "generated": null,
       "identity": null,
       "name": "description",
@@ -1625,11 +1637,11 @@
       "table": "pages"
     },
     {
-      "type": "varchar(100000)",
+      "type": "varchar(1000000)",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
-      "default": null,
+      "default": "''",
       "generated": null,
       "identity": null,
       "name": "keywords",
@@ -2026,6 +2038,162 @@
       "entityType": "columns",
       "schema": "public",
       "table": "requests"
+    },
+    {
+      "type": "varchar(50)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "seen_by"
+    },
+    {
+      "type": "varchar(50)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "user_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "seen_by"
+    },
+    {
+      "type": "varchar(50)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "entity_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "seen_by"
+    },
+    {
+      "type": "varchar",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "entity_type",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "seen_by"
+    },
+    {
+      "type": "varchar(50)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "organization_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "seen_by"
+    },
+    {
+      "type": "varchar(24)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "tenant_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "seen_by"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "seen_by"
+    },
+    {
+      "type": "varchar(50)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "entity_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "seen_counts"
+    },
+    {
+      "type": "varchar",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "entity_type",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "seen_counts"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "0",
+      "generated": null,
+      "identity": null,
+      "name": "view_count",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "seen_counts"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "entity_created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "seen_counts"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "seen_counts"
     },
     {
       "type": "varchar(50)",
@@ -3432,6 +3600,83 @@
       "nameExplicit": true,
       "columns": [
         {
+          "value": "user_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "organization_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "entity_type",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "seen_by_user_org_type_index",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "seen_by"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "entity_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "seen_by_entity_id_index",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "seen_by"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "tenant_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "seen_by_tenant_id_index",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "seen_by"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
           "value": "secret",
           "isExpression": false,
           "asc": true,
@@ -4213,6 +4458,57 @@
       ],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
+      "name": "seen_by_user_id_users_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "seen_by"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "tenant_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "tenants",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "seen_by_tenant_id_tenants_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "seen_by"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "organization_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "organizations",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "seen_by_organization_id_organizations_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "seen_by"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "user_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "users",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
       "name": "sessions_user_id_users_id_fkey",
       "entityType": "fks",
       "schema": "public",
@@ -4364,6 +4660,28 @@
       "entityType": "pks",
       "schema": "public",
       "table": "activities"
+    },
+    {
+      "columns": [
+        "id",
+        "created_at"
+      ],
+      "nameExplicit": false,
+      "name": "seen_by_pkey",
+      "entityType": "pks",
+      "schema": "public",
+      "table": "seen_by"
+    },
+    {
+      "columns": [
+        "entity_id",
+        "entity_created_at"
+      ],
+      "nameExplicit": false,
+      "name": "seen_counts_pkey",
+      "entityType": "pks",
+      "schema": "public",
+      "table": "seen_counts"
     },
     {
       "columns": [
@@ -4634,6 +4952,18 @@
       "table": "pages"
     },
     {
+      "nameExplicit": true,
+      "columns": [
+        "user_id",
+        "entity_id"
+      ],
+      "nullsNotDistinct": false,
+      "name": "seen_by_user_entity_unique",
+      "entityType": "uniques",
+      "schema": "public",
+      "table": "seen_by"
+    },
+    {
       "nameExplicit": false,
       "columns": [
         "email"
@@ -4804,6 +5134,19 @@
       "table": "inactive_memberships"
     },
     {
+      "as": "PERMISSIVE",
+      "for": "SELECT",
+      "roles": [
+        "public"
+      ],
+      "using": "current_setting('app.is_authenticated', true)::boolean = true AND \n  COALESCE(current_setting('app.user_id', true), '') != ''\n  AND \"inactive_memberships\".\"user_id\" = current_setting('app.user_id', true)::text\n",
+      "withCheck": null,
+      "name": "inactive_memberships_select_own_policy",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "inactive_memberships"
+    },
+    {
       "as": "RESTRICTIVE",
       "for": "SELECT",
       "roles": [
@@ -4887,7 +5230,7 @@
       "roles": [
         "public"
       ],
-      "using": "\n        current_setting('app.is_authenticated', true)::boolean = true\n        AND COALESCE(current_setting('app.user_id', true), '') != ''\n        AND (\n          \"organizations\".\"created_by\" = current_setting('app.user_id', true)::text\n          OR EXISTS (\n            SELECT 1 FROM memberships m\n            WHERE m.organization_id = \"organizations\".\"id\"\n            AND m.user_id = current_setting('app.user_id', true)::text\n            AND m.tenant_id = \"organizations\".\"tenant_id\"\n          )\n        )\n      ",
+      "using": "\n        current_setting('app.is_authenticated', true)::boolean = true\n        AND COALESCE(current_setting('app.user_id', true), '') != ''\n        AND (\n          \"organizations\".\"created_by\" = current_setting('app.user_id', true)::text\n          OR EXISTS (\n            SELECT 1 FROM memberships m\n            WHERE m.organization_id = \"organizations\".\"id\"\n            AND m.user_id = current_setting('app.user_id', true)::text\n            AND m.tenant_id = \"organizations\".\"tenant_id\"\n          )\n          OR EXISTS (\n            SELECT 1 FROM inactive_memberships im\n            WHERE im.organization_id = \"organizations\".\"id\"\n            AND im.user_id = current_setting('app.user_id', true)::text\n            AND im.rejected_at IS NULL\n          )\n        )\n      ",
       "withCheck": null,
       "name": "organizations_select_policy",
       "entityType": "policies",

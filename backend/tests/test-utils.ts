@@ -14,7 +14,7 @@ import { sql } from 'drizzle-orm';
 import { Context, Next } from 'hono';
 import { appConfig } from 'shared';
 import { vi } from 'vitest';
-import { unsafeInternalDb as db } from '#/db/db';
+import { baseDb as db } from '#/db/db';
 import { resetOrganizationMockEnforcers } from '../mocks/mock-organization';
 import { resetUserMockEnforcers } from '../mocks/mock-user';
 

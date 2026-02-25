@@ -25,7 +25,7 @@ export const crossTenantGuard = xMiddleware(
     functionName: 'crossTenantGuard',
     type: 'x-guard',
     name: 'crossTenant',
-    description: 'Wraps handler in user RLS context for cross-tenant access',
+    description: 'Requires authGuard and sets user-scoped RLS db context for cross-tenant access',
   },
   async (ctx, next) => {
     const user = ctx.var.user;

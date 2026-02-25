@@ -77,6 +77,7 @@
   "invalid_domain": "Domain must not contain @, no special chars and at least one dot (.) in between.",
   "invalid_email": "Invalid email address",
   "invalid_email_or_password": "Invalid email or password",
+  "invalid_id": "ID may only contain lowercase letters and numbers (12-50 characters)",
   "invalid_invitation": "Invitation could not be processed",
   "invalid_limit": "Limit must be a number, that  greater than 0 and less than or equal to {{max}}",
   "invalid_max_items": "The number of {{name}} cannot exceed {{max}}.",

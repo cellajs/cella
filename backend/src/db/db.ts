@@ -11,11 +11,6 @@ import { env } from '../env';
 
 export type DBSchema = typeof schema;
 
-/**
- * ✅ Key change: type/satisfies DrizzleConfig WITH the schema type.
- * If you annotate as plain `DrizzleConfig`, TS may widen schema and you get
- * `Record<string, never> | typeof schema` in the DB type.
- */
 export const dbConfig = {
   logger: appConfig.debug,
   casing: 'snake_case',
@@ -66,6 +61,6 @@ const initConnections = (): { db: DB; migrationDb?: PgDB; adminDb?: PgDB } => {
 
 const connections = initConnections();
 
-export const unsafeInternalDb: DB = connections.db;
+export const baseDb: DB = connections.db;
 export const migrationDb: PgDB | undefined = connections.migrationDb;
 export const unsafeInternalAdminDb: PgDB | undefined = connections.adminDb;

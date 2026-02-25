@@ -12,7 +12,6 @@ const isTest = env.NODE_ENV === 'test';
 export const cdcLogger = pino(
   {
     level: isTest ? 'silent' : isProduction ? 'info' : env.DEBUG ? 'debug' : 'info',
-    name: 'cdc-worker',
   },
   isProduction
     ? undefined

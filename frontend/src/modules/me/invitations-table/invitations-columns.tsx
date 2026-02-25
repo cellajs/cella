@@ -6,7 +6,7 @@ import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useHandleInvitationMutation } from '~/modules/me/query';
 import type { Invitation } from '~/modules/me/types';
 import { Button } from '~/modules/ui/button';
-import { UserCellById } from '~/modules/user/user-cell';
+import { UserCell } from '~/modules/user/user-cell';
 import { dateShort } from '~/utils/date-short';
 
 export const useColumns = () => {
@@ -87,9 +87,12 @@ export const useColumns = () => {
       visible: !isMobile,
       minWidth: 120,
       renderHeaderCell: HeaderCell,
-      renderCell: ({ row, tabIndex }) => (
-        <UserCellById userId={row.inactiveMembership.createdBy} cacheOnly={false} tabIndex={tabIndex} />
-      ),
+      renderCell: ({ row, tabIndex }) =>
+        row.inactiveMembership.createdBy ? (
+          <UserCell compactable user={row.inactiveMembership.createdBy} tabIndex={tabIndex} />
+        ) : (
+          <span className="text-muted">-</span>
+        ),
     },
     {
       key: 'actions',

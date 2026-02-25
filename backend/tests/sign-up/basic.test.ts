@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { testClient } from 'hono/testing';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { unsafeInternalDb as db } from '#/db/db';
+import { baseDb as db } from '#/db/db';
 import { usersTable } from '#/db/schema/users';
 import { defaultHeaders, signUpUser } from '../fixtures';
 import { createPasswordUser } from '../helpers';

@@ -80,7 +80,8 @@ function PagesTable() {
         if (column.key === 'status' && page.status !== originalPage.status) {
           updateMutation.mutate({
             id: page.id,
-            data: { status: page.status },
+            key: 'status',
+            data: page.status,
           });
         }
       }
@@ -129,7 +130,8 @@ function PagesTable() {
         if (newOrder !== draggedPage.displayOrder) {
           updateMutation.mutate({
             id: draggedPage.id,
-            data: { displayOrder: newOrder },
+            key: 'displayOrder',
+            data: newOrder,
           });
         }
       }

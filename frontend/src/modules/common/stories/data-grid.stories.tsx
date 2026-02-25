@@ -199,6 +199,28 @@ const focusableColumns: Column<Person>[] = [
   { key: 'department', name: 'Department', width: 120 },
 ];
 
+// Columns with interactive links (used to verify none-mode accessibility behavior)
+const linkColumns: Column<Person>[] = [
+  { key: 'firstName', name: 'First Name', width: 140 },
+  { key: 'lastName', name: 'Last Name', width: 140 },
+  {
+    key: 'email',
+    name: 'Email link',
+    width: 260,
+    renderCell: ({ row }) => (
+      <a
+        href={`mailto:${row.email}`}
+        tabIndex={0}
+        onClick={(event) => event.preventDefault()}
+        className="text-primary underline underline-offset-2"
+      >
+        {row.email}
+      </a>
+    ),
+  },
+  { key: 'department', name: 'Department', width: 140 },
+];
+
 /**
  * A high-performance data grid component with advanced features including
  * cell range selection, responsive columns, mobile sub-rows, and touch mode.
@@ -310,6 +332,27 @@ export const SelectionModeNone: Story = {
 };
 
 /**
+ * No selection mode with interactive links.
+ * Grid cells are not tabbable/selectable, while links remain keyboard focusable and clickable.
+ */
+export const SelectionModeNoneWithLinks: Story = {
+  render: (args) => (
+    <div className="space-y-4">
+      <div className="text-sm text-muted-foreground">
+        Use Tab to focus links in the Email column. Cells are not selectable in none mode.
+      </div>
+      <div style={{ height: 350 }}>
+        <DataGrid {...args} selectionMode="none" />
+      </div>
+    </div>
+  ),
+  args: {
+    columns: linkColumns,
+    rows: sampleData,
+  },
+};
+
+/**
  * Single cell selection mode.
  */
 export const SelectionModeCell: Story = {
@@ -335,7 +378,7 @@ export const SelectionModeCellRange: Story = {
         <div className="text-sm text-muted-foreground">
           {selectedRange
             ? `Selected: (${selectedRange.start.idx}, ${selectedRange.start.rowIdx}) to (${selectedRange.end.idx}, ${selectedRange.end.rowIdx})`
-            : 'Use Shift+Click or Shift+Arrow keys to select a range'}
+            : 'Select a cell, then use Shift+Click or Shift+Arrow keys to extend the range'}
         </div>
         <div style={{ height: 350 }}>
           <DataGrid

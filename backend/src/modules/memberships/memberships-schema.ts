@@ -4,7 +4,7 @@ import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { membershipsTable } from '#/db/schema/memberships';
 import { createSelectSchema } from '#/db/utils/drizzle-schema';
 import { contextEntityTypeSchema, paginationQuerySchema, validEmailSchema, validIdSchema } from '#/schemas';
-import { userBaseSchema } from '#/schemas/user-schema-base';
+import { userBaseSchema, userMinimalBaseSchema } from '#/schemas/user-schema-base';
 import {
   mockInactiveMembershipResponse,
   mockMembershipBase,
@@ -32,6 +32,7 @@ export const inactiveMembershipSchema = z
     // Override enum columns with explicit schemas to preserve literal types
     role: entityRoleSchema,
     contextType: contextEntityTypeSchema,
+    createdBy: userMinimalBaseSchema.nullable(),
   })
   .openapi('InactiveMembership', {
     description: 'A membership record for a user who has not yet accepted an invitation.',
@@ -81,5 +82,5 @@ export const pendingMembershipSchema = z.object({
   thumbnailUrl: userBaseSchema.shape.thumbnailUrl.nullable(),
   role: membershipSchema.shape.role.nullable(),
   createdAt: membershipSchema.shape.createdAt,
-  createdBy: membershipSchema.shape.createdBy.nullable(),
+  createdBy: userMinimalBaseSchema.nullable(),
 });

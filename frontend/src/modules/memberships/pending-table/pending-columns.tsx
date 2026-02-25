@@ -4,7 +4,7 @@ import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { HeaderCell } from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import type { PendingMembership } from '~/modules/memberships/types';
-import { UserCellById } from '~/modules/user/user-cell';
+import { UserCell } from '~/modules/user/user-cell';
 import { dateShort } from '~/utils/date-short';
 
 export const useColumns = () => {
@@ -62,9 +62,12 @@ export const useColumns = () => {
         visible: !isMobile,
         minWidth: 80,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row, tabIndex }) => (
-          <UserCellById userId={row.createdBy} cacheOnly={false} tabIndex={tabIndex} />
-        ),
+        renderCell: ({ row, tabIndex }) =>
+          row.createdBy ? (
+            <UserCell compactable user={row.createdBy} tabIndex={tabIndex} />
+          ) : (
+            <span className="text-muted">-</span>
+          ),
       },
     ];
 

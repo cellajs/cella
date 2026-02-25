@@ -2,7 +2,6 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
 import type { EnabledOAuthProvider } from 'shared';
 import { appConfig } from 'shared';
-import { unsafeInternalDb as db } from '#/db/db';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { membershipsTable } from '#/db/schema/memberships';
 import { AuthStrategy, sessionsTable } from '#/db/schema/sessions';
@@ -22,6 +21,7 @@ import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { makeContextEntityBaseSelect } from '#/modules/entities/helpers/select';
 import { getAuthInfo, getUserSessions } from '#/modules/me/helpers/get-user-info';
 import meRoutes from '#/modules/me/me-routes';
+import { withAuditUsers } from '#/modules/user/helpers/audit-user';
 import { userSelect } from '#/modules/user/helpers/select';
 import { entityTables } from '#/table-config';
 import { defaultHook } from '#/utils/default-hook';
@@ -44,6 +44,7 @@ const meRouteHandlers = app
    * Get me
    */
   .openapi(meRoutes.getMe, async (ctx) => {
+    const db = ctx.var.db;
     const user = ctx.var.user;
     const systemRole = ctx.var.userSystemRole ?? ('user' as const);
 
@@ -63,6 +64,7 @@ const meRouteHandlers = app
    * Toggle MFA require for me auth
    */
   .openapi(meRoutes.toggleMfa, async (ctx) => {
+    const db = ctx.var.db;
     const { mfaRequired, passkeyData, totpCode } = ctx.req.valid('json');
     const user = ctx.var.user;
 
@@ -132,8 +134,11 @@ const meRouteHandlers = app
    * Get my invitations - a list with a combination of pending membership and entity data
    */
   .openapi(meRoutes.getMyInvitations, async (ctx) => {
+    const db = ctx.var.db;
     const user = ctx.var.user;
 
+    // crossTenantGuard sets user RLS context (app.user_id + app.is_authenticated)
+    // select_own_policy on inactive_memberships allows reading own invitations
     const pendingInvites = await Promise.all(
       appConfig.contextEntityTypes.map((entityType) => {
         const entityTable = entityTables[entityType];
@@ -147,7 +152,6 @@ const meRouteHandlers = app
             inactiveMembership: inactiveMembershipsTable,
           })
           .from(inactiveMembershipsTable)
-          .leftJoin(usersTable, eq(usersTable.id, inactiveMembershipsTable.createdBy))
           .innerJoin(
             entityTable,
             eq(entityTable.id, inactiveMembershipsTable[entityIdColumnKey as InactiveEntityIdColumnNames]),
@@ -162,7 +166,15 @@ const meRouteHandlers = app
       }),
     );
 
-    const items = pendingInvites.flat();
+    const rawItems = pendingInvites.flat();
+
+    // Populate createdBy on inactiveMemberships with user objects
+    const allMemberships = rawItems.map((item) => item.inactiveMembership);
+    const populatedMemberships = await withAuditUsers(allMemberships, db);
+    const items = rawItems.map((item, i) => ({
+      ...item,
+      inactiveMembership: populatedMemberships[i],
+    }));
     const total = items.length;
 
     return ctx.json({ items, total }, 200);
@@ -171,6 +183,7 @@ const meRouteHandlers = app
    * Terminate one or more of my sessions
    */
   .openapi(meRoutes.deleteMySessions, async (ctx) => {
+    const db = ctx.var.db;
     const { ids } = ctx.req.valid('json');
     const user = ctx.var.user;
 
@@ -199,6 +212,7 @@ const meRouteHandlers = app
    * Update current user (me)
    */
   .openapi(meRoutes.updateMe, async (ctx) => {
+    const db = ctx.var.db;
     const user = ctx.var.user;
 
     if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { user: 'self' } });
@@ -233,6 +247,7 @@ const meRouteHandlers = app
    * Delete current user (me)
    */
   .openapi(meRoutes.deleteMe, async (ctx) => {
+    const db = ctx.var.db;
     const user = ctx.var.user;
 
     // Check if user exists
@@ -250,6 +265,7 @@ const meRouteHandlers = app
    * Delete one of my entity memberships
    */
   .openapi(meRoutes.deleteMyMembership, async (ctx) => {
+    const db = ctx.var.db;
     const user = ctx.var.user;
 
     const { entityType, entityId } = ctx.req.valid('query');
@@ -311,6 +327,7 @@ const meRouteHandlers = app
    * Unsubscribe myself by token from receiving newsletters
    */
   .openapi(meRoutes.unsubscribeMe, async (ctx) => {
+    const db = ctx.var.db;
     const { token } = ctx.req.valid('query');
 
     // Check if token exists

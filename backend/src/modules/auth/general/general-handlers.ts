@@ -2,7 +2,6 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { and, desc, eq } from 'drizzle-orm';
 import i18n from 'i18next';
 import { appConfig } from 'shared';
-import { unsafeInternalDb as db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { sessionsTable } from '#/db/schema/sessions';
@@ -50,6 +49,7 @@ const authGeneralRouteHandlers = app
    * Check if email exists
    */
   .openapi(authGeneralRoutes.checkEmail, async (ctx) => {
+    const db = ctx.var.db;
     const { email } = ctx.req.valid('json');
 
     const normalizedEmail = email.toLowerCase().trim();
@@ -121,6 +121,7 @@ const authGeneralRouteHandlers = app
    * Get token data by single use token in cookie
    */
   .openapi(authGeneralRoutes.getTokenData, async (ctx) => {
+    const db = ctx.var.db;
     const { type: tokenType, id: tokenId } = ctx.req.valid('param');
 
     // Check if token session is valid
@@ -151,6 +152,7 @@ const authGeneralRouteHandlers = app
    * Start impersonation
    */
   .openapi(authGeneralRoutes.startImpersonation, async (ctx) => {
+    const db = ctx.var.db;
     const { targetUserId } = ctx.req.valid('query');
 
     const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, targetUserId)).limit(1);
@@ -168,6 +170,7 @@ const authGeneralRouteHandlers = app
    * Stop impersonation
    */
   .openapi(authGeneralRoutes.stopImpersonation, async (ctx) => {
+    const db = ctx.var.db;
     const { sessionToken, adminUserId } = await getParsedSessionCookie(ctx, { deleteAfterAttempt: true });
     const { session } = await validateSession(sessionToken);
 
@@ -196,6 +199,7 @@ const authGeneralRouteHandlers = app
    * Resend invitation email with token for entity invites and system invites.
    */
   .openapi(authGeneralRoutes.resendInvitationWithToken, async (ctx) => {
+    const db = ctx.var.db;
     const { email, tokenId } = ctx.req.valid('json');
 
     const normalizedEmail = email?.toLowerCase().trim();
@@ -303,6 +307,7 @@ const authGeneralRouteHandlers = app
    * Sign out
    */
   .openapi(authGeneralRoutes.signOut, async (ctx) => {
+    const db = ctx.var.db;
     const confirmMfa = await getAuthCookie(ctx, 'confirm-mfa');
 
     if (confirmMfa) {

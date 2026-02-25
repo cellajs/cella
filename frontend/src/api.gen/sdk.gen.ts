@@ -153,6 +153,9 @@ import type {
   GetTokenDataData,
   GetTokenDataErrors,
   GetTokenDataResponses,
+  GetUnseenCountsData,
+  GetUnseenCountsErrors,
+  GetUnseenCountsResponses,
   GetUploadTokenData,
   GetUploadTokenErrors,
   GetUploadTokenResponses,
@@ -175,6 +178,9 @@ import type {
   HandleMembershipInvitationResponses,
   InvokeTokenData,
   InvokeTokenErrors,
+  MarkSeenData,
+  MarkSeenErrors,
+  MarkSeenResponses,
   MembershipInviteData,
   MembershipInviteErrors,
   MembershipInviteResponses,
@@ -1250,6 +1256,32 @@ export const getMyMemberships = <ThrowOnError extends boolean = true>(
   });
 
 /**
+ * Get unseen counts
+ *
+ * Returns the number of unseen product entities per organization and entity type for the *current user*. Only entities created within the last 90 days are considered.
+ *
+ * **GET /unseen/counts** ·· [getUnseenCounts](https://api.cellajs.com/docs#tag/seen/get/unseen/counts) ·· _seen_
+ *
+ * @param {getUnseenCountsData} options
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const getUnseenCounts = <ThrowOnError extends boolean = true>(
+  options?: Options<GetUnseenCountsData, ThrowOnError>,
+) =>
+  (options?.client ?? client).get<GetUnseenCountsResponses, GetUnseenCountsErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/unseen/counts',
+    ...options,
+  });
+
+/**
  * Check slug availability
  *
  * Checks whether a given slug is available across all entity types (e.g. *organizations*, *users*).
@@ -1647,7 +1679,7 @@ export const getTenantById = <ThrowOnError extends boolean = true>(options: Opti
  *
  * Updates a tenant by ID. System admin access required.
  *
- * **PATCH /tenants/{tenantId}** ·· [updateTenant](https://api.cellajs.com/docs#tag/tenants/patch/tenants/{tenantId}) ·· _tenants_
+ * **PUT /tenants/{tenantId}** ·· [updateTenant](https://api.cellajs.com/docs#tag/tenants/put/tenants/{tenantId}) ·· _tenants_
  *
  * @param {updateTenantData} options
  * @param {string} options.path.tenantid - `string`
@@ -1656,7 +1688,7 @@ export const getTenantById = <ThrowOnError extends boolean = true>(options: Opti
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const updateTenant = <ThrowOnError extends boolean = true>(options: Options<UpdateTenantData, ThrowOnError>) =>
-  (options.client ?? client).patch<UpdateTenantResponses, UpdateTenantErrors, ThrowOnError, 'data'>({
+  (options.client ?? client).put<UpdateTenantResponses, UpdateTenantErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -1986,11 +2018,11 @@ export const getOrganizations = <ThrowOnError extends boolean = true>(
  *
  * Retrieves an *organization* by ID within a tenant. Pass `?slug=true` to resolve by slug instead.
  *
- * **GET /{tenantId}/organizations/{organizationId}** ·· [getOrganization](https://api.cellajs.com/docs#tag/organizations/get/{tenantId}/organizations/{organizationId}) ·· _organizations_
+ * **GET /{tenantId}/organizations/{id}** ·· [getOrganization](https://api.cellajs.com/docs#tag/organizations/get/{tenantId}/organizations/{id}) ·· _organizations_
  *
  * @param {getOrganizationData} options
  * @param {string} options.path.tenantid - `string`
- * @param {string} options.path.organizationid - `string`
+ * @param {string} options.path.id - `string`
  * @param {string | boolean=} options.query.slug - `string | boolean` (optional)
  * @param {string=} options.query.include - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
@@ -2007,7 +2039,7 @@ export const getOrganization = <ThrowOnError extends boolean = true>(
         type: 'apiKey',
       },
     ],
-    url: '/{tenantId}/organizations/{organizationId}',
+    url: '/{tenantId}/organizations/{id}',
     ...options,
   });
 
@@ -2170,12 +2202,8 @@ export const createPages = <ThrowOnError extends boolean = true>(options: Option
  * @param {updatePageData} options
  * @param {string} options.path.tenantid - `string`
  * @param {string} options.path.id - `string`
- * @param {string=} options.body.name - `string` (optional)
- * @param {string | null=} options.body.description - `string | null` (optional)
- * @param {string=} options.body.keywords - `string` (optional)
- * @param {number=} options.body.displayOrder - `number` (optional)
- * @param {enum=} options.body.status - `enum` (optional)
- * @param {string | null=} options.body.parentId - `string | null` (optional)
+ * @param {enum | enum | enum | enum | enum | enum=} options.body.key - `enum | enum | enum | enum | enum | enum` (optional)
+ * @param {string | number | boolean | any[] | null=} options.body.data - `string | number | boolean | any[] | null` (optional)
  * @param {any=} options.body.stx - `any` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
@@ -2420,8 +2448,8 @@ export const getAttachment = <ThrowOnError extends boolean = true>(options: Opti
  * @param {string} options.path.tenantid - `string`
  * @param {string} options.path.orgid - `string`
  * @param {string} options.path.id - `string`
- * @param {string=} options.body.name - `string` (optional)
- * @param {string=} options.body.originalKey - `string` (optional)
+ * @param {enum | enum=} options.body.key - `enum | enum` (optional)
+ * @param {string | null=} options.body.data - `string | null` (optional)
  * @param {any=} options.body.stx - `any` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
@@ -2673,4 +2701,36 @@ export const getPendingMemberships = <ThrowOnError extends boolean = true>(
     ],
     url: '/{tenantId}/{orgId}/memberships/pending',
     ...options,
+  });
+
+/**
+ * Mark entities as seen
+ *
+ * Records that the current user has viewed one or more product entities. Deduplicates against existing records. Updates entity view counts for newly seen entities.
+ *
+ * **POST /{tenantId}/{orgId}/seen** ·· [markSeen](https://api.cellajs.com/docs#tag/seen/post/{tenantId}/{orgId}/seen) ·· _seen_
+ *
+ * @param {markSeenData} options
+ * @param {string} options.path.tenantid - `string`
+ * @param {string} options.path.orgid - `string`
+ * @param {any[]=} options.body.entityIds - `any[]` (optional)
+ * @param {enum=} options.body.entityType - `enum` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const markSeen = <ThrowOnError extends boolean = true>(options: Options<MarkSeenData, ThrowOnError>) =>
+  (options.client ?? client).post<MarkSeenResponses, MarkSeenErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/{tenantId}/{orgId}/seen',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
   });

@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { appConfig } from 'shared';
-import { unsafeInternalDb as db } from '#/db/db';
+import { baseDb as db } from '#/db/db';
 import { tokensTable } from '#/db/schema/tokens';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { Env } from '#/lib/context';

@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/docs/x-routes';
-import { authGuard, orgGuard, tenantGuard } from '#/middlewares/guard';
+import { authGuard, crossTenantGuard, orgGuard, tenantGuard } from '#/middlewares/guard';
 import {
   memberListQuerySchema,
   membershipBaseSchema,
@@ -128,7 +128,7 @@ const membershipRoutes = {
     operationId: 'handleMembershipInvitation',
     method: 'post',
     path: '/{id}/{acceptOrReject}',
-    xGuard: [authGuard],
+    xGuard: [authGuard, crossTenantGuard],
     tags: ['memberships'],
     summary: 'Respond to membership invitation',
     description: 'Accepting activates the associated membership. Rejecting simply removes the invitation token.',

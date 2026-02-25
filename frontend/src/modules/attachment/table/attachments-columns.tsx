@@ -9,8 +9,9 @@ import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
 import { HeaderCell } from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import type { EnrichedContextEntity } from '~/modules/entities/types';
+import { SeenMark } from '~/modules/seen/seen-mark';
 import { Input } from '~/modules/ui/input';
-import { UserCellById } from '~/modules/user/user-cell';
+import { UserCell } from '~/modules/user/user-cell';
 import { dateShort } from '~/utils/date-short';
 
 export const useColumns = (entity: EnrichedContextEntity, isSheet: boolean, isCompact: boolean) => {
@@ -40,7 +41,12 @@ export const useColumns = (entity: EnrichedContextEntity, isSheet: boolean, isCo
         resizable: true,
         minWidth: 180,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row }) => <span className="font-medium">{row.name || '-'}</span>,
+        renderCell: ({ row }) => (
+          <>
+            <SeenMark entityId={row.id} tenantId={entity.tenantId} orgId={entity.id} entityType="attachment" />
+            <span className="font-medium">{row.name || '-'}</span>
+          </>
+        ),
         ...(canUpdate && {
           renderEditCell: ({ row, onRowChange }) => (
             <Input value={row.name} onChange={(e) => onRowChange({ ...row, name: e.target.value })} autoFocus />
@@ -108,6 +114,19 @@ export const useColumns = (entity: EnrichedContextEntity, isSheet: boolean, isCo
         ),
       },
       {
+        key: 'viewCount',
+        name: t('common:views'),
+        sortable: false,
+        visible: !isMobile && !isSheet,
+        minWidth: 80,
+        renderHeaderCell: HeaderCell,
+        renderCell: ({ row }) => (
+          <div className="inline-flex items-center gap-1 relative font-light group h-full w-full opacity-50">
+            {(row as Attachment & { viewCount?: number }).viewCount ?? 0}
+          </div>
+        ),
+      },
+      {
         key: 'createdAt',
         name: t('common:created_at'),
         sortable: true,
@@ -124,9 +143,12 @@ export const useColumns = (entity: EnrichedContextEntity, isSheet: boolean, isCo
         minWidth: isCompact ? null : 120,
         width: isCompact ? 50 : null,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row, tabIndex }) => (
-          <UserCellById userId={row.createdBy} cacheOnly={false} tabIndex={tabIndex} />
-        ),
+        renderCell: ({ row, tabIndex }) =>
+          row.createdBy ? (
+            <UserCell compactable user={row.createdBy} tabIndex={tabIndex} />
+          ) : (
+            <span className="text-muted">-</span>
+          ),
       },
       {
         key: 'modifiedAt',
@@ -144,12 +166,15 @@ export const useColumns = (entity: EnrichedContextEntity, isSheet: boolean, isCo
         visible: false,
         width: isCompact ? 80 : 120,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row, tabIndex }) => (
-          <UserCellById userId={row.modifiedBy} cacheOnly={true} tabIndex={tabIndex} />
-        ),
+        renderCell: ({ row, tabIndex }) =>
+          row.modifiedBy ? (
+            <UserCell compactable user={row.modifiedBy} tabIndex={tabIndex} />
+          ) : (
+            <span className="text-muted">-</span>
+          ),
       },
     ],
-    [t, isMobile, isSheet, isCompact, canUpdate],
+    [t, isMobile, isSheet, isCompact, canUpdate, entity.tenantId, entity.id],
   );
 
   return columns;

@@ -105,7 +105,7 @@ export const tenantRoutes = {
    */
   updateTenant: createXRoute({
     operationId: 'updateTenant',
-    method: 'patch',
+    method: 'put',
     path: '/{tenantId}',
     xGuard: [authGuard, sysAdminGuard],
     tags: ['tenants'],

@@ -44,6 +44,8 @@ BEGIN
     GRANT SELECT, INSERT, UPDATE, DELETE ON emails TO runtime_role;
     GRANT SELECT, INSERT, UPDATE, DELETE ON rate_limits TO runtime_role;
     GRANT SELECT, INSERT, UPDATE, DELETE ON context_counters TO runtime_role;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON seen_by TO runtime_role;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON seen_counts TO runtime_role;
     GRANT SELECT ON tenants TO runtime_role;
     GRANT SELECT ON system_roles TO runtime_role;
     GRANT SELECT ON activities TO runtime_role;

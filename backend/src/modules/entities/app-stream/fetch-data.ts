@@ -1,6 +1,6 @@
 import { and, desc, eq, gt, inArray, or, sql } from 'drizzle-orm';
 import { appConfig } from 'shared';
-import { unsafeInternalDb as db } from '#/db/db';
+import { baseDb as db } from '#/db/db';
 import { activitiesTable } from '#/db/schema/activities';
 import { contextCountersTable } from '#/db/schema/context-counters';
 import type { AppCatchupResponse } from '#/schemas';

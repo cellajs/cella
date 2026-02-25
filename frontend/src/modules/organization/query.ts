@@ -19,6 +19,7 @@ import {
   createEntityKeys,
   findInListCache,
   invalidateIfLastMutation,
+  preserveIncluded,
   registerEntityQueryKeys,
   useMutateQueryData,
 } from '~/query/basic';
@@ -47,8 +48,9 @@ export const findOrganizationInListCache = (idOrSlug: string) =>
 export const organizationQueryOptions = (id: string, tenantId: string) =>
   queryOptions({
     queryKey: keys.detail.byId(id),
-    queryFn: async () => getOrganization({ path: { tenantId, organizationId: id }, query: { include: 'counts' } }),
+    queryFn: async () => getOrganization({ path: { tenantId, id }, query: { include: 'counts' } }),
     placeholderData: () => findOrganizationInListCache(id),
+    structuralSharing: preserveIncluded,
   });
 
 type OrganizationsListParams = Omit<NonNullable<GetOrganizationsData['query']>, 'limit' | 'offset'> & {

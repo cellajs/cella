@@ -890,9 +890,29 @@
                         "required": true
                       },
                       "createdBy": {
-                        "type": "string",
+                        "type": ["object", "null"],
                         "required": true,
-                        "maxLength": 50
+                        "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                        "properties": {
+                          "id": { "type": "string", "required": true },
+                          "name": { "type": "string", "required": true },
+                          "slug": { "type": "string", "required": true },
+                          "thumbnailUrl": {
+                            "type": ["string", "null"],
+                            "required": true
+                          },
+                          "email": {
+                            "type": "string",
+                            "required": true,
+                            "format": "email"
+                          },
+                          "entityType": {
+                            "type": "string",
+                            "required": true,
+                            "enum": ["user"]
+                          }
+                        },
+                        "extendsRef": "#/components/schemas/UserMinimalBase"
                       },
                       "organizationId": {
                         "type": "string",

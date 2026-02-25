@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { unsafeInternalDb as db, migrateConfig, migrationDb } from '#/db/db';
+import { baseDb as db, migrateConfig, migrationDb } from '#/db/db';
 import docs from '#/docs/docs';
 import '#/lib/i18n';
 import { serve } from '@hono/node-server';
@@ -28,7 +28,7 @@ process.on('uncaughtException', (err) => {
   setTimeout(() => process.exit(1), 500);
 });
 process.on('SIGTERM', () => {
-  process.stderr.write('[startup] Received SIGTERM — process killed (likely by Render timeout)\n');
+  process.stderr.write('[startup] Received SIGTERM — process killed\n');
   setTimeout(() => process.exit(1), 200);
 });
 

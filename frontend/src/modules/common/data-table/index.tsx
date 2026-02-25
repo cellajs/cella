@@ -6,6 +6,7 @@ import {
   DataGrid,
   type RenderRowProps,
   type RowsChangeData,
+  type SelectionMode,
   type SortColumn,
 } from '~/modules/common/data-grid';
 import '~/modules/common/data-grid/style/data-grid.css';
@@ -43,6 +44,7 @@ interface DataTableProps<TData> {
   onSelectedRowsChange?: (selectedRows: Set<string>) => void;
   sortColumns?: SortColumn[];
   onSortColumnsChange?: (sortColumns: SortColumn[]) => void;
+  selectionMode?: SelectionMode;
   rowHeight?: number;
   hideHeader?: boolean;
   enableVirtualization?: boolean;
@@ -51,6 +53,8 @@ interface DataTableProps<TData> {
   className?: string;
   /** When true, hides infinite loader (for static/non-paginated tables) */
   readOnly?: boolean;
+  /** Per-row function to disable selection (e.g. cross-tenant constraint) */
+  isRowSelectionDisabled?: (row: TData) => boolean;
 }
 
 /**
@@ -71,6 +75,7 @@ export const DataTable = <TData,>({
   onSelectedRowsChange,
   sortColumns,
   onSortColumnsChange,
+  selectionMode,
   rowHeight = 52,
   hideHeader,
   enableVirtualization,
@@ -81,6 +86,7 @@ export const DataTable = <TData,>({
   onCellClick,
   className,
   readOnly,
+  isRowSelectionDisabled,
 }: DataTableProps<TData>) => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm', false);
@@ -149,10 +155,11 @@ export const DataTable = <TData,>({
                 style={{ blockSize: '100%', marginRight: columns.length % 2 === 0 ? '0' : '.05rem' }}
                 selectedRows={selectedRows}
                 onSelectedRowsChange={handleSelectedRowsChange}
+                isRowSelectionDisabled={isRowSelectionDisabled}
                 sortColumns={sortColumns}
                 onSortColumnsChange={onSortColumnsChange}
                 onRowsEndApproaching={handleRowsEndApproaching}
-                selectionMode={readOnly ? 'none' : undefined}
+                selectionMode={selectionMode ?? (readOnly ? 'none' : undefined)}
                 renderers={{
                   renderRow,
                   renderCell,

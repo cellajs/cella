@@ -3,6 +3,18 @@
 import * as z from 'zod';
 
 /**
+ * Minimal user data for references (e.g. createdBy, modifiedBy).
+ */
+export const zUserMinimalBase = z.object({
+  id: z.string(),
+  name: z.string(),
+  slug: z.string(),
+  thumbnailUrl: z.string().nullable(),
+  email: z.email(),
+  entityType: z.enum(['user']),
+});
+
+/**
  * Base user schema with essential fields for identification and display.
  */
 export const zUserBase = z.object({
@@ -253,7 +265,7 @@ export const zInactiveMembership = z.object({
   tokenId: z.string().max(50).nullable(),
   role: z.enum(['admin', 'member']),
   rejectedAt: z.string().nullable(),
-  createdBy: z.string().max(50),
+  createdBy: zUserMinimalBase.and(z.record(z.string(), z.unknown())).nullable(),
   organizationId: z.string().max(50),
 });
 
@@ -311,8 +323,8 @@ export const zOrganization = z.object({
   slug: z.string().max(255),
   thumbnailUrl: z.string().max(2048).nullable(),
   bannerUrl: z.string().max(2048).nullable(),
-  createdBy: z.string().max(50).nullable(),
-  modifiedBy: z.string().max(50).nullable(),
+  createdBy: zUserMinimalBase.and(z.record(z.string(), z.unknown())).nullable(),
+  modifiedBy: zUserMinimalBase.and(z.record(z.string(), z.unknown())).nullable(),
   shortName: z.string().max(255).nullable(),
   country: z.string().max(255).nullable(),
   timezone: z.string().max(255).nullable(),
@@ -346,7 +358,7 @@ export const zOrganization = z.object({
 });
 
 /**
- * A content page belonging to an organization.
+ * A content page for documentation purposes.
  */
 export const zPage = z.object({
   createdAt: z.string(),
@@ -358,8 +370,8 @@ export const zPage = z.object({
   stx: zStxBase,
   description: z.string().max(1000000).nullable(),
   keywords: z.string().max(1000000),
-  createdBy: z.string().max(50).nullable(),
-  modifiedBy: z.string().max(50).nullable(),
+  createdBy: zUserMinimalBase.and(z.record(z.string(), z.unknown())).nullable(),
+  modifiedBy: zUserMinimalBase.and(z.record(z.string(), z.unknown())).nullable(),
   status: z.enum(['unpublished', 'published', 'archived']),
   publicAccess: z.boolean(),
   parentId: z.string().max(50).nullable(),
@@ -388,8 +400,8 @@ export const zAttachment = z.object({
   stx: zStxBase,
   description: z.string().max(1000000).nullable(),
   keywords: z.string().max(1000000),
-  createdBy: z.string().max(50).nullable(),
-  modifiedBy: z.string().max(50).nullable(),
+  createdBy: zUserMinimalBase.and(z.record(z.string(), z.unknown())).nullable(),
+  modifiedBy: zUserMinimalBase.and(z.record(z.string(), z.unknown())).nullable(),
   public: z.boolean(),
   bucketName: z.string().max(255),
   groupId: z.string().max(50).nullable(),
@@ -401,6 +413,7 @@ export const zAttachment = z.object({
   convertedKey: z.string().max(2048).nullable(),
   thumbnailKey: z.string().max(2048).nullable(),
   organizationId: z.string().max(50),
+  viewCount: z.int().gte(0).optional(),
 });
 
 /**
@@ -989,6 +1002,17 @@ export const zGetMyMembershipsResponse = z.object({
   items: z.array(zMembershipBase),
 });
 
+export const zGetUnseenCountsData = z.object({
+  body: z.never().optional(),
+  path: z.never().optional(),
+  query: z.never().optional(),
+});
+
+/**
+ * Unseen counts per org per entity type
+ */
+export const zGetUnseenCountsResponse = z.record(z.string(), z.record(z.string(), z.int().gte(0)));
+
 export const zCheckSlugData = z.object({
   body: z.object({
     slug: z.string(),
@@ -1507,7 +1531,7 @@ export const zGetOrganizationData = z.object({
   body: z.never().optional(),
   path: z.object({
     tenantId: z.string().max(50),
-    organizationId: z.string().max(50),
+    id: z.string().max(50),
   }),
   query: z
     .object({
@@ -1647,12 +1671,15 @@ export const zCreatePagesResponse = z.union([
 
 export const zUpdatePageData = z.object({
   body: z.object({
-    name: z.string().max(255).optional(),
-    description: z.string().max(1000000).nullish(),
-    keywords: z.string().max(1000000).optional(),
-    displayOrder: z.number().gte(-140737488355328).lte(140737488355327).optional(),
-    status: z.enum(['unpublished', 'published', 'archived']).optional(),
-    parentId: z.string().max(50).nullish(),
+    key: z.union([
+      z.enum(['name']),
+      z.enum(['description']),
+      z.enum(['keywords']),
+      z.enum(['displayOrder']),
+      z.enum(['status']),
+      z.enum(['parentId']),
+    ]),
+    data: z.union([z.string(), z.number(), z.boolean(), z.array(z.string())]).nullable(),
     stx: zStxRequestBase,
   }),
   path: z.object({
@@ -1774,8 +1801,6 @@ export const zCreateAttachmentsData = z.object({
         filename: z.string().max(255),
         contentType: z.string().max(255),
         size: z.string().max(255),
-        organizationId: z.string().max(50),
-        createdBy: z.string().max(50).nullish(),
         originalKey: z.string().max(2048),
         bucketName: z.string().max(255),
         public: z.boolean().optional(),
@@ -1841,8 +1866,8 @@ export const zGetAttachmentResponse = zAttachment;
 
 export const zUpdateAttachmentData = z.object({
   body: z.object({
-    name: z.string().max(255).optional(),
-    originalKey: z.string().max(2048).optional(),
+    key: z.union([z.enum(['name']), z.enum(['originalKey'])]),
+    data: z.string().nullable(),
     stx: zStxRequestBase,
   }),
   path: z.object({
@@ -2026,8 +2051,27 @@ export const zGetPendingMembershipsResponse = z.object({
       thumbnailUrl: z.string().nullable(),
       role: z.enum(['admin', 'member']).nullable(),
       createdAt: z.string(),
-      createdBy: z.string().max(50).nullable(),
+      createdBy: zUserMinimalBase.and(z.record(z.string(), z.unknown())).nullable(),
     }),
   ),
   total: z.number(),
+});
+
+export const zMarkSeenData = z.object({
+  body: z.object({
+    entityIds: z.array(z.string().max(50)).min(1).max(500),
+    entityType: z.enum(['attachment', 'page']),
+  }),
+  path: z.object({
+    tenantId: z.string().max(50),
+    orgId: z.string().max(50),
+  }),
+  query: z.never().optional(),
+});
+
+/**
+ * Seen records processed
+ */
+export const zMarkSeenResponse = z.object({
+  newCount: z.int().gte(0),
 });

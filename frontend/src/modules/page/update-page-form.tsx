@@ -2,14 +2,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { Check, EyeIcon, Loader2 } from 'lucide-react';
-import { lazy, Suspense, useCallback, useMemo, useState } from 'react';
-import type { UseFormProps } from 'react-hook-form';
+import { lazy, Suspense, useCallback, useState } from 'react';
+import type { Control, FieldValues, UseFormProps } from 'react-hook-form';
 import { useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
-import type { z } from 'zod';
+import { z } from 'zod';
 import type { Page } from '~/api.gen';
-import { zUpdatePageData } from '~/api.gen/zod.gen';
 import { useAutoSave } from '~/hooks/use-auto-save';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
@@ -22,8 +21,11 @@ import { Form } from '~/modules/ui/form';
 
 const BlockNoteContentField = lazy(() => import('~/modules/common/form-fields/blocknote-content'));
 
-// Pick only the fields this form manages
-const formSchema = zUpdatePageData.shape.body.pick({ name: true, description: true });
+// Form schema for name/description editing
+const formSchema = z.object({
+  name: z.string().min(1).max(255),
+  description: z.string().max(1000000),
+});
 
 type FormValues = z.infer<typeof formSchema>;
 
@@ -53,64 +55,42 @@ export function UpdatePageForm({ page }: Props) {
   // Watch form values for auto-save
   const watchedValues = useWatch({ control: form.control });
 
-  // Memoize form data for auto-save
-  const formData = useMemo(
-    () => ({
-      name: watchedValues.name ?? page.name,
-      description: watchedValues.description ?? page.description ?? '',
-    }),
-    [watchedValues.name, watchedValues.description, page.name, page.description],
-  );
-
-  // Check if form has actual changes compared to original page
-  const hasChanges = useCallback(
-    (data: FormValues): boolean => {
-      const nameChanged = data.name !== page.name;
-      const descriptionChanged = data.description !== page.description;
-      return nameChanged || descriptionChanged;
-    },
-    [page.name, page.description],
-  );
-
-  // Save handler using mutation (fire-and-forget for offline support)
-  const handleSave = useCallback(
-    (data: FormValues) => {
+  // Save a single field via mutation
+  const saveField = useCallback(
+    (key: 'name' | 'description', value: string) => {
       setSaveStatus('saving');
-
       updatePage.mutate(
-        { id: page.id, data },
+        { id: page.id, key, data: value },
         {
           onSuccess: () => {
-            form.reset(data);
             setSaveStatus('saved');
             setTimeout(() => setSaveStatus('idle'), 1000);
           },
-          onError: () => {
-            setSaveStatus('idle');
-          },
+          onError: () => setSaveStatus('idle'),
         },
       );
-
-      // For offline: optimistic update happens in onMutate, show "saved" after short delay
-      // The mutation will be paused and resume when online
+      // For offline: optimistic update happens in onMutate
       if (updatePage.isPaused) {
-        form.reset(data);
         setSaveStatus('saved');
         setTimeout(() => setSaveStatus('idle'), 1000);
       }
     },
-    [page.id, updatePage, form],
+    [page.id, updatePage],
   );
 
-  // Auto-save with 5s inactivity delay and 30s max delay
-  const { hasUnsavedChanges } = useAutoSave({
-    data: formData,
-    hasChanges,
-    onSave: handleSave,
+  // Per-field auto-save: description (time-based since users type continuously)
+  const descriptionValue = watchedValues.description ?? page.description ?? '';
+  const { hasUnsavedChanges: descriptionUnsaved } = useAutoSave({
+    data: descriptionValue,
+    hasChanges: (val) => val !== (page.description ?? ''),
+    onSave: (val) => saveField('description', val),
     inactivityDelay: 5000,
     maxDelay: 30000,
     enabled: !form.loading,
   });
+
+  const nameUnsaved = (watchedValues.name ?? page.name) !== page.name;
+  const hasUnsavedChanges = nameUnsaved || descriptionUnsaved;
 
   // Prevent data loss on navigation
   useBeforeUnload(hasUnsavedChanges);
@@ -164,15 +144,19 @@ export function UpdatePageForm({ page }: Props) {
         <form className="space-y-6 [&_label]:hidden">
           <InputFormField
             inputClassName="h-14 text-4xl font-bold border-0 p-0 focus:ring-0 focus:ring-offset-0 shadow-none"
-            control={form.control}
+            control={form.control as unknown as Control<FieldValues>}
             name="name"
             label={t('common:title')}
             required
+            onBlur={() => {
+              const val = form.getValues('name');
+              if (val !== page.name) saveField('name', val);
+            }}
           />
 
           <Suspense fallback={<Spinner className="my-16 h-6 w-6 opacity-50" noDelay />}>
             <BlockNoteContentField
-              control={form.control}
+              control={form.control as unknown as Control<FieldValues>}
               name="description"
               autoFocus
               baseBlockNoteProps={{

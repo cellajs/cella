@@ -12,8 +12,8 @@ export const productEntityColumns = <T extends ProductEntityType>(entityType: T)
   ...tenantEntityColumns(entityType),
   name: varchar({ length: maxLength.field }).notNull().default(`New ${entityType}`), // Override default name
   ...stxColumns,
-  description: varchar({ length: maxLength.html }),
-  keywords: varchar({ length: maxLength.html }).notNull(),
+  description: varchar({ length: maxLength.html }).default(''),
+  keywords: varchar({ length: maxLength.html }).notNull().default(''),
   createdBy: varchar({ length: maxLength.id }).references(() => usersTable.id, { onDelete: 'set null' }),
   modifiedBy: varchar({ length: maxLength.id }).references(() => usersTable.id, { onDelete: 'set null' }),
 });

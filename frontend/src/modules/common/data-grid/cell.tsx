@@ -74,7 +74,7 @@ function Cell<R, SR>({
     onMouseDown?.(event);
     if (!handleMouseEvent(event, onCellMouseDown)) {
       // select cell if the event is not prevented
-      selectCellWrapper();
+      selectCell({ rowIdx, idx: column.idx }, { extendSelection: event.shiftKey });
     }
   }
 

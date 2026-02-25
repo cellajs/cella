@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { unsafeInternalDb as db } from '#/db/db';
+import { baseDb as db } from '#/db/db';
 import { env } from '#/env';
 
 export type HealthStatus = 'healthy' | 'degraded' | 'unhealthy';

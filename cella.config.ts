@@ -56,6 +56,7 @@ export default defineConfig({
       "shared/production-config.ts",
       "shared/tunnel-config.ts",
       "shared/hierarchy-config.ts",
+      "shared/permissions-config.ts",
       "frontend/package.json",
       "frontend/public/favicon.ico",
       "frontend/public/favicon.svg",

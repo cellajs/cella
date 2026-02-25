@@ -1,6 +1,6 @@
 import type { Context } from 'hono';
 import { RateLimiterDrizzle, RateLimiterMemory, type RateLimiterRes } from 'rate-limiter-flexible';
-import { unsafeInternalDb as db } from '#/db/db';
+import { baseDb as db } from '#/db/db';
 import { rateLimitsTable } from '#/db/schema/rate-limits';
 import { env } from '#/env';
 import type { Env } from '#/lib/context';

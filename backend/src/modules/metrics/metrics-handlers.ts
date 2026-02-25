@@ -3,7 +3,6 @@ import { count } from 'drizzle-orm';
 import { register } from 'prom-client';
 import { appConfig } from 'shared';
 import type { z } from 'zod';
-import { unsafeInternalDb as db } from '#/db/db';
 import { getCacheMetrics } from '#/lib/cache-metrics';
 import type { Env } from '#/lib/context';
 import { entityCache } from '#/middlewares/entity-cache';
@@ -142,6 +141,7 @@ const metricsRouteHandlers = app
    * Get public counts with caching
    */
   .openapi(metricRoutes.getPublicCounts, async (ctx) => {
+    const db = ctx.var.db;
     const cacheKey = 'publicCounts';
     const cached = publicCountsCache.get(cacheKey);
 

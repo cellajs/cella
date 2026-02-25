@@ -9,7 +9,6 @@ import { queryClient } from '~/query/query-client';
 /** Find an entity's slug by scanning list caches for that entity type */
 function findEntitySlugInCache(entityType: ContextEntityType, entityId: string): string | null {
   const keys = getEntityQueryKeys(entityType);
-  if (!keys) return null;
 
   for (const [, data] of queryClient.getQueriesData<InfiniteData>({ queryKey: keys.list.base })) {
     if (!data?.pages) continue;

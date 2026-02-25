@@ -1,5 +1,5 @@
-import { appConfig } from '../../app-config';
-import { configureAccessPolicies } from './access-policies';
+import { appConfig } from './app-config';
+import { configureAccessPolicies } from './src/permissions/access-policies';
 
 /**
  * Access policies for each entity type.
@@ -26,7 +26,6 @@ export const accessPolicies = configureAccessPolicies(appConfig.entityTypes, ({ 
       contexts.organization.member({ create: 1, read: 1, update: 0, delete: 1 });
       break;
     case 'page':
-      // No policies configured for pages
       break;
   }
 });

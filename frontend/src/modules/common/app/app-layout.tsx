@@ -9,6 +9,7 @@ import { Sheeter } from '~/modules/common/sheeter/provider';
 import { TabCoordinator } from '~/modules/common/tab-coordinator';
 import { Uploader } from '~/modules/common/uploader/uploader';
 import { AppNav } from '~/modules/navigation/app-nav';
+import { SeenTracker } from '~/modules/seen/seen-tracker';
 import { SidebarWrapper } from '~/modules/ui/sidebar';
 import { AppStream } from '~/query/realtime';
 
@@ -32,6 +33,7 @@ function AppLayout() {
         </SidebarWrapper>
         <TabCoordinator />
         <AppStream />
+        <SeenTracker />
         <Uploader />
         <Dialoger />
         <AppSheets />

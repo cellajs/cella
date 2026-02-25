@@ -10,7 +10,7 @@
     "start": "cross-env NODE_ENV=production tsx dist/index.js",
     "dev": "cross-env NODE_ENV=development tsx --watch-path=src src/index.ts",
     "tunnel": "cross-env NODE_ENV=tunnel tsx --watch-path=src src/index.ts",
-    "ts": "tsgo --pretty",
+    "ts": "cd .. && tsgo -p backend/tsconfig.json --pretty",
     "ts:old": "tsc --pretty",
     "tsperf": "rm -rf dist && rm -rf tsconfig.tsbuildinfo && tsgo --extendedDiagnostics",
     "tsperf:old": "rm -rf dist && rm -rf tsconfig.tsbuildinfo && tsc --extendedDiagnostics",

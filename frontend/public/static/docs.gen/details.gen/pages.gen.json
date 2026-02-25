@@ -16,7 +16,7 @@
               "ref": "#/components/schemas/Page",
               "items": {
                 "type": "object",
-                "description": "A content page belonging to an organization.",
+                "description": "A content page for documentation purposes.",
                 "properties": {
                   "createdAt": { "type": "string", "required": true },
                   "id": {
@@ -66,14 +66,54 @@
                     "maxLength": 1000000
                   },
                   "createdBy": {
-                    "type": ["string", "null"],
+                    "type": ["object", "null"],
                     "required": true,
-                    "maxLength": 50
+                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                    "properties": {
+                      "id": { "type": "string", "required": true },
+                      "name": { "type": "string", "required": true },
+                      "slug": { "type": "string", "required": true },
+                      "thumbnailUrl": {
+                        "type": ["string", "null"],
+                        "required": true
+                      },
+                      "email": {
+                        "type": "string",
+                        "required": true,
+                        "format": "email"
+                      },
+                      "entityType": {
+                        "type": "string",
+                        "required": true,
+                        "enum": ["user"]
+                      }
+                    },
+                    "extendsRef": "#/components/schemas/UserMinimalBase"
                   },
                   "modifiedBy": {
-                    "type": ["string", "null"],
+                    "type": ["object", "null"],
                     "required": true,
-                    "maxLength": 50
+                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                    "properties": {
+                      "id": { "type": "string", "required": true },
+                      "name": { "type": "string", "required": true },
+                      "slug": { "type": "string", "required": true },
+                      "thumbnailUrl": {
+                        "type": ["string", "null"],
+                        "required": true
+                      },
+                      "email": {
+                        "type": "string",
+                        "required": true,
+                        "format": "email"
+                      },
+                      "entityType": {
+                        "type": "string",
+                        "required": true,
+                        "enum": ["user"]
+                      }
+                    },
+                    "extendsRef": "#/components/schemas/UserMinimalBase"
                   },
                   "status": {
                     "type": "string",
@@ -226,7 +266,7 @@
         "contentType": "application/json",
         "schema": {
           "type": "object",
-          "description": "A content page belonging to an organization.",
+          "description": "A content page for documentation purposes.",
           "properties": {
             "createdAt": { "type": "string", "required": true },
             "id": {
@@ -276,14 +316,54 @@
               "maxLength": 1000000
             },
             "createdBy": {
-              "type": ["string", "null"],
+              "type": ["object", "null"],
               "required": true,
-              "maxLength": 50
+              "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+              "properties": {
+                "id": { "type": "string", "required": true },
+                "name": { "type": "string", "required": true },
+                "slug": { "type": "string", "required": true },
+                "thumbnailUrl": {
+                  "type": ["string", "null"],
+                  "required": true
+                },
+                "email": {
+                  "type": "string",
+                  "required": true,
+                  "format": "email"
+                },
+                "entityType": {
+                  "type": "string",
+                  "required": true,
+                  "enum": ["user"]
+                }
+              },
+              "extendsRef": "#/components/schemas/UserMinimalBase"
             },
             "modifiedBy": {
-              "type": ["string", "null"],
+              "type": ["object", "null"],
               "required": true,
-              "maxLength": 50
+              "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+              "properties": {
+                "id": { "type": "string", "required": true },
+                "name": { "type": "string", "required": true },
+                "slug": { "type": "string", "required": true },
+                "thumbnailUrl": {
+                  "type": ["string", "null"],
+                  "required": true
+                },
+                "email": {
+                  "type": "string",
+                  "required": true,
+                  "format": "email"
+                },
+                "entityType": {
+                  "type": "string",
+                  "required": true,
+                  "enum": ["user"]
+                }
+              },
+              "extendsRef": "#/components/schemas/UserMinimalBase"
             },
             "status": {
               "type": "string",
@@ -390,7 +470,7 @@
               "ref": "#/components/schemas/Page",
               "items": {
                 "type": "object",
-                "description": "A content page belonging to an organization.",
+                "description": "A content page for documentation purposes.",
                 "properties": {
                   "createdAt": { "type": "string", "required": true },
                   "id": {
@@ -440,14 +520,54 @@
                     "maxLength": 1000000
                   },
                   "createdBy": {
-                    "type": ["string", "null"],
+                    "type": ["object", "null"],
                     "required": true,
-                    "maxLength": 50
+                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                    "properties": {
+                      "id": { "type": "string", "required": true },
+                      "name": { "type": "string", "required": true },
+                      "slug": { "type": "string", "required": true },
+                      "thumbnailUrl": {
+                        "type": ["string", "null"],
+                        "required": true
+                      },
+                      "email": {
+                        "type": "string",
+                        "required": true,
+                        "format": "email"
+                      },
+                      "entityType": {
+                        "type": "string",
+                        "required": true,
+                        "enum": ["user"]
+                      }
+                    },
+                    "extendsRef": "#/components/schemas/UserMinimalBase"
                   },
                   "modifiedBy": {
-                    "type": ["string", "null"],
+                    "type": ["object", "null"],
                     "required": true,
-                    "maxLength": 50
+                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                    "properties": {
+                      "id": { "type": "string", "required": true },
+                      "name": { "type": "string", "required": true },
+                      "slug": { "type": "string", "required": true },
+                      "thumbnailUrl": {
+                        "type": ["string", "null"],
+                        "required": true
+                      },
+                      "email": {
+                        "type": "string",
+                        "required": true,
+                        "format": "email"
+                      },
+                      "entityType": {
+                        "type": "string",
+                        "required": true,
+                        "enum": ["user"]
+                      }
+                    },
+                    "extendsRef": "#/components/schemas/UserMinimalBase"
                   },
                   "status": {
                     "type": "string",
@@ -548,7 +668,7 @@
               "ref": "#/components/schemas/Page",
               "items": {
                 "type": "object",
-                "description": "A content page belonging to an organization.",
+                "description": "A content page for documentation purposes.",
                 "properties": {
                   "createdAt": { "type": "string", "required": true },
                   "id": {
@@ -598,14 +718,54 @@
                     "maxLength": 1000000
                   },
                   "createdBy": {
-                    "type": ["string", "null"],
+                    "type": ["object", "null"],
                     "required": true,
-                    "maxLength": 50
+                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                    "properties": {
+                      "id": { "type": "string", "required": true },
+                      "name": { "type": "string", "required": true },
+                      "slug": { "type": "string", "required": true },
+                      "thumbnailUrl": {
+                        "type": ["string", "null"],
+                        "required": true
+                      },
+                      "email": {
+                        "type": "string",
+                        "required": true,
+                        "format": "email"
+                      },
+                      "entityType": {
+                        "type": "string",
+                        "required": true,
+                        "enum": ["user"]
+                      }
+                    },
+                    "extendsRef": "#/components/schemas/UserMinimalBase"
                   },
                   "modifiedBy": {
-                    "type": ["string", "null"],
+                    "type": ["object", "null"],
                     "required": true,
-                    "maxLength": 50
+                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                    "properties": {
+                      "id": { "type": "string", "required": true },
+                      "name": { "type": "string", "required": true },
+                      "slug": { "type": "string", "required": true },
+                      "thumbnailUrl": {
+                        "type": ["string", "null"],
+                        "required": true
+                      },
+                      "email": {
+                        "type": "string",
+                        "required": true,
+                        "format": "email"
+                      },
+                      "entityType": {
+                        "type": "string",
+                        "required": true,
+                        "enum": ["user"]
+                      }
+                    },
+                    "extendsRef": "#/components/schemas/UserMinimalBase"
                   },
                   "status": {
                     "type": "string",
@@ -884,7 +1044,7 @@
         "contentType": "application/json",
         "schema": {
           "type": "object",
-          "description": "A content page belonging to an organization.",
+          "description": "A content page for documentation purposes.",
           "properties": {
             "createdAt": { "type": "string", "required": true },
             "id": {
@@ -934,14 +1094,54 @@
               "maxLength": 1000000
             },
             "createdBy": {
-              "type": ["string", "null"],
+              "type": ["object", "null"],
               "required": true,
-              "maxLength": 50
+              "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+              "properties": {
+                "id": { "type": "string", "required": true },
+                "name": { "type": "string", "required": true },
+                "slug": { "type": "string", "required": true },
+                "thumbnailUrl": {
+                  "type": ["string", "null"],
+                  "required": true
+                },
+                "email": {
+                  "type": "string",
+                  "required": true,
+                  "format": "email"
+                },
+                "entityType": {
+                  "type": "string",
+                  "required": true,
+                  "enum": ["user"]
+                }
+              },
+              "extendsRef": "#/components/schemas/UserMinimalBase"
             },
             "modifiedBy": {
-              "type": ["string", "null"],
+              "type": ["object", "null"],
               "required": true,
-              "maxLength": 50
+              "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+              "properties": {
+                "id": { "type": "string", "required": true },
+                "name": { "type": "string", "required": true },
+                "slug": { "type": "string", "required": true },
+                "thumbnailUrl": {
+                  "type": ["string", "null"],
+                  "required": true
+                },
+                "email": {
+                  "type": "string",
+                  "required": true,
+                  "format": "email"
+                },
+                "entityType": {
+                  "type": "string",
+                  "required": true,
+                  "enum": ["user"]
+                }
+              },
+              "extendsRef": "#/components/schemas/UserMinimalBase"
             },
             "status": {
               "type": "string",
@@ -1041,36 +1241,54 @@
       "body": {
         "type": "object",
         "properties": {
-          "name": {
-            "type": "string",
-            "required": false,
-            "maxLength": 255
+          "key": {
+            "required": true,
+            "anyOf": [
+              {
+                "type": "string",
+                "required": false,
+                "enum": ["name"]
+              },
+              {
+                "type": "string",
+                "required": false,
+                "enum": ["description"]
+              },
+              {
+                "type": "string",
+                "required": false,
+                "enum": ["keywords"]
+              },
+              {
+                "type": "string",
+                "required": false,
+                "enum": ["displayOrder"]
+              },
+              {
+                "type": "string",
+                "required": false,
+                "enum": ["status"]
+              },
+              {
+                "type": "string",
+                "required": false,
+                "enum": ["parentId"]
+              }
+            ]
           },
-          "description": {
-            "type": ["string", "null"],
-            "required": false,
-            "maxLength": 1000000
-          },
-          "keywords": {
-            "type": "string",
-            "required": false,
-            "maxLength": 1000000
-          },
-          "displayOrder": {
-            "type": "number",
-            "required": false,
-            "minimum": -140737488355328,
-            "maximum": 140737488355327
-          },
-          "status": {
-            "type": "string",
-            "required": false,
-            "enum": ["unpublished", "published", "archived"]
-          },
-          "parentId": {
-            "type": ["string", "null"],
-            "required": false,
-            "maxLength": 50
+          "data": {
+            "required": true,
+            "anyOf": [
+              { "type": "string", "required": false },
+              { "type": "number", "required": false },
+              { "type": "boolean", "required": false },
+              {
+                "type": "array",
+                "required": false,
+                "itemType": "string"
+              },
+              { "type": "null", "required": false }
+            ]
           },
           "stx": {
             "type": "object",

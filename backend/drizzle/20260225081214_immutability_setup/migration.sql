@@ -72,6 +72,8 @@ BEGIN
     EXECUTE 'CREATE TRIGGER memberships_immutable_keys_trigger BEFORE UPDATE ON memberships FOR EACH ROW EXECUTE FUNCTION membership_immutable_keys()';
     EXECUTE 'DROP TRIGGER IF EXISTS inactive_memberships_immutable_keys_trigger ON inactive_memberships';
     EXECUTE 'CREATE TRIGGER inactive_memberships_immutable_keys_trigger BEFORE UPDATE ON inactive_memberships FOR EACH ROW EXECUTE FUNCTION inactive_membership_immutable_keys()';
+    EXECUTE 'DROP TRIGGER IF EXISTS activities_immutable_keys_trigger ON activities';
+    EXECUTE 'CREATE TRIGGER activities_immutable_keys_trigger BEFORE UPDATE ON activities FOR EACH ROW EXECUTE FUNCTION append_only_immutable_row()';
 
     RAISE NOTICE 'Immutability triggers setup complete.';
   EXCEPTION WHEN OTHERS THEN

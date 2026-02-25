@@ -10,6 +10,7 @@ import { requestsTable } from '#/db/schema/requests';
 import { tokensTable } from '#/db/schema/tokens';
 import { userActivityTable } from '#/db/schema/user-activity';
 import { usersTable } from '#/db/schema/users';
+import { setTenantRlsContext } from '#/db/tenant-context';
 import { type Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
 import { mailer } from '#/lib/mailer';
@@ -17,6 +18,7 @@ import { resolveEntity } from '#/lib/resolve-entity';
 import { getBaseMembershipEntityId, insertMemberships } from '#/modules/memberships/helpers';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import membershipRoutes from '#/modules/memberships/memberships-routes';
+import { withAuditUsers } from '#/modules/user/helpers/audit-user';
 import { memberSelect, userBaseSelect } from '#/modules/user/helpers/select';
 import { getValidContextEntity } from '#/permissions/get-context-entity';
 import { defaultHook } from '#/utils/default-hook';
@@ -501,6 +503,7 @@ const membershipsRouteHandlers = app
 
     const user = ctx.var.user;
 
+    // crossTenantGuard sets user RLS context, so select_own_policy allows reading own invitation
     const [inactiveMembership] = await db
       .select()
       .from(inactiveMembershipsTable)
@@ -510,39 +513,46 @@ const membershipsRouteHandlers = app
     if (!inactiveMembership)
       throw new AppError(404, 'inactive_membership_not_found', 'error', { meta: { id: inactiveMembershipId } });
 
-    if (acceptOrReject === 'accept') {
-      const entityFieldIdName = appConfig.entityIdColumnKeys[inactiveMembership.contextType];
-      const entityFieldId = inactiveMembership[entityFieldIdName];
-      if (!entityFieldId)
-        throw new AppError(500, 'server_error', 'error', { entityType: inactiveMembership.contextType });
+    // Build a minimal entity object from the inactive_membership row (avoids org table SELECT which requires membership)
+    const entityFieldIdName = appConfig.entityIdColumnKeys[inactiveMembership.contextType];
+    const entityFieldId = inactiveMembership[entityFieldIdName];
+    if (!entityFieldId)
+      throw new AppError(500, 'server_error', 'error', { entityType: inactiveMembership.contextType });
 
-      // Internal resolve: user is accepting their own invitation, so no membership exists yet for permission checks
-      const entity = await resolveEntity(inactiveMembership.contextType, entityFieldId, db);
-      if (!entity) throw new AppError(404, 'not_found', 'error', { entityType: inactiveMembership.contextType });
+    // Wrap write operations in tenant RLS context (writes require tenantMatch)
+    await setTenantRlsContext({ tenantId: inactiveMembership.tenantId, userId: user.id }, async (tx) => {
+      if (acceptOrReject === 'accept') {
+        // Internal resolve: user is accepting their own invitation, so no membership exists yet for permission checks
+        const entity = await resolveEntity(inactiveMembership.contextType, entityFieldId, tx);
+        if (!entity) throw new AppError(404, 'not_found', 'error', { entityType: inactiveMembership.contextType });
 
-      const activatedMemberships = await insertMemberships(db, [
-        { entity, userId: user.id, role: inactiveMembership.role, createdBy: inactiveMembership.createdBy },
-      ]);
+        const activatedMemberships = await insertMemberships(tx, [
+          { entity, userId: user.id, role: inactiveMembership.role, createdBy: inactiveMembership.createdBy },
+        ]);
 
-      await db.delete(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
+        await tx.delete(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
 
-      // Event emitted via CDC -> activities table -> activityBus ('membership.created')
-      logEvent('info', 'Accepted membership', { ids: activatedMemberships.map((m) => m.id) });
-    }
+        // Event emitted via CDC -> activities table -> activityBus ('membership.created')
+        logEvent('info', 'Accepted membership', { ids: activatedMemberships.map((m) => m.id) });
+      }
 
-    // Reject membership simply deletes the membership
-    if (acceptOrReject === 'reject') {
-      await db
-        .update(inactiveMembershipsTable)
-        .set({ rejectedAt: getIsoDate() })
-        .where(and(eq(inactiveMembershipsTable.id, inactiveMembership.id)));
-    }
+      // Reject membership simply marks it as rejected
+      if (acceptOrReject === 'reject') {
+        await tx
+          .update(inactiveMembershipsTable)
+          .set({ rejectedAt: getIsoDate() })
+          .where(and(eq(inactiveMembershipsTable.id, inactiveMembership.id)));
+      }
+    });
 
-    // Internal resolve: getting root entity for response after invitation handling (no permission check needed)
+    // After accept, user now has a membership — resolveEntity works with tenant context
     const rootEntityId = inactiveMembership[rootIdColumnKey as InactiveEntityIdColumnNames];
     if (!rootEntityId) throw new AppError(500, 'server_error', 'error', { entityType: rootContextType });
 
-    const entity = await resolveEntity(rootContextType, rootEntityId, db);
+    // Use a tenant-scoped read for the response entity (user now has membership after accept)
+    const entity = await setTenantRlsContext({ tenantId: inactiveMembership.tenantId, userId: user.id }, (tx) =>
+      resolveEntity(rootContextType, rootEntityId, tx),
+    );
     if (!entity) throw new AppError(404, 'not_found', 'error', { entityType: rootContextType });
 
     return ctx.json(entity, 200);
@@ -641,7 +651,10 @@ const membershipsRouteHandlers = app
       )
       .orderBy(orderColumn);
 
-    const items = await pendingMembershipsQuery.limit(limit).offset(offset);
+    const rawItems = await pendingMembershipsQuery.limit(limit).offset(offset);
+
+    // Populate createdBy with user objects
+    const items = await withAuditUsers(rawItems, db);
 
     const [{ total }] = await db.select({ total: count() }).from(pendingMembershipsQuery.as('pendingMemberships'));
 

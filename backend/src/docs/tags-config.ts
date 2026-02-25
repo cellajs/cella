@@ -17,6 +17,7 @@ export const openapiTagIds = [
   'metrics',
   'activities',
   'tenants',
+  'seen',
 ] as const;
 
 export type OpenApiTagId = (typeof openapiTagIds)[number];
@@ -76,6 +77,10 @@ const tagDescriptions: Record<OpenApiTagId, string> = {
   tenants: `System admin operations for managing tenants. Tenants are top-level isolation boundaries used by
         Row-Level Security (RLS) to partition data. Supports listing, retrieving, creating, updating, and
         soft-deleting (archiving) tenants.`,
+
+  seen: `Operations for tracking which product entities a user has viewed. Supports batch marking entities
+        as seen (deduplicating against existing records) and incrementing view counts. Used to power unseen
+        count badges in navigation and view count columns in entity lists.`,
 };
 
 /**

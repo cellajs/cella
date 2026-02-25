@@ -1,5 +1,5 @@
 import type { Block } from '@blocknote/core';
-import { getTextFromBlock } from '#/utils/text-from-block';
+import { getTextFromBlock } from 'shared/blocknote';
 
 /**
  * Extracts unique keywords from one or more text inputs.

@@ -63,5 +63,10 @@
     "name": "tenants",
     "description": "System admin operations for managing tenants. Tenants are top-level isolation boundaries used by\n        Row-Level Security (RLS) to partition data. Supports listing, retrieving, creating, updating, and\n        soft-deleting (archiving) tenants.",
     "count": 5
+  },
+  {
+    "name": "seen",
+    "description": "Operations for tracking which product entities a user has viewed. Supports batch marking entities\n        as seen (deduplicating against existing records) and incrementing view counts. Used to power unseen\n        count badges in navigation and view count columns in entity lists.",
+    "count": 2
   }
 ]

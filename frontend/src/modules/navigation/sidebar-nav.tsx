@@ -128,8 +128,8 @@ export function SidebarNav({ triggerNavItem }: SidebarNavProps) {
             </SidebarContent>
             <SidebarFooter className="p-0 gap-2">
               <Suspense>{DebugDropdown ? <DebugDropdown className="mx-2" /> : null}</Suspense>
-              <StopImpersonation isCollapsed={!isExpanded} />
               <SidebarMenu className="gap-1">
+                <StopImpersonation isCollapsed={!isExpanded} />
                 {getFooterNavItems().map((navItem: NavItem) => (
                   <NavButton
                     key={navItem.id}

@@ -45,11 +45,29 @@ export const mockProductEntityBase = (key = 'product-entity:default') =>
     ...mockEntityCore(),
     name: faker.lorem.sentence({ min: 2, max: 5 }),
     description: faker.lorem.paragraph(),
-    createdBy: mockNanoid(),
-    modifiedBy: mockNanoid(),
+    createdBy: mockUserMinimalBase(`${key}:createdBy`),
+    modifiedBy: mockUserMinimalBase(`${key}:modifiedBy`),
     entityType: 'page' as const,
     keywords: faker.lorem.words(3),
   }));
+
+/**
+ * Generates a mock UserMinimalBase response.
+ * Minimal user data for references (e.g. createdBy, modifiedBy).
+ */
+export const mockUserMinimalBase = (key = 'user-minimal:default') =>
+  withFakerSeed(key, () => {
+    const firstName = faker.person.firstName();
+    const lastName = faker.person.lastName();
+    return {
+      id: mockNanoid(),
+      name: `${firstName} ${lastName}`,
+      slug: faker.internet.username({ firstName, lastName }).toLowerCase(),
+      thumbnailUrl: null,
+      email: faker.internet.email({ firstName, lastName }).toLowerCase(),
+      entityType: 'user' as const,
+    };
+  });
 
 /**
  * Generates a mock UserBase response.

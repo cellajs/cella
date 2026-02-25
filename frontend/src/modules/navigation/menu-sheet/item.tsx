@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { toaster } from '~/modules/common/toaster/service';
 import type { UserMenuItem } from '~/modules/me/types';
+import { useUnseenCount } from '~/modules/seen/use-unseen-count';
 import { getContextEntityRoute } from '~/routes-resolver';
 import { useUIStore } from '~/store/ui';
 import { cn } from '~/utils/cn';
@@ -24,6 +25,11 @@ export const MenuSheetItem = ({ item, icon: Icon, className, searchResults }: Me
 
   const canAccess = offlineAccess ? (isOnline ? true : !item.membership.archived) : true;
   const isSubitem = !searchResults && !item.submenu;
+
+  // Unseen count for this org — suppressed for muted memberships
+  const isMuted = item.membership.muted;
+  const unseenCount = useUnseenCount(item.entityType === 'organization' ? item.id : undefined);
+  const showBadge = unseenCount > 0 && !isMuted;
 
   // Build route path for the entity
   const { to, params, search } = getContextEntityRoute(item, isSubitem);
@@ -45,20 +51,22 @@ export const MenuSheetItem = ({ item, icon: Icon, className, searchResults }: Me
       activeProps={{ 'data-link-active': true }}
       className={cn(
         'relative group/menuItem h-12 w-full flex items-start justify-start space-x-1 rounded-sm p-0 focus:outline-hidden ring-2 ring-inset ring-transparent focus-visible:ring-foreground sm:hover:bg-accent/30 sm:hover:text-accent-foreground data-[subitem=true]:h-10 ',
-        'data-[link-active=true]:ring-transparent sm:opacity-80 data-[link-active=true]:opacity-100',
+        'data-[link-active=true]:ring-transparent',
         className,
       )}
     >
       <span className="absolute left-0 top-3 h-[calc(100%-1.5rem)] w-1 rounded-lg bg-primary transition-opacity opacity-0 group-data-[link-active=true]/menuItem:opacity-100" />
-      <AvatarWrap
-        className="z-1 items-center m-2 mx-3 text-sm group-hover/menuItem:font-bold group-data-[subitem=true]/menuItem:my-2 group-data-[subitem=true]/menuItem:mx-4 group-data-[subitem=true]/menuItem:text-xs size-8 group-data-[subitem=true]/menuItem:size-6"
-        type={item.entityType}
-        id={item.id}
-        icon={Icon}
-        name={item.name}
-        url={item.thumbnailUrl}
-      />
-      <div className="truncate grow flex flex-col justify-center pr-2 text-left group-data-[subitem=true]/menuItem:pl-0">
+      <span className="z-1 shrink-0 bg-background rounded-full m-2 mx-3 group-data-[subitem=true]/menuItem:my-2 group-data-[subitem=true]/menuItem:mx-4 size-8 group-data-[subitem=true]/menuItem:size-6">
+        <AvatarWrap
+          className="items-center text-sm group-hover/menuItem:font-bold group-data-[subitem=true]/menuItem:text-xs size-8 group-data-[subitem=true]/menuItem:size-6 sm:opacity-80 group-hover/menuItem:opacity-100 group-data-[link-active=true]/menuItem:opacity-100"
+          type={item.entityType}
+          id={item.id}
+          icon={Icon}
+          name={item.name}
+          url={item.thumbnailUrl}
+        />
+      </span>
+      <div className="truncate grow flex flex-col justify-center pr-2 text-left group-data-[subitem=true]/menuItem:pl-0 sm:opacity-80 group-hover/menuItem:opacity-100 group-data-[link-active=true]/menuItem:opacity-100">
         <div
           className={cn(
             'truncate leading-5 transition-spacing text-md group-hover/menuItem:delay-300 pt-1 duration-100 ease-in-out',
@@ -82,7 +90,7 @@ export const MenuSheetItem = ({ item, icon: Icon, className, searchResults }: Me
               </span>
             </span>
           )}
-          <span className="opacity-0 transition-opacity duration-100 ease-in-out group-hover/menuItem:delay-300 absolute z-[-1] sm:group-hover/menuItem:opacity-100">
+          <span className="opacity-0 transition-opacity duration-100 ease-in-out group-hover/menuItem:delay-300 absolute sm:group-hover/menuItem:opacity-100">
             {item.submenu?.length
               ? `${item.submenu?.length} ${t(item.submenu?.length > 1 ? item.submenu[0].entityType : item.submenu[0].entityType, { ns: ['app', 'common'] }).toLowerCase()}`
               : item.membership.role
@@ -91,6 +99,11 @@ export const MenuSheetItem = ({ item, icon: Icon, className, searchResults }: Me
           </span>
         </div>
       </div>
+      {showBadge && (
+        <span className="shrink-0 self-center mr-3 min-w-4 h-4 flex items-center justify-center rounded-full bg-background text-primary text-[0.6rem] font-bold px-1 leading-none">
+          {unseenCount > 99 ? '99+' : unseenCount}
+        </span>
+      )}
     </Link>
   );
 };

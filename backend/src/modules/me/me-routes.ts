@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/docs/x-routes';
-import { authGuard, publicGuard } from '#/middlewares/guard';
+import { authGuard, crossTenantGuard, publicGuard } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   meAuthDataSchema,
@@ -60,7 +60,7 @@ const meRoutes = {
     operationId: 'getMyInvitations',
     method: 'get',
     path: '/invitations',
-    xGuard: authGuard,
+    xGuard: [authGuard, crossTenantGuard],
     tags: ['me'],
     summary: 'Get list of invitations',
     description: 'Returns a list of pending memberships with entity data.',

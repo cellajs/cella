@@ -5,6 +5,18 @@ export type ClientOptions = {
 };
 
 /**
+ * Minimal user data for references (e.g. createdBy, modifiedBy).
+ */
+export type UserMinimalBase = {
+  id: string;
+  name: string;
+  slug: string;
+  thumbnailUrl: string | null;
+  email: string;
+  entityType: 'user';
+};
+
+/**
  * Base user schema with essential fields for identification and display.
  */
 export type UserBase = {
@@ -249,7 +261,10 @@ export type InactiveMembership = {
   tokenId: string | null;
   role: 'admin' | 'member';
   rejectedAt: string | null;
-  createdBy: string;
+  createdBy: UserMinimalBase &
+    ({
+      [key: string]: unknown;
+    } | null);
   organizationId: string;
 };
 
@@ -317,8 +332,14 @@ export type Organization = {
   slug: string;
   thumbnailUrl: string | null;
   bannerUrl: string | null;
-  createdBy: string | null;
-  modifiedBy: string | null;
+  createdBy: UserMinimalBase &
+    ({
+      [key: string]: unknown;
+    } | null);
+  modifiedBy: UserMinimalBase &
+    ({
+      [key: string]: unknown;
+    } | null);
   shortName: string | null;
   country: string | null;
   timezone: string | null;
@@ -350,7 +371,7 @@ export type Organization = {
 };
 
 /**
- * A content page belonging to an organization.
+ * A content page for documentation purposes.
  */
 export type Page = {
   createdAt: string;
@@ -362,8 +383,14 @@ export type Page = {
   stx: StxBase;
   description: string | null;
   keywords: string;
-  createdBy: string | null;
-  modifiedBy: string | null;
+  createdBy: UserMinimalBase &
+    ({
+      [key: string]: unknown;
+    } | null);
+  modifiedBy: UserMinimalBase &
+    ({
+      [key: string]: unknown;
+    } | null);
   status: 'unpublished' | 'published' | 'archived';
   publicAccess: boolean;
   parentId: string | null;
@@ -401,8 +428,14 @@ export type Attachment = {
   stx: StxBase;
   description: string | null;
   keywords: string;
-  createdBy: string | null;
-  modifiedBy: string | null;
+  createdBy: UserMinimalBase &
+    ({
+      [key: string]: unknown;
+    } | null);
+  modifiedBy: UserMinimalBase &
+    ({
+      [key: string]: unknown;
+    } | null);
   public: boolean;
   bucketName: string;
   groupId: string | null;
@@ -414,6 +447,7 @@ export type Attachment = {
   convertedKey: string | null;
   thumbnailKey: string | null;
   organizationId: string;
+  viewCount?: number;
 };
 
 /**
@@ -2132,6 +2166,51 @@ export type GetMyMembershipsResponses = {
 
 export type GetMyMembershipsResponse = GetMyMembershipsResponses[keyof GetMyMembershipsResponses];
 
+export type GetUnseenCountsData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/unseen/counts';
+};
+
+export type GetUnseenCountsErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetUnseenCountsError = GetUnseenCountsErrors[keyof GetUnseenCountsErrors];
+
+export type GetUnseenCountsResponses = {
+  /**
+   * Unseen counts per org per entity type
+   */
+  200: {
+    [key: string]: {
+      [key: string]: number;
+    };
+  };
+};
+
+export type GetUnseenCountsResponse = GetUnseenCountsResponses[keyof GetUnseenCountsResponses];
+
 export type CheckSlugData = {
   body: {
     slug: string;
@@ -3587,13 +3666,13 @@ export type GetOrganizationData = {
   body?: never;
   path: {
     tenantId: string;
-    organizationId: string;
+    id: string;
   };
   query?: {
     slug?: string | boolean;
     include?: string;
   };
-  url: '/{tenantId}/organizations/{organizationId}';
+  url: '/{tenantId}/organizations/{id}';
 };
 
 export type GetOrganizationErrors = {
@@ -3919,12 +3998,8 @@ export type CreatePagesResponse = CreatePagesResponses[keyof CreatePagesResponse
 
 export type UpdatePageData = {
   body: {
-    name?: string;
-    description?: string | null;
-    keywords?: string;
-    displayOrder?: number;
-    status?: 'unpublished' | 'published' | 'archived';
-    parentId?: string | null;
+    key: 'name' | 'description' | 'keywords' | 'displayOrder' | 'status' | 'parentId';
+    data: string | number | boolean | Array<string> | null;
     stx: StxRequestBase;
   };
   path: {
@@ -4195,8 +4270,6 @@ export type CreateAttachmentsData = {
     filename: string;
     contentType: string;
     size: string;
-    organizationId: string;
-    createdBy?: string | null;
     originalKey: string;
     bucketName: string;
     public?: boolean;
@@ -4369,8 +4442,8 @@ export type GetAttachmentResponse = GetAttachmentResponses[keyof GetAttachmentRe
 
 export type UpdateAttachmentData = {
   body: {
-    name?: string;
-    originalKey?: string;
+    key: 'name' | 'originalKey';
+    data: string | null;
     stx: StxRequestBase;
   };
   path: {
@@ -4806,10 +4879,71 @@ export type GetPendingMembershipsResponses = {
       thumbnailUrl: string | null;
       role: 'admin' | 'member' | null;
       createdAt: string;
-      createdBy: string | null;
+      createdBy: UserMinimalBase &
+        ({
+          [key: string]: unknown;
+        } | null);
     }>;
     total: number;
   };
 };
 
 export type GetPendingMembershipsResponse = GetPendingMembershipsResponses[keyof GetPendingMembershipsResponses];
+
+export type MarkSeenData = {
+  body: {
+    /**
+     * Entity IDs the user has viewed since last batch
+     */
+    entityIds: Array<string>;
+    /**
+     * Entity type for all IDs in this batch
+     */
+    entityType: 'attachment' | 'page';
+  };
+  path: {
+    tenantId: string;
+    orgId: string;
+  };
+  query?: never;
+  url: '/{tenantId}/{orgId}/seen';
+};
+
+export type MarkSeenErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type MarkSeenError = MarkSeenErrors[keyof MarkSeenErrors];
+
+export type MarkSeenResponses = {
+  /**
+   * Seen records processed
+   */
+  200: {
+    /**
+     * Number of entities newly marked as seen (deduped)
+     */
+    newCount: number;
+  };
+};
+
+export type MarkSeenResponse = MarkSeenResponses[keyof MarkSeenResponses];

@@ -13,6 +13,7 @@ type InputFieldProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TFie
   type?: Parameters<typeof Input>[0]['type'] | 'textarea';
   placeholder?: string;
   onFocus?: () => void;
+  onBlur?: () => void;
   minimal?: boolean;
   readOnly?: boolean;
   disabled?: boolean;
@@ -30,6 +31,7 @@ export const InputFormField = <TFieldValues extends FieldValues>({
   defaultValue,
   description,
   onFocus,
+  onBlur,
   type = 'text',
   placeholder,
   required,
@@ -52,7 +54,7 @@ export const InputFormField = <TFieldValues extends FieldValues>({
     <FormField
       control={disabled ? undefined : control}
       name={name}
-      render={({ field: { value: formFieldValue, ...rest } }) => (
+      render={({ field: { value: formFieldValue, onBlur: fieldOnBlur, ...rest } }) => (
         <FormItem name={name.toString()}>
           <FormLabel>
             {label}
@@ -76,6 +78,10 @@ export const InputFormField = <TFieldValues extends FieldValues>({
                 className={cn(inputClassName, icon && 'pl-10')}
                 placeholder={placeholder}
                 onFocus={onFocus}
+                onBlur={() => {
+                  fieldOnBlur();
+                  onBlur?.();
+                }}
                 readOnly={readOnly}
                 type={type}
                 autoComplete={autocomplete}

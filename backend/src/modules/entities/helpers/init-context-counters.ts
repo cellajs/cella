@@ -1,5 +1,5 @@
 import { type ContextEntityType, hierarchy, roles } from 'shared';
-import { unsafeInternalDb as db } from '#/db/db';
+import { baseDb as db } from '#/db/db';
 import { contextCountersTable } from '#/db/schema/context-counters';
 
 /**

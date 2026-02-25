@@ -66,14 +66,54 @@
                     "maxLength": 1000000
                   },
                   "createdBy": {
-                    "type": ["string", "null"],
+                    "type": ["object", "null"],
                     "required": true,
-                    "maxLength": 50
+                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                    "properties": {
+                      "id": { "type": "string", "required": true },
+                      "name": { "type": "string", "required": true },
+                      "slug": { "type": "string", "required": true },
+                      "thumbnailUrl": {
+                        "type": ["string", "null"],
+                        "required": true
+                      },
+                      "email": {
+                        "type": "string",
+                        "required": true,
+                        "format": "email"
+                      },
+                      "entityType": {
+                        "type": "string",
+                        "required": true,
+                        "enum": ["user"]
+                      }
+                    },
+                    "extendsRef": "#/components/schemas/UserMinimalBase"
                   },
                   "modifiedBy": {
-                    "type": ["string", "null"],
+                    "type": ["object", "null"],
                     "required": true,
-                    "maxLength": 50
+                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                    "properties": {
+                      "id": { "type": "string", "required": true },
+                      "name": { "type": "string", "required": true },
+                      "slug": { "type": "string", "required": true },
+                      "thumbnailUrl": {
+                        "type": ["string", "null"],
+                        "required": true
+                      },
+                      "email": {
+                        "type": "string",
+                        "required": true,
+                        "format": "email"
+                      },
+                      "entityType": {
+                        "type": "string",
+                        "required": true,
+                        "enum": ["user"]
+                      }
+                    },
+                    "extendsRef": "#/components/schemas/UserMinimalBase"
                   },
                   "public": { "type": "boolean", "required": true },
                   "bucketName": {
@@ -125,6 +165,11 @@
                     "type": "string",
                     "required": true,
                     "maxLength": 50
+                  },
+                  "viewCount": {
+                    "type": "integer",
+                    "required": false,
+                    "minimum": 0
                   }
                 },
                 "ref": "#/components/schemas/Attachment"
@@ -344,14 +389,54 @@
                     "maxLength": 1000000
                   },
                   "createdBy": {
-                    "type": ["string", "null"],
+                    "type": ["object", "null"],
                     "required": true,
-                    "maxLength": 50
+                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                    "properties": {
+                      "id": { "type": "string", "required": true },
+                      "name": { "type": "string", "required": true },
+                      "slug": { "type": "string", "required": true },
+                      "thumbnailUrl": {
+                        "type": ["string", "null"],
+                        "required": true
+                      },
+                      "email": {
+                        "type": "string",
+                        "required": true,
+                        "format": "email"
+                      },
+                      "entityType": {
+                        "type": "string",
+                        "required": true,
+                        "enum": ["user"]
+                      }
+                    },
+                    "extendsRef": "#/components/schemas/UserMinimalBase"
                   },
                   "modifiedBy": {
-                    "type": ["string", "null"],
+                    "type": ["object", "null"],
                     "required": true,
-                    "maxLength": 50
+                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                    "properties": {
+                      "id": { "type": "string", "required": true },
+                      "name": { "type": "string", "required": true },
+                      "slug": { "type": "string", "required": true },
+                      "thumbnailUrl": {
+                        "type": ["string", "null"],
+                        "required": true
+                      },
+                      "email": {
+                        "type": "string",
+                        "required": true,
+                        "format": "email"
+                      },
+                      "entityType": {
+                        "type": "string",
+                        "required": true,
+                        "enum": ["user"]
+                      }
+                    },
+                    "extendsRef": "#/components/schemas/UserMinimalBase"
                   },
                   "public": { "type": "boolean", "required": true },
                   "bucketName": {
@@ -403,6 +488,11 @@
                     "type": "string",
                     "required": true,
                     "maxLength": 50
+                  },
+                  "viewCount": {
+                    "type": "integer",
+                    "required": false,
+                    "minimum": 0
                   }
                 },
                 "ref": "#/components/schemas/Attachment"
@@ -550,14 +640,54 @@
                     "maxLength": 1000000
                   },
                   "createdBy": {
-                    "type": ["string", "null"],
+                    "type": ["object", "null"],
                     "required": true,
-                    "maxLength": 50
+                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                    "properties": {
+                      "id": { "type": "string", "required": true },
+                      "name": { "type": "string", "required": true },
+                      "slug": { "type": "string", "required": true },
+                      "thumbnailUrl": {
+                        "type": ["string", "null"],
+                        "required": true
+                      },
+                      "email": {
+                        "type": "string",
+                        "required": true,
+                        "format": "email"
+                      },
+                      "entityType": {
+                        "type": "string",
+                        "required": true,
+                        "enum": ["user"]
+                      }
+                    },
+                    "extendsRef": "#/components/schemas/UserMinimalBase"
                   },
                   "modifiedBy": {
-                    "type": ["string", "null"],
+                    "type": ["object", "null"],
                     "required": true,
-                    "maxLength": 50
+                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                    "properties": {
+                      "id": { "type": "string", "required": true },
+                      "name": { "type": "string", "required": true },
+                      "slug": { "type": "string", "required": true },
+                      "thumbnailUrl": {
+                        "type": ["string", "null"],
+                        "required": true
+                      },
+                      "email": {
+                        "type": "string",
+                        "required": true,
+                        "format": "email"
+                      },
+                      "entityType": {
+                        "type": "string",
+                        "required": true,
+                        "enum": ["user"]
+                      }
+                    },
+                    "extendsRef": "#/components/schemas/UserMinimalBase"
                   },
                   "public": { "type": "boolean", "required": true },
                   "bucketName": {
@@ -609,6 +739,11 @@
                     "type": "string",
                     "required": true,
                     "maxLength": 50
+                  },
+                  "viewCount": {
+                    "type": "integer",
+                    "required": false,
+                    "minimum": 0
                   }
                 },
                 "ref": "#/components/schemas/Attachment"
@@ -774,16 +909,6 @@
               "type": "string",
               "required": true,
               "maxLength": 255
-            },
-            "organizationId": {
-              "type": "string",
-              "required": true,
-              "maxLength": 50
-            },
-            "createdBy": {
-              "type": ["string", "null"],
-              "required": false,
-              "maxLength": 50
             },
             "originalKey": {
               "type": "string",
@@ -1084,14 +1209,54 @@
               "maxLength": 1000000
             },
             "createdBy": {
-              "type": ["string", "null"],
+              "type": ["object", "null"],
               "required": true,
-              "maxLength": 50
+              "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+              "properties": {
+                "id": { "type": "string", "required": true },
+                "name": { "type": "string", "required": true },
+                "slug": { "type": "string", "required": true },
+                "thumbnailUrl": {
+                  "type": ["string", "null"],
+                  "required": true
+                },
+                "email": {
+                  "type": "string",
+                  "required": true,
+                  "format": "email"
+                },
+                "entityType": {
+                  "type": "string",
+                  "required": true,
+                  "enum": ["user"]
+                }
+              },
+              "extendsRef": "#/components/schemas/UserMinimalBase"
             },
             "modifiedBy": {
-              "type": ["string", "null"],
+              "type": ["object", "null"],
               "required": true,
-              "maxLength": 50
+              "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+              "properties": {
+                "id": { "type": "string", "required": true },
+                "name": { "type": "string", "required": true },
+                "slug": { "type": "string", "required": true },
+                "thumbnailUrl": {
+                  "type": ["string", "null"],
+                  "required": true
+                },
+                "email": {
+                  "type": "string",
+                  "required": true,
+                  "format": "email"
+                },
+                "entityType": {
+                  "type": "string",
+                  "required": true,
+                  "enum": ["user"]
+                }
+              },
+              "extendsRef": "#/components/schemas/UserMinimalBase"
             },
             "public": { "type": "boolean", "required": true },
             "bucketName": {
@@ -1143,6 +1308,11 @@
               "type": "string",
               "required": true,
               "maxLength": 50
+            },
+            "viewCount": {
+              "type": "integer",
+              "required": false,
+              "minimum": 0
             }
           },
           "ref": "#/components/schemas/Attachment",
@@ -1297,14 +1467,54 @@
               "maxLength": 1000000
             },
             "createdBy": {
-              "type": ["string", "null"],
+              "type": ["object", "null"],
               "required": true,
-              "maxLength": 50
+              "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+              "properties": {
+                "id": { "type": "string", "required": true },
+                "name": { "type": "string", "required": true },
+                "slug": { "type": "string", "required": true },
+                "thumbnailUrl": {
+                  "type": ["string", "null"],
+                  "required": true
+                },
+                "email": {
+                  "type": "string",
+                  "required": true,
+                  "format": "email"
+                },
+                "entityType": {
+                  "type": "string",
+                  "required": true,
+                  "enum": ["user"]
+                }
+              },
+              "extendsRef": "#/components/schemas/UserMinimalBase"
             },
             "modifiedBy": {
-              "type": ["string", "null"],
+              "type": ["object", "null"],
               "required": true,
-              "maxLength": 50
+              "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+              "properties": {
+                "id": { "type": "string", "required": true },
+                "name": { "type": "string", "required": true },
+                "slug": { "type": "string", "required": true },
+                "thumbnailUrl": {
+                  "type": ["string", "null"],
+                  "required": true
+                },
+                "email": {
+                  "type": "string",
+                  "required": true,
+                  "format": "email"
+                },
+                "entityType": {
+                  "type": "string",
+                  "required": true,
+                  "enum": ["user"]
+                }
+              },
+              "extendsRef": "#/components/schemas/UserMinimalBase"
             },
             "public": { "type": "boolean", "required": true },
             "bucketName": {
@@ -1356,6 +1566,11 @@
               "type": "string",
               "required": true,
               "maxLength": 50
+            },
+            "viewCount": {
+              "type": "integer",
+              "required": false,
+              "minimum": 0
             }
           },
           "ref": "#/components/schemas/Attachment",
@@ -1450,15 +1665,24 @@
       "body": {
         "type": "object",
         "properties": {
-          "name": {
-            "type": "string",
-            "required": false,
-            "maxLength": 255
+          "key": {
+            "required": true,
+            "anyOf": [
+              {
+                "type": "string",
+                "required": false,
+                "enum": ["name"]
+              },
+              {
+                "type": "string",
+                "required": false,
+                "enum": ["originalKey"]
+              }
+            ]
           },
-          "originalKey": {
-            "type": "string",
-            "required": false,
-            "maxLength": 2048
+          "data": {
+            "type": ["string", "null"],
+            "required": true
           },
           "stx": {
             "type": "object",

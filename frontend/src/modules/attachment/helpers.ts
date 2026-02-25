@@ -130,7 +130,8 @@ export const parseUploadedAttachments = (
     // Override the temp id with the upload-provided id
     attachment.id = id;
 
-    attachmentsById.set(id, attachment);
+    // Note: cast needed because hey-api generates non-nullable intersection for nullable refs
+    attachmentsById.set(id, attachment as Attachment);
   }
 
   //  Process converted + thumbnail variants

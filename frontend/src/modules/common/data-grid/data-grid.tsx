@@ -67,6 +67,7 @@ import {
   canExitGrid,
   classnames,
   createCellEvent,
+  createRange,
   evaluateMobileSubRows,
   evaluateTouchMode,
   getCellStyle,
@@ -397,6 +398,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   const enableRowVirtualization = rawEnableRowVirtualization ?? enableVirtualization;
   const enableColumnVirtualization = rawEnableColumnVirtualization ?? enableVirtualization;
   const selectionMode: SelectionMode = rawSelectionMode ?? 'row-multi';
+  const isCellSelectionEnabled = selectionMode !== 'none';
   const direction = rawDirection ?? 'ltr';
   // Default threshold: 25% of rows, minimum 10, maximum 50
   const rowsEndApproachingThreshold =
@@ -425,10 +427,10 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   const [shouldFocusCell, setShouldFocusCell] = useState(false);
   const [previousRowIdx, setPreviousRowIdx] = useState(-1);
   const [selectedCellRangeInternal, setSelectedCellRangeInternal] = useState<CellRange | null>(null);
+  const [cellRangeAnchor, setCellRangeAnchor] = useState<Position | null>(null);
   const [expandedRowsInternal, setExpandedRowsInternal] = useState<Set<number>>(new Set());
 
   // Controlled vs uncontrolled cell range
-  // Note: setSelectedCellRange is prepared for shift+click range selection implementation
   const isSelectedCellRangeControlled = selectedCellRangeProp !== undefined && onSelectedCellRangeChange != null;
   const selectedCellRange = isSelectedCellRangeControlled ? selectedCellRangeProp : selectedCellRangeInternal;
   const setSelectedCellRange = isSelectedCellRangeControlled
@@ -436,9 +438,6 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
         onSelectedCellRangeChange({ range });
       }
     : setSelectedCellRangeInternal;
-
-  // Suppress unused variable warning - setSelectedCellRange will be used in range selection handlers
-  void setSelectedCellRange;
 
   // Controlled vs uncontrolled expanded rows
   const isExpandedRowsControlled = expandedRowsProp != null && onExpandedRowsChange != null;
@@ -670,6 +669,54 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
       setShouldFocusCell(false);
     }
   }, [shouldFocusCell, focusCell, selectedPosition.idx]);
+
+  useEffect(() => {
+    if (!isCellSelectionEnabled) {
+      setSelectedPosition((position) => {
+        if (position.idx === -1 && position.rowIdx === minRowIdx - 1 && position.mode === 'SELECT') {
+          return position;
+        }
+
+        return { idx: -1, rowIdx: minRowIdx - 1, mode: 'SELECT' };
+      });
+      if (isSelectedCellRangeControlled) {
+        if (selectedCellRangeProp != null) {
+          onSelectedCellRangeChange?.({ range: null });
+        }
+      } else if (selectedCellRangeInternal != null) {
+        setSelectedCellRangeInternal(null);
+      }
+
+      if (cellRangeAnchor != null) {
+        setCellRangeAnchor(null);
+      }
+
+      return;
+    }
+
+    if (selectionMode !== 'cell-range') {
+      if (isSelectedCellRangeControlled) {
+        if (selectedCellRangeProp != null) {
+          onSelectedCellRangeChange?.({ range: null });
+        }
+      } else if (selectedCellRangeInternal != null) {
+        setSelectedCellRangeInternal(null);
+      }
+
+      if (cellRangeAnchor != null) {
+        setCellRangeAnchor(null);
+      }
+    }
+  }, [
+    cellRangeAnchor,
+    isCellSelectionEnabled,
+    isSelectedCellRangeControlled,
+    minRowIdx,
+    onSelectedCellRangeChange,
+    selectionMode,
+    selectedCellRangeInternal,
+    selectedCellRangeProp,
+  ]);
 
   /**
    * Infinite scroll: fires onRowsEndApproaching when user scrolls near the end of data.
@@ -989,11 +1036,16 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     return isRowIdxWithinViewportBounds(rowIdx) && isColIdxWithinSelectionBounds(idx);
   }
 
+  function isDataCellPosition({ idx, rowIdx }: Position): boolean {
+    return isRowIdxWithinViewportBounds(rowIdx) && idx >= 0 && idx <= maxColIdx;
+  }
+
   function isCellEditable(position: Position): boolean {
     return isCellWithinEditBounds(position) && isSelectedCellEditable({ columns, rows, selectedPosition: position });
   }
 
   function selectCell(position: Position, options?: SelectCellOptions): void {
+    if (!isCellSelectionEnabled) return;
     if (!isCellWithinSelectionBounds(position)) return;
     commitEditorChanges();
 
@@ -1016,6 +1068,20 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
         row: isRowIdxWithinViewportBounds(position.rowIdx) ? rows[position.rowIdx] : undefined,
         column: columns[position.idx],
       });
+    }
+
+    if (selectionMode === 'cell-range') {
+      const shouldExtendSelection = options?.extendSelection === true;
+      const fallbackAnchor = isDataCellPosition(selectedPosition) ? selectedPosition : position;
+      const anchor = shouldExtendSelection ? (cellRangeAnchor ?? fallbackAnchor) : position;
+
+      if (isDataCellPosition(anchor) && isDataCellPosition(position)) {
+        setSelectedCellRange(createRange(anchor, position));
+        setCellRangeAnchor(anchor);
+      } else {
+        setSelectedCellRange(null);
+        setCellRangeAnchor(null);
+      }
     }
   }
 
@@ -1107,7 +1173,10 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
       isCellWithinBounds: isCellWithinSelectionBounds,
     });
 
-    selectCell(nextSelectedCellPosition, { shouldFocusCell: true });
+    selectCell(nextSelectedCellPosition, {
+      shouldFocusCell: true,
+      extendSelection: selectionMode === 'cell-range' && shiftKey,
+    });
   }
 
   function getDraggedOverCellIdx(currentRowIdx: number): number | undefined {
@@ -1379,9 +1448,9 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
       dir={direction}
       ref={gridRef}
       onScroll={handleScroll}
-      onKeyDown={handleKeyDown}
-      onCopy={handleCellCopy}
-      onPaste={handleCellPaste}
+      onKeyDown={isCellSelectionEnabled ? handleKeyDown : undefined}
+      onCopy={isCellSelectionEnabled ? handleCellCopy : undefined}
+      onPaste={isCellSelectionEnabled ? handleCellPaste : undefined}
       data-testid={testId}
       data-cy={dataCy}
     >
@@ -1410,7 +1479,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
               lastFrozenColumnIndex={lastFrozenColumnIndex}
               selectedCellIdx={selectedPosition.rowIdx === mainHeaderRowIdx ? selectedPosition.idx : undefined}
               selectCell={selectHeaderCellLatest}
-              shouldFocusGrid={!selectedCellIsWithinSelectionBounds}
+              shouldFocusGrid={isCellSelectionEnabled && !selectedCellIsWithinSelectionBounds}
               direction={direction}
             />
           </HeaderRowSelectionContext>

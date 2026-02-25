@@ -1,6 +1,7 @@
-import { foreignKey, index, pgTable, timestamp, unique, varchar } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
+import { foreignKey, index, pgPolicy, pgTable, timestamp, unique, varchar } from 'drizzle-orm/pg-core';
 import { appConfig, roles } from 'shared';
-import { membershipCrudPolicies } from '#/db/rls-helpers';
+import { isAuthenticated, orgScopedCrudPolicies, userMatch } from '#/db/rls-helpers';
 import { organizationsTable } from '#/db/schema/organizations';
 import { tenantsTable } from '#/db/schema/tenants';
 import { usersTable } from '#/db/schema/users';
@@ -52,7 +53,12 @@ export const inactiveMembershipsTable = pgTable(
       columns: [table.tenantId, table.organizationId],
       foreignColumns: [organizationsTable.tenantId, organizationsTable.id],
     }).onDelete('cascade'),
-    ...membershipCrudPolicies('inactive_memberships', table),
+    ...orgScopedCrudPolicies('inactive_memberships', table),
+    // Own invitations visible across all tenants (for /me routes)
+    pgPolicy('inactive_memberships_select_own_policy', {
+      for: 'select',
+      using: sql`${isAuthenticated} AND ${userMatch(table)}`,
+    }),
   ],
 );
 
