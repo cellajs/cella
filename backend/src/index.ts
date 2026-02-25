@@ -10,10 +10,10 @@ import type { PgliteDatabase } from 'drizzle-orm/pglite';
 import { migrate as pgliteMigrate } from 'drizzle-orm/pglite/migrator';
 import pc from 'picocolors';
 import { appConfig } from 'shared';
+import { renderAscii } from 'shared/ascii';
 import app from '#/routes';
 import { registerCacheInvalidation } from '#/sync/cache-invalidation';
 import { cdcWebSocketServer } from '#/sync/cdc-websocket';
-import { ascii } from '#/utils/ascii';
 import { env } from './env';
 
 // import { sdk } from './tracing';
@@ -96,7 +96,7 @@ const main = async () => {
 
       const tunnelUrl = await startTunnel(info);
 
-      ascii();
+      renderAscii();
       console.info(' ');
 
       console.info(`${pc.bold(pc.greenBright(appConfig.name))} 

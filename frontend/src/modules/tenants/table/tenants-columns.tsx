@@ -59,7 +59,8 @@ export const useColumns = () => {
         resizable: true,
         width: 180,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row }) => (row.createdAt ? dateShort(row.createdAt) : <span className="text-muted">-</span>),
+        placeholderValue: '-',
+        renderCell: ({ row }) => dateShort(row.createdAt),
       },
     ];
 

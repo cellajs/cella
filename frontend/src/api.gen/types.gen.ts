@@ -4764,6 +4764,7 @@ export type GetMembersData = {
     entityId: string;
     entityType: 'organization';
     role?: 'admin' | 'member';
+    userIds?: string;
   };
   url: '/{tenantId}/{orgId}/memberships/members';
 };

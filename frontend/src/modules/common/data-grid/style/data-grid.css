@@ -297,35 +297,6 @@
 }
 
 /* ==========================================================================
-   Text Editor
-   ========================================================================== */
-
-.rdg-text-editor {
-  appearance: none;
-  box-sizing: border-box;
-  inline-size: 100%;
-  block-size: 100%;
-  padding-block: 0;
-  padding-inline: 0.375rem;
-  border: 2px solid hsl(var(--primary));
-  vertical-align: top;
-  color: var(--rdg-color);
-  background-color: var(--rdg-background-color);
-  font-family: inherit;
-  font-size: var(--rdg-font-size);
-}
-
-.rdg-text-editor::placeholder {
-  color: hsl(var(--muted-foreground));
-  opacity: 1;
-}
-
-.rdg-text-editor:focus {
-  outline: none;
-  border-color: hsl(var(--ring));
-}
-
-/* ==========================================================================
    Grouped Header
    ========================================================================== */
 

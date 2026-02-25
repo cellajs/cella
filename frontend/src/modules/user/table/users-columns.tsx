@@ -124,7 +124,8 @@ export const useColumns = () => {
         resizable: true,
         minWidth: 160,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row }) => (row.createdAt ? dateShort(row.createdAt) : <span className="text-muted">-</span>),
+        placeholderValue: '-',
+        renderCell: ({ row }) => dateShort(row.createdAt),
       },
       {
         key: 'lastSeenAt',
@@ -134,7 +135,8 @@ export const useColumns = () => {
         resizable: true,
         minWidth: 160,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row }) => (row.lastSeenAt ? dateShort(row.lastSeenAt) : <span className="text-muted">-</span>),
+        placeholderValue: '-',
+        renderCell: ({ row }) => dateShort(row.lastSeenAt),
       },
     ];
 

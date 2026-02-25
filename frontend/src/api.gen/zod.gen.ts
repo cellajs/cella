@@ -1990,6 +1990,7 @@ export const zGetMembersData = z.object({
     entityId: z.string().max(50),
     entityType: z.enum(['organization']),
     role: z.enum(['admin', 'member']).optional(),
+    userIds: z.string().optional(),
   }),
 });
 

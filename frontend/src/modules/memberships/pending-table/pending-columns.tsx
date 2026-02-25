@@ -20,8 +20,9 @@ export const useColumns = () => {
         visible: true,
         renderHeaderCell: HeaderCell,
         minWidth: 140,
+        placeholderValue: '-',
         renderCell: ({ row, tabIndex }) => {
-          if (!row.email) return <span className="text-muted">-</span>;
+          if (!row.email) return null;
           return (
             <a
               href={`mailto:${row.email}`}
@@ -40,11 +41,13 @@ export const useColumns = () => {
         visible: true,
         width: 100,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row }) => (
-          <div className="inline-flex items-center gap-1 relative group h-full w-full">
-            {row.role ? t(row.role, { ns: ['app', 'common'] }) : <span className="text-muted">-</span>}
-          </div>
-        ),
+        placeholderValue: '-',
+        renderCell: ({ row }) =>
+          row.role ? (
+            <div className="inline-flex items-center gap-1 relative group h-full w-full">
+              {t(row.role, { ns: ['app', 'common'] })}
+            </div>
+          ) : null,
       },
       {
         key: 'createdAt',
@@ -52,7 +55,8 @@ export const useColumns = () => {
         sortable: true,
         visible: !isMobile,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row }) => (row.createdAt ? dateShort(row.createdAt) : <span className="text-muted">-</span>),
+        placeholderValue: '-',
+        renderCell: ({ row }) => dateShort(row.createdAt),
         minWidth: 80,
       },
       {
@@ -62,12 +66,9 @@ export const useColumns = () => {
         visible: !isMobile,
         minWidth: 80,
         renderHeaderCell: HeaderCell,
+        placeholderValue: '-',
         renderCell: ({ row, tabIndex }) =>
-          row.createdBy ? (
-            <UserCell compactable user={row.createdBy} tabIndex={tabIndex} />
-          ) : (
-            <span className="text-muted">-</span>
-          ),
+          row.createdBy && <UserCell compactable user={row.createdBy} tabIndex={tabIndex} />,
       },
     ];
 

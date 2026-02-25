@@ -68,6 +68,7 @@ export const memberListQuerySchema = paginationQuerySchema.extend({
   entityType: contextEntityTypeSchema,
   sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt']).default('createdAt').optional(),
   role: z.enum(roles.all).optional(),
+  userIds: z.string().optional(),
 });
 
 export const pendingMembershipListQuerySchema = paginationQuerySchema.extend({

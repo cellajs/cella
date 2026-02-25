@@ -1,7 +1,7 @@
 import { foreignKey, index, pgTable, primaryKey, timestamp, unique, varchar } from 'drizzle-orm/pg-core';
 import { appConfig } from 'shared';
+import { nanoid } from 'shared/nanoid';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
-import { nanoid } from '#/utils/nanoid';
 import { organizationsTable } from './organizations';
 import { tenantsTable } from './tenants';
 import { usersTable } from './users';

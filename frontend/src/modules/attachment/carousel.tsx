@@ -3,6 +3,7 @@ import Autoplay from 'embla-carousel-autoplay';
 import { DownloadIcon, ExternalLinkIcon } from 'lucide-react';
 import { useRef, useState } from 'react';
 import useDownloader from 'react-use-downloader';
+import { isCDNUrl } from 'shared/is-cdn-url';
 import { clearAttachmentDialogSearchParams, openAttachmentDialog } from '~/modules/attachment/dialog/lib';
 import { FilePlaceholder } from '~/modules/attachment/file-placeholder';
 import { AttachmentRender } from '~/modules/attachment/render';
@@ -19,7 +20,6 @@ import {
   CarouselPrevious,
 } from '~/modules/ui/carousel';
 import { cn } from '~/utils/cn';
-import { isCDNUrl } from '~/utils/is-cdn-url';
 
 export type CarouselItemData = {
   id: string;

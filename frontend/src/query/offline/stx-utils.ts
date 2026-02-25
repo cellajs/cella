@@ -5,8 +5,8 @@
  * Uses nanoid for unique mutation IDs and version-based conflict detection.
  */
 
+import { nanoid } from 'shared/nanoid';
 import type { StxRequestBase } from '~/api.gen';
-import { nanoid } from '~/utils/nanoid';
 
 /**
  * Unique identifier for this browser tab/instance.

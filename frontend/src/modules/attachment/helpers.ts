@@ -1,4 +1,5 @@
 import { appConfig } from 'shared';
+import { nanoid } from 'shared/nanoid';
 import { uploadTemplates } from 'shared/upload-templates';
 import type { Attachment } from '~/api.gen';
 import { getPresignedUrl } from '~/api.gen/sdk.gen';
@@ -9,7 +10,6 @@ import { downloadService } from '~/modules/attachment/download-service';
 import { findAttachmentInListCache } from '~/modules/attachment/query';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
 import { createOptimisticEntity } from '~/query/basic';
-import { nanoid } from '~/utils/nanoid';
 
 /**
  * Constructs a public CDN URL for a file key.

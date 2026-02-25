@@ -99,7 +99,8 @@ export const useColumns = (isCompact: boolean) => {
         resizable: true,
         minWidth: 160,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row }) => (row.createdAt ? dateShort(row.createdAt) : <span className="text-muted">-</span>),
+        placeholderValue: '-',
+        renderCell: ({ row }) => dateShort(row.createdAt),
       },
       {
         key: 'createdBy',
@@ -110,12 +111,9 @@ export const useColumns = (isCompact: boolean) => {
         minWidth: isCompact ? null : 120,
         width: isCompact ? 50 : null,
         renderHeaderCell: HeaderCell,
+        placeholderValue: '-',
         renderCell: ({ row, tabIndex }) =>
-          row.createdBy ? (
-            <UserCell compactable user={row.createdBy} tabIndex={tabIndex} />
-          ) : (
-            <span className="text-muted">-</span>
-          ),
+          row.createdBy && <UserCell compactable user={row.createdBy} tabIndex={tabIndex} />,
       },
       {
         key: 'memberCount',

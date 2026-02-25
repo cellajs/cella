@@ -31,6 +31,7 @@ import { logEvent } from '#/utils/logger';
 import { getOrderColumn } from '#/utils/order-column';
 import { filterWithRejection, takeWithRestriction } from '#/utils/rejection-utils';
 import { prepareStringForILikeFilter } from '#/utils/sql';
+import { validateBlockMediaUrls } from '#/utils/validate-block-urls';
 import { defaultWelcomeText } from '#json/text-blocks.json';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
@@ -334,6 +335,7 @@ const organizationRouteHandlers = app
     }
 
     const user = ctx.var.user;
+    const tx = ctx.var.db;
 
     const updatedFields = ctx.req.valid('json');
     const slug = updatedFields.slug;
@@ -344,10 +346,16 @@ const organizationRouteHandlers = app
         throw new AppError(409, 'slug_exists', 'warn', { entityType: 'organization', meta: { slug } });
     }
 
-    // TODO-005 sanitize blocknote blocks for welcomeText? How to only allow image urls from our own cdn plus a list from allowed domains?
-
-    // Use RLS-enabled transaction from tenant guard middleware
-    const tx = ctx.var.db;
+    // Validate media URLs in welcomeText are from trusted sources (CDN only)
+    if (updatedFields.welcomeText) {
+      const urlValidation = validateBlockMediaUrls(updatedFields.welcomeText);
+      if (!urlValidation.valid) {
+        throw new AppError(400, 'invalid_request', 'warn', {
+          entityType: 'organization',
+          meta: { reason: 'Untrusted media URLs in welcomeText', invalidUrls: urlValidation.invalidUrls.join(', ') },
+        });
+      }
+    }
 
     const [updatedOrganization] = await tx
       .update(organizationsTable)

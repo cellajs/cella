@@ -1,10 +1,10 @@
 import type { Context } from 'hono';
 import type { EntityActionType } from 'shared';
+import { nanoid } from 'shared/nanoid';
 import type { Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
 import { checkPermission } from '#/permissions';
 import type { SubjectForPermission } from '#/permissions/permission-manager/types';
-import { nanoid } from '#/utils/nanoid';
 
 /**
  * Checks if user has permission to perform a collection-level action on an entity type.

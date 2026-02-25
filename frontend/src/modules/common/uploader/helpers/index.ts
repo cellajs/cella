@@ -3,6 +3,7 @@ import { onlineManager } from '@tanstack/react-query';
 import { Uppy } from '@uppy/core';
 import Transloadit from '@uppy/transloadit';
 import { appConfig } from 'shared';
+import { nanoid } from 'shared/nanoid';
 import { getUploadToken, type UploadToken } from '~/api.gen';
 import { makeBlobKey, type UploadContext } from '~/modules/attachment/dexie/attachments-db';
 import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
@@ -10,7 +11,6 @@ import { prepareFilesForOffline } from '~/modules/common/uploader/helpers/prepar
 import type { CustomUppy, CustomUppyFile, CustomUppyOpt } from '~/modules/common/uploader/types';
 import type { UploadTokenQuery } from '~/modules/me/types';
 import { cleanFileName } from '~/utils/clean-file-name';
-import { nanoid } from '~/utils/nanoid';
 
 /**
  * Creates and initializes a new Uppy instance with local-first upload support.

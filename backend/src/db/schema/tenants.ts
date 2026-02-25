@@ -1,7 +1,7 @@
 import { index, pgEnum, pgTable, varchar } from 'drizzle-orm/pg-core';
+import { nanoidTenant } from 'shared/nanoid';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
-import { nanoidTenant } from '#/utils/nanoid';
 
 export const tenantStatusEnum = pgEnum('tenant_status', ['active', 'suspended', 'archived']);
 

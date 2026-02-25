@@ -18,10 +18,10 @@
 
 import { sql } from 'drizzle-orm';
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { nanoidTenant } from 'shared/nanoid';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as adminDb } from '#/db/db';
 import { setPublicRlsContext, setTenantRlsContext, setUserRlsContext } from '#/db/tenant-context';
-import { nanoidTenant } from '#/utils/nanoid';
 
 // Test IDs - deterministic for reliable cleanup
 const TEST_TENANT_A = 'rlsta1';

@@ -423,7 +423,7 @@ export function TreeDataGrid<R, SR = unknown, K extends Key = Key>({
       role="treegrid"
       aria-rowcount={rowsCount + 1 + (props.topSummaryRows?.length ?? 0) + (props.bottomSummaryRows?.length ?? 0)}
       columns={columns}
-      rows={rows as R[]} // TODO-027: check types
+      rows={rows as R[]}
       rowHeight={rowHeight}
       rowKeyGetter={rowKeyGetter}
       onRowsChange={handleRowsChange}

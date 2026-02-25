@@ -851,7 +851,8 @@
             "type": "string",
             "required": false,
             "enum": ["admin", "member"]
-          }
+          },
+          "userIds": { "type": "string", "required": false }
         }
       }
     }

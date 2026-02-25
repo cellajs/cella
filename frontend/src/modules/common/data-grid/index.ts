@@ -12,7 +12,6 @@ export {
   type RowsEndApproachingArgs,
 } from './data-grid';
 export { DataGridDefaultRenderersContext } from './data-grid-default-renderers-context';
-export { textTextEditor as renderTextEditor } from './editors/render-text-editor';
 export {
   useCopyPaste,
   useExpandableRows,

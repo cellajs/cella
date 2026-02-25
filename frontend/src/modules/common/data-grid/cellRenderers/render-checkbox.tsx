@@ -1,24 +1,23 @@
+import { useRef } from 'react';
+import { Checkbox } from '~/modules/ui/checkbox';
 import type { RenderCheckboxProps } from '../types';
 
-const checkboxClassname = 'rdg-checkbox-input';
+export function renderCheckbox({ onChange, indeterminate: _indeterminate, ...props }: RenderCheckboxProps) {
+  const withShift = useRef(false);
 
-// TODO-037 not used, perhaps remove or refactor so that it is used and uses shadcn checkbox
-export function renderCheckbox({ onChange, indeterminate, ...props }: RenderCheckboxProps) {
-  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    onChange(e.target.checked, (e.nativeEvent as MouseEvent).shiftKey);
-  }
+  const handleChange = (checked: boolean) => {
+    onChange(checked, withShift.current);
+  };
 
   return (
-    <input
-      ref={(el) => {
-        if (el) {
-          el.indeterminate = indeterminate === true;
-        }
-      }}
-      type="checkbox"
-      className={checkboxClassname}
-      onChange={handleChange}
+    <Checkbox
       {...props}
+      onClick={(e) => {
+        withShift.current = e.nativeEvent.shiftKey;
+      }}
+      onCheckedChange={(checked) => {
+        handleChange(!!checked);
+      }}
     />
   );
 }

@@ -1,7 +1,7 @@
 import { index, pgTable, varchar } from 'drizzle-orm/pg-core';
+import { nanoid } from 'shared/nanoid';
 import { maxLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
-import { nanoid } from '#/utils/nanoid';
 
 export const requestTypeEnum = ['waitlist', 'newsletter', 'contact'] as const;
 

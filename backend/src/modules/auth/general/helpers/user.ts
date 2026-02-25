@@ -1,5 +1,6 @@
 import { and, eq, inArray, isNotNull, isNull } from 'drizzle-orm';
 import { appConfig } from 'shared';
+import { nanoid } from 'shared/nanoid';
 import { baseDb as db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
@@ -9,7 +10,6 @@ import { type InsertUserModel, type UserModel, usersTable } from '#/db/schema/us
 import { AppError } from '#/lib/error';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { getIsoDate } from '#/utils/iso-date';
-import { nanoid } from '#/utils/nanoid';
 import { generateUnsubscribeToken } from '#/utils/unsubscribe-token';
 
 interface HandleCreateUserProps {

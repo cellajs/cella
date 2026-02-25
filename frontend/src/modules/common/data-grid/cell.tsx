@@ -120,7 +120,7 @@ function Cell<R, SR>({
       onFocus={onFocus}
       {...props}
     >
-      {column.renderCell({
+      {renderCellContent(column, {
         column,
         row,
         rowIdx,
@@ -130,6 +130,18 @@ function Cell<R, SR>({
       })}
     </div>
   );
+}
+
+/** Renders cell content, falling back to placeholderValue when renderCell returns nullish */
+function renderCellContent<R, SR>(
+  column: CellRendererProps<R, SR>['column'],
+  props: Parameters<typeof column.renderCell>[0],
+) {
+  const content = column.renderCell(props);
+  if (content == null && column.placeholderValue != null) {
+    return <span className="text-muted">{column.placeholderValue}</span>;
+  }
+  return content;
 }
 
 export const CellComponent = memo(Cell) as <R, SR>(props: CellRendererProps<R, SR>) => React.JSX.Element;

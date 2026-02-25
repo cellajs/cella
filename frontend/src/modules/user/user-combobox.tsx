@@ -67,20 +67,22 @@ export const UserCombobox = ({ value, onChange, entity }: Props) => {
     // isFetchingNextPage,
   } = useInfiniteQuery(queryOptions);
 
-  // TODO can we do this with filter on users in list
-  // Fetch existing members of the entity to check "already member" status
-  const { data: membersData } = useInfiniteQuery(
-    membersListQueryOptions({
+  const items = data?.pages.flatMap((p) => p.items) ?? [];
+  const userIds = items.map((u) => u.id).join(',');
+
+  // Fetch membership status only for users in search results
+  const { data: membersData } = useInfiniteQuery({
+    ...membersListQueryOptions({
       entityId: entity.id,
       entityType: entity.entityType,
       tenantId: entity.tenantId,
       orgId: entity.organizationId || entity.id,
+      userIds,
     }),
-  );
+    enabled: items.length > 0,
+  });
 
   const existingMemberIds = new Set(membersData?.pages.flatMap((p) => p.items.map((m) => m.id)) ?? []);
-
-  const items = data?.pages.flatMap((p) => p.items) ?? [];
 
   useEffect(() => {
     onChange(selected);

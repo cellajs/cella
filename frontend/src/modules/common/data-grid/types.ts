@@ -91,6 +91,12 @@ export interface Column<TRow, TSummaryRow = unknown> {
   /** Sets the column sort order to be descending instead of ascending the first time the column is sorted */
   readonly sortDescendingFirst?: Maybe<boolean>;
   /**
+   * Placeholder to display when the cell value is nullish.
+   * Rendered as muted text. Only applies when renderCell returns null/undefined.
+   * @example placeholderValue: '-'
+   */
+  readonly placeholderValue?: Maybe<string>;
+  /**
    * Whether the column can receive keyboard focus.
    * When false, Tab and Arrow keys skip this column.
    * @default true

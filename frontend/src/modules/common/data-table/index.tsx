@@ -19,7 +19,6 @@ import { DataTableSkeleton } from '~/modules/common/data-table/table-skeleton';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useTableTooltip } from '~/modules/common/data-table/use-table-tooltip';
 import { toaster } from '~/modules/common/toaster/service';
-import { Checkbox } from '~/modules/ui/checkbox';
 import { cn } from '~/utils/cn';
 
 /** Maximum number of rows that can be selected at once */
@@ -163,27 +162,6 @@ export const DataTable = <TData,>({
                 renderers={{
                   renderRow,
                   renderCell,
-                  renderCheckbox: ({ onChange, ...props }) => {
-                    const withShift = useRef(false);
-
-                    delete props.indeterminate;
-
-                    const handleChange = (checked: boolean) => {
-                      onChange(checked, withShift.current);
-                    };
-
-                    return (
-                      <Checkbox
-                        {...props}
-                        onClick={(e) => {
-                          withShift.current = e.nativeEvent.shiftKey;
-                        }}
-                        onCheckedChange={(checked) => {
-                          handleChange(!!checked);
-                        }}
-                      />
-                    );
-                  },
                 }}
               />
               {!readOnly && (

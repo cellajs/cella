@@ -56,15 +56,13 @@ export const useColumns = () => {
       visible: true,
       minWidth: 100,
       renderHeaderCell: HeaderCell,
-      renderCell: ({ row }) => (
-        <div className="inline-flex items-center gap-1 relative group h-full w-full">
-          {row.inactiveMembership.role ? (
-            t(`common:${row.inactiveMembership.role}`)
-          ) : (
-            <span className="text-muted">-</span>
-          )}
-        </div>
-      ),
+      placeholderValue: '-',
+      renderCell: ({ row }) =>
+        row.inactiveMembership.role ? (
+          <div className="inline-flex items-center gap-1 relative group h-full w-full">
+            {t(`common:${row.inactiveMembership.role}`)}
+          </div>
+        ) : null,
     },
     {
       key: 'createdAt',
@@ -73,12 +71,8 @@ export const useColumns = () => {
       visible: !isMobile,
       minWidth: 160,
       renderHeaderCell: HeaderCell,
-      renderCell: ({ row }) =>
-        row.inactiveMembership.createdAt ? (
-          dateShort(row.inactiveMembership.createdAt)
-        ) : (
-          <span className="text-muted">-</span>
-        ),
+      placeholderValue: '-',
+      renderCell: ({ row }) => dateShort(row.inactiveMembership.createdAt),
     },
     {
       key: 'createdBy',
@@ -87,11 +81,10 @@ export const useColumns = () => {
       visible: !isMobile,
       minWidth: 120,
       renderHeaderCell: HeaderCell,
+      placeholderValue: '-',
       renderCell: ({ row, tabIndex }) =>
-        row.inactiveMembership.createdBy ? (
+        row.inactiveMembership.createdBy && (
           <UserCell compactable user={row.inactiveMembership.createdBy} tabIndex={tabIndex} />
-        ) : (
-          <span className="text-muted">-</span>
         ),
     },
     {

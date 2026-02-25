@@ -3,10 +3,10 @@ import { and, count, eq, ilike, inArray, or, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import i18n from 'i18next';
 import { appConfig, hierarchy } from 'shared';
+import { nanoid } from 'shared/nanoid';
 import { emailsTable } from '#/db/schema/emails';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { membershipsTable } from '#/db/schema/memberships';
-import { requestsTable } from '#/db/schema/requests';
 import { tokensTable } from '#/db/schema/tokens';
 import { userActivityTable } from '#/db/schema/user-activity';
 import { usersTable } from '#/db/schema/users';
@@ -24,7 +24,6 @@ import { getValidContextEntity } from '#/permissions/get-context-entity';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
-import { nanoid } from '#/utils/nanoid';
 import { getOrderColumn } from '#/utils/order-column';
 import { encodeLowerCased } from '#/utils/oslo';
 import { slugFromEmail } from '#/utils/slug-from-email';
@@ -273,17 +272,6 @@ const membershipsRouteHandlers = app
         secret: tokensTable.secret,
         type: tokensTable.type,
       });
-
-      // Step 5b: Link waitlist requests to new tokens (if any)
-      // TODO-011: This should be handled by eventManager in requests module itself
-      await Promise.all(
-        insertedTokens.map(({ id, email }) =>
-          db
-            .update(requestsTable)
-            .set({ tokenId: id })
-            .where(and(eq(requestsTable.email, email), eq(requestsTable.type, 'waitlist'))),
-        ),
-      );
     }
 
     // Step 5c – create inactive memberships for Scenario 2a + 3 in one bulk insert
@@ -561,7 +549,7 @@ const membershipsRouteHandlers = app
    * Get members by entity id/slug and type
    */
   .openapi(membershipRoutes.getMembers, async (ctx) => {
-    const { entityId, entityType, q, sort, order, offset, limit, role } = ctx.req.valid('query');
+    const { entityId, entityType, q, sort, order, offset, limit, role, userIds } = ctx.req.valid('query');
     const db = ctx.var.db;
 
     const organization = ctx.var.organization;
@@ -586,6 +574,7 @@ const membershipsRouteHandlers = app
     ];
 
     if (role) membersFilters.push(eq(membershipsTable.role, role));
+    if (userIds) membersFilters.push(inArray(usersTable.id, userIds.split(',')));
 
     const orderColumn = getOrderColumn(sort, usersTable.id, order, {
       id: usersTable.id,

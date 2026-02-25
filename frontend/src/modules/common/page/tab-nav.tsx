@@ -3,13 +3,13 @@ import { motion } from 'motion/react';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
+import { nanoid } from 'shared/nanoid';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useMountedState } from '~/hooks/use-mounted-state';
 import { useNavTabs } from '~/hooks/use-nav-tabs';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { StickyBox } from '~/modules/common/sticky-box';
 import { cn } from '~/utils/cn';
-import { nanoid } from '~/utils/nanoid';
 
 export type PageTab = {
   id: string;

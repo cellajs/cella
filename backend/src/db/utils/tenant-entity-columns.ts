@@ -1,8 +1,8 @@
 import { varchar } from 'drizzle-orm/pg-core';
+import { nanoid } from 'shared/nanoid';
 import { tenantsTable } from '#/db/schema/tenants';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
-import { nanoid } from '#/utils/nanoid';
 
 /**
  * Creates base columns shared by all tenant-scoped entities (context entities, product entities).

@@ -1,13 +1,13 @@
 import { sql } from 'drizzle-orm';
 import { foreignKey, index, pgPolicy, pgTable, timestamp, unique, varchar } from 'drizzle-orm/pg-core';
 import { appConfig, roles } from 'shared';
+import { nanoid } from 'shared/nanoid';
 import { isAuthenticated, orgScopedCrudPolicies, userMatch } from '#/db/rls-helpers';
 import { organizationsTable } from '#/db/schema/organizations';
 import { tenantsTable } from '#/db/schema/tenants';
 import { usersTable } from '#/db/schema/users';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
-import { nanoid } from '#/utils/nanoid';
 
 const roleEnum = roles.all;
 

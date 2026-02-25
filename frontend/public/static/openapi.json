@@ -11833,6 +11833,14 @@
             "required": false,
             "name": "role",
             "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "userIds",
+            "in": "query"
           }
         ],
         "responses": {
