@@ -57,7 +57,7 @@
           },
           "emailEnumLimiter": {
             "name": "emailEnum",
-            "description": "Blocks IP for 30 min after 10 consecutive failures"
+            "description": "Blocks IP for 30 min after 5 consecutive failures"
           },
           "passwordLimiter": {
             "name": "password",
@@ -74,6 +74,10 @@
           "passkeyChallengeLimiter": {
             "name": "passkeyChallenge",
             "description": "Max 5 passkey challenges/hour per IP"
+          },
+          "pointsLimiter": {
+            "name": "points",
+            "description": "Consumes dynamic API point(s) per request against per-tenant hourly budget"
           },
           "tokenLimiter": {
             "name": "token",
@@ -1032,20 +1036,16 @@
           "user": {
             "$ref": "#/components/schemas/User"
           },
-          "systemRole": {
-            "type": "string",
-            "enum": [
-              "admin",
-              "user"
-            ],
-            "description": "System-level role (e.g. admin) or user for standard access."
+          "isSystemAdmin": {
+            "type": "boolean",
+            "description": "Whether the current user has system admin privileges."
           }
         },
         "required": [
           "user",
-          "systemRole"
+          "isSystemAdmin"
         ],
-        "description": "The currently authenticated user with their system role.",
+        "description": "The currently authenticated user with their system admin status.",
         "example": {
           "user": {
             "id": "snou9b80h3jlnu1j458h6mvs",
@@ -1069,7 +1069,7 @@
             "lastSignInAt": "2024-07-14T22:49:14.651Z",
             "lastSeenAt": "2024-07-14T22:49:14.651Z"
           },
-          "systemRole": null
+          "isSystemAdmin": false
         }
       },
       "User": {
@@ -1621,6 +1621,36 @@
               "archived"
             ]
           },
+          "restrictions": {
+            "type": "object",
+            "properties": {
+              "quotas": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "description": "Entity quotas (0 = unlimited)"
+              },
+              "rateLimits": {
+                "type": "object",
+                "properties": {
+                  "apiPointsPerHour": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "Max API points per hour per user within this tenant"
+                  }
+                },
+                "required": [
+                  "apiPointsPerHour"
+                ]
+              }
+            },
+            "required": [
+              "quotas",
+              "rateLimits"
+            ]
+          },
           "createdAt": {
             "type": "string"
           },
@@ -1635,6 +1665,7 @@
           "id",
           "name",
           "status",
+          "restrictions",
           "createdAt",
           "modifiedAt"
         ],
@@ -1946,7 +1977,7 @@
           "chatSupport",
           "included"
         ],
-        "description": "An organization with settings, restrictions, and membership context.",
+        "description": "An organization with membership context.",
         "example": {
           "id": "hmo9fwr239kqavr3yur671kl",
           "tenantId": "vk6xht",
@@ -1977,11 +2008,6 @@
           "createdBy": null,
           "modifiedAt": "2024-12-25T15:29:47.111Z",
           "modifiedBy": null,
-          "restrictions": {
-            "user": 1000,
-            "attachment": 100,
-            "page": 0
-          },
           "included": {
             "membership": {
               "id": "kaba9fpc90mgtzmtjipw2v8s",
@@ -4679,7 +4705,7 @@
                     "lastSignInAt": "2024-07-14T22:49:14.651Z",
                     "lastSeenAt": "2024-07-14T22:49:14.651Z"
                   },
-                  "systemRole": null
+                  "isSystemAdmin": false
                 }
               }
             }
@@ -5203,7 +5229,9 @@
         "x-guard": [
           "authGuard"
         ],
-        "x-rate-limiter": [],
+        "x-rate-limiter": [
+          "pointsLimiter"
+        ],
         "x-cache": [],
         "requestBody": {
           "content": {
@@ -5569,7 +5597,7 @@
           "seen"
         ],
         "summary": "Get unseen counts",
-        "description": "Returns the number of unseen product entities per organization and entity type for the *current user*. Only entities created within the last 90 days are considered.",
+        "description": "Returns the number of unseen product entities per parent context entity (e.g., project) and entity type for the *current user*. Computed as total (from context_counters) minus seen (from seen_by).",
         "x-guard": [
           "authGuard"
         ],
@@ -5577,7 +5605,7 @@
         "x-cache": [],
         "responses": {
           "200": {
-            "description": "Unseen counts per org per entity type",
+            "description": "Unseen counts per parent context entity per entity type",
             "content": {
               "application/json": {
                 "schema": {
@@ -6007,7 +6035,10 @@
           "authGuard",
           "sysAdminGuard"
         ],
-        "x-rate-limiter": [],
+        "x-rate-limiter": [
+          "spamLimiter",
+          "pointsLimiter"
+        ],
         "x-cache": [],
         "requestBody": {
           "required": true,
@@ -6115,7 +6146,9 @@
           "authGuard",
           "sysAdminGuard"
         ],
-        "x-rate-limiter": [],
+        "x-rate-limiter": [
+          "pointsLimiter"
+        ],
         "x-cache": [],
         "requestBody": {
           "required": true,
@@ -6801,6 +6834,29 @@
                       "suspended",
                       "archived"
                     ]
+                  },
+                  "restrictions": {
+                    "type": "object",
+                    "properties": {
+                      "quotas": {
+                        "type": "object",
+                        "additionalProperties": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "description": "Entity quotas (0 = unlimited)"
+                      },
+                      "rateLimits": {
+                        "type": "object",
+                        "properties": {
+                          "apiPointsPerHour": {
+                            "type": "integer",
+                            "minimum": 0
+                          }
+                        }
+                      }
+                    },
+                    "description": "Partial restrictions override"
                   }
                 }
               }
@@ -7146,7 +7202,9 @@
           "authGuard",
           "sysAdminGuard"
         ],
-        "x-rate-limiter": [],
+        "x-rate-limiter": [
+          "pointsLimiter"
+        ],
         "x-cache": [],
         "requestBody": {
           "required": true,
@@ -7823,7 +7881,9 @@
           "authGuard",
           "tenantGuard"
         ],
-        "x-rate-limiter": [],
+        "x-rate-limiter": [
+          "pointsLimiter"
+        ],
         "x-cache": [],
         "parameters": [
           {
@@ -7952,7 +8012,7 @@
                             }
                           }
                         ],
-                        "description": "An organization with settings, restrictions, and membership context.",
+                        "description": "An organization with membership context.",
                         "example": {
                           "id": "hmo9fwr239kqavr3yur671kl",
                           "tenantId": "vk6xht",
@@ -7983,11 +8043,6 @@
                           "createdBy": null,
                           "modifiedAt": "2024-12-25T15:29:47.111Z",
                           "modifiedBy": null,
-                          "restrictions": {
-                            "user": 1000,
-                            "attachment": 100,
-                            "page": 0
-                          },
                           "included": {
                             "membership": {
                               "id": "kaba9fpc90mgtzmtjipw2v8s",
@@ -8071,11 +8126,6 @@
                       "createdBy": null,
                       "modifiedAt": "2024-04-19T14:04:35.773Z",
                       "modifiedBy": null,
-                      "restrictions": {
-                        "user": 1000,
-                        "attachment": 100,
-                        "page": 0
-                      },
                       "included": {
                         "membership": {
                           "id": "3y6ee6h5lc8sjfv4trxwe3yb",
@@ -8132,11 +8182,6 @@
                       "createdBy": null,
                       "modifiedAt": "2024-02-25T13:01:35.301Z",
                       "modifiedBy": null,
-                      "restrictions": {
-                        "user": 1000,
-                        "attachment": 100,
-                        "page": 0
-                      },
                       "included": {
                         "membership": {
                           "id": "ry5f7szmj5jhp0ad93klgj3e",
@@ -8202,7 +8247,9 @@
           "authGuard",
           "tenantGuard"
         ],
-        "x-rate-limiter": [],
+        "x-rate-limiter": [
+          "pointsLimiter"
+        ],
         "x-cache": [],
         "parameters": [
           {
@@ -8464,11 +8511,6 @@
                       "createdBy": null,
                       "modifiedAt": "2024-11-21T04:00:59.122Z",
                       "modifiedBy": null,
-                      "restrictions": {
-                        "user": 1000,
-                        "attachment": 100,
-                        "page": 0
-                      },
                       "included": {
                         "membership": {
                           "id": "300jor4orrvsgezqoyxfckg3",
@@ -8525,11 +8567,6 @@
                       "createdBy": null,
                       "modifiedAt": "2024-10-29T08:46:20.790Z",
                       "modifiedBy": null,
-                      "restrictions": {
-                        "user": 1000,
-                        "attachment": 100,
-                        "page": 0
-                      },
                       "included": {
                         "membership": {
                           "id": "1u44cckbz5av195r4h3wiruz",
@@ -8681,11 +8718,6 @@
                   "createdBy": null,
                   "modifiedAt": "2024-12-25T15:29:47.111Z",
                   "modifiedBy": null,
-                  "restrictions": {
-                    "user": 1000,
-                    "attachment": 100,
-                    "page": 0
-                  },
                   "included": {
                     "membership": {
                       "id": "kaba9fpc90mgtzmtjipw2v8s",
@@ -8944,11 +8976,6 @@
                   "createdBy": null,
                   "modifiedAt": "2024-12-25T15:29:47.111Z",
                   "modifiedBy": null,
-                  "restrictions": {
-                    "user": 1000,
-                    "attachment": 100,
-                    "page": 0
-                  },
                   "included": {
                     "membership": {
                       "id": "kaba9fpc90mgtzmtjipw2v8s",
@@ -9261,7 +9288,9 @@
           "tenantGuard",
           "sysAdminGuard"
         ],
-        "x-rate-limiter": [],
+        "x-rate-limiter": [
+          "pointsLimiter"
+        ],
         "x-cache": [],
         "parameters": [
           {
@@ -9512,7 +9541,9 @@
           "tenantGuard",
           "sysAdminGuard"
         ],
-        "x-rate-limiter": [],
+        "x-rate-limiter": [
+          "pointsLimiter"
+        ],
         "x-cache": [],
         "parameters": [
           {
@@ -9877,11 +9908,17 @@
                       "items": {
                         "allOf": [
                           {
-                            "$ref": "#/components/schemas/User"
+                            "$ref": "#/components/schemas/UserBase"
                           },
                           {
                             "type": "object",
                             "properties": {
+                              "lastSeenAt": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
                               "role": {
                                 "type": [
                                   "string",
@@ -9892,31 +9929,24 @@
                                   null
                                 ]
                               }
-                            }
+                            },
+                            "required": [
+                              "lastSeenAt"
+                            ]
                           }
                         ],
-                        "description": "A user with profile data and activity timestamps.",
+                        "description": "Base user schema with essential fields for identification and display.",
                         "example": {
-                          "id": "7sfzetbhjls7m9dg1xzavv78",
-                          "entityType": "user",
-                          "name": "Cecilia Hodkiewicz",
-                          "firstName": "Cecilia",
-                          "lastName": "Hodkiewicz",
-                          "email": "cecilia.hodkiewicz@hotmail.com",
-                          "slug": "ceciliahodkiewicz17",
+                          "id": "eyp654w9neyhyka0hezx1xnh",
+                          "createdAt": "2024-05-14T11:11:41.599Z",
+                          "modifiedAt": "2024-08-06T10:38:55.463Z",
+                          "name": "Rosendo Bayer",
                           "description": null,
+                          "entityType": "user",
+                          "slug": "rosendo.bayer89",
                           "thumbnailUrl": null,
                           "bannerUrl": null,
-                          "language": "en",
-                          "newsletter": false,
-                          "mfaRequired": false,
-                          "userFlags": {},
-                          "createdAt": "2024-12-13T11:17:23.643Z",
-                          "modifiedAt": "2024-12-13T11:17:23.643Z",
-                          "modifiedBy": null,
-                          "lastStartedAt": "2024-12-13T11:17:23.643Z",
-                          "lastSignInAt": "2024-12-13T11:17:23.643Z",
-                          "lastSeenAt": "2024-12-13T11:17:23.643Z"
+                          "email": "rosendo.bayer7@yahoo.com"
                         }
                       }
                     },
@@ -10078,7 +10108,38 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/User"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/UserBase"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "lastSeenAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "lastSeenAt"
+                      ]
+                    }
+                  ],
+                  "description": "Base user schema with essential fields for identification and display.",
+                  "example": {
+                    "id": "eyp654w9neyhyka0hezx1xnh",
+                    "createdAt": "2024-05-14T11:11:41.599Z",
+                    "modifiedAt": "2024-08-06T10:38:55.463Z",
+                    "name": "Rosendo Bayer",
+                    "description": null,
+                    "entityType": "user",
+                    "slug": "rosendo.bayer89",
+                    "thumbnailUrl": null,
+                    "bannerUrl": null,
+                    "email": "rosendo.bayer7@yahoo.com"
+                  }
                 },
                 "example": {
                   "id": "7sfzetbhjls7m9dg1xzavv78",
@@ -10347,7 +10408,9 @@
           "tenantGuard",
           "orgGuard"
         ],
-        "x-rate-limiter": [],
+        "x-rate-limiter": [
+          "pointsLimiter"
+        ],
         "x-cache": [],
         "parameters": [
           {
@@ -10695,7 +10758,9 @@
           "tenantGuard",
           "orgGuard"
         ],
-        "x-rate-limiter": [],
+        "x-rate-limiter": [
+          "pointsLimiter"
+        ],
         "x-cache": [],
         "parameters": [
           {
@@ -11214,7 +11279,10 @@
           "tenantGuard",
           "orgGuard"
         ],
-        "x-rate-limiter": [],
+        "x-rate-limiter": [
+          "spamLimiter",
+          "pointsLimiter"
+        ],
         "x-cache": [],
         "parameters": [
           {
@@ -11385,7 +11453,9 @@
           "tenantGuard",
           "orgGuard"
         ],
-        "x-rate-limiter": [],
+        "x-rate-limiter": [
+          "pointsLimiter"
+        ],
         "x-cache": [],
         "parameters": [
           {
@@ -11854,133 +11924,42 @@
                     "items": {
                       "type": "array",
                       "items": {
-                        "type": "object",
-                        "properties": {
-                          "createdAt": {
-                            "type": "string"
+                        "allOf": [
+                          {
+                            "$ref": "#/components/schemas/UserBase"
                           },
-                          "id": {
-                            "type": "string",
-                            "maxLength": 50
-                          },
-                          "entityType": {
-                            "type": "string",
-                            "enum": [
-                              "user"
+                          {
+                            "type": "object",
+                            "properties": {
+                              "lastSeenAt": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "membership": {
+                                "$ref": "#/components/schemas/MembershipBase"
+                              }
+                            },
+                            "required": [
+                              "lastSeenAt",
+                              "membership"
                             ]
-                          },
-                          "name": {
-                            "type": "string",
-                            "maxLength": 255
-                          },
-                          "description": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
-                          },
-                          "slug": {
-                            "type": "string",
-                            "maxLength": 255
-                          },
-                          "thumbnailUrl": {
-                            "type": [
-                              "string",
-                              "null"
-                            ],
-                            "maxLength": 2048
-                          },
-                          "bannerUrl": {
-                            "type": [
-                              "string",
-                              "null"
-                            ],
-                            "maxLength": 2048
-                          },
-                          "email": {
-                            "type": "string",
-                            "format": "email"
-                          },
-                          "mfaRequired": {
-                            "type": "boolean"
-                          },
-                          "firstName": {
-                            "type": [
-                              "string",
-                              "null"
-                            ],
-                            "maxLength": 255
-                          },
-                          "lastName": {
-                            "type": [
-                              "string",
-                              "null"
-                            ],
-                            "maxLength": 255
-                          },
-                          "language": {
-                            "type": "string",
-                            "enum": [
-                              "en",
-                              "nl"
-                            ]
-                          },
-                          "modifiedAt": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
-                          },
-                          "modifiedBy": {
-                            "type": [
-                              "string",
-                              "null"
-                            ],
-                            "maxLength": 50
-                          },
-                          "lastSeenAt": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
-                          },
-                          "lastStartedAt": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
-                          },
-                          "lastSignInAt": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
-                          },
-                          "membership": {
-                            "$ref": "#/components/schemas/MembershipBase"
                           }
-                        },
-                        "required": [
-                          "createdAt",
-                          "id",
-                          "entityType",
-                          "name",
-                          "description",
-                          "slug",
-                          "thumbnailUrl",
-                          "bannerUrl",
-                          "email",
-                          "mfaRequired",
-                          "firstName",
-                          "lastName",
-                          "language",
-                          "modifiedAt",
-                          "modifiedBy",
-                          "lastSeenAt",
-                          "lastStartedAt",
-                          "lastSignInAt",
-                          "membership"
-                        ]
+                        ],
+                        "description": "Base user schema with essential fields for identification and display.",
+                        "example": {
+                          "id": "eyp654w9neyhyka0hezx1xnh",
+                          "createdAt": "2024-05-14T11:11:41.599Z",
+                          "modifiedAt": "2024-08-06T10:38:55.463Z",
+                          "name": "Rosendo Bayer",
+                          "description": null,
+                          "entityType": "user",
+                          "slug": "rosendo.bayer89",
+                          "thumbnailUrl": null,
+                          "bannerUrl": null,
+                          "email": "rosendo.bayer7@yahoo.com"
+                        }
                       }
                     },
                     "total": {
@@ -12333,7 +12312,9 @@
           "tenantGuard",
           "orgGuard"
         ],
-        "x-rate-limiter": [],
+        "x-rate-limiter": [
+          "pointsLimiter"
+        ],
         "x-cache": [],
         "parameters": [
           {

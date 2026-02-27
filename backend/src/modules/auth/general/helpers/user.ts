@@ -1,7 +1,7 @@
 import { and, eq, inArray, isNotNull, isNull } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import { nanoid } from 'shared/nanoid';
-import { baseDb as db } from '#/db/db';
+import type { DbOrTx } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { tokensTable } from '#/db/schema/tokens';
@@ -16,6 +16,7 @@ interface HandleCreateUserProps {
   newUser: InsertUserModel;
   inactiveMembershipId?: string | null;
   emailVerified?: boolean;
+  db: DbOrTx;
 }
 
 /**
@@ -27,7 +28,7 @@ interface HandleCreateUserProps {
  * @param emailVerified - Optional, new user email verified.
  * @returns Error response or Redirect response or Response
  */
-export const handleCreateUser = async ({ newUser, emailVerified }: HandleCreateUserProps): Promise<UserModel> => {
+export const handleCreateUser = async ({ newUser, emailVerified, db }: HandleCreateUserProps): Promise<UserModel> => {
   // Check if slug is available
   const slugAvailable = await checkSlugAvailable(newUser.slug, db);
 
@@ -67,6 +68,7 @@ export const handleCreateUser = async ({ newUser, emailVerified }: HandleCreateU
     // If there are existing invitation tokens, set the user ID on the associated inactive memberships
     if (existingTokens.length > 0) {
       await handleSetUserOnInactiveMemberships(
+        db,
         user.id,
         existingTokens.map((t) => t.inactiveMembershipId!),
       );
@@ -100,7 +102,11 @@ export const handleCreateUser = async ({ newUser, emailVerified }: HandleCreateU
  * @param userId - The ID of the newly created user.
  * @param inactiveMembershipIds - The IDs of the inactive memberships to update.
  */
-export const handleSetUserOnInactiveMemberships = async (userId: string, inactiveMembershipIds: string[]) => {
+export const handleSetUserOnInactiveMemberships = async (
+  db: DbOrTx,
+  userId: string,
+  inactiveMembershipIds: string[],
+) => {
   await db
     .update(inactiveMembershipsTable)
     .set({ userId })

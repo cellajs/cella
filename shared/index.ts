@@ -48,6 +48,7 @@ export type {
   ParentlessProductEntityType,
   ProductEntityType,
   PublicProductEntityType,
+  SeenTrackedEntityType,
   RelatableContextEntityType,
   ResourceType,
   Severity,

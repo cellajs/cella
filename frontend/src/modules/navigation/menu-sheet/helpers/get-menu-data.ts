@@ -12,7 +12,7 @@ import { buildMenuFromCache } from './build-menu-from-cache';
  *
  * @returns The menu data.
  */
-export async function getMenuData(opts?: { detailedMenu?: boolean }) {
+export async function getMenuData() {
   const userId = useUserStore.getState().user.id;
 
   // Fetch memberships first — populates the cache that the subscriber reads from
@@ -31,5 +31,5 @@ export async function getMenuData(opts?: { detailedMenu?: boolean }) {
     }),
   );
 
-  return buildMenuFromCache(userId, opts);
+  return buildMenuFromCache(userId);
 }

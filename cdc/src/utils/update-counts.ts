@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { isProductEntity } from 'shared';
+import { appConfig, hierarchy, isProductEntity } from 'shared';
 import { contextCountersTable } from '#/db/schema/context-counters';
 import { cdcDb } from '../db';
 import type { TableRegistryEntry } from '../types';
@@ -28,34 +28,36 @@ export interface CountDelta {
  *   - update rejectedAt null→non-null → -1 pending
  *
  * Entity counts (e: prefix):
- *   - product entity create with orgId → +1
- *   - product entity delete with orgId → -1
+ *   - product entity create → +1 on org AND parent context (e.g., project)
+ *   - product entity delete → -1 on org AND parent context
  */
 export function getCountDeltas(
   entry: TableRegistryEntry,
   action: 'create' | 'update' | 'delete',
   newRow: Record<string, unknown>,
   oldRow?: Record<string, unknown>,
-): CountDelta | null {
+): CountDelta[] {
   const orgId = getStringValue(newRow, 'organizationId') ?? getStringValue(oldRow, 'organizationId');
-  if (!orgId) return null;
+  if (!orgId) return [];
 
   // Active memberships: track role counts + total
   if (entry.kind === 'resource' && entry.type === 'membership') {
-    return getMembershipDelta(action, orgId, newRow, oldRow);
+    const delta = getMembershipDelta(action, orgId, newRow, oldRow);
+    return delta ? [delta] : [];
   }
 
   // Inactive memberships: track pending count
   if (entry.kind === 'resource' && entry.type === 'inactive_membership') {
-    return getInactiveMembershipDelta(action, orgId, newRow, oldRow);
+    const delta = getInactiveMembershipDelta(action, orgId, newRow, oldRow);
+    return delta ? [delta] : [];
   }
 
-  // Product entities: track entity type counts
+  // Product entities: track entity type counts on org + parent context
   if (entry.kind === 'entity' && isProductEntity(entry.type)) {
-    return getEntityDelta(action, orgId, entry.type);
+    return getEntityDeltas(action, orgId, entry.type, newRow, oldRow);
   }
 
-  return null;
+  return [];
 }
 
 /**
@@ -179,17 +181,27 @@ function getInactiveMembershipDelta(
   return null;
 }
 
-function getEntityDelta(
+function getEntityDeltas(
   action: 'create' | 'update' | 'delete',
   orgId: string,
   entityType: string,
-): CountDelta | null {
-  if (action === 'create') {
-    return { contextKey: orgId, deltas: { [`e:${entityType}`]: 1 } };
+  newRow: Record<string, unknown>,
+  oldRow?: Record<string, unknown>,
+): CountDelta[] {
+  if (action !== 'create' && action !== 'delete') return [];
+  const value = action === 'create' ? 1 : -1;
+  const deltas: CountDelta[] = [{ contextKey: orgId, deltas: { [`e:${entityType}`]: value } }];
+
+  // Also emit delta for parent context (e.g., task → project)
+  const parentType = hierarchy.getParent(entityType);
+  if (parentType && parentType !== 'organization') {
+    const parentIdColumn = appConfig.entityIdColumnKeys[parentType];
+    const row = action === 'delete' ? (oldRow ?? newRow) : newRow;
+    const parentId = getStringValue(row, parentIdColumn);
+    if (parentId) {
+      deltas.push({ contextKey: parentId, deltas: { [`e:${entityType}`]: value } });
+    }
   }
-  if (action === 'delete') {
-    return { contextKey: orgId, deltas: { [`e:${entityType}`]: -1 } };
-  }
-  // Updates don't change entity counts
-  return null;
+
+  return deltas;
 }

@@ -32,6 +32,9 @@ export type RelatableContextEntityType = (typeof hierarchy.relatableContextTypes
 /** Resource types that are not entities but have activities logged */
 export type ResourceType = (typeof appConfig.resourceTypes)[number];
 
+/** Product entity types tracked for seen/unseen counts */
+export type SeenTrackedEntityType = (typeof appConfig.seenTrackedEntityTypes)[number];
+
 /******************************************************************************
  * APP CONFIGURATION TYPES
  ******************************************************************************/

@@ -1,22 +1,22 @@
 import i18n from 'i18next';
 import { PencilIcon } from 'lucide-react';
 import { type RefObject, useRef } from 'react';
-import type { User } from '~/api.gen';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
+import type { BaseUser } from '~/modules/user/types';
 import { UpdateUserForm } from '~/modules/user/update-user-form';
 
 interface Props {
-  user: User;
+  user: BaseUser;
   tabIndex: number;
 }
 
 /**
  * Opens the update user sheet anchored to the given button ref.
  */
-export function openUpdateUserSheet(user: User, buttonRef: RefObject<HTMLButtonElement | null>) {
+export function openUpdateUserSheet(user: BaseUser, buttonRef: RefObject<HTMLButtonElement | null>) {
   const title = i18n.t('common:edit_resource', { resource: i18n.t('common:user').toLowerCase() });
   const createSheet = useSheeter.getState().create;
 

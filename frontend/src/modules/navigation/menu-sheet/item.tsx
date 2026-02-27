@@ -5,8 +5,10 @@ import { useTranslation } from 'react-i18next';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { toaster } from '~/modules/common/toaster/service';
 import type { UserMenuItem } from '~/modules/me/types';
+import { seenGroupingContextTypes } from '~/modules/seen/helpers';
 import { useUnseenCount } from '~/modules/seen/use-unseen-count';
 import { getContextEntityRoute } from '~/routes-resolver';
+import { useNavigationStore } from '~/store/navigation';
 import { useUIStore } from '~/store/ui';
 import { cn } from '~/utils/cn';
 
@@ -22,14 +24,18 @@ export const MenuSheetItem = ({ item, icon: Icon, className, searchResults }: Me
 
   const isOnline = onlineManager.isOnline();
   const offlineAccess = useUIStore((state) => state.offlineAccess);
+  const detailedMenu = useNavigationStore((state) => state.detailedMenu);
 
   const canAccess = offlineAccess ? (isOnline ? true : !item.membership.archived) : true;
   const isSubitem = !searchResults && !item.submenu;
 
-  // Unseen count for this org — suppressed for muted memberships
-  const isMuted = item.membership.muted;
-  const unseenCount = useUnseenCount(item.entityType === 'organization' ? item.id : undefined);
-  const showBadge = unseenCount > 0 && !isMuted;
+  // Unseen count — shown on grouping contexts (direct) and their parents (aggregated from submenu).
+  // When detailedMenu is on, sub-items show their own badges so skip parent-level aggregation.
+  let contextIds: string | string[] | undefined;
+  if (seenGroupingContextTypes.has(item.entityType)) contextIds = item.id;
+  else if (!detailedMenu && item.submenu?.length) contextIds = item.submenu.map((sub) => sub.id);
+  const unseenCount = useUnseenCount(contextIds);
+  const showBadge = unseenCount > 0 && !item.membership.muted;
 
   // Build route path for the entity
   const { to, params, search } = getContextEntityRoute(item, isSubitem);
@@ -51,7 +57,7 @@ export const MenuSheetItem = ({ item, icon: Icon, className, searchResults }: Me
       activeProps={{ 'data-link-active': true }}
       className={cn(
         'relative group/menuItem h-12 w-full flex items-start justify-start space-x-1 rounded-sm p-0 focus:outline-hidden ring-2 ring-inset ring-transparent focus-visible:ring-foreground sm:hover:bg-accent/30 sm:hover:text-accent-foreground data-[subitem=true]:h-10 ',
-        'data-[link-active=true]:ring-transparent',
+        'data-[link-active=true]:ring-transparent data-[link-active=true]:focus-visible:ring-foreground',
         className,
       )}
     >

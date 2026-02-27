@@ -17,7 +17,7 @@
 
 <h1><b>Cella</b></h1>
 <p>
-    <b>TypeScript template to build collaborative web apps with sync & offline capabilities. Europe-first.</b>
+    <b>Template to build web apps with sync engine for offline and realtime use. Postgres, openapi & react-query are foundational layers.</b>
     <br />
     <br />
     <a href="https://cellajs.com">Website</a>
@@ -35,9 +35,8 @@
 
 #### Contents
 
-- [Agent Guidelines](/info/AGENTS.md)
+- [Agent guidelines](/info/AGENTS.md)
 - [Architecture](/info/ARCHITECTURE.md)
-- [Roadmap](/info/ROADMAP.md)
 
 ## Requirements
 

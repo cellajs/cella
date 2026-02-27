@@ -40,14 +40,6 @@ export const userSelect = (() => {
   };
 })();
 
-/**
- * Member select. unnecessary fields are omitted from user select.
- */
-export const memberSelect = (() => {
-  const { newsletter, userFlags, ...memberSafe } = userSelect;
-  return memberSafe;
-})();
-
 // Infer types of user base columns
 type TableColumns = (typeof usersTable)['_']['columns'];
 type UserBaseKeys = keyof typeof userBaseSchema.shape;
@@ -60,6 +52,19 @@ export const userBaseSelect: UserBaseSelect = (() => {
   const cols = getColumns(usersTable);
   const keys = Object.keys(userBaseSchema.shape) as UserBaseKeys[];
   return pickColumns(cols, keys);
+})();
+
+/**
+ * Member select — returns only userBaseSelect columns + lastSeenAt.
+ * Used for cross-tenant user endpoints and member lists.
+ */
+export const memberSelect = (() => {
+  return {
+    ...userBaseSelect,
+    lastSeenAt: sql<
+      string | null
+    >`(SELECT ${userActivityTable.lastSeenAt} FROM ${userActivityTable} WHERE ${userActivityTable.userId} = ${usersTable.id})`,
+  };
 })();
 
 // Infer types of user minimal base columns

@@ -8,6 +8,7 @@ import { xMiddleware } from '#/docs/x-middleware';
 import { AppError } from '#/lib/error';
 import { deleteAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/helpers/session';
+import { isSystemAccessAllowed } from '#/utils/system-access';
 import { updateLastSeenAt } from '../update-last-seen';
 
 /**
@@ -52,25 +53,32 @@ export const authGuard = xMiddleware(
         username: user.slug,
       });
 
-      const { memberships, userSystemRole } = await setUserRlsContext({ userId: user.id }, async (tx) => {
-        const [memberships, [userSystemRoleRecord]] = await Promise.all([
+      const systemAccessAllowed = isSystemAccessAllowed(ctx);
+
+      const { memberships, isSystemAdmin } = await setUserRlsContext({ userId: user.id }, async (tx) => {
+        const [memberships, [systemRoleRecord]] = await Promise.all([
           tx.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id)),
-          tx
-            .select({ role: systemRolesTable.role })
-            .from(systemRolesTable)
-            .where(eq(systemRolesTable.userId, user.id))
-            .limit(1),
+          // Only query system roles when system access is allowed for this request
+          ...(systemAccessAllowed
+            ? [
+                tx
+                  .select({ role: systemRolesTable.role })
+                  .from(systemRolesTable)
+                  .where(eq(systemRolesTable.userId, user.id))
+                  .limit(1),
+              ]
+            : [Promise.resolve([])]),
         ]);
 
         return {
           memberships,
-          userSystemRole: userSystemRoleRecord?.role ?? null,
+          isSystemAdmin: systemAccessAllowed && systemRoleRecord?.role === 'admin',
         };
       });
 
       // Store values in context for downstream use
       ctx.set('memberships', memberships);
-      ctx.set('userSystemRole', userSystemRole);
+      ctx.set('isSystemAdmin', isSystemAdmin);
       ctx.set('db', baseDb);
 
       await next();

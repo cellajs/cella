@@ -22,7 +22,7 @@ export const canAccessEntity = (
   action: Exclude<EntityActionType, 'create'>,
   entity: SubjectForPermission,
 ) => {
-  const userSystemRole = ctx.var.userSystemRole;
+  const isSystemAdmin = ctx.var.isSystemAdmin;
   const memberships = ctx.var.memberships;
 
   const { entityType } = entity;
@@ -30,7 +30,7 @@ export const canAccessEntity = (
   // Build a minimal subject for permission check (generate temp id for policy resolution)
   const subject = { ...entity, id: nanoid() };
 
-  const { isAllowed } = checkPermission(memberships, action, subject, { systemRole: userSystemRole });
+  const { isAllowed } = checkPermission(memberships, action, subject, { isSystemAdmin });
 
   if (!isAllowed) {
     throw new AppError(403, 'forbidden', 'warn', { entityType, meta: { action } });

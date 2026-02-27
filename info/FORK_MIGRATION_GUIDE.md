@@ -43,11 +43,10 @@ Upstream Cella uses `organization` (context entity) and `attachment` (product en
 
 ### 4. Regenerate and verify
 
-Run iteratively until clean:
+Run iteratively until clean. User is likely to run migration itself.
 
 ```bash
 pnpm install              # Regenerate lockfile
-pnpm generate             # Regenerate Drizzle migrations
 pnpm generate:openapi     # Regenerate API client
 pnpm check                # Typecheck + lint (runs generate:openapi internally)
 pnpm build                # CDC, backend, frontend build independently — all must pass
@@ -55,10 +54,6 @@ pnpm test                 # Run tests
 ```
 
 Common type errors: changed schema exports, renamed fields in query responses, mock data shape mismatches in `backend/mocks/`.
-
-### 5. Contribute fixes back
-
-Some fixes belong in upstream. Use `autoContribute` in `cella.config.ts` to detect drifted files, or manually PR with the `contrib(forkname):` prefix.
 
 ## Rules
 

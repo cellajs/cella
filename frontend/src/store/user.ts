@@ -3,19 +3,19 @@ import { appConfig } from 'shared';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import type { GetMeResponse, MeAuthData, User } from '~/api.gen';
+import type { MeAuthData, User } from '~/api.gen';
 import { isDebugMode } from '~/env';
 import type { MeUser } from '~/modules/me/types';
 
 interface UserStoreState {
   user: MeUser; // Current user data
-  systemRole: GetMeResponse['systemRole'];
+  isSystemAdmin: boolean;
   hasPasskey: boolean; // Current user's passkey
   hasTotp: MeAuthData['hasTotp']; // Current user's passkey
   enabledOAuth: MeAuthData['enabledOAuth']; // Current user's oauth options
   lastUser: Partial<MeUser> | null; // Last signed-out user's data (email, name, passkey, id, slug)
   setUser: (user: MeUser, skipLastUser?: boolean) => void; // Sets current user and updates lastUser
-  setSystemRole: (systemRole: GetMeResponse['systemRole']) => void; // Sets current user and updates lastUser
+  setIsSystemAdmin: (isSystemAdmin: boolean) => void; // Sets current user's system admin status
   setLastUser: (lastUser: Partial<MeUser>) => void; // Sets last user (used for MFA)
   setMeAuthData: (data: Partial<Pick<MeAuthData, 'hasTotp' | 'enabledOAuth'> & { hasPasskey: boolean }>) => void; // Sets current user auth info
   updateUser: (user: User) => void; // Updates current user and adjusts lastUser
@@ -28,7 +28,7 @@ export const useUserStore = create<UserStoreState>()(
       immer((set) => ({
         // Hackish solution to avoid type issues for user being undefined. Router should prevent user ever being undefined in the app layout routes.
         user: null as unknown as MeUser,
-        systemRole: null as unknown as GetMeResponse['systemRole'],
+        isSystemAdmin: false,
         enabledOAuth: [] as MeAuthData['enabledOAuth'],
         hasPasskey: false,
         hasTotp: false,
@@ -66,9 +66,9 @@ export const useUserStore = create<UserStoreState>()(
 
           i18n.changeLanguage(user.language || 'en');
         },
-        setSystemRole: (systemRole) => {
+        setIsSystemAdmin: (isSystemAdmin) => {
           set((state) => {
-            state.systemRole = systemRole;
+            state.isSystemAdmin = isSystemAdmin;
           });
         },
         setLastUser: (lastUser) => {
@@ -89,7 +89,7 @@ export const useUserStore = create<UserStoreState>()(
         clearUserStore: () => {
           set((state) => {
             state.user = null as unknown as MeUser;
-            state.systemRole = null as unknown as GetMeResponse['systemRole'];
+            state.isSystemAdmin = false;
             state.lastUser = null;
             state.enabledOAuth = [];
             state.hasPasskey = false;
@@ -97,11 +97,11 @@ export const useUserStore = create<UserStoreState>()(
         },
       })),
       {
-        version: 6,
+        version: 7,
         name: `${appConfig.slug}-user`,
         partialize: (state) => ({
           user: state.user,
-          systemRole: state.systemRole,
+          isSystemAdmin: state.isSystemAdmin,
           oauth: state.enabledOAuth,
           passkey: state.hasPasskey,
           totp: state.hasTotp,

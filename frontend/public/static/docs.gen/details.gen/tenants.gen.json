@@ -34,6 +34,29 @@
                     "required": true,
                     "enum": ["active", "suspended", "archived"]
                   },
+                  "restrictions": {
+                    "type": "object",
+                    "required": true,
+                    "properties": {
+                      "quotas": {
+                        "type": "object",
+                        "required": true,
+                        "description": "Entity quotas (0 = unlimited)"
+                      },
+                      "rateLimits": {
+                        "type": "object",
+                        "required": true,
+                        "properties": {
+                          "apiPointsPerHour": {
+                            "type": "integer",
+                            "required": true,
+                            "description": "Max API points per hour per user within this tenant",
+                            "minimum": 0
+                          }
+                        }
+                      }
+                    }
+                  },
                   "createdAt": { "type": "string", "required": true },
                   "modifiedAt": {
                     "type": ["string", "null"],
@@ -143,6 +166,29 @@
               "required": true,
               "enum": ["active", "suspended", "archived"]
             },
+            "restrictions": {
+              "type": "object",
+              "required": true,
+              "properties": {
+                "quotas": {
+                  "type": "object",
+                  "required": true,
+                  "description": "Entity quotas (0 = unlimited)"
+                },
+                "rateLimits": {
+                  "type": "object",
+                  "required": true,
+                  "properties": {
+                    "apiPointsPerHour": {
+                      "type": "integer",
+                      "required": true,
+                      "description": "Max API points per hour per user within this tenant",
+                      "minimum": 0
+                    }
+                  }
+                }
+              }
+            },
             "createdAt": { "type": "string", "required": true },
             "modifiedAt": {
               "type": ["string", "null"],
@@ -240,6 +286,29 @@
               "required": true,
               "enum": ["active", "suspended", "archived"]
             },
+            "restrictions": {
+              "type": "object",
+              "required": true,
+              "properties": {
+                "quotas": {
+                  "type": "object",
+                  "required": true,
+                  "description": "Entity quotas (0 = unlimited)"
+                },
+                "rateLimits": {
+                  "type": "object",
+                  "required": true,
+                  "properties": {
+                    "apiPointsPerHour": {
+                      "type": "integer",
+                      "required": true,
+                      "description": "Max API points per hour per user within this tenant",
+                      "minimum": 0
+                    }
+                  }
+                }
+              }
+            },
             "createdAt": { "type": "string", "required": true },
             "modifiedAt": {
               "type": ["string", "null"],
@@ -328,6 +397,29 @@
               "required": true,
               "enum": ["active", "suspended", "archived"]
             },
+            "restrictions": {
+              "type": "object",
+              "required": true,
+              "properties": {
+                "quotas": {
+                  "type": "object",
+                  "required": true,
+                  "description": "Entity quotas (0 = unlimited)"
+                },
+                "rateLimits": {
+                  "type": "object",
+                  "required": true,
+                  "properties": {
+                    "apiPointsPerHour": {
+                      "type": "integer",
+                      "required": true,
+                      "description": "Max API points per hour per user within this tenant",
+                      "minimum": 0
+                    }
+                  }
+                }
+              }
+            },
             "createdAt": { "type": "string", "required": true },
             "modifiedAt": {
               "type": ["string", "null"],
@@ -398,6 +490,29 @@
             "type": "string",
             "required": false,
             "enum": ["active", "suspended", "archived"]
+          },
+          "restrictions": {
+            "type": "object",
+            "required": false,
+            "description": "Partial restrictions override",
+            "properties": {
+              "quotas": {
+                "type": "object",
+                "required": false,
+                "description": "Entity quotas (0 = unlimited)"
+              },
+              "rateLimits": {
+                "type": "object",
+                "required": false,
+                "properties": {
+                  "apiPointsPerHour": {
+                    "type": "integer",
+                    "required": false,
+                    "minimum": 0
+                  }
+                }
+              }
+            }
           }
         },
         "required": true,

@@ -113,14 +113,13 @@ const attachmentRouteHandlers = app
 
     if (attachment) {
       const user = ctx.var.user;
-      const userSystemRole = ctx.var.userSystemRole;
+      const isSystemAdmin = ctx.var.isSystemAdmin;
 
       const memberships = await tenantDb
         .select(membershipBaseSelect)
         .from(membershipsTable)
         .where(eq(membershipsTable.userId, user.id));
 
-      const isSystemAdmin = userSystemRole === 'admin';
       const { isAllowed } = checkPermission(memberships, 'read', attachment);
 
       if (!isSystemAdmin && !isAllowed) {
@@ -178,7 +177,7 @@ const attachmentRouteHandlers = app
     }
 
     const user = ctx.var.user;
-    const attachmentRestrictions = organization.restrictions.attachment;
+    const attachmentRestrictions = ctx.var.tenant.restrictions.quotas.attachment;
 
     if (attachmentRestrictions !== 0 && newAttachments.length > attachmentRestrictions) {
       throw new AppError(403, 'restrict_by_org', 'warn', { entityType: 'attachment' });

@@ -26,11 +26,12 @@
       "required": false,
       "values": {
         "spamLimiter": { "name": "spam", "description": "Max 10 requests/hour per IP for email-sending endpoints" },
-        "emailEnumLimiter": { "name": "emailEnum", "description": "Blocks IP for 30 min after 10 consecutive failures" },
+        "emailEnumLimiter": { "name": "emailEnum", "description": "Blocks IP for 30 min after 5 consecutive failures" },
         "passwordLimiter": { "name": "password", "description": "Blocks email/IP for 30 min after 10 consecutive failures" },
         "presignedUrlLimiter": { "name": "presignedUrl", "description": "Max 2000 requests/hour per user/IP for presigned URLs" },
         "totpVerificationLimiter": { "name": "totpVerification", "description": "Blocks for 30 min after 5 failed TOTP attempts" },
         "passkeyChallengeLimiter": { "name": "passkeyChallenge", "description": "Max 5 passkey challenges/hour per IP" },
+        "pointsLimiter": { "name": "points", "description": "Consumes dynamic API point(s) per request against per-tenant hourly budget" },
         "tokenLimiter": { "name": "token", "description": "Blocks IP for 30 min after 10 consecutive token failures" }
       }
     },

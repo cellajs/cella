@@ -4,7 +4,7 @@
  * Tenants are system-level resources for RLS isolation.
  * Managed exclusively by system admins.
  *
- * @see info/RLS.md for architecture documentation
+ * @see info/ARCHITECTURE.md for architecture documentation
  */
 
 import { z } from '@hono/zod-openapi';
@@ -16,6 +16,20 @@ export type TenantStatus = (typeof tenantStatusValues)[number];
 /** Tenant status schema */
 export const tenantStatusSchema = z.enum(tenantStatusValues);
 
+/** Restrictions: rate limits sub-schema */
+const rateLimitsSchema = z.object({
+  apiPointsPerHour: z.number().int().min(0).describe('Max API points per hour per user within this tenant'),
+});
+
+/** Restrictions: quotas sub-schema (entity type string → hard cap) */
+const quotasSchema = z.record(z.string(), z.number().int().min(0)).describe('Entity quotas (0 = unlimited)');
+
+/** Full restrictions schema for API responses */
+const restrictionsSchema = z.object({
+  quotas: quotasSchema,
+  rateLimits: rateLimitsSchema,
+});
+
 /**
  * Base tenant schema for API responses.
  */
@@ -24,6 +38,7 @@ export const tenantSchema = z
     id: z.string().max(24).describe('Lowercase alphanumeric tenant ID'),
     name: z.string().describe('Tenant display name'),
     status: tenantStatusSchema,
+    restrictions: restrictionsSchema,
     createdAt: z.string(),
     modifiedAt: z.string().nullable(),
   })
@@ -37,12 +52,25 @@ export const createTenantBodySchema = z.object({
   status: tenantStatusSchema.optional().default('active'),
 });
 
+/** Partial restrictions schema for update operations */
+const partialRestrictionsSchema = z
+  .object({
+    quotas: quotasSchema.optional(),
+    rateLimits: z
+      .object({
+        apiPointsPerHour: z.number().int().min(0).optional(),
+      })
+      .optional(),
+  })
+  .describe('Partial restrictions override');
+
 /**
  * Schema for updating a tenant.
  */
 export const updateTenantBodySchema = z.object({
   name: z.string().min(1).max(255).optional(),
   status: tenantStatusSchema.optional(),
+  restrictions: partialRestrictionsSchema.optional(),
 });
 
 /**

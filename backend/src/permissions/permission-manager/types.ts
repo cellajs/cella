@@ -1,4 +1,4 @@
-import type { ContextEntityType, EntityActionType, EntityIdColumnKeys, ProductEntityType, SystemRole } from 'shared';
+import type { ContextEntityType, EntityActionType, EntityIdColumnKeys, ProductEntityType } from 'shared';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 
 export type ContextEntityIdColumns = {
@@ -33,5 +33,5 @@ export interface PermissionDecision<T extends MembershipBaseModel = MembershipBa
 }
 
 export interface PermissionCheckOptions {
-  systemRole?: SystemRole | null;
+  isSystemAdmin?: boolean;
 }

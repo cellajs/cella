@@ -4,7 +4,7 @@
  * Tenants are system-level resources for RLS isolation.
  * All operations require system admin access and bypass RLS.
  *
- * @see info/RLS.md for architecture documentation
+ * @see info/ARCHITECTURE.md for architecture documentation
  */
 
 import { OpenAPIHono } from '@hono/zod-openapi';
@@ -114,10 +114,21 @@ const tenantHandlers = app
       throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'tenant' } });
     }
 
+    const { restrictions: restrictionsUpdate, ...otherUpdates } = updates;
+
+    // Deep-merge restrictions so partial updates don't clobber existing values
+    const mergedRestrictions = restrictionsUpdate
+      ? {
+          quotas: { ...existing.restrictions.quotas, ...restrictionsUpdate.quotas },
+          rateLimits: { ...existing.restrictions.rateLimits, ...restrictionsUpdate.rateLimits },
+        }
+      : undefined;
+
     const [tenant] = await db
       .update(tenantsTable)
       .set({
-        ...updates,
+        ...otherUpdates,
+        ...(mergedRestrictions ? { restrictions: mergedRestrictions } : {}),
         modifiedAt: new Date().toISOString(),
       })
       .where(eq(tenantsTable.id, tenantId))

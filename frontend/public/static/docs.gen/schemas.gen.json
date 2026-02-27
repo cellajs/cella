@@ -824,16 +824,15 @@
           },
           "ref": "#/components/schemas/User"
         },
-        "systemRole": {
-          "type": "string",
+        "isSystemAdmin": {
+          "type": "boolean",
           "required": true,
-          "description": "System-level role (e.g. admin) or user for standard access.",
-          "enum": ["admin", "user"]
+          "description": "Whether the current user has system admin privileges."
         }
       }
     },
     "schemaTag": "data",
-    "description": "The currently authenticated user with their system role.",
+    "description": "The currently authenticated user with their system admin status.",
     "example": {
       "user": {
         "id": "snou9b80h3jlnu1j458h6mvs",
@@ -857,7 +856,7 @@
         "lastSignInAt": "2024-07-14T22:49:14.651Z",
         "lastSeenAt": "2024-07-14T22:49:14.651Z"
       },
-      "systemRole": null
+      "isSystemAdmin": false
     }
   },
   {
@@ -1285,6 +1284,29 @@
           "required": true,
           "enum": ["active", "suspended", "archived"]
         },
+        "restrictions": {
+          "type": "object",
+          "required": true,
+          "properties": {
+            "quotas": {
+              "type": "object",
+              "required": true,
+              "description": "Entity quotas (0 = unlimited)"
+            },
+            "rateLimits": {
+              "type": "object",
+              "required": true,
+              "properties": {
+                "apiPointsPerHour": {
+                  "type": "integer",
+                  "required": true,
+                  "description": "Max API points per hour per user within this tenant",
+                  "minimum": 0
+                }
+              }
+            }
+          }
+        },
         "createdAt": { "type": "string", "required": true },
         "modifiedAt": {
           "type": ["string", "null"],
@@ -1577,7 +1599,7 @@
       }
     },
     "schemaTag": "data",
-    "description": "An organization with settings, restrictions, and membership context.",
+    "description": "An organization with membership context.",
     "example": {
       "id": "hmo9fwr239kqavr3yur671kl",
       "tenantId": "vk6xht",
@@ -1604,11 +1626,6 @@
       "createdBy": null,
       "modifiedAt": "2024-12-25T15:29:47.111Z",
       "modifiedBy": null,
-      "restrictions": {
-        "user": 1000,
-        "attachment": 100,
-        "page": 0
-      },
       "included": {
         "membership": {
           "id": "kaba9fpc90mgtzmtjipw2v8s",

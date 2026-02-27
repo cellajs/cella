@@ -28,7 +28,7 @@ const isPageSeeded = async () => {
 /**
  * Seeds the database with sample pages.
  */
-export const dataSeed = async () => {
+export const pagesSeed = async () => {
   const spinner = startSpinner('Seeding pages...');
 
   // Case: Production mode → skip seeding

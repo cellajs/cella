@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "7df36047-8483-4b48-b990-1323de404fee",
+  "id": "6eae7fd1-9328-4430-a448-f597bd14e393",
   "prevIds": [
     "00000000-0000-0000-0000-000000000000"
   ],
@@ -1416,19 +1416,6 @@
       "table": "organizations"
     },
     {
-      "type": "json",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "'{\"user\":1000,\"attachment\":100,\"page\":0}'",
-      "generated": null,
-      "identity": null,
-      "name": "restrictions",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "organizations"
-    },
-    {
       "type": "varchar(255)",
       "typeSchema": null,
       "notNull": false,
@@ -2099,6 +2086,19 @@
       "default": null,
       "generated": null,
       "identity": null,
+      "name": "context_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "seen_by"
+    },
+    {
+      "type": "varchar(50)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
       "name": "organization_id",
       "entityType": "columns",
       "schema": "public",
@@ -2165,19 +2165,6 @@
       "generated": null,
       "identity": null,
       "name": "view_count",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "seen_counts"
-    },
-    {
-      "type": "timestamp",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "entity_created_at",
       "entityType": "columns",
       "schema": "public",
       "table": "seen_counts"
@@ -2438,6 +2425,19 @@
       "generated": null,
       "identity": null,
       "name": "status",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tenants"
+    },
+    {
+      "type": "json",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'{\"quotas\":{\"user\":1000,\"organization\":5,\"attachment\":100,\"page\":0},\"rateLimits\":{\"apiPointsPerHour\":1000}}'",
+      "generated": null,
+      "identity": null,
+      "name": "restrictions",
       "entityType": "columns",
       "schema": "public",
       "table": "tenants"
@@ -3607,7 +3607,7 @@
           "opclass": null
         },
         {
-          "value": "organization_id",
+          "value": "context_id",
           "isExpression": false,
           "asc": true,
           "nullsFirst": false,
@@ -3626,7 +3626,7 @@
       "with": "",
       "method": "btree",
       "concurrently": false,
-      "name": "seen_by_user_org_type_index",
+      "name": "seen_by_user_context_type_index",
       "entityType": "indexes",
       "schema": "public",
       "table": "seen_by"
@@ -4664,28 +4664,6 @@
     {
       "columns": [
         "id",
-        "created_at"
-      ],
-      "nameExplicit": false,
-      "name": "seen_by_pkey",
-      "entityType": "pks",
-      "schema": "public",
-      "table": "seen_by"
-    },
-    {
-      "columns": [
-        "entity_id",
-        "entity_created_at"
-      ],
-      "nameExplicit": false,
-      "name": "seen_counts_pkey",
-      "entityType": "pks",
-      "schema": "public",
-      "table": "seen_counts"
-    },
-    {
-      "columns": [
-        "id",
         "expires_at"
       ],
       "nameExplicit": false,
@@ -4834,6 +4812,26 @@
       "name": "requests_pkey",
       "schema": "public",
       "table": "requests",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "seen_by_pkey",
+      "schema": "public",
+      "table": "seen_by",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "entity_id"
+      ],
+      "nameExplicit": false,
+      "name": "seen_counts_pkey",
+      "schema": "public",
+      "table": "seen_counts",
       "entityType": "pks"
     },
     {
@@ -5165,22 +5163,9 @@
       "roles": [
         "public"
       ],
-      "using": "current_setting('app.is_authenticated', true)::boolean = true AND \n  COALESCE(current_setting('app.user_id', true), '') != ''\n  AND \"memberships\".\"user_id\" = current_setting('app.user_id', true)::text\n",
+      "using": "current_setting('app.is_authenticated', true)::boolean = true",
       "withCheck": null,
-      "name": "memberships_select_own_policy",
-      "entityType": "policies",
-      "schema": "public",
-      "table": "memberships"
-    },
-    {
-      "as": "PERMISSIVE",
-      "for": "SELECT",
-      "roles": [
-        "public"
-      ],
-      "using": "current_setting('app.is_authenticated', true)::boolean = true AND \n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"memberships\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n",
-      "withCheck": null,
-      "name": "memberships_select_tenant_policy",
+      "name": "memberships_select_authenticated_policy",
       "entityType": "policies",
       "schema": "public",
       "table": "memberships"

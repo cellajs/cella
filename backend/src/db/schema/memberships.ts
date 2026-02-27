@@ -2,7 +2,7 @@ import { sql } from 'drizzle-orm';
 import { boolean, doublePrecision, foreignKey, index, pgPolicy, pgTable, unique, varchar } from 'drizzle-orm/pg-core';
 import { appConfig, roles } from 'shared';
 import { nanoid } from 'shared/nanoid';
-import { isAuthenticated, tenantContextSet, tenantMatch, userContextSet, userMatch } from '#/db/rls-helpers';
+import { isAuthenticated, tenantContextSet, tenantMatch, userContextSet } from '#/db/rls-helpers';
 import { organizationsTable } from '#/db/schema/organizations';
 import { tenantsTable } from '#/db/schema/tenants';
 import { usersTable } from '#/db/schema/users';
@@ -66,15 +66,14 @@ export const membershipsTable = pgTable(
       for: 'select',
       using: sql`${tenantContextSet} OR ${userContextSet}`,
     }),
-    // Own memberships visible across all tenants (for /me routes)
-    pgPolicy('memberships_select_own_policy', {
+    // All authenticated users can read memberships. Membership rows are relationship
+    // graph data (userId, orgId, role) with no PII — acceptable to expose broadly.
+    // This enables cross-tenant queries (relatableGuard, getUsers filter) to see
+    // other users' memberships without RLS workarounds. The restrictive context_guard
+    // above still requires at least one session var to be set.
+    pgPolicy('memberships_select_authenticated_policy', {
       for: 'select',
-      using: sql`${isAuthenticated} AND ${userMatch(table)}`,
-    }),
-    // All tenant memberships visible. Cannot use membershipExists here (self-referencing → infinite recursion).
-    pgPolicy('memberships_select_tenant_policy', {
-      for: 'select',
-      using: sql`${isAuthenticated} AND ${tenantMatch(table)}`,
+      using: sql`${isAuthenticated}`,
     }),
     pgPolicy('memberships_insert_policy', {
       for: 'insert',

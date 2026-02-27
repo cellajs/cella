@@ -178,14 +178,14 @@ export type Activity = {
 };
 
 /**
- * The currently authenticated user with their system role.
+ * The currently authenticated user with their system admin status.
  */
 export type Me = {
   user: User;
   /**
-   * System-level role (e.g. admin) or user for standard access.
+   * Whether the current user has system admin privileges.
    */
-  systemRole: 'admin' | 'user';
+  isSystemAdmin: boolean;
 };
 
 /**
@@ -303,6 +303,20 @@ export type Tenant = {
    */
   name: string;
   status: 'active' | 'suspended' | 'archived';
+  restrictions: {
+    /**
+     * Entity quotas (0 = unlimited)
+     */
+    quotas: {
+      [key: string]: number;
+    };
+    rateLimits: {
+      /**
+       * Max API points per hour per user within this tenant
+       */
+      apiPointsPerHour: number;
+    };
+  };
   createdAt: string;
   modifiedAt: string | null;
 };
@@ -320,7 +334,7 @@ export type Request = {
 };
 
 /**
- * An organization with settings, restrictions, and membership context.
+ * An organization with membership context.
  */
 export type Organization = {
   createdAt: string;
@@ -2200,7 +2214,7 @@ export type GetUnseenCountsError = GetUnseenCountsErrors[keyof GetUnseenCountsEr
 
 export type GetUnseenCountsResponses = {
   /**
-   * Unseen counts per org per entity type
+   * Unseen counts per parent context entity per entity type
    */
   200: {
     [key: string]: {
@@ -2920,6 +2934,20 @@ export type UpdateTenantData = {
   body: {
     name?: string;
     status?: 'active' | 'suspended' | 'archived';
+    /**
+     * Partial restrictions override
+     */
+    restrictions?: {
+      /**
+       * Entity quotas (0 = unlimited)
+       */
+      quotas?: {
+        [key: string]: number;
+      };
+      rateLimits?: {
+        apiPointsPerHour?: number;
+      };
+    };
   };
   path: {
     /**
@@ -3572,7 +3600,7 @@ export type CreateOrganizationsResponses = {
    */
   201: {
     /**
-     * An organization with settings, restrictions, and membership context.
+     * An organization with membership context.
      */
     data: Array<
       Organization & {
@@ -4089,10 +4117,11 @@ export type GetUsersResponses = {
    */
   200: {
     /**
-     * A user with profile data and activity timestamps.
+     * Base user schema with essential fields for identification and display.
      */
     items: Array<
-      User & {
+      UserBase & {
+        lastSeenAt: string | null;
         role?: 'admin' | null;
       }
     >;
@@ -4140,9 +4169,11 @@ export type GetUserError = GetUserErrors[keyof GetUserErrors];
 
 export type GetUserResponses = {
   /**
-   * User
+   * Base user schema with essential fields for identification and display.
    */
-  200: User;
+  200: UserBase & {
+    lastSeenAt: string | null;
+  };
 };
 
 export type GetUserResponse = GetUserResponses[keyof GetUserResponses];
@@ -4799,27 +4830,15 @@ export type GetMembersResponses = {
    * Members
    */
   200: {
-    items: Array<{
-      createdAt: string;
-      id: string;
-      entityType: 'user';
-      name: string;
-      description: string | null;
-      slug: string;
-      thumbnailUrl: string | null;
-      bannerUrl: string | null;
-      email: string;
-      mfaRequired: boolean;
-      firstName: string | null;
-      lastName: string | null;
-      language: 'en' | 'nl';
-      modifiedAt: string | null;
-      modifiedBy: string | null;
-      lastSeenAt: string | null;
-      lastStartedAt: string | null;
-      lastSignInAt: string | null;
-      membership: MembershipBase;
-    }>;
+    /**
+     * Base user schema with essential fields for identification and display.
+     */
+    items: Array<
+      UserBase & {
+        lastSeenAt: string | null;
+        membership: MembershipBase;
+      }
+    >;
     total: number;
   };
 };

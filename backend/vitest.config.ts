@@ -58,7 +58,7 @@ export default defineConfig({
       ARGON_SECRET: 'test-argon-secret-for-unit-tests',
       COOKIE_SECRET: 'test-cookie-secret-for-unit-tests',
       UNSUBSCRIBE_SECRET: 'test-unsubscribe-secret',
-      REMOTE_SYSTEM_ACCESS_IP: '*',
+      SYSTEM_ADMIN_IP_ALLOWLIST: '*',
       // basic mode: skip database connection entirely
       // core/full: use PostgreSQL test container
       ...(isBasic

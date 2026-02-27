@@ -128,6 +128,7 @@ export interface ConfigStringArrays {
   contextEntityTypes: readonly string[];
   productEntityTypes: readonly string[];
   parentlessProductEntityTypes: readonly string[];
+  seenTrackedEntityTypes: readonly string[];
   entityActions: readonly string[];
   resourceTypes: readonly string[];
   systemRoles: readonly string[];
@@ -152,11 +153,15 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   contextEntityTypes: T['contextEntityTypes'];
   productEntityTypes: T['productEntityTypes'];
   parentlessProductEntityTypes: T['parentlessProductEntityTypes'];
+  seenTrackedEntityTypes: T['seenTrackedEntityTypes'];
   entityIdColumnKeys: Record<string, string>;
   entityActions: T['entityActions'];
   resourceTypes: T['resourceTypes'];
   menuStructure: readonly MenuStructureItem[];
-  defaultOrganizationRestrictions: Record<string, number>;
+  defaultRestrictions: {
+    quotas: Record<string, number>;
+    rateLimits: { apiPointsPerHour: number };
+  };
 
   // System roles
   systemRoles: T['systemRoles'];
@@ -190,6 +195,7 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   // Email
   supportEmail: string;
   notificationsEmail: string;
+  securityEmail: string;
 
   // Mode & flags
   mode: ConfigMode;

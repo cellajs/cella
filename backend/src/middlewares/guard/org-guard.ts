@@ -26,7 +26,7 @@ export const orgGuard = xMiddleware(
 
     const db = ctx.var.db;
     const memberships = ctx.var.memberships;
-    const userSystemRole = ctx.var.userSystemRole;
+    const isSystemAdmin = ctx.var.isSystemAdmin;
 
     // Guard: tenantGuard must run before orgGuard to provide tenant-scoped db
     if (!db) {
@@ -46,7 +46,7 @@ export const orgGuard = xMiddleware(
     // Check if user has access to organization (or is a system admin)
     const orgMembership =
       memberships.find((m) => m.organizationId === organization.id && m.contextType === 'organization') || null;
-    if (userSystemRole !== 'admin' && !orgMembership) {
+    if (!isSystemAdmin && !orgMembership) {
       throw new AppError(403, 'forbidden', 'warn', { entityType: 'organization' });
     }
     const orgWithMembership = { ...organization, membership: orgMembership };

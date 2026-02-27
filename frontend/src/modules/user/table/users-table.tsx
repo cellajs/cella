@@ -7,12 +7,12 @@ import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { usersListQueryOptions } from '~/modules/user/query';
 import { UsersTableBar } from '~/modules/user/table/users-bar';
 import { useColumns } from '~/modules/user/table/users-columns';
-import type { UsersRouteSearchParams, UserWithRole } from '~/modules/user/types';
+import type { BaseUser, UsersRouteSearchParams } from '~/modules/user/types';
 
 const LIMIT = appConfig.requestLimits.users;
 
 /** Stable row key getter function - defined outside component to prevent re-renders */
-function rowKeyGetter(row: UserWithRole) {
+function rowKeyGetter(row: BaseUser) {
   return row.id;
 }
 
@@ -24,7 +24,7 @@ function UsersTable() {
   const limit = LIMIT;
 
   // Build columns
-  const [selected, setSelected] = useState<UserWithRole[]>([]);
+  const [selected, setSelected] = useState<BaseUser[]>([]);
   const [columns, setColumns] = useColumns();
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
@@ -66,7 +66,7 @@ function UsersTable() {
         setColumns={setColumns}
         clearSelection={() => setSelected([])}
       />
-      <DataTable<UserWithRole>
+      <DataTable<BaseUser>
         {...{
           rows,
           rowHeight: 52,

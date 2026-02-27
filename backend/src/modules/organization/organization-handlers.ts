@@ -45,8 +45,7 @@ const organizationRouteHandlers = app
     const { tenantId } = ctx.req.valid('param');
 
     const user = ctx.var.user;
-    const userSystemRole = ctx.var.userSystemRole;
-    const isSystemAdmin = userSystemRole === 'admin';
+    const isSystemAdmin = ctx.var.isSystemAdmin;
 
     // Count user's org creations from activities (includes deleted orgs)
     const [orgCountResult] = await baseDb
@@ -61,8 +60,9 @@ const organizationRouteHandlers = app
       );
     const createdOrgsCount = orgCountResult?.count ?? 0;
 
-    // Organization restriction is hardcoded to max 5 for now (system admins bypass this)
-    const availableSlots = 5 - createdOrgsCount;
+    // Organization restriction is read from tenant restrictions (system admins bypass this)
+    const orgQuota = ctx.var.tenant.restrictions.quotas.organization;
+    const availableSlots = orgQuota === 0 ? items.length : orgQuota - createdOrgsCount;
 
     // No slots - system admins can bypass this restriction
     if (!isSystemAdmin && availableSlots <= 0)
@@ -162,9 +162,8 @@ const organizationRouteHandlers = app
     const entityType = 'organization';
 
     const user = ctx.var.user;
-    const userSystemRole = ctx.var.userSystemRole;
     const memberships = ctx.var.memberships;
-    const isSystemAdmin = userSystemRole === 'admin' && !relatableUserId;
+    const isSystemAdmin = ctx.var.isSystemAdmin && !relatableUserId;
 
     // relatableGuard already verified shared org membership if relatableUserId is provided
     const targetUserId = relatableUserId ?? user.id;
@@ -196,7 +195,7 @@ const organizationRouteHandlers = app
       id: organizationsTable.id,
       name: organizationsTable.name,
       createdAt: organizationsTable.createdAt,
-      userSystemRole: membershipsTable.role,
+      userRole: membershipsTable.role,
     });
 
     const tx = ctx.var.db;

@@ -1,9 +1,9 @@
-import { dataSeed } from './seed';
+import { attachmentsSeed } from './seed';
 
 /**
- * Run data seed script.
+ * Run attachments seed script.
  */
-dataSeed()
+attachmentsSeed()
   .catch((error) => {
     console.error(error);
     process.exit(1);

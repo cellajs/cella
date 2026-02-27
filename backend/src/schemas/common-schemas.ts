@@ -2,6 +2,7 @@ import { z } from '@hono/zod-openapi';
 import { t } from 'i18next';
 import { appConfig } from 'shared';
 import { isCDNUrl } from 'shared/is-cdn-url';
+import zxcvbn from 'zxcvbn';
 import { maxLength } from '#/db/utils/constraints';
 
 export { maxLength };
@@ -52,8 +53,20 @@ export const sessionCookieSchema = z.object({
   adminUserId: z.string().max(maxLength.id).optional(),
 });
 
-/** Password schema: string - min 8 - max characters */
-export const passwordSchema = z.string().min(8).max(maxLength.password);
+/** Password input schema: basic length validation only (used for sign-in) */
+export const passwordInputSchema = z.string().min(8).max(maxLength.password);
+
+/** Password schema: extends passwordInputSchema with minimum zxcvbn score of 2 (used for create/edit) */
+export const passwordSchema = passwordInputSchema.superRefine((password, ctx) => {
+  const { score } = zxcvbn(password);
+  if (score < 2) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Password is too weak',
+      params: { type: 'weak_password' },
+    });
+  }
+});
 
 /** Schema for supported languages (enum) */
 export const languageSchema = z.enum(appConfig.languages);

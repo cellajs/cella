@@ -11,7 +11,7 @@ import type { SubjectForPermission } from '#/permissions/permission-manager/type
  * Uses SubjectForPermission directly — id is optional for create checks.
  */
 export const canCreateEntity = (ctx: Context<Env>, entity: SubjectForPermission) => {
-  const userSystemRole = ctx.var.userSystemRole;
+  const isSystemAdmin = ctx.var.isSystemAdmin;
   const memberships = ctx.var.memberships;
 
   const { entityType } = entity;
@@ -20,7 +20,7 @@ export const canCreateEntity = (ctx: Context<Env>, entity: SubjectForPermission)
   const subject = { ...entity, id: nanoid() };
 
   // Step 1: Permission check (system admin bypass is handled inside)
-  const { isAllowed } = checkPermission(memberships, 'create', subject, { systemRole: userSystemRole });
+  const { isAllowed } = checkPermission(memberships, 'create', subject, { isSystemAdmin });
 
   // Deny if not allowed
   if (!isAllowed) {

@@ -84,11 +84,9 @@ export const OrganizationLayoutRoute = createRoute({
 export const OrganizationRoute = createRoute({
   path: '/organization',
   staticData: { isAuth: true, floatingNavButtons: { left: 'menu' } },
-  beforeLoad: ({ context: { organization, tenantId } }) =>
-    noDirectAccess(
-      `/${tenantId}/${organization.slug}/organization`,
-      `/${tenantId}/${organization.slug}/organization/members`,
-    ),
+  beforeLoad: () => {
+    noDirectAccess(OrganizationRoute.to, OrganizationAttachmentsRoute.to);
+  },
   head: ({ match }) => ({ meta: [{ title: appTitle(match.context.organization?.name) }] }),
   getParentRoute: () => OrganizationLayoutRoute,
   errorComponent: ({ error }) => <ErrorNotice boundary="app" error={error} />,

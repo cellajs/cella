@@ -7,18 +7,17 @@ import { type AuthStrategy, type SessionModel, type SessionTypes, sessionsTable 
 import { systemRolesTable } from '#/db/schema/system-roles';
 import { userActivityTable } from '#/db/schema/user-activity';
 import { type UserModel, usersTable } from '#/db/schema/users';
-import { env } from '#/env';
 import type { Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { deviceInfo } from '#/modules/auth/general/helpers/device-info';
 import { type UserWithActivity, userSelect } from '#/modules/user/helpers/select';
 import { sessionCookieSchema } from '#/schemas';
-import { getIp } from '#/utils/get-ip';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
 import { encodeLowerCased } from '#/utils/oslo';
+import { isSystemAccessAllowed } from '#/utils/system-access';
 import { createDate, TimeSpan } from '#/utils/time-span';
 
 /**
@@ -39,11 +38,7 @@ export const setUserSession = async (
     .then((rows) => !!rows[0]);
 
   if (isSystemAdmin || type === 'impersonation') {
-    const ip = getIp(ctx);
-    const allowList = (env.REMOTE_SYSTEM_ACCESS_IP ?? '').split(',');
-    const allowAll = allowList.includes('*');
-
-    if (!allowAll && (!ip || !allowList.includes(ip))) throw new AppError(403, 'system_access_forbidden', 'warn');
+    if (!isSystemAccessAllowed(ctx)) throw new AppError(403, 'system_access_forbidden', 'warn');
   }
 
   // Get device information

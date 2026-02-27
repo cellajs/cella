@@ -1258,7 +1258,7 @@ export const getMyMemberships = <ThrowOnError extends boolean = true>(
 /**
  * Get unseen counts
  *
- * Returns the number of unseen product entities per organization and entity type for the *current user*. Only entities created within the last 90 days are considered.
+ * Returns the number of unseen product entities per parent context entity (e.g., project) and entity type for the *current user*. Computed as total (from context_counters) minus seen (from seen_by).
  *
  * **GET /unseen/counts** ·· [getUnseenCounts](https://api.cellajs.com/docs#tag/seen/get/unseen/counts) ·· _seen_
  *
@@ -1685,6 +1685,7 @@ export const getTenantById = <ThrowOnError extends boolean = true>(options: Opti
  * @param {string} options.path.tenantid - `string`
  * @param {string=} options.body.name - `string` (optional)
  * @param {enum=} options.body.status - `enum` (optional)
+ * @param {object=} options.body.restrictions - `object` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const updateTenant = <ThrowOnError extends boolean = true>(options: Options<UpdateTenantData, ThrowOnError>) =>

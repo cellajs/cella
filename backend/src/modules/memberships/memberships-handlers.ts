@@ -77,8 +77,34 @@ const membershipsRouteHandlers = app
 
     // Step 0: Contextual user and organization
     const user = ctx.var.user;
-    const userSystemRole = ctx.var.userSystemRole;
+    const isSystemAdmin = ctx.var.isSystemAdmin;
     const organization = ctx.var.organization;
+
+    // Step 0: Check restrictions before proceeding — max members in organization
+    const [{ currentOrgMemberships }] = await db
+      .select({ currentOrgMemberships: count() })
+      .from(membershipsTable)
+      .where(
+        and(eq(membershipsTable.contextType, rootContextType), eq(membershipsTable[rootIdColumnKey], organization.id)),
+      );
+
+    const [{ pendingInvites }] = await db
+      .select({ pendingInvites: count() })
+      .from(inactiveMembershipsTable)
+      .where(
+        and(
+          eq(inactiveMembershipsTable.contextType, rootContextType),
+          eq(inactiveMembershipsTable[rootIdColumnKey as InactiveEntityIdColumnNames], organization.id),
+        ),
+      );
+
+    const membersRestrictions = ctx.var.tenant.restrictions.quotas.user;
+    if (
+      membersRestrictions !== 0 &&
+      currentOrgMemberships + pendingInvites + normalizedEmails.length > membersRestrictions
+    ) {
+      throw new AppError(403, 'restrict_by_org', 'warn', { entityType });
+    }
 
     // Step 0: Scenario buckets
     const rejectedItemIds: string[] = []; // Scenario 1: already active members
@@ -174,7 +200,7 @@ const membershipsRouteHandlers = app
       // Scenario 2: existing user but no membership yet
       const userRow = rows.find((r) => r.userId);
       if (userRow?.userId) {
-        const isAdminInvitingSelf = user.email === email && userSystemRole === 'admin';
+        const isAdminInvitingSelf = user.email === email && isSystemAdmin;
 
         if (isAdminInvitingSelf) {
           existingUsersToDirectAdd.push({ userId: userRow.userId, email });
@@ -345,19 +371,6 @@ const membershipsRouteHandlers = app
     }
 
     const invitesSentCount = insertedInactiveMemberships.length;
-
-    // Check restrictions: max members in organization
-    const [{ currentOrgMemberships }] = await db
-      .select({ currentOrgMemberships: count() })
-      .from(membershipsTable)
-      .where(
-        and(eq(membershipsTable.contextType, rootContextType), eq(membershipsTable[rootIdColumnKey], organization.id)),
-      );
-
-    const membersRestrictions = organization.restrictions.user;
-    if (membersRestrictions !== 0 && currentOrgMemberships + invitesSentCount > membersRestrictions) {
-      throw new AppError(403, 'restrict_by_org', 'warn', { entityType });
-    }
 
     logEvent('info', 'Users invited on entity level', {
       count: invitesSentCount,

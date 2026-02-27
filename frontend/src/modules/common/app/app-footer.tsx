@@ -5,7 +5,7 @@ import { contactFormHandler } from '~/modules/common/contact-form/contact-form-h
 import { Logo } from '~/modules/common/logo';
 import { UserLanguage } from '~/modules/me/user-language';
 import { UserTheme } from '~/modules/me/user-theme';
-import { Button, buttonVariants } from '~/modules/ui/button';
+import { Button } from '~/modules/ui/button';
 import { defaultFooterLinks } from '~/nav-config';
 import { cn } from '~/utils/cn';
 
@@ -19,9 +19,11 @@ export const FooterLink = ({ id, href }: FooterLinkProps) => {
 
   return (
     <li>
-      <Link to={href} draggable="false" className={cn(buttonVariants({ size: 'xs', variant: 'ghost' }), 'font-light')}>
-        {t(`common:${id}`)}
-      </Link>
+      <Button size="xs" variant="ghost" className="font-light" asChild>
+        <Link to={href} draggable="false">
+          {t(`common:${id}`)}
+        </Link>
+      </Button>
     </li>
   );
 };

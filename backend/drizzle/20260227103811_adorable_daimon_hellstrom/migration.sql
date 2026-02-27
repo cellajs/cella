@@ -125,7 +125,6 @@ CREATE TABLE "organizations" (
 	"timezone" varchar(255),
 	"default_language" varchar DEFAULT 'en' NOT NULL,
 	"languages" json DEFAULT '["en"]' NOT NULL,
-	"restrictions" json DEFAULT '{"user":1000,"attachment":100,"page":0}' NOT NULL,
 	"notification_email" varchar(255),
 	"email_domains" json DEFAULT '[]' NOT NULL,
 	"color" varchar(255),
@@ -195,24 +194,22 @@ CREATE TABLE "requests" (
 );
 --> statement-breakpoint
 CREATE TABLE "seen_by" (
-	"id" varchar(50),
+	"id" varchar(50) PRIMARY KEY,
 	"user_id" varchar(50) NOT NULL,
 	"entity_id" varchar(50) NOT NULL,
 	"entity_type" varchar NOT NULL,
+	"context_id" varchar(50) NOT NULL,
 	"organization_id" varchar(50) NOT NULL,
 	"tenant_id" varchar(24) NOT NULL,
-	"created_at" timestamp DEFAULT now(),
-	CONSTRAINT "seen_by_pkey" PRIMARY KEY("id","created_at"),
+	"created_at" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "seen_by_user_entity_unique" UNIQUE("user_id","entity_id")
 );
 --> statement-breakpoint
 CREATE TABLE "seen_counts" (
-	"entity_id" varchar(50),
+	"entity_id" varchar(50) PRIMARY KEY,
 	"entity_type" varchar NOT NULL,
 	"view_count" integer DEFAULT 0 NOT NULL,
-	"entity_created_at" timestamp,
-	"updated_at" timestamp DEFAULT now() NOT NULL,
-	CONSTRAINT "seen_counts_pkey" PRIMARY KEY("entity_id","entity_created_at")
+	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "sessions" (
@@ -242,6 +239,7 @@ CREATE TABLE "tenants" (
 	"id" varchar(24) PRIMARY KEY,
 	"name" varchar(255) NOT NULL,
 	"status" "tenant_status" DEFAULT 'active'::"tenant_status" NOT NULL,
+	"restrictions" json DEFAULT '{"quotas":{"user":1000,"organization":5,"attachment":100,"page":0},"rateLimits":{"apiPointsPerHour":1000}}' NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"modified_at" timestamp
 );
@@ -331,7 +329,7 @@ CREATE INDEX "organizations_tenant_id_index" ON "organizations" ("tenant_id");--
 CREATE INDEX "pages_tenant_id_idx" ON "pages" ("tenant_id");--> statement-breakpoint
 CREATE INDEX "requests_emails" ON "requests" ("email" DESC NULLS LAST);--> statement-breakpoint
 CREATE INDEX "requests_created_at" ON "requests" ("created_at" DESC NULLS LAST);--> statement-breakpoint
-CREATE INDEX "seen_by_user_org_type_index" ON "seen_by" ("user_id","organization_id","entity_type");--> statement-breakpoint
+CREATE INDEX "seen_by_user_context_type_index" ON "seen_by" ("user_id","context_id","entity_type");--> statement-breakpoint
 CREATE INDEX "seen_by_entity_id_index" ON "seen_by" ("entity_id");--> statement-breakpoint
 CREATE INDEX "seen_by_tenant_id_index" ON "seen_by" ("tenant_id");--> statement-breakpoint
 CREATE INDEX "sessions_secret_idx" ON "sessions" ("secret");--> statement-breakpoint
@@ -551,14 +549,7 @@ CREATE POLICY "inactive_memberships_select_own_policy" ON "inactive_memberships"
   AND "inactive_memberships"."user_id" = current_setting('app.user_id', true)::text
 );--> statement-breakpoint
 CREATE POLICY "memberships_context_guard" ON "memberships" AS RESTRICTIVE FOR SELECT TO public USING (COALESCE(current_setting('app.tenant_id', true), '') != '' OR COALESCE(current_setting('app.user_id', true), '') != '');--> statement-breakpoint
-CREATE POLICY "memberships_select_own_policy" ON "memberships" AS PERMISSIVE FOR SELECT TO public USING (current_setting('app.is_authenticated', true)::boolean = true AND 
-  COALESCE(current_setting('app.user_id', true), '') != ''
-  AND "memberships"."user_id" = current_setting('app.user_id', true)::text
-);--> statement-breakpoint
-CREATE POLICY "memberships_select_tenant_policy" ON "memberships" AS PERMISSIVE FOR SELECT TO public USING (current_setting('app.is_authenticated', true)::boolean = true AND 
-  COALESCE(current_setting('app.tenant_id', true), '') != ''
-  AND "memberships"."tenant_id" = current_setting('app.tenant_id', true)::text
-);--> statement-breakpoint
+CREATE POLICY "memberships_select_authenticated_policy" ON "memberships" AS PERMISSIVE FOR SELECT TO public USING (current_setting('app.is_authenticated', true)::boolean = true);--> statement-breakpoint
 CREATE POLICY "memberships_insert_policy" ON "memberships" AS PERMISSIVE FOR INSERT TO public WITH CHECK (
   COALESCE(current_setting('app.tenant_id', true), '') != ''
   AND "memberships"."tenant_id" = current_setting('app.tenant_id', true)::text

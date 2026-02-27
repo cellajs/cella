@@ -45,7 +45,7 @@ export function enrichWithPermissions(item: EnrichableEntity, contextType: Conte
   const membership = item.membership ?? null;
   const existing = item.can;
 
-  const isSystemAdmin = useUserStore.getState().systemRole === 'admin';
+  const isSystemAdmin = useUserStore.getState().isSystemAdmin;
   const computed = membership
     ? computeCan(contextType, membership, accessPolicies)
     : isSystemAdmin

@@ -26,7 +26,7 @@ import { mockOrganizationResponse } from '../../../mocks/mock-organization';
 
 export const organizationSchema = z
   .object({
-    ...createSelectSchema(organizationsTable).omit({ restrictions: true }).shape,
+    ...createSelectSchema(organizationsTable).shape,
     createdBy: userMinimalBaseSchema.nullable(),
     modifiedBy: userMinimalBaseSchema.nullable(),
     languages: z.array(languageSchema).min(1),
@@ -35,7 +35,7 @@ export const organizationSchema = z
     included: contextEntityIncludedSchema,
   })
   .openapi('Organization', {
-    description: 'An organization with settings, restrictions, and membership context.',
+    description: 'An organization with membership context.',
     example: mockOrganizationResponse(),
   });
 

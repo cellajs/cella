@@ -8,9 +8,9 @@ import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { toaster } from '~/modules/common/toaster/service';
-import { buttonVariants } from '~/modules/ui/button';
+import { FocusBridge, FocusTarget } from '~/modules/navigation/focus-bridge';
+import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
-import { cn } from '~/utils/cn';
 import { numberToColorClass } from '~/utils/number-to-color-class';
 
 type AccountButtonProps = {
@@ -26,23 +26,26 @@ function AccountButton({ offlineAccess, isOnline, icon: Icon, label, id, action 
 
   const isDisabled = offlineAccess ? false : !isOnline;
   return (
-    <Link
-      disabled={isDisabled}
-      onClick={() => {
-        if (isDisabled) toaster(t('common:action.offline.text'), 'warning');
-      }}
+    <Button
+      variant="ghost"
+      size="lg"
+      className="data-[sign-out=true]:text-red-600 hover:bg-accent/50 w-full justify-start text-left focus-effect"
       data-sign-out={id === 'btn-signout'}
-      id={id}
-      draggable="false"
-      to={action}
-      className={cn(
-        buttonVariants({ variant: 'ghost', size: 'lg' }),
-        'data-[sign-out=true]:text-red-600 hover:bg-accent/50 w-full justify-start text-left focus-effect',
-      )}
+      asChild
     >
-      <Icon className="mr-2 size-4" aria-hidden="true" />
-      {label}
-    </Link>
+      <Link
+        disabled={isDisabled}
+        onClick={() => {
+          if (isDisabled) toaster(t('common:action.offline.text'), 'warning');
+        }}
+        id={id}
+        draggable="false"
+        to={action}
+      >
+        <Icon className="mr-2 size-4" aria-hidden="true" />
+        {label}
+      </Link>
+    </Button>
   );
 }
 
@@ -52,11 +55,10 @@ function AccountButton({ offlineAccess, isOnline, icon: Icon, label, id, action 
 export const AccountSheet = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { user, systemRole } = useUserStore();
+  const { user, isSystemAdmin } = useUserStore();
   const isMobile = useBreakpoints('max', 'sm', false);
   const { isOnline } = useOnlineManager();
 
-  const isSystemAdmin = systemRole === 'admin';
   const buttonWrapper = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -67,8 +69,10 @@ export const AccountSheet = () => {
 
   return (
     <div ref={buttonWrapper} className="p-3 bg-card w-full flex flex-col gap-4 min-h-screen">
+      <FocusTarget target="sheet" />
       <button
         type="button"
+        tabIndex={-1}
         onClick={() => navigate({ to: '.', search: (prev) => ({ ...prev, userSheetId: user.id }), resetScroll: false })}
         className="w-full relative"
       >
@@ -92,20 +96,18 @@ export const AccountSheet = () => {
           <div className="max-sm:hidden text-center text-sm text-foreground/50 mb-4">{user.id}</div>
         )}
 
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="lg"
           id="btn-profile"
+          className="hover:bg-accent/50 w-full justify-start text-left focus-effect"
           onClick={() =>
             navigate({ to: '.', search: (prev) => ({ ...prev, userSheetId: user.id }), resetScroll: false })
           }
-          className={cn(
-            buttonVariants({ variant: 'ghost', size: 'lg' }),
-            'hover:bg-accent/50 w-full justify-start text-left focus-effect',
-          )}
         >
           <UserRoundIcon className="mr-2 size-4" aria-hidden="true" />
           {t('common:view_resource', { resource: t('common:profile').toLowerCase() })}
-        </button>
+        </Button>
         <AccountButton
           offlineAccess={false}
           isOnline={isOnline}
@@ -132,6 +134,11 @@ export const AccountSheet = () => {
           label={t('common:sign_out')}
           action="/sign-out"
         />
+      </div>
+      {/* Keyboard-only skip links at end of sheet */}
+      <div className="mt-auto flex flex-col">
+        <FocusBridge direction="to-content" className="focus:relative" />
+        <FocusBridge direction="to-sidebar" className="focus:relative" />
       </div>
     </div>
   );

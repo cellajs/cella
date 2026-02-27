@@ -35,7 +35,7 @@ export const generateScripts: GenerateScript[] = [
 ];
 
 /** Seed scripts run during `pnpm seed` */
-export const seedScripts = ['pnpm run seed:user', 'pnpm run seed:organizations', 'pnpm run seed:data', 'pnpm run seed:counters'];
+export const seedScripts = ['pnpm run seed:user', 'pnpm run seed:organizations', 'pnpm run seed:pages', 'pnpm run seed:attachments', 'pnpm run seed:counters'];
 
 /** Seed scripts for production - only creates admin user */
 export const seedAdminScripts = ['pnpm run seed:user'];

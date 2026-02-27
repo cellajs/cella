@@ -568,81 +568,39 @@
               "itemType": "object",
               "items": {
                 "type": "object",
+                "description": "Base user schema with essential fields for identification and display.",
                 "properties": {
+                  "id": { "type": "string", "required": true },
+                  "name": { "type": "string", "required": true },
                   "createdAt": { "type": "string", "required": true },
-                  "id": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 50
+                  "modifiedAt": {
+                    "type": ["string", "null"],
+                    "required": true
                   },
-                  "entityType": {
-                    "type": "string",
-                    "required": true,
-                    "enum": ["user"]
+                  "slug": { "type": "string", "required": true },
+                  "thumbnailUrl": {
+                    "type": ["string", "null"],
+                    "required": true
                   },
-                  "name": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 255
+                  "bannerUrl": {
+                    "type": ["string", "null"],
+                    "required": true
                   },
                   "description": {
                     "type": ["string", "null"],
                     "required": true
-                  },
-                  "slug": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 255
-                  },
-                  "thumbnailUrl": {
-                    "type": ["string", "null"],
-                    "required": true,
-                    "maxLength": 2048
-                  },
-                  "bannerUrl": {
-                    "type": ["string", "null"],
-                    "required": true,
-                    "maxLength": 2048
                   },
                   "email": {
                     "type": "string",
                     "required": true,
                     "format": "email"
                   },
-                  "mfaRequired": { "type": "boolean", "required": true },
-                  "firstName": {
-                    "type": ["string", "null"],
-                    "required": true,
-                    "maxLength": 255
-                  },
-                  "lastName": {
-                    "type": ["string", "null"],
-                    "required": true,
-                    "maxLength": 255
-                  },
-                  "language": {
+                  "entityType": {
                     "type": "string",
                     "required": true,
-                    "enum": ["en", "nl"]
-                  },
-                  "modifiedAt": {
-                    "type": ["string", "null"],
-                    "required": true
-                  },
-                  "modifiedBy": {
-                    "type": ["string", "null"],
-                    "required": true,
-                    "maxLength": 50
+                    "enum": ["user"]
                   },
                   "lastSeenAt": {
-                    "type": ["string", "null"],
-                    "required": true
-                  },
-                  "lastStartedAt": {
-                    "type": ["string", "null"],
-                    "required": true
-                  },
-                  "lastSignInAt": {
                     "type": ["string", "null"],
                     "required": true
                   },
@@ -692,7 +650,8 @@
                     },
                     "ref": "#/components/schemas/MembershipBase"
                   }
-                }
+                },
+                "extendsRef": "#/components/schemas/UserBase"
               }
             },
             "total": { "type": "number", "required": true }

@@ -25,17 +25,15 @@ const baseMenu = buildInitialMenu(appConfig.menuStructure);
 export function buildMenu(
   byType: Map<MenuSection['entityType'] | MenuSection['subentityType'], UserMenuItem[]>,
   menuStructure: MenuSection[],
-  opts?: { detailedMenu?: boolean },
 ) {
-  const detailedMenu = !!opts?.detailedMenu;
-
   const menu = { ...baseMenu };
 
   for (const section of menuStructure) {
     const items = byType.get(section.entityType) ?? [];
 
-    // Always add submenu: [] for consistent shape
-    if (!detailedMenu || !section.subentityType) {
+    // Always attach sub-items so data (e.g., unseen badge aggregation) is available
+    // regardless of detailedMenu. Rendering of sub-items is controlled separately.
+    if (!section.subentityType) {
       menu[section.entityType] = items.map((e) => ({ ...e, submenu: [] }));
       continue;
     }

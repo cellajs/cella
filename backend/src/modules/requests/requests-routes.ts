@@ -1,7 +1,7 @@
 import { createXRoute } from '#/docs/x-routes';
 import { authGuard, publicGuard, sysAdminGuard } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
-import { emailEnumLimiter, spamLimiter } from '#/middlewares/rate-limiter/limiters';
+import { bulkPointsLimiter, emailEnumLimiter, spamLimiter } from '#/middlewares/rate-limiter/limiters';
 import { requestCreateBodySchema, requestListQuerySchema, requestSchema } from '#/modules/requests/requests-schema';
 import { batchResponseSchema, errorResponseRefs, idsBodySchema, paginationSchema } from '#/schemas';
 import { mockPaginatedRequestsResponse, mockRequestResponse } from '../../../mocks/mock-request';
@@ -68,6 +68,7 @@ const requestRoutes = {
     method: 'delete',
     path: '/',
     xGuard: [authGuard, sysAdminGuard],
+    xRateLimiter: bulkPointsLimiter,
     tags: ['requests'],
     summary: 'Delete requests',
     description: 'Deletes one or more *requests* from the system by their IDs.',

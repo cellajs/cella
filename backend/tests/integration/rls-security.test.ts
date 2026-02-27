@@ -13,7 +13,7 @@
  * - Session variables (app.tenant_id, app.user_id, app.is_authenticated)
  *   are set via set_config() within transactions to drive RLS policy evaluation
  *
- * @see info/RLS.md for full architecture documentation
+ * @see info/ARCHITECTURE.md for full architecture documentation
  */
 
 import { sql } from 'drizzle-orm';

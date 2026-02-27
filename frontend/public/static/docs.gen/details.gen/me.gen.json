@@ -10,7 +10,7 @@
         "contentType": "application/json",
         "schema": {
           "type": "object",
-          "description": "The currently authenticated user with their system role.",
+          "description": "The currently authenticated user with their system admin status.",
           "properties": {
             "user": {
               "type": "object",
@@ -105,11 +105,10 @@
               },
               "ref": "#/components/schemas/User"
             },
-            "systemRole": {
-              "type": "string",
+            "isSystemAdmin": {
+              "type": "boolean",
               "required": true,
-              "description": "System-level role (e.g. admin) or user for standard access.",
-              "enum": ["admin", "user"]
+              "description": "Whether the current user has system admin privileges."
             }
           },
           "ref": "#/components/schemas/Me",
@@ -138,7 +137,7 @@
             "lastSignInAt": "2024-07-14T22:49:14.651Z",
             "lastSeenAt": "2024-07-14T22:49:14.651Z"
           },
-          "systemRole": null
+          "isSystemAdmin": false
         }
       },
       {

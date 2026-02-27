@@ -15,18 +15,23 @@ import app from '#/routes';
 import { registerCacheInvalidation } from '#/sync/cache-invalidation';
 import { cdcWebSocketServer } from '#/sync/cdc-websocket';
 import { env } from './env';
+import { maple, verifyMapleConnection } from './tracing';
 
 // import { sdk } from './tracing';
+maple?.start();
+verifyMapleConnection();
 
 // Catch unhandled errors that bypass try/catch (e.g., DB pool 'error' events)
 process.on('unhandledRejection', (reason) => {
   process.stderr.write(`[startup] Unhandled rejection: ${reason instanceof Error ? reason.stack : reason}\n`);
 });
+
 process.on('uncaughtException', (err) => {
   process.stderr.write(`[startup] Uncaught exception: ${err.stack ?? err}\n`);
   // Give stderr time to flush before exit
   setTimeout(() => process.exit(1), 500);
 });
+
 process.on('SIGTERM', () => {
   process.stderr.write('[startup] Received SIGTERM — process killed\n');
   setTimeout(() => process.exit(1), 200);

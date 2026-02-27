@@ -1,12 +1,11 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { and, count, eq, exists, ilike, inArray, or, sql } from 'drizzle-orm';
-import { appConfig } from 'shared';
-import { membershipsTable } from '#/db/schema/memberships';
+import { and, count, eq, ilike, or, sql } from 'drizzle-orm';
 import { systemRolesTable } from '#/db/schema/system-roles';
 import { userActivityTable } from '#/db/schema/user-activity';
 import { usersTable } from '#/db/schema/users';
 import { type Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
+import { sharesOrgFilter } from '#/modules/user/helpers/relatable-filter';
 import { memberSelect } from '#/modules/user/helpers/select';
 import userRoutes from '#/modules/user/user-routes';
 import { defaultHook } from '#/utils/default-hook';
@@ -24,38 +23,24 @@ const userRouteHandlers = app
     const { q, sort, order, offset, limit, role } = ctx.req.valid('query');
 
     const db = ctx.var.db;
-    const userSystemRole = ctx.var.userSystemRole;
+    const isSystemAdmin = ctx.var.isSystemAdmin;
     const memberships = ctx.var.memberships;
-    const isSystemAdmin = userSystemRole === 'admin';
 
-    // Non-admins: only see users who share at least one organization
+    // Only see users who share at least one organization
     const myOrgIds = [...new Set(memberships.map((m) => m.organizationId))];
-    const relatableFilter =
-      !isSystemAdmin && myOrgIds.length > 0
-        ? [
-            exists(
-              db
-                .select({ id: membershipsTable.id })
-                .from(membershipsTable)
-                .where(
-                  and(eq(membershipsTable.userId, usersTable.id), inArray(membershipsTable.organizationId, myOrgIds)),
-                ),
-            ),
-          ]
-        : [];
+    if (myOrgIds.length === 0) return ctx.json({ items: [], total: 0 }, 200);
 
-    const filters = [
-      ...relatableFilter,
-      ...(role ? [eq(systemRolesTable.role, role)] : []),
-      ...(q
-        ? [
-            or(
-              ilike(usersTable.name, prepareStringForILikeFilter(q)),
-              ilike(usersTable.email, prepareStringForILikeFilter(q)),
-            ),
-          ]
-        : []),
-    ];
+    const filters = [];
+    if (!isSystemAdmin) filters.push(sharesOrgFilter(db, myOrgIds));
+    if (role) filters.push(eq(systemRolesTable.role, role));
+    if (q) {
+      filters.push(
+        or(
+          ilike(usersTable.name, prepareStringForILikeFilter(q)),
+          ilike(usersTable.email, prepareStringForILikeFilter(q)),
+        ),
+      );
+    }
 
     const orderColumn = getOrderColumn(sort, usersTable.id, order, {
       id: usersTable.id,
@@ -78,10 +63,7 @@ const userRouteHandlers = app
     const [{ total }] = await db.select({ total: count() }).from(usersQuery.as('users'));
     const result = await usersQuery.limit(limit).offset(offset);
 
-    // Return safe defaults for fields omitted by memberSelect
-    const users = result.map((u) => ({ ...u, newsletter: false, userFlags: appConfig.defaultUserFlags }));
-
-    return ctx.json({ items: users, total }, 200);
+    return ctx.json({ items: result, total }, 200);
   })
   /**
    * Get a user by id (cross-tenant). Pass ?slug=true to resolve by slug.
@@ -98,26 +80,15 @@ const userRouteHandlers = app
     const isSelf = relatableUserId === requestingUser.id || (bySlug && relatableUserId === requestingUser.slug);
 
     // Defense in depth: verify shared org membership at query level (mirrors relatableGuard)
-    const userSystemRole = ctx.var.userSystemRole;
-    const isSystemAdmin = userSystemRole === 'admin';
+    const isSystemAdmin = ctx.var.isSystemAdmin;
     const memberships = ctx.var.memberships;
     const myOrgIds = [...new Set(memberships.map((m) => m.organizationId))];
+    if (!isSelf && !isSystemAdmin && myOrgIds.length === 0) {
+      throw new AppError(403, 'forbidden', 'warn', { entityType: 'user' });
+    }
 
-    const filters = [
-      userCondition,
-      ...(!isSelf && !isSystemAdmin && myOrgIds.length > 0
-        ? [
-            exists(
-              db
-                .select({ id: membershipsTable.id })
-                .from(membershipsTable)
-                .where(
-                  and(eq(membershipsTable.userId, usersTable.id), inArray(membershipsTable.organizationId, myOrgIds)),
-                ),
-            ),
-          ]
-        : []),
-    ];
+    const filters = [userCondition];
+    if (!isSelf && !isSystemAdmin) filters.push(sharesOrgFilter(db, myOrgIds));
 
     // Use memberSelect for all lookups (omits newsletter, userFlags)
     const [targetUser] = await db
@@ -129,8 +100,7 @@ const userRouteHandlers = app
     if (!targetUser)
       throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { user: relatableUserId } });
 
-    // Return with safe defaults for fields omitted by memberSelect
-    return ctx.json({ ...targetUser, newsletter: false, userFlags: appConfig.defaultUserFlags }, 200);
+    return ctx.json(targetUser, 200);
   });
 
 export default userRouteHandlers;

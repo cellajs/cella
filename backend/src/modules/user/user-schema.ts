@@ -4,6 +4,7 @@ import { usersTable } from '#/db/schema/users';
 import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schema';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
 import { languageSchema, paginationQuerySchema, validCDNUrlSchema, validNameSchema, validSlugSchema } from '#/schemas';
+import { userBaseSchema } from '#/schemas/user-schema-base';
 import { mockUserResponse } from '../../../mocks/mock-user';
 
 export const enabledOAuthProvidersEnum = z.enum(
@@ -36,12 +37,14 @@ export const userSchema = createSelectSchema(usersTable, {
     example: mockUserResponse(),
   });
 
-export const memberSchema = z
-  .object({
-    ...userSchema.shape,
-    membership: membershipBaseSchema,
-  })
-  .omit({ userFlags: true, newsletter: true });
+/** Public user schema for cross-tenant and member-facing endpoints. Based on userBaseSchema + lastSeenAt. */
+export const memberUserSchema = userBaseSchema.extend({
+  lastSeenAt: z.string().nullable(),
+});
+
+export const memberSchema = memberUserSchema.extend({
+  membership: membershipBaseSchema,
+});
 
 export const userUpdateBodySchema = createInsertSchema(usersTable, {
   firstName: validNameSchema.nullable(),

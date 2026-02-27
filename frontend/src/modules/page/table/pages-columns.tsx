@@ -82,7 +82,7 @@ export function usePagesTableColumns(isCompact: boolean) {
       width: 160,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => {
-        return <span className="font-light">{t(`app:${row.status}`)}</span>;
+        return <span className="font-light">{t(`common:${row.status}`)}</span>;
       },
       renderEditCell: ({ row, onRowChange }) => {
         const { t } = useTranslation();
@@ -99,7 +99,7 @@ export function usePagesTableColumns(isCompact: boolean) {
             <SelectContent sideOffset={-41} alignOffset={-5} className="duration-0!">
               {pageStatuses.map((status) => (
                 <SelectItem key={status} value={status}>
-                  {t(`app:${status}`)}
+                  {t(`common:${status}`)}
                 </SelectItem>
               ))}
             </SelectContent>

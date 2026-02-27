@@ -4,7 +4,7 @@
     "responses": [
       {
         "status": 200,
-        "description": "Unseen counts per org per entity type",
+        "description": "Unseen counts per parent context entity per entity type",
         "contentType": "application/json",
         "schema": { "type": "object", "contentType": "application/json" }
       },

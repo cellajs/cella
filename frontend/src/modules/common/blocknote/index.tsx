@@ -15,7 +15,6 @@ import {
   type MouseEventHandler,
   useCallback,
   useEffect,
-  useMemo,
   useRef,
 } from 'react';
 import { WebrtcProvider } from 'y-webrtc';
@@ -32,7 +31,6 @@ import { CustomSideMenu } from '~/modules/common/blocknote/custom-side-menu';
 import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu';
 import { compareIsContentSame, getParsedContent, getRandomColor } from '~/modules/common/blocknote/helpers';
 import { getDictionary } from '~/modules/common/blocknote/helpers/dictionary';
-import { focusEditor } from '~/modules/common/blocknote/helpers/focus';
 import { openAttachment } from '~/modules/common/blocknote/helpers/open-attachment';
 import { shadCNComponents } from '~/modules/common/blocknote/helpers/shad-cn';
 import type {
@@ -44,6 +42,16 @@ import type {
 } from '~/modules/common/blocknote/types';
 import router from '~/routes/router';
 import { useUIStore } from '~/store/ui';
+
+// IDE-like wrapping characters (constant, no need to recreate per keystroke)
+const wrappingChars: Record<string, string> = {
+  '[': ']',
+  '{': '}',
+  '(': ')',
+  '`': '`',
+  '"': '"',
+  "'": "'",
+};
 
 type BlockNoteProps =
   | (CommonBlockNoteProps & {
@@ -143,6 +151,7 @@ function BlockNote({
     heading: { levels: headingLevels },
     trailingBlock,
     dictionary: getDictionary(),
+    ...(autoFocus && editable ? { autofocus: 'end' as const } : {}),
     collaboration: collaborationConfig,
     // Offline-first file URL resolution:
     // 1. If key looks like an attachment ID (nanoid format), check local blob storage
@@ -189,18 +198,8 @@ function BlockNote({
       const isEscape = key === 'Escape';
       const isCmdEnter = key === 'Enter' && (metaKey || ctrlKey);
 
-      // IDE-like wrapping characters
-      const wrappingChars: Record<string, string> = {
-        '[': ']',
-        '{': '}',
-        '(': ')',
-        '`': '`',
-        '"': '"',
-        "'": "'",
-      };
-
       // Handle character-based wrapping
-      if (wrappingChars[key]) {
+      if (key in wrappingChars) {
         const selection = editor.getSelection();
 
         const singleBlockSelected =
@@ -306,7 +305,7 @@ function BlockNote({
     [editor, clickOpensPreview, editable],
   );
 
-  const passedContent = useMemo(() => getParsedContent(defaultValue), [defaultValue]);
+  const passedContent = getParsedContent(defaultValue);
 
   useEffect(() => {
     const currentContent = JSON.stringify(editor.document);
@@ -315,18 +314,6 @@ function BlockNote({
     if (passedContent === undefined) editor.removeBlocks(editor.document);
     else editor.replaceBlocks(editor.document, passedContent);
   }, [passedContent]);
-
-  // TODO-002(BLOCKING) Autofocus issue  https://github.com/TypeCellOS/BlockNote/issues/891
-  useEffect(() => {
-    if (!autoFocus || !editable || !editor) return;
-
-    const intervalID = setInterval(() => {
-      focusEditor(editor);
-      clearInterval(intervalID);
-    }, 10);
-
-    return () => clearInterval(intervalID);
-  }, [editor, editable, autoFocus]);
 
   useEffect(() => {
     if (!onBeforeLoad || !editable) return;

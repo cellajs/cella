@@ -1,5 +1,6 @@
 import { createXRoute } from '#/docs/x-routes';
 import { authGuard, orgGuard, tenantGuard } from '#/middlewares/guard';
+import { bulkPointsLimiter } from '#/middlewares/rate-limiter/limiters';
 import { seenBatchBodySchema, seenBatchResponseSchema, unseenCountsResponseSchema } from '#/modules/seen/seen-schema';
 import { errorResponseRefs, tenantOrgParamSchema } from '#/schemas';
 
@@ -12,6 +13,7 @@ const seenRoutes = {
     method: 'post',
     path: '/',
     xGuard: [authGuard, tenantGuard, orgGuard],
+    xRateLimiter: bulkPointsLimiter,
     tags: ['seen'],
     summary: 'Mark entities as seen',
     description:
@@ -33,7 +35,7 @@ const seenRoutes = {
     },
   }),
   /**
-   * Get unseen counts per org per entity type
+   * Get unseen counts per parent context entity per entity type
    */
   getUnseenCounts: createXRoute({
     operationId: 'getUnseenCounts',
@@ -43,11 +45,11 @@ const seenRoutes = {
     tags: ['seen'],
     summary: 'Get unseen counts',
     description:
-      'Returns the number of unseen product entities per organization and entity type for the *current user*. ' +
-      'Only entities created within the last 90 days are considered.',
+      'Returns the number of unseen product entities per parent context entity (e.g., project) and entity type for the *current user*. ' +
+      'Computed as total (from context_counters) minus seen (from seen_by).',
     responses: {
       200: {
-        description: 'Unseen counts per org per entity type',
+        description: 'Unseen counts per parent context entity per entity type',
         content: { 'application/json': { schema: unseenCountsResponseSchema } },
       },
       ...errorResponseRefs,

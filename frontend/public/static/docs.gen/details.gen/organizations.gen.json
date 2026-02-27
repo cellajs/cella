@@ -15,7 +15,7 @@
               "itemType": "object",
               "items": {
                 "type": "object",
-                "description": "An organization with settings, restrictions, and membership context.",
+                "description": "An organization with membership context.",
                 "properties": {
                   "createdAt": { "type": "string", "required": true },
                   "id": {
@@ -293,11 +293,6 @@
               "createdBy": null,
               "modifiedAt": "2024-04-19T14:04:35.773Z",
               "modifiedBy": null,
-              "restrictions": {
-                "user": 1000,
-                "attachment": 100,
-                "page": 0
-              },
               "included": {
                 "membership": {
                   "id": "3y6ee6h5lc8sjfv4trxwe3yb",
@@ -347,11 +342,6 @@
               "createdBy": null,
               "modifiedAt": "2024-02-25T13:01:35.301Z",
               "modifiedBy": null,
-              "restrictions": {
-                "user": 1000,
-                "attachment": 100,
-                "page": 0
-              },
               "included": {
                 "membership": {
                   "id": "ry5f7szmj5jhp0ad93klgj3e",
@@ -563,7 +553,7 @@
               "ref": "#/components/schemas/Organization",
               "items": {
                 "type": "object",
-                "description": "An organization with settings, restrictions, and membership context.",
+                "description": "An organization with membership context.",
                 "properties": {
                   "createdAt": { "type": "string", "required": true },
                   "id": {
@@ -831,11 +821,6 @@
               "createdBy": null,
               "modifiedAt": "2024-11-21T04:00:59.122Z",
               "modifiedBy": null,
-              "restrictions": {
-                "user": 1000,
-                "attachment": 100,
-                "page": 0
-              },
               "included": {
                 "membership": {
                   "id": "300jor4orrvsgezqoyxfckg3",
@@ -885,11 +870,6 @@
               "createdBy": null,
               "modifiedAt": "2024-10-29T08:46:20.790Z",
               "modifiedBy": null,
-              "restrictions": {
-                "user": 1000,
-                "attachment": 100,
-                "page": 0
-              },
               "included": {
                 "membership": {
                   "id": "1u44cckbz5av195r4h3wiruz",
@@ -1004,7 +984,7 @@
         "contentType": "application/json",
         "schema": {
           "type": "object",
-          "description": "An organization with settings, restrictions, and membership context.",
+          "description": "An organization with membership context.",
           "properties": {
             "createdAt": { "type": "string", "required": true },
             "id": {
@@ -1266,11 +1246,6 @@
           "createdBy": null,
           "modifiedAt": "2024-12-25T15:29:47.111Z",
           "modifiedBy": null,
-          "restrictions": {
-            "user": 1000,
-            "attachment": 100,
-            "page": 0
-          },
           "included": {
             "membership": {
               "id": "kaba9fpc90mgtzmtjipw2v8s",
@@ -1371,7 +1346,7 @@
         "contentType": "application/json",
         "schema": {
           "type": "object",
-          "description": "An organization with settings, restrictions, and membership context.",
+          "description": "An organization with membership context.",
           "properties": {
             "createdAt": { "type": "string", "required": true },
             "id": {
@@ -1633,11 +1608,6 @@
           "createdBy": null,
           "modifiedAt": "2024-12-25T15:29:47.111Z",
           "modifiedBy": null,
-          "restrictions": {
-            "user": 1000,
-            "attachment": 100,
-            "page": 0
-          },
           "included": {
             "membership": {
               "id": "kaba9fpc90mgtzmtjipw2v8s",

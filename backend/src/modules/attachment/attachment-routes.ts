@@ -2,7 +2,7 @@ import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/docs/x-routes';
 import { appCache } from '#/middlewares/entity-cache';
 import { authGuard, orgGuard, publicGuard, tenantGuard } from '#/middlewares/guard';
-import { presignedUrlLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
+import { bulkPointsLimiter, presignedUrlLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   attachmentCreateManyStxBodySchema,
   attachmentCreateResponseSchema,
@@ -63,6 +63,7 @@ const attachmentRoutes = {
     method: 'post',
     path: '/',
     xGuard: [authGuard, tenantGuard, orgGuard],
+    xRateLimiter: bulkPointsLimiter,
     tags: ['attachments'],
     summary: 'Create attachments',
     description:
@@ -147,6 +148,7 @@ const attachmentRoutes = {
     method: 'delete',
     path: '/',
     xGuard: [authGuard, tenantGuard, orgGuard],
+    xRateLimiter: bulkPointsLimiter,
     tags: ['attachments'],
     summary: 'Delete attachments',
     description: 'Deletes one or more *attachment* records by ID. This does not delete the underlying file in storage.',

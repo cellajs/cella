@@ -152,7 +152,7 @@ const entitiesRouteHandlers = app
   .openapi(entityRoutes.appStream, async (ctx) => {
     const user = ctx.var.user;
     const memberships = ctx.var.memberships;
-    const userSystemRole = ctx.var.userSystemRole;
+    const isSystemAdmin = ctx.var.isSystemAdmin;
     const sessionToken = ctx.var.sessionToken;
     const orgIds = new Set(memberships.map((m) => m.organizationId));
 
@@ -175,7 +175,7 @@ const entitiesRouteHandlers = app
         userId: user.id,
         sessionToken,
         orgIds,
-        userSystemRole,
+        isSystemAdmin,
         memberships,
         cursor,
       };

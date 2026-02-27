@@ -22,7 +22,7 @@ interface ViewPageProps {
 function ViewPage({ pageId }: ViewPageProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { systemRole } = useUserStore();
+  const { isSystemAdmin } = useUserStore();
 
   // Get page from React Query
   const { data: page } = useSuspenseQuery(pageQueryOptions(pageId));
@@ -41,7 +41,7 @@ function ViewPage({ pageId }: ViewPageProps) {
         <StickyBox className="z-10 bg-background" offsetTop={0} hideOnScrollDown>
           <div className="flex items-center justify-between gap-3 py-3 sm:py-6">
             <div className="flex items-center gap-2">
-              {systemRole && (
+              {isSystemAdmin && (
                 <Button variant="plain" onClick={() => navigate({ to: '/docs/page/$id/edit', params: { id: pageId } })}>
                   <EditIcon size={16} className="mr-2" />
                   {t('common:edit')}

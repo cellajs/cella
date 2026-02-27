@@ -24,6 +24,9 @@ export const config = {
    */
   parentlessProductEntityTypes: ['page'] as const,
 
+  /** Product entity types tracked for seen/unseen counts. Must be org-scoped (not parentless). */
+  seenTrackedEntityTypes: ['attachment'] as const,
+
   /** Maps entity types to their ID column names - must match entityTypes */
   entityIdColumnKeys: {
     user: 'userId',
@@ -46,10 +49,16 @@ export const config = {
     { entityType: 'organization',subentityType: null} as const,
   ],
 
-  /** Default restrictions for organizations (max entities per org) */
-  defaultOrganizationRestrictions: {
-    user: 1000,
-    attachment: 100,
+  /** Default restrictions for tenants (entity quotas and rate limits) */
+  defaultRestrictions: {
+    quotas: {
+      organization: 5,
+      user: 1000,
+      attachment: 100,
+    },
+    rateLimits: {
+      apiPointsPerHour: 1000,
+    },
   } as const,
 
   /******************************************************************************
@@ -107,8 +116,12 @@ export const config = {
 
   /** Email address for user support inquiries */
   supportEmail: 'support@cellajs.com',
+
   /** From address for system notifications */
   notificationsEmail: 'notifications@cellajs.com',
+
+    /** Receive security warnings */
+  securityEmail: 'security@cellajs.com',
 
   /******************************************************************************
    * MODE & FLAGS

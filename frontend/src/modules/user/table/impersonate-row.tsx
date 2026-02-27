@@ -1,20 +1,20 @@
 import i18n from 'i18next';
 import { VenetianMaskIcon } from 'lucide-react';
 import { appConfig } from 'shared';
-import type { User } from '~/api.gen';
 import { startImpersonation } from '~/api.gen';
 import { toaster } from '~/modules/common/toaster/service';
 import { getAndSetMe } from '~/modules/me/helpers';
 import { meKeys } from '~/modules/me/query';
 import { getMenuData } from '~/modules/navigation/menu-sheet/helpers/get-menu-data';
 import { Button } from '~/modules/ui/button';
+import type { BaseUser } from '~/modules/user/types';
 import { queryClient } from '~/query/query-client';
 import { appStreamManager } from '~/query/realtime/stream-store';
 import router from '~/routes/router';
 import { useUIStore } from '~/store/ui';
 
 interface Props {
-  user: User;
+  user: BaseUser;
   tabIndex: number;
 }
 

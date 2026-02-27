@@ -23,6 +23,7 @@ export {
   maxLength,
   noDuplicateSlugsRefine,
   paginationQuerySchema,
+  passwordInputSchema,
   passwordSchema,
   productEntityTypeSchema,
   refineWithType,

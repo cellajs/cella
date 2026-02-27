@@ -3,6 +3,7 @@ import { appConfig } from 'shared';
 import type { User } from '~/api.gen';
 import { deleteUsers, type GetUsersData, getUser, getUsers, type UpdateUserData, updateUser } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
+import type { BaseUser } from '~/modules/user/types';
 import {
   baseInfiniteQueryOptions,
   createEntityKeys,
@@ -84,7 +85,7 @@ export const useUserDeleteMutation = () => {
   const queryClient = useQueryClient();
   const mutateCache = useMutateQueryData(keys.list.base, (user) => keys.detail.byId(user.id), ['remove']);
 
-  return useMutation<void, ApiError, User[]>({
+  return useMutation<void, ApiError, BaseUser[]>({
     mutationKey: keys.delete,
     mutationFn: async (users) => {
       const ids = users.map(({ id }) => id);
