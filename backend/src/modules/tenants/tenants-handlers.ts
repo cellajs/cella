@@ -9,13 +9,13 @@
 
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { and, asc, count, desc, eq, ilike } from 'drizzle-orm';
+import { appConfig } from 'shared';
 import { tenantsTable } from '#/db/schema/tenants';
 import { type Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
 import { defaultHook } from '#/utils/default-hook';
 import { logEvent } from '#/utils/logger';
 import { prepareStringForILikeFilter } from '#/utils/sql';
-import { PUBLIC_TENANT_ID } from '../../../scripts/seeds/fixtures';
 import tenantRoutes from './tenants-routes';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
@@ -148,7 +148,7 @@ const tenantHandlers = app
     const user = ctx.var.user;
 
     // Protect public tenant from archival
-    if (tenantId === PUBLIC_TENANT_ID) {
+    if (tenantId === appConfig.publicTenant.id) {
       throw new AppError(403, 'forbidden', 'warn', { meta: { reason: 'Cannot archive public tenant' } });
     }
 

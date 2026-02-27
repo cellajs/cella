@@ -154,7 +154,7 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   productEntityTypes: T['productEntityTypes'];
   parentlessProductEntityTypes: T['parentlessProductEntityTypes'];
   seenTrackedEntityTypes: T['seenTrackedEntityTypes'];
-  entityIdColumnKeys: Record<string, string>;
+  entityIdColumnKeys: { readonly [K in T['entityTypes'][number] & string]: `${K}Id` };
   entityActions: T['entityActions'];
   resourceTypes: T['resourceTypes'];
   menuStructure: readonly MenuStructureItem[];
@@ -162,6 +162,9 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
     quotas: Record<string, number>;
     rateLimits: { apiPointsPerHour: number };
   };
+
+  // Public tenant
+  publicTenant: { id: string; name: string };
 
   // System roles
   systemRoles: T['systemRoles'];

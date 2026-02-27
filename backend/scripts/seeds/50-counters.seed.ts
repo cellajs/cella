@@ -1,6 +1,7 @@
+import type { SeedScript } from '../types';
 import { getTableName } from 'drizzle-orm';
 import { sql } from 'drizzle-orm';
-import { appConfig, hierarchy, isProductEntity, roles } from 'shared';
+import { type EntityType, appConfig, hierarchy, isProductEntity, roles } from 'shared';
 import { migrationDb } from '#/db/db';
 import { contextCountersTable } from '#/db/schema/context-counters';
 import { entityTables } from '#/table-config';
@@ -9,10 +10,8 @@ import { startSpinner, succeedSpinner, warnSpinner } from '#/utils/console';
 // Seed scripts use admin connection (migrationDb) for privileged operations
 const db = migrationDb;
 
-const isProduction = process.env.NODE_ENV === 'production';
-
 /** Resolve entity type → SQL table name via Drizzle (e.g. 'task' → 'tasks') */
-const sqlTableName = (entityType: string) => getTableName(entityTables[entityType as keyof typeof entityTables]);
+const sqlTableName = (entityType: EntityType) => getTableName(entityTables[entityType]);
 
 /**
  * Backfill context_counters from current membership + entity data.
@@ -32,11 +31,6 @@ const sqlTableName = (entityType: string) => getTableName(entityTables[entityTyp
  */
 export const countersSeed = async () => {
   const spinner = startSpinner('Seeding context counters...');
-
-  if (isProduction) {
-    spinner.fail('Not allowed in production.');
-    return;
-  }
 
   if (!db) {
     spinner.fail('DATABASE_ADMIN_URL required for seeding');
@@ -104,7 +98,8 @@ export const countersSeed = async () => {
     if (children.length === 0) continue;
 
     const ctxTableName = sqlTableName(contextType);
-    const idColumn = appConfig.entityIdColumnKeys[contextType as keyof typeof appConfig.entityIdColumnKeys];
+    // Type is `never` in default config (only 'organization' exists) but forks may add context types
+    const idColumn: string = appConfig.entityIdColumnKeys[contextType];
     // Convert camelCase to snake_case for SQL column reference (e.g. projectId → project_id)
     const fkColumn = idColumn.replace(/[A-Z]/g, (m) => `_${m.toLowerCase()}`);
 
@@ -137,3 +132,5 @@ export const countersSeed = async () => {
 
   succeedSpinner(`Seeded context counters for ${count} contexts`);
 };
+
+export const seedConfig: SeedScript = { name: 'counters', run: countersSeed };

@@ -8,7 +8,7 @@ import { flushStores } from '~/utils/flush-stores';
 /**
  * Fallback messages for common 400 errors
  */
-const fallbackMessages = {
+const fallbackMessages: Partial<Record<number, string>> = {
   400: i18n.t('error:bad_request_action'),
   401: i18n.t('error:unauthorized_action'),
   403: i18n.t('error:forbidden_action'),
@@ -35,7 +35,7 @@ const getErrorMessage = ({ type, entityType, message, status }: ApiError) => {
   if (message) return message;
 
   // Priority 4: Status-based fallback
-  return fallbackMessages[status as keyof typeof fallbackMessages] || 'Unknown error occurred';
+  return fallbackMessages[status] || 'Unknown error occurred';
 };
 
 /**

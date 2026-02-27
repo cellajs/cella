@@ -24,8 +24,8 @@ export function extractActivityContext(
   const entityType = entry.kind === 'entity' ? entry.type : null;
   const resourceType = entry.kind === 'resource' ? entry.type : null;
 
-  // Entity ID is only set for entity tables
-  const entityId = entityType ? getRowValue(row, 'id') : null;
+  // Entity ID from row's id column (applies to both entity and resource tables)
+  const entityId = getRowValue(row, 'id') ?? null;
 
   // Try multiple columns for user ID
   const userId =

@@ -4,47 +4,49 @@ import { entityTables } from '#/table-config';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { membershipsTable } from '#/db/schema/memberships';
 import { logMigrationResult, upsertMigration } from './helpers/drizzle-utils';
+import type { GenerateScript } from '../types';
 
-// ============================================================================
-// Table Classification
-// ============================================================================
+async function run() {
+  // ============================================================================
+  // Table Classification
+  // ============================================================================
 
-/**
- * Collect all entity tables that need RLS setup (ownership, FORCE RLS, grants).
- * Policies are defined in Drizzle schema files using pgPolicy() - not generated here.
- */
-const entityTableNames = Object.entries(entityTables)
-  .filter(([entityType]) => entityType !== 'user')
-  .map(([, table]) => getTableName(table));
+  /**
+   * Collect all entity tables that need RLS setup (ownership, FORCE RLS, grants).
+   * Policies are defined in Drizzle schema files using pgPolicy() - not generated here.
+   */
+  const entityTableNames = Object.entries(entityTables)
+    .filter(([entityType]) => entityType !== 'user')
+    .map(([, table]) => getTableName(table));
 
-const membershipTables = [getTableName(membershipsTable), getTableName(inactiveMembershipsTable)];
-const rlsTables = [...entityTableNames, ...membershipTables];
+  const membershipTables = [getTableName(membershipsTable), getTableName(inactiveMembershipsTable)];
+  const rlsTables = [...entityTableNames, ...membershipTables];
 
-// Tables without RLS but needing grants (auth, system, etc.)
-const fullCrudTables = [
-  'users',
-  'sessions',
-  'user_activity',
-  'tokens',
-  'passkeys',
-  'oauth_accounts',
-  'passwords',
-  'totps',
-  'requests',
-  'unsubscribe_tokens',
-  'emails',
-  'rate_limits',
-  'context_counters',
-  'seen_by',
-  'seen_counts',
-];
-const readOnlyTables = ['tenants', 'system_roles', 'activities'];
+  // Tables without RLS but needing grants (auth, system, etc.)
+  const fullCrudTables = [
+    'users',
+    'sessions',
+    'user_activity',
+    'tokens',
+    'passkeys',
+    'oauth_accounts',
+    'passwords',
+    'totps',
+    'requests',
+    'unsubscribe_tokens',
+    'emails',
+    'rate_limits',
+    'context_counters',
+    'seen_by',
+    'seen_counts',
+  ];
+  const readOnlyTables = ['tenants', 'system_roles', 'activities'];
 
-// ============================================================================
-// Migration SQL
-// ============================================================================
+  // ============================================================================
+  // Migration SQL
+  // ============================================================================
 
-const migrationSql = `-- RLS (Row-Level Security) Setup
+  const migrationSql = `-- RLS (Row-Level Security) Setup
 -- Configures FORCE RLS, table ownership, and grants.
 -- Policies are defined in Drizzle schema files using pgPolicy().
 -- For PGlite: migration is skipped (no role support).
@@ -88,13 +90,20 @@ ${readOnlyTables.map((t) => `    GRANT SELECT ON ${t} TO runtime_role;`).join('\
 END $$;
 `;
 
-// ============================================================================
-// Execute Migration
-// ============================================================================
+  // ============================================================================
+  // Execute Migration
+  // ============================================================================
 
-const result = upsertMigration('rls_setup', migrationSql);
-logMigrationResult(result, 'RLS setup');
+  const result = upsertMigration('rls_setup', migrationSql);
+  logMigrationResult(result, 'RLS setup');
 
-console.info('');
-console.info(`  ${pc.cyanBright('RLS tables:')} ${rlsTables.join(', ')}`);
-console.info(`  ${pc.dim('(Policies defined in Drizzle schema via pgPolicy())')}`);
+  console.info('');
+  console.info(`  ${pc.cyanBright('RLS tables:')} ${rlsTables.join(', ')}`);
+  console.info(`  ${pc.dim('(Policies defined in Drizzle schema via pgPolicy())')}`);
+}
+
+export const generateConfig: GenerateScript = {
+  name: 'RLS setup migration',
+  type: 'migration',
+  run,
+};

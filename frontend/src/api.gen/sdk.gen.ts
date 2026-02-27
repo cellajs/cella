@@ -83,6 +83,9 @@ import type {
   GetAppStreamResponses,
   GetAttachmentData,
   GetAttachmentErrors,
+  GetAttachmentLinkData,
+  GetAttachmentLinkErrors,
+  GetAttachmentLinkResponses,
   GetAttachmentResponses,
   GetAttachmentsData,
   GetAttachmentsErrors,
@@ -197,9 +200,6 @@ import type {
   PostPublicCatchupData,
   PostPublicCatchupErrors,
   PostPublicCatchupResponses,
-  RedirectToAttachmentData,
-  RedirectToAttachmentErrors,
-  RedirectToAttachmentResponses,
   RequestPasswordData,
   RequestPasswordErrors,
   RequestPasswordResponses,
@@ -2475,20 +2475,20 @@ export const updateAttachment = <ThrowOnError extends boolean = true>(
   });
 
 /**
- * Redirect to attachment
+ * Get attachment link
  *
- * Redirects to the file's public or presigned URL, depending on storage visibility.
+ * Returns an HTML page with OG meta tags for link previews and a client-side redirect to the attachment in the app.
  *
- * **GET /{tenantId}/{orgId}/attachments/{id}/link** ·· [redirectToAttachment](https://api.cellajs.com/docs#tag/attachments/get/{tenantId}/{orgId}/attachments/{id}/link) ·· _attachments_
+ * **GET /{tenantId}/{orgId}/attachments/{id}/link** ·· [getAttachmentLink](https://api.cellajs.com/docs#tag/attachments/get/{tenantId}/{orgId}/attachments/{id}/link) ·· _attachments_
  *
- * @param {redirectToAttachmentData} options
+ * @param {getAttachmentLinkData} options
  * @param {string} options.path.id - `string`
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const redirectToAttachment = <ThrowOnError extends boolean = true>(
-  options: Options<RedirectToAttachmentData, ThrowOnError>,
+export const getAttachmentLink = <ThrowOnError extends boolean = true>(
+  options: Options<GetAttachmentLinkData, ThrowOnError>,
 ) =>
-  (options.client ?? client).get<RedirectToAttachmentResponses, RedirectToAttachmentErrors, ThrowOnError, 'data'>({
+  (options.client ?? client).get<GetAttachmentLinkResponses, GetAttachmentLinkErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/{tenantId}/{orgId}/attachments/{id}/link',
     ...options,

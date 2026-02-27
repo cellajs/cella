@@ -1,9 +1,9 @@
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
 import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
-import { RuntimeNodeInstrumentation } from '@opentelemetry/instrumentation-runtime-node';
-import { processDetector, resourceFromAttributes } from '@opentelemetry/resources';
-import { SimpleLogRecordProcessor } from '@opentelemetry/sdk-logs';
+// import { RuntimeNodeInstrumentation } from '@opentelemetry/instrumentation-runtime-node';
+import { resourceFromAttributes } from '@opentelemetry/resources';
+import { LoggerProvider, SimpleLogRecordProcessor } from '@opentelemetry/sdk-logs';
 import {
   AggregationTemporality,
   InMemoryMetricExporter,
@@ -11,7 +11,7 @@ import {
   PeriodicExportingMetricReader,
 } from '@opentelemetry/sdk-metrics';
 import { NodeSDK } from '@opentelemetry/sdk-node';
-import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace-node';
+// import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace-node';
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions';
 import { appConfig } from 'shared';
 import { env } from './env';
@@ -42,25 +42,20 @@ export const meterProvider = new MeterProvider({
   }),
 });
 
-/**
- * OpenTelemetry SDK configuration.
- * HTTP instrumentation is handled by @hono/otel middleware for route-aware spans.
- * RuntimeNodeInstrumentation provides Node.js metrics (event loop utilization, etc.).
- */
-export const sdk = new NodeSDK({
-  resource: resourceFromAttributes({
-    [ATTR_SERVICE_NAME]: appConfig.name,
-    [ATTR_SERVICE_VERSION]: '1.0',
-  }),
-  resourceDetectors: [processDetector],
-  traceExporter: new ConsoleSpanExporter(),
-  instrumentations: [
-    // Node.js runtime metrics (event loop utilization, GC, heap)
-    new RuntimeNodeInstrumentation({
-      monitoringPrecision: 5000, // 5 second intervals
-    }),
-  ],
-});
+// NOTE: Disabled in favor of maple SDK to avoid conflicting global OTel providers.
+// export const sdk = new NodeSDK({
+//   resource: resourceFromAttributes({
+//     [ATTR_SERVICE_NAME]: appConfig.name,
+//     [ATTR_SERVICE_VERSION]: '1.0',
+//   }),
+//   resourceDetectors: [processDetector],
+//   traceExporter: new ConsoleSpanExporter(),
+//   instrumentations: [
+//     new RuntimeNodeInstrumentation({
+//       monitoringPrecision: 5000,
+//     }),
+//   ],
+// });
 
 // Maple.dev observability
 const mapleApiKey = env.MAPLE_API_KEY;
@@ -81,6 +76,10 @@ const mapleLogExporter = mapleApiKey
 
 export const maple = mapleApiKey
   ? new NodeSDK({
+      resource: resourceFromAttributes({
+        [ATTR_SERVICE_NAME]: appConfig.name,
+        [ATTR_SERVICE_VERSION]: '1.0',
+      }),
       traceExporter: mapleTraceExporter,
       logRecordProcessors: mapleLogExporter ? [new SimpleLogRecordProcessor(mapleLogExporter)] : [],
       instrumentations: [getNodeAutoInstrumentations()],
@@ -88,18 +87,32 @@ export const maple = mapleApiKey
   : undefined;
 
 /**
- * Verify Maple.dev connectivity by sending a test trace export.
- * Logs success or failure to stderr so you can confirm it's working.
+ * Verify Maple.dev connectivity by sending a test trace and init log record.
+ * Emits an actual OTel log so you can confirm data arrives in the Maple dashboard.
  */
 export async function verifyMapleConnection() {
-  if (!mapleTraceExporter) {
+  if (!mapleTraceExporter || !mapleLogExporter) {
     console.info('[maple] MAPLE_API_KEY not set — skipping Maple.dev');
     return;
   }
   try {
-    await mapleTraceExporter.forceFlush();
-    console.info('[maple] Connected to Maple.dev — traces and logs are being exported');
+    // Send an init log record so it appears in the Maple.dev dashboard
+    const loggerProvider = new LoggerProvider({
+      resource: resourceFromAttributes({
+        [ATTR_SERVICE_NAME]: appConfig.name,
+        [ATTR_SERVICE_VERSION]: '1.0',
+      }),
+      processors: [new SimpleLogRecordProcessor(mapleLogExporter)],
+    });
+    const logger = loggerProvider.getLogger(appConfig.name);
+    logger.emit({
+      severityText: 'INFO',
+      body: `[maple] ${appConfig.name} initialized — mode=${appConfig.mode}`,
+    });
+    await loggerProvider.forceFlush();
+
+    console.info('[maple] Connected to Maple.dev — init log exported');
   } catch (err) {
-    console.error('[maple] Failed to connect to Maple.dev:', err instanceof Error ? err.message : err);
+    console.error('[maple] Failed to export to Maple.dev:', err instanceof Error ? err.message : err);
   }
 }

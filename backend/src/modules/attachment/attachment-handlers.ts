@@ -3,14 +3,12 @@ import { and, count, eq, getColumns, gte, ilike, inArray, or, type SQL, sql } fr
 import { html, raw } from 'hono/html';
 import { appConfig } from 'shared';
 import { attachmentsTable } from '#/db/schema/attachments';
-import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 import { seenCountsTable } from '#/db/schema/seen-counts';
 import { type Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
 import { getSignedUrlFromKey } from '#/lib/signed-url';
 import attachmentRoutes from '#/modules/attachment/attachment-routes';
-import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import {
   auditUserSelect,
   coalesceAuditUsers,
@@ -112,13 +110,8 @@ const attachmentRouteHandlers = app
     const bucketName = attachment?.bucketName ?? appConfig.s3.privateBucket;
 
     if (attachment) {
-      const user = ctx.var.user;
       const isSystemAdmin = ctx.var.isSystemAdmin;
-
-      const memberships = await tenantDb
-        .select(membershipBaseSelect)
-        .from(membershipsTable)
-        .where(eq(membershipsTable.userId, user.id));
+      const memberships = ctx.var.memberships;
 
       const { isAllowed } = checkPermission(memberships, 'read', attachment);
 
@@ -273,9 +266,9 @@ const attachmentRouteHandlers = app
     return ctx.json({ data: [] as never[], rejectedItemIds }, 200);
   })
   /**
-   * Redirect to attachment
+   * Get attachment link page (OG meta + client-side redirect)
    */
-  .openapi(attachmentRoutes.redirectToAttachment, async (ctx) => {
+  .openapi(attachmentRoutes.getAttachmentLink, async (ctx) => {
     const db = ctx.var.db;
     const { id } = ctx.req.valid('param');
 
@@ -288,7 +281,9 @@ const attachmentRouteHandlers = app
       .where(eq(organizationsTable.id, attachment.organizationId));
     if (!organization) throw new AppError(404, 'not_found', 'warn', { entityType: 'organization' });
 
-    const url = new URL(`${appConfig.frontendUrl}/organization/${organization.slug}/attachments`);
+    const url = new URL(
+      `${appConfig.frontendUrl}/${attachment.tenantId}/${organization.slug}/organization/attachments`,
+    );
     url.searchParams.set('attachmentDialogId', attachment.id);
     if (attachment.groupId) url.searchParams.set('groupId', attachment.groupId);
 

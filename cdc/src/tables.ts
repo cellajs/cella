@@ -1,6 +1,7 @@
 import { entityTables } from '#/table-config';
 import { resourceTables } from '#/table-config';
 import { getTableName } from 'drizzle-orm';
+import { typedEntries } from 'shared';
 import type { EntityTableEntry, ResourceTableEntry, TableRegistryEntry } from './types';
 
 /**
@@ -10,22 +11,22 @@ function buildTableRegistry(): Map<string, TableRegistryEntry> {
   const registry = new Map<string, TableRegistryEntry>();
 
   // Register entity tables
-  for (const [type, table] of Object.entries(entityTables)) {
+  for (const [type, table] of typedEntries(entityTables)) {
     const tableName = getTableName(table);
     registry.set(tableName, {
       kind: 'entity',
       table,
-      type: type as keyof typeof entityTables,
+      type,
     } as EntityTableEntry);
   }
 
   // Register resource tables
-  for (const [type, table] of Object.entries(resourceTables)) {
+  for (const [type, table] of typedEntries(resourceTables)) {
     const tableName = getTableName(table);
     registry.set(tableName, {
       kind: 'resource',
       table,
-      type: type as keyof typeof resourceTables,
+      type,
     } as ResourceTableEntry);
   }
 

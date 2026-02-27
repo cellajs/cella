@@ -281,12 +281,7 @@ export type UploadToken = {
       key: string;
       expires?: string;
     };
-    [key: string]:
-      | unknown
-      | {
-          key: string;
-          expires?: string;
-        };
+    [key: string]: unknown;
   } | null;
 };
 
@@ -4520,7 +4515,7 @@ export type UpdateAttachmentResponses = {
 
 export type UpdateAttachmentResponse = UpdateAttachmentResponses[keyof UpdateAttachmentResponses];
 
-export type RedirectToAttachmentData = {
+export type GetAttachmentLinkData = {
   body?: never;
   path: {
     id: string;
@@ -4529,7 +4524,7 @@ export type RedirectToAttachmentData = {
   url: '/{tenantId}/{orgId}/attachments/{id}/link';
 };
 
-export type RedirectToAttachmentErrors = {
+export type GetAttachmentLinkErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -4552,9 +4547,9 @@ export type RedirectToAttachmentErrors = {
   429: TooManyRequestsError;
 };
 
-export type RedirectToAttachmentError = RedirectToAttachmentErrors[keyof RedirectToAttachmentErrors];
+export type GetAttachmentLinkError = GetAttachmentLinkErrors[keyof GetAttachmentLinkErrors];
 
-export type RedirectToAttachmentResponses = {
+export type GetAttachmentLinkResponses = {
   /**
    * Success
    */

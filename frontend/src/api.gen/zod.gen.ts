@@ -1904,7 +1904,7 @@ export const zUpdateAttachmentData = z.object({
  */
 export const zUpdateAttachmentResponse = zAttachment;
 
-export const zRedirectToAttachmentData = z.object({
+export const zGetAttachmentLinkData = z.object({
   body: z.never().optional(),
   path: z.object({
     id: z.string().max(50),

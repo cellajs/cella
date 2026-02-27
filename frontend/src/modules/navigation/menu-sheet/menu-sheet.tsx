@@ -43,16 +43,7 @@ export const MenuSheet = () => {
 
   // monitoring drop event
   useEffect(() => {
-    const viewportEl = document.getElementById('nav-sheet-viewport');
-    if (!viewportEl) return;
-
-    console.debug('Initializing drag-and-drop monitoring for menu sheet');
-
-    return combine(
-      autoScrollForElements({
-        element: viewportEl,
-        getAllowedAxis: () => 'vertical',
-      }),
+    const cleanups = [
       monitorForElements({
         canMonitor({ source }) {
           return isPageData(source.data) && !source.data.item.membership.archived;
@@ -91,7 +82,22 @@ export const MenuSheet = () => {
           });
         },
       }),
-    );
+    ];
+
+    // Auto-scroll for the nav sheet if its viewport element exists
+    const viewportEl = document.getElementById('nav-sheet');
+    if (viewportEl) {
+      cleanups.push(
+        autoScrollForElements({
+          element: viewportEl,
+          getAllowedAxis: () => 'vertical',
+        }),
+      );
+    }
+
+    console.debug('Initializing drag-and-drop monitoring for menu sheet');
+
+    return combine(...cleanups);
   }, [menu]);
 
   // Show skeleton when loading or no user data yet

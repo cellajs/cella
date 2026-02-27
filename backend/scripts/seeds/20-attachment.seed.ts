@@ -1,10 +1,11 @@
+import type { SeedScript } from '../types';
 import { appConfig } from 'shared';
 import { startSpinner, succeedSpinner, warnSpinner } from '#/utils/console';
 import { migrationDb } from '#/db/db';
 import { attachmentsTable } from '#/db/schema/attachments';
 import { organizationsTable } from '#/db/schema/organizations';
-import { mockAttachment } from '../../../mocks/mock-attachment';
-import { setMockContext } from '../../../mocks/utils';
+import { mockAttachment } from '../../mocks/mock-attachment';
+import { setMockContext } from '../../mocks/utils';
 import { defaultAdminUser } from '../fixtures';
 
 // Seed scripts use admin connection (migrationDb) for privileged operations
@@ -12,8 +13,6 @@ const db = migrationDb;
 
 // Set mock context for seed script - IDs will get 'gen-' prefix
 setMockContext('script');
-
-const isProduction = appConfig.mode === 'production';
 
 /**
  * Known S3 files that should exist in the dev bucket under the `seed/` prefix.
@@ -40,11 +39,6 @@ const isAttachmentSeeded = async () => {
 export const attachmentsSeed = async () => {
   const spinner = startSpinner('Seeding attachments...');
 
-  if (isProduction) {
-    spinner.fail('Not allowed in production.');
-    return;
-  }
-
   if (!db) {
     spinner.fail('DATABASE_ADMIN_URL required for seeding');
     return;
@@ -59,7 +53,7 @@ export const attachmentsSeed = async () => {
   const organizations = await db.select({ id: organizationsTable.id, tenantId: organizationsTable.tenantId }).from(organizationsTable);
 
   if (!organizations.length) {
-    spinner.fail('No organizations found → run seed:organizations first');
+    spinner.fail('No organizations found → run organization seed first');
     return;
   }
 
@@ -90,3 +84,5 @@ export const attachmentsSeed = async () => {
 
   succeedSpinner(`Created ${totalCreated} attachments across ${organizations.length} organizations`);
 };
+
+export const seedConfig: SeedScript = { name: 'attachments', run: attachmentsSeed };

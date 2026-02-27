@@ -1,5 +1,13 @@
 import type { EntityCanMap } from 'shared';
-import { accessPolicies, allActionsAllowed, type ContextEntityType, computeCan, hierarchy } from 'shared';
+import {
+  accessPolicies,
+  allActionsAllowed,
+  type ContextEntityType,
+  computeCan,
+  type EntityActionType,
+  type EntityType,
+  hierarchy,
+} from 'shared';
 import type { EnrichableEntity } from '~/query/enrichment/types';
 import { useUserStore } from '~/store/user';
 
@@ -8,18 +16,16 @@ function hasCanChanged(a: EntityCanMap | undefined, b: EntityCanMap | undefined)
   if (!a && !b) return false;
   if (!a || !b) return true;
 
-  const aKeys = Object.keys(a);
-  const bKeys = Object.keys(b);
+  const aKeys = Object.keys(a) as EntityType[];
+  const bKeys = Object.keys(b) as EntityType[];
   if (aKeys.length !== bKeys.length) return true;
 
   return aKeys.some((key) => {
-    const aPerms = a[key as ContextEntityType];
-    const bPerms = b[key as ContextEntityType];
+    const aPerms = a[key];
+    const bPerms = b[key];
     if (!aPerms && !bPerms) return false;
     if (!aPerms || !bPerms) return true;
-    return Object.keys(aPerms).some(
-      (action) => aPerms[action as keyof typeof aPerms] !== bPerms[action as keyof typeof bPerms],
-    );
+    return (Object.keys(aPerms) as EntityActionType[]).some((action) => aPerms[action] !== bPerms[action]);
   });
 }
 

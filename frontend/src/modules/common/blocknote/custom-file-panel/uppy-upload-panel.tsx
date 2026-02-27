@@ -63,7 +63,7 @@ export function UppyFilePanel({
 
   const block = editor.getBlock(blockId)!;
 
-  const blockType = (block.type as keyof typeof basicBlockTypes) || 'file';
+  const blockType = block.type in basicBlockTypes ? (block.type as keyof typeof basicBlockTypes) : 'file';
   const uppyOptions: CustomUppyOpt = {
     restrictions: {
       ...appConfig.uppy.defaultRestrictions,

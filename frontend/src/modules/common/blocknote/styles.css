@@ -1,32 +1,6 @@
-.bn-container.bn-shadcn.dark {
-  --table-border: 228 100% 95%;
-  --media-secondary-color: 240 3.7% 15%;
-  --blocknote-placeholder: 240 3.7% 50%;
-
-  --background: 240 10% 9%;
-  --foreground: 0 0% 95%;
-  --card: 240 10% 14%;
-  --card-foreground: 0 0% 95%;
-  --popover: hsl(240 10% 9%);
-  --popover-foreground: 0 0% 95%;
-  --primary: 0 0% 98%;
-  --primary-foreground: 240 5.9% 16%;
-  --secondary: 240 3.7% 15%;
-  --secondary-foreground: 0 0% 95%;
-  --muted: 240 3.7% 25%;
-  --muted-foreground: 240 5% 84.9%;
-  --accent: 240 3.7% 25%;
-  --accent-foreground: 0 0% 95%;
-  --destructive: 0 62.8% 50%;
-  --destructive-foreground: 0 0% 95%;
-  --border: 240 3.7% 20%;
-  --input: 240 3.7% 25%;
-  --ring: 240 4.9% 83.9%;
-  --success: 120 100% 40%;
-}
+/* Dark theme variables inherited from tailwind.css via .bn-container.bn-shadcn.dark selector */
 
 .bn-shadcn {
-  --blocknote-placeholder: 240 3.7% 50%;
   --bn-font-family: "Open Sans", ui-sans-serif, sans-serif;
 }
 
@@ -78,15 +52,15 @@
 .bn-shadcn code {
   font-size: 0.85em;
   line-height: 1rem;
-  background: var(--input) / 0.5;
+  background: color-mix(in oklch, var(--input) 50%, transparent);
   padding: 0.15rem;
   border-radius: 0.25rem;
   color: #e8912d;
 }
 
 .bn-container.bn-shadcn.dark .bn-block-content[data-content-type="codeBlock"] {
-  background: oklch(var(--input) l c h / 0.5);
-  border: 0.05rem solid oklch(var(--ring) l c h / 0.4);
+  background: color-mix(in oklch, var(--input) 50%, transparent);
+  border: 0.05rem solid color-mix(in oklch, var(--ring) 40%, transparent);
 }
 
 .bn-block-content[data-content-type="codeBlock"] code {
@@ -141,7 +115,7 @@
   color: inherit;
   text-decoration: underline;
   text-underline-offset: 0.2rem;
-  text-decoration-color: oklch(var(--foreground) / 0.2);
+  text-decoration-color: color-mix(in oklch, var(--foreground) 20%, transparent);
 }
 
 .bn-link-toolbar > button.px-3 {
@@ -260,7 +234,7 @@
   background-color: var(--accent);
 }
 .slash-menu-item:hover {
-  background-color: oklch(var(--accent) l c h / 0.6);
+  background-color: color-mix(in oklch, var(--accent) 60%, transparent);
 }
 
 /* Mobile-specific styles for slash menu */

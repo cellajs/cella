@@ -1,41 +1,36 @@
+import { readdirSync } from 'node:fs';
+import { join } from 'node:path';
 import type { GenerateScript } from './types';
+import type { SeedScript } from './types';
 
-/** Scripts run during `pnpm generate` for migrations */
-export const generateScripts: GenerateScript[] = [
-  {
-    name: 'Drizzle migrations',
-    // Use tsx to run drizzle-kit so path aliases (#/) are resolved
-    command: 'tsx node_modules/drizzle-kit/bin.cjs generate --config drizzle.config.ts',
-    type: 'drizzle',
-  },
-  {
-    name: 'CDC setup migration',
-    command: 'tsx scripts/migrations/cdc-migration.ts',
-    type: 'migration',
-    migrationTag: 'cdc_setup',
-  },
-  {
-    name: 'Partman setup migration',
-    command: 'tsx scripts/migrations/partman-migration.ts',
-    type: 'migration',
-    migrationTag: 'partman_setup',
-  },
-  {
-    name: 'RLS setup migration',
-    command: 'tsx scripts/migrations/rls-migration.ts',
-    type: 'migration',
-    migrationTag: 'rls_setup',
-  },
-  {
-    name: 'Immutability triggers migration',
-    command: 'tsx scripts/migrations/immutability-migration.ts',
-    type: 'migration',
-    migrationTag: 'immutability_setup',
-  },
-];
+/**
+ * Auto-discover generate scripts from scripts/migrations/*.migration.ts files.
+ * Each must export a `generateConfig: GenerateScript`. Sorted by filename (use numeric prefixes for order).
+ */
+const migrationDir = join(import.meta.dirname, 'migrations');
+const migrationFiles = readdirSync(migrationDir).filter((f) => f.endsWith('.migration.ts')).sort();
 
-/** Seed scripts run during `pnpm seed` */
-export const seedScripts = ['pnpm run seed:user', 'pnpm run seed:organizations', 'pnpm run seed:pages', 'pnpm run seed:attachments', 'pnpm run seed:counters'];
+export const generateScripts: GenerateScript[] = [];
 
-/** Seed scripts for production - only creates admin user */
-export const seedAdminScripts = ['pnpm run seed:user'];
+for (const file of migrationFiles) {
+  const mod = await import(`./migrations/${file.replace('.ts', '')}`);
+  if (!mod.generateConfig) throw new Error(`Missing generateConfig export in migrations/${file}`);
+  generateScripts.push(mod.generateConfig);
+}
+
+/**
+ * Auto-discover seed scripts from scripts/seeds/*.seed.ts files.
+ * Each must export a `seedConfig: SeedScript`. Sorted by filename (use numeric prefixes for order).
+ */
+const seedDir = join(import.meta.dirname, 'seeds');
+const seedFiles = readdirSync(seedDir).filter((f) => f.endsWith('.seed.ts')).sort();
+
+export const seedScripts: SeedScript[] = [];
+
+for (const file of seedFiles) {
+  const mod = await import(`./seeds/${file.replace('.ts', '')}`);
+  if (!mod.seedConfig) throw new Error(`Missing seedConfig export in seeds/${file}`);
+  seedScripts.push(mod.seedConfig);
+}
+
+export type SeedName = string;

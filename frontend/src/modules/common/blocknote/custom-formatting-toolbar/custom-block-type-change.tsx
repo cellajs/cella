@@ -9,7 +9,7 @@ import {
   useSelectedBlocks,
 } from '@blocknote/react';
 import { ChevronDownIcon } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { customBlockTypeSwitchItems } from '~/modules/common/blocknote/blocknote-config';
 import { isHeadingMenuItemActive } from '~/modules/common/blocknote/helpers/header-item-select';
 import type { CustomBlockNoteMenuProps } from '~/modules/common/blocknote/types';
@@ -30,17 +30,13 @@ export const CellaCustomBlockTypeSelect = ({
 
   const [block, setBlock] = useState(editor.getTextCursorPosition().block);
 
-  const filteredItems = useMemo(
-    () =>
-      blockTypeSelectItems(dict).filter(({ type, props }) => {
-        if (!itemsType.includes(type)) return false;
-        if (type === 'heading' && typeof props?.level === 'number') {
-          return headingLevels.includes(props.level as (typeof headingLevels)[number]);
-        }
-        return true;
-      }),
-    [editor, dict],
-  );
+  const filteredItems = blockTypeSelectItems(dict).filter(({ type, props }) => {
+    if (!itemsType.includes(type)) return false;
+    if (type === 'heading' && typeof props?.level === 'number') {
+      return headingLevels.includes(props.level as (typeof headingLevels)[number]);
+    }
+    return true;
+  });
 
   const shouldShow = filteredItems.some((item) => item.type === block.type);
 
@@ -63,19 +59,15 @@ export const CellaCustomBlockTypeSelect = ({
     }
   };
 
-  const fullItems = useMemo(
-    () =>
-      filteredItems.map((item) => {
-        const { icon: Icon, name, type } = item;
-        return {
-          title: name,
-          icon: <Icon size={16} />,
-          onClick: () => handleItemClick(item),
-          isSelected: block.type === 'heading' ? isHeadingMenuItemActive(block, name) : block.type === type,
-        };
-      }),
-    [block, filteredItems, editor, selectedBlocks],
-  );
+  const fullItems = filteredItems.map((item) => {
+    const { icon: Icon, name, type } = item;
+    return {
+      title: name,
+      icon: <Icon size={16} />,
+      onClick: () => handleItemClick(item),
+      isSelected: block.type === 'heading' ? isHeadingMenuItemActive(block, name) : block.type === type,
+    };
+  });
 
   // Update the block whenever the editor content or selection changes
   useEditorState({

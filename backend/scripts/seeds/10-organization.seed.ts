@@ -1,3 +1,4 @@
+import type { SeedScript } from '../types';
 import { faker } from '@faker-js/faker';
 import { eq } from 'drizzle-orm';
 import { startSpinner, succeedSpinner, warnSpinner } from '#/utils/console';
@@ -11,10 +12,10 @@ import { tenantsTable } from '#/db/schema/tenants';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { UserModel, usersTable } from '#/db/schema/users';
 import { hashPassword } from '#/modules/auth/passwords/helpers/argon2id';
-import { getMembershipOrderOffset, mockContextMembership } from '../../../mocks/mock-membership';
-import { mockOrganization } from '../../../mocks/mock-organization';
-import { mockEmail, mockPassword, mockUnsubscribeToken, mockUser } from '../../../mocks/mock-user';
-import { mockMany, setMockContext } from '../../../mocks/utils';
+import { getMembershipOrderOffset, mockContextMembership } from '../../mocks/mock-membership';
+import { mockOrganization } from '../../mocks/mock-organization';
+import { mockEmail, mockPassword, mockUnsubscribeToken, mockUser } from '../../mocks/mock-user';
+import { mockMany, setMockContext } from '../../mocks/utils';
 import { defaultAdminUser } from '../fixtures';
 
 // Set mock context for seed script - IDs will get 'gen-' prefix (CDC worker skips these)
@@ -23,13 +24,11 @@ setMockContext('script');
 // Seed scripts use admin connection (migrationDb) for privileged operations
 const db = migrationDb;
 
-const isProduction = process.env.NODE_ENV === 'production';
-
 const TENANTS_COUNT = 10;
 const ORGANIZATIONS_PER_TENANT = 10;
 const MEMBERS_COUNT = 100;
 const SYSTEM_ADMIN_MEMBERSHIP_COUNT = 10;
-export const PLAIN_USER_PASSWORD = '12345678';
+const PLAIN_USER_PASSWORD = '12345678';
 
 const isOrganizationSeeded = async () => {
   if (!db) return true; // Skip if no admin connection
@@ -43,8 +42,6 @@ const isOrganizationSeeded = async () => {
 
 // Seed organizations with data
 export const organizationsSeed = async () => {
-  if (isProduction) return console.error('Not allowed in production.');
-
   // Admin connection required
   if (!db) return console.error('DATABASE_ADMIN_URL required for seeding');
 
@@ -177,3 +174,5 @@ const addAdminMembership = (
   // Add admin membership to the list
   adminMemberships.push(membership);
 }
+
+export const seedConfig: SeedScript = { name: 'organizations', run: organizationsSeed };

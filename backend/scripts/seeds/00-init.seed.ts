@@ -1,3 +1,4 @@
+import type { SeedScript } from '../types';
 import { migrationDb } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { passwordsTable } from '#/db/schema/passwords';
@@ -5,12 +6,11 @@ import { tenantsTable } from '#/db/schema/tenants';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { usersTable } from '#/db/schema/users';
 import { env } from '#/env';
-// hashPassword is imported lazily below (only needed in dev, avoids loading argon2 in production)
 import pc from 'picocolors';
 import { appConfig } from 'shared';
-import { mockAdmin, mockEmail, mockPassword, mockUnsubscribeToken } from '../../../mocks/mock-user';
-import { setMockContext } from '../../../mocks/utils';
-import { defaultAdminUser, publicTenant } from '../fixtures';
+import { mockAdmin, mockEmail, mockPassword, mockUnsubscribeToken } from '../../mocks/mock-user';
+import { setMockContext } from '../../mocks/utils';
+import { defaultAdminUser } from '../fixtures';
 import { systemRolesTable } from '#/db/schema/system-roles';
 import { checkMark } from '#/utils/console';
 
@@ -38,7 +38,7 @@ const isUserSeeded = async () => {
  * - Development: uses fixtures (admin-test@cellajs.com / 12345678)
  * - Production: uses ADMIN_EMAIL env var, no password (use "forgot password" or OAuth to sign in)
  */
-export const userSeed = async () => {
+export const initSeed = async () => {
   // Determine admin email: env var takes precedence, then fixture default
   const adminEmail = env.ADMIN_EMAIL ?? defaultAdminUser.email;
 
@@ -54,7 +54,7 @@ export const userSeed = async () => {
   if (await isUserSeeded()) return console.warn('Users table is not empty → skip seeding');
 
   // Create public tenant (needed for pages and other platform-wide content)
-  await db.insert(tenantsTable).values({ id: publicTenant.id, name: publicTenant.name }).onConflictDoNothing();
+  await db.insert(tenantsTable).values({ id: appConfig.publicTenant.id, name: appConfig.publicTenant.name }).onConflictDoNothing();
 
   // Make admin user → Insert into the database
   const adminId = isProduction ? undefined : defaultAdminUser.id;
@@ -90,11 +90,13 @@ export const userSeed = async () => {
 
   if (isProduction) {
     console.info(
-      ` \n${checkMark} Created admin user with email ${pc.bold(pc.greenBright(adminUser.email))}. Use "forgot password" or OAuth to sign in.\n `,
+      ` \n${checkMark} Created admin user with email ${pc.bold(pc.greenBright(adminUser.email))}: use "forgot password" or OAuth to sign in\n `,
     );
   } else {
     console.info(
-      ` \n${checkMark} Created admin user with verified email ${pc.bold(pc.greenBright(adminUser.email))} and password ${pc.bold(pc.greenBright(defaultAdminUser.password))}.\n `,
+      ` \n${checkMark} Created admin user with email ${pc.bold(pc.greenBright(adminUser.email))} and password ${pc.bold(pc.greenBright(defaultAdminUser.password))}\n `,
     );
   }
 };
+
+export const seedConfig: SeedScript = { name: 'init', run: initSeed, allowProduction: true };

@@ -61,6 +61,12 @@ export const config = {
     },
   } as const,
 
+  /** Public tenant for platform-wide content (pages, docs, etc.) */
+  publicTenant: {
+    id: 'public',
+    name: 'Public',
+  },
+
   /******************************************************************************
    * SYSTEM ROLES
    ******************************************************************************/

@@ -46,6 +46,7 @@ export const inactiveMembershipsTable = pgTable(
         table.tenantId,
         table.email,
         table.contextType,
+        // Drizzle table column types and appConfig types are structurally separate — assertion unavoidable
         ...appConfig.contextEntityTypes.map((t) => table[appConfig.entityIdColumnKeys[t] as keyof typeof table]),
       )
       .nullsNotDistinct(),

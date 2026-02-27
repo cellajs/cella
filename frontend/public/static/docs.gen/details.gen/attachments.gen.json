@@ -1717,7 +1717,7 @@
     }
   },
   {
-    "operationId": "redirectToAttachment",
+    "operationId": "getAttachmentLink",
     "responses": [
       { "status": 200, "description": "Success" },
       {

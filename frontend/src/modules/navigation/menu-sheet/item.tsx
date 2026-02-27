@@ -1,6 +1,7 @@
 import { onlineManager } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import type { LucideIcon } from 'lucide-react';
+import { BellOffIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { toaster } from '~/modules/common/toaster/service';
@@ -62,7 +63,7 @@ export const MenuSheetItem = ({ item, icon: Icon, className, searchResults }: Me
       )}
     >
       <span className="absolute left-0 top-3 h-[calc(100%-1.5rem)] w-1 rounded-lg bg-primary transition-opacity opacity-0 group-data-[link-active=true]/menuItem:opacity-100" />
-      <span className="z-1 shrink-0 bg-card rounded-full m-2 mx-3 group-data-[subitem=true]/menuItem:my-2 group-data-[subitem=true]/menuItem:mx-4 size-8 group-data-[subitem=true]/menuItem:size-6">
+      <span className="relative z-1 shrink-0 bg-card rounded-full m-2 mx-3 group-data-[subitem=true]/menuItem:my-2 group-data-[subitem=true]/menuItem:mx-4 size-8 group-data-[subitem=true]/menuItem:size-6">
         <AvatarWrap
           className="items-center text-sm bg-card group-hover/menuItem:font-bold group-data-[subitem=true]/menuItem:text-xs size-8 group-data-[subitem=true]/menuItem:size-6 sm:opacity-80 group-hover/menuItem:opacity-100 group-data-[link-active=true]/menuItem:opacity-100"
           type={item.entityType}
@@ -71,6 +72,11 @@ export const MenuSheetItem = ({ item, icon: Icon, className, searchResults }: Me
           name={item.name}
           url={item.thumbnailUrl}
         />
+        {item.membership.muted && (
+          <span className="absolute bottom-0 right-0 flex items-center justify-center rounded-tl-lg rounded-br-none rounded-tr-none rounded-bl-none bg-card size-3.5 opacity-80">
+            <BellOffIcon size={10} strokeWidth={2} />
+          </span>
+        )}
       </span>
       <div className="truncate grow flex flex-col justify-center pr-2 text-left group-data-[subitem=true]/menuItem:pl-0 sm:opacity-80 group-hover/menuItem:opacity-100 group-data-[link-active=true]/menuItem:opacity-100">
         <div

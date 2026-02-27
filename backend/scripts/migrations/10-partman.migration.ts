@@ -15,13 +15,11 @@
  *
  * The generated migration is idempotent and gracefully skips if pg_partman
  * is not available (e.g., local PGlite development).
- *
- * Usage:
- *   pnpm generate:partman-migration
  */
 
 import pc from 'picocolors';
 import { logMigrationResult, upsertMigration } from './helpers/drizzle-utils';
+import type { GenerateScript } from '../types';
 
 // =============================================================================
 // PARTITION CONFIGURATION
@@ -232,10 +230,11 @@ ${escapedIndexesSql.map((sql) => `  EXECUTE '${sql}';`).join('\n')}
 `;
 }
 
-// Generate the full migration SQL
-const tableSetupSql = partitionConfigs.map(generateTablePartitionSql).join('\n');
+async function run() {
+  // Generate the full migration SQL
+  const tableSetupSql = partitionConfigs.map(generateTablePartitionSql).join('\n');
 
-const migrationSql = `-- =============================================================================
+  const migrationSql = `-- =============================================================================
 -- Migration: pg_partman Setup for Token/Session/Activity Tables
 -- =============================================================================
 -- This migration converts sessions, tokens, unsubscribe_tokens, and activities
@@ -314,15 +313,21 @@ ${tableSetupSql}
 END $$;
 `;
 
-// Use shared migration utility
-const result = upsertMigration('partman_setup', migrationSql);
-logMigrationResult(result, 'pg_partman setup');
+  // Use shared migration utility
+  const result = upsertMigration('partman_setup', migrationSql);
+  logMigrationResult(result, 'pg_partman setup');
 
-console.info('');
-console.info(`  ${pc.bold(pc.greenBright('Configured tables:'))}`);
-for (const config of partitionConfigs) {
-  const retentionLabel = config.retention ?? 'indefinite';
-  console.info(`    - ${config.name}: ${config.interval} partitions, ${retentionLabel} retention`);
+  console.info('');
+  console.info(`  ${pc.bold(pc.greenBright('Configured tables:'))}`);
+  for (const config of partitionConfigs) {
+    const retentionLabel = config.retention ?? 'indefinite';
+    console.info(`    - ${config.name}: ${config.interval} partitions, ${retentionLabel} retention`);
+  }
+  console.info('');
 }
-console.info('');
 
+export const generateConfig: GenerateScript = {
+  name: 'Partman setup migration',
+  type: 'migration',
+  run,
+};
