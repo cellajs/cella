@@ -110,7 +110,7 @@ function MembersTable({ entity, isSheet = false, children }: MembersTableWrapper
       <MembersTableBar
         entity={entity}
         selected={selected}
-        searchVars={{ ...search, limit }}
+        searchVars={{ q, role, sort, order, limit }}
         setSearch={setSearch}
         queryKey={queryOptions.queryKey}
         columns={columns}

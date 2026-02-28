@@ -61,7 +61,7 @@ function UsersTable() {
       <UsersTableBar
         queryKey={queryOptions.queryKey}
         selected={selected}
-        searchVars={{ ...search, limit }}
+        searchVars={{ q, role, sort, order, limit }}
         setSearch={setSearch}
         columns={columns}
         setColumns={setColumns}
