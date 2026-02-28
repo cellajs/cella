@@ -1,5 +1,6 @@
 import { appConfig } from 'shared';
-import { myMembershipsQueryOptions } from '~/modules/me/query';
+import { getMyMemberships } from '~/api.gen';
+import { meKeys } from '~/modules/me/query';
 import { getContextEntityTypeToListQueries } from '~/offline-config';
 import { queryClient } from '~/query/query-client';
 import { useUserStore } from '~/store/user';
@@ -17,7 +18,8 @@ export async function getMenuData() {
 
   // Fetch memberships first — populates the cache that the subscriber reads from
   await queryClient.ensureQueryData({
-    ...myMembershipsQueryOptions(),
+    queryKey: meKeys.memberships,
+    queryFn: async ({ signal }) => getMyMemberships({ signal }),
     revalidateIfStale: true,
   });
 

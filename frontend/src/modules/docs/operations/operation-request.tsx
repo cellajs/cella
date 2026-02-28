@@ -7,32 +7,28 @@ import { cn } from '~/utils/cn';
 import {
   getTypeCodeForRequest,
   getZodCodeForRequest,
-  typesContentQueryOptions,
-  zodContentQueryOptions,
+  typesIndexQueryOptions,
+  zodIndexQueryOptions,
 } from '../helpers/extract-types';
-import { tagDetailsQueryOptions } from '../query';
+import type { GenOperationDetail } from '../types';
 import { ViewerGroup } from '../viewer-group';
 
 interface OperationRequestProps {
-  operationId: string;
-  tagName: string;
+  detail?: GenOperationDetail;
 }
 
 /**
  * Collapsible container for request schema (path, query, body).
  * Only renders if the operation has a request schema.
  */
-export const OperationRequest = ({ operationId, tagName }: OperationRequestProps) => {
+export const OperationRequest = ({ detail }: OperationRequestProps) => {
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(true);
 
-  const { data: operations } = useSuspenseQuery(tagDetailsQueryOptions(tagName));
-  const { data: zodContent } = useSuspenseQuery(zodContentQueryOptions);
-  const { data: typesContent } = useSuspenseQuery(typesContentQueryOptions);
+  const { data: zodIndex } = useSuspenseQuery(zodIndexQueryOptions);
+  const { data: typesIndex } = useSuspenseQuery(typesIndexQueryOptions);
 
-  const operation = operations.find((op) => op.operationId === operationId);
-
-  const request = operation?.request;
+  const request = detail?.request;
 
   // Don't render if no request data
   if (!request) return null;
@@ -53,8 +49,9 @@ export const OperationRequest = ({ operationId, tagName }: OperationRequestProps
           <ViewerGroup
             schema={request}
             defaultInspectDepth={5}
-            zodCode={getZodCodeForRequest(zodContent, operationId)}
-            typeCode={getTypeCodeForRequest(typesContent, operationId)}
+            zodCode={getZodCodeForRequest(zodIndex, detail.operationId)}
+            typeCode={getTypeCodeForRequest(typesIndex, detail.operationId)}
+            example={request.example}
           />
         </div>
       </CollapsibleContent>

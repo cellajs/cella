@@ -6,8 +6,8 @@ interface ViewportColumnsArgs<R, SR> {
   columns: readonly CalculatedColumn<R, SR>[];
   colSpanColumns: readonly CalculatedColumn<R, SR>[];
   rows: readonly R[];
-  topSummaryRows: Maybe<readonly SR[]>;
-  bottomSummaryRows: Maybe<readonly SR[]>;
+  topSummaryRows?: Maybe<readonly SR[]>;
+  bottomSummaryRows?: Maybe<readonly SR[]>;
   colOverscanStartIdx: number;
   colOverscanEndIdx: number;
   lastFrozenColumnIndex: number;

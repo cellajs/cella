@@ -2,8 +2,8 @@ import { memo, useState } from 'react';
 import type { DataGridProps } from './data-grid';
 import { HeaderCell } from './header-cell';
 import { rowSelectedClassname } from './style/row';
-import type { CalculatedColumn, Direction, Maybe, Position, ResizedWidth } from './types';
-import { classnames, getColSpan } from './utils';
+import type { CalculatedColumn, Maybe, Position, ResizedWidth } from './types';
+import { cn, getColSpan } from './utils';
 
 type SharedDataGridProps<R, SR, K extends React.Key> = Pick<
   DataGridProps<R, SR, K>,
@@ -19,7 +19,6 @@ export interface HeaderRowProps<R, SR, K extends React.Key> extends SharedDataGr
   lastFrozenColumnIndex: number;
   selectedCellIdx: number | undefined;
   shouldFocusGrid: boolean;
-  direction: Direction;
   headerRowClass: Maybe<string>;
 }
 
@@ -38,7 +37,6 @@ function HeaderRow<R, SR, K extends React.Key>({
   selectedCellIdx,
   selectCell,
   shouldFocusGrid,
-  direction,
 }: HeaderRowProps<R, SR, K>) {
   const [draggedColumnKey, setDraggedColumnKey] = useState<string>();
 
@@ -64,7 +62,6 @@ function HeaderRow<R, SR, K extends React.Key>({
         sortColumns={sortColumns}
         selectCell={selectCell}
         shouldFocusGrid={shouldFocusGrid && index === 0}
-        direction={direction}
         draggedColumnKey={draggedColumnKey}
         setDraggedColumnKey={setDraggedColumnKey}
       />,
@@ -75,7 +72,7 @@ function HeaderRow<R, SR, K extends React.Key>({
     <div
       role="row"
       aria-rowindex={rowIdx} // aria-rowindex is 1 based
-      className={classnames(
+      className={cn(
         headerRowClassname,
         {
           [rowSelectedClassname]: selectedCellIdx === -1,

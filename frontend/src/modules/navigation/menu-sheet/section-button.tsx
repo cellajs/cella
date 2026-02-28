@@ -2,7 +2,7 @@ import { ChevronDown, PlusIcon, Settings2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { type RefObject, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { StickyBox } from '~/modules/common/sticky-box';
+
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import type { UserMenuItem } from '~/modules/me/types';
 import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
@@ -41,7 +41,7 @@ export const MenuSectionButton = ({
   const createButtonRef = useRef(null);
 
   return (
-    <StickyBox className="z-10">
+    <div className="sticky top-0 z-10">
       <div className="flex items-center z-10 py-3 pb-1 bg-card">
         <motion.div layout="size" transition={{ bounce: 0, duration: 0.2 }} className="flex items-center w-full">
           {/* Main section toggle button */}
@@ -131,6 +131,6 @@ export const MenuSectionButton = ({
           </AnimatePresence>
         </motion.div>
       </div>
-    </StickyBox>
+    </div>
   );
 };

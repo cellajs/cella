@@ -5,7 +5,6 @@ import { startImpersonation } from '~/api.gen';
 import { toaster } from '~/modules/common/toaster/service';
 import { getAndSetMe } from '~/modules/me/helpers';
 import { meKeys } from '~/modules/me/query';
-import { getMenuData } from '~/modules/navigation/menu-sheet/helpers/get-menu-data';
 import { Button } from '~/modules/ui/button';
 import type { BaseUser } from '~/modules/user/types';
 import { queryClient } from '~/query/query-client';
@@ -26,7 +25,6 @@ async function handleStartImpersonation(targetUserId: string) {
     queryClient.removeQueries({ queryKey: meKeys.all });
     queryClient.removeQueries({ queryKey: meKeys.memberships });
     await getAndSetMe();
-    await getMenuData();
     // Reconnect SSE so the subscriber uses the impersonated user's role and memberships
     appStreamManager.reconnect();
     toaster(i18n.t('common:success.impersonated'), 'success');

@@ -86,6 +86,7 @@ function BlockNote({
   defaultValue = '', // stringified blocks
   trailingBlock = true,
   clickOpensPreview = false, // click on FileBlock opens preview (in case, type is 'preview' or not editable)
+  dense = false,
   // Editor functional
   headingLevels = [1, 2, 3],
   editable = type !== 'preview',
@@ -313,7 +314,7 @@ function BlockNote({
       editor={editor}
       editable={editable}
       ref={blockNoteRef}
-      className={className}
+      className={`${dense ? 'bn-dense' : ''} ${className}`}
       data-color-scheme={mode}
       shadCNComponents={shadCNComponents}
       sideMenu={false}

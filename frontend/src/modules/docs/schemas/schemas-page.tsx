@@ -35,8 +35,8 @@ function SchemasPage() {
 
   return (
     <div className="container">
-      <StickyBox className="z-10 bg-background" offsetTop={0} hideOnScrollDown>
-        <div className="flex items-center gap-3 py-3">
+      <StickyBox className="z-10 bg-background/60 backdrop-blur-xs" hideWhenOutOfView>
+        <div className="flex items-center gap-3 py-4">
           <span className="text-sm text-muted-foreground">
             {schemas.length} {t('common:schema', { count: schemas.length })}
           </span>

@@ -6,7 +6,19 @@
         "status": 200,
         "description": "Unseen counts per parent context entity per entity type",
         "contentType": "application/json",
-        "schema": { "type": "object", "contentType": "application/json" }
+        "schema": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "required": false,
+            "additionalProperties": {
+              "type": "integer",
+              "required": false,
+              "minimum": 0
+            }
+          },
+          "contentType": "application/json"
+        }
       },
       {
         "status": 400,

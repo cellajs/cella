@@ -2,7 +2,6 @@ import { Link, type LinkComponentProps } from '@tanstack/react-router';
 import { motion } from 'motion/react';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useInView } from 'react-intersection-observer';
 import { nanoid } from 'shared/nanoid';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useMountedState } from '~/hooks/use-mounted-state';
@@ -10,6 +9,7 @@ import { useNavTabs } from '~/hooks/use-nav-tabs';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { StickyBox } from '~/modules/common/sticky-box';
 import { cn } from '~/utils/cn';
+import { scrollToNearestTarget } from '~/utils/scroll-to-target';
 
 export type PageTab = {
   id: string;
@@ -58,8 +58,6 @@ export const PageTabNav = ({
 
   const tabRefs = useRef<Record<string, HTMLAnchorElement | null>>({});
 
-  const { ref: inViewRef, inView } = useInView({ triggerOnce: false, threshold: 0 });
-
   // Focus the first tab on mount
   useEffect(() => {
     if (!isMobile && hasStarted && tabs[0]) tabRefs.current[tabs[0].id]?.focus();
@@ -70,20 +68,10 @@ export const PageTabNav = ({
     tab?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
   };
 
-  // Scroll to tabs when scrolled past header
-  const updateScrollPosition = (tabEl: HTMLAnchorElement | null) => {
-    if (!tabEl) return;
-
-    const tabsWrapper = document.getElementById('tabs-position');
-    if (inView || !tabsWrapper) return;
-
-    window.scrollTo({ top: tabsWrapper.offsetTop });
-  };
-
   return (
     <>
-      <div id="tabs-position" ref={inViewRef} />
       <StickyBox
+        data-scroll-target
         className={cn(
           'group/sticky block text-center gap-1 border-b bg-background/75 backdrop-blur-xs z-80',
           className,
@@ -123,7 +111,7 @@ export const PageTabNav = ({
                   search={search}
                   activeOptions={activeOptions}
                   activeProps={{ 'data-active': true }}
-                  onClick={(e) => updateScrollPosition(e.currentTarget)}
+                  onClick={(e) => scrollToNearestTarget(e.currentTarget)}
                 >
                   {({ isActive }) => {
                     const showAsActive = isActive || (fallbackToFirst && index === 0);

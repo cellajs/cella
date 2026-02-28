@@ -1,5 +1,5 @@
 import { ChevronRightIcon } from 'lucide-react';
-import { type FC, useEffect, useState } from 'react';
+import { type FC, memo, useEffect, useState } from 'react';
 import { CollapsedPreview } from './collapsed-preview';
 import { useJsonViewerContext } from './context';
 import { CopyButton } from './copy-button';
@@ -23,7 +23,7 @@ interface JsonNodeProps {
 /**
  * Renders a single node in the JSON tree.
  */
-export const JsonNode: FC<JsonNodeProps> = ({ value, path, keyName, depth, visualDepth, cascadeDepth = 0 }) => {
+export const JsonNode: FC<JsonNodeProps> = memo(({ value, path, keyName, depth, visualDepth, cascadeDepth = 0 }) => {
   // Use visualDepth if provided, otherwise fall back to depth
   const effectiveVisualDepth = visualDepth ?? depth;
 
@@ -206,8 +206,23 @@ export const JsonNode: FC<JsonNodeProps> = ({ value, path, keyName, depth, visua
     return null;
   })();
 
-  // contentType is displayed as a regular property in the JSON viewer
-  const contentTypeValue = null;
+  // Extract contentType value for label display (filtered out of entries below, like type/ref)
+  const contentTypeValue =
+    openapiMode === 'schema' && !isInsideProperties && valueObj && typeof valueObj.contentType === 'string'
+      ? valueObj.contentType
+      : null;
+
+  // Extract constraint values for inline display (filtered out of entries below, like required)
+  const constraints = (() => {
+    if (openapiMode !== 'schema' || isArray || typeof value !== 'object' || value === null) return null;
+    const obj = value as Record<string, unknown>;
+    const c: { maxLength?: number; minLength?: number; maximum?: number; minimum?: number } = {};
+    if (typeof obj.maxLength === 'number') c.maxLength = obj.maxLength;
+    if (typeof obj.minLength === 'number') c.minLength = obj.minLength;
+    if (typeof obj.maximum === 'number') c.maximum = obj.maximum;
+    if (typeof obj.minimum === 'number') c.minimum = obj.minimum;
+    return Object.keys(c).length > 0 ? c : null;
+  })();
 
   // Check if this is an array schema (has type: 'array') - used to hoist items.properties
   const isArraySchema =
@@ -231,7 +246,11 @@ export const JsonNode: FC<JsonNodeProps> = ({ value, path, keyName, depth, visua
       ? rawEntries.filter(
           ([key]) =>
             key !== 'required' &&
-            (isInsideProperties || (key !== 'type' && key !== 'ref')) &&
+            key !== 'maxLength' &&
+            key !== 'minLength' &&
+            key !== 'maximum' &&
+            key !== 'minimum' &&
+            (isInsideProperties || (key !== 'type' && key !== 'ref' && key !== 'contentType')) &&
             !(isArraySchema && key === 'items'),
         )
       : rawEntries;
@@ -301,6 +320,7 @@ export const JsonNode: FC<JsonNodeProps> = ({ value, path, keyName, depth, visua
           contentTypeValue={contentTypeValue}
           hasAnyOf={hasAnyOf}
           hasOneOf={hasOneOf}
+          constraints={constraints}
           theme={theme}
         />
         <span className={bracketClass}>{closeBracket}</span>
@@ -415,4 +435,4 @@ export const JsonNode: FC<JsonNodeProps> = ({ value, path, keyName, depth, visua
       )}
     </div>
   );
-};
+});

@@ -1,27 +1,79 @@
 import { queryOptions } from '@tanstack/react-query';
 
+export type DefinitionIndex = Map<string, string>;
+
 /**
- * Query options for lazily loading types.gen.ts content.
- * Uses dynamic import to code-split the raw content.
+ * Build an index of all exported definitions from a TS source file in one pass.
+ * Returns a Map<exportName, fullDefinitionCode> for O(1) lookups.
  */
-export const typesContentQueryOptions = queryOptions({
-  queryKey: ['docs', 'types-content'],
+function buildIndex(content: string): DefinitionIndex {
+  const index: DefinitionIndex = new Map();
+  const exportRegex = /^export (?:const|type) (\w+)/gm;
+  let match: RegExpExecArray | null;
+
+  while ((match = exportRegex.exec(content)) !== null) {
+    const name = match[1];
+    const startIndex = match.index;
+
+    // Find `=` after the declaration
+    let endIndex = startIndex + match[0].length;
+    while (endIndex < content.length && content[endIndex] !== '=' && content[endIndex] !== '\n') endIndex++;
+    if (content[endIndex] !== '=') continue;
+    endIndex++; // skip '='
+    while (endIndex < content.length && content[endIndex] === ' ') endIndex++;
+
+    const startsWithBrace = content[endIndex] === '{';
+    let braceCount = startsWithBrace ? 1 : 0;
+    let parenCount = 0;
+    let started = startsWithBrace;
+    if (startsWithBrace) endIndex++;
+
+    while (endIndex < content.length) {
+      const char = content[endIndex];
+      if (char === '(' || char === '{') {
+        started = true;
+        if (char === '(') parenCount++;
+        if (char === '{') braceCount++;
+      }
+      if (char === ')') parenCount--;
+      if (char === '}') braceCount--;
+      endIndex++;
+
+      if (started && braceCount === 0 && parenCount === 0) {
+        while (endIndex < content.length && content[endIndex] !== ';' && content[endIndex] !== '\n') endIndex++;
+        if (content[endIndex] === ';') endIndex++;
+        break;
+      }
+    }
+
+    index.set(name, content.slice(startIndex, endIndex).trim());
+  }
+
+  return index;
+}
+
+/**
+ * Query options for lazily loading and indexing zod.gen.ts definitions.
+ * Parses all exports in one pass on first access; subsequent lookups are O(1).
+ */
+export const zodIndexQueryOptions = queryOptions({
+  queryKey: ['docs', 'zod-index'],
   queryFn: async () => {
-    const module = await import('~/api.gen/types.gen.ts?raw');
-    return module.default as string;
+    const module = await import('~/api.gen/zod.gen.ts?raw');
+    return buildIndex(module.default as string);
   },
   staleTime: Number.POSITIVE_INFINITY,
 });
 
 /**
- * Query options for lazily loading zod.gen.ts content.
- * Uses dynamic import to code-split the raw content.
+ * Query options for lazily loading and indexing types.gen.ts definitions.
+ * Parses all exports in one pass on first access; subsequent lookups are O(1).
  */
-export const zodContentQueryOptions = queryOptions({
-  queryKey: ['docs', 'zod-content'],
+export const typesIndexQueryOptions = queryOptions({
+  queryKey: ['docs', 'types-index'],
   queryFn: async () => {
-    const module = await import('~/api.gen/zod.gen.ts?raw');
-    return module.default as string;
+    const module = await import('~/api.gen/types.gen.ts?raw');
+    return buildIndex(module.default as string);
   },
   staleTime: Number.POSITIVE_INFINITY,
 });
@@ -35,68 +87,23 @@ const toPascalCase = (str: string): string => {
 };
 
 /**
- * Extract a const/type definition from source content.
- * Finds the start of the definition and tracks braces to find the end.
- */
-const extractDefinition = (content: string, pattern: RegExp, startsWithBrace = false): string | null => {
-  const match = pattern.exec(content);
-  if (!match) return null;
-
-  const startIndex = match.index;
-  let endIndex = match.index + match[0].length;
-
-  // If pattern ends with opening brace, initialize count to 1
-  let braceCount = startsWithBrace ? 1 : 0;
-  let parenCount = 0;
-  let started = startsWithBrace;
-
-  // Find the end by tracking balanced braces/parens
-  while (endIndex < content.length) {
-    const char = content[endIndex];
-
-    if (char === '(' || char === '{') {
-      started = true;
-      if (char === '(') parenCount++;
-      if (char === '{') braceCount++;
-    }
-    if (char === ')') parenCount--;
-    if (char === '}') braceCount--;
-
-    endIndex++;
-
-    // End when we've closed all braces/parens after starting
-    if (started && braceCount === 0 && parenCount === 0) {
-      // Skip to semicolon or newline
-      while (endIndex < content.length && content[endIndex] !== ';' && content[endIndex] !== '\n') {
-        endIndex++;
-      }
-      if (content[endIndex] === ';') endIndex++;
-      break;
-    }
-  }
-
-  return content.slice(startIndex, endIndex).trim();
-};
-
-/**
  * Get the Zod schema code for a specific operation response.
  * For error responses (status >= 400), uses responseName (e.g., 'BadRequestError').
  * For success responses, uses operationId + 'Response' (e.g., 'GetMeResponse').
  */
 export const getZodCodeForResponse = (
-  zodContent: string,
+  zodIndex: DefinitionIndex,
   operationId: string,
   status: number,
   responseName?: string,
 ): string => {
   const isError = status >= 400;
   const schemaName = isError && responseName ? responseName : `${toPascalCase(operationId)}Response`;
-
-  const pattern = new RegExp(`export const z${schemaName} = `);
-  const definition = extractDefinition(zodContent, pattern);
+  const name = `z${schemaName}`;
+  const definition = zodIndex.get(name);
 
   if (!definition) {
-    return `// Schema z${schemaName} not found in zod.gen.ts`;
+    return `// Schema ${name} not found in zod.gen.ts`;
   }
 
   return `// From ~/api.gen/zod.gen.ts\n${definition}`;
@@ -105,14 +112,11 @@ export const getZodCodeForResponse = (
 /**
  * Get the TypeScript type code for a specific operation response.
  */
-export const getTypeCodeForResponse = (typesContent: string, operationId: string, status: number): string => {
+export const getTypeCodeForResponse = (typesIndex: DefinitionIndex, operationId: string, status: number): string => {
   const pascalCaseOpId = toPascalCase(operationId);
   const isSuccess = status >= 200 && status < 300;
   const typeName = isSuccess ? `${pascalCaseOpId}Responses` : `${pascalCaseOpId}Errors`;
-
-  // Pattern includes opening brace, so pass startsWithBrace = true
-  const pattern = new RegExp(`export type ${typeName} = \\{`);
-  const definition = extractDefinition(typesContent, pattern, true);
+  const definition = typesIndex.get(typeName);
 
   if (!definition) {
     return `// Type ${typeName} not found in api.gen.ts`;
@@ -124,15 +128,12 @@ export const getTypeCodeForResponse = (typesContent: string, operationId: string
 /**
  * Get the Zod schema code for a specific operation request (Data).
  */
-export const getZodCodeForRequest = (zodContent: string, operationId: string): string => {
-  const pascalCaseOpId = toPascalCase(operationId);
-  const schemaName = `z${pascalCaseOpId}Data`;
-
-  const pattern = new RegExp(`export const ${schemaName} = `);
-  const definition = extractDefinition(zodContent, pattern);
+export const getZodCodeForRequest = (zodIndex: DefinitionIndex, operationId: string): string => {
+  const name = `z${toPascalCase(operationId)}Data`;
+  const definition = zodIndex.get(name);
 
   if (!definition) {
-    return `// Schema ${schemaName} not found in zod.gen.ts`;
+    return `// Schema ${name} not found in zod.gen.ts`;
   }
 
   return `// From ~/api.gen/zod.gen.ts\n${definition}`;
@@ -141,13 +142,9 @@ export const getZodCodeForRequest = (zodContent: string, operationId: string): s
 /**
  * Get the TypeScript type code for a specific operation request (Data).
  */
-export const getTypeCodeForRequest = (typesContent: string, operationId: string): string => {
-  const pascalCaseOpId = toPascalCase(operationId);
-  const typeName = `${pascalCaseOpId}Data`;
-
-  // Pattern includes opening brace, so pass startsWithBrace = true
-  const pattern = new RegExp(`export type ${typeName} = \\{`);
-  const definition = extractDefinition(typesContent, pattern, true);
+export const getTypeCodeForRequest = (typesIndex: DefinitionIndex, operationId: string): string => {
+  const typeName = `${toPascalCase(operationId)}Data`;
+  const definition = typesIndex.get(typeName);
 
   if (!definition) {
     return `// Type ${typeName} not found in api.gen.ts`;
@@ -159,14 +156,12 @@ export const getTypeCodeForRequest = (typesContent: string, operationId: string)
 /**
  * Get the Zod schema code for a component schema by name.
  */
-export const getZodCodeForSchema = (zodContent: string, schemaName: string): string => {
-  const zodSchemaName = `z${schemaName}`;
-
-  const pattern = new RegExp(`export const ${zodSchemaName} = `);
-  const definition = extractDefinition(zodContent, pattern);
+export const getZodCodeForSchema = (zodIndex: DefinitionIndex, schemaName: string): string => {
+  const name = `z${schemaName}`;
+  const definition = zodIndex.get(name);
 
   if (!definition) {
-    return `// Schema ${zodSchemaName} not found in zod.gen.ts`;
+    return `// Schema ${name} not found in zod.gen.ts`;
   }
 
   return `// From ~/api.gen/zod.gen.ts\n${definition}`;
@@ -175,10 +170,8 @@ export const getZodCodeForSchema = (zodContent: string, schemaName: string): str
 /**
  * Get the TypeScript type code for a component schema by name.
  */
-export const getTypeCodeForSchema = (typesContent: string, schemaName: string): string => {
-  // Pattern includes opening brace, so pass startsWithBrace = true
-  const pattern = new RegExp(`export type ${schemaName} = \\{`);
-  const definition = extractDefinition(typesContent, pattern, true);
+export const getTypeCodeForSchema = (typesIndex: DefinitionIndex, schemaName: string): string => {
+  const definition = typesIndex.get(schemaName);
 
   if (!definition) {
     return `// Type ${schemaName} not found in types.gen.ts`;

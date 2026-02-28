@@ -242,15 +242,17 @@ const inviteCallbackFlow = async ({
   // OAuth account already linked
   if (oauthAccount) throw new AppError(409, 'oauth_conflict', 'error');
 
-  // No linked OAuth account and email already in use by an existing user
-  const users = await db
+  // No linked OAuth account and email already in use by an existing user (check both emails and users tables)
+  const usersWithVerifiedEmail = await db
     .select(userSelect)
     .from(usersTable)
     .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
     .where(eq(emailsTable.email, providerUser.email));
-  if (users.length) throw new AppError(409, 'oauth_email_exists', 'error');
+  if (usersWithVerifiedEmail.length) throw new AppError(409, 'oauth_email_exists', 'error');
 
-  // TODO-013 User already signed up meanwhile?
+  // User may have signed up via another method (password/OAuth) but hasn't verified email yet
+  const [existingUser] = await db.select(userSelect).from(usersTable).where(eq(usersTable.email, providerUser.email));
+  if (existingUser) throw new AppError(409, 'oauth_email_exists', 'error');
 
   // No user match → create a new user and OAuth account atomically
   const newOAuthAccount = await db.transaction(async (tx) => {

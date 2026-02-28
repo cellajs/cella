@@ -4,8 +4,7 @@ import { useRovingTabIndex } from './hooks';
 import type { CellMouseEventHandler, CellRendererProps } from './types';
 import { createCellEvent, getCellClassname, getCellStyle, isCellEditableUtil } from './utils';
 
-const cellDraggedOverClassname = 'rdg-cell-dragged-over';
-const cellInRangeClassname = 'rdg-cell-range-selected';
+const cellInRangeClassname = 'bg-primary/10';
 const cellRangeTopClassname = 'rdg-cell-range-top';
 const cellRangeBottomClassname = 'rdg-cell-range-bottom';
 const cellRangeLeftClassname = 'rdg-cell-range-left';
@@ -41,7 +40,6 @@ function Cell<R, SR>({
   className = getCellClassname(
     column,
     {
-      [cellDraggedOverClassname]: isDraggedOver,
       [cellInRangeClassname]: isInSelectedRange === true,
       [cellRangeTopClassname]: isInSelectedRange === true && (rangeBoundary?.isTop ?? false),
       [cellRangeBottomClassname]: isInSelectedRange === true && (rangeBoundary?.isBottom ?? false),

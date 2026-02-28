@@ -106,7 +106,7 @@ export const UsersTableBar = ({
 
   return (
     <>
-      <TableBarContainer>
+      <TableBarContainer searchVars={searchVars}>
         {/* Table filter bar */}
         <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
           <FilterBarActions>

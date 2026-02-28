@@ -64,7 +64,7 @@ export function FocusBridge({ direction, className }: FocusBridgeProps) {
 
   return (
     <Button
-      variant="outline"
+      variant="ghost"
       size="sm"
       onClick={() => focusById(targets[direction])}
       className={cn('sr-only focus:not-sr-only focus:absolute focus:z-200', className)}

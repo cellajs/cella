@@ -7,7 +7,8 @@ export function useLatestRef<T>(value: T) {
   return ref;
 }
 
-type AnyFunction = (...args: unknown[]) => unknown;
+// biome-ignore lint/suspicious/noExplicitAny: generic function type for useLatestCallback
+type AnyFunction = (...args: any[]) => any;
 
 /**
  * Returns a stable callback that always calls the latest function.

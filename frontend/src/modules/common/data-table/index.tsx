@@ -121,7 +121,7 @@ export const DataTable = <TData,>({
   };
 
   return (
-    <div className={cn('w-full h-full mb-4 md:mb-8', enableVirtualization && 'focus-view-scroll', className)}>
+    <div className={cn('w-full h-full mb-4 md:mb-8', className)}>
       {isLoading || !rows ? (
         // Render skeleton only on initial load
         <DataTableSkeleton

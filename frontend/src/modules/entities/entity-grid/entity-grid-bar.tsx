@@ -48,7 +48,7 @@ export const EntityGridBar = ({ queryKey, label, searchVars, setSearch, focusVie
   const onResetFilters = () => setSearch({ q: '' });
 
   return (
-    <TableBarContainer>
+    <TableBarContainer searchVars={searchVars}>
       {/* Filter Bar */}
       <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
         <FilterBarActions>

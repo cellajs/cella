@@ -41,7 +41,12 @@
                       "quotas": {
                         "type": "object",
                         "required": true,
-                        "description": "Entity quotas (0 = unlimited)"
+                        "description": "Entity quotas (0 = unlimited)",
+                        "additionalProperties": {
+                          "type": "integer",
+                          "required": false,
+                          "minimum": 0
+                        }
                       },
                       "rateLimits": {
                         "type": "object",
@@ -173,7 +178,12 @@
                 "quotas": {
                   "type": "object",
                   "required": true,
-                  "description": "Entity quotas (0 = unlimited)"
+                  "description": "Entity quotas (0 = unlimited)",
+                  "additionalProperties": {
+                    "type": "integer",
+                    "required": false,
+                    "minimum": 0
+                  }
                 },
                 "rateLimits": {
                   "type": "object",
@@ -293,7 +303,12 @@
                 "quotas": {
                   "type": "object",
                   "required": true,
-                  "description": "Entity quotas (0 = unlimited)"
+                  "description": "Entity quotas (0 = unlimited)",
+                  "additionalProperties": {
+                    "type": "integer",
+                    "required": false,
+                    "minimum": 0
+                  }
                 },
                 "rateLimits": {
                   "type": "object",
@@ -404,7 +419,12 @@
                 "quotas": {
                   "type": "object",
                   "required": true,
-                  "description": "Entity quotas (0 = unlimited)"
+                  "description": "Entity quotas (0 = unlimited)",
+                  "additionalProperties": {
+                    "type": "integer",
+                    "required": false,
+                    "minimum": 0
+                  }
                 },
                 "rateLimits": {
                   "type": "object",
@@ -499,7 +519,12 @@
               "quotas": {
                 "type": "object",
                 "required": false,
-                "description": "Entity quotas (0 = unlimited)"
+                "description": "Entity quotas (0 = unlimited)",
+                "additionalProperties": {
+                  "type": "integer",
+                  "required": false,
+                  "minimum": 0
+                }
               },
               "rateLimits": {
                 "type": "object",

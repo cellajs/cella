@@ -184,7 +184,7 @@ export function DocsSidebar({ tags }: DocsSidebarProps) {
                   </Link>
                 </CollapsibleTrigger>
               </SidebarMenuItem>
-              <CollapsibleContent forceMount className="overflow-hidden data-[state=closed]:hidden">
+              <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
                 <SidebarGroupContent>
                   {/* Operation tags sidebar */}
                   <Suspense fallback={null}>
@@ -230,7 +230,7 @@ export function DocsSidebar({ tags }: DocsSidebarProps) {
                   </Link>
                 </CollapsibleTrigger>
               </SidebarMenuItem>
-              <CollapsibleContent forceMount className="overflow-hidden data-[state=closed]:hidden">
+              <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
                 <SidebarGroupContent>
                   {/* Schemas tags list */}
                   <Suspense fallback={null}>

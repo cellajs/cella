@@ -64,7 +64,7 @@ function handleMembershipNotification(
   switch (action) {
     case 'create':
       membershipOps.invalidateContextList(contextType);
-      membershipOps.refreshMenu();
+      membershipOps.invalidateMemberships();
       break;
 
     case 'update':
@@ -74,7 +74,7 @@ function handleMembershipNotification(
 
     case 'delete':
       membershipOps.invalidateContextList(contextType);
-      membershipOps.refreshMenu();
+      membershipOps.invalidateMemberships();
       break;
   }
 

@@ -1,8 +1,5 @@
-import { useDefaultRenderers } from './data-grid-default-renderers-context';
+import { renderSortStatus } from './sort-status';
 import type { RenderHeaderCellProps } from './types';
-
-const headerSortCellClassname = 'rdg-header-sort-cell';
-const headerSortNameClassname = 'rdg-header-sort-name';
 
 export function renderHeaderCell<R, SR>({ column, sortDirection, priority }: RenderHeaderCellProps<R, SR>) {
   if (!column.sortable) return column.name;
@@ -21,11 +18,9 @@ interface SortableHeaderCellProps<R, SR> extends SharedHeaderCellProps<R, SR> {
 }
 
 function SortableHeaderCell<R, SR>({ sortDirection, priority, children }: SortableHeaderCellProps<R, SR>) {
-  const renderSortStatus = useDefaultRenderers<R, SR>()!.renderSortStatus!;
-
   return (
-    <span className={headerSortCellClassname}>
-      <span className={headerSortNameClassname}>{children}</span>
+    <span className="flex">
+      <span className="grow overflow-clip text-ellipsis">{children}</span>
       <span>{renderSortStatus({ sortDirection, priority })}</span>
     </span>
   );

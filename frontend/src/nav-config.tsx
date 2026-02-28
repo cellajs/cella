@@ -8,7 +8,7 @@ import { toaster } from '~/modules/common/toaster/service';
 import { AccountSheet } from '~/modules/navigation/account-sheet';
 import { AppSearch } from '~/modules/navigation/app-search';
 import { MenuSheet } from '~/modules/navigation/menu-sheet/menu-sheet';
-import { PreferencesSheet } from './modules/navigation/settings-sheet';
+import { PreferencesSheet } from './modules/navigation/preferences-sheet';
 
 /**
  * Declare search nav button action

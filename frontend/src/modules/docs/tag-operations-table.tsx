@@ -109,7 +109,7 @@ export const TagOperationsTable = ({ operations, tagName }: TagOperationsTablePr
       isFiltered={false}
       rowHeight={36}
       hideHeader
-      enableVirtualization={false}
+      enableVirtualization
       readOnly
     />
   );

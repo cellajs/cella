@@ -42,9 +42,12 @@ export function MobileSubRow<R, SR>({ row, rowIdx, subColumns, isExpanded }: Mob
           );
 
         return (
-          <div key={column.key} className="rdg-mobile-sub-item">
-            <span className="rdg-mobile-sub-label">{label}</span>
-            <span className="rdg-mobile-sub-value">{value}</span>
+          <div
+            key={column.key}
+            className="flex items-start gap-2 py-1 [&:not(:last-child)]:border-b [&:not(:last-child)]:border-border/50"
+          >
+            <span className="shrink-0 font-medium text-muted-foreground min-w-24">{label}</span>
+            <span className="grow text-foreground overflow-hidden text-ellipsis">{value}</span>
           </div>
         );
       })}

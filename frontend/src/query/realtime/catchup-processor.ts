@@ -81,7 +81,7 @@ export function processAppCatchup(response: AppCatchupResponse): void {
       if (serverMSeq > clientMSeq) {
         // Membership changes happened — invalidate all membership-related queries
         membershipOps.invalidateContextList(null);
-        membershipOps.refreshMenu();
+        membershipOps.invalidateMemberships();
         membershipOps.invalidateMemberQueries(orgId);
         membershipOps.refreshMe();
         console.debug(`[CatchupProcessor] Org ${orgId}: mSeq gap ${clientMSeq}→${serverMSeq} → membership refresh`);

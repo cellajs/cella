@@ -4,7 +4,7 @@
  */
 
 /* CSS Layers for proper cascade ordering */
-@layer rdg.Defaults, rdg.Root, rdg.Row, rdg.Cell, rdg.FocusSink, rdg.DragHandle, rdg.Checkbox;
+@layer rdg.Defaults, rdg.Root, rdg.Row, rdg.Cell, rdg.FocusSink;
 
 /* ==========================================================================
    Root / Grid Container
@@ -26,17 +26,13 @@
     --rdg-font-size: 0.875rem;
     --rdg-cell-frozen-box-shadow: 2px 0 5px -2px rgba(136, 136, 136, 0.3);
     --rdg-border-width: 1px;
-    --rdg-summary-border-width: calc(var(--rdg-border-width) * 2);
     --rdg-color: hsl(var(--foreground));
     --rdg-border-color: hsl(var(--border));
-    --rdg-summary-border-color: hsl(var(--border));
     --rdg-background-color: hsl(var(--background));
     --rdg-header-background-color: hsl(var(--muted));
-    --rdg-header-draggable-background-color: hsl(var(--muted));
     --rdg-row-hover-background-color: hsl(var(--muted) / 0.5);
     --rdg-row-selected-background-color: hsl(var(--accent));
     --rdg-row-selected-hover-background-color: hsl(var(--accent));
-    --rdg-checkbox-focus-color: hsl(var(--ring));
     /* Z-index for frozen rows portal - can be overridden per grid instance */
     --rdg-frozen-row-z-index: 100;
 
@@ -63,33 +59,12 @@
     color-scheme: light;
   }
 
-  .rdg:dir(rtl) {
-    --rdg-cell-frozen-box-shadow: -2px 0 5px -2px rgba(136, 136, 136, 0.3);
-  }
-
   /* Firefox scrollbar fix */
   .rdg::before {
     content: "";
     grid-column: 1 / -1;
     grid-row: 1 / -1;
   }
-
-  /* Summary row borders */
-  .rdg > :nth-last-child(1 of .rdg-top-summary-row) > .rdg-cell {
-    border-block-end: var(--rdg-summary-border-width) solid var(--rdg-summary-border-color);
-  }
-
-  .rdg > :nth-child(1 of .rdg-bottom-summary-row) > .rdg-cell {
-    border-block-start: var(--rdg-summary-border-width) solid var(--rdg-summary-border-color);
-  }
-}
-
-.rdg-viewport-dragging {
-  user-select: none;
-}
-
-.rdg-viewport-dragging .rdg-row {
-  cursor: move;
 }
 
 /* ==========================================================================
@@ -185,33 +160,6 @@
 }
 
 /* ==========================================================================
-   Drag Handle
-   ========================================================================== */
-
-@layer rdg.DragHandle {
-  .rdg-cell-drag-handle {
-    --rdg-drag-handle-size: 8px;
-    z-index: 0;
-    cursor: move;
-    inline-size: var(--rdg-drag-handle-size);
-    block-size: var(--rdg-drag-handle-size);
-    background-color: var(--rdg-selection-color);
-    place-self: end;
-  }
-
-  .rdg-cell-drag-handle:hover {
-    --rdg-drag-handle-size: 16px;
-    border: 2px solid var(--rdg-selection-color);
-    background-color: var(--rdg-background-color);
-  }
-
-  .rdg-cell-drag-handle-frozen {
-    z-index: 1;
-    position: sticky;
-  }
-}
-
-/* ==========================================================================
    Header Row
    ========================================================================== */
 
@@ -225,158 +173,9 @@
   background-color: var(--rdg-header-background-color);
 }
 
-.rdg-header-row-draggable > .rdg-cell {
-  background-color: var(--rdg-header-draggable-background-color);
-}
-
 /* ==========================================================================
-   Checkbox
+   Additional classes
    ========================================================================== */
-
-@layer rdg.Checkbox {
-  .rdg-checkbox-label {
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: absolute;
-    inset: 0;
-  }
-
-  .rdg-checkbox-label-disabled {
-    cursor: default;
-  }
-
-  .rdg-checkbox-input {
-    /* Visually hidden but accessible */
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border-width: 0;
-  }
-
-  .rdg-checkbox {
-    content: "";
-    width: 1.25rem;
-    height: 1.25rem;
-    border: 2px solid var(--rdg-border-color);
-    border-radius: 0.25rem;
-    background-color: var(--rdg-background-color);
-  }
-
-  .rdg-checkbox-input:checked + .rdg-checkbox {
-    background-color: hsl(var(--primary));
-    border-color: hsl(var(--primary));
-    background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");
-  }
-
-  .rdg-checkbox-input:indeterminate + .rdg-checkbox {
-    background-color: hsl(var(--primary));
-    border-color: hsl(var(--primary));
-    background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M4 8a1 1 0 011-1h6a1 1 0 110 2H5a1 1 0 01-1-1z'/%3e%3c/svg%3e");
-  }
-
-  .rdg-checkbox-input:focus-visible + .rdg-checkbox {
-    outline: 2px solid var(--rdg-checkbox-focus-color);
-    outline-offset: 2px;
-  }
-}
-
-/* ==========================================================================
-   Sort Icon
-   ========================================================================== */
-
-.rdg-sort-icon {
-  display: inline-flex;
-  margin-inline-start: 0.25rem;
-}
-
-/* ==========================================================================
-   Grouped Header
-   ========================================================================== */
-
-.rdg-grouped-column-header-row {
-  display: contents;
-}
-
-.rdg-grouped-column-header-cell {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: var(--rdg-header-background-color);
-  border-inline-end: var(--rdg-border-width) solid var(--rdg-border-color);
-  border-block-end: var(--rdg-border-width) solid var(--rdg-border-color);
-}
-
-/* ==========================================================================
-   Additional classes migrated from ecij CSS-in-JS
-   ========================================================================== */
-
-/* Header Cell */
-.rdg-cell-sortable {
-  cursor: pointer;
-}
-
-.rdg-cell-resizable {
-  touch-action: none;
-}
-
-.rdg-resize-handle {
-  cursor: col-resize;
-  position: absolute;
-  inset-block-start: 0;
-  inset-inline-end: 0;
-  inset-block-end: 0;
-  inline-size: 10px;
-}
-
-.rdg-cell-dragging {
-  background-color: var(--rdg-header-draggable-background-color);
-}
-
-.rdg-cell-drag-over {
-  background-color: var(--rdg-header-draggable-background-color);
-}
-
-.rdg-drag-image {
-  border-radius: 4px;
-  width: fit-content;
-  outline: 2px solid hsl(207, 100%, 50%);
-  outline-offset: -2px;
-}
-
-/* Cell Dragged Over */
-.rdg-cell-dragged-over {
-  background-color: hsl(var(--accent) / 0.3);
-}
-
-/* Edit Cell */
-.rdg-cell-editing {
-  padding: 0;
-}
-
-/* Summary Row */
-.rdg-summary-row > .rdg-cell {
-  position: sticky;
-}
-
-.rdg-top-summary-row-sticky > .rdg-cell {
-  z-index: 2;
-}
-
-.rdg-top-summary-row-sticky > .rdg-cell-frozen {
-  z-index: 3;
-}
-
-.rdg-summary-cell {
-  inset-block-start: var(--rdg-summary-row-top);
-  inset-block-end: var(--rdg-summary-row-bottom);
-}
 
 /* Group Row */
 .rdg-group-row:not([aria-selected="true"]) {
@@ -388,75 +187,9 @@
   border-inline-end: none;
 }
 
-/* Group Cell Content */
-.rdg-group-cell-content {
-  outline: none;
-}
-
-/* Caret */
-.rdg-caret {
-  margin-inline-start: 4px;
-  stroke: currentColor;
-  stroke-width: 1.5px;
-  fill: transparent;
-  vertical-align: middle;
-}
-
-.rdg-caret > path {
-  transition: d 0.1s;
-}
-
-/* Sortable Header Cell */
-.rdg-header-sort-cell {
-  display: flex;
-}
-
-.rdg-header-sort-name {
-  flex-grow: 1;
-  overflow: clip;
-  text-overflow: ellipsis;
-}
-
-/* Measuring Cell */
-.rdg-measuring-cell {
-  contain: strict;
-  grid-row: 1;
-  visibility: hidden;
-}
-
-/* Sort Arrow */
-.rdg-sort-arrow {
-  fill: currentColor;
-}
-
-.rdg-sort-arrow > path {
-  transition: d 0.1s;
-}
-
-/* Checkbox */
-.rdg-checkbox-input {
-  display: block;
-  margin: auto;
-  inline-size: 20px;
-  block-size: 20px;
-}
-
-.rdg-checkbox-input:focus-visible {
-  outline: 2px solid var(--rdg-checkbox-focus-color);
-  outline-offset: -3px;
-}
-
-.rdg-checkbox-input:enabled {
-  cursor: pointer;
-}
-
 /* ==========================================================================
    Cell Range Selection
    ========================================================================== */
-
-.rdg-cell-range-selected {
-  background-color: hsl(var(--primary) / 0.1);
-}
 
 .rdg-cell-range-top {
   border-block-start: var(--rdg-selection-width) solid var(--rdg-selection-color);
@@ -485,11 +218,6 @@
 .rdg-touch-mode .rdg-cell {
   padding-inline: var(--rdg-touch-cell-padding);
   min-block-size: 44px;
-}
-
-.rdg-touch-mode .rdg-checkbox-label {
-  min-block-size: 44px;
-  min-inline-size: 44px;
 }
 
 /* ==========================================================================
@@ -550,29 +278,4 @@
 
 .rdg-row-expanded + .rdg-mobile-sub-row {
   display: block;
-}
-
-.rdg-mobile-sub-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
-  padding-block: 0.25rem;
-}
-
-.rdg-mobile-sub-item:not(:last-child) {
-  border-block-end: 1px solid hsl(var(--border) / 0.5);
-}
-
-.rdg-mobile-sub-label {
-  flex-shrink: 0;
-  font-weight: 500;
-  color: hsl(var(--muted-foreground));
-  min-inline-size: 6rem;
-}
-
-.rdg-mobile-sub-value {
-  flex-grow: 1;
-  color: hsl(var(--foreground));
-  overflow: hidden;
-  text-overflow: ellipsis;
 }

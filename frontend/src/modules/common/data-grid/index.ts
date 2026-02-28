@@ -11,7 +11,6 @@ export {
   type DefaultColumnOptions,
   type RowsEndApproachingArgs,
 } from './data-grid';
-export { DataGridDefaultRenderersContext } from './data-grid-default-renderers-context';
 export {
   useCopyPaste,
   useExpandableRows,
@@ -64,8 +63,6 @@ export type {
   ColumnVisibility,
   ColumnWidth,
   ColumnWidths,
-  Direction,
-  FillEvent,
   MobileSubRowConfig,
   RenderCellProps,
   RenderCheckboxProps,
@@ -77,7 +74,6 @@ export type {
   RenderSortIconProps,
   RenderSortPriorityProps,
   RenderSortStatusProps,
-  RenderSummaryCellProps,
   RowHeightArgs,
   RowsChangeData,
   SelectCellOptions,

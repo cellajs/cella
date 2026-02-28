@@ -1043,7 +1043,12 @@
             "rejectionReasons": {
               "type": "object",
               "required": false,
-              "description": "Map of reason code to rejected item IDs"
+              "description": "Map of reason code to rejected item IDs",
+              "additionalProperties": {
+                "type": "array",
+                "required": false,
+                "itemType": "string"
+              }
             }
           },
           "contentType": "application/json"
@@ -1194,7 +1199,8 @@
                         "expires": { "type": "string", "required": false }
                       }
                     }
-                  }
+                  },
+                  "additionalProperties": { "type": "object", "required": false }
                 },
                 { "type": "null", "required": false }
               ]

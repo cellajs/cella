@@ -22,27 +22,29 @@ function RequestsPerMinute() {
   const { data: metrics } = useQuery(queryParams);
 
   return (
-    <Card className="mt-4">
-      <CardHeader>
-        <CardTitle>{t('common:requests')}</CardTitle>
-        <CardDescription>{t('common:requests.text')}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <ChartContainer config={chartConfig} className="h-100 w-full">
-          <BarChart accessibilityLayer data={metrics}>
-            <CartesianGrid vertical={false} />
-            <XAxis
-              dataKey="date"
-              tickMargin={6}
-              tickFormatter={(value) =>
-                new Date(value).toLocaleString(undefined, { hour: '2-digit', minute: '2-digit' })
-              }
-            />
-            <Bar dataKey="count" fill="var(--primary)" radius={4} />
-          </BarChart>
-        </ChartContainer>
-      </CardContent>
-    </Card>
+    <div className="container flex flex-col gap-4 h-full">
+      <Card className="mt-4">
+        <CardHeader>
+          <CardTitle>{t('common:requests')}</CardTitle>
+          <CardDescription>{t('common:requests.text')}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ChartContainer config={chartConfig} className="h-100 w-full">
+            <BarChart accessibilityLayer data={metrics}>
+              <CartesianGrid vertical={false} />
+              <XAxis
+                dataKey="date"
+                tickMargin={6}
+                tickFormatter={(value) =>
+                  new Date(value).toLocaleString(undefined, { hour: '2-digit', minute: '2-digit' })
+                }
+              />
+              <Bar dataKey="count" fill="var(--primary)" radius={4} />
+            </BarChart>
+          </ChartContainer>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 

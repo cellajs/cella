@@ -13,6 +13,7 @@ import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import type { RowsChangeData } from '~/modules/common/data-grid';
 import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
+import { FocusViewContainer } from '~/modules/common/focus-view';
 import type { EnrichedContextEntity } from '~/modules/entities/types';
 
 const LIMIT = appConfig.requestLimits.attachments;
@@ -113,7 +114,7 @@ function AttachmentsTable({ entity, canUpload = true, isSheet = false }: Attachm
   const clearSelection = () => setSelected([]);
 
   return (
-    <div className="flex flex-col gap-4 h-full" data-is-compact={isCompact}>
+    <FocusViewContainer data-is-compact={isCompact}>
       <AttachmentsTableBar
         entity={entity}
         selected={selected}
@@ -150,7 +151,7 @@ function AttachmentsTable({ entity, canUpload = true, isSheet = false }: Attachm
           NoRowsComponent,
         }}
       />
-    </div>
+    </FocusViewContainer>
   );
 }
 

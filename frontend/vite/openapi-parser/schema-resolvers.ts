@@ -178,6 +178,11 @@ export function resolveSchemaProperty(
     }
   }
 
+  // Handle additionalProperties (record/map types from z.record())
+  if (schema.additionalProperties && typeof schema.additionalProperties === 'object') {
+    prop.additionalProperties = resolveSchemaProperty(schema.additionalProperties, false, spec, visited);
+  }
+
   // Handle array items - unwrap simple items to parent level
   if (schema.items) {
     // Note: we pass false for isRequired since array items don't have a meaningful required field
@@ -304,6 +309,11 @@ export function resolveSchema(schema: OpenApiSchema, spec: OpenApiSpec, visited:
     for (const [key, value] of Object.entries(schema.properties)) {
       result.properties[key] = resolveSchemaProperty(value, requiredSet.has(key), spec, visited);
     }
+  }
+
+  // Handle additionalProperties (record/map types from z.record())
+  if (schema.additionalProperties && typeof schema.additionalProperties === 'object') {
+    result.additionalProperties = resolveSchemaProperty(schema.additionalProperties, false, spec, visited);
   }
 
   // Handle array items - unwrap simple items to parent level

@@ -11,9 +11,11 @@ export function useTableTooltip(gridRef: React.RefObject<HTMLDivElement | null>,
   const timeoutRef = useRef<number | null>(null);
   const lastShownCellRef = useRef<HTMLElement | null>(null);
   const observerRef = useRef<MutationObserver | null>(null);
+  const cleanupAutoUpdateRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     if (!gridRef?.current) return;
+    const gridEl = gridRef.current;
     const tooltip = document.createElement('div');
 
     tooltip.className =
@@ -29,7 +31,12 @@ export function useTableTooltip(gridRef: React.RefObject<HTMLDivElement | null>,
       tooltip.style.display = 'block';
       lastShownCellRef.current = cell;
 
-      autoUpdate(cell, tooltip, () => {
+      // Clean up previous autoUpdate before starting a new one
+      cleanupAutoUpdateRef.current?.();
+      cleanupAutoUpdateRef.current = autoUpdate(cell, tooltip, () => {
+        // When virtualization recycles the row, the cell gets detached — dismiss the orphaned tooltip
+        if (!cell.isConnected) return clearTooltip();
+
         computePosition(cell, tooltip, {
           placement: 'right',
           middleware: [offset(4)],
@@ -54,6 +61,9 @@ export function useTableTooltip(gridRef: React.RefObject<HTMLDivElement | null>,
     const handleMouseMove = (e: MouseEvent) => {
       const cell: HTMLElement | null = (e.target as HTMLElement).closest("[data-tooltip='true']");
       if (!cell) return clearTooltip();
+
+      // Already showing tooltip for this exact element
+      if (lastShownCellRef.current === cell) return;
 
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
 
@@ -81,20 +91,25 @@ export function useTableTooltip(gridRef: React.RefObject<HTMLDivElement | null>,
     const clearTooltip = () => {
       tooltip.style.display = 'none';
       lastShownCellRef.current = null;
+      cleanupAutoUpdateRef.current?.();
+      cleanupAutoUpdateRef.current = null;
       observerRef.current?.disconnect();
     };
 
     // Attach event listeners
-    gridRef.current.addEventListener('mousemove', handleMouseMove);
-    gridRef.current.addEventListener('mouseleave', handleMouseLeave);
-    gridRef.current.addEventListener('focusin', handleFocus);
-    gridRef.current.addEventListener('focusout', clearTooltip);
+    gridEl.addEventListener('mousemove', handleMouseMove);
+    gridEl.addEventListener('mouseleave', handleMouseLeave);
+    gridEl.addEventListener('focusin', handleFocus);
+    gridEl.addEventListener('focusout', clearTooltip);
+    gridEl.addEventListener('scroll', clearTooltip, { capture: true, passive: true });
 
     return () => {
-      gridRef.current?.removeEventListener('mousemove', handleMouseMove);
-      gridRef.current?.removeEventListener('mouseleave', handleMouseLeave);
-      gridRef.current?.removeEventListener('focusin', handleFocus);
-      gridRef.current?.removeEventListener('focusout', clearTooltip);
+      gridEl.removeEventListener('mousemove', handleMouseMove);
+      gridEl.removeEventListener('mouseleave', handleMouseLeave);
+      gridEl.removeEventListener('focusin', handleFocus);
+      gridEl.removeEventListener('focusout', clearTooltip);
+      gridEl.removeEventListener('scroll', clearTooltip, { capture: true });
+      cleanupAutoUpdateRef.current?.();
       observerRef.current?.disconnect();
       tooltip.remove();
     };

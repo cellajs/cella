@@ -2,7 +2,7 @@
 
 exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
 {
-  "inputHash": "d8e22c2deaa65394",
+  "inputHash": "7452079727a9fc58",
   "output": {
     "info": {
       "description": "⚠️ ATTENTION: PRERELEASE!  
@@ -54,7 +54,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "required": false,
           "values": {
             "emailEnumLimiter": {
-              "description": "Blocks IP for 30 min after 10 consecutive failures",
+              "description": "Blocks IP for 30 min after 5 consecutive failures",
               "name": "emailEnum",
             },
             "passkeyChallengeLimiter": {
@@ -64,6 +64,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "passwordLimiter": {
               "description": "Blocks email/IP for 30 min after 10 consecutive failures",
               "name": "password",
+            },
+            "pointsLimiter": {
+              "description": "Consumes dynamic API point(s) per request against per-tenant hourly budget",
+              "name": "points",
             },
             "presignedUrlLimiter": {
               "description": "Max 2000 requests/hour per user/IP for presigned URLs",
@@ -92,6 +96,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "appCache": {
               "description": "TTL cache with session-signed token validation",
               "name": "app",
+            },
+            "httpCache": {
+              "description": "HTTP private cache: max-age=3600s",
+              "name": "http",
             },
             "publicCache": {
               "description": "LRU cache for public page entities",
@@ -931,7 +939,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "xGuard": [
             "authGuard",
           ],
-          "xRateLimiter": [],
+          "xRateLimiter": [
+            "pointsLimiter",
+          ],
         },
         "hasExample": false,
         "hasParams": false,
@@ -1042,7 +1052,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Returns the number of unseen product entities per organization and entity type for the *current user*. Only entities created within the last 90 days are considered.",
+        "description": "Returns the number of unseen product entities per parent context entity (e.g., project) and entity type for the *current user*. Computed as total (from context_counters) minus seen (from seen_by).",
         "extensions": {
           "xCache": [],
           "xGuard": [
@@ -1188,7 +1198,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "authGuard",
             "sysAdminGuard",
           ],
-          "xRateLimiter": [],
+          "xRateLimiter": [
+            "spamLimiter",
+            "pointsLimiter",
+          ],
         },
         "hasExample": true,
         "hasParams": false,
@@ -1212,7 +1225,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "authGuard",
             "sysAdminGuard",
           ],
-          "xRateLimiter": [],
+          "xRateLimiter": [
+            "pointsLimiter",
+          ],
         },
         "hasExample": false,
         "hasParams": false,
@@ -1479,7 +1494,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "authGuard",
             "sysAdminGuard",
           ],
-          "xRateLimiter": [],
+          "xRateLimiter": [
+            "pointsLimiter",
+          ],
         },
         "hasExample": false,
         "hasParams": false,
@@ -1628,7 +1645,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "authGuard",
             "tenantGuard",
           ],
-          "xRateLimiter": [],
+          "xRateLimiter": [
+            "pointsLimiter",
+          ],
         },
         "hasExample": true,
         "hasParams": true,
@@ -1653,7 +1672,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "authGuard",
             "tenantGuard",
           ],
-          "xRateLimiter": [],
+          "xRateLimiter": [
+            "pointsLimiter",
+          ],
         },
         "hasExample": false,
         "hasParams": true,
@@ -1805,7 +1826,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "tenantGuard",
             "sysAdminGuard",
           ],
-          "xRateLimiter": [],
+          "xRateLimiter": [
+            "pointsLimiter",
+          ],
         },
         "hasExample": true,
         "hasParams": true,
@@ -1831,7 +1854,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "tenantGuard",
             "sysAdminGuard",
           ],
-          "xRateLimiter": [],
+          "xRateLimiter": [
+            "pointsLimiter",
+          ],
         },
         "hasExample": false,
         "hasParams": true,
@@ -1960,7 +1985,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "tenantGuard",
             "orgGuard",
           ],
-          "xRateLimiter": [],
+          "xRateLimiter": [
+            "pointsLimiter",
+          ],
         },
         "hasExample": true,
         "hasParams": true,
@@ -1986,7 +2013,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "tenantGuard",
             "orgGuard",
           ],
-          "xRateLimiter": [],
+          "xRateLimiter": [
+            "pointsLimiter",
+          ],
         },
         "hasExample": false,
         "hasParams": true,
@@ -2006,7 +2035,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "description": "Generates and returns a presigned URL for accessing a private attachment file in S3. Public files should use the public CDN URL directly. Requires organization context.",
         "entityType": "attachment",
         "extensions": {
-          "xCache": [],
+          "xCache": [
+            "httpCache",
+          ],
           "xGuard": [
             "authGuard",
             "tenantGuard",
@@ -2085,10 +2116,12 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Redirects to the file's public or presigned URL, depending on storage visibility.",
+        "description": "Returns an HTML page with OG meta tags for link previews and a client-side redirect to the attachment in the app.",
         "entityType": "attachment",
         "extensions": {
-          "xCache": [],
+          "xCache": [
+            "httpCache",
+          ],
           "xGuard": [
             "publicGuard",
           ],
@@ -2101,10 +2134,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasRequestBody": false,
         "hasResponseBody": false,
         "hash": "tag/attachments/GET/{tenantId}/{orgId}/attachments/{id}/link",
-        "id": "redirectToAttachment",
+        "id": "getAttachmentLink",
         "method": "get",
         "path": "/{tenantId}/{orgId}/attachments/{id}/link",
-        "summary": "Redirect to attachment",
+        "summary": "Get attachment link",
         "tags": [
           "attachments",
         ],
@@ -2119,7 +2152,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "tenantGuard",
             "orgGuard",
           ],
-          "xRateLimiter": [],
+          "xRateLimiter": [
+            "spamLimiter",
+            "pointsLimiter",
+          ],
         },
         "hasExample": true,
         "hasParams": true,
@@ -2144,7 +2180,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "tenantGuard",
             "orgGuard",
           ],
-          "xRateLimiter": [],
+          "xRateLimiter": [
+            "pointsLimiter",
+          ],
         },
         "hasExample": false,
         "hasParams": true,
@@ -2268,7 +2306,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "tenantGuard",
             "orgGuard",
           ],
-          "xRateLimiter": [],
+          "xRateLimiter": [
+            "pointsLimiter",
+          ],
         },
         "hasExample": false,
         "hasParams": true,
@@ -2591,6 +2631,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "schema": {
           "properties": {
             "fieldVersions": {
+              "additionalProperties": {
+                "required": false,
+                "type": "integer",
+              },
               "required": true,
               "type": "object",
             },
@@ -2712,6 +2756,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "extendsRef": "#/components/schemas/StxBase",
               "properties": {
                 "fieldVersions": {
+                  "additionalProperties": {
+                    "required": false,
+                    "type": "integer",
+                  },
                   "required": true,
                   "type": "object",
                 },
@@ -3453,6 +3501,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "description": "Sync transaction metadata stored on entities for offline and realtime support.",
                   "properties": {
                     "fieldVersions": {
+                      "additionalProperties": {
+                        "required": false,
+                        "type": "integer",
+                      },
                       "required": true,
                       "type": "object",
                     },
@@ -3513,9 +3565,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "type": "object",
       },
       {
-        "description": "The currently authenticated user with their system role.",
+        "description": "The currently authenticated user with their system admin status.",
         "example": {
-          "systemRole": null,
+          "isSystemAdmin": false,
           "user": {
             "bannerUrl": null,
             "createdAt": "2024-07-14T22:49:14.651Z",
@@ -3543,14 +3595,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "ref": "#/components/schemas/Me",
         "schema": {
           "properties": {
-            "systemRole": {
-              "description": "System-level role (e.g. admin) or user for standard access.",
-              "enum": [
-                "admin",
-                "user",
-              ],
+            "isSystemAdmin": {
+              "description": "Whether the current user has system admin privileges.",
               "required": true,
-              "type": "string",
+              "type": "boolean",
             },
             "user": {
               "description": "A user with profile data and activity timestamps.",
@@ -4212,6 +4260,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "params": {
               "anyOf": [
                 {
+                  "additionalProperties": {
+                    "required": false,
+                    "type": "object",
+                  },
                   "properties": {
                     "auth": {
                       "properties": {
@@ -4291,6 +4343,34 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": true,
               "type": "string",
             },
+            "restrictions": {
+              "properties": {
+                "quotas": {
+                  "additionalProperties": {
+                    "minimum": 0,
+                    "required": false,
+                    "type": "integer",
+                  },
+                  "description": "Entity quotas (0 = unlimited)",
+                  "required": true,
+                  "type": "object",
+                },
+                "rateLimits": {
+                  "properties": {
+                    "apiPointsPerHour": {
+                      "description": "Max API points per hour per user within this tenant",
+                      "minimum": 0,
+                      "required": true,
+                      "type": "integer",
+                    },
+                  },
+                  "required": true,
+                  "type": "object",
+                },
+              },
+              "required": true,
+              "type": "object",
+            },
             "status": {
               "enum": [
                 "active",
@@ -4362,7 +4442,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "type": "object",
       },
       {
-        "description": "An organization with settings, restrictions, and membership context.",
+        "description": "An organization with membership context.",
         "example": {
           "authStrategies": [
             "password",
@@ -4411,11 +4491,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "modifiedBy": null,
           "name": "Hills, Bauch and Monahan",
           "notificationEmail": "notifications@hills-bauch-and-monahan.example",
-          "restrictions": {
-            "attachment": 100,
-            "page": 0,
-            "user": 1000,
-          },
           "shortName": "Hills,",
           "slug": "hills-bauch-and-monahan",
           "tenantId": "vk6xht",
@@ -4787,11 +4862,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "example": {
           "createdAt": "2024-08-06T10:28:33.226Z",
           "createdBy": "0f0ak5vkrrl687pmkwpa1vju",
-          "description": "[{"content":[{"type":"text","text":"Voluptates cornu tempus eaque universe volubilis conturbo. Sponte utpote crux pecco vulticulus cunctatio. Vallum ut adimpleo summa valde strenuus attonbitus.\\nMollitia vel cado vitae cibus dolores decet. Aptus accusamus praesentium cibus subito viscus vox nemo. Video tremo molestias charisma clam ipsa suscipit.","styles":{}}],"children":[]}]",
-          "displayOrder": 32.69,
+          "description": "[{"id":"ub0dxavgjm9sadg4v0ogmhfz","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":2},"content":[{"type":"text","text":"Voluptates cornu tempus eaque universe.","styles":{}}],"children":[]},{"id":"r550gp4uks6507krqn5we2du","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Cubo sponte utpote crux pecco. Cunctatio dolorum vallum ut adimpleo summa valde strenuus attonbitus eligendi. Vel cado vitae cibus dolores decet surgo. Accusamus praesentium cibus subito.","styles":{}}],"children":[]},{"id":"ufa9r3kojry2kqh0cppr8lg5","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":3},"content":[{"type":"text","text":"User-friendly zero trust local area network","styles":{}}],"children":[]},{"id":"ph5kop5akylihf7wlw7zxxux","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Tremo molestias charisma clam ipsa suscipit solvo atrox tendo compello.","styles":{}}],"children":[]},{"id":"r8tb0px1zym610ui9vl5chbr","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Tonsor ullus damnatio.","styles":{}}],"children":[]},{"id":"jkmjpgfjm6307yc09g7ezazx","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Cupressus depono sto benigne delego decumbo adaugeo.","styles":{}}],"children":[]},{"id":"hsh44mex2z51cbqxvwjuf4qu","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Video aer addo crinis amissio alius allatus solium delectus tabesco. Inventore contra complectus summa umquam nobis dapifer supplanto odio. Atavus absorbeo suffoco cado deorsum amor.","styles":{}}],"children":[]},{"id":"0dxzaybja5wif0689s2l9vrn","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Nam certe vulgaris sumptus spiritus vae fugit creo.","styles":{}}],"children":[]},{"id":"toc8xn3z35z17v2p23vhrdeg","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Dolorem conduco causa.","styles":{}}],"children":[]},{"id":"acp7c9vorr0w5jkx3xfv7w50","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Caste pauper argumentum civitas.","styles":{}}],"children":[]},{"id":"gt4ahbzyiup2ikw08q3i2urn","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":false},"content":[{"type":"text","text":"Use the mobile HTTP port, then you can copy the primary hard drive!","styles":{}}],"children":[]},{"id":"3o6qx8gmc0j7t3whr6p1axpl","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":false},"content":[{"type":"text","text":"Try to hack the SSD feed, maybe it will input the bluetooth panel!","styles":{}}],"children":[]},{"id":"1dt1r1aehiqnc5olsb172qo7","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":false},"content":[{"type":"text","text":"Use the virtual SSL transmitter, then you can index the bluetooth capacitor!","styles":{}}],"children":[]},{"id":"oii2gkzwt8hu6o47bkpwnmq2","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Solium solvo degero ventus apto tempus aurum delectus facilis cura. Dolore animadverto maxime theatrum esse amo statua adfectus tremo contigo. Demens timidus calcar cohors appono aranea decet cultura substantia.","styles":{}}],"children":[]}]",
+          "displayOrder": 47.51,
           "entityType": "page",
           "id": "co96vrmic3wbowmxzbqa1e9f",
-          "keywords": "solvo atrox tendo",
+          "keywords": "tantillus debitis mollitia",
           "modifiedAt": "2024-08-06T10:28:33.226Z",
           "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju",
           "name": "Torrens adfectus.",
@@ -4800,8 +4875,8 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "status": "unpublished",
           "stx": {
             "fieldVersions": {},
-            "mutationId": "4tufkeho7gg1xwx21e333ngq",
-            "sourceId": "src_ujcbpukfple60p8h3tnk9zpo",
+            "mutationId": "rd8bblxzxc0ypms2q9lzubyp",
+            "sourceId": "src_ddo8vfjx4d5px26kw7k3q17d",
             "version": 1,
           },
           "tenantId": "ijllhz",
@@ -4966,6 +5041,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "description": "Sync transaction metadata stored on entities for offline and realtime support.",
               "properties": {
                 "fieldVersions": {
+                  "additionalProperties": {
+                    "required": false,
+                    "type": "integer",
+                  },
                   "required": true,
                   "type": "object",
                 },
@@ -5254,6 +5333,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "description": "Sync transaction metadata stored on entities for offline and realtime support.",
               "properties": {
                 "fieldVersions": {
+                  "additionalProperties": {
+                    "required": false,
+                    "type": "integer",
+                  },
                   "required": true,
                   "type": "object",
                 },
@@ -5674,6 +5757,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                               "description": "Sync transaction metadata stored on entities for offline and realtime support.",
                               "properties": {
                                 "fieldVersions": {
+                                  "additionalProperties": {
+                                    "required": false,
+                                    "type": "integer",
+                                  },
                                   "required": true,
                                   "type": "object",
                                 },
@@ -6102,6 +6189,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "description": "Sync transaction metadata stored on entities for offline and realtime support.",
                           "properties": {
                             "fieldVersions": {
+                              "additionalProperties": {
+                                "required": false,
+                                "type": "integer",
+                              },
                               "required": true,
                               "type": "object",
                             },
@@ -6308,6 +6399,27 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": true,
               "type": "array",
             },
+            "example": [
+              {
+                "bucketName": "attachments",
+                "contentType": "application/vnd.ms-fontobject",
+                "convertedContentType": null,
+                "convertedKey": null,
+                "filename": "excluding_ugh_besides.svgz",
+                "groupId": null,
+                "id": "slwtksu3yccsd9ihoiny6rso",
+                "name": "excluding_ugh_besides.svgz",
+                "originalKey": "uploads/auzy6zwhhoizpinjn9as93qc/excluding_ugh_besides.svgz",
+                "public": false,
+                "size": "7651256",
+                "stx": {
+                  "lastReadVersion": 0,
+                  "mutationId": "b6pakf4ovzm1ne3h55lgj31d",
+                  "sourceId": "src_63n9apx99a5auvr5cyj5s37i",
+                },
+                "thumbnailKey": null,
+              },
+            ],
             "path": {
               "properties": {
                 "orgId": {
@@ -6585,6 +6697,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "description": "Sync transaction metadata stored on entities for offline and realtime support.",
                           "properties": {
                             "fieldVersions": {
+                              "additionalProperties": {
+                                "required": false,
+                                "type": "integer",
+                              },
                               "required": true,
                               "type": "object",
                             },
@@ -6638,6 +6754,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "type": "array",
                   },
                   "rejectionReasons": {
+                    "additionalProperties": {
+                      "itemType": "string",
+                      "required": false,
+                      "type": "array",
+                    },
                     "description": "Map of reason code to rejected item IDs",
                     "required": false,
                     "type": "object",
@@ -6908,6 +7029,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "description": "Sync transaction metadata stored on entities for offline and realtime support.",
                           "properties": {
                             "fieldVersions": {
+                              "additionalProperties": {
+                                "required": false,
+                                "type": "integer",
+                              },
                               "required": true,
                               "type": "object",
                             },
@@ -6961,6 +7086,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "type": "array",
                   },
                   "rejectionReasons": {
+                    "additionalProperties": {
+                      "itemType": "string",
+                      "required": false,
+                      "type": "array",
+                    },
                     "description": "Map of reason code to rejected item IDs",
                     "required": false,
                     "type": "object",
@@ -7038,6 +7168,15 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": true,
               "type": "object",
             },
+            "example": {
+              "ids": [
+                "triduana",
+              ],
+              "stx": {
+                "mutationId": "fF4QWCZ8fUQS3s8u",
+                "sourceId": "src_8xmTIFcPfqPJ",
+              },
+            },
             "path": {
               "properties": {
                 "orgId": {
@@ -7071,6 +7210,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "type": "array",
                   },
                   "rejectionReasons": {
+                    "additionalProperties": {
+                      "itemType": "string",
+                      "required": false,
+                      "type": "array",
+                    },
                     "description": "Map of reason code to rejected item IDs",
                     "required": false,
                     "type": "object",
@@ -7440,6 +7584,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "description": "Sync transaction metadata stored on entities for offline and realtime support.",
                     "properties": {
                       "fieldVersions": {
+                        "additionalProperties": {
+                          "required": false,
+                          "type": "integer",
+                        },
                         "required": true,
                         "type": "object",
                       },
@@ -7582,6 +7730,15 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               },
               "required": true,
               "type": "object",
+            },
+            "example": {
+              "data": "caelestis",
+              "key": "name",
+              "stx": {
+                "lastReadVersion": 0,
+                "mutationId": "pkeuemouu8t58r8fuj3tlenh",
+                "sourceId": "src_qurk6hu54pnfytf99mpmuhw0",
+              },
             },
             "path": {
               "properties": {
@@ -7829,6 +7986,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "description": "Sync transaction metadata stored on entities for offline and realtime support.",
                     "properties": {
                       "fieldVersions": {
+                        "additionalProperties": {
+                          "required": false,
+                          "type": "integer",
+                        },
                         "required": true,
                         "type": "object",
                       },
@@ -7911,7 +8072,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           ],
         },
         {
-          "operationId": "redirectToAttachment",
+          "operationId": "getAttachmentLink",
           "request": {
             "path": {
               "properties": {
@@ -8040,6 +8201,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               },
               "required": true,
               "type": "object",
+            },
+            "example": {
+              "email": "jane_doe51@hotmail.com",
             },
           },
           "responses": [
@@ -8374,6 +8538,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "contentType": "application/json",
               "required": true,
             },
+            "example": {
+              "email": "jane.doe30@hotmail.com",
+              "tokenId": "tOXsWF7YstsUL118zJMObGv2",
+            },
           },
           "responses": [
             {
@@ -8538,6 +8706,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": true,
               "type": "object",
             },
+            "example": {
+              "code": "123456",
+            },
           },
           "responses": [
             {
@@ -8639,6 +8810,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": true,
               "type": "object",
             },
+            "example": {
+              "code": "123456",
+            },
           },
           "responses": [
             {
@@ -8702,6 +8876,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               },
               "required": false,
               "type": "object",
+            },
+            "example": {
+              "email": "jane_doe@hotmail.com",
+              "password": "G3n$ecureP@ss!",
             },
           },
           "responses": [
@@ -8770,6 +8948,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               },
               "required": true,
               "type": "object",
+            },
+            "example": {
+              "email": "jane.doe@gmail.com",
+              "password": "G3n$ecureP@ss!",
             },
             "path": {
               "properties": {
@@ -8851,6 +9033,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": true,
               "type": "object",
             },
+            "example": {
+              "email": "jane_doe@gmail.com",
+            },
           },
           "responses": [
             {
@@ -8909,6 +9094,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               },
               "required": true,
               "type": "object",
+            },
+            "example": {
+              "password": "G3n$ecureP@ss!",
             },
             "path": {
               "properties": {
@@ -8996,6 +9184,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": true,
               "type": "object",
             },
+            "example": {
+              "email": "jane.doe97@yahoo.com",
+              "password": "G3n$ecureP@ss!",
+            },
           },
           "responses": [
             {
@@ -9080,6 +9272,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               },
               "required": true,
               "type": "object",
+            },
+            "example": {
+              "attestationObject": "wbRtwJIXRrhZ3AnFzVv5adpZcLPjXKDRw9bDTR4er8KS1S4APJdvZhd5WHQTYrmbkuQBJk2LrSNUPsWoAIqEH87uNLusL9wx8FGPwN2JkiC1NMH2NpRws6hsZG1bn8xS",
+              "clientDataJSON": "dr1aQe4rjKSICQbUYh5uOrBl6nSNgXy2UcJQ7Ep05kNvwp1GQkNBBuSHf19BKUcH",
+              "nameOnDevice": "Chrome on Mac",
             },
           },
           "responses": [
@@ -9268,6 +9465,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": true,
               "type": "object",
             },
+            "example": {
+              "email": "jane.doe88@gmail.com",
+              "type": "authentication",
+            },
           },
           "responses": [
             {
@@ -9371,6 +9572,14 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               },
               "required": true,
               "type": "object",
+            },
+            "example": {
+              "authenticatorObject": "DYpMPC4azlzoYrol4mJMAX4pZybP6Asx9odCB5fOGn1otsOqw52CQ6pijNd8ULI6",
+              "clientDataJSON": "OvMTGSeHqfl6xT2QivIb89Yp7ez7lDmWBbnOrxoPPtqd0cpIuik1OfpmZUCqjTJZ",
+              "credentialId": "6cWd9f7q0mqNsAgemAKSGxsKhNncm0E1",
+              "email": "jane.doe@yahoo.com",
+              "signature": "DnSA1O7pqamxMGI6PP33NHBrbeVB23A8XVedHJ6UPT0ZMT3m2M1aS8WbIacFyqiX",
+              "type": "authentication",
             },
           },
           "responses": [
@@ -9817,6 +10026,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": true,
               "type": "object",
             },
+            "example": {
+              "entityType": "user",
+              "slug": "vae-antiquus",
+            },
           },
           "responses": [
             {
@@ -9921,6 +10134,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "type": "string",
                 },
                 "seqs": {
+                  "additionalProperties": {
+                    "required": false,
+                    "type": "integer",
+                  },
                   "description": "Client-side sequence numbers per scope: { "orgId": 42, "orgId:m": 5 }",
                   "required": false,
                   "type": "object",
@@ -9928,6 +10145,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               },
               "required": true,
               "type": "object",
+            },
+            "example": {
+              "cursor": "0-54F6250",
+              "seqs": {},
             },
           },
           "responses": [
@@ -9938,6 +10159,25 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 "contentType": "application/json",
                 "properties": {
                   "changes": {
+                    "additionalProperties": {
+                      "properties": {
+                        "deletedIds": {
+                          "itemType": "string",
+                          "required": true,
+                          "type": "array",
+                        },
+                        "mSeq": {
+                          "required": false,
+                          "type": "integer",
+                        },
+                        "seq": {
+                          "required": true,
+                          "type": "integer",
+                        },
+                      },
+                      "required": false,
+                      "type": "object",
+                    },
                     "description": "Per-entityType change summary: { [entityType]: { seq, deletedIds } }",
                     "required": true,
                     "type": "object",
@@ -10053,6 +10293,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "type": "string",
                 },
                 "seqs": {
+                  "additionalProperties": {
+                    "required": false,
+                    "type": "integer",
+                  },
                   "description": "Client-side sequence numbers per scope: { "orgId": 42, "orgId:m": 5 }",
                   "required": false,
                   "type": "object",
@@ -10060,6 +10304,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               },
               "required": true,
               "type": "object",
+            },
+            "example": {
+              "cursor": "d9909rsl2y2ii9vbcsc2ywg7",
+              "seqs": {},
             },
           },
           "responses": [
@@ -10079,6 +10327,25 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 "contentType": "application/json",
                 "properties": {
                   "changes": {
+                    "additionalProperties": {
+                      "properties": {
+                        "deletedIds": {
+                          "itemType": "string",
+                          "required": true,
+                          "type": "array",
+                        },
+                        "mSeq": {
+                          "required": false,
+                          "type": "integer",
+                        },
+                        "seq": {
+                          "required": true,
+                          "type": "integer",
+                        },
+                      },
+                      "required": false,
+                      "type": "object",
+                    },
                     "description": "Per-org change summary: { [orgId]: { seq, deletedIds, membership? } }",
                     "required": true,
                     "type": "object",
@@ -10142,7 +10409,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "contentType": "application/json",
               "description": "User",
               "example": {
-                "systemRole": null,
+                "isSystemAdmin": false,
                 "user": {
                   "bannerUrl": null,
                   "createdAt": "2024-07-14T22:49:14.651Z",
@@ -10170,16 +10437,12 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "ref": "#/components/schemas/Me",
               "schema": {
                 "contentType": "application/json",
-                "description": "The currently authenticated user with their system role.",
+                "description": "The currently authenticated user with their system admin status.",
                 "properties": {
-                  "systemRole": {
-                    "description": "System-level role (e.g. admin) or user for standard access.",
-                    "enum": [
-                      "admin",
-                      "user",
-                    ],
+                  "isSystemAdmin": {
+                    "description": "Whether the current user has system admin privileges.",
                     "required": true,
-                    "type": "string",
+                    "type": "boolean",
                   },
                   "user": {
                     "description": "A user with profile data and activity timestamps.",
@@ -10435,6 +10698,18 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               },
               "required": true,
               "type": "object",
+            },
+            "example": {
+              "bannerUrl": null,
+              "firstName": "Cecilia",
+              "language": "en",
+              "lastName": "Hodkiewicz",
+              "newsletter": false,
+              "slug": "ceciliahodkiewicz17",
+              "thumbnailUrl": null,
+              "userFlags": {
+                "finishedOnboarding": false,
+              },
             },
           },
           "responses": [
@@ -10727,6 +11002,16 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               },
               "required": false,
               "type": "object",
+            },
+            "example": {
+              "mfaRequired": false,
+              "passkeyData": {
+                "authenticatorObject": "RC14ci3QccGTmehgnGDht5WMEe5W9qgOIbBIeYbO1J9YG83liD34u3Dv2HUiN8gl",
+                "clientDataJSON": "Sg9Sjc2hXVzk31FLwyuZVZPFhKQEZssuJgCCjxjcWP6HG386rXoOX5i5tAePILPA",
+                "credentialId": "dh4Q5rHanrE2iAAl0oSDaAYGCx3r3dpy",
+                "signature": "4fv5YJ7qBt866bSd5ainzA9q9jluNW4zgqF1Y1XbszZEIbvkJ32egLerzD3ib92w",
+              },
+              "totpCode": "cornu",
             },
           },
           "responses": [
@@ -11484,6 +11769,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": false,
               "type": "object",
             },
+            "example": {
+              "ids": [
+                "terra",
+              ],
+            },
           },
           "responses": [
             {
@@ -11503,6 +11793,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "type": "array",
                   },
                   "rejectionReasons": {
+                    "additionalProperties": {
+                      "itemType": "string",
+                      "required": false,
+                      "type": "array",
+                    },
                     "description": "Map of reason code to rejected item IDs",
                     "required": false,
                     "type": "object",
@@ -11670,6 +11965,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "params": {
                     "anyOf": [
                       {
+                        "additionalProperties": {
+                          "required": false,
+                          "type": "object",
+                        },
                         "properties": {
                           "auth": {
                             "properties": {
@@ -11955,6 +12254,12 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": true,
               "type": "object",
             },
+            "example": {
+              "emails": [
+                "jane_doe15@hotmail.com",
+              ],
+              "role": "admin",
+            },
             "path": {
               "properties": {
                 "orgId": {
@@ -12083,6 +12388,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "type": "array",
                   },
                   "rejectionReasons": {
+                    "additionalProperties": {
+                      "itemType": "string",
+                      "required": false,
+                      "type": "array",
+                    },
                     "description": "Map of reason code to rejected item IDs",
                     "required": false,
                     "type": "object",
@@ -12146,6 +12456,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": true,
               "type": "object",
             },
+            "example": {
+              "ids": [
+                "cilicium",
+              ],
+            },
             "path": {
               "properties": {
                 "orgId": {
@@ -12195,6 +12510,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "type": "array",
                   },
                   "rejectionReasons": {
+                    "additionalProperties": {
+                      "itemType": "string",
+                      "required": false,
+                      "type": "array",
+                    },
                     "description": "Map of reason code to rejected item IDs",
                     "required": false,
                     "type": "object",
@@ -12270,6 +12590,12 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               },
               "required": false,
               "type": "object",
+            },
+            "example": {
+              "archived": false,
+              "displayOrder": 49,
+              "muted": false,
+              "role": "admin",
             },
             "path": {
               "properties": {
@@ -12721,9 +13047,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "items": {
                     "itemType": "object",
                     "items": {
+                      "description": "Base user schema with essential fields for identification and display.",
+                      "extendsRef": "#/components/schemas/UserBase",
                       "properties": {
                         "bannerUrl": {
-                          "maxLength": 2048,
                           "required": true,
                           "type": [
                             "string",
@@ -12753,50 +13080,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "required": true,
                           "type": "string",
                         },
-                        "firstName": {
-                          "maxLength": 255,
-                          "required": true,
-                          "type": [
-                            "string",
-                            "null",
-                          ],
-                        },
                         "id": {
-                          "maxLength": 50,
                           "required": true,
                           "type": "string",
-                        },
-                        "language": {
-                          "enum": [
-                            "en",
-                            "nl",
-                          ],
-                          "required": true,
-                          "type": "string",
-                        },
-                        "lastName": {
-                          "maxLength": 255,
-                          "required": true,
-                          "type": [
-                            "string",
-                            "null",
-                          ],
                         },
                         "lastSeenAt": {
-                          "required": true,
-                          "type": [
-                            "string",
-                            "null",
-                          ],
-                        },
-                        "lastSignInAt": {
-                          "required": true,
-                          "type": [
-                            "string",
-                            "null",
-                          ],
-                        },
-                        "lastStartedAt": {
                           "required": true,
                           "type": [
                             "string",
@@ -12860,10 +13148,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "required": true,
                           "type": "object",
                         },
-                        "mfaRequired": {
-                          "required": true,
-                          "type": "boolean",
-                        },
                         "modifiedAt": {
                           "required": true,
                           "type": [
@@ -12871,26 +13155,15 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                             "null",
                           ],
                         },
-                        "modifiedBy": {
-                          "maxLength": 50,
-                          "required": true,
-                          "type": [
-                            "string",
-                            "null",
-                          ],
-                        },
                         "name": {
-                          "maxLength": 255,
                           "required": true,
                           "type": "string",
                         },
                         "slug": {
-                          "maxLength": 255,
                           "required": true,
                           "type": "string",
                         },
                         "thumbnailUrl": {
-                          "maxLength": 2048,
                           "required": true,
                           "type": [
                             "string",
@@ -13290,6 +13563,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "items": {
                             "properties": {
                               "attributes": {
+                                "additionalProperties": {
+                                  "required": false,
+                                  "type": "string",
+                                },
                                 "required": false,
                                 "type": "object",
                               },
@@ -13308,6 +13585,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                                     "type": "number",
                                   },
                                   {
+                                    "additionalProperties": {
+                                      "required": false,
+                                      "type": "number",
+                                    },
                                     "required": false,
                                     "type": "object",
                                   },
@@ -13672,6 +13953,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "type": "number",
                   },
                   "avgDurationByName": {
+                    "additionalProperties": {
+                      "required": false,
+                      "type": "number",
+                    },
                     "description": "Average duration by span name (ms)",
                     "required": true,
                     "type": "object",
@@ -13702,6 +13987,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "type": "number",
                   },
                   "spansByName": {
+                    "additionalProperties": {
+                      "required": false,
+                      "type": "number",
+                    },
                     "description": "Span counts by name",
                     "required": true,
                     "type": "object",
@@ -13784,6 +14073,13 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": true,
               "type": "array",
             },
+            "example": [
+              {
+                "id": "kzmv5qbhdcqeiuvwlosan0fc",
+                "name": "Kessler and Sons",
+                "slug": "kessler-and-sons",
+              },
+            ],
             "path": {
               "properties": {
                 "tenantId": {
@@ -13848,11 +14144,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "modifiedBy": null,
                     "name": "Kessler and Sons",
                     "notificationEmail": "notifications@kessler-and-sons.example",
-                    "restrictions": {
-                      "attachment": 100,
-                      "page": 0,
-                      "user": 1000,
-                    },
                     "shortName": "Kessler",
                     "slug": "kessler-and-sons",
                     "tenantId": "wgpaj0",
@@ -13909,11 +14200,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "modifiedBy": null,
                     "name": "Howell - Ullrich",
                     "notificationEmail": "notifications@howell-ullrich.example",
-                    "restrictions": {
-                      "attachment": 100,
-                      "page": 0,
-                      "user": 1000,
-                    },
                     "shortName": "Howell",
                     "slug": "howell-ullrich",
                     "tenantId": "74l758",
@@ -13931,7 +14217,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "data": {
                     "itemType": "object",
                     "items": {
-                      "description": "An organization with settings, restrictions, and membership context.",
+                      "description": "An organization with membership context.",
                       "extendsRef": "#/components/schemas/Organization",
                       "properties": {
                         "authStrategies": {
@@ -14295,6 +14581,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "type": "array",
                   },
                   "rejectionReasons": {
+                    "additionalProperties": {
+                      "itemType": "string",
+                      "required": false,
+                      "type": "array",
+                    },
                     "description": "Map of reason code to rejected item IDs",
                     "required": false,
                     "type": "object",
@@ -14358,6 +14649,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": true,
               "type": "object",
             },
+            "example": {
+              "ids": [
+                "aduro",
+              ],
+            },
             "path": {
               "properties": {
                 "tenantId": {
@@ -14386,6 +14682,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "type": "array",
                   },
                   "rejectionReasons": {
+                    "additionalProperties": {
+                      "itemType": "string",
+                      "required": false,
+                      "type": "array",
+                    },
                     "description": "Map of reason code to rejected item IDs",
                     "required": false,
                     "type": "object",
@@ -14549,11 +14850,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "modifiedBy": null,
                     "name": "Dicki - Jacobi",
                     "notificationEmail": "notifications@dicki-jacobi.example",
-                    "restrictions": {
-                      "attachment": 100,
-                      "page": 0,
-                      "user": 1000,
-                    },
                     "shortName": "Dicki",
                     "slug": "dicki-jacobi",
                     "tenantId": "9xn03u",
@@ -14610,11 +14906,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "modifiedBy": null,
                     "name": "Witting - Wuckert",
                     "notificationEmail": "notifications@witting-wuckert.example",
-                    "restrictions": {
-                      "attachment": 100,
-                      "page": 0,
-                      "user": 1000,
-                    },
                     "shortName": "Witting",
                     "slug": "witting-wuckert",
                     "tenantId": "clxs8v",
@@ -14632,7 +14923,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "items": {
                     "itemType": "object",
                     "items": {
-                      "description": "An organization with settings, restrictions, and membership context.",
+                      "description": "An organization with membership context.",
                       "properties": {
                         "authStrategies": {
                           "enum": [
@@ -15127,11 +15418,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 "modifiedBy": null,
                 "name": "Hills, Bauch and Monahan",
                 "notificationEmail": "notifications@hills-bauch-and-monahan.example",
-                "restrictions": {
-                  "attachment": 100,
-                  "page": 0,
-                  "user": 1000,
-                },
                 "shortName": "Hills,",
                 "slug": "hills-bauch-and-monahan",
                 "tenantId": "vk6xht",
@@ -15144,7 +15430,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "ref": "#/components/schemas/Organization",
               "schema": {
                 "contentType": "application/json",
-                "description": "An organization with settings, restrictions, and membership context.",
+                "description": "An organization with membership context.",
                 "properties": {
                   "authStrategies": {
                     "enum": [
@@ -15683,6 +15969,29 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": false,
               "type": "object",
             },
+            "example": {
+              "authStrategies": [
+                "password",
+              ],
+              "bannerUrl": null,
+              "chatSupport": true,
+              "color": "#ecfdfe",
+              "country": "Turks and Caicos Islands",
+              "defaultLanguage": "en",
+              "emailDomains": [],
+              "languages": [
+                "en",
+              ],
+              "logoUrl": null,
+              "name": "Hills, Bauch and Monahan",
+              "notificationEmail": "notifications@hills-bauch-and-monahan.example",
+              "shortName": "Hills,",
+              "slug": "hills-bauch-and-monahan",
+              "thumbnailUrl": null,
+              "timezone": "America/Argentina/Buenos_Aires",
+              "websiteUrl": "https://hills-bauch-and-monahan.example",
+              "welcomeText": "Welcome to Hills, Bauch and Monahan!",
+            },
             "path": {
               "properties": {
                 "id": {
@@ -15750,11 +16059,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 "modifiedBy": null,
                 "name": "Hills, Bauch and Monahan",
                 "notificationEmail": "notifications@hills-bauch-and-monahan.example",
-                "restrictions": {
-                  "attachment": 100,
-                  "page": 0,
-                  "user": 1000,
-                },
                 "shortName": "Hills,",
                 "slug": "hills-bauch-and-monahan",
                 "tenantId": "vk6xht",
@@ -15767,7 +16071,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "ref": "#/components/schemas/Organization",
               "schema": {
                 "contentType": "application/json",
-                "description": "An organization with settings, restrictions, and membership context.",
+                "description": "An organization with membership context.",
                 "properties": {
                   "authStrategies": {
                     "enum": [
@@ -16214,11 +16518,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   {
                     "createdAt": "2024-11-21T04:00:59.122Z",
                     "createdBy": "qqp8d07imsvjbtqtl3rtjgxd",
-                    "description": "[{"content":[{"type":"text","text":"Tergo adhuc virtus vesco audentia angustus. Voco commodi abduco deduco. Cubicularis volo utroque in comminor concedo quae.\\nSumptus dolorem varius crudelis. Advoco surgo angulus demens tabella clibanus. Valens vester cavus.","styles":{}}],"children":[]}]",
-                    "displayOrder": 40.67,
+                    "description": "[{"id":"fe8cyyi0fi36nqot2vres7ib","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":2},"content":[{"type":"text","text":"Tergo adhuc virtus vesco audentia.","styles":{}}],"children":[]},{"id":"w50ks6eo9s3ge8xz8bby5uab","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Voco commodi abduco deduco. Cubicularis volo utroque in comminor concedo quae.","styles":{}}],"children":[]},{"id":"3jjx6b39mzeqze56lx7sl33d","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":3},"content":[{"type":"text","text":"Customizable optimizing interface","styles":{}}],"children":[]},{"id":"6pjoxjbkdc0sap9zdbaxd6xx","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Deduco advoco surgo angulus demens tabella.","styles":{}}],"children":[]},{"id":"jnv8h0vgayhhipoasarx8iz9","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Alioqui valens vester cavus contego.","styles":{}}],"children":[]},{"id":"52yt166d317x76lajge2znxa","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Volubilis cum vindico audacia perspiciatis supra.","styles":{}}],"children":[]},{"id":"ry8jqzijuu8413qdducdqpqg","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Chirographum depraedor rem dolorum magni deleniti.","styles":{}}],"children":[]},{"id":"pdz43zfq9o778ru9x1dbhmjc","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Amita defendo vitae amicitia coaegresco celo. Denuncio cum abbas conitor timidus teneo placeat.","styles":{}}],"children":[]},{"id":"99vuz904b4fwjum7pzzvughq","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Aqua amissio verto bellicus voluptatibus.","styles":{}}],"children":[]},{"id":"j9tgv28u74kubiiskfzojhf8","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Adstringo aduro vitae.","styles":{}}],"children":[]},{"id":"mrfzwb1ac1rhn3b1smrej9q6","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Tredecim tam arx barba doloribus ubi.","styles":{}}],"children":[]},{"id":"kttyqgnueawxydklc9fcihw6","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":true},"content":[{"type":"text","text":"I'll hack the back-end SCSI panel, that should circuit the XSS pixel!","styles":{}}],"children":[]},{"id":"qfiuq9rzzontiglogctnlbkn","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":false},"content":[{"type":"text","text":"I'll parse the bluetooth SMTP system, that should bandwidth the IB application!","styles":{}}],"children":[]},{"id":"4nczri4nfhuarovin1j28t22","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Coniecto umbra apparatus patior quas creber cruentus. Acceptus cervus stultus consequuntur conitor a peccatus atrox. Verus consuasor venia vulpes delego bibo.","styles":{}}],"children":[]}]",
+                    "displayOrder": 60.77,
                     "entityType": "page",
                     "id": "9xn03u76eo7z71y60a882cwp",
-                    "keywords": "contego debeo volubilis",
+                    "keywords": "summisse credo thymum",
                     "modifiedAt": "2024-11-21T04:00:59.122Z",
                     "modifiedBy": "qqp8d07imsvjbtqtl3rtjgxd",
                     "name": "Tersus summa caterva socius.",
@@ -16227,8 +16531,8 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "status": "unpublished",
                     "stx": {
                       "fieldVersions": {},
-                      "mutationId": "y6mqh9hmikgme3gy3a9lhe0c",
-                      "sourceId": "src_trmzc53x7z222ydtq57iu31m",
+                      "mutationId": "lfn51vpq8cnfsar9hbjwtoks",
+                      "sourceId": "src_rox8rpubibp4ljoerjtgyu7c",
                       "version": 1,
                     },
                     "tenantId": "xtanax",
@@ -16236,11 +16540,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   {
                     "createdAt": "2024-10-29T08:46:20.790Z",
                     "createdBy": "hg5ogh3yr2b2dbwf7b9eckaj",
-                    "description": "[{"content":[{"type":"text","text":"Acidus advoco ventus sub cogito argentum attonbitus trans. Crapula bestia auxilium non sui desino amor barba. Vitiosus eligendi clementia usus demens conor auctor basium tolero.\\nSoluta temporibus aut labore. Depono ultio explicabo ascit. Utpote amplexus nihil aut concedo vel praesentium universe.","styles":{}}],"children":[]}]",
-                    "displayOrder": 11.43,
+                    "description": "[{"id":"8ef51zv1co2b46axihgrrv5l","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":2},"content":[{"type":"text","text":"Acidus advoco ventus sub cogito argentum.","styles":{}}],"children":[]},{"id":"7w0qxtz6m3t4j11x7ir53h6f","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Summa crapula bestia auxilium non sui desino amor barba. Vitiosus eligendi clementia usus demens conor auctor basium tolero.","styles":{}}],"children":[]},{"id":"8r71hk13jvjp4l7lhzoa0i9k","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":3},"content":[{"type":"text","text":"Devolved national pricing structure","styles":{}}],"children":[]},{"id":"vrfol41eg0oy95ev2di5wtes","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Appello depono ultio explicabo ascit suscipio utpote.","styles":{}}],"children":[]},{"id":"2nmeaa3wtyt6baj118arxu64","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Nihil aut concedo.","styles":{}}],"children":[]},{"id":"c3rkdh5mqgqvh8z6smaa8fq1","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Universe pecus accusator cubitum amplus antea concedo. Repellendus deorsum thorax virga cicuta turbo vestigium coniecto. Tumultus vallum infit terra tempus voluptates utpote voluptatum cilicium contego.","styles":{}}],"children":[]},{"id":"b614yrls63mof86z60lu84it","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Villa adipiscor demo certe terreo ater valens vorago.","styles":{}}],"children":[]},{"id":"rm0ch8w8cvxknyhlaix824e5","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Delinquo ustilo consuasor iste acidus temperantia.","styles":{}}],"children":[]},{"id":"sgg5ch2djun5tkewuu6fhen3","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":false},"content":[{"type":"text","text":"I'll index the solid state UTF8 matrix, that should alarm the THX array!","styles":{}}],"children":[]},{"id":"dr9ogzu89q28mdjoiouacs6f","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":false},"content":[{"type":"text","text":"The SMS transmitter is down, program the online panel so we can connect the EXE application!","styles":{}}],"children":[]},{"id":"g7w1xhhxy41csvdtfjcqmazw","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":true},"content":[{"type":"text","text":"You can't input the protocol without compressing the wireless AI transmitter!","styles":{}}],"children":[]},{"id":"o8hcwwfgpmpi5tspsbu3hlqj","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Recusandae angulus civitas dolorum solvo tenuis depono. Exercitationem pel eius ancilla tardus urbs defaeco canonicus sapiente. Tamquam voluptatum vicinus perferendis molestias aliqua.","styles":{}}],"children":[]}]",
+                    "displayOrder": 27.01,
                     "entityType": "page",
                     "id": "clxs8vayzrul7vmeyahbgyu0",
-                    "keywords": "pecus accusator cubitum",
+                    "keywords": "apud cunctatio cupiditate",
                     "modifiedAt": "2024-10-29T08:46:20.790Z",
                     "modifiedBy": "hg5ogh3yr2b2dbwf7b9eckaj",
                     "name": "Conitor suspendo aiunt.",
@@ -16249,8 +16553,8 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "status": "unpublished",
                     "stx": {
                       "fieldVersions": {},
-                      "mutationId": "4bpmhsyauxcwuwjsrzvzac8q",
-                      "sourceId": "src_x1h9s6vzhgvcj0rs3xtuk03g",
+                      "mutationId": "2ta8rpig1rxpmc6pv1fvu0uy",
+                      "sourceId": "src_umluud11ppu88to0zzdvgboo",
                       "version": 1,
                     },
                     "tenantId": "1sr6ut",
@@ -16422,6 +16726,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "description": "Sync transaction metadata stored on entities for offline and realtime support.",
                           "properties": {
                             "fieldVersions": {
+                              "additionalProperties": {
+                                "required": false,
+                                "type": "integer",
+                              },
                               "required": true,
                               "type": "object",
                             },
@@ -16520,11 +16828,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "example": {
                 "createdAt": "2024-08-06T10:28:33.226Z",
                 "createdBy": "0f0ak5vkrrl687pmkwpa1vju",
-                "description": "[{"content":[{"type":"text","text":"Voluptates cornu tempus eaque universe volubilis conturbo. Sponte utpote crux pecco vulticulus cunctatio. Vallum ut adimpleo summa valde strenuus attonbitus.\\nMollitia vel cado vitae cibus dolores decet. Aptus accusamus praesentium cibus subito viscus vox nemo. Video tremo molestias charisma clam ipsa suscipit.","styles":{}}],"children":[]}]",
-                "displayOrder": 32.69,
+                "description": "[{"id":"ub0dxavgjm9sadg4v0ogmhfz","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":2},"content":[{"type":"text","text":"Voluptates cornu tempus eaque universe.","styles":{}}],"children":[]},{"id":"r550gp4uks6507krqn5we2du","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Cubo sponte utpote crux pecco. Cunctatio dolorum vallum ut adimpleo summa valde strenuus attonbitus eligendi. Vel cado vitae cibus dolores decet surgo. Accusamus praesentium cibus subito.","styles":{}}],"children":[]},{"id":"ufa9r3kojry2kqh0cppr8lg5","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":3},"content":[{"type":"text","text":"User-friendly zero trust local area network","styles":{}}],"children":[]},{"id":"ph5kop5akylihf7wlw7zxxux","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Tremo molestias charisma clam ipsa suscipit solvo atrox tendo compello.","styles":{}}],"children":[]},{"id":"r8tb0px1zym610ui9vl5chbr","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Tonsor ullus damnatio.","styles":{}}],"children":[]},{"id":"jkmjpgfjm6307yc09g7ezazx","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Cupressus depono sto benigne delego decumbo adaugeo.","styles":{}}],"children":[]},{"id":"hsh44mex2z51cbqxvwjuf4qu","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Video aer addo crinis amissio alius allatus solium delectus tabesco. Inventore contra complectus summa umquam nobis dapifer supplanto odio. Atavus absorbeo suffoco cado deorsum amor.","styles":{}}],"children":[]},{"id":"0dxzaybja5wif0689s2l9vrn","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Nam certe vulgaris sumptus spiritus vae fugit creo.","styles":{}}],"children":[]},{"id":"toc8xn3z35z17v2p23vhrdeg","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Dolorem conduco causa.","styles":{}}],"children":[]},{"id":"acp7c9vorr0w5jkx3xfv7w50","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Caste pauper argumentum civitas.","styles":{}}],"children":[]},{"id":"gt4ahbzyiup2ikw08q3i2urn","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":false},"content":[{"type":"text","text":"Use the mobile HTTP port, then you can copy the primary hard drive!","styles":{}}],"children":[]},{"id":"3o6qx8gmc0j7t3whr6p1axpl","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":false},"content":[{"type":"text","text":"Try to hack the SSD feed, maybe it will input the bluetooth panel!","styles":{}}],"children":[]},{"id":"1dt1r1aehiqnc5olsb172qo7","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":false},"content":[{"type":"text","text":"Use the virtual SSL transmitter, then you can index the bluetooth capacitor!","styles":{}}],"children":[]},{"id":"oii2gkzwt8hu6o47bkpwnmq2","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Solium solvo degero ventus apto tempus aurum delectus facilis cura. Dolore animadverto maxime theatrum esse amo statua adfectus tremo contigo. Demens timidus calcar cohors appono aranea decet cultura substantia.","styles":{}}],"children":[]}]",
+                "displayOrder": 47.51,
                 "entityType": "page",
                 "id": "co96vrmic3wbowmxzbqa1e9f",
-                "keywords": "solvo atrox tendo",
+                "keywords": "tantillus debitis mollitia",
                 "modifiedAt": "2024-08-06T10:28:33.226Z",
                 "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju",
                 "name": "Torrens adfectus.",
@@ -16533,8 +16841,8 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 "status": "unpublished",
                 "stx": {
                   "fieldVersions": {},
-                  "mutationId": "4tufkeho7gg1xwx21e333ngq",
-                  "sourceId": "src_ujcbpukfple60p8h3tnk9zpo",
+                  "mutationId": "rd8bblxzxc0ypms2q9lzubyp",
+                  "sourceId": "src_ddo8vfjx4d5px26kw7k3q17d",
                   "version": 1,
                 },
                 "tenantId": "ijllhz",
@@ -16701,6 +17009,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "description": "Sync transaction metadata stored on entities for offline and realtime support.",
                     "properties": {
                       "fieldVersions": {
+                        "additionalProperties": {
+                          "required": false,
+                          "type": "integer",
+                        },
                         "required": true,
                         "type": "object",
                       },
@@ -16817,6 +17129,16 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": true,
               "type": "array",
             },
+            "example": [
+              {
+                "name": "Voluntarius contra.",
+                "stx": {
+                  "lastReadVersion": 0,
+                  "mutationId": "2bb6438g9cersdww4bfs8s5t",
+                  "sourceId": "src_co33lcgsn94dor3vtrwsv2ec",
+                },
+              },
+            ],
             "path": {
               "properties": {
                 "tenantId": {
@@ -16836,11 +17158,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   {
                     "createdAt": "2024-04-19T14:04:35.773Z",
                     "createdBy": "kzmv5qbhdcqeiuvwlosan0fc",
-                    "description": "[{"content":[{"type":"text","text":"Tergo crepusculum certe desparatus depromo. Dolor somnus vobis atavus tergiversatio tersus suadeo colo. Id abduco supplanto asporto.\\nCuratio xiphias auxilium teneo claudeo unde vulgo. Atavus vorax vergo deputo deprimo statim eos vulnero subito eligendi. Exercitationem somnus cattus cilicium textilis cervus alo tactus.","styles":{}}],"children":[]}]",
-                    "displayOrder": 70.17,
+                    "description": "[{"id":"sv3l0q9y82rnleos35844wqy","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":2},"content":[{"type":"text","text":"Tergo crepusculum certe desparatus.","styles":{}}],"children":[]},{"id":"7skc2dn5j60735hvygvtkyzs","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Dolor somnus vobis atavus tergiversatio tersus suadeo colo. Id abduco supplanto asporto. Curatio xiphias auxilium teneo claudeo unde vulgo.","styles":{}}],"children":[]},{"id":"7vkf76q8e9w2vwut8v199c6x","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":3},"content":[{"type":"text","text":"User-centric cohesive website","styles":{}}],"children":[]},{"id":"is43i6pqsz7uf78bar3xegt4","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Deprimo statim eos vulnero subito eligendi.","styles":{}}],"children":[]},{"id":"xhq66fbwu2mp2mw7wfughcxg","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Exercitationem somnus cattus cilicium textilis cervus alo tactus.","styles":{}}],"children":[]},{"id":"teqijqxlxys3ahf4ezykxugo","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Colligo audio substantia coepi laudantium.","styles":{}}],"children":[]},{"id":"1ukwqptgx043xgful99mj6ti","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Apparatus suasoria valde voveo quis adaugeo.","styles":{}}],"children":[]},{"id":"558rudjism5woja0al8ngsm1","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Amita depereo armarium apud pariatur deinde. Alienus admoneo creo asporto amita sol certus.","styles":{}}],"children":[]},{"id":"yjhvmqlluj26pj0evzkgnbkh","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Vero casus celer cogo armarium cicuta tumultus utique.","styles":{}}],"children":[]},{"id":"p2ykge5xwue7zq07x3bqzd4i","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Ars conicio viridis fuga arbor tergo aliquam beatae dolores.","styles":{}}],"children":[]},{"id":"fj7ssa43aqjl7370pef4fkqt","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":true},"content":[{"type":"text","text":"We need to index the neural PNG hard drive!","styles":{}}],"children":[]},{"id":"2fgmrbpkcki8xyjhu3jmsitr","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":false},"content":[{"type":"text","text":"I'll back up the optical SCSI protocol, that should pixel the TLS transmitter!","styles":{}}],"children":[]},{"id":"e9h012p9gidga883ka6jlu4q","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":false},"content":[{"type":"text","text":"We need to connect the open-source SCSI transmitter!","styles":{}}],"children":[]},{"id":"cucoe7ekf0n7c5adhm7873ji","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Advoco vetus quidem alii asporto tum perspiciatis. Urbanus adsuesco sint acervus. Quam velut suffoco comminor pectus.","styles":{}}],"children":[]}]",
+                    "displayOrder": 63.43,
                     "entityType": "page",
                     "id": "wgpaj0cfyc7n2sjn5fpfkbrs",
-                    "keywords": "confido colligo audio",
+                    "keywords": "virgo spes tracto",
                     "modifiedAt": "2024-04-19T14:04:35.773Z",
                     "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
                     "name": "Voluntarius contra.",
@@ -16849,8 +17171,8 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "status": "unpublished",
                     "stx": {
                       "fieldVersions": {},
-                      "mutationId": "akf4ovzm1ne3h55lgj31d63n",
-                      "sourceId": "src_9apx99a5auvr5cyj5s37irnj",
+                      "mutationId": "2bb6438g9cersdww4bfs8s5t",
+                      "sourceId": "src_co33lcgsn94dor3vtrwsv2ec",
                       "version": 1,
                     },
                     "tenantId": "lwtksu",
@@ -16858,11 +17180,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   {
                     "createdAt": "2024-02-25T13:01:35.301Z",
                     "createdBy": "p3t0ygxx0aa83en3sk1fs1we",
-                    "description": "[{"content":[{"type":"text","text":"Vehemens deprecator ventus ascit denique tum candidus curvo perspiciatis defendo. Carpo verecundia cometes. Sortitus colligo ceno terra cado temptatio carmen arx sequi cicuta.\\nAttollo autem adipisci vinitor comminor odit. Virga aptus corrupti utpote. Subseco vomica auxilium ascit cuppedia abbas amo patior credo tenus.","styles":{}}],"children":[]}]",
-                    "displayOrder": 14.28,
+                    "description": "[{"id":"tmzj0k1t3qhnnsmlidpqra3q","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":2},"content":[{"type":"text","text":"Vehemens deprecator ventus ascit denique tum candidus.","styles":{}}],"children":[]},{"id":"ekksfrvqfgbeh5vd8ommau3x","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Defendo adinventitias carpo verecundia cometes vergo sortitus. Ceno terra cado temptatio carmen. Sequi cicuta derelinquo attollo.","styles":{}}],"children":[]},{"id":"ey499f8dnkjifvafohze2hk3","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":3},"content":[{"type":"text","text":"Distributed analyzing throughput","styles":{}}],"children":[]},{"id":"t1w7a4028zxir0jg5cjjjm75","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Audacia virga aptus corrupti utpote vulnus subseco.","styles":{}}],"children":[]},{"id":"40z5fa10fk8cfwk0m52kpxs8","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Auxilium ascit cuppedia abbas amo patior credo tenus aestus degero.","styles":{}}],"children":[]},{"id":"h6yzjwgtpnk6g6wfp00truye","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Approbo depraedor inventore cervus.","styles":{}}],"children":[]},{"id":"mml90okjwbg60mvwqyzz6dcs","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Vos tendo avaritia utrum admoneo desino tres subiungo conqueror cavus.","styles":{}}],"children":[]},{"id":"3c9a1ae5c2mufewqe1kj3fvp","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Voluptatem traho universe cohors coniuratio virga advoco adicio tamen acidus.","styles":{}}],"children":[]},{"id":"zz2uj69jg77hn5tawb9sknz5","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":true},"content":[{"type":"text","text":"We need to navigate the cross-platform SQL application!","styles":{}}],"children":[]},{"id":"6q47bsuttblcn6m38yuz3016","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":true},"content":[{"type":"text","text":"You can't program the array without quantifying the wireless HDD system!","styles":{}}],"children":[]},{"id":"0l22dr34xssjnmj83y5mxapg","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Spiritus commodi arx temporibus arma tredecim sumo adeo. Sufficio coaegresco denuncio soleo assumenda caute volup. Chirographum aestus surculus derelinquo alioqui temporibus tergeo.","styles":{}}],"children":[]}]",
+                    "displayOrder": 18.82,
                     "entityType": "page",
                     "id": "74l7581dwpxxbqdej8622zpg",
-                    "keywords": "aestus degero cicuta",
+                    "keywords": "decipio cupressus una",
                     "modifiedAt": "2024-02-25T13:01:35.301Z",
                     "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
                     "name": "Taedium spargo cetera.",
@@ -16871,8 +17193,8 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "status": "unpublished",
                     "stx": {
                       "fieldVersions": {},
-                      "mutationId": "4hj92yzr7v1itpc9wztvbcy2",
-                      "sourceId": "src_1q04oq81k5rbzt4yq63pob5r",
+                      "mutationId": "60ozr0yjbednvd5gs836nelu",
+                      "sourceId": "src_d6hh0iebfum8827w318qwfuf",
                       "version": 1,
                     },
                     "tenantId": "o54qw5",
@@ -17044,6 +17366,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "description": "Sync transaction metadata stored on entities for offline and realtime support.",
                           "properties": {
                             "fieldVersions": {
+                              "additionalProperties": {
+                                "required": false,
+                                "type": "integer",
+                              },
                               "required": true,
                               "type": "object",
                             },
@@ -17084,6 +17410,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "type": "array",
                   },
                   "rejectionReasons": {
+                    "additionalProperties": {
+                      "itemType": "string",
+                      "required": false,
+                      "type": "array",
+                    },
                     "description": "Map of reason code to rejected item IDs",
                     "required": false,
                     "type": "object",
@@ -17101,11 +17432,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   {
                     "createdAt": "2024-04-19T14:04:35.773Z",
                     "createdBy": "kzmv5qbhdcqeiuvwlosan0fc",
-                    "description": "[{"content":[{"type":"text","text":"Tergo crepusculum certe desparatus depromo. Dolor somnus vobis atavus tergiversatio tersus suadeo colo. Id abduco supplanto asporto.\\nCuratio xiphias auxilium teneo claudeo unde vulgo. Atavus vorax vergo deputo deprimo statim eos vulnero subito eligendi. Exercitationem somnus cattus cilicium textilis cervus alo tactus.","styles":{}}],"children":[]}]",
-                    "displayOrder": 70.17,
+                    "description": "[{"id":"hrp9r23m0l2686qmjp2galjp","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":2},"content":[{"type":"text","text":"Tergo crepusculum certe desparatus.","styles":{}}],"children":[]},{"id":"iyh0dhjemexyp4wjcbkqh1m2","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Dolor somnus vobis atavus tergiversatio tersus suadeo colo. Id abduco supplanto asporto. Curatio xiphias auxilium teneo claudeo unde vulgo.","styles":{}}],"children":[]},{"id":"0we9az2omatxtpwd8rawu9qy","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":3},"content":[{"type":"text","text":"User-centric cohesive website","styles":{}}],"children":[]},{"id":"2r5e5nuoyplwa9t017hzko3p","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Deprimo statim eos vulnero subito eligendi.","styles":{}}],"children":[]},{"id":"j6d9aphhhx8u9s3sxgbhcofy","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Exercitationem somnus cattus cilicium textilis cervus alo tactus.","styles":{}}],"children":[]},{"id":"gbruybfqpvg7stc1meauhnu9","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Colligo audio substantia coepi laudantium.","styles":{}}],"children":[]},{"id":"s9vx42c0eqvx1wm8kn4q1xpw","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Apparatus suasoria valde voveo quis adaugeo.","styles":{}}],"children":[]},{"id":"2u9npkk0ijf01mvxej2ssrqe","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Amita depereo armarium apud pariatur deinde. Alienus admoneo creo asporto amita sol certus.","styles":{}}],"children":[]},{"id":"vnvqrae3fmwx8zd4p68b7683","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Vero casus celer cogo armarium cicuta tumultus utique.","styles":{}}],"children":[]},{"id":"h8bhmho2o95efmhgzocmxu3h","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Ars conicio viridis fuga arbor tergo aliquam beatae dolores.","styles":{}}],"children":[]},{"id":"191i33qrp9ewe24w8a4s66uf","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":true},"content":[{"type":"text","text":"We need to index the neural PNG hard drive!","styles":{}}],"children":[]},{"id":"dedy5bgyrrlyvn1xo3fdx2uo","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":false},"content":[{"type":"text","text":"I'll back up the optical SCSI protocol, that should pixel the TLS transmitter!","styles":{}}],"children":[]},{"id":"q8wvppm1sxf7kkfn8162jbg2","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":false},"content":[{"type":"text","text":"We need to connect the open-source SCSI transmitter!","styles":{}}],"children":[]},{"id":"3ni3ctco9251699jk3ig0y98","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Advoco vetus quidem alii asporto tum perspiciatis. Urbanus adsuesco sint acervus. Quam velut suffoco comminor pectus.","styles":{}}],"children":[]}]",
+                    "displayOrder": 63.43,
                     "entityType": "page",
                     "id": "wgpaj0cfyc7n2sjn5fpfkbrs",
-                    "keywords": "confido colligo audio",
+                    "keywords": "virgo spes tracto",
                     "modifiedAt": "2024-04-19T14:04:35.773Z",
                     "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
                     "name": "Voluntarius contra.",
@@ -17114,8 +17445,8 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "status": "unpublished",
                     "stx": {
                       "fieldVersions": {},
-                      "mutationId": "akf4ovzm1ne3h55lgj31d63n",
-                      "sourceId": "src_9apx99a5auvr5cyj5s37irnj",
+                      "mutationId": "2bb6438g9cersdww4bfs8s5t",
+                      "sourceId": "src_co33lcgsn94dor3vtrwsv2ec",
                       "version": 1,
                     },
                     "tenantId": "lwtksu",
@@ -17123,11 +17454,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   {
                     "createdAt": "2024-02-25T13:01:35.301Z",
                     "createdBy": "p3t0ygxx0aa83en3sk1fs1we",
-                    "description": "[{"content":[{"type":"text","text":"Vehemens deprecator ventus ascit denique tum candidus curvo perspiciatis defendo. Carpo verecundia cometes. Sortitus colligo ceno terra cado temptatio carmen arx sequi cicuta.\\nAttollo autem adipisci vinitor comminor odit. Virga aptus corrupti utpote. Subseco vomica auxilium ascit cuppedia abbas amo patior credo tenus.","styles":{}}],"children":[]}]",
-                    "displayOrder": 14.28,
+                    "description": "[{"id":"2v08vspdmf0ue7tz00gy8u74","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":2},"content":[{"type":"text","text":"Vehemens deprecator ventus ascit denique tum candidus.","styles":{}}],"children":[]},{"id":"q3k7pqym9umarjyf6ekg1014","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Defendo adinventitias carpo verecundia cometes vergo sortitus. Ceno terra cado temptatio carmen. Sequi cicuta derelinquo attollo.","styles":{}}],"children":[]},{"id":"31d5xeyvnoqxay2nej5ymln5","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":3},"content":[{"type":"text","text":"Distributed analyzing throughput","styles":{}}],"children":[]},{"id":"x25denpzf077f4nuck66kska","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Audacia virga aptus corrupti utpote vulnus subseco.","styles":{}}],"children":[]},{"id":"cu9x6i5pb0v5shjcc6wbylfv","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Auxilium ascit cuppedia abbas amo patior credo tenus aestus degero.","styles":{}}],"children":[]},{"id":"gch8e2frfckk9g9imoxa3nfh","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Approbo depraedor inventore cervus.","styles":{}}],"children":[]},{"id":"c84rxxdqqyust0wwwa8925pg","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Vos tendo avaritia utrum admoneo desino tres subiungo conqueror cavus.","styles":{}}],"children":[]},{"id":"v0h8gnlyam2fw1ba9108yi6v","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Voluptatem traho universe cohors coniuratio virga advoco adicio tamen acidus.","styles":{}}],"children":[]},{"id":"alvmj3fcke8c12ppav5qklno","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":true},"content":[{"type":"text","text":"We need to navigate the cross-platform SQL application!","styles":{}}],"children":[]},{"id":"brcg0hjg9ovx0qk9appf71rk","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":true},"content":[{"type":"text","text":"You can't program the array without quantifying the wireless HDD system!","styles":{}}],"children":[]},{"id":"zyzm94vr6ka16dobjdraihfu","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Spiritus commodi arx temporibus arma tredecim sumo adeo. Sufficio coaegresco denuncio soleo assumenda caute volup. Chirographum aestus surculus derelinquo alioqui temporibus tergeo.","styles":{}}],"children":[]}]",
+                    "displayOrder": 18.82,
                     "entityType": "page",
                     "id": "74l7581dwpxxbqdej8622zpg",
-                    "keywords": "aestus degero cicuta",
+                    "keywords": "decipio cupressus una",
                     "modifiedAt": "2024-02-25T13:01:35.301Z",
                     "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
                     "name": "Taedium spargo cetera.",
@@ -17136,8 +17467,8 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "status": "unpublished",
                     "stx": {
                       "fieldVersions": {},
-                      "mutationId": "4hj92yzr7v1itpc9wztvbcy2",
-                      "sourceId": "src_1q04oq81k5rbzt4yq63pob5r",
+                      "mutationId": "60ozr0yjbednvd5gs836nelu",
+                      "sourceId": "src_d6hh0iebfum8827w318qwfuf",
                       "version": 1,
                     },
                     "tenantId": "o54qw5",
@@ -17309,6 +17640,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "description": "Sync transaction metadata stored on entities for offline and realtime support.",
                           "properties": {
                             "fieldVersions": {
+                              "additionalProperties": {
+                                "required": false,
+                                "type": "integer",
+                              },
                               "required": true,
                               "type": "object",
                             },
@@ -17349,6 +17684,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "type": "array",
                   },
                   "rejectionReasons": {
+                    "additionalProperties": {
+                      "itemType": "string",
+                      "required": false,
+                      "type": "array",
+                    },
                     "description": "Map of reason code to rejected item IDs",
                     "required": false,
                     "type": "object",
@@ -17412,6 +17752,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": true,
               "type": "object",
             },
+            "example": {
+              "ids": [
+                "coerceo",
+              ],
+            },
             "path": {
               "properties": {
                 "tenantId": {
@@ -17440,6 +17785,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "type": "array",
                   },
                   "rejectionReasons": {
+                    "additionalProperties": {
+                      "itemType": "string",
+                      "required": false,
+                      "type": "array",
+                    },
                     "description": "Map of reason code to rejected item IDs",
                     "required": false,
                     "type": "object",
@@ -17595,6 +17945,15 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": true,
               "type": "object",
             },
+            "example": {
+              "data": "antepono",
+              "key": "name",
+              "stx": {
+                "lastReadVersion": 0,
+                "mutationId": "rd8bblxzxc0ypms2q9lzubyp",
+                "sourceId": "src_ddo8vfjx4d5px26kw7k3q17d",
+              },
+            },
             "path": {
               "properties": {
                 "id": {
@@ -17617,11 +17976,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "example": {
                 "createdAt": "2024-08-06T10:28:33.226Z",
                 "createdBy": "0f0ak5vkrrl687pmkwpa1vju",
-                "description": "[{"content":[{"type":"text","text":"Voluptates cornu tempus eaque universe volubilis conturbo. Sponte utpote crux pecco vulticulus cunctatio. Vallum ut adimpleo summa valde strenuus attonbitus.\\nMollitia vel cado vitae cibus dolores decet. Aptus accusamus praesentium cibus subito viscus vox nemo. Video tremo molestias charisma clam ipsa suscipit.","styles":{}}],"children":[]}]",
-                "displayOrder": 32.69,
+                "description": "[{"id":"ub0dxavgjm9sadg4v0ogmhfz","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":2},"content":[{"type":"text","text":"Voluptates cornu tempus eaque universe.","styles":{}}],"children":[]},{"id":"r550gp4uks6507krqn5we2du","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Cubo sponte utpote crux pecco. Cunctatio dolorum vallum ut adimpleo summa valde strenuus attonbitus eligendi. Vel cado vitae cibus dolores decet surgo. Accusamus praesentium cibus subito.","styles":{}}],"children":[]},{"id":"ufa9r3kojry2kqh0cppr8lg5","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":3},"content":[{"type":"text","text":"User-friendly zero trust local area network","styles":{}}],"children":[]},{"id":"ph5kop5akylihf7wlw7zxxux","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Tremo molestias charisma clam ipsa suscipit solvo atrox tendo compello.","styles":{}}],"children":[]},{"id":"r8tb0px1zym610ui9vl5chbr","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Tonsor ullus damnatio.","styles":{}}],"children":[]},{"id":"jkmjpgfjm6307yc09g7ezazx","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Cupressus depono sto benigne delego decumbo adaugeo.","styles":{}}],"children":[]},{"id":"hsh44mex2z51cbqxvwjuf4qu","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Video aer addo crinis amissio alius allatus solium delectus tabesco. Inventore contra complectus summa umquam nobis dapifer supplanto odio. Atavus absorbeo suffoco cado deorsum amor.","styles":{}}],"children":[]},{"id":"0dxzaybja5wif0689s2l9vrn","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Nam certe vulgaris sumptus spiritus vae fugit creo.","styles":{}}],"children":[]},{"id":"toc8xn3z35z17v2p23vhrdeg","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Dolorem conduco causa.","styles":{}}],"children":[]},{"id":"acp7c9vorr0w5jkx3xfv7w50","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Caste pauper argumentum civitas.","styles":{}}],"children":[]},{"id":"gt4ahbzyiup2ikw08q3i2urn","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":false},"content":[{"type":"text","text":"Use the mobile HTTP port, then you can copy the primary hard drive!","styles":{}}],"children":[]},{"id":"3o6qx8gmc0j7t3whr6p1axpl","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":false},"content":[{"type":"text","text":"Try to hack the SSD feed, maybe it will input the bluetooth panel!","styles":{}}],"children":[]},{"id":"1dt1r1aehiqnc5olsb172qo7","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":false},"content":[{"type":"text","text":"Use the virtual SSL transmitter, then you can index the bluetooth capacitor!","styles":{}}],"children":[]},{"id":"oii2gkzwt8hu6o47bkpwnmq2","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Solium solvo degero ventus apto tempus aurum delectus facilis cura. Dolore animadverto maxime theatrum esse amo statua adfectus tremo contigo. Demens timidus calcar cohors appono aranea decet cultura substantia.","styles":{}}],"children":[]}]",
+                "displayOrder": 47.51,
                 "entityType": "page",
                 "id": "co96vrmic3wbowmxzbqa1e9f",
-                "keywords": "solvo atrox tendo",
+                "keywords": "tantillus debitis mollitia",
                 "modifiedAt": "2024-08-06T10:28:33.226Z",
                 "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju",
                 "name": "Torrens adfectus.",
@@ -17630,8 +17989,8 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 "status": "unpublished",
                 "stx": {
                   "fieldVersions": {},
-                  "mutationId": "4tufkeho7gg1xwx21e333ngq",
-                  "sourceId": "src_ujcbpukfple60p8h3tnk9zpo",
+                  "mutationId": "rd8bblxzxc0ypms2q9lzubyp",
+                  "sourceId": "src_ddo8vfjx4d5px26kw7k3q17d",
                   "version": 1,
                 },
                 "tenantId": "ijllhz",
@@ -17798,6 +18157,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "description": "Sync transaction metadata stored on entities for offline and realtime support.",
                     "properties": {
                       "fieldVersions": {
+                        "additionalProperties": {
+                          "required": false,
+                          "type": "integer",
+                        },
                         "required": true,
                         "type": "object",
                       },
@@ -17900,6 +18263,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               },
               "required": true,
               "type": "object",
+            },
+            "example": {
+              "email": "marlin62@yahoo.com",
+              "message": "Demens terreo amiculum.",
+              "type": "contact",
             },
           },
           "responses": [
@@ -18176,6 +18544,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": true,
               "type": "object",
             },
+            "example": {
+              "ids": [
+                "textor",
+              ],
+            },
           },
           "responses": [
             {
@@ -18195,6 +18568,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "type": "array",
                   },
                   "rejectionReasons": {
+                    "additionalProperties": {
+                      "itemType": "string",
+                      "required": false,
+                      "type": "array",
+                    },
                     "description": "Map of reason code to rejected item IDs",
                     "required": false,
                     "type": "object",
@@ -18248,8 +18626,17 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "responses": [
             {
               "contentType": "application/json",
-              "description": "Unseen counts per org per entity type",
+              "description": "Unseen counts per parent context entity per entity type",
               "schema": {
+                "additionalProperties": {
+                  "additionalProperties": {
+                    "minimum": 0,
+                    "required": false,
+                    "type": "integer",
+                  },
+                  "required": false,
+                  "type": "object",
+                },
                 "contentType": "application/json",
                 "type": "object",
               },
@@ -18319,6 +18706,12 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               },
               "required": true,
               "type": "object",
+            },
+            "example": {
+              "entityIds": [
+                "cursim",
+              ],
+              "entityType": "attachment",
             },
             "path": {
               "properties": {
@@ -18410,6 +18803,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": true,
               "type": "object",
             },
+            "example": {
+              "emails": [
+                "jane_doe21@yahoo.com",
+              ],
+            },
           },
           "responses": [
             {
@@ -18438,6 +18836,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "type": "array",
                   },
                   "rejectionReasons": {
+                    "additionalProperties": {
+                      "itemType": "string",
+                      "required": false,
+                      "type": "array",
+                    },
                     "description": "Map of reason code to rejected item IDs",
                     "required": false,
                     "type": "object",
@@ -18501,6 +18904,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": true,
               "type": "object",
             },
+            "example": {
+              "ids": [
+                "surculus",
+              ],
+            },
           },
           "responses": [
             {
@@ -18520,6 +18928,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "type": "array",
                   },
                   "rejectionReasons": {
+                    "additionalProperties": {
+                      "itemType": "string",
+                      "required": false,
+                      "type": "array",
+                    },
                     "description": "Map of reason code to rejected item IDs",
                     "required": false,
                     "type": "object",
@@ -18627,6 +19040,15 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               },
               "required": false,
               "type": "object",
+            },
+            "example": {
+              "bannerUrl": null,
+              "firstName": "Cecilia",
+              "language": "en",
+              "lastName": "Hodkiewicz",
+              "newsletter": false,
+              "slug": "ceciliahodkiewicz17",
+              "thumbnailUrl": null,
             },
             "path": {
               "properties": {
@@ -18932,6 +19354,16 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": true,
               "type": "object",
             },
+            "example": {
+              "content": "<p>Aliquam depulso tantillus claudeo suadeo sophismata assumenda quos subvenio. Vulnus attero itaque. Tego ciminatio terminatio vilitas coniecto incidunt audio.</p>",
+              "organizationIds": [
+                "ter",
+              ],
+              "roles": [
+                "admin",
+              ],
+              "subject": "Antepono capio saepe minus vix cum.",
+            },
             "query": {
               "properties": {
                 "toSelf": {
@@ -19075,6 +19507,34 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "required": true,
                           "type": "string",
                         },
+                        "restrictions": {
+                          "properties": {
+                            "quotas": {
+                              "additionalProperties": {
+                                "minimum": 0,
+                                "required": false,
+                                "type": "integer",
+                              },
+                              "description": "Entity quotas (0 = unlimited)",
+                              "required": true,
+                              "type": "object",
+                            },
+                            "rateLimits": {
+                              "properties": {
+                                "apiPointsPerHour": {
+                                  "description": "Max API points per hour per user within this tenant",
+                                  "minimum": 0,
+                                  "required": true,
+                                  "type": "integer",
+                                },
+                              },
+                              "required": true,
+                              "type": "object",
+                            },
+                          },
+                          "required": true,
+                          "type": "object",
+                        },
                         "status": {
                           "enum": [
                             "active",
@@ -19164,6 +19624,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": true,
               "type": "object",
             },
+            "example": {
+              "name": "Dare - Kovacek",
+              "status": "active",
+            },
           },
           "responses": [
             {
@@ -19196,6 +19660,34 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "description": "Tenant display name",
                     "required": true,
                     "type": "string",
+                  },
+                  "restrictions": {
+                    "properties": {
+                      "quotas": {
+                        "additionalProperties": {
+                          "minimum": 0,
+                          "required": false,
+                          "type": "integer",
+                        },
+                        "description": "Entity quotas (0 = unlimited)",
+                        "required": true,
+                        "type": "object",
+                      },
+                      "rateLimits": {
+                        "properties": {
+                          "apiPointsPerHour": {
+                            "description": "Max API points per hour per user within this tenant",
+                            "minimum": 0,
+                            "required": true,
+                            "type": "integer",
+                          },
+                        },
+                        "required": true,
+                        "type": "object",
+                      },
+                    },
+                    "required": true,
+                    "type": "object",
                   },
                   "status": {
                     "enum": [
@@ -19295,6 +19787,34 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "required": true,
                     "type": "string",
                   },
+                  "restrictions": {
+                    "properties": {
+                      "quotas": {
+                        "additionalProperties": {
+                          "minimum": 0,
+                          "required": false,
+                          "type": "integer",
+                        },
+                        "description": "Entity quotas (0 = unlimited)",
+                        "required": true,
+                        "type": "object",
+                      },
+                      "rateLimits": {
+                        "properties": {
+                          "apiPointsPerHour": {
+                            "description": "Max API points per hour per user within this tenant",
+                            "minimum": 0,
+                            "required": true,
+                            "type": "integer",
+                          },
+                        },
+                        "required": true,
+                        "type": "object",
+                      },
+                    },
+                    "required": true,
+                    "type": "object",
+                  },
                   "status": {
                     "enum": [
                       "active",
@@ -19359,6 +19879,34 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "required": false,
                   "type": "string",
                 },
+                "restrictions": {
+                  "description": "Partial restrictions override",
+                  "properties": {
+                    "quotas": {
+                      "additionalProperties": {
+                        "minimum": 0,
+                        "required": false,
+                        "type": "integer",
+                      },
+                      "description": "Entity quotas (0 = unlimited)",
+                      "required": false,
+                      "type": "object",
+                    },
+                    "rateLimits": {
+                      "properties": {
+                        "apiPointsPerHour": {
+                          "minimum": 0,
+                          "required": false,
+                          "type": "integer",
+                        },
+                      },
+                      "required": false,
+                      "type": "object",
+                    },
+                  },
+                  "required": false,
+                  "type": "object",
+                },
                 "status": {
                   "enum": [
                     "active",
@@ -19371,6 +19919,16 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               },
               "required": true,
               "type": "object",
+            },
+            "example": {
+              "name": "Murray, Bode and McKenzie",
+              "restrictions": {
+                "quotas": {},
+                "rateLimits": {
+                  "apiPointsPerHour": 57,
+                },
+              },
+              "status": "active",
             },
             "path": {
               "properties": {
@@ -19414,6 +19972,34 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "description": "Tenant display name",
                     "required": true,
                     "type": "string",
+                  },
+                  "restrictions": {
+                    "properties": {
+                      "quotas": {
+                        "additionalProperties": {
+                          "minimum": 0,
+                          "required": false,
+                          "type": "integer",
+                        },
+                        "description": "Entity quotas (0 = unlimited)",
+                        "required": true,
+                        "type": "object",
+                      },
+                      "rateLimits": {
+                        "properties": {
+                          "apiPointsPerHour": {
+                            "description": "Max API points per hour per user within this tenant",
+                            "minimum": 0,
+                            "required": true,
+                            "type": "integer",
+                          },
+                        },
+                        "required": true,
+                        "type": "object",
+                      },
+                    },
+                    "required": true,
+                    "type": "object",
                   },
                   "status": {
                     "enum": [
@@ -19669,11 +20255,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "items": {
                     "itemType": "object",
                     "items": {
-                      "description": "A user with profile data and activity timestamps.",
-                      "extendsRef": "#/components/schemas/User",
+                      "description": "Base user schema with essential fields for identification and display.",
+                      "extendsRef": "#/components/schemas/UserBase",
                       "properties": {
                         "bannerUrl": {
-                          "maxLength": 2048,
                           "required": true,
                           "type": [
                             "string",
@@ -19703,34 +20288,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "required": true,
                           "type": "string",
                         },
-                        "firstName": {
-                          "maxLength": 255,
-                          "required": true,
-                          "type": [
-                            "string",
-                            "null",
-                          ],
-                        },
                         "id": {
-                          "maxLength": 50,
                           "required": true,
                           "type": "string",
-                        },
-                        "language": {
-                          "enum": [
-                            "en",
-                            "nl",
-                          ],
-                          "required": true,
-                          "type": "string",
-                        },
-                        "lastName": {
-                          "maxLength": 255,
-                          "required": true,
-                          "type": [
-                            "string",
-                            "null",
-                          ],
                         },
                         "lastSeenAt": {
                           "required": true,
@@ -19739,24 +20299,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                             "null",
                           ],
                         },
-                        "lastSignInAt": {
-                          "required": true,
-                          "type": [
-                            "string",
-                            "null",
-                          ],
-                        },
-                        "lastStartedAt": {
-                          "required": true,
-                          "type": [
-                            "string",
-                            "null",
-                          ],
-                        },
-                        "mfaRequired": {
-                          "required": true,
-                          "type": "boolean",
-                        },
                         "modifiedAt": {
                           "required": true,
                           "type": [
@@ -19764,22 +20306,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                             "null",
                           ],
                         },
-                        "modifiedBy": {
-                          "maxLength": 50,
-                          "required": true,
-                          "type": [
-                            "string",
-                            "null",
-                          ],
-                        },
                         "name": {
-                          "maxLength": 255,
                           "required": true,
                           "type": "string",
-                        },
-                        "newsletter": {
-                          "required": true,
-                          "type": "boolean",
                         },
                         "role": {
                           "enum": [
@@ -19793,27 +20322,15 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           ],
                         },
                         "slug": {
-                          "maxLength": 255,
                           "required": true,
                           "type": "string",
                         },
                         "thumbnailUrl": {
-                          "maxLength": 2048,
                           "required": true,
                           "type": [
                             "string",
                             "null",
                           ],
-                        },
-                        "userFlags": {
-                          "properties": {
-                            "finishedOnboarding": {
-                              "required": true,
-                              "type": "boolean",
-                            },
-                          },
-                          "required": true,
-                          "type": "object",
                         },
                       },
                       "type": "object",
@@ -19903,34 +20420,22 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "description": "User",
               "example": {
                 "bannerUrl": null,
-                "createdAt": "2024-12-13T11:17:23.643Z",
+                "createdAt": "2024-05-14T11:11:41.599Z",
                 "description": null,
-                "email": "cecilia.hodkiewicz@hotmail.com",
+                "email": "rosendo.bayer7@yahoo.com",
                 "entityType": "user",
-                "firstName": "Cecilia",
-                "id": "7sfzetbhjls7m9dg1xzavv78",
-                "language": "en",
-                "lastName": "Hodkiewicz",
-                "lastSeenAt": "2024-12-13T11:17:23.643Z",
-                "lastSignInAt": "2024-12-13T11:17:23.643Z",
-                "lastStartedAt": "2024-12-13T11:17:23.643Z",
-                "mfaRequired": false,
-                "modifiedAt": "2024-12-13T11:17:23.643Z",
-                "modifiedBy": null,
-                "name": "Cecilia Hodkiewicz",
-                "newsletter": false,
-                "slug": "ceciliahodkiewicz17",
+                "id": "eyp654w9neyhyka0hezx1xnh",
+                "modifiedAt": "2024-08-06T10:38:55.463Z",
+                "name": "Rosendo Bayer",
+                "slug": "rosendo.bayer89",
                 "thumbnailUrl": null,
-                "userFlags": {},
               },
-              "name": "User",
-              "ref": "#/components/schemas/User",
               "schema": {
                 "contentType": "application/json",
-                "description": "A user with profile data and activity timestamps.",
+                "description": "Base user schema with essential fields for identification and display.",
+                "extendsRef": "#/components/schemas/UserBase",
                 "properties": {
                   "bannerUrl": {
-                    "maxLength": 2048,
                     "required": true,
                     "type": [
                       "string",
@@ -19960,34 +20465,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "required": true,
                     "type": "string",
                   },
-                  "firstName": {
-                    "maxLength": 255,
-                    "required": true,
-                    "type": [
-                      "string",
-                      "null",
-                    ],
-                  },
                   "id": {
-                    "maxLength": 50,
                     "required": true,
                     "type": "string",
-                  },
-                  "language": {
-                    "enum": [
-                      "en",
-                      "nl",
-                    ],
-                    "required": true,
-                    "type": "string",
-                  },
-                  "lastName": {
-                    "maxLength": 255,
-                    "required": true,
-                    "type": [
-                      "string",
-                      "null",
-                    ],
                   },
                   "lastSeenAt": {
                     "required": true,
@@ -19996,24 +20476,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                       "null",
                     ],
                   },
-                  "lastSignInAt": {
-                    "required": true,
-                    "type": [
-                      "string",
-                      "null",
-                    ],
-                  },
-                  "lastStartedAt": {
-                    "required": true,
-                    "type": [
-                      "string",
-                      "null",
-                    ],
-                  },
-                  "mfaRequired": {
-                    "required": true,
-                    "type": "boolean",
-                  },
                   "modifiedAt": {
                     "required": true,
                     "type": [
@@ -20021,48 +20483,22 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                       "null",
                     ],
                   },
-                  "modifiedBy": {
-                    "maxLength": 50,
-                    "required": true,
-                    "type": [
-                      "string",
-                      "null",
-                    ],
-                  },
                   "name": {
-                    "maxLength": 255,
                     "required": true,
                     "type": "string",
                   },
-                  "newsletter": {
-                    "required": true,
-                    "type": "boolean",
-                  },
                   "slug": {
-                    "maxLength": 255,
                     "required": true,
                     "type": "string",
                   },
                   "thumbnailUrl": {
-                    "maxLength": 2048,
                     "required": true,
                     "type": [
                       "string",
                       "null",
                     ],
                   },
-                  "userFlags": {
-                    "properties": {
-                      "finishedOnboarding": {
-                        "required": true,
-                        "type": "boolean",
-                      },
-                    },
-                    "required": true,
-                    "type": "object",
-                  },
                 },
-                "ref": "#/components/schemas/User",
                 "type": "object",
               },
               "status": 200,

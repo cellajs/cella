@@ -137,8 +137,8 @@ export const MembersTableBar = ({
   };
 
   return (
-    <div>
-      <TableBarContainer>
+    <>
+      <TableBarContainer searchVars={searchVars}>
         {/* Table Filter Bar */}
         <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
           <FilterBarActions>
@@ -210,6 +210,6 @@ export const MembersTableBar = ({
 
       {/* Container ref to embed dialog */}
       <div ref={inviteContainerRef} className="empty:hidden" />
-    </div>
+    </>
   );
 };

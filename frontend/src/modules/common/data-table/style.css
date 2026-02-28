@@ -6,6 +6,11 @@
  * and virtualization. The grid-template-rows defines the full height of all rows
  * (even non-rendered ones), which is essential for proper scroll behavior.
  */
+/* Offset cells so scrollIntoView() during keyboard nav clears the sticky toolbar above */
+.grid.rdg-wrapper .rdg-cell {
+  scroll-margin-block-start: 8rem;
+}
+
 .grid.rdg-wrapper > .rdg {
   --rdg-color: var(--foreground);
   --rdg-border-color: var(--border);

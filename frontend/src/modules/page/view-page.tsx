@@ -10,7 +10,7 @@ import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
 import { dateShort } from '~/utils/date-short';
 
-const BlockNote = lazy(() => import('~/modules/common/blocknote'));
+const BlockNoteStaticView = lazy(() => import('~/modules/common/blocknote/static-view'));
 
 interface ViewPageProps {
   pageId: string;
@@ -38,7 +38,7 @@ function ViewPage({ pageId }: ViewPageProps) {
   return (
     <div className="container">
       <div className="mx-auto max-w-4xl">
-        <StickyBox className="z-10 bg-background" offsetTop={0} hideOnScrollDown>
+        <StickyBox className="z-10 bg-background/60 backdrop-blur-xs" hideWhenOutOfView>
           <div className="flex items-center justify-between gap-3 py-3 sm:py-6">
             <div className="flex items-center gap-2">
               {isSystemAdmin && (
@@ -66,9 +66,8 @@ function ViewPage({ pageId }: ViewPageProps) {
 
           {page.description && (
             <Suspense fallback={<Spinner className="my-16 h-6 w-6 opacity-50" noDelay />}>
-              <BlockNote
+              <BlockNoteStaticView
                 id={`page-${pageId}`}
-                type="preview"
                 defaultValue={page.description}
                 className="text-muted-foreground font-light"
                 clickOpensPreview

@@ -8,6 +8,7 @@ import { useSearchParams } from '~/hooks/use-search-params';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
+import { FocusViewContainer } from '~/modules/common/focus-view';
 import { tenantsListQueryOptions } from '~/modules/tenants/query';
 import type { TenantsRouteSearchParams } from '~/modules/tenants/search-params-schema';
 import { TenantsTableBar } from '~/modules/tenants/table/tenants-bar';
@@ -69,7 +70,7 @@ function TenantsTable() {
   const visibleColumns = useMemo(() => columns.filter((column) => column.visible), [columns]);
 
   return (
-    <div className="flex flex-col gap-4 h-full">
+    <FocusViewContainer>
       <TenantsTableBar
         queryKey={queryOptions.queryKey}
         selected={selected}
@@ -106,7 +107,7 @@ function TenantsTable() {
           ),
         }}
       />
-    </div>
+    </FocusViewContainer>
   );
 }
 

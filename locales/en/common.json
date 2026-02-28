@@ -364,6 +364,7 @@
   "password_confirmation": "Password confirmation",
   "path": "Path",
   "pending": "Pending",
+  "pending_invitation": "Pending invitation",
   "pending_invitations": "Pending invitations",
   "pending_invitations.text": "Manage users invited to join this {{entityType}}.",
   "period": "Period",

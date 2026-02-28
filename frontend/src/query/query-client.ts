@@ -9,43 +9,52 @@ const defaultStaleTime = 1000 * 30 * 1; // 30 seconds
 const offlineStaleTime = Number.POSITIVE_INFINITY; // Infinite when offline
 
 /**
- * Handle online status
+ * Handle online status — guarded to avoid duplicate listeners on HMR.
  */
 function handleOnlineStatus() {
   onlineManager.setOnline(navigator.onLine);
 }
 
-window.addEventListener('online', handleOnlineStatus);
-window.addEventListener('offline', handleOnlineStatus);
-
-handleOnlineStatus();
+if (!import.meta.hot?.data?.listenersAttached) {
+  window.addEventListener('online', handleOnlineStatus);
+  window.addEventListener('offline', handleOnlineStatus);
+  handleOnlineStatus();
+}
 
 /**
- * Our queryClient instance.
+ * Our queryClient instance — preserved across HMR to keep the cache intact.
  *
  * @link https://tanstack.com/query/latest/docs/reference/QueryClient
  */
-export const queryClient = new QueryClient({
-  mutationCache: new MutationCache(queryClientConfig),
-  queryCache: new QueryCache(queryClientConfig),
-  defaultOptions: {
-    queries: {
-      networkMode: 'offlineFirst',
-      gcTime: 1000 * 60 * 60 * 24 * 7, // 7 days
-      staleTime: defaultStaleTime,
+export const queryClient: QueryClient =
+  (import.meta.hot?.data?.queryClient as QueryClient) ??
+  new QueryClient({
+    mutationCache: new MutationCache(queryClientConfig),
+    queryCache: new QueryCache(queryClientConfig),
+    defaultOptions: {
+      queries: {
+        networkMode: 'offlineFirst',
+        gcTime: 1000 * 60 * 60 * 24 * 7, // 7 days
+        staleTime: defaultStaleTime,
 
-      refetchOnMount: false,
-      refetchOnWindowFocus: false,
-      refetchOnReconnect: true, // Automatically refetch when coming back online
+        refetchOnMount: false,
+        refetchOnWindowFocus: false,
+        refetchOnReconnect: true, // Automatically refetch when coming back online
 
-      retry: false,
+        retry: false,
+      },
+      mutations: {
+        networkMode: 'offlineFirst', // Mutations fire once, then pause if offline and resume when back online
+        retry: 0,
+      },
     },
-    mutations: {
-      networkMode: 'offlineFirst', // Mutations fire once, then pause if offline and resume when back online
-      retry: 0,
-    },
-  },
-});
+  });
+
+// Preserve queryClient and listener state across HMR
+if (import.meta.hot) {
+  import.meta.hot.data.queryClient = queryClient;
+  import.meta.hot.data.listenersAttached = true;
+}
 
 /**
  * Update staleTime based on offline access mode and network status.

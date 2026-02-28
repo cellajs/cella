@@ -8,6 +8,7 @@ import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import type { RowsChangeData } from '~/modules/common/data-grid';
 import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
+import { FocusViewContainer } from '~/modules/common/focus-view';
 import type { EnrichedContextEntity } from '~/modules/entities/types';
 import { MembersTableBar } from '~/modules/memberships/members-table/members-bar';
 import { useColumns } from '~/modules/memberships/members-table/members-columns';
@@ -105,7 +106,7 @@ function MembersTable({ entity, isSheet = false, children }: MembersTableWrapper
   const visibleColumns = useMemo(() => columns.filter((column) => column.visible), [columns]);
 
   return (
-    <div className="flex flex-col gap-4 h-full">
+    <FocusViewContainer>
       <MembersTableBar
         entity={entity}
         selected={selected}
@@ -146,7 +147,7 @@ function MembersTable({ entity, isSheet = false, children }: MembersTableWrapper
           ),
         }}
       />
-    </div>
+    </FocusViewContainer>
   );
 }
 

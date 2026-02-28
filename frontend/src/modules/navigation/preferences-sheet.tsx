@@ -90,7 +90,7 @@ export const PreferencesSheet = () => {
           <div className="flex flex-col gap-4 mx-2">
             <h3 className="text-sm font-medium text-muted-foreground/70 lowercase px-4">{t('common:offline')}</h3>
             <OfflineAccessSwitch />
-            <AlertWrap id="offline_access" variant="plain" icon={InfoIcon}>
+            <AlertWrap id="offline_access" animate variant="plain" icon={InfoIcon}>
               {t('common:offline_access.text')}
             </AlertWrap>
           </div>
@@ -130,7 +130,7 @@ export const PreferencesSheet = () => {
         </Button>
       </div>
       {/* Keyboard-only skip links at end of sheet */}
-      <div className="mt-auto flex flex-col">
+      <div className="flex flex-col pt-3">
         <FocusBridge direction="to-content" className="focus:relative" />
         <FocusBridge direction="to-sidebar" className="focus:relative" />
       </div>

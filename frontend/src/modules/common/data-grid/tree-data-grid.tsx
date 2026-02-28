@@ -1,12 +1,11 @@
 import type { Key } from 'react';
 import { useCallback, useMemo } from 'react';
+import { useLatestCallback } from '~/hooks/use-latest-ref';
 import { renderToggleGroup } from './cellRenderers';
 import { SELECT_COLUMN_KEY } from './columns';
 import type { DataGridProps } from './data-grid';
 import { DataGrid } from './data-grid';
-import { useDefaultRenderers } from './data-grid-default-renderers-context';
 import { GroupedRow } from './group-row';
-import { useLatestFunc } from './hooks';
 import { defaultRenderRow } from './row';
 import type {
   CellClipboardEvent,
@@ -25,10 +24,7 @@ import type {
 import { assertIsValidKeyGetter, getLeftRightKey } from './utils';
 
 export interface TreeDataGridProps<R, SR = unknown, K extends Key = Key>
-  extends Omit<
-    DataGridProps<R, SR, K>,
-    'columns' | 'role' | 'aria-rowcount' | 'rowHeight' | 'onFill' | 'isRowSelectionDisabled'
-  > {
+  extends Omit<DataGridProps<R, SR, K>, 'columns' | 'role' | 'aria-rowcount' | 'rowHeight' | 'isRowSelectionDisabled'> {
   columns: readonly Column<NoInfer<R>, NoInfer<SR>>[];
   rowHeight?: Maybe<number | ((args: RowHeightArgs<NoInfer<R>>) => number)>;
   groupBy: readonly string[];
@@ -66,11 +62,10 @@ export function TreeDataGrid<R, SR = unknown, K extends Key = Key>({
   groupIdGetter: rawGroupIdGetter,
   ...props
 }: TreeDataGridProps<R, SR, K>) {
-  const defaultRenderers = useDefaultRenderers<R, SR>();
-  const rawRenderRow = renderers?.renderRow ?? defaultRenderers?.renderRow ?? defaultRenderRow;
-  const headerAndTopSummaryRowsCount = 1 + (props.topSummaryRows?.length ?? 0);
-  const { leftKey, rightKey } = getLeftRightKey(props.direction);
-  const toggleGroupLatest = useLatestFunc(toggleGroup);
+  const rawRenderRow = renderers?.renderRow ?? defaultRenderRow;
+  const headerRowsCount = 1;
+  const { leftKey, rightKey } = getLeftRightKey();
+  const toggleGroupLatest = useLatestCallback(toggleGroup);
   const groupIdGetter = rawGroupIdGetter ?? defaultGroupIdGetter;
 
   const { columns, groupBy } = useMemo(() => {
@@ -374,7 +369,6 @@ export function TreeDataGrid<R, SR = unknown, K extends Key = Key>({
       onCellContextMenu,
       onRowChange,
       lastFrozenColumnIndex,
-      draggedOverCellIdx,
       selectedCellEditor,
       ...rowProps
     }: RenderRowProps<R, SR>,
@@ -385,7 +379,7 @@ export function TreeDataGrid<R, SR = unknown, K extends Key = Key>({
         <GroupedRow
           key={key}
           {...rowProps}
-          aria-rowindex={headerAndTopSummaryRowsCount + startRowIndex + 1}
+          aria-rowindex={headerRowsCount + startRowIndex + 1}
           row={row}
           groupBy={groupBy}
           toggleGroup={toggleGroupLatest}
@@ -398,7 +392,7 @@ export function TreeDataGrid<R, SR = unknown, K extends Key = Key>({
     if (parentRowAndIndex !== undefined) {
       const { startRowIndex, childRows } = parentRowAndIndex[0];
       const groupIndex = childRows.indexOf(row);
-      ariaRowIndex = startRowIndex + headerAndTopSummaryRowsCount + groupIndex + 2;
+      ariaRowIndex = startRowIndex + headerRowsCount + groupIndex + 2;
     }
 
     return rawRenderRow(key, {
@@ -412,7 +406,6 @@ export function TreeDataGrid<R, SR = unknown, K extends Key = Key>({
       onCellContextMenu,
       onRowChange,
       lastFrozenColumnIndex,
-      draggedOverCellIdx,
       selectedCellEditor,
     });
   }
@@ -421,7 +414,7 @@ export function TreeDataGrid<R, SR = unknown, K extends Key = Key>({
     <DataGrid<R, SR>
       {...props}
       role="treegrid"
-      aria-rowcount={rowsCount + 1 + (props.topSummaryRows?.length ?? 0) + (props.bottomSummaryRows?.length ?? 0)}
+      aria-rowcount={rowsCount + 1}
       columns={columns}
       rows={rows as R[]}
       rowHeight={rowHeight}

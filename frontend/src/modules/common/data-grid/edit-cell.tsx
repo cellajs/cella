@@ -29,7 +29,7 @@ import { createCellEvent, getCellClassname, getCellStyle, onEditorNavigation } f
 const _scheduler = globalThis as any;
 const canUsePostTask = typeof _scheduler.scheduler === 'object' && typeof _scheduler.scheduler.postTask === 'function';
 
-const cellEditingClassname = 'rdg-cell-editing';
+const cellEditingClassname = '!p-0';
 
 type SharedCellRendererProps<R, SR> = Pick<CellRendererProps<R, SR>, 'colSpan'>;
 
