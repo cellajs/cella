@@ -206,7 +206,11 @@
         "mutationId": { "type": "string", "required": true },
         "sourceId": { "type": "string", "required": true },
         "version": { "type": "integer", "required": true },
-        "fieldVersions": { "type": "object", "required": true }
+        "fieldVersions": {
+          "type": "object",
+          "required": true,
+          "additionalProperties": { "type": "integer", "required": false }
+        }
       }
     },
     "schemaTag": "base",
@@ -262,7 +266,11 @@
             "mutationId": { "type": "string", "required": true },
             "sourceId": { "type": "string", "required": true },
             "version": { "type": "integer", "required": true },
-            "fieldVersions": { "type": "object", "required": true }
+            "fieldVersions": {
+              "type": "object",
+              "required": true,
+              "additionalProperties": { "type": "integer", "required": false }
+            }
           },
           "extendsRef": "#/components/schemas/StxBase"
         },
@@ -667,7 +675,11 @@
                 "mutationId": { "type": "string", "required": true },
                 "sourceId": { "type": "string", "required": true },
                 "version": { "type": "integer", "required": true },
-                "fieldVersions": { "type": "object", "required": true }
+                "fieldVersions": {
+                  "type": "object",
+                  "required": true,
+                  "additionalProperties": { "type": "integer", "required": false }
+                }
               },
               "ref": "#/components/schemas/StxBase"
             },
@@ -824,16 +836,15 @@
           },
           "ref": "#/components/schemas/User"
         },
-        "systemRole": {
-          "type": "string",
+        "isSystemAdmin": {
+          "type": "boolean",
           "required": true,
-          "description": "System-level role (e.g. admin) or user for standard access.",
-          "enum": ["admin", "user"]
+          "description": "Whether the current user has system admin privileges."
         }
       }
     },
     "schemaTag": "data",
-    "description": "The currently authenticated user with their system role.",
+    "description": "The currently authenticated user with their system admin status.",
     "example": {
       "user": {
         "id": "snou9b80h3jlnu1j458h6mvs",
@@ -857,7 +868,7 @@
         "lastSignInAt": "2024-07-14T22:49:14.651Z",
         "lastSeenAt": "2024-07-14T22:49:14.651Z"
       },
-      "systemRole": null
+      "isSystemAdmin": false
     }
   },
   {
@@ -1243,7 +1254,8 @@
                     "expires": { "type": "string", "required": false }
                   }
                 }
-              }
+              },
+              "additionalProperties": { "type": "object", "required": false }
             },
             { "type": "null", "required": false }
           ]
@@ -1284,6 +1296,34 @@
           "type": "string",
           "required": true,
           "enum": ["active", "suspended", "archived"]
+        },
+        "restrictions": {
+          "type": "object",
+          "required": true,
+          "properties": {
+            "quotas": {
+              "type": "object",
+              "required": true,
+              "description": "Entity quotas (0 = unlimited)",
+              "additionalProperties": {
+                "type": "integer",
+                "required": false,
+                "minimum": 0
+              }
+            },
+            "rateLimits": {
+              "type": "object",
+              "required": true,
+              "properties": {
+                "apiPointsPerHour": {
+                  "type": "integer",
+                  "required": true,
+                  "description": "Max API points per hour per user within this tenant",
+                  "minimum": 0
+                }
+              }
+            }
+          }
         },
         "createdAt": { "type": "string", "required": true },
         "modifiedAt": {
@@ -1577,7 +1617,7 @@
       }
     },
     "schemaTag": "data",
-    "description": "An organization with settings, restrictions, and membership context.",
+    "description": "An organization with membership context.",
     "example": {
       "id": "hmo9fwr239kqavr3yur671kl",
       "tenantId": "vk6xht",
@@ -1604,11 +1644,6 @@
       "createdBy": null,
       "modifiedAt": "2024-12-25T15:29:47.111Z",
       "modifiedBy": null,
-      "restrictions": {
-        "user": 1000,
-        "attachment": 100,
-        "page": 0
-      },
       "included": {
         "membership": {
           "id": "kaba9fpc90mgtzmtjipw2v8s",
@@ -1673,7 +1708,11 @@
             "mutationId": { "type": "string", "required": true },
             "sourceId": { "type": "string", "required": true },
             "version": { "type": "integer", "required": true },
-            "fieldVersions": { "type": "object", "required": true }
+            "fieldVersions": {
+              "type": "object",
+              "required": true,
+              "additionalProperties": { "type": "integer", "required": false }
+            }
           },
           "ref": "#/components/schemas/StxBase"
         },
@@ -1763,19 +1802,19 @@
       "tenantId": "ijllhz",
       "entityType": "page",
       "name": "Torrens adfectus.",
-      "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Voluptates cornu tempus eaque universe volubilis conturbo. Sponte utpote crux pecco vulticulus cunctatio. Vallum ut adimpleo summa valde strenuus attonbitus.\\nMollitia vel cado vitae cibus dolores decet. Aptus accusamus praesentium cibus subito viscus vox nemo. Video tremo molestias charisma clam ipsa suscipit.\",\"styles\":{}}],\"children\":[]}]",
-      "keywords": "solvo atrox tendo",
+      "description": "[{\"id\":\"4d3he3s8zop3fw0iutwkwdjf\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":2},\"content\":[{\"type\":\"text\",\"text\":\"Voluptates cornu tempus eaque universe.\",\"styles\":{}}],\"children\":[]},{\"id\":\"gu1294r3uzfmb2q1s1pusd2q\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Cubo sponte utpote crux pecco. Cunctatio dolorum vallum ut adimpleo summa valde strenuus attonbitus eligendi. Vel cado vitae cibus dolores decet surgo. Accusamus praesentium cibus subito.\",\"styles\":{}}],\"children\":[]},{\"id\":\"671fcn296rcp87t4d8lgrgcd\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":3},\"content\":[{\"type\":\"text\",\"text\":\"User-friendly zero trust local area network\",\"styles\":{}}],\"children\":[]},{\"id\":\"3yy1xh7n8karpr93u08rejwv\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Tremo molestias charisma clam ipsa suscipit solvo atrox tendo compello.\",\"styles\":{}}],\"children\":[]},{\"id\":\"n62te29fhcglysf95lf4htmk\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Tonsor ullus damnatio.\",\"styles\":{}}],\"children\":[]},{\"id\":\"sn59ulwuvhhur9xhd9ofh16n\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Cupressus depono sto benigne delego decumbo adaugeo.\",\"styles\":{}}],\"children\":[]},{\"id\":\"f065igtth4lg9regyxhos6bd\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Video aer addo crinis amissio alius allatus solium delectus tabesco. Inventore contra complectus summa umquam nobis dapifer supplanto odio. Atavus absorbeo suffoco cado deorsum amor.\",\"styles\":{}}],\"children\":[]},{\"id\":\"6hnxe4afibfi2ihz6afxd2dw\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Nam certe vulgaris sumptus spiritus vae fugit creo.\",\"styles\":{}}],\"children\":[]},{\"id\":\"5ig5f60loc1tlb0d2cilrdv3\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Dolorem conduco causa.\",\"styles\":{}}],\"children\":[]},{\"id\":\"u62ip228irxk0kazo01lz7po\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Caste pauper argumentum civitas.\",\"styles\":{}}],\"children\":[]},{\"id\":\"akx0232fwk8b5rexgpqc7ez6\",\"type\":\"checkListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"checked\":false},\"content\":[{\"type\":\"text\",\"text\":\"Use the mobile HTTP port, then you can copy the primary hard drive!\",\"styles\":{}}],\"children\":[]},{\"id\":\"i6f7muwgjjctz9jyxzy5iqwi\",\"type\":\"checkListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"checked\":false},\"content\":[{\"type\":\"text\",\"text\":\"Try to hack the SSD feed, maybe it will input the bluetooth panel!\",\"styles\":{}}],\"children\":[]},{\"id\":\"r054clt3x7vx4csq7z72sdht\",\"type\":\"checkListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"checked\":false},\"content\":[{\"type\":\"text\",\"text\":\"Use the virtual SSL transmitter, then you can index the bluetooth capacitor!\",\"styles\":{}}],\"children\":[]},{\"id\":\"bsptr5jdc6c6qnh4vbzzewl2\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Solium solvo degero ventus apto tempus aurum delectus facilis cura. Dolore animadverto maxime theatrum esse amo statua adfectus tremo contigo. Demens timidus calcar cohors appono aranea decet cultura substantia.\",\"styles\":{}}],\"children\":[]}]",
+      "keywords": "tantillus debitis mollitia",
       "status": "unpublished",
       "publicAccess": true,
       "parentId": null,
-      "displayOrder": 32.69,
+      "displayOrder": 47.51,
       "createdAt": "2024-08-06T10:28:33.226Z",
       "createdBy": "0f0ak5vkrrl687pmkwpa1vju",
       "modifiedAt": "2024-08-06T10:28:33.226Z",
       "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju",
       "stx": {
-        "mutationId": "4tufkeho7gg1xwx21e333ngq",
-        "sourceId": "src_ujcbpukfple60p8h3tnk9zpo",
+        "mutationId": "rd8bblxzxc0ypms2q9lzubyp",
+        "sourceId": "src_ddo8vfjx4d5px26kw7k3q17d",
         "version": 1,
         "fieldVersions": {}
       }
@@ -1856,7 +1895,11 @@
             "mutationId": { "type": "string", "required": true },
             "sourceId": { "type": "string", "required": true },
             "version": { "type": "integer", "required": true },
-            "fieldVersions": { "type": "object", "required": true }
+            "fieldVersions": {
+              "type": "object",
+              "required": true,
+              "additionalProperties": { "type": "integer", "required": false }
+            }
           },
           "ref": "#/components/schemas/StxBase"
         },

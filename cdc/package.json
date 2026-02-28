@@ -20,7 +20,6 @@
     "@hono/node-server": "^1.19.9",
     "drizzle-orm": "1.0.0-beta.15-859cf75",
     "hono": "^4.12.2",
-    "nanoid": "^5.1.6",
     "pg-logical-replication": "^2.3.0",
     "pino": "^10.3.1",
     "pino-pretty": "^13.1.3",

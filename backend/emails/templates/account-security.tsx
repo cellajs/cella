@@ -4,7 +4,18 @@ import { appConfig } from 'shared';
 import { EmailBody, EmailContainer, EmailHeader, EmailLogo, Footer } from '../components';
 import type { BasicTemplateType } from '../types';
 
-type AccountSecurityType = 'mfa-enabled' | 'mfa-disabled' | 'wrong-password-lockout';
+type AccountSecurityType =
+  | 'mfa-enabled'
+  | 'mfa-disabled'
+  | 'wrong-password-lockout'
+  | 'totp-lockout'
+  | 'password-changed'
+  | 'sysadmin-fail'
+  | 'impersonation-started'
+  | 'passkey-added'
+  | 'passkey-removed'
+  | 'totp-added'
+  | 'totp-removed';
 
 interface AccountSecurityProps extends BasicTemplateType {
   name: string;

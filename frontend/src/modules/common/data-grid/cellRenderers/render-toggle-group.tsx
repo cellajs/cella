@@ -1,7 +1,6 @@
 import type { RenderGroupCellProps } from '../types';
 
-const groupCellContentClassname = 'rdg-group-cell-content';
-const caretClassname = 'rdg-caret';
+const groupCellContentClassname = 'outline-none';
 
 export function renderToggleGroup<R, SR>(props: RenderGroupCellProps<R, SR>) {
   return <ToggleGroup {...props} />;
@@ -19,8 +18,14 @@ export function ToggleGroup<R, SR>({ groupKey, isExpanded, tabIndex, toggleGroup
   return (
     <span className={groupCellContentClassname} tabIndex={tabIndex} onKeyDown={handleKeyDown}>
       {groupKey as string}
-      <svg viewBox="0 0 14 8" width="14" height="8" className={caretClassname} aria-hidden>
-        <path d={d} />
+      <svg
+        viewBox="0 0 14 8"
+        width="14"
+        height="8"
+        className="ms-1 stroke-current [stroke-width:1.5px] fill-transparent align-middle"
+        aria-hidden
+      >
+        <path d={d} style={{ transition: 'd 0.1s' }} />
       </svg>
     </span>
   );

@@ -15,6 +15,9 @@ let initTime = 0;
 /** Check if hash writes are currently allowed */
 const canWriteHash = () => Date.now() > hashWriteBlockedUntil && initTime && Date.now() - initTime > 300;
 
+/** Check if a programmatic scroll is currently in progress */
+export const isProgrammaticScroll = () => Date.now() < hashWriteBlockedUntil;
+
 /** Block hash writes for a duration */
 const blockHashWrites = (ms: number) => {
   hashWriteBlockedUntil = Date.now() + ms;

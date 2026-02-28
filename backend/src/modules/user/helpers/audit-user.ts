@@ -58,7 +58,14 @@ type NullableUser = {
   email: string | null;
   entityType: 'user' | null;
 };
-type RawAuditRow = { createdBy: NullableUser; modifiedBy: NullableUser };
+
+/**
+ * Accept audit rows where each audit user field may have nullable or non-nullable sub-fields.
+ * Drizzle LEFT JOINs make columns nullable, but `sql<'user'>` keeps entityType as `'user'`.
+ * We accept both shapes to avoid `as any` at every call-site.
+ */
+type CompatibleNullableUser = { [K in keyof NullableUser]: NullableUser[K] | NonNullable<NullableUser[K]> };
+type RawAuditRow = { createdBy: CompatibleNullableUser; modifiedBy: CompatibleNullableUser };
 
 export function coalesceAuditUsers<T extends RawAuditRow>(
   rows: T[],
@@ -89,24 +96,33 @@ export const toUserMinimalBase = (user: {
   entityType: 'user',
 });
 
+/** Input for the `knownUsers` parameter: a pre-built Map or a user-like object (auto-converted via toUserMinimalBase). */
+type KnownUsersInput =
+  | Map<string, UserMinimalBase>
+  | { id: string; name: string; slug: string; thumbnailUrl: string | null; email: string };
+
 /**
  * Populate createdBy/modifiedBy string IDs with UserMinimalBase objects.
- * Pass knownUsers map (e.g., with current user) to avoid unnecessary DB lookups.
+ * Pass a user object (or Map) to avoid unnecessary DB lookups for the current user.
  *
  * Usage in CUD handlers:
  * ```
- * const userMinimal = toUserMinimalBase(ctx.var.user);
- * const knownUsers = new Map([[user.id, userMinimal]]);
- * const items = await withAuditUsers(rawItems, tenantDb, knownUsers);
+ * const items = await withAuditUsers(rawItems, tenantDb, user);
  * ```
  */
 export async function withAuditUsers<T extends { createdBy: string | null; modifiedBy?: string | null }>(
   entities: T[],
   db: DbOrTx,
-  knownUsers: Map<string, UserMinimalBase> = new Map(),
+  knownUsersInput: KnownUsersInput = new Map(),
 ): Promise<
   (Omit<T, 'createdBy' | 'modifiedBy'> & { createdBy: UserMinimalBase | null; modifiedBy: UserMinimalBase | null })[]
 > {
+  // Normalize input: accept a user object or a pre-built Map
+  const knownUsers =
+    knownUsersInput instanceof Map
+      ? knownUsersInput
+      : new Map([[knownUsersInput.id, toUserMinimalBase(knownUsersInput)]]);
+
   // Collect all unique user IDs that need resolving
   const unknownIds = new Set<string>();
   for (const entity of entities) {
@@ -137,4 +153,17 @@ export async function withAuditUsers<T extends { createdBy: string | null; modif
     createdBy: createdBy ? (knownUsers.get(createdBy) ?? null) : null,
     modifiedBy: modifiedBy ? (knownUsers.get(modifiedBy) ?? null) : null,
   }));
+}
+
+/**
+ * Single-entity convenience wrapper around withAuditUsers.
+ * Avoids the `[entity]` / destructure-`[0]` boilerplate.
+ */
+export async function withAuditUser<T extends { createdBy: string | null; modifiedBy?: string | null }>(
+  entity: T,
+  db: DbOrTx,
+  knownUsersInput?: KnownUsersInput,
+) {
+  const [result] = await withAuditUsers([entity], db, knownUsersInput);
+  return result;
 }

@@ -83,6 +83,9 @@ import type {
   GetAppStreamResponses,
   GetAttachmentData,
   GetAttachmentErrors,
+  GetAttachmentLinkData,
+  GetAttachmentLinkErrors,
+  GetAttachmentLinkResponses,
   GetAttachmentResponses,
   GetAttachmentsData,
   GetAttachmentsErrors,
@@ -197,9 +200,6 @@ import type {
   PostPublicCatchupData,
   PostPublicCatchupErrors,
   PostPublicCatchupResponses,
-  RedirectToAttachmentData,
-  RedirectToAttachmentErrors,
-  RedirectToAttachmentResponses,
   RequestPasswordData,
   RequestPasswordErrors,
   RequestPasswordResponses,
@@ -1258,7 +1258,7 @@ export const getMyMemberships = <ThrowOnError extends boolean = true>(
 /**
  * Get unseen counts
  *
- * Returns the number of unseen product entities per organization and entity type for the *current user*. Only entities created within the last 90 days are considered.
+ * Returns the number of unseen product entities per parent context entity (e.g., project) and entity type for the *current user*. Computed as total (from context_counters) minus seen (from seen_by).
  *
  * **GET /unseen/counts** ·· [getUnseenCounts](https://api.cellajs.com/docs#tag/seen/get/unseen/counts) ·· _seen_
  *
@@ -1685,6 +1685,7 @@ export const getTenantById = <ThrowOnError extends boolean = true>(options: Opti
  * @param {string} options.path.tenantid - `string`
  * @param {string=} options.body.name - `string` (optional)
  * @param {enum=} options.body.status - `enum` (optional)
+ * @param {object=} options.body.restrictions - `object` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const updateTenant = <ThrowOnError extends boolean = true>(options: Options<UpdateTenantData, ThrowOnError>) =>
@@ -2474,20 +2475,20 @@ export const updateAttachment = <ThrowOnError extends boolean = true>(
   });
 
 /**
- * Redirect to attachment
+ * Get attachment link
  *
- * Redirects to the file's public or presigned URL, depending on storage visibility.
+ * Returns an HTML page with OG meta tags for link previews and a client-side redirect to the attachment in the app.
  *
- * **GET /{tenantId}/{orgId}/attachments/{id}/link** ·· [redirectToAttachment](https://api.cellajs.com/docs#tag/attachments/get/{tenantId}/{orgId}/attachments/{id}/link) ·· _attachments_
+ * **GET /{tenantId}/{orgId}/attachments/{id}/link** ·· [getAttachmentLink](https://api.cellajs.com/docs#tag/attachments/get/{tenantId}/{orgId}/attachments/{id}/link) ·· _attachments_
  *
- * @param {redirectToAttachmentData} options
+ * @param {getAttachmentLinkData} options
  * @param {string} options.path.id - `string`
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const redirectToAttachment = <ThrowOnError extends boolean = true>(
-  options: Options<RedirectToAttachmentData, ThrowOnError>,
+export const getAttachmentLink = <ThrowOnError extends boolean = true>(
+  options: Options<GetAttachmentLinkData, ThrowOnError>,
 ) =>
-  (options.client ?? client).get<RedirectToAttachmentResponses, RedirectToAttachmentErrors, ThrowOnError, 'data'>({
+  (options.client ?? client).get<GetAttachmentLinkResponses, GetAttachmentLinkErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/{tenantId}/{orgId}/attachments/{id}/link',
     ...options,
@@ -2652,6 +2653,7 @@ export const handleMembershipInvitation = <ThrowOnError extends boolean = true>(
  * @param {string} options.query.entityid - `string`
  * @param {enum} options.query.entitytype - `enum`
  * @param {enum=} options.query.role - `enum` (optional)
+ * @param {string=} options.query.userids - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getMembers = <ThrowOnError extends boolean = true>(options: Options<GetMembersData, ThrowOnError>) =>

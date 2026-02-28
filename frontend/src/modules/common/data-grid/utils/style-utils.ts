@@ -1,6 +1,9 @@
 import type { CSSProperties } from 'react';
+import { cn } from '~/utils/cn';
 import { cellClassname, cellFrozenClassname } from '../style/cell';
-import type { CalculatedColumn, CalculatedColumnOrColumnGroup, Maybe } from '../types';
+import type { CalculatedColumn, CalculatedColumnOrColumnGroup } from '../types';
+
+export { cn } from '~/utils/cn';
 
 export function getRowStyle(rowIdx: number): CSSProperties {
   return { '--rdg-grid-row-start': rowIdx };
@@ -40,33 +43,11 @@ export function getCellStyle<R, SR>(column: CalculatedColumn<R, SR>, colSpan = 1
   };
 }
 
-type ClassValue = Maybe<string> | Record<string, boolean> | false;
-
-export function classnames(...args: readonly ClassValue[]) {
-  let classname = '';
-
-  for (const arg of args) {
-    if (arg) {
-      if (typeof arg === 'string') {
-        classname += ` ${arg}`;
-      } else if (typeof arg === 'object') {
-        for (const key in arg) {
-          if (arg[key]) {
-            classname += ` ${key}`;
-          }
-        }
-      }
-    }
-  }
-
-  return classname.trimStart();
-}
-
 export function getCellClassname<R, SR>(
   column: CalculatedColumn<R, SR>,
-  ...extraClasses: readonly ClassValue[]
+  ...extraClasses: Parameters<typeof cn>
 ): string {
-  return classnames(
+  return cn(
     cellClassname,
     {
       [cellFrozenClassname]: column.frozen,

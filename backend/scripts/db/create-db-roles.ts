@@ -17,11 +17,11 @@ import pc from 'picocolors';
  * Supports both `postgres://user:pass@host/db` and `postgresql://user:pass@host/db`.
  */
 function parseCredentials(connectionString: string): { username: string; password: string } {
-  const url = new URL(connectionString);
-  return {
-    username: decodeURIComponent(url.username),
-    password: decodeURIComponent(url.password),
-  };
+const url = new URL(connectionString);
+return {
+  username: decodeURIComponent(url.username),
+  password: decodeURIComponent(url.password),
+};
 }
 
 /**
@@ -30,25 +30,25 @@ function parseCredentials(connectionString: string): { username: string; passwor
  * and let Neon handle logical replication at the project level.
  */
 function buildCreateRolesSql(runtimePassword: string, cdcPassword: string, adminPassword: string): string {
-  // Escape single quotes for SQL injection safety
-  const escSql = (s: string) => s.replace(/'/g, "''");
+// Escape single quotes for SQL injection safety
+const escSql = (s: string) => s.replace(/'/g, "''");
 
-  return `
+return `
 DO $$
 BEGIN
-  -- Check if we can create roles (not available in PGlite)
-  IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname = 'pg_database_owner') THEN
-    RAISE NOTICE 'Role management not available (e.g., PGlite) - skipping.';
-    RETURN;
-  END IF;
+-- Check if we can create roles (not available in PGlite)
+IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname = 'pg_database_owner') THEN
+  RAISE NOTICE 'Role management not available (e.g., PGlite) - skipping.';
+  RETURN;
+END IF;
 
-  -- runtime_role: Normal authenticated requests, subject to RLS
-  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'runtime_role') THEN
-    CREATE ROLE runtime_role WITH LOGIN PASSWORD '${escSql(runtimePassword)}';
-    RAISE NOTICE 'Created role runtime_role';
-  ELSE
-    ALTER ROLE runtime_role WITH PASSWORD '${escSql(runtimePassword)}';
-  END IF;
+-- runtime_role: Normal authenticated requests, subject to RLS
+IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'runtime_role') THEN
+  CREATE ROLE runtime_role WITH LOGIN PASSWORD '${escSql(runtimePassword)}';
+  RAISE NOTICE 'Created role runtime_role';
+ELSE
+  ALTER ROLE runtime_role WITH PASSWORD '${escSql(runtimePassword)}';
+END IF;
 
   -- cdc_role: CDC worker, INSERT on activities only + REPLICATION for logical replication
   BEGIN
@@ -69,18 +69,18 @@ BEGIN
     END IF;
   END;
 
-  -- admin_role: Migrations, seeds, system admin, BYPASSRLS
-  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'admin_role') THEN
-    CREATE ROLE admin_role WITH LOGIN BYPASSRLS PASSWORD '${escSql(adminPassword)}';
-    RAISE NOTICE 'Created role admin_role';
-  ELSE
-    ALTER ROLE admin_role WITH PASSWORD '${escSql(adminPassword)}';
-  END IF;
+-- admin_role: Migrations, seeds, system admin, BYPASSRLS
+IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'admin_role') THEN
+  CREATE ROLE admin_role WITH LOGIN BYPASSRLS PASSWORD '${escSql(adminPassword)}';
+  RAISE NOTICE 'Created role admin_role';
+ELSE
+  ALTER ROLE admin_role WITH PASSWORD '${escSql(adminPassword)}';
+END IF;
 
-  -- Grant schema access
-  GRANT USAGE ON SCHEMA public TO runtime_role;
-  GRANT USAGE ON SCHEMA public TO cdc_role;
-  GRANT ALL ON SCHEMA public TO admin_role;
+-- Grant schema access
+GRANT USAGE ON SCHEMA public TO runtime_role;
+GRANT USAGE ON SCHEMA public TO cdc_role;
+GRANT ALL ON SCHEMA public TO admin_role;
 END $$;
 `;
 }
@@ -92,17 +92,17 @@ const requiredRoles = ['runtime_role', 'cdc_role', 'admin_role'] as const;
  * Returns true if setup can be skipped (avoids catalog writes on hot-reload).
  */
 async function rolesExist(): Promise<boolean> {
-  const result = await migrationDb!.execute(
-    sql.raw(`SELECT COUNT(*)::int AS cnt FROM pg_roles WHERE rolname IN ('${requiredRoles.join("','")}')`),
-  );
-  return (result.rows[0] as { cnt: number }).cnt === requiredRoles.length;
+const result = await migrationDb!.execute(
+  sql.raw(`SELECT COUNT(*)::int AS cnt FROM pg_roles WHERE rolname IN ('${requiredRoles.join("','")}')`),
+);
+return (result.rows[0] as { cnt: number }).cnt === requiredRoles.length;
 }
 
 export async function createDbRoles() {
-  if (env.DEV_MODE === 'basic') {
-    // PGlite doesn't support roles
-    return;
-  }
+if (env.DEV_MODE === 'basic') {
+  // PGlite doesn't support roles
+  return;
+}
 
   if (!migrationDb) {
     throw new Error('DATABASE_ADMIN_URL required for role setup');
@@ -116,17 +116,17 @@ export async function createDbRoles() {
   }
   console.info('[roles] Some roles missing, creating...');
 
-  // Extract passwords from connection strings
-  const runtime = parseCredentials(env.DATABASE_URL);
-  const cdcUrl = process.env.DATABASE_CDC_URL;
+// Extract passwords from connection strings
+const runtime = parseCredentials(env.DATABASE_URL);
+const cdcUrl = process.env.DATABASE_CDC_URL;
 
-  // For admin_role, use a dedicated env var or fall back to same password as runtime
-  const adminPassword = process.env.DATABASE_ADMIN_ROLE_PASSWORD ?? runtime.password;
+// For admin_role, use a dedicated env var or fall back to same password as runtime
+const adminPassword = process.env.DATABASE_ADMIN_ROLE_PASSWORD ?? runtime.password;
 
-  // CDC URL is optional — default to runtime password if not set (e.g., quick/core modes without CDC)
-  const cdcPassword = cdcUrl ? parseCredentials(cdcUrl).password : runtime.password;
+// CDC URL is optional — default to runtime password if not set (e.g., quick/core modes without CDC)
+const cdcPassword = cdcUrl ? parseCredentials(cdcUrl).password : runtime.password;
 
-  const createRolesSql = buildCreateRolesSql(runtime.password, cdcPassword, adminPassword);
+const createRolesSql = buildCreateRolesSql(runtime.password, cdcPassword, adminPassword);
 
   try {
     console.info('[roles] Executing CREATE ROLE SQL...');

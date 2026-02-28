@@ -6,10 +6,13 @@
   },
   "exports": {
     ".": "./index.ts",
+    "./nanoid": "./src/utils/nanoid.ts",
     "./upload-templates": "./upload-templates.ts",
     "./tracing": "./src/tracing/index.ts",
     "./builder": "./src/builder/index.ts",
-    "./blocknote": "./src/utils/text-from-block.ts"
+    "./blocknote": "./src/utils/text-from-block.ts",
+    "./is-cdn-url": "./src/utils/is-cdn-url.ts",
+    "./ascii": "./src/utils/ascii.ts"
   },
   "dependencies": {
     "@blocknote/core": "^0.47.0",

@@ -15,6 +15,7 @@ export type OpenApiSchema = {
   minItems?: number;
   maxItems?: number;
   properties?: Record<string, OpenApiSchema>;
+  additionalProperties?: OpenApiSchema | boolean;
   required?: string[];
   items?: OpenApiSchema;
   $ref?: string;

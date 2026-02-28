@@ -660,7 +660,7 @@
     "hasExample": false,
     "extensions": {
       "xGuard": ["authGuard"],
-      "xRateLimiter": [],
+      "xRateLimiter": ["pointsLimiter"],
       "xCache": []
     }
   },
@@ -747,7 +747,7 @@
     "path": "/unseen/counts",
     "tags": ["seen"],
     "summary": "Get unseen counts",
-    "description": "Returns the number of unseen product entities per organization and entity type for the *current user*. Only entities created within the last 90 days are considered.",
+    "description": "Returns the number of unseen product entities per parent context entity (e.g., project) and entity type for the *current user*. Computed as total (from context_counters) minus seen (from seen_by).",
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": false,
@@ -869,7 +869,7 @@
     "hasExample": true,
     "extensions": {
       "xGuard": ["authGuard", "sysAdminGuard"],
-      "xRateLimiter": [],
+      "xRateLimiter": ["spamLimiter", "pointsLimiter"],
       "xCache": []
     }
   },
@@ -888,7 +888,7 @@
     "hasExample": false,
     "extensions": {
       "xGuard": ["authGuard", "sysAdminGuard"],
-      "xRateLimiter": [],
+      "xRateLimiter": ["pointsLimiter"],
       "xCache": []
     }
   },
@@ -1097,7 +1097,7 @@
     "hasExample": false,
     "extensions": {
       "xGuard": ["authGuard", "sysAdminGuard"],
-      "xRateLimiter": [],
+      "xRateLimiter": ["pointsLimiter"],
       "xCache": []
     }
   },
@@ -1211,7 +1211,7 @@
     "hasExample": true,
     "extensions": {
       "xGuard": ["authGuard", "tenantGuard"],
-      "xRateLimiter": [],
+      "xRateLimiter": ["pointsLimiter"],
       "xCache": []
     },
     "entityType": "organization"
@@ -1231,7 +1231,7 @@
     "hasExample": false,
     "extensions": {
       "xGuard": ["authGuard", "tenantGuard"],
-      "xRateLimiter": [],
+      "xRateLimiter": ["pointsLimiter"],
       "xCache": []
     },
     "entityType": "organization"
@@ -1351,7 +1351,7 @@
     "hasExample": true,
     "extensions": {
       "xGuard": ["authGuard", "tenantGuard", "sysAdminGuard"],
-      "xRateLimiter": [],
+      "xRateLimiter": ["pointsLimiter"],
       "xCache": []
     },
     "entityType": "page"
@@ -1371,7 +1371,7 @@
     "hasExample": false,
     "extensions": {
       "xGuard": ["authGuard", "tenantGuard", "sysAdminGuard"],
-      "xRateLimiter": [],
+      "xRateLimiter": ["pointsLimiter"],
       "xCache": []
     },
     "entityType": "page"
@@ -1471,7 +1471,7 @@
     "hasExample": true,
     "extensions": {
       "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
-      "xRateLimiter": [],
+      "xRateLimiter": ["pointsLimiter"],
       "xCache": []
     },
     "entityType": "attachment"
@@ -1491,7 +1491,7 @@
     "hasExample": false,
     "extensions": {
       "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
-      "xRateLimiter": [],
+      "xRateLimiter": ["pointsLimiter"],
       "xCache": []
     },
     "entityType": "attachment"
@@ -1512,7 +1512,7 @@
     "extensions": {
       "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
       "xRateLimiter": ["presignedUrlLimiter"],
-      "xCache": []
+      "xCache": ["httpCache"]
     },
     "entityType": "attachment"
   },
@@ -1557,13 +1557,13 @@
     "entityType": "attachment"
   },
   {
-    "id": "redirectToAttachment",
+    "id": "getAttachmentLink",
     "hash": "tag/attachments/GET/{tenantId}/{orgId}/attachments/{id}/link",
     "method": "get",
     "path": "/{tenantId}/{orgId}/attachments/{id}/link",
     "tags": ["attachments"],
-    "summary": "Redirect to attachment",
-    "description": "Redirects to the file's public or presigned URL, depending on storage visibility.",
+    "summary": "Get attachment link",
+    "description": "Returns an HTML page with OG meta tags for link previews and a client-side redirect to the attachment in the app.",
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
@@ -1572,7 +1572,7 @@
     "extensions": {
       "xGuard": ["publicGuard"],
       "xRateLimiter": ["tokenLimiter"],
-      "xCache": []
+      "xCache": ["httpCache"]
     },
     "entityType": "attachment"
   },
@@ -1591,7 +1591,7 @@
     "hasExample": true,
     "extensions": {
       "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
-      "xRateLimiter": [],
+      "xRateLimiter": ["spamLimiter", "pointsLimiter"],
       "xCache": []
     }
   },
@@ -1610,7 +1610,7 @@
     "hasExample": false,
     "extensions": {
       "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
-      "xRateLimiter": [],
+      "xRateLimiter": ["pointsLimiter"],
       "xCache": []
     }
   },
@@ -1705,7 +1705,7 @@
     "hasExample": false,
     "extensions": {
       "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
-      "xRateLimiter": [],
+      "xRateLimiter": ["pointsLimiter"],
       "xCache": []
     }
   }

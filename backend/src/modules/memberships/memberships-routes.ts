@@ -1,6 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/docs/x-routes';
 import { authGuard, crossTenantGuard, orgGuard, tenantGuard } from '#/middlewares/guard';
+import { bulkPointsLimiter, spamLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   memberListQuerySchema,
   membershipBaseSchema,
@@ -39,6 +40,7 @@ const membershipRoutes = {
     method: 'post',
     path: '/',
     xGuard: [authGuard, tenantGuard, orgGuard],
+    xRateLimiter: [spamLimiter, bulkPointsLimiter],
     tags: ['memberships'],
     summary: 'Create memberships',
     description:
@@ -72,6 +74,7 @@ const membershipRoutes = {
     method: 'delete',
     path: '/',
     xGuard: [authGuard, tenantGuard, orgGuard],
+    xRateLimiter: bulkPointsLimiter,
     tags: ['memberships'],
     summary: 'Delete memberships',
     description:

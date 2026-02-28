@@ -3,20 +3,18 @@ import { and, count, eq, getColumns, gte, ilike, inArray, or, type SQL, sql } fr
 import { html, raw } from 'hono/html';
 import { appConfig } from 'shared';
 import { attachmentsTable } from '#/db/schema/attachments';
-import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 import { seenCountsTable } from '#/db/schema/seen-counts';
 import { type Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
 import { getSignedUrlFromKey } from '#/lib/signed-url';
 import attachmentRoutes from '#/modules/attachment/attachment-routes';
-import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import {
   auditUserSelect,
   coalesceAuditUsers,
   createdByUser,
   modifiedByUser,
-  toUserMinimalBase,
+  withAuditUser,
   withAuditUsers,
 } from '#/modules/user/helpers/audit-user';
 import { canAccessEntity, canCreateEntity, checkPermission } from '#/permissions';
@@ -112,15 +110,9 @@ const attachmentRouteHandlers = app
     const bucketName = attachment?.bucketName ?? appConfig.s3.privateBucket;
 
     if (attachment) {
-      const user = ctx.var.user;
-      const userSystemRole = ctx.var.userSystemRole;
+      const isSystemAdmin = ctx.var.isSystemAdmin;
+      const memberships = ctx.var.memberships;
 
-      const memberships = await tenantDb
-        .select(membershipBaseSelect)
-        .from(membershipsTable)
-        .where(eq(membershipsTable.userId, user.id));
-
-      const isSystemAdmin = userSystemRole === 'admin';
       const { isAllowed } = checkPermission(memberships, 'read', attachment);
 
       if (!isSystemAdmin && !isAllowed) {
@@ -146,11 +138,11 @@ const attachmentRouteHandlers = app
     }
 
     const tenantDb = ctx.var.db;
-    const [populated] = await withAuditUsers([attachment], tenantDb);
+    const attachmentResponse = await withAuditUser(attachment, tenantDb);
 
-    ctx.set('entityCacheData', populated as Record<string, unknown>);
+    ctx.set('entityCacheData', attachmentResponse as Record<string, unknown>);
 
-    return ctx.json(populated, 200);
+    return ctx.json(attachmentResponse, 200);
   })
   /**
    * Create one or more attachments
@@ -172,13 +164,13 @@ const attachmentRouteHandlers = app
         .from(attachmentsTable)
         .where(sql`${attachmentsTable.stx}->>'mutationId' = ${batchStxId}`);
       if (existingBatch.length > 0) {
-        const data = await withAuditUsers(existingBatch, tenantDb);
-        return ctx.json({ data, rejectedItemIds: [] }, 200);
+        const attachmentResponses = await withAuditUsers(existingBatch, tenantDb);
+        return ctx.json({ data: attachmentResponses, rejectedItemIds: [] }, 200);
       }
     }
 
     const user = ctx.var.user;
-    const attachmentRestrictions = organization.restrictions.attachment;
+    const attachmentRestrictions = ctx.var.tenant.restrictions.quotas.attachment;
 
     if (attachmentRestrictions !== 0 && newAttachments.length > attachmentRestrictions) {
       throw new AppError(403, 'restrict_by_org', 'warn', { entityType: 'attachment' });
@@ -206,11 +198,9 @@ const attachmentRouteHandlers = app
 
     logEvent('info', `${createdAttachments.length} attachments have been created`);
 
-    const userMinimal = toUserMinimalBase(user);
-    const knownUsers = new Map([[user.id, userMinimal]]);
-    const data = await withAuditUsers(createdAttachments, tenantDb, knownUsers);
+    const attachmentResponses = await withAuditUsers(createdAttachments, tenantDb, user);
 
-    return ctx.json({ data, rejectedItemIds: [] }, 201);
+    return ctx.json({ data: attachmentResponses, rejectedItemIds: [] }, 201);
   })
   /**
    * Update an attachment by id
@@ -230,7 +220,7 @@ const attachmentRouteHandlers = app
 
     const tenantDb = ctx.var.db;
 
-    const [updatedAttachment] = await tenantDb
+    const [updatedAttachmentRecord] = await tenantDb
       .update(attachmentsTable)
       .set({
         [key]: updateData,
@@ -241,13 +231,11 @@ const attachmentRouteHandlers = app
       .where(eq(attachmentsTable.id, id))
       .returning();
 
-    logEvent('info', 'Attachment updated', { attachmentId: updatedAttachment.id });
+    logEvent('info', 'Attachment updated', { attachmentId: updatedAttachmentRecord.id });
 
-    const userMinimal = toUserMinimalBase(user);
-    const knownUsers = new Map([[user.id, userMinimal]]);
-    const [populated] = await withAuditUsers([updatedAttachment], tenantDb, knownUsers);
+    const attachmentResponse = await withAuditUser(updatedAttachmentRecord, tenantDb, user);
 
-    return ctx.json(populated, 200);
+    return ctx.json(attachmentResponse, 200);
   })
   // Delete attachments
   .openapi(attachmentRoutes.deleteAttachments, async (ctx) => {
@@ -261,7 +249,6 @@ const attachmentRouteHandlers = app
     }
 
     const toDeleteIds = Array.isArray(ids) ? ids : [ids];
-    if (!toDeleteIds.length) throw new AppError(400, 'invalid_request', 'warn', { entityType: 'attachment' });
 
     const { allowedIds, disallowedIds: rejectedItemIds } = await splitByPermission(
       ctx,
@@ -271,8 +258,6 @@ const attachmentRouteHandlers = app
       memberships,
     );
 
-    if (!allowedIds.length) throw new AppError(403, 'forbidden', 'warn', { entityType: 'attachment' });
-
     const tenantDb = ctx.var.db;
     await tenantDb.delete(attachmentsTable).where(inArray(attachmentsTable.id, allowedIds));
 
@@ -281,9 +266,9 @@ const attachmentRouteHandlers = app
     return ctx.json({ data: [] as never[], rejectedItemIds }, 200);
   })
   /**
-   * Redirect to attachment
+   * Get attachment link page (OG meta + client-side redirect)
    */
-  .openapi(attachmentRoutes.redirectToAttachment, async (ctx) => {
+  .openapi(attachmentRoutes.getAttachmentLink, async (ctx) => {
     const db = ctx.var.db;
     const { id } = ctx.req.valid('param');
 
@@ -296,7 +281,9 @@ const attachmentRouteHandlers = app
       .where(eq(organizationsTable.id, attachment.organizationId));
     if (!organization) throw new AppError(404, 'not_found', 'warn', { entityType: 'organization' });
 
-    const url = new URL(`${appConfig.frontendUrl}/organization/${organization.slug}/attachments`);
+    const url = new URL(
+      `${appConfig.frontendUrl}/${attachment.tenantId}/${organization.slug}/organization/attachments`,
+    );
     url.searchParams.set('attachmentDialogId', attachment.id);
     if (attachment.groupId) url.searchParams.set('groupId', attachment.groupId);
 

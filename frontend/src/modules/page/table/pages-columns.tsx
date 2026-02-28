@@ -82,7 +82,7 @@ export function usePagesTableColumns(isCompact: boolean) {
       width: 160,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => {
-        return <span className="font-light">{t(`app:${row.status}`)}</span>;
+        return <span className="font-light">{t(`common:${row.status}`)}</span>;
       },
       renderEditCell: ({ row, onRowChange }) => {
         const { t } = useTranslation();
@@ -99,7 +99,7 @@ export function usePagesTableColumns(isCompact: boolean) {
             <SelectContent sideOffset={-41} alignOffset={-5} className="duration-0!">
               {pageStatuses.map((status) => (
                 <SelectItem key={status} value={status}>
-                  {t(`app:${status}`)}
+                  {t(`common:${status}`)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -116,13 +116,9 @@ export function usePagesTableColumns(isCompact: boolean) {
       minWidth: isCompact ? null : 120,
       width: isCompact ? 50 : null,
       renderHeaderCell: HeaderCell,
-      // TODO revisit user cell since often no avatar
+      placeholderValue: '-',
       renderCell: ({ row, tabIndex }) =>
-        row.createdBy ? (
-          <UserCell compactable user={row.createdBy} tabIndex={tabIndex} />
-        ) : (
-          <span className="text-muted">-</span>
-        ),
+        row.createdBy && <UserCell compactable user={row.createdBy} tabIndex={tabIndex} />,
     },
     {
       key: 'createdAt',
@@ -132,7 +128,8 @@ export function usePagesTableColumns(isCompact: boolean) {
       resizable: true,
       minWidth: 160,
       renderHeaderCell: HeaderCell,
-      renderCell: ({ row }) => (row.createdAt ? dateShort(row.createdAt) : <span className="text-muted">-</span>),
+      placeholderValue: '-',
+      renderCell: ({ row }) => dateShort(row.createdAt),
     },
   ];
 

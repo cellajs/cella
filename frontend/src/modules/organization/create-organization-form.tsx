@@ -3,6 +3,7 @@ import type React from 'react';
 import { useMemo } from 'react';
 import { type UseFormProps, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { nanoid } from 'shared/nanoid';
 import { z } from 'zod';
 import type { Organization } from '~/api.gen';
 import { zCreateOrganizationsData } from '~/api.gen/zod.gen';
@@ -16,7 +17,6 @@ import { toaster } from '~/modules/common/toaster/service';
 import { useOrganizationCreateMutation } from '~/modules/organization/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, type LabelDirectionType } from '~/modules/ui/form';
-import { nanoid } from '~/utils/nanoid';
 
 interface Props {
   dialog?: boolean;

@@ -1,5 +1,8 @@
 {
     "about": "Over",
+    "go_to_content": "Ga naar pagina-inhoud",
+    "go_to_navigation": "Terug naar navigatie",
+    "go_to_panel": "Ga naar paneel",
     "local_only": "Alleen zichtbaar voor jou",
     "sync_failed": "Synchronisatie mislukt",
     "synced": "Gesynchroniseerd",

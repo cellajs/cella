@@ -1,29 +1,23 @@
 /**
  * Entity type guard functions bound to the app's hierarchy.
- * Wraps the generic builder guards with the concrete hierarchy instance.
+ * Single source of truth — calls hierarchy methods directly.
  */
 import { hierarchy } from './default-config';
-import {
-  getContextRoles as _getContextRoles,
-  isContextEntity as _isContextEntity,
-  isProductEntity as _isProductEntity,
-  isPublicProductEntity as _isPublicProductEntity,
-} from './src/builder/entity-guards';
 import type { ContextEntityType, ProductEntityType } from './types';
 
 /** Get roles for a context entity. */
 export function getContextRoles(contextType: string): readonly string[] {
-  return _getContextRoles(hierarchy, contextType);
+  return hierarchy.getRoles(contextType);
 }
 
 /** Check if entity type is a context entity (type guard). */
 export function isContextEntity(entityType: string): entityType is ContextEntityType {
-  return _isContextEntity(hierarchy, entityType);
+  return hierarchy.isContext(entityType);
 }
 
 /** Check if entity type is a product entity (type guard). */
 export function isProductEntity(entityType: string | null | undefined): entityType is ProductEntityType {
-  return _isProductEntity(hierarchy, entityType);
+  return !!entityType && hierarchy.isProduct(entityType);
 }
 
 /**
@@ -32,5 +26,5 @@ export function isProductEntity(entityType: string | null | undefined): entityTy
  * not whether a specific row IS public.
  */
 export function isPublicProductEntity(entityType: string): boolean {
-  return _isPublicProductEntity(hierarchy, entityType);
+  return hierarchy.canBePublic(entityType);
 }

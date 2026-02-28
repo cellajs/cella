@@ -1,13 +1,13 @@
 import { eq } from 'drizzle-orm';
 import { testClient } from 'hono/testing';
 import { appConfig } from 'shared';
+import { nanoid } from 'shared/nanoid';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
-import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';
 import { mockEmail, mockUser } from '../../mocks/mock-user';
 import { pastIsoDate } from '../../mocks/utils';

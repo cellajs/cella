@@ -18,14 +18,6 @@ export {
   createRoleRegistry,
 } from './entity-hierarchy';
 
-// Entity type guards
-export {
-  getContextRoles,
-  isContextEntity,
-  isProductEntity,
-  isPublicProductEntity,
-} from './entity-guards';
-
 // Utility functions
 export { hasKey, identityRecord, mergeDeep, recordFromKeys } from './utils';
 

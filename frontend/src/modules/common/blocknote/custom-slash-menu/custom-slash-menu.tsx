@@ -1,5 +1,4 @@
-import { SuggestionMenu } from '@blocknote/core/extensions';
-import { type DefaultReactSuggestionItem, type SuggestionMenuProps, useExtension } from '@blocknote/react';
+import type { DefaultReactSuggestionItem, SuggestionMenuProps } from '@blocknote/react';
 import { useEffect, useRef } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useEventListener } from '~/hooks/use-event-listener';
@@ -8,20 +7,29 @@ import type { CustomBlockTypes } from '~/modules/common/blocknote/types';
 import { DialogTitle } from '~/modules/ui/dialog';
 import { Drawer, DrawerContent, DrawerPortal } from '~/modules/ui/drawer';
 
-export const slashMenu = (
-  props: SuggestionMenuProps<DefaultReactSuggestionItem>,
-  originalItemCount: number,
-  allowedTypes: CustomBlockTypes[],
-) => {
-  const { items, loadingState, selectedIndex, onItemClick } = props;
+interface CustomSlashMenuComponentProps extends SuggestionMenuProps<DefaultReactSuggestionItem> {
+  originalItemCount: number;
+  allowedTypes: CustomBlockTypes[];
+}
+
+// Proper React component (not a plain function) so hooks work correctly
+// and React can optimize re-renders via reconciliation.
+export const CustomSlashMenuComponent = ({
+  items,
+  loadingState,
+  selectedIndex,
+  onItemClick,
+  originalItemCount,
+  allowedTypes,
+}: CustomSlashMenuComponentProps) => {
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const menuRef = useRef<HTMLDivElement>(null);
   const isMobile = useBreakpoints('max', 'sm');
   const indexedItemCount = customSlashIndexedItems.filter((item) => allowedTypes.includes(item)).length;
-  const slashMenu = useExtension(SuggestionMenu);
 
-  const handleKeyPress = async (e: KeyboardEvent) => {
+  const handleKeyPress = (e: KeyboardEvent) => {
     const { key: pressedKey } = e;
-    const itemIndex = Number.parseInt(pressedKey, 10) - 1; // Convert pressed key to an index
+    const itemIndex = Number.parseInt(pressedKey, 10) - 1;
 
     if (
       isMobile ||
@@ -35,41 +43,35 @@ export const slashMenu = (
     const item = items[itemIndex];
     if (!item) return;
 
-    return triggerItemClick(item, e);
-  };
-
-  const triggerItemClick = (
-    item: DefaultReactSuggestionItem,
-    event: KeyboardEvent | React.MouseEvent<HTMLButtonElement, MouseEvent>,
-  ) => {
-    event.preventDefault();
+    e.preventDefault();
     onItemClick?.(item);
   };
 
   // Ensure that all items are loaded before listening for keyboard shortcuts
   useEventListener('keydown', handleKeyPress, { enabled: loadingState === 'loaded' });
 
-  // To be able to use in sheet
-  useEffect(() => {
-    const bodyStyle = document.body.style;
-    const pointerEventsOnOpen = bodyStyle.pointerEvents;
-    bodyStyle.pointerEvents = 'auto';
-
-    return () => {
-      bodyStyle.pointerEvents = pointerEventsOnOpen;
-    };
-  }, []);
-
-  // Scroll to the selected item when it changes
+  // Scroll selected item into view within the menu container only (not the page)
   useEffect(() => {
     const selectedItem = itemRefs.current[selectedIndex || 0];
-    selectedItem?.scrollIntoView({ behavior: 'instant', block: 'nearest' });
+    const menuContainer = menuRef.current;
+    if (!selectedItem || !menuContainer) return;
+
+    const itemTop = selectedItem.offsetTop;
+    const itemBottom = itemTop + selectedItem.offsetHeight;
+    const scrollTop = menuContainer.scrollTop;
+    const scrollBottom = scrollTop + menuContainer.clientHeight;
+
+    if (itemTop < scrollTop) {
+      menuContainer.scrollTop = itemTop;
+    } else if (itemBottom > scrollBottom) {
+      menuContainer.scrollTop = itemBottom - menuContainer.clientHeight;
+    }
   }, [selectedIndex]);
 
   const menuContent = (
-    <div className="slash-menu">
+    <div className="slash-menu" role="listbox" ref={menuRef}>
       {items.map((item, index) => (
-        <div role="tablist" key={item.title}>
+        <div key={item.title}>
           {!isMobile && index === indexedItemCount && items.length === originalItemCount && (
             <hr className="slash-menu-separator" />
           )}
@@ -77,12 +79,12 @@ export const slashMenu = (
             ref={(el) => {
               itemRefs.current[index] = el;
             }}
-            role="tab"
+            role="option"
             type="button"
             aria-selected={selectedIndex === index}
             className="slash-menu-item px-2!"
-            onMouseDown={(e) => triggerItemClick(item, e)}
-            tabIndex={0}
+            onClick={() => onItemClick?.(item)}
+            tabIndex={-1}
           >
             <div className="flex items-center gap-3 mr-2 text-sm">
               {item.icon}
@@ -99,7 +101,7 @@ export const slashMenu = (
 
   if (isMobile) {
     return (
-      <Drawer open={slashMenu.shown()} onClose={() => slashMenu.closeMenu()} noBodyStyles>
+      <Drawer open={true} noBodyStyles>
         <DrawerPortal>
           <DrawerContent>
             <DialogTitle className="hidden" />

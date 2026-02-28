@@ -1,7 +1,8 @@
-import { index, pgEnum, pgTable, varchar } from 'drizzle-orm/pg-core';
+import { index, json, pgEnum, pgTable, varchar } from 'drizzle-orm/pg-core';
+import { nanoidTenant } from 'shared/nanoid';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
+import { defaultRestrictions, type Restrictions } from '#/db/utils/tenant-restrictions';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
-import { nanoidTenant } from '#/utils/nanoid';
 
 export const tenantStatusEnum = pgEnum('tenant_status', ['active', 'suspended', 'archived']);
 
@@ -12,6 +13,7 @@ export const tenantsTable = pgTable(
     id: varchar({ length: tenantIdLength }).primaryKey().$defaultFn(nanoidTenant),
     name: varchar({ length: maxLength.field }).notNull(),
     status: tenantStatusEnum().notNull().default('active'),
+    restrictions: json().$type<Restrictions>().notNull().default(defaultRestrictions()),
     createdAt: timestampColumns.createdAt,
     modifiedAt: timestampColumns.modifiedAt,
   },

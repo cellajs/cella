@@ -151,10 +151,18 @@
                           "required": true,
                           "anyOf": [
                             { "type": "number", "required": false },
-                            { "type": "object", "required": false }
+                            {
+                              "type": "object",
+                              "required": false,
+                              "additionalProperties": { "type": "number", "required": false }
+                            }
                           ]
                         },
-                        "attributes": { "type": "object", "required": false },
+                        "attributes": {
+                          "type": "object",
+                          "required": false,
+                          "additionalProperties": { "type": "string", "required": false }
+                        },
                         "startTime": { "type": "string", "required": false },
                         "endTime": { "type": "string", "required": false }
                       }
@@ -438,12 +446,14 @@
             "spansByName": {
               "type": "object",
               "required": true,
-              "description": "Span counts by name"
+              "description": "Span counts by name",
+              "additionalProperties": { "type": "number", "required": false }
             },
             "avgDurationByName": {
               "type": "object",
               "required": true,
-              "description": "Average duration by span name (ms)"
+              "description": "Average duration by span name (ms)",
+              "additionalProperties": { "type": "number", "required": false }
             },
             "errorCount": {
               "type": "number",

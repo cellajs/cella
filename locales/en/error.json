@@ -217,5 +217,7 @@
   "sync_organization_required": "Organization required",
   "sync_organization_mismatch": "Organization mismatch",
   "field_conflict": "Field conflict",
-  "field_conflict.text": "This field was modified by another user. Please refresh and try again."
+  "field_conflict.text": "This field was modified by another user. Please refresh and try again.",
+  "weak_password": "Weak password",
+  "weak_password.text": "This password is too easy to guess. Please choose a stronger password."
 }

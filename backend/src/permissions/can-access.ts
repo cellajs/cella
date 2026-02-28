@@ -1,10 +1,10 @@
 import type { Context } from 'hono';
 import type { EntityActionType } from 'shared';
+import { nanoid } from 'shared/nanoid';
 import type { Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
 import { checkPermission } from '#/permissions';
 import type { SubjectForPermission } from '#/permissions/permission-manager/types';
-import { nanoid } from '#/utils/nanoid';
 
 /**
  * Checks if user has permission to perform a collection-level action on an entity type.
@@ -22,7 +22,7 @@ export const canAccessEntity = (
   action: Exclude<EntityActionType, 'create'>,
   entity: SubjectForPermission,
 ) => {
-  const userSystemRole = ctx.var.userSystemRole;
+  const isSystemAdmin = ctx.var.isSystemAdmin;
   const memberships = ctx.var.memberships;
 
   const { entityType } = entity;
@@ -30,7 +30,7 @@ export const canAccessEntity = (
   // Build a minimal subject for permission check (generate temp id for policy resolution)
   const subject = { ...entity, id: nanoid() };
 
-  const { isAllowed } = checkPermission(memberships, action, subject, { systemRole: userSystemRole });
+  const { isAllowed } = checkPermission(memberships, action, subject, { isSystemAdmin });
 
   if (!isAllowed) {
     throw new AppError(403, 'forbidden', 'warn', { entityType, meta: { action } });

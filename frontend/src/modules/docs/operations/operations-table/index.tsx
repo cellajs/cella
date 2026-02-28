@@ -5,7 +5,6 @@ import type { RowsChangeData } from '~/modules/common/data-grid';
 import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { FocusViewContainer } from '~/modules/common/focus-view';
-import { StickyBox } from '~/modules/common/sticky-box';
 import { OperationsTableBar } from '~/modules/docs/operations/operations-table/operations-bar';
 import { useColumns } from '~/modules/docs/operations/operations-table/operations-columns';
 import { infoQueryOptions, operationsQueryOptions } from '~/modules/docs/query';
@@ -129,38 +128,34 @@ function OperationsTable() {
   );
 
   return (
-    <FocusViewContainer className="container min-h-screen">
-      <div className="flex flex-col gap-2">
-        <StickyBox className="z-10 bg-background py-3" offsetTop={0} hideOnScrollDown>
-          <OperationsTableBar
-            total={filteredOperations.length}
-            searchVars={{ q }}
-            setSearch={setSearch}
-            columns={columns}
-            setColumns={setColumns}
-            isCompact={isCompact}
-            setIsCompact={setIsCompact}
-            isEntityOnly={isEntityOnly}
-            setIsEntityOnly={setIsEntityOnly}
-          />
-        </StickyBox>
-        <DataTable<GenOperationSummary>
-          columns={columns.filter((column) => column.visible)}
-          rows={sortedOperations}
-          onRowsChange={onRowsChange}
-          selectionMode="none"
-          hasNextPage={false}
-          rowKeyGetter={(row) => row.hash}
-          isLoading={false}
-          isFetching={false}
-          limit={sortedOperations.length}
-          isFiltered={!!q}
-          rowHeight={42}
-          enableVirtualization={false}
-          sortColumns={sortColumns}
-          onSortColumnsChange={setSortColumns}
-        />
-      </div>
+    <FocusViewContainer>
+      <OperationsTableBar
+        total={filteredOperations.length}
+        searchVars={{ q }}
+        setSearch={setSearch}
+        columns={columns}
+        setColumns={setColumns}
+        isCompact={isCompact}
+        setIsCompact={setIsCompact}
+        isEntityOnly={isEntityOnly}
+        setIsEntityOnly={setIsEntityOnly}
+      />
+      <DataTable<GenOperationSummary>
+        columns={columns.filter((column) => column.visible)}
+        rows={sortedOperations}
+        onRowsChange={onRowsChange}
+        selectionMode="none"
+        hasNextPage={false}
+        rowKeyGetter={(row) => row.hash}
+        isLoading={false}
+        isFetching={false}
+        limit={sortedOperations.length}
+        isFiltered={!!q}
+        rowHeight={42}
+        enableVirtualization
+        sortColumns={sortColumns}
+        onSortColumnsChange={setSortColumns}
+      />
     </FocusViewContainer>
   );
 }

@@ -4,7 +4,7 @@
 
 ## Overview
 
-The **hybrid sync engine** extends Cella's **OpenAPI + React Query** infrastructure with sync and offline capabilities. It is "hybrid" because standard REST/OpenAPI endpoints remain the default, while entity modules *can* be 'upgraded' with transaction tracking, offline support, and realtime streaming. The core sync concept is a classic push-pull sync: A worker notifies the client, which then fetches the new data.
+The **hybrid sync engine** extends Cella's **OpenAPI + React Query** infrastructure with sync and offline capabilities. It is "hybrid" because standard REST/OpenAPI endpoints remain the default, while entity modules *can* be 'upgraded' with transaction tracking, offline support, and realtime streaming. The core sync concept is a classic _notify-then-pull_ sync: A worker notifies the client, which then fetches the new data.
 
 | Mode | Entity type | Features | Example |
 |------|-------------|----------|---------|
@@ -507,8 +507,6 @@ activityBus.onAny((event) => {
   }
 });
 ```
-
-// TODO-016 we need to consider a variant for a list of items because SSE could also trigger a lot of paginated requests.
 
 **On delete:** Just invalidate. No tombstone needed — let DB return 404 if client missed SSE.
 

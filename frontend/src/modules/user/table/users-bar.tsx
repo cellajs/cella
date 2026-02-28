@@ -1,7 +1,7 @@
 import { MailIcon, TrashIcon, XSquareIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { User } from '~/api.gen';
+
 import { ColumnsView } from '~/modules/common/data-table/columns-view';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
 import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
@@ -21,10 +21,10 @@ import { toaster } from '~/modules/common/toaster/service';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import { DeleteUsers } from '~/modules/user/delete-users';
 import { InviteUsers } from '~/modules/user/invite-users';
-import type { UsersRouteSearchParams, UserWithRole } from '~/modules/user/types';
+import type { BaseUser, UsersRouteSearchParams } from '~/modules/user/types';
 import { useInfiniteQueryTotal } from '~/query/basic';
 
-type UsersTableBarProps = BaseTableBarProps<UserWithRole, UsersRouteSearchParams>;
+type UsersTableBarProps = BaseTableBarProps<BaseUser, UsersRouteSearchParams>;
 
 export const UsersTableBar = ({
   selected,
@@ -78,7 +78,7 @@ export const UsersTableBar = ({
   };
 
   const openDeleteDialog = () => {
-    const callback = (args: CallbackArgs<User[]>) => {
+    const callback = (args: CallbackArgs<BaseUser[]>) => {
       if (args.status === 'success') {
         const message =
           args.data.length === 1
@@ -106,7 +106,7 @@ export const UsersTableBar = ({
 
   return (
     <>
-      <TableBarContainer>
+      <TableBarContainer searchVars={searchVars}>
         {/* Table filter bar */}
         <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
           <FilterBarActions>

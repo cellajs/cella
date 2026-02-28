@@ -89,7 +89,7 @@ export const TenantsTableBar = ({
   };
 
   return (
-    <TableBarContainer>
+    <TableBarContainer searchVars={searchVars}>
       <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
         <FilterBarActions>
           {selected.length > 0 ? (

@@ -72,6 +72,7 @@ export type CommonBlockNoteProps = {
   formattingToolbar?: boolean;
   trailingBlock?: boolean;
   clickOpensPreview?: boolean;
+  dense?: boolean;
   emojis?: boolean;
   excludeBlockTypes?: CustomBlockRegularTypes[];
   excludeFileBlockTypes?: CustomBlockFileTypes[];

@@ -2,7 +2,7 @@ import i18n from 'i18next';
 import { PencilIcon, TrashIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { User } from '~/api.gen';
+
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
 import { HeaderCell } from '~/modules/common/data-table/header-cell';
@@ -13,7 +13,7 @@ import { PopConfirm } from '~/modules/common/popconfirm';
 import { DeleteUsers } from '~/modules/user/delete-users';
 import { ImpersonateRow } from '~/modules/user/table/impersonate-row';
 import { openUpdateUserSheet, UpdateRow } from '~/modules/user/table/update-row';
-import type { UserWithRole } from '~/modules/user/types';
+import type { BaseUser } from '~/modules/user/types';
 import { UserCell } from '~/modules/user/user-cell';
 import { dateShort } from '~/utils/date-short';
 
@@ -22,7 +22,7 @@ export const useColumns = () => {
   const isMobile = useBreakpoints('max', 'sm', false);
 
   const columns = useMemo(() => {
-    const cols: ColumnOrColumnGroup<UserWithRole>[] = [
+    const cols: ColumnOrColumnGroup<BaseUser>[] = [
       CheckboxColumn,
       {
         key: 'name',
@@ -56,7 +56,7 @@ export const useColumns = () => {
         sortable: false,
         width: 32,
         renderCell: ({ row, tabIndex }) => {
-          const ellipsisOptions: EllipsisOption<User>[] = [
+          const ellipsisOptions: EllipsisOption<BaseUser>[] = [
             {
               label: i18n.t('common:edit'),
               icon: PencilIcon,
@@ -124,7 +124,8 @@ export const useColumns = () => {
         resizable: true,
         minWidth: 160,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row }) => (row.createdAt ? dateShort(row.createdAt) : <span className="text-muted">-</span>),
+        placeholderValue: '-',
+        renderCell: ({ row }) => dateShort(row.createdAt),
       },
       {
         key: 'lastSeenAt',
@@ -134,12 +135,13 @@ export const useColumns = () => {
         resizable: true,
         minWidth: 160,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row }) => (row.lastSeenAt ? dateShort(row.lastSeenAt) : <span className="text-muted">-</span>),
+        placeholderValue: '-',
+        renderCell: ({ row }) => dateShort(row.lastSeenAt),
       },
     ];
 
     return cols;
   }, []);
 
-  return useState<ColumnOrColumnGroup<UserWithRole>[]>(columns);
+  return useState<ColumnOrColumnGroup<BaseUser>[]>(columns);
 };

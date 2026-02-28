@@ -1,20 +1,29 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { and, count, eq, gte, inArray, notExists, sql } from 'drizzle-orm';
-import { appConfig } from 'shared';
+import { and, count, eq, getTableColumns, inArray, sql } from 'drizzle-orm';
+import type { SeenTrackedEntityType } from 'shared';
+import { appConfig, hierarchy } from 'shared';
+import { baseDb } from '#/db/db';
+import { contextCountersTable } from '#/db/schema/context-counters';
 import { seenByTable } from '#/db/schema/seen-by';
 import { seenCountsTable } from '#/db/schema/seen-counts';
-import { setTenantRlsContext } from '#/db/tenant-context';
 import type { Env } from '#/lib/context';
 import seenRoutes from '#/modules/seen/seen-routes';
-import { entityTables } from '#/table-config';
+import { entityTables, type OrgScopedEntityTable } from '#/table-config';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
 
-/** Product entity types that are org-scoped (have organizationId) */
-const orgScopedProductEntityTypes = appConfig.productEntityTypes.filter(
-  (t) => !(appConfig.parentlessProductEntityTypes as readonly string[]).includes(t),
-);
+/** Product entity types tracked for seen/unseen — configured in appConfig.seenTrackedEntityTypes */
+const trackedEntityTypes = appConfig.seenTrackedEntityTypes;
+const trackedEntityTypeSet = new Set<string>(trackedEntityTypes);
+
+/** Type guard: narrows a product entity type to a seen-tracked entity type */
+function isTrackedEntityType(entityType: string): entityType is SeenTrackedEntityType {
+  return trackedEntityTypeSet.has(entityType);
+}
+
+/** Context types that group unseen counts (derived from hierarchy parents of tracked types) */
+const groupingContextTypes = new Set(trackedEntityTypes.map((t) => hierarchy.getParent(t)).filter(Boolean));
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -22,10 +31,11 @@ const seenRouteHandlers = app
   /**
    * Mark entities as seen (batch)
    *
-   * 1. Validate entity type is org-scoped product type
-   * 2. Filter entity IDs to those created within 90 days
-   * 3. INSERT ... ON CONFLICT DO NOTHING RETURNING to dedup
-   * 4. UPSERT seenCounts for newly seen entities
+   * 1. Validate entity type is tracked + org-scoped product type
+   * 2. Filter entity IDs to those that exist + belong to this org
+   * 3. Derive contextId (parent context, e.g. projectId) per entity
+   * 4. INSERT ... ON CONFLICT DO NOTHING RETURNING to dedup
+   * 5. UPSERT seenCounts for newly seen entities
    */
   .openapi(seenRoutes.markSeen, async (ctx) => {
     const { entityIds, entityType } = ctx.req.valid('json');
@@ -38,34 +48,34 @@ const seenRouteHandlers = app
       `markSeen: ${entityType} x${entityIds.length} for org ${organization.id.slice(0, 8)} by ${user.id.slice(0, 8)}`,
     );
 
-    // Only org-scoped product entity types are trackable
-    if (!(orgScopedProductEntityTypes as readonly string[]).includes(entityType)) {
-      logEvent('debug', `markSeen: skipping non-org-scoped type "${entityType}"`);
+    // Only configured tracked entity types are accepted
+    if (!isTrackedEntityType(entityType)) {
+      logEvent('debug', `markSeen: skipping non-tracked type "${entityType}"`);
       return ctx.json({ newCount: 0 }, 200);
     }
 
-    // Get entity table to verify entity IDs exist and are within 90-day window
-    const entityTable = entityTables[entityType as keyof typeof entityTables];
-    if (!entityTable) {
-      return ctx.json({ newCount: 0 }, 200);
-    }
+    // After narrowing, entityType is SeenTrackedEntityType — a valid key of entityTables
+    const entityTable = entityTables[entityType];
 
-    const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
+    // Narrow to org-scoped table shape (all org-scoped product tables have these columns)
+    const orgTable = entityTable as OrgScopedEntityTable;
+    const columns = getTableColumns(entityTable);
 
-    // Filter to only entities that exist, belong to this org, and are within 90-day window
-    const validEntities = await tenantDb
-      .select({ id: entityTable.id, createdAt: (entityTable as any).createdAt as typeof entityTable.id })
+    // Derive context ID column from hierarchy parent (e.g., task → project → 'projectId')
+    const parentType = hierarchy.getParent(entityType);
+    const contextIdColumnKey = parentType ? appConfig.entityIdColumnKeys[parentType] : 'organizationId';
+    const contextIdColumn =
+      (columns as Record<string, typeof orgTable.organizationId>)[contextIdColumnKey] ?? orgTable.organizationId;
+
+    // Filter to only entities that exist and belong to this org
+    const validEntities: { id: string; contextId: string }[] = await tenantDb
+      .select({ id: orgTable.id, contextId: contextIdColumn })
       .from(entityTable)
-      .where(
-        and(
-          inArray(entityTable.id, entityIds),
-          eq((entityTable as any).organizationId, organization.id),
-          gte((entityTable as any).createdAt, ninetyDaysAgo),
-        ),
-      );
+      .where(and(inArray(orgTable.id, entityIds), eq(orgTable.organizationId, organization.id)));
 
     const validIds = validEntities.map((e) => e.id);
-    const entityCreatedAtMap = new Map(validEntities.map((e) => [e.id, e.createdAt]));
+
+    const entityContextIdMap = new Map(validEntities.map((e) => [e.id, e.contextId]));
     if (validIds.length === 0) {
       logEvent('debug', `markSeen: 0 valid entities out of ${entityIds.length} submitted`);
       return ctx.json({ newCount: 0 }, 200);
@@ -81,6 +91,7 @@ const seenRouteHandlers = app
           userId: user.id,
           entityId,
           entityType,
+          contextId: entityContextIdMap.get(entityId) ?? organization.id,
           organizationId: organization.id,
           tenantId: organization.tenantId,
         })),
@@ -101,13 +112,12 @@ const seenRouteHandlers = app
           newEntityIds.map((entityId) => ({
             entityId,
             entityType,
-            entityCreatedAt: entityCreatedAtMap.get(entityId)!,
             viewCount: 1,
             updatedAt: getIsoDate(),
           })),
         )
         .onConflictDoUpdate({
-          target: [seenCountsTable.entityId, seenCountsTable.entityCreatedAt],
+          target: seenCountsTable.entityId,
           set: {
             viewCount: sql`${seenCountsTable.viewCount} + 1`,
             updatedAt: sql`now()`,
@@ -123,6 +133,10 @@ export default seenRouteHandlers;
 
 /**
  * Unseen counts for current user.
+ *
+ * Computes unseen = total (context_counters) − seen (seen_by) per context.
+ * No entity table scans, no RLS context, no per-tenant loop.
+ * Both context_counters and seen_by have no RLS — queried directly via baseDb.
  */
 const unseenApp = new OpenAPIHono<Env>({ defaultHook });
 
@@ -130,68 +144,79 @@ export const unseenRouteHandlers = unseenApp.openapi(seenRoutes.getUnseenCounts,
   const user = ctx.var.user;
   const memberships = ctx.var.memberships;
 
-  // Org-scoped product entity types (exclude parentless types like pages)
-  const orgScopedTypes = appConfig.productEntityTypes.filter(
-    (t) => !(appConfig.parentlessProductEntityTypes as readonly string[]).includes(t),
-  );
-
-  // Group org IDs by tenant
-  const orgsByTenant = new Map<string, string[]>();
-  for (const m of memberships) {
-    const orgs = orgsByTenant.get(m.tenantId) ?? [];
-    orgs.push(m.organizationId);
-    orgsByTenant.set(m.tenantId, orgs);
-  }
-
-  if (orgsByTenant.size === 0 || orgScopedTypes.length === 0) {
+  if (memberships.length === 0 || trackedEntityTypeSet.size === 0) {
     return ctx.json({}, 200);
   }
 
-  const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
+  // Collect context entity IDs from memberships whose contextType groups seen counts
+  // e.g., project memberships → projectIds (since task's parent is project)
+  const contextIds: string[] = [];
+  for (const m of memberships) {
+    if (!groupingContextTypes.has(m.contextType)) continue;
+    const idKey = appConfig.entityIdColumnKeys[m.contextType] as keyof typeof m;
+    const id = m[idKey];
+    if (typeof id === 'string') contextIds.push(id);
+  }
 
-  // Shape: { [contextEntityId]: { [productEntityType]: count } }
+  // Fallback: if any tracked type has no parent, group by org → collect org IDs
+  const needsOrgFallback = trackedEntityTypes.some((t) => !hierarchy.getParent(t));
+  if (needsOrgFallback) {
+    const orgIds = new Set(memberships.map((m) => m.organizationId));
+    for (const id of orgIds) contextIds.push(id);
+  }
+
+  if (contextIds.length === 0) {
+    return ctx.json({}, 200);
+  }
+
+  const uniqueContextIds = [...new Set(contextIds)];
+
+  // 1. Total entity counts from context_counters (no RLS)
+  const countRows = await baseDb
+    .select({
+      contextKey: contextCountersTable.contextKey,
+      counts: contextCountersTable.counts,
+    })
+    .from(contextCountersTable)
+    .where(inArray(contextCountersTable.contextKey, uniqueContextIds));
+
+  // 2. User's seen counts from seen_by grouped by contextId + entityType (no RLS)
+  const seenRows = await baseDb
+    .select({
+      contextId: seenByTable.contextId,
+      entityType: seenByTable.entityType,
+      seenCount: count(),
+    })
+    .from(seenByTable)
+    .where(and(eq(seenByTable.userId, user.id), inArray(seenByTable.contextId, uniqueContextIds)))
+    .groupBy(seenByTable.contextId, seenByTable.entityType);
+
+  // 3. Build seen map: { [contextId]: { [entityType]: seenCount } }
+  const seenByContext = new Map<string, Map<string, number>>();
+  for (const row of seenRows) {
+    let typeMap = seenByContext.get(row.contextId);
+    if (!typeMap) {
+      typeMap = new Map();
+      seenByContext.set(row.contextId, typeMap);
+    }
+    typeMap.set(row.entityType, Number(row.seenCount));
+  }
+
+  // 4. Compute unseen = total − seen (floored at 0)
   const results: Record<string, Record<string, number>> = {};
 
-  // Query per tenant to satisfy entity table RLS policies
-  for (const [tenantId, tenantOrgIds] of orgsByTenant) {
-    const uniqueOrgIds = [...new Set(tenantOrgIds)];
+  for (const row of countRows) {
+    for (const trackedType of trackedEntityTypes) {
+      const total = (row.counts as Record<string, number>)?.[`e:${trackedType}`] ?? 0;
+      if (total <= 0) continue;
 
-    await setTenantRlsContext({ tenantId, userId: user.id }, async (tx) => {
-      for (const entityType of orgScopedTypes) {
-        const entityTable = entityTables[entityType as keyof typeof entityTables];
-        if (!entityTable || !('organizationId' in entityTable)) continue;
-
-        const entityTableTyped = entityTable as typeof entityTable & { organizationId: any; createdAt: any; id: any };
-
-        const rows = await tx
-          .select({
-            organizationId: entityTableTyped.organizationId,
-            unseenCount: count(),
-          })
-          .from(entityTable)
-          .where(
-            and(
-              inArray(entityTableTyped.organizationId, uniqueOrgIds),
-              gte(entityTableTyped.createdAt, ninetyDaysAgo),
-              notExists(
-                tx
-                  .select({ one: sql`1` })
-                  .from(seenByTable)
-                  .where(and(eq(seenByTable.entityId, entityTableTyped.id), eq(seenByTable.userId, user.id))),
-              ),
-            ),
-          )
-          .groupBy(entityTableTyped.organizationId);
-
-        for (const row of rows) {
-          if (row.unseenCount > 0) {
-            const contextId = row.organizationId as string;
-            if (!results[contextId]) results[contextId] = {};
-            results[contextId][entityType] = row.unseenCount;
-          }
-        }
+      const seen = seenByContext.get(row.contextKey)?.get(trackedType) ?? 0;
+      const unseen = Math.max(0, total - seen);
+      if (unseen > 0) {
+        if (!results[row.contextKey]) results[row.contextKey] = {};
+        results[row.contextKey][trackedType] = unseen;
       }
-    });
+    }
   }
 
   return ctx.json(results, 200);

@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/docs/x-routes';
 import { authGuard, crossTenantGuard, publicGuard } from '#/middlewares/guard';
-import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
+import { bulkPointsLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   meAuthDataSchema,
   mePendingInvitationSchema,
@@ -151,6 +151,7 @@ const meRoutes = {
     method: 'delete',
     path: '/sessions',
     xGuard: authGuard,
+    xRateLimiter: bulkPointsLimiter,
     tags: ['me'],
     summary: 'Terminate sessions',
     description: 'Ends one or more sessions for the *current user* based on provided session IDs.',

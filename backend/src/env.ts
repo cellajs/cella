@@ -37,7 +37,11 @@ export const env = createEnv({
     ARGON_SECRET: z.string(),
     COOKIE_SECRET: z.string(),
 
-    REMOTE_SYSTEM_ACCESS_IP: z.string(),
+    SYSTEM_ADMIN_IP_ALLOWLIST: z.union([
+      z.literal('none'),
+      z.literal('*'),
+      z.string().regex(/^(\d{1,3}\.){3}\d{1,3}(,(\d{1,3}\.){3}\d{1,3})*$/, 'Must be comma-separated IPv4 addresses'),
+    ]),
 
     ADMIN_EMAIL: z.email(),
 
@@ -66,6 +70,8 @@ export const env = createEnv({
 
     ELEMENT_ROOM_ID: z.string().optional(),
     ELEMENT_BOT_ACCESS_TOKEN: z.string().optional(),
+
+    MAPLE_API_KEY: z.string().optional(),
 
     // CDC Worker WebSocket authentication (required in full/production mode)
     CDC_INTERNAL_SECRET: z

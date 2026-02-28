@@ -10,6 +10,8 @@ import { queryClient } from '~/query/query-client';
 interface SeenBatch {
   tenantId: string;
   orgId: string;
+  /** Context entity ID for badge grouping (e.g., projectId). Defaults to orgId. */
+  contextId: string;
   entityType: ProductEntityType;
   entityIds: Set<string>;
 }
@@ -23,7 +25,13 @@ interface SeenStoreState {
   flushIntervalId: ReturnType<typeof setInterval> | null;
 
   /** Record an entity as seen — queued for next flush */
-  markEntitySeen: (tenantId: string, orgId: string, entityType: ProductEntityType, entityId: string) => void;
+  markEntitySeen: (
+    tenantId: string,
+    orgId: string,
+    contextId: string,
+    entityType: ProductEntityType,
+    entityId: string,
+  ) => void;
   /** Start the periodic flush interval (10 minutes) */
   startFlushInterval: () => void;
   /** Stop the periodic flush interval */
@@ -57,7 +65,10 @@ export const useSeenStore = create<SeenStoreState>()(
         flushedIds: new Set(),
         flushIntervalId: null,
 
-        markEntitySeen: (tenantId, orgId, entityType, entityId) => {
+        markEntitySeen: (tenantId, orgId, contextId, entityType, entityId) => {
+          // Skip entity types not configured for seen tracking
+          if (!(appConfig.seenTrackedEntityTypes as readonly string[]).includes(entityType)) return;
+
           // Skip if already flushed to server in a previous session
           if (get().flushedIds.has(entityId)) return;
 
@@ -73,24 +84,25 @@ export const useSeenStore = create<SeenStoreState>()(
           newSet.add(entityId);
 
           const newMap = new Map(pending);
-          newMap.set(key, { tenantId, orgId, entityType, entityIds: newSet });
+          newMap.set(key, { tenantId, orgId, contextId, entityType, entityIds: newSet });
           set({ pending: newMap });
 
           // Optimistically decrement unseen count in query cache for instant badge update
+          // Uses contextId (e.g., projectId) as cache key, matching backend grouping
           queryClient.setQueryData<GetUnseenCountsResponse>(['me', 'unseen', 'counts'], (old) => {
             if (!old) return old;
-            const current = old[orgId]?.[entityType];
+            const current = old[contextId]?.[entityType];
             if (!current) return old;
 
-            const updated = { ...old, [orgId]: { ...old[orgId], [entityType]: current - 1 } };
+            const updated = { ...old, [contextId]: { ...old[contextId], [entityType]: current - 1 } };
             // Remove zero entries
-            if (updated[orgId][entityType] <= 0) {
-              const { [entityType]: _, ...rest } = updated[orgId];
+            if (updated[contextId][entityType] <= 0) {
+              const { [entityType]: _, ...rest } = updated[contextId];
               if (Object.keys(rest).length === 0) {
-                const { [orgId]: __, ...withoutOrg } = updated;
-                return withoutOrg;
+                const { [contextId]: __, ...withoutContext } = updated;
+                return withoutContext;
               }
-              updated[orgId] = rest;
+              updated[contextId] = rest;
             }
             return updated;
           });
@@ -127,6 +139,7 @@ export const useSeenStore = create<SeenStoreState>()(
             key,
             tenantId: batch.tenantId,
             orgId: batch.orgId,
+            contextId: batch.contextId,
             entityType: batch.entityType,
             entityIds: Array.from(batch.entityIds),
           }));
@@ -175,6 +188,7 @@ export const useSeenStore = create<SeenStoreState>()(
               newMap.set(key, {
                 tenantId: batch.tenantId,
                 orgId: batch.orgId,
+                contextId: batch.contextId,
                 entityType: batch.entityType,
                 entityIds: merged,
               });

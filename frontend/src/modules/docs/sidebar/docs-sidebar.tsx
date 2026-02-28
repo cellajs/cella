@@ -59,7 +59,7 @@ export function DocsSidebar({ tags }: DocsSidebarProps) {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm', false);
 
-  const { systemRole } = useUserStore();
+  const { isSystemAdmin } = useUserStore();
 
   // Fetch schemas data for sidebar count (non-suspense to avoid sheet reload on mobile)
   const { data: schemas } = useQuery(schemasQueryOptions);
@@ -184,7 +184,7 @@ export function DocsSidebar({ tags }: DocsSidebarProps) {
                   </Link>
                 </CollapsibleTrigger>
               </SidebarMenuItem>
-              <CollapsibleContent forceMount className="overflow-hidden data-[state=closed]:hidden">
+              <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
                 <SidebarGroupContent>
                   {/* Operation tags sidebar */}
                   <Suspense fallback={null}>
@@ -230,7 +230,7 @@ export function DocsSidebar({ tags }: DocsSidebarProps) {
                   </Link>
                 </CollapsibleTrigger>
               </SidebarMenuItem>
-              <CollapsibleContent forceMount className="overflow-hidden data-[state=closed]:hidden">
+              <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
                 <SidebarGroupContent>
                   {/* Schemas tags list */}
                   <Suspense fallback={null}>
@@ -248,7 +248,7 @@ export function DocsSidebar({ tags }: DocsSidebarProps) {
         <div className="flex items-center gap-3 px-4 pr-1">
           <SidebarGroupLabel className="opacity-75 p-0 lowercase">{t('common:pages')}</SidebarGroupLabel>
           {/* Edit pages */}
-          {systemRole && (
+          {isSystemAdmin && (
             <Link
               to="/docs/pages"
               onClick={closeSheet}

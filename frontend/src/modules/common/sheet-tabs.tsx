@@ -1,8 +1,8 @@
 import { motion } from 'motion/react';
 import { Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { nanoid } from 'shared/nanoid';
 import { Button } from '~/modules/ui/button';
-import { nanoid } from '~/utils/nanoid';
 
 type SheetTab = { id: string; label: string; element: React.ReactNode };
 

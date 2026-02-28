@@ -16,11 +16,14 @@ export function ScrollArea({
   return (
     <ScrollAreaPrimitive.Root data-slot="scroll-area" className={cn('relative', className)} {...props}>
       <ScrollAreaPrimitive.Viewport
-        id={`${id}-viewport`}
+        id={id ? `${id}-viewport` : undefined}
         // to prevent warning on autoscroll set from Pragmatic DnD
         style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', height: '100%' }}
         ref={viewportRef}
-        className={cn('h-full w-full [&>div]:block! rounded-[inherit] touch-pan-y', viewportClassName)}
+        className={cn(
+          'h-full w-full [&>div]:block! rounded-[inherit] touch-pan-y focus:outline-none',
+          viewportClassName,
+        )}
       >
         {children}
       </ScrollAreaPrimitive.Viewport>

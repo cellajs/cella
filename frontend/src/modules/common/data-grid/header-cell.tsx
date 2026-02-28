@@ -9,18 +9,12 @@ import {
   getCellStyle,
   getHeaderCellRowSpan,
   getHeaderCellStyle,
-  getLeftRightKey,
   isCtrlKeyHeldDown,
   stopPropagation,
 } from './utils';
 
-const cellSortableClassname = 'rdg-cell-sortable';
-const cellResizableClassname = 'rdg-cell-resizable';
-const resizeHandleClassname = 'rdg-resize-handle';
-const cellDraggableClassname = 'rdg-cell-draggable';
-const cellDraggingClassname = 'rdg-cell-dragging';
-const cellOverClassname = 'rdg-cell-drag-over';
-const dragImageClassname = 'rdg-drag-image';
+const resizeHandleClassname = 'cursor-col-resize absolute inset-y-0 end-0 w-2.5';
+const dragImageClassname = 'rounded w-fit outline-2 outline-[hsl(207,100%,50%)] -outline-offset-2';
 
 type SharedHeaderRowProps<R, SR> = Pick<
   HeaderRowProps<R, SR, React.Key>,
@@ -30,7 +24,6 @@ type SharedHeaderRowProps<R, SR> = Pick<
   | 'onColumnResize'
   | 'onColumnResizeEnd'
   | 'shouldFocusGrid'
-  | 'direction'
   | 'onColumnsReorder'
 >;
 
@@ -55,7 +48,6 @@ export function HeaderCell<R, SR>({
   onSortColumnsChange,
   selectCell,
   shouldFocusGrid,
-  direction,
   draggedColumnKey,
   setDraggedColumnKey,
 }: HeaderCellProps<R, SR>) {
@@ -73,11 +65,9 @@ export function HeaderCell<R, SR>({
   const { sortable, resizable, draggable } = column;
 
   const className = getCellClassname(column, column.headerCellClass, {
-    [cellSortableClassname]: sortable,
-    [cellResizableClassname]: resizable,
-    [cellDraggableClassname]: draggable,
-    [cellDraggingClassname]: isDragging,
-    [cellOverClassname]: isOver,
+    'cursor-pointer': sortable,
+    'touch-action-none': resizable,
+    'bg-muted': isDragging || isOver,
   });
 
   function onSort(ctrlClick: boolean) {
@@ -145,8 +135,7 @@ export function HeaderCell<R, SR>({
       // stopPropagation prevents grid navigation during column resize
       event.stopPropagation();
       const { width } = event.currentTarget.getBoundingClientRect();
-      const { leftKey } = getLeftRightKey(direction);
-      const offset = key === leftKey ? -10 : 10;
+      const offset = key === 'ArrowLeft' ? -10 : 10;
       const newWidth = clampColumnWidth(width + offset, column);
       if (newWidth !== width) {
         onColumnResize(column, newWidth);
@@ -254,26 +243,17 @@ export function HeaderCell<R, SR>({
         {content}
 
         {resizable && (
-          <ResizeHandle
-            direction={direction}
-            column={column}
-            onColumnResize={onColumnResize}
-            onColumnResizeEnd={onColumnResizeEnd}
-          />
+          <ResizeHandle column={column} onColumnResize={onColumnResize} onColumnResizeEnd={onColumnResizeEnd} />
         )}
       </div>
     </>
   );
 }
 
-type ResizeHandleProps<R, SR> = Pick<
-  HeaderCellProps<R, SR>,
-  'direction' | 'column' | 'onColumnResize' | 'onColumnResizeEnd'
->;
+type ResizeHandleProps<R, SR> = Pick<HeaderCellProps<R, SR>, 'column' | 'onColumnResize' | 'onColumnResizeEnd'>;
 
-function ResizeHandle<R, SR>({ direction, column, onColumnResize, onColumnResizeEnd }: ResizeHandleProps<R, SR>) {
+function ResizeHandle<R, SR>({ column, onColumnResize, onColumnResizeEnd }: ResizeHandleProps<R, SR>) {
   const resizingOffsetRef = useRef<number>(undefined);
-  const isRtl = direction === 'rtl';
 
   function onPointerDown(event: React.PointerEvent<HTMLDivElement>) {
     if (event.pointerType === 'mouse' && event.buttons !== 1) {
@@ -286,15 +266,15 @@ function ResizeHandle<R, SR>({ direction, column, onColumnResize, onColumnResize
     const { currentTarget, pointerId } = event;
     currentTarget.setPointerCapture(pointerId);
     const headerCell = currentTarget.parentElement!;
-    const { right, left } = headerCell.getBoundingClientRect();
-    resizingOffsetRef.current = isRtl ? event.clientX - left : right - event.clientX;
+    const { right } = headerCell.getBoundingClientRect();
+    resizingOffsetRef.current = right - event.clientX;
   }
 
   function onPointerMove(event: React.PointerEvent<HTMLDivElement>) {
     const offset = resizingOffsetRef.current;
     if (offset === undefined) return;
-    const { width, right, left } = event.currentTarget.parentElement!.getBoundingClientRect();
-    let newWidth = isRtl ? right + offset - event.clientX : event.clientX + offset - left;
+    const { width, left } = event.currentTarget.parentElement!.getBoundingClientRect();
+    let newWidth = event.clientX + offset - left;
     newWidth = clampColumnWidth(newWidth, column);
     if (width > 0 && newWidth !== width) {
       onColumnResize(column, newWidth);

@@ -1,5 +1,5 @@
-import { type ComponentProps, type RefObject, useEffect, useRef, useState } from 'react';
-import { useScrollVisibility } from '~/hooks/use-scroll-visibility';
+import { type ComponentProps, useEffect, useRef, useState } from 'react';
+import { isProgrammaticScroll } from '~/hooks/use-scroll-spy-store';
 
 function getScrollParent(node: HTMLElement) {
   let parent: HTMLElement | null = node;
@@ -369,13 +369,11 @@ export function useStickyBox({
   bottom = false,
   enabled = true,
 }: StickyBoxConfig = {}) {
-  if (!enabled) return [() => {}, false] as const;
-
   const [node, setNode] = useState<HTMLElement | null>(null);
   const [isSticky, setIsSticky] = useState<boolean>(false);
 
   useEffect(() => {
-    if (!node || !stickyProp) return;
+    if (!enabled || !node || !stickyProp) return;
     const unsubs: UnsubList = [];
     setup(node, unsubs, { offsetBottom, offsetTop, bottom, enabled });
 
@@ -410,12 +408,9 @@ export function useStickyBox({
       });
     };
 
-    // Scroll/resize on the right target
-    const onScroll = scrollPane === window ? () => handleScrollLike() : () => handleScrollLike();
-
     const onResize = () => handleScrollLike();
 
-    addTarget.addEventListener('scroll', onScroll, passiveArg);
+    addTarget.addEventListener('scroll', handleScrollLike, passiveArg);
     window.addEventListener('resize', onResize, passiveArg);
 
     // also observe size changes of the scroll parent if it's an element
@@ -430,59 +425,110 @@ export function useStickyBox({
 
     return () => {
       unsubs.forEach((fn) => fn());
-      addTarget.removeEventListener('scroll', onScroll);
+      addTarget.removeEventListener('scroll', handleScrollLike);
       window.removeEventListener('resize', onResize);
       ro?.disconnect();
     };
   }, [node, offsetBottom, offsetTop, bottom, enabled]);
 
+  if (!enabled) return [() => {}, false] as const;
   return [setNode, isSticky] as const;
 }
 
 export type StickyBoxCompProps = StickyBoxConfig &
-  Pick<ComponentProps<'div'>, 'children' | 'className' | 'style'> & {
-    /** When true, hides the sticky box when scrolling down and shows it when scrolling up (reuses useScrollVisibility from floating-nav) */
-    hideOnScrollDown?: boolean;
+  Omit<ComponentProps<'div'>, 'ref'> & {
+    /** When true, hides the sticky box when its natural position scrolls out of the viewport */
+    hideWhenOutOfView?: boolean;
   };
 
 export function StickyBox(props: StickyBoxCompProps) {
-  const { enabled = true, offsetTop, offsetBottom, bottom, children, className, style, hideOnScrollDown } = props;
+  const {
+    enabled = true,
+    offsetTop,
+    offsetBottom,
+    bottom,
+    children,
+    className,
+    style,
+    hideWhenOutOfView,
+    ...rest
+  } = props;
 
   const ref = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
   const [setRef, isSticky] = useStickyBox({ offsetTop, offsetBottom, bottom, enabled });
-
-  // Find scroll parent for scroll-direction detection (reuses getScrollParent from this module)
-  const scrollContainerRef = useRef<HTMLElement | null>(null) as RefObject<HTMLElement | null>;
-  const [scrollParentReady, setScrollParentReady] = useState(false);
+  const [visible, setVisible] = useState(true);
 
   useEffect(() => {
     if (ref.current) setRef(ref.current);
   }, [setRef]);
 
   useEffect(() => {
-    if (!hideOnScrollDown || !ref.current) return;
-    const parent = getScrollParent(ref.current);
-    // If parent is an element (not window), store it in the ref
-    scrollContainerRef.current = parent === window ? null : (parent as HTMLElement);
-    setScrollParentReady(true);
-  }, [hideOnScrollDown]);
+    if (!hideWhenOutOfView || !sentinelRef.current) return;
 
-  const { isVisible } = useScrollVisibility(
-    hideOnScrollDown && scrollParentReady,
-    scrollContainerRef.current ? scrollContainerRef : undefined,
-  );
+    const scrollParent = getScrollParent(sentinelRef.current);
+    const root = scrollParent === window ? null : (scrollParent as HTMLElement);
+    let sentinelInView = true;
+    let lastScrollY = scrollParent === window ? window.scrollY : (scrollParent as HTMLElement).scrollTop;
+    let ticking = false;
 
-  const hideStyle: React.CSSProperties | undefined = hideOnScrollDown
-    ? {
-        transition: 'transform 300ms ease, opacity 300ms ease',
-        ...(isVisible ? {} : { transform: 'translateY(-100%)', opacity: 0, pointerEvents: 'none' as const }),
-      }
-    : undefined;
+    // Track when the natural position leaves/enters the viewport
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        sentinelInView = entry.isIntersecting;
+        if (sentinelInView) setVisible(true);
+      },
+      { root },
+    );
+    observer.observe(sentinelRef.current);
+
+    // When natural position is gone, use scroll direction to toggle
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const currentY = scrollParent === window ? window.scrollY : (scrollParent as HTMLElement).scrollTop;
+
+        // Hide during programmatic scrolls (e.g. scrollToSection)
+        if (isProgrammaticScroll()) {
+          setVisible(false);
+        } else if (!sentinelInView) {
+          const delta = currentY - lastScrollY;
+          if (Math.abs(delta) > 10) setVisible(delta < 0);
+        }
+
+        lastScrollY = currentY;
+        ticking = false;
+      });
+    };
+
+    scrollParent.addEventListener('scroll', onScroll, passiveArg);
+    return () => {
+      observer.disconnect();
+      scrollParent.removeEventListener('scroll', onScroll);
+    };
+  }, [hideWhenOutOfView]);
+
+  if (!hideWhenOutOfView) {
+    return (
+      <div className={className} data-sticky={isSticky} style={style} ref={ref} {...rest}>
+        {children}
+      </div>
+    );
+  }
+
+  const hideStyle: React.CSSProperties = {
+    transition: 'transform 300ms ease, opacity 300ms ease',
+    ...(visible ? {} : { transform: 'translateY(-100%)', opacity: 0, pointerEvents: 'none' as const }),
+  };
 
   return (
-    <div className={className} data-sticky={isSticky} style={{ ...style, ...hideStyle }} ref={ref}>
-      {children}
-    </div>
+    <>
+      <div ref={sentinelRef} className="sticky-sentinel" style={{ height: 1, marginBottom: -1 }} />
+      <div className={className} data-sticky={isSticky} style={{ ...style, ...hideStyle }} ref={ref} {...rest}>
+        {children}
+      </div>
+    </>
   );
 }
 // ISC License

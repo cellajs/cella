@@ -1,8 +1,9 @@
 import { z } from '@hono/zod-openapi';
 import { t } from 'i18next';
 import { appConfig } from 'shared';
+import { isCDNUrl } from 'shared/is-cdn-url';
+import zxcvbn from 'zxcvbn';
 import { maxLength } from '#/db/utils/constraints';
-import { isCDNUrl } from '#/utils/is-cdn-url';
 
 export { maxLength };
 
@@ -52,8 +53,20 @@ export const sessionCookieSchema = z.object({
   adminUserId: z.string().max(maxLength.id).optional(),
 });
 
-/** Password schema: string - min 8 - max characters */
-export const passwordSchema = z.string().min(8).max(maxLength.password);
+/** Password input schema: basic length validation only (used for sign-in) */
+export const passwordInputSchema = z.string().min(8).max(maxLength.password);
+
+/** Password schema: extends passwordInputSchema with minimum zxcvbn score of 2 (used for create/edit) */
+export const passwordSchema = passwordInputSchema.superRefine((password, ctx) => {
+  const { score } = zxcvbn(password);
+  if (score < 2) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Password is too weak',
+      params: { type: 'weak_password' },
+    });
+  }
+});
 
 /** Schema for supported languages (enum) */
 export const languageSchema = z.enum(appConfig.languages);
@@ -160,6 +173,12 @@ export const includeQuerySchema = z
   .optional()
   .transform((val) => (val ? val.split(',').map((s) => s.trim()) : []))
   .pipe(z.array(z.enum(includeOptions)));
+
+/** Schema for slug + include query params — used by single-get context entity routes */
+export const slugIncludeQuerySchema = z.object({
+  slug: booleanTransformSchema.optional(),
+  include: includeQuerySchema,
+});
 
 export const emailOrTokenIdQuerySchema = z.union([
   z.object({ email: z.email({ message: t('error:invalid_email') }), tokenId: z.string().optional() }),

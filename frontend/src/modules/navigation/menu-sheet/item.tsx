@@ -1,12 +1,15 @@
 import { onlineManager } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import type { LucideIcon } from 'lucide-react';
+import { BellOffIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { toaster } from '~/modules/common/toaster/service';
 import type { UserMenuItem } from '~/modules/me/types';
+import { seenGroupingContextTypes } from '~/modules/seen/helpers';
 import { useUnseenCount } from '~/modules/seen/use-unseen-count';
 import { getContextEntityRoute } from '~/routes-resolver';
+import { useNavigationStore } from '~/store/navigation';
 import { useUIStore } from '~/store/ui';
 import { cn } from '~/utils/cn';
 
@@ -22,14 +25,18 @@ export const MenuSheetItem = ({ item, icon: Icon, className, searchResults }: Me
 
   const isOnline = onlineManager.isOnline();
   const offlineAccess = useUIStore((state) => state.offlineAccess);
+  const detailedMenu = useNavigationStore((state) => state.detailedMenu);
 
   const canAccess = offlineAccess ? (isOnline ? true : !item.membership.archived) : true;
   const isSubitem = !searchResults && !item.submenu;
 
-  // Unseen count for this org — suppressed for muted memberships
-  const isMuted = item.membership.muted;
-  const unseenCount = useUnseenCount(item.entityType === 'organization' ? item.id : undefined);
-  const showBadge = unseenCount > 0 && !isMuted;
+  // Unseen count — shown on grouping contexts (direct) and their parents (aggregated from submenu).
+  // When detailedMenu is on, sub-items show their own badges so skip parent-level aggregation.
+  let contextIds: string | string[] | undefined;
+  if (seenGroupingContextTypes.has(item.entityType)) contextIds = item.id;
+  else if (!detailedMenu && item.submenu?.length) contextIds = item.submenu.map((sub) => sub.id);
+  const unseenCount = useUnseenCount(contextIds);
+  const showBadge = unseenCount > 0 && !item.membership.muted;
 
   // Build route path for the entity
   const { to, params, search } = getContextEntityRoute(item, isSubitem);
@@ -51,20 +58,25 @@ export const MenuSheetItem = ({ item, icon: Icon, className, searchResults }: Me
       activeProps={{ 'data-link-active': true }}
       className={cn(
         'relative group/menuItem h-12 w-full flex items-start justify-start space-x-1 rounded-sm p-0 focus:outline-hidden ring-2 ring-inset ring-transparent focus-visible:ring-foreground sm:hover:bg-accent/30 sm:hover:text-accent-foreground data-[subitem=true]:h-10 ',
-        'data-[link-active=true]:ring-transparent',
+        'data-[link-active=true]:ring-transparent data-[link-active=true]:focus-visible:ring-foreground',
         className,
       )}
     >
       <span className="absolute left-0 top-3 h-[calc(100%-1.5rem)] w-1 rounded-lg bg-primary transition-opacity opacity-0 group-data-[link-active=true]/menuItem:opacity-100" />
-      <span className="z-1 shrink-0 bg-background rounded-full m-2 mx-3 group-data-[subitem=true]/menuItem:my-2 group-data-[subitem=true]/menuItem:mx-4 size-8 group-data-[subitem=true]/menuItem:size-6">
+      <span className="relative z-1 shrink-0 bg-card rounded-full m-2 mx-3 group-data-[subitem=true]/menuItem:my-2 group-data-[subitem=true]/menuItem:mx-4 size-8 group-data-[subitem=true]/menuItem:size-6">
         <AvatarWrap
-          className="items-center text-sm group-hover/menuItem:font-bold group-data-[subitem=true]/menuItem:text-xs size-8 group-data-[subitem=true]/menuItem:size-6 sm:opacity-80 group-hover/menuItem:opacity-100 group-data-[link-active=true]/menuItem:opacity-100"
+          className="items-center text-sm bg-card group-hover/menuItem:font-bold group-data-[subitem=true]/menuItem:text-xs size-8 group-data-[subitem=true]/menuItem:size-6 sm:opacity-80 group-hover/menuItem:opacity-100 group-data-[link-active=true]/menuItem:opacity-100"
           type={item.entityType}
           id={item.id}
           icon={Icon}
           name={item.name}
           url={item.thumbnailUrl}
         />
+        {item.membership.muted && (
+          <span className="absolute bottom-0 right-0 flex items-center justify-center rounded-tl-lg rounded-br-none rounded-tr-none rounded-bl-none bg-card size-3.5 opacity-80">
+            <BellOffIcon size={10} strokeWidth={2} />
+          </span>
+        )}
       </span>
       <div className="truncate grow flex flex-col justify-center pr-2 text-left group-data-[subitem=true]/menuItem:pl-0 sm:opacity-80 group-hover/menuItem:opacity-100 group-data-[link-active=true]/menuItem:opacity-100">
         <div

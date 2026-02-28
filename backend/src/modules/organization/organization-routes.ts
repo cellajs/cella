@@ -1,5 +1,6 @@
 import { createXRoute } from '#/docs/x-routes';
 import { authGuard, crossTenantGuard, relatableGuard, tenantGuard } from '#/middlewares/guard';
+import { bulkPointsLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   organizationCreateBodySchema,
   organizationListQuerySchema,
@@ -31,6 +32,7 @@ const organizationRoutes = {
     method: 'post',
     path: '/{tenantId}/organizations',
     xGuard: [authGuard, tenantGuard],
+    xRateLimiter: bulkPointsLimiter,
     tags: ['organizations'],
     summary: 'Create organizations',
     description: 'Creates one or more new *organizations* within a tenant.',
@@ -132,6 +134,7 @@ const organizationRoutes = {
     method: 'delete',
     path: '/{tenantId}/organizations',
     xGuard: [authGuard, tenantGuard],
+    xRateLimiter: bulkPointsLimiter,
     tags: ['organizations'],
     summary: 'Delete organizations',
     description: 'Deletes one or more *organizations* by ID within a tenant.',

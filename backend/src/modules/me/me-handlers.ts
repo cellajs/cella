@@ -2,6 +2,7 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
 import type { EnabledOAuthProvider } from 'shared';
 import { appConfig } from 'shared';
+import { baseDb } from '#/db/db';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { membershipsTable } from '#/db/schema/memberships';
 import { AuthStrategy, sessionsTable } from '#/db/schema/sessions';
@@ -12,6 +13,7 @@ import { env } from '#/env';
 import { type Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
 import { resolveEntity } from '#/lib/resolve-entity';
+import { sendAccountSecurityEmail } from '#/lib/send-account-security-email';
 import { getParams, getSignature } from '#/lib/transloadit';
 import { deleteAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { getParsedSessionCookie, setUserSession, validateSession } from '#/modules/auth/general/helpers/session';
@@ -46,7 +48,7 @@ const meRouteHandlers = app
   .openapi(meRoutes.getMe, async (ctx) => {
     const db = ctx.var.db;
     const user = ctx.var.user;
-    const systemRole = ctx.var.userSystemRole ?? ('user' as const);
+    const isSystemAdmin = ctx.var.isSystemAdmin;
 
     // Update last visit date in user_activity table (avoids CDC noise on users table)
     const lastStartedAt = getIsoDate();
@@ -58,7 +60,7 @@ const meRouteHandlers = app
     // Re-select with userSelect to include activity timestamps (subqueries from user_activity table)
     const [userWithActivity] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, user.id)).limit(1);
 
-    return ctx.json({ user: userWithActivity, systemRole }, 200);
+    return ctx.json({ user: userWithActivity, isSystemAdmin }, 200);
   })
   /**
    * Toggle MFA require for me auth
@@ -86,24 +88,34 @@ const meRouteHandlers = app
       });
     }
 
-    const [updatedUser] = await db
-      .update(usersTable)
-      .set({ mfaRequired })
-      .where(eq(usersTable.id, user.id))
-      .returning();
+    // Update MFA flag and invalidate sessions atomically
+    const updatedUser = await baseDb.transaction(async (tx) => {
+      const [updatedUser] = await tx
+        .update(usersTable)
+        .set({ mfaRequired })
+        .where(eq(usersTable.id, user.id))
+        .returning();
+
+      if (updatedUser.mfaRequired) {
+        // Invalidate all existing regular sessions
+        await tx
+          .delete(sessionsTable)
+          .where(and(eq(sessionsTable.userId, updatedUser.id), eq(sessionsTable.type, 'regular')));
+      }
+
+      return updatedUser;
+    });
 
     if (updatedUser.mfaRequired) {
-      // Invalidate all existing regular sessions
-      await db
-        .delete(sessionsTable)
-        .where(and(eq(sessionsTable.userId, updatedUser.id), eq(sessionsTable.type, 'regular')));
-
       // Clear session cookie to enforce fresh login
       deleteAuthCookie(ctx, 'session');
 
       // Establish a new session after MFA verification
       await setUserSession(ctx, user, strategy, 'mfa');
     }
+
+    // Notify user about MFA status change
+    sendAccountSecurityEmail(user, mfaRequired ? 'mfa-enabled' : 'mfa-disabled');
 
     // Re-select with userSelect to include activity timestamps (subqueries from user_activity table)
     const [userWithActivity] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, user.id)).limit(1);

@@ -1,8 +1,8 @@
 import { boolean, foreignKey, index, jsonb, pgTable, text, varchar } from 'drizzle-orm/pg-core';
 import { appConfig, type UserFlags } from 'shared';
+import { nanoid } from 'shared/nanoid';
 import { maxLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
-import { nanoid } from '#/utils/nanoid';
 
 const languagesEnum = appConfig.languages;
 

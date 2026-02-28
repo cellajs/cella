@@ -20,14 +20,14 @@ import { createSpinner, spinnerFail, spinnerSuccess } from '../utils/display';
 import { git } from '../utils/git';
 
 /**
- * Push drifted files to a contrib branch in the upstream local clone.
- * Always force-pushes a single commit: upstream/branch + drifted files overlay.
+ * Push drifted and diverged files to a contrib branch in the upstream local clone.
+ * Always force-pushes a single commit: upstream/branch + fork files overlay.
  *
  * Uses git plumbing to avoid checkout — never touches the working tree.
  *
  * @returns true if files were pushed, false if skipped/failed
  */
-export async function pushContribBranch(driftedFiles: AnalyzedFile[], config: RuntimeConfig): Promise<boolean> {
+export async function pushContribBranch(files: AnalyzedFile[], config: RuntimeConfig): Promise<boolean> {
   const upstreamLocalPath = config.settings.upstreamLocalPath;
 
   if (!upstreamLocalPath) {
@@ -39,7 +39,7 @@ export async function pushContribBranch(driftedFiles: AnalyzedFile[], config: Ru
     return false;
   }
 
-  if (driftedFiles.length === 0) {
+  if (files.length === 0) {
     return false;
   }
 
@@ -48,7 +48,7 @@ export async function pushContribBranch(driftedFiles: AnalyzedFile[], config: Ru
   const upstreamBranch = config.settings.upstreamBranch;
   const tmpIndex = join(upstreamPath, '.git', 'tmp-contrib-index');
 
-  createSpinner(`contributing ${driftedFiles.length} drifted files to ${branchName}...`);
+  createSpinner(`contributing ${files.length} files to ${branchName}...`);
 
   try {
     // Ensure we have latest upstream
@@ -60,9 +60,9 @@ export async function pushContribBranch(driftedFiles: AnalyzedFile[], config: Ru
     // Read upstream branch tree into temp index
     await git(['read-tree', baseRef], upstreamPath, { env: indexEnv });
 
-    // Overlay drifted files from fork into the temp index
+    // Overlay fork files into the temp index
     const fileList: string[] = [];
-    for (const file of driftedFiles) {
+    for (const file of files) {
       const src = join(config.forkPath, file.path);
       // Validate path stays within fork root (CWE-22 path traversal)
       if (!resolve(src).startsWith(resolve(config.forkPath))) continue;
@@ -94,7 +94,7 @@ export async function pushContribBranch(driftedFiles: AnalyzedFile[], config: Ru
     // Create commit on top of upstream branch
     const parentHash = await git(['rev-parse', baseRef], upstreamPath);
     const commitBody = fileList.map((f) => `- ${f}`).join('\n');
-    const commitMessage = `contrib(${forkName}): ${fileList.length} drifted files\n\n${commitBody}`;
+    const commitMessage = `contrib(${forkName}): ${fileList.length} files\n\n${commitBody}`;
     const commitHash = await git(['commit-tree', treeHash, '-p', parentHash, '-m', commitMessage], upstreamPath);
 
     // Update branch ref without checkout

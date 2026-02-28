@@ -118,9 +118,20 @@ export const useColumns = (_isCompact: boolean, extensions: GenExtensionDefiniti
         return values?.length ? (
           <div className="font-mono text-[11px] flex flex-wrap gap-1 truncate">
             {values.map((value: string) => {
-              const label = ext.values?.[value]?.name ?? value;
+              const meta = ext.values?.[value];
+              const label = meta?.name ?? value;
+              const tooltipContent = meta?.description
+                ? `${value} — ${meta.description}`
+                : label !== value
+                  ? value
+                  : undefined;
               return (
-                <code key={value} className="truncate inline-block" title={value}>
+                <code
+                  key={value}
+                  className="truncate inline-block cursor-default"
+                  data-tooltip={tooltipContent ? 'true' : undefined}
+                  data-tooltip-content={tooltipContent}
+                >
                   {label}
                 </code>
               );

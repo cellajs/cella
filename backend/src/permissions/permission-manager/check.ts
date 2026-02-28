@@ -239,7 +239,7 @@ export function getAllDecisions<T extends MembershipBaseModel>(
 ): PermissionDecision<T> | Map<string, PermissionDecision<T>> {
   const isSingle = !Array.isArray(subjects);
   const subjectArray = isSingle ? [subjects] : subjects;
-  const isSystemAdmin = options?.systemRole === 'admin';
+  const isSystemAdmin = options?.isSystemAdmin === true;
 
   const results = new Map<string, PermissionDecision<T>>();
 

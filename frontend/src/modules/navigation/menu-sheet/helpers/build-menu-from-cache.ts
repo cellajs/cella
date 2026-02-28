@@ -17,7 +17,7 @@ const menuEntityTypes = Array.from(
  *
  * Used by both useMenu (reactive) and getMenuData (imperative).
  */
-export function buildMenuFromCache(userId: string, opts?: { detailedMenu?: boolean }): UserMenu {
+export function buildMenuFromCache(userId: string): UserMenu {
   const registry = getContextEntityTypeToListQueries();
   const byType = new Map<ContextEntityType, UserMenuItem[]>();
 
@@ -38,7 +38,7 @@ export function buildMenuFromCache(userId: string, opts?: { detailedMenu?: boole
     );
   }
 
-  return buildMenu(byType, appConfig.menuStructure, opts);
+  return buildMenu(byType, appConfig.menuStructure);
 }
 
 /** The menu entity types used for query subscriptions */

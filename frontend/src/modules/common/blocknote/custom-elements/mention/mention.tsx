@@ -25,20 +25,7 @@ export const MentionSchema = createReactInlineContentSpec(
       const { name } = props.inlineContent.props;
 
       const mentionContent = (
-        <span
-          style={{
-            backgroundColor: '#1F2937',
-            color: '#FFFFFF',
-            borderRadius: '4px',
-            padding: '2px 6px',
-            fontWeight: '600',
-            fontSize: '0.875em',
-            border: 'none',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '4px',
-          }}
-        >
+        <span className="bg-muted text-foreground rounded px-1.5 py-0.5 font-semibold text-[0.875em] border-none inline-flex items-center gap-1">
           @ {name}
         </span>
       );

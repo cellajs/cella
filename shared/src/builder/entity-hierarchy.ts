@@ -1,4 +1,10 @@
-/** Entity hierarchy builder with compile-time validation, parent inheritance, and public access config. */
+/**
+ * Entity hierarchy builder with compile-time validation, parent inheritance, and public access config.
+ *
+ * Fork contract: Every tenant-scoped table must have tenant_id. Tables with an organization
+ * parent must also have organization_id with a composite FK to organizations(tenant_id, id).
+ * Parentless products require tenant_id only. canBePublic() determines hybrid vs standard RLS policies.
+ */
 
 export type PublicAction = 'read';
 
@@ -294,10 +300,10 @@ export class EntityHierarchy<
     return entry?.kind === 'context' ? (entry.roles as readonly RoleFromRegistry<TRoles>[]) : [];
   }
 
-  /** Get the direct parent. Returns null for root entities or user. */
-  getParent(entityType: string): string | null {
+  /** Get the direct parent (always a context entity). Returns null for root entities or user. */
+  getParent(entityType: string): TContexts | null {
     const entry = this.entities.get(entityType);
-    return entry && entry.kind !== 'user' ? entry.parent : null;
+    return entry && entry.kind !== 'user' ? (entry.parent as TContexts | null) : null;
   }
 
   /** Get ordered ancestors (most-specific → root). Example: task → ['project', 'organization'] */
@@ -311,7 +317,7 @@ export class EntityHierarchy<
       const entry = this.entities.get(current);
       if (!entry) break;
       if (entry.kind === 'context') ancestors.push(current as TContexts);
-      current = entry.kind === 'user' ? null : entry.parent;
+      current = entry.kind === 'user' ? null : (entry.parent as TContexts | null);
     }
 
     const frozen = Object.freeze(ancestors);

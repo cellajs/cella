@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/docs/x-routes';
 import { authGuard, publicGuard, sysAdminGuard } from '#/middlewares/guard';
-import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
+import { bulkPointsLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { inviteBodySchema, sendNewsletterBodySchema } from '#/modules/system/system-schema';
 import {
   batchResponseSchema,
@@ -23,6 +23,7 @@ const systemRoutes = {
     method: 'post',
     path: '/invite',
     xGuard: [authGuard, sysAdminGuard],
+    xRateLimiter: [spamLimiter, bulkPointsLimiter],
     tags: ['system'],
     summary: 'Invite to system',
     description:
@@ -54,6 +55,7 @@ const systemRoutes = {
     method: 'delete',
     path: '/',
     xGuard: [authGuard, sysAdminGuard],
+    xRateLimiter: bulkPointsLimiter,
     tags: ['system'],
     summary: 'Delete users',
     description:

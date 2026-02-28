@@ -1,10 +1,14 @@
-import type { MiddlewareHandler } from 'hono';
 import { RateLimiterRes } from 'rate-limiter-flexible';
 import { xMiddleware } from '#/docs/x-middleware';
-import type { Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
 import { extractIdentifiers, getRateLimiterInstance, rateLimitError } from '#/middlewares/rate-limiter/helpers';
-import type { RateLimiterOpts, RateLimitIdentifier, RateLimitMode } from '#/middlewares/rate-limiter/types';
+import type {
+  RateLimiterHandler,
+  RateLimiterOpts,
+  RateLimitIdentifier,
+  RateLimitMode,
+} from '#/middlewares/rate-limiter/types';
+import { logEvent } from '#/utils/logger';
 
 // Default options
 export const defaultOptions = {
@@ -50,13 +54,14 @@ export const rateLimiter = (
   key: string,
   identifiers: RateLimitIdentifier[],
   opts?: RateLimiterOpts,
-): MiddlewareHandler<Env> => {
-  const { limits, functionName, name, description } = opts ?? {};
+): RateLimiterHandler => {
+  const { limits, functionName, name, description, onBlock, getConsumePoints, getPointsBudget } = opts ?? {};
   const config = { ...defaultOptions, ...limits };
-  const limiter = getRateLimiterInstance({ ...config, keyPrefix: `${key}_${mode}` });
-  const slowLimiter = getRateLimiterInstance({ ...slowOptions, keyPrefix: `${key}_${mode}:slow` });
+  const keyPrefix = `${key}_${mode}`;
+  const limiter = getRateLimiterInstance({ ...config, keyPrefix });
+  const slowLimiter = getRateLimiterInstance({ ...slowOptions, keyPrefix: `${keyPrefix}:slow` });
 
-  return xMiddleware(
+  const handler = xMiddleware(
     { functionName: functionName ?? `${key}Limiter`, type: 'x-rate-limiter', name: name ?? key, description },
     async (ctx, next) => {
       // Extract identifiers from multiple sources
@@ -87,6 +92,10 @@ export const rateLimiter = (
             rateLimitKey += `userId:${value}`;
             break;
           }
+          case 'tenantId': {
+            rateLimitKey += `tenantId:${value}`;
+            break;
+          }
         }
       }
 
@@ -94,17 +103,39 @@ export const rateLimiter = (
       const slowLimitState = await slowLimiter.get(rateLimitKey);
 
       // If already rate limited, return 429
-      if (limitState !== null && limitState.consumedPoints > limiter.points)
+      if (limitState !== null && limitState.consumedPoints > limiter.points) {
+        try {
+          onBlock?.(rateLimitKey);
+        } catch (err) {
+          logEvent('warn', 'Rate limit onBlock callback failed', { rateLimitKey, err: String(err) });
+        }
         return rateLimitError(ctx, limitState, rateLimitKey);
+      }
 
       // If slow brute forcing, return 429
-      if (slowLimitState !== null && slowLimitState.consumedPoints > slowLimiter.points)
+      if (slowLimitState !== null && slowLimitState.consumedPoints > slowLimiter.points) {
+        try {
+          onBlock?.(rateLimitKey);
+        } catch (err) {
+          logEvent('warn', 'Rate limit onBlock callback failed', { rateLimitKey, err: String(err) });
+        }
         return rateLimitError(ctx, slowLimitState, rateLimitKey);
+      }
 
       // If the rate limit mode is 'limit', consume points without blocking unless the limit is reached
       if (mode === 'limit') {
+        // Resolve how many points this request costs (default: 1)
+        const consumePoints = getConsumePoints ? await getConsumePoints(ctx) : 1;
+
+        // Dynamically adjust the budget per-tenant if a getPointsBudget callback is provided
+        if (getPointsBudget) {
+          const budget = getPointsBudget(ctx);
+          // Override the limiter's points cap for this key so existing consumed points are compared against the tenant budget
+          limiter.points = budget;
+        }
+
         try {
-          await limiter.consume(rateLimitKey);
+          await limiter.consume(rateLimitKey, consumePoints);
         } catch (rlRejected) {
           if (rlRejected instanceof RateLimiterRes) return rateLimitError(ctx, rlRejected, rateLimitKey);
           throw rlRejected;
@@ -123,7 +154,9 @@ export const rateLimiter = (
         if (mode === 'success') {
           try {
             await limiter.consume(rateLimitKey);
-          } catch {}
+          } catch (err) {
+            logEvent('warn', 'Rate limit consume failed', { rateLimitKey, err: String(err) });
+          }
           // If the mode is 'failseries', delete the rate limit on successful request
         } else if (mode === 'failseries') {
           await limiter.delete(rateLimitKey);
@@ -142,8 +175,15 @@ export const rateLimiter = (
         // Consume points for the specific rate limit
         try {
           await limiter.consume(rateLimitKey);
-        } catch {}
+        } catch (err) {
+          logEvent('warn', 'Rate limit consume failed', { rateLimitKey, err: String(err) });
+        }
       }
     },
-  );
+  ) as unknown as RateLimiterHandler;
+
+  handler.keyPrefix = keyPrefix;
+  handler.points = config.points;
+
+  return handler;
 };

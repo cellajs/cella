@@ -3,7 +3,7 @@ import { LogInIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ErrorNotice } from '~/modules/common/error-notice';
 import { ResendInvitationButton } from '~/modules/memberships/resend-invitation-button';
-import { buttonVariants } from '~/modules/ui/button';
+import { Button } from '~/modules/ui/button';
 import { useAuthStore } from '~/store/auth';
 
 /**
@@ -24,14 +24,12 @@ export function AuthErrorPage() {
     <ErrorNotice error={error} boundary="public">
       {showResendButton && resendData && <ResendInvitationButton resendData={resendData} />}
 
-      <Link
-        to="/auth/authenticate"
-        replace
-        className={buttonVariants({ variant: showResendButton ? 'plain' : 'default' })}
-      >
-        <LogInIcon size={16} className="mr-2" />
-        {t('common:sign_in')}
-      </Link>
+      <Button variant={showResendButton ? 'plain' : 'default'} asChild>
+        <Link to="/auth/authenticate" replace>
+          <LogInIcon size={16} className="mr-2" />
+          {t('common:sign_in')}
+        </Link>
+      </Button>
     </ErrorNotice>
   );
 }

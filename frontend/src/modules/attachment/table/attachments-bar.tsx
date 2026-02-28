@@ -1,5 +1,4 @@
 import { InfoIcon, TrashIcon, UploadIcon, XSquareIcon } from 'lucide-react';
-import { AnimatePresence, motion } from 'motion/react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Attachment } from '~/api.gen';
@@ -75,8 +74,8 @@ export const AttachmentsTableBar = ({
   };
 
   return (
-    <div className={'flex flex-col gap-4'}>
-      <TableBarContainer>
+    <>
+      <TableBarContainer searchVars={searchVars}>
         {/* Filter bar */}
         <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
           <FilterBarActions>
@@ -127,26 +126,10 @@ export const AttachmentsTableBar = ({
 
       {/* Explainer alert box */}
       {!!total && (
-        <AnimatePresence initial={false}>
-          {
-            <motion.div
-              key="alert"
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{
-                height: { duration: 0.3 },
-                opacity: { delay: 0.6, duration: 0.2 },
-              }}
-              style={{ overflow: 'hidden' }}
-            >
-              <AlertWrap id="edit_attachment" variant="plain" icon={InfoIcon}>
-                {t('common:edit_attachment.text')}
-              </AlertWrap>
-            </motion.div>
-          }
-        </AnimatePresence>
+        <AlertWrap id="edit_attachment" variant="plain" className="mb-4" icon={InfoIcon} animate>
+          {t('common:edit_attachment.text')}
+        </AlertWrap>
       )}
-    </div>
+    </>
   );
 };

@@ -1,6 +1,6 @@
+import { nanoid } from 'shared/nanoid';
 import type { z } from 'zod';
 import { useUserStore } from '~/store/user';
-import { nanoid } from '~/utils/nanoid';
 
 /**
  * Zod v4 schema definition structure (internal API).

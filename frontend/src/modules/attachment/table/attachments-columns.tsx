@@ -133,7 +133,8 @@ export const useColumns = (entity: EnrichedContextEntity, isSheet: boolean, isCo
         visible: !isSheet && !isMobile,
         minWidth: 160,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row }) => (row.createdAt ? dateShort(row.createdAt) : <span className="text-muted">-</span>),
+        placeholderValue: '-',
+        renderCell: ({ row }) => dateShort(row.createdAt),
       },
       {
         key: 'createdBy',
@@ -143,12 +144,9 @@ export const useColumns = (entity: EnrichedContextEntity, isSheet: boolean, isCo
         minWidth: isCompact ? null : 120,
         width: isCompact ? 50 : null,
         renderHeaderCell: HeaderCell,
+        placeholderValue: '-',
         renderCell: ({ row, tabIndex }) =>
-          row.createdBy ? (
-            <UserCell compactable user={row.createdBy} tabIndex={tabIndex} />
-          ) : (
-            <span className="text-muted">-</span>
-          ),
+          row.createdBy && <UserCell compactable user={row.createdBy} tabIndex={tabIndex} />,
       },
       {
         key: 'modifiedAt',
@@ -157,7 +155,8 @@ export const useColumns = (entity: EnrichedContextEntity, isSheet: boolean, isCo
         visible: false,
         minWidth: 160,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row }) => (row.modifiedAt ? dateShort(row.modifiedAt) : <span className="text-muted">-</span>),
+        placeholderValue: '-',
+        renderCell: ({ row }) => dateShort(row.modifiedAt),
       },
       {
         key: 'modifiedBy',
@@ -166,12 +165,9 @@ export const useColumns = (entity: EnrichedContextEntity, isSheet: boolean, isCo
         visible: false,
         width: isCompact ? 80 : 120,
         renderHeaderCell: HeaderCell,
+        placeholderValue: '-',
         renderCell: ({ row, tabIndex }) =>
-          row.modifiedBy ? (
-            <UserCell compactable user={row.modifiedBy} tabIndex={tabIndex} />
-          ) : (
-            <span className="text-muted">-</span>
-          ),
+          row.modifiedBy && <UserCell compactable user={row.modifiedBy} tabIndex={tabIndex} />,
       },
     ],
     [t, isMobile, isSheet, isCompact, canUpdate, entity.tenantId, entity.id],

@@ -1,5 +1,5 @@
-import { useDefaultRenderers } from '../data-grid-default-renderers-context';
 import type { RenderCheckboxProps } from '../types';
+import { renderCheckbox as defaultRenderCheckbox } from './render-checkbox';
 
 type SharedInputProps = Pick<
   RenderCheckboxProps,
@@ -19,9 +19,7 @@ export function SelectCellFormatter({
   'aria-label': ariaLabel,
   'aria-labelledby': ariaLabelledBy,
 }: SelectCellFormatterProps) {
-  const renderCheckbox = useDefaultRenderers()!.renderCheckbox!;
-
-  return renderCheckbox({
+  return defaultRenderCheckbox({
     'aria-label': ariaLabel,
     'aria-labelledby': ariaLabelledBy,
     tabIndex,

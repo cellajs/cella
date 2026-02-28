@@ -4,8 +4,14 @@
  * Reusable SQL fragments for consistent RLS policy definitions across all tenant-scoped tables.
  * Follows the fail-closed principle: missing context always results in denied access.
  *
+ * Policy categories:
+ *   Standard       — tenant + org check on all ops (orgScopedCrudPolicies)
+ *   Hybrid         — public SELECT OR tenant+org; writes require tenant+org (publicAccessCrudPolicies)
+ *   Cross-tenant   — user sees own rows across tenants; writes scoped to tenant (memberships)
+ *   Privilege-based — role grants control access; append-only for activities
+ *
  * Session variables: app.tenant_id, app.user_id, app.is_authenticated
- * @see info/RLS.md for full architecture documentation
+ * @see info/ARCHITECTURE.md for full architecture documentation
  */
 
 import { sql } from 'drizzle-orm';

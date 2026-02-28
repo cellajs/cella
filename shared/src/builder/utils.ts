@@ -46,3 +46,19 @@ export function recordFromKeys<K extends string, V>(keys: readonly K[], valueFn:
 export function identityRecord<const T extends readonly string[]>(keys: T): { readonly [K in T[number]]: K } {
   return Object.fromEntries(keys.map((k) => [k, k])) as { readonly [K in T[number]]: K };
 }
+
+/**
+ * Type-safe Object.entries that preserves key literal types.
+ * Use when iterating known objects where keys should remain narrowed.
+ */
+export function typedEntries<T extends Record<string, unknown>>(obj: T): [keyof T & string, T[keyof T]][] {
+  return Object.entries(obj) as [keyof T & string, T[keyof T]][];
+}
+
+/**
+ * Type-safe Object.keys that preserves key literal types.
+ * Use when iterating known objects where keys should remain narrowed.
+ */
+export function typedKeys<T extends Record<string, unknown>>(obj: T): (keyof T & string)[] {
+  return Object.keys(obj) as (keyof T & string)[];
+}

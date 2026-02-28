@@ -7,16 +7,16 @@ import { Button } from '~/modules/ui/button';
 interface SectionArchiveButtonProps {
   archiveToggleClick: () => void;
   archivedCount: number;
-  archivedOrgIds?: string[];
+  archivedContextIds?: string[];
 }
 
 export const SectionArchiveButton = ({
   archiveToggleClick,
   archivedCount,
-  archivedOrgIds = [],
+  archivedContextIds = [],
 }: SectionArchiveButtonProps) => {
   const { t } = useTranslation();
-  const archivedUnseenCount = useUnseenCount(archivedOrgIds);
+  const archivedUnseenCount = useUnseenCount(archivedContextIds);
 
   return (
     <motion.div layout>

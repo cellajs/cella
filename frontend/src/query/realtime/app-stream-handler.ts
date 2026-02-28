@@ -1,6 +1,4 @@
-import type { ContextEntityType, ProductEntityType } from 'shared';
-import { isProductEntity } from 'shared';
-import type { GetUnseenCountsResponse } from '~/api.gen';
+import { appConfig, type ContextEntityType, isProductEntity, type ProductEntityType } from 'shared';
 import { syncSpanNames, withSpanSync } from '~/lib/tracing';
 import { seenKeys } from '~/modules/seen/query';
 import { type EntityQueryKeys, getEntityQueryKeys } from '~/query/basic';
@@ -66,7 +64,7 @@ function handleMembershipNotification(
   switch (action) {
     case 'create':
       membershipOps.invalidateContextList(contextType);
-      membershipOps.refreshMenu();
+      membershipOps.invalidateMemberships();
       break;
 
     case 'update':
@@ -76,7 +74,7 @@ function handleMembershipNotification(
 
     case 'delete':
       membershipOps.invalidateContextList(contextType);
-      membershipOps.refreshMenu();
+      membershipOps.invalidateMemberships();
       break;
   }
 
@@ -125,7 +123,7 @@ function handleEntityNotification(
 
       // Optimistically increment unseen count for new entities from other users
       if (action === 'create') {
-        incrementUnseenCount(organizationId, entityType);
+        incrementUnseenCount(entityType);
       }
       break;
 
@@ -143,15 +141,13 @@ function handleEntityNotification(
 }
 
 /**
- * Optimistically increment the unseen count when a new entity is created via SSE.
- * Always correct since the user can't have seen a brand-new entity yet.
+ * Invalidate unseen counts when a new tracked entity is created via SSE.
+ * Since SSE notifications don't include parent context IDs (e.g., projectId),
+ * we invalidate the query to trigger a refetch instead of optimistic increment.
  */
-function incrementUnseenCount(orgId: string, entityType: string): void {
-  queryClient.setQueryData<GetUnseenCountsResponse>(seenKeys.unseenCounts, (old) => {
-    if (!old) return old;
-    return {
-      ...old,
-      [orgId]: { ...(old[orgId] ?? {}), [entityType]: (old[orgId]?.[entityType] ?? 0) + 1 },
-    };
-  });
+function incrementUnseenCount(entityType: string): void {
+  const trackedTypes = appConfig.seenTrackedEntityTypes as readonly string[];
+  if (!trackedTypes.includes(entityType)) return;
+
+  queryClient.invalidateQueries({ queryKey: seenKeys.unseenCounts });
 }

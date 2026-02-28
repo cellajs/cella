@@ -25,7 +25,6 @@ import type {
   MemberQueryData,
   MutationUpdateMembership,
 } from '~/modules/memberships/types';
-import { getMenuData } from '~/modules/navigation/menu-sheet/helpers/get-menu-data';
 import {
   changeInfiniteQueryData,
   changeQueryData,
@@ -222,7 +221,8 @@ export const useMemberUpdateMutation = () =>
       toaster(toastMessage, 'success');
     },
     onError: (_, __, context) => {
-      getMenuData();
+      // Invalidate memberships to undo the optimistic update — enrichment subscriber re-syncs entity lists
+      queryClient.invalidateQueries({ queryKey: meKeys.memberships, refetchType: 'active' });
       onError(_, __, context?.queryContext);
     },
   });

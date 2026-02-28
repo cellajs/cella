@@ -1,5 +1,3 @@
-import type { Direction, Maybe } from '../types';
-
 // https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/key/Key_Values
 const nonInputKeys = new Set([
   // Special keys
@@ -80,11 +78,9 @@ export function onEditorNavigation({ key, target }: React.KeyboardEvent<HTMLDivE
   return false;
 }
 
-export function getLeftRightKey(direction: Maybe<Direction>) {
-  const isRtl = direction === 'rtl';
-
+export function getLeftRightKey() {
   return {
-    leftKey: isRtl ? 'ArrowRight' : 'ArrowLeft',
-    rightKey: isRtl ? 'ArrowLeft' : 'ArrowRight',
+    leftKey: 'ArrowLeft',
+    rightKey: 'ArrowRight',
   } as const;
 }

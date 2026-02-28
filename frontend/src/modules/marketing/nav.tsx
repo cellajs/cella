@@ -12,9 +12,8 @@ import { GithubIcon } from '~/modules/marketing/icons/github';
 import { marketingNavConfig } from '~/modules/marketing/marketing-config';
 import { UserLanguage } from '~/modules/me/user-language';
 import { UserTheme } from '~/modules/me/user-theme';
-import { Button, buttonVariants } from '~/modules/ui/button';
+import { Button } from '~/modules/ui/button';
 import { Sheet, SheetContent, SheetTitle } from '~/modules/ui/sheet';
-import { cn } from '~/utils/cn';
 
 export const MarketingNav = () => {
   const { t } = useTranslation();
@@ -34,22 +33,22 @@ export const MarketingNav = () => {
 
   const renderNavItems = () => {
     return marketingNavConfig.map(({ url, hash, id }) => (
-      <Link
-        to={url}
-        hash={hash}
-        replace={location.pathname === '/about'}
-        key={id}
-        draggable="false"
-        onClick={(e) => {
-          setActiveSheet(false);
-          if (!hash) return;
-          e.preventDefault();
-          handleNavClick(hash);
-        }}
-        className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }))}
-      >
-        {t(id)}
-      </Link>
+      <Button key={id} variant="ghost" size="lg" asChild>
+        <Link
+          to={url}
+          hash={hash}
+          replace={location.pathname === '/about'}
+          draggable="false"
+          onClick={(e) => {
+            setActiveSheet(false);
+            if (!hash) return;
+            e.preventDefault();
+            handleNavClick(hash);
+          }}
+        >
+          {t(id)}
+        </Link>
+      </Button>
     ));
   };
 
@@ -127,9 +126,11 @@ export const MarketingNav = () => {
               </Button>
             )}
 
-            <Link to="/auth/authenticate" preload={false} className={cn('sm:ml-2 max-xs:hidden"', buttonVariants())}>
-              {t('common:sign_in')}
-            </Link>
+            <Button className="sm:ml-2 max-xs:hidden" asChild>
+              <Link to="/auth/authenticate" preload={false}>
+                {t('common:sign_in')}
+              </Link>
+            </Button>
           </div>
         </div>
       </header>

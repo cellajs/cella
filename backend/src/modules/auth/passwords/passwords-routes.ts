@@ -5,7 +5,7 @@ import { hasValidSingleUseToken } from '#/middlewares/has-valid-single-use-token
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { emailEnumLimiter, passwordLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { emailBodySchema } from '#/modules/auth/general/general-schema';
-import { emailPasswordBodySchema } from '#/modules/auth/passwords/passwords-schema';
+import { emailPasswordBodySchema, signInBodySchema } from '#/modules/auth/passwords/passwords-schema';
 import { cookieSchema, errorResponseRefs, locationSchema, passwordSchema } from '#/schemas';
 import {
   mockCreatePasswordResponse,
@@ -150,7 +150,7 @@ const authPasswordsRoutes = {
     request: {
       body: {
         required: true,
-        content: { 'application/json': { schema: emailPasswordBodySchema } },
+        content: { 'application/json': { schema: signInBodySchema } },
       },
     },
     responses: {

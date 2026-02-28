@@ -3,6 +3,7 @@ import { EventName, Paddle } from '@paddle/paddle-node-sdk';
 import { and, eq, inArray, isNull } from 'drizzle-orm';
 import i18n from 'i18next';
 import { appConfig } from 'shared';
+import { nanoid } from 'shared/nanoid';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
@@ -21,7 +22,6 @@ import { userSelect } from '#/modules/user/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { logError, logEvent } from '#/utils/logger';
-import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
@@ -169,7 +169,6 @@ const systemRouteHandlers = app
 
     // Convert the user ids to an array
     const toDeleteIds = Array.isArray(ids) ? ids : [ids];
-    if (!toDeleteIds.length) throw new AppError(400, 'invalid_request', 'error', { entityType: 'user' });
 
     // Fetch users by IDs to verify they exist
     const targets = await db.select({ id: usersTable.id }).from(usersTable).where(inArray(usersTable.id, toDeleteIds));

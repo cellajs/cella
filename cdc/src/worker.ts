@@ -70,13 +70,13 @@ async function persistAndSendActivity(
     const seq = seqScope ? await getNextSeq(seqScope) : undefined;
 
     // Update entity/membership counts in contextCountersTable.counts JSONB
-    const countDelta = getCountDeltas(
+    const countDeltas = getCountDeltas(
       processResult.entry,
       activityWithId.action as 'create' | 'update' | 'delete',
       processResult.entityData,
       processResult.oldEntityData,
     );
-    if (countDelta) await updateContextCounts(countDelta);
+    for (const delta of countDeltas) await updateContextCounts(delta);
 
     const insertResult = await withRetry(async () => {
       await cdcDb.insert(activitiesTable).values({ ...activityWithId, seq }).onConflictDoNothing();

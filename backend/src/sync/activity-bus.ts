@@ -82,7 +82,7 @@ export interface ActivityEventWithEntity extends ActivityEvent {
  * ```typescript
  * if (event.resourceType === 'membership') {
  *   const membership = getTypedEntity(event, 'membership');
- *   console.log(membership?.userId); // Properly typed as string
+ *   console.info(membership?.userId); // Properly typed as string
  * }
  * ```
  */

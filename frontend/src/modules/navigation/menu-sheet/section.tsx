@@ -7,6 +7,7 @@ import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { AlertWrap } from '~/modules/common/alert-wrap';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import type { UserMenuItem } from '~/modules/me/types';
+import { collectContextIds } from '~/modules/navigation/menu-sheet/helpers/collect-context-ids';
 import { MenuSheetItemsEdit } from '~/modules/navigation/menu-sheet/items-edit-list';
 import { MenuSheetItems } from '~/modules/navigation/menu-sheet/items-list';
 import { SectionArchiveButton } from '~/modules/navigation/menu-sheet/section-archive-button';
@@ -36,10 +37,10 @@ export const MenuSheetSection = ({ data, options }: MenuSheetSectionProps) => {
   const archivedSectionType = `${options.entityType}-archived`;
   const isArchivedVisible = activeSections?.[archivedSectionType] ?? true;
   const isSectionVisible = activeSections?.[options.entityType] ?? true;
-  const archivedCount = data.filter((i) => i.membership?.archived).length;
-  const archivedOrgIds = data
-    .filter((i) => i.membership?.archived && i.entityType === 'organization' && !i.membership.muted)
-    .map((i) => i.id);
+  const archivedItems = data.filter((i) => i.membership?.archived);
+  const archivedCount = archivedItems.length;
+  const activeContextIds = collectContextIds(data, { archived: false });
+  const archivedContextIds = collectContextIds(data, { archived: true });
 
   const handleCreateAction = (ref: RefObject<HTMLButtonElement | null>) => {
     if (isMobile) {
@@ -59,6 +60,7 @@ export const MenuSheetSection = ({ data, options }: MenuSheetSectionProps) => {
     <div className="group/menuSection" data-visible={isSectionVisible}>
       <MenuSectionButton
         data={data}
+        contextIds={activeContextIds}
         options={options}
         isEditing={isEditing}
         isSectionVisible={isSectionVisible}
@@ -78,7 +80,7 @@ export const MenuSheetSection = ({ data, options }: MenuSheetSectionProps) => {
             }}
             style={{ overflow: 'hidden' }}
           >
-            <AlertWrap id="menu_management" variant="plain" icon={InfoIcon}>
+            <AlertWrap id="menu_management" variant="plain" icon={InfoIcon} animate>
               {t('common:configure_menu.text')}
             </AlertWrap>
           </motion.div>
@@ -110,7 +112,7 @@ export const MenuSheetSection = ({ data, options }: MenuSheetSectionProps) => {
                   <SectionArchiveButton
                     archiveToggleClick={archiveToggleClick}
                     archivedCount={archivedCount}
-                    archivedOrgIds={archivedOrgIds}
+                    archivedContextIds={archivedContextIds}
                   />
                 )}
                 <AnimatePresence initial={false}>

@@ -99,7 +99,7 @@ export function UpdatePageForm({ page }: Props) {
 
   return (
     <>
-      <StickyBox className="z-10 bg-background" offsetTop={0} hideOnScrollDown>
+      <StickyBox className="z-10 bg-background/60 backdrop-blur-xs" hideWhenOutOfView>
         <div className="flex items-center justify-between gap-3 py-3 sm:py-6">
           <div className="flex items-center gap-2">
             <Button

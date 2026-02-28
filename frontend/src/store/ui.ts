@@ -73,12 +73,6 @@ export const useUIStore = create<UIStoreState>()(
         setFocusView: (status) => {
           set((state) => {
             state.focusView = status;
-            // Only move scroll to table if .focus-view-scroll is present
-            if (status && document.getElementsByClassName('focus-view-scroll').length) {
-              document.body.classList.add('focus-view-table');
-            } else {
-              document.body.classList.remove('focus-view-table');
-            }
           });
         },
         lockUI: (source) => {

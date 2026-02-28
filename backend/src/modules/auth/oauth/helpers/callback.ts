@@ -1,7 +1,7 @@
 import { and, eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { appConfig, type EnabledOAuthProvider } from 'shared';
-import { baseDb as db } from '#/db/db';
+import { type DbOrTx, baseDb as db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { type OAuthAccountModel, oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import type { UserModel } from '#/db/schema/users';
@@ -11,10 +11,10 @@ import { AppError, type ErrorKey } from '#/lib/error';
 import { initiateMfa } from '#/modules/auth/general/helpers/mfa';
 import { getParsedSessionCookie, setUserSession, validateSession } from '#/modules/auth/general/helpers/session';
 import { handleCreateUser } from '#/modules/auth/general/helpers/user';
-import { OAuthCookiePayload } from '#/modules/auth/oauth/helpers/initiation';
 import type { Provider } from '#/modules/auth/oauth/helpers/providers';
 import { sendOAuthVerificationEmail } from '#/modules/auth/oauth/helpers/send-oauth-verification-email';
 import type { TransformedUser } from '#/modules/auth/oauth/helpers/transform-user-data';
+import type { OAuthCookiePayload } from '#/modules/auth/oauth/oauth-schema';
 import { userSelect } from '#/modules/user/helpers/select';
 import { getValidSingleUseToken } from '#/utils/get-valid-single-use-token';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
@@ -153,9 +153,11 @@ const authCallbackFlow = async ({
     throw new AppError(403, 'sign_up_restricted', 'info');
   }
 
-  // No user match → create a new user and OAuth account
-  const user = await handleCreateUser({ newUser: providerUser, emailVerified: false });
-  const newOAuthAccount = await createOAuthAccount(user.id, providerUser.id, provider, providerUser.email);
+  // No user match → create a new user and OAuth account atomically
+  const newOAuthAccount = await db.transaction(async (tx) => {
+    const user = await handleCreateUser({ newUser: providerUser, emailVerified: false, db: tx });
+    return createOAuthAccount(tx, user.id, providerUser.id, provider, providerUser.email);
+  });
 
   return { type: 'unverified', oauthAccount: newOAuthAccount, reason: 'signup' };
 };
@@ -209,7 +211,7 @@ const connectCallbackFlow = async ({
   }
 
   // Safe to connect → create and link OAuth account to current user
-  const newOAuthAccount = await createOAuthAccount(connectUserId, providerUser.id, provider, providerUser.email);
+  const newOAuthAccount = await createOAuthAccount(db, connectUserId, providerUser.id, provider, providerUser.email);
   return { type: 'unverified', oauthAccount: newOAuthAccount, reason: 'connect' };
 };
 
@@ -240,21 +242,24 @@ const inviteCallbackFlow = async ({
   // OAuth account already linked
   if (oauthAccount) throw new AppError(409, 'oauth_conflict', 'error');
 
-  // No linked OAuth account and email already in use by an existing user
-  const users = await db
+  // No linked OAuth account and email already in use by an existing user (check both emails and users tables)
+  const usersWithVerifiedEmail = await db
     .select(userSelect)
     .from(usersTable)
     .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
     .where(eq(emailsTable.email, providerUser.email));
-  if (users.length) throw new AppError(409, 'oauth_email_exists', 'error');
+  if (usersWithVerifiedEmail.length) throw new AppError(409, 'oauth_email_exists', 'error');
 
-  // TODO-013 User already signed up meanwhile?
+  // User may have signed up via another method (password/OAuth) but hasn't verified email yet
+  const [existingUser] = await db.select(userSelect).from(usersTable).where(eq(usersTable.email, providerUser.email));
+  if (existingUser) throw new AppError(409, 'oauth_email_exists', 'error');
 
-  // No user match → create a new user
-  const user = await handleCreateUser({ newUser: providerUser, emailVerified: false });
+  // No user match → create a new user and OAuth account atomically
+  const newOAuthAccount = await db.transaction(async (tx) => {
+    const user = await handleCreateUser({ newUser: providerUser, emailVerified: false, db: tx });
+    return createOAuthAccount(tx, user.id, providerUser.id, provider, providerUser.email);
+  });
 
-  // link user to new OAuth account and prompt email verification
-  const newOAuthAccount = await createOAuthAccount(user.id, providerUser.id, provider, providerUser.email);
   return { type: 'unverified', oauthAccount: newOAuthAccount, reason: 'invite' };
 };
 
@@ -284,36 +289,38 @@ const verifyCallbackFlow = async ({
   // Somehow already linked + verified → return verified result
   if (oauthAccount.verified) return { type: 'verified', user, oauthAccount };
 
-  // Verify oauthAccount
-  await db
-    .update(oauthAccountsTable)
-    .set({ verified: true, verifiedAt: getIsoDate() })
-    .where(
-      and(
-        eq(oauthAccountsTable.id, verifyToken.oauthAccountId),
-        eq(oauthAccountsTable.userId, user.id),
-        eq(oauthAccountsTable.email, verifyToken.email),
-      ),
-    );
+  // Verify oauthAccount + email records atomically
+  await db.transaction(async (tx) => {
+    await tx
+      .update(oauthAccountsTable)
+      .set({ verified: true, verifiedAt: getIsoDate() })
+      .where(
+        and(
+          eq(oauthAccountsTable.id, oauthAccount.id),
+          eq(oauthAccountsTable.userId, user.id),
+          eq(oauthAccountsTable.email, verifyToken.email),
+        ),
+      );
 
-  // Add email to emails table if it doesn't exist
-  await db
-    .insert(emailsTable)
-    .values({ email: verifyToken.email, userId: user.id, verified: true, verifiedAt: getIsoDate() })
-    .onConflictDoNothing();
+    // Add email to emails table if it doesn't exist
+    await tx
+      .insert(emailsTable)
+      .values({ email: verifyToken.email, userId: user.id, verified: true, verifiedAt: getIsoDate() })
+      .onConflictDoNothing();
 
-  // Set email verified if it exists
-  await db
-    .update(emailsTable)
-    .set({ verified: true, verifiedAt: getIsoDate() })
-    .where(
-      and(
-        eq(emailsTable.tokenId, verifyToken.id),
-        eq(emailsTable.userId, user.id),
-        eq(emailsTable.email, verifyToken.email),
-        eq(emailsTable.verified, false),
-      ),
-    );
+    // Set email verified if it exists
+    await tx
+      .update(emailsTable)
+      .set({ verified: true, verifiedAt: getIsoDate() })
+      .where(
+        and(
+          eq(emailsTable.tokenId, verifyToken.id),
+          eq(emailsTable.userId, user.id),
+          eq(emailsTable.email, verifyToken.email),
+          eq(emailsTable.verified, false),
+        ),
+      );
+  });
 
   // Verification successful → return verified OAuth account result
   return { type: 'verified', user, oauthAccount };
@@ -329,12 +336,13 @@ const verifyCallbackFlow = async ({
  * @returns The created OAuth account.
  */
 const createOAuthAccount = async (
+  dbOrTx: DbOrTx,
   userId: OAuthAccountModel['userId'],
   providerUserId: Provider['userId'],
   provider: Provider['id'],
   email: UserModel['email'],
 ): Promise<OAuthAccountModel> => {
-  const [oauthAccount] = await db
+  const [oauthAccount] = await dbOrTx
     .insert(oauthAccountsTable)
     .values({
       userId,

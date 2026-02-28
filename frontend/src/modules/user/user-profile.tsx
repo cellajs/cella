@@ -4,7 +4,6 @@ import { lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { UserBase } from '~/api.gen';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
-import { FocusViewContainer } from '~/modules/common/focus-view';
 import { PageHeader } from '~/modules/common/page/header';
 import { toaster } from '~/modules/common/toaster/service';
 import { useUpdateSelfMutation } from '~/modules/me/query';
@@ -72,9 +71,9 @@ export function UserProfilePage({ user, isSheet }: Props) {
         }
       />
       <Suspense>
-        <FocusViewContainer className="container min-h-screen">
+        <div className="container">
           <ProfilePageContent user={user} isSheet={isSheet} />
-        </FocusViewContainer>
+        </div>
       </Suspense>
     </>
   );

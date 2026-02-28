@@ -3,11 +3,13 @@ import { encodeBase32UpperCase } from '@oslojs/encoding';
 import { createTOTPKeyURI } from '@oslojs/otp';
 import { eq } from 'drizzle-orm';
 import { appConfig } from 'shared';
+import { baseDb } from '#/db/db';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { totpsTable } from '#/db/schema/totps';
 import { usersTable } from '#/db/schema/users';
 import { type Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
+import { sendAccountSecurityEmail } from '#/lib/send-account-security-email';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { validateConfirmMfaToken } from '#/modules/auth/general/helpers/mfa';
 import { setUserSession } from '#/modules/auth/general/helpers/session';
@@ -72,28 +74,33 @@ const authTotpsRouteHandlers = app
     // Save encoded secret key in database
     await db.insert(totpsTable).values({ userId: user.id, secret: encodedSecret });
 
+    sendAccountSecurityEmail(user, 'totp-added');
+
     return ctx.body(null, 201);
   })
   /**
    * Unlink TOTP
    */
   .openapi(authTotpsRoutes.deleteTotp, async (ctx) => {
-    const db = ctx.var.db;
     const user = ctx.var.user;
 
-    // Remove all totps linked to this user's email
-    await db.delete(totpsTable).where(eq(totpsTable.userId, user.id));
+    // Remove TOTP and conditionally disable MFA atomically
+    await baseDb.transaction(async (tx) => {
+      await tx.delete(totpsTable).where(eq(totpsTable.userId, user.id));
 
-    // Check if the user still has any passkeys or TOTP entries registered
-    const [userPasskeys, userTotps] = await Promise.all([
-      db.select().from(passkeysTable).where(eq(passkeysTable.userId, user.id)),
-      db.select().from(totpsTable).where(eq(totpsTable.userId, user.id)),
-    ]);
+      // Check if the user still has any passkeys or TOTP entries registered
+      const [userPasskeys, userTotps] = await Promise.all([
+        tx.select().from(passkeysTable).where(eq(passkeysTable.userId, user.id)),
+        tx.select().from(totpsTable).where(eq(totpsTable.userId, user.id)),
+      ]);
 
-    // If no TOTP and Passkeys exists, disable MFA completely
-    if (!userPasskeys.length || !userTotps.length) {
-      await db.update(usersTable).set({ mfaRequired: false }).where(eq(usersTable.id, user.id));
-    }
+      // If no TOTP and Passkeys exists, disable MFA completely
+      if (!userPasskeys.length || !userTotps.length) {
+        await tx.update(usersTable).set({ mfaRequired: false }).where(eq(usersTable.id, user.id));
+      }
+    });
+
+    sendAccountSecurityEmail(user, 'totp-removed');
 
     return ctx.body(null, 204);
   })

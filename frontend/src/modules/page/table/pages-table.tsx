@@ -8,7 +8,6 @@ import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import type { CellRendererProps, RowsChangeData } from '~/modules/common/data-grid';
 import { DataTable } from '~/modules/common/data-table';
 import { FocusViewContainer } from '~/modules/common/focus-view';
-import { StickyBox } from '~/modules/common/sticky-box';
 import { pagesLimit, pagesListQueryOptions, usePageUpdateMutation } from '~/modules/page/query';
 import { DraggableCellRenderer } from '~/modules/page/table/draggable-cell-renderer';
 import { PagesTableBar } from '~/modules/page/table/pages-bar';
@@ -143,19 +142,17 @@ function PagesTable() {
 
   return (
     <FocusViewContainer data-is-compact={isCompact} className="container min-h-screen flex flex-col gap-4">
-      <StickyBox className="z-10 bg-background" offsetTop={0} hideOnScrollDown>
-        <PagesTableBar
-          searchVars={{ ...search, limit }}
-          setSearch={setSearch}
-          columns={columns}
-          setColumns={setColumns}
-          selected={selected}
-          clearSelection={clearSelection}
-          isCompact={isCompact}
-          setIsCompact={setIsCompact}
-          total={rows?.length ?? 0}
-        />
-      </StickyBox>
+      <PagesTableBar
+        searchVars={{ ...search, limit }}
+        setSearch={setSearch}
+        columns={columns}
+        setColumns={setColumns}
+        selected={selected}
+        clearSelection={clearSelection}
+        isCompact={isCompact}
+        setIsCompact={setIsCompact}
+        total={rows?.length ?? 0}
+      />
       <DataTable
         rows={rows}
         rowHeight={52}

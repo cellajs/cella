@@ -1,12 +1,12 @@
 import { desc, sql } from 'drizzle-orm';
 import { foreignKey, index, integer, jsonb, pgTable, primaryKey, varchar } from 'drizzle-orm/pg-core';
 import { appConfig } from 'shared';
+import { nanoid } from 'shared/nanoid';
 import type { ActivityError } from '#/db/utils/activity-error-schema';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import type { StxBase } from '#/schemas/sync-transaction-schemas';
 import { activityActions } from '#/sync/activity-actions';
-import { nanoid } from '#/utils/nanoid';
 import { organizationsTable } from './organizations';
 import { tenantsTable } from './tenants';
 import { usersTable } from './users';

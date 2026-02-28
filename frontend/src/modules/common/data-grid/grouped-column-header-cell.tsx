@@ -2,7 +2,7 @@ import type { GroupedColumnHeaderRowProps } from './grouped-column-header-row';
 import { useRovingTabIndex } from './hooks';
 import { cellClassname } from './style/cell';
 import type { CalculatedColumnParent } from './types';
-import { classnames, getHeaderCellRowSpan, getHeaderCellStyle } from './utils';
+import { cn, getHeaderCellRowSpan, getHeaderCellStyle } from './utils';
 
 type SharedGroupedColumnHeaderRowProps<R, SR> = Pick<GroupedColumnHeaderRowProps<R, SR>, 'rowIdx' | 'selectCell'>;
 
@@ -34,7 +34,7 @@ export function GroupedColumnHeaderCell<R, SR>({
       aria-rowspan={rowSpan}
       aria-selected={isCellSelected}
       tabIndex={tabIndex}
-      className={classnames(cellClassname, column.headerCellClass)}
+      className={cn(cellClassname, column.headerCellClass)}
       style={{
         ...getHeaderCellStyle(column, rowIdx, rowSpan),
         gridColumnStart: index,

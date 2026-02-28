@@ -109,7 +109,6 @@ const viteConfig = {
   define: {
     'process.env': {
       NODE_ENV: JSON.stringify(process.env.NODE_ENV),
-      VITE_QUICK: JSON.stringify(process.env.VITE_QUICK),
     },
   },
 } satisfies UserConfig;

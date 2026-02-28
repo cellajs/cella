@@ -41,7 +41,7 @@ export const getValidContextEntity = async <T extends ContextEntityType>(
   bySlug = false,
 ): Promise<ValidContextEntityResult<T>> => {
   // Get current user role and memberships from request context
-  const userSystemRole = ctx.var.userSystemRole;
+  const isSystemAdmin = ctx.var.isSystemAdmin;
   const memberships = ctx.var.memberships;
 
   // Get db from context (set by tenantGuard or crossTenantGuard middleware)
@@ -52,7 +52,7 @@ export const getValidContextEntity = async <T extends ContextEntityType>(
   if (!entity) throw new AppError(404, 'not_found', 'warn', { entityType });
 
   // Step 2: Check permission for the requested action (system admin bypass is handled inside)
-  const { isAllowed, membership } = checkPermission(memberships, action, entity, { systemRole: userSystemRole });
+  const { isAllowed, membership } = checkPermission(memberships, action, entity, { isSystemAdmin });
 
   if (!isAllowed) {
     throw new AppError(403, 'forbidden', 'warn', { entityType, meta: { action } });

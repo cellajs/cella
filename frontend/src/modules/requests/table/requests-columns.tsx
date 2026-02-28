@@ -66,12 +66,9 @@ export const useColumns = () => {
         resizable: true,
         minWidth: 200,
         renderHeaderCell: HeaderCell,
+        placeholderValue: '-',
         renderCell: ({ row }) =>
-          row.message ? (
-            <span className="font-light whitespace-pre-line leading-5">{row.message}</span>
-          ) : (
-            <span className="text-muted">-</span>
-          ),
+          row.message ? <span className="font-light whitespace-pre-line leading-5">{row.message}</span> : null,
       },
       {
         key: 'createdAt',
@@ -81,7 +78,8 @@ export const useColumns = () => {
         resizable: true,
         width: 180,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row }) => (row.createdAt ? dateShort(row.createdAt) : <span className="text-muted">-</span>),
+        placeholderValue: '-',
+        renderCell: ({ row }) => dateShort(row.createdAt),
       },
     ];
 

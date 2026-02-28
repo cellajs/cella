@@ -48,6 +48,7 @@ export type {
   ParentlessProductEntityType,
   ProductEntityType,
   PublicProductEntityType,
+  SeenTrackedEntityType,
   RelatableContextEntityType,
   ResourceType,
   Severity,
@@ -67,7 +68,7 @@ export {
 } from './entity-guards';
 
 // Utility functions
-export { hasKey, recordFromKeys, identityRecord } from './src/builder/utils';
+export { hasKey, recordFromKeys, identityRecord, typedEntries, typedKeys } from './src/builder/utils';
 
 // Permissions
 export type {

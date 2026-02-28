@@ -2,7 +2,8 @@ import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/docs/x-routes';
 import { appCache } from '#/middlewares/entity-cache';
 import { authGuard, orgGuard, publicGuard, tenantGuard } from '#/middlewares/guard';
-import { presignedUrlLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
+import { httpCache } from '#/middlewares/http-cache';
+import { bulkPointsLimiter, presignedUrlLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   attachmentCreateManyStxBodySchema,
   attachmentCreateResponseSchema,
@@ -63,6 +64,7 @@ const attachmentRoutes = {
     method: 'post',
     path: '/',
     xGuard: [authGuard, tenantGuard, orgGuard],
+    xRateLimiter: bulkPointsLimiter,
     tags: ['attachments'],
     summary: 'Create attachments',
     description:
@@ -147,6 +149,7 @@ const attachmentRoutes = {
     method: 'delete',
     path: '/',
     xGuard: [authGuard, tenantGuard, orgGuard],
+    xRateLimiter: bulkPointsLimiter,
     tags: ['attachments'],
     summary: 'Delete attachments',
     description: 'Deletes one or more *attachment* records by ID. This does not delete the underlying file in storage.',
@@ -170,17 +173,19 @@ const attachmentRoutes = {
     },
   }),
   /**
-   * Redirect to attachment
+   * Get attachment link page (OG meta + client-side redirect)
    */
-  redirectToAttachment: createXRoute({
-    operationId: 'redirectToAttachment',
+  getAttachmentLink: createXRoute({
+    operationId: 'getAttachmentLink',
     method: 'get',
     path: '/{id}/link',
     xGuard: publicGuard,
     xRateLimiter: tokenLimiter('attachment_redirect'),
+    xCache: httpCache({ scope: 'public', maxAge: 3600 }),
     tags: ['attachments'],
-    summary: 'Redirect to attachment',
-    description: "Redirects to the file's public or presigned URL, depending on storage visibility.",
+    summary: 'Get attachment link',
+    description:
+      'Returns an HTML page with OG meta tags for link previews and a client-side redirect to the attachment in the app.',
     request: { params: z.object({ id: validIdSchema }) },
     responses: {
       200: { description: 'Success' },
@@ -196,6 +201,7 @@ const attachmentRoutes = {
     path: '/presigned-url',
     xGuard: [authGuard, tenantGuard, orgGuard],
     xRateLimiter: presignedUrlLimiter,
+    xCache: httpCache({ scope: 'private', maxAge: 3600 }),
     tags: ['attachments'],
     summary: 'Get presigned URL',
     description:

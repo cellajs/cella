@@ -8,6 +8,8 @@ interface SchemaLabelsProps {
   hasAnyOf?: boolean;
   /** Whether this node contains oneOf composition */
   hasOneOf?: boolean;
+  /** Inline numeric constraints (maxLength, minLength, etc.) */
+  constraints?: { maxLength?: number; minLength?: number; maximum?: number; minimum?: number } | null;
   theme: {
     string: string;
     number: string;
@@ -48,9 +50,10 @@ export const SchemaLabels: FC<SchemaLabelsProps> = ({
   contentTypeValue,
   hasAnyOf,
   hasOneOf,
+  constraints,
   theme,
 }) => {
-  if (!typeValue && !refValue && !contentTypeValue && !hasAnyOf && !hasOneOf) return null;
+  if (!typeValue && !refValue && !contentTypeValue && !hasAnyOf && !hasOneOf && !constraints) return null;
 
   // Normalize typeValue to array for consistent rendering
   const typeValues = typeValue ? (Array.isArray(typeValue) ? typeValue : [typeValue]) : [];
@@ -79,6 +82,18 @@ export const SchemaLabels: FC<SchemaLabelsProps> = ({
         <span className="ml-0.5 px-1 py-0.5 text-xs font-medium rounded text-primary bg-primary/10">{refValue}</span>
       )}
       {contentTypeValue && <span className="ml-1 italic text-xs text-foreground/40">{contentTypeValue}</span>}
+      {constraints && (
+        <span className="ml-1.5 text-xs text-foreground/35">
+          {[
+            constraints.minLength != null && `min:${constraints.minLength}`,
+            constraints.maxLength != null && `max:${constraints.maxLength}`,
+            constraints.minimum != null && `≥${constraints.minimum}`,
+            constraints.maximum != null && `≤${constraints.maximum}`,
+          ]
+            .filter(Boolean)
+            .join(' ')}
+        </span>
+      )}
     </>
   );
 };

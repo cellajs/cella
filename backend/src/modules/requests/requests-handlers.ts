@@ -2,6 +2,7 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { and, count, eq, getColumns, ilike, inArray, type SQL, sql } from 'drizzle-orm';
 import i18n from 'i18next';
 import { appConfig } from 'shared';
+import { baseDb } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { type RequestModel, requestsTable } from '#/db/schema/requests';
 import { usersTable } from '#/db/schema/users';
@@ -11,13 +12,35 @@ import { mailer } from '#/lib/mailer';
 import { sendMatrixMessage } from '#/lib/notifications/send-matrix-message';
 import requestRoutes from '#/modules/requests/requests-routes';
 import { userSelect } from '#/modules/user/helpers/select';
+import { type ActivityEventWithEntity, activityBus, getTypedEntity } from '#/sync/activity-bus';
 import { defaultHook } from '#/utils/default-hook';
+import { logEvent } from '#/utils/logger';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { RequestInfoEmail, RequestResponseEmail } from '../../../emails';
 
 // These requests are only allowed to be created if user has none yet
 const uniqueRequests: RequestModel['type'][] = ['waitlist', 'newsletter'];
+
+// ============================================
+// ActivityBus: link waitlist requests to invitation tokens
+// ============================================
+// When an inactive membership is created with a tokenId, update the matching
+// waitlist request so it is marked as "invited". This keeps the requests module
+// self-contained — the memberships module has no knowledge of requests.
+activityBus.on('inactive_membership.created', async (event: ActivityEventWithEntity) => {
+  const membership = getTypedEntity(event, 'inactive_membership');
+  if (!membership?.tokenId || !membership.email) return;
+
+  try {
+    await baseDb
+      .update(requestsTable)
+      .set({ tokenId: membership.tokenId })
+      .where(and(eq(requestsTable.email, membership.email), eq(requestsTable.type, 'waitlist')));
+  } catch (error) {
+    logEvent('error', 'Failed to link waitlist request to token', { error, email: membership.email });
+  }
+});
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -96,12 +119,12 @@ const requestsRouteHandlers = app
 
     mailer.prepareEmails(RequestResponseEmail, staticProps, recipients);
 
-    const data = {
+    const requestResponse = {
       ...createdRequest,
       wasInvited: false,
     };
 
-    return ctx.json(data, 201);
+    return ctx.json(requestResponse, 201);
   })
   /**
    *  Get list of requests for system admins
@@ -144,7 +167,6 @@ const requestsRouteHandlers = app
 
     // Convert the ids to an array
     const toDeleteIds = Array.isArray(ids) ? ids : [ids];
-    if (!toDeleteIds.length) throw new AppError(400, 'invalid_request', 'error');
 
     // Delete the requests
     await db.delete(requestsTable).where(inArray(requestsTable.id, toDeleteIds));

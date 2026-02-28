@@ -1,5 +1,6 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { and, count, eq, getColumns, gte, ilike, inArray, or, SQL } from 'drizzle-orm';
+import { nanoid } from 'shared/nanoid';
 import { pagesTable } from '#/db/schema/pages';
 import { setPublicRlsContext } from '#/db/tenant-context';
 import { type Env } from '#/lib/context';
@@ -10,7 +11,7 @@ import {
   coalesceAuditUsers,
   createdByUser,
   modifiedByUser,
-  toUserMinimalBase,
+  withAuditUser,
   withAuditUsers,
 } from '#/modules/user/helpers/audit-user';
 import { getValidProductEntity } from '#/permissions/get-product-entity';
@@ -20,7 +21,6 @@ import { defaultHook } from '#/utils/default-hook';
 import { extractKeywords } from '#/utils/extract-keywords';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
-import { nanoid } from '#/utils/nanoid';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 
@@ -101,14 +101,14 @@ const pageRouteHandlers = app
     const { id } = ctx.req.valid('param');
 
     return setPublicRlsContext('public', async (tenantDb) => {
-      const [page] = await tenantDb.select().from(pagesTable).where(eq(pagesTable.id, id));
-      if (!page) throw new AppError(404, 'not_found', 'warn', { entityType: 'page' });
+      const [pageRecord] = await tenantDb.select().from(pagesTable).where(eq(pagesTable.id, id));
+      if (!pageRecord) throw new AppError(404, 'not_found', 'warn', { entityType: 'page' });
 
-      const [populated] = await withAuditUsers([page], tenantDb);
+      const pageResponse = await withAuditUser(pageRecord, tenantDb);
 
-      ctx.set('entityCacheData', populated);
+      ctx.set('entityCacheData', pageResponse);
 
-      return ctx.json(populated, 200);
+      return ctx.json(pageResponse, 200);
     });
   })
   /**
@@ -125,8 +125,8 @@ const pageRouteHandlers = app
       if (ref) {
         const existing = await tenantDb.select().from(pagesTable).where(eq(pagesTable.id, ref.entityId));
         if (existing.length > 0) {
-          const data = await withAuditUsers(existing, tenantDb);
-          return ctx.json({ data, rejectedItemIds: [] }, 200);
+          const pageResponses = await withAuditUsers(existing, tenantDb);
+          return ctx.json({ data: pageResponses, rejectedItemIds: [] }, 200);
         }
       }
     }
@@ -147,15 +147,13 @@ const pageRouteHandlers = app
       stx: buildStx(stx),
     }));
 
-    const createdPages = await tenantDb.insert(pagesTable).values(pagesToInsert).returning();
+    const pageRecords = await tenantDb.insert(pagesTable).values(pagesToInsert).returning();
 
-    logEvent('info', `${createdPages.length} pages have been created`);
+    logEvent('info', `${pageRecords.length} pages have been created`);
 
-    const userMinimal = toUserMinimalBase(user);
-    const knownUsers = new Map([[user.id, userMinimal]]);
-    const data = await withAuditUsers(createdPages, tenantDb, knownUsers);
+    const pageResponses = await withAuditUsers(pageRecords, tenantDb, user);
 
-    return ctx.json({ data, rejectedItemIds: [] }, 201);
+    return ctx.json({ data: pageResponses, rejectedItemIds: [] }, 201);
   })
   /**
    * Update a page by id
@@ -178,7 +176,7 @@ const pageRouteHandlers = app
     const updatedDescription =
       key === 'description' && typeof updateData === 'string' ? updateData : entity.description;
 
-    const [page] = await tenantDb
+    const [updatedPageRecord] = await tenantDb
       .update(pagesTable)
       .set({
         [key]: updateData,
@@ -190,13 +188,11 @@ const pageRouteHandlers = app
       .where(eq(pagesTable.id, id))
       .returning();
 
-    logEvent('info', 'Page updated', { pageId: page.id });
+    logEvent('info', 'Page updated', { pageId: updatedPageRecord.id });
 
-    const userMinimal = toUserMinimalBase(user);
-    const knownUsers = new Map([[user.id, userMinimal]]);
-    const [populated] = await withAuditUsers([page], tenantDb, knownUsers);
+    const pageResponse = await withAuditUser(updatedPageRecord, tenantDb, user);
 
-    return ctx.json(populated, 200);
+    return ctx.json(pageResponse, 200);
   })
   /**
    * Delete pages by ids

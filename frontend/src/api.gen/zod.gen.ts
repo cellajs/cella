@@ -209,11 +209,11 @@ export const zUser = z.object({
 });
 
 /**
- * The currently authenticated user with their system role.
+ * The currently authenticated user with their system admin status.
  */
 export const zMe = z.object({
   user: zUser,
-  systemRole: z.enum(['admin', 'user']),
+  isSystemAdmin: z.boolean(),
 });
 
 /**
@@ -294,6 +294,12 @@ export const zTenant = z.object({
   id: z.string().max(24),
   name: z.string(),
   status: z.enum(['active', 'suspended', 'archived']),
+  restrictions: z.object({
+    quotas: z.record(z.string(), z.int().gte(0)),
+    rateLimits: z.object({
+      apiPointsPerHour: z.int().gte(0),
+    }),
+  }),
   createdAt: z.string(),
   modifiedAt: z.string().nullable(),
 });
@@ -311,7 +317,7 @@ export const zRequest = z.object({
 });
 
 /**
- * An organization with settings, restrictions, and membership context.
+ * An organization with membership context.
  */
 export const zOrganization = z.object({
   createdAt: z.string(),
@@ -1009,7 +1015,7 @@ export const zGetUnseenCountsData = z.object({
 });
 
 /**
- * Unseen counts per org per entity type
+ * Unseen counts per parent context entity per entity type
  */
 export const zGetUnseenCountsResponse = z.record(z.string(), z.record(z.string(), z.int().gte(0)));
 
@@ -1245,6 +1251,16 @@ export const zUpdateTenantData = z.object({
   body: z.object({
     name: z.string().min(1).max(255).optional(),
     status: z.enum(['active', 'suspended', 'archived']).optional(),
+    restrictions: z
+      .object({
+        quotas: z.record(z.string(), z.int().gte(0)).optional(),
+        rateLimits: z
+          .object({
+            apiPointsPerHour: z.int().gte(0).optional(),
+          })
+          .optional(),
+      })
+      .optional(),
   }),
   path: z.object({
     tenantId: z.string().max(24),
@@ -1714,8 +1730,9 @@ export const zGetUsersData = z.object({
  */
 export const zGetUsersResponse = z.object({
   items: z.array(
-    zUser.and(
+    zUserBase.and(
       z.object({
+        lastSeenAt: z.string().nullable(),
         role: z.enum(['admin']).nullish(),
       }),
     ),
@@ -1736,9 +1753,13 @@ export const zGetUserData = z.object({
 });
 
 /**
- * User
+ * Base user schema with essential fields for identification and display.
  */
-export const zGetUserResponse = zUser;
+export const zGetUserResponse = zUserBase.and(
+  z.object({
+    lastSeenAt: z.string().nullable(),
+  }),
+);
 
 export const zDeleteAttachmentsData = z.object({
   body: z.object({
@@ -1883,7 +1904,7 @@ export const zUpdateAttachmentData = z.object({
  */
 export const zUpdateAttachmentResponse = zAttachment;
 
-export const zRedirectToAttachmentData = z.object({
+export const zGetAttachmentLinkData = z.object({
   body: z.never().optional(),
   path: z.object({
     id: z.string().max(50),
@@ -1990,6 +2011,7 @@ export const zGetMembersData = z.object({
     entityId: z.string().max(50),
     entityType: z.enum(['organization']),
     role: z.enum(['admin', 'member']).optional(),
+    userIds: z.string().optional(),
   }),
 });
 
@@ -1998,27 +2020,12 @@ export const zGetMembersData = z.object({
  */
 export const zGetMembersResponse = z.object({
   items: z.array(
-    z.object({
-      createdAt: z.string(),
-      id: z.string().max(50),
-      entityType: z.enum(['user']),
-      name: z.string().max(255),
-      description: z.string().nullable(),
-      slug: z.string().max(255),
-      thumbnailUrl: z.string().max(2048).nullable(),
-      bannerUrl: z.string().max(2048).nullable(),
-      email: z.email(),
-      mfaRequired: z.boolean(),
-      firstName: z.string().max(255).nullable(),
-      lastName: z.string().max(255).nullable(),
-      language: z.enum(['en', 'nl']),
-      modifiedAt: z.string().nullable(),
-      modifiedBy: z.string().max(50).nullable(),
-      lastSeenAt: z.string().nullable(),
-      lastStartedAt: z.string().nullable(),
-      lastSignInAt: z.string().nullable(),
-      membership: zMembershipBase,
-    }),
+    zUserBase.and(
+      z.object({
+        lastSeenAt: z.string().nullable(),
+        membership: zMembershipBase,
+      }),
+    ),
   ),
   total: z.number(),
 });

@@ -6,7 +6,7 @@ import { env } from '#/env';
 import type { Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
 import { defaultOptions, slowOptions } from '#/middlewares/rate-limiter/core';
-import { Identifiers, RateLimitIdentifier } from '#/middlewares/rate-limiter/types';
+import type { Identifiers, RateLimiterHandler, RateLimitIdentifier } from '#/middlewares/rate-limiter/types';
 import { getIp } from '#/utils/get-ip';
 
 type RateLimiterOptions = {
@@ -62,6 +62,7 @@ export const extractIdentifiers = async (
     email: null,
     ip: null,
     userId: null,
+    tenantId: null,
   };
 
   for (const identifier of identifiersToExtract) {
@@ -116,6 +117,11 @@ export const extractIdentifiers = async (
         if (user) results.userId = user.id;
         break;
       }
+      case 'tenantId': {
+        const tenantId = ctx.req.param('tenantId') || ctx.var.tenantId;
+        if (tenantId) results.tenantId = tenantId;
+        break;
+      }
     }
   }
 
@@ -123,20 +129,30 @@ export const extractIdentifiers = async (
 };
 
 /**
+ * Check if an IP is currently rate-limited for a given limiter.
+ * Shorthand for getIp + checkRateLimitStatus.
+ */
+export const checkIpRateLimitStatus = async (ctx: Context<Env>, rateLimiterHandler: RateLimiterHandler) => {
+  const ip = getIp(ctx);
+  return checkRateLimitStatus(rateLimiterHandler, `ip:${ip}`);
+};
+
+/**
  * Check if a rate limit key is currently blocked without consuming points.
  * Used by /auth/health to detect restrictedMode for email enumeration protection.
  */
 export const checkRateLimitStatus = async (
-  keyPrefix: string,
+  rateLimiterHandler: RateLimiterHandler,
   rateLimitKey: string,
 ): Promise<{ isLimited: boolean; retryAfter?: number }> => {
-  const limiter = getRateLimiterInstance({ ...defaultOptions, keyPrefix });
+  const { keyPrefix, points: mainPoints } = rateLimiterHandler;
+  const limiter = getRateLimiterInstance({ ...defaultOptions, points: mainPoints, keyPrefix });
   const slowLimiter = getRateLimiterInstance({ ...slowOptions, keyPrefix: `${keyPrefix}:slow` });
 
   const [state, slowState] = await Promise.all([limiter.get(rateLimitKey), slowLimiter.get(rateLimitKey)]);
 
   // Check main limiter
-  if (state && state.consumedPoints > (defaultOptions.points ?? 10)) {
+  if (state && state.consumedPoints > mainPoints) {
     return { isLimited: true, retryAfter: Math.round(state.msBeforeNext / 1000) };
   }
 
@@ -146,4 +162,23 @@ export const checkRateLimitStatus = async (
   }
 
   return { isLimited: false };
+};
+
+/**
+ * Read the length of the bulk body array from the request.
+ * Supports `{ ids: [...] }` shape (bulk delete) and top-level arrays (bulk create).
+ * Returns 1 as fallback so every request costs at least 1 point.
+ */
+export const bulkBodyLength = async (ctx: Context<Env>): Promise<number> => {
+  try {
+    const contentType = ctx.req.header('content-type');
+    if (!contentType?.includes('application/json')) return 1;
+
+    const body = await ctx.req.raw.clone().json();
+
+    if (Array.isArray(body)) return Math.max(body.length, 1);
+    if (body && Array.isArray(body.ids)) return Math.max(body.ids.length, 1);
+  } catch {}
+
+  return 1;
 };

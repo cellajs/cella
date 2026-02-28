@@ -58,11 +58,10 @@ describe('System Invitation', async () => {
 
       expect(res.status).toBe(200);
       const response = (await parseResponse(res)) as {
-        success: boolean;
+        data: any[];
         rejectedItemIds: string[];
         invitesSentCount: number;
       };
-      expect(response.success).toBe(true);
       expect(response.invitesSentCount).toBe(2);
       expect(response.rejectedItemIds).toHaveLength(0);
 
@@ -78,11 +77,10 @@ describe('System Invitation', async () => {
 
       expect(res.status).toBe(200);
       const response = (await parseResponse(res)) as {
-        success: boolean;
+        data: any[];
         rejectedItemIds: string[];
         invitesSentCount: number;
       };
-      expect(response.success).toBe(true);
       expect(response.invitesSentCount).toBe(1); // Only new user
       expect(response.rejectedItemIds).toContain('existing@cella.com');
     });
@@ -93,11 +91,10 @@ describe('System Invitation', async () => {
 
       expect(res.status).toBe(200);
       const response = (await parseResponse(res)) as {
-        success: boolean;
+        data: any[];
         rejectedItemIds: string[];
         invitesSentCount: number;
       };
-      expect(response.success).toBe(true);
       expect(response.invitesSentCount).toBe(1); // Only one invitation sent
       expect(response.rejectedItemIds).toHaveLength(0);
     });
@@ -152,10 +149,9 @@ describe('System Invitation', async () => {
       const secondRes = await makeInviteRequest(['user@cella.com'], sessionCookie);
       expect(secondRes.status).toBe(200);
 
-      const response = await parseResponse<{ success: boolean; rejectedItemIds: string[]; invitesSentCount: number }>(
+      const response = await parseResponse<{ data: any[]; rejectedItemIds: string[]; invitesSentCount: number }>(
         secondRes,
       );
-      expect(response.success).toBe(false); // No new invitations
       expect(response.invitesSentCount).toBe(0);
       expect(response.rejectedItemIds).toContain('user@cella.com');
     });
@@ -167,11 +163,10 @@ describe('System Invitation', async () => {
 
       expect(res.status).toBe(200);
       const response = (await parseResponse(res)) as {
-        success: boolean;
+        data: any[];
         rejectedItemIds: string[];
         invitesSentCount: number;
       };
-      expect(response.success).toBe(true);
       expect(response.invitesSentCount).toBe(3);
       expect(response.rejectedItemIds).toHaveLength(0);
     });

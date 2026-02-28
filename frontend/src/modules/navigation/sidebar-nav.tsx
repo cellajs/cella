@@ -5,6 +5,7 @@ import { useBodyClass } from '~/hooks/use-body-class';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useMountedState } from '~/hooks/use-mounted-state';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { FocusBridge, FocusTarget } from '~/modules/navigation/focus-bridge';
 import { NavButton } from '~/modules/navigation/nav-buttons';
 import { StopImpersonation } from '~/modules/navigation/stop-impersonation';
 import type { NavItem, TriggerNavItemFn } from '~/modules/navigation/types';
@@ -103,9 +104,10 @@ export function SidebarNav({ triggerNavItem }: SidebarNavProps) {
         data-started={hasStarted}
         data-collapsed={isCollapsed}
         data-overlay={isOverlay}
-        className="fixed inset-y-0 left-0 z-100 w-(--sidebar-w) transition-[width] duration-200 linear border-r-0 bg-primary group-[.focus-view]/body:hidden
+        className="fixed inset-y-0 left-0 z-100 w-(--sidebar-w) transition-[width] duration-200 linear border-r-0 bg-primary group-[.focus-view]/body:hidden focus:outline-none
           data-[theme=none]:bg-secondary data-[started=false]:-translate-x-full"
       >
+        <FocusTarget target="sidebar" />
         <div className="flex flex-row h-full relative">
           {/* Icon bar */}
           <div className="flex flex-col h-full w-(--icon-bar-w) transition-[width] duration-200 linear overflow-hidden">
@@ -140,6 +142,8 @@ export function SidebarNav({ triggerNavItem }: SidebarNavProps) {
                   />
                 ))}
               </SidebarMenu>
+              {/* Keyboard-only skip link to jump into the open sheet panel */}
+              <FocusBridge direction="to-sheet" className="focus:relative focus:m-2" />
             </SidebarFooter>
           </div>
         </div>

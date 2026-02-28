@@ -3,13 +3,13 @@ import { ChevronDownIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { nanoid } from 'shared/nanoid';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
 import type { LegalSection, LegalSubject } from '~/modules/marketing/legal/legal-config';
 import { buttonVariants } from '~/modules/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';
 import { cn } from '~/utils/cn';
-import { nanoid } from '~/utils/nanoid';
 
 interface LegalSubjectConfig {
   id: LegalSubject;

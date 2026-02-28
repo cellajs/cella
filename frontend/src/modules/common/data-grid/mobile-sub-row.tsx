@@ -26,7 +26,7 @@ export function MobileSubRow<R, SR>({ row, rowIdx, subColumns, isExpanded }: Mob
         const label = column.mobileLabel ?? (typeof column.name === 'string' ? column.name : column.key);
 
         // Get the rendered value using the column's renderCell
-        const value = column.renderCell({
+        const rawValue = column.renderCell({
           column,
           row,
           rowIdx,
@@ -34,11 +34,20 @@ export function MobileSubRow<R, SR>({ row, rowIdx, subColumns, isExpanded }: Mob
           tabIndex: -1,
           onRowChange: () => {},
         });
+        const value =
+          rawValue == null && column.placeholderValue != null ? (
+            <span className="text-muted">{column.placeholderValue}</span>
+          ) : (
+            rawValue
+          );
 
         return (
-          <div key={column.key} className="rdg-mobile-sub-item">
-            <span className="rdg-mobile-sub-label">{label}</span>
-            <span className="rdg-mobile-sub-value">{value}</span>
+          <div
+            key={column.key}
+            className="flex items-start gap-2 py-1 [&:not(:last-child)]:border-b [&:not(:last-child)]:border-border/50"
+          >
+            <span className="shrink-0 font-medium text-muted-foreground min-w-24">{label}</span>
+            <span className="grow text-foreground overflow-hidden text-ellipsis">{value}</span>
           </div>
         );
       })}
