@@ -59,7 +59,7 @@ function RequestsTable() {
 
   const selectedRowIds = useMemo(() => new Set(selected.map((s) => s.id)), [selected]);
 
-  const visibleColumns = useMemo(() => columns.filter((column) => column.visible), [columns]);
+  const visibleColumns = useMemo(() => columns.filter((column) => !column.hidden), [columns]);
 
   return (
     <FocusViewContainer>

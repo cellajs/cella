@@ -75,7 +75,7 @@ export const AttachmentsTableBar = ({
 
   return (
     <>
-      <TableBarContainer searchVars={searchVars} offsetTop={36}>
+      <TableBarContainer searchVars={searchVars} offsetTop={40}>
         {/* Filter bar */}
         <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
           <FilterBarActions>

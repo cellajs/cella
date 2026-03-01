@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Attachment } from '~/api.gen';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
 import {
   CopyUrlCell,
   DownloadCell,
@@ -22,7 +21,6 @@ import { dateShort } from '~/utils/date-short';
 export const useColumns = (contextEntity: EnrichedContextEntity, isSheet: boolean, isCompact: boolean) => {
   const { t } = useTranslation();
 
-  const isMobile = useBreakpoints('max', 'sm', false);
   // Check attachment permissions on the parent context entity
   const canUpdate = contextEntity.can?.attachment?.update ?? false;
 
@@ -32,7 +30,6 @@ export const useColumns = (contextEntity: EnrichedContextEntity, isSheet: boolea
       {
         key: 'thumbnail',
         name: '',
-        visible: true,
         sortable: false,
         width: 32,
         renderCell: ({ row, tabIndex }) => <ThumbnailCell row={row} tabIndex={tabIndex} />,
@@ -41,7 +38,6 @@ export const useColumns = (contextEntity: EnrichedContextEntity, isSheet: boolea
         key: 'name',
         name: t('common:name'),
         editable: true,
-        visible: true,
         sortable: true,
         resizable: true,
         minWidth: 180,
@@ -66,7 +62,6 @@ export const useColumns = (contextEntity: EnrichedContextEntity, isSheet: boolea
       {
         key: 'publicAccess',
         name: '',
-        visible: true,
         sortable: false,
         width: 32,
         renderCell: ({ row, tabIndex }) => <PublicAccessCell row={row} tabIndex={tabIndex} canUpdate={canUpdate} />,
@@ -74,7 +69,7 @@ export const useColumns = (contextEntity: EnrichedContextEntity, isSheet: boolea
       {
         key: 'url',
         name: '',
-        visible: !isMobile,
+        minBreakpoint: 'md',
         sortable: false,
         width: 32,
         renderCell: ({ row, tabIndex }) => <CopyUrlCell row={row} tabIndex={tabIndex} />,
@@ -82,7 +77,7 @@ export const useColumns = (contextEntity: EnrichedContextEntity, isSheet: boolea
       {
         key: 'download',
         name: '',
-        visible: !isMobile,
+        minBreakpoint: 'md',
         sortable: false,
         width: 32,
         renderCell: ({ row, tabIndex }) => <DownloadCell row={row} tabIndex={tabIndex} />,
@@ -90,7 +85,7 @@ export const useColumns = (contextEntity: EnrichedContextEntity, isSheet: boolea
       {
         key: 'ellipsis',
         name: '',
-        visible: isMobile,
+        maxBreakpoint: 'sm',
         sortable: false,
         width: 32,
         renderCell: ({ row, tabIndex }) => <EllipsisCell row={row} tabIndex={tabIndex} />,
@@ -98,7 +93,7 @@ export const useColumns = (contextEntity: EnrichedContextEntity, isSheet: boolea
       {
         key: 'filename',
         name: t('common:filename'),
-        visible: !isMobile,
+        minBreakpoint: 'md',
         sortable: false,
         resizable: true,
         minWidth: 140,
@@ -114,8 +109,8 @@ export const useColumns = (contextEntity: EnrichedContextEntity, isSheet: boolea
         name: t('common:size'),
         sortable: true,
         resizable: true,
-        visible: !isMobile,
-        minWidth: 100,
+        minBreakpoint: 'md',
+        minWidth: 80,
         renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => (
           <div className="inline-flex items-center gap-1 relative font-light group h-full w-full opacity-50">
@@ -127,12 +122,13 @@ export const useColumns = (contextEntity: EnrichedContextEntity, isSheet: boolea
         key: 'viewCount',
         name: t('common:views'),
         sortable: false,
-        visible: !isMobile && !isSheet,
+        hidden: isSheet,
+        minBreakpoint: 'md',
         minWidth: 80,
         renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => (
           <div className="inline-flex items-center gap-1 relative font-light group h-full w-full opacity-50">
-            {(row as Attachment & { viewCount?: number }).viewCount ?? 0}
+            {row.viewCount ?? 0}
           </div>
         ),
       },
@@ -140,7 +136,8 @@ export const useColumns = (contextEntity: EnrichedContextEntity, isSheet: boolea
         key: 'createdAt',
         name: t('common:created_at'),
         sortable: true,
-        visible: !isSheet && !isMobile,
+        hidden: isSheet,
+        minBreakpoint: 'md',
         minWidth: 160,
         renderHeaderCell: HeaderCell,
         placeholderValue: '-',
@@ -150,7 +147,7 @@ export const useColumns = (contextEntity: EnrichedContextEntity, isSheet: boolea
         key: 'createdBy',
         name: t('common:created_by'),
         sortable: false,
-        visible: false,
+        hidden: true,
         minWidth: isCompact ? null : 120,
         width: isCompact ? 50 : null,
         renderHeaderCell: HeaderCell,
@@ -162,7 +159,7 @@ export const useColumns = (contextEntity: EnrichedContextEntity, isSheet: boolea
         key: 'modifiedAt',
         name: t('common:modified'),
         sortable: false,
-        visible: false,
+        hidden: true,
         minWidth: 160,
         renderHeaderCell: HeaderCell,
         placeholderValue: '-',
@@ -172,7 +169,7 @@ export const useColumns = (contextEntity: EnrichedContextEntity, isSheet: boolea
         key: 'modifiedBy',
         name: t('common:modified_by'),
         sortable: false,
-        visible: false,
+        hidden: true,
         width: isCompact ? 80 : 120,
         renderHeaderCell: HeaderCell,
         placeholderValue: '-',
@@ -180,7 +177,7 @@ export const useColumns = (contextEntity: EnrichedContextEntity, isSheet: boolea
           row.modifiedBy && <UserCell compactable user={row.modifiedBy} tabIndex={tabIndex} />,
       },
     ],
-    [t, isMobile, isSheet, isCompact, canUpdate, contextEntity.tenantId, contextEntity.id],
+    [t, isSheet, isCompact, canUpdate, contextEntity.tenantId, contextEntity.id],
   );
 
   return columns;

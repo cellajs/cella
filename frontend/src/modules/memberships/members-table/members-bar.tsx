@@ -138,7 +138,7 @@ export const MembersTableBar = ({
 
   return (
     <>
-      <TableBarContainer searchVars={searchVars} offsetTop={isSheet ? 0 : 36}>
+      <TableBarContainer searchVars={searchVars} offsetTop={isSheet ? 0 : 40}>
         {/* Table Filter Bar */}
         <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
           <FilterBarActions>

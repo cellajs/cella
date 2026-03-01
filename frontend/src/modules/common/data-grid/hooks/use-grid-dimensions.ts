@@ -1,13 +1,10 @@
 import type { RefObject } from 'react';
 import { useLayoutEffect, useRef, useState } from 'react';
-import { flushSync } from 'react-dom';
 
 interface GridDimensions {
-  inlineSize: number;
   viewportHeight: number;
   horizontalScrollbarHeight: number;
   scrollTop: number;
-  scrollLeft: number;
   gridRect: DOMRect | null;
 }
 
@@ -16,21 +13,41 @@ export interface GridDimensionsResult extends GridDimensions {
 }
 
 const initialDimensions: GridDimensions = {
-  inlineSize: 1,
   viewportHeight: 1,
   horizontalScrollbarHeight: 0,
   scrollTop: 0,
-  scrollLeft: 0,
   gridRect: null,
 };
 
 /**
+ * Walk up the DOM to find the nearest scrollable ancestor.
+ * Returns null if the scroll container is the window/document.
+ */
+function getScrollParent(node: HTMLElement): HTMLElement | null {
+  let parent: HTMLElement | null = node;
+  // biome-ignore lint/suspicious/noAssignInExpressions: required for short-circuit assignment pattern
+  while ((parent = parent.parentElement)) {
+    if (parent === document.body || parent === document.documentElement) return null;
+    const { overflowY } = getComputedStyle(parent);
+    if (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') {
+      return parent;
+    }
+  }
+  return null;
+}
+
+/**
  * Hook to measure grid dimensions and track scroll position.
- * Supports page-level scroll with optional scroll container override.
+ * Auto-detects the nearest scrollable ancestor unless an explicit
+ * scrollContainerRef is provided. Falls back to window-level scroll.
  *
- * ResizeObserver uses flushSync to keep the grid width in sync with the DOM
- * (avoids a 1-frame flash where React still renders the old width).
- * Scroll & window-resize use rAF-throttled batched state to stay cheap.
+ * Column virtualization is removed — the grid no longer tracks its own
+ * inline-size in JS. CSS grid handles column sizing natively between
+ * breakpoints. Only viewportHeight and scroll positions are tracked
+ * (needed for row virtualization).
+ *
+ * ResizeObserver tracks only horizontalScrollbarHeight (rare changes).
+ * All updates are rAF-throttled to stay cheap.
  */
 export function useGridDimensions(scrollContainerRef?: RefObject<HTMLElement | null>): GridDimensionsResult {
   const gridRef = useRef<HTMLDivElement>(null);
@@ -44,8 +61,8 @@ export function useGridDimensions(scrollContainerRef?: RefObject<HTMLElement | n
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (ResizeObserver == null || grid == null) return;
 
-    // Determine the scroll container: provided ref, or window
-    const scrollContainer = scrollContainerRef?.current ?? null;
+    // Determine the scroll container: explicit ref → auto-detect → window
+    const scrollContainer = scrollContainerRef?.current ?? getScrollParent(grid);
     const isWindowScroll = scrollContainer === null;
 
     // rAF throttle — coalesces rapid scroll / resize calls into one frame
@@ -72,38 +89,32 @@ export function useGridDimensions(scrollContainerRef?: RefObject<HTMLElement | n
         ...prev,
         viewportHeight,
         scrollTop,
-        scrollLeft: Math.abs(grid.scrollLeft),
         gridRect: rect,
       };
     };
 
     // --- Initial synchronous measurement ---
-    const { clientWidth, clientHeight, offsetWidth, offsetHeight } = grid;
-    const { width } = grid.getBoundingClientRect();
-    const initialWidth = width - offsetWidth + clientWidth;
+    const { clientHeight, offsetHeight } = grid;
     const initialHScrollbar = offsetHeight - clientHeight;
 
     const initial: GridDimensions = measureScroll({
       ...initialDimensions,
-      inlineSize: initialWidth,
       horizontalScrollbarHeight: initialHScrollbar,
     });
     setDimensions(initial);
 
-    // --- ResizeObserver: must be synchronous to avoid visual tearing ---
-    const resizeObserver = new ResizeObserver((entries) => {
-      const size = entries[0].contentBoxSize[0];
+    // --- ResizeObserver: rAF-throttled for scrollbar height detection ---
+    // No flushSync needed — column sizing is handled by CSS grid natively.
+    // Only horizontalScrollbarHeight is tracked (changes when scrollbar appears/disappears).
+    const resizeObserver = new ResizeObserver(() => {
       const { clientHeight, offsetHeight } = grid;
+      const newHScrollbar = offsetHeight - clientHeight;
 
-      // flushSync is intentional here — the grid MUST re-render at the new
-      // width in the same frame as the DOM resize, otherwise a 1-frame flash
-      // of the old width is visible (the grid "implodes" or overflows).
-      flushSync(() => {
-        setDimensions((prev) => ({
-          ...prev,
-          inlineSize: size.inlineSize,
-          horizontalScrollbarHeight: offsetHeight - clientHeight,
-        }));
+      scheduleUpdate(() => {
+        setDimensions((prev) => {
+          if (prev.horizontalScrollbarHeight === newHScrollbar) return prev;
+          return { ...prev, horizontalScrollbarHeight: newHScrollbar };
+        });
       });
     });
     resizeObserver.observe(grid);
@@ -112,17 +123,6 @@ export function useGridDimensions(scrollContainerRef?: RefObject<HTMLElement | n
     const handleScroll = () => {
       scheduleUpdate(() => {
         setDimensions((prev) => measureScroll(prev));
-      });
-    };
-
-    // Horizontal scroll on the grid element itself
-    const handleGridScroll = () => {
-      scheduleUpdate(() => {
-        setDimensions((prev) => {
-          const newScrollLeft = Math.abs(grid.scrollLeft);
-          if (prev.scrollLeft === newScrollLeft) return prev;
-          return { ...prev, scrollLeft: newScrollLeft };
-        });
       });
     };
 
@@ -142,8 +142,6 @@ export function useGridDimensions(scrollContainerRef?: RefObject<HTMLElement | n
       resizeObserver.observe(scrollContainer);
     }
 
-    grid.addEventListener('scroll', handleGridScroll, { passive: true });
-
     return () => {
       cancelAnimationFrame(rafId);
       resizeObserver.disconnect();
@@ -153,7 +151,6 @@ export function useGridDimensions(scrollContainerRef?: RefObject<HTMLElement | n
       } else {
         scrollContainer.removeEventListener('scroll', handleScroll);
       }
-      grid.removeEventListener('scroll', handleGridScroll);
     };
   }, [scrollContainerRef]);
 

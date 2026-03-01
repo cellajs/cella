@@ -6,5 +6,4 @@ export * from './use-grid-dimensions';
 export * from './use-responsive-columns';
 export * from './use-roving-tab-index';
 export * from './use-row-selection';
-export * from './use-viewport-columns';
 export * from './use-viewport-rows';

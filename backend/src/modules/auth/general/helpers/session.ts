@@ -1,6 +1,7 @@
 import type { z } from '@hono/zod-openapi';
 import { and, eq } from 'drizzle-orm';
 import type { Context } from 'hono';
+import { appConfig } from 'shared';
 import { nanoid } from 'shared/nanoid';
 import { baseDb as db } from '#/db/db';
 import { type AuthStrategy, type SessionModel, type SessionTypes, sessionsTable } from '#/db/schema/sessions';
@@ -9,10 +10,12 @@ import { userActivityTable } from '#/db/schema/user-activity';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import type { Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
+import { sendAccountSecurityEmail } from '#/lib/send-account-security-email';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { deviceInfo } from '#/modules/auth/general/helpers/device-info';
 import { type UserWithActivity, userSelect } from '#/modules/user/helpers/select';
 import { sessionCookieSchema } from '#/schemas';
+import { getIp } from '#/utils/get-ip';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
@@ -39,6 +42,16 @@ export const setUserSession = async (
 
   if (isSystemAdmin || type === 'impersonation') {
     if (!isSystemAccessAllowed(ctx)) throw new AppError(403, 'system_access_forbidden', 'warn');
+  }
+
+  // Notify security email when a system admin signs in (skip in development)
+  if (isSystemAdmin && appConfig.mode !== 'development') {
+    const ip = getIp(ctx) ?? 'unknown';
+    sendAccountSecurityEmail({ email: appConfig.securityEmail, name: 'Security' }, 'sysadmin-signin', {
+      email: user.email,
+      ip,
+      timestamp: new Date().toISOString(),
+    });
   }
 
   // Get device information

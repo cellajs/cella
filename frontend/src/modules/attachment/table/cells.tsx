@@ -1,4 +1,4 @@
-import { Link, useNavigate } from '@tanstack/react-router';
+import { useNavigate } from '@tanstack/react-router';
 import i18n from 'i18next';
 import {
   AlertCircleIcon,
@@ -42,18 +42,14 @@ export const ThumbnailCell = ({ row, tabIndex }: ThumbnailCellProps) => {
   const { id, filename, contentType, groupId } = row;
   const navigate = useNavigate();
   const setTriggerRef = useDialoger((state) => state.setTriggerRef);
-  const cellRef = useRef<HTMLAnchorElement | null>(null);
+  const cellRef = useRef<HTMLButtonElement | null>(null);
 
   const wrapClass = 'relative flex space-x-2 items-center justify-center w-full h-full';
 
   // Use attachment URL hook - prefer thumbnail variant for table cells
-  const { url, isLocal } = useAttachmentUrl(row, { preferredVariant: 'thumbnail' });
+  const { url } = useAttachmentUrl(row, { preferredVariant: 'thumbnail' });
 
-  const handleClick = (e: React.MouseEvent) => {
-    // For non-local URLs, allow cmd/ctrl+click to open in new tab
-    if (!isLocal && (e.metaKey || e.ctrlKey)) return;
-    e.preventDefault();
-
+  const handleClick = () => {
     // Store focus anchor
     setTriggerRef(id, cellRef);
 
@@ -72,36 +68,11 @@ export const ThumbnailCell = ({ row, tabIndex }: ThumbnailCellProps) => {
   const preview = <AttachmentPreview name={filename} url={url ?? undefined} contentType={contentType} />;
   const badge = <SyncStatusBadge attachmentId={id} />;
 
-  // Use regular anchor for blob URLs (local) since TanStack Router blocks blob: protocol
-  // For remote URLs, use Link for proper router integration
-  if (isLocal) {
-    return (
-      <a
-        ref={cellRef}
-        href={url ?? undefined}
-        draggable="false"
-        tabIndex={tabIndex}
-        className={wrapClass}
-        onClick={handleClick}
-      >
-        {preview}
-        {badge}
-      </a>
-    );
-  }
-
   return (
-    <Link
-      to={url ?? undefined}
-      ref={cellRef}
-      draggable="false"
-      tabIndex={tabIndex}
-      className={wrapClass}
-      onClick={handleClick}
-    >
+    <Button ref={cellRef} variant="cell" size="cell" tabIndex={tabIndex} className={wrapClass} onClick={handleClick}>
       {preview}
       {badge}
-    </Link>
+    </Button>
   );
 };
 
@@ -277,13 +248,12 @@ export const EllipsisCell = ({ row, tabIndex }: EllipsisCellProps) => {
       label: i18n.t('common:delete'),
       icon: TrashIcon,
       onSelect: (row) => {
-        const { update } = useDropdowner.getState();
-        const callback = () => useDropdowner.getState().remove();
+        const { update, remove } = useDropdowner.getState();
 
         update({
           content: (
             <PopConfirm title={i18n.t('common:delete_confirm.text', { name: row.name })}>
-              <DeleteAttachments attachments={[row]} callback={callback} />
+              <DeleteAttachments attachments={[row]} callback={remove} onCancel={remove} />
             </PopConfirm>
           ),
         });

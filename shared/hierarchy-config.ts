@@ -21,14 +21,16 @@ export const roles = createRoleRegistry(['admin', 'member'] as const);
  * Entity relationships with single-parent inheritance.
  * Parents are defined before children. Order determines ancestor chain.
  *
- * Public access configuration:
- * - Context entities can be sources of public access (e.g., project with publicAccess column)
- * - Product entities can inherit public access from their parent context
- * - Parentless products without publicAccess are private-only
+ * Public actions define which actions (e.g., 'read') are allowed without authentication.
+ * There is no cascading between contexts — each context must declare its own publicActions.
+ * - Context entities can be public action sources (e.g., project with publicActions: ['read'])
+ * - Product entities can either declare publicActions directly (standalone) or inherit from a parent context
+ * - Inherited means the product is public only when its parent context is public
+ * - Entities without publicActions are always private
  */
 export const hierarchy = createEntityHierarchy(roles)
   .user()
   .context('organization', { parent: null, roles: roles.all })
-  .product('attachment', { parent: 'organization', publicAccess: { actions: ['read'] } })
-  .product('page', { parent: null, publicAccess: { actions: ['read'] } })
+  .product('attachment', { parent: 'organization' })
+  .product('page', { parent: null, publicActions: ['read'] })
   .build();

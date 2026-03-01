@@ -194,17 +194,17 @@ describe('EntityHierarchyBuilder', () => {
       .context('project', {
         parent: 'organization',
         roles: roles.all,
-        publicAccess: { actions: ['read'] },
+        publicActions: ['read'],
       })
       .product('task', {
         parent: 'project',
-        publicAccess: { inherits: 'project', actions: ['read'] },
+        publicActions: { inherits: 'project', actions: ['read'] },
       })
-      .product('attachment', { parent: 'project' }) // No public access
-      .product('page', { parent: null, publicAccess: { actions: ['read'] } }) // Standalone public
+      .product('attachment', { parent: 'project' }) // No public actions
+      .product('page', { parent: null, publicActions: ['read'] }) // Standalone public
       .build();
 
-    it('canBePublic returns true for entities with publicAccess', () => {
+    it('canBePublic returns true for entities with publicActions', () => {
       expect(publicHierarchy.canBePublic('project')).toBe(true);
       expect(publicHierarchy.canBePublic('task')).toBe(true);
       expect(publicHierarchy.canBePublic('page')).toBe(true);
@@ -235,53 +235,53 @@ describe('EntityHierarchyBuilder', () => {
       expect(publicHierarchy.publicGuardSource('page')).toBe(false); // Product, not context
     });
 
-    it('publicAccessSourceTypes contains only context sources', () => {
-      expect(publicHierarchy.publicAccessSourceTypes).toContain('project');
-      expect(publicHierarchy.publicAccessSourceTypes).not.toContain('page');
-      expect(publicHierarchy.publicAccessSourceTypes).toHaveLength(1);
+    it('publicActionsSourceTypes contains only context sources', () => {
+      expect(publicHierarchy.publicActionsSourceTypes).toContain('project');
+      expect(publicHierarchy.publicActionsSourceTypes).not.toContain('page');
+      expect(publicHierarchy.publicActionsSourceTypes).toHaveLength(1);
     });
 
-    it('publicAccessTypes contains all entities with publicAccess', () => {
-      expect(publicHierarchy.publicAccessTypes).toContain('project');
-      expect(publicHierarchy.publicAccessTypes).toContain('task');
-      expect(publicHierarchy.publicAccessTypes).toContain('page');
-      expect(publicHierarchy.publicAccessTypes).not.toContain('attachment');
-      expect(publicHierarchy.publicAccessTypes).toHaveLength(3);
+    it('publicActionsTypes contains all entities with publicActions', () => {
+      expect(publicHierarchy.publicActionsTypes).toContain('project');
+      expect(publicHierarchy.publicActionsTypes).toContain('task');
+      expect(publicHierarchy.publicActionsTypes).toContain('page');
+      expect(publicHierarchy.publicActionsTypes).not.toContain('attachment');
+      expect(publicHierarchy.publicActionsTypes).toHaveLength(3);
     });
 
-    it('getPublicAccessConfig returns full config', () => {
-      expect(publicHierarchy.getPublicAccessConfig('project')).toEqual({ actions: ['read'] });
-      expect(publicHierarchy.getPublicAccessConfig('task')).toEqual({
+    it('getPublicActionsConfig returns full config', () => {
+      expect(publicHierarchy.getPublicActionsConfig('project')).toEqual(['read']);
+      expect(publicHierarchy.getPublicActionsConfig('task')).toEqual({
         inherits: 'project',
         actions: ['read'],
       });
-      expect(publicHierarchy.getPublicAccessConfig('attachment')).toBeUndefined();
+      expect(publicHierarchy.getPublicActionsConfig('attachment')).toBeUndefined();
     });
 
-    it('getContextConfig includes publicAccess', () => {
+    it('getContextConfig includes publicActions', () => {
       const projectConfig = publicHierarchy.getContextConfig('project');
-      expect(projectConfig?.publicAccess).toEqual({ actions: ['read'] });
+      expect(projectConfig?.publicActions).toEqual(['read']);
 
       const orgConfig = publicHierarchy.getContextConfig('organization');
-      expect(orgConfig?.publicAccess).toBeUndefined();
+      expect(orgConfig?.publicActions).toBeUndefined();
     });
 
-    it('getProductConfig includes publicAccess', () => {
+    it('getProductConfig includes publicActions', () => {
       const taskConfig = publicHierarchy.getProductConfig('task');
-      expect(taskConfig?.publicAccess).toEqual({ inherits: 'project', actions: ['read'] });
+      expect(taskConfig?.publicActions).toEqual({ inherits: 'project', actions: ['read'] });
 
       const attachmentConfig = publicHierarchy.getProductConfig('attachment');
-      expect(attachmentConfig?.publicAccess).toBeUndefined();
+      expect(attachmentConfig?.publicActions).toBeUndefined();
     });
   });
 
-  describe('public access validation', () => {
+  describe('public actions validation', () => {
     it('throws if inherited access references unknown entity', () => {
       expect(() => {
         createEntityHierarchy(roles)
           .user()
           .context('organization', { parent: null, roles: roles.all })
-          .product('task', { parent: 'organization', publicAccess: { inherits: 'project', actions: ['read'] } });
+          .product('task', { parent: 'organization', publicActions: { inherits: 'project', actions: ['read'] } });
       }).toThrow('inherits from unknown entity "project"');
     });
 
@@ -290,26 +290,26 @@ describe('EntityHierarchyBuilder', () => {
         createEntityHierarchy(roles)
           .user()
           .context('organization', { parent: null, roles: roles.all })
-          .product('page', { parent: null, publicAccess: { actions: ['read'] } })
-          .product('comment', { parent: 'organization', publicAccess: { inherits: 'page', actions: ['read'] } });
-      }).toThrow('Only context entities can be public access sources');
+          .product('page', { parent: null, publicActions: ['read'] })
+          .product('comment', { parent: 'organization', publicActions: { inherits: 'page', actions: ['read'] } });
+      }).toThrow('Only context entities can be publicActions sources');
     });
 
-    it('throws if inherited access source has no publicAccess', () => {
+    it('throws if inherited access source has no publicActions', () => {
       expect(() => {
         createEntityHierarchy(roles)
           .user()
           .context('organization', { parent: null, roles: roles.all })
-          .product('task', { parent: 'organization', publicAccess: { inherits: 'organization', actions: ['read'] } });
-      }).toThrow('that context has no publicAccess configured');
+          .product('task', { parent: 'organization', publicActions: { inherits: 'organization', actions: ['read'] } });
+      }).toThrow('that context has no publicActions configured');
     });
 
-    it('throws if publicAccess has empty actions array', () => {
+    it('throws if publicActions has empty actions array', () => {
       expect(() => {
         createEntityHierarchy(roles)
           .user()
           .context('organization', { parent: null, roles: roles.all })
-          .product('page', { parent: null, publicAccess: { actions: [] as const } });
+          .product('page', { parent: null, publicActions: [] as const });
       }).toThrow('must have at least one action');
     });
   });

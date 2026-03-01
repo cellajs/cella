@@ -45,7 +45,7 @@ export function PendingMembershipsTable({ contextEntity }: PendingMembershipsTab
   const [columns] = useColumns();
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
-  const visibleColumns = useMemo(() => columns.filter((column) => column.visible), [columns]);
+  const visibleColumns = useMemo(() => columns.filter((column) => !column.hidden), [columns]);
 
   const queryOptions = pendingMembershipsQueryOptions({
     entityId: contextEntity.id,

@@ -31,11 +31,17 @@ export const TableBarContainer = ({ children, className, offsetTop, searchVars }
 
   return (
     <StickyBox
-      className="z-10 bg-background/60 backdrop-blur-xs pb-4"
+      className="group/sticky z-10 bg-background/60 backdrop-blur-xs pb-2 max-sm:static! max-sm:top-auto!"
       offsetTop={focusView ? 0 : offsetTop}
       hideWhenOutOfView
     >
-      <div ref={containerRef} className={cn('flex items-center max-sm:justify-between md:gap-2 mt-4', className)}>
+      <div
+        ref={containerRef}
+        className={cn(
+          'flex items-center max-sm:justify-between md:gap-2 mt-4 group-data-[sticky=true]/sticky:mt-2',
+          className,
+        )}
+      >
         {children}
       </div>
     </StickyBox>

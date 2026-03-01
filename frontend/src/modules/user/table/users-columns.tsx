@@ -3,7 +3,6 @@ import { PencilIcon, TrashIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
 import { HeaderCell } from '~/modules/common/data-table/header-cell';
 import { type EllipsisOption, TableEllipsis } from '~/modules/common/data-table/table-ellipsis';
@@ -19,7 +18,6 @@ import { dateShort } from '~/utils/date-short';
 
 export const useColumns = () => {
   const { t } = useTranslation();
-  const isMobile = useBreakpoints('max', 'sm', false);
 
   const columns = useMemo(() => {
     const cols: ColumnOrColumnGroup<BaseUser>[] = [
@@ -27,7 +25,6 @@ export const useColumns = () => {
       {
         key: 'name',
         name: t('common:name'),
-        visible: true,
         sortable: true,
         resizable: true,
         renderHeaderCell: HeaderCell,
@@ -36,7 +33,7 @@ export const useColumns = () => {
       {
         key: 'impersonate',
         name: '',
-        visible: !isMobile,
+        minBreakpoint: 'md',
         sortable: false,
         width: 32,
         renderCell: ({ row, tabIndex }) => <ImpersonateRow user={row} tabIndex={tabIndex} />,
@@ -44,7 +41,7 @@ export const useColumns = () => {
       {
         key: 'edit',
         name: '',
-        visible: !isMobile,
+        minBreakpoint: 'md',
         sortable: false,
         width: 32,
         renderCell: ({ row, tabIndex }) => <UpdateRow user={row} tabIndex={tabIndex} />,
@@ -52,7 +49,7 @@ export const useColumns = () => {
       {
         key: 'ellipsis',
         name: '',
-        visible: isMobile,
+        maxBreakpoint: 'sm',
         sortable: false,
         width: 32,
         renderCell: ({ row, tabIndex }) => {
@@ -90,7 +87,7 @@ export const useColumns = () => {
         key: 'email',
         name: t('common:email'),
         sortable: false,
-        visible: !isMobile,
+        minBreakpoint: 'md',
         resizable: true,
         minWidth: 140,
         renderHeaderCell: HeaderCell,
@@ -110,7 +107,7 @@ export const useColumns = () => {
         key: 'role',
         name: t('common:role'),
         sortable: true,
-        visible: !isMobile,
+        minBreakpoint: 'md',
         resizable: true,
         width: 100,
         renderHeaderCell: HeaderCell,
@@ -120,7 +117,7 @@ export const useColumns = () => {
         key: 'createdAt',
         name: t('common:created_at'),
         sortable: true,
-        visible: !isMobile,
+        minBreakpoint: 'md',
         resizable: true,
         minWidth: 160,
         renderHeaderCell: HeaderCell,
@@ -131,7 +128,7 @@ export const useColumns = () => {
         key: 'lastSeenAt',
         name: t('common:last_seen_at'),
         sortable: true,
-        visible: !isMobile,
+        minBreakpoint: 'md',
         resizable: true,
         minWidth: 160,
         renderHeaderCell: HeaderCell,

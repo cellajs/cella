@@ -67,7 +67,7 @@ export function FocusBridge({ direction, className }: FocusBridgeProps) {
       variant="ghost"
       size="sm"
       onClick={() => focusById(targets[direction])}
-      className={cn('sr-only focus:not-sr-only focus:absolute focus:z-200', className)}
+      className={cn('max-sm:hidden sr-only focus:not-sr-only focus:absolute focus:z-200', className)}
     >
       {labels[direction]}
     </Button>

@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { HeaderCell } from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import type { PendingMembership } from '~/modules/memberships/types';
@@ -9,7 +8,6 @@ import { dateShort } from '~/utils/date-short';
 
 export const useColumns = () => {
   const { t } = useTranslation();
-  const isMobile = useBreakpoints('max', 'sm', false);
 
   const columns = useMemo(() => {
     const cols: ColumnOrColumnGroup<PendingMembership>[] = [
@@ -17,7 +15,6 @@ export const useColumns = () => {
         key: 'email',
         name: t('common:email'),
         sortable: false,
-        visible: true,
         renderHeaderCell: HeaderCell,
         minWidth: 140,
         placeholderValue: '-',
@@ -38,7 +35,6 @@ export const useColumns = () => {
         key: 'role',
         name: t('common:role'),
         sortable: false,
-        visible: true,
         width: 100,
         renderHeaderCell: HeaderCell,
         placeholderValue: '-',
@@ -53,7 +49,7 @@ export const useColumns = () => {
         key: 'createdAt',
         name: t('common:invited_at'),
         sortable: true,
-        visible: !isMobile,
+        minBreakpoint: 'md',
         renderHeaderCell: HeaderCell,
         placeholderValue: '-',
         renderCell: ({ row }) => dateShort(row.createdAt),
@@ -63,7 +59,7 @@ export const useColumns = () => {
         key: 'createdBy',
         name: t('common:invited_by'),
         sortable: false,
-        visible: !isMobile,
+        minBreakpoint: 'md',
         minWidth: 80,
         renderHeaderCell: HeaderCell,
         placeholderValue: '-',

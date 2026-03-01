@@ -43,10 +43,13 @@ export function AttachmentDialog() {
 
   // Reactively fetch single attachment metadata - handles page reload race condition
   // where the list cache hasn't populated yet when the dialog opens
-  const { data: singleAttachment } = useQuery({
+  const { data: singleAttachment, isFetching: isFetchingSingle } = useQuery({
     ...attachmentQueryOptions(tenantId ?? '', orgId ?? '', initialAttachmentId),
     enabled: !!tenantId && !!orgId && !!initialAttachmentId && !groupAttachments,
   });
+
+  // Wait for org context on page reload before showing error state
+  const awaitingContext = !tenantId || !orgId;
 
   // When groupId is present, wait for group data to avoid a 1→N item transition
   // that causes Embla to reinit and flash other slides
@@ -62,7 +65,7 @@ export function AttachmentDialog() {
   const itemIndex = index === -1 ? 0 : index;
 
   // Loading state - still resolving URLs or waiting for group data
-  if (isLoading || awaitingGroup) {
+  if (isLoading || awaitingContext || awaitingGroup || isFetchingSingle) {
     return (
       <div className="flex items-center justify-center h-screen">
         <Spinner className="h-12 w-12" />

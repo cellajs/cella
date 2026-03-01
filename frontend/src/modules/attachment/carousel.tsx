@@ -4,7 +4,7 @@ import { DownloadIcon, ExternalLinkIcon } from 'lucide-react';
 import { useRef, useState } from 'react';
 import useDownloader from 'react-use-downloader';
 import { isCDNUrl } from 'shared/is-cdn-url';
-import { clearAttachmentDialogSearchParams, openAttachmentDialog } from '~/modules/attachment/dialog/lib';
+import { clearAttachmentDialogSearchParams, openAttachmentDialog } from '~/modules/attachment/dialog/helpers';
 import { FilePlaceholder } from '~/modules/attachment/file-placeholder';
 import { AttachmentRender } from '~/modules/attachment/render';
 import { CloseButton } from '~/modules/common/close-button';

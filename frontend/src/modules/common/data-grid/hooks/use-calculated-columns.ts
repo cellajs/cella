@@ -4,7 +4,7 @@ import { SELECT_COLUMN_KEY } from '../columns';
 import type { DataGridProps } from '../data-grid';
 import { renderHeaderCell } from '../render-header-cell';
 import type { BreakpointKey, CalculatedColumn, CalculatedColumnParent, ColumnOrColumnGroup, Omit } from '../types';
-import { clampColumnWidth, isColumnVisible, max, min } from '../utils';
+import { breakpointOrder, clampColumnWidth } from '../utils';
 
 type Mutable<T> = {
   -readonly [P in keyof T]: T[P] extends ReadonlyArray<infer V> ? Mutable<V>[] : T[P];
@@ -28,10 +28,7 @@ const DEFAULT_COLUMN_MIN_WIDTH = 50;
 interface CalculatedColumnsArgs<R, SR> {
   rawColumns: readonly ColumnOrColumnGroup<R, SR>[];
   defaultColumnOptions: DataGridProps<R, SR>['defaultColumnOptions'];
-  viewportWidth: number;
-  scrollLeft: number;
   getColumnWidth: (column: CalculatedColumn<R, SR>) => string | number;
-  enableVirtualization: boolean;
   /** Current breakpoint for responsive column visibility */
   currentBreakpoint?: BreakpointKey;
   /** Whether mobile sub-rows are active (hides columns with mobileRole: 'sub') */
@@ -42,9 +39,6 @@ export function useCalculatedColumns<R, SR>({
   rawColumns,
   defaultColumnOptions,
   getColumnWidth,
-  viewportWidth,
-  scrollLeft,
-  enableVirtualization,
   currentBreakpoint = 'lg',
   isMobileSubRowsActive = false,
 }: CalculatedColumnsArgs<R, SR>) {
@@ -60,13 +54,7 @@ export function useCalculatedColumns<R, SR>({
   // Disable resizing on mobile breakpoints (xs, sm) since it's not useful on touch devices
   const isMobile = currentBreakpoint === 'xs' || currentBreakpoint === 'sm';
 
-  const { columns, colSpanColumns, lastFrozenColumnIndex, headerRowsCount, subColumns } = useMemo((): {
-    readonly columns: readonly CalculatedColumn<R, SR>[];
-    readonly colSpanColumns: readonly CalculatedColumn<R, SR>[];
-    readonly lastFrozenColumnIndex: number;
-    readonly headerRowsCount: number;
-    readonly subColumns: readonly CalculatedColumn<R, SR>[];
-  } => {
+  const { columns, colSpanColumns, lastFrozenColumnIndex, headerRowsCount, subColumns } = useMemo(() => {
     let lastFrozenColumnIndex = -1;
     let headerRowsCount = 1;
     const columns: MutableCalculatedColumn<R, SR>[] = [];
@@ -94,10 +82,10 @@ export function useCalculatedColumns<R, SR>({
           continue;
         }
 
-        // Check visibility based on breakpoint
-        if (!isColumnVisible(rawColumn.visible, currentBreakpoint)) {
-          continue;
-        }
+        // Check visibility based on breakpoint props
+        const bp = breakpointOrder[currentBreakpoint];
+        if (rawColumn.minBreakpoint && bp < breakpointOrder[rawColumn.minBreakpoint]) continue;
+        if (rawColumn.maxBreakpoint && bp > breakpointOrder[rawColumn.maxBreakpoint]) continue;
 
         const frozen = rawColumn.frozen ?? false;
 
@@ -183,11 +171,10 @@ export function useCalculatedColumns<R, SR>({
     isMobileSubRowsActive,
   ]);
 
-  const { templateColumns, layoutCssVars, totalFrozenColumnWidth, columnMetrics } = useMemo((): {
+  const { templateColumns, layoutCssVars, totalFrozenColumnWidth } = useMemo((): {
     templateColumns: readonly string[];
     layoutCssVars: Readonly<Record<string, string>>;
     totalFrozenColumnWidth: number;
-    columnMetrics: ReadonlyMap<CalculatedColumn<R, SR>, ColumnMetric>;
   } => {
     const columnMetrics = new Map<CalculatedColumn<R, SR>, ColumnMetric>();
     let left = 0;
@@ -195,18 +182,21 @@ export function useCalculatedColumns<R, SR>({
     const templateColumns: string[] = [];
 
     for (const column of columns) {
-      let width = getColumnWidth(column);
+      const width = getColumnWidth(column);
 
       if (typeof width === 'number') {
-        width = clampColumnWidth(width, column);
+        const clampedWidth = clampColumnWidth(width, column);
+        templateColumns.push(`${clampedWidth}px`);
+        columnMetrics.set(column, { width: clampedWidth, left });
+        left += clampedWidth;
       } else {
-        // This is a placeholder width so we can continue to use virtualization.
-        // The actual value is set after the column is rendered
-        width = column.minWidth;
+        // CSS-native flex distribution — CSS grid handles sizing between breakpoints.
+        // No JS measurement needed; minmax distributes remaining space with proper constraints.
+        const maxBound = column.maxWidth ? `${column.maxWidth}px` : '1fr';
+        templateColumns.push(`minmax(${column.minWidth}px, ${maxBound})`);
+        columnMetrics.set(column, { width: column.minWidth, left });
+        left += column.minWidth;
       }
-      templateColumns.push(`${width}px`);
-      columnMetrics.set(column, { width, left });
-      left += width;
     }
 
     if (lastFrozenColumnIndex !== -1) {
@@ -221,68 +211,12 @@ export function useCalculatedColumns<R, SR>({
       layoutCssVars[`--rdg-frozen-left-${column.idx}`] = `${columnMetrics.get(column)!.left}px`;
     }
 
-    return { templateColumns, layoutCssVars, totalFrozenColumnWidth, columnMetrics };
+    return { templateColumns, layoutCssVars, totalFrozenColumnWidth };
   }, [getColumnWidth, columns, lastFrozenColumnIndex]);
-
-  const [colOverscanStartIdx, colOverscanEndIdx] = useMemo((): [number, number] => {
-    if (!enableVirtualization) {
-      return [0, columns.length - 1];
-    }
-    // get the viewport's left side and right side positions for non-frozen columns
-    const viewportLeft = scrollLeft + totalFrozenColumnWidth;
-    const viewportRight = scrollLeft + viewportWidth;
-    // get first and last non-frozen column indexes
-    const lastColIdx = columns.length - 1;
-    const firstUnfrozenColumnIdx = min(lastFrozenColumnIndex + 1, lastColIdx);
-
-    // skip rendering non-frozen columns if the frozen columns cover the entire viewport
-    if (viewportLeft >= viewportRight) {
-      return [firstUnfrozenColumnIdx, firstUnfrozenColumnIdx];
-    }
-
-    // get the first visible non-frozen column index
-    let colVisibleStartIdx = firstUnfrozenColumnIdx;
-    while (colVisibleStartIdx < lastColIdx) {
-      const { left, width } = columnMetrics.get(columns[colVisibleStartIdx])!;
-      // if the right side of the columnn is beyond the left side of the available viewport,
-      // then it is the first column that's at least partially visible
-      if (left + width > viewportLeft) {
-        break;
-      }
-      colVisibleStartIdx++;
-    }
-
-    // get the last visible non-frozen column index
-    let colVisibleEndIdx = colVisibleStartIdx;
-    while (colVisibleEndIdx < lastColIdx) {
-      const { left, width } = columnMetrics.get(columns[colVisibleEndIdx])!;
-      // if the right side of the column is beyond or equal to the right side of the available viewport,
-      // then it the last column that's at least partially visible, as the previous column's right side is not beyond the viewport.
-      if (left + width >= viewportRight) {
-        break;
-      }
-      colVisibleEndIdx++;
-    }
-
-    const colOverscanStartIdx = max(firstUnfrozenColumnIdx, colVisibleStartIdx - 1);
-    const colOverscanEndIdx = min(lastColIdx, colVisibleEndIdx + 1);
-
-    return [colOverscanStartIdx, colOverscanEndIdx];
-  }, [
-    columnMetrics,
-    columns,
-    lastFrozenColumnIndex,
-    scrollLeft,
-    totalFrozenColumnWidth,
-    viewportWidth,
-    enableVirtualization,
-  ]);
 
   return {
     columns,
     colSpanColumns,
-    colOverscanStartIdx,
-    colOverscanEndIdx,
     templateColumns,
     layoutCssVars,
     headerRowsCount,

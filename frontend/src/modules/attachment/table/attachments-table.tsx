@@ -47,12 +47,12 @@ function AttachmentsTable({ contextEntity, canUpload = true, isSheet = false }: 
   const [columns, setColumns] = useState(columnsFromHook);
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
-  // Sync columns when isCompact changes (preserve visibility settings)
+  // Sync columns when isCompact changes (preserve hidden settings)
   useEffect(() => {
     setColumns((prev) =>
       columnsFromHook.map((col) => ({
         ...col,
-        visible: prev.find((p) => p.key === col.key)?.visible ?? col.visible,
+        hidden: prev.find((p) => p.key === col.key)?.hidden ?? col.hidden,
       })),
     );
   }, [isCompact]);
@@ -101,7 +101,7 @@ function AttachmentsTable({ contextEntity, canUpload = true, isSheet = false }: 
 
   const selectedRowIds = useMemo(() => new Set(selected.map((s) => s.id)), [selected]);
 
-  const visibleColumns = useMemo(() => columns.filter((column) => column.visible), [columns]);
+  const visibleColumns = useMemo(() => columns.filter((column) => !column.hidden), [columns]);
 
   const NoRowsComponent = (
     <ContentPlaceholder

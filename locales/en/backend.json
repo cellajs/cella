@@ -12,6 +12,8 @@
   "email.account_security.password-changed.title": "Password changed",
   "email.account_security.sysadmin-fail.text": "A system admin access attempt was blocked on {{appName}}. IP: {{ip}}, Route: {{route}}, Time: {{timestamp}}.",
   "email.account_security.sysadmin-fail.title": "Blocked system admin access attempt",
+  "email.account_security.sysadmin-signin.text": "A system admin signed in to {{appName}}. Email: {{email}}, IP: {{ip}}, Time: {{timestamp}}.",
+  "email.account_security.sysadmin-signin.title": "System admin sign-in detected",
   "email.account_security.impersonation-started.text": "An administrator ({{adminName}}) has started an impersonation session on your {{appName}} account.",
   "email.account_security.impersonation-started.title": "Admin impersonation started",
   "email.account_security.passkey-added.text": "A new passkey has been registered on your {{appName}} account.",

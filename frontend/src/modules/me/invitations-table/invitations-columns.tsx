@@ -1,5 +1,4 @@
 import { useTranslation } from 'react-i18next';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { HeaderCell } from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
@@ -12,8 +11,6 @@ import { dateShort } from '~/utils/date-short';
 export const useColumns = () => {
   const { t } = useTranslation();
 
-  const isMobile = useBreakpoints('max', 'sm', false);
-
   const actionButtons = [
     { label: t('common:accept'), variant: 'darkSuccess', action: 'accept' },
     { label: t('common:reject'), variant: 'destructive', action: 'reject' },
@@ -25,7 +22,6 @@ export const useColumns = () => {
     {
       key: 'name',
       name: '',
-      visible: true,
       sortable: false,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => (
@@ -44,7 +40,6 @@ export const useColumns = () => {
     {
       key: 'entityType',
       name: t('common:type'),
-      visible: true,
       sortable: false,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => <span>{t(`common:${row.entity.entityType}`)}</span>,
@@ -53,7 +48,6 @@ export const useColumns = () => {
       key: 'role',
       name: t('common:role'),
       sortable: false,
-      visible: true,
       minWidth: 100,
       renderHeaderCell: HeaderCell,
       placeholderValue: '-',
@@ -68,7 +62,7 @@ export const useColumns = () => {
       key: 'createdAt',
       name: t('common:invited_at'),
       sortable: false,
-      visible: !isMobile,
+      minBreakpoint: 'md',
       minWidth: 160,
       renderHeaderCell: HeaderCell,
       placeholderValue: '-',
@@ -78,7 +72,7 @@ export const useColumns = () => {
       key: 'createdBy',
       name: t('common:invited_by'),
       sortable: false,
-      visible: !isMobile,
+      minBreakpoint: 'md',
       minWidth: 120,
       renderHeaderCell: HeaderCell,
       placeholderValue: '-',
@@ -91,7 +85,6 @@ export const useColumns = () => {
       key: 'actions',
       name: '',
       sortable: false,
-      visible: true,
       width: 200,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => (

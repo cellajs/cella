@@ -492,7 +492,10 @@ export function StickyBox(props: StickyBoxCompProps) {
         // Hide during programmatic scrolls (e.g. scrollToSection)
         if (isProgrammaticScroll()) {
           setVisible(false);
-        } else if (!sentinelInView) {
+        } else if (sentinelInView) {
+          // Recover visibility when sentinel is back in view (e.g. after layout shifts)
+          setVisible(true);
+        } else {
           const delta = currentY - lastScrollY;
           if (Math.abs(delta) > 10) setVisible(delta < 0);
         }

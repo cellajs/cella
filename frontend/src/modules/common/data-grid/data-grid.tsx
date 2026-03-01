@@ -15,7 +15,6 @@ import {
   useCalculatedColumns,
   useColumnWidths,
   useGridDimensions,
-  useViewportColumns,
   useViewportRows,
 } from './hooks';
 import { defaultRenderRow } from './row';
@@ -79,7 +78,8 @@ interface EditCellState<R> extends Position {
   readonly originalRow: R;
 }
 
-// TODO-017 seems to be heavy when resizing browser tab, please investigate
+// TODO-017 fixed: no longer heavy during resize. Column sizing is CSS-native
+// between breakpoints. JS only re-renders on breakpoint transitions.
 
 /** Arguments passed to onRowsEndApproaching callback */
 export interface RowsEndApproachingArgs {
@@ -199,11 +199,6 @@ export interface DataGridProps<R, SR = unknown, K extends Key = Key> extends Sha
    */
   enableRowVirtualization?: Maybe<boolean>;
   /**
-   * Enable column virtualization independently
-   * When set, overrides enableVirtualization for columns
-   */
-  enableColumnVirtualization?: Maybe<boolean>;
-  /**
    * Selection mode for cells and rows
    * - 'none': Selection is disabled
    * - 'cell': Single cell selection only
@@ -320,7 +315,6 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     // Toggles and modes
     enableVirtualization: rawEnableVirtualization,
     enableRowVirtualization: rawEnableRowVirtualization,
-    enableColumnVirtualization: rawEnableColumnVirtualization,
     selectionMode: rawSelectionMode,
     selectedCellRange: selectedCellRangeProp,
     onSelectedCellRangeChange,
@@ -359,7 +353,6 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   const noRowsFallback = renderers?.noRowsFallback;
   const enableVirtualization = rawEnableVirtualization ?? true;
   const enableRowVirtualization = rawEnableRowVirtualization ?? enableVirtualization;
-  const enableColumnVirtualization = rawEnableColumnVirtualization ?? enableVirtualization;
   const selectionMode: SelectionMode = rawSelectionMode ?? 'row-multi';
   const isCellSelectionEnabled = selectionMode !== 'none';
   // Default threshold: 25% of rows, minimum 10, maximum 50
@@ -423,21 +416,12 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     [columnWidths],
   );
 
-  const {
-    gridRef,
-    inlineSize: gridWidth,
-    viewportHeight,
-    horizontalScrollbarHeight,
-    scrollTop,
-    scrollLeft,
-  } = useGridDimensions();
+  const { gridRef, viewportHeight, horizontalScrollbarHeight, scrollTop } = useGridDimensions();
   const {
     columns,
     colSpanColumns,
     lastFrozenColumnIndex,
     headerRowsCount,
-    colOverscanStartIdx,
-    colOverscanEndIdx,
     templateColumns,
     layoutCssVars,
     totalFrozenColumnWidth,
@@ -446,9 +430,6 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     rawColumns,
     defaultColumnOptions,
     getColumnWidth,
-    scrollLeft,
-    viewportWidth: gridWidth,
-    enableVirtualization: enableColumnVirtualization,
     currentBreakpoint,
     isMobileSubRowsActive,
   });
@@ -529,23 +510,10 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     enableVirtualization: enableRowVirtualization,
   });
 
-  const viewportColumns = useViewportColumns({
-    columns,
-    colSpanColumns,
-    colOverscanStartIdx,
-    colOverscanEndIdx,
-    lastFrozenColumnIndex,
-    rowOverscanStartIdx,
-    rowOverscanEndIdx,
-    rows,
-  });
-
   const { gridTemplateColumns, handleColumnResize } = useColumnWidths(
     columns,
-    viewportColumns,
     templateColumns,
     gridRef,
-    gridWidth,
     columnWidths,
     onColumnWidthsChange,
     onColumnResize,
@@ -1126,26 +1094,6 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     );
   }
 
-  function getRowViewportColumns(rowIdx: number) {
-    // idx can be -1 if grouping is enabled
-    const selectedColumn = selectedPosition.idx === -1 ? undefined : columns[selectedPosition.idx];
-    if (
-      selectedColumn !== undefined &&
-      selectedPosition.rowIdx === rowIdx &&
-      !viewportColumns.includes(selectedColumn)
-    ) {
-      // Add the selected column to viewport columns if the cell is not within the viewport
-      return selectedPosition.idx > colOverscanEndIdx
-        ? [...viewportColumns, selectedColumn]
-        : [
-            ...viewportColumns.slice(0, lastFrozenColumnIndex + 1),
-            selectedColumn,
-            ...viewportColumns.slice(lastFrozenColumnIndex + 1),
-          ];
-    }
-    return viewportColumns;
-  }
-
   function getViewportRows() {
     const rowElements: React.ReactNode[] = [];
 
@@ -1165,15 +1113,12 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
         viewportRowIdx === rowOverscanStartIdx - 1 || viewportRowIdx === rowOverscanEndIdx + 1;
       const rowIdx = isRowOutsideViewport ? selectedRowIdx : viewportRowIdx;
 
-      let rowColumns = viewportColumns;
+      let rowColumns = columns;
       const selectedColumn = selectedIdx === -1 ? undefined : columns[selectedIdx];
       if (selectedColumn !== undefined) {
         if (isRowOutsideViewport) {
           // if the row is outside the viewport then only render the selected cell
           rowColumns = [selectedColumn];
-        } else {
-          // if the row is within the viewport and cell is not, add the selected column to viewport columns
-          rowColumns = getRowViewportColumns(rowIdx);
         }
       }
 
@@ -1290,7 +1235,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
               key={index}
               rowIdx={index + 1}
               level={-groupedColumnHeaderRowsCount + index}
-              columns={getRowViewportColumns(minRowIdx + index)}
+              columns={columns}
               selectedCellIdx={selectedPosition.rowIdx === minRowIdx + index ? selectedPosition.idx : undefined}
               selectCell={selectHeaderCellLatest}
             />
@@ -1298,7 +1243,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
           <HeaderRow
             headerRowClass={headerRowClass}
             rowIdx={headerRowsCount}
-            columns={getRowViewportColumns(mainHeaderRowIdx)}
+            columns={columns}
             onColumnResize={handleColumnResizeLatest}
             onColumnResizeEnd={handleColumnResizeEndLatest}
             onColumnsReorder={onColumnsReorderLastest}
@@ -1318,7 +1263,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
       )}
 
       {/* render empty cells that span only 1 column so we can safely measure column widths, regardless of colSpan */}
-      {renderMeasuringCells(viewportColumns)}
+      {renderMeasuringCells(columns)}
 
       {/* extra div is needed for row navigation in a treegrid */}
       {isTreeGrid && (

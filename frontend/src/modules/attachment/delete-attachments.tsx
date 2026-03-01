@@ -10,9 +10,10 @@ interface Props {
   attachments: Attachment[];
   dialog?: boolean;
   callback?: (args: CallbackArgs<Attachment[]>) => void;
+  onCancel?: () => void;
 }
 
-export function DeleteAttachments({ attachments, callback, dialog: isDialog }: Props) {
+export function DeleteAttachments({ attachments, callback, dialog: isDialog, onCancel }: Props) {
   const removeDialog = useDialoger((state) => state.remove);
   // Use tenantId and organizationId from first attachment - all attachments belong to same org
   const deleteAttachments = useAttachmentDeleteMutation(attachments[0].tenantId, attachments[0].organizationId);
@@ -33,5 +34,5 @@ export function DeleteAttachments({ attachments, callback, dialog: isDialog }: P
     }
   };
 
-  return <DeleteForm onDelete={onDelete} onCancel={() => removeDialog()} pending={isPending} />;
+  return <DeleteForm onDelete={onDelete} onCancel={onCancel ?? (() => removeDialog())} pending={isPending} />;
 }
