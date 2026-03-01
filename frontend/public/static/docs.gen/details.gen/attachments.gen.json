@@ -120,6 +120,7 @@
                     "extendsRef": "#/components/schemas/UserMinimalBase"
                   },
                   "public": { "type": "boolean", "required": true },
+                  "publicAccess": { "type": "boolean", "required": true },
                   "bucketName": {
                     "type": "string",
                     "required": true,
@@ -193,6 +194,7 @@
               "description": null,
               "keywords": "vesco audentia angustus",
               "public": false,
+              "publicAccess": false,
               "bucketName": "attachments",
               "groupId": null,
               "filename": "elegantly.vss",
@@ -222,6 +224,7 @@
               "description": null,
               "keywords": "auxilium non sui",
               "public": false,
+              "publicAccess": false,
               "bucketName": "attachments",
               "groupId": null,
               "filename": "woefully_bah.vsw",
@@ -447,6 +450,7 @@
                     "extendsRef": "#/components/schemas/UserMinimalBase"
                   },
                   "public": { "type": "boolean", "required": true },
+                  "publicAccess": { "type": "boolean", "required": true },
                   "bucketName": {
                     "type": "string",
                     "required": true,
@@ -535,6 +539,7 @@
               "description": null,
               "keywords": "nam curatio xiphias",
               "public": false,
+              "publicAccess": false,
               "bucketName": "attachments",
               "groupId": null,
               "filename": "excluding_ugh_besides.svgz",
@@ -564,6 +569,7 @@
               "description": null,
               "keywords": "denique tum candidus",
               "public": false,
+              "publicAccess": false,
               "bucketName": "attachments",
               "groupId": null,
               "filename": "gown.txt",
@@ -707,6 +713,7 @@
                     "extendsRef": "#/components/schemas/UserMinimalBase"
                   },
                   "public": { "type": "boolean", "required": true },
+                  "publicAccess": { "type": "boolean", "required": true },
                   "bucketName": {
                     "type": "string",
                     "required": true,
@@ -795,6 +802,7 @@
               "description": null,
               "keywords": "nam curatio xiphias",
               "public": false,
+              "publicAccess": false,
               "bucketName": "attachments",
               "groupId": null,
               "filename": "excluding_ugh_besides.svgz",
@@ -824,6 +832,7 @@
               "description": null,
               "keywords": "denique tum candidus",
               "public": false,
+              "publicAccess": false,
               "bucketName": "attachments",
               "groupId": null,
               "filename": "gown.txt",
@@ -943,6 +952,7 @@
               "maxLength": 255
             },
             "public": { "type": "boolean", "required": false },
+            "publicAccess": { "type": "boolean", "required": false },
             "groupId": {
               "type": ["string", "null"],
               "required": false,
@@ -1290,6 +1300,7 @@
               "extendsRef": "#/components/schemas/UserMinimalBase"
             },
             "public": { "type": "boolean", "required": true },
+            "publicAccess": { "type": "boolean", "required": true },
             "bucketName": {
               "type": "string",
               "required": true,
@@ -1357,6 +1368,7 @@
           "description": null,
           "keywords": "damno tenax arx",
           "public": false,
+          "publicAccess": false,
           "bucketName": "attachments",
           "groupId": null,
           "filename": "yet_rightfully_lest.ogx",
@@ -1552,6 +1564,7 @@
               "extendsRef": "#/components/schemas/UserMinimalBase"
             },
             "public": { "type": "boolean", "required": true },
+            "publicAccess": { "type": "boolean", "required": true },
             "bucketName": {
               "type": "string",
               "required": true,
@@ -1619,6 +1632,7 @@
           "description": null,
           "keywords": "damno tenax arx",
           "public": false,
+          "publicAccess": false,
           "bucketName": "attachments",
           "groupId": null,
           "filename": "yet_rightfully_lest.ogx",
@@ -1712,12 +1726,27 @@
                 "type": "string",
                 "required": false,
                 "enum": ["originalKey"]
+              },
+              {
+                "type": "string",
+                "required": false,
+                "enum": ["publicAccess"]
               }
             ]
           },
           "data": {
-            "type": ["string", "null"],
-            "required": true
+            "required": true,
+            "anyOf": [
+              { "type": "string", "required": false },
+              { "type": "number", "required": false },
+              { "type": "boolean", "required": false },
+              {
+                "type": "array",
+                "required": false,
+                "itemType": "string"
+              },
+              { "type": "null", "required": false }
+            ]
           },
           "stx": {
             "type": "object",

@@ -70,9 +70,10 @@ const getDefaultForZodType = (schema: { _def: ZodDef }): unknown => {
     }
 
     case 'optional':
+      return def.innerType ? getDefaultForZodType(def.innerType) : undefined;
+
     case 'nullable':
-      // For optional/nullable, try the inner type but fallback to null/undefined
-      return def.innerType ? getDefaultForZodType(def.innerType) : null;
+      return null;
 
     case 'default':
       // Use the schema's own default

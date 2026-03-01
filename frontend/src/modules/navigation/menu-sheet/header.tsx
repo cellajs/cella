@@ -1,12 +1,14 @@
 import { Link } from '@tanstack/react-router';
-import { SearchIcon, XCircleIcon, XIcon } from 'lucide-react';
+import { SearchIcon, Settings2Icon, XCircleIcon, XIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useFocusByRef } from '~/hooks/use-focus-by-ref';
 import { useMountedState } from '~/hooks/use-mounted-state';
 import { Logo } from '~/modules/common/logo';
 import { SearchSpinner } from '~/modules/common/search-spinner';
 import { UserTheme } from '~/modules/me/user-theme';
+import { openPreferencesSheet } from '~/modules/navigation/open-preferences-sheet';
 import { Button } from '~/modules/ui/button';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '~/modules/ui/input-group';
 import { cn } from '~/utils/cn';
@@ -26,6 +28,7 @@ export const MenuSheetHeader = ({ searchTerm, setSearchTerm, isSearchActive, set
   const { t } = useTranslation();
   const { hasWaited, hasStarted } = useMountedState();
   const { focusRef: inputRef, setFocus } = useFocusByRef({ trigger: isSearchActive, delay: 50 });
+  const preferencesRef = useRef<HTMLButtonElement | null>(null);
 
   const toggleSearch = () => {
     if (isSearchActive) {
@@ -136,21 +139,34 @@ export const MenuSheetHeader = ({ searchTerm, setSearchTerm, isSearchActive, set
             </Button>
           </motion.div>
 
-          {/* Theme button - slides to the right and fades out when search is active */}
+          {/* Theme button (desktop) / Preferences button (mobile) - slides right and fades out when search is active */}
           <motion.div
             animate={{ x: isSearchActive ? 20 : 0, opacity: isSearchActive ? 0 : 1 }}
             transition={{ duration: 0.2 }}
             className={isSearchActive ? 'pointer-events-none' : ''}
           >
-            <UserTheme
-              contentClassName="z-140"
-              buttonClassName={cn(
-                'size-10 transition-opacity',
-                !hasWaited && 'opacity-0!',
-                !isSearchActive &&
-                  'group-[.keep-nav-open]/body:opacity-0 group-[.keep-nav-open]/body:group-hover/menu:opacity-100 group-[.keep-nav-open]/body:group-focus-within/menu:opacity-100 group-[.keep-nav-open]/body:data-[state=open]:opacity-100',
-              )}
-            />
+            {/* UserTheme hidden on mobile, preferences icon shown instead */}
+            <div className="max-sm:hidden">
+              <UserTheme
+                contentClassName="z-140"
+                buttonClassName={cn(
+                  'size-10 transition-opacity',
+                  !hasWaited && 'opacity-0!',
+                  !isSearchActive &&
+                    'group-[.keep-nav-open]/body:opacity-0 group-[.keep-nav-open]/body:group-hover/menu:opacity-100 group-[.keep-nav-open]/body:group-focus-within/menu:opacity-100 group-[.keep-nav-open]/body:data-[state=open]:opacity-100',
+                )}
+              />
+            </div>
+            <Button
+              ref={preferencesRef}
+              variant="ghost"
+              size="icon"
+              onClick={() => openPreferencesSheet(preferencesRef)}
+              className={cn('size-10 sm:hidden transition-opacity', !hasWaited && 'opacity-0!')}
+              aria-label={t('common:preferences')}
+            >
+              <Settings2Icon size={20} className="opacity-80" />
+            </Button>
           </motion.div>
         </div>
       </div>

@@ -39,6 +39,7 @@ export const attachmentCreateBodySchema = attachmentInsertSchema
     originalKey: true,
     bucketName: true,
     public: true,
+    publicAccess: true,
     groupId: true,
     convertedContentType: true,
     convertedKey: true,
@@ -55,10 +56,11 @@ export const attachmentCreateStxBodySchema = attachmentCreateBodySchema.extend({
 export const attachmentCreateManyStxBodySchema = attachmentCreateStxBodySchema.array().min(1).max(50);
 
 /** Update body using key/data pattern for single-field updates with conflict detection */
-export const attachmentUpdateStxBodySchema = createUpdateSchema(
-  [z.literal('name'), z.literal('originalKey')],
-  z.string().nullable(),
-);
+export const attachmentUpdateStxBodySchema = createUpdateSchema([
+  z.literal('name'),
+  z.literal('originalKey'),
+  z.literal('publicAccess'),
+]);
 
 // Response schemas: batch operations use { data, rejectedItemIds }, single returns entity directly
 export const attachmentCreateResponseSchema = batchResponseSchema(attachmentSchema);

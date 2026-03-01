@@ -1,6 +1,7 @@
 import { createXRoute } from '#/docs/x-routes';
 import { authGuard, publicGuard, sysAdminGuard } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
+import { singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   cacheStatsSchema,
   metricListSchema,
@@ -26,6 +27,7 @@ const metricRouteConfig = {
     method: 'get',
     path: '/',
     xGuard: [authGuard, sysAdminGuard],
+    xRateLimiter: singlePointsLimiter,
     tags: ['metrics'],
     summary: 'Get metrics',
     description: `EXPERIMENTAL. Returns raw system observability data (e.g. node level statistics or runtime insights).
@@ -46,6 +48,7 @@ const metricRouteConfig = {
     method: 'get',
     path: '/runtime',
     xGuard: [authGuard, sysAdminGuard],
+    xRateLimiter: singlePointsLimiter,
     tags: ['metrics'],
     summary: 'Get runtime metrics',
     description: `Returns Node.js process health metrics and OpenTelemetry runtime instrumentation data.
@@ -87,6 +90,7 @@ const metricRouteConfig = {
     method: 'get',
     path: '/cache',
     xGuard: [authGuard, sysAdminGuard],
+    xRateLimiter: singlePointsLimiter,
     tags: ['metrics'],
     summary: 'Get entity cache statistics',
     description: `Returns entity cache statistics including hit rates, sizes, and invalidations.
@@ -107,6 +111,7 @@ const metricRouteConfig = {
     method: 'get',
     path: '/sync',
     xGuard: [authGuard, sysAdminGuard],
+    xRateLimiter: singlePointsLimiter,
     tags: ['metrics'],
     summary: 'Get sync flow metrics',
     description: `Returns metrics for the sync flow: CDC Worker (messages) → ActivityBus (events) → SSE (notifications).

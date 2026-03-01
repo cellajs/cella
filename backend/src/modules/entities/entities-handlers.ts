@@ -32,7 +32,7 @@ const app = new OpenAPIHono<Env>({ defaultHook });
 // ============================================
 
 // Register listeners dynamically for all public product entity types
-for (const entityType of hierarchy.publicAccessTypes) {
+for (const entityType of hierarchy.publicActionsTypes) {
   const eventTypes = [`${entityType}.created`, `${entityType}.updated`, `${entityType}.deleted`] as const;
 
   for (const eventType of eventTypes) {
@@ -114,7 +114,7 @@ const entitiesRouteHandlers = app
       await writeOffset(stream, cursor);
 
       // Register subscriber on all public entity channels
-      const channels = hierarchy.publicAccessTypes.map((t) => publicChannel(t));
+      const channels = hierarchy.publicActionsTypes.map((t) => publicChannel(t));
       const subscriber: PublicStreamSubscriber = {
         id: nanoid(),
         channel: channels[0] ?? 'public:default',

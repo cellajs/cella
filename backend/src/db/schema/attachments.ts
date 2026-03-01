@@ -1,5 +1,5 @@
 import { boolean, foreignKey, index, pgTable, varchar } from 'drizzle-orm/pg-core';
-import { orgScopedCrudPolicies } from '#/db/rls-helpers';
+import { orgScopedPublicAccessCrudPolicies } from '#/db/rls-helpers';
 import { organizationsTable } from '#/db/schema/organizations';
 import { maxLength } from '#/db/utils/constraints';
 import { productEntityColumns } from '#/db/utils/product-entity-columns';
@@ -13,6 +13,7 @@ export const attachmentsTable = pgTable(
   {
     ...productEntityColumns('attachment'),
     public: boolean().notNull().default(false),
+    publicAccess: boolean('public_access').notNull().default(false),
     bucketName: varchar({ length: maxLength.field }).notNull(),
     groupId: varchar({ length: maxLength.id }),
     filename: varchar({ length: maxLength.field }).notNull(),
@@ -33,7 +34,7 @@ export const attachmentsTable = pgTable(
       columns: [table.tenantId, table.organizationId],
       foreignColumns: [organizationsTable.tenantId, organizationsTable.id],
     }).onDelete('cascade'),
-    ...orgScopedCrudPolicies('attachments', table),
+    ...orgScopedPublicAccessCrudPolicies('attachments', table),
   ],
 );
 

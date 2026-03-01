@@ -41,6 +41,7 @@ export function OrganizationsGrid({ fixedQuery, saveDataInSearch, focusView }: P
         searchVars={baseSearch}
         label={'common:organization'}
         setSearch={setSearch}
+        isSheet={!focusView}
         focusView={focusView}
       />
 

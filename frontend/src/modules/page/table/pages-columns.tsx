@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Page } from '~/api.gen';
 import { zPage } from '~/api.gen/zod.gen';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
 import { HeaderCell } from '~/modules/common/data-table/header-cell';
 import { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
@@ -24,14 +23,12 @@ function isLocalPage(page: Page) {
  */
 export function usePagesTableColumns(isCompact: boolean) {
   const { t } = useTranslation();
-  const isMobile = useBreakpoints('max', 'sm', false);
 
   const configs: ColumnOrColumnGroup<Page>[] = [
     CheckboxColumn,
     {
       key: 'name',
       name: t('common:title'),
-      visible: true,
       minWidth: 200,
       sortable: false,
       resizable: true,
@@ -52,7 +49,6 @@ export function usePagesTableColumns(isCompact: boolean) {
     {
       key: 'syncStatus',
       name: '',
-      visible: true,
       sortable: false,
       width: 32,
       renderCell: ({ row }) => {
@@ -76,7 +72,7 @@ export function usePagesTableColumns(isCompact: boolean) {
       key: 'status',
       name: t('common:status'),
       editable: true,
-      visible: !isMobile,
+      minBreakpoint: 'md',
       sortable: false,
       resizable: true,
       width: 160,
@@ -111,7 +107,6 @@ export function usePagesTableColumns(isCompact: boolean) {
       key: 'createdBy',
       name: t('common:created_by'),
       sortable: false,
-      visible: true,
       resizable: true,
       minWidth: isCompact ? null : 120,
       width: isCompact ? 50 : null,
@@ -124,7 +119,7 @@ export function usePagesTableColumns(isCompact: boolean) {
       key: 'createdAt',
       name: t('common:created_at'),
       sortable: false,
-      visible: !isMobile,
+      minBreakpoint: 'md',
       resizable: true,
       minWidth: 160,
       renderHeaderCell: HeaderCell,
@@ -137,7 +132,7 @@ export function usePagesTableColumns(isCompact: boolean) {
 
   return {
     columns,
-    visibleColumns: columns.filter((column) => column.visible),
+    visibleColumns: columns.filter((column) => !column.hidden),
     setColumns,
   };
 }

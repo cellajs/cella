@@ -63,14 +63,14 @@ const mapleApiKey = env.MAPLE_API_KEY;
 const mapleTraceExporter = mapleApiKey
   ? new OTLPTraceExporter({
       url: 'https://ingest.maple.dev/v1/traces',
-      headers: { 'x-api-key': mapleApiKey },
+      headers: { 'x-maple-ingest-key': mapleApiKey },
     })
   : undefined;
 
 const mapleLogExporter = mapleApiKey
   ? new OTLPLogExporter({
       url: 'https://ingest.maple.dev/v1/logs',
-      headers: { 'x-api-key': mapleApiKey },
+      headers: { 'x-maple-ingest-key': mapleApiKey },
     })
   : undefined;
 

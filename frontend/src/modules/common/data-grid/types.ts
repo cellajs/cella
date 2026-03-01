@@ -11,16 +11,6 @@ export type StateSetter<S> = React.Dispatch<React.SetStateAction<S>>;
 /** Supported breakpoint keys for responsive features */
 export type BreakpointKey = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 
-/**
- * Column visibility configuration.
- * Can be a boolean or breakpoint-based visibility rules.
- */
-export type ColumnVisibility =
-  | boolean
-  | { min: BreakpointKey }
-  | { max: BreakpointKey }
-  | { min: BreakpointKey; max: BreakpointKey };
-
 /** Cell position in the grid */
 export interface Position {
   readonly idx: number;
@@ -101,13 +91,18 @@ export interface Column<TRow, TSummaryRow = unknown> {
    */
   readonly focusable?: Maybe<boolean>;
   /**
-   * Column visibility. Boolean or breakpoint-based.
-   * @example visible: true
-   * @example visible: { max: 'sm' }  // Mobile only
-   * @example visible: { min: 'md' }  // Desktop only
-   * @default true
+   * Minimum breakpoint at which this column is visible.
+   * Below this breakpoint the column is excluded from the grid.
+   * Evaluated by the grid against its internal breakpoint — keep this static.
+   * @example minBreakpoint: 'md'  // Hidden on xs, sm
    */
-  readonly visible?: Maybe<ColumnVisibility>;
+  readonly minBreakpoint?: BreakpointKey;
+  /**
+   * Maximum breakpoint at which this column is visible.
+   * Above this breakpoint the column is excluded from the grid.
+   * @example maxBreakpoint: 'sm'  // Only visible on xs, sm (mobile-only)
+   */
+  readonly maxBreakpoint?: BreakpointKey;
   /**
    * Mobile rendering behavior.
    * - undefined: Normal column behavior

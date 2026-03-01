@@ -25,7 +25,7 @@ import { stripParams } from '~/utils/strip-search-params';
 const DocsLayout = lazy(() => import('~/modules/docs/docs-layout'));
 const OverviewPage = lazy(() => import('~/modules/docs/overview-page'));
 const OperationsPage = lazy(() => import('~/modules/docs/operations/operations-page'));
-const OperationsTable = lazy(() => import('~/modules/docs/operations/operations-table'));
+const OperationsTable = lazy(() => import('~/modules/docs/operations/operations-table/operations-table'));
 const SchemasPage = lazy(() => import('~/modules/docs/schemas/schemas-page'));
 const PagesTable = lazy(() => import('~/modules/page/table/pages-table'));
 const ViewPage = lazy(() => import('~/modules/page/view-page'));

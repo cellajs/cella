@@ -51,7 +51,7 @@ export function ColumnsView<TData>({
       <TooltipButton className={className} toolTipContent={t('common:columns_view')}>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" className="relative flex">
-            {filteredColumns.some((column) => !column.visible) && (
+            {filteredColumns.some((column) => column.hidden) && (
               <Badge className="absolute -right-1 -top-1 flex h-2 w-2 justify-center p-0 z-10" />
             )}
             <SlidersHorizontalIcon className="size-4" />
@@ -64,14 +64,14 @@ export function ColumnsView<TData>({
           <DropdownMenuCheckboxItem
             key={column.key}
             className="min-h-8"
-            checked={column.visible}
+            checked={!column.hidden}
             onCheckedChange={() =>
               setColumns((columns) =>
                 columns.map((c) =>
                   c.name === column.name
                     ? {
                         ...c,
-                        visible: !c.visible,
+                        hidden: !c.hidden,
                       }
                     : c,
                 ),

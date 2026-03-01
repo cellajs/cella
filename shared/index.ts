@@ -21,9 +21,9 @@ export type {
   RoleFromRegistry,
   UserEntityView,
   PublicAction,
-  PublicAccessConfig,
-  PublicAccessSource,
-  PublicAccessInherited,
+  PublicActionsConfig,
+  PublicActionsInherited,
+  PublicActionsOption,
 } from './src/builder/entity-hierarchy';
 export {
   createEntityHierarchy,

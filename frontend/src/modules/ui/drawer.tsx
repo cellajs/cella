@@ -49,7 +49,7 @@ function DrawerContent({ className, children, ...props }: React.ComponentProps<t
         {...props}
       >
         <div className="bg-muted mx-auto mt-4 hidden h-2 w-25 shrink-0 rounded-full group-data-[vaul-drawer-direction=bottom]/drawer-content:block" />
-        <ScrollArea id={props.id} className="w-full h-full">
+        <ScrollArea id={props.id} className="w-full h-full" viewportClassName="touch-pan-y">
           {children}
         </ScrollArea>
       </DrawerPrimitive.Content>

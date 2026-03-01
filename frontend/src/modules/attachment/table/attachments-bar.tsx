@@ -25,7 +25,7 @@ type AttachmentsTableBarProps = AttachmentsTableProps &
   };
 
 export const AttachmentsTableBar = ({
-  entity,
+  contextEntity,
   selected,
   searchVars,
   setSearch,
@@ -40,7 +40,7 @@ export const AttachmentsTableBar = ({
 }: AttachmentsTableBarProps) => {
   const { t } = useTranslation();
   const createDialog = useDialoger((state) => state.create);
-  const { open } = useAttachmentsUploadDialog(entity.tenantId, entity.id);
+  const { open } = useAttachmentsUploadDialog(contextEntity.tenantId, contextEntity.id);
 
   const deleteButtonRef = useRef(null);
 
@@ -75,7 +75,7 @@ export const AttachmentsTableBar = ({
 
   return (
     <>
-      <TableBarContainer searchVars={searchVars}>
+      <TableBarContainer searchVars={searchVars} offsetTop={40}>
         {/* Filter bar */}
         <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
           <FilterBarActions>

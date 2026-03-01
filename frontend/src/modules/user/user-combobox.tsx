@@ -20,10 +20,10 @@ import { usersListQueryOptions } from '~/modules/user/query';
 interface Props {
   value: string[];
   onChange: (items: string[]) => void;
-  entity: ContextEntityBase & { organizationId?: string };
+  contextEntity: ContextEntityBase & { organizationId?: string };
 }
 
-export const UserCombobox = ({ value, onChange, entity }: Props) => {
+export const UserCombobox = ({ value, onChange, contextEntity }: Props) => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm');
   const { ref, bounds } = useMeasure<HTMLDivElement>();
@@ -73,10 +73,10 @@ export const UserCombobox = ({ value, onChange, entity }: Props) => {
   // Fetch membership status only for users in search results
   const { data: membersData } = useInfiniteQuery({
     ...membersListQueryOptions({
-      entityId: entity.id,
-      entityType: entity.entityType,
-      tenantId: entity.tenantId,
-      orgId: entity.organizationId || entity.id,
+      entityId: contextEntity.id,
+      entityType: contextEntity.entityType,
+      tenantId: contextEntity.tenantId,
+      orgId: contextEntity.organizationId || contextEntity.id,
       userIds,
     }),
     enabled: items.length > 0,

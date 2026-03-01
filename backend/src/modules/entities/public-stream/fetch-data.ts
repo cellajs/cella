@@ -1,6 +1,6 @@
 /**
  * Data fetching utilities for public stream catch-up.
- * Entity-agnostic: uses hierarchy.publicAccessTypes dynamically.
+ * Entity-agnostic: uses hierarchy.publicActionsTypes dynamically.
  */
 
 import { and, desc, gt, inArray, sql } from 'drizzle-orm';
@@ -25,7 +25,7 @@ export async function fetchPublicCatchupSummary(
   cursor: string | null,
   clientSeqs?: Record<string, number>,
 ): Promise<PublicCatchupResponse> {
-  const publicTypes = [...hierarchy.publicAccessTypes];
+  const publicTypes = [...hierarchy.publicActionsTypes];
 
   if (publicTypes.length === 0) return { changes: {}, cursor };
 
@@ -96,7 +96,7 @@ export async function fetchPublicCatchupSummary(
  * Get latest public entity activity ID (for 'now' offset and as cursor).
  */
 export async function getLatestPublicActivityId(): Promise<string | null> {
-  const publicTypes = [...hierarchy.publicAccessTypes];
+  const publicTypes = [...hierarchy.publicActionsTypes];
 
   if (publicTypes.length === 0) return null;
 

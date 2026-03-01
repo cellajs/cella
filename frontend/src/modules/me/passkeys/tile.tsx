@@ -1,6 +1,7 @@
 import { ChevronDownIcon, KeyRoundIcon, MonitorIcon, SmartphoneIcon, UnlinkIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { TooltipButton } from '~/modules/common/tooltip-button';
 import type { Passkey } from '~/modules/me/types';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
@@ -33,11 +34,13 @@ export const PasskeyTile = ({ passkey, handleUnlinkPasskey, isPending, onlyPassk
 
         <div className="flex flex-col gap-1 w-full overflow-hidden">
           <div className="flex max-md:flex-col items-start gap-1 md:gap-2">
-            <span className="text-sm">{passkey.deviceName || t('common:unknown_device')}</span>
-            <Badge size="xs" variant="outline" className="truncate">
-              <KeyRoundIcon size={12} />
-              <span className="truncate">{passkey.nameOnDevice}</span>
-            </Badge>
+            <span className="text-sm max-sm:hidden">{passkey.deviceName || t('common:unknown_device')}</span>
+            <TooltipButton toolTipContent={passkey.nameOnDevice} side="top">
+              <Badge size="xs" variant="outline" className="truncate max-w-48">
+                <KeyRoundIcon size={12} className="shrink-0" />
+                <span className="truncate">{passkey.nameOnDevice}</span>
+              </Badge>
+            </TooltipButton>
           </div>
 
           <div className="flex flex-wrap items-start gap-x-2 md:gap-x-5 gap-y-1 font-light text-sm text-muted-foreground">
@@ -62,7 +65,7 @@ export const PasskeyTile = ({ passkey, handleUnlinkPasskey, isPending, onlyPassk
               onClick={() => setExpanded((v) => !v)}
               aria-expanded={expanded}
               size="xs"
-              className="lg:hidden p-0 font-light max-sm:text-[0.7rem] h-auto sm:opacity-0 group-hover/tile:opacity-100 focus-visible:opacity-100 focus-visible:ring-transparent ring-offset-0 outline-0 transition-opacity"
+              className="lg:hidden p-0 font-light h-auto sm:opacity-0 group-hover/tile:opacity-100 focus-visible:opacity-100 focus-visible:ring-transparent ring-offset-0 outline-0 transition-opacity"
             >
               <div className="group-data-[expanded=true]/tile:hidden">More</div>
               <div className="group-data-[expanded=false]/tile:hidden">Less</div>

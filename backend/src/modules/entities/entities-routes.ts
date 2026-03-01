@@ -1,6 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/docs/x-routes';
 import { authGuard, publicGuard } from '#/middlewares/guard';
+import { singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
 import { checkSlugBodySchema } from '#/modules/entities/entities-schema';
 import {
   appCatchupResponseSchema,
@@ -19,6 +20,7 @@ const entityRoutes = {
     method: 'post',
     path: '/check-slug',
     xGuard: authGuard,
+    xRateLimiter: singlePointsLimiter,
     tags: ['entities'],
     summary: 'Check slug availability',
     description: `Checks whether a given slug is available across all entity types (e.g. *organizations*, *users*).
@@ -120,6 +122,7 @@ const entityRoutes = {
     method: 'post',
     path: '/app/stream',
     xGuard: authGuard,
+    xRateLimiter: singlePointsLimiter,
     tags: ['entities'],
     summary: 'App event catchup',
     description:

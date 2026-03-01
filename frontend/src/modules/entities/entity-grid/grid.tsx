@@ -13,6 +13,10 @@ type BaseEntityGridProps<TEntity extends { id: string }> = {
   entities?: TEntity[];
   tileComponent: ComponentType<{ entity: TEntity }>;
 
+  // skeleton
+  /** Approximate height of each tile in px, passed to skeleton (default: 180) */
+  skeletonHeight?: number;
+
   // state
   isLoading: boolean;
   isFetching: boolean;
@@ -33,6 +37,7 @@ export function BaseEntityGrid<TEntity extends { id: string }>({
   label,
   entities,
   tileComponent: TileComponent,
+  skeletonHeight,
   isLoading,
   isFetching,
   error,
@@ -45,7 +50,7 @@ export function BaseEntityGrid<TEntity extends { id: string }>({
     await fetchNextPage();
   };
 
-  if (isLoading || !entities) return <EntityGridSkeleton />;
+  if (isLoading || !entities) return <EntityGridSkeleton tileHeight={skeletonHeight} />;
 
   if (!isFetching && !error && entities.length === 0) {
     return isFiltered ? (

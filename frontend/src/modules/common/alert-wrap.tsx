@@ -38,7 +38,7 @@ export const AlertWrap = ({
   const setAsSeen = () => setAlertSeen(id);
 
   const alertContent = (
-    <Alert variant={variant} className={cn('relative', className)}>
+    <Alert variant={variant} className={cn('relative', !animate && className)}>
       <CloseButton onClick={setAsSeen} size="md" className="absolute top-2 right-2" />
       {Icon && <Icon size={16} />}
       {title && <AlertTitle className="pr-8">{t(title)}</AlertTitle>}
@@ -52,11 +52,10 @@ export const AlertWrap = ({
         {showAlert && (
           <motion.div
             key={id}
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ height: { duration: 0.3 }, opacity: { duration: 0.2 } }}
-            style={{ overflow: 'hidden' }}
+            className={className}
+            initial={{ height: 0, opacity: 0, overflow: 'hidden' }}
+            animate={{ height: 'auto', opacity: 1, overflow: 'visible', transitionEnd: { overflow: 'visible' } }}
+            exit={{ height: 0, opacity: 0, overflow: 'hidden' }}
           >
             {alertContent}
           </motion.div>

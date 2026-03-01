@@ -21,8 +21,8 @@ export function isProductEntity(entityType: string | null | undefined): entityTy
 }
 
 /**
- * Check if entity type has public access configured in hierarchy.
- * This checks whether the entity CAN be public (has publicAccess config),
+ * Check if entity type has public actions configured in hierarchy.
+ * This checks whether the entity type CAN be public (has publicActions config),
  * not whether a specific row IS public.
  */
 export function isPublicProductEntity(entityType: string): boolean {

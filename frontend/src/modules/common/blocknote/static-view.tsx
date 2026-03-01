@@ -5,7 +5,7 @@ import { BlockNoteEditor } from '@blocknote/core';
 import { type MouseEventHandler, useEffect, useRef, useState } from 'react';
 import type { CarouselItemData } from '~/modules/attachment/carousel';
 import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
-import { openAttachmentDialog } from '~/modules/attachment/dialog/lib';
+import { openAttachmentDialog } from '~/modules/attachment/dialog/helpers';
 import { getFileUrl } from '~/modules/attachment/helpers';
 import { findAttachmentInListCache } from '~/modules/attachment/query';
 import { customSchema } from '~/modules/common/blocknote/blocknote-config';

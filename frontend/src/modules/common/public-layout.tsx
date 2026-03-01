@@ -12,7 +12,7 @@ import { PublicStream } from '~/query/realtime/public-stream';
  */
 export function PublicLayout() {
   return (
-    <div id="publicLayout" className="max-sm:mb-16 in-[.floating-nav]:mb-0">
+    <div id="publicLayout">
       <ErrorBoundary
         fallbackRender={({ error, resetErrorBoundary }) => (
           <ErrorNotice error={error as ErrorNoticeError} boundary="root" resetErrorBoundary={resetErrorBoundary} />

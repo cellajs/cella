@@ -1,6 +1,6 @@
 import { useMatch, useNavigate, useSearch } from '@tanstack/react-router';
 import { memo, useEffect } from 'react';
-import { AttachmentDialog } from '~/modules/attachment/dialog';
+import { AttachmentDialog } from '~/modules/attachment/dialog/attachment-dialog';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { fallbackContentRef } from '~/utils/fallback-content-ref';
 
