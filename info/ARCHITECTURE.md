@@ -85,28 +85,6 @@ Cella is a flat-root monorepo.
 └── shared                    Shared config, types and utils
 ```
 
-## API design
-
-The API runs through [zod-openapi](https://github.com/honojs/middleware/tree/main/packages/zod-openapi) to build an OpenAPI 3.1 specification. Please read the readme in this middleware before you get started. An api client is generated in the frontend using [openapi-ts](https://github.com/hey-api/openapi-ts), which produces zod schemas, types, and an sdk for the frontend.
-
-### OpenAPI extensions & doc generation
-
-The OpenAPI spec is enriched with custom `x-*` specification extensions that describe guards, rate limiters, and caches per operation. Middleware wrapped with `xMiddleware` carries typed metadata; `createXRoute` (used instead of `createRoute`) automatically collects this metadata into `x-guard`, `x-rate-limiter`, and `x-cache` spec extensions. New extension types are added via a central registry.
-
-At startup the backend builds the full spec (including an `info.x-extensions` block with all definitions and values), writes a cached `openapi.cache.json`. A custom Vite plugin pre-parses the spec into static JSON at build time; the frontend docs UI dynamically generates table columns from the extension definitions — no hardcoding of extension names.
-
-### Mocks
-
-Mock generators in `backend/mocks/` are a single source of truth serving three purposes:
-
-| Purpose | Mock type | ID context |
-|---------|-----------|------------|
-| OpenAPI examples | Response mocks (deterministic via seeded faker) | `'example'` — no prefix |
-| Database seeding | Insert mocks | `'script'` — `gen-` prefix |
-| Test fixtures | Insert mocks | `'test'` — `test-` prefix |
-
-Response mocks are passed as `example:` values to `.openapi()` on Zod schemas and route responses — the sole source of OpenAPI examples. Insert mocks return Drizzle `Insert*Model` types with `UniqueEnforcer` for uniqueness. The context-aware ID prefix system lets CDC workers and test cleanup distinguish generated data.
-
 ## Data modeling & modularity
 
 Tables can be split in `entity`,  `resource` and _other_ tables (see `backend/src/db/schema/`). Entities are split in categories:
@@ -229,6 +207,29 @@ Identity columns (`tenant_id`, `organization_id`, `user_id` on memberships, etc.
 ### Fork contract
 
 > Every tenant-scoped table must have `tenant_id`. Tables with an organization parent must also have `organization_id` with a composite FK to `organizations(tenant_id, id)`. Parentless product entities require `tenant_id` only. The entity hierarchy config (`shared/hierarchy-config.ts`) determines which pattern applies.
+
+## API design
+
+The API runs through [zod-openapi](https://github.com/honojs/middleware/tree/main/packages/zod-openapi) to build an OpenAPI 3.1 specification. Please read the readme in this middleware before you get started. An api client is generated in the frontend using [openapi-ts](https://github.com/hey-api/openapi-ts), which produces zod schemas, types, and an sdk for the frontend.
+
+### OpenAPI extensions & doc generation
+
+The OpenAPI spec is enriched with custom `x-*` specification extensions that describe guards, rate limiters, and caches per operation. Middleware wrapped with `xMiddleware` carries typed metadata; `createXRoute` (used instead of `createRoute`) automatically collects this metadata into `x-guard`, `x-rate-limiter`, and `x-cache` spec extensions. New extension types are added via a central registry.
+
+At startup the backend builds the full spec (including an `info.x-extensions` block with all definitions and values), writes a cached `openapi.cache.json`. A custom Vite plugin pre-parses the spec into static JSON at build time; the frontend docs UI dynamically generates table columns from the extension definitions — no hardcoding of extension names.
+
+### Mocks
+
+Mock generators in `backend/mocks/` are a single source of truth serving three purposes:
+
+| Purpose | Mock type | ID context |
+|---------|-----------|------------|
+| OpenAPI examples | Response mocks (deterministic via seeded faker) | `'example'` — no prefix |
+| Database seeding | Insert mocks | `'script'` — `gen-` prefix |
+| Test fixtures | Insert mocks | `'test'` — `test-` prefix |
+
+Response mocks are passed as `example:` values to `.openapi()` on Zod schemas and route responses — the sole source of OpenAPI examples. Insert mocks return Drizzle `Insert*Model` types with `UniqueEnforcer` for uniqueness. The context-aware ID prefix system lets CDC workers and test cleanup distinguish generated data.
+
 
 ## Testing
 

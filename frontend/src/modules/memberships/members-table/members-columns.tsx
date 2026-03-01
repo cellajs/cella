@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { roles } from 'shared';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
 import { HeaderCell } from '~/modules/common/data-table/header-cell';
 import { renderSelect } from '~/modules/common/data-table/select-column';
@@ -12,7 +11,6 @@ import { dateShort } from '~/utils/date-short';
 
 export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
   const { t } = useTranslation();
-  const isMobile = useBreakpoints('max', 'sm', false);
 
   const columns = () => {
     const cols: ColumnOrColumnGroup<Member>[] = [
@@ -21,7 +19,6 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
       {
         key: 'name',
         name: t('common:name'),
-        visible: true,
         sortable: true,
         resizable: true,
         renderHeaderCell: HeaderCell,
@@ -31,7 +28,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
         key: 'email',
         name: t('common:email'),
         sortable: false,
-        visible: !isMobile,
+        minBreakpoint: 'md',
         resizable: true,
         renderHeaderCell: HeaderCell,
         minWidth: 140,
@@ -53,7 +50,6 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
         key: 'role',
         name: t('common:role'),
         sortable: true,
-        visible: true,
         resizable: true,
         renderHeaderCell: HeaderCell,
         placeholderValue: '-',
@@ -80,7 +76,8 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
         key: 'createdAt',
         name: t('common:created_at'),
         sortable: true,
-        visible: !isSheet && !isMobile,
+        hidden: isSheet,
+        minBreakpoint: 'md',
         minWidth: 160,
         resizable: true,
         renderHeaderCell: HeaderCell,
@@ -91,7 +88,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
         key: 'lastSeenAt',
         name: t('common:last_seen_at'),
         sortable: true,
-        visible: !isMobile,
+        minBreakpoint: 'md',
         resizable: true,
         minWidth: 160,
         renderHeaderCell: HeaderCell,

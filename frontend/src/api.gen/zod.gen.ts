@@ -409,6 +409,7 @@ export const zAttachment = z.object({
   createdBy: zUserMinimalBase.and(z.record(z.string(), z.unknown())).nullable(),
   modifiedBy: zUserMinimalBase.and(z.record(z.string(), z.unknown())).nullable(),
   public: z.boolean(),
+  publicAccess: z.boolean(),
   bucketName: z.string().max(255),
   groupId: z.string().max(50).nullable(),
   filename: z.string().max(255),
@@ -1825,6 +1826,7 @@ export const zCreateAttachmentsData = z.object({
         originalKey: z.string().max(2048),
         bucketName: z.string().max(255),
         public: z.boolean().optional(),
+        publicAccess: z.boolean().optional(),
         groupId: z.string().max(50).nullish(),
         convertedContentType: z.string().max(255).nullish(),
         convertedKey: z.string().max(2048).nullish(),
@@ -1887,8 +1889,8 @@ export const zGetAttachmentResponse = zAttachment;
 
 export const zUpdateAttachmentData = z.object({
   body: z.object({
-    key: z.union([z.enum(['name']), z.enum(['originalKey'])]),
-    data: z.string().nullable(),
+    key: z.union([z.enum(['name']), z.enum(['originalKey']), z.enum(['publicAccess'])]),
+    data: z.union([z.string(), z.number(), z.boolean(), z.array(z.string())]).nullable(),
     stx: zStxRequestBase,
   }),
   path: z.object({

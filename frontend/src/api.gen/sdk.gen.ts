@@ -2449,8 +2449,8 @@ export const getAttachment = <ThrowOnError extends boolean = true>(options: Opti
  * @param {string} options.path.tenantid - `string`
  * @param {string} options.path.orgid - `string`
  * @param {string} options.path.id - `string`
- * @param {enum | enum=} options.body.key - `enum | enum` (optional)
- * @param {string | null=} options.body.data - `string | null` (optional)
+ * @param {enum | enum | enum=} options.body.key - `enum | enum | enum` (optional)
+ * @param {string | number | boolean | any[] | null=} options.body.data - `string | number | boolean | any[] | null` (optional)
  * @param {any=} options.body.stx - `any` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */

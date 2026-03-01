@@ -1,5 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { getFileIcon } from '~/modules/attachment/file-placeholder';
+import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { Spinner } from '~/modules/common/spinner';
 
 const ReactPanZoom = lazy(() => import('~/modules/attachment/render/image'));
@@ -55,6 +57,9 @@ export const AttachmentRender = ({
         {type.includes('video') && <RenderVideo src={url} className="max-h-[90vh] max-w-7xl mx-auto" />}
         {type.includes('pdf') && (
           <RenderPDF file={url} className="w-[95vw] max-w-280 mt-12 m-auto h-[calc(97vh-3rem)] overflow-auto" />
+        )}
+        {!['image', 'audio', 'video', 'pdf'].some((k) => type.includes(k)) && (
+          <ContentPlaceholder icon={getFileIcon(type)} title="common:download_to_view" />
         )}
       </Suspense>
     </div>

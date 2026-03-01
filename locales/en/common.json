@@ -165,6 +165,7 @@
   "documentation": "Documentation",
   "dont_show_again": "Don't show again",
   "download": "Download",
+  "download_to_view": "Please download to view",
   "draft": "Draft",
   "edit": "Edit",
   "edit_attachment.text": "Double-click on a cell in the 'Name' column to edit an attachment name. Changes will be auto-saved.",
@@ -387,9 +388,11 @@
   "pricing_plan": "Pricing plan",
   "privacy": "Privacy",
   "privacy_policy": "Privacy policy",
+  "private": "Private",
   "product": "Product",
   "profile": "Profile",
   "profile_picture": "Profile picture",
+  "public": "Public",
   "published": "Published",
   "recommended": "Recommended",
   "recreate_github_webhook": "Recreate GitHub webhook for this repository",
@@ -625,5 +628,6 @@
   "your_role": "Your role",
   "preferences": "Preferences",
   "appearance": "Appearance",
-  "dark_mode": "Dark mode"
+  "dark_mode": "Dark mode",
+  "next": "Next"
 }

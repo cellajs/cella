@@ -8,5 +8,7 @@
     "synced": "Gesynchroniseerd",
     "syncing": "Synchroniseren",
     "pending_sync": "Wacht op synchronisatie",
+    "private": "Privé",
+    "public": "Openbaar",
     "views": "Weergaven"
 }

@@ -21,7 +21,7 @@ export function ScrollArea({
         style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', height: '100%' }}
         ref={viewportRef}
         className={cn(
-          'h-full w-full [&>div]:block! rounded-[inherit] touch-pan-y focus:outline-none',
+          'h-full w-full [&>div]:block! rounded-[inherit] touch-manipulation focus:outline-none',
           viewportClassName,
         )}
       >

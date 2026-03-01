@@ -3,7 +3,6 @@ import { ShieldIcon, UserRoundIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { roles } from 'shared';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
 import { HeaderCell } from '~/modules/common/data-table/header-cell';
@@ -17,7 +16,6 @@ import { dateShort } from '~/utils/date-short';
 
 export const useColumns = (isCompact: boolean) => {
   const { t } = useTranslation();
-  const isMobile = useBreakpoints('max', 'sm', false);
 
   const columns = useMemo(() => {
     const cols: ColumnOrColumnGroup<EnrichedOrganization>[] = [
@@ -25,7 +23,6 @@ export const useColumns = (isCompact: boolean) => {
       {
         key: 'name',
         name: t('common:name'),
-        visible: true,
         sortable: true,
         resizable: true,
         renderHeaderCell: HeaderCell,
@@ -53,7 +50,6 @@ export const useColumns = (isCompact: boolean) => {
       {
         key: 'edit',
         name: '',
-        visible: true,
         width: 32,
         renderCell: ({ row, tabIndex }) => {
           if ((row.included.counts?.membership.admin ?? 0) > 0 || (row.included.counts?.membership.member ?? 0) > 0)
@@ -64,7 +60,7 @@ export const useColumns = (isCompact: boolean) => {
         key: 'role',
         name: t('common:your_role'),
         sortable: false,
-        visible: !isMobile,
+        minBreakpoint: 'md',
         resizable: true,
         width: 120,
         renderHeaderCell: HeaderCell,
@@ -85,7 +81,7 @@ export const useColumns = (isCompact: boolean) => {
         key: 'subscription',
         name: t('common:subscription'),
         sortable: false,
-        visible: !isMobile,
+        minBreakpoint: 'md',
         resizable: true,
         minWidth: 140,
         renderHeaderCell: HeaderCell,
@@ -95,7 +91,7 @@ export const useColumns = (isCompact: boolean) => {
         key: 'createdAt',
         name: t('common:created_at'),
         sortable: true,
-        visible: !isMobile,
+        minBreakpoint: 'md',
         resizable: true,
         minWidth: 160,
         renderHeaderCell: HeaderCell,
@@ -106,7 +102,7 @@ export const useColumns = (isCompact: boolean) => {
         key: 'createdBy',
         name: t('common:created_by'),
         sortable: false,
-        visible: false,
+        hidden: true,
         resizable: true,
         minWidth: isCompact ? null : 120,
         width: isCompact ? 50 : null,
@@ -119,7 +115,7 @@ export const useColumns = (isCompact: boolean) => {
         key: 'memberCount',
         name: t('common:members'),
         sortable: false,
-        visible: !isMobile,
+        minBreakpoint: 'md',
         width: 140,
         renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => (
@@ -133,7 +129,7 @@ export const useColumns = (isCompact: boolean) => {
         key: 'adminCount',
         name: t('common:admins'),
         sortable: false,
-        visible: !isMobile,
+        minBreakpoint: 'md',
         width: 140,
         renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => (

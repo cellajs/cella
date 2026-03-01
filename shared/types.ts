@@ -23,8 +23,8 @@ export type ProductEntityType = (typeof appConfig.productEntityTypes)[number];
 /** Parentless product entities (no organization_id) - tenant-scoped only */
 export type ParentlessProductEntityType = (typeof appConfig.parentlessProductEntityTypes)[number];
 
-/** Public product entities (parent: null) - accessible without authentication */
-export type PublicProductEntityType = (typeof hierarchy.publicAccessTypes)[number];
+/** Public product entities (types with publicActions configured in hierarchy) */
+export type PublicProductEntityType = (typeof hierarchy.publicActionsTypes)[number];
 
 /** Relatable context entities - context entities that appear as parents of product entities. Used for activities table columns and CDC context extraction. */
 export type RelatableContextEntityType = (typeof hierarchy.relatableContextTypes)[number];

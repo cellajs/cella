@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e \"const rp = require\\(''react-pdf/package.json''\\); console.log\\(''react-pdf:'', rp.version\\); const pd = require\\(''pdfjs-dist/package.json''\\); console.log\\(''pdfjs-dist:'', pd.version\\)\")",
+      "Bash(node -e \"const rp = require\\(''react-pdf/package.json''\\); console.log\\(''react-pdf pdfjs-dist dep:'', rp.dependencies?.[''pdfjs-dist''] || rp.peerDependencies?.[''pdfjs-dist'']\\)\")",
+      "Bash(pnpm install --filter frontend)",
+      "WebFetch(domain:raw.githubusercontent.com)"
+    ]
+  }
+}

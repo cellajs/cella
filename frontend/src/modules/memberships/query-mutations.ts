@@ -95,8 +95,8 @@ export const useInviteMemberMutation = () =>
   useMutation<MembershipInviteResponse, ApiError, InviteMember, undefined>({
     mutationKey: memberQueryKeys.update(),
     mutationFn: ({ body, path, query }) => membershipInvite({ body, path, query }),
-    onSuccess: ({ invitesSentCount }, { entity }) => {
-      const { id: entityId, entityType, organizationId } = entity;
+    onSuccess: ({ invitesSentCount }, { contextEntity }) => {
+      const { id: entityId, entityType, organizationId } = contextEntity;
 
       if (invitesSentCount) {
         // If the entity is not an organization but belongs to one, update its cache too

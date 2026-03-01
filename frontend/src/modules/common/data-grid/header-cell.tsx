@@ -13,7 +13,8 @@ import {
   stopPropagation,
 } from './utils';
 
-const resizeHandleClassname = 'cursor-col-resize absolute inset-y-0 end-0 w-2.5';
+const resizeHandleClassname =
+  'cursor-col-resize absolute inset-y-0 end-0 w-2.5 after:content-[""] after:absolute after:top-1/2 after:-translate-y-1/2 after:end-0 after:h-4 after:w-0.5 after:rounded-full after:bg-foreground/30 hover:after:bg-primary/80';
 const dragImageClassname = 'rounded w-fit outline-2 outline-[hsl(207,100%,50%)] -outline-offset-2';
 
 type SharedHeaderRowProps<R, SR> = Pick<

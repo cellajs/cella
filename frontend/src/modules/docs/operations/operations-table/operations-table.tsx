@@ -141,7 +141,7 @@ function OperationsTable() {
         setIsEntityOnly={setIsEntityOnly}
       />
       <DataTable<GenOperationSummary>
-        columns={columns.filter((column) => column.visible)}
+        columns={columns.filter((column) => !column.hidden)}
         rows={sortedOperations}
         onRowsChange={onRowsChange}
         selectionMode="none"

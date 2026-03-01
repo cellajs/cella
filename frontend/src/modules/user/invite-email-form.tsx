@@ -16,7 +16,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { type InviteFormValues, useInviteFormDraft } from '~/modules/user/invite-users';
 
 interface Props {
-  entity?: EnrichedContextEntity;
+  contextEntity?: EnrichedContextEntity;
   dialog?: boolean;
   children?: React.ReactNode;
 }
@@ -24,12 +24,12 @@ interface Props {
 /**
  * Form for inviting users by email.
  */
-export function InviteEmailForm({ entity, dialog: isDialog, children }: Props) {
+export function InviteEmailForm({ contextEntity, dialog: isDialog, children }: Props) {
   const { t } = useTranslation();
 
   const { nextStep } = useStepper();
 
-  const form = useInviteFormDraft(entity?.id);
+  const form = useInviteFormDraft(contextEntity?.id);
 
   const onSuccess = (
     { invitesSentCount, rejectedItemIds }: { rejectedItemIds: string[]; invitesSentCount: number },
@@ -58,13 +58,13 @@ export function InviteEmailForm({ entity, dialog: isDialog, children }: Props) {
   });
 
   const onSubmit = (values: InviteFormValues) => {
-    entity
+    contextEntity
       ? membershipInvite(
           {
             body: values,
-            path: { tenantId: entity.tenantId, orgId: entity.organizationId || entity.id },
-            query: { entityId: entity.id, entityType: entity.entityType },
-            entity,
+            path: { tenantId: contextEntity.tenantId, orgId: contextEntity.organizationId || contextEntity.id },
+            query: { entityId: contextEntity.id, entityType: contextEntity.entityType },
+            contextEntity,
           },
           { onSuccess },
         )
@@ -91,7 +91,7 @@ export function InviteEmailForm({ entity, dialog: isDialog, children }: Props) {
             </FormItem>
           )}
         />
-        {entity && (
+        {contextEntity && (
           <FormField
             control={form.control}
             name="role"

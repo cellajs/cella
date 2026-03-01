@@ -68,9 +68,9 @@ export const tokenLimiter = (tokenType: string): MiddlewareHandler<Env> =>
 /**
  * Presigned URL rate limiter to prevent abuse, falls back to IP address for anonymous requests
  */
-export const presignedUrlLimiter = rateLimiter('limit', 'presignedUrl', ['userId', 'ip'], {
+export const presignedUrlLimiter = rateLimiter('limit', 'presignedUrl', ['userId'], {
   limits: { points: 2000, duration: 60 * 60, blockDuration: 60 * 15 },
-  description: 'Max 2000 requests/hour per user/IP for presigned URLs',
+  description: 'Max 2000 requests/hour per user for presigned URLs',
 });
 
 /**
@@ -123,3 +123,9 @@ export const pointsLimiter = (cost = 1) =>
  * Attach to any route that accepts `{ ids: [...] }` or a top-level array body.
  */
 export const bulkPointsLimiter = pointsLimiter(0);
+
+/**
+ * Single-write points limiter: cost = 1 per request.
+ * Attach to single-entity create, update, and delete routes.
+ */
+export const singlePointsLimiter = pointsLimiter();

@@ -126,7 +126,7 @@ export const MarketingNav = () => {
               </Button>
             )}
 
-            <Button className="sm:ml-2 max-xs:hidden" asChild>
+            <Button className="sm:ml-2" asChild>
               <Link to="/auth/authenticate" preload={false}>
                 {t('common:sign_in')}
               </Link>

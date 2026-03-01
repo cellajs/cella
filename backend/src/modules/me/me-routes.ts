@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/docs/x-routes';
 import { authGuard, crossTenantGuard, publicGuard } from '#/middlewares/guard';
-import { bulkPointsLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
+import { bulkPointsLimiter, singlePointsLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   meAuthDataSchema,
   mePendingInvitationSchema,
@@ -85,6 +85,7 @@ const meRoutes = {
     method: 'put',
     path: '/',
     xGuard: authGuard,
+    xRateLimiter: singlePointsLimiter,
     tags: ['me'],
     summary: 'Update self',
     description: 'Updates the *current user*.',
@@ -114,6 +115,7 @@ const meRoutes = {
     method: 'delete',
     path: '/',
     xGuard: authGuard,
+    xRateLimiter: singlePointsLimiter,
     tags: ['me'],
     summary: 'Delete self',
     description:
@@ -178,6 +180,7 @@ const meRoutes = {
     method: 'delete',
     path: '/leave',
     xGuard: authGuard,
+    xRateLimiter: singlePointsLimiter,
     tags: ['me'],
     summary: 'Leave entity',
     description: 'Removes the *current user* from an entity they are a member of.',
@@ -240,6 +243,7 @@ const meRoutes = {
     method: 'put',
     path: '/mfa',
     xGuard: authGuard,
+    xRateLimiter: singlePointsLimiter,
     tags: ['me'],
     summary: 'Toggle MFA',
     description:

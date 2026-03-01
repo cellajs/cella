@@ -1,6 +1,6 @@
 import { createXRoute } from '#/docs/x-routes';
 import { authGuard, crossTenantGuard, relatableGuard, tenantGuard } from '#/middlewares/guard';
-import { bulkPointsLimiter } from '#/middlewares/rate-limiter/limiters';
+import { bulkPointsLimiter, singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   organizationCreateBodySchema,
   organizationListQuerySchema,
@@ -109,6 +109,7 @@ const organizationRoutes = {
     method: 'put',
     path: '/{tenantId}/organizations/{id}',
     xGuard: [authGuard, tenantGuard],
+    xRateLimiter: singlePointsLimiter,
     tags: ['organizations'],
     summary: 'Update organization',
     description: 'Updates an *organization* within a tenant.',

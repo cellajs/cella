@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Request } from '~/api.gen';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
 import { HeaderCell } from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
@@ -11,7 +10,6 @@ import { dateShort } from '~/utils/date-short';
 
 export const useColumns = () => {
   const { t } = useTranslation();
-  const isMobile = useBreakpoints('max', 'sm', false);
 
   const columns = useMemo(() => {
     const cols: ColumnOrColumnGroup<Request>[] = [
@@ -20,7 +18,6 @@ export const useColumns = () => {
         key: 'type',
         name: t('common:request_type'),
         sortable: true,
-        visible: true,
         resizable: true,
         width: 160,
         renderHeaderCell: HeaderCell,
@@ -41,7 +38,6 @@ export const useColumns = () => {
       {
         key: 'email',
         name: t('common:email'),
-        visible: true,
         sortable: false,
         resizable: true,
         minWidth: 120,
@@ -61,7 +57,7 @@ export const useColumns = () => {
       {
         key: 'message',
         name: t('common:message'),
-        visible: !isMobile,
+        minBreakpoint: 'md',
         sortable: false,
         resizable: true,
         minWidth: 200,
@@ -74,7 +70,7 @@ export const useColumns = () => {
         key: 'createdAt',
         name: t('common:created_at'),
         sortable: true,
-        visible: !isMobile,
+        minBreakpoint: 'md',
         resizable: true,
         width: 180,
         renderHeaderCell: HeaderCell,

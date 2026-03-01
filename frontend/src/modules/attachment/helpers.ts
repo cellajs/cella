@@ -7,7 +7,7 @@ import { zAttachment } from '~/api.gen/zod.gen';
 import type { BlobVariant } from '~/modules/attachment/dexie/attachments-db';
 import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
 import { downloadService } from '~/modules/attachment/download-service';
-import { findAttachmentInListCache } from '~/modules/attachment/query';
+import { findAttachmentInCache, findAttachmentInListCache } from '~/modules/attachment/query';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
 import { createOptimisticEntity } from '~/query/basic';
 
@@ -68,8 +68,8 @@ export async function resolveAttachmentUrl(
     }
   }
 
-  // 2. Need attachment metadata for cloud URL - try cache if not provided
-  const meta = attachment ?? findAttachmentInListCache(attachmentId);
+  // 2. Need attachment metadata for cloud URL - try list and detail cache
+  const meta = attachment ?? findAttachmentInCache(attachmentId);
   if (!meta) return null;
 
   // 3. Get cloud presigned URL

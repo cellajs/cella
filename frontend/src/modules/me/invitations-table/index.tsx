@@ -19,7 +19,7 @@ export function InvitationsTable() {
   // Build columns
   const columns = useColumns();
 
-  const visibleColumns = useMemo(() => columns.filter((column) => column.visible), [columns]);
+  const visibleColumns = useMemo(() => columns.filter((column) => !column.hidden), [columns]);
 
   const queryOptions = meInvitationsQueryOptions();
   const { data, isLoading, isFetching, error } = useQuery({

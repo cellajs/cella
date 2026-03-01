@@ -119,6 +119,12 @@ async function persistAndSendActivity(
 async function handleDataMessage(lsn: string, message: unknown): Promise<void> {
   const msg = message as Pgoutput.Message;
   const tag = msg.tag;
+
+  // Early exit for non-DML messages (begin, relation, commit, origin, type, etc.)
+  if (tag !== 'insert' && tag !== 'update' && tag !== 'delete') {
+    return;
+  }
+
   const tableName = 'relation' in msg ? msg.relation?.name : undefined;
 
   // Early exit for seeded data (gen- prefix) - no logging to avoid flooding during seed scripts

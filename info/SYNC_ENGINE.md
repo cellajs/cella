@@ -188,7 +188,7 @@ Unauthenticated stream for public entities (e.g., pages).
 | Aspect | Implementation |
 |--------|----------------|
 | **Auth** | No authentication required |
-| **Scope** | All public entity types (from `hierarchy.publicAccessTypes`) |
+| **Scope** | All public entity types (from `hierarchy.publicActionsTypes`) |
 | **Catch-up** | Handled by standard REST list fetches (not /stream) |
 | **Processing** | Standard list fetches update cache; SSE triggers fetches |
 | **Cursor storage** | In-memory only (module-level variable) |

@@ -22,26 +22,27 @@
   .rdg {
     /* CSS Custom Properties - can be overridden */
     --rdg-selection-width: 2px;
-    --rdg-selection-color: hsl(var(--primary));
+    --rdg-selection-color: var(--primary);
     --rdg-font-size: 0.875rem;
     --rdg-cell-frozen-box-shadow: 2px 0 5px -2px rgba(136, 136, 136, 0.3);
     --rdg-border-width: 1px;
-    --rdg-color: hsl(var(--foreground));
-    --rdg-border-color: hsl(var(--border));
-    --rdg-background-color: hsl(var(--background));
-    --rdg-header-background-color: hsl(var(--muted));
-    --rdg-row-hover-background-color: hsl(var(--muted) / 0.5);
-    --rdg-row-selected-background-color: hsl(var(--accent));
-    --rdg-row-selected-hover-background-color: hsl(var(--accent));
+    --rdg-color: var(--foreground);
+    --rdg-border-color: var(--border);
+    --rdg-background-color: var(--background);
+    --rdg-header-background-color: var(--muted);
+    --rdg-row-hover-background-color: oklch(from var(--muted) l c h / 0.5);
+    --rdg-row-selected-background-color: var(--accent);
+    --rdg-row-selected-hover-background-color: var(--accent);
     /* Z-index for frozen rows portal - can be overridden per grid instance */
     --rdg-frozen-row-z-index: 100;
 
     display: grid;
-    accent-color: hsl(var(--primary));
+    accent-color: var(--primary);
 
     /* Page-embedded mode: vertical overflow visible, horizontal scroll internal */
-    contain: layout style;
     content-visibility: auto;
+    contain-intrinsic-size: auto 300px;
+    contain: layout style;
     border: 1px solid var(--rdg-border-color);
     box-sizing: border-box;
     overflow-x: auto;
@@ -242,7 +243,7 @@
   border: none;
   border-radius: 0.25rem;
   background-color: transparent;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
   cursor: pointer;
   transition:
     background-color 0.15s,
@@ -251,8 +252,8 @@
 }
 
 .rdg-mobile-expand-toggle:hover {
-  background-color: hsl(var(--muted));
-  color: hsl(var(--foreground));
+  background-color: var(--muted);
+  color: var(--foreground);
 }
 
 .rdg-mobile-expand-toggle:focus-visible {
@@ -272,7 +273,7 @@
   display: none;
   grid-column: 1 / -1;
   padding: 0.5rem 1rem;
-  background-color: hsl(var(--muted) / 0.3);
+  background-color: oklch(from var(--muted) l c h / 0.3);
   border-block-end: var(--rdg-border-width) solid var(--rdg-border-color);
 }
 

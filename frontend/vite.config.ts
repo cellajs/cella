@@ -77,6 +77,10 @@ const viteConfig = {
           src: '../locales/**/*',
           dest: 'locales',
         },
+        {
+          src: 'node_modules/pdfjs-dist/build/pdf.worker.min.mjs',
+          dest: '',
+        },
       ],
     }),
     createHtmlPlugin({

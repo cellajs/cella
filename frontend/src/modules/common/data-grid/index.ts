@@ -60,7 +60,6 @@ export type {
   Column,
   ColumnGroup,
   ColumnOrColumnGroup,
-  ColumnVisibility,
   ColumnWidth,
   ColumnWidths,
   MobileSubRowConfig,

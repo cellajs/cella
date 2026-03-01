@@ -1,7 +1,8 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { and, count, eq, getColumns, gte, ilike, inArray, or, type SQL, sql } from 'drizzle-orm';
-import { html, raw } from 'hono/html';
+import { html } from 'hono/html';
 import { appConfig } from 'shared';
+import { unsafeInternalAdminDb } from '#/db/db';
 import { attachmentsTable } from '#/db/schema/attachments';
 import { organizationsTable } from '#/db/schema/organizations';
 import { seenCountsTable } from '#/db/schema/seen-counts';
@@ -187,6 +188,11 @@ const attachmentRouteHandlers = app
 
     const attachmentsToInsert = newAttachments.map(({ stx, ...att }) => ({
       ...att,
+      // Normalize empty strings to null for nullable fields
+      convertedKey: att.convertedKey || null,
+      convertedContentType: att.convertedContentType || null,
+      thumbnailKey: att.thumbnailKey || null,
+      groupId: att.groupId || null,
       tenantId: organization.tenantId,
       organizationId: organization.id,
       createdAt: getIsoDate(),
@@ -266,28 +272,43 @@ const attachmentRouteHandlers = app
     return ctx.json({ data: [] as never[], rejectedItemIds }, 200);
   })
   /**
-   * Get attachment link page (OG meta + client-side redirect)
+   * Get attachment link — serves OG meta for bots, direct download for users.
    */
   .openapi(attachmentRoutes.getAttachmentLink, async (ctx) => {
-    const db = ctx.var.db;
     const { id } = ctx.req.valid('param');
 
-    const [attachment] = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, id));
+    // Use adminDb to bypass RLS since this is a public endpoint without auth context.
+    // Organizations table requires isAuthenticated=true in its RLS policy, which isn't
+    // set for public endpoints. Falls back to ctx.var.db for PGlite mode (no RLS).
+    const db = unsafeInternalAdminDb ?? ctx.var.db;
+    const [attachment] = await db
+      .select()
+      .from(attachmentsTable)
+      .where(and(eq(attachmentsTable.id, id), eq(attachmentsTable.publicAccess, true)));
     if (!attachment) throw new AppError(404, 'not_found', 'warn', { entityType: 'attachment' });
 
+    // Detect bots/crawlers by User-Agent to serve OG meta page for link previews
+    const ua = ctx.req.header('user-agent') ?? '';
+    const isBot =
+      /bot|crawl|spider|slurp|facebookexternalhit|linkedinbot|twitterbot|whatsapp|telegram|discord|preview|fetch|embed/i.test(
+        ua,
+      );
+
+    if (!isBot) {
+      // Regular user — redirect to a presigned download URL
+      const key = attachment.convertedKey || attachment.originalKey;
+      const fileUrl = await getSignedUrlFromKey(key, { bucketName: attachment.bucketName, isPublic: false });
+      return ctx.redirect(fileUrl, 302);
+    }
+
+    // Bot — serve OG meta HTML for rich link previews
     const [organization] = await db
       .select()
       .from(organizationsTable)
       .where(eq(organizationsTable.id, attachment.organizationId));
     if (!organization) throw new AppError(404, 'not_found', 'warn', { entityType: 'organization' });
 
-    const url = new URL(
-      `${appConfig.frontendUrl}/${attachment.tenantId}/${organization.slug}/organization/attachments`,
-    );
-    url.searchParams.set('attachmentDialogId', attachment.id);
-    if (attachment.groupId) url.searchParams.set('groupId', attachment.groupId);
-
-    const redirectUrl = url.toString();
+    const linkUrl = `${appConfig.backendUrl}/${attachment.tenantId}/${organization.slug}/attachments/${attachment.id}/link`;
 
     return ctx.html(html`
       <!doctype html>
@@ -296,9 +317,10 @@ const attachmentRouteHandlers = app
           <meta charset="utf-8" />
 
           <title>${attachment.filename}</title>
+          <meta property="og:title" content="${attachment.filename}" />
           <meta property="og:description" content="View an attachment in ${organization.name}." />
           <meta name="description" content="View an attachment in ${organization.name}." />
-          <meta property="og:url" content="${redirectUrl}" />
+          <meta property="og:url" content="${linkUrl}" />
 
           <meta property="og:type" content="website" />
           <meta property="og:site_name" content="${appConfig.name}" />
@@ -306,11 +328,8 @@ const attachmentRouteHandlers = app
           <link rel="logo" type="image/png" href="/static/logo/logo.png" />
           <link rel="icon" type="image/png" sizes="512x512" href="/static/icons/icon-512x512.png" />
           <link rel="icon" type="image/png" sizes="192x192" href="/static/icons/icon-192x192.png" />
-          <meta name="robots" content="index,follow" />
+          <meta name="robots" content="noindex" />
         </head>
-      <script>
-        ${raw(`window.location.href = "${redirectUrl}";`)}
-      </script>
       </html>
     `);
   });

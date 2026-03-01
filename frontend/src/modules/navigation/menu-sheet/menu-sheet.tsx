@@ -3,7 +3,7 @@ import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/ad
 import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
 import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { Link } from '@tanstack/react-router';
-import { ArrowLeftIcon, SearchIcon } from 'lucide-react';
+import { ArrowLeftIcon, SearchIcon, Settings2Icon } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
@@ -20,6 +20,7 @@ import { MenuSheetHeader } from '~/modules/navigation/menu-sheet/header';
 import { filterMenuItems, getRelativeItemOrder, isPageData } from '~/modules/navigation/menu-sheet/helpers';
 import { MenuSheetItem } from '~/modules/navigation/menu-sheet/item';
 import { MenuSheetSection } from '~/modules/navigation/menu-sheet/section';
+import { openPreferencesSheet } from '~/modules/navigation/open-preferences-sheet';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
@@ -36,6 +37,7 @@ export const MenuSheet = () => {
   const [isSearchActive, setSearchActive] = useState<boolean>(false);
 
   const accountButtonRef = useRef(null);
+  const preferencesButtonRef = useRef<HTMLButtonElement | null>(null);
 
   const { menu, isLoading } = useMenu(user?.id);
 
@@ -84,8 +86,9 @@ export const MenuSheet = () => {
       }),
     ];
 
-    // Auto-scroll for the nav sheet if its viewport element exists
-    const viewportEl = document.getElementById('nav-sheet');
+    // Auto-scroll for the nav sheet's scroll area viewport (the actual scrollable element)
+    const sheetEl = document.getElementById('nav-sheet');
+    const viewportEl = sheetEl?.querySelector<HTMLElement>('[data-radix-scroll-area-viewport]');
     if (viewportEl) {
       cleanups.push(
         autoScrollForElements({
@@ -124,11 +127,20 @@ export const MenuSheet = () => {
       <FocusTarget target="sheet" />
       {/* Only visible when floating nav is present. To return to home */}
       <div id="return-nav" className="in-[.floating-nav]:flex hidden gap-2">
-        <Button variant="ghost" className="w-full justify-start h-10" asChild>
+        <Button variant="ghost" className="justify-start h-10 grow" asChild>
           <Link to="/home">
             <ArrowLeftIcon size={16} strokeWidth={1.5} />
             <span className="ml-2 font-normal">Home</span>
           </Link>
+        </Button>
+        <Button
+          ref={preferencesButtonRef}
+          size="icon"
+          variant="ghost"
+          onClick={() => openPreferencesSheet(preferencesButtonRef)}
+          className="w-10 px-1.5 shrink-0 h-10"
+        >
+          <Settings2Icon size={20} strokeWidth={1.5} />
         </Button>
         <Button
           ref={accountButtonRef}

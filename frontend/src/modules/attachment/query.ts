@@ -29,6 +29,7 @@ import {
 } from '~/query/basic';
 import { addMutationRegistrar } from '~/query/mutation-registry';
 import { createStxForCreate, createStxForDelete, createStxForUpdate, squashPendingMutation } from '~/query/offline';
+import { queryClient } from '~/query/query-client';
 import { getCacheToken } from '~/query/realtime';
 import { useUserStore } from '~/store/user';
 
@@ -121,6 +122,10 @@ export const attachmentQueryOptions = (tenantId: string, orgId: string, id: stri
 
 /** Find an attachment in the list cache by id. */
 export const findAttachmentInListCache = (id: string) => findInListCache<Attachment>(keys.list.base, id);
+
+/** Find an attachment in any cache (list or detail) by id. */
+export const findAttachmentInCache = (id: string): Attachment | undefined =>
+  findAttachmentInListCache(id) ?? queryClient.getQueryData<Attachment>(keys.detail.byId(id));
 
 /**
  * Reactive hook to get all attachments with a specific groupId.

@@ -1,5 +1,4 @@
 import { Link, useNavigate } from '@tanstack/react-router';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { DataTable } from '~/modules/common/data-table';
 import { HeaderCell } from '~/modules/common/data-table/header-cell';
@@ -17,7 +16,6 @@ interface TagOperationsTableProps {
  * Columns for TagOperationsTable
  */
 function useColumns(tagName: string): ColumnOrColumnGroup<GenOperationSummary>[] {
-  const isMobile = useBreakpoints('max', 'sm', false);
   const navigate = useNavigate();
   const { scrollToSection } = useScrollSpy();
 
@@ -38,7 +36,6 @@ function useColumns(tagName: string): ColumnOrColumnGroup<GenOperationSummary>[]
     {
       key: 'method',
       name: '',
-      visible: true,
       sortable: false,
       width: 80,
       renderHeaderCell: HeaderCell,
@@ -54,7 +51,6 @@ function useColumns(tagName: string): ColumnOrColumnGroup<GenOperationSummary>[]
     {
       key: 'path',
       name: '',
-      visible: true,
       minWidth: 200,
       sortable: false,
       renderHeaderCell: HeaderCell,
@@ -81,7 +77,7 @@ function useColumns(tagName: string): ColumnOrColumnGroup<GenOperationSummary>[]
     {
       key: 'id',
       name: '',
-      visible: !isMobile,
+      minBreakpoint: 'md',
       sortable: false,
       width: 200,
       renderHeaderCell: HeaderCell,
@@ -99,7 +95,7 @@ export const TagOperationsTable = ({ operations, tagName }: TagOperationsTablePr
   return (
     <DataTable<GenOperationSummary>
       className="mb-0"
-      columns={columns.filter((col) => col.visible)}
+      columns={columns.filter((col) => !col.hidden)}
       rows={operations}
       hasNextPage={false}
       rowKeyGetter={(row) => row.hash}

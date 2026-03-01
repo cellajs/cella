@@ -16,26 +16,39 @@ type RateLimiterOptions = {
   blockDuration?: number;
 };
 
+// Singleton registry: reuse limiter instances with the same keyPrefix to share internal caches and reduce DB round-trips
+const limiterRegistry = new Map<string, RateLimiterDrizzle | RateLimiterMemory>();
+
 /**
  * Get instance of rate limiter with correct store.
  * Uses RateLimiterDrizzle with a Drizzle-managed schema - no async table creation needed.
+ * Instances are memoized by keyPrefix so all consumers sharing a prefix share one warm cache.
  */
 export const getRateLimiterInstance = (options: RateLimiterOptions) => {
+  const keyPrefix = options.keyPrefix ?? '';
+  const existing = limiterRegistry.get(keyPrefix);
+  if (existing) return existing;
+
   const enforcedOptions = {
     ...options,
     tableName: defaultOptions.tableName,
   };
 
+  let instance: RateLimiterDrizzle | RateLimiterMemory;
+
   // Use in-memory rate limiter for basic mode and none mode (no database)
   if (env.DEV_MODE === 'basic' || env.DEV_MODE === 'none') {
-    return new RateLimiterMemory(enforcedOptions);
+    instance = new RateLimiterMemory(enforcedOptions);
+  } else {
+    instance = new RateLimiterDrizzle({
+      ...enforcedOptions,
+      storeClient: db,
+      schema: rateLimitsTable,
+    });
   }
 
-  return new RateLimiterDrizzle({
-    ...enforcedOptions,
-    storeClient: db,
-    schema: rateLimitsTable,
-  });
+  limiterRegistry.set(keyPrefix, instance);
+  return instance;
 };
 
 /**

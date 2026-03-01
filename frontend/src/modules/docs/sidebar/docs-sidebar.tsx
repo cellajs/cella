@@ -157,7 +157,8 @@ export function DocsSidebar({ tags }: DocsSidebarProps) {
                         e.preventDefault();
                         setForcedCollapsed((prev) => (prev === 'operations' ? null : 'operations'));
                       } else {
-                        setForcedCollapsed(null);
+                        // Only clear if operations was forcibly collapsed, preserve other section's state
+                        setForcedCollapsed((prev) => (prev === 'operations' ? null : prev));
                       }
                     }}
                     className={cn(
@@ -208,7 +209,8 @@ export function DocsSidebar({ tags }: DocsSidebarProps) {
                         e.preventDefault();
                         setForcedCollapsed((prev) => (prev === 'schemas' ? null : 'schemas'));
                       } else {
-                        setForcedCollapsed(null);
+                        // Only clear if schemas was forcibly collapsed, preserve other section's state
+                        setForcedCollapsed((prev) => (prev === 'schemas' ? null : prev));
                       }
                     }}
                     className={cn(

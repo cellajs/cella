@@ -9,7 +9,8 @@ export type BaseTableSearchVariables<T> = T & {
 
 export type ColumnOrColumnGroup<TData> = GridColumnOrColumnGroup<TData> & {
   key: string;
-  visible?: boolean;
+  /** Reactive hide flag for non-breakpoint conditions (e.g. isSheet). */
+  hidden?: boolean;
 };
 
 export type BaseTableBarProps<T, K> = {

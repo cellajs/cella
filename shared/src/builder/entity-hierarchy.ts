@@ -1,5 +1,5 @@
 /**
- * Entity hierarchy builder with compile-time validation, parent inheritance, and public access config.
+ * Entity hierarchy builder with compile-time validation, parent inheritance, and public actions config.
  *
  * Fork contract: Every tenant-scoped table must have tenant_id. Tables with an organization
  * parent must also have organization_id with a composite FK to organizations(tenant_id, id).
@@ -8,21 +8,20 @@
 
 export type PublicAction = 'read';
 
-/** Context entities that can be set public. */
-export interface PublicAccessSource {
-  actions: readonly PublicAction[];
-}
+/** Simple list of allowed public actions for an entity type. */
+export type PublicActionsConfig = readonly PublicAction[];
 
-/** Entities inheriting public access from a parent context. */
-export interface PublicAccessInherited {
+/** Inherited public actions from a parent context. */
+export interface PublicActionsInherited {
   inherits: string;
   actions: readonly PublicAction[];
 }
 
-export type PublicAccessConfig = PublicAccessSource | PublicAccessInherited;
+/** Full public actions config: either a simple list or inherited from a context. */
+export type PublicActionsOption = PublicActionsConfig | PublicActionsInherited;
 
-function isInheritedAccess(config: PublicAccessConfig): config is PublicAccessInherited {
-  return 'inherits' in config;
+function isInheritedActions(config: PublicActionsOption): config is PublicActionsInherited {
+  return !Array.isArray(config) && 'inherits' in config;
 }
 
 // Role Registry
@@ -50,12 +49,12 @@ interface ContextEntry<R extends string = string> {
   kind: 'context';
   parent: string | null;
   roles: readonly R[];
-  publicAccess?: PublicAccessSource;
+  publicActions?: PublicActionsConfig;
 }
 interface ProductEntry {
   kind: 'product';
   parent: string | null;
-  publicAccess?: PublicAccessConfig;
+  publicActions?: PublicActionsOption;
 }
 type EntityEntry = UserEntry | ContextEntry | ProductEntry;
 
@@ -63,13 +62,13 @@ export interface ContextEntityView<R extends string = string> {
   readonly kind: 'context';
   readonly parent: string | null;
   readonly roles: readonly R[];
-  readonly publicAccess?: PublicAccessSource;
+  readonly publicActions?: PublicActionsConfig;
 }
 
 export interface ProductEntityView {
   readonly kind: 'product';
   readonly parent: string | null;
-  readonly publicAccess?: PublicAccessConfig;
+  readonly publicActions?: PublicActionsOption;
 }
 
 export interface UserEntityView { readonly kind: 'user' }
@@ -104,29 +103,29 @@ export class EntityHierarchyBuilder<
   /** Add a context entity with parent reference and roles. */
   context<N extends string>(
     name: N,
-    options: { parent: TContexts | null; roles: readonly RoleFromRegistry<TRoles>[]; publicAccess?: PublicAccessSource },
+    options: { parent: TContexts | null; roles: readonly RoleFromRegistry<TRoles>[]; publicActions?: PublicActionsConfig },
   ): EntityHierarchyBuilder<TRoles, TContexts | N, TProducts, TParentlessProducts> {
     this.validateName(name);
     this.validateParent(name, options.parent, 'context');
     this.validateRoles(name, options.roles);
-    this.entities.set(name, { kind: 'context', parent: options.parent, roles: options.roles, publicAccess: options.publicAccess });
+    this.entities.set(name, { kind: 'context', parent: options.parent, roles: options.roles, publicActions: options.publicActions });
     return this as EntityHierarchyBuilder<TRoles, TContexts | N, TProducts, TParentlessProducts>;
   }
 
   /** Add a product entity with parent reference. Products with parent: null tracked as TParentlessProducts. */
   product<N extends string>(
     name: N,
-    options: { parent: null; publicAccess?: PublicAccessConfig },
+    options: { parent: null; publicActions?: PublicActionsOption },
   ): EntityHierarchyBuilder<TRoles, TContexts, TProducts | N, TParentlessProducts | N>;
   product<N extends string>(
     name: N,
-    options: { parent: TContexts; publicAccess?: PublicAccessConfig },
+    options: { parent: TContexts; publicActions?: PublicActionsOption },
   ): EntityHierarchyBuilder<TRoles, TContexts, TProducts | N, TParentlessProducts>;
-  product(name: string, options: { parent: string | null; publicAccess?: PublicAccessConfig }) {
+  product(name: string, options: { parent: string | null; publicActions?: PublicActionsOption }) {
     this.validateName(name);
     this.validateParent(name, options.parent, 'product');
-    this.validatePublicAccess(name, options.publicAccess);
-    this.entities.set(name, { kind: 'product', parent: options.parent, publicAccess: options.publicAccess });
+    this.validatePublicActions(name, options.publicActions);
+    this.entities.set(name, { kind: 'product', parent: options.parent, publicActions: options.publicActions });
     return this;
   }
 
@@ -180,36 +179,37 @@ export class EntityHierarchyBuilder<
     }
   }
 
-  private validatePublicAccess(name: string, publicAccess?: PublicAccessConfig): void {
-    if (!publicAccess) return;
+  private validatePublicActions(name: string, publicActions?: PublicActionsOption): void {
+    if (!publicActions) return;
 
     // Validate inherited access references an existing entity
-    if (isInheritedAccess(publicAccess)) {
-      const sourceEntry = this.entities.get(publicAccess.inherits);
+    if (isInheritedActions(publicActions)) {
+      const sourceEntry = this.entities.get(publicActions.inherits);
       if (!sourceEntry) {
         throw new Error(
-          `EntityHierarchy: product "${name}" public access inherits from unknown entity "${publicAccess.inherits}". ` +
+          `EntityHierarchy: product "${name}" publicActions inherits from unknown entity "${publicActions.inherits}". ` +
             'The source entity must be defined before the inheriting entity.',
         );
       }
-      // Source must be a context entity with publicAccess configured
+      // Source must be a context entity with publicActions configured
       if (sourceEntry.kind !== 'context') {
         throw new Error(
-          `EntityHierarchy: product "${name}" public access inherits from "${publicAccess.inherits}", ` +
-            `but it is a ${sourceEntry.kind} entity. Only context entities can be public access sources.`,
+          `EntityHierarchy: product "${name}" publicActions inherits from "${publicActions.inherits}", ` +
+            `but it is a ${sourceEntry.kind} entity. Only context entities can be publicActions sources.`,
         );
       }
-      if (!sourceEntry.publicAccess) {
+      if (!sourceEntry.publicActions) {
         throw new Error(
-          `EntityHierarchy: product "${name}" public access inherits from "${publicAccess.inherits}", ` +
-            'but that context has no publicAccess configured.',
+          `EntityHierarchy: product "${name}" publicActions inherits from "${publicActions.inherits}", ` +
+            'but that context has no publicActions configured.',
         );
       }
     }
 
     // Validate actions array is not empty
-    if (publicAccess.actions.length === 0) {
-      throw new Error(`EntityHierarchy: product "${name}" publicAccess must have at least one action`);
+    const actions = isInheritedActions(publicActions) ? publicActions.actions : publicActions;
+    if (actions.length === 0) {
+      throw new Error(`EntityHierarchy: product "${name}" publicActions must have at least one action`);
     }
   }
 }
@@ -234,8 +234,17 @@ export class EntityHierarchy<
   readonly allTypes: readonly ('user' | TContexts | TProducts)[];
   readonly relatableContextTypes: readonly TContexts[];
   readonly parentlessProductTypes: readonly TParentlessProducts[];
-  readonly publicAccessSourceTypes: readonly TContexts[];
-  readonly publicAccessTypes: readonly (TContexts | TProducts)[];
+  readonly publicActionsSourceTypes: readonly TContexts[];
+  readonly publicActionsTypes: readonly (TContexts | TProducts)[];
+
+  /** @deprecated Use publicActionsTypes */
+  get publicAccessTypes(): readonly (TContexts | TProducts)[] {
+    return this.publicActionsTypes;
+  }
+  /** @deprecated Use publicActionsSourceTypes */
+  get publicAccessSourceTypes(): readonly TContexts[] {
+    return this.publicActionsSourceTypes;
+  }
 
   constructor(roles: TRoles, entities: Map<string, EntityEntry>) {
     this.roleRegistry = roles;
@@ -248,16 +257,16 @@ export class EntityHierarchy<
     const parentlessProducts: TParentlessProducts[] = [];
     const relatableContexts = new Set<TContexts>();
     const publicSources: TContexts[] = [];
-    const publicAccessTypes: (TContexts | TProducts)[] = [];
+    const publicActionsTypes: (TContexts | TProducts)[] = [];
 
     for (const [name, entry] of entities) {
       all.push(name as 'user' | TContexts | TProducts);
 
       if (entry.kind === 'context') {
         contexts.push(name as TContexts);
-        if (entry.publicAccess) {
+        if (entry.publicActions) {
           publicSources.push(name as TContexts);
-          publicAccessTypes.push(name as TContexts);
+          publicActionsTypes.push(name as TContexts);
         }
       } else if (entry.kind === 'product') {
         products.push(name as TProducts);
@@ -266,8 +275,8 @@ export class EntityHierarchy<
         } else {
           relatableContexts.add(entry.parent as TContexts);
         }
-        if (entry.publicAccess) {
-          publicAccessTypes.push(name as TProducts);
+        if (entry.publicActions) {
+          publicActionsTypes.push(name as TProducts);
         }
       }
     }
@@ -277,8 +286,8 @@ export class EntityHierarchy<
     this.allTypes = Object.freeze(all);
     this.parentlessProductTypes = Object.freeze(parentlessProducts);
     this.relatableContextTypes = Object.freeze([...relatableContexts]);
-    this.publicAccessSourceTypes = Object.freeze(publicSources);
-    this.publicAccessTypes = Object.freeze(publicAccessTypes);
+    this.publicActionsSourceTypes = Object.freeze(publicSources);
+    this.publicActionsTypes = Object.freeze(publicActionsTypes);
     Object.freeze(this);
   }
 
@@ -331,9 +340,9 @@ export class EntityHierarchy<
     if (!entry) return undefined;
     if (entry.kind === 'user') return { kind: 'user' };
     if (entry.kind === 'context') {
-      return { kind: 'context', parent: entry.parent, roles: entry.roles, publicAccess: entry.publicAccess };
+      return { kind: 'context', parent: entry.parent, roles: entry.roles, publicActions: entry.publicActions };
     }
-    return { kind: 'product', parent: entry.parent, publicAccess: entry.publicAccess };
+    return { kind: 'product', parent: entry.parent, publicActions: entry.publicActions };
   }
 
   /** Get product entity view. */
@@ -392,33 +401,40 @@ export class EntityHierarchy<
     return this.roleRegistry;
   }
 
-  // Public Access Methods
+  // Public Actions Methods
 
-  /** Get public access config. Returns undefined if not configured. */
-  getPublicAccessConfig(entityType: string): PublicAccessConfig | undefined {
+  /** Get public actions config. Returns undefined if not configured. */
+  getPublicActionsConfig(entityType: string): PublicActionsOption | undefined {
     const entry = this.entities.get(entityType);
-    return entry && entry.kind !== 'user' ? entry.publicAccess : undefined;
+    return entry && entry.kind !== 'user' ? entry.publicActions : undefined;
   }
 
-  /** Check if entity can be public (has publicAccess configured). */
+  /** @deprecated Use getPublicActionsConfig */
+  getPublicAccessConfig(entityType: string): PublicActionsOption | undefined {
+    return this.getPublicActionsConfig(entityType);
+  }
+
+  /** Check if entity type has public actions configured. */
   canBePublic(entityType: string): boolean {
-    return this.getPublicAccessConfig(entityType) !== undefined;
+    return this.getPublicActionsConfig(entityType) !== undefined;
   }
 
   /** Get allowed public actions. Returns empty array if not configured. */
   getPublicActions(entityType: string): readonly PublicAction[] {
-    return this.getPublicAccessConfig(entityType)?.actions ?? [];
+    const config = this.getPublicActionsConfig(entityType);
+    if (!config) return [];
+    return isInheritedActions(config) ? config.actions : config;
   }
 
-  /** Get entity type from which public access is inherited. Returns null if source or none. */
+  /** Get entity type from which public actions are inherited. Returns null if source or none. */
   getPublicInheritanceSource(entityType: string): string | null {
-    const config = this.getPublicAccessConfig(entityType);
-    return config && isInheritedAccess(config) ? config.inherits : null;
+    const config = this.getPublicActionsConfig(entityType);
+    return config && isInheritedActions(config) ? config.inherits : null;
   }
 
-  /** Check if entity is a public access source (context with publicAccess). */
+  /** Check if entity is a public actions source (context with publicActions). */
   publicGuardSource(entityType: string): boolean {
-    return this.publicAccessSourceTypes.includes(entityType as TContexts);
+    return this.publicActionsSourceTypes.includes(entityType as TContexts);
   }
 }
 

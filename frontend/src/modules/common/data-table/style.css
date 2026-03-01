@@ -145,6 +145,6 @@
   left: 0;
   right: 0;
   height: 2px;
-  background-color: hsl(var(--primary));
+    background-color: var(--primary);
   z-index: 10;
 }

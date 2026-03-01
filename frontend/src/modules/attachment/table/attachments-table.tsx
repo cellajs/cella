@@ -24,16 +24,16 @@ function rowKeyGetter(row: Attachment) {
 }
 
 export interface AttachmentsTableProps {
-  entity: EnrichedContextEntity;
+  contextEntity: EnrichedContextEntity;
   isSheet?: boolean;
   canUpload?: boolean;
 }
 
-function AttachmentsTable({ entity, canUpload = true, isSheet = false }: AttachmentsTableProps) {
+function AttachmentsTable({ contextEntity, canUpload = true, isSheet = false }: AttachmentsTableProps) {
   const { t } = useTranslation();
   const { search, setSearch } = useSearchParams<AttachmentsRouteSearchParams>({ saveDataInSearch: !isSheet });
 
-  const updateAttachment = useAttachmentUpdateMutation(entity.tenantId, entity.id);
+  const updateAttachment = useAttachmentUpdateMutation(contextEntity.tenantId, contextEntity.id);
 
   // Table state
   const { q, sort, order } = search;
@@ -43,23 +43,23 @@ function AttachmentsTable({ entity, canUpload = true, isSheet = false }: Attachm
 
   // Build columns
   const [selected, setSelected] = useState<Attachment[]>([]);
-  const columnsFromHook = useColumns(entity, isSheet, isCompact);
+  const columnsFromHook = useColumns(contextEntity, isSheet, isCompact);
   const [columns, setColumns] = useState(columnsFromHook);
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
-  // Sync columns when isCompact changes (preserve visibility settings)
+  // Sync columns when isCompact changes (preserve hidden settings)
   useEffect(() => {
     setColumns((prev) =>
       columnsFromHook.map((col) => ({
         ...col,
-        visible: prev.find((p) => p.key === col.key)?.visible ?? col.visible,
+        hidden: prev.find((p) => p.key === col.key)?.hidden ?? col.hidden,
       })),
     );
   }, [isCompact]);
 
   const queryOptions = attachmentsListQueryOptions({
-    tenantId: entity.tenantId,
-    orgId: entity.id,
+    tenantId: contextEntity.tenantId,
+    orgId: contextEntity.id,
     q,
     sort,
     order,
@@ -101,7 +101,7 @@ function AttachmentsTable({ entity, canUpload = true, isSheet = false }: Attachm
 
   const selectedRowIds = useMemo(() => new Set(selected.map((s) => s.id)), [selected]);
 
-  const visibleColumns = useMemo(() => columns.filter((column) => column.visible), [columns]);
+  const visibleColumns = useMemo(() => columns.filter((column) => !column.hidden), [columns]);
 
   const NoRowsComponent = (
     <ContentPlaceholder
@@ -116,7 +116,7 @@ function AttachmentsTable({ entity, canUpload = true, isSheet = false }: Attachm
   return (
     <FocusViewContainer data-is-compact={isCompact}>
       <AttachmentsTableBar
-        entity={entity}
+        contextEntity={contextEntity}
         selected={selected}
         searchVars={{ ...search, limit }}
         setSearch={setSearch}
