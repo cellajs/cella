@@ -1,11 +1,19 @@
 import type { SeedScript } from '../types';
+<<<<<<< HEAD
+import { faker } from '@faker-js/faker';
+=======
+>>>>>>> cella-upstream/development
 import { appConfig } from 'shared';
 import { startSpinner, succeedSpinner, warnSpinner } from '#/utils/console';
 import { migrationDb } from '#/db/db';
 import { attachmentsTable } from '#/db/schema/attachments';
 import { organizationsTable } from '#/db/schema/organizations';
+<<<<<<< HEAD
+import { mockNanoid, mockStx, setMockContext, withFakerSeed } from '../../mocks/utils';
+=======
 import { mockAttachment } from '../../mocks/mock-attachment';
 import { setMockContext } from '../../mocks/utils';
+>>>>>>> cella-upstream/development
 import { defaultAdminUser } from '../fixtures';
 
 // Seed scripts use admin connection (migrationDb) for privileged operations
@@ -60,23 +68,31 @@ export const attachmentsSeed = async () => {
   let totalCreated = 0;
 
   for (const org of organizations) {
-    const records = SEED_FILES.map((file, i) => {
-      const base = mockAttachment(`attachment:seed:${org.id}:${i}`);
-      return {
-        ...base,
-        tenantId: org.tenantId,
-        organizationId: org.id,
-        createdBy: defaultAdminUser.id,
-        modifiedBy: defaultAdminUser.id,
-        filename: file.filename,
-        name: file.filename,
-        contentType: file.contentType,
-        size: file.size,
-        originalKey: file.originalKey,
-        public: file.public,
-        bucketName: file.public ? appConfig.s3.publicBucket : appConfig.s3.privateBucket,
-      };
-    });
+    const records = SEED_FILES.map((file, i) =>
+      withFakerSeed(`attachment:seed:${org.id}:${i}`, () => {
+        const createdAt = faker.date.past({ refDate: new Date('2025-01-01') }).toISOString();
+        return {
+          id: mockNanoid(),
+          entityType: 'attachment' as const,
+          tenantId: org.tenantId,
+          organizationId: org.id,
+          createdAt,
+          modifiedAt: createdAt,
+          createdBy: defaultAdminUser.id,
+          modifiedBy: defaultAdminUser.id,
+          stx: mockStx(),
+          description: null,
+          keywords: faker.lorem.words(3),
+          filename: file.filename,
+          name: file.filename,
+          contentType: file.contentType,
+          size: file.size,
+          originalKey: file.originalKey,
+          public: file.public,
+          bucketName: file.public ? appConfig.s3.publicBucket : appConfig.s3.privateBucket,
+        };
+      }),
+    );
 
     await db.insert(attachmentsTable).values(records).onConflictDoNothing();
     totalCreated += records.length;
