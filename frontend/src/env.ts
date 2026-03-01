@@ -15,6 +15,7 @@ export const env = createEnv({
       .string()
       .default('false')
       .transform((v) => v === 'true'),
+    VITE_GITHUB_APP_URL: z.string().optional(),
   },
   clientPrefix: 'VITE_',
   runtimeEnv: import.meta.env,
