@@ -446,6 +446,7 @@ export type Attachment = {
       [key: string]: unknown;
     } | null);
   public: boolean;
+  publicAccess: boolean;
   bucketName: string;
   groupId: string | null;
   filename: string;
@@ -4299,6 +4300,7 @@ export type CreateAttachmentsData = {
     originalKey: string;
     bucketName: string;
     public?: boolean;
+    publicAccess?: boolean;
     groupId?: string | null;
     convertedContentType?: string | null;
     convertedKey?: string | null;
@@ -4468,8 +4470,8 @@ export type GetAttachmentResponse = GetAttachmentResponses[keyof GetAttachmentRe
 
 export type UpdateAttachmentData = {
   body: {
-    key: 'name' | 'originalKey';
-    data: string | null;
+    key: 'name' | 'originalKey' | 'publicAccess';
+    data: string | number | boolean | Array<string> | null;
     stx: StxRequestBase;
   };
   path: {

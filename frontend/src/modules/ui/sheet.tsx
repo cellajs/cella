@@ -71,7 +71,9 @@ export function SheetContent({
       )}
       {...props}
     >
-      <ScrollArea className="w-full h-full">{children}</ScrollArea>
+      <ScrollArea className="w-full h-full" viewportClassName="touch-pan-y">
+        {children}
+      </ScrollArea>
       {showCloseButton && (
         <SheetPrimitive.Close
           data-slot="sheet-close"

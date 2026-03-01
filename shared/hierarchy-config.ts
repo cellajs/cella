@@ -29,6 +29,6 @@ export const roles = createRoleRegistry(['admin', 'member'] as const);
 export const hierarchy = createEntityHierarchy(roles)
   .user()
   .context('organization', { parent: null, roles: roles.all })
-  .product('attachment', { parent: 'organization' })
+  .product('attachment', { parent: 'organization', publicAccess: { actions: ['read'] } })
   .product('page', { parent: null, publicAccess: { actions: ['read'] } })
   .build();

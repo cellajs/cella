@@ -10,13 +10,14 @@ import { Button } from '~/modules/ui/button';
 const PendingMembershipsTable = lazy(() => import('~/modules/memberships/pending-table/pending-memberships-table'));
 
 type EntityWithIncluded = EnrichedContextEntity & Pick<Organization, 'included'>;
-const hasIncluded = (entity: EnrichedContextEntity): entity is EntityWithIncluded => 'included' in entity;
+const hasIncluded = (contextEntity: EnrichedContextEntity): contextEntity is EntityWithIncluded =>
+  'included' in contextEntity;
 
 /**
  * Component to display pending memberships count.
  * Users can click to open them in a table in a sheet.
  */
-export const PendingMembershipsCount = ({ entity }: { entity: EnrichedContextEntity }) => {
+export const PendingMembershipsCount = ({ contextEntity }: { contextEntity: EnrichedContextEntity }) => {
   const { t } = useTranslation();
   const buttonRef = useRef(null);
 
@@ -29,7 +30,7 @@ export const PendingMembershipsCount = ({ entity }: { entity: EnrichedContextEnt
     createSheet(
       <div className="container">
         <Suspense>
-          <PendingMembershipsTable entity={entity} />
+          <PendingMembershipsTable contextEntity={contextEntity} />
         </Suspense>
       </div>,
       {
@@ -39,24 +40,24 @@ export const PendingMembershipsCount = ({ entity }: { entity: EnrichedContextEnt
         className: 'max-w-full lg:max-w-4xl',
         title: t('common:pending_invitations'),
         description: t('common:pending_invitations.text', {
-          entityType: t(`common:${entity.entityType}`).toLowerCase(),
+          entityType: t(`common:${contextEntity.entityType}`).toLowerCase(),
         }),
       },
     );
   };
 
-  if (!hasIncluded(entity) || !entity.included.counts) return null;
+  if (!hasIncluded(contextEntity) || !contextEntity.included.counts) return null;
 
   return (
     <Button
       ref={buttonRef}
-      disabled={entity.included.counts.membership.pending < 1}
+      disabled={contextEntity.included.counts.membership.pending < 1}
       variant="ghost"
       size="xs"
       className="font-light"
       onClick={openSheet}
     >
-      {new Intl.NumberFormat('de-DE').format(entity.included.counts.membership.pending)}{' '}
+      {new Intl.NumberFormat('de-DE').format(contextEntity.included.counts.membership.pending)}{' '}
       {t('common:pending').toLowerCase()}
     </Button>
   );

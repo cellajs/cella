@@ -31,7 +31,7 @@ import { useInfiniteQueryTotal } from '~/query/basic';
 type MembersTableBarProps = MembersTableWrapperProps & BaseTableBarProps<Member, MembersRouteSearchParams>;
 
 export const MembersTableBar = ({
-  entity,
+  contextEntity,
   selected,
   searchVars,
   setSearch,
@@ -54,8 +54,8 @@ export const MembersTableBar = ({
 
   const isFiltered = role !== undefined || !!q;
   // Check if user can update this context entity (and thus manage its members)
-  const canUpdate = entity.can?.[entity.entityType]?.update ?? false;
-  const entityType = entity.entityType;
+  const canUpdate = contextEntity.can?.[contextEntity.entityType]?.update ?? false;
+  const entityType = contextEntity.entityType;
 
   // Clear selected rows on search
   const onSearch = (searchString: string) => {
@@ -77,10 +77,10 @@ export const MembersTableBar = ({
   const openDeleteDialog = () => {
     createDialog(
       <DeleteMemberships
-        tenantId={entity.tenantId}
-        orgId={entity.organizationId || entity.id}
-        entityId={entity.id}
-        entityType={entity.entityType}
+        tenantId={contextEntity.tenantId}
+        orgId={contextEntity.organizationId || contextEntity.id}
+        entityId={contextEntity.id}
+        entityType={contextEntity.entityType}
         dialog
         members={selected}
         callback={clearSelection}
@@ -95,7 +95,7 @@ export const MembersTableBar = ({
             t={t}
             i18nKey="common:confirm.remove_members"
             values={{
-              entityType: entity.entityType,
+              entityType: contextEntity.entityType,
               emails: selected.map((member) => member.email).join(', '),
             }}
           />
@@ -107,7 +107,7 @@ export const MembersTableBar = ({
   const openInviteDialog = () => {
     if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
 
-    createDialog(<InviteUsers entity={entity} mode={null} dialog />, {
+    createDialog(<InviteUsers contextEntity={contextEntity} mode={null} dialog />, {
       id: 'invite-users',
       triggerRef: inviteButtonRef,
       drawerOnMobile: false,
@@ -128,17 +128,17 @@ export const MembersTableBar = ({
         role,
         limit: String(limit),
         offset: '0',
-        entityId: entity.id,
-        entityType: entity.entityType,
+        entityId: contextEntity.id,
+        entityType: contextEntity.entityType,
       },
-      path: { tenantId: entity.tenantId, orgId: entity.organizationId || entity.id },
+      path: { tenantId: contextEntity.tenantId, orgId: contextEntity.organizationId || contextEntity.id },
     });
     return items;
   };
 
   return (
     <>
-      <TableBarContainer searchVars={searchVars}>
+      <TableBarContainer searchVars={searchVars} offsetTop={isSheet ? 0 : 36}>
         {/* Table Filter Bar */}
         <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
           <FilterBarActions>
@@ -151,7 +151,7 @@ export const MembersTableBar = ({
                   className="relative"
                   badge={selected.length}
                   icon={TrashIcon}
-                  label={entity.id ? 'common:remove' : 'common:delete'}
+                  label={contextEntity.id ? 'common:remove' : 'common:delete'}
                 />
 
                 <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquareIcon} label="common:clear" />
@@ -169,7 +169,7 @@ export const MembersTableBar = ({
             )}
             {selected.length === 0 && (
               <TableCount count={total} label="common:member" isFiltered={isFiltered} onResetFilters={onResetFilters}>
-                {canUpdate && !isFiltered && <PendingMembershipsCount entity={entity} />}
+                {canUpdate && !isFiltered && <PendingMembershipsCount contextEntity={contextEntity} />}
               </TableCount>
             )}
           </FilterBarActions>

@@ -114,7 +114,7 @@ export const OrganizationMembersRoute = createRoute({
     const { data } = useSuspenseQuery(organizationQueryOptions(organization.id, tenantId));
     return (
       <Suspense>
-        <MembersTable key={data.id} entity={data} />
+        <MembersTable key={data.id} contextEntity={data} />
       </Suspense>
     );
   },
@@ -133,7 +133,7 @@ export const OrganizationAttachmentsRoute = createRoute({
     const { data } = useSuspenseQuery(organizationQueryOptions(organization.id, tenantId));
     return (
       <Suspense>
-        <AttachmentsTable canUpload={true} key={data.id} entity={data} />
+        <AttachmentsTable canUpload={true} key={data.id} contextEntity={data} />
       </Suspense>
     );
   },

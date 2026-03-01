@@ -96,7 +96,7 @@ export function Onboarding({ onboarding = 'start', setOnboardingState }: Onboard
                         <p className="opacity-80 text-sm font-medium">{t('common:already_created_org.text')}</p>
                       )}
                       {id === 'invitation' && organization && (
-                        <InviteUsers entity={organization} mode="email">
+                        <InviteUsers contextEntity={organization} mode="email">
                           <StepperFooter setOnboardingState={setOnboardingState} />
                         </InviteUsers>
                       )}

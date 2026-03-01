@@ -3,7 +3,7 @@ import { migrateConfig, migrationDb } from '#/db/db';
 import { env } from '#/env';
 import { appConfig } from 'shared';
 import { createDbRoles } from './db/create-db-roles';
-import { seedScripts } from './scripts-config';
+import { seedScripts } from './scripts-discovery';
 
 const isProduction = appConfig.mode === 'production';
 

@@ -98,6 +98,30 @@ export const orgScopedCrudPolicies = (name: string, table: { tenantId: unknown; 
 };
 
 /**
+ * Org-scoped CRUD policies with public access support (e.g., attachments with shareable links).
+ * SELECT: org membership OR (tenant match + publicAccess=true).
+ * INSERT/UPDATE/DELETE: org membership required.
+ */
+export const orgScopedPublicAccessCrudPolicies = (
+  name: string,
+  table: { tenantId: unknown; organizationId: unknown; publicAccess: unknown },
+) => {
+  const writeCondition = membershipWriteCondition(table);
+  return [
+    pgPolicy(`${name}_select_policy`, {
+      for: 'select',
+      using: sql`
+        ${tenantMatch(table)}
+        AND (${membershipExists(table)} OR ${table.publicAccess} = true)
+      `,
+    }),
+    pgPolicy(`${name}_insert_policy`, { for: 'insert', withCheck: writeCondition }),
+    pgPolicy(`${name}_update_policy`, { for: 'update', using: writeCondition, withCheck: writeCondition }),
+    pgPolicy(`${name}_delete_policy`, { for: 'delete', using: writeCondition }),
+  ] as const;
+};
+
+/**
  * Org-owned CRUD policies for context entities (projects, workspaces, etc.).
  * SELECT includes createdBy match for RETURNING after INSERT (before membership exists).
  * INSERT requires tenant match + auth. UPDATE/DELETE require membership.

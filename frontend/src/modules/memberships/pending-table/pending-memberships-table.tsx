@@ -27,13 +27,13 @@ const pendingMembershipsSearchSchema = zGetPendingMembershipsData.shape.query.pi
 type PendingMembershipsSearch = z.infer<typeof pendingMembershipsSearchSchema>;
 
 export interface PendingMembershipsTableProps {
-  entity: EnrichedContextEntity;
+  contextEntity: EnrichedContextEntity;
 }
 
 /**
  * Displays a table of pending memberships for a context entity.
  */
-export function PendingMembershipsTable({ entity }: PendingMembershipsTableProps) {
+export function PendingMembershipsTable({ contextEntity }: PendingMembershipsTableProps) {
   const { t } = useTranslation();
   const { search, setSearch } = useSearchParams<PendingMembershipsSearch>({ saveDataInSearch: false });
 
@@ -48,10 +48,10 @@ export function PendingMembershipsTable({ entity }: PendingMembershipsTableProps
   const visibleColumns = useMemo(() => columns.filter((column) => column.visible), [columns]);
 
   const queryOptions = pendingMembershipsQueryOptions({
-    entityId: entity.id,
-    entityType: entity.entityType,
-    tenantId: entity.tenantId,
-    orgId: entity.organizationId || entity.id,
+    entityId: contextEntity.id,
+    entityType: contextEntity.entityType,
+    tenantId: contextEntity.tenantId,
+    orgId: contextEntity.organizationId || contextEntity.id,
     ...search,
     limit,
   });

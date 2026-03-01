@@ -84,8 +84,9 @@ export const MenuSheet = () => {
       }),
     ];
 
-    // Auto-scroll for the nav sheet if its viewport element exists
-    const viewportEl = document.getElementById('nav-sheet');
+    // Auto-scroll for the nav sheet's scroll area viewport (the actual scrollable element)
+    const sheetEl = document.getElementById('nav-sheet');
+    const viewportEl = sheetEl?.querySelector<HTMLElement>('[data-radix-scroll-area-viewport]');
     if (viewportEl) {
       cleanups.push(
         autoScrollForElements({

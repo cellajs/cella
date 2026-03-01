@@ -2,9 +2,14 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Attachment } from '~/api.gen';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import { CopyUrlCell, DownloadCell, EllipsisCell, ThumbnailCell } from '~/modules/attachment/table/cells';
+import {
+  CopyUrlCell,
+  DownloadCell,
+  EllipsisCell,
+  PublicAccessCell,
+  ThumbnailCell,
+} from '~/modules/attachment/table/cells';
 import { formatBytes } from '~/modules/attachment/table/helpers';
-import { SyncStatusCell } from '~/modules/attachment/table/sync-status-cell';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
 import { HeaderCell } from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
@@ -14,12 +19,12 @@ import { Input } from '~/modules/ui/input';
 import { UserCell } from '~/modules/user/user-cell';
 import { dateShort } from '~/utils/date-short';
 
-export const useColumns = (entity: EnrichedContextEntity, isSheet: boolean, isCompact: boolean) => {
+export const useColumns = (contextEntity: EnrichedContextEntity, isSheet: boolean, isCompact: boolean) => {
   const { t } = useTranslation();
 
   const isMobile = useBreakpoints('max', 'sm', false);
   // Check attachment permissions on the parent context entity
-  const canUpdate = entity.can?.attachment?.update ?? false;
+  const canUpdate = contextEntity.can?.attachment?.update ?? false;
 
   const columns: ColumnOrColumnGroup<Attachment>[] = useMemo(
     () => [
@@ -43,7 +48,12 @@ export const useColumns = (entity: EnrichedContextEntity, isSheet: boolean, isCo
         renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => (
           <>
-            <SeenMark entityId={row.id} tenantId={entity.tenantId} orgId={entity.id} entityType="attachment" />
+            <SeenMark
+              entityId={row.id}
+              tenantId={contextEntity.tenantId}
+              orgId={contextEntity.id}
+              entityType="attachment"
+            />
             <span className="font-medium">{row.name || '-'}</span>
           </>
         ),
@@ -54,12 +64,12 @@ export const useColumns = (entity: EnrichedContextEntity, isSheet: boolean, isCo
         }),
       },
       {
-        key: 'uploadStatus',
+        key: 'publicAccess',
         name: '',
         visible: true,
         sortable: false,
         width: 32,
-        renderCell: ({ row }) => <SyncStatusCell row={row} />,
+        renderCell: ({ row, tabIndex }) => <PublicAccessCell row={row} tabIndex={tabIndex} canUpdate={canUpdate} />,
       },
       {
         key: 'url',
@@ -170,7 +180,7 @@ export const useColumns = (entity: EnrichedContextEntity, isSheet: boolean, isCo
           row.modifiedBy && <UserCell compactable user={row.modifiedBy} tabIndex={tabIndex} />,
       },
     ],
-    [t, isMobile, isSheet, isCompact, canUpdate, entity.tenantId, entity.id],
+    [t, isMobile, isSheet, isCompact, canUpdate, contextEntity.tenantId, contextEntity.id],
   );
 
   return columns;

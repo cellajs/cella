@@ -32,14 +32,14 @@ export function useInviteFormDraft(entityId?: string) {
 }
 
 interface InviteUsersProps {
-  entity?: EnrichedContextEntity;
+  contextEntity?: EnrichedContextEntity;
   dialog?: boolean;
   mode?: 'search' | 'email' | null;
   children?: React.ReactNode;
 }
 
 // When no entity type, it's a system invite
-export function InviteUsers({ entity, dialog: isDialog, mode: baseMode, children }: InviteUsersProps) {
+export function InviteUsers({ contextEntity, dialog: isDialog, mode: baseMode, children }: InviteUsersProps) {
   const { t } = useTranslation();
 
   const [inviteMode, setInviteMode] = useState(baseMode);
@@ -136,11 +136,11 @@ export function InviteUsers({ entity, dialog: isDialog, mode: baseMode, children
               {t(inviteMode === 'email' ? 'common:explain.invite_email.text' : 'common:explain.invite_search.text')}
             </AlertWrap>
             {inviteMode === 'email' ? (
-              <InviteEmailForm entity={entity} dialog={isDialog}>
+              <InviteEmailForm contextEntity={contextEntity} dialog={isDialog}>
                 {children}
               </InviteEmailForm>
             ) : (
-              <InviteSearchForm entity={entity} dialog={isDialog} />
+              <InviteSearchForm contextEntity={contextEntity} dialog={isDialog} />
             )}
           </motion.div>
         )}

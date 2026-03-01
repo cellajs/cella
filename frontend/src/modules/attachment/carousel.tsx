@@ -182,7 +182,7 @@ export function AttachmentsCarousel({
                   classNameContainer,
                 )}
                 itemClassName={isDialog ? 'object-contain' : ''}
-                type={convertedContentType ?? contentType}
+                type={convertedContentType || contentType}
                 imagePanZoom={isDialog}
                 showButtons={currentItemIndex === idx}
                 url={convertedUrl ?? url}

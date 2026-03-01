@@ -26,7 +26,7 @@ function buildItemData(item: Partial<CarouselItemData> & { id: string }, url: st
     filename: item.filename ?? cached?.filename,
     contentType: item.contentType ?? cached?.contentType,
     convertedUrl: cached?.convertedKey ? undefined : null,
-    convertedContentType: item.convertedContentType ?? cached?.convertedContentType,
+    convertedContentType: item.convertedContentType || cached?.convertedContentType || null,
   };
 }
 

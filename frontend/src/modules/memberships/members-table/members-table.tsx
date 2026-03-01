@@ -25,12 +25,12 @@ function rowKeyGetter(row: Member) {
 }
 
 export interface MembersTableWrapperProps {
-  entity: EnrichedContextEntity;
+  contextEntity: EnrichedContextEntity;
   isSheet?: boolean;
   children?: React.ReactNode;
 }
 
-function MembersTable({ entity, isSheet = false, children }: MembersTableWrapperProps) {
+function MembersTable({ contextEntity, isSheet = false, children }: MembersTableWrapperProps) {
   const { t } = useTranslation();
   const { search, setSearch } = useSearchParams<MembersRouteSearchParams>({ saveDataInSearch: !isSheet });
 
@@ -39,13 +39,13 @@ function MembersTable({ entity, isSheet = false, children }: MembersTableWrapper
 
   const updateMemberMembership = useMemberUpdateMutation();
 
-  const entityId = entity.id;
-  const entityType = entity.entityType;
+  const entityId = contextEntity.id;
+  const entityType = contextEntity.entityType;
   const tenantId = organization.tenantId;
   const orgId = organization.id;
 
   // Check if user can update this context entity (and thus manage its members)
-  const canUpdate = entity.can?.[entity.entityType]?.update ?? false;
+  const canUpdate = contextEntity.can?.[contextEntity.entityType]?.update ?? false;
 
   // Table state
   const { q, role, sort, order } = search;
@@ -108,7 +108,7 @@ function MembersTable({ entity, isSheet = false, children }: MembersTableWrapper
   return (
     <FocusViewContainer>
       <MembersTableBar
-        entity={entity}
+        contextEntity={contextEntity}
         selected={selected}
         searchVars={{ q, role, sort, order, limit }}
         setSearch={setSearch}

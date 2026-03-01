@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/docs/x-routes';
 import { authGuard, crossTenantGuard, orgGuard, tenantGuard } from '#/middlewares/guard';
-import { bulkPointsLimiter, spamLimiter } from '#/middlewares/rate-limiter/limiters';
+import { bulkPointsLimiter, singlePointsLimiter, spamLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   memberListQuerySchema,
   membershipBaseSchema,
@@ -107,6 +107,7 @@ const membershipRoutes = {
     method: 'put',
     path: '/{id}',
     xGuard: [authGuard, tenantGuard, orgGuard],
+    xRateLimiter: singlePointsLimiter,
     tags: ['memberships'],
     summary: 'Update membership',
     description: 'Updates the *membership* metadata, such as role, `muted`, or `archived` status.',
@@ -132,6 +133,7 @@ const membershipRoutes = {
     method: 'post',
     path: '/{id}/{acceptOrReject}',
     xGuard: [authGuard, crossTenantGuard],
+    xRateLimiter: singlePointsLimiter,
     tags: ['memberships'],
     summary: 'Respond to membership invitation',
     description: 'Accepting activates the associated membership. Rejecting simply removes the invitation token.',

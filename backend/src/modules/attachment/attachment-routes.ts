@@ -3,7 +3,12 @@ import { createXRoute } from '#/docs/x-routes';
 import { appCache } from '#/middlewares/entity-cache';
 import { authGuard, orgGuard, publicGuard, tenantGuard } from '#/middlewares/guard';
 import { httpCache } from '#/middlewares/http-cache';
-import { bulkPointsLimiter, presignedUrlLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
+import {
+  bulkPointsLimiter,
+  presignedUrlLimiter,
+  singlePointsLimiter,
+  tokenLimiter,
+} from '#/middlewares/rate-limiter/limiters';
 import {
   attachmentCreateManyStxBodySchema,
   attachmentCreateResponseSchema,
@@ -123,6 +128,7 @@ const attachmentRoutes = {
     method: 'put',
     path: '/{id}',
     xGuard: [authGuard, tenantGuard, orgGuard],
+    xRateLimiter: singlePointsLimiter,
     tags: ['attachments'],
     summary: 'Update attachment',
     description: 'Updates metadata of an *attachment*, such as its name or associated entity.',

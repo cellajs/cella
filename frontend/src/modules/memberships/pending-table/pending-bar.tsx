@@ -7,7 +7,7 @@ export const PendingMembershipsTableBar = ({ queryKey }: { queryKey: QueryKey })
   const total = useInfiniteQueryTotal(queryKey);
 
   return (
-    <TableBarContainer>
+    <TableBarContainer offsetTop={0}>
       <TableCount count={total} label="common:pending_invitation" />
     </TableBarContainer>
   );

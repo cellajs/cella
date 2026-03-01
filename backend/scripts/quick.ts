@@ -15,7 +15,7 @@ if (res.rows.length > 0) {
   process.exit(0);
 }
 
-import { seedScripts } from './scripts-config';
+import { seedScripts } from './scripts-discovery';
 
 for (const seed of seedScripts) {
   try {

@@ -30,10 +30,11 @@ type Props = {
   label: string;
   searchVars: EntityGridBarSearch;
   setSearch: (search: EntityGridBarSearch) => void;
+  isSheet?: boolean;
   focusView?: boolean;
 };
 
-export const EntityGridBar = ({ queryKey, label, searchVars, setSearch, focusView }: Props) => {
+export const EntityGridBar = ({ queryKey, label, searchVars, setSearch, isSheet, focusView }: Props) => {
   const { q, sort, role } = searchVars;
 
   const total = useInfiniteQueryTotal(queryKey);
@@ -48,7 +49,7 @@ export const EntityGridBar = ({ queryKey, label, searchVars, setSearch, focusVie
   const onResetFilters = () => setSearch({ q: '' });
 
   return (
-    <TableBarContainer searchVars={searchVars}>
+    <TableBarContainer searchVars={searchVars} offsetTop={isSheet ? 0 : 36}>
       {/* Filter Bar */}
       <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
         <FilterBarActions>
