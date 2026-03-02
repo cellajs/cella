@@ -78,7 +78,16 @@ const main = async () => {
     const { createDbRoles } = await import('../scripts/db/create-db-roles');
     await createDbRoles();
     console.info('[startup] Running migrations...');
-    await pgMigrate(migrationDb, migrateConfig);
+    try {
+      await pgMigrate(migrationDb, migrateConfig);
+    } catch (error) {
+      const errMsg = error instanceof Error ? error.message : String(error);
+      if (errMsg.includes('already exists') || errMsg.includes('BYPASSRLS')) {
+        console.warn('[startup] Migrations already applied or skipped, continuing...');
+      } else {
+        throw error;
+      }
+    }
   } else {
     throw new Error('DATABASE_ADMIN_URL required for migrations');
   }

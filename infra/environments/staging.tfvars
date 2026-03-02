@@ -30,3 +30,6 @@ enable_waf = true
 # Image tags
 backend_image_tag = "latest"
 cdc_image_tag     = "latest"
+
+# Admin
+admin_email = "admin@cellajs.com"

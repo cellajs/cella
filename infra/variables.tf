@@ -54,23 +54,17 @@ variable "app_domain" {
 }
 
 # -----------------------------------------------------------------------------
-# Database Configuration
+# Database Configuration (Neon PostgreSQL - external)
 # -----------------------------------------------------------------------------
 
-variable "db_node_type" {
-  description = "PostgreSQL instance type (DB-DEV-S, DB-GP-XS, DB-GP-S, etc.)"
+variable "database_url" {
+  description = "PostgreSQL pooled connection string for the backend API (Neon pooler URL)"
   type        = string
-  default     = "DB-DEV-S"
+  sensitive   = true
 }
 
-variable "db_volume_size_gb" {
-  description = "Database volume size in GB"
-  type        = number
-  default     = 10
-}
-
-variable "db_password" {
-  description = "Database password for the cella user"
+variable "database_url_direct" {
+  description = "PostgreSQL direct connection string for CDC worker and migrations (Neon direct URL)"
   type        = string
   sensitive   = true
 }
@@ -162,6 +156,11 @@ variable "cdc_ws_secret" {
     condition     = length(var.cdc_ws_secret) >= 16
     error_message = "CDC WebSocket secret must be at least 16 characters"
   }
+}
+
+variable "admin_email" {
+  description = "Admin email address for the system administrator account"
+  type        = string
 }
 
 # -----------------------------------------------------------------------------

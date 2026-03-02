@@ -27,38 +27,6 @@ output "cdc_container_endpoint" {
 }
 
 # -----------------------------------------------------------------------------
-# Database
-# -----------------------------------------------------------------------------
-
-output "database_host" {
-  description = "PostgreSQL host"
-  value       = module.database.host
-  sensitive   = true
-}
-
-output "database_port" {
-  description = "PostgreSQL port"
-  value       = module.database.port
-}
-
-output "database_name" {
-  description = "PostgreSQL database name"
-  value       = module.database.database_name
-}
-
-output "database_connection_string_direct" {
-  description = "PostgreSQL direct connection string (for CDC/migrations)"
-  value       = module.database.connection_string_direct
-  sensitive   = true
-}
-
-output "database_connection_string_pooled" {
-  description = "PostgreSQL pooled connection string (for API)"
-  value       = module.database.connection_string_pooled
-  sensitive   = true
-}
-
-# -----------------------------------------------------------------------------
 # Container Registry
 # -----------------------------------------------------------------------------
 

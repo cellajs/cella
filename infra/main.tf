@@ -1,11 +1,11 @@
 # =============================================================================
 # Cella Infrastructure - Scaleway Terraform
 # =============================================================================
-# Complete infrastructure for deploying Cella:
-# - PostgreSQL 17 Database (with CDC/logical replication)
+# Infrastructure for deploying Cella on Scaleway:
 # - Backend API (Serverless Container)
 # - CDC Worker (Serverless Container)
 # - Frontend (Object Storage + Edge Services CDN)
+# - Database hosted externally (Neon PostgreSQL)
 # =============================================================================
 
 terraform {
@@ -61,21 +61,6 @@ module "network" {
 }
 
 # =============================================================================
-# DATABASE - PostgreSQL 17 with CDC Support
-# =============================================================================
-
-module "database" {
-  source = "./modules/database"
-
-  name_prefix        = local.name_prefix
-  region             = var.region
-  node_type          = var.db_node_type
-  volume_size_gb     = var.db_volume_size_gb
-  private_network_id = module.network.private_network_id
-  tags               = local.tags
-}
-
-# =============================================================================
 # CONTAINER REGISTRY
 # =============================================================================
 
@@ -96,8 +81,8 @@ module "secrets" {
   name_prefix              = local.name_prefix
   env                      = var.environment
   region                   = var.region
-  database_url_pooled      = module.database.connection_string_pooled
-  database_url_direct      = module.database.connection_string_direct
+  database_url_pooled      = var.database_url
+  database_url_direct      = var.database_url_direct
   argon_secret             = var.argon_secret
   cookie_secret            = var.cookie_secret
   unsubscribe_token_secret = var.unsubscribe_token_secret
@@ -134,12 +119,15 @@ module "containers" {
   frontend_url = local.frontend_url
   backend_url  = local.backend_url
 
+  # Admin configuration
+  admin_email = var.admin_email
+
   # Secret references (from secrets module)
   secret_ids = module.secrets.secret_ids
 
   tags = local.tags
 
-  depends_on = [module.database, module.secrets]
+  depends_on = [module.secrets]
 }
 
 # =============================================================================

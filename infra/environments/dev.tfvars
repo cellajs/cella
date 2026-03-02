@@ -19,9 +19,9 @@ app_domain = "app.example.com"
 # You can enable this later when you have a domain
 enable_custom_domain = false
 
-# Database (smallest instance for dev)
-db_node_type      = "DB-DEV-S"
-db_volume_size_gb = 10
+# Database is hosted externally on Neon PostgreSQL
+# database_url and database_url_direct are passed via TF_VAR_ environment variables
+# (they contain sensitive credentials and should not be stored in .tfvars)
 
 # Container scaling (scale to zero for dev - cost savings)
 # Note: Scaleway requires memory >= CPU (e.g., 500 mvCPU needs min 500 MB)
@@ -39,3 +39,6 @@ enable_waf = false
 # Image tags (use 'latest' for dev)
 backend_image_tag = "latest"
 cdc_image_tag     = "latest"
+
+# Admin
+admin_email = "flip@cellajs.com"

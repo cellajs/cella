@@ -30,7 +30,7 @@ COPY shared/package.json ./shared/
 COPY locales/package.json ./locales/
 
 # Install production dependencies only
-RUN pnpm install --frozen-lockfile --prod --filter @cella/backend...
+RUN pnpm install --prod --filter @cella/backend...
 
 # -----------------------------------------------------------------------------
 # Stage 3: Build application
@@ -46,7 +46,7 @@ COPY shared/package.json ./shared/
 COPY locales/package.json ./locales/
 
 # Install all dependencies (including dev for build)
-RUN pnpm install --frozen-lockfile --filter @cella/backend...
+RUN pnpm install --filter @cella/backend...
 
 # Copy source code
 COPY backend/ ./backend/

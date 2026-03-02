@@ -78,6 +78,10 @@ variable "backend_url" {
   type = string
 }
 
+variable "admin_email" {
+  type = string
+}
+
 variable "tags" {
   type = list(string)
 }
@@ -111,23 +115,26 @@ resource "scaleway_container" "backend" {
   privacy         = "private" # Only accessible via Load Balancer
   protocol        = "http1"
   http_option     = "redirected" # Redirect HTTP to HTTPS
-  deploy          = true
+  deploy          = false        # Set to true after first successful image push
 
   environment_variables = {
-    NODE_ENV     = var.env == "prod" ? "production" : var.env
-    TZ           = "UTC"
-    FRONTEND_URL = var.frontend_url
-    BACKEND_URL  = var.backend_url
-    DEV_MODE     = "core" # core mode for serverless (no local CDC)
+    NODE_ENV                  = var.env == "prod" ? "production" : var.env == "dev" ? "development" : var.env
+    TZ                        = "UTC"
+    FRONTEND_URL              = var.frontend_url
+    BACKEND_URL               = var.backend_url
+    DEV_MODE                  = "core" # core mode for serverless (no local CDC)
+    ADMIN_EMAIL               = var.admin_email
+    SYSTEM_ADMIN_IP_ALLOWLIST = "none"
   }
 
   # Reference secrets from Secret Manager
   secret_environment_variables = {
-    DATABASE_URL             = var.secret_ids.database_url_pooled
-    ARGON_SECRET             = var.secret_ids.argon_secret
-    COOKIE_SECRET            = var.secret_ids.cookie_secret
-    UNSUBSCRIBE_TOKEN_SECRET = var.secret_ids.unsubscribe_token_secret
-    CDC_WS_SECRET            = var.secret_ids.cdc_ws_secret
+    DATABASE_URL        = var.secret_ids.database_url_pooled
+    DATABASE_ADMIN_URL  = var.secret_ids.database_url_direct
+    ARGON_SECRET        = var.secret_ids.argon_secret
+    COOKIE_SECRET       = var.secret_ids.cookie_secret
+    UNSUBSCRIBE_SECRET  = var.secret_ids.unsubscribe_token_secret
+    CDC_INTERNAL_SECRET = var.secret_ids.cdc_ws_secret
   }
 }
 
@@ -149,21 +156,21 @@ resource "scaleway_container" "cdc" {
   max_concurrency = 1   # Single connection to replication slot
   privacy         = "private"
   protocol        = "http1"
-  deploy          = true
+  deploy          = false # Set to true after first successful image push
 
   environment_variables = {
-    NODE_ENV        = var.env == "prod" ? "production" : var.env
+    NODE_ENV        = var.env == "prod" ? "production" : var.env == "dev" ? "development" : var.env
     TZ              = "UTC"
     CDC_HEALTH_PORT = "4001"
     # Backend WebSocket URL for CDC to connect to
-    CDC_BACKEND_WS_URL = "wss://${replace(var.backend_url, "https://", "")}/cdc"
+    API_WS_URL = "wss://${replace(var.backend_url, "https://", "")}/internal/cdc"
   }
 
   # Reference secrets from Secret Manager
   # CDC uses direct database URL (not pooled) for logical replication
   secret_environment_variables = {
-    DATABASE_URL  = var.secret_ids.database_url_direct
-    CDC_WS_SECRET = var.secret_ids.cdc_ws_secret
+    DATABASE_CDC_URL    = var.secret_ids.database_url_direct
+    CDC_INTERNAL_SECRET = var.secret_ids.cdc_ws_secret
   }
 }
 
