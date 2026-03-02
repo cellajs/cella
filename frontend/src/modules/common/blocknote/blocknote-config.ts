@@ -57,8 +57,7 @@ export const customSchema = BlockNoteSchema.create().extend({
       indentLineWithTab: true,
       supportedLanguages,
       defaultLanguage: 'text',
-      // TODO-001(BLOCKING) Blocknote type err
-      createHighlighter: codeBlockOptions.createHighlighter as any,
+      createHighlighter: codeBlockOptions.createHighlighter,
     }),
   },
   inlineContentSpecs: { mention: MentionSchema }, // Adds Mention tag

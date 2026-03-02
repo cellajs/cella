@@ -70,57 +70,16 @@
                     "maxLength": 1000000
                   },
                   "createdBy": {
-                    "type": ["object", "null"],
+                    "type": ["string", "null"],
                     "required": true,
-                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
-                    "properties": {
-                      "id": { "type": "string", "required": true },
-                      "name": { "type": "string", "required": true },
-                      "slug": { "type": "string", "required": true },
-                      "thumbnailUrl": {
-                        "type": ["string", "null"],
-                        "required": true
-                      },
-                      "email": {
-                        "type": "string",
-                        "required": true,
-                        "format": "email"
-                      },
-                      "entityType": {
-                        "type": "string",
-                        "required": true,
-                        "enum": ["user"]
-                      }
-                    },
-                    "extendsRef": "#/components/schemas/UserMinimalBase"
+                    "maxLength": 50
                   },
                   "modifiedBy": {
-                    "type": ["object", "null"],
+                    "type": ["string", "null"],
                     "required": true,
-                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
-                    "properties": {
-                      "id": { "type": "string", "required": true },
-                      "name": { "type": "string", "required": true },
-                      "slug": { "type": "string", "required": true },
-                      "thumbnailUrl": {
-                        "type": ["string", "null"],
-                        "required": true
-                      },
-                      "email": {
-                        "type": "string",
-                        "required": true,
-                        "format": "email"
-                      },
-                      "entityType": {
-                        "type": "string",
-                        "required": true,
-                        "enum": ["user"]
-                      }
-                    },
-                    "extendsRef": "#/components/schemas/UserMinimalBase"
+                    "maxLength": 50
                   },
                   "public": { "type": "boolean", "required": true },
-                  "publicAccess": { "type": "boolean", "required": true },
                   "bucketName": {
                     "type": "string",
                     "required": true,
@@ -194,7 +153,6 @@
               "description": null,
               "keywords": "vesco audentia angustus",
               "public": false,
-              "publicAccess": false,
               "bucketName": "attachments",
               "groupId": null,
               "filename": "elegantly.vss",
@@ -224,7 +182,6 @@
               "description": null,
               "keywords": "auxilium non sui",
               "public": false,
-              "publicAccess": false,
               "bucketName": "attachments",
               "groupId": null,
               "filename": "woefully_bah.vsw",
@@ -400,57 +357,16 @@
                     "maxLength": 1000000
                   },
                   "createdBy": {
-                    "type": ["object", "null"],
+                    "type": ["string", "null"],
                     "required": true,
-                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
-                    "properties": {
-                      "id": { "type": "string", "required": true },
-                      "name": { "type": "string", "required": true },
-                      "slug": { "type": "string", "required": true },
-                      "thumbnailUrl": {
-                        "type": ["string", "null"],
-                        "required": true
-                      },
-                      "email": {
-                        "type": "string",
-                        "required": true,
-                        "format": "email"
-                      },
-                      "entityType": {
-                        "type": "string",
-                        "required": true,
-                        "enum": ["user"]
-                      }
-                    },
-                    "extendsRef": "#/components/schemas/UserMinimalBase"
+                    "maxLength": 50
                   },
                   "modifiedBy": {
-                    "type": ["object", "null"],
+                    "type": ["string", "null"],
                     "required": true,
-                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
-                    "properties": {
-                      "id": { "type": "string", "required": true },
-                      "name": { "type": "string", "required": true },
-                      "slug": { "type": "string", "required": true },
-                      "thumbnailUrl": {
-                        "type": ["string", "null"],
-                        "required": true
-                      },
-                      "email": {
-                        "type": "string",
-                        "required": true,
-                        "format": "email"
-                      },
-                      "entityType": {
-                        "type": "string",
-                        "required": true,
-                        "enum": ["user"]
-                      }
-                    },
-                    "extendsRef": "#/components/schemas/UserMinimalBase"
+                    "maxLength": 50
                   },
                   "public": { "type": "boolean", "required": true },
-                  "publicAccess": { "type": "boolean", "required": true },
                   "bucketName": {
                     "type": "string",
                     "required": true,
@@ -539,7 +455,6 @@
               "description": null,
               "keywords": "nam curatio xiphias",
               "public": false,
-              "publicAccess": false,
               "bucketName": "attachments",
               "groupId": null,
               "filename": "excluding_ugh_besides.svgz",
@@ -569,7 +484,6 @@
               "description": null,
               "keywords": "denique tum candidus",
               "public": false,
-              "publicAccess": false,
               "bucketName": "attachments",
               "groupId": null,
               "filename": "gown.txt",
@@ -663,57 +577,16 @@
                     "maxLength": 1000000
                   },
                   "createdBy": {
-                    "type": ["object", "null"],
+                    "type": ["string", "null"],
                     "required": true,
-                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
-                    "properties": {
-                      "id": { "type": "string", "required": true },
-                      "name": { "type": "string", "required": true },
-                      "slug": { "type": "string", "required": true },
-                      "thumbnailUrl": {
-                        "type": ["string", "null"],
-                        "required": true
-                      },
-                      "email": {
-                        "type": "string",
-                        "required": true,
-                        "format": "email"
-                      },
-                      "entityType": {
-                        "type": "string",
-                        "required": true,
-                        "enum": ["user"]
-                      }
-                    },
-                    "extendsRef": "#/components/schemas/UserMinimalBase"
+                    "maxLength": 50
                   },
                   "modifiedBy": {
-                    "type": ["object", "null"],
+                    "type": ["string", "null"],
                     "required": true,
-                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
-                    "properties": {
-                      "id": { "type": "string", "required": true },
-                      "name": { "type": "string", "required": true },
-                      "slug": { "type": "string", "required": true },
-                      "thumbnailUrl": {
-                        "type": ["string", "null"],
-                        "required": true
-                      },
-                      "email": {
-                        "type": "string",
-                        "required": true,
-                        "format": "email"
-                      },
-                      "entityType": {
-                        "type": "string",
-                        "required": true,
-                        "enum": ["user"]
-                      }
-                    },
-                    "extendsRef": "#/components/schemas/UserMinimalBase"
+                    "maxLength": 50
                   },
                   "public": { "type": "boolean", "required": true },
-                  "publicAccess": { "type": "boolean", "required": true },
                   "bucketName": {
                     "type": "string",
                     "required": true,
@@ -802,7 +675,6 @@
               "description": null,
               "keywords": "nam curatio xiphias",
               "public": false,
-              "publicAccess": false,
               "bucketName": "attachments",
               "groupId": null,
               "filename": "excluding_ugh_besides.svgz",
@@ -832,7 +704,6 @@
               "description": null,
               "keywords": "denique tum candidus",
               "public": false,
-              "publicAccess": false,
               "bucketName": "attachments",
               "groupId": null,
               "filename": "gown.txt",
@@ -952,7 +823,6 @@
               "maxLength": 255
             },
             "public": { "type": "boolean", "required": false },
-            "publicAccess": { "type": "boolean", "required": false },
             "groupId": {
               "type": ["string", "null"],
               "required": false,
@@ -1250,57 +1120,16 @@
               "maxLength": 1000000
             },
             "createdBy": {
-              "type": ["object", "null"],
+              "type": ["string", "null"],
               "required": true,
-              "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
-              "properties": {
-                "id": { "type": "string", "required": true },
-                "name": { "type": "string", "required": true },
-                "slug": { "type": "string", "required": true },
-                "thumbnailUrl": {
-                  "type": ["string", "null"],
-                  "required": true
-                },
-                "email": {
-                  "type": "string",
-                  "required": true,
-                  "format": "email"
-                },
-                "entityType": {
-                  "type": "string",
-                  "required": true,
-                  "enum": ["user"]
-                }
-              },
-              "extendsRef": "#/components/schemas/UserMinimalBase"
+              "maxLength": 50
             },
             "modifiedBy": {
-              "type": ["object", "null"],
+              "type": ["string", "null"],
               "required": true,
-              "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
-              "properties": {
-                "id": { "type": "string", "required": true },
-                "name": { "type": "string", "required": true },
-                "slug": { "type": "string", "required": true },
-                "thumbnailUrl": {
-                  "type": ["string", "null"],
-                  "required": true
-                },
-                "email": {
-                  "type": "string",
-                  "required": true,
-                  "format": "email"
-                },
-                "entityType": {
-                  "type": "string",
-                  "required": true,
-                  "enum": ["user"]
-                }
-              },
-              "extendsRef": "#/components/schemas/UserMinimalBase"
+              "maxLength": 50
             },
             "public": { "type": "boolean", "required": true },
-            "publicAccess": { "type": "boolean", "required": true },
             "bucketName": {
               "type": "string",
               "required": true,
@@ -1368,7 +1197,6 @@
           "description": null,
           "keywords": "damno tenax arx",
           "public": false,
-          "publicAccess": false,
           "bucketName": "attachments",
           "groupId": null,
           "filename": "yet_rightfully_lest.ogx",
@@ -1514,57 +1342,16 @@
               "maxLength": 1000000
             },
             "createdBy": {
-              "type": ["object", "null"],
+              "type": ["string", "null"],
               "required": true,
-              "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
-              "properties": {
-                "id": { "type": "string", "required": true },
-                "name": { "type": "string", "required": true },
-                "slug": { "type": "string", "required": true },
-                "thumbnailUrl": {
-                  "type": ["string", "null"],
-                  "required": true
-                },
-                "email": {
-                  "type": "string",
-                  "required": true,
-                  "format": "email"
-                },
-                "entityType": {
-                  "type": "string",
-                  "required": true,
-                  "enum": ["user"]
-                }
-              },
-              "extendsRef": "#/components/schemas/UserMinimalBase"
+              "maxLength": 50
             },
             "modifiedBy": {
-              "type": ["object", "null"],
+              "type": ["string", "null"],
               "required": true,
-              "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
-              "properties": {
-                "id": { "type": "string", "required": true },
-                "name": { "type": "string", "required": true },
-                "slug": { "type": "string", "required": true },
-                "thumbnailUrl": {
-                  "type": ["string", "null"],
-                  "required": true
-                },
-                "email": {
-                  "type": "string",
-                  "required": true,
-                  "format": "email"
-                },
-                "entityType": {
-                  "type": "string",
-                  "required": true,
-                  "enum": ["user"]
-                }
-              },
-              "extendsRef": "#/components/schemas/UserMinimalBase"
+              "maxLength": 50
             },
             "public": { "type": "boolean", "required": true },
-            "publicAccess": { "type": "boolean", "required": true },
             "bucketName": {
               "type": "string",
               "required": true,
@@ -1632,7 +1419,6 @@
           "description": null,
           "keywords": "damno tenax arx",
           "public": false,
-          "publicAccess": false,
           "bucketName": "attachments",
           "groupId": null,
           "filename": "yet_rightfully_lest.ogx",
@@ -1714,39 +1500,15 @@
       "body": {
         "type": "object",
         "properties": {
-          "key": {
-            "required": true,
-            "anyOf": [
-              {
-                "type": "string",
-                "required": false,
-                "enum": ["name"]
-              },
-              {
-                "type": "string",
-                "required": false,
-                "enum": ["originalKey"]
-              },
-              {
-                "type": "string",
-                "required": false,
-                "enum": ["publicAccess"]
-              }
-            ]
+          "name": {
+            "type": "string",
+            "required": false,
+            "maxLength": 255
           },
-          "data": {
-            "required": true,
-            "anyOf": [
-              { "type": "string", "required": false },
-              { "type": "number", "required": false },
-              { "type": "boolean", "required": false },
-              {
-                "type": "array",
-                "required": false,
-                "itemType": "string"
-              },
-              { "type": "null", "required": false }
-            ]
+          "originalKey": {
+            "type": "string",
+            "required": false,
+            "maxLength": 2048
           },
           "stx": {
             "type": "object",
@@ -1781,7 +1543,7 @@
     }
   },
   {
-    "operationId": "getAttachmentLink",
+    "operationId": "redirectToAttachment",
     "responses": [
       { "status": 200, "description": "Success" },
       {

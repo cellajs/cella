@@ -5,18 +5,6 @@ export type ClientOptions = {
 };
 
 /**
- * Minimal user data for references (e.g. createdBy, modifiedBy).
- */
-export type UserMinimalBase = {
-  id: string;
-  name: string;
-  slug: string;
-  thumbnailUrl: string | null;
-  email: string;
-  entityType: 'user';
-};
-
-/**
  * Base user schema with essential fields for identification and display.
  */
 export type UserBase = {
@@ -178,14 +166,14 @@ export type Activity = {
 };
 
 /**
- * The currently authenticated user with their system admin status.
+ * The currently authenticated user with their system role.
  */
 export type Me = {
   user: User;
   /**
-   * Whether the current user has system admin privileges.
+   * System-level role (e.g. admin) or user for standard access.
    */
-  isSystemAdmin: boolean;
+  systemRole: 'admin' | 'user';
 };
 
 /**
@@ -261,10 +249,7 @@ export type InactiveMembership = {
   tokenId: string | null;
   role: 'admin' | 'member';
   rejectedAt: string | null;
-  createdBy: UserMinimalBase &
-    ({
-      [key: string]: unknown;
-    } | null);
+  createdBy: string;
   organizationId: string;
 };
 
@@ -298,20 +283,6 @@ export type Tenant = {
    */
   name: string;
   status: 'active' | 'suspended' | 'archived';
-  restrictions: {
-    /**
-     * Entity quotas (0 = unlimited)
-     */
-    quotas: {
-      [key: string]: number;
-    };
-    rateLimits: {
-      /**
-       * Max API points per hour per user within this tenant
-       */
-      apiPointsPerHour: number;
-    };
-  };
   createdAt: string;
   modifiedAt: string | null;
 };
@@ -329,7 +300,7 @@ export type Request = {
 };
 
 /**
- * An organization with membership context.
+ * An organization with settings, restrictions, and membership context.
  */
 export type Organization = {
   createdAt: string;
@@ -341,14 +312,8 @@ export type Organization = {
   slug: string;
   thumbnailUrl: string | null;
   bannerUrl: string | null;
-  createdBy: UserMinimalBase &
-    ({
-      [key: string]: unknown;
-    } | null);
-  modifiedBy: UserMinimalBase &
-    ({
-      [key: string]: unknown;
-    } | null);
+  createdBy: string | null;
+  modifiedBy: string | null;
   shortName: string | null;
   country: string | null;
   timezone: string | null;
@@ -392,14 +357,8 @@ export type Page = {
   stx: StxBase;
   description: string | null;
   keywords: string;
-  createdBy: UserMinimalBase &
-    ({
-      [key: string]: unknown;
-    } | null);
-  modifiedBy: UserMinimalBase &
-    ({
-      [key: string]: unknown;
-    } | null);
+  createdBy: string | null;
+  modifiedBy: string | null;
   status: 'unpublished' | 'published' | 'archived';
   publicAccess: boolean;
   parentId: string | null;
@@ -437,16 +396,9 @@ export type Attachment = {
   stx: StxBase;
   description: string | null;
   keywords: string;
-  createdBy: UserMinimalBase &
-    ({
-      [key: string]: unknown;
-    } | null);
-  modifiedBy: UserMinimalBase &
-    ({
-      [key: string]: unknown;
-    } | null);
+  createdBy: string | null;
+  modifiedBy: string | null;
   public: boolean;
-  publicAccess: boolean;
   bucketName: string;
   groupId: string | null;
   filename: string;
@@ -2176,14 +2128,14 @@ export type GetMyMembershipsResponses = {
 
 export type GetMyMembershipsResponse = GetMyMembershipsResponses[keyof GetMyMembershipsResponses];
 
-export type GetUnseenCountsData = {
+export type GetMyUnseenCountsData = {
   body?: never;
   path?: never;
   query?: never;
-  url: '/unseen/counts';
+  url: '/me/unseen-counts';
 };
 
-export type GetUnseenCountsErrors = {
+export type GetMyUnseenCountsErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -2206,20 +2158,22 @@ export type GetUnseenCountsErrors = {
   429: TooManyRequestsError;
 };
 
-export type GetUnseenCountsError = GetUnseenCountsErrors[keyof GetUnseenCountsErrors];
+export type GetMyUnseenCountsError = GetMyUnseenCountsErrors[keyof GetMyUnseenCountsErrors];
 
-export type GetUnseenCountsResponses = {
+export type GetMyUnseenCountsResponses = {
   /**
-   * Unseen counts per parent context entity per entity type
+   * Unseen counts per org per entity type
    */
   200: {
-    [key: string]: {
-      [key: string]: number;
-    };
+    counts: Array<{
+      organizationId: string;
+      entityType: 'attachment' | 'page';
+      unseenCount: number;
+    }>;
   };
 };
 
-export type GetUnseenCountsResponse = GetUnseenCountsResponses[keyof GetUnseenCountsResponses];
+export type GetMyUnseenCountsResponse = GetMyUnseenCountsResponses[keyof GetMyUnseenCountsResponses];
 
 export type CheckSlugData = {
   body: {
@@ -2930,20 +2884,6 @@ export type UpdateTenantData = {
   body: {
     name?: string;
     status?: 'active' | 'suspended' | 'archived';
-    /**
-     * Partial restrictions override
-     */
-    restrictions?: {
-      /**
-       * Entity quotas (0 = unlimited)
-       */
-      quotas?: {
-        [key: string]: number;
-      };
-      rateLimits?: {
-        apiPointsPerHour?: number;
-      };
-    };
   };
   path: {
     /**
@@ -3596,7 +3536,7 @@ export type CreateOrganizationsResponses = {
    */
   201: {
     /**
-     * An organization with membership context.
+     * An organization with settings, restrictions, and membership context.
      */
     data: Array<
       Organization & {
@@ -4022,8 +3962,12 @@ export type CreatePagesResponse = CreatePagesResponses[keyof CreatePagesResponse
 
 export type UpdatePageData = {
   body: {
-    key: 'name' | 'description' | 'keywords' | 'displayOrder' | 'status' | 'parentId';
-    data: string | number | boolean | Array<string> | null;
+    name?: string;
+    description?: string | null;
+    keywords?: string;
+    displayOrder?: number;
+    status?: 'unpublished' | 'published' | 'archived';
+    parentId?: string | null;
     stx: StxRequestBase;
   };
   path: {
@@ -4113,11 +4057,10 @@ export type GetUsersResponses = {
    */
   200: {
     /**
-     * Base user schema with essential fields for identification and display.
+     * A user with profile data and activity timestamps.
      */
     items: Array<
-      UserBase & {
-        lastSeenAt: string | null;
+      User & {
         role?: 'admin' | null;
       }
     >;
@@ -4165,11 +4108,9 @@ export type GetUserError = GetUserErrors[keyof GetUserErrors];
 
 export type GetUserResponses = {
   /**
-   * Base user schema with essential fields for identification and display.
+   * User
    */
-  200: UserBase & {
-    lastSeenAt: string | null;
-  };
+  200: User;
 };
 
 export type GetUserResponse = GetUserResponses[keyof GetUserResponses];
@@ -4300,7 +4241,6 @@ export type CreateAttachmentsData = {
     originalKey: string;
     bucketName: string;
     public?: boolean;
-    publicAccess?: boolean;
     groupId?: string | null;
     convertedContentType?: string | null;
     convertedKey?: string | null;
@@ -4470,8 +4410,8 @@ export type GetAttachmentResponse = GetAttachmentResponses[keyof GetAttachmentRe
 
 export type UpdateAttachmentData = {
   body: {
-    key: 'name' | 'originalKey' | 'publicAccess';
-    data: string | number | boolean | Array<string> | null;
+    name?: string;
+    originalKey?: string;
     stx: StxRequestBase;
   };
   path: {
@@ -4517,7 +4457,7 @@ export type UpdateAttachmentResponses = {
 
 export type UpdateAttachmentResponse = UpdateAttachmentResponses[keyof UpdateAttachmentResponses];
 
-export type GetAttachmentLinkData = {
+export type RedirectToAttachmentData = {
   body?: never;
   path: {
     id: string;
@@ -4526,7 +4466,7 @@ export type GetAttachmentLinkData = {
   url: '/{tenantId}/{orgId}/attachments/{id}/link';
 };
 
-export type GetAttachmentLinkErrors = {
+export type RedirectToAttachmentErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -4549,9 +4489,9 @@ export type GetAttachmentLinkErrors = {
   429: TooManyRequestsError;
 };
 
-export type GetAttachmentLinkError = GetAttachmentLinkErrors[keyof GetAttachmentLinkErrors];
+export type RedirectToAttachmentError = RedirectToAttachmentErrors[keyof RedirectToAttachmentErrors];
 
-export type GetAttachmentLinkResponses = {
+export type RedirectToAttachmentResponses = {
   /**
    * Success
    */
@@ -4792,7 +4732,6 @@ export type GetMembersData = {
     entityId: string;
     entityType: 'organization';
     role?: 'admin' | 'member';
-    userIds?: string;
   };
   url: '/{tenantId}/{orgId}/memberships/members';
 };
@@ -4827,15 +4766,27 @@ export type GetMembersResponses = {
    * Members
    */
   200: {
-    /**
-     * Base user schema with essential fields for identification and display.
-     */
-    items: Array<
-      UserBase & {
-        lastSeenAt: string | null;
-        membership: MembershipBase;
-      }
-    >;
+    items: Array<{
+      createdAt: string;
+      id: string;
+      entityType: 'user';
+      name: string;
+      description: string | null;
+      slug: string;
+      thumbnailUrl: string | null;
+      bannerUrl: string | null;
+      email: string;
+      mfaRequired: boolean;
+      firstName: string | null;
+      lastName: string | null;
+      language: 'en' | 'nl';
+      modifiedAt: string | null;
+      modifiedBy: string | null;
+      lastSeenAt: string | null;
+      lastStartedAt: string | null;
+      lastSignInAt: string | null;
+      membership: MembershipBase;
+    }>;
     total: number;
   };
 };
@@ -4896,10 +4847,7 @@ export type GetPendingMembershipsResponses = {
       thumbnailUrl: string | null;
       role: 'admin' | 'member' | null;
       createdAt: string;
-      createdBy: UserMinimalBase &
-        ({
-          [key: string]: unknown;
-        } | null);
+      createdBy: string | null;
     }>;
     total: number;
   };

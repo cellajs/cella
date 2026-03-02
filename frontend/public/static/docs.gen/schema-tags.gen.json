@@ -2,7 +2,7 @@
   {
     "name": "base",
     "description": "Schemas with base fields only",
-    "count": 6
+    "count": 5
   },
   {
     "name": "data",
