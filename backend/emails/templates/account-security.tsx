@@ -1,7 +1,6 @@
-import i18n from 'i18next';
-import { Text } from 'jsx-email';
 import { appConfig } from 'shared';
-import { EmailBody, EmailContainer, EmailHeader, EmailLogo, Footer } from '../components';
+import { EmailBody, EmailContainer, EmailHeader, EmailLogo, Footer, Text } from '../components';
+import i18n from '../i18n';
 import type { BasicTemplateType } from '../types';
 
 type AccountSecurityType =
@@ -52,3 +51,11 @@ export const AccountSecurity = ({ lng, name, type, details }: AccountSecurityPro
 
 // Template export
 export const Template = AccountSecurity;
+
+// Preview props for jsx-email CLI
+export const previewProps = {
+  lng: 'en',
+  subject: 'Account security alert',
+  name: 'Emily',
+  type: 'password-changed',
+} satisfies AccountSecurityProps;

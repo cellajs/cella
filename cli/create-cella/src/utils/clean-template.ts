@@ -2,13 +2,19 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import pc from 'picocolors';
 
-import { TO_CLEAN, TO_COPY, TO_EDIT, TO_REMOVE } from '#/constants';
+import { type FileEdit, TO_CLEAN, TO_COPY, TO_EDIT, TO_REMOVE } from '#/constants';
 
 /**
  * Cleans the specified template by removing designated folders and files.
- * @param params - Parameters containing the target folder.
+ * @param params - Parameters containing the target folder and optional extra edits.
  */
-export async function cleanTemplate({ targetFolder }: { targetFolder: string }): Promise<void> {
+export async function cleanTemplate({
+  targetFolder,
+  extraEdits = {},
+}: {
+  targetFolder: string;
+  extraEdits?: Record<string, FileEdit[]>;
+}): Promise<void> {
   // Change the current working directory to targetFolder if not already set
   if (process.cwd() !== targetFolder) {
     process.chdir(targetFolder);
@@ -39,9 +45,15 @@ export async function cleanTemplate({ targetFolder }: { targetFolder: string }):
         }),
       );
 
+      // Merge static edits with extra edits (e.g., port offsets)
+      const allEdits = { ...TO_EDIT };
+      for (const [filePath, edits] of Object.entries(extraEdits)) {
+        allEdits[filePath] = [...(allEdits[filePath] || []), ...edits];
+      }
+
       // Edit specific files
       await Promise.all(
-        Object.entries(TO_EDIT).map(async ([filePath, edits]) => {
+        Object.entries(allEdits).map(async ([filePath, edits]) => {
           const absolutePath = path.resolve(targetFolder, filePath);
           await editFile(absolutePath, edits);
         }),

@@ -18,8 +18,8 @@ const envSchema = z.object({
   // Enforces append-only access - cdc_role cannot UPDATE/DELETE activities
   DATABASE_CDC_URL: z.string().url(),
 
-  // API WebSocket URL for sending activities (defaults to local)
-  API_WS_URL: z.url().default('ws://localhost:4000/internal/cdc'),
+  // API WebSocket URL for sending activities (derived from appConfig backend port)
+  API_WS_URL: z.url().default(`ws://localhost:${new URL(appConfig.backendUrl).port}/internal/cdc`),
 
   // Shared secret for WebSocket authentication (required for security)
   CDC_INTERNAL_SECRET: z.string().min(16, 'CDC_INTERNAL_SECRET must be at least 16 characters'),
@@ -34,8 +34,8 @@ const envSchema = z.object({
     .default('false')
     .transform((v) => v === 'true'),
 
-  // Health server port
-  CDC_HEALTH_PORT: z.coerce.number().default(4001),
+  // Health server port (derived from appConfig backend port + 1)
+  CDC_HEALTH_PORT: z.coerce.number().default(Number(new URL(appConfig.backendUrl).port) + 1),
 });
 
 /**

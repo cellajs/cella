@@ -4,4 +4,5 @@ export { EmailButton } from './email-button';
 export { EmailContainer } from './email-container';
 export { EmailHeader } from './email-header';
 export { EmailLogo } from './email-logo';
+export { Text } from './email-text';
 export { Footer } from './footer';

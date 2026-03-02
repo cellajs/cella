@@ -18,11 +18,11 @@ export const DataTableSkeleton = ({
   shrinkTable = false,
 }: DataTableSkeletonProps) => {
   const renderCellHeight = cellHeight - 18;
-  const { hasStarted } = useMountedState();
+  const { hasMounted } = useMountedState();
 
   return (
     <div
-      className={`w-full space-y-3 overflow-auto duration-300 transition-opacity ${hasStarted ? 'opacity-100' : 'opacity-0'}`}
+      className={`w-full space-y-3 overflow-auto duration-500 transition-opacity ${hasMounted ? 'opacity-100' : 'opacity-0'}`}
     >
       <Table>
         <TableHeader>

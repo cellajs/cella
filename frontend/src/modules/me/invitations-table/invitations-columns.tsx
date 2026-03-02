@@ -1,6 +1,5 @@
 import { useTranslation } from 'react-i18next';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
-import { HeaderCell } from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useHandleInvitationMutation } from '~/modules/me/query';
 import type { Invitation } from '~/modules/me/types';
@@ -23,7 +22,6 @@ export const useColumns = () => {
       key: 'name',
       name: '',
       sortable: false,
-      renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => (
         <>
           <AvatarWrap
@@ -41,7 +39,6 @@ export const useColumns = () => {
       key: 'entityType',
       name: t('common:type'),
       sortable: false,
-      renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => <span>{t(`common:${row.entity.entityType}`)}</span>,
     },
     {
@@ -49,7 +46,6 @@ export const useColumns = () => {
       name: t('common:role'),
       sortable: false,
       minWidth: 100,
-      renderHeaderCell: HeaderCell,
       placeholderValue: '-',
       renderCell: ({ row }) =>
         row.inactiveMembership.role ? (
@@ -64,7 +60,6 @@ export const useColumns = () => {
       sortable: false,
       minBreakpoint: 'md',
       minWidth: 160,
-      renderHeaderCell: HeaderCell,
       placeholderValue: '-',
       renderCell: ({ row }) => dateShort(row.inactiveMembership.createdAt),
     },
@@ -74,7 +69,6 @@ export const useColumns = () => {
       sortable: false,
       minBreakpoint: 'md',
       minWidth: 120,
-      renderHeaderCell: HeaderCell,
       placeholderValue: '-',
       renderCell: ({ row, tabIndex }) =>
         row.inactiveMembership.createdBy && (
@@ -86,7 +80,6 @@ export const useColumns = () => {
       name: '',
       sortable: false,
       width: 200,
-      renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => (
         <div className="flex gap-2 w-full max-w-50">
           {actionButtons.map(({ label, variant, action }) => (

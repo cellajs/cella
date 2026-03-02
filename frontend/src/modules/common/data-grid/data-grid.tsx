@@ -53,6 +53,7 @@ import {
   assertIsValidKeyGetter,
   canExitGrid,
   cn,
+  computeWrapTextRowHeight,
   createCellEvent,
   createRange,
   evaluateMobileSubRows,
@@ -60,6 +61,7 @@ import {
   getColSpan,
   getLeftRightKey,
   getNextSelectedCellPosition,
+  hasWrapTextColumns,
   isCtrlKeyHeldDown,
   isDefaultCellInput,
   isSelectedCellEditable,
@@ -346,8 +348,8 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
    * defaults
    */
   const role = rawRole ?? 'grid';
-  const rowHeight = rawRowHeight ?? 35;
-  const headerRowHeight = rawHeaderRowHeight ?? (typeof rowHeight === 'number' ? rowHeight : 35);
+  const baseRowHeight = rawRowHeight ?? 35;
+  const headerRowHeight = rawHeaderRowHeight ?? (typeof baseRowHeight === 'number' ? baseRowHeight : 35);
   const renderRow = renderers?.renderRow ?? defaultRenderRow;
   const renderCell = renderers?.renderCell ?? defaultRenderCell;
   const noRowsFallback = renderers?.noRowsFallback;
@@ -433,6 +435,15 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     currentBreakpoint,
     isMobileSubRowsActive,
   });
+
+  // Compute effective rowHeight, wrapping baseRowHeight with wrapText-aware logic
+  // when any column has wrapText enabled. This turns a fixed height into a per-row
+  // function that accounts for multi-line content.
+  const rowHeight = useMemo(() => {
+    if (typeof baseRowHeight === 'function') return baseRowHeight;
+    if (!hasWrapTextColumns(columns)) return baseRowHeight;
+    return (row: R) => computeWrapTextRowHeight(baseRowHeight, columns as readonly CalculatedColumn<R, unknown>[], row);
+  }, [baseRowHeight, columns]);
 
   const groupedColumnHeaderRowsCount = headerRowsCount - 1;
   const minRowIdx = -headerRowsCount;

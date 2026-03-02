@@ -1,7 +1,6 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { DataTable } from '~/modules/common/data-table';
-import { HeaderCell } from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { infoQueryOptions } from '~/modules/docs/query';
 import { Card, CardContent } from '~/modules/ui/card';
@@ -37,7 +36,6 @@ export function OverviewTable() {
       sortable: false,
       resizable: false,
       width: 160,
-      renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => <span className="font-medium">{row.label}</span>,
     },
     {
@@ -45,10 +43,8 @@ export function OverviewTable() {
       name: '',
       sortable: false,
       resizable: true,
-      renderHeaderCell: HeaderCell,
-      renderCell: ({ row }) => (
-        <div className="whitespace-pre-line leading-5 py-3 text-muted-foreground">{row.value}</div>
-      ),
+      wrapText: 5,
+      renderCell: ({ row }) => <div className="leading-5 text-muted-foreground">{row.value}</div>,
     },
   ];
 

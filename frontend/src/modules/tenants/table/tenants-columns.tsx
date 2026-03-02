@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Tenant } from '~/api.gen';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
-import { HeaderCell } from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { Badge } from '~/modules/ui/badge';
 import { dateShort } from '~/utils/date-short';
@@ -22,7 +21,6 @@ export const useColumns = () => {
         sortable: false,
         resizable: true,
         width: 100,
-        renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => <code className="text-xs font-mono">{row.id}</code>,
       },
       {
@@ -31,7 +29,6 @@ export const useColumns = () => {
         sortable: true,
         resizable: true,
         minWidth: 160,
-        renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => <span className="font-medium">{row.name}</span>,
       },
       {
@@ -40,7 +37,6 @@ export const useColumns = () => {
         sortable: false,
         resizable: true,
         width: 120,
-        renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => {
           const variant = row.status === 'active' ? 'success' : row.status === 'suspended' ? 'secondary' : 'plain';
           return <Badge variant={variant}>{t(`common:${row.status}`)}</Badge>;
@@ -53,7 +49,6 @@ export const useColumns = () => {
         minBreakpoint: 'md',
         resizable: true,
         width: 180,
-        renderHeaderCell: HeaderCell,
         placeholderValue: '-',
         renderCell: ({ row }) => dateShort(row.createdAt),
       },

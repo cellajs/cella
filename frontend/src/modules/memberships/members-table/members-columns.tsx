@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { roles } from 'shared';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
-import { HeaderCell } from '~/modules/common/data-table/header-cell';
 import { renderSelect } from '~/modules/common/data-table/select-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import type { Member } from '~/modules/memberships/types';
@@ -21,7 +20,6 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
         name: t('common:name'),
         sortable: true,
         resizable: true,
-        renderHeaderCell: HeaderCell,
         renderCell: ({ row, tabIndex }) => <UserCell user={row} tabIndex={tabIndex} className="font-medium" />,
       },
       {
@@ -30,7 +28,6 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
         sortable: false,
         minBreakpoint: 'md',
         resizable: true,
-        renderHeaderCell: HeaderCell,
         minWidth: 140,
         placeholderValue: '-',
         renderCell: ({ row, tabIndex }) => {
@@ -51,7 +48,6 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
         name: t('common:role'),
         sortable: true,
         resizable: true,
-        renderHeaderCell: HeaderCell,
         placeholderValue: '-',
         renderCell: ({ row }) =>
           row.membership ? (
@@ -80,7 +76,6 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
         minBreakpoint: 'md',
         minWidth: 160,
         resizable: true,
-        renderHeaderCell: HeaderCell,
         placeholderValue: '-',
         renderCell: ({ row }) => dateShort(row.createdAt),
       },
@@ -91,7 +86,6 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
         minBreakpoint: 'md',
         resizable: true,
         minWidth: 160,
-        renderHeaderCell: HeaderCell,
         placeholderValue: '-',
         renderCell: ({ row }) => dateShort(row.lastSeenAt),
       },

@@ -4,7 +4,6 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
-import { HeaderCell } from '~/modules/common/data-table/header-cell';
 import { type EllipsisOption, TableEllipsis } from '~/modules/common/data-table/table-ellipsis';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
@@ -27,7 +26,6 @@ export const useColumns = () => {
         name: t('common:name'),
         sortable: true,
         resizable: true,
-        renderHeaderCell: HeaderCell,
         renderCell: ({ row, tabIndex }) => <UserCell user={row} tabIndex={tabIndex} className="font-medium" />,
       },
       {
@@ -90,7 +88,6 @@ export const useColumns = () => {
         minBreakpoint: 'md',
         resizable: true,
         minWidth: 140,
-        renderHeaderCell: HeaderCell,
         renderCell: ({ row, tabIndex }) => {
           return (
             <a
@@ -110,7 +107,6 @@ export const useColumns = () => {
         minBreakpoint: 'md',
         resizable: true,
         width: 100,
-        renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => <div>{row.role ? t(row.role, { ns: ['app', 'common'] }) : t('common:user')}</div>,
       },
       {
@@ -120,7 +116,6 @@ export const useColumns = () => {
         minBreakpoint: 'md',
         resizable: true,
         minWidth: 160,
-        renderHeaderCell: HeaderCell,
         placeholderValue: '-',
         renderCell: ({ row }) => dateShort(row.createdAt),
       },
@@ -131,7 +126,6 @@ export const useColumns = () => {
         minBreakpoint: 'md',
         resizable: true,
         minWidth: 160,
-        renderHeaderCell: HeaderCell,
         placeholderValue: '-',
         renderCell: ({ row }) => dateShort(row.lastSeenAt),
       },

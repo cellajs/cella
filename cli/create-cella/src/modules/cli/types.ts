@@ -20,6 +20,8 @@ export interface CreateOptions {
   newBranchName?: string | null;
   packageManager: string;
   templateUrl?: string;
+  /** Port offset to avoid collisions with sibling forks (0 = default ports) */
+  portOffset?: number;
   /** Suppress all output (for testing) */
   silent?: boolean;
 }

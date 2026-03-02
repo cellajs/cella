@@ -1,7 +1,6 @@
-import i18n from 'i18next';
-import { Text } from 'jsx-email';
 import { appConfig } from 'shared';
-import { EmailBody, EmailContainer, EmailHeader, EmailLogo, Footer } from '../components';
+import { EmailBody, EmailContainer, EmailHeader, EmailLogo, Footer, Text } from '../components';
+import i18n from '../i18n';
 import { RequestResponseEmailProps } from './request-was-sent';
 
 /**
@@ -20,10 +19,7 @@ export const RequestInfoEmail = ({ lng, type, subject, message }: RequestRespons
           />
         }
       />
-      <EmailBody>
-        <Text>{subject}</Text>
-        {message && <Text>{message}</Text>}
-      </EmailBody>
+      <EmailBody>{message && <Text>{message}</Text>}</EmailBody>
 
       <EmailLogo />
       <Footer />
@@ -33,3 +29,11 @@ export const RequestInfoEmail = ({ lng, type, subject, message }: RequestRespons
 
 // Template export
 export const Template = RequestInfoEmail;
+
+// Preview props for jsx-email CLI
+export const previewProps = {
+  lng: 'en',
+  subject: 'New contact request',
+  type: 'contact',
+  message: 'Hi, I would like to learn more about your product.',
+} satisfies RequestResponseEmailProps;

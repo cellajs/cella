@@ -4,27 +4,36 @@ interface EmailContainerProps {
   previewText: string;
   bodyStyle?: React.CSSProperties;
   containerStyle?: React.CSSProperties;
+  headChildren?: React.ReactNode;
   children: React.ReactNode;
 }
 
 /**
  * Email container component to wrap email content with consistent styling.
  */
-export const EmailContainer = ({ previewText, bodyStyle, containerStyle, children }: EmailContainerProps) => (
+export const EmailContainer = ({
+  previewText,
+  bodyStyle,
+  containerStyle,
+  headChildren,
+  children,
+}: EmailContainerProps) => (
   <Html>
-    <Head />
+    <Head>{headChildren}</Head>
     <Preview>{previewText}</Preview>
     <Tailwind>
       <Body
         style={{
-          backgroundColor: 'white',
+          backgroundColor: '#f5f5f5',
           fontFamily: 'sans-serif',
           margin: 'auto',
           padding: '0 0.625rem',
           ...bodyStyle,
         }}
       >
-        <Container style={{ width: '30rem', margin: '0 auto', ...containerStyle }}>{children}</Container>
+        <Container style={{ maxWidth: '30rem', width: '100%', margin: '0 auto', ...containerStyle }}>
+          {children}
+        </Container>
       </Body>
     </Tailwind>
   </Html>

@@ -2,7 +2,7 @@
   {
     "name": "me",
     "description": "Operations scoped to the current user (the user associated with the active session). Includes\n        profile management, session control, MFA toggling, upload token generation, viewing and responding\n        to membership invitations, leaving entities, and email unsubscription. Distinct from `users`\n        operations, which target any user in the system.",
-    "count": 12
+    "count": 11
   },
   {
     "name": "users",
@@ -67,6 +67,6 @@
   {
     "name": "seen",
     "description": "Operations for tracking which product entities a user has viewed. Supports batch marking entities\n        as seen (deduplicating against existing records) and incrementing view counts. Used to power unseen\n        count badges in navigation and view count columns in entity lists.",
-    "count": 1
+    "count": 2
   }
 ]

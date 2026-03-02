@@ -37,6 +37,9 @@ const viteConfig = {
       ],
     },
   },
+  preview: {
+    port: Number(frontendUrl.port),
+  },
   build: {
     rollupOptions: {
       output: {

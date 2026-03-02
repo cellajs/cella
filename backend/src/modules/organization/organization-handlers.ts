@@ -44,6 +44,13 @@ const organizationRouteHandlers = app
     const items = ctx.req.valid('json');
     const { tenantId } = ctx.req.valid('param');
 
+    // Prevent creating organizations in the public tenant
+    if (tenantId === appConfig.publicTenant.id) {
+      throw new AppError(403, 'forbidden', 'warn', {
+        meta: { reason: 'Cannot create organizations in public tenant' },
+      });
+    }
+
     const user = ctx.var.user;
     const isSystemAdmin = ctx.var.isSystemAdmin;
 

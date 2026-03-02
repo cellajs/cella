@@ -10,7 +10,6 @@ import {
 } from '~/modules/attachment/table/cells';
 import { formatBytes } from '~/modules/attachment/table/helpers';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
-import { HeaderCell } from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import type { EnrichedContextEntity } from '~/modules/entities/types';
 import { SeenMark } from '~/modules/seen/seen-mark';
@@ -41,7 +40,6 @@ export const useColumns = (contextEntity: EnrichedContextEntity, isSheet: boolea
         sortable: true,
         resizable: true,
         minWidth: 180,
-        renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => (
           <>
             <SeenMark
@@ -97,7 +95,6 @@ export const useColumns = (contextEntity: EnrichedContextEntity, isSheet: boolea
         sortable: false,
         resizable: true,
         minWidth: 140,
-        renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => (
           <span className="group-hover:underline underline-offset-4 truncate font-light">
             {row.filename || <span className="text-muted">-</span>}
@@ -111,7 +108,6 @@ export const useColumns = (contextEntity: EnrichedContextEntity, isSheet: boolea
         resizable: true,
         minBreakpoint: 'md',
         minWidth: 80,
-        renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => (
           <div className="inline-flex items-center gap-1 relative font-light group h-full w-full opacity-50">
             {formatBytes(row.size)}
@@ -125,7 +121,6 @@ export const useColumns = (contextEntity: EnrichedContextEntity, isSheet: boolea
         hidden: isSheet,
         minBreakpoint: 'md',
         minWidth: 80,
-        renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => (
           <div className="inline-flex items-center gap-1 relative font-light group h-full w-full opacity-50">
             {row.viewCount ?? 0}
@@ -139,7 +134,6 @@ export const useColumns = (contextEntity: EnrichedContextEntity, isSheet: boolea
         hidden: isSheet,
         minBreakpoint: 'md',
         minWidth: 160,
-        renderHeaderCell: HeaderCell,
         placeholderValue: '-',
         renderCell: ({ row }) => dateShort(row.createdAt),
       },
@@ -150,7 +144,6 @@ export const useColumns = (contextEntity: EnrichedContextEntity, isSheet: boolea
         hidden: true,
         minWidth: isCompact ? null : 120,
         width: isCompact ? 50 : null,
-        renderHeaderCell: HeaderCell,
         placeholderValue: '-',
         renderCell: ({ row, tabIndex }) =>
           row.createdBy && <UserCell compactable user={row.createdBy} tabIndex={tabIndex} />,
@@ -161,7 +154,6 @@ export const useColumns = (contextEntity: EnrichedContextEntity, isSheet: boolea
         sortable: false,
         hidden: true,
         minWidth: 160,
-        renderHeaderCell: HeaderCell,
         placeholderValue: '-',
         renderCell: ({ row }) => dateShort(row.modifiedAt),
       },
@@ -171,7 +163,6 @@ export const useColumns = (contextEntity: EnrichedContextEntity, isSheet: boolea
         sortable: false,
         hidden: true,
         width: isCompact ? 80 : 120,
-        renderHeaderCell: HeaderCell,
         placeholderValue: '-',
         renderCell: ({ row, tabIndex }) =>
           row.modifiedBy && <UserCell compactable user={row.modifiedBy} tabIndex={tabIndex} />,

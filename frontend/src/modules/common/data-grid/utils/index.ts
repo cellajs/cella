@@ -10,6 +10,7 @@ export * from './keyboard-utils';
 export * from './render-measuring-cells';
 export * from './selected-cell-utils';
 export * from './style-utils';
+export * from './wrap-text-utils';
 
 export const { min, max, floor, sign, abs } = Math;
 

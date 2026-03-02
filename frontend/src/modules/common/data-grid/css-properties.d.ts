@@ -21,5 +21,6 @@ declare module 'react' {
     '--rdg-frozen-left'?: string;
     '--rdg-frozen-right'?: string;
     '--rdg-template-columns'?: string;
+    '--rdg-wrap-text-lines'?: string;
   }
 }

@@ -128,6 +128,23 @@
   }
 }
 
+/* Wrap-text cells: outside @layer so it overrides DataTable's unlayered
+   `display: flex` on .rdg-cell. Line-clamp targets the direct child because
+   -webkit-line-clamp only works on -webkit-box's own content, not nested blocks. */
+.rdg-cell-wrap-text {
+  white-space: pre-line;
+  overflow: hidden;
+  align-content: center;
+}
+
+.rdg-cell-wrap-text > * {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--rdg-wrap-text-lines, none);
+}
+
 /* ==========================================================================
    Focus Sink (for keyboard navigation outline)
    ========================================================================== */

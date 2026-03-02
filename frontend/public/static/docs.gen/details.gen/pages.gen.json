@@ -70,14 +70,54 @@
                     "maxLength": 1000000
                   },
                   "createdBy": {
-                    "type": ["string", "null"],
+                    "type": ["object", "null"],
                     "required": true,
-                    "maxLength": 50
+                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                    "properties": {
+                      "id": { "type": "string", "required": true },
+                      "name": { "type": "string", "required": true },
+                      "slug": { "type": "string", "required": true },
+                      "thumbnailUrl": {
+                        "type": ["string", "null"],
+                        "required": true
+                      },
+                      "email": {
+                        "type": "string",
+                        "required": true,
+                        "format": "email"
+                      },
+                      "entityType": {
+                        "type": "string",
+                        "required": true,
+                        "enum": ["user"]
+                      }
+                    },
+                    "extendsRef": "#/components/schemas/UserMinimalBase"
                   },
                   "modifiedBy": {
-                    "type": ["string", "null"],
+                    "type": ["object", "null"],
                     "required": true,
-                    "maxLength": 50
+                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                    "properties": {
+                      "id": { "type": "string", "required": true },
+                      "name": { "type": "string", "required": true },
+                      "slug": { "type": "string", "required": true },
+                      "thumbnailUrl": {
+                        "type": ["string", "null"],
+                        "required": true
+                      },
+                      "email": {
+                        "type": "string",
+                        "required": true,
+                        "format": "email"
+                      },
+                      "entityType": {
+                        "type": "string",
+                        "required": true,
+                        "enum": ["user"]
+                      }
+                    },
+                    "extendsRef": "#/components/schemas/UserMinimalBase"
                   },
                   "status": {
                     "type": "string",
@@ -111,19 +151,19 @@
               "tenantId": "xtanax",
               "entityType": "page",
               "name": "Tersus summa caterva socius.",
-              "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Tergo adhuc virtus vesco audentia angustus. Voco commodi abduco deduco. Cubicularis volo utroque in comminor concedo quae.\\nSumptus dolorem varius crudelis. Advoco surgo angulus demens tabella clibanus. Valens vester cavus.\",\"styles\":{}}],\"children\":[]}]",
-              "keywords": "contego debeo volubilis",
+              "description": "[{\"id\":\"s4hpxzy40nolohva0tkhx9mp\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":2},\"content\":[{\"type\":\"text\",\"text\":\"Tergo adhuc virtus vesco audentia.\",\"styles\":{}}],\"children\":[]},{\"id\":\"v9ufiffvv3l8jcjgdj4j7ojn\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Voco commodi abduco deduco. Cubicularis volo utroque in comminor concedo quae.\",\"styles\":{}}],\"children\":[]},{\"id\":\"ff68w0icoy18dchnrqyfyfgj\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":3},\"content\":[{\"type\":\"text\",\"text\":\"Customizable optimizing interface\",\"styles\":{}}],\"children\":[]},{\"id\":\"iup8bfcb10b7j2kc145gx4ld\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Deduco advoco surgo angulus demens tabella.\",\"styles\":{}}],\"children\":[]},{\"id\":\"cnzlfdz3u3e9qe66dq6uiahf\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Alioqui valens vester cavus contego.\",\"styles\":{}}],\"children\":[]},{\"id\":\"z1onfsm2zmoe7j4hb6kjea6c\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Volubilis cum vindico audacia perspiciatis supra.\",\"styles\":{}}],\"children\":[]},{\"id\":\"olsrivhp523xld8qc0qfcdr2\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Chirographum depraedor rem dolorum magni deleniti.\",\"styles\":{}}],\"children\":[]},{\"id\":\"eck48q5aw2vuzfwlq7plg5ci\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Amita defendo vitae amicitia coaegresco celo. Denuncio cum abbas conitor timidus teneo placeat.\",\"styles\":{}}],\"children\":[]},{\"id\":\"952vvduv5u6n8ufwfok0cx5l\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Aqua amissio verto bellicus voluptatibus.\",\"styles\":{}}],\"children\":[]},{\"id\":\"utiwhmtq1ailr5m9mct0mlya\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Adstringo aduro vitae.\",\"styles\":{}}],\"children\":[]},{\"id\":\"5lys0jwivzlw46l03oam92sf\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Tredecim tam arx barba doloribus ubi.\",\"styles\":{}}],\"children\":[]},{\"id\":\"qvqm9qtsdxwbpfznkiec6p0b\",\"type\":\"checkListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"checked\":true},\"content\":[{\"type\":\"text\",\"text\":\"I'll hack the back-end SCSI panel, that should circuit the XSS pixel!\",\"styles\":{}}],\"children\":[]},{\"id\":\"85c58dk3coh8m2gpwqtyp5zb\",\"type\":\"checkListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"checked\":false},\"content\":[{\"type\":\"text\",\"text\":\"I'll parse the bluetooth SMTP system, that should bandwidth the IB application!\",\"styles\":{}}],\"children\":[]},{\"id\":\"7hra830irjmaexrcuqncr1xw\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Coniecto umbra apparatus patior quas creber cruentus. Acceptus cervus stultus consequuntur conitor a peccatus atrox. Verus consuasor venia vulpes delego bibo.\",\"styles\":{}}],\"children\":[]}]",
+              "keywords": "summisse credo thymum",
               "status": "unpublished",
               "publicAccess": true,
               "parentId": null,
-              "displayOrder": 40.67,
+              "displayOrder": 60.77,
               "createdAt": "2024-11-21T04:00:59.122Z",
               "createdBy": "qqp8d07imsvjbtqtl3rtjgxd",
               "modifiedAt": "2024-11-21T04:00:59.122Z",
               "modifiedBy": "qqp8d07imsvjbtqtl3rtjgxd",
               "stx": {
-                "mutationId": "y6mqh9hmikgme3gy3a9lhe0c",
-                "sourceId": "src_trmzc53x7z222ydtq57iu31m",
+                "mutationId": "lfn51vpq8cnfsar9hbjwtoks",
+                "sourceId": "src_rox8rpubibp4ljoerjtgyu7c",
                 "version": 1,
                 "fieldVersions": {}
               }
@@ -133,19 +173,19 @@
               "tenantId": "1sr6ut",
               "entityType": "page",
               "name": "Conitor suspendo aiunt.",
-              "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Acidus advoco ventus sub cogito argentum attonbitus trans. Crapula bestia auxilium non sui desino amor barba. Vitiosus eligendi clementia usus demens conor auctor basium tolero.\\nSoluta temporibus aut labore. Depono ultio explicabo ascit. Utpote amplexus nihil aut concedo vel praesentium universe.\",\"styles\":{}}],\"children\":[]}]",
-              "keywords": "pecus accusator cubitum",
+              "description": "[{\"id\":\"3vk115mfkksu6tdu824nchtu\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":2},\"content\":[{\"type\":\"text\",\"text\":\"Acidus advoco ventus sub cogito argentum.\",\"styles\":{}}],\"children\":[]},{\"id\":\"aujc7fzz98ceddjt96zn5obr\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Summa crapula bestia auxilium non sui desino amor barba. Vitiosus eligendi clementia usus demens conor auctor basium tolero.\",\"styles\":{}}],\"children\":[]},{\"id\":\"awvrzu3vb9hrjms49u54dijs\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":3},\"content\":[{\"type\":\"text\",\"text\":\"Devolved national pricing structure\",\"styles\":{}}],\"children\":[]},{\"id\":\"wgqxkg7uyahzsgxv29adhxc6\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Appello depono ultio explicabo ascit suscipio utpote.\",\"styles\":{}}],\"children\":[]},{\"id\":\"zce5krnhefhsst89xdhbzlk8\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Nihil aut concedo.\",\"styles\":{}}],\"children\":[]},{\"id\":\"4unh3jy1n9efko2tri2xbyyc\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Universe pecus accusator cubitum amplus antea concedo. Repellendus deorsum thorax virga cicuta turbo vestigium coniecto. Tumultus vallum infit terra tempus voluptates utpote voluptatum cilicium contego.\",\"styles\":{}}],\"children\":[]},{\"id\":\"3hntj0jc04vb025cbvron7i5\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Villa adipiscor demo certe terreo ater valens vorago.\",\"styles\":{}}],\"children\":[]},{\"id\":\"9cxvvt132m12nlndferxd2pc\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Delinquo ustilo consuasor iste acidus temperantia.\",\"styles\":{}}],\"children\":[]},{\"id\":\"puk3qia1rfusqzoudhd47mig\",\"type\":\"checkListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"checked\":false},\"content\":[{\"type\":\"text\",\"text\":\"I'll index the solid state UTF8 matrix, that should alarm the THX array!\",\"styles\":{}}],\"children\":[]},{\"id\":\"t1o7mqcswrm53sno6xcah3t3\",\"type\":\"checkListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"checked\":false},\"content\":[{\"type\":\"text\",\"text\":\"The SMS transmitter is down, program the online panel so we can connect the EXE application!\",\"styles\":{}}],\"children\":[]},{\"id\":\"1cmr09gzrz9stbqdbnj94pey\",\"type\":\"checkListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"checked\":true},\"content\":[{\"type\":\"text\",\"text\":\"You can't input the protocol without compressing the wireless AI transmitter!\",\"styles\":{}}],\"children\":[]},{\"id\":\"un7g2b2ogvbh0lu312nl6xd1\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Recusandae angulus civitas dolorum solvo tenuis depono. Exercitationem pel eius ancilla tardus urbs defaeco canonicus sapiente. Tamquam voluptatum vicinus perferendis molestias aliqua.\",\"styles\":{}}],\"children\":[]}]",
+              "keywords": "apud cunctatio cupiditate",
               "status": "unpublished",
               "publicAccess": true,
               "parentId": null,
-              "displayOrder": 11.43,
+              "displayOrder": 27.01,
               "createdAt": "2024-10-29T08:46:20.790Z",
               "createdBy": "hg5ogh3yr2b2dbwf7b9eckaj",
               "modifiedAt": "2024-10-29T08:46:20.790Z",
               "modifiedBy": "hg5ogh3yr2b2dbwf7b9eckaj",
               "stx": {
-                "mutationId": "4bpmhsyauxcwuwjsrzvzac8q",
-                "sourceId": "src_x1h9s6vzhgvcj0rs3xtuk03g",
+                "mutationId": "2ta8rpig1rxpmc6pv1fvu0uy",
+                "sourceId": "src_umluud11ppu88to0zzdvgboo",
                 "version": 1,
                 "fieldVersions": {}
               }
@@ -284,14 +324,54 @@
               "maxLength": 1000000
             },
             "createdBy": {
-              "type": ["string", "null"],
+              "type": ["object", "null"],
               "required": true,
-              "maxLength": 50
+              "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+              "properties": {
+                "id": { "type": "string", "required": true },
+                "name": { "type": "string", "required": true },
+                "slug": { "type": "string", "required": true },
+                "thumbnailUrl": {
+                  "type": ["string", "null"],
+                  "required": true
+                },
+                "email": {
+                  "type": "string",
+                  "required": true,
+                  "format": "email"
+                },
+                "entityType": {
+                  "type": "string",
+                  "required": true,
+                  "enum": ["user"]
+                }
+              },
+              "extendsRef": "#/components/schemas/UserMinimalBase"
             },
             "modifiedBy": {
-              "type": ["string", "null"],
+              "type": ["object", "null"],
               "required": true,
-              "maxLength": 50
+              "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+              "properties": {
+                "id": { "type": "string", "required": true },
+                "name": { "type": "string", "required": true },
+                "slug": { "type": "string", "required": true },
+                "thumbnailUrl": {
+                  "type": ["string", "null"],
+                  "required": true
+                },
+                "email": {
+                  "type": "string",
+                  "required": true,
+                  "format": "email"
+                },
+                "entityType": {
+                  "type": "string",
+                  "required": true,
+                  "enum": ["user"]
+                }
+              },
+              "extendsRef": "#/components/schemas/UserMinimalBase"
             },
             "status": {
               "type": "string",
@@ -319,19 +399,19 @@
           "tenantId": "ijllhz",
           "entityType": "page",
           "name": "Torrens adfectus.",
-          "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Voluptates cornu tempus eaque universe volubilis conturbo. Sponte utpote crux pecco vulticulus cunctatio. Vallum ut adimpleo summa valde strenuus attonbitus.\\nMollitia vel cado vitae cibus dolores decet. Aptus accusamus praesentium cibus subito viscus vox nemo. Video tremo molestias charisma clam ipsa suscipit.\",\"styles\":{}}],\"children\":[]}]",
-          "keywords": "solvo atrox tendo",
+          "description": "[{\"id\":\"wrn0md2ugnosscaglc7fd7i2\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":2},\"content\":[{\"type\":\"text\",\"text\":\"Voluptates cornu tempus eaque universe.\",\"styles\":{}}],\"children\":[]},{\"id\":\"epk1kzzz21zyxt0mvd4o7vwh\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Cubo sponte utpote crux pecco. Cunctatio dolorum vallum ut adimpleo summa valde strenuus attonbitus eligendi. Vel cado vitae cibus dolores decet surgo. Accusamus praesentium cibus subito.\",\"styles\":{}}],\"children\":[]},{\"id\":\"sp5e5pmq268teamq53a00blr\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":3},\"content\":[{\"type\":\"text\",\"text\":\"User-friendly zero trust local area network\",\"styles\":{}}],\"children\":[]},{\"id\":\"fpovg1hw4lwx9fdhoo29zovz\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Tremo molestias charisma clam ipsa suscipit solvo atrox tendo compello.\",\"styles\":{}}],\"children\":[]},{\"id\":\"11sk21vc0kbhqhj6ar5uao0b\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Tonsor ullus damnatio.\",\"styles\":{}}],\"children\":[]},{\"id\":\"xpqjfch64ztwc6b6wwbsxpu7\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Cupressus depono sto benigne delego decumbo adaugeo.\",\"styles\":{}}],\"children\":[]},{\"id\":\"jjk979mulm2umqkp45wgsudw\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Video aer addo crinis amissio alius allatus solium delectus tabesco. Inventore contra complectus summa umquam nobis dapifer supplanto odio. Atavus absorbeo suffoco cado deorsum amor.\",\"styles\":{}}],\"children\":[]},{\"id\":\"l8fdv4tk3rjp8xg28tslq0hm\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Nam certe vulgaris sumptus spiritus vae fugit creo.\",\"styles\":{}}],\"children\":[]},{\"id\":\"jf5weyscnn3elj0uo6c5itsr\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Dolorem conduco causa.\",\"styles\":{}}],\"children\":[]},{\"id\":\"cq2ny211vxu3mf4ubaen3d9g\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Caste pauper argumentum civitas.\",\"styles\":{}}],\"children\":[]},{\"id\":\"nsmll6jflblg5nip5s22nrkm\",\"type\":\"checkListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"checked\":false},\"content\":[{\"type\":\"text\",\"text\":\"Use the mobile HTTP port, then you can copy the primary hard drive!\",\"styles\":{}}],\"children\":[]},{\"id\":\"czfy91k369e77df0zm7m12nx\",\"type\":\"checkListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"checked\":false},\"content\":[{\"type\":\"text\",\"text\":\"Try to hack the SSD feed, maybe it will input the bluetooth panel!\",\"styles\":{}}],\"children\":[]},{\"id\":\"4h47wg7onyam3f4m0izvpmmb\",\"type\":\"checkListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"checked\":false},\"content\":[{\"type\":\"text\",\"text\":\"Use the virtual SSL transmitter, then you can index the bluetooth capacitor!\",\"styles\":{}}],\"children\":[]},{\"id\":\"91zge7ukmwommkgm8xcacbm7\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Solium solvo degero ventus apto tempus aurum delectus facilis cura. Dolore animadverto maxime theatrum esse amo statua adfectus tremo contigo. Demens timidus calcar cohors appono aranea decet cultura substantia.\",\"styles\":{}}],\"children\":[]}]",
+          "keywords": "tantillus debitis mollitia",
           "status": "unpublished",
           "publicAccess": true,
           "parentId": null,
-          "displayOrder": 32.69,
+          "displayOrder": 47.51,
           "createdAt": "2024-08-06T10:28:33.226Z",
           "createdBy": "0f0ak5vkrrl687pmkwpa1vju",
           "modifiedAt": "2024-08-06T10:28:33.226Z",
           "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju",
           "stx": {
-            "mutationId": "4tufkeho7gg1xwx21e333ngq",
-            "sourceId": "src_ujcbpukfple60p8h3tnk9zpo",
+            "mutationId": "rd8bblxzxc0ypms2q9lzubyp",
+            "sourceId": "src_ddo8vfjx4d5px26kw7k3q17d",
             "version": 1,
             "fieldVersions": {}
           }
@@ -452,14 +532,54 @@
                     "maxLength": 1000000
                   },
                   "createdBy": {
-                    "type": ["string", "null"],
+                    "type": ["object", "null"],
                     "required": true,
-                    "maxLength": 50
+                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                    "properties": {
+                      "id": { "type": "string", "required": true },
+                      "name": { "type": "string", "required": true },
+                      "slug": { "type": "string", "required": true },
+                      "thumbnailUrl": {
+                        "type": ["string", "null"],
+                        "required": true
+                      },
+                      "email": {
+                        "type": "string",
+                        "required": true,
+                        "format": "email"
+                      },
+                      "entityType": {
+                        "type": "string",
+                        "required": true,
+                        "enum": ["user"]
+                      }
+                    },
+                    "extendsRef": "#/components/schemas/UserMinimalBase"
                   },
                   "modifiedBy": {
-                    "type": ["string", "null"],
+                    "type": ["object", "null"],
                     "required": true,
-                    "maxLength": 50
+                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                    "properties": {
+                      "id": { "type": "string", "required": true },
+                      "name": { "type": "string", "required": true },
+                      "slug": { "type": "string", "required": true },
+                      "thumbnailUrl": {
+                        "type": ["string", "null"],
+                        "required": true
+                      },
+                      "email": {
+                        "type": "string",
+                        "required": true,
+                        "format": "email"
+                      },
+                      "entityType": {
+                        "type": "string",
+                        "required": true,
+                        "enum": ["user"]
+                      }
+                    },
+                    "extendsRef": "#/components/schemas/UserMinimalBase"
                   },
                   "status": {
                     "type": "string",
@@ -508,19 +628,19 @@
               "tenantId": "lwtksu",
               "entityType": "page",
               "name": "Voluntarius contra.",
-              "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Tergo crepusculum certe desparatus depromo. Dolor somnus vobis atavus tergiversatio tersus suadeo colo. Id abduco supplanto asporto.\\nCuratio xiphias auxilium teneo claudeo unde vulgo. Atavus vorax vergo deputo deprimo statim eos vulnero subito eligendi. Exercitationem somnus cattus cilicium textilis cervus alo tactus.\",\"styles\":{}}],\"children\":[]}]",
-              "keywords": "confido colligo audio",
+              "description": "[{\"id\":\"zsuh8mhxzjnkxduf2485mh67\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":2},\"content\":[{\"type\":\"text\",\"text\":\"Tergo crepusculum certe desparatus.\",\"styles\":{}}],\"children\":[]},{\"id\":\"etucoucw76idyds8yvddqca3\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Dolor somnus vobis atavus tergiversatio tersus suadeo colo. Id abduco supplanto asporto. Curatio xiphias auxilium teneo claudeo unde vulgo.\",\"styles\":{}}],\"children\":[]},{\"id\":\"rl76aj5ubw1ukk0daxepdiiz\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":3},\"content\":[{\"type\":\"text\",\"text\":\"User-centric cohesive website\",\"styles\":{}}],\"children\":[]},{\"id\":\"oruncklksuer1lnrj5bkihi6\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Deprimo statim eos vulnero subito eligendi.\",\"styles\":{}}],\"children\":[]},{\"id\":\"7lmltdaswdfanru8l51ixe19\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Exercitationem somnus cattus cilicium textilis cervus alo tactus.\",\"styles\":{}}],\"children\":[]},{\"id\":\"hlcv23pkpwp1wn5xlm29qd2b\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Colligo audio substantia coepi laudantium.\",\"styles\":{}}],\"children\":[]},{\"id\":\"2eynfydthmcqv6ii1yitukac\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Apparatus suasoria valde voveo quis adaugeo.\",\"styles\":{}}],\"children\":[]},{\"id\":\"te633kiaodhffhdsa6wdbm2c\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Amita depereo armarium apud pariatur deinde. Alienus admoneo creo asporto amita sol certus.\",\"styles\":{}}],\"children\":[]},{\"id\":\"78i81vwpqlu7slx1klwiqb6w\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Vero casus celer cogo armarium cicuta tumultus utique.\",\"styles\":{}}],\"children\":[]},{\"id\":\"js5jmmmy1widet01nd9miihk\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Ars conicio viridis fuga arbor tergo aliquam beatae dolores.\",\"styles\":{}}],\"children\":[]},{\"id\":\"djt7s7y1fa2yj9mexvzaj1q5\",\"type\":\"checkListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"checked\":true},\"content\":[{\"type\":\"text\",\"text\":\"We need to index the neural PNG hard drive!\",\"styles\":{}}],\"children\":[]},{\"id\":\"ohduvj58yl9p3zaizc5lhjdx\",\"type\":\"checkListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"checked\":false},\"content\":[{\"type\":\"text\",\"text\":\"I'll back up the optical SCSI protocol, that should pixel the TLS transmitter!\",\"styles\":{}}],\"children\":[]},{\"id\":\"h3g2c4bbis71rqabwvpvp3g9\",\"type\":\"checkListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"checked\":false},\"content\":[{\"type\":\"text\",\"text\":\"We need to connect the open-source SCSI transmitter!\",\"styles\":{}}],\"children\":[]},{\"id\":\"twapx8e9756n6kx9k34vx4s5\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Advoco vetus quidem alii asporto tum perspiciatis. Urbanus adsuesco sint acervus. Quam velut suffoco comminor pectus.\",\"styles\":{}}],\"children\":[]}]",
+              "keywords": "virgo spes tracto",
               "status": "unpublished",
               "publicAccess": true,
               "parentId": null,
-              "displayOrder": 70.17,
+              "displayOrder": 63.43,
               "createdAt": "2024-04-19T14:04:35.773Z",
               "createdBy": "kzmv5qbhdcqeiuvwlosan0fc",
               "modifiedAt": "2024-04-19T14:04:35.773Z",
               "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
               "stx": {
-                "mutationId": "akf4ovzm1ne3h55lgj31d63n",
-                "sourceId": "src_9apx99a5auvr5cyj5s37irnj",
+                "mutationId": "2bb6438g9cersdww4bfs8s5t",
+                "sourceId": "src_co33lcgsn94dor3vtrwsv2ec",
                 "version": 1,
                 "fieldVersions": {}
               }
@@ -530,19 +650,19 @@
               "tenantId": "o54qw5",
               "entityType": "page",
               "name": "Taedium spargo cetera.",
-              "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Vehemens deprecator ventus ascit denique tum candidus curvo perspiciatis defendo. Carpo verecundia cometes. Sortitus colligo ceno terra cado temptatio carmen arx sequi cicuta.\\nAttollo autem adipisci vinitor comminor odit. Virga aptus corrupti utpote. Subseco vomica auxilium ascit cuppedia abbas amo patior credo tenus.\",\"styles\":{}}],\"children\":[]}]",
-              "keywords": "aestus degero cicuta",
+              "description": "[{\"id\":\"jn0mnobp7o5u3z7mhrrdg2d8\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":2},\"content\":[{\"type\":\"text\",\"text\":\"Vehemens deprecator ventus ascit denique tum candidus.\",\"styles\":{}}],\"children\":[]},{\"id\":\"ds3261ywjawa6u6xi10vzsne\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Defendo adinventitias carpo verecundia cometes vergo sortitus. Ceno terra cado temptatio carmen. Sequi cicuta derelinquo attollo.\",\"styles\":{}}],\"children\":[]},{\"id\":\"9qsgzpnao7ubovjxtouox4rd\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":3},\"content\":[{\"type\":\"text\",\"text\":\"Distributed analyzing throughput\",\"styles\":{}}],\"children\":[]},{\"id\":\"s4kve4uf8s2zngrv1mn1cvia\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Audacia virga aptus corrupti utpote vulnus subseco.\",\"styles\":{}}],\"children\":[]},{\"id\":\"rcxifs2w1ww3rc5i0tas80qz\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Auxilium ascit cuppedia abbas amo patior credo tenus aestus degero.\",\"styles\":{}}],\"children\":[]},{\"id\":\"48ixa9fo0qm268e1shujy4tg\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Approbo depraedor inventore cervus.\",\"styles\":{}}],\"children\":[]},{\"id\":\"c6hs464i86zh424aekpqymp5\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Vos tendo avaritia utrum admoneo desino tres subiungo conqueror cavus.\",\"styles\":{}}],\"children\":[]},{\"id\":\"z2u5aw0447ytl3e2v4ytj0rl\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Voluptatem traho universe cohors coniuratio virga advoco adicio tamen acidus.\",\"styles\":{}}],\"children\":[]},{\"id\":\"i746z0vnirdtipis8cux32jh\",\"type\":\"checkListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"checked\":true},\"content\":[{\"type\":\"text\",\"text\":\"We need to navigate the cross-platform SQL application!\",\"styles\":{}}],\"children\":[]},{\"id\":\"gjt8iwta2uyub6wkbzeknxuh\",\"type\":\"checkListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"checked\":true},\"content\":[{\"type\":\"text\",\"text\":\"You can't program the array without quantifying the wireless HDD system!\",\"styles\":{}}],\"children\":[]},{\"id\":\"p4sguamyc6y8mzq5unaue561\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Spiritus commodi arx temporibus arma tredecim sumo adeo. Sufficio coaegresco denuncio soleo assumenda caute volup. Chirographum aestus surculus derelinquo alioqui temporibus tergeo.\",\"styles\":{}}],\"children\":[]}]",
+              "keywords": "decipio cupressus una",
               "status": "unpublished",
               "publicAccess": true,
               "parentId": null,
-              "displayOrder": 14.28,
+              "displayOrder": 18.82,
               "createdAt": "2024-02-25T13:01:35.301Z",
               "createdBy": "p3t0ygxx0aa83en3sk1fs1we",
               "modifiedAt": "2024-02-25T13:01:35.301Z",
               "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
               "stx": {
-                "mutationId": "4hj92yzr7v1itpc9wztvbcy2",
-                "sourceId": "src_1q04oq81k5rbzt4yq63pob5r",
+                "mutationId": "60ozr0yjbednvd5gs836nelu",
+                "sourceId": "src_d6hh0iebfum8827w318qwfuf",
                 "version": 1,
                 "fieldVersions": {}
               }
@@ -619,14 +739,54 @@
                     "maxLength": 1000000
                   },
                   "createdBy": {
-                    "type": ["string", "null"],
+                    "type": ["object", "null"],
                     "required": true,
-                    "maxLength": 50
+                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                    "properties": {
+                      "id": { "type": "string", "required": true },
+                      "name": { "type": "string", "required": true },
+                      "slug": { "type": "string", "required": true },
+                      "thumbnailUrl": {
+                        "type": ["string", "null"],
+                        "required": true
+                      },
+                      "email": {
+                        "type": "string",
+                        "required": true,
+                        "format": "email"
+                      },
+                      "entityType": {
+                        "type": "string",
+                        "required": true,
+                        "enum": ["user"]
+                      }
+                    },
+                    "extendsRef": "#/components/schemas/UserMinimalBase"
                   },
                   "modifiedBy": {
-                    "type": ["string", "null"],
+                    "type": ["object", "null"],
                     "required": true,
-                    "maxLength": 50
+                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                    "properties": {
+                      "id": { "type": "string", "required": true },
+                      "name": { "type": "string", "required": true },
+                      "slug": { "type": "string", "required": true },
+                      "thumbnailUrl": {
+                        "type": ["string", "null"],
+                        "required": true
+                      },
+                      "email": {
+                        "type": "string",
+                        "required": true,
+                        "format": "email"
+                      },
+                      "entityType": {
+                        "type": "string",
+                        "required": true,
+                        "enum": ["user"]
+                      }
+                    },
+                    "extendsRef": "#/components/schemas/UserMinimalBase"
                   },
                   "status": {
                     "type": "string",
@@ -675,19 +835,19 @@
               "tenantId": "lwtksu",
               "entityType": "page",
               "name": "Voluntarius contra.",
-              "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Tergo crepusculum certe desparatus depromo. Dolor somnus vobis atavus tergiversatio tersus suadeo colo. Id abduco supplanto asporto.\\nCuratio xiphias auxilium teneo claudeo unde vulgo. Atavus vorax vergo deputo deprimo statim eos vulnero subito eligendi. Exercitationem somnus cattus cilicium textilis cervus alo tactus.\",\"styles\":{}}],\"children\":[]}]",
-              "keywords": "confido colligo audio",
+              "description": "[{\"id\":\"5lurc16t2o3x0ly7o8j86h6a\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":2},\"content\":[{\"type\":\"text\",\"text\":\"Tergo crepusculum certe desparatus.\",\"styles\":{}}],\"children\":[]},{\"id\":\"75kni9sqyhh70i1gin4ggbpm\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Dolor somnus vobis atavus tergiversatio tersus suadeo colo. Id abduco supplanto asporto. Curatio xiphias auxilium teneo claudeo unde vulgo.\",\"styles\":{}}],\"children\":[]},{\"id\":\"9fpntxu93vxqtmr6si6uwbl6\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":3},\"content\":[{\"type\":\"text\",\"text\":\"User-centric cohesive website\",\"styles\":{}}],\"children\":[]},{\"id\":\"9gz25an36ee542ulwl8mlfwy\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Deprimo statim eos vulnero subito eligendi.\",\"styles\":{}}],\"children\":[]},{\"id\":\"fb76kwrzydwx74dr8rai0lvj\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Exercitationem somnus cattus cilicium textilis cervus alo tactus.\",\"styles\":{}}],\"children\":[]},{\"id\":\"e0pvq3cm6e73jl94j88x7f8w\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Colligo audio substantia coepi laudantium.\",\"styles\":{}}],\"children\":[]},{\"id\":\"dykuvcegw4orjbc2jkpf5nx0\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Apparatus suasoria valde voveo quis adaugeo.\",\"styles\":{}}],\"children\":[]},{\"id\":\"uls7hdb44129n2ul1yqgfp1b\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Amita depereo armarium apud pariatur deinde. Alienus admoneo creo asporto amita sol certus.\",\"styles\":{}}],\"children\":[]},{\"id\":\"f1dwf6sbxlmiq08s8gmha5w2\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Vero casus celer cogo armarium cicuta tumultus utique.\",\"styles\":{}}],\"children\":[]},{\"id\":\"6pjg24kd2heeiowygd4zu777\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Ars conicio viridis fuga arbor tergo aliquam beatae dolores.\",\"styles\":{}}],\"children\":[]},{\"id\":\"irlyqozrk69if1tffa2e24ja\",\"type\":\"checkListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"checked\":true},\"content\":[{\"type\":\"text\",\"text\":\"We need to index the neural PNG hard drive!\",\"styles\":{}}],\"children\":[]},{\"id\":\"99aj1tn3wfzzvazhu9xnm3de\",\"type\":\"checkListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"checked\":false},\"content\":[{\"type\":\"text\",\"text\":\"I'll back up the optical SCSI protocol, that should pixel the TLS transmitter!\",\"styles\":{}}],\"children\":[]},{\"id\":\"hjugiv8zp0elf2tub2xv0gld\",\"type\":\"checkListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"checked\":false},\"content\":[{\"type\":\"text\",\"text\":\"We need to connect the open-source SCSI transmitter!\",\"styles\":{}}],\"children\":[]},{\"id\":\"08m15waonj8l7ejh5hn1ah7n\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Advoco vetus quidem alii asporto tum perspiciatis. Urbanus adsuesco sint acervus. Quam velut suffoco comminor pectus.\",\"styles\":{}}],\"children\":[]}]",
+              "keywords": "virgo spes tracto",
               "status": "unpublished",
               "publicAccess": true,
               "parentId": null,
-              "displayOrder": 70.17,
+              "displayOrder": 63.43,
               "createdAt": "2024-04-19T14:04:35.773Z",
               "createdBy": "kzmv5qbhdcqeiuvwlosan0fc",
               "modifiedAt": "2024-04-19T14:04:35.773Z",
               "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
               "stx": {
-                "mutationId": "akf4ovzm1ne3h55lgj31d63n",
-                "sourceId": "src_9apx99a5auvr5cyj5s37irnj",
+                "mutationId": "2bb6438g9cersdww4bfs8s5t",
+                "sourceId": "src_co33lcgsn94dor3vtrwsv2ec",
                 "version": 1,
                 "fieldVersions": {}
               }
@@ -697,19 +857,19 @@
               "tenantId": "o54qw5",
               "entityType": "page",
               "name": "Taedium spargo cetera.",
-              "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Vehemens deprecator ventus ascit denique tum candidus curvo perspiciatis defendo. Carpo verecundia cometes. Sortitus colligo ceno terra cado temptatio carmen arx sequi cicuta.\\nAttollo autem adipisci vinitor comminor odit. Virga aptus corrupti utpote. Subseco vomica auxilium ascit cuppedia abbas amo patior credo tenus.\",\"styles\":{}}],\"children\":[]}]",
-              "keywords": "aestus degero cicuta",
+              "description": "[{\"id\":\"14w7nw3ui9pym6zjgk3jrknf\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":2},\"content\":[{\"type\":\"text\",\"text\":\"Vehemens deprecator ventus ascit denique tum candidus.\",\"styles\":{}}],\"children\":[]},{\"id\":\"ve28x1ilkwr6qco79e6050ia\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Defendo adinventitias carpo verecundia cometes vergo sortitus. Ceno terra cado temptatio carmen. Sequi cicuta derelinquo attollo.\",\"styles\":{}}],\"children\":[]},{\"id\":\"b6ujrpci50eyx9rnh3657blm\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":3},\"content\":[{\"type\":\"text\",\"text\":\"Distributed analyzing throughput\",\"styles\":{}}],\"children\":[]},{\"id\":\"tuh97pvsapwjxkefg9jcp8li\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Audacia virga aptus corrupti utpote vulnus subseco.\",\"styles\":{}}],\"children\":[]},{\"id\":\"rrh710v2til0ykbhgd1lcyir\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Auxilium ascit cuppedia abbas amo patior credo tenus aestus degero.\",\"styles\":{}}],\"children\":[]},{\"id\":\"sit30hn7iar3nzlwqax2u9jp\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Approbo depraedor inventore cervus.\",\"styles\":{}}],\"children\":[]},{\"id\":\"bckgukk9yp1oodmb24naggov\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Vos tendo avaritia utrum admoneo desino tres subiungo conqueror cavus.\",\"styles\":{}}],\"children\":[]},{\"id\":\"9sxv6vnr8i8ol1y04kwyrysg\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Voluptatem traho universe cohors coniuratio virga advoco adicio tamen acidus.\",\"styles\":{}}],\"children\":[]},{\"id\":\"n12e2512k1thwnlhsc5cocep\",\"type\":\"checkListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"checked\":true},\"content\":[{\"type\":\"text\",\"text\":\"We need to navigate the cross-platform SQL application!\",\"styles\":{}}],\"children\":[]},{\"id\":\"4289lm168j8dy7fm2nsvzi21\",\"type\":\"checkListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"checked\":true},\"content\":[{\"type\":\"text\",\"text\":\"You can't program the array without quantifying the wireless HDD system!\",\"styles\":{}}],\"children\":[]},{\"id\":\"8m8irrecnwm7qtvnlzjrittn\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Spiritus commodi arx temporibus arma tredecim sumo adeo. Sufficio coaegresco denuncio soleo assumenda caute volup. Chirographum aestus surculus derelinquo alioqui temporibus tergeo.\",\"styles\":{}}],\"children\":[]}]",
+              "keywords": "decipio cupressus una",
               "status": "unpublished",
               "publicAccess": true,
               "parentId": null,
-              "displayOrder": 14.28,
+              "displayOrder": 18.82,
               "createdAt": "2024-02-25T13:01:35.301Z",
               "createdBy": "p3t0ygxx0aa83en3sk1fs1we",
               "modifiedAt": "2024-02-25T13:01:35.301Z",
               "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
               "stx": {
-                "mutationId": "4hj92yzr7v1itpc9wztvbcy2",
-                "sourceId": "src_1q04oq81k5rbzt4yq63pob5r",
+                "mutationId": "60ozr0yjbednvd5gs836nelu",
+                "sourceId": "src_d6hh0iebfum8827w318qwfuf",
                 "version": 1,
                 "fieldVersions": {}
               }
@@ -969,14 +1129,54 @@
               "maxLength": 1000000
             },
             "createdBy": {
-              "type": ["string", "null"],
+              "type": ["object", "null"],
               "required": true,
-              "maxLength": 50
+              "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+              "properties": {
+                "id": { "type": "string", "required": true },
+                "name": { "type": "string", "required": true },
+                "slug": { "type": "string", "required": true },
+                "thumbnailUrl": {
+                  "type": ["string", "null"],
+                  "required": true
+                },
+                "email": {
+                  "type": "string",
+                  "required": true,
+                  "format": "email"
+                },
+                "entityType": {
+                  "type": "string",
+                  "required": true,
+                  "enum": ["user"]
+                }
+              },
+              "extendsRef": "#/components/schemas/UserMinimalBase"
             },
             "modifiedBy": {
-              "type": ["string", "null"],
+              "type": ["object", "null"],
               "required": true,
-              "maxLength": 50
+              "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+              "properties": {
+                "id": { "type": "string", "required": true },
+                "name": { "type": "string", "required": true },
+                "slug": { "type": "string", "required": true },
+                "thumbnailUrl": {
+                  "type": ["string", "null"],
+                  "required": true
+                },
+                "email": {
+                  "type": "string",
+                  "required": true,
+                  "format": "email"
+                },
+                "entityType": {
+                  "type": "string",
+                  "required": true,
+                  "enum": ["user"]
+                }
+              },
+              "extendsRef": "#/components/schemas/UserMinimalBase"
             },
             "status": {
               "type": "string",
@@ -1004,19 +1204,19 @@
           "tenantId": "ijllhz",
           "entityType": "page",
           "name": "Torrens adfectus.",
-          "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Voluptates cornu tempus eaque universe volubilis conturbo. Sponte utpote crux pecco vulticulus cunctatio. Vallum ut adimpleo summa valde strenuus attonbitus.\\nMollitia vel cado vitae cibus dolores decet. Aptus accusamus praesentium cibus subito viscus vox nemo. Video tremo molestias charisma clam ipsa suscipit.\",\"styles\":{}}],\"children\":[]}]",
-          "keywords": "solvo atrox tendo",
+          "description": "[{\"id\":\"wrn0md2ugnosscaglc7fd7i2\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":2},\"content\":[{\"type\":\"text\",\"text\":\"Voluptates cornu tempus eaque universe.\",\"styles\":{}}],\"children\":[]},{\"id\":\"epk1kzzz21zyxt0mvd4o7vwh\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Cubo sponte utpote crux pecco. Cunctatio dolorum vallum ut adimpleo summa valde strenuus attonbitus eligendi. Vel cado vitae cibus dolores decet surgo. Accusamus praesentium cibus subito.\",\"styles\":{}}],\"children\":[]},{\"id\":\"sp5e5pmq268teamq53a00blr\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":3},\"content\":[{\"type\":\"text\",\"text\":\"User-friendly zero trust local area network\",\"styles\":{}}],\"children\":[]},{\"id\":\"fpovg1hw4lwx9fdhoo29zovz\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Tremo molestias charisma clam ipsa suscipit solvo atrox tendo compello.\",\"styles\":{}}],\"children\":[]},{\"id\":\"11sk21vc0kbhqhj6ar5uao0b\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Tonsor ullus damnatio.\",\"styles\":{}}],\"children\":[]},{\"id\":\"xpqjfch64ztwc6b6wwbsxpu7\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Cupressus depono sto benigne delego decumbo adaugeo.\",\"styles\":{}}],\"children\":[]},{\"id\":\"jjk979mulm2umqkp45wgsudw\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Video aer addo crinis amissio alius allatus solium delectus tabesco. Inventore contra complectus summa umquam nobis dapifer supplanto odio. Atavus absorbeo suffoco cado deorsum amor.\",\"styles\":{}}],\"children\":[]},{\"id\":\"l8fdv4tk3rjp8xg28tslq0hm\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Nam certe vulgaris sumptus spiritus vae fugit creo.\",\"styles\":{}}],\"children\":[]},{\"id\":\"jf5weyscnn3elj0uo6c5itsr\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Dolorem conduco causa.\",\"styles\":{}}],\"children\":[]},{\"id\":\"cq2ny211vxu3mf4ubaen3d9g\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Caste pauper argumentum civitas.\",\"styles\":{}}],\"children\":[]},{\"id\":\"nsmll6jflblg5nip5s22nrkm\",\"type\":\"checkListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"checked\":false},\"content\":[{\"type\":\"text\",\"text\":\"Use the mobile HTTP port, then you can copy the primary hard drive!\",\"styles\":{}}],\"children\":[]},{\"id\":\"czfy91k369e77df0zm7m12nx\",\"type\":\"checkListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"checked\":false},\"content\":[{\"type\":\"text\",\"text\":\"Try to hack the SSD feed, maybe it will input the bluetooth panel!\",\"styles\":{}}],\"children\":[]},{\"id\":\"4h47wg7onyam3f4m0izvpmmb\",\"type\":\"checkListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"checked\":false},\"content\":[{\"type\":\"text\",\"text\":\"Use the virtual SSL transmitter, then you can index the bluetooth capacitor!\",\"styles\":{}}],\"children\":[]},{\"id\":\"91zge7ukmwommkgm8xcacbm7\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Solium solvo degero ventus apto tempus aurum delectus facilis cura. Dolore animadverto maxime theatrum esse amo statua adfectus tremo contigo. Demens timidus calcar cohors appono aranea decet cultura substantia.\",\"styles\":{}}],\"children\":[]}]",
+          "keywords": "tantillus debitis mollitia",
           "status": "unpublished",
           "publicAccess": true,
           "parentId": null,
-          "displayOrder": 32.69,
+          "displayOrder": 47.51,
           "createdAt": "2024-08-06T10:28:33.226Z",
           "createdBy": "0f0ak5vkrrl687pmkwpa1vju",
           "modifiedAt": "2024-08-06T10:28:33.226Z",
           "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju",
           "stx": {
-            "mutationId": "4tufkeho7gg1xwx21e333ngq",
-            "sourceId": "src_ujcbpukfple60p8h3tnk9zpo",
+            "mutationId": "rd8bblxzxc0ypms2q9lzubyp",
+            "sourceId": "src_ddo8vfjx4d5px26kw7k3q17d",
             "version": 1,
             "fieldVersions": {}
           }
@@ -1076,36 +1276,54 @@
       "body": {
         "type": "object",
         "properties": {
-          "name": {
-            "type": "string",
-            "required": false,
-            "maxLength": 255
+          "key": {
+            "required": true,
+            "anyOf": [
+              {
+                "type": "string",
+                "required": false,
+                "enum": ["name"]
+              },
+              {
+                "type": "string",
+                "required": false,
+                "enum": ["description"]
+              },
+              {
+                "type": "string",
+                "required": false,
+                "enum": ["keywords"]
+              },
+              {
+                "type": "string",
+                "required": false,
+                "enum": ["displayOrder"]
+              },
+              {
+                "type": "string",
+                "required": false,
+                "enum": ["status"]
+              },
+              {
+                "type": "string",
+                "required": false,
+                "enum": ["parentId"]
+              }
+            ]
           },
-          "description": {
-            "type": ["string", "null"],
-            "required": false,
-            "maxLength": 1000000
-          },
-          "keywords": {
-            "type": "string",
-            "required": false,
-            "maxLength": 1000000
-          },
-          "displayOrder": {
-            "type": "number",
-            "required": false,
-            "minimum": -140737488355328,
-            "maximum": 140737488355327
-          },
-          "status": {
-            "type": "string",
-            "required": false,
-            "enum": ["unpublished", "published", "archived"]
-          },
-          "parentId": {
-            "type": ["string", "null"],
-            "required": false,
-            "maxLength": 50
+          "data": {
+            "required": true,
+            "anyOf": [
+              { "type": "string", "required": false },
+              { "type": "number", "required": false },
+              { "type": "boolean", "required": false },
+              {
+                "type": "array",
+                "required": false,
+                "itemType": "string"
+              },
+              { "type": "null", "required": false }
+            ]
           },
           "stx": {
             "type": "object",
