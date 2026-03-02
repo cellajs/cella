@@ -114,6 +114,14 @@ export interface Column<TRow, TSummaryRow = unknown> {
    * Only used when mobileRole is 'sub'.
    */
   readonly mobileLabel?: Maybe<string>;
+  /**
+   * Enable text wrapping in cells.
+   * - number: Max visible lines (CSS line-clamp). Row height auto-adjusts per row based on content.
+   * - true: Unlimited wrapping (equivalent to a high line cap, e.g. 10).
+   * Pair with a base `rowHeight` — the grid computes `max(rowHeight, lines * lineHeight)` per row.
+   * @default undefined (single-line truncation)
+   */
+  readonly wrapText?: Maybe<number | boolean>;
   /** Options for cell editing */
   readonly editorOptions?: Maybe<{
     /**

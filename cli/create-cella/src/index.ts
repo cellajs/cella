@@ -3,10 +3,12 @@
 import { existsSync } from 'node:fs';
 import { basename, resolve } from 'node:path';
 import { confirm, input, select } from '@inquirer/prompts';
+import pc from 'picocolors';
 
 import { TEMPLATE_URL } from '#/constants';
 import { create } from '#/create';
 import { type CreateOptions, cli, showWelcome } from '#/modules/cli';
+import { detectUsedPorts, findNextOffset } from '#/utils/detect-used-ports';
 import { extractPackageJsonVersionFromUri } from '#/utils/extract-package-json-version-from-uri';
 import { isEmptyDirectory } from '#/utils/is-empty-directory';
 import { validateProjectName } from '#/utils/validate-project-name';
@@ -91,6 +93,9 @@ async function main(): Promise<void> {
     }
   }
 
+  // Scan sibling directories and prompt for port offset
+  const portOffset = await promptPortOffset(targetFolder, promptTheme, promptContext);
+
   // Proceed with the project creation
   const createOptions: CreateOptions = {
     projectName,
@@ -98,9 +103,62 @@ async function main(): Promise<void> {
     newBranchName: cli.newBranchName,
     packageManager: cli.packageManager,
     templateUrl: cli.options.template,
+    portOffset,
   };
 
   await create(createOptions);
 }
 
 main().catch(console.error);
+
+/** Format an offset as a port overview string, e.g. "10 → :3010 / :4010 / :5442" */
+function formatOffset(o: number, suffix = ''): string {
+  return `${o} → :${3000 + o} / :${4000 + o} / :${5432 + o}${suffix}`;
+}
+
+/** Scan sibling forks and prompt the user to pick a port offset */
+async function promptPortOffset(targetFolder: string, theme: object, context: object): Promise<number> {
+  const usedPorts = await detectUsedPorts(targetFolder);
+  const suggested = findNextOffset(usedPorts);
+
+  if (usedPorts.length > 0) {
+    console.info(pc.dim('\nDetected cella forks in sibling directories:'));
+    for (const p of usedPorts) {
+      console.info(pc.dim(`  ${p.project}: frontend :${p.frontend}, backend :${p.backend} (offset ${p.offset})`));
+    }
+    console.info();
+  }
+
+  const presets = [0, 10, 20, 30].filter((o) => o !== suggested);
+  const choice = await select(
+    {
+      message: 'Port offset (avoids conflicts with sibling forks)',
+      theme,
+      choices: [
+        ...(suggested > 0 ? [{ name: formatOffset(suggested, ' (suggested)'), value: suggested }] : []),
+        { name: formatOffset(0, ' (default)'), value: 0 },
+        ...presets.map((o) => ({ name: formatOffset(o), value: o })),
+        { name: 'Custom offset', value: -1 },
+      ],
+    },
+    context,
+  );
+
+  if (choice !== -1) return choice;
+
+  const custom = await input(
+    {
+      message: 'Enter custom offset (0-490, multiples of 10)',
+      default: String(suggested),
+      theme,
+      validate: (val) => {
+        const n = Number(val);
+        if (Number.isNaN(n) || n < 0 || n > 490) return 'Must be between 0 and 490';
+        if (n % 10 !== 0) return 'Must be a multiple of 10';
+        return true;
+      },
+    },
+    context,
+  );
+  return Number(custom);
+}

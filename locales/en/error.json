@@ -130,6 +130,8 @@
   "no_selected_rows": "Export cannot proceed as no rows are selected.",
   "no_session": "You have no session",
   "no_session.text": "Please reload and sign in again to continue.",
+  "org_create_in_public_tenant": "Cannot create organization in public tenant",
+  "org_create_in_public_tenant.text": "Organizations cannot be created within the public tenant.",
   "org_limit_reached": "Organization limit reached",
   "org_limit_reached.text": "You have reached the maximum number of organizations you can create.",
   "no_sysadmin": "No system access",

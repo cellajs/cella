@@ -1,7 +1,8 @@
 import type { CSSProperties } from 'react';
 import { cn } from '~/utils/cn';
-import { cellClassname, cellFrozenClassname } from '../style/cell';
+import { cellClassname, cellFrozenClassname, cellWrapTextClassname } from '../style/cell';
 import type { CalculatedColumn, CalculatedColumnOrColumnGroup } from '../types';
+import { resolveWrapTextLines } from './wrap-text-utils';
 
 export { cn } from '~/utils/cn';
 
@@ -36,10 +37,12 @@ export function getHeaderCellStyle<R, SR>(
 
 export function getCellStyle<R, SR>(column: CalculatedColumn<R, SR>, colSpan = 1): React.CSSProperties {
   const index = column.idx + 1;
+  const wrapLines = resolveWrapTextLines(column.wrapText);
   return {
     gridColumnStart: index,
     gridColumnEnd: index + colSpan,
     insetInlineStart: column.frozen ? `var(--rdg-frozen-left-${column.idx})` : undefined,
+    ...(wrapLines > 0 ? { '--rdg-wrap-text-lines': String(wrapLines) } : undefined),
   };
 }
 
@@ -47,10 +50,12 @@ export function getCellClassname<R, SR>(
   column: CalculatedColumn<R, SR>,
   ...extraClasses: Parameters<typeof cn>
 ): string {
+  const wrapLines = resolveWrapTextLines(column.wrapText);
   return cn(
     cellClassname,
     {
       [cellFrozenClassname]: column.frozen,
+      [cellWrapTextClassname]: wrapLines > 0,
     },
     ...extraClasses,
   );

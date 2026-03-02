@@ -1,5 +1,6 @@
 import type { DeepPartial } from './src/builder/types';
 import type _default from './default-config';
+import development from './development-config';
 
 /**
  * Ensure that this file does not include or use any sensitive information.
@@ -13,9 +14,11 @@ export default {
   debug: false,
 
   domain: '',
-  frontendUrl: 'http://localhost:3000',
-  backendUrl: 'http://localhost:4000',
-  backendAuthUrl: 'http://localhost:4000/auth',
+
+  // Derive URLs from development config so port changes only need to happen in one place
+  frontendUrl: development.frontendUrl,
+  backendUrl: development.backendUrl,
+  backendAuthUrl: development.backendAuthUrl,
 
   s3: {
     bucketPrefix: 'cella-test',

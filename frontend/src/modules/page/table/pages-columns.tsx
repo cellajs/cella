@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next';
 import { Page } from '~/api.gen';
 import { zPage } from '~/api.gen/zod.gen';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
-import { HeaderCell } from '~/modules/common/data-table/header-cell';
 import { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
 import { UserCell } from '~/modules/user/user-cell';
@@ -32,7 +31,6 @@ export function usePagesTableColumns(isCompact: boolean) {
       minWidth: 200,
       sortable: false,
       resizable: true,
-      renderHeaderCell: HeaderCell,
       renderCell: ({ row, tabIndex }) => (
         <Link
           to="/docs/page/$id"
@@ -76,7 +74,6 @@ export function usePagesTableColumns(isCompact: boolean) {
       sortable: false,
       resizable: true,
       width: 160,
-      renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => {
         return <span className="font-light">{t(`common:${row.status}`)}</span>;
       },
@@ -110,7 +107,6 @@ export function usePagesTableColumns(isCompact: boolean) {
       resizable: true,
       minWidth: isCompact ? null : 120,
       width: isCompact ? 50 : null,
-      renderHeaderCell: HeaderCell,
       placeholderValue: '-',
       renderCell: ({ row, tabIndex }) =>
         row.createdBy && <UserCell compactable user={row.createdBy} tabIndex={tabIndex} />,
@@ -122,7 +118,6 @@ export function usePagesTableColumns(isCompact: boolean) {
       minBreakpoint: 'md',
       resizable: true,
       minWidth: 160,
-      renderHeaderCell: HeaderCell,
       placeholderValue: '-',
       renderCell: ({ row }) => dateShort(row.createdAt),
     },

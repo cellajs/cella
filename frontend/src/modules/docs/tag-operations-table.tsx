@@ -1,7 +1,6 @@
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { DataTable } from '~/modules/common/data-table';
-import { HeaderCell } from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import type { GenOperationSummary } from '~/modules/docs/types';
 import { Badge } from '~/modules/ui/badge';
@@ -38,7 +37,6 @@ function useColumns(tagName: string): ColumnOrColumnGroup<GenOperationSummary>[]
       name: '',
       sortable: false,
       width: 80,
-      renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => (
         <Badge
           variant="secondary"
@@ -53,7 +51,6 @@ function useColumns(tagName: string): ColumnOrColumnGroup<GenOperationSummary>[]
       name: '',
       minWidth: 200,
       sortable: false,
-      renderHeaderCell: HeaderCell,
       renderCell: ({ row, tabIndex }) => (
         <Link
           to="."
@@ -80,7 +77,6 @@ function useColumns(tagName: string): ColumnOrColumnGroup<GenOperationSummary>[]
       minBreakpoint: 'md',
       sortable: false,
       width: 200,
-      renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => <code className="text-xs truncate text-muted-foreground font-mono">{row.id}</code>,
     },
   ];

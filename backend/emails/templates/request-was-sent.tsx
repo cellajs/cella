@@ -1,8 +1,7 @@
-import i18n from 'i18next';
-import { Text } from 'jsx-email';
 import { appConfig } from 'shared';
 import type { requestTypeEnum } from '#/db/schema/requests';
-import { EmailBody, EmailContainer, EmailHeader, EmailLogo, Footer } from '../components';
+import { EmailBody, EmailContainer, EmailHeader, EmailLogo, Footer, Text } from '../components';
+import i18n from '../i18n';
 import type { BasicTemplateType } from '../types';
 
 export interface RequestResponseEmailProps extends BasicTemplateType {
@@ -13,7 +12,7 @@ export interface RequestResponseEmailProps extends BasicTemplateType {
 /**
  * Email template for responses to user requests such as waitlist signups, newsletter subscriptions, or contact form submissions.
  */
-export const RequestResponseEmail = ({ lng, type, subject, message }: RequestResponseEmailProps) => {
+export const RequestResponseEmail = ({ lng, type, subject }: RequestResponseEmailProps) => {
   return (
     <EmailContainer previewText={subject}>
       <EmailHeader
@@ -22,9 +21,6 @@ export const RequestResponseEmail = ({ lng, type, subject, message }: RequestRes
         }
       />
       <EmailBody>
-        <Text>{subject}</Text>
-        {message && <Text>{message}</Text>}
-
         <Text>
           <span
             dangerouslySetInnerHTML={{
@@ -42,3 +38,11 @@ export const RequestResponseEmail = ({ lng, type, subject, message }: RequestRes
 
 // Template export
 export const Template = RequestResponseEmail;
+
+// Preview props for jsx-email CLI
+export const previewProps = {
+  lng: 'en',
+  subject: 'Your request was sent',
+  type: 'contact',
+  message: null,
+} satisfies RequestResponseEmailProps;

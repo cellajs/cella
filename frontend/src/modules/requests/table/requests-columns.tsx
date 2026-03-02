@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Request } from '~/api.gen';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
-import { HeaderCell } from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Badge } from '~/modules/ui/badge';
@@ -20,7 +19,6 @@ export const useColumns = () => {
         sortable: true,
         resizable: true,
         width: 160,
-        renderHeaderCell: HeaderCell,
         renderCell: ({ row: { type, wasInvited } }) => (
           <div className="flex flew-row gap-2 items-center">
             {t(`common:${type}`)}
@@ -41,7 +39,6 @@ export const useColumns = () => {
         sortable: false,
         resizable: true,
         minWidth: 120,
-        renderHeaderCell: HeaderCell,
         renderCell: ({ row, tabIndex }) => {
           return (
             <a
@@ -61,7 +58,6 @@ export const useColumns = () => {
         sortable: false,
         resizable: true,
         minWidth: 200,
-        renderHeaderCell: HeaderCell,
         placeholderValue: '-',
         renderCell: ({ row }) =>
           row.message ? <span className="font-light whitespace-pre-line leading-5">{row.message}</span> : null,
@@ -73,7 +69,6 @@ export const useColumns = () => {
         minBreakpoint: 'md',
         resizable: true,
         width: 180,
-        renderHeaderCell: HeaderCell,
         placeholderValue: '-',
         renderCell: ({ row }) => dateShort(row.createdAt),
       },

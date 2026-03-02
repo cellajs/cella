@@ -1,7 +1,8 @@
-import i18n from 'i18next';
-import { Column, Row, Text } from 'jsx-email';
+import { Column, Row } from 'jsx-email';
 import { appConfig, type EntityRole } from 'shared';
-import { Avatar, EmailBody, EmailButton, EmailContainer, EmailHeader, EmailLogo, Footer } from '../components';
+import { Avatar, EmailBody, EmailButton, EmailContainer, EmailHeader, EmailLogo, Footer, Text } from '../components';
+import i18n from '../i18n';
+import { avatarRowStyle, greetingStyle } from '../styles';
 import type { BasicTemplateType } from '../types';
 
 interface MemberInviteEmailProps extends BasicTemplateType {
@@ -27,7 +28,7 @@ export const MemberInviteEmail = ({
   return (
     <EmailContainer previewText={i18n.t('backend:email.member_invite.preview', { lng, entityName, appName })}>
       {senderName && (
-        <Row style={{ margin: '1.5rem 0 1rem' }}>
+        <Row style={avatarRowStyle}>
           <Column align="center">
             <Avatar name={senderName} type="user" />
           </Column>
@@ -40,8 +41,8 @@ export const MemberInviteEmail = ({
         }
       />
       <EmailBody>
+        {name && <Text style={greetingStyle}>{i18n.t('backend:email.hi', { lng, name })}</Text>}
         <Text>
-          <p style={{ marginBottom: '4px' }}>{name && i18n.t('backend:email.hi', { lng, name })}</p>
           <span
             dangerouslySetInnerHTML={{
               __html: i18n.t('backend:email.member_invite.text', { lng, entityName, appName, senderName, role }),
@@ -60,3 +61,14 @@ export const MemberInviteEmail = ({
 
 // Template export
 export const Template = MemberInviteEmail;
+
+// Preview props for jsx-email CLI
+export const previewProps = {
+  lng: 'en',
+  subject: 'You are invited to Acme',
+  name: 'Emily',
+  senderName: 'John',
+  entityName: 'Acme',
+  memberInviteLink: 'https://cellajs.com/acme/invite',
+  role: 'member',
+} satisfies MemberInviteEmailProps;

@@ -10,7 +10,8 @@ export const EmailBody = ({ children }: { children: React.ReactNode }): JSX.Elem
       margin: '0 auto 40px',
       maxWidth: '600px',
       width: '100%',
-      fontSize: '1rem',
+      fontSize: '0.875rem',
+      lineHeight: '1.3rem',
       color: '#404040',
     }}
   >

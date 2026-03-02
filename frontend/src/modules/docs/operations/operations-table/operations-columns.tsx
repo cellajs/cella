@@ -2,7 +2,6 @@ import i18n from 'i18next';
 import { BirdIcon } from 'lucide-react';
 import { type RefObject, Suspense, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { HeaderCell } from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { Spinner } from '~/modules/common/spinner';
@@ -110,7 +109,6 @@ export const useColumns = (_isCompact: boolean, extensions: GenExtensionDefiniti
       sortable: false,
       resizable: true,
       width: 150,
-      renderHeaderCell: HeaderCell,
       renderCell: ({ row }: { row: GenOperationSummary }) => {
         const values = row.extensions[ext.id];
         return values?.length ? (
@@ -148,7 +146,6 @@ export const useColumns = (_isCompact: boolean, extensions: GenExtensionDefiniti
         sortable: true,
         resizable: false,
         width: 80,
-        renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => (
           <Badge
             variant="secondary"
@@ -164,7 +161,6 @@ export const useColumns = (_isCompact: boolean, extensions: GenExtensionDefiniti
         minWidth: 180,
         resizable: true,
         sortable: true,
-        renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => <PathCell row={row} />,
       },
       {
@@ -173,7 +169,6 @@ export const useColumns = (_isCompact: boolean, extensions: GenExtensionDefiniti
         resizable: false,
         sortable: false,
         width: 50,
-        renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => <ExampleCell row={row} />,
       },
       {
@@ -182,7 +177,6 @@ export const useColumns = (_isCompact: boolean, extensions: GenExtensionDefiniti
         sortable: true,
         resizable: true,
         width: 200,
-        renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => (
           <code className="font-mono text-[11px] text-muted-foreground/80 truncate">{row.id}</code>
         ),
@@ -194,7 +188,6 @@ export const useColumns = (_isCompact: boolean, extensions: GenExtensionDefiniti
         sortable: true,
         resizable: true,
         editable: true,
-        renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => <span className="truncate text-sm">{row.summary || row.id}</span>,
         renderEditCell: ({ row, onRowChange }) => (
           <Input value={row.summary} onChange={(e) => onRowChange({ ...row, summary: e.target.value })} autoFocus />
@@ -209,7 +202,6 @@ export const useColumns = (_isCompact: boolean, extensions: GenExtensionDefiniti
         minBreakpoint: 'md',
         resizable: true,
         minWidth: 80,
-        renderHeaderCell: HeaderCell,
         renderCell: ({ row }) =>
           row.tags?.length ? (
             <div className="flex flex-wrap gap-1">

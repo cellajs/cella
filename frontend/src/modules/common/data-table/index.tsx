@@ -9,6 +9,7 @@ import {
   type SelectionMode,
   type SortColumn,
 } from '~/modules/common/data-grid';
+import { HeaderCell } from '~/modules/common/data-table/header-cell';
 import '~/modules/common/data-grid/style/data-grid.css';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
@@ -147,6 +148,7 @@ export const DataTable = <TData,>({
                 enableVirtualization={enableVirtualization}
                 rowKeyGetter={rowKeyGetter}
                 columns={columns}
+                defaultColumnOptions={{ renderHeaderCell: HeaderCell }}
                 onRowsChange={onRowsChange}
                 rows={rows}
                 onCellClick={onCellClick}

@@ -109,7 +109,7 @@ Frontend: ${pc.bold(pc.cyanBright(appConfig.frontendUrl))}
 Backend: ${pc.bold(pc.cyanBright(appConfig.backendUrl))} 
 Tunnel: ${pc.bold(pc.magentaBright(tunnelUrl || '-'))}
 Docs: ${pc.cyanBright(`${appConfig.backendUrl}/docs`)}
-Storybook: ${pc.cyanBright(`http://localhost:6006/`)}`);
+Storybook: ${pc.cyanBright(`http://localhost:${Number(new URL(appConfig.frontendUrl).port) + 3006}/`)}`);
 
       console.info(' ');
     },

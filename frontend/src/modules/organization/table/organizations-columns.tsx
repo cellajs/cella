@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next';
 import { roles } from 'shared';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
-import { HeaderCell } from '~/modules/common/data-table/header-cell';
 import { renderSelect } from '~/modules/common/data-table/select-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { UpdateRow } from '~/modules/organization/table/update-row';
@@ -25,7 +24,6 @@ export const useColumns = (isCompact: boolean) => {
         name: t('common:name'),
         sortable: true,
         resizable: true,
-        renderHeaderCell: HeaderCell,
         renderCell: ({ row, tabIndex }) => (
           <Link
             className={buttonVariants({ variant: 'cell', size: 'cell' })}
@@ -63,7 +61,6 @@ export const useColumns = (isCompact: boolean) => {
         minBreakpoint: 'md',
         resizable: true,
         width: 120,
-        renderHeaderCell: HeaderCell,
         renderCell: ({ row }) =>
           row.membership?.role ? (
             t(`${row.membership.role}`, { ns: ['app', 'common'] })
@@ -84,7 +81,6 @@ export const useColumns = (isCompact: boolean) => {
         minBreakpoint: 'md',
         resizable: true,
         minWidth: 140,
-        renderHeaderCell: HeaderCell,
         renderCell: () => <span className="text-muted">-</span>,
       },
       {
@@ -94,7 +90,6 @@ export const useColumns = (isCompact: boolean) => {
         minBreakpoint: 'md',
         resizable: true,
         minWidth: 160,
-        renderHeaderCell: HeaderCell,
         placeholderValue: '-',
         renderCell: ({ row }) => dateShort(row.createdAt),
       },
@@ -106,7 +101,6 @@ export const useColumns = (isCompact: boolean) => {
         resizable: true,
         minWidth: isCompact ? null : 120,
         width: isCompact ? 50 : null,
-        renderHeaderCell: HeaderCell,
         placeholderValue: '-',
         renderCell: ({ row, tabIndex }) =>
           row.createdBy && <UserCell compactable user={row.createdBy} tabIndex={tabIndex} />,
@@ -117,7 +111,6 @@ export const useColumns = (isCompact: boolean) => {
         sortable: false,
         minBreakpoint: 'md',
         width: 140,
-        renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => (
           <>
             <UserRoundIcon className="mr-2 opacity-50" size={16} />
@@ -131,7 +124,6 @@ export const useColumns = (isCompact: boolean) => {
         sortable: false,
         minBreakpoint: 'md',
         width: 140,
-        renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => (
           <>
             <ShieldIcon className="mr-2 opacity-50" size={16} />

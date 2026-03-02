@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { HeaderCell } from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import type { PendingMembership } from '~/modules/memberships/types';
 import { UserCell } from '~/modules/user/user-cell';
@@ -15,7 +14,6 @@ export const useColumns = () => {
         key: 'email',
         name: t('common:email'),
         sortable: false,
-        renderHeaderCell: HeaderCell,
         minWidth: 140,
         placeholderValue: '-',
         renderCell: ({ row, tabIndex }) => {
@@ -36,7 +34,6 @@ export const useColumns = () => {
         name: t('common:role'),
         sortable: false,
         width: 100,
-        renderHeaderCell: HeaderCell,
         placeholderValue: '-',
         renderCell: ({ row }) =>
           row.role ? (
@@ -50,7 +47,6 @@ export const useColumns = () => {
         name: t('common:invited_at'),
         sortable: true,
         minBreakpoint: 'md',
-        renderHeaderCell: HeaderCell,
         placeholderValue: '-',
         renderCell: ({ row }) => dateShort(row.createdAt),
         minWidth: 80,
@@ -61,7 +57,6 @@ export const useColumns = () => {
         sortable: false,
         minBreakpoint: 'md',
         minWidth: 80,
-        renderHeaderCell: HeaderCell,
         placeholderValue: '-',
         renderCell: ({ row, tabIndex }) =>
           row.createdBy && <UserCell compactable user={row.createdBy} tabIndex={tabIndex} />,

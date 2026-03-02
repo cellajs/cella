@@ -1,6 +1,7 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo } from 'react';
 import { type FieldValues, useController } from 'react-hook-form';
+import { appConfig } from 'shared';
 import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
 import { myMembershipsQueryOptions } from '~/modules/me/query';
 import { tenantsListQueryOptions } from '~/modules/tenants/query';
@@ -49,7 +50,10 @@ export const SelectTenantFormField = <TFieldValues extends FieldValues>({
   }, [membershipsQuery.data]);
 
   // System admins see all tenants with names; regular users see their membership tenants
-  const filteredTenants = isSystemAdmin ? allTenants : memberTenants;
+  // Always exclude the public tenant (reserved for platform-wide content)
+  const filteredTenants = (isSystemAdmin ? allTenants : memberTenants).filter(
+    (t) => t.id !== appConfig.publicTenant.id,
+  );
 
   const options =
     opts ??
