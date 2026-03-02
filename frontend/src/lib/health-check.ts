@@ -49,7 +49,9 @@ export const healthCheck = async ({
         return true;
       }
       console.debug(`[HealthCheck] Response status: ${response.status}`);
-    } catch (err) {}
+    } catch (err) {
+      console.debug('[HealthCheck] Fetch failed', err);
+    }
 
     if (delay < maxDelay * 1000) {
       delay = Math.min(maxDelay * 1000, delay * factor);

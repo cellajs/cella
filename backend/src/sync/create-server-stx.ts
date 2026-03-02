@@ -1,5 +1,5 @@
+import { nanoid } from 'shared/nanoid';
 import type { StxBase } from '#/schemas/sync-transaction-schemas';
-import { nanoid } from '#/utils/nanoid';
 
 /**
  * Create sync transaction metadata for server-side entity creation.

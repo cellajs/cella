@@ -16,7 +16,6 @@ import {
   deleteTotp,
   getMyInvitations,
   getMyMemberships,
-  getMyUnseenCounts,
   handleMembershipInvitation,
   toggleMfa,
   type UpdateMeData,
@@ -27,7 +26,6 @@ import { getPasskeyRegistrationCredential } from '~/modules/auth/passkey-credent
 import { toaster } from '~/modules/common/toaster/service';
 import { getAndSetMe, getAndSetMeAuthData } from '~/modules/me/helpers';
 import type { Passkey } from '~/modules/me/types';
-import { getMenuData } from '~/modules/navigation/menu-sheet/helpers/get-menu-data';
 import { userQueryKeys } from '~/modules/user/query';
 import { queryClient } from '~/query/query-client';
 import type { MutationData } from '~/query/types';
@@ -43,7 +41,6 @@ export const meKeys = {
   auth: ['me', 'auth'],
   invites: ['me', 'invites'],
   memberships: ['me', 'memberships'],
-  unseenCounts: ['me', 'unseen-counts'],
   register: {
     passkey: ['me', 'register', 'passkey'],
   },
@@ -70,17 +67,6 @@ export const meQueryOptions = () => queryOptions({ queryKey: meKeys.all, queryFn
  * @returns Query options.
  */
 export const meAuthQueryOptions = () => queryOptions({ queryKey: meKeys.auth, queryFn: getAndSetMeAuthData });
-
-/**
- * Query options for fetching the current user's unseen entity counts per org.
- * Used by menu badges to show how many new entities the user hasn't viewed.
- */
-export const unseenCountsQueryOptions = () =>
-  queryOptions({
-    queryKey: meKeys.unseenCounts,
-    queryFn: () => getMyUnseenCounts(),
-    staleTime: 60 * 1000, // 1 minute — refetch on SSE entity.created or menu open
-  });
 
 /**
  * Query options for fetching the current user's invites.
@@ -238,7 +224,8 @@ export const useHandleInvitationMutation = () =>
   useMutation<HandleMembershipInvitationResponse, ApiError, MutationData<HandleMembershipInvitationData>>({
     mutationFn: ({ path }) => handleMembershipInvitation({ path }),
     onSuccess: async (settledEntity, { path: { acceptOrReject } }) => {
-      await getMenuData();
+      // Invalidate memberships + entity lists so useMenu reactively rebuilds
+      await queryClient.invalidateQueries({ queryKey: meKeys.memberships });
 
       queryClient.setQueryData<GetMyInvitationsResponse>(meKeys.invites, (oldData) => {
         if (!oldData) return oldData;

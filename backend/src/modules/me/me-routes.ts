@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/docs/x-routes';
-import { authGuard, publicGuard } from '#/middlewares/guard';
-import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
+import { authGuard, crossTenantGuard, publicGuard } from '#/middlewares/guard';
+import { bulkPointsLimiter, singlePointsLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   meAuthDataSchema,
   mePendingInvitationSchema,
@@ -11,7 +11,6 @@ import {
   uploadTokenSchema,
 } from '#/modules/me/me-schema';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
-import { unseenCountsResponseSchema } from '#/modules/seen/seen-schema';
 import { userFlagsSchema, userSchema, userUpdateBodySchema } from '#/modules/user/user-schema';
 import {
   batchResponseSchema,
@@ -61,7 +60,7 @@ const meRoutes = {
     operationId: 'getMyInvitations',
     method: 'get',
     path: '/invitations',
-    xGuard: authGuard,
+    xGuard: [authGuard, crossTenantGuard],
     tags: ['me'],
     summary: 'Get list of invitations',
     description: 'Returns a list of pending memberships with entity data.',
@@ -86,6 +85,7 @@ const meRoutes = {
     method: 'put',
     path: '/',
     xGuard: authGuard,
+    xRateLimiter: singlePointsLimiter,
     tags: ['me'],
     summary: 'Update self',
     description: 'Updates the *current user*.',
@@ -115,6 +115,7 @@ const meRoutes = {
     method: 'delete',
     path: '/',
     xGuard: authGuard,
+    xRateLimiter: singlePointsLimiter,
     tags: ['me'],
     summary: 'Delete self',
     description:
@@ -152,6 +153,7 @@ const meRoutes = {
     method: 'delete',
     path: '/sessions',
     xGuard: authGuard,
+    xRateLimiter: bulkPointsLimiter,
     tags: ['me'],
     summary: 'Terminate sessions',
     description: 'Ends one or more sessions for the *current user* based on provided session IDs.',
@@ -178,6 +180,7 @@ const meRoutes = {
     method: 'delete',
     path: '/leave',
     xGuard: authGuard,
+    xRateLimiter: singlePointsLimiter,
     tags: ['me'],
     summary: 'Leave entity',
     description: 'Removes the *current user* from an entity they are a member of.',
@@ -240,6 +243,7 @@ const meRoutes = {
     method: 'put',
     path: '/mfa',
     xGuard: authGuard,
+    xRateLimiter: singlePointsLimiter,
     tags: ['me'],
     summary: 'Toggle MFA',
     description:
@@ -274,27 +278,6 @@ const meRoutes = {
             schema: z.object({ items: z.array(membershipBaseSchema) }),
           },
         },
-      },
-      ...errorResponseRefs,
-    },
-  }),
-  /**
-   * Get unseen counts
-   */
-  getMyUnseenCounts: createXRoute({
-    operationId: 'getMyUnseenCounts',
-    method: 'get',
-    path: '/unseen-counts',
-    xGuard: authGuard,
-    tags: ['me'],
-    summary: 'Get unseen counts',
-    description:
-      'Returns the number of unseen product entities per organization and entity type for the *current user*. ' +
-      'Only entities created within the last 90 days are considered.',
-    responses: {
-      200: {
-        description: 'Unseen counts per org per entity type',
-        content: { 'application/json': { schema: unseenCountsResponseSchema } },
       },
       ...errorResponseRefs,
     },

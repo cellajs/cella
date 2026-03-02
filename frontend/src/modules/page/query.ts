@@ -188,19 +188,27 @@ export const usePageUpdateMutation = () => {
     mutationKey: keys.update,
 
     // Execute API call with version-based transaction metadata
-    mutationFn: async ({ id, data }: { id: string; data: UpdatePageInput }) => {
+    mutationFn: async ({
+      id,
+      key,
+      data,
+    }: {
+      id: string;
+      key: UpdatePageInput['key'];
+      data: UpdatePageInput['data'];
+    }) => {
       // Get cached entity for lastReadVersion conflict detection
       const cachedEntity = findPageInListCache(id);
       const stx = createStxForUpdate(cachedEntity);
-      // Body has stx embedded directly
-      const result = await updatePage({ path: { tenantId: 'public', id }, body: { ...data, stx } });
+      // Body uses key/data pattern with stx embedded
+      const result = await updatePage({ path: { tenantId: 'public', id }, body: { key, data, stx } });
       return result;
     },
 
     // Runs BEFORE mutationFn - squash duplicates and prepare optimistic state
-    onMutate: async ({ id, data }) => {
+    onMutate: async ({ id, key, data }) => {
       // Cancel in-flight mutations updating the same entity (prevents redundant requests)
-      await squashPendingMutation(queryClient, keys.update, id, data);
+      await squashPendingMutation(queryClient, keys.update, id, { [key]: data });
 
       // Cancel queries to prevent race conditions
       await queryClient.cancelQueries({ queryKey: keys.list.base });
@@ -211,7 +219,7 @@ export const usePageUpdateMutation = () => {
 
       if (previousPage) {
         // Merge new data into existing entity for instant UI update
-        const optimisticPage = { ...previousPage, ...data, modifiedAt: new Date().toISOString() };
+        const optimisticPage = { ...previousPage, [key]: data, modifiedAt: new Date().toISOString() };
         mutateCache.update([optimisticPage]);
         // Also update detail cache so view page shows updated data immediately
         queryClient.setQueryData(keys.detail.byId(id), optimisticPage);
@@ -231,7 +239,7 @@ export const usePageUpdateMutation = () => {
     },
 
     // Runs on API success - apply authoritative server data
-    onSuccess: (updatedPage, _variables) => {
+    onSuccess: (updatedPage) => {
       // Replace optimistic data with server response (source of truth)
       mutateCache.update([updatedPage]);
       queryClient.setQueryData(keys.detail.byId(updatedPage.id), updatedPage);
@@ -317,12 +325,20 @@ addMutationRegistrar((queryClient: QueryClient) => {
 
   // Update mutation
   queryClient.setMutationDefaults(keys.update, {
-    mutationFn: async ({ id, data }: { id: string; data: UpdatePageInput }) => {
+    mutationFn: async ({
+      id,
+      key,
+      data,
+    }: {
+      id: string;
+      key: UpdatePageInput['key'];
+      data: UpdatePageInput['data'];
+    }) => {
       // Get cached entity for lastReadVersion (may be undefined if not in cache)
       const cachedEntity = findPageInListCache(id);
       const stx = createStxForUpdate(cachedEntity);
-      // Body has stx embedded directly
-      return updatePage({ path: { tenantId: 'public', id }, body: { ...data, stx } });
+      // Body uses key/data pattern with stx embedded
+      return updatePage({ path: { tenantId: 'public', id }, body: { key, data, stx } });
     },
   });
 

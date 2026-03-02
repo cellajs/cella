@@ -1,21 +1,28 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { and, count, eq, getColumns, gte, ilike, inArray, or, type SQL, sql } from 'drizzle-orm';
-import { html, raw } from 'hono/html';
+import { html } from 'hono/html';
 import { appConfig } from 'shared';
+import { unsafeInternalAdminDb } from '#/db/db';
 import { attachmentsTable } from '#/db/schema/attachments';
-import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 import { seenCountsTable } from '#/db/schema/seen-counts';
 import { type Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
 import { getSignedUrlFromKey } from '#/lib/signed-url';
 import attachmentRoutes from '#/modules/attachment/attachment-routes';
-import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
+import {
+  auditUserSelect,
+  coalesceAuditUsers,
+  createdByUser,
+  modifiedByUser,
+  withAuditUser,
+  withAuditUsers,
+} from '#/modules/user/helpers/audit-user';
 import { canAccessEntity, canCreateEntity, checkPermission } from '#/permissions';
 import { getValidProductEntity } from '#/permissions/get-product-entity';
 import { splitByPermission } from '#/permissions/split-by-permission';
 import { buildStx, isTransactionProcessed } from '#/sync';
-import { checkFieldConflicts, getChangedTrackedFields, throwIfConflicts } from '#/sync/field-versions';
+import { checkFieldConflicts, throwIfConflicts } from '#/sync/field-versions';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
@@ -60,13 +67,17 @@ const attachmentRouteHandlers = app
     });
 
     const tenantDb = ctx.var.db;
+    const { createdBy: _cb, modifiedBy: _mb, ...attachmentCols } = getColumns(attachmentsTable);
     const attachmentsQuery = tenantDb
       .select({
-        ...getColumns(attachmentsTable),
+        ...attachmentCols,
+        ...auditUserSelect,
         viewCount: sql<number>`coalesce(${seenCountsTable.viewCount}, 0)`.as('view_count'),
       })
       .from(attachmentsTable)
       .leftJoin(seenCountsTable, eq(seenCountsTable.entityId, attachmentsTable.id))
+      .leftJoin(createdByUser, eq(createdByUser.id, attachmentsTable.createdBy))
+      .leftJoin(modifiedByUser, eq(modifiedByUser.id, attachmentsTable.modifiedBy))
       .where(and(...filters));
 
     const [items, [{ total }]] = await Promise.all([
@@ -74,7 +85,7 @@ const attachmentRouteHandlers = app
       tenantDb.select({ total: count() }).from(attachmentsQuery.as('attachments')),
     ]);
 
-    return ctx.json({ items, total }, 200);
+    return ctx.json({ items: coalesceAuditUsers(items), total }, 200);
   })
   /**
    * Get presigned URL for private attachment.
@@ -100,15 +111,9 @@ const attachmentRouteHandlers = app
     const bucketName = attachment?.bucketName ?? appConfig.s3.privateBucket;
 
     if (attachment) {
-      const user = ctx.var.user;
-      const userSystemRole = ctx.var.userSystemRole;
+      const isSystemAdmin = ctx.var.isSystemAdmin;
+      const memberships = ctx.var.memberships;
 
-      const memberships = await tenantDb
-        .select(membershipBaseSelect)
-        .from(membershipsTable)
-        .where(eq(membershipsTable.userId, user.id));
-
-      const isSystemAdmin = userSystemRole === 'admin';
       const { isAllowed } = checkPermission(memberships, 'read', attachment);
 
       if (!isSystemAdmin && !isAllowed) {
@@ -133,9 +138,12 @@ const attachmentRouteHandlers = app
       throw new AppError(404, 'not_found', 'warn', { entityType: 'attachment' });
     }
 
-    ctx.set('entityCacheData', attachment as Record<string, unknown>);
+    const tenantDb = ctx.var.db;
+    const attachmentResponse = await withAuditUser(attachment, tenantDb);
 
-    return ctx.json(attachment, 200);
+    ctx.set('entityCacheData', attachmentResponse as Record<string, unknown>);
+
+    return ctx.json(attachmentResponse, 200);
   })
   /**
    * Create one or more attachments
@@ -157,12 +165,13 @@ const attachmentRouteHandlers = app
         .from(attachmentsTable)
         .where(sql`${attachmentsTable.stx}->>'mutationId' = ${batchStxId}`);
       if (existingBatch.length > 0) {
-        return ctx.json({ data: existingBatch, rejectedItemIds: [] }, 200);
+        const attachmentResponses = await withAuditUsers(existingBatch, tenantDb);
+        return ctx.json({ data: attachmentResponses, rejectedItemIds: [] }, 200);
       }
     }
 
     const user = ctx.var.user;
-    const attachmentRestrictions = organization.restrictions.attachment;
+    const attachmentRestrictions = ctx.var.tenant.restrictions.quotas.attachment;
 
     if (attachmentRestrictions !== 0 && newAttachments.length > attachmentRestrictions) {
       throw new AppError(403, 'restrict_by_org', 'warn', { entityType: 'attachment' });
@@ -179,6 +188,11 @@ const attachmentRouteHandlers = app
 
     const attachmentsToInsert = newAttachments.map(({ stx, ...att }) => ({
       ...att,
+      // Normalize empty strings to null for nullable fields
+      convertedKey: att.convertedKey || null,
+      convertedContentType: att.convertedContentType || null,
+      thumbnailKey: att.thumbnailKey || null,
+      groupId: att.groupId || null,
       tenantId: organization.tenantId,
       organizationId: organization.id,
       createdAt: getIsoDate(),
@@ -190,31 +204,32 @@ const attachmentRouteHandlers = app
 
     logEvent('info', `${createdAttachments.length} attachments have been created`);
 
-    return ctx.json({ data: createdAttachments, rejectedItemIds: [] }, 201);
+    const attachmentResponses = await withAuditUsers(createdAttachments, tenantDb, user);
+
+    return ctx.json({ data: attachmentResponses, rejectedItemIds: [] }, 201);
   })
   /**
    * Update an attachment by id
    */
   .openapi(attachmentRoutes.updateAttachment, async (ctx) => {
     const { id } = ctx.req.valid('param');
-    const { stx, ...updatedFields } = ctx.req.valid('json');
+    const { key, data: updateData, stx } = ctx.req.valid('json');
 
     const { entity } = await getValidProductEntity(ctx, id, 'attachment', 'update');
 
     const user = ctx.var.user;
 
     // Field-level conflict detection
-    const trackedFields = ['name', 'filename', 'contentType'] as const;
-    const changedFields = getChangedTrackedFields(updatedFields, trackedFields);
+    const changedFields = key ? [key] : [];
     const { conflicts } = checkFieldConflicts(changedFields, entity.stx, stx.lastReadVersion);
     throwIfConflicts('attachment', conflicts);
 
     const tenantDb = ctx.var.db;
 
-    const [updatedAttachment] = await tenantDb
+    const [updatedAttachmentRecord] = await tenantDb
       .update(attachmentsTable)
       .set({
-        ...updatedFields,
+        [key]: updateData,
         modifiedAt: getIsoDate(),
         modifiedBy: user.id,
         stx: buildStx(stx, entity, changedFields),
@@ -222,9 +237,11 @@ const attachmentRouteHandlers = app
       .where(eq(attachmentsTable.id, id))
       .returning();
 
-    logEvent('info', 'Attachment updated', { attachmentId: updatedAttachment.id });
+    logEvent('info', 'Attachment updated', { attachmentId: updatedAttachmentRecord.id });
 
-    return ctx.json({ ...updatedAttachment }, 200);
+    const attachmentResponse = await withAuditUser(updatedAttachmentRecord, tenantDb, user);
+
+    return ctx.json(attachmentResponse, 200);
   })
   // Delete attachments
   .openapi(attachmentRoutes.deleteAttachments, async (ctx) => {
@@ -238,7 +255,6 @@ const attachmentRouteHandlers = app
     }
 
     const toDeleteIds = Array.isArray(ids) ? ids : [ids];
-    if (!toDeleteIds.length) throw new AppError(400, 'invalid_request', 'warn', { entityType: 'attachment' });
 
     const { allowedIds, disallowedIds: rejectedItemIds } = await splitByPermission(
       ctx,
@@ -248,8 +264,6 @@ const attachmentRouteHandlers = app
       memberships,
     );
 
-    if (!allowedIds.length) throw new AppError(403, 'forbidden', 'warn', { entityType: 'attachment' });
-
     const tenantDb = ctx.var.db;
     await tenantDb.delete(attachmentsTable).where(inArray(attachmentsTable.id, allowedIds));
 
@@ -258,26 +272,43 @@ const attachmentRouteHandlers = app
     return ctx.json({ data: [] as never[], rejectedItemIds }, 200);
   })
   /**
-   * Redirect to attachment
+   * Get attachment link — serves OG meta for bots, direct download for users.
    */
-  .openapi(attachmentRoutes.redirectToAttachment, async (ctx) => {
-    const db = ctx.var.db;
+  .openapi(attachmentRoutes.getAttachmentLink, async (ctx) => {
     const { id } = ctx.req.valid('param');
 
-    const [attachment] = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, id));
+    // Use adminDb to bypass RLS since this is a public endpoint without auth context.
+    // Organizations table requires isAuthenticated=true in its RLS policy, which isn't
+    // set for public endpoints. Falls back to ctx.var.db for PGlite mode (no RLS).
+    const db = unsafeInternalAdminDb ?? ctx.var.db;
+    const [attachment] = await db
+      .select()
+      .from(attachmentsTable)
+      .where(and(eq(attachmentsTable.id, id), eq(attachmentsTable.publicAccess, true)));
     if (!attachment) throw new AppError(404, 'not_found', 'warn', { entityType: 'attachment' });
 
+    // Detect bots/crawlers by User-Agent to serve OG meta page for link previews
+    const ua = ctx.req.header('user-agent') ?? '';
+    const isBot =
+      /bot|crawl|spider|slurp|facebookexternalhit|linkedinbot|twitterbot|whatsapp|telegram|discord|preview|fetch|embed/i.test(
+        ua,
+      );
+
+    if (!isBot) {
+      // Regular user — redirect to a presigned download URL
+      const key = attachment.convertedKey || attachment.originalKey;
+      const fileUrl = await getSignedUrlFromKey(key, { bucketName: attachment.bucketName, isPublic: false });
+      return ctx.redirect(fileUrl, 302);
+    }
+
+    // Bot — serve OG meta HTML for rich link previews
     const [organization] = await db
       .select()
       .from(organizationsTable)
       .where(eq(organizationsTable.id, attachment.organizationId));
     if (!organization) throw new AppError(404, 'not_found', 'warn', { entityType: 'organization' });
 
-    const url = new URL(`${appConfig.frontendUrl}/organization/${organization.slug}/attachments`);
-    url.searchParams.set('attachmentDialogId', attachment.id);
-    if (attachment.groupId) url.searchParams.set('groupId', attachment.groupId);
-
-    const redirectUrl = url.toString();
+    const linkUrl = `${appConfig.backendUrl}/${attachment.tenantId}/${organization.slug}/attachments/${attachment.id}/link`;
 
     return ctx.html(html`
       <!doctype html>
@@ -286,9 +317,10 @@ const attachmentRouteHandlers = app
           <meta charset="utf-8" />
 
           <title>${attachment.filename}</title>
+          <meta property="og:title" content="${attachment.filename}" />
           <meta property="og:description" content="View an attachment in ${organization.name}." />
           <meta name="description" content="View an attachment in ${organization.name}." />
-          <meta property="og:url" content="${redirectUrl}" />
+          <meta property="og:url" content="${linkUrl}" />
 
           <meta property="og:type" content="website" />
           <meta property="og:site_name" content="${appConfig.name}" />
@@ -296,11 +328,8 @@ const attachmentRouteHandlers = app
           <link rel="logo" type="image/png" href="/static/logo/logo.png" />
           <link rel="icon" type="image/png" sizes="512x512" href="/static/icons/icon-512x512.png" />
           <link rel="icon" type="image/png" sizes="192x192" href="/static/icons/icon-192x192.png" />
-          <meta name="robots" content="index,follow" />
+          <meta name="robots" content="noindex" />
         </head>
-      <script>
-        ${raw(`window.location.href = "${redirectUrl}";`)}
-      </script>
       </html>
     `);
   });

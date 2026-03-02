@@ -1,4 +1,3 @@
-import { execSync } from 'node:child_process';
 import { sql } from 'drizzle-orm';
 import { migrate } from 'drizzle-orm/pglite/migrator';
 import { baseDb as db, migrateConfig } from '#/db/db';
@@ -16,13 +15,13 @@ if (res.rows.length > 0) {
   process.exit(0);
 }
 
-import { seedScripts } from './scripts-config';
+import { seedScripts } from './scripts-discovery';
 
-for (const cmd of seedScripts) {
+for (const seed of seedScripts) {
   try {
-    execSync(cmd, { stdio: 'inherit' });
+    await seed.run();
   } catch (error) {
-    console.error(`Error executing command: ${cmd}`, error);
+    console.error(`Error running seed: ${seed.name}`, error);
     process.exit(1);
   }
 }

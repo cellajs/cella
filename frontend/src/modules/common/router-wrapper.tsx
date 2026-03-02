@@ -1,4 +1,4 @@
-import { onlineManager, useIsRestoring } from '@tanstack/react-query';
+import { onlineManager, useIsFetching, useIsRestoring } from '@tanstack/react-query';
 import { RouterProvider } from '@tanstack/react-router';
 import { PullToRefresh } from '~/modules/common/pull-to-refresh';
 import { Spinner } from '~/modules/common/spinner';
@@ -11,6 +11,7 @@ import router from '~/routes/router';
 export const RouterWrapper = () => {
   const isRestoring = useIsRestoring();
   const isOnline = onlineManager.isOnline();
+  const fetchingCount = useIsFetching();
 
   if (isRestoring && !isOnline) {
     return <Spinner className="h-12 w-12 mt-[45vh]" />;
@@ -24,7 +25,11 @@ export const RouterWrapper = () => {
 
   return (
     <>
-      <PullToRefresh onRefresh={() => handleRefresh()} isDisabled={isRestoring || !isOnline} />
+      <PullToRefresh
+        onRefresh={() => handleRefresh()}
+        isFetching={fetchingCount > 0}
+        isDisabled={isRestoring || !isOnline}
+      />
       <RouterProvider router={router} />
     </>
   );

@@ -15,6 +15,14 @@ import { initContextCounters } from '#/modules/entities/helpers/init-context-cou
 import { insertMemberships } from '#/modules/memberships/helpers';
 import { type MembershipBaseModel, toMembershipBase } from '#/modules/memberships/helpers/select';
 import organizationRoutes from '#/modules/organization/organization-routes';
+import {
+  auditUserSelect,
+  coalesceAuditUsers,
+  createdByUser,
+  modifiedByUser,
+  withAuditUser,
+  withAuditUsers,
+} from '#/modules/user/helpers/audit-user';
 import { getValidContextEntity } from '#/permissions';
 import { splitByPermission } from '#/permissions/split-by-permission';
 import { defaultHook } from '#/utils/default-hook';
@@ -23,6 +31,7 @@ import { logEvent } from '#/utils/logger';
 import { getOrderColumn } from '#/utils/order-column';
 import { filterWithRejection, takeWithRestriction } from '#/utils/rejection-utils';
 import { prepareStringForILikeFilter } from '#/utils/sql';
+import { validateBlockMediaUrls } from '#/utils/validate-block-urls';
 import { defaultWelcomeText } from '#json/text-blocks.json';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
@@ -36,8 +45,7 @@ const organizationRouteHandlers = app
     const { tenantId } = ctx.req.valid('param');
 
     const user = ctx.var.user;
-    const userSystemRole = ctx.var.userSystemRole;
-    const isSystemAdmin = userSystemRole === 'admin';
+    const isSystemAdmin = ctx.var.isSystemAdmin;
 
     // Count user's org creations from activities (includes deleted orgs)
     const [orgCountResult] = await baseDb
@@ -52,8 +60,9 @@ const organizationRouteHandlers = app
       );
     const createdOrgsCount = orgCountResult?.count ?? 0;
 
-    // Organization restriction is hardcoded to max 5 for now (system admins bypass this)
-    const availableSlots = 5 - createdOrgsCount;
+    // Organization restriction is read from tenant restrictions (system admins bypass this)
+    const orgQuota = ctx.var.tenant.restrictions.quotas.organization;
+    const availableSlots = orgQuota === 0 ? items.length : orgQuota - createdOrgsCount;
 
     // No slots - system admins can bypass this restriction
     if (!isSystemAdmin && availableSlots <= 0)
@@ -84,7 +93,7 @@ const organizationRouteHandlers = app
     const tx = ctx.var.db;
 
     // Insert organizations with proper RLS context (all in same tenant from path)
-    const createdOrganizations = await tx
+    const organizationRecords = await tx
       .insert(organizationsTable)
       .values(
         itemsToCreate.map((item) => ({
@@ -103,11 +112,11 @@ const organizationRouteHandlers = app
     logEvent(
       'info',
       'Organizations created',
-      createdOrganizations.map((org) => org.id),
+      organizationRecords.map((org) => org.id),
     );
 
     // Insert memberships (using RLS-enabled db from middleware)
-    const membershipInserts = createdOrganizations.map((org) => ({
+    const membershipInserts = organizationRecords.map((org) => ({
       userId: user.id,
       createdBy: user.id,
       role: 'admin' as const,
@@ -119,7 +128,7 @@ const organizationRouteHandlers = app
     // Initialize context counters (prevents race with CDC processing)
     await initContextCounters(
       'organization',
-      createdOrganizations.map((org) => org.id),
+      organizationRecords.map((org) => org.id),
     );
 
     // Build counts for response
@@ -128,7 +137,9 @@ const organizationRouteHandlers = app
     // Map memberships by organizationId
     const membershipByOrgId = new Map(createdMemberships.map((m) => [m.organizationId, m]));
 
-    const data = createdOrganizations.map((org) => {
+    const orgsWithAudit = await withAuditUsers(organizationRecords, tx, user);
+
+    const organizationResponses = orgsWithAudit.map((org) => {
       // Membership must exist — we just inserted it above
       const membership = membershipByOrgId.get(org.id)!;
       return {
@@ -140,7 +151,7 @@ const organizationRouteHandlers = app
       };
     });
 
-    return ctx.json({ data, ...rejectionState }, 201);
+    return ctx.json({ data: organizationResponses, ...rejectionState }, 201);
   })
   /**
    * Get list of organizations
@@ -151,9 +162,8 @@ const organizationRouteHandlers = app
     const entityType = 'organization';
 
     const user = ctx.var.user;
-    const userSystemRole = ctx.var.userSystemRole;
     const memberships = ctx.var.memberships;
-    const isSystemAdmin = userSystemRole === 'admin' && !relatableUserId;
+    const isSystemAdmin = ctx.var.isSystemAdmin && !relatableUserId;
 
     // relatableGuard already verified shared org membership if relatableUserId is provided
     const targetUserId = relatableUserId ?? user.id;
@@ -185,18 +195,19 @@ const organizationRouteHandlers = app
       id: organizationsTable.id,
       name: organizationsTable.name,
       createdAt: organizationsTable.createdAt,
-      userSystemRole: membershipsTable.role,
+      userRole: membershipsTable.role,
     });
 
-    // Get RLS-enabled db from crossTenantGuard middleware
     const tx = ctx.var.db;
 
     // System admins see all orgs they have RLS access to (via createdBy or membership)
     // They use LEFT JOIN since they may not have a membership row for every org.
     // Regular users use INNER JOIN on memberships (only see orgs they're members of).
     const countData = includeCounts ? getEntityCountsSelect(entityType) : null;
+    const { createdBy: _cb, modifiedBy: _mb, ...orgCols } = getColumns(organizationsTable);
     const selectShape = {
-      ...getColumns(organizationsTable),
+      ...orgCols,
+      ...auditUserSelect,
       ...(countData && { counts: countData.countsSelect }),
       total: sql<number>`count(*) over()`.mapWith(Number),
     } as const;
@@ -207,8 +218,15 @@ const organizationRouteHandlers = app
       : tx.select(selectShape).from(organizationsTable).innerJoin(membershipsTable, membershipOn);
 
     if (countData) {
-      query = query.leftJoin(contextCountersTable, eq(organizationsTable.id, contextCountersTable.contextKey));
+      query = query.leftJoin(
+        contextCountersTable,
+        eq(organizationsTable.id, contextCountersTable.contextKey),
+      ) as typeof query;
     }
+
+    query = query
+      .leftJoin(createdByUser, eq(createdByUser.id, organizationsTable.createdBy))
+      .leftJoin(modifiedByUser, eq(modifiedByUser.id, organizationsTable.modifiedBy)) as unknown as typeof query;
 
     const organizations = await query
       .where(and(...orgWhere))
@@ -228,9 +246,7 @@ const organizationRouteHandlers = app
       if (includeMembership) {
         // Find membership from context memberships
         const membership = memberships.find((m) => m.contextType === entityType && m.organizationId === org.id);
-        if (membership) {
-          included.membership = toMembershipBase(membership);
-        }
+        if (membership) included.membership = toMembershipBase(membership);
       }
 
       if (includeCounts && counts) {
@@ -244,7 +260,7 @@ const organizationRouteHandlers = app
     });
 
     // Enrich organizations with membership data
-    return ctx.json({ items, total }, 200);
+    return ctx.json({ items: coalesceAuditUsers(items), total }, 200);
   })
 
   /**
@@ -287,12 +303,9 @@ const organizationRouteHandlers = app
       included.membership = toMembershipBase(membership);
     }
 
-    const data = {
-      ...organization,
-      included,
-    };
+    const organizationWithAudit = await withAuditUser(organization, ctx.var.db);
 
-    return ctx.json(data, 200);
+    return ctx.json({ ...organizationWithAudit, included }, 200);
   })
   /**
    * Update an organization by id (tenant-scoped)
@@ -323,12 +336,20 @@ const organizationRouteHandlers = app
         throw new AppError(409, 'slug_exists', 'warn', { entityType: 'organization', meta: { slug } });
     }
 
-    // TODO-005 sanitize blocknote blocks for welcomeText? How to only allow image urls from our own cdn plus a list from allowed domains?
+    // Validate media URLs in welcomeText are from trusted sources (CDN only)
+    if (updatedFields.welcomeText) {
+      const urlValidation = validateBlockMediaUrls(updatedFields.welcomeText);
+      if (!urlValidation.valid) {
+        throw new AppError(400, 'invalid_request', 'warn', {
+          entityType: 'organization',
+          meta: { reason: 'Untrusted media URLs in welcomeText', invalidUrls: urlValidation.invalidUrls.join(', ') },
+        });
+      }
+    }
 
-    // Use RLS-enabled transaction from tenant guard middleware
     const tx = ctx.var.db;
 
-    const [updatedOrganization] = await tx
+    const [updatedOrganizationRecord] = await tx
       .update(organizationsTable)
       .set({
         ...updatedFields,
@@ -338,7 +359,7 @@ const organizationRouteHandlers = app
       .where(eq(organizationsTable.id, organization.id))
       .returning();
 
-    logEvent('info', 'Organization updated', { organizationId: updatedOrganization.id });
+    logEvent('info', 'Organization updated', { organizationId: updatedOrganizationRecord.id });
 
     const counts = await getEntityCounts(organization.entityType, organization.id, tx);
 
@@ -348,9 +369,9 @@ const organizationRouteHandlers = app
       counts,
     };
 
-    const data = { ...updatedOrganization, included };
+    const organizationWithAudit = await withAuditUser(updatedOrganizationRecord, tx, user);
 
-    return ctx.json(data, 200);
+    return ctx.json({ ...organizationWithAudit, included }, 200);
   })
   /**
    * Delete organizations by ids (tenant-scoped)
@@ -368,13 +389,10 @@ const organizationRouteHandlers = app
 
     // Convert the ids to an array
     const toDeleteIds = Array.isArray(ids) ? ids : [ids];
-    if (!toDeleteIds.length) throw new AppError(400, 'invalid_request', 'error', { entityType: 'organization' });
 
     // Split ids into allowed and disallowed
     const result = await splitByPermission(ctx, 'delete', 'organization', toDeleteIds, memberships);
     const { allowedIds, disallowedIds: rejectedItemIds } = result;
-
-    if (!allowedIds.length) throw new AppError(403, 'forbidden', 'warn', { entityType: 'organization' });
 
     // Delete the organizations
     await baseDb.delete(organizationsTable).where(inArray(organizationsTable.id, allowedIds));

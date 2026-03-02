@@ -51,7 +51,11 @@
                       "mutationId": { "type": "string", "required": true },
                       "sourceId": { "type": "string", "required": true },
                       "version": { "type": "integer", "required": true },
-                      "fieldVersions": { "type": "object", "required": true }
+                      "fieldVersions": {
+                        "type": "object",
+                        "required": true,
+                        "additionalProperties": { "type": "integer", "required": false }
+                      }
                     },
                     "ref": "#/components/schemas/StxBase"
                   },
@@ -334,7 +338,11 @@
                       "mutationId": { "type": "string", "required": true },
                       "sourceId": { "type": "string", "required": true },
                       "version": { "type": "integer", "required": true },
-                      "fieldVersions": { "type": "object", "required": true }
+                      "fieldVersions": {
+                        "type": "object",
+                        "required": true,
+                        "additionalProperties": { "type": "integer", "required": false }
+                      }
                     },
                     "ref": "#/components/schemas/StxBase"
                   },
@@ -427,7 +435,12 @@
             "rejectionReasons": {
               "type": "object",
               "required": false,
-              "description": "Map of reason code to rejected item IDs"
+              "description": "Map of reason code to rejected item IDs",
+              "additionalProperties": {
+                "type": "array",
+                "required": false,
+                "itemType": "string"
+              }
             }
           },
           "contentType": "application/json"
@@ -545,7 +558,11 @@
                       "mutationId": { "type": "string", "required": true },
                       "sourceId": { "type": "string", "required": true },
                       "version": { "type": "integer", "required": true },
-                      "fieldVersions": { "type": "object", "required": true }
+                      "fieldVersions": {
+                        "type": "object",
+                        "required": true,
+                        "additionalProperties": { "type": "integer", "required": false }
+                      }
                     },
                     "ref": "#/components/schemas/StxBase"
                   },
@@ -638,7 +655,12 @@
             "rejectionReasons": {
               "type": "object",
               "required": false,
-              "description": "Map of reason code to rejected item IDs"
+              "description": "Map of reason code to rejected item IDs",
+              "additionalProperties": {
+                "type": "array",
+                "required": false,
+                "itemType": "string"
+              }
             }
           },
           "contentType": "application/json"
@@ -876,7 +898,12 @@
             "rejectionReasons": {
               "type": "object",
               "required": false,
-              "description": "Map of reason code to rejected item IDs"
+              "description": "Map of reason code to rejected item IDs",
+              "additionalProperties": {
+                "type": "array",
+                "required": false,
+                "itemType": "string"
+              }
             }
           },
           "contentType": "application/json"
@@ -1074,7 +1101,11 @@
                 "mutationId": { "type": "string", "required": true },
                 "sourceId": { "type": "string", "required": true },
                 "version": { "type": "integer", "required": true },
-                "fieldVersions": { "type": "object", "required": true }
+                "fieldVersions": {
+                  "type": "object",
+                  "required": true,
+                  "additionalProperties": { "type": "integer", "required": false }
+                }
               },
               "ref": "#/components/schemas/StxBase"
             },
@@ -1292,7 +1323,11 @@
                 "mutationId": { "type": "string", "required": true },
                 "sourceId": { "type": "string", "required": true },
                 "version": { "type": "integer", "required": true },
-                "fieldVersions": { "type": "object", "required": true }
+                "fieldVersions": {
+                  "type": "object",
+                  "required": true,
+                  "additionalProperties": { "type": "integer", "required": false }
+                }
               },
               "ref": "#/components/schemas/StxBase"
             },

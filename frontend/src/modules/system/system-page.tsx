@@ -1,6 +1,5 @@
 import { Outlet } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { FocusViewContainer } from '~/modules/common/focus-view';
 import { PageTabNav } from '~/modules/common/page/tab-nav';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import { SystemRoute } from '~/routes/system-routes';
@@ -20,9 +19,7 @@ export function SystemPage() {
 
       <PageTabNav className="mt-4" parentRouteId={SystemRoute.id} />
 
-      <FocusViewContainer className="container min-h-screen">
-        <Outlet />
-      </FocusViewContainer>
+      <Outlet />
     </>
   );
 }

@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { appConfig, type Theme } from 'shared';
 import { type Mode, useUIStore } from '~/store/ui';
-import { hexToHsl } from '~/utils/hex-to-hsl';
 
 const root = window.document.documentElement;
 
@@ -15,8 +14,6 @@ function setThemeColor(passedTheme: Theme) {
   root.classList.add('theme-base');
 
   const color = appConfig.theme.colors[passedTheme];
-  // replace comas so tailwind can operate with color var
-  const hslColor = hexToHsl(color).replaceAll(',', '');
 
   // Check if exist <style> tag for theme-base rules
   let themeStyleTag = document.getElementById('theme-style');
@@ -26,8 +23,8 @@ function setThemeColor(passedTheme: Theme) {
     themeStyleTag.id = 'theme-style';
     document.head.appendChild(themeStyleTag);
   }
-  // update CSS rule for .theme-base
-  themeStyleTag.innerHTML = `.theme-base { --primary: ${hslColor}; }`;
+  // update CSS rule for .theme-base with hex color (compatible with oklch-based vars)
+  themeStyleTag.innerHTML = `.theme-base { --primary: ${color}; }`;
 }
 
 /**

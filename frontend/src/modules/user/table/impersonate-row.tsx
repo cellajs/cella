@@ -1,19 +1,19 @@
 import i18n from 'i18next';
 import { VenetianMaskIcon } from 'lucide-react';
 import { appConfig } from 'shared';
-import type { User } from '~/api.gen';
 import { startImpersonation } from '~/api.gen';
 import { toaster } from '~/modules/common/toaster/service';
 import { getAndSetMe } from '~/modules/me/helpers';
 import { meKeys } from '~/modules/me/query';
-import { getMenuData } from '~/modules/navigation/menu-sheet/helpers/get-menu-data';
 import { Button } from '~/modules/ui/button';
+import type { BaseUser } from '~/modules/user/types';
 import { queryClient } from '~/query/query-client';
+import { appStreamManager } from '~/query/realtime/stream-store';
 import router from '~/routes/router';
 import { useUIStore } from '~/store/ui';
 
 interface Props {
-  user: User;
+  user: BaseUser;
   tabIndex: number;
 }
 
@@ -21,10 +21,12 @@ async function handleStartImpersonation(targetUserId: string) {
   try {
     await startImpersonation({ query: { targetUserId } });
     useUIStore.getState().setImpersonating(true);
-    await getAndSetMe();
-    // Remove stale memberships (key is not user-specific) so getMenuData refetches for the impersonated user
+    // Remove stale user and membership caches so fresh data is fetched for the impersonated user
+    queryClient.removeQueries({ queryKey: meKeys.all });
     queryClient.removeQueries({ queryKey: meKeys.memberships });
-    await getMenuData();
+    await getAndSetMe();
+    // Reconnect SSE so the subscriber uses the impersonated user's role and memberships
+    appStreamManager.reconnect();
     toaster(i18n.t('common:success.impersonated'), 'success');
     router.navigate({ to: appConfig.defaultRedirectPath, replace: true });
   } catch (error) {

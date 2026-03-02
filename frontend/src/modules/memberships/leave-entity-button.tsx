@@ -11,14 +11,14 @@ import { queryClient } from '~/query/query-client';
 import { cn } from '~/utils/cn';
 
 export type LeaveEntityButtonProps = {
-  entity: ContextEntityBase;
+  contextEntity: ContextEntityBase;
   redirectPath?: string;
   buttonProps?: ButtonProps;
   callback?: (args: CallbackArgs) => void;
 };
 
 export const LeaveEntityButton = ({
-  entity,
+  contextEntity,
   buttonProps,
   redirectPath = appConfig.defaultRedirectPath,
   callback,
@@ -28,18 +28,19 @@ export const LeaveEntityButton = ({
 
   const { mutate: leaveEntity } = useMutation({
     mutationFn: async () => {
-      const entityId = entity.id;
-      return await deleteMyMembership({ query: { entityId, entityType: entity.entityType } });
+      const entityId = contextEntity.id;
+      return await deleteMyMembership({ query: { entityId, entityType: contextEntity.entityType } });
     },
     onSuccess: () => {
-      toaster(t('common:success.you_left_entity', { entity: entity.entityType }), 'success');
+      toaster(t('common:success.you_left_entity', { entity: contextEntity.entityType }), 'success');
       navigate({ to: redirectPath, replace: true });
 
       // Clear related cache entries
       // Note: works if queryKeys are structured like `organizationQueryKeys.single`
       queryClient.removeQueries({
         predicate: ({ queryKey }) =>
-          queryKey.includes(entity.entityType) && queryKey.some((k) => k === entity.id || k === entity.slug),
+          queryKey.includes(contextEntity.entityType) &&
+          queryKey.some((k) => k === contextEntity.id || k === contextEntity.slug),
       });
 
       callback?.({ status: 'success' });

@@ -3,7 +3,7 @@ import { productEntityTypeSchema } from '#/schemas';
 
 /**
  * Request body for batch marking entities as seen.
- * Posted every 10 minutes from the client with accumulated seen entity IDs.
+ * Posted every 1 minute from the client with accumulated seen entity IDs.
  */
 export const seenBatchBodySchema = z.object({
   entityIds: z.array(z.string().max(50)).min(1).max(500).describe('Entity IDs the user has viewed since last batch'),
@@ -18,17 +18,8 @@ export const seenBatchResponseSchema = z.object({
 });
 
 /**
- * Single unseen count entry per org per entity type.
+ * Response for GET /unseen/counts.
+ * Shape: { [contextEntityId]: { [productEntityType]: unseenCount } }
+ * Entity-agnostic — keys are dynamic IDs and type strings, not hardcoded field names.
  */
-export const unseenCountSchema = z.object({
-  organizationId: z.string(),
-  entityType: productEntityTypeSchema,
-  unseenCount: z.number().int().min(0),
-});
-
-/**
- * Response for GET /me/unseen-counts.
- */
-export const unseenCountsResponseSchema = z.object({
-  counts: z.array(unseenCountSchema),
-});
+export const unseenCountsResponseSchema = z.record(z.string(), z.record(z.string(), z.number().int().min(0)));

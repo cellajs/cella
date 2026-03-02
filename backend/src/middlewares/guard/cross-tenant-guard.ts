@@ -5,7 +5,7 @@
  * allowing queries that span multiple tenants based on user memberships.
  * Used for routes like GET /organizations that list entities across tenants.
  *
- * @see info/RLS.md for architecture documentation
+ * @see info/ARCHITECTURE.md for architecture documentation
  */
 
 import { setUserRlsContext } from '#/db/tenant-context';

@@ -8,6 +8,7 @@ import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import type { RowsChangeData } from '~/modules/common/data-grid';
 import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
+import { FocusViewContainer } from '~/modules/common/focus-view';
 import type { EnrichedContextEntity } from '~/modules/entities/types';
 import { MembersTableBar } from '~/modules/memberships/members-table/members-bar';
 import { useColumns } from '~/modules/memberships/members-table/members-columns';
@@ -24,12 +25,12 @@ function rowKeyGetter(row: Member) {
 }
 
 export interface MembersTableWrapperProps {
-  entity: EnrichedContextEntity;
+  contextEntity: EnrichedContextEntity;
   isSheet?: boolean;
   children?: React.ReactNode;
 }
 
-function MembersTable({ entity, isSheet = false, children }: MembersTableWrapperProps) {
+function MembersTable({ contextEntity, isSheet = false, children }: MembersTableWrapperProps) {
   const { t } = useTranslation();
   const { search, setSearch } = useSearchParams<MembersRouteSearchParams>({ saveDataInSearch: !isSheet });
 
@@ -38,13 +39,13 @@ function MembersTable({ entity, isSheet = false, children }: MembersTableWrapper
 
   const updateMemberMembership = useMemberUpdateMutation();
 
-  const entityId = entity.id;
-  const entityType = entity.entityType;
+  const entityId = contextEntity.id;
+  const entityType = contextEntity.entityType;
   const tenantId = organization.tenantId;
   const orgId = organization.id;
 
   // Check if user can update this context entity (and thus manage its members)
-  const canUpdate = entity.can?.[entity.entityType]?.update ?? false;
+  const canUpdate = contextEntity.can?.[contextEntity.entityType]?.update ?? false;
 
   // Table state
   const { q, role, sort, order } = search;
@@ -102,14 +103,14 @@ function MembersTable({ entity, isSheet = false, children }: MembersTableWrapper
 
   const selectedRowIds = useMemo(() => new Set(selected.map((s) => s.id)), [selected]);
 
-  const visibleColumns = useMemo(() => columns.filter((column) => column.visible), [columns]);
+  const visibleColumns = useMemo(() => columns.filter((column) => !column.hidden), [columns]);
 
   return (
-    <div className="flex flex-col gap-4 h-full">
+    <FocusViewContainer>
       <MembersTableBar
-        entity={entity}
+        contextEntity={contextEntity}
         selected={selected}
-        searchVars={{ ...search, limit }}
+        searchVars={{ q, role, sort, order, limit }}
         setSearch={setSearch}
         queryKey={queryOptions.queryKey}
         columns={columns}
@@ -146,7 +147,7 @@ function MembersTable({ entity, isSheet = false, children }: MembersTableWrapper
           ),
         }}
       />
-    </div>
+    </FocusViewContainer>
   );
 }
 

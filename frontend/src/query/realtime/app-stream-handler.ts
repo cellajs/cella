@@ -1,7 +1,9 @@
-import type { ContextEntityType, ProductEntityType } from 'shared';
+import { appConfig, type ContextEntityType, isProductEntity, type ProductEntityType } from 'shared';
 import { syncSpanNames, withSpanSync } from '~/lib/tracing';
+import { seenKeys } from '~/modules/seen/query';
 import { type EntityQueryKeys, getEntityQueryKeys } from '~/query/basic';
 import { sourceId } from '~/query/offline';
+import { queryClient } from '~/query/query-client';
 import { useSyncStore } from '~/store/sync';
 import * as cacheOps from './cache-ops';
 import * as membershipOps from './membership-ops';
@@ -35,13 +37,13 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
       return;
     }
 
-    // Realtime entity events - use registry for dynamic lookup
-    if (entityType) {
-      const keys = getEntityQueryKeys(entityType);
-      if (keys) {
-        handleEntityNotification(entityType as ProductEntityType, entityId, action, stx, organizationId, seq, keys);
-      }
-    }
+    if (!isProductEntity(entityType))
+      return console.error('Unknown entityType in app stream notification:', entityType);
+
+    const keys = getEntityQueryKeys(entityType);
+    if (!organizationId) return console.error('Missing organizationId for product entity event:', entityType, entityId);
+
+    handleEntityNotification(entityType, entityId, action, stx, organizationId, seq, keys);
   });
 }
 
@@ -62,7 +64,7 @@ function handleMembershipNotification(
   switch (action) {
     case 'create':
       membershipOps.invalidateContextList(contextType);
-      membershipOps.refreshMenu();
+      membershipOps.invalidateMemberships();
       break;
 
     case 'update':
@@ -72,7 +74,7 @@ function handleMembershipNotification(
 
     case 'delete':
       membershipOps.invalidateContextList(contextType);
-      membershipOps.refreshMenu();
+      membershipOps.invalidateMemberships();
       break;
   }
 
@@ -89,7 +91,7 @@ function handleEntityNotification(
   entityId: string,
   action: AppStreamNotification['action'],
   stx: AppStreamNotification['stx'],
-  organizationId: string | null,
+  organizationId: string,
   seq: number | null,
   keys: EntityQueryKeys,
 ): void {
@@ -100,7 +102,7 @@ function handleEntityNotification(
   }
 
   // Track seq for gap detection — scoped per org for app stream
-  if (seq !== null && organizationId) {
+  if (seq !== null) {
     useSyncStore.getState().setSeq(organizationId, seq);
   }
 
@@ -118,14 +120,34 @@ function handleEntityNotification(
         // Fetch single entity and patch both detail and list caches
         cacheOps.fetchEntityAndUpdateList(entityId, keys, action);
       }
+
+      // Optimistically increment unseen count for new entities from other users
+      if (action === 'create') {
+        incrementUnseenCount(entityType);
+      }
       break;
 
     case 'delete':
       // Remove from detail and list caches directly (no refetch needed)
       cacheOps.removeEntityFromCache(entityType, entityId);
       cacheOps.removeEntityFromListCache(entityId, keys);
+
+      // Invalidate unseen counts — can't know if deleted entity was unseen
+      queryClient.invalidateQueries({ queryKey: seenKeys.unseenCounts });
       break;
   }
 
   console.debug(`[handleEntityNotification] ${entityType}:${action} priority=${priority}`);
+}
+
+/**
+ * Invalidate unseen counts when a new tracked entity is created via SSE.
+ * Since SSE notifications don't include parent context IDs (e.g., projectId),
+ * we invalidate the query to trigger a refetch instead of optimistic increment.
+ */
+function incrementUnseenCount(entityType: string): void {
+  const trackedTypes = appConfig.seenTrackedEntityTypes as readonly string[];
+  if (!trackedTypes.includes(entityType)) return;
+
+  queryClient.invalidateQueries({ queryKey: seenKeys.unseenCounts });
 }

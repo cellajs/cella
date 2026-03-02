@@ -1,16 +1,16 @@
 import { onlineManager } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import type { User } from '~/api.gen';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster/service';
 import { useUserDeleteMutation } from '~/modules/user/query';
+import type { BaseUser } from '~/modules/user/types';
 
 interface Props {
-  users: User[];
+  users: BaseUser[];
   dialog?: boolean;
-  callback?: (args: CallbackArgs<User[]>) => void;
+  callback?: (args: CallbackArgs<BaseUser[]>) => void;
 }
 
 export function DeleteUsers({ users, callback, dialog: isDialog }: Props) {

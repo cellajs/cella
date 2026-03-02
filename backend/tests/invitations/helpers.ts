@@ -1,8 +1,8 @@
+import { nanoid } from 'shared/nanoid';
 import { baseDb as db } from '#/db/db';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { tokensTable } from '#/db/schema/tokens';
 import type { UserModel } from '#/db/schema/users';
-import { nanoid } from '#/utils/nanoid';
 import { pastIsoDate } from '../../mocks/utils';
 
 /**
@@ -12,7 +12,7 @@ export async function createMembershipInvitationToken(
   user: UserModel,
   organizationId: string,
   role: 'admin' | 'member' = 'member',
-  tenantId: string = 'test01', // Default test tenant
+  tenantId: string,
 ) {
   // Create inactive membership first
   const inactiveMembership = {

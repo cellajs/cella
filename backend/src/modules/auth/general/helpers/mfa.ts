@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { appConfig } from 'shared';
+import { nanoid } from 'shared/nanoid';
 import { baseDb as db } from '#/db/db';
 import { tokensTable } from '#/db/schema/tokens';
 import { type UserModel, usersTable } from '#/db/schema/users';
@@ -9,7 +10,6 @@ import { AppError } from '#/lib/error';
 import { getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { userSelect } from '#/modules/user/helpers/select';
 import { getValidToken } from '#/utils/get-valid-token';
-import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';
 import { createDate, TimeSpan } from '#/utils/time-span';
 

@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/docs/x-routes';
 import { authGuard, publicGuard } from '#/middlewares/guard';
-import { totpVerificationLimiter } from '#/middlewares/rate-limiter/limiters';
+import { singlePointsLimiter, totpVerificationLimiter } from '#/middlewares/rate-limiter/limiters';
 import { totpCreateBodySchema } from '#/modules/auth/totps/totps-schema';
 import { cookieSchema, errorResponseRefs } from '#/schemas';
 import { mockTotpKeyResponse } from '../../../../mocks/mock-auth';
@@ -15,6 +15,7 @@ const authTotpsRoutes = {
     method: 'post',
     path: '/totp/generate-key',
     xGuard: authGuard,
+    xRateLimiter: singlePointsLimiter,
     tags: ['auth'],
     summary: 'Generate TOTP key',
     description: 'Generates a new TOTP key for current user and returns a provisioning URI and Base32 manual key.',
@@ -39,6 +40,7 @@ const authTotpsRoutes = {
     method: 'post',
     path: '/totp',
     xGuard: authGuard,
+    xRateLimiter: singlePointsLimiter,
     tags: ['auth'],
     summary: 'Set TOTP',
     description:
@@ -65,6 +67,7 @@ const authTotpsRoutes = {
     method: 'delete',
     path: '/totp',
     xGuard: authGuard,
+    xRateLimiter: singlePointsLimiter,
     tags: ['auth'],
     summary: 'Delete TOTP',
     description: 'Delete TOTP credential for current user.',

@@ -1,18 +1,15 @@
 import { useTranslation } from 'react-i18next';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { HeaderCell } from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useHandleInvitationMutation } from '~/modules/me/query';
 import type { Invitation } from '~/modules/me/types';
 import { Button } from '~/modules/ui/button';
-import { UserCellById } from '~/modules/user/user-cell';
+import { UserCell } from '~/modules/user/user-cell';
 import { dateShort } from '~/utils/date-short';
 
 export const useColumns = () => {
   const { t } = useTranslation();
-
-  const isMobile = useBreakpoints('max', 'sm', false);
 
   const actionButtons = [
     { label: t('common:accept'), variant: 'darkSuccess', action: 'accept' },
@@ -25,7 +22,6 @@ export const useColumns = () => {
     {
       key: 'name',
       name: '',
-      visible: true,
       sortable: false,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => (
@@ -44,7 +40,6 @@ export const useColumns = () => {
     {
       key: 'entityType',
       name: t('common:type'),
-      visible: true,
       sortable: false,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => <span>{t(`common:${row.entity.entityType}`)}</span>,
@@ -53,49 +48,43 @@ export const useColumns = () => {
       key: 'role',
       name: t('common:role'),
       sortable: false,
-      visible: true,
       minWidth: 100,
       renderHeaderCell: HeaderCell,
-      renderCell: ({ row }) => (
-        <div className="inline-flex items-center gap-1 relative group h-full w-full">
-          {row.inactiveMembership.role ? (
-            t(`common:${row.inactiveMembership.role}`)
-          ) : (
-            <span className="text-muted">-</span>
-          )}
-        </div>
-      ),
+      placeholderValue: '-',
+      renderCell: ({ row }) =>
+        row.inactiveMembership.role ? (
+          <div className="inline-flex items-center gap-1 relative group h-full w-full">
+            {t(`common:${row.inactiveMembership.role}`)}
+          </div>
+        ) : null,
     },
     {
       key: 'createdAt',
       name: t('common:invited_at'),
       sortable: false,
-      visible: !isMobile,
+      minBreakpoint: 'md',
       minWidth: 160,
       renderHeaderCell: HeaderCell,
-      renderCell: ({ row }) =>
-        row.inactiveMembership.createdAt ? (
-          dateShort(row.inactiveMembership.createdAt)
-        ) : (
-          <span className="text-muted">-</span>
-        ),
+      placeholderValue: '-',
+      renderCell: ({ row }) => dateShort(row.inactiveMembership.createdAt),
     },
     {
       key: 'createdBy',
       name: t('common:invited_by'),
       sortable: false,
-      visible: !isMobile,
+      minBreakpoint: 'md',
       minWidth: 120,
       renderHeaderCell: HeaderCell,
-      renderCell: ({ row, tabIndex }) => (
-        <UserCellById userId={row.inactiveMembership.createdBy} cacheOnly={false} tabIndex={tabIndex} />
-      ),
+      placeholderValue: '-',
+      renderCell: ({ row, tabIndex }) =>
+        row.inactiveMembership.createdBy && (
+          <UserCell compactable user={row.inactiveMembership.createdBy} tabIndex={tabIndex} />
+        ),
     },
     {
       key: 'actions',
       name: '',
       sortable: false,
-      visible: true,
       width: 200,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => (

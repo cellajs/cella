@@ -167,10 +167,10 @@ const fullColumns: Column<Person>[] = [
 const responsiveColumns: Column<Person>[] = [
   { key: 'id', name: 'ID', width: 60, frozen: true },
   { key: 'firstName', name: 'First Name', width: 120 },
-  { key: 'lastName', name: 'Last Name', width: 120, visible: { min: 'sm' } },
-  { key: 'email', name: 'Email', width: 200, visible: { min: 'md' } },
-  { key: 'department', name: 'Department', width: 120, visible: { min: 'lg' } },
-  { key: 'role', name: 'Role', width: 150, visible: { min: 'xl' } },
+  { key: 'lastName', name: 'Last Name', width: 120, minBreakpoint: 'sm' },
+  { key: 'email', name: 'Email', width: 200, minBreakpoint: 'md' },
+  { key: 'department', name: 'Department', width: 120, minBreakpoint: 'lg' },
+  { key: 'role', name: 'Role', width: 150, minBreakpoint: 'xl' },
 ];
 
 // Columns with mobile sub-row support
@@ -605,8 +605,8 @@ export const ColumnVisibilityRange: Story = {
   args: {
     columns: [
       { key: 'firstName', name: 'First Name (always)', width: 150 },
-      { key: 'lastName', name: 'Last Name (sm-lg)', width: 150, visible: { min: 'sm', max: 'lg' } },
-      { key: 'email', name: 'Email (lg+)', width: 200, visible: { min: 'lg' } },
+      { key: 'lastName', name: 'Last Name (sm-lg)', width: 150, minBreakpoint: 'sm', maxBreakpoint: 'lg' },
+      { key: 'email', name: 'Email (lg+)', width: 200, minBreakpoint: 'lg' },
     ] as Column<Person>[],
     rows: sampleData,
   },

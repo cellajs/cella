@@ -5,7 +5,6 @@ import { isAuthenticated, tenantMatch, userContextSet } from '#/db/rls-helpers';
 import type { AuthStrategy } from '#/db/schema/sessions';
 import { maxLength } from '#/db/utils/constraints';
 import { contextEntityColumns } from '#/db/utils/context-entity-columns';
-import { defaultRestrictions, type Restrictions } from '#/db/utils/organization-restrictions';
 
 const languagesEnum = appConfig.languages;
 
@@ -22,7 +21,6 @@ export const organizationsTable = pgTable(
     timezone: varchar({ length: maxLength.field }),
     defaultLanguage: varchar({ enum: languagesEnum }).notNull().default(appConfig.defaultLanguage),
     languages: json().$type<Language[]>().notNull().default([appConfig.defaultLanguage]),
-    restrictions: json().$type<Restrictions>().notNull().default(defaultRestrictions()),
     notificationEmail: varchar({ length: maxLength.field }),
     emailDomains: json().$type<string[]>().notNull().default([]),
     color: varchar({ length: maxLength.field }),
@@ -51,6 +49,12 @@ export const organizationsTable = pgTable(
             WHERE m.organization_id = ${table.id}
             AND m.user_id = current_setting('app.user_id', true)::text
             AND m.tenant_id = ${table.tenantId}
+          )
+          OR EXISTS (
+            SELECT 1 FROM inactive_memberships im
+            WHERE im.organization_id = ${table.id}
+            AND im.user_id = current_setting('app.user_id', true)::text
+            AND im.rejected_at IS NULL
           )
         )
       `,

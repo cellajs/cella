@@ -6,7 +6,6 @@ import {
   useExtension,
   useExtensionState,
 } from '@blocknote/react';
-import { useMemo } from 'react';
 import { customBlockTypeSwitchItems, getSideMenuItems } from '~/modules/common/blocknote/blocknote-config';
 import { focusEditor } from '~/modules/common/blocknote/helpers/focus';
 import { isHeadingMenuItemActive } from '~/modules/common/blocknote/helpers/header-item-select';
@@ -34,16 +33,14 @@ export function ResetBlockTypeItem({ editor, allowedTypes, headingLevels }: Rese
   const filteredSelectItems = customBlockTypeSwitchItems.filter((i) => allowedTypes.includes(i));
   const selectItemsType: readonly string[] = filteredSelectItems;
 
-  const filteredItems = useMemo(() => {
-    return getSideMenuItems(dict).filter((item) => {
-      if (!selectItemsType.includes(item.type)) return false;
+  const filteredItems = getSideMenuItems(dict).filter((item) => {
+    if (!selectItemsType.includes(item.type)) return false;
 
-      if (item.type === 'heading' && typeof item.props?.level === 'number') {
-        return headingLevels.includes(item.props.level as (typeof headingLevels)[number]);
-      }
-      return true;
-    });
-  }, [editor, dict, selectItemsType, headingLevels]);
+    if (item.type === 'heading' && typeof item.props?.level === 'number') {
+      return headingLevels.includes(item.props.level as (typeof headingLevels)[number]);
+    }
+    return true;
+  });
 
   // Determine if the current block type should be shown
   const shouldShow = filteredItems.some((item) => item.type === block.type);
@@ -64,19 +61,15 @@ export function ResetBlockTypeItem({ editor, allowedTypes, headingLevels }: Rese
     setTimeout(() => focusEditor(editor, block.id), 0);
   };
 
-  const fullItems = useMemo(
-    () =>
-      filteredItems.map((item) => {
-        const { type, icon: Icon, name } = item;
-        return {
-          type: type,
-          title: name,
-          icon: <Icon size={16} />,
-          onClick: () => handleItemClick(item),
-        };
-      }),
-    [block, filteredItems, editor],
-  );
+  const fullItems = filteredItems.map((item) => {
+    const { type, icon: Icon, name } = item;
+    return {
+      type: type,
+      title: name,
+      icon: <Icon size={16} />,
+      onClick: () => handleItemClick(item),
+    };
+  });
   // If block type should not be shown or the editor is not editable, return null early
   if (!shouldShow || !editor.isEditable) return null;
 

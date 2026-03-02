@@ -134,9 +134,18 @@ export function OpenApiSpecViewer() {
 
   return (
     <>
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80 py-2 -mt-2 mb-2 flex items-center gap-2 max-sm:flex-col w-full">
+      {/* Mobile-only: show actions before sticky bar */}
+      <JsonActions
+        url={openApiUrl}
+        data={data}
+        filename="openapi.json"
+        resourceName={t('common:docs.openapi_json')}
+        className="w-full sm:hidden mb-2 *:flex-1!"
+      />
+
+      <div className="sticky top-0 z-10 bg-background/60 backdrop-blur-xs py-2 -mt-2 mb-2 flex items-center gap-2 max-sm:flex-col w-full">
         {/* Search through JSON */}
-        <InputGroup className="max-sm:w-full max-sm:order-last">
+        <InputGroup className="max-sm:w-full">
           <InputGroupAddon>
             <SearchSpinner value={searchText} isSearching={false} />
           </InputGroupAddon>
@@ -176,7 +185,7 @@ export function OpenApiSpecViewer() {
                   type="button"
                   onClick={handleNextMatch}
                   disabled={matchCount === 0}
-                  className="p-1 hover:bg-muted rounded disabled:opacity-30"
+                  className="p-1 mr-2 hover:bg-muted rounded disabled:opacity-30"
                   title={t('common:next')}
                 >
                   <ChevronDownIcon size={14} />
@@ -209,13 +218,13 @@ export function OpenApiSpecViewer() {
           <span>{isExpanded ? t('common:reset') : t('common:expand')}</span>
         </Button>
 
-        {/* Copy, download and open in new tab */}
+        {/* Copy, download and open in new tab (desktop only, mobile version is above sticky bar) */}
         <JsonActions
           url={openApiUrl}
           data={data}
           filename="openapi.json"
           resourceName={t('common:docs.openapi_json')}
-          className="max-sm:w-full"
+          className="max-sm:hidden"
         />
       </div>
 

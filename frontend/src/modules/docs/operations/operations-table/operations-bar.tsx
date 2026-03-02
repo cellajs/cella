@@ -43,7 +43,7 @@ export const OperationsTableBar = ({
   const isFiltered = !!searchVars.q;
 
   return (
-    <TableBarContainer className="mt-0">
+    <TableBarContainer searchVars={searchVars} offsetTop={0}>
       <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
         <FilterBarActions>
           <ViewModeToggle />

@@ -1,9 +1,9 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { useLocation, useSearch } from '@tanstack/react-router';
 import { useMemo, useRef } from 'react';
+import { nanoid } from 'shared/nanoid';
 import { schemasQueryOptions, schemaTagsQueryOptions } from '~/modules/docs/query';
 import { SidebarMenu } from '~/modules/ui/sidebar';
-import { nanoid } from '~/utils/nanoid';
 import { SchemaTagItem } from './schema-tag-item';
 
 /** Sidebar listing schema tags with their schemas. */

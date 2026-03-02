@@ -5,7 +5,7 @@ import { appConfig } from 'shared';
 import { usePreloadLazyComponents } from '~/hooks/use-preload-lazy-components';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { SimpleHeader } from '~/modules/common/simple-header';
-import { StickyBox } from '~/modules/common/sticky-box';
+
 import { LegalAside } from '~/modules/marketing/legal/legal-aside';
 import { type LegalSubject, legalConfig } from '~/modules/marketing/legal/legal-config';
 import { objectEntries } from '~/utils/object';
@@ -49,10 +49,10 @@ export const LegalContent = () => {
   return (
     <div className="container md:flex md:flex-row my-4 md:mt-8 gap-4">
       <div className="mx-auto md:min-w-48 md:w-[25%] md:mt-3">
-        <StickyBox className="z-10 group" offsetTop={12}>
+        <div className="sticky top-3 z-10 group">
           <SimpleHeader className="p-3" text={t('common:legal_text', { appName: appConfig.name })} collapseText />
           <LegalAside subjects={subjects} currentSubject={currentSubject} className="py-2" />
-        </StickyBox>
+        </div>
       </div>
 
       {/* Main legal content */}

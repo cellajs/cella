@@ -4,7 +4,7 @@ import { GroupCell } from './group-cell';
 import { RowSelectionContext, type RowSelectionContextValue } from './hooks';
 import { rowClassname, rowSelectedClassname } from './style/row';
 import type { BaseRenderRowProps, GroupRow } from './types';
-import { classnames, getRowStyle } from './utils';
+import { cn, getRowStyle } from './utils';
 
 const groupRowClassname = 'rdg-group-row';
 
@@ -48,7 +48,7 @@ function GroupedRow<R, SR>({
         aria-setsize={row.setSize}
         aria-posinset={row.posInSet + 1} // aria-posinset is 1-based
         aria-expanded={row.isExpanded}
-        className={classnames(
+        className={cn(
           rowClassname,
           groupRowClassname,
           `rdg-row-${rowIdx % 2 === 0 ? 'even' : 'odd'}`,

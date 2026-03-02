@@ -101,6 +101,8 @@ export interface GenSchemaProperty {
   maxItems?: number;
   /** Nested properties for object types */
   properties?: Record<string, GenSchemaProperty>;
+  /** Value schema for record/map types (from OpenAPI additionalProperties) */
+  additionalProperties?: GenSchemaProperty;
   /** Item type for array types (unwrapped from items.type) */
   itemType?: string | string[];
   /** Items schema for array types (only for complex nested objects/arrays) */
@@ -146,6 +148,8 @@ export interface GenSchema {
   maxLength?: number;
   /** Properties for object schemas */
   properties?: Record<string, GenSchemaProperty>;
+  /** Value schema for record/map types (from OpenAPI additionalProperties) */
+  additionalProperties?: GenSchemaProperty;
   /** Item type for array types (unwrapped from items.type) */
   itemType?: string | string[];
   /** Items schema for array types (only for complex nested objects/arrays) */
@@ -236,6 +240,8 @@ export interface GenRequestSection {
   maxLength?: number;
   /** Properties within the section */
   properties?: Record<string, GenSchemaProperty>;
+  /** Value schema for record/map types (from OpenAPI additionalProperties) */
+  additionalProperties?: GenSchemaProperty;
   /** Items schema for array body types */
   items?: GenSchemaProperty;
   /** Item type for array body types */
@@ -268,6 +274,8 @@ export interface GenRequest {
   query?: GenRequestSection;
   /** Request body (section can be required/optional) */
   body?: GenRequestSection;
+  /** Example value for request body from OpenAPI spec */
+  example?: unknown;
 }
 
 /**

@@ -5,13 +5,10 @@
  * tracing across frontend, backend, and CDC Worker without heavy SDK dependencies.
  */
 
-import { customAlphabet } from 'nanoid';
+import { nanoid } from '../utils/nanoid';
 
 // Re-export span names
 export * from './span-names';
-
-/** Custom nanoid using lowercase alphanumeric (matches cella convention). */
-const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz0123456789');
 
 // ================================
 // Types

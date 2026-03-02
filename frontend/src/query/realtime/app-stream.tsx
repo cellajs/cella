@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { appStreamManager, useAppStreamStore } from './stream-store';
+import { appStreamManager } from './stream-store';
 import type { UseAppStreamOptions, UseAppStreamReturn } from './types';
 
 const debugLabel = 'AppStream';
@@ -11,8 +11,8 @@ const debugLabel = 'AppStream';
 export function useAppStream(options: UseAppStreamOptions = {}): UseAppStreamReturn {
   const { enabled = true, onStateChange } = options;
 
-  const state = useAppStreamStore((s) => s.state);
-  const cursor = useAppStreamStore((s) => s.cursor);
+  const state = appStreamManager.useStore((s) => s.state);
+  const cursor = appStreamManager.useStore((s) => s.cursor);
 
   // Connect/disconnect based on enabled prop
   useEffect(() => {

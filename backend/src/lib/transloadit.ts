@@ -1,8 +1,8 @@
 import crypto from 'node:crypto';
 import { appConfig, type UploadTemplateId } from 'shared';
+import { nanoid } from 'shared/nanoid';
 import { uploadTemplates } from 'shared/upload-templates';
 import { env } from '#/env';
-import { nanoid } from '#/utils/nanoid';
 import { utcDateString } from '#/utils/utc-data-string';
 
 export const getParams = (templateId: UploadTemplateId, isPublic: boolean, sub: string) => {

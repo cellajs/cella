@@ -76,16 +76,12 @@ export function invalidateOnMembershipChange(
   organizationId?: string,
 ): void {
   const keys = getEntityQueryKeys(entityType);
-  if (keys) {
-    queryClient.invalidateQueries({ queryKey: keys.detail.byId(entityId), refetchType: 'active' });
-    queryClient.invalidateQueries({ queryKey: keys.list.base, refetchType: 'active' });
-  }
+  queryClient.invalidateQueries({ queryKey: keys.detail.byId(entityId), refetchType: 'active' });
+  queryClient.invalidateQueries({ queryKey: keys.list.base, refetchType: 'active' });
 
   // If entity belongs to a different parent org, invalidate that too
   if (organizationId && organizationId !== entityId) {
     const orgKeys = getEntityQueryKeys('organization');
-    if (orgKeys) {
-      queryClient.invalidateQueries({ queryKey: orgKeys.detail.byId(organizationId), refetchType: 'active' });
-    }
+    queryClient.invalidateQueries({ queryKey: orgKeys.detail.byId(organizationId), refetchType: 'active' });
   }
 }

@@ -6,7 +6,7 @@ import { type Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
 import { getAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { handleOAuthCallback } from '#/modules/auth/oauth/helpers/callback';
-import { handleOAuthInitiation, type OAuthCookiePayload } from '#/modules/auth/oauth/helpers/initiation';
+import { handleOAuthInitiation, parseOAuthCookie } from '#/modules/auth/oauth/helpers/initiation';
 import {
   type GithubUserEmailProps,
   type GithubUserProps,
@@ -127,7 +127,7 @@ const authOAuthRouteHandlers = app
 
     // Verify cookie by `state` (CSRF protection)
     const oauthCookie = await getAuthCookie(ctx, `oauth-state-${state}`);
-    const cookiePayload: OAuthCookiePayload | null = oauthCookie ? JSON.parse(oauthCookie) : null;
+    const cookiePayload = parseOAuthCookie(oauthCookie);
 
     if (!state || !cookiePayload) {
       throw new AppError(401, 'invalid_state', 'error', {
@@ -174,7 +174,7 @@ const authOAuthRouteHandlers = app
 
     // Verify cookie by `state` (CSRF protection) & PKCE validation
     const oauthCookie = await getAuthCookie(ctx, `oauth-state-${state}`);
-    const cookiePayload: OAuthCookiePayload | null = oauthCookie ? JSON.parse(oauthCookie) : null;
+    const cookiePayload = parseOAuthCookie(oauthCookie);
 
     if (!code || !cookiePayload || !cookiePayload.codeVerifier) {
       throw new AppError(401, 'invalid_state', 'error', {
@@ -215,7 +215,7 @@ const authOAuthRouteHandlers = app
 
     // Verify cookie by `state` (CSRF protection) & PKCE validation
     const oauthCookie = await getAuthCookie(ctx, `oauth-state-${state}`);
-    const cookiePayload: OAuthCookiePayload | null = oauthCookie ? JSON.parse(oauthCookie) : null;
+    const cookiePayload = parseOAuthCookie(oauthCookie);
 
     if (!code || !cookiePayload || !cookiePayload.codeVerifier) {
       throw new AppError(401, 'invalid_state', 'error', {

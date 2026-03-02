@@ -126,8 +126,11 @@ async function applyDirectMerge(
       batchRestorePaths.push(filePath);
     } else if (ignored && !existsInFork) {
       batchRemovePaths.push(filePath);
-    } else if (pinned && !file.renamedFrom) {
+    } else if (pinned && !file.renamedFrom && existsInFork) {
       batchRestorePaths.push(filePath);
+    } else if (pinned && !file.renamedFrom && !existsInFork) {
+      // Pinned file doesn't exist in fork — remove from merge to keep fork's state (deleted)
+      batchRemovePaths.push(filePath);
     }
   }
 
@@ -285,8 +288,15 @@ async function applyDirectMerge(
       }
       resolved++;
     } else if (fileIsPinned) {
-      onProgress?.(`→ ${filePath}: keeping fork (pinned conflict)`);
-      await restoreToHead(forkPath, filePath);
+      const existsInFork = await fileExistsAtRef(forkPath, 'HEAD', filePath);
+      if (existsInFork) {
+        onProgress?.(`→ ${filePath}: keeping fork (pinned conflict)`);
+        await restoreToHead(forkPath, filePath);
+      } else {
+        onProgress?.(`→ ${filePath}: removing (pinned conflict, not in fork)`);
+        await gitRm(forkPath, filePath);
+        await removeFileFromWorktree(forkPath, filePath);
+      }
       resolved++;
     }
     // Non-ignored, non-pinned conflicts are left for user in IDE

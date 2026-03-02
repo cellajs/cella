@@ -35,12 +35,13 @@ describe('Invitation response', async () => {
   }
 
   async function respondToInvitation(
+    tenantId: string,
     organizationId: string,
     inactiveMembershipId: string,
     action: 'accept' | 'reject',
     sessionCookie: string,
   ) {
-    return await (client as any)[organizationId]['memberships'][inactiveMembershipId][action].$post(
+    return await (client as any)[tenantId][organizationId]['memberships'][inactiveMembershipId][action].$post(
       {},
       {
         headers: {
@@ -55,10 +56,21 @@ describe('Invitation response', async () => {
     const organization = await createOrg();
     const invitedUser = await createPasswordUser('invited@cella.com', 'password123!');
 
-    const { inactiveMembership } = await createMembershipInvitationToken(invitedUser, organization.id, 'member');
+    const { inactiveMembership } = await createMembershipInvitationToken(
+      invitedUser,
+      organization.id,
+      'member',
+      organization.tenantId,
+    );
     const sessionCookie = await signInUser('invited@cella.com', 'password123!');
 
-    const res = await respondToInvitation(organization.id, inactiveMembership.id!, 'accept', sessionCookie);
+    const res = await respondToInvitation(
+      organization.tenantId,
+      organization.id,
+      inactiveMembership.id!,
+      'accept',
+      sessionCookie,
+    );
 
     expect(res.status).toBe(200);
 
@@ -78,10 +90,21 @@ describe('Invitation response', async () => {
     const organization = await createOrg();
     const invitedUser = await createPasswordUser('invited@cella.com', 'password123!');
 
-    const { inactiveMembership } = await createMembershipInvitationToken(invitedUser, organization.id, 'admin');
+    const { inactiveMembership } = await createMembershipInvitationToken(
+      invitedUser,
+      organization.id,
+      'admin',
+      organization.tenantId,
+    );
     const sessionCookie = await signInUser('invited@cella.com', 'password123!');
 
-    const res = await respondToInvitation(organization.id, inactiveMembership.id!, 'accept', sessionCookie);
+    const res = await respondToInvitation(
+      organization.tenantId,
+      organization.id,
+      inactiveMembership.id!,
+      'accept',
+      sessionCookie,
+    );
 
     expect(res.status).toBe(200);
 
@@ -94,10 +117,21 @@ describe('Invitation response', async () => {
     const organization = await createOrg();
     const invitedUser = await createPasswordUser('invited@cella.com', 'password123!');
 
-    const { inactiveMembership } = await createMembershipInvitationToken(invitedUser, organization.id, 'member');
+    const { inactiveMembership } = await createMembershipInvitationToken(
+      invitedUser,
+      organization.id,
+      'member',
+      organization.tenantId,
+    );
     const sessionCookie = await signInUser('invited@cella.com', 'password123!');
 
-    const res = await respondToInvitation(organization.id, inactiveMembership.id!, 'reject', sessionCookie);
+    const res = await respondToInvitation(
+      organization.tenantId,
+      organization.id,
+      inactiveMembership.id!,
+      'reject',
+      sessionCookie,
+    );
 
     expect(res.status).toBe(200);
 
@@ -119,7 +153,7 @@ describe('Invitation response', async () => {
 
     const sessionCookie = await signInUser('user@cella.com', 'password123!');
 
-    const res = await client[organization.id]['memberships']['non-existent-id']['accept'].$post(
+    const res = await client[organization.tenantId][organization.id]['memberships']['non-existent-id']['accept'].$post(
       {},
       {
         headers: {
@@ -136,13 +170,30 @@ describe('Invitation response', async () => {
     const organization = await createOrg();
     const invitedUser = await createPasswordUser('invited@cella.com', 'password123!');
 
-    const { inactiveMembership } = await createMembershipInvitationToken(invitedUser, organization.id, 'member');
+    const { inactiveMembership } = await createMembershipInvitationToken(
+      invitedUser,
+      organization.id,
+      'member',
+      organization.tenantId,
+    );
     const sessionCookie = await signInUser('invited@cella.com', 'password123!');
 
-    const firstRes = await respondToInvitation(organization.id, inactiveMembership.id!, 'accept', sessionCookie);
+    const firstRes = await respondToInvitation(
+      organization.tenantId,
+      organization.id,
+      inactiveMembership.id!,
+      'accept',
+      sessionCookie,
+    );
     expect(firstRes.status).toBe(200);
 
-    const secondRes = await respondToInvitation(organization.id, inactiveMembership.id!, 'accept', sessionCookie);
+    const secondRes = await respondToInvitation(
+      organization.tenantId,
+      organization.id,
+      inactiveMembership.id!,
+      'accept',
+      sessionCookie,
+    );
     expect(secondRes.status).toBe(404);
   });
 });

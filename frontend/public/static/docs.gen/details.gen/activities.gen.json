@@ -85,7 +85,11 @@
                           "mutationId": { "type": "string", "required": true },
                           "sourceId": { "type": "string", "required": true },
                           "version": { "type": "integer", "required": true },
-                          "fieldVersions": { "type": "object", "required": true }
+                          "fieldVersions": {
+                            "type": "object",
+                            "required": true,
+                            "additionalProperties": { "type": "integer", "required": false }
+                          }
                         },
                         "ref": "#/components/schemas/StxBase"
                       },

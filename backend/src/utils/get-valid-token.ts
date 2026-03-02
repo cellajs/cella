@@ -1,5 +1,6 @@
 import { and, eq } from 'drizzle-orm';
 import { Context } from 'hono';
+import { nanoid } from 'shared/nanoid';
 import { baseDb as db } from '#/db/db';
 import { type TokenModel, tokensTable } from '#/db/schema/tokens';
 import { Env } from '#/lib/context';
@@ -7,7 +8,6 @@ import { AppError } from '#/lib/error';
 import { getAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/helpers/session';
 import { isExpiredDate } from '#/utils/is-expired-date';
-import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';
 import { createDate, TimeSpan } from '#/utils/time-span';
 

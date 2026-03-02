@@ -6,11 +6,11 @@ import '~/lib/dayjs';
 import '~/lib/i18n';
 
 import { appConfig } from 'shared';
+import { renderAscii } from 'shared/ascii';
 import { initSentry } from '~/lib/sentry';
 import { RouterWrapper } from '~/modules/common/router-wrapper';
 import { QueryClientProvider } from '~/query/provider';
 import { addBadgeToFavicon } from '~/utils/add-badge-to-favicon';
-import { renderAscii } from '~/utils/ascii';
 
 /**
  * Check if debug mode is enabled via VITE_DEBUG_MODE environment variable.

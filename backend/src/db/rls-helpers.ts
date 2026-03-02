@@ -4,8 +4,14 @@
  * Reusable SQL fragments for consistent RLS policy definitions across all tenant-scoped tables.
  * Follows the fail-closed principle: missing context always results in denied access.
  *
+ * Policy categories:
+ *   Standard       — tenant + org check on all ops (orgScopedCrudPolicies)
+ *   Hybrid         — public SELECT OR tenant+org; writes require tenant+org (publicAccessCrudPolicies)
+ *   Cross-tenant   — user sees own rows across tenants; writes scoped to tenant (memberships)
+ *   Privilege-based — role grants control access; append-only for activities
+ *
  * Session variables: app.tenant_id, app.user_id, app.is_authenticated
- * @see info/RLS.md for full architecture documentation
+ * @see info/ARCHITECTURE.md for full architecture documentation
  */
 
 import { sql } from 'drizzle-orm';
@@ -88,6 +94,30 @@ export const orgScopedCrudPolicies = (name: string, table: { tenantId: unknown; 
     pgPolicy(`${name}_insert_policy`, { for: 'insert', withCheck: condition }),
     pgPolicy(`${name}_update_policy`, { for: 'update', using: condition, withCheck: condition }),
     pgPolicy(`${name}_delete_policy`, { for: 'delete', using: condition }),
+  ] as const;
+};
+
+/**
+ * Org-scoped CRUD policies with public access support (e.g., attachments with shareable links).
+ * SELECT: org membership OR (tenant match + publicAccess=true).
+ * INSERT/UPDATE/DELETE: org membership required.
+ */
+export const orgScopedPublicAccessCrudPolicies = (
+  name: string,
+  table: { tenantId: unknown; organizationId: unknown; publicAccess: unknown },
+) => {
+  const writeCondition = membershipWriteCondition(table);
+  return [
+    pgPolicy(`${name}_select_policy`, {
+      for: 'select',
+      using: sql`
+        ${tenantMatch(table)}
+        AND (${membershipExists(table)} OR ${table.publicAccess} = true)
+      `,
+    }),
+    pgPolicy(`${name}_insert_policy`, { for: 'insert', withCheck: writeCondition }),
+    pgPolicy(`${name}_update_policy`, { for: 'update', using: writeCondition, withCheck: writeCondition }),
+    pgPolicy(`${name}_delete_policy`, { for: 'delete', using: writeCondition }),
   ] as const;
 };
 

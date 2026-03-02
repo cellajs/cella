@@ -12,7 +12,7 @@ import { mockNanoid, mockPaginated, withFakerSeed } from './utils';
 export const mockMeResponse = (key = 'me:default'): MeResponse =>
   withFakerSeed(key, () => ({
     user: mockUserResponse('me:user'),
-    systemRole: null,
+    isSystemAdmin: false,
   }));
 
 /**

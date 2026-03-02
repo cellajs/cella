@@ -1,6 +1,7 @@
 import { createXRoute } from '#/docs/x-routes';
 import { authGuard, orgGuard, tenantGuard } from '#/middlewares/guard';
-import { seenBatchBodySchema, seenBatchResponseSchema } from '#/modules/seen/seen-schema';
+import { bulkPointsLimiter } from '#/middlewares/rate-limiter/limiters';
+import { seenBatchBodySchema, seenBatchResponseSchema, unseenCountsResponseSchema } from '#/modules/seen/seen-schema';
 import { errorResponseRefs, tenantOrgParamSchema } from '#/schemas';
 
 const seenRoutes = {
@@ -12,6 +13,7 @@ const seenRoutes = {
     method: 'post',
     path: '/',
     xGuard: [authGuard, tenantGuard, orgGuard],
+    xRateLimiter: bulkPointsLimiter,
     tags: ['seen'],
     summary: 'Mark entities as seen',
     description:
@@ -28,6 +30,27 @@ const seenRoutes = {
       200: {
         description: 'Seen records processed',
         content: { 'application/json': { schema: seenBatchResponseSchema } },
+      },
+      ...errorResponseRefs,
+    },
+  }),
+  /**
+   * Get unseen counts per parent context entity per entity type
+   */
+  getUnseenCounts: createXRoute({
+    operationId: 'getUnseenCounts',
+    method: 'get',
+    path: '/counts',
+    xGuard: authGuard,
+    tags: ['seen'],
+    summary: 'Get unseen counts',
+    description:
+      'Returns the number of unseen product entities per parent context entity (e.g., project) and entity type for the *current user*. ' +
+      'Computed as total (from context_counters) minus seen (from seen_by).',
+    responses: {
+      200: {
+        description: 'Unseen counts per parent context entity per entity type',
+        content: { 'application/json': { schema: unseenCountsResponseSchema } },
       },
       ...errorResponseRefs,
     },

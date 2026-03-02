@@ -11,16 +11,6 @@ export type StateSetter<S> = React.Dispatch<React.SetStateAction<S>>;
 /** Supported breakpoint keys for responsive features */
 export type BreakpointKey = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 
-/**
- * Column visibility configuration.
- * Can be a boolean or breakpoint-based visibility rules.
- */
-export type ColumnVisibility =
-  | boolean
-  | { min: BreakpointKey }
-  | { max: BreakpointKey }
-  | { min: BreakpointKey; max: BreakpointKey };
-
 /** Cell position in the grid */
 export interface Position {
   readonly idx: number;
@@ -65,14 +55,12 @@ export interface Column<TRow, TSummaryRow = unknown> {
   readonly cellClass?: Maybe<string | ((row: TRow) => Maybe<string>)>;
   /** Class name(s) for the header cell */
   readonly headerCellClass?: Maybe<string>;
-  /** Class name(s) for summary cells */
-  readonly summaryCellClass?: Maybe<string | ((row: TSummaryRow) => Maybe<string>)>;
+
   /** Render function to render the content of cells */
   readonly renderCell?: Maybe<(props: RenderCellProps<TRow, TSummaryRow>) => ReactNode>;
   /** Render function to render the content of the header cell */
   readonly renderHeaderCell?: Maybe<(props: RenderHeaderCellProps<TRow, TSummaryRow>) => ReactNode>;
-  /** Render function to render the content of summary cells */
-  readonly renderSummaryCell?: Maybe<(props: RenderSummaryCellProps<TSummaryRow, TRow>) => ReactNode>;
+
   /** Render function to render the content of group cells */
   readonly renderGroupCell?: Maybe<(props: RenderGroupCellProps<TRow, TSummaryRow>) => ReactNode>;
   /** Render function to render the content of edit cells. When set, the column is automatically set to be editable */
@@ -91,19 +79,30 @@ export interface Column<TRow, TSummaryRow = unknown> {
   /** Sets the column sort order to be descending instead of ascending the first time the column is sorted */
   readonly sortDescendingFirst?: Maybe<boolean>;
   /**
+   * Placeholder to display when the cell value is nullish.
+   * Rendered as muted text. Only applies when renderCell returns null/undefined.
+   * @example placeholderValue: '-'
+   */
+  readonly placeholderValue?: Maybe<string>;
+  /**
    * Whether the column can receive keyboard focus.
    * When false, Tab and Arrow keys skip this column.
    * @default true
    */
   readonly focusable?: Maybe<boolean>;
   /**
-   * Column visibility. Boolean or breakpoint-based.
-   * @example visible: true
-   * @example visible: { max: 'sm' }  // Mobile only
-   * @example visible: { min: 'md' }  // Desktop only
-   * @default true
+   * Minimum breakpoint at which this column is visible.
+   * Below this breakpoint the column is excluded from the grid.
+   * Evaluated by the grid against its internal breakpoint — keep this static.
+   * @example minBreakpoint: 'md'  // Hidden on xs, sm
    */
-  readonly visible?: Maybe<ColumnVisibility>;
+  readonly minBreakpoint?: BreakpointKey;
+  /**
+   * Maximum breakpoint at which this column is visible.
+   * Above this breakpoint the column is excluded from the grid.
+   * @example maxBreakpoint: 'sm'  // Only visible on xs, sm (mobile-only)
+   */
+  readonly maxBreakpoint?: BreakpointKey;
   /**
    * Mobile rendering behavior.
    * - undefined: Normal column behavior
@@ -180,12 +179,6 @@ export interface RenderCellProps<TRow, TSummaryRow = unknown> {
   isCellEditable: boolean;
   tabIndex: number;
   onRowChange: (row: TRow) => void;
-}
-
-export interface RenderSummaryCellProps<TSummaryRow, TRow = unknown> {
-  column: CalculatedColumn<TRow, TSummaryRow>;
-  row: TSummaryRow;
-  tabIndex: number;
 }
 
 export interface RenderGroupCellProps<TRow, TSummaryRow = unknown> {
@@ -297,10 +290,11 @@ export interface BaseRenderRowProps<TRow, TSummaryRow = unknown> extends BaseCel
 export interface RenderRowProps<TRow, TSummaryRow = unknown> extends BaseRenderRowProps<TRow, TSummaryRow> {
   row: TRow;
   lastFrozenColumnIndex: number;
-  draggedOverCellIdx: number | undefined;
   selectedCellEditor: ReactElement<RenderEditCellProps<TRow>> | undefined;
   onRowChange: (column: CalculatedColumn<TRow, TSummaryRow>, rowIdx: number, newRow: TRow) => void;
   rowClass: Maybe<(row: TRow, rowIdx: number) => Maybe<string>>;
+  /** Render function for individual cells */
+  renderCell: (key: Key, props: CellRendererProps<TRow, TSummaryRow>) => ReactNode;
   /** Current cell range for range selection styling */
   selectedCellRange?: CellRange | null;
   /** Columns to render in mobile sub-row (when mobileRole: 'sub') */
@@ -324,12 +318,6 @@ export interface SelectRowEvent<TRow> {
 
 export interface SelectHeaderRowEvent {
   checked: boolean;
-}
-
-export interface FillEvent<TRow> {
-  columnKey: string;
-  sourceRow: TRow;
-  targetRow: TRow;
 }
 
 interface CellCopyPasteArgs<TRow, TSummaryRow = unknown> {
@@ -411,8 +399,6 @@ export interface ColumnWidth {
 }
 
 export type ColumnWidths = ReadonlyMap<string, ColumnWidth>;
-
-export type Direction = 'ltr' | 'rtl';
 
 /**
  * Selection mode for the data grid.

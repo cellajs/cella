@@ -1,10 +1,10 @@
 import { memo, useMemo } from 'react';
-import { useDefaultRenderers } from './data-grid-default-renderers-context';
-import { RowSelectionContext, type RowSelectionContextValue, useLatestFunc } from './hooks';
+import { useLatestCallback } from '~/hooks/use-latest-ref';
+import { RowSelectionContext, type RowSelectionContextValue } from './hooks';
 import { MobileExpandToggle, MobileSubRow } from './mobile-sub-row';
 import { rowClassname, rowSelectedClassname } from './style/row';
 import type { CalculatedColumn, RenderRowProps } from './types';
-import { classnames, getCellRangeBoundary, getColSpan, getRowStyle, isCellInRange } from './utils';
+import { cn, getCellRangeBoundary, getColSpan, getRowStyle, isCellInRange } from './utils';
 
 function Row<R, SR>({
   className,
@@ -13,7 +13,6 @@ function Row<R, SR>({
   selectedCellIdx,
   isRowSelectionDisabled,
   isRowSelected,
-  draggedOverCellIdx,
   lastFrozenColumnIndex,
   row,
   viewportColumns,
@@ -25,6 +24,7 @@ function Row<R, SR>({
   rowClass,
   onRowChange,
   selectCell,
+  renderCell,
   selectedCellRange,
   subColumns,
   isRowExpanded,
@@ -32,19 +32,17 @@ function Row<R, SR>({
   style,
   ...props
 }: RenderRowProps<R, SR>) {
-  const renderCell = useDefaultRenderers<R, SR>()!.renderCell!;
-
-  const handleRowChange = useLatestFunc((column: CalculatedColumn<R, SR>, newRow: R) => {
+  const handleRowChange = useLatestCallback((column: CalculatedColumn<R, SR>, newRow: R) => {
     onRowChange(column, rowIdx, newRow);
   });
 
-  const handleToggleExpand = useLatestFunc(() => {
+  const handleToggleExpand = useLatestCallback(() => {
     onToggleRowExpand?.(rowIdx);
   });
 
   const hasSubColumns = (subColumns?.length ?? 0) > 0;
 
-  className = classnames(
+  className = cn(
     rowClassname,
     `rdg-row-${rowIdx % 2 === 0 ? 'even' : 'odd'}`,
     {
@@ -95,7 +93,7 @@ function Row<R, SR>({
           colSpan,
           row,
           rowIdx,
-          isDraggedOver: draggedOverCellIdx === idx,
+          isDraggedOver: false,
           isCellSelected,
           isInSelectedRange,
           rangeBoundary,

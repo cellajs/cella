@@ -220,7 +220,12 @@
             "rejectionReasons": {
               "type": "object",
               "required": false,
-              "description": "Map of reason code to rejected item IDs"
+              "description": "Map of reason code to rejected item IDs",
+              "additionalProperties": {
+                "type": "array",
+                "required": false,
+                "itemType": "string"
+              }
             }
           },
           "contentType": "application/json"
@@ -438,7 +443,12 @@
             "rejectionReasons": {
               "type": "object",
               "required": false,
-              "description": "Map of reason code to rejected item IDs"
+              "description": "Map of reason code to rejected item IDs",
+              "additionalProperties": {
+                "type": "array",
+                "required": false,
+                "itemType": "string"
+              }
             }
           },
           "contentType": "application/json"

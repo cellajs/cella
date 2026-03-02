@@ -1,10 +1,10 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { and, count, eq, gte, inArray, isNull, notExists, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
 import type { EnabledOAuthProvider } from 'shared';
 import { appConfig } from 'shared';
+import { baseDb } from '#/db/db';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { membershipsTable } from '#/db/schema/memberships';
-import { seenByTable } from '#/db/schema/seen-by';
 import { AuthStrategy, sessionsTable } from '#/db/schema/sessions';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { userActivityTable } from '#/db/schema/user-activity';
@@ -13,6 +13,7 @@ import { env } from '#/env';
 import { type Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
 import { resolveEntity } from '#/lib/resolve-entity';
+import { sendAccountSecurityEmail } from '#/lib/send-account-security-email';
 import { getParams, getSignature } from '#/lib/transloadit';
 import { deleteAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { getParsedSessionCookie, setUserSession, validateSession } from '#/modules/auth/general/helpers/session';
@@ -22,6 +23,7 @@ import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { makeContextEntityBaseSelect } from '#/modules/entities/helpers/select';
 import { getAuthInfo, getUserSessions } from '#/modules/me/helpers/get-user-info';
 import meRoutes from '#/modules/me/me-routes';
+import { withAuditUsers } from '#/modules/user/helpers/audit-user';
 import { userSelect } from '#/modules/user/helpers/select';
 import { entityTables } from '#/table-config';
 import { defaultHook } from '#/utils/default-hook';
@@ -46,7 +48,7 @@ const meRouteHandlers = app
   .openapi(meRoutes.getMe, async (ctx) => {
     const db = ctx.var.db;
     const user = ctx.var.user;
-    const systemRole = ctx.var.userSystemRole ?? ('user' as const);
+    const isSystemAdmin = ctx.var.isSystemAdmin;
 
     // Update last visit date in user_activity table (avoids CDC noise on users table)
     const lastStartedAt = getIsoDate();
@@ -58,7 +60,7 @@ const meRouteHandlers = app
     // Re-select with userSelect to include activity timestamps (subqueries from user_activity table)
     const [userWithActivity] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, user.id)).limit(1);
 
-    return ctx.json({ user: userWithActivity, systemRole }, 200);
+    return ctx.json({ user: userWithActivity, isSystemAdmin }, 200);
   })
   /**
    * Toggle MFA require for me auth
@@ -86,24 +88,34 @@ const meRouteHandlers = app
       });
     }
 
-    const [updatedUser] = await db
-      .update(usersTable)
-      .set({ mfaRequired })
-      .where(eq(usersTable.id, user.id))
-      .returning();
+    // Update MFA flag and invalidate sessions atomically
+    const updatedUser = await baseDb.transaction(async (tx) => {
+      const [updatedUser] = await tx
+        .update(usersTable)
+        .set({ mfaRequired })
+        .where(eq(usersTable.id, user.id))
+        .returning();
+
+      if (updatedUser.mfaRequired) {
+        // Invalidate all existing regular sessions
+        await tx
+          .delete(sessionsTable)
+          .where(and(eq(sessionsTable.userId, updatedUser.id), eq(sessionsTable.type, 'regular')));
+      }
+
+      return updatedUser;
+    });
 
     if (updatedUser.mfaRequired) {
-      // Invalidate all existing regular sessions
-      await db
-        .delete(sessionsTable)
-        .where(and(eq(sessionsTable.userId, updatedUser.id), eq(sessionsTable.type, 'regular')));
-
       // Clear session cookie to enforce fresh login
       deleteAuthCookie(ctx, 'session');
 
       // Establish a new session after MFA verification
       await setUserSession(ctx, user, strategy, 'mfa');
     }
+
+    // Notify user about MFA status change
+    sendAccountSecurityEmail(user, mfaRequired ? 'mfa-enabled' : 'mfa-disabled');
 
     // Re-select with userSelect to include activity timestamps (subqueries from user_activity table)
     const [userWithActivity] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, user.id)).limit(1);
@@ -137,6 +149,8 @@ const meRouteHandlers = app
     const db = ctx.var.db;
     const user = ctx.var.user;
 
+    // crossTenantGuard sets user RLS context (app.user_id + app.is_authenticated)
+    // select_own_policy on inactive_memberships allows reading own invitations
     const pendingInvites = await Promise.all(
       appConfig.contextEntityTypes.map((entityType) => {
         const entityTable = entityTables[entityType];
@@ -150,7 +164,6 @@ const meRouteHandlers = app
             inactiveMembership: inactiveMembershipsTable,
           })
           .from(inactiveMembershipsTable)
-          .leftJoin(usersTable, eq(usersTable.id, inactiveMembershipsTable.createdBy))
           .innerJoin(
             entityTable,
             eq(entityTable.id, inactiveMembershipsTable[entityIdColumnKey as InactiveEntityIdColumnNames]),
@@ -165,7 +178,15 @@ const meRouteHandlers = app
       }),
     );
 
-    const items = pendingInvites.flat();
+    const rawItems = pendingInvites.flat();
+
+    // Populate createdBy on inactiveMemberships with user objects
+    const allMemberships = rawItems.map((item) => item.inactiveMembership);
+    const populatedMemberships = await withAuditUsers(allMemberships, db);
+    const items = rawItems.map((item, i) => ({
+      ...item,
+      inactiveMembership: populatedMemberships[i],
+    }));
     const total = items.length;
 
     return ctx.json({ items, total }, 200);
@@ -351,77 +372,6 @@ const meRouteHandlers = app
     const items = memberships.map(({ createdBy, ...rest }) => rest);
 
     return ctx.json({ items }, 200);
-  })
-  /**
-   * Get unseen counts per org per entity type
-   *
-   * For each org the user is a member of, counts product entities created within
-   * the last 90 days that have no seenBy record for this user.
-   */
-  .openapi(meRoutes.getMyUnseenCounts, async (ctx) => {
-    const db = ctx.var.db;
-    const user = ctx.var.user;
-    const memberships = ctx.var.memberships;
-    // Org-scoped product entity types (exclude parentless types like pages)
-    const orgScopedTypes = appConfig.productEntityTypes.filter(
-      (t) => !(appConfig.parentlessProductEntityTypes as readonly string[]).includes(t),
-    );
-
-    // Unique org IDs from user's memberships
-    const orgIds = [...new Set(memberships.map((m) => m.organizationId))];
-
-    if (orgIds.length === 0 || orgScopedTypes.length === 0) {
-      return ctx.json({ counts: [] }, 200);
-    }
-
-    const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
-
-    // Build unseen count queries per org × entityType
-    const results: {
-      organizationId: string;
-      entityType: (typeof appConfig.productEntityTypes)[number];
-      unseenCount: number;
-    }[] = [];
-
-    for (const entityType of orgScopedTypes) {
-      const entityTable = entityTables[entityType as keyof typeof entityTables];
-      if (!entityTable || !('organizationId' in entityTable)) continue;
-
-      const entityTableTyped = entityTable as typeof entityTable & { organizationId: any; createdAt: any; id: any };
-
-      // Single query: count unseen entities across all orgs, grouped by organizationId
-      const rows = await db
-        .select({
-          organizationId: entityTableTyped.organizationId,
-          unseenCount: count(),
-        })
-        .from(entityTable)
-        .where(
-          and(
-            inArray(entityTableTyped.organizationId, orgIds),
-            gte(entityTableTyped.createdAt, ninetyDaysAgo),
-            notExists(
-              db
-                .select({ one: sql`1` })
-                .from(seenByTable)
-                .where(and(eq(seenByTable.entityId, entityTableTyped.id), eq(seenByTable.userId, user.id))),
-            ),
-          ),
-        )
-        .groupBy(entityTableTyped.organizationId);
-
-      for (const row of rows) {
-        if (row.unseenCount > 0) {
-          results.push({
-            organizationId: row.organizationId as string,
-            entityType: entityType as (typeof appConfig.productEntityTypes)[number],
-            unseenCount: row.unseenCount,
-          });
-        }
-      }
-    }
-
-    return ctx.json({ counts: results }, 200);
   });
 
 export default meRouteHandlers;

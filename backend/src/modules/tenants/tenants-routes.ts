@@ -4,12 +4,13 @@
  * Tenants are system-level resources managed exclusively by admins.
  * These routes provide CRUD operations for tenant management.
  *
- * @see info/RLS.md for architecture documentation
+ * @see info/ARCHITECTURE.md for architecture documentation
  */
 
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/docs/x-routes';
 import { authGuard, sysAdminGuard } from '#/middlewares/guard';
+import { singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
 import { errorResponseRefs, paginationSchema } from '#/schemas';
 import {
   createTenantBodySchema,
@@ -78,6 +79,7 @@ export const tenantRoutes = {
     method: 'post',
     path: '/',
     xGuard: [authGuard, sysAdminGuard],
+    xRateLimiter: singlePointsLimiter,
     tags: ['tenants'],
     summary: 'Create a new tenant',
     description: 'Creates a new tenant. System admin access required.',
@@ -108,6 +110,7 @@ export const tenantRoutes = {
     method: 'put',
     path: '/{tenantId}',
     xGuard: [authGuard, sysAdminGuard],
+    xRateLimiter: singlePointsLimiter,
     tags: ['tenants'],
     summary: 'Update a tenant',
     description: 'Updates a tenant by ID. System admin access required.',
@@ -140,6 +143,7 @@ export const tenantRoutes = {
     method: 'delete',
     path: '/{tenantId}',
     xGuard: [authGuard, sysAdminGuard],
+    xRateLimiter: singlePointsLimiter,
     tags: ['tenants'],
     summary: 'Archive a tenant',
     description:

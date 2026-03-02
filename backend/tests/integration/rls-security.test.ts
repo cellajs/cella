@@ -13,15 +13,15 @@
  * - Session variables (app.tenant_id, app.user_id, app.is_authenticated)
  *   are set via set_config() within transactions to drive RLS policy evaluation
  *
- * @see info/RLS.md for full architecture documentation
+ * @see info/ARCHITECTURE.md for full architecture documentation
  */
 
 import { sql } from 'drizzle-orm';
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { nanoidTenant } from 'shared/nanoid';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as adminDb } from '#/db/db';
 import { setPublicRlsContext, setTenantRlsContext, setUserRlsContext } from '#/db/tenant-context';
-import { nanoidTenant } from '#/utils/nanoid';
 
 // Test IDs - deterministic for reliable cleanup
 const TEST_TENANT_A = 'rlsta1';

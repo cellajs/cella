@@ -27,6 +27,7 @@ export {
   isInfiniteQueryData,
   isQueryData,
 } from './mutate-query';
+export { preserveIncluded } from './preserve-included';
 export type {
   ArbitraryEntityQueryData,
   EntityIdAndType,

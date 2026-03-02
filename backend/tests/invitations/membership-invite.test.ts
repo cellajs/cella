@@ -53,8 +53,13 @@ describe('Membership Invitation', async () => {
     return { organization, sessionCookie: signInRes.headers.get('set-cookie') };
   };
 
-  const makeInviteRequest = async (organizationId: string, inviteData: any, sessionCookie: string | null) => {
-    return await client[organizationId]['memberships'].$post(
+  const makeInviteRequest = async (
+    tenantId: string,
+    organizationId: string,
+    inviteData: any,
+    sessionCookie: string | null,
+  ) => {
+    return await client[tenantId][organizationId]['memberships'].$post(
       { json: inviteData, query: { entityId: organizationId, entityType: 'organization' } },
       {
         headers: {
@@ -76,16 +81,14 @@ describe('Membership Invitation', async () => {
     const { organization, sessionCookie } = await createOrgAndAdmin();
 
     const res = await makeInviteRequest(
+      organization.tenantId,
       organization.id,
       { emails: ['user1@cella.com', 'user2@cella.com'], role: 'member' },
       sessionCookie,
     );
 
     expect(res.status).toBe(200);
-    const response = await parseResponse<{ success: boolean; rejectedItemIds: string[]; invitesSentCount: number }>(
-      res,
-    );
-    expect(response.success).toBe(true);
+    const response = await parseResponse<{ data: any[]; rejectedItemIds: string[]; invitesSentCount: number }>(res);
     expect(response.invitesSentCount).toBe(2);
     expect(response.rejectedItemIds).toHaveLength(0);
 
@@ -102,16 +105,14 @@ describe('Membership Invitation', async () => {
     const existingUser = await createPasswordUser('existing@cella.com', 'password123!');
 
     const res = await makeInviteRequest(
+      organization.tenantId,
       organization.id,
       { emails: ['existing@cella.com'], role: 'admin' },
       sessionCookie,
     );
 
     expect(res.status).toBe(200);
-    const response = await parseResponse<{ success: boolean; rejectedItemIds: string[]; invitesSentCount: number }>(
-      res,
-    );
-    expect(response.success).toBe(true);
+    const response = await parseResponse<{ data: any[]; rejectedItemIds: string[]; invitesSentCount: number }>(res);
     expect(response.invitesSentCount).toBe(1);
     expect(response.rejectedItemIds).toHaveLength(0);
 
@@ -126,16 +127,14 @@ describe('Membership Invitation', async () => {
     const existingUser = await createPasswordUser('existing@cella.com', 'password123!');
 
     const res = await makeInviteRequest(
+      organization.tenantId,
       organization.id,
       { emails: ['existing@cella.com', 'newuser@cella.com'], role: 'member' },
       sessionCookie,
     );
 
     expect(res.status).toBe(200);
-    const response = await parseResponse<{ success: boolean; rejectedItemIds: string[]; invitesSentCount: number }>(
-      res,
-    );
-    expect(response.success).toBe(true);
+    const response = await parseResponse<{ data: any[]; rejectedItemIds: string[]; invitesSentCount: number }>(res);
     expect(response.invitesSentCount).toBe(2);
     expect(response.rejectedItemIds).toHaveLength(0);
 
@@ -154,7 +153,12 @@ describe('Membership Invitation', async () => {
   it('should assign admin role correctly', async () => {
     const { organization, sessionCookie } = await createOrgAndAdmin();
 
-    const res = await makeInviteRequest(organization.id, { emails: ['user@cella.com'], role: 'admin' }, sessionCookie);
+    const res = await makeInviteRequest(
+      organization.tenantId,
+      organization.id,
+      { emails: ['user@cella.com'], role: 'admin' },
+      sessionCookie,
+    );
 
     expect(res.status).toBe(200);
 
@@ -169,7 +173,12 @@ describe('Membership Invitation', async () => {
   it('should assign member role correctly', async () => {
     const { organization, sessionCookie } = await createOrgAndAdmin();
 
-    const res = await makeInviteRequest(organization.id, { emails: ['user@cella.com'], role: 'member' }, sessionCookie);
+    const res = await makeInviteRequest(
+      organization.tenantId,
+      organization.id,
+      { emails: ['user@cella.com'], role: 'member' },
+      sessionCookie,
+    );
 
     expect(res.status).toBe(200);
 
@@ -184,8 +193,11 @@ describe('Membership Invitation', async () => {
   it('should reject invitations without authentication', async () => {
     const organization = await createTestOrganization();
 
-    const res = await client[organization.id]['memberships'].$post(
-      { json: { emails: ['user@cella.com'], role: 'member' }, query: { entityType: 'organization' } },
+    const res = await client[organization.tenantId][organization.id]['memberships'].$post(
+      {
+        json: { emails: ['user@cella.com'], role: 'member' },
+        query: { entityId: organization.id, entityType: 'organization' },
+      },
       { headers: defaultHeaders },
     );
 
@@ -202,6 +214,7 @@ describe('Membership Invitation', async () => {
     );
 
     const res = await makeInviteRequest(
+      organization.tenantId,
       organization.id,
       { emails: ['newuser@cella.com'], role: 'member' },
       signInRes.headers.get('set-cookie'),
@@ -215,17 +228,15 @@ describe('Membership Invitation', async () => {
 
     const inviteData = { emails: ['user@cella.com'], role: 'member' };
 
-    const firstRes = await makeInviteRequest(organization.id, inviteData, sessionCookie);
+    const firstRes = await makeInviteRequest(organization.tenantId, organization.id, inviteData, sessionCookie);
     expect(firstRes.status).toBe(200);
 
-    const secondRes = await makeInviteRequest(organization.id, inviteData, sessionCookie);
+    const secondRes = await makeInviteRequest(organization.tenantId, organization.id, inviteData, sessionCookie);
     expect(secondRes.status).toBe(200);
 
-    const response = await parseResponse<{ success: boolean; rejectedItemIds: string[]; invitesSentCount: number }>(
+    const response = await parseResponse<{ data: any[]; rejectedItemIds: string[]; invitesSentCount: number }>(
       secondRes,
     );
-    expect(response.success).toBe(false);
     expect(response.invitesSentCount).toBe(0);
-    expect(response.rejectedItemIds).toHaveLength(0);
   });
 });

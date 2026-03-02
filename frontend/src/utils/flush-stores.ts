@@ -3,6 +3,7 @@ import { persister, sessionPersister } from '~/query/persister';
 import { queryClient } from '~/query/query-client';
 import { useAlertStore } from '~/store/alert';
 import { useDraftStore } from '~/store/draft';
+import { useSeenStore } from '~/store/seen';
 import { useUIStore } from '~/store/ui';
 import { useUserStore } from '~/store/user';
 
@@ -16,6 +17,7 @@ export const flushStores = (removeAccount?: boolean) => {
   queryClient.clear();
   sessionPersister.removeClient();
   persister.removeClient();
+  useSeenStore.getState().clear();
   useUserStore.setState({ user: null as unknown as MeUser });
   useDraftStore.getState().clearForms();
   useUIStore.getState().setImpersonating(false);

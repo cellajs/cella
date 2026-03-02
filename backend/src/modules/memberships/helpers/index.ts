@@ -25,6 +25,8 @@ interface InsertMultipleProps<T> {
   role: MembershipModel['role'];
   entity: T;
   createdBy: string;
+  /** Extra columns to set on the target membership row (e.g. workspaceId). */
+  extraFields?: Partial<InsertMembershipModel>;
 }
 
 /**
@@ -120,7 +122,7 @@ export const insertMemberships = async <T extends BaseEntityModel>(
       displayOrder: nextOrder,
     } as const;
 
-    return { targetEntitiesIdColumnKeys, baseMembership, entity };
+    return { targetEntitiesIdColumnKeys, baseMembership, entity, extraFields: info.extraFields };
   });
 
   /**
@@ -170,11 +172,12 @@ export const insertMemberships = async <T extends BaseEntityModel>(
 
   // Build target entity membership rows (the ones we return after insert)
   const targetRows: InsertMembershipModel[] = prepared.map(
-    ({ baseMembership, targetEntitiesIdColumnKeys, entity }) => ({
+    ({ baseMembership, targetEntitiesIdColumnKeys, entity, extraFields }) => ({
       ...baseMembership,
       tenantId: entity.tenantId,
       contextType: entity.entityType,
       ...targetEntitiesIdColumnKeys,
+      ...extraFields,
     }),
   );
 

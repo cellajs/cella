@@ -5,14 +5,26 @@ import { Env } from '#/lib/context';
 import { AppError, type ErrorKey } from '#/lib/error';
 import { setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/helpers/session';
-import { oauthQuerySchema } from '#/modules/auth/oauth/oauth-schema';
+import { type OAuthCookiePayload, oauthCookiePayloadSchema, oauthQuerySchema } from '#/modules/auth/oauth/oauth-schema';
 import { getValidSingleUseToken } from '#/utils/get-valid-single-use-token';
 import { logEvent } from '#/utils/logger';
 import { TimeSpan } from '#/utils/time-span';
 
 type OAuthQueryParams = z.infer<typeof oauthQuerySchema>;
-export type OAuthCookiePayload = OAuthQueryParams & {
-  codeVerifier?: string;
+
+/**
+ * Parse and validate an OAuth cookie payload using Zod schema.
+ * Returns null if the cookie is missing, malformed, or fails validation.
+ */
+export const parseOAuthCookie = (raw: string | false | null | undefined): OAuthCookiePayload | null => {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    const result = oauthCookiePayloadSchema.safeParse(parsed);
+    return result.success ? result.data : null;
+  } catch {
+    return null;
+  }
 };
 
 /**

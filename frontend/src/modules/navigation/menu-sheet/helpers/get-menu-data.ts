@@ -1,5 +1,6 @@
 import { appConfig } from 'shared';
-import { myMembershipsQueryOptions } from '~/modules/me/query';
+import { getMyMemberships } from '~/api.gen';
+import { meKeys } from '~/modules/me/query';
 import { getContextEntityTypeToListQueries } from '~/offline-config';
 import { queryClient } from '~/query/query-client';
 import { useUserStore } from '~/store/user';
@@ -12,12 +13,13 @@ import { buildMenuFromCache } from './build-menu-from-cache';
  *
  * @returns The menu data.
  */
-export async function getMenuData(opts?: { detailedMenu?: boolean }) {
+export async function getMenuData() {
   const userId = useUserStore.getState().user.id;
 
   // Fetch memberships first — populates the cache that the subscriber reads from
   await queryClient.ensureQueryData({
-    ...myMembershipsQueryOptions(),
+    queryKey: meKeys.memberships,
+    queryFn: async ({ signal }) => getMyMemberships({ signal }),
     revalidateIfStale: true,
   });
 
@@ -31,5 +33,5 @@ export async function getMenuData(opts?: { detailedMenu?: boolean }) {
     }),
   );
 
-  return buildMenuFromCache(userId, opts);
+  return buildMenuFromCache(userId);
 }

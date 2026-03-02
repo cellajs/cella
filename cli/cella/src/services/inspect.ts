@@ -320,11 +320,11 @@ export async function runInspect(config: RuntimeConfig): Promise<void> {
 
   spinnerSuccess();
 
-  const driftedFiles = result.files.filter((f) => f.status === 'drifted');
+  const driftedFiles = result.files.filter((f) => f.status === 'drifted' || f.status === 'diverged');
 
   if (driftedFiles.length === 0) {
     console.info();
-    console.info(`${pc.green('✓')} no drifted files — all fork changes are pinned or ignored`);
+    console.info(`${pc.green('✓')} no drifted or diverged files — all fork changes are pinned or ignored`);
     return;
   }
 
@@ -341,7 +341,7 @@ export async function runInspect(config: RuntimeConfig): Promise<void> {
 
   // Run the custom inspect prompt
   const selectedPaths = await inspectPrompt({
-    message: 'drifted from upstream',
+    message: 'drifted / diverged from upstream',
     items: driftedFiles.map((f) => ({ path: f.path, file: f, checked: false })),
     runtimeConfig: config,
     pageSize: 20,

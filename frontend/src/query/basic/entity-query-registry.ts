@@ -21,7 +21,7 @@ export interface EntityQueryKeys {
  * Usage in stream handlers:
  * ```ts
  * const keys = getEntityQueryKeys(entityType);
- * if (keys) queryClient.invalidateQueries({ queryKey: keys.list.base });
+ * queryClient.invalidateQueries({ queryKey: keys.list.base });
  * ```
  */
 const entityQueryKeysRegistry = new Map<string, EntityQueryKeys>();
@@ -36,10 +36,13 @@ export function registerEntityQueryKeys(entityType: EntityType, keys: EntityQuer
 
 /**
  * Get query keys for an entity type.
- * Returns undefined if the entity type hasn't been registered.
+ * Throws if the entity type hasn't been registered — all entity types
+ * must be registered at module load time before any stream/cache code runs.
  */
-export function getEntityQueryKeys(entityType: string): EntityQueryKeys | undefined {
-  return entityQueryKeysRegistry.get(entityType);
+export function getEntityQueryKeys(entityType: string): EntityQueryKeys {
+  const keys = entityQueryKeysRegistry.get(entityType);
+  if (!keys) throw new Error(`No query keys registered for entity type: ${entityType}`);
+  return keys;
 }
 
 /**

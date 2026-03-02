@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { appConfig, ContextEntityType } from 'shared';
 import type { UserBase } from '~/api.gen';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
-import { StickyBox } from '~/modules/common/sticky-box';
+
 import type { EnrichedContextEntity } from '~/modules/entities/types';
 import { Badge } from '~/modules/ui/badge';
 import { CommandGroup, CommandItem, CommandSeparator } from '~/modules/ui/command';
@@ -27,12 +27,12 @@ export const SearchResultBlock = ({ results, entityType, onSelect }: SearchBlock
     <div key={entityType} className="flex flex-col gap-1 w-full">
       <CommandSeparator />
       <CommandGroup className="">
-        <StickyBox className="z-10 px-2 py-1.5 text-xs font-medium text-muted-foreground bg-popover">
+        <div className="sticky top-0 z-10 px-2 py-1.5 text-xs font-medium text-muted-foreground bg-popover">
           {t(entityType, {
             ns: ['app', 'common'],
             defaultValue: entityType,
           })}
-        </StickyBox>
+        </div>
         {results.map((item: SearchBlockResult) => {
           return (
             <CommandItem

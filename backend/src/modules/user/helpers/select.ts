@@ -3,6 +3,7 @@ import { appConfig, type UserFlags } from 'shared';
 import { userActivityTable } from '#/db/schema/user-activity';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { pickColumns } from '#/db/utils/pick-columns';
+import { userMinimalBaseSchema } from '#/schemas/user-minimal-base';
 import { userBaseSchema } from '#/schemas/user-schema-base';
 
 /**
@@ -39,14 +40,6 @@ export const userSelect = (() => {
   };
 })();
 
-/**
- * Member select. unnecessary fields are omitted from user select.
- */
-export const memberSelect = (() => {
-  const { newsletter, userFlags, ...memberSafe } = userSelect;
-  return memberSafe;
-})();
-
 // Infer types of user base columns
 type TableColumns = (typeof usersTable)['_']['columns'];
 type UserBaseKeys = keyof typeof userBaseSchema.shape;
@@ -59,4 +52,32 @@ export const userBaseSelect: UserBaseSelect = (() => {
   const cols = getColumns(usersTable);
   const keys = Object.keys(userBaseSchema.shape) as UserBaseKeys[];
   return pickColumns(cols, keys);
+})();
+
+/**
+ * Member select — returns only userBaseSelect columns + lastSeenAt.
+ * Used for cross-tenant user endpoints and member lists.
+ */
+export const memberSelect = (() => {
+  return {
+    ...userBaseSelect,
+    lastSeenAt: sql<
+      string | null
+    >`(SELECT ${userActivityTable.lastSeenAt} FROM ${userActivityTable} WHERE ${userActivityTable.userId} = ${usersTable.id})`,
+  };
+})();
+
+// Infer types of user minimal base columns
+type UserMinimalBaseKeys = keyof typeof userMinimalBaseSchema.shape;
+type UserMinimalBaseSelect = Pick<TableColumns, Exclude<UserMinimalBaseKeys, 'entityType'>>;
+
+/**
+ * User select for minimal base data only (id, name, slug, thumbnailUrl, email).
+ * Used for embedding user data in createdBy/modifiedBy fields.
+ * entityType is excluded since it's always 'user' and added as a SQL literal in joins.
+ */
+export const userMinimalBaseSelect: UserMinimalBaseSelect = (() => {
+  const cols = getColumns(usersTable);
+  const keys = (Object.keys(userMinimalBaseSchema.shape) as UserMinimalBaseKeys[]).filter((k) => k !== 'entityType');
+  return pickColumns(cols, keys as Exclude<UserMinimalBaseKeys, 'entityType'>[]);
 })();

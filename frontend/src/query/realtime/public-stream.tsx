@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { publicStreamManager, usePublicStreamStore } from './stream-store';
+import { publicStreamManager } from './stream-store';
 import type { StreamState } from './types';
 
 const debugLabel = 'PublicStream';
@@ -39,8 +39,8 @@ export function usePublicStream(options: UsePublicStreamOptions = {}): UsePublic
   const { enabled = true, onStateChange } = options;
 
   // Subscribe to store state
-  const state = usePublicStreamStore((s) => s.state);
-  const cursor = usePublicStreamStore((s) => s.cursor);
+  const state = publicStreamManager.useStore((s) => s.state);
+  const cursor = publicStreamManager.useStore((s) => s.cursor);
 
   // Connect/disconnect based on enabled prop
   useEffect(() => {

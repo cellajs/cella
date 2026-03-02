@@ -39,13 +39,14 @@ export const TooltipButton = React.forwardRef<HTMLDivElement, TooltipButtonProps
       </TooltipContent>
     );
 
-    return (
+    const trigger = (
       <Tooltip>
-        <TooltipTrigger asChild>
-          <div className={className}>{children}</div>
-        </TooltipTrigger>
+        <TooltipTrigger asChild>{children}</TooltipTrigger>
         {portal ? <TooltipPortal>{content}</TooltipPortal> : content}
       </Tooltip>
     );
+
+    if (className) return <span className={className}>{trigger}</span>;
+    return trigger;
   },
 );

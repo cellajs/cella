@@ -266,12 +266,7 @@ export type UploadToken = {
       key: string;
       expires?: string;
     };
-    [key: string]:
-      | unknown
-      | {
-          key: string;
-          expires?: string;
-        };
+    [key: string]: unknown;
   } | null;
 };
 

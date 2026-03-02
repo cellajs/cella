@@ -14,14 +14,13 @@ export function getField(obj: any, key: string): unknown {
 export function getRegisteredContextEntities(): { type: ContextEntityType; keys: EntityQueryKeys }[] {
   return getRegisteredEntityTypes()
     .filter((t) => hierarchy.isContext(t))
-    .map((t) => ({ type: t as ContextEntityType, keys: getEntityQueryKeys(t)! }));
+    .map((t) => ({ type: t as ContextEntityType, keys: getEntityQueryKeys(t) }));
 }
 
 /** Get registered query keys for a context entity type, or null if not registered */
 export function getContextEntityKeys(entityType: string): { type: ContextEntityType; keys: EntityQueryKeys } | null {
   if (!hierarchy.isContext(entityType)) return null;
   const keys = getEntityQueryKeys(entityType);
-  if (!keys) return null;
   return { type: entityType as ContextEntityType, keys };
 }
 

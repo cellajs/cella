@@ -1,4 +1,5 @@
 import { appConfig } from 'shared';
+import { nanoid } from 'shared/nanoid';
 import { uploadTemplates } from 'shared/upload-templates';
 import type { Attachment } from '~/api.gen';
 import { getPresignedUrl } from '~/api.gen/sdk.gen';
@@ -6,10 +7,9 @@ import { zAttachment } from '~/api.gen/zod.gen';
 import type { BlobVariant } from '~/modules/attachment/dexie/attachments-db';
 import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
 import { downloadService } from '~/modules/attachment/download-service';
-import { findAttachmentInListCache } from '~/modules/attachment/query';
+import { findAttachmentInCache, findAttachmentInListCache } from '~/modules/attachment/query';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
 import { createOptimisticEntity } from '~/query/basic';
-import { nanoid } from '~/utils/nanoid';
 
 /**
  * Constructs a public CDN URL for a file key.
@@ -68,8 +68,8 @@ export async function resolveAttachmentUrl(
     }
   }
 
-  // 2. Need attachment metadata for cloud URL - try cache if not provided
-  const meta = attachment ?? findAttachmentInListCache(attachmentId);
+  // 2. Need attachment metadata for cloud URL - try list and detail cache
+  const meta = attachment ?? findAttachmentInCache(attachmentId);
   if (!meta) return null;
 
   // 3. Get cloud presigned URL
@@ -130,7 +130,8 @@ export const parseUploadedAttachments = (
     // Override the temp id with the upload-provided id
     attachment.id = id;
 
-    attachmentsById.set(id, attachment);
+    // Note: cast needed because hey-api generates non-nullable intersection for nullable refs
+    attachmentsById.set(id, attachment as Attachment);
   }
 
   //  Process converted + thumbnail variants

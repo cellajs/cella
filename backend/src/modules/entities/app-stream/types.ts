@@ -1,4 +1,3 @@
-import type { SystemRole } from 'shared';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import type { CursoredSubscriber } from '#/sync/stream';
 
@@ -13,8 +12,8 @@ export interface AppStreamSubscriber extends CursoredSubscriber {
   sessionToken: string;
   /** Set of org IDs user belongs to (for filtering org events) */
   orgIds: Set<string>;
-  /** User's system role for permission bypass (null if no elevated role) */
-  userSystemRole: SystemRole | null;
+  /** Whether the user is a system admin (bypasses permission checks) */
+  isSystemAdmin: boolean;
   /** User's memberships for permission checks on product entities */
   memberships: MembershipBaseModel[];
 }

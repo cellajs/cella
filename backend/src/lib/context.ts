@@ -2,7 +2,7 @@ import type { HttpBindings } from '@hono/node-server';
 import type * as Sentry from '@sentry/node';
 import type { DbOrTx } from '#/db/db';
 import type { OrganizationModel } from '#/db/schema/organizations';
-import type { SystemRoleModel } from '#/db/schema/system-roles';
+import type { TenantModel } from '#/db/schema/tenants';
 import type { TokenModel } from '#/db/schema/tokens';
 import type { UserModel } from '#/db/schema/users';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
@@ -23,7 +23,7 @@ type Bindings = HttpBindings & {
 export type Env = {
   Variables: {
     user: UserModel;
-    userSystemRole: SystemRoleModel['role'] | null;
+    isSystemAdmin: boolean;
     organization: OrganizationModel & { membership: MembershipBaseModel | null };
     memberships: (MembershipBaseModel & { createdBy: string | null })[];
     token: TokenModel;
@@ -34,6 +34,7 @@ export type Env = {
     /** Database connection - either raw db (non-RLS routes) or RLS-scoped transaction (tenant routes) */
     db: DbOrTx;
     tenantId: string;
+    tenant: TenantModel;
   };
   Bindings: Bindings;
 };

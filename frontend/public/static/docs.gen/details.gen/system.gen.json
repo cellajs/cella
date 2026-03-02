@@ -19,7 +19,12 @@
             "rejectionReasons": {
               "type": "object",
               "required": false,
-              "description": "Map of reason code to rejected item IDs"
+              "description": "Map of reason code to rejected item IDs",
+              "additionalProperties": {
+                "type": "array",
+                "required": false,
+                "itemType": "string"
+              }
             },
             "invitesSentCount": { "type": "number", "required": true }
           },
@@ -105,7 +110,12 @@
             "rejectionReasons": {
               "type": "object",
               "required": false,
-              "description": "Map of reason code to rejected item IDs"
+              "description": "Map of reason code to rejected item IDs",
+              "additionalProperties": {
+                "type": "array",
+                "required": false,
+                "itemType": "string"
+              }
             }
           },
           "contentType": "application/json"

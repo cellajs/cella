@@ -5,8 +5,6 @@
 
 export const rootClassname = 'rdg';
 
-export const viewportDraggingClassname = 'rdg-viewport-dragging';
-
 export const focusSinkClassname = 'rdg-focus-sink';
 
 export const focusSinkHeaderAndSummaryClassname = 'rdg-focus-sink rdg-focus-sink-header-summary';

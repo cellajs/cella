@@ -1,6 +1,7 @@
 import type { Context } from 'hono';
 import type { ContextEntityType, EntityActionType, ProductEntityType } from 'shared';
 import type { Env } from '#/lib/context';
+import { AppError } from '#/lib/error';
 import { resolveEntities } from '#/lib/resolve-entity';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { checkPermission } from '#/permissions';
@@ -10,6 +11,7 @@ import { checkPermission } from '#/permissions';
  *
  * Resolves the entities and checks whether the user can perform the specified action.
  * The result is split into `allowedIds` and `disallowedIds`.
+ * Throws 403 if none of the requested IDs are allowed.
  * Note: Only context and product entities are supported - user access uses separate logic.
  *
  * @param action - Action to check `"create" | "read" | "update" | "delete"`.
@@ -17,6 +19,7 @@ import { checkPermission } from '#/permissions';
  * @param ids - The entity IDs to check.
  * @param memberships - The user's memberships.
  * @returns An object with `allowedIds` and `disallowedIds` arrays.
+ * @throws {AppError} 403 if no entities are allowed.
  */
 export const splitByPermission = async (
   ctx: Context<Env>,
@@ -25,14 +28,14 @@ export const splitByPermission = async (
   ids: string[],
   memberships: MembershipBaseModel[],
 ) => {
-  const userSystemRole = ctx.var.userSystemRole;
+  const isSystemAdmin = ctx.var.isSystemAdmin;
   const db = ctx.var.db;
 
   // Resolve entities
   const entities = await resolveEntities(entityType, ids, db);
 
   // Check permissions for all entities in a single batch operation
-  const { results } = checkPermission(memberships, action, entities, { systemRole: userSystemRole });
+  const { results } = checkPermission(memberships, action, entities, { isSystemAdmin });
 
   // Partition into allowed and disallowed
   const allowedIds: string[] = [];
@@ -46,6 +49,9 @@ export const splitByPermission = async (
       disallowedIds.push(entity.id);
     }
   }
+
+  // Throw if user has no permission for any of the requested entities
+  if (!allowedIds.length) throw new AppError(403, 'forbidden', 'warn', { entityType });
 
   return { allowedIds, disallowedIds };
 };

@@ -1,13 +1,13 @@
 import { faker } from '@faker-js/faker';
 import { UniqueEnforcer } from 'enforce-unique';
 import { appConfig, type SystemRole, type UserFlags } from 'shared';
+import { nanoid } from 'shared/nanoid';
 import slugify from 'slugify';
 import type { InsertEmailModel } from '#/db/schema/emails';
 import type { InsertPasswordModel } from '#/db/schema/passwords';
 import type { InsertUnsubscribeTokenModel } from '#/db/schema/unsubscribe-tokens';
 import type { InsertUserModel, UserModel } from '#/db/schema/users';
 import type { UserWithActivity } from '#/modules/user/helpers/select';
-import { nanoid } from '#/utils/nanoid';
 import { generateUnsubscribeToken } from '#/utils/unsubscribe-token';
 import { mockMembershipBase } from './mock-membership';
 import { mockNanoid, mockPaginated, pastIsoDate, withFakerSeed } from './utils';

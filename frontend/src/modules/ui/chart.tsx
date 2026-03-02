@@ -4,7 +4,7 @@ import type { LegendPayload } from 'recharts/types/component/DefaultLegendConten
 import type { NameType, Payload, ValueType } from 'recharts/types/component/DefaultTooltipContent';
 import type { Props as LegendProps } from 'recharts/types/component/Legend';
 import type { TooltipContentProps } from 'recharts/types/component/Tooltip';
-
+import { typedEntries } from 'shared';
 import { cn } from '~/utils/cn';
 
 // Format: { THEME_NAME: CSS_SELECTOR }
@@ -106,13 +106,13 @@ export function ChartStyle({ id, config }: { id: string; config: ChartConfig }) 
     <style
       // biome-ignore lint/security/noDangerouslySetInnerHtml: safe since we control content
       dangerouslySetInnerHTML={{
-        __html: Object.entries(THEMES)
+        __html: typedEntries(THEMES)
           .map(
             ([theme, prefix]) => `
             ${prefix} [data-chart=${id}] {
             ${colorConfig
               .map(([key, itemConfig]) => {
-                const color = itemConfig.theme?.[theme as keyof typeof itemConfig.theme] || itemConfig.color;
+                const color = itemConfig.theme?.[theme] || itemConfig.color;
                 return color ? `  --color-${key}: ${color};` : null;
               })
               .join('\n')}
@@ -153,10 +153,7 @@ export function ChartTooltipContent({
     const key = `${labelKey || item?.dataKey || item?.name || 'value'}`;
     const itemConfig = getPayloadConfigFromPayload(config, item, key);
     const value = (() => {
-      const v =
-        !labelKey && typeof label === 'string'
-          ? (config[label as keyof typeof config]?.label ?? label)
-          : itemConfig?.label;
+      const v = !labelKey && typeof label === 'string' ? (config[label]?.label ?? label) : itemConfig?.label;
 
       return typeof v === 'string' || typeof v === 'number' ? v : undefined;
     })();
@@ -297,22 +294,19 @@ function getPayloadConfigFromPayload(config: ChartConfig, payload: unknown, key:
     return undefined;
   }
 
+  const pl = payload as Record<string, unknown>;
   const payloadPayload =
-    'payload' in payload && typeof payload.payload === 'object' && payload.payload !== null
-      ? payload.payload
+    'payload' in pl && typeof pl.payload === 'object' && pl.payload !== null
+      ? (pl.payload as Record<string, unknown>)
       : undefined;
 
   let configLabelKey: string = key;
 
-  if (key in payload && typeof payload[key as keyof typeof payload] === 'string') {
-    configLabelKey = payload[key as keyof typeof payload] as string;
-  } else if (
-    payloadPayload &&
-    key in payloadPayload &&
-    typeof payloadPayload[key as keyof typeof payloadPayload] === 'string'
-  ) {
-    configLabelKey = payloadPayload[key as keyof typeof payloadPayload] as string;
+  if (key in pl && typeof pl[key] === 'string') {
+    configLabelKey = pl[key] as string;
+  } else if (payloadPayload && key in payloadPayload && typeof payloadPayload[key] === 'string') {
+    configLabelKey = payloadPayload[key] as string;
   }
 
-  return configLabelKey in config ? config[configLabelKey] : config[key as keyof typeof config];
+  return configLabelKey in config ? config[configLabelKey] : config[key];
 }

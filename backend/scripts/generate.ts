@@ -8,7 +8,7 @@
  */
 
 import { runGenerateScripts } from './migrations/helpers/run-generate-scripts';
-import { generateScripts } from './scripts-config';
+import { generateScripts } from './scripts-discovery';
 
 runGenerateScripts(generateScripts).catch((err) => {
   console.error('Generation failed:', err.message);

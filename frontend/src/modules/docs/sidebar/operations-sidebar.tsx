@@ -1,9 +1,9 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { useLocation, useSearch } from '@tanstack/react-router';
 import { useMemo, useRef } from 'react';
+import { nanoid } from 'shared/nanoid';
 import { operationsQueryOptions, tagsQueryOptions } from '~/modules/docs/query';
 import { SidebarMenu } from '~/modules/ui/sidebar';
-import { nanoid } from '~/utils/nanoid';
 import { TagItem } from './tag-item';
 
 /** Sidebar listing operation tags with their operations. */

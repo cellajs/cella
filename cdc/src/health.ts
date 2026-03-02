@@ -3,11 +3,12 @@ import { Hono } from 'hono';
 import { secureHeaders } from 'hono/secure-headers';
 import { env } from './env';
 import { cdcErrorHandler } from './lib/error';
-import { replicationState, type CdcHealthState } from './lib/replication-state';
+import { replicationState } from './lib/replication-state';
 import { getFreeDiskSpace, getWalBytes } from './lib/resource-monitor';
 import { logEvent } from './pino';
 import { getCdcMetrics } from './tracing';
 import { RESOURCE_LIMITS } from './constants';
+import { wsClient } from './websocket-client';
 
 export type HealthStatus = 'healthy' | 'degraded' | 'unhealthy';
 
@@ -24,8 +25,8 @@ interface HealthResponse {
 
 const { runtime } = RESOURCE_LIMITS;
 
-async function getHealthStatus(state: CdcHealthState): Promise<HealthStatus> {
-  if (state.wsState === 'open' && state.replicationState === 'active') return 'healthy';
+async function getHealthStatus(): Promise<HealthStatus> {
+  if (wsClient.wsState === 'open' && replicationState.replicationState === 'active') return 'healthy';
 
   const walBytes = await getWalBytes();
   if (walBytes !== null) {
@@ -39,8 +40,8 @@ async function getHealthStatus(state: CdcHealthState): Promise<HealthStatus> {
   const pausedAt = replicationState.replicationPausedAt;
   if (pausedAt && Date.now() - pausedAt.getTime() > runtime.pauseUnhealthyMs) return 'unhealthy';
 
-  if (state.wsState === 'reconnecting' && state.replicationState === 'paused') return 'degraded';
-  if (state.wsState === 'closed') return 'unhealthy';
+  if (wsClient.wsState === 'reconnecting' && replicationState.replicationState === 'paused') return 'degraded';
+  if (wsClient.wsState === 'closed') return 'unhealthy';
 
   return 'degraded';
 }
@@ -53,8 +54,7 @@ app.use('*', secureHeaders());
 
 // Health check endpoint
 app.get('/health', async (c) => {
-  const cdcState = replicationState.getCdcHealthState();
-  const status = await getHealthStatus(cdcState);
+  const status = await getHealthStatus();
   const metrics = getCdcMetrics();
 
   // Calculate paused duration if replication is paused
@@ -67,10 +67,10 @@ app.get('/health', async (c) => {
 
   const response: HealthResponse & { metrics: typeof metrics } = {
     status,
-    wsState: cdcState.wsState,
-    replicationState: cdcState.replicationState,
-    lastLsn: cdcState.lastLsn,
-    lastMessageAt: cdcState.lastMessageAt?.toISOString() ?? null,
+    wsState: wsClient.wsState,
+    replicationState: replicationState.replicationState,
+    lastLsn: replicationState.lastLsn,
+    lastMessageAt: wsClient.lastMessageAt?.toISOString() ?? null,
     pausedDurationMs,
     walBytes,
     freeDiskBytes,

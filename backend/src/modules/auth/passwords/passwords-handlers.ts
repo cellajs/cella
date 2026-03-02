@@ -2,6 +2,8 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { and, eq } from 'drizzle-orm';
 import i18n from 'i18next';
 import { appConfig } from 'shared';
+import { nanoid } from 'shared/nanoid';
+import { baseDb } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { passwordsTable } from '#/db/schema/passwords';
 import { tokensTable } from '#/db/schema/tokens';
@@ -9,7 +11,9 @@ import { usersTable } from '#/db/schema/users';
 import { type Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
 import { mailer } from '#/lib/mailer';
-import { checkRateLimitStatus } from '#/middlewares/rate-limiter/helpers';
+import { sendAccountSecurityEmail } from '#/lib/send-account-security-email';
+import { checkIpRateLimitStatus } from '#/middlewares/rate-limiter/helpers';
+import { emailEnumLimiter } from '#/middlewares/rate-limiter/limiters';
 import { initiateMfa } from '#/modules/auth/general/helpers/mfa';
 import { sendVerificationEmail } from '#/modules/auth/general/helpers/send-verification-email';
 import { setUserSession } from '#/modules/auth/general/helpers/session';
@@ -18,10 +22,8 @@ import { hashPassword, verifyPasswordHash } from '#/modules/auth/passwords/helpe
 import authPasswordsRoutes from '#/modules/auth/passwords/passwords-routes';
 import { userSelect } from '#/modules/user/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
-import { getIp } from '#/utils/get-ip';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
-import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
@@ -36,7 +38,6 @@ const authPasswordsRouteHandlers = app
    * Only when invited to a new organization (context), user will proceed to accept this first after signing up.
    */
   .openapi(authPasswordsRoutes.signUp, async (ctx) => {
-    const db = ctx.var.db;
     const { email, password } = ctx.req.valid('json');
 
     // Verify if strategy allowed
@@ -47,18 +48,31 @@ const authPasswordsRouteHandlers = app
 
     // Stop if sign up is disabled and no invitation
     if (!appConfig.has.registrationEnabled) throw new AppError(403, 'sign_up_restricted', 'info');
+
+    // Check if IP is rate-limited for email enumeration (restricted mode)
+    const { isLimited: restrictedMode } = await checkIpRateLimitStatus(ctx, emailEnumLimiter);
+
     const slug = slugFromEmail(email);
 
     // Create user & send verification email
     const newUser = { slug, name: slug, email };
 
-    const user = await handleCreateUser({ newUser });
+    try {
+      const user = await baseDb.transaction(async (tx) => {
+        const user = await handleCreateUser({ newUser, db: tx });
+        const hashedPassword = await hashPassword(password);
+        await tx.insert(passwordsTable).values({ userId: user.id, hashedPassword });
+        return user;
+      });
 
-    // Separatly insert password
-    const hashedPassword = await hashPassword(password);
-    await db.insert(passwordsTable).values({ userId: user.id, hashedPassword: hashedPassword });
-
-    sendVerificationEmail({ userId: user.id });
+      sendVerificationEmail({ userId: user.id });
+    } catch (error) {
+      // In restricted mode, return idempotent 201 to prevent email enumeration
+      if (restrictedMode && error instanceof AppError && error.type === 'email_exists') {
+        return ctx.body(null, 201);
+      }
+      throw error;
+    }
 
     return ctx.body(null, 201);
   })
@@ -68,7 +82,6 @@ const authPasswordsRouteHandlers = app
    * Only for organization membership invitations, user will proceed to accept after signing up.
    */
   .openapi(authPasswordsRoutes.signUpWithToken, async (ctx) => {
-    const db = ctx.var.db;
     const { password } = ctx.req.valid('json');
 
     const validToken = ctx.var.token;
@@ -82,13 +95,14 @@ const authPasswordsRouteHandlers = app
 
     const slug = slugFromEmail(validToken.email);
 
-    // Create user
+    // Create user + password atomically
     const newUser = { slug, name: slug, email: validToken.email };
-    const user = await handleCreateUser({ newUser, emailVerified: true });
-
-    // Separately insert password
-    const hashedPassword = await hashPassword(password);
-    await db.insert(passwordsTable).values({ userId: user.id, hashedPassword: hashedPassword });
+    const user = await baseDb.transaction(async (tx) => {
+      const user = await handleCreateUser({ newUser, emailVerified: true, db: tx });
+      const hashedPassword = await hashPassword(password);
+      await tx.insert(passwordsTable).values({ userId: user.id, hashedPassword });
+      return user;
+    });
 
     // Sign in user
     await setUserSession(ctx, user, strategy);
@@ -109,6 +123,9 @@ const authPasswordsRouteHandlers = app
       throw new AppError(400, 'forbidden_strategy', 'error', { meta: { strategy } });
     }
 
+    // Check if IP is rate-limited for email enumeration (restricted mode)
+    const { isLimited: restrictedMode } = await checkIpRateLimitStatus(ctx, emailEnumLimiter);
+
     const normalizedEmail = email.toLowerCase().trim();
 
     const [user] = await db
@@ -117,7 +134,12 @@ const authPasswordsRouteHandlers = app
       .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
       .where(eq(emailsTable.email, normalizedEmail))
       .limit(1);
-    if (!user) throw new AppError(404, 'invalid_email', 'warn', { entityType: 'user' });
+
+    // In restricted mode, return idempotent 204 to prevent email enumeration
+    if (!user) {
+      if (restrictedMode) return ctx.body(null, 204);
+      throw new AppError(404, 'invalid_email', 'warn', { entityType: 'user' });
+    }
 
     // Delete old token if exists
     await db.delete(tokensTable).where(and(eq(tokensTable.userId, user.id), eq(tokensTable.type, 'password-reset')));
@@ -185,6 +207,9 @@ const authPasswordsRouteHandlers = app
       db.update(emailsTable).set({ verified: true, verifiedAt: getIsoDate() }).where(eq(emailsTable.email, user.email)),
     ]);
 
+    // Notify user about password change
+    sendAccountSecurityEmail(user, 'password-changed');
+
     const mfaInitiated = await initiateMfa(ctx, user);
 
     await setUserSession(ctx, user, strategy);
@@ -206,9 +231,7 @@ const authPasswordsRouteHandlers = app
     }
 
     // Check if IP is rate-limited for email enumeration (restricted mode)
-    const ip = getIp(ctx);
-    const rateLimitKey = `ip:${ip}`;
-    const { isLimited: restrictedMode } = await checkRateLimitStatus('emailEnum_failseries', rateLimitKey);
+    const { isLimited: restrictedMode } = await checkIpRateLimitStatus(ctx, emailEnumLimiter);
 
     const normalizedEmail = email.toLowerCase().trim();
 

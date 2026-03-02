@@ -70,13 +70,13 @@ async function persistAndSendActivity(
     const seq = seqScope ? await getNextSeq(seqScope) : undefined;
 
     // Update entity/membership counts in contextCountersTable.counts JSONB
-    const countDelta = getCountDeltas(
+    const countDeltas = getCountDeltas(
       processResult.entry,
       activityWithId.action as 'create' | 'update' | 'delete',
       processResult.entityData,
       processResult.oldEntityData,
     );
-    if (countDelta) await updateContextCounts(countDelta);
+    for (const delta of countDeltas) await updateContextCounts(delta);
 
     const insertResult = await withRetry(async () => {
       await cdcDb.insert(activitiesTable).values({ ...activityWithId, seq }).onConflictDoNothing();
@@ -119,6 +119,12 @@ async function persistAndSendActivity(
 async function handleDataMessage(lsn: string, message: unknown): Promise<void> {
   const msg = message as Pgoutput.Message;
   const tag = msg.tag;
+
+  // Early exit for non-DML messages (begin, relation, commit, origin, type, etc.)
+  if (tag !== 'insert' && tag !== 'update' && tag !== 'delete') {
+    return;
+  }
+
   const tableName = 'relation' in msg ? msg.relation?.name : undefined;
 
   // Early exit for seeded data (gen- prefix) - no logging to avoid flooding during seed scripts

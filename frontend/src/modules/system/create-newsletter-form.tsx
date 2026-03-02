@@ -140,7 +140,7 @@ export function CreateNewsletterForm({ organizationIds, callback }: CreateNewsle
         />
 
         {testOnly && (
-          <AlertWrap id="test-email" variant="plain" icon={InfoIcon}>
+          <AlertWrap id="test-email" variant="plain" icon={InfoIcon} animate>
             {t('common:test_email.text')}
           </AlertWrap>
         )}

@@ -32,8 +32,8 @@ interface GetNextSelectedCellPositionOpts<R, SR> {
   columns: readonly CalculatedColumn<R, SR>[];
   colSpanColumns: readonly CalculatedColumn<R, SR>[];
   rows: readonly R[];
-  topSummaryRows: Maybe<readonly SR[]>;
-  bottomSummaryRows: Maybe<readonly SR[]>;
+  topSummaryRows?: Maybe<readonly SR[]>;
+  bottomSummaryRows?: Maybe<readonly SR[]>;
   minRowIdx: number;
   mainHeaderRowIdx: number;
   maxRowIdx: number;

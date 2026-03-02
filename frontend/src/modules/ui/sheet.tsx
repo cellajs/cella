@@ -71,7 +71,7 @@ export function SheetContent({
       )}
       {...props}
     >
-      <ScrollArea id={props.id} className="w-full h-full">
+      <ScrollArea className="w-full h-full" viewportClassName="touch-pan-y">
         {children}
       </ScrollArea>
       {showCloseButton && (

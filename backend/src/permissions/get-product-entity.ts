@@ -33,7 +33,7 @@ export const getValidProductEntity = async <K extends ProductEntityType>(
   action: Exclude<EntityActionType, 'create'>,
 ): Promise<ValidProductEntityResult<K>> => {
   // Get current user role and memberships from request context
-  const userSystemRole = ctx.var.userSystemRole;
+  const isSystemAdmin = ctx.var.isSystemAdmin;
   const memberships = ctx.var.memberships;
   const db = ctx.var.db;
 
@@ -42,7 +42,7 @@ export const getValidProductEntity = async <K extends ProductEntityType>(
   if (!entity) throw new AppError(404, 'not_found', 'warn', { entityType });
 
   // Step 2: Check permission for the requested action (system admin bypass is handled inside)
-  const { isAllowed } = checkPermission(memberships, action, entity, { systemRole: userSystemRole });
+  const { isAllowed } = checkPermission(memberships, action, entity, { isSystemAdmin });
 
   if (!isAllowed) {
     throw new AppError(403, 'forbidden', 'warn', { entityType, meta: { action } });

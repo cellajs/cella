@@ -7,21 +7,19 @@ const sortedBreakpoints = Object.keys(breakpoints).sort(
   (a, b) => Number.parseInt(breakpoints[a], 10) - Number.parseInt(breakpoints[b], 10),
 );
 
-// Function to get the matched breakpoint based on window width
+// Function to get the matched breakpoint based on window width.
+// Returns the largest breakpoint whose threshold is ≤ the current width,
+// aligning with CSS min-width media queries.
 function getMatchedBreakpoints() {
   if (typeof window === 'undefined') return sortedBreakpoints[0];
 
   const width = window.innerWidth;
-  let matched = sortedBreakpoints[0]; // Default to first breakpoint
+  let matched = sortedBreakpoints[0]; // Default to smallest breakpoint
 
-  for (let i = 1; i < sortedBreakpoints.length; i++) {
-    const prevBreakpointSize = Number.parseInt(breakpoints[sortedBreakpoints[i - 1]], 10);
-    const currentBreakpointSize = Number.parseInt(breakpoints[sortedBreakpoints[i]], 10);
-
-    if (width > currentBreakpointSize) {
-      matched = sortedBreakpoints[i];
-    } else if (width >= prevBreakpointSize && width < currentBreakpointSize) {
-      matched = sortedBreakpoints[i];
+  for (const bp of sortedBreakpoints) {
+    if (width >= Number.parseInt(breakpoints[bp], 10)) {
+      matched = bp;
+    } else {
       break;
     }
   }

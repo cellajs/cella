@@ -69,7 +69,7 @@ export function PageHeader({ entity, panel, parent, disableScroll, ...coverProps
             {membership && (
               <>
                 <Badge variant="plain">{t(membership.role, { ns: ['app', 'common'] })}</Badge>
-                <div className="opacity-70 max-sm:hidden">&middot;</div>
+                <div className="opacity-70 max-sm:invisible max-sm:w-0">&middot;</div>
               </>
             )}
 

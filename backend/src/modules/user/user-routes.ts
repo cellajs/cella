@@ -1,7 +1,7 @@
 import { createXRoute } from '#/docs/x-routes';
 import { authGuard, crossTenantGuard, relatableGuard } from '#/middlewares/guard';
 import { systemRoleBaseSchema } from '#/modules/system/system-schema';
-import { userListQuerySchema, userSchema } from '#/modules/user/user-schema';
+import { memberUserSchema, userListQuerySchema } from '#/modules/user/user-schema';
 import { errorResponseRefs, paginationSchema, relatableUserIdParamSchema, slugQuerySchema } from '#/schemas';
 import { mockPaginatedUsersResponse, mockUserResponse } from '../../../mocks/mock-user';
 
@@ -24,7 +24,7 @@ const userRoutes = {
         content: {
           'application/json': {
             schema: paginationSchema(
-              userSchema.extend({
+              memberUserSchema.extend({
                 role: systemRoleBaseSchema.shape.role.nullable().optional(),
               }),
             ),
@@ -51,7 +51,7 @@ const userRoutes = {
     responses: {
       200: {
         description: 'User',
-        content: { 'application/json': { schema: userSchema, example: mockUserResponse() } },
+        content: { 'application/json': { schema: memberUserSchema, example: mockUserResponse() } },
       },
       ...errorResponseRefs,
     },

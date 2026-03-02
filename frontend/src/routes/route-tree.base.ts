@@ -98,8 +98,8 @@ export const baseDocsChildren = [
 
 /** Base organization children (inside OrganizationRoute) */
 export const baseOrganizationChildren = [
-  OrganizationMembersRoute,
   OrganizationAttachmentsRoute,
+  OrganizationMembersRoute,
   OrganizationSettingsRoute,
 ] as const;
 

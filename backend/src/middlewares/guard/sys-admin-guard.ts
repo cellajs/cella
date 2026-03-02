@@ -1,12 +1,14 @@
 import type { MiddlewareHandler } from 'hono';
 import { every } from 'hono/combine';
 import { ipRestriction } from 'hono/ip-restriction';
+import { appConfig } from 'shared';
 import { setMiddlewareExtension } from '#/docs/x-middleware';
 import { AppError } from '#/lib/error';
+import { sendAccountSecurityEmail } from '#/lib/send-account-security-email';
 import { getIp } from '#/utils/get-ip';
 import { env } from '../../env';
 
-const allowList = env.REMOTE_SYSTEM_ACCESS_IP.split(',') || [];
+const allowList = env.SYSTEM_ADMIN_IP_ALLOWLIST === 'none' ? [] : env.SYSTEM_ADMIN_IP_ALLOWLIST.split(',');
 
 /**
  * Internal middleware to check if user is a system admin based on their role.
@@ -14,9 +16,17 @@ const allowList = env.REMOTE_SYSTEM_ACCESS_IP.split(',') || [];
  */
 const sysAdminCheck: MiddlewareHandler = async (ctx, next) => {
   const user = ctx.var.user;
-  const userSystemRole = ctx.var.userSystemRole;
+  const isSystemAdmin = ctx.var.isSystemAdmin;
 
-  if (userSystemRole !== 'admin') throw new AppError(403, 'no_sysadmin', 'warn', { meta: { user: user.id } });
+  if (!isSystemAdmin) {
+    const ip = getIp(ctx) ?? 'unknown';
+    sendAccountSecurityEmail({ email: appConfig.securityEmail, name: 'Security' }, 'sysadmin-fail', {
+      ip,
+      route: ctx.req.path,
+      timestamp: new Date().toISOString(),
+    });
+    throw new AppError(403, 'no_sysadmin', 'warn', { meta: { user: user.id } });
+  }
 
   await next();
 };
@@ -29,7 +39,13 @@ const sysAdminCheck: MiddlewareHandler = async (ctx, next) => {
  */
 const combinedMiddleware: MiddlewareHandler = every(
   sysAdminCheck,
-  ipRestriction(getIp, { allowList }, async () => {
+  ipRestriction(getIp, { allowList }, async (remote) => {
+    const ip = remote.addr ?? 'unknown';
+    sendAccountSecurityEmail({ email: appConfig.securityEmail, name: 'Security' }, 'sysadmin-fail', {
+      ip,
+      route: 'ip-restricted',
+      timestamp: new Date().toISOString(),
+    });
     throw new AppError(403, 'forbidden', 'warn');
   }),
 );

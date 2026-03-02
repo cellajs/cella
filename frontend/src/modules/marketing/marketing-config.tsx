@@ -1,11 +1,11 @@
 import { Building2Icon, CloudIcon, type LucideIcon, UsersIcon } from 'lucide-react';
 import { appConfig, type EntityType } from 'shared';
+import { nanoid } from 'shared/nanoid';
 import type { AboutCard } from '~/modules/marketing/about/cards';
 import type { PricingPlan } from '~/modules/marketing/about/pricing';
 import { ShowcaseItem } from '~/modules/marketing/about/showcase';
 import { ElementIcon } from '~/modules/marketing/icons/element';
 import { GithubIcon } from '~/modules/marketing/icons/github';
-import { nanoid } from '~/utils/nanoid';
 
 /*************************************************************************************************
  * Nav

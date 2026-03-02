@@ -8,10 +8,13 @@
  * 4. Wraps the request in a transaction with RLS session variables set
  * 5. Resolves organization and verifies membership
  *
- * @see info/RLS.md for architecture documentation
+ * @see info/ARCHITECTURE.md for architecture documentation
  */
 
 import * as Sentry from '@sentry/node';
+import { eq } from 'drizzle-orm';
+import { baseDb } from '#/db/db';
+import { tenantsTable } from '#/db/schema/tenants';
 import { setTenantRlsContext } from '#/db/tenant-context';
 import { xMiddleware } from '#/docs/x-middleware';
 import { AppError } from '#/lib/error';
@@ -43,7 +46,7 @@ export const tenantGuard = xMiddleware(
 
     const user = ctx.var.user;
     const memberships = ctx.var.memberships;
-    const userSystemRole = ctx.var.userSystemRole;
+    const isSystemAdmin = ctx.var.isSystemAdmin;
 
     // Require authenticated user (this middleware is for authenticated routes)
     if (!user || memberships === undefined) {
@@ -54,12 +57,23 @@ export const tenantGuard = xMiddleware(
 
     // Verify user has access to this tenant (via membership) or is system admin
     const hasTenantMembership = memberships.some((m) => m.tenantId === tenantId);
-    if (userSystemRole !== 'admin' && !hasTenantMembership) {
+    if (!isSystemAdmin && !hasTenantMembership) {
       throw new AppError(403, 'forbidden', 'warn', { meta: { resource: 'tenant' } });
     }
 
     // Set Sentry context
     Sentry.setTag('tenant_id', tenantId);
+
+    // Load tenant row (uses baseDb, not RLS-scoped tx, since we're establishing context)
+    const [tenant] = await baseDb.select().from(tenantsTable).where(eq(tenantsTable.id, tenantId)).limit(1);
+
+    if (!tenant) {
+      throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'tenant' } });
+    }
+
+    if (tenant.status !== 'active') {
+      throw new AppError(403, 'forbidden', 'warn', { message: `Tenant is ${tenant.status}` });
+    }
 
     // Wrap remaining middleware chain in tenant context with RLS active
     return setTenantRlsContext(
@@ -70,6 +84,7 @@ export const tenantGuard = xMiddleware(
       async (tx) => {
         ctx.set('db', tx);
         ctx.set('tenantId', tenantId);
+        ctx.set('tenant', tenant);
 
         await next();
       },

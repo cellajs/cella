@@ -172,6 +172,8 @@ export const appErrorHandler: ErrorHandler<Env> = (err, ctx) => {
     severity,
     entityType,
     logId,
+    path: ctx.req.path,
+    method: ctx.req.method,
     timestamp,
     meta,
   };

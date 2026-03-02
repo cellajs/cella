@@ -34,7 +34,6 @@ export function OverviewTable() {
     {
       key: 'label',
       name: '',
-      visible: true,
       sortable: false,
       resizable: false,
       width: 160,
@@ -44,7 +43,6 @@ export function OverviewTable() {
     {
       key: 'value',
       name: '',
-      visible: true,
       sortable: false,
       resizable: true,
       renderHeaderCell: HeaderCell,

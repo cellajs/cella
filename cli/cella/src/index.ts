@@ -24,13 +24,13 @@ import { loadConfig } from './utils/config';
 import { getCurrentBranch, isClean } from './utils/git';
 
 /**
- * Auto-contribute drifted files if enabled in config.
+ * Auto-contribute drifted and diverged files if enabled in config.
  */
 async function autoContribute(result: MergeResult, config: RuntimeConfig): Promise<void> {
   if (!config.settings.autoContribute) return;
-  const drifted = result.files.filter((f) => f.status === 'drifted');
-  if (drifted.length > 0) {
-    await pushContribBranch(drifted, config);
+  const contributable = result.files.filter((f) => f.status === 'drifted' || f.status === 'diverged');
+  if (contributable.length > 0) {
+    await pushContribBranch(contributable, config);
   }
 }
 
@@ -142,11 +142,11 @@ async function main(): Promise<void> {
       });
       spinnerSuccess();
 
-      const drifted = result.files.filter((f) => f.status === 'drifted');
-      if (drifted.length > 0) {
-        await pushContribBranch(drifted, config);
+      const contributable = result.files.filter((f) => f.status === 'drifted' || f.status === 'diverged');
+      if (contributable.length > 0) {
+        await pushContribBranch(contributable, config);
       } else {
-        console.info(pc.dim('no drifted files to contribute.'));
+        console.info(pc.dim('no drifted or diverged files to contribute.'));
       }
       await pushPinnedBranch(config);
       return;

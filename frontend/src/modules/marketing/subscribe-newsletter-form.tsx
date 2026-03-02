@@ -5,7 +5,7 @@ import { appConfig } from 'shared';
 import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/service';
 import { useCreateRequestMutation } from '~/modules/requests/query';
-import { SubmitButton } from '~/modules/ui/button';
+import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '~/modules/ui/input-group';
 
 export function SubscribeNewsletterForm() {
   const { t } = useTranslation();
@@ -32,8 +32,8 @@ export function SubscribeNewsletterForm() {
 
   return (
     <form ref={formRef} onSubmit={handleSubmit}>
-      <div className="relative mt-6">
-        <input
+      <InputGroup className="mt-6 h-14 rounded-2xl border-gray-300/40 bg-transparent ring-4 ring-primary/10 transition focus-within:border-gray-300 focus-within:ring-primary/20">
+        <InputGroupInput
           type="email"
           name="email"
           id="email"
@@ -41,14 +41,18 @@ export function SubscribeNewsletterForm() {
           autoComplete="email"
           aria-label="Email for newsletter"
           required
-          className="block w-full rounded-2xl border border-gray-300/40 bg-transparent py-4 pl-6 pr-20 text-base/6 text-gray-200 ring-4 ring-primary/10 transition placeholder:text-gray-300/50 focus:border-gray-300 focus:outline-hidden focus-visible:ring-primary/20"
+          className="py-4 pl-6 text-base/6 text-gray-200 placeholder:text-gray-300/50"
         />
-        <div className="absolute inset-y-1 right-1 flex justify-end">
-          <SubmitButton variant="link" aria-label="Submit email for newsletter" className="h-full rounded-xl">
+        <InputGroupAddon align="inline-end">
+          <InputGroupButton
+            type="submit"
+            aria-label="Submit email for newsletter"
+            className="text-white size-10 rounded-lg mr-0.5"
+          >
             {isPending ? <Spinner className="w-4 h-4" noDelay /> : <SendIcon className="w-4" />}
-          </SubmitButton>
-        </div>
-      </div>
+          </InputGroupButton>
+        </InputGroupAddon>
+      </InputGroup>
     </form>
   );
 }

@@ -1,5 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { contextEntityTypeSchema, productEntityTypeSchema } from '#/schemas';
+import { userMinimalBaseSchema } from '#/schemas/user-minimal-base';
 import { mockContextEntityBase, mockProductEntityBase } from '../../mocks/mock-entity-base';
 
 /**
@@ -16,8 +17,8 @@ const entityCoreShape = {
  * Audit fields for entities that track who created/modified them.
  */
 const auditShape = {
-  createdBy: z.string().nullable(),
-  modifiedBy: z.string().nullable(),
+  createdBy: userMinimalBaseSchema.nullable(),
+  modifiedBy: userMinimalBaseSchema.nullable(),
 };
 
 /**

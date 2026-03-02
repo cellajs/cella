@@ -6,7 +6,7 @@ import { logEvent } from '../pino';
 import { recordCdcMetric, type TraceContext } from '../tracing';
 import { wsClient } from '../websocket-client';
 import { getErrorCode } from './retry';
-import { nanoid } from '#/utils/nanoid';
+import { nanoid } from 'shared/nanoid';
 
 const LOG_PREFIX = '[activity]';
 

@@ -5,6 +5,9 @@
  * variables set. All tenant-scoped queries must use these wrappers to ensure
  * RLS policies are correctly applied.
  *
+ * RLS enforces two hard boundaries: tenant_id (cross-tenant) and organization_id
+ * (cross-org). Cross-project isolation is application-layer only.
+ *
  * Session variables (transaction-scoped via set_config with true):
  * - app.tenant_id: Current tenant context
  * - app.user_id: Current authenticated user ID

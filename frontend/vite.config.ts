@@ -77,6 +77,10 @@ const viteConfig = {
           src: '../locales/**/*',
           dest: 'locales',
         },
+        {
+          src: 'node_modules/pdfjs-dist/build/pdf.worker.min.mjs',
+          dest: '',
+        },
       ],
     }),
     createHtmlPlugin({
@@ -109,7 +113,6 @@ const viteConfig = {
   define: {
     'process.env': {
       NODE_ENV: JSON.stringify(process.env.NODE_ENV),
-      VITE_QUICK: JSON.stringify(process.env.VITE_QUICK),
     },
   },
 } satisfies UserConfig;

@@ -9,6 +9,7 @@ import { SidebarNav } from '~/modules/navigation/sidebar-nav';
 import type { NavItem, TriggerNavItemFn } from '~/modules/navigation/types';
 import { navItems } from '~/nav-config';
 import { useNavigationStore } from '~/store/navigation';
+import { useUIStore } from '~/store/ui';
 
 // Sheet class for nav sheets - positioned next to sidebar icon bar on sm+, pushes content when keepNavOpen
 export const navSheetClassName =
@@ -84,12 +85,13 @@ export function AppNav() {
     ['Shift + M', () => triggerNavItem('menu')],
   ]);
 
-  // Auto-open menu on desktop when keepOpen preference is enabled
+  // Auto-open menu on desktop when keepOpen preference is enabled (skip in focus view)
+  const focusView = useUIStore((state) => state.focusView);
   useEffect(() => {
-    if (isDesktop && keepOpenPreference && !navSheetOpen) {
+    if (isDesktop && keepOpenPreference && !navSheetOpen && !focusView) {
       triggerNavItem('menu', undefined, { skipAnimation: true });
     }
-  }, [isDesktop, keepOpenPreference]);
+  }, [isDesktop, keepOpenPreference, focusView]);
 
   // Sync keepNavOpen: pinned only when desktop + preference + a sheet is open
   useEffect(() => {

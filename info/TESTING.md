@@ -69,6 +69,17 @@ Best for:
 pnpm test:full
 ```
 
+## Infrastructure
+
+Vitest workspace (`vitest.config.ts`) runs backend, shared, and frontend tests from a single `pnpm vitest` command (or `--project=backend` for isolation).
+
+`backend/tests/global-setup.ts` runs Drizzle migrations against the dedicated test database (Docker Compose `test` profile, port 5434) before any tests. Exits gracefully with a helpful message if Postgres is unavailable.
+
+### Notable test suites
+
+* `backend/tests/integration/rls-security.test.ts`: Full RLS regression tests using two DB connections (`adminDb` as superuser, `runtimeDb` as `runtime_role`) verifying data isolation across tenants, orgs, and public access. Requires `pnpm test:full`.
+* `backend/src/permissions/permission-manager/check.perf.test.ts`: Permission manager performance tests.
+
 ## Writing Tests
 
 ### File Naming

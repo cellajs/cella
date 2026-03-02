@@ -3,7 +3,7 @@ import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/ad
 import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
 import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { Link } from '@tanstack/react-router';
-import { ArrowLeftIcon, SearchIcon } from 'lucide-react';
+import { ArrowLeftIcon, SearchIcon, Settings2Icon } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
@@ -15,21 +15,20 @@ import { Spinner } from '~/modules/common/spinner';
 import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
 import { AccountSheet } from '~/modules/navigation/account-sheet';
 import { navSheetClassName } from '~/modules/navigation/app-nav';
+import { FocusBridge, FocusTarget } from '~/modules/navigation/focus-bridge';
 import { MenuSheetHeader } from '~/modules/navigation/menu-sheet/header';
 import { filterMenuItems, getRelativeItemOrder, isPageData } from '~/modules/navigation/menu-sheet/helpers';
 import { MenuSheetItem } from '~/modules/navigation/menu-sheet/item';
 import { MenuSheetSection } from '~/modules/navigation/menu-sheet/section';
-import { Button, buttonVariants } from '~/modules/ui/button';
+import { openPreferencesSheet } from '~/modules/navigation/open-preferences-sheet';
+import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
-import { cn } from '~/utils/cn';
 import { useMenu } from './helpers/use-menu';
 
 export const MenuSheet = () => {
   const { t } = useTranslation();
   const { user } = useUserStore();
-
-  const detailedMenu = useNavigationStore((state) => state.detailedMenu);
   const setNavSheetOpen = useNavigationStore((state) => state.setNavSheetOpen);
 
   const { mutateAsync } = useMemberUpdateMutation();
@@ -38,23 +37,15 @@ export const MenuSheet = () => {
   const [isSearchActive, setSearchActive] = useState<boolean>(false);
 
   const accountButtonRef = useRef(null);
+  const preferencesButtonRef = useRef<HTMLButtonElement | null>(null);
 
-  const { menu, isLoading } = useMenu(user?.id, { detailedMenu });
+  const { menu, isLoading } = useMenu(user?.id);
 
   const searchResults = useMemo(() => filterMenuItems(menu, searchTerm), [menu, searchTerm]);
 
   // monitoring drop event
   useEffect(() => {
-    const viewportEl = document.getElementById('nav-sheet-viewport');
-    if (!viewportEl) return;
-
-    console.debug('Initializing drag-and-drop monitoring for menu sheet');
-
-    return combine(
-      autoScrollForElements({
-        element: viewportEl,
-        getAllowedAxis: () => 'vertical',
-      }),
+    const cleanups = [
       monitorForElements({
         canMonitor({ source }) {
           return isPageData(source.data) && !source.data.item.membership.archived;
@@ -93,7 +84,23 @@ export const MenuSheet = () => {
           });
         },
       }),
-    );
+    ];
+
+    // Auto-scroll for the nav sheet's scroll area viewport (the actual scrollable element)
+    const sheetEl = document.getElementById('nav-sheet');
+    const viewportEl = sheetEl?.querySelector<HTMLElement>('[data-radix-scroll-area-viewport]');
+    if (viewportEl) {
+      cleanups.push(
+        autoScrollForElements({
+          element: viewportEl,
+          getAllowedAxis: () => 'vertical',
+        }),
+      );
+    }
+
+    console.debug('Initializing drag-and-drop monitoring for menu sheet');
+
+    return combine(...cleanups);
   }, [menu]);
 
   // Show skeleton when loading or no user data yet
@@ -117,12 +124,24 @@ export const MenuSheet = () => {
 
   return (
     <div data-search={!!searchTerm} className="group/menu bg-card w-full py-3 px-3 gap-1 min-h-screen flex flex-col">
+      <FocusTarget target="sheet" />
       {/* Only visible when floating nav is present. To return to home */}
       <div id="return-nav" className="in-[.floating-nav]:flex hidden gap-2">
-        <Link to="/home" className={cn(buttonVariants({ variant: 'ghost' }), 'w-full justify-start h-10')}>
-          <ArrowLeftIcon size={16} strokeWidth={1.5} />
-          <span className="ml-2 font-normal">Home</span>
-        </Link>
+        <Button variant="ghost" className="justify-start h-10 grow" asChild>
+          <Link to="/home">
+            <ArrowLeftIcon size={16} strokeWidth={1.5} />
+            <span className="ml-2 font-normal">Home</span>
+          </Link>
+        </Button>
+        <Button
+          ref={preferencesButtonRef}
+          size="icon"
+          variant="ghost"
+          onClick={() => openPreferencesSheet(preferencesButtonRef)}
+          className="w-10 px-1.5 shrink-0 h-10"
+        >
+          <Settings2Icon size={20} strokeWidth={1.5} />
+        </Button>
         <Button
           ref={accountButtonRef}
           size="icon"
@@ -166,6 +185,11 @@ export const MenuSheet = () => {
         )}
       </div>
       {!searchTerm && <>{renderedSections}</>}
+      {/* Keyboard-only skip links at end of sheet */}
+      <div className="mt-auto flex flex-col">
+        <FocusBridge direction="to-content" className="focus:relative" />
+        <FocusBridge direction="to-sidebar" className="focus:relative" />
+      </div>
     </div>
   );
 };

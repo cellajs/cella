@@ -8,8 +8,8 @@ import { cn } from '~/utils/cn';
 import {
   getTypeCodeForSchema,
   getZodCodeForSchema,
-  typesContentQueryOptions,
-  zodContentQueryOptions,
+  typesIndexQueryOptions,
+  zodIndexQueryOptions,
 } from '../helpers/extract-types';
 
 interface SchemaDetailProps {
@@ -22,8 +22,8 @@ interface SchemaDetailProps {
  * Lazily loads types/zod content via React Query.
  */
 export const SchemaDetail = ({ schema, className }: SchemaDetailProps) => {
-  const { data: zodContent } = useSuspenseQuery(zodContentQueryOptions);
-  const { data: typesContent } = useSuspenseQuery(typesContentQueryOptions);
+  const { data: zodIndex } = useSuspenseQuery(zodIndexQueryOptions);
+  const { data: typesIndex } = useSuspenseQuery(typesIndexQueryOptions);
 
   // Strip leading #
   const refId = schema.ref.replace(/^#/, '');
@@ -43,8 +43,8 @@ export const SchemaDetail = ({ schema, className }: SchemaDetailProps) => {
         <div className="mt-2">
           <ViewerGroup
             schema={schema.schema}
-            zodCode={getZodCodeForSchema(zodContent, schema.name)}
-            typeCode={getTypeCodeForSchema(typesContent, schema.name)}
+            zodCode={getZodCodeForSchema(zodIndex, schema.name)}
+            typeCode={getTypeCodeForSchema(typesIndex, schema.name)}
             example={schema.example}
             defaultInspectDepth={3}
           />

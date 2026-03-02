@@ -1,5 +1,4 @@
 import { and, eq, inArray } from 'drizzle-orm';
-import { baseDb as db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { xMiddleware } from '#/docs/x-middleware';
 import { AppError } from '#/lib/error';
@@ -31,7 +30,7 @@ export const relatableGuard = xMiddleware(
     const targetUserId = ctx.req.param('relatableUserId') ?? ctx.req.query('relatableUserId');
 
     const user = ctx.var.user;
-    const userSystemRole = ctx.var.userSystemRole;
+    const isSystemAdmin = ctx.var.isSystemAdmin;
 
     // No-op if param absent or requesting self
     if (!targetUserId || targetUserId === user.id || targetUserId === user.slug) {
@@ -40,7 +39,7 @@ export const relatableGuard = xMiddleware(
     }
 
     // System admins bypass relatability check
-    if (userSystemRole === 'admin') {
+    if (isSystemAdmin) {
       await next();
       return;
     }
@@ -53,7 +52,10 @@ export const relatableGuard = xMiddleware(
       throw new AppError(403, 'forbidden', 'warn', { entityType: 'user' });
     }
 
-    // Check if target user shares at least one organization with requesting user
+    // Check if target user shares at least one organization with requesting user.
+    // The memberships_select_authenticated_policy allows any authenticated user to
+    // read membership rows, so this query works in cross-tenant RLS context.
+    const db = ctx.var.db;
     const [shared] = await db
       .select({ id: membershipsTable.id })
       .from(membershipsTable)

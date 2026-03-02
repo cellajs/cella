@@ -15,6 +15,7 @@
   "delete_resource_forbidden": "Not allowed to delete this {{resourceLowerCase}}",
   "delete_resource_forbidden.text": "You do not have enough permission to delete this {{resourceLowerCase}}.",
   "delete_resources": "{{resources}} could not be deleted",
+  "download_failed": "Download failed. Try again later.",
   "duplicate_creation": "Item already exist",
   "duplicate_slugs": "Duplicate slugs are not allowed",
   "email_already_verified": "Email already verified",
@@ -217,5 +218,7 @@
   "sync_organization_required": "Organization required",
   "sync_organization_mismatch": "Organization mismatch",
   "field_conflict": "Field conflict",
-  "field_conflict.text": "This field was modified by another user. Please refresh and try again."
+  "field_conflict.text": "This field was modified by another user. Please refresh and try again.",
+  "weak_password": "Weak password",
+  "weak_password.text": "This password is too easy to guess. Please choose a stronger password."
 }

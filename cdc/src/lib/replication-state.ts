@@ -1,19 +1,7 @@
 import type { LogicalReplicationService } from 'pg-logical-replication';
-import { wsClient, type WsState } from '../websocket-client';
 
 /** Replication state for health monitoring */
 export type ReplicationState = 'active' | 'paused' | 'stopped';
-
-
-// TODO-045 review the value of having this vs inlining this at the call site
-
-/** Health state exposed for monitoring */
-export interface CdcHealthState {
-  wsState: WsState;
-  replicationState: ReplicationState;
-  lastLsn: string | null;
-  lastMessageAt: Date | null;
-}
 
 /**
  * Centralized state management for CDC replication.
@@ -63,18 +51,6 @@ class ReplicationStateManager {
   /** Set time when replication was paused */
   set replicationPausedAt(date: Date | null) {
     this._replicationPausedAt = date;
-  }
-
-  /**
-   * Get current CDC health state for health endpoint.
-   */
-  getCdcHealthState(): CdcHealthState {
-    return {
-      wsState: wsClient.wsState,
-      replicationState: this._replicationState,
-      lastLsn: this._lastLsn,
-      lastMessageAt: wsClient.lastMessageAt,
-    };
   }
 
   /**

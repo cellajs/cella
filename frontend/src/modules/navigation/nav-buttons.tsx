@@ -4,6 +4,7 @@ import { appConfig } from 'shared';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { AppNavLoader } from '~/modules/navigation/app-nav-loader';
 import type { NavItem, TriggerNavItemFn } from '~/modules/navigation/types';
+import { useTotalUnseenCount } from '~/modules/seen/use-unseen-count';
 import { SidebarMenuButton, SidebarMenuItem } from '~/modules/ui/sidebar';
 import { useUIStore } from '~/store/ui';
 import { useUserStore } from '~/store/user';
@@ -60,8 +61,10 @@ export function NavButton({ navItem, isActive, isCollapsed, onClick }: NavButton
   const { t } = useTranslation();
   const buttonRef = useRef<HTMLButtonElement>(null);
   const theme = useUIStore((state) => state.theme);
+  const totalUnseenCount = useTotalUnseenCount();
 
   const showTooltip = isCollapsed || !hasSidebarTextLabels;
+  const showUnseenBadge = navItem.id === 'menu' && totalUnseenCount > 0 && !isActive;
 
   return (
     <SidebarMenuItem className="flex transform grow-0 justify-start pb-2">
@@ -76,9 +79,14 @@ export function NavButton({ navItem, isActive, isCollapsed, onClick }: NavButton
         className="h-14 ring-inset focus-visible:ring-offset-0 group transition-[width] duration-200 linear
           data-[active=true]:bg-background/50 hover:bg-background/30
           text-primary-foreground data-[theme=none]:text-inherit
-          w-full data-[collapsed=true]:w-16 justify-center"
+          w-full data-[collapsed=true]:w-16 justify-center relative"
       >
         <AppNavIcon navItem={navItem} />
+        {showUnseenBadge && (
+          <span className="absolute top-2 left-8 group-data-[collapsed=true]:left-8 min-w-4 h-4 flex items-center justify-center rounded-full bg-background text-primary text-[0.6rem] font-bold px-1 leading-none">
+            {totalUnseenCount > 99 ? '99+' : totalUnseenCount}
+          </span>
+        )}
         {hasSidebarTextLabels && (
           <span
             className="pl-1.5 font-medium whitespace-nowrap transition-[opacity,width] duration-200 linear overflow-hidden
@@ -98,6 +106,9 @@ export function NavButton({ navItem, isActive, isCollapsed, onClick }: NavButton
 export function BottomBarNavButton({ navItem, isActive, onClick }: Omit<NavButtonProps, 'isCollapsed'>) {
   const buttonRef = useRef<HTMLButtonElement>(null);
   const theme = useUIStore((state) => state.theme);
+  const totalUnseenCount = useTotalUnseenCount();
+
+  const showUnseenBadge = navItem.id === 'menu' && totalUnseenCount > 0 && !isActive;
 
   return (
     <button
@@ -108,12 +119,17 @@ export function BottomBarNavButton({ navItem, isActive, onClick }: Omit<NavButto
       data-active={isActive}
       onClick={() => onClick(navItem.id, buttonRef)}
       className={cn(
-        'ring-inset focus-visible:ring-offset-0 group size-14 flex items-center justify-center rounded-md',
+        'ring-inset focus-visible:ring-offset-0 group size-14 flex items-center justify-center rounded-md relative',
         'data-[active=true]:bg-background/50 hover:bg-background/30',
         'text-primary-foreground data-[theme=none]:text-inherit',
       )}
     >
       <AppNavIcon navItem={navItem} />
+      {showUnseenBadge && (
+        <span className="absolute top-1 right-1 min-w-4 h-4 flex items-center justify-center rounded-full bg-background text-primary text-[0.6rem] font-bold px-1 leading-none">
+          {totalUnseenCount > 99 ? '99+' : totalUnseenCount}
+        </span>
+      )}
     </button>
   );
 }

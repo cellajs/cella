@@ -29,8 +29,7 @@ export const SelectTenantFormField = <TFieldValues extends FieldValues>({
   disabled,
   autoHide,
 }: SelectTenantProps<TFieldValues>) => {
-  const systemRole = useUserStore((s) => s.systemRole);
-  const isSystemAdmin = systemRole === 'admin';
+  const isSystemAdmin = useUserStore((s) => s.isSystemAdmin);
 
   // System admins: fetch all tenants from API (includes tenant names)
   const tenantsQuery = useInfiniteQuery({ ...tenantsListQueryOptions({}), enabled: isSystemAdmin });

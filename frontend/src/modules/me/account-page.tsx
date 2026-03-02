@@ -18,7 +18,7 @@ import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { HelpText } from '~/modules/common/help-text';
 import { PageAside } from '~/modules/common/page/aside';
 import { SimpleHeader } from '~/modules/common/simple-header';
-import { StickyBox } from '~/modules/common/sticky-box';
+
 import { toaster } from '~/modules/common/toaster/service';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import { DeleteSelf } from '~/modules/me/delete-self';
@@ -118,10 +118,10 @@ function UserAccountPage() {
   return (
     <div className="container md:flex md:flex-row my-4 md:mt-8 gap-4 ">
       <div className="max-md:hidden mx-auto md:min-w-48 md:w-[30%] md:mt-3">
-        <StickyBox className="z-10 max-md:block! group" offsetTop={12}>
+        <div className="sticky top-3 z-10 max-md:block! group">
           <SimpleHeader className="p-3" heading="common:my_account" text="common:my_account.text" collapseText />
           <PageAside tabs={tabs} className="py-2" setFocus />
-        </StickyBox>
+        </div>
       </div>
 
       <div className="md:w-[70%] flex flex-col gap-8">

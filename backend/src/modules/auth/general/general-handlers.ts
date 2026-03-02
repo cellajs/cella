@@ -2,6 +2,7 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { and, desc, eq } from 'drizzle-orm';
 import i18n from 'i18next';
 import { appConfig } from 'shared';
+import { nanoid } from 'shared/nanoid';
 import { emailsTable } from '#/db/schema/emails';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { sessionsTable } from '#/db/schema/sessions';
@@ -11,7 +12,9 @@ import { type Env } from '#/lib/context';
 import { AppError, type ErrorKey } from '#/lib/error';
 import { mailer } from '#/lib/mailer';
 import { resolveEntity } from '#/lib/resolve-entity';
-import { checkRateLimitStatus } from '#/middlewares/rate-limiter/helpers';
+import { sendAccountSecurityEmail } from '#/lib/send-account-security-email';
+import { checkIpRateLimitStatus } from '#/middlewares/rate-limiter/helpers';
+import { emailEnumLimiter } from '#/middlewares/rate-limiter/limiters';
 import authGeneralRoutes from '#/modules/auth/general/general-routes';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { getParsedSessionCookie, setUserSession, validateSession } from '#/modules/auth/general/helpers/session';
@@ -19,12 +22,10 @@ import { handleOAuthVerification } from '#/modules/auth/oauth/helpers/handle-oau
 import { handleEmailVerification } from '#/modules/auth/passwords/helpers/handle-email-verification';
 import { userSelect } from '#/modules/user/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
-import { getIp } from '#/utils/get-ip';
 import { getValidSingleUseToken } from '#/utils/get-valid-single-use-token';
 import { getValidToken } from '#/utils/get-valid-token';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { logEvent } from '#/utils/logger';
-import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
@@ -37,11 +38,8 @@ const authGeneralRouteHandlers = app
    * Auth health check with rate limit status
    */
   .openapi(authGeneralRoutes.health, async (ctx) => {
-    const ip = getIp(ctx);
-    const rateLimitKey = `ip:${ip}`;
-
     // Check emailEnum rate limit status without consuming points
-    const { isLimited, retryAfter } = await checkRateLimitStatus('emailEnum_failseries', rateLimitKey);
+    const { isLimited, retryAfter } = await checkIpRateLimitStatus(ctx, emailEnumLimiter);
 
     return ctx.json({ restrictedMode: isLimited, ...(retryAfter && { retryAfter }) }, 200);
   })
@@ -51,6 +49,12 @@ const authGeneralRouteHandlers = app
   .openapi(authGeneralRoutes.checkEmail, async (ctx) => {
     const db = ctx.var.db;
     const { email } = ctx.req.valid('json');
+
+    // Check if IP is rate-limited for email enumeration (restricted mode)
+    const { isLimited: restrictedMode } = await checkIpRateLimitStatus(ctx, emailEnumLimiter);
+
+    // In restricted mode, always return 204 to prevent email enumeration
+    if (restrictedMode) return ctx.body(null, 204);
 
     const normalizedEmail = email.toLowerCase().trim();
 
@@ -130,23 +134,23 @@ const authGeneralRouteHandlers = app
     // Check if tokenId matches the one being requested
     if (tokenRecord.id !== tokenId) throw new AppError(400, 'invalid_request', 'warn');
 
-    const data = {
+    const tokenResponse = {
       email: tokenRecord.email,
       userId: tokenRecord.userId || '',
       inactiveMembershipId: tokenRecord.inactiveMembershipId || '',
     };
 
     // If its NOT an membership invitation, return base data
-    if (!tokenRecord.inactiveMembershipId) return ctx.json(data, 200);
+    if (!tokenRecord.inactiveMembershipId) return ctx.json(tokenResponse, 200);
 
     // If it is a membership invitation, check if a new user has been created since invitation was sent (without verifying email)
     const [existingUser] = await db.select(userSelect).from(usersTable).where(eq(usersTable.email, tokenRecord.email));
     if (!tokenRecord.userId && existingUser) {
       await db.update(tokensTable).set({ userId: existingUser.id }).where(eq(tokensTable.id, tokenRecord.id));
-      data.userId = existingUser.id;
+      tokenResponse.userId = existingUser.id;
     }
 
-    return ctx.json(data, 200);
+    return ctx.json(tokenResponse, 200);
   })
   /**
    * Start impersonation
@@ -163,6 +167,7 @@ const authGeneralRouteHandlers = app
     await setUserSession(ctx, user, 'password', 'impersonation');
 
     logEvent('info', 'Started impersonation', { adminId: adminUser.id, targetUserId });
+    sendAccountSecurityEmail(user, 'impersonation-started', { adminName: adminUser.name || adminUser.email });
 
     return ctx.body(null, 204);
   })

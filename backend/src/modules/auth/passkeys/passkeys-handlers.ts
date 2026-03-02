@@ -3,12 +3,14 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { encodeBase64 } from '@oslojs/encoding';
 import { and, eq, getColumns } from 'drizzle-orm';
 import { appConfig } from 'shared';
+import { baseDb } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { totpsTable } from '#/db/schema/totps';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { type Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
+import { sendAccountSecurityEmail } from '#/lib/send-account-security-email';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { deviceInfo } from '#/modules/auth/general/helpers/device-info';
 import { validateConfirmMfaToken } from '#/modules/auth/general/helpers/mfa';
@@ -58,29 +60,34 @@ const authPasskeysRouteHandlers = app
     // Save public key in database
     const [newPasskey] = await db.insert(passkeysTable).values(passkeyValue).returning(passkeySelect);
 
+    sendAccountSecurityEmail(user, 'passkey-added');
+
     return ctx.json(newPasskey, 201);
   })
   /**
    * Delete passkey
    */
   .openapi(authPasskeysRoutes.deletePasskey, async (ctx) => {
-    const db = ctx.var.db;
     const { id } = ctx.req.valid('param');
     const user = ctx.var.user;
 
-    // Remove all passkeys linked to this user's email
-    await db.delete(passkeysTable).where(and(eq(passkeysTable.userId, user.id), eq(passkeysTable.id, id)));
+    // Remove passkey and conditionally disable MFA atomically
+    await baseDb.transaction(async (tx) => {
+      await tx.delete(passkeysTable).where(and(eq(passkeysTable.userId, user.id), eq(passkeysTable.id, id)));
 
-    // Check if the user still has any passkeys or TOTP entries registered
-    const [userPasskeys, userTotps] = await Promise.all([
-      db.select().from(passkeysTable).where(eq(passkeysTable.userId, user.id)),
-      db.select().from(totpsTable).where(eq(totpsTable.userId, user.id)),
-    ]);
+      // Check if the user still has any passkeys or TOTP entries registered
+      const [userPasskeys, userTotps] = await Promise.all([
+        tx.select().from(passkeysTable).where(eq(passkeysTable.userId, user.id)),
+        tx.select().from(totpsTable).where(eq(totpsTable.userId, user.id)),
+      ]);
 
-    // If no TOTP and Passkeys exists, disable MFA completely
-    if (!userPasskeys.length || !userTotps.length) {
-      await db.update(usersTable).set({ mfaRequired: false }).where(eq(usersTable.id, user.id));
-    }
+      // If no TOTP and Passkeys exists, disable MFA completely
+      if (!userPasskeys.length || !userTotps.length) {
+        await tx.update(usersTable).set({ mfaRequired: false }).where(eq(usersTable.id, user.id));
+      }
+    });
+
+    sendAccountSecurityEmail(user, 'passkey-removed');
 
     return ctx.body(null, 204);
   })

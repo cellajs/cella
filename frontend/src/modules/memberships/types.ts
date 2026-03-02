@@ -26,7 +26,7 @@ export type EntityMembershipContextProp = {
   entityType?: ContextEntityType;
 };
 
-export type InviteMember = MutationData<MembershipInviteData> & { entity: EnrichedContextEntity };
+export type InviteMember = MutationData<MembershipInviteData> & { contextEntity: EnrichedContextEntity };
 
 export type MutationUpdateMembership = MutationData<UpdateMembershipData> & {
   entityId: string;

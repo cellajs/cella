@@ -1,6 +1,6 @@
 import { appConfig } from 'shared';
 
-export function LegalContact() {
+export function LegalContact({ addressOnly = false }: { addressOnly?: boolean }) {
   const companyFull = appConfig.company.name;
   const streetAddress = appConfig.company.streetAddress;
   const postcode = appConfig.company.postcode;
@@ -21,12 +21,12 @@ export function LegalContact() {
       </li>
       <li>{country}</li>
       <li>
-        <a className="ml-1" href={`mailto:${supportEmail}`} target="_blank" rel="noreferrer">
+        <a className="ml-1 underline" href={`mailto:${supportEmail}`} target="_blank" rel="noreferrer">
           {supportEmail}
         </a>
       </li>
-      <li>{registration}</li>
-      <li>Bank account: {bankAccount}</li>
+      {!addressOnly && <li>{registration}</li>}
+      {!addressOnly && <li>Bank account: {bankAccount}</li>}
     </ul>
   );
 }

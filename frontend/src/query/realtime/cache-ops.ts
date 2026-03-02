@@ -3,7 +3,7 @@
  * Used by both live handler and catchup processor.
  */
 
-import { type EntityQueryKeys, getEntityQueryKeys, type ItemData } from '~/query/basic';
+import { type EntityQueryKeys, getEntityQueryKeys, hasEntityQueryKeys, type ItemData } from '~/query/basic';
 import { changeInfiniteQueryData, changeQueryData } from '~/query/basic/helpers';
 import { isInfiniteQueryData, isQueryData } from '~/query/basic/mutate-query';
 import { queryClient } from '~/query/query-client';
@@ -16,8 +16,8 @@ export function storeEntityCacheToken(entityType: string, entityId: string, toke
 
 /** Remove entity from detail cache and remove cache token */
 export function removeEntityFromCache(entityType: string, entityId: string): void {
-  const keys = getEntityQueryKeys(entityType);
-  if (keys) {
+  if (hasEntityQueryKeys(entityType)) {
+    const keys = getEntityQueryKeys(entityType);
     queryClient.removeQueries({ queryKey: keys.detail.byId(entityId) });
   }
   removeCacheToken(entityType, entityId);

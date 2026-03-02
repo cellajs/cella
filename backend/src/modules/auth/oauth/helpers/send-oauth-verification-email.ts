@@ -1,6 +1,7 @@
 import { and, eq } from 'drizzle-orm';
 import i18n from 'i18next';
 import { appConfig } from 'shared';
+import { nanoid } from 'shared/nanoid';
 import { baseDb as db } from '#/db/db';
 import { type EmailModel, emailsTable } from '#/db/schema/emails';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
@@ -11,7 +12,6 @@ import { mailer } from '#/lib/mailer';
 import { deleteVerificationTokens } from '#/modules/auth/general/helpers/send-verification-email';
 import { userSelect } from '#/modules/user/helpers/select';
 import { logEvent } from '#/utils/logger';
-import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { OAuthVerificationEmail } from '../../../../../emails';

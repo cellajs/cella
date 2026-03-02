@@ -2,7 +2,6 @@ import i18n from 'i18next';
 import { BirdIcon } from 'lucide-react';
 import { type RefObject, Suspense, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { HeaderCell } from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
@@ -98,7 +97,6 @@ function ExampleCell({ row }: { row: GenOperationSummary }) {
 
 export const useColumns = (_isCompact: boolean, extensions: GenExtensionDefinition[] = []) => {
   const { t } = useTranslation();
-  const isMobile = useBreakpoints('max', 'sm', false);
 
   const columns = useMemo(() => {
     // Generate extension columns dynamically from extension definitions
@@ -108,7 +106,7 @@ export const useColumns = (_isCompact: boolean, extensions: GenExtensionDefiniti
         .replace('x-', '')
         .replace(/-/g, ' ')
         .replace(/^\w/, (c) => c.toUpperCase()),
-      visible: !isMobile,
+      minBreakpoint: 'md',
       sortable: false,
       resizable: true,
       width: 150,
@@ -118,9 +116,20 @@ export const useColumns = (_isCompact: boolean, extensions: GenExtensionDefiniti
         return values?.length ? (
           <div className="font-mono text-[11px] flex flex-wrap gap-1 truncate">
             {values.map((value: string) => {
-              const label = ext.values?.[value]?.name ?? value;
+              const meta = ext.values?.[value];
+              const label = meta?.name ?? value;
+              const tooltipContent = meta?.description
+                ? `${value} — ${meta.description}`
+                : label !== value
+                  ? value
+                  : undefined;
               return (
-                <code key={value} className="truncate inline-block" title={value}>
+                <code
+                  key={value}
+                  className="truncate inline-block cursor-default"
+                  data-tooltip={tooltipContent ? 'true' : undefined}
+                  data-tooltip-content={tooltipContent}
+                >
                   {label}
                 </code>
               );
@@ -136,7 +145,6 @@ export const useColumns = (_isCompact: boolean, extensions: GenExtensionDefiniti
       {
         key: 'method',
         name: t('common:method'),
-        visible: true,
         sortable: true,
         resizable: false,
         width: 80,
@@ -154,7 +162,6 @@ export const useColumns = (_isCompact: boolean, extensions: GenExtensionDefiniti
         key: 'path',
         name: t('common:path'),
         minWidth: 180,
-        visible: true,
         resizable: true,
         sortable: true,
         renderHeaderCell: HeaderCell,
@@ -163,7 +170,6 @@ export const useColumns = (_isCompact: boolean, extensions: GenExtensionDefiniti
       {
         key: 'hasExample',
         name: '',
-        visible: true,
         resizable: false,
         sortable: false,
         width: 50,
@@ -174,7 +180,6 @@ export const useColumns = (_isCompact: boolean, extensions: GenExtensionDefiniti
         key: 'id',
         name: t('common:docs.operation_id'),
         sortable: true,
-        visible: true,
         resizable: true,
         width: 200,
         renderHeaderCell: HeaderCell,
@@ -185,7 +190,7 @@ export const useColumns = (_isCompact: boolean, extensions: GenExtensionDefiniti
       {
         key: 'summary',
         name: t('common:summary'),
-        visible: false,
+        hidden: true,
         sortable: true,
         resizable: true,
         editable: true,
@@ -201,7 +206,7 @@ export const useColumns = (_isCompact: boolean, extensions: GenExtensionDefiniti
         key: 'tags',
         name: t('common:tags'),
         sortable: true,
-        visible: !isMobile,
+        minBreakpoint: 'md',
         resizable: true,
         minWidth: 80,
         renderHeaderCell: HeaderCell,
@@ -221,7 +226,7 @@ export const useColumns = (_isCompact: boolean, extensions: GenExtensionDefiniti
     ];
 
     return cols;
-  }, [t, extensions, isMobile]);
+  }, [t, extensions]);
 
   return useState<ColumnOrColumnGroup<GenOperationSummary>[]>(columns);
 };

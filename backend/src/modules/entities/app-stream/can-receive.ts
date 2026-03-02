@@ -53,7 +53,7 @@ function canReceiveProductEntityEvent(
 
   // Check permissions using user's memberships
   const { isAllowed } = checkPermission(subscriber.memberships, 'read', eventEntity, {
-    systemRole: subscriber.userSystemRole,
+    isSystemAdmin: subscriber.isSystemAdmin,
   });
 
   if (!isAllowed) {

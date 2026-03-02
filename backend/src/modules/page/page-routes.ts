@@ -2,6 +2,7 @@ import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/docs/x-routes';
 import { publicCache } from '#/middlewares/entity-cache';
 import { authGuard, publicGuard, sysAdminGuard, tenantGuard } from '#/middlewares/guard';
+import { bulkPointsLimiter, singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   batchResponseSchema,
   errorResponseRefs,
@@ -28,6 +29,7 @@ const pagesRoutes = {
     method: 'post',
     path: '/{tenantId}/pages',
     xGuard: [authGuard, tenantGuard, sysAdminGuard],
+    xRateLimiter: bulkPointsLimiter,
     tags: ['pages'],
     summary: 'Create pages',
     description: 'Insert one or more new *pages*. Returns created pages and any rejected items.',
@@ -117,6 +119,7 @@ const pagesRoutes = {
     method: 'put',
     path: '/{tenantId}/pages/{id}',
     xGuard: [authGuard, tenantGuard, sysAdminGuard],
+    xRateLimiter: singlePointsLimiter,
     tags: ['pages'],
     summary: 'Update page',
     description: 'Update a single *page* by ID.',
@@ -143,6 +146,7 @@ const pagesRoutes = {
     method: 'delete',
     path: '/{tenantId}/pages',
     xGuard: [authGuard, tenantGuard, sysAdminGuard],
+    xRateLimiter: bulkPointsLimiter,
     tags: ['pages'],
     summary: 'Delete pages',
     description: 'Delete one or more *pages* by ID.',

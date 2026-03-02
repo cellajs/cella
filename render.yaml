@@ -1,1 +1,113 @@
----
+previewsExpireAfterDays: 3
+
+# Make sure to replace everything with *.cella* with own domain name(s), etc
+
+services:
+  # Backend
+  - type: web
+    name: cella-backend
+    runtime: node
+    region: frankfurt
+    rootDir: backend
+    buildCommand: pnpm install && pnpm build
+    # preDeployCommand: pnpm predeploy
+    startCommand: pnpm start
+    numInstances: 1
+    healthCheckPath: /health
+    previews:
+      generation: manual
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_ADMIN_URL
+        sync: false
+      - key: UNSUBSCRIBE_SECRET
+        sync: false
+      - key: ARGON_SECRET
+        sync: false
+      - key: COOKIE_SECRET
+        sync: false
+      - key: REMOTE_SYSTEM_ACCESS_IP
+        sync: false
+      - key: CDC_INTERNAL_SECRET
+        sync: false
+      - key: NODE_VERSION
+        sync: true
+        value: 24
+    buildFilter:
+      paths:
+        - backend/**/*.?s
+
+  # CDC Worker
+  - type: worker
+    name: cella-cdc
+    runtime: node
+    region: frankfurt
+    rootDir: cdc
+    buildCommand: pnpm install && pnpm build
+    startCommand: pnpm start
+    numInstances: 1
+    previews:
+      generation: manual
+    envVars:
+      - key: DATABASE_CDC_URL
+        sync: false
+      - key: API_WS_URL
+        sync: false
+      - key: CDC_INTERNAL_SECRET
+        sync: false
+      - key: NODE_VERSION
+        sync: true
+        value: 24
+    buildFilter:
+      paths:
+        - cdc/**/*.?s
+
+  # Frontend
+  - type: web
+    name: cella-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: pnpm install && pnpm build
+    staticPublishPath: ./dist
+    previews:
+      generation: manual
+    headers:
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Content-Security-Policy
+        value: |
+          default-src 'self';
+          script-src 'self' *.cellajs.com *.vimeo.com *.gleap.io;
+          connect-src 'self' blob: *.cellajs.com *.gleap.io wss://ws.gleap.io;
+          img-src 'self' blob: https: data:;
+          media-src 'self' blob: data: https://i.ytimg.com *.gleap.io;
+          frame-src 'self' *.youtube.com *.vimeo.com *.paddle.com *.gleap.io;
+      - path: /*
+        name: Referrer-Policy
+        value: same-origin
+      - path: /*
+        name: Strict-Transport-Security
+        value: max-age=15768000
+      - path: /*
+        name: X-XSS-Protection
+        value: 1; mode=block
+      - path: /*
+        name: X-Frame-Options
+        value: SAMEORIGIN
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: SKIP_INSTALL_DEPS
+        sync: true
+        value: true
+      - key: NODE_VERSION
+        sync: true
+        value: 24
+    buildFilter:
+      paths:
+        - frontend/**/*.?s

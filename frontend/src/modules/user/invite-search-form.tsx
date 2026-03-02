@@ -12,27 +12,27 @@ import { type InviteFormValues, useInviteFormDraft } from '~/modules/user/invite
 import { UserCombobox } from '~/modules/user/user-combobox';
 
 interface Props {
-  entity?: EnrichedContextEntity;
+  contextEntity?: EnrichedContextEntity;
   dialog?: boolean;
 }
 
 /**
  * Invite members by searching for users which are already in the system
  */
-export function InviteSearchForm({ entity, dialog: isDialog }: Props) {
+export function InviteSearchForm({ contextEntity, dialog: isDialog }: Props) {
   const { t } = useTranslation();
-  if (!entity) return null;
+  if (!contextEntity) return null;
 
-  const form = useInviteFormDraft(entity?.id);
+  const form = useInviteFormDraft(contextEntity?.id);
   const { mutate: invite, isPending } = useInviteMemberMutation();
 
   const onSubmit = (values: InviteFormValues) => {
     invite(
       {
         body: values,
-        path: { tenantId: entity.tenantId, orgId: entity.organizationId || entity.id },
-        query: { entityId: entity.id, entityType: entity.entityType },
-        entity,
+        path: { tenantId: contextEntity.tenantId, orgId: contextEntity.organizationId || contextEntity.id },
+        query: { entityId: contextEntity.id, entityType: contextEntity.entityType },
+        contextEntity,
       },
       {
         onSuccess: ({ invitesSentCount, rejectedItemIds }, { body: { emails } }) => {
@@ -60,7 +60,7 @@ export function InviteSearchForm({ entity, dialog: isDialog }: Props) {
           render={({ field: { onChange, value } }) => (
             <FormItem>
               <FormControl>
-                <UserCombobox value={value} onChange={onChange} entity={entity} />
+                <UserCombobox value={value} onChange={onChange} contextEntity={contextEntity} />
               </FormControl>
               <FormMessage />
             </FormItem>

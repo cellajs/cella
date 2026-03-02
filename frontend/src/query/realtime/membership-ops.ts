@@ -7,8 +7,8 @@
 
 import type { ContextEntityType } from 'shared';
 import { getAndSetMe } from '~/modules/me/helpers';
+import { meKeys } from '~/modules/me/query';
 import { memberQueryKeys } from '~/modules/memberships/query';
-import { getMenuData } from '~/modules/navigation/menu-sheet/helpers/get-menu-data';
 import { getContextEntityTypeToListQueries } from '~/offline-config';
 import { queryClient } from '~/query/query-client';
 import { useUserStore } from '~/store/user';
@@ -65,11 +65,11 @@ export function invalidateMemberQueries(organizationId: string | null): void {
 }
 
 /**
- * Refresh menu data.
- * Called after membership create/delete to update visible entities.
+ * Invalidate memberships cache so the enrichment subscriber
+ * re-enriches entity lists and useMenu reactively rebuilds.
  */
-export function refreshMenu(): void {
-  getMenuData();
+export function invalidateMemberships(): void {
+  queryClient.invalidateQueries({ queryKey: meKeys.memberships, refetchType: 'active' });
 }
 
 /**

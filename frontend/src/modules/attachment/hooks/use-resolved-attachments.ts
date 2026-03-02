@@ -7,7 +7,7 @@ import { useIsRestoring } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import type { CarouselItemData } from '~/modules/attachment/carousel';
 import { resolveAttachmentUrl } from '~/modules/attachment/helpers';
-import { findAttachmentInListCache } from '~/modules/attachment/query';
+import { findAttachmentInCache } from '~/modules/attachment/query';
 
 export interface ResolvedAttachmentsResult {
   items: CarouselItemData[];
@@ -18,7 +18,7 @@ export interface ResolvedAttachmentsResult {
 
 /** Build CarouselItemData with metadata from cache */
 function buildItemData(item: Partial<CarouselItemData> & { id: string }, url: string): CarouselItemData {
-  const cached = findAttachmentInListCache(item.id);
+  const cached = findAttachmentInCache(item.id);
   return {
     id: item.id,
     url,
@@ -26,7 +26,7 @@ function buildItemData(item: Partial<CarouselItemData> & { id: string }, url: st
     filename: item.filename ?? cached?.filename,
     contentType: item.contentType ?? cached?.contentType,
     convertedUrl: cached?.convertedKey ? undefined : null,
-    convertedContentType: item.convertedContentType ?? cached?.convertedContentType,
+    convertedContentType: item.convertedContentType || cached?.convertedContentType || null,
   };
 }
 

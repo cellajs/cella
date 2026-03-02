@@ -2,10 +2,11 @@ import { ChevronDown, PlusIcon, Settings2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { type RefObject, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { StickyBox } from '~/modules/common/sticky-box';
+
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import type { UserMenuItem } from '~/modules/me/types';
 import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
+import { useUnseenCount } from '~/modules/seen/use-unseen-count';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
 
@@ -14,6 +15,7 @@ interface MenuSectionButtonProps {
   isEditing: boolean;
   isSectionVisible: boolean;
   data: UserMenuItem[];
+  contextIds: string[];
   toggleIsEditing: () => void;
   handleCreateAction?: (ref: RefObject<HTMLButtonElement | null>) => void;
 }
@@ -23,6 +25,7 @@ interface MenuSectionButtonProps {
  */
 export const MenuSectionButton = ({
   data,
+  contextIds,
   options,
   isEditing,
   isSectionVisible,
@@ -32,10 +35,13 @@ export const MenuSectionButton = ({
   const { t } = useTranslation();
   const toggleSection = useNavigationStore((state) => state.toggleSection);
 
+  // Cumulative unseen count for non-archived, non-muted items in this section
+  const sectionUnseenCount = useUnseenCount(contextIds);
+
   const createButtonRef = useRef(null);
 
   return (
-    <StickyBox className="z-10">
+    <div className="sticky top-0 z-10">
       <div className="flex items-center z-10 py-3 pb-1 bg-card">
         <motion.div layout="size" transition={{ bounce: 0, duration: 0.2 }} className="flex items-center w-full">
           {/* Main section toggle button */}
@@ -48,7 +54,7 @@ export const MenuSectionButton = ({
             <motion.button layout="size" transition={{ bounce: 0, duration: 0.2 }}>
               <div className="flex items-center">
                 <span className="flex items-center">{t(options.label)}</span>
-                {/* Item count badge */}
+                {/* Unseen count badge or item count when section is collapsed */}
                 <motion.span
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -56,7 +62,13 @@ export const MenuSectionButton = ({
                   transition={{ duration: 0.25 }}
                   className="inline-block group-data-[visible=true]/menuSection:hidden px-2 py-1 text-xs font-light text-muted-foreground"
                 >
-                  {data.filter((i) => !i.membership.archived).length}
+                  {sectionUnseenCount > 0 ? (
+                    <span className="inline-flex items-center justify-center min-w-4 h-4 rounded-full bg-background text-primary text-[0.6rem] font-bold px-1 leading-none">
+                      {sectionUnseenCount > 99 ? '99+' : sectionUnseenCount}
+                    </span>
+                  ) : (
+                    data.filter((i) => !i.membership.archived).length
+                  )}
                 </motion.span>
               </div>
 
@@ -76,7 +88,7 @@ export const MenuSectionButton = ({
                 animate={{ width: '2.5rem', opacity: 1, marginLeft: '0.5rem' }}
                 exit={{ width: 0, opacity: 0, marginLeft: 0 }}
                 transition={{ bounce: 0, duration: 0.2 }}
-                className="shrink-0 overflow-hidden max-sm:hidden"
+                className="shrink-0 max-sm:hidden"
               >
                 <TooltipButton toolTipContent={t('common:manage_content')} side="bottom" sideOffset={10}>
                   <Button
@@ -101,7 +113,7 @@ export const MenuSectionButton = ({
                 animate={{ width: '2.5rem', opacity: 1, marginLeft: '0.5rem' }}
                 exit={{ width: 0, opacity: 0, marginLeft: 0 }}
                 transition={{ bounce: 0, duration: 0.2 }}
-                className="shrink-0 overflow-hidden"
+                className="shrink-0"
               >
                 <TooltipButton toolTipContent={t('common:create')} sideOffset={22} side="right">
                   <Button
@@ -119,6 +131,6 @@ export const MenuSectionButton = ({
           </AnimatePresence>
         </motion.div>
       </div>
-    </StickyBox>
+    </div>
   );
 };

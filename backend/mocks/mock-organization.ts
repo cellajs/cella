@@ -1,12 +1,11 @@
 import { faker } from '@faker-js/faker';
 import { UniqueEnforcer } from 'enforce-unique';
 import { appConfig, type Language } from 'shared';
+import { nanoid } from 'shared/nanoid';
 import slugify from 'slugify';
 import type { InsertOrganizationModel, OrganizationModel } from '#/db/schema/organizations';
 import type { AuthStrategy } from '#/db/schema/sessions';
-import { defaultRestrictions } from '#/db/utils/organization-restrictions';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
-import { nanoid } from '#/utils/nanoid';
 import { mockBatchResponse } from './mock-common';
 import { mockMembershipBase } from './mock-membership';
 import {
@@ -109,7 +108,6 @@ export const mockOrganizationResponse = (
 
     return {
       ...base,
-      restrictions: defaultRestrictions(),
       included: {
         membership,
         counts: generateMockFullCounts(`${key}:counts`),

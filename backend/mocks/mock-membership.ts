@@ -1,9 +1,9 @@
 import { faker } from '@faker-js/faker';
 import { appConfig, type ContextEntityType, type EntityRole, roles } from 'shared';
+import { nanoid } from 'shared/nanoid';
 import type { InactiveMembershipModel } from '#/db/schema/inactive-memberships';
 import type { InsertMembershipModel, MembershipModel } from '#/db/schema/memberships';
 import type { UserModel } from '#/db/schema/users';
-import { nanoid } from '#/utils/nanoid';
 import {
   generateMockContextEntityIdColumns,
   type MockContextEntityIdColumns,

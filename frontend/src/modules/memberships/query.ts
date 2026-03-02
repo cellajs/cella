@@ -54,11 +54,12 @@ export const membersListQueryOptions = ({
   sort = 'createdAt',
   order = 'desc',
   role,
+  userIds,
   limit: baseLimit = appConfig.requestLimits.members,
 }: GetMembersParams & { limit?: number }) => {
   const limit = String(baseLimit);
 
-  const queryKey = keys.list.members({ entityId, entityType, tenantId, orgId, q, sort, order, role });
+  const queryKey = keys.list.members({ entityId, entityType, tenantId, orgId, q, sort, order, role, userIds });
 
   return infiniteQueryOptions({
     queryKey,
@@ -66,7 +67,7 @@ export const membersListQueryOptions = ({
       const offset = String(_offset || (page || 0) * Number(limit));
 
       return await getMembers({
-        query: { q, sort, order, role, limit, entityId, entityType, offset },
+        query: { q, sort, order, role, userIds, limit, entityId, entityType, offset },
         path: { tenantId, orgId },
         signal,
       });

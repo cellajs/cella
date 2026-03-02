@@ -25,7 +25,6 @@ import type {
   MemberQueryData,
   MutationUpdateMembership,
 } from '~/modules/memberships/types';
-import { getMenuData } from '~/modules/navigation/menu-sheet/helpers/get-menu-data';
 import {
   changeInfiniteQueryData,
   changeQueryData,
@@ -73,7 +72,6 @@ const addMyMembershipCache = (newMembership: MembershipBase) => {
  */
 const updateEntityInListCache = (entityType: ContextEntityType, updatedItems: { id: string }[]) => {
   const keys = getEntityQueryKeys(entityType);
-  if (!keys) return;
 
   const queries = queryClient.getQueriesData({ queryKey: keys.list.base });
   for (const [queryKey, queryData] of queries) {
@@ -97,20 +95,17 @@ export const useInviteMemberMutation = () =>
   useMutation<MembershipInviteResponse, ApiError, InviteMember, undefined>({
     mutationKey: memberQueryKeys.update(),
     mutationFn: ({ body, path, query }) => membershipInvite({ body, path, query }),
-    onSuccess: ({ invitesSentCount }, { entity }) => {
-      const { id: entityId, entityType, organizationId } = entity;
+    onSuccess: ({ invitesSentCount }, { contextEntity }) => {
+      const { id: entityId, entityType, organizationId } = contextEntity;
 
       if (invitesSentCount) {
         // If the entity is not an organization but belongs to one, update its cache too
         if (entityType !== 'organization' && organizationId) {
           const orgKeys = getEntityQueryKeys('organization');
-          if (orgKeys) {
-            const orgDetailQueryKey = orgKeys.detail.byId(organizationId);
-            queryClient.setQueryData<Organization>(orgDetailQueryKey, (oldOrg) => {
-              if (!oldOrg?.included.counts) return oldOrg;
-              return updateMembershipCounts(oldOrg, invitesSentCount);
-            });
-          }
+          const orgDetailQueryKey = orgKeys.detail.byId(organizationId);
+          queryClient.setQueryData<Organization>(orgDetailQueryKey, (oldOrg) =>
+            updateMembershipCounts(oldOrg, invitesSentCount),
+          );
         }
 
         const entityPendingTableQueries = getSimilarQueries(
@@ -121,13 +116,10 @@ export const useInviteMemberMutation = () =>
 
         // Update entity detail cache using the proper query key
         const entityKeys = getEntityQueryKeys(entityType);
-        if (entityKeys) {
-          const detailQueryKey = entityKeys.detail.byId(entityId);
-          queryClient.setQueryData<Organization>(detailQueryKey, (oldEntity) => {
-            if (!oldEntity?.included.counts) return oldEntity;
-            return updateMembershipCounts(oldEntity, invitesSentCount);
-          });
-        }
+        const detailQueryKey = entityKeys.detail.byId(entityId);
+        queryClient.setQueryData<Organization>(detailQueryKey, (oldEntity) =>
+          updateMembershipCounts(oldEntity, invitesSentCount),
+        );
 
         // Invalidate entity detail/list queries to ensure fresh data
         invalidateOnMembershipChange(queryClient, entityType, entityId, organizationId);
@@ -229,7 +221,8 @@ export const useMemberUpdateMutation = () =>
       toaster(toastMessage, 'success');
     },
     onError: (_, __, context) => {
-      getMenuData();
+      // Invalidate memberships to undo the optimistic update — enrichment subscriber re-syncs entity lists
+      queryClient.invalidateQueries({ queryKey: meKeys.memberships, refetchType: 'active' });
       onError(_, __, context?.queryContext);
     },
   });

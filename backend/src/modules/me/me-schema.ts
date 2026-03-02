@@ -17,12 +17,10 @@ export const sessionSchema = createSelectSchema(sessionsTable)
 export const meSchema = z
   .object({
     user: userSchema,
-    systemRole: z
-      .enum([...appConfig.systemRoles, 'user'])
-      .openapi({ description: 'System-level role (e.g. admin) or user for standard access.' }),
+    isSystemAdmin: z.boolean().openapi({ description: 'Whether the current user has system admin privileges.' }),
   })
   .openapi('Me', {
-    description: 'The currently authenticated user with their system role.',
+    description: 'The currently authenticated user with their system admin status.',
     example: mockMeResponse(),
   });
 

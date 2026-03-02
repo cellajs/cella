@@ -1,8 +1,8 @@
 import { boolean, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { nanoid } from 'shared/nanoid';
 import { usersTable } from '#/db/schema/users';
 import { maxLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
-import { nanoid } from '#/utils/nanoid';
 
 /** Users can have multiple emails. tokenId has no FK constraint (tokens is partitioned). */
 export const emailsTable = pgTable('emails', {

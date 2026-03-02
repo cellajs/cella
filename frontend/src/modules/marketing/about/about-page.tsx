@@ -15,9 +15,8 @@ import { AboutSection } from '~/modules/marketing/about/section';
 import { Why } from '~/modules/marketing/about/why';
 import { MarketingFooter } from '~/modules/marketing/footer';
 import { MarketingNav } from '~/modules/marketing/nav';
-import { Button, buttonVariants } from '~/modules/ui/button';
+import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
-import { cn } from '~/utils/cn';
 
 export type AboutSectionId = (typeof aboutSectionIds)[number];
 
@@ -58,15 +57,16 @@ export function AboutPage() {
               {copied ? <CheckIcon size={16} /> : <CopyIcon size={16} />}
             </Button>
           </div>
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="lg"
+            className="group"
             onClick={() => scrollToSection('why')}
-            className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }), 'group')}
             aria-label="Read more"
           >
             <span className="font-normal opacity-70 group-hover:opacity-100">{t('about:why')}</span>
             <ArrowDownIcon size={16} className="ml-2 animate-bounce opacity-70 group-hover:opacity-100" />
-          </button>
+          </Button>
         </Hero>
 
         <div className="my-12">

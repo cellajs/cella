@@ -114,7 +114,20 @@
             "changes": {
               "type": "object",
               "required": true,
-              "description": "Per-entityType change summary: { [entityType]: { seq, deletedIds } }"
+              "description": "Per-entityType change summary: { [entityType]: { seq, deletedIds } }",
+              "additionalProperties": {
+                "type": "object",
+                "required": false,
+                "properties": {
+                  "seq": { "type": "integer", "required": true },
+                  "deletedIds": {
+                    "type": "array",
+                    "required": true,
+                    "itemType": "string"
+                  },
+                  "mSeq": { "type": "integer", "required": false }
+                }
+              }
             },
             "cursor": {
               "type": ["string", "null"],
@@ -173,7 +186,8 @@
           "seqs": {
             "type": "object",
             "required": false,
-            "description": "Client-side sequence numbers per scope: { \"orgId\": 42, \"orgId:m\": 5 }"
+            "description": "Client-side sequence numbers per scope: { \"orgId\": 42, \"orgId:m\": 5 }",
+            "additionalProperties": { "type": "integer", "required": false }
           }
         },
         "required": true,
@@ -240,7 +254,20 @@
             "changes": {
               "type": "object",
               "required": true,
-              "description": "Per-org change summary: { [orgId]: { seq, deletedIds, membership? } }"
+              "description": "Per-org change summary: { [orgId]: { seq, deletedIds, membership? } }",
+              "additionalProperties": {
+                "type": "object",
+                "required": false,
+                "properties": {
+                  "seq": { "type": "integer", "required": true },
+                  "deletedIds": {
+                    "type": "array",
+                    "required": true,
+                    "itemType": "string"
+                  },
+                  "mSeq": { "type": "integer", "required": false }
+                }
+              }
             },
             "cursor": {
               "type": ["string", "null"],
@@ -308,7 +335,8 @@
           "seqs": {
             "type": "object",
             "required": false,
-            "description": "Client-side sequence numbers per scope: { \"orgId\": 42, \"orgId:m\": 5 }"
+            "description": "Client-side sequence numbers per scope: { \"orgId\": 42, \"orgId:m\": 5 }",
+            "additionalProperties": { "type": "integer", "required": false }
           }
         },
         "required": true,

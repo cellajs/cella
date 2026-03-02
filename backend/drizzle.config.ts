@@ -2,6 +2,8 @@ import { defineConfig } from 'drizzle-kit';
 
 const devMode = process.env.DEV_MODE || 'core';
 const databaseUrl = process.env.DATABASE_URL || '';
+// Use admin URL for Drizzle Studio/push so it bypasses RLS (admin_role has BYPASSRLS)
+const databaseAdminUrl = process.env.DATABASE_ADMIN_URL || databaseUrl;
 const extendConfig = devMode === 'basic' ? { driver: 'pglite' as const } : {};
 
 /**
@@ -18,6 +20,6 @@ export default defineConfig({
   },
   ...extendConfig,
   dbCredentials: {
-    url: devMode === 'basic' ? './.db' : databaseUrl,
+    url: devMode === 'basic' ? './.db' : databaseAdminUrl,
   },
 });

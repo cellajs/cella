@@ -2,10 +2,11 @@ import { useSuspenseQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '~/modules/ui/accordion';
 import {
+  type DefinitionIndex,
   getTypeCodeForResponse,
   getZodCodeForResponse,
-  typesContentQueryOptions,
-  zodContentQueryOptions,
+  typesIndexQueryOptions,
+  zodIndexQueryOptions,
 } from '../helpers/extract-types';
 import { getStatusColor } from '../helpers/get-status-color';
 import { schemasQueryOptions, tagDetailsQueryOptions } from '../query';
@@ -27,15 +28,15 @@ interface ExamplesAccordionProps {
   responses: GenResponseSummary[];
   schemas: GenComponentSchema[];
   operationId: string;
-  zodContent: string;
-  typesContent: string;
+  zodIndex: DefinitionIndex;
+  typesIndex: DefinitionIndex;
 }
 
 /**
  * Accordion component to display operation response examples.
  * Only shows responses that have examples, with example view preselected.
  */
-function ExamplesAccordion({ responses, schemas, operationId, zodContent, typesContent }: ExamplesAccordionProps) {
+function ExamplesAccordion({ responses, schemas, operationId, zodIndex, typesIndex }: ExamplesAccordionProps) {
   const { t } = useTranslation();
 
   // Filter to only responses with examples
@@ -75,8 +76,8 @@ function ExamplesAccordion({ responses, schemas, operationId, zodContent, typesC
               {schema ? (
                 <ViewerGroup
                   schema={schema}
-                  zodCode={getZodCodeForResponse(zodContent, operationId, response.status, response.name)}
-                  typeCode={getTypeCodeForResponse(typesContent, operationId, response.status)}
+                  zodCode={getZodCodeForResponse(zodIndex, operationId, response.status, response.name)}
+                  typeCode={getTypeCodeForResponse(typesIndex, operationId, response.status)}
                   example={response.example}
                   defaultViewMode="example"
                 />
@@ -105,8 +106,8 @@ export const OperationExamples = ({ operationId, tagName }: OperationExamplesPro
 
   const { data: operations } = useSuspenseQuery(tagDetailsQueryOptions(tagName));
   const { data: schemas } = useSuspenseQuery(schemasQueryOptions);
-  const { data: zodContent } = useSuspenseQuery(zodContentQueryOptions);
-  const { data: typesContent } = useSuspenseQuery(typesContentQueryOptions);
+  const { data: zodIndex } = useSuspenseQuery(zodIndexQueryOptions);
+  const { data: typesIndex } = useSuspenseQuery(typesIndexQueryOptions);
 
   const operation = operations.find((op) => op.operationId === operationId);
   const responses = operation?.responses ?? [];
@@ -125,8 +126,8 @@ export const OperationExamples = ({ operationId, tagName }: OperationExamplesPro
       responses={responses}
       schemas={schemas}
       operationId={operationId}
-      zodContent={zodContent}
-      typesContent={typesContent}
+      zodIndex={zodIndex}
+      typesIndex={typesIndex}
     />
   );
 };

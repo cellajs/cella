@@ -6,14 +6,15 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '~/
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';
 import { cn } from '~/utils/cn';
 import {
+  type DefinitionIndex,
   getTypeCodeForResponse,
   getZodCodeForResponse,
-  typesContentQueryOptions,
-  zodContentQueryOptions,
+  typesIndexQueryOptions,
+  zodIndexQueryOptions,
 } from '../helpers/extract-types';
 import { getStatusColor } from '../helpers/get-status-color';
 import { schemasQueryOptions, tagDetailsQueryOptions } from '../query';
-import type { GenComponentSchema, GenResponseSummary, GenSchema } from '../types';
+import type { GenComponentSchema, GenOperationDetail, GenResponseSummary, GenSchema } from '../types';
 import { ViewerGroup } from '../viewer-group';
 
 /** Resolve response schema, looking up by name from prefetched schemas for error responses */
@@ -31,14 +32,14 @@ interface ResponsesAccordionProps {
   responses: GenResponseSummary[];
   schemas: GenComponentSchema[];
   operationId: string;
-  zodContent: string;
-  typesContent: string;
+  zodIndex: DefinitionIndex;
+  typesIndex: DefinitionIndex;
 }
 
 /**
  * Accordion component to display operation responses.
  */
-function ResponsesAccordion({ responses, schemas, operationId, zodContent, typesContent }: ResponsesAccordionProps) {
+function ResponsesAccordion({ responses, schemas, operationId, zodIndex, typesIndex }: ResponsesAccordionProps) {
   const { t } = useTranslation();
 
   if (responses.length === 0) {
@@ -72,8 +73,8 @@ function ResponsesAccordion({ responses, schemas, operationId, zodContent, types
               {schema ? (
                 <ViewerGroup
                   schema={schema}
-                  zodCode={getZodCodeForResponse(zodContent, operationId, response.status, response.name)}
-                  typeCode={getTypeCodeForResponse(typesContent, operationId, response.status)}
+                  zodCode={getZodCodeForResponse(zodIndex, operationId, response.status, response.name)}
+                  typeCode={getTypeCodeForResponse(typesIndex, operationId, response.status)}
                   example={response.example}
                 />
               ) : (
@@ -88,25 +89,22 @@ function ResponsesAccordion({ responses, schemas, operationId, zodContent, types
 }
 
 interface OperationResponsesProps {
-  operationId: string;
-  tagName: string;
+  detail?: GenOperationDetail;
 }
 
 /**
  * Operation responses component that uses useSuspenseQuery for Suspense integration.
  * Wrap the parent component in a Suspense boundary for optimal batching.
  */
-export const OperationResponses = ({ operationId, tagName }: OperationResponsesProps) => {
+export const OperationResponses = ({ detail }: OperationResponsesProps) => {
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(true);
 
-  const { data: operations } = useSuspenseQuery(tagDetailsQueryOptions(tagName));
   const { data: schemas } = useSuspenseQuery(schemasQueryOptions);
-  const { data: zodContent } = useSuspenseQuery(zodContentQueryOptions);
-  const { data: typesContent } = useSuspenseQuery(typesContentQueryOptions);
+  const { data: zodIndex } = useSuspenseQuery(zodIndexQueryOptions);
+  const { data: typesIndex } = useSuspenseQuery(typesIndexQueryOptions);
 
-  const operation = operations.find((op) => op.operationId === operationId);
-  const responses = operation?.responses ?? [];
+  const responses = detail?.responses ?? [];
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen} className="mt-8">
@@ -124,9 +122,9 @@ export const OperationResponses = ({ operationId, tagName }: OperationResponsesP
           <ResponsesAccordion
             responses={responses}
             schemas={schemas}
-            operationId={operationId}
-            zodContent={zodContent}
-            typesContent={typesContent}
+            operationId={detail?.operationId ?? ''}
+            zodIndex={zodIndex}
+            typesIndex={typesIndex}
           />
         </div>
       </CollapsibleContent>

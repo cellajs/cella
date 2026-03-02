@@ -14,7 +14,7 @@ import dayjs from 'dayjs';
  * @returns A formatted string representing the relative time or the full date.
  */
 export const dateShort = (date?: string | null | Date) => {
-  if (!date) return '-';
+  if (!date) return null;
   const currentDate = dayjs.utc(date).local();
 
   return currentDate.calendar(null, {

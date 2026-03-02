@@ -9,15 +9,7 @@ import {
 } from '@blocknote/core/extensions';
 import { GridSuggestionMenuController, useCreateBlockNote, useExtension, useExtensionState } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
-import {
-  type FocusEventHandler,
-  type KeyboardEventHandler,
-  type MouseEventHandler,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-} from 'react';
+import { type FocusEventHandler, type KeyboardEventHandler, type MouseEventHandler, useEffect, useRef } from 'react';
 import { WebrtcProvider } from 'y-webrtc';
 import * as Y from 'yjs';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
@@ -32,7 +24,6 @@ import { CustomSideMenu } from '~/modules/common/blocknote/custom-side-menu';
 import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu';
 import { compareIsContentSame, getParsedContent, getRandomColor } from '~/modules/common/blocknote/helpers';
 import { getDictionary } from '~/modules/common/blocknote/helpers/dictionary';
-import { focusEditor } from '~/modules/common/blocknote/helpers/focus';
 import { openAttachment } from '~/modules/common/blocknote/helpers/open-attachment';
 import { shadCNComponents } from '~/modules/common/blocknote/helpers/shad-cn';
 import type {
@@ -44,6 +35,16 @@ import type {
 } from '~/modules/common/blocknote/types';
 import router from '~/routes/router';
 import { useUIStore } from '~/store/ui';
+
+// IDE-like wrapping characters (constant, no need to recreate per keystroke)
+const wrappingChars: Record<string, string> = {
+  '[': ']',
+  '{': '}',
+  '(': ')',
+  '`': '`',
+  '"': '"',
+  "'": "'",
+};
 
 type BlockNoteProps =
   | (CommonBlockNoteProps & {
@@ -85,6 +86,7 @@ function BlockNote({
   defaultValue = '', // stringified blocks
   trailingBlock = true,
   clickOpensPreview = false, // click on FileBlock opens preview (in case, type is 'preview' or not editable)
+  dense = false,
   // Editor functional
   headingLevels = [1, 2, 3],
   editable = type !== 'preview',
@@ -122,20 +124,24 @@ function BlockNote({
   );
 
   const collaborationConfig = collaborative
-    ? {
-        // The Yjs Provider responsible for transporting updates:
-        provider: new WebrtcProvider(id, new Y.Doc()),
-        // Where to store BlockNote data in the Y.Doc:
-        fragment: new Y.Doc().getXmlFragment('document-store'),
-        // Information (name and color) for this user:
-        user: {
-          name: user?.name || 'Anonymous User',
-          color: user?.color || getRandomColor(),
-        },
-        // When to show user labels on the collaboration cursor. Set by default to
-        // "activity" (show when the cursor moves), but can also be set to "always".
-        showCursorLabels: 'activity' as const,
-      }
+    ? (() => {
+        // Share a single Y.Doc between provider and fragment so collaboration actually works
+        const yDoc = new Y.Doc();
+        return {
+          // The Yjs Provider responsible for transporting updates:
+          provider: new WebrtcProvider(id, yDoc),
+          // Where to store BlockNote data in the Y.Doc:
+          fragment: yDoc.getXmlFragment('document-store'),
+          // Information (name and color) for this user:
+          user: {
+            name: user?.name || 'Anonymous User',
+            color: user?.color || getRandomColor(),
+          },
+          // When to show user labels on the collaboration cursor. Set by default to
+          // "activity" (show when the cursor moves), but can also be set to "always".
+          showCursorLabels: 'activity' as const,
+        };
+      })()
     : undefined;
 
   const editor = useCreateBlockNote({
@@ -143,6 +149,7 @@ function BlockNote({
     heading: { levels: headingLevels },
     trailingBlock,
     dictionary: getDictionary(),
+    ...(autoFocus && editable ? { autofocus: 'end' as const } : {}),
     collaboration: collaborationConfig,
     // Offline-first file URL resolution:
     // 1. If key looks like an attachment ID (nanoid format), check local blob storage
@@ -183,77 +190,61 @@ function BlockNote({
     },
   });
 
-  const handleKeyDown: KeyboardEventHandler = useCallback(
-    (event) => {
-      const { metaKey, ctrlKey, key } = event;
-      const isEscape = key === 'Escape';
-      const isCmdEnter = key === 'Enter' && (metaKey || ctrlKey);
+  const handleKeyDown: KeyboardEventHandler = (event) => {
+    const { metaKey, ctrlKey, key } = event;
+    const isEscape = key === 'Escape';
+    const isCmdEnter = key === 'Enter' && (metaKey || ctrlKey);
 
-      // IDE-like wrapping characters
-      const wrappingChars: Record<string, string> = {
-        '[': ']',
-        '{': '}',
-        '(': ')',
-        '`': '`',
-        '"': '"',
-        "'": "'",
-      };
+    // Handle character-based wrapping
+    if (key in wrappingChars) {
+      const selection = editor.getSelection();
 
-      // Handle character-based wrapping
-      if (wrappingChars[key]) {
-        const selection = editor.getSelection();
+      const singleBlockSelected =
+        selection &&
+        selection.blocks.length === 1 &&
+        Array.isArray(selection.blocks[0].content) &&
+        selection.blocks[0].content.length > 0;
 
-        const singleBlockSelected =
-          selection &&
-          selection.blocks.length === 1 &&
-          Array.isArray(selection.blocks[0].content) &&
-          selection.blocks[0].content.length > 0;
+      if (singleBlockSelected) {
+        event.preventDefault();
 
-        if (singleBlockSelected) {
-          event.preventDefault();
+        const [currentBlock] = selection.blocks;
+        const selectedText = editor.getSelectedText();
 
-          const [currentBlock] = selection.blocks;
-          const selectedText = editor.getSelectedText();
+        editor.updateBlock(currentBlock, {
+          content: `${key}${selectedText}${wrappingChars[key]}`,
+        });
 
-          editor.updateBlock(currentBlock, {
-            content: `${key}${selectedText}${wrappingChars[key]}`,
-          });
-
-          return;
-        }
-      }
-
-      // Skip everything else if it's not special command
-      if (!isEscape && !isCmdEnter) return;
-
-      event.preventDefault();
-
-      // Escape handling
-      if (isEscape) {
-        onEscapeClick?.();
         return;
       }
+    }
 
-      // Cmd/Ctrl + Enter
-      event.stopPropagation();
-      onEnterClick?.();
+    // Skip everything else if it's not special command
+    if (!isEscape && !isCmdEnter) return;
 
-      if (!editor.isEmpty) handleUpdateData(editor);
-    },
-    [editor, defaultValue],
-  );
+    event.preventDefault();
 
-  const handleUpdateData = useCallback(
-    (editor: CustomBlockNoteEditor) => {
-      const strBlocks = JSON.stringify(editor.document);
-      if (compareIsContentSame(strBlocks, defaultValue) || !updateData) return;
+    // Escape handling
+    if (isEscape) {
+      onEscapeClick?.();
+      return;
+    }
 
-      updateData(strBlocks);
-    },
-    [defaultValue],
-  );
+    // Cmd/Ctrl + Enter
+    event.stopPropagation();
+    onEnterClick?.();
 
-  const handleOnBeforeLoad = useCallback(() => onBeforeLoad?.(editor), [editor]);
+    if (!editor.isEmpty) handleUpdateData(editor);
+  };
+
+  const handleUpdateData = (editor: CustomBlockNoteEditor) => {
+    const strBlocks = JSON.stringify(editor.document);
+    if (compareIsContentSame(strBlocks, defaultValue) || !updateData) return;
+
+    updateData(strBlocks);
+  };
+
+  const handleOnBeforeLoad = () => onBeforeLoad?.(editor);
 
   const sideMenuExt = useExtensionState(SideMenuExtension, { editor });
   const suggestionMenuExt = useExtension(SuggestionMenu, { editor });
@@ -262,51 +253,45 @@ function BlockNote({
   });
   const filePanelShown = !!useExtensionState(FilePanelExtension, { editor });
 
-  const handleBlur: FocusEventHandler = useCallback(
-    (event) => {
-      // if user in Side Menu does not update
-      if (sideMenuExt?.show) return;
+  const handleBlur: FocusEventHandler = (event) => {
+    // if user in Side Menu does not update
+    if (sideMenuExt?.show) return;
 
-      // if user in Formatting Toolbar does not update
-      if (formattingToolbarShown) return;
+    // if user in Formatting Toolbar does not update
+    if (formattingToolbarShown) return;
 
-      // if user in Slash Menu does not update
-      if (suggestionMenuExt.shown()) return;
+    // if user in Slash Menu does not update
+    if (suggestionMenuExt.shown()) return;
 
-      // if user in file panel does not update
-      if (filePanelShown) return;
+    // if user in file panel does not update
+    if (filePanelShown) return;
 
-      const nextFocused = event.relatedTarget;
-      // Check if the next focused element is still inside the editor
-      if (nextFocused && blockNoteRef.current && blockNoteRef.current.contains(nextFocused)) return;
+    const nextFocused = event.relatedTarget;
+    // Check if the next focused element is still inside the editor
+    if (nextFocused && blockNoteRef.current && blockNoteRef.current.contains(nextFocused)) return;
 
-      if (type === 'edit') handleUpdateData(editor);
-    },
-    [editor, sideMenuExt, formattingToolbarShown, suggestionMenuExt, filePanelShown],
-  );
+    if (type === 'edit') handleUpdateData(editor);
+  };
 
-  const handleClick: MouseEventHandler = useCallback(
-    (event) => {
-      if (!clickOpensPreview || editable) return;
+  const handleClick: MouseEventHandler = (event) => {
+    if (!clickOpensPreview || editable) return;
 
-      const target = event.target as HTMLElement;
+    const target = event.target as HTMLElement;
 
-      // Check if click is on or inside a media element
-      const mediaElement = target.closest('img, video, audio') || target.querySelector('img, video, audio');
-      const insideFileBlock = !!target.closest('.bn-file-block-content-wrapper');
+    // Check if click is on or inside a media element
+    const mediaElement = target.closest('img, video, audio') || target.querySelector('img, video, audio');
+    const insideFileBlock = !!target.closest('.bn-file-block-content-wrapper');
 
-      if (!mediaElement && !insideFileBlock) return;
+    if (!mediaElement && !insideFileBlock) return;
 
-      event.preventDefault();
+    event.preventDefault();
 
-      // Get the src of the clicked media to start carousel at that item
-      const clickedSrc = (mediaElement as HTMLMediaElement)?.src;
-      openAttachment(editor, blockNoteRef, clickedSrc);
-    },
-    [editor, clickOpensPreview, editable],
-  );
+    // Get the src of the clicked media to start carousel at that item
+    const clickedSrc = (mediaElement as HTMLMediaElement)?.src;
+    openAttachment(editor, blockNoteRef, clickedSrc);
+  };
 
-  const passedContent = useMemo(() => getParsedContent(defaultValue), [defaultValue]);
+  const passedContent = getParsedContent(defaultValue);
 
   useEffect(() => {
     const currentContent = JSON.stringify(editor.document);
@@ -315,18 +300,6 @@ function BlockNote({
     if (passedContent === undefined) editor.removeBlocks(editor.document);
     else editor.replaceBlocks(editor.document, passedContent);
   }, [passedContent]);
-
-  // TODO-002(BLOCKING) Autofocus issue  https://github.com/TypeCellOS/BlockNote/issues/891
-  useEffect(() => {
-    if (!autoFocus || !editable || !editor) return;
-
-    const intervalID = setInterval(() => {
-      focusEditor(editor);
-      clearInterval(intervalID);
-    }, 10);
-
-    return () => clearInterval(intervalID);
-  }, [editor, editable, autoFocus]);
 
   useEffect(() => {
     if (!onBeforeLoad || !editable) return;
@@ -341,7 +314,7 @@ function BlockNote({
       editor={editor}
       editable={editable}
       ref={blockNoteRef}
-      className={className}
+      className={`${dense ? 'bn-dense' : ''} ${className}`}
       data-color-scheme={mode}
       shadCNComponents={shadCNComponents}
       sideMenu={false}

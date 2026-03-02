@@ -392,19 +392,27 @@ export async function getFileHashesAtRef(cwd: string, ref: string): Promise<Map<
 /**
  * Restore a file to HEAD version (our version during merge).
  * Updates both index and worktree to match HEAD.
+ *
+ * Uses `git checkout HEAD --` instead of `git restore --source=HEAD` because
+ * `git restore` fails on unmerged (conflicted) paths during a merge, while
+ * `git checkout HEAD --` resolves them by taking HEAD's version.
  */
 export async function restoreToHead(cwd: string, filePath: string): Promise<void> {
-  await git(['restore', '--source=HEAD', '--staged', '--worktree', '--', filePath], cwd);
+  await git(['checkout', 'HEAD', '--', filePath], cwd);
 }
 
 /**
  * Batch restore multiple files to HEAD version in a single git command.
  * Much faster than calling restoreToHead for each file individually.
  * Reduces IDE file watcher events by completing all restores at once.
+ *
+ * Uses `git checkout HEAD --` instead of `git restore --source=HEAD` because
+ * `git restore` fails on unmerged (conflicted) paths during a merge, while
+ * `git checkout HEAD --` resolves them by taking HEAD's version.
  */
 export async function batchRestoreToHead(cwd: string, filePaths: string[]): Promise<void> {
   if (filePaths.length === 0) return;
-  await git(['restore', '--source=HEAD', '--staged', '--worktree', '--', ...filePaths], cwd);
+  await git(['checkout', 'HEAD', '--', ...filePaths], cwd);
 }
 
 /**

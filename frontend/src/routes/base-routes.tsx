@@ -5,12 +5,14 @@ import { lazy, Suspense } from 'react';
 import { appConfig } from 'shared';
 import { z } from 'zod';
 import { zApiError } from '~/api.gen/zod.gen';
+import { ApiError } from '~/lib/api';
 import { ErrorNotice } from '~/modules/common/error-notice';
 import { PublicLayout } from '~/modules/common/public-layout';
 import { Root } from '~/modules/common/root';
 import { Spinner } from '~/modules/common/spinner';
 import { meQueryOptions } from '~/modules/me/query';
 import { getMenuData } from '~/modules/navigation/menu-sheet/helpers/get-menu-data';
+import { unseenCountsQueryOptions } from '~/modules/seen/query';
 import { onError } from '~/query/on-error';
 import { queryClient } from '~/query/query-client';
 import { cleanupOnBoundaryChange } from '~/routes/boundary-cleanup';
@@ -34,6 +36,9 @@ export const RootRoute = createRootRouteWithContext()({
     // Enforce isAuth globally: if the leaf route requires auth, verify the user session
     const leafMatch = matches[matches.length - 1];
     if (!leafMatch?.staticData?.isAuth) return;
+
+    // Let AppLayoutRoute handle unauthenticated users on root path (redirects to /about)
+    if (location.pathname === '/') return;
 
     const storedUser = useUserStore.getState().user;
     if (storedUser) return;
@@ -85,6 +90,9 @@ export const PublicLayoutRoute = createRoute({
       // Fetch and set user
       await queryClient.ensureQueryData({ ...meQueryOptions() });
     } catch (error) {
+      // A 401 on /me is expected for unauthenticated visitors on public pages — ignore silently
+      if (error instanceof ApiError && error.status === 401) return;
+
       if (error instanceof Error) {
         Sentry.captureException(error);
         onError(error);
@@ -154,6 +162,9 @@ export const AppLayoutRoute = createRoute({
 
       // Revalidate user if not already awaited above
       if (!context?.user) await queryClient.ensureQueryData({ ...meQueryOptions() });
+
+      // Prefetch unseen counts alongside menu data
+      queryClient.prefetchQuery(unseenCountsQueryOptions());
 
       // Get menu too but defer it so no need to hang while its being retrieved
       return await defer(getMenuData());

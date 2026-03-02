@@ -1,18 +1,21 @@
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { HashUrlButton } from '~/modules/docs/hash-url-button';
 import { OperationRequest } from '~/modules/docs/operations/operation-request';
 import { OperationResponses } from '~/modules/docs/operations/operation-responses';
-import type { GenOperationSummary } from '~/modules/docs/types';
+import type { GenOperationDetail, GenOperationSummary } from '~/modules/docs/types';
 import { Badge } from '~/modules/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import { cn } from '~/utils/cn';
 import { Spinner } from '../../common/spinner';
 import { getMethodColor } from '../helpers/get-method-color';
+import { tagDetailsQueryOptions } from '../query';
 
 interface OperationDetailProps {
   operation: GenOperationSummary;
+  detail?: GenOperationDetail;
   className?: string;
 }
 
@@ -20,7 +23,7 @@ interface OperationDetailProps {
  * Single operation detail with collapsible request and responses sections.
  * Displays method, path, description, request parameters, and responses.
  */
-export const OperationDetail = ({ operation, className }: OperationDetailProps) => {
+export const OperationDetail = ({ operation, detail, className }: OperationDetailProps) => {
   const { t } = useTranslation();
 
   return (
@@ -56,11 +59,11 @@ export const OperationDetail = ({ operation, className }: OperationDetailProps) 
 
         {/* Request (path params, query params, body) */}
         <Suspense fallback={<Spinner />}>
-          <OperationRequest operationId={operation.id} tagName={operation.tags[0]} />
+          <OperationRequest detail={detail} />
         </Suspense>
 
         {/* Responses */}
-        <OperationResponses operationId={operation.id} tagName={operation.tags[0]} />
+        <OperationResponses detail={detail} />
       </CardContent>
     </Card>
   );
@@ -73,16 +76,27 @@ interface TagOperationsListProps {
 /**
  * Renders a list of operation details and registers all operation hashes
  * with the shared scroll spy in a single hook call.
+ * Fetches tag details once and distributes resolved details to children.
  */
 export const TagOperationsList = ({ operations }: TagOperationsListProps) => {
   // Register all operation hashes for this tag section
   const sectionIds = operations.map((op) => op.hash);
   useScrollSpy(sectionIds);
 
+  // Fetch tag details once and build a lookup map
+  const tagName = operations[0]?.tags[0];
+  const { data: tagDetails } = useSuspenseQuery(tagDetailsQueryOptions(tagName));
+  const detailsMap = new Map(tagDetails.map((d) => [d.operationId, d]));
+
   return (
     <div className="border-t">
       {operations.map((operation) => (
-        <OperationDetail key={operation.hash} operation={operation} className="rounded-none last:rounded-b-lg" />
+        <OperationDetail
+          key={operation.hash}
+          operation={operation}
+          detail={detailsMap.get(operation.id)}
+          className="rounded-none last:rounded-b-lg"
+        />
       ))}
     </div>
   );

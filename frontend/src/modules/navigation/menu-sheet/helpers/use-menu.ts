@@ -12,9 +12,7 @@ import { buildMenuFromCache, menuEntityTypes } from './build-menu-from-cache';
  * @param opts - Optional configuration for building detailed menu with submenus
  * @returns An object containing the menu, loading state, and any errors
  */
-export function useMenu(userId: string | undefined, opts?: { detailedMenu?: boolean }) {
-  const detailedMenu = !!opts?.detailedMenu;
-
+export function useMenu(userId: string | undefined) {
   // Memoize registry so useQueries sees stable configs across renders
   const contextEntityQueryRegistry = useMemo(() => getContextEntityTypeToListQueries(), []);
 
@@ -31,10 +29,7 @@ export function useMenu(userId: string | undefined, opts?: { detailedMenu?: bool
   const recomputeKey = results.map((r) => r.dataUpdatedAt).join('|');
 
   // Build menu from cache — shared logic with getMenuData
-  const menu = useMemo(
-    () => (userId ? buildMenuFromCache(userId, { detailedMenu }) : buildMenuFromCache('', { detailedMenu })),
-    [userId, detailedMenu, recomputeKey],
-  );
+  const menu = useMemo(() => (userId ? buildMenuFromCache(userId) : buildMenuFromCache('')), [userId, recomputeKey]);
 
   const isLoading = results.some((r) => r.isLoading || r.isPending);
   const error = results.find((r) => r.error)?.error;

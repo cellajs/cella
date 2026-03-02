@@ -169,7 +169,11 @@
         "mutationId": { "type": "string", "required": true },
         "sourceId": { "type": "string", "required": true },
         "version": { "type": "integer", "required": true },
-        "fieldVersions": { "type": "object", "required": true }
+        "fieldVersions": {
+          "type": "object",
+          "required": true,
+          "additionalProperties": { "type": "integer", "required": false }
+        }
       }
     },
     "schemaTag": "base",
@@ -225,7 +229,11 @@
             "mutationId": { "type": "string", "required": true },
             "sourceId": { "type": "string", "required": true },
             "version": { "type": "integer", "required": true },
-            "fieldVersions": { "type": "object", "required": true }
+            "fieldVersions": {
+              "type": "object",
+              "required": true,
+              "additionalProperties": { "type": "integer", "required": false }
+            }
           },
           "extendsRef": "#/components/schemas/StxBase"
         },
@@ -630,7 +638,11 @@
                 "mutationId": { "type": "string", "required": true },
                 "sourceId": { "type": "string", "required": true },
                 "version": { "type": "integer", "required": true },
-                "fieldVersions": { "type": "object", "required": true }
+                "fieldVersions": {
+                  "type": "object",
+                  "required": true,
+                  "additionalProperties": { "type": "integer", "required": false }
+                }
               },
               "ref": "#/components/schemas/StxBase"
             },
@@ -1186,7 +1198,8 @@
                     "expires": { "type": "string", "required": false }
                   }
                 }
-              }
+              },
+              "additionalProperties": { "type": "object", "required": false }
             },
             { "type": "null", "required": false }
           ]
@@ -1576,7 +1589,11 @@
             "mutationId": { "type": "string", "required": true },
             "sourceId": { "type": "string", "required": true },
             "version": { "type": "integer", "required": true },
-            "fieldVersions": { "type": "object", "required": true }
+            "fieldVersions": {
+              "type": "object",
+              "required": true,
+              "additionalProperties": { "type": "integer", "required": false }
+            }
           },
           "ref": "#/components/schemas/StxBase"
         },
@@ -1719,7 +1736,11 @@
             "mutationId": { "type": "string", "required": true },
             "sourceId": { "type": "string", "required": true },
             "version": { "type": "integer", "required": true },
-            "fieldVersions": { "type": "object", "required": true }
+            "fieldVersions": {
+              "type": "object",
+              "required": true,
+              "additionalProperties": { "type": "integer", "required": false }
+            }
           },
           "ref": "#/components/schemas/StxBase"
         },

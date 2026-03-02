@@ -28,8 +28,12 @@ import { useUserStore } from '~/store/user';
 const formSchema = zUpdateUserData.shape.body.unwrap();
 
 type FormValues = z.infer<typeof formSchema>;
+
+/** Accepts both User (self-update) and BaseUser (admin table). Only `id` is required; other fields pre-fill the form. */
+type FormUser = Pick<User, 'id'> & Partial<FormValues>;
+
 interface UpdateUserFormProps {
-  user: User;
+  user: FormUser;
   sheet?: boolean;
   /** Show only essential fields (avatar, name) for onboarding */
   compact?: boolean;
@@ -97,22 +101,25 @@ export function UpdateUserForm({ user, callback, sheet: isSheet, compact, childr
           name="thumbnailUrl"
           entity={user}
         />
-        <div className="grid sm:grid-cols-2 gap-6 sm:gap-4">
-          <InputFormField
-            inputClassName="border"
-            control={form.control}
-            name="firstName"
-            label={t('common:first_name')}
-            required
-          />
-          <InputFormField
-            inputClassName="border"
-            control={form.control}
-            name="lastName"
-            label={t('common:last_name')}
-            required
-          />
-        </div>
+        {/* Personal fields only shown for self — admins edit avatar/slug only */}
+        {isSelf && (
+          <div className="grid sm:grid-cols-2 gap-6 sm:gap-4">
+            <InputFormField
+              inputClassName="border"
+              control={form.control}
+              name="firstName"
+              label={t('common:first_name')}
+              required
+            />
+            <InputFormField
+              inputClassName="border"
+              control={form.control}
+              name="lastName"
+              label={t('common:last_name')}
+              required
+            />
+          </div>
+        )}
 
         {!compact && (
           <>
@@ -124,45 +131,49 @@ export function UpdateUserForm({ user, callback, sheet: isSheet, compact, childr
               previousSlug={user.slug}
             />
 
-            <div className="flex-col flex gap-2">
-              <Label>{t('common:email')}</Label>
-              <Input value={user.email} autoComplete="off" disabled />
-            </div>
+            {isSelf && (
+              <>
+                <div className="flex-col flex gap-2">
+                  <Label>{t('common:email')}</Label>
+                  <Input value={currentUser.email} autoComplete="off" disabled />
+                </div>
 
-            <FormField
-              control={form.control}
-              name="language"
-              render={({ field }) => (
-                <FormItem name="language">
-                  <FormLabel>
-                    {t('common:language')}
-                    <span className="ml-1 opacity-50">*</span>
-                  </FormLabel>
-                  <FormControl>
-                    <SelectLanguage
-                      options={[...appConfig.languages]}
-                      value={field.value ?? appConfig.defaultLanguage}
-                      onChange={field.onChange}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                <FormField
+                  control={form.control}
+                  name="language"
+                  render={({ field }) => (
+                    <FormItem name="language">
+                      <FormLabel>
+                        {t('common:language')}
+                        <span className="ml-1 opacity-50">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <SelectLanguage
+                          options={[...appConfig.languages]}
+                          value={field.value ?? appConfig.defaultLanguage}
+                          onChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            <FormField
-              control={form.control}
-              name="newsletter"
-              render={({ field }) => (
-                <FormItem className="flex-row items-center" name="newsletter">
-                  <FormControl>
-                    <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                  </FormControl>
-                  <FormLabel>{t('common:newsletter')}</FormLabel>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                <FormField
+                  control={form.control}
+                  name="newsletter"
+                  render={({ field }) => (
+                    <FormItem className="flex-row items-center" name="newsletter">
+                      <FormControl>
+                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                      </FormControl>
+                      <FormLabel>{t('common:newsletter')}</FormLabel>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </>
+            )}
           </>
         )}
 

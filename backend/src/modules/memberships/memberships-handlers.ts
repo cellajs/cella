@@ -3,13 +3,14 @@ import { and, count, eq, ilike, inArray, or, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import i18n from 'i18next';
 import { appConfig, hierarchy } from 'shared';
+import { nanoid } from 'shared/nanoid';
 import { emailsTable } from '#/db/schema/emails';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { membershipsTable } from '#/db/schema/memberships';
-import { requestsTable } from '#/db/schema/requests';
 import { tokensTable } from '#/db/schema/tokens';
 import { userActivityTable } from '#/db/schema/user-activity';
 import { usersTable } from '#/db/schema/users';
+import { setTenantRlsContext } from '#/db/tenant-context';
 import { type Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
 import { mailer } from '#/lib/mailer';
@@ -17,12 +18,12 @@ import { resolveEntity } from '#/lib/resolve-entity';
 import { getBaseMembershipEntityId, insertMemberships } from '#/modules/memberships/helpers';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import membershipRoutes from '#/modules/memberships/memberships-routes';
+import { withAuditUsers } from '#/modules/user/helpers/audit-user';
 import { memberSelect, userBaseSelect } from '#/modules/user/helpers/select';
 import { getValidContextEntity } from '#/permissions/get-context-entity';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
-import { nanoid } from '#/utils/nanoid';
 import { getOrderColumn } from '#/utils/order-column';
 import { encodeLowerCased } from '#/utils/oslo';
 import { slugFromEmail } from '#/utils/slug-from-email';
@@ -76,8 +77,34 @@ const membershipsRouteHandlers = app
 
     // Step 0: Contextual user and organization
     const user = ctx.var.user;
-    const userSystemRole = ctx.var.userSystemRole;
+    const isSystemAdmin = ctx.var.isSystemAdmin;
     const organization = ctx.var.organization;
+
+    // Step 0: Check restrictions before proceeding — max members in organization
+    const [{ currentOrgMemberships }] = await db
+      .select({ currentOrgMemberships: count() })
+      .from(membershipsTable)
+      .where(
+        and(eq(membershipsTable.contextType, rootContextType), eq(membershipsTable[rootIdColumnKey], organization.id)),
+      );
+
+    const [{ pendingInvites }] = await db
+      .select({ pendingInvites: count() })
+      .from(inactiveMembershipsTable)
+      .where(
+        and(
+          eq(inactiveMembershipsTable.contextType, rootContextType),
+          eq(inactiveMembershipsTable[rootIdColumnKey as InactiveEntityIdColumnNames], organization.id),
+        ),
+      );
+
+    const membersRestrictions = ctx.var.tenant.restrictions.quotas.user;
+    if (
+      membersRestrictions !== 0 &&
+      currentOrgMemberships + pendingInvites + normalizedEmails.length > membersRestrictions
+    ) {
+      throw new AppError(403, 'restrict_by_org', 'warn', { entityType });
+    }
 
     // Step 0: Scenario buckets
     const rejectedItemIds: string[] = []; // Scenario 1: already active members
@@ -173,7 +200,7 @@ const membershipsRouteHandlers = app
       // Scenario 2: existing user but no membership yet
       const userRow = rows.find((r) => r.userId);
       if (userRow?.userId) {
-        const isAdminInvitingSelf = user.email === email && userSystemRole === 'admin';
+        const isAdminInvitingSelf = user.email === email && isSystemAdmin;
 
         if (isAdminInvitingSelf) {
           existingUsersToDirectAdd.push({ userId: userRow.userId, email });
@@ -271,17 +298,6 @@ const membershipsRouteHandlers = app
         secret: tokensTable.secret,
         type: tokensTable.type,
       });
-
-      // Step 5b: Link waitlist requests to new tokens (if any)
-      // TODO-011: This should be handled by eventManager in requests module itself
-      await Promise.all(
-        insertedTokens.map(({ id, email }) =>
-          db
-            .update(requestsTable)
-            .set({ tokenId: id })
-            .where(and(eq(requestsTable.email, email), eq(requestsTable.type, 'waitlist'))),
-        ),
-      );
     }
 
     // Step 5c – create inactive memberships for Scenario 2a + 3 in one bulk insert
@@ -355,19 +371,6 @@ const membershipsRouteHandlers = app
     }
 
     const invitesSentCount = insertedInactiveMemberships.length;
-
-    // Check restrictions: max members in organization
-    const [{ currentOrgMemberships }] = await db
-      .select({ currentOrgMemberships: count() })
-      .from(membershipsTable)
-      .where(
-        and(eq(membershipsTable.contextType, rootContextType), eq(membershipsTable[rootIdColumnKey], organization.id)),
-      );
-
-    const membersRestrictions = organization.restrictions.user;
-    if (membersRestrictions !== 0 && currentOrgMemberships + invitesSentCount > membersRestrictions) {
-      throw new AppError(403, 'restrict_by_org', 'warn', { entityType });
-    }
 
     logEvent('info', 'Users invited on entity level', {
       count: invitesSentCount,
@@ -501,6 +504,7 @@ const membershipsRouteHandlers = app
 
     const user = ctx.var.user;
 
+    // crossTenantGuard sets user RLS context, so select_own_policy allows reading own invitation
     const [inactiveMembership] = await db
       .select()
       .from(inactiveMembershipsTable)
@@ -510,39 +514,46 @@ const membershipsRouteHandlers = app
     if (!inactiveMembership)
       throw new AppError(404, 'inactive_membership_not_found', 'error', { meta: { id: inactiveMembershipId } });
 
-    if (acceptOrReject === 'accept') {
-      const entityFieldIdName = appConfig.entityIdColumnKeys[inactiveMembership.contextType];
-      const entityFieldId = inactiveMembership[entityFieldIdName];
-      if (!entityFieldId)
-        throw new AppError(500, 'server_error', 'error', { entityType: inactiveMembership.contextType });
+    // Build a minimal entity object from the inactive_membership row (avoids org table SELECT which requires membership)
+    const entityFieldIdName = appConfig.entityIdColumnKeys[inactiveMembership.contextType];
+    const entityFieldId = inactiveMembership[entityFieldIdName];
+    if (!entityFieldId)
+      throw new AppError(500, 'server_error', 'error', { entityType: inactiveMembership.contextType });
 
-      // Internal resolve: user is accepting their own invitation, so no membership exists yet for permission checks
-      const entity = await resolveEntity(inactiveMembership.contextType, entityFieldId, db);
-      if (!entity) throw new AppError(404, 'not_found', 'error', { entityType: inactiveMembership.contextType });
+    // Wrap write operations in tenant RLS context (writes require tenantMatch)
+    await setTenantRlsContext({ tenantId: inactiveMembership.tenantId, userId: user.id }, async (tx) => {
+      if (acceptOrReject === 'accept') {
+        // Internal resolve: user is accepting their own invitation, so no membership exists yet for permission checks
+        const entity = await resolveEntity(inactiveMembership.contextType, entityFieldId, tx);
+        if (!entity) throw new AppError(404, 'not_found', 'error', { entityType: inactiveMembership.contextType });
 
-      const activatedMemberships = await insertMemberships(db, [
-        { entity, userId: user.id, role: inactiveMembership.role, createdBy: inactiveMembership.createdBy },
-      ]);
+        const activatedMemberships = await insertMemberships(tx, [
+          { entity, userId: user.id, role: inactiveMembership.role, createdBy: inactiveMembership.createdBy },
+        ]);
 
-      await db.delete(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
+        await tx.delete(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
 
-      // Event emitted via CDC -> activities table -> activityBus ('membership.created')
-      logEvent('info', 'Accepted membership', { ids: activatedMemberships.map((m) => m.id) });
-    }
+        // Event emitted via CDC -> activities table -> activityBus ('membership.created')
+        logEvent('info', 'Accepted membership', { ids: activatedMemberships.map((m) => m.id) });
+      }
 
-    // Reject membership simply deletes the membership
-    if (acceptOrReject === 'reject') {
-      await db
-        .update(inactiveMembershipsTable)
-        .set({ rejectedAt: getIsoDate() })
-        .where(and(eq(inactiveMembershipsTable.id, inactiveMembership.id)));
-    }
+      // Reject membership simply marks it as rejected
+      if (acceptOrReject === 'reject') {
+        await tx
+          .update(inactiveMembershipsTable)
+          .set({ rejectedAt: getIsoDate() })
+          .where(and(eq(inactiveMembershipsTable.id, inactiveMembership.id)));
+      }
+    });
 
-    // Internal resolve: getting root entity for response after invitation handling (no permission check needed)
+    // After accept, user now has a membership — resolveEntity works with tenant context
     const rootEntityId = inactiveMembership[rootIdColumnKey as InactiveEntityIdColumnNames];
     if (!rootEntityId) throw new AppError(500, 'server_error', 'error', { entityType: rootContextType });
 
-    const entity = await resolveEntity(rootContextType, rootEntityId, db);
+    // Use a tenant-scoped read for the response entity (user now has membership after accept)
+    const entity = await setTenantRlsContext({ tenantId: inactiveMembership.tenantId, userId: user.id }, (tx) =>
+      resolveEntity(rootContextType, rootEntityId, tx),
+    );
     if (!entity) throw new AppError(404, 'not_found', 'error', { entityType: rootContextType });
 
     return ctx.json(entity, 200);
@@ -551,7 +562,7 @@ const membershipsRouteHandlers = app
    * Get members by entity id/slug and type
    */
   .openapi(membershipRoutes.getMembers, async (ctx) => {
-    const { entityId, entityType, q, sort, order, offset, limit, role } = ctx.req.valid('query');
+    const { entityId, entityType, q, sort, order, offset, limit, role, userIds } = ctx.req.valid('query');
     const db = ctx.var.db;
 
     const organization = ctx.var.organization;
@@ -576,6 +587,7 @@ const membershipsRouteHandlers = app
     ];
 
     if (role) membersFilters.push(eq(membershipsTable.role, role));
+    if (userIds) membersFilters.push(inArray(usersTable.id, userIds.split(',')));
 
     const orderColumn = getOrderColumn(sort, usersTable.id, order, {
       id: usersTable.id,
@@ -641,7 +653,10 @@ const membershipsRouteHandlers = app
       )
       .orderBy(orderColumn);
 
-    const items = await pendingMembershipsQuery.limit(limit).offset(offset);
+    const rawItems = await pendingMembershipsQuery.limit(limit).offset(offset);
+
+    // Populate createdBy with user objects
+    const items = await withAuditUsers(rawItems, db);
 
     const [{ total }] = await db.select({ total: count() }).from(pendingMembershipsQuery.as('pendingMemberships'));
 
