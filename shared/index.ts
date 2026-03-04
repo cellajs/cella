@@ -82,9 +82,9 @@ export type {
   SubjectAccessPolicies,
 } from './src/permissions';
 export { configureAccessPolicies, getPolicyPermissions, getSubjectPolicies } from './src/permissions';
-export { allActionsAllowed, allActionsDenied, createActionRecord } from './src/permissions';
+export { allActionsAllowed, allActionsDenied, createActionRecord, resolvePermission } from './src/permissions';
 export { accessPolicies, computeCan } from './src/permissions';
-export type { EntityCanMap } from './src/permissions';
+export type { ActionPermissionState, EntityCanMap } from './src/permissions';
 
 // Side-effect import: compile-time validation that config matches hierarchy
 import './src/builder/config-validation';

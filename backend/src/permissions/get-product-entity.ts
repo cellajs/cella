@@ -35,14 +35,17 @@ export const getValidProductEntity = async <K extends ProductEntityType>(
   // Get current user role and memberships from request context
   const isSystemAdmin = ctx.var.isSystemAdmin;
   const memberships = ctx.var.memberships;
+  const userId = ctx.var.user.id;
   const db = ctx.var.db;
 
   // Step 1: Resolve target entity by ID or slug
   const entity = await resolveEntity(entityType, id, db);
   if (!entity) throw new AppError(404, 'not_found', 'warn', { entityType });
 
-  // Step 2: Check permission for the requested action (system admin bypass is handled inside)
-  const { isAllowed } = checkPermission(memberships, action, entity, { isSystemAdmin });
+  // Step 2: Check permission for the requested action.
+  // The entity carries `createdBy` which enables implicit "owner" relation evaluation
+  // when the access policy uses `'own'` for this action.
+  const { isAllowed } = checkPermission(memberships, action, entity, { isSystemAdmin, userId });
 
   if (!isAllowed) {
     throw new AppError(403, 'forbidden', 'warn', { entityType, meta: { action } });

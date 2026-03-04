@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
+import { appConfig } from 'shared';
 
 import { useEventListener } from '~/hooks/use-event-listener';
 import type { Column, ColumnOrColumnGroup } from '../types';
@@ -25,15 +26,10 @@ export interface ResponsiveColumnGroup<R, SR = unknown> {
 
 export type ResponsiveColumnOrColumnGroup<R, SR = unknown> = ResponsiveColumn<R, SR> | ResponsiveColumnGroup<R, SR>;
 
-/** Default Tailwind breakpoints in pixels */
-const DEFAULT_BREAKPOINTS: Record<ResponsiveBreakpoint, number> = {
-  xs: 0,
-  sm: 640,
-  md: 768,
-  lg: 1024,
-  xl: 1280,
-  '2xl': 1536,
-};
+/** Breakpoints from appConfig, matching Tailwind screen config */
+const DEFAULT_BREAKPOINTS: Record<ResponsiveBreakpoint, number> = Object.fromEntries(
+  Object.entries(appConfig.theme.screenSizes).map(([key, value]) => [key, Number.parseInt(value, 10)]),
+) as Record<ResponsiveBreakpoint, number>;
 
 export interface ResponsiveColumnsOptions<R, SR> {
   /** All columns with responsive configuration */

@@ -87,6 +87,9 @@ const getSubjectContextId = (
 /**
  * Internal function to check permissions for a single subject using pre-built indices.
  * This is the core logic shared by both single and batch permission checks.
+ *
+ * Supports Zanzibar-style implicit "owner" relation: when a policy value is `'own'`,
+ * the engine checks if `subject.createdBy === userId` to determine grant.
  */
 const checkWithIndices = <T extends MembershipBaseModel>(
   membershipIndex: MembershipIndex<T>,
@@ -94,6 +97,7 @@ const checkWithIndices = <T extends MembershipBaseModel>(
   subject: SubjectForPermission,
   orderedContexts: ContextEntityType[],
   isSystemAdmin: boolean,
+  userId?: string,
 ): PermissionDecision<T> => {
   // Primary context is always the first (most specific) in the hierarchy
   const primaryContext = orderedContexts[0];
@@ -107,10 +111,14 @@ const checkWithIndices = <T extends MembershipBaseModel>(
 
   // If system admin, grant all permissions immediately (but still return membership if exists)
   if (isSystemAdmin) {
-    const allGranted = createActionRecord(() => ({
-      enabled: true,
-      grantedBy: [{ contextType: 'system' as ContextEntityType, contextId: 'admin', role: 'admin' }],
-    }));
+    const allGranted = createActionRecord(
+      (): ActionAttribution => ({
+        enabled: true,
+        grantedBy: [
+          { type: 'membership', contextType: 'system' as ContextEntityType, contextId: 'admin', role: 'admin' },
+        ],
+      }),
+    );
 
     const can = { ...allActionsAllowed };
     const contextIds = primaryContextId ? { [primaryContext]: primaryContextId } : {};
@@ -169,9 +177,26 @@ const checkWithIndices = <T extends MembershipBaseModel>(
 
       // Attribute each granted action to this membership
       for (const action of appConfig.entityActions) {
-        if (permissions[action] !== 1) continue;
-        actions[action].enabled = true;
-        actions[action].grantedBy.push({ contextType, contextId: subjectContextId, role: m.role });
+        const policyValue = permissions[action];
+
+        // Unconditional grant
+        if (policyValue === 1) {
+          actions[action].enabled = true;
+          actions[action].grantedBy.push({
+            type: 'membership',
+            contextType,
+            contextId: subjectContextId,
+            role: m.role,
+          });
+          continue;
+        }
+
+        // Implicit "owner" relation check: grant if actor created this entity.
+        // In Zanzibar terms: check(actor, action, object) where relation(actor, 'owner', object) exists.
+        if (policyValue === 'own' && userId && subject.createdBy === userId) {
+          actions[action].enabled = true;
+          actions[action].grantedBy.push({ type: 'relation', relation: 'owner' });
+        }
       }
     }
   }
@@ -240,6 +265,7 @@ export function getAllDecisions<T extends MembershipBaseModel>(
   const isSingle = !Array.isArray(subjects);
   const subjectArray = isSingle ? [subjects] : subjects;
   const isSystemAdmin = options?.isSystemAdmin === true;
+  const userId = options?.userId;
 
   const results = new Map<string, PermissionDecision<T>>();
 
@@ -280,7 +306,7 @@ export function getAllDecisions<T extends MembershipBaseModel>(
     const policyIndex = getOrBuildPolicyIndex(policies, subject.entityType, policyIndexCache);
 
     // Perform the permission check using pre-built indices
-    const decision = checkWithIndices(membershipIndex, policyIndex, subject, orderedContexts, isSystemAdmin);
+    const decision = checkWithIndices(membershipIndex, policyIndex, subject, orderedContexts, isSystemAdmin, userId);
     const key = subject.id ?? `_idx:${subjectArray.indexOf(subject)}`;
     results.set(key, decision);
   }

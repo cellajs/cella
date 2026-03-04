@@ -1,12 +1,15 @@
 import { Link } from '@tanstack/react-router';
-import { BookOpenIcon, InfoIcon, LifeBuoyIcon, MailIcon } from 'lucide-react';
+import { ArrowLeftIcon, BookOpenIcon, InfoIcon, LifeBuoyIcon, MailIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { AlertWrap } from '~/modules/common/alert-wrap';
 import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
 import { handleAskForHelp } from '~/modules/common/error-notice';
+import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { navSheetClassName } from '~/modules/navigation/app-nav';
 import { FocusBridge, FocusTarget } from '~/modules/navigation/focus-bridge';
+import { MenuSheet } from '~/modules/navigation/menu-sheet/menu-sheet';
 import { OfflineAccessSwitch } from '~/modules/navigation/menu-sheet/offline-access-switch';
 import { Button } from '~/modules/ui/button';
 import { Switch } from '~/modules/ui/switch';
@@ -17,7 +20,8 @@ import { cn } from '~/utils/cn';
 const pwaEnabled = appConfig.has.pwa;
 
 /**
- * Settings sheet content for navigation preferences.
+ * Preferences sheet content for device-linked navigation, storage and appearance settings.
+ * Also includes support links and other user preferences that don't fit elsewhere.
  */
 export const PreferencesSheet = () => {
   const { t } = useTranslation();
@@ -33,12 +37,40 @@ export const PreferencesSheet = () => {
 
   const { mode, setMode } = useUIStore();
   const hasThemeColors = Object.keys(appConfig.theme.colors).length > 0;
+  const setNavSheetOpen = useNavigationStore((state) => state.setNavSheetOpen);
+
+  const backRef = useRef<HTMLButtonElement>(null);
+
+  const goBackToMenu = () => {
+    setNavSheetOpen('menu');
+    useSheeter.getState().create(<MenuSheet />, {
+      id: 'nav-sheet',
+      triggerRef: backRef,
+      side: 'left',
+      showCloseButton: false,
+      modal: false,
+      className: navSheetClassName,
+      skipAnimation: true,
+      onClose: () => setNavSheetOpen(null),
+    });
+  };
 
   return (
     <div className="w-full bg-card py-3 px-3 min-h-screen flex flex-col">
       <FocusTarget target="sheet" />
-      {/* Usage settings */}
-      <h2 className="text-lg font-semibold mb-4 px-2 py-1.5">{t('common:preferences')}</h2>
+      <div className="flex items-center gap-2 mb-4 px-1 py-1.5">
+        <Button
+          ref={backRef}
+          variant="ghost"
+          size="icon"
+          onClick={goBackToMenu}
+          className="size-8 shrink-0"
+          aria-label={t('common:menu')}
+        >
+          <ArrowLeftIcon className="size-4" />
+        </Button>
+        <h2 className="text-lg font-semibold">{t('common:preferences')}</h2>
+      </div>
 
       {/* Appearance */}
       <div

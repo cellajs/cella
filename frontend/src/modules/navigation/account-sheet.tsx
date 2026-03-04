@@ -1,15 +1,21 @@
 import { Link, useNavigate } from '@tanstack/react-router';
-import { LogOutIcon, type LucideProps, SettingsIcon, UserRoundIcon, WrenchIcon } from 'lucide-react';
+import { ArrowLeftIcon, LogOutIcon, type LucideProps, SettingsIcon, UserRoundIcon, WrenchIcon } from 'lucide-react';
+import { motion } from 'motion/react';
 import type React from 'react';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { useMountedState } from '~/hooks/use-mounted-state';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
+import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster/service';
+import { navSheetClassName } from '~/modules/navigation/app-nav';
 import { FocusBridge, FocusTarget } from '~/modules/navigation/focus-bridge';
+import { MenuSheet } from '~/modules/navigation/menu-sheet/menu-sheet';
 import { Button } from '~/modules/ui/button';
+import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
 import { numberToColorClass } from '~/utils/number-to-color-class';
 
@@ -60,6 +66,23 @@ export const AccountSheet = () => {
   const { isOnline } = useOnlineManager();
 
   const buttonWrapper = useRef<HTMLDivElement | null>(null);
+  const backRef = useRef<HTMLButtonElement>(null);
+  const setNavSheetOpen = useNavigationStore((state) => state.setNavSheetOpen);
+  const { hasStarted } = useMountedState();
+
+  const goBackToMenu = () => {
+    setNavSheetOpen('menu');
+    useSheeter.getState().create(<MenuSheet />, {
+      id: 'nav-sheet',
+      triggerRef: backRef,
+      side: 'left',
+      showCloseButton: false,
+      modal: false,
+      className: navSheetClassName,
+      skipAnimation: true,
+      onClose: () => setNavSheetOpen(null),
+    });
+  };
 
   useEffect(() => {
     if (isMobile) return;
@@ -70,6 +93,19 @@ export const AccountSheet = () => {
   return (
     <div ref={buttonWrapper} className="p-3 bg-card w-full flex flex-col gap-4 min-h-screen">
       <FocusTarget target="sheet" />
+      <div className="flex items-center gap-2 px-1 py-1.5 -mx-1 pl-3 in-[.floating-nav]:pl-1">
+        <Button
+          ref={backRef}
+          variant="ghost"
+          size="icon"
+          onClick={goBackToMenu}
+          className="in-[.floating-nav]:flex hidden size-8 shrink-0"
+          aria-label={t('common:menu')}
+        >
+          <ArrowLeftIcon className="size-4" />
+        </Button>
+        <h2 className="text-lg font-semibold">{t('common:account')}</h2>
+      </div>
       <button
         type="button"
         tabIndex={-1}
@@ -77,18 +113,25 @@ export const AccountSheet = () => {
         className="w-full relative"
       >
         <div
-          className={`relative transition-all shadow-[inset_0_-4px_12px_rgba(0,0,0,0.15)] duration-300 hover:bg-opacity-50 hover:-mx-10 -mx-5 -mt-3 bg-cover bg-center h-24 bg-opacity-80 ${
+          className={`relative transition-all shadow-[inset_0_-4px_12px_rgba(0,0,0,0.15)] duration-300 hover:bg-opacity-50 hover:-mx-10 -mx-5 bg-cover bg-center h-32 bg-opacity-80 ${
             user.bannerUrl ? '' : numberToColorClass(user.id)
           }`}
           style={user.bannerUrl ? { backgroundImage: `url(${user.bannerUrl})` } : {}}
         >
-          <AvatarWrap
-            className="h-16 w-16 absolute top-4 text-2xl left-[50%] -ml-8 rounded-full shadow-[0_0_0_4px_rgba(0,0,0,0.1)]"
-            type="user"
-            id={user.id}
-            name={user.name}
-            url={user.thumbnailUrl}
-          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={hasStarted ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.8 }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
+            className="absolute top-6 left-[50%] -ml-10"
+          >
+            <AvatarWrap
+              className="size-20 text-2xl rounded-full shadow-[0_0_0_4px_rgba(0,0,0,0.1)]"
+              type="user"
+              id={user.id}
+              name={user.name}
+              url={user.thumbnailUrl}
+            />
+          </motion.div>
         </div>
       </button>
       <div className="flex flex-col gap-1 max-sm:mt-4">

@@ -11,7 +11,7 @@ import {
 import type { EnrichableEntity } from '~/query/enrichment/types';
 import { useUserStore } from '~/store/user';
 
-/** Deep-compare two EntityCanMap objects */
+/** Deep-compare two EntityCanMap objects (supports three-state: true/false/'own') */
 function hasCanChanged(a: EntityCanMap | undefined, b: EntityCanMap | undefined): boolean {
   if (!a && !b) return false;
   if (!a || !b) return true;
