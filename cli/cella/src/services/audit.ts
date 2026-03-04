@@ -37,8 +37,10 @@ import { createSpinner, spinnerSuccess } from '../utils/display';
 
 /** Options for the audit service */
 export interface AuditOptions {
-  /** Whether to clear the cache before running */
+  /** Whether to clear the changelog cache before running */
   clearCache?: boolean;
+  /** Whether to bypass pnpm metadata cache for fresh registry data */
+  force?: boolean;
 }
 
 /**
@@ -54,6 +56,17 @@ export async function runAudit(config: RuntimeConfig, options: AuditOptions = {}
   }
 
   const spinner = createSpinner('checking for outdated packages & vulnerabilities...');
+
+  // Clear pnpm metadata cache when force is set to get fresh registry data
+  if (options.force) {
+    spinner.text = 'clearing pnpm metadata cache...';
+    clearCache();
+    spawnSync('pnpm', ['cache', 'delete', '*'], {
+      cwd: forkPath,
+      stdio: 'ignore',
+    });
+    spinner.text = 'checking for outdated packages & vulnerabilities...';
+  }
 
   // Run outdated check and audit in parallel
   const [outdatedPackages, auditResult] = await Promise.all([
@@ -152,12 +165,16 @@ export async function runAudit(config: RuntimeConfig, options: AuditOptions = {}
   spinner.stop();
 
   // Print results
-  printOutdatedResults(enhancedPackages, dependentNameCache, forkPath);
+  if (enhancedPackages.length > 0) {
+    printOutdatedResults(enhancedPackages, dependentNameCache, forkPath);
+  }
   printVulnerabilityResults(auditResult, vulnMap);
 
   // Interactive update prompt (skip in non-interactive/list mode)
-  if (enhancedPackages.length > 0 && !config.list) {
-    await promptForUpdates(enhancedPackages, forkPath, vulnMap.size > 0);
+  // Show when there are outdated packages OR vulnerabilities to fix
+  const hasVulns = vulnMap.size > 0;
+  if ((enhancedPackages.length > 0 || hasVulns) && !config.list) {
+    await promptForUpdates(enhancedPackages, forkPath, auditResult);
   }
 }
 
@@ -175,13 +192,13 @@ function printOutdatedResults(
   const MAX_DEPENDENTS_LEN = 15;
   const maxNameLen = Math.min(
     MAX_NAME_LEN,
-    Math.max(...enhancedPackages.map((p) => p.name.length + (p.isDev ? DEV_TAG.length : 0)), 7),
+    Math.max(7, ...enhancedPackages.map((p) => p.name.length + (p.isDev ? DEV_TAG.length : 0))),
   );
-  const maxCurrentLen = Math.max(...enhancedPackages.map((p) => p.current.length), 7);
-  const maxLatestLen = Math.max(...enhancedPackages.map((p) => p.latest.length), 6);
+  const maxCurrentLen = Math.max(7, ...enhancedPackages.map((p) => p.current.length));
+  const maxLatestLen = Math.max(6, ...enhancedPackages.map((p) => p.latest.length));
   const maxDependentsLen = Math.min(
     MAX_DEPENDENTS_LEN,
-    Math.max(...enhancedPackages.map((p) => formatDependents(p.dependents).length), 10),
+    Math.max(10, ...enhancedPackages.map((p) => formatDependents(p.dependents).length)),
   );
 
   // Header (vuln column is just a dot, so minimal width)
@@ -250,7 +267,7 @@ function printOutdatedResults(
   }
   const sortedDependents = [...dependentMap.entries()].sort((a, b) => a[0].localeCompare(b[0]));
   // Calculate max dependent name length for alignment
-  const maxDependentNameLen = Math.max(...sortedDependents.map(([name]) => name.length));
+  const maxDependentNameLen = Math.max(0, ...sortedDependents.map(([name]) => name.length));
   for (const [dependentName, { location, count }] of sortedDependents) {
     const packageJsonPath = path.join(location, 'package.json');
     const relativePath = path.relative(forkPath, packageJsonPath);
@@ -267,19 +284,32 @@ function printOutdatedResults(
 async function promptForUpdates(
   packages: EnhancedPackageInfo[],
   forkPath: string,
-  hasVulnerabilities: boolean,
+  auditResult: AuditResult | null,
 ): Promise<void> {
-  // Ask if user wants to update packages (message adapts when vulnerabilities are present)
+  const hasVulnerabilities =
+    auditResult !== null && Object.values(auditResult.metadata?.vulnerabilities || {}).some((c) => c > 0);
+  const hasPackages = packages.length > 0;
+
+  // Ask if user wants to proceed (message adapts to what's available)
+  let confirmMessage = 'update packages?';
+  if (hasVulnerabilities && hasPackages) {
+    confirmMessage = 'update packages and fix vulnerabilities?';
+  } else if (hasVulnerabilities) {
+    confirmMessage = 'fix vulnerabilities?';
+  }
+
   let wantsUpdate: boolean;
   try {
     wantsUpdate = await confirm({
-      message: hasVulnerabilities ? 'update packages and fix vulnerabilities?' : 'update packages?',
+      message: confirmMessage,
       default: true,
     });
   } catch {
     return;
   }
   if (!wantsUpdate) return;
+
+  console.info();
 
   // Build choice item for a package
   const makeChoice = (pkg: EnhancedPackageInfo) => {
@@ -304,20 +334,16 @@ async function promptForUpdates(
   // Build grouped choices with separators
   const choices: Array<{ name: string; value: string; checked: boolean } | Separator> = [];
 
-  if (pinned.length > 0) {
-    choices.push(new Separator(pc.yellow(`── pinned (${pinned.length}) ──`)));
-    choices.push(...pinned.map(makeChoice));
-  }
-  if (regular.length > 0) {
-    if (pinned.length > 0) {
-      choices.push(new Separator(pc.dim(`── packages (${regular.length}) ──`)));
-    }
-    choices.push(...regular.map(makeChoice));
-  }
-
-  // Add audit --fix checkbox in its own group when vulnerabilities exist
+  // Add audit --fix checkbox at the top when vulnerabilities exist
   if (hasVulnerabilities) {
-    choices.push(new Separator(pc.red('── vulnerabilities ──')));
+    const vulnMeta = auditResult?.metadata?.vulnerabilities || {};
+    const parts: string[] = [];
+    if (vulnMeta.critical) parts.push(pc.red(`${vulnMeta.critical} critical`));
+    if (vulnMeta.high) parts.push(pc.red(`${vulnMeta.high} high`));
+    if (vulnMeta.moderate) parts.push(pc.yellow(`${vulnMeta.moderate} moderate`));
+    if (vulnMeta.low) parts.push(pc.blue(`${vulnMeta.low} low`));
+    const vulnSummary = parts.length > 0 ? ` ${pc.dim('·')} ${parts.join(' ')}` : '';
+    choices.push(new Separator(pc.red(`── vulnerabilities${vulnSummary} ──`)));
     choices.push({
       name: `${pc.cyan('pnpm audit --fix')}  ${pc.dim('add overrides for non-vulnerable versions')}`,
       value: AUDIT_FIX_VALUE,
@@ -325,11 +351,23 @@ async function promptForUpdates(
     });
   }
 
+  if (pinned.length > 0) {
+    choices.push(new Separator(pc.yellow(`── pinned (${pinned.length}) ──`)));
+    choices.push(...pinned.map(makeChoice));
+  }
+  if (regular.length > 0) {
+    if (pinned.length > 0 || hasVulnerabilities) {
+      choices.push(new Separator(pc.dim(`── packages (${regular.length}) ──`)));
+    }
+    choices.push(...regular.map(makeChoice));
+  }
+
   let selected: string[];
   try {
     selected = await checkbox({
-      message: `toggle packages to update\n${pc.dim('↑↓')} navigate  ${pc.dim('space')} toggle  ${pc.dim('⏎')} confirm  ${pc.dim('esc')} skip`,
+      message: 'toggle packages to update',
       choices,
+      required: true,
       pageSize: 20,
       loop: false,
       theme: {
@@ -338,6 +376,10 @@ async function promptForUpdates(
         },
         style: {
           highlight: (text: string) => text,
+          keysHelpTip: (keys: [string, string][]) => {
+            const tips = keys.map(([key, action]: [string, string]) => `${pc.dim(key)} ${action}`);
+            return tips.join('  ');
+          },
           renderSelectedChoices: (selectedChoices: Array<{ value?: string }>) =>
             pc.dim(`${selectedChoices.length} package${selectedChoices.length !== 1 ? 's' : ''} selected`),
         },
@@ -352,10 +394,17 @@ async function promptForUpdates(
   const runAuditFix = selected.includes(AUDIT_FIX_VALUE);
   const selectedPackages = selected.filter((s) => s !== AUDIT_FIX_VALUE);
 
-  // Handle empty selection (no packages and no audit fix)
-  if (selectedPackages.length === 0 && !runAuditFix) {
-    return;
+  // Print summary of what will happen
+  const summaryParts: string[] = [];
+  if (selectedPackages.length > 0) {
+    summaryParts.push(`updating ${selectedPackages.length} package${selectedPackages.length !== 1 ? 's' : ''}`);
   }
+  if (runAuditFix) {
+    summaryParts.push('then updating dependencies');
+  }
+  console.info();
+  console.info(pc.green(`✓ ${summaryParts.join(' ')}`));
+  console.info();
 
   // Check if any major updates are selected
   const selectedMajor = packages.filter((p) => selectedPackages.includes(p.name) && p.isMajorUpdate);
@@ -400,6 +449,22 @@ async function promptForUpdates(
     }
   }
 
+  // Run pnpm audit --fix first (before package updates) so overrides are applied during install
+  if (runAuditFix) {
+    console.info(pc.dim('running pnpm audit --fix...'));
+    const auditFixResult = spawnSync('pnpm', ['audit', '--fix'], {
+      cwd: forkPath,
+      stdio: 'inherit',
+    });
+
+    console.info();
+    if (auditFixResult.status === 0) {
+      console.info(pc.green('✓ pnpm audit --fix completed'));
+    } else {
+      console.error(pc.red(`✗ pnpm audit --fix failed (exit code ${auditFixResult.status})`));
+    }
+  }
+
   // Build pnpm update commands and run with inherited stdio so user sees pnpm output directly
   const commands: string[] = [];
   for (const [workspace, { filter, packages: pkgs }] of workspacePackages) {
@@ -423,23 +488,6 @@ async function promptForUpdates(
       console.info(pc.green(`✓ ${selectedPackages.length} package${selectedPackages.length > 1 ? 's' : ''} updated`));
     } else {
       console.error(pc.red(`✗ update failed (exit code ${result.status})`));
-    }
-  }
-
-  // Run pnpm audit --fix if requested
-  if (runAuditFix) {
-    console.info();
-    console.info(pc.dim('running pnpm audit --fix...'));
-    const auditFixResult = spawnSync('pnpm', ['audit', '--fix'], {
-      cwd: forkPath,
-      stdio: 'inherit',
-    });
-
-    console.info();
-    if (auditFixResult.status === 0) {
-      console.info(pc.green('✓ pnpm audit --fix completed'));
-    } else {
-      console.error(pc.red(`✗ pnpm audit --fix failed (exit code ${auditFixResult.status})`));
     }
   }
 }

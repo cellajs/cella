@@ -189,7 +189,7 @@ async function main(): Promise<void> {
         break;
 
       case 'audit':
-        await runAudit(config);
+        await runAudit(config, { force: config.force });
         break;
 
       case 'forks':

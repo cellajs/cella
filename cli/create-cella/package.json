@@ -51,7 +51,7 @@
     "validate-npm-package-name": "^7.0.2"
   },
   "devDependencies": {
-    "@types/node": "^24.10.13",
+    "@types/node": "24.10.13",
     "@types/validate-npm-package-name": "^4.0.2",
     "tsup": "^8.5.1",
     "tsx": "^4.21.0"

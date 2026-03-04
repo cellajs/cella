@@ -15,7 +15,7 @@
     "./ascii": "./src/utils/ascii.ts"
   },
   "dependencies": {
-    "@blocknote/core": "^0.47.0",
+    "@blocknote/core": "^0.47.1",
     "nanoid": "^5.1.6"
   }
 }
