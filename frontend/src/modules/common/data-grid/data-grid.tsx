@@ -521,7 +521,11 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     enableVirtualization: enableRowVirtualization,
   });
 
-  const { gridTemplateColumns, handleColumnResize } = useColumnWidths(
+  const {
+    gridTemplateColumns,
+    handleColumnResize,
+    handleColumnResizeEnd: handleColumnResizeEndWidths,
+  } = useColumnWidths(
     columns,
     templateColumns,
     gridRef,
@@ -874,9 +878,12 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   }
 
   function handleColumnResizeEnd() {
+    // Remove temporary measured widths, restore flex sizing
+    handleColumnResizeEndWidths();
     // This check is needed as double click on the resize handle triggers onPointerMove
     if (isColumnResizing) {
-      onColumnWidthsChangeRaw?.(columnWidths);
+      // Re-read columnWidths after cleanup — the hook already updated the map
+      onColumnWidthsChangeRaw?.(columnWidthsInternal);
       setColumnResizing(false);
     }
   }

@@ -95,7 +95,8 @@ export async function parseCli(userConfig: CellaCliConfig, forkPath: string): Pr
     })
     .option('--fork <name>', 'pre-select fork by name (skips fork selection prompt)')
     .option('--contribute', 'push drifted files to contrib branch in upstream (non-interactive)')
-    .option('--hard', 'overwrite drifted files with upstream version (aggressive realignment)');
+    .option('--hard', 'overwrite drifted files with upstream version (aggressive realignment)')
+    .option('--force', 'bypass pnpm metadata cache for fresh registry data (audit)');
 
   program.parse(process.argv);
 
@@ -145,5 +146,6 @@ export async function parseCli(userConfig: CellaCliConfig, forkPath: string): Pr
     fork: opts.fork,
     contribute: opts.contribute,
     hard: opts.hard,
+    force: opts.force,
   };
 }

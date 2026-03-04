@@ -6,7 +6,6 @@ import { AppNavLoader } from '~/modules/navigation/app-nav-loader';
 import type { NavItem, TriggerNavItemFn } from '~/modules/navigation/types';
 import { useTotalUnseenCount } from '~/modules/seen/use-unseen-count';
 import { SidebarMenuButton, SidebarMenuItem } from '~/modules/ui/sidebar';
-import { useUIStore } from '~/store/ui';
 import { useUserStore } from '~/store/user';
 import { cn } from '~/utils/cn';
 
@@ -60,7 +59,6 @@ export function AppNavIcon({ navItem, className }: { navItem: NavItem; className
 export function NavButton({ navItem, isActive, isCollapsed, onClick }: NavButtonProps) {
   const { t } = useTranslation();
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const theme = useUIStore((state) => state.theme);
   const totalUnseenCount = useTotalUnseenCount();
 
   const showTooltip = isCollapsed || !hasSidebarTextLabels;
@@ -75,10 +73,9 @@ export function NavButton({ navItem, isActive, isCollapsed, onClick }: NavButton
         tooltip={{ children: t(`common:${navItem.id}`), hidden: !showTooltip }}
         onClick={() => onClick(navItem.id, buttonRef)}
         isActive={isActive}
-        data-theme={theme}
         className="h-14 ring-inset focus-visible:ring-offset-0 group transition-[width] duration-200 linear
           data-[active=true]:bg-background/50 hover:bg-background/30
-          text-primary-foreground data-[theme=none]:text-inherit
+          text-sidebar-foreground
           w-full data-[collapsed=true]:w-16 justify-center relative"
       >
         <AppNavIcon navItem={navItem} />
@@ -105,7 +102,6 @@ export function NavButton({ navItem, isActive, isCollapsed, onClick }: NavButton
  */
 export function BottomBarNavButton({ navItem, isActive, onClick }: Omit<NavButtonProps, 'isCollapsed'>) {
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const theme = useUIStore((state) => state.theme);
   const totalUnseenCount = useTotalUnseenCount();
 
   const showUnseenBadge = navItem.id === 'menu' && totalUnseenCount > 0 && !isActive;
@@ -115,13 +111,12 @@ export function BottomBarNavButton({ navItem, isActive, onClick }: Omit<NavButto
       ref={buttonRef}
       type="button"
       id={`${navItem.id}-nav`}
-      data-theme={theme}
       data-active={isActive}
       onClick={() => onClick(navItem.id, buttonRef)}
       className={cn(
         'ring-inset focus-visible:ring-offset-0 group size-14 flex items-center justify-center rounded-md relative',
         'data-[active=true]:bg-background/50 hover:bg-background/30',
-        'text-primary-foreground data-[theme=none]:text-inherit',
+        'text-sidebar-foreground',
       )}
     >
       <AppNavIcon navItem={navItem} />

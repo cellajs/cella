@@ -3,18 +3,17 @@ import { useEffect, useMemo, useState } from 'react';
 import { appConfig } from 'shared';
 import { downloadService } from '~/modules/attachment/download-service';
 import { uploadService } from '~/modules/attachment/upload-service';
-import type { UserMenuItem } from '~/modules/me/types';
-import { entityToPrefetchQueries } from '~/offline-config';
 import { initContextEntityEnrichment } from '~/query/enrichment/init';
 import { initMutationDefaults } from '~/query/mutation-registry';
 import '~/modules/attachment/query';
 import '~/modules/page/query';
 import { cleanupOrphanedSessions, persister, sessionPersister } from '~/query/persister';
 import { queryClient, silentRevalidateOnReconnect, updateStaleTime } from '~/query/query-client';
+import { appStreamManager } from '~/query/realtime/stream-store';
+import { runSyncService } from '~/query/realtime/sync-service';
 import { useTabCoordinatorStore } from '~/query/realtime/tab-coordinator';
 import { useUIStore } from '~/store/ui';
 import { useUserStore } from '~/store/user';
-import { waitFor } from '~/utils/wait-for';
 
 /**
  * Initialize mutation defaults BEFORE any cache restoration.
@@ -42,14 +41,6 @@ if (import.meta.hot) {
  */
 downloadService.start();
 uploadService.start();
-
-/** Configuration for offline-capable queries. */
-export const offlineQueryConfig = {
-  gcTime: 24 * 60 * 60 * 1000, // Cache expiration time: 24 hours
-  meta: {
-    offlinePrefetch: true,
-  },
-};
 
 /**
  * QueryClientProvider wrapper handling cache persistence and offline capabilities.
@@ -111,58 +102,35 @@ export function QueryClientProvider({ children }: { children: React.ReactNode })
     console.info(`[Offline] Network: ${isOnline ? 'online' : 'offline'}`);
   }, [offlineAccess, isOnline]);
 
+  // Run sync service when app stream reaches 'live' state.
+  // High priority: resolves staleness for current org immediately (ensureQueryData).
+  // Low priority: only fills offline cache when offlineAccess is enabled.
+  // Without offlineAccess, non-current orgs refetch naturally via refetchOnMount hooks.
   useEffect(() => {
-    // Exit early if offline access is disabled or no stored user is available
-    if (!offlineAccess || !user) return;
+    if (!user) return;
 
-    let isCancelled = false; // to handle the cancellation
+    let abortController: AbortController | null = null;
 
-    (async () => {
-      await waitFor(1000); // Avoid overloading server with requests
-      if (isCancelled) return; // If request was aborted, exit early
+    const unsubscribe = appStreamManager.useStore.subscribe((state) => {
+      if (state.state === 'live') {
+        // Abort any in-flight sync from a previous 'live' transition
+        abortController?.abort();
+        abortController = new AbortController();
+        runSyncService(offlineAccess, abortController.signal);
+      }
+    });
 
-      // Get menu from already-cached entity lists (dynamic import to avoid HMR coupling with menu-sheet helpers)
-      const { getMenuData } = await import('~/modules/navigation/menu-sheet/helpers/get-menu-data');
-      const menu = await getMenuData();
+    // Also trigger if already live (e.g., on mount after HMR)
+    if (appStreamManager.useStore.getState().state === 'live') {
+      abortController = new AbortController();
+      runSyncService(offlineAccess, abortController.signal);
+    }
 
-      // Recursive function to prefetch content data based on menu items
-      const prefetchContentData = async (items: UserMenuItem[]) => {
-        for (const item of items) {
-          if (isCancelled) return; // Check for abortion in each loop
-          if (item.membership.archived) continue; // Skip archived items
-
-          // Prefetch data (e.g., members as a react query, attachments as a collection, etc.)
-          const prefetchPromises = entityToPrefetchQueries(
-            item.id,
-            item.entityType,
-            item.tenantId,
-            item.organizationId,
-          ).map((source) => {
-            const options = { ...source, ...offlineQueryConfig };
-            // Use ensureInfiniteQueryData for infinite queries (have getNextPageParam)
-            // biome-ignore lint/suspicious/noExplicitAny: runtime check narrows type but TS can't infer it
-            if ('getNextPageParam' in options) return queryClient.ensureInfiniteQueryData(options as any);
-            // biome-ignore lint/suspicious/noExplicitAny: dynamic query options from entityToPrefetchQueries
-            return queryClient.ensureQueryData(options as any);
-          });
-          await Promise.allSettled(prefetchPromises);
-
-          await waitFor(500); // Avoid overloading server
-
-          // Recursively prefetch submenu items if they exist
-          if (item.submenu) await prefetchContentData(item.submenu);
-        }
-      };
-
-      // Start prefetching content data for each menu section
-      Object.values(menu).map(prefetchContentData);
-    })();
-
-    // Cleanup function to abort prefetch if component is unmounted
     return () => {
-      isCancelled = true;
+      unsubscribe();
+      abortController?.abort();
     };
-  }, [offlineAccess, user]);
+  }, [user, offlineAccess]);
 
   return (
     <PersistQueryClientProvider

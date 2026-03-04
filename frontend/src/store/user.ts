@@ -7,16 +7,18 @@ import type { MeAuthData, User } from '~/api.gen';
 import { isDebugMode } from '~/env';
 import type { MeUser } from '~/modules/me/types';
 
+type LastUser = Partial<MeUser> & { hasPasskey?: boolean };
+
 interface UserStoreState {
   user: MeUser; // Current user data
   isSystemAdmin: boolean;
   hasPasskey: boolean; // Current user's passkey
   hasTotp: MeAuthData['hasTotp']; // Current user's passkey
   enabledOAuth: MeAuthData['enabledOAuth']; // Current user's oauth options
-  lastUser: Partial<MeUser> | null; // Last signed-out user's data (email, name, passkey, id, slug)
+  lastUser: LastUser | null; // Last signed-out user's data (email, name, passkey, id, slug)
   setUser: (user: MeUser, skipLastUser?: boolean) => void; // Sets current user and updates lastUser
   setIsSystemAdmin: (isSystemAdmin: boolean) => void; // Sets current user's system admin status
-  setLastUser: (lastUser: Partial<MeUser>) => void; // Sets last user (used for MFA)
+  setLastUser: (lastUser: LastUser) => void; // Sets last user (used for MFA)
   setMeAuthData: (data: Partial<Pick<MeAuthData, 'hasTotp' | 'enabledOAuth'> & { hasPasskey: boolean }>) => void; // Sets current user auth info
   updateUser: (user: User) => void; // Updates current user and adjusts lastUser
   clearUserStore: () => void; // Resets the store.
@@ -61,6 +63,7 @@ export const useUserStore = create<UserStoreState>()(
               id: user.id,
               slug: user.slug,
               mfaRequired: user.mfaRequired,
+              hasPasskey: state.hasPasskey,
             };
           });
 
@@ -76,6 +79,7 @@ export const useUserStore = create<UserStoreState>()(
             state.lastUser = {
               email: lastUser.email,
               mfaRequired: lastUser.mfaRequired,
+              hasPasskey: lastUser.hasPasskey ?? state.lastUser?.hasPasskey,
             };
           });
         },
@@ -84,6 +88,11 @@ export const useUserStore = create<UserStoreState>()(
             state.hasPasskey = data.hasPasskey ?? state.hasPasskey;
             state.hasTotp = data.hasTotp ?? state.hasTotp;
             state.enabledOAuth = data.enabledOAuth ?? state.enabledOAuth;
+
+            // Keep lastUser in sync so passkey status survives sign-out
+            if (data.hasPasskey !== undefined && state.lastUser) {
+              state.lastUser.hasPasskey = data.hasPasskey;
+            }
           });
         },
         clearUserStore: () => {
@@ -97,7 +106,7 @@ export const useUserStore = create<UserStoreState>()(
         },
       })),
       {
-        version: 7,
+        version: 8,
         name: `${appConfig.slug}-user`,
         partialize: (state) => ({
           user: state.user,

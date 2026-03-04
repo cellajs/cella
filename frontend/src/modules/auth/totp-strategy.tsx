@@ -8,6 +8,7 @@ import { type ApiError, type SignInWithTotpData, type SignInWithTotpResponse, si
 import { TotpConfirmationForm } from '~/modules/auth/totp-verify-code-form';
 import { toaster } from '~/modules/common/toaster/service';
 import { Button } from '~/modules/ui/button';
+import { useAuthStore } from '~/store/auth';
 import { useUIStore } from '~/store/ui';
 
 export const TotpStrategy = ({
@@ -31,6 +32,7 @@ export const TotpStrategy = ({
   >({
     mutationFn: async (body) => await signInWithTotp({ body }),
     onSuccess: () => {
+      useAuthStore.getState().setSignedIn(true);
       navigate({ to: appConfig.defaultRedirectPath, replace: true });
     },
     onError: () => toaster(t('error:totp_verification_failed'), 'error'),

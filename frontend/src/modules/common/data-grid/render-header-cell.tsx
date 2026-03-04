@@ -2,7 +2,7 @@ import { renderSortStatus } from './sort-status';
 import type { RenderHeaderCellProps } from './types';
 
 export function renderHeaderCell<R, SR>({ column, sortDirection, priority }: RenderHeaderCellProps<R, SR>) {
-  if (!column.sortable) return column.name;
+  if (!column.sortable) return <span className="truncate">{column.name}</span>;
 
   return (
     <SortableHeaderCell sortDirection={sortDirection} priority={priority}>

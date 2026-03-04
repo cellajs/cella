@@ -116,6 +116,24 @@ The pipeline flows: **Postgres WAL → CDC Worker → WebSocket → ActivityBus 
 - **App stream** (`/app/stream`): authenticated, carries membership events, org events, and product entity notifications. Uses leader-tab pattern (Web Locks API) — one tab holds the SSE connection, followers sync via BroadcastChannel.
 - **Public stream** (`/public/stream`): unauthenticated, carries events for public product entities (e.g. pages). Each tab maintains its own connection (no leader election). On connect, catches up on deletes, then switches to live-only SSE.
 
+### Client sync cycle
+
+On every stream connect (including reconnects), a two-phase sync cycle runs:
+
+1. **Phase A (catchup)** — fast, synchronous, before SSE opens:
+   - Patches deletes directly into detail + list caches (no invalidation)
+   - Marks changed entity types as stale per org via per-entityType seq comparison (`refetchType: 'none'`)
+   - Handles membership changes
+
+2. **Phase B (sync service)** — background, after SSE reaches `live`:
+   - High priority: `ensureQueryData` for current org (resolves staleness from Phase A)
+   - Low priority: `ensureQueryData` for other orgs (only when `offlineAccess` enabled, for offline cache fill)
+   - Without `offlineAccess`, other orgs refetch naturally via React Query hooks on navigation
+
+3. **Live SSE** — handles individual notifications with priority routing:
+   - High priority (current org): fetch single entity + patch into list caches
+   - Low priority (other orgs): mark stale, refetch on next access
+
 Offline mutations are queued with stx metadata and squashed per entity until connectivity returns.
 
 For full details on CDC, the realtime pipeline, stx transactions, offline mutations, and context counters, see [SYNC_ENGINE.md](./SYNC_ENGINE.md).
@@ -126,9 +144,9 @@ React Query (TanStack Query) is the central data layer on the frontend (`fronten
 
 ### Cache persistence
 
-The React Query cache is persisted to IndexedDB via Dexie with two modes:
-- **Offline mode** (`offlineAccess=true`): shared key, survives browser restart for full offline capability.
-- **Session mode** (`offlineAccess=false`): per-tab session key, survives refresh but cleaned up on tab close. Orphaned sessions are garbage-collected on next startup.
+The React Query cache is persisted to IndexedDB via Dexie with two modes controlled by the `offlineAccess` toggle:
+- **Offline mode** (`offlineAccess=true`): shared key, survives browser restart for full offline capability. Sync service eagerly fills cache for all orgs.
+- **Session mode** (`offlineAccess=false`): per-tab session key, survives refresh but cleaned up on tab close. Sync service only resolves staleness for the current org.
 
 Only the leader tab (elected via Web Locks API) persists mutations to prevent cross-tab conflicts. Since `mutationFn` cannot be serialized, entity modules register their defaults via `addMutationRegistrar()` at load time so paused mutations can resume after page reload.
 

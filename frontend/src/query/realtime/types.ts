@@ -41,6 +41,10 @@ export interface CatchupChangeSummary {
   seq: number;
   deletedIds: string[];
   mSeq?: number;
+  /** Per-entityType sequence numbers within an org (e.g. { attachment: 5, page: 12 }) */
+  entitySeqs?: Record<string, number>;
+  /** Deleted entity IDs grouped by entityType for targeted cache removal */
+  deletedByType?: Record<string, string[]>;
 }
 
 /** App stream catchup response (per-org summaries) */

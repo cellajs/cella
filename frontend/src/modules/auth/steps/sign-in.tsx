@@ -31,7 +31,7 @@ type FormValues = z.infer<typeof formSchema>;
 export function SignInStep() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { email, resetSteps, restrictedMode, setStep } = useAuthStore();
+  const { email, resetSteps, restrictedMode, setStep, setSignedIn } = useAuthStore();
 
   const passwordRef = useRef<HTMLInputElement>(null);
 
@@ -59,6 +59,8 @@ export function SignInStep() {
         navigate({ ...navigateInfo, replace: true });
         return;
       }
+
+      setSignedIn(true);
 
       // Go to pending invitation in home if token is provided, otherwise use provided redirect or default path
       const redirectPath = tokenId

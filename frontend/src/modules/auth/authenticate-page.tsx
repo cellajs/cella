@@ -6,11 +6,7 @@ import { appConfig } from 'shared';
 import { getAuthHealth } from '~/api.gen';
 import { OAuthProviders } from '~/modules/auth/oauth-providers';
 import { PasskeyStrategy } from '~/modules/auth/passkey-strategy';
-import { CheckEmailStep } from '~/modules/auth/steps/check-email';
-import { InviteOnlyStep } from '~/modules/auth/steps/invite-only';
-import { SignInStep } from '~/modules/auth/steps/sign-in';
-import { SignUpStep } from '~/modules/auth/steps/sign-up';
-import { WaitlistStep } from '~/modules/auth/steps/waitlist';
+import { CheckEmailStep, InviteOnlyStep, SignInStep, SignUpStep, WaitlistStep } from '~/modules/auth/steps';
 import type { AuthStep } from '~/modules/auth/types';
 import { useGetTokenData } from '~/modules/auth/use-get-token-data';
 import { Spinner } from '~/modules/common/spinner';
@@ -43,7 +39,14 @@ export function AuthenticatePage() {
   const { tokenId } = useSearch({ from: '/publicLayout/authLayout/auth/authenticate' });
 
   const { lastUser } = useUserStore();
-  const { step, email, setStep, restrictedMode, setRestrictedMode } = useAuthStore();
+  const { step, email, setStep, restrictedMode, setRestrictedMode, signedIn } = useAuthStore();
+
+  const showPasskey =
+    enabledStrategies.includes('passkey') &&
+    lastUser?.email === email &&
+    !!lastUser.hasPasskey &&
+    !lastUser.mfaRequired &&
+    step === 'signIn';
 
   const { data: tokenData, isLoading } = useGetTokenData('invitation', tokenId, !!tokenId);
 
@@ -78,8 +81,8 @@ export function AuthenticatePage() {
     setStep('signUp', tokenData.email);
   }, [tokenData, lastUser, restrictedMode, step]);
 
-  // Loading invitation token or health check
-  if (isLoading || isHealthLoading) return <Spinner className="h-10 w-10" />;
+  // Loading invitation token or health check, or already signed in (prevents UI flash during route transition)
+  if (isLoading || isHealthLoading || signedIn) return <Spinner className="h-10 w-10" />;
 
   // Render form based on current step
   return (
@@ -100,10 +103,7 @@ export function AuthenticatePage() {
               <span className="text-muted-foreground px-2">{t('common:or')}</span>
             </div>
           )}
-          {enabledStrategies.includes('passkey') &&
-            lastUser?.email === email &&
-            !lastUser.mfaRequired &&
-            step === 'signIn' && <PasskeyStrategy email={email} type="authentication" />}
+          {showPasskey && <PasskeyStrategy email={email} type="authentication" />}
           {enabledStrategies.includes('oauth') && <OAuthProviders authStep={step} />}
         </>
       )}

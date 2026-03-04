@@ -24,7 +24,7 @@ export function StopImpersonation({ isCollapsed }: StopImpersonationProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const { impersonating, setImpersonating, theme } = useUIStore();
+  const { impersonating, setImpersonating } = useUIStore();
 
   const stopImpersonation = async () => {
     await breakImpersonation();
@@ -50,9 +50,8 @@ export function StopImpersonation({ isCollapsed }: StopImpersonationProps) {
         data-collapsed={isCollapsed}
         tooltip={{ children: t('common:stop_impersonation'), hidden: !showTooltip }}
         onClick={stopImpersonation}
-        data-theme={theme}
         className="h-14 ring-inset focus-visible:ring-offset-0 group transition-[width] duration-200 linear
-          hover:bg-background/30 text-primary-foreground data-[theme=none]:text-inherit
+          hover:bg-background/30 text-sidebar-foreground
           w-full data-[collapsed=true]:w-16 justify-center"
       >
         <UserXIcon

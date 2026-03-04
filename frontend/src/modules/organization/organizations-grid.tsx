@@ -1,4 +1,5 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 import { useSearchParams } from '~/hooks/use-search-params';
 import { BaseEntityGrid, EntityGridBar, EntityGridTile } from '~/modules/entities/entity-grid';
 import { organizationsListQueryOptions } from './query';
@@ -9,6 +10,8 @@ interface Props {
   fixedQuery?: Partial<OrgSearch>;
   focusView?: boolean;
   saveDataInSearch?: boolean;
+  /** When true, show only 3 items with a "Show all" button */
+  limitedView?: boolean;
 }
 
 // Optionally set a custom tile
@@ -17,7 +20,10 @@ const tileComponent = EntityGridTile;
 /**
  * Display a grid of organization tiles.
  */
-export function OrganizationsGrid({ fixedQuery, saveDataInSearch, focusView }: Props) {
+export function OrganizationsGrid({ fixedQuery, saveDataInSearch, focusView, limitedView: initialLimitedView }: Props) {
+  const [expanded, setExpanded] = useState(false);
+  const limitedView = initialLimitedView && !expanded;
+
   const { search: baseSearch, setSearch } = useSearchParams({ saveDataInSearch });
 
   const search: OrgSearch = { ...baseSearch, ...(fixedQuery ?? {}) };
@@ -36,14 +42,16 @@ export function OrganizationsGrid({ fixedQuery, saveDataInSearch, focusView }: P
 
   return (
     <div className="flex flex-col gap-4 h-full">
-      <EntityGridBar
-        queryKey={queryOptions.queryKey}
-        searchVars={baseSearch}
-        label={'common:organization'}
-        setSearch={setSearch}
-        isSheet={!focusView}
-        focusView={focusView}
-      />
+      {!limitedView && (
+        <EntityGridBar
+          queryKey={queryOptions.queryKey}
+          searchVars={baseSearch}
+          label={'common:organization'}
+          setSearch={setSearch}
+          isSheet={!focusView}
+          focusView={focusView}
+        />
+      )}
 
       <BaseEntityGrid
         label="common:organization"
@@ -55,6 +63,8 @@ export function OrganizationsGrid({ fixedQuery, saveDataInSearch, focusView }: P
         hasNextPage={hasNextPage}
         fetchNextPage={fetchNextPage}
         isFiltered={isFiltered}
+        limitedView={limitedView}
+        onExpand={() => setExpanded(true)}
       />
     </div>
   );

@@ -129,7 +129,7 @@ export function DocsSidebar({ tags }: DocsSidebarProps) {
         <div className="flex justify-center pb-3">
           <Suspense fallback={<div className="h-7 w-60 rounded-md border border-input bg-background/50" />}>
             <OpenApiJsonActions />
-            <UserTheme buttonClassName="ml-2 h-7 w-8" size={16} />
+            <UserTheme buttonClassName="ml-2 h-7 w-8" />
           </Suspense>
         </div>
       </SidebarGroup>

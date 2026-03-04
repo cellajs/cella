@@ -1,29 +1,22 @@
 import { onlineManager } from '@tanstack/react-query';
 import i18n from 'i18next';
+import { CheckIcon } from 'lucide-react';
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig, type Language } from 'shared';
 import { updateMe } from '~/api.gen';
-import { CountryFlag } from '~/modules/common/country-flag';
+import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { toaster } from '~/modules/common/toaster/service';
 import { Button } from '~/modules/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from '~/modules/ui/dropdown-menu';
 import { useUserStore } from '~/store/user';
-import { cn } from '~/utils/cn';
 
 interface Props {
-  size?: number;
-  align?: 'start' | 'end';
   triggerClassName?: string;
-  contentClassName?: string;
 }
 
-export function UserLanguage({ align = 'end', triggerClassName = '', contentClassName = '' }: Props) {
+export function UserLanguage({ triggerClassName = '' }: Props) {
   const { t } = useTranslation();
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
 
   const { user, updateUser } = useUserStore();
   const language = user?.language || i18n.languages[0];
@@ -32,6 +25,7 @@ export function UserLanguage({ align = 'end', triggerClassName = '', contentClas
     if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
     if (window.Gleap) window.Gleap.setLanguage(lng);
     i18n.changeLanguage(lng);
+    useDropdowner.getState().remove();
 
     if (!user) return;
     updateMe({ body: { language: lng } }).then((res) => {
@@ -41,27 +35,41 @@ export function UserLanguage({ align = 'end', triggerClassName = '', contentClas
 
   if (appConfig.languages.length < 2) return null;
 
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className={triggerClassName} aria-label="Change language">
-          <span className="font-[400]">{language.toUpperCase()}</span>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align={align} className={cn('w-48 p-1', contentClassName)}>
+  const openDropdown = () => {
+    const currentLang = user?.language || i18n.languages[0];
+
+    useDropdowner.getState().create(
+      <div className="flex flex-col">
         {appConfig.languages.map((lang) => (
-          <DropdownMenuCheckboxItem
+          <Button
             key={lang}
-            checked={language === lang}
-            onCheckedChange={() => {
-              changeLanguage(lang);
-            }}
+            variant="ghost"
+            className="w-full justify-between gap-4"
+            onClick={() => changeLanguage(lang)}
           >
-            <CountryFlag countryCode={lang} imgType="png" />
-            <span className="ml-2">{t(`common:${lang}`)}</span>
-          </DropdownMenuCheckboxItem>
+            <span>{t(`common:${lang}`)}</span>
+            <CheckIcon size={16} className={`text-success ${currentLang === lang ? 'visible' : 'invisible'}`} />
+          </Button>
         ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+      </div>,
+      {
+        id: 'user-language',
+        triggerId: 'user-language-trigger',
+        triggerRef,
+      },
+    );
+  };
+
+  return (
+    <Button
+      ref={triggerRef}
+      variant="ghost"
+      size="icon"
+      className={`data-dropdowner-active:bg-accent ${triggerClassName}`}
+      aria-label="Change language"
+      onClick={openDropdown}
+    >
+      <span className="font-normal">{language.toUpperCase()}</span>
+    </Button>
   );
 }

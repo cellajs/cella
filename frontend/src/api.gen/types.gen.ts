@@ -2360,6 +2360,12 @@ export type PostPublicCatchupResponses = {
         seq: number;
         deletedIds: Array<string>;
         mSeq?: number;
+        entitySeqs?: {
+          [key: string]: number;
+        };
+        deletedByType?: {
+          [key: string]: Array<string>;
+        };
       };
     };
     /**
@@ -2466,6 +2472,12 @@ export type PostAppCatchupResponses = {
         seq: number;
         deletedIds: Array<string>;
         mSeq?: number;
+        entitySeqs?: {
+          [key: string]: number;
+        };
+        deletedByType?: {
+          [key: string]: Array<string>;
+        };
       };
     };
     /**

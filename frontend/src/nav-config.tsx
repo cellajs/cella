@@ -33,7 +33,7 @@ export const navItems = [
   { id: 'home', type: 'base', icon: HomeIcon, href: '/home' },
   { id: 'search', type: 'base', icon: SearchIcon, action: startSearchAction },
   { id: 'account', type: 'base', icon: UserIcon, sheet: <AccountSheet />, mirrorOnMobile: true },
-  { id: 'preferences', type: 'footer', icon: Settings2Icon, sheet: <PreferencesSheet /> },
+  { id: 'preferences', type: 'hidden', icon: Settings2Icon, sheet: <PreferencesSheet /> },
 ] as const;
 
 /**

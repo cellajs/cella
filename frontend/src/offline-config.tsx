@@ -1,4 +1,5 @@
 import type { ContextEntityType, EntityType } from 'shared';
+import { attachmentsListQueryOptions } from '~/modules/attachment/query';
 import { membersListQueryOptions } from '~/modules/memberships/query';
 import { organizationsListQueryOptions } from '~/modules/organization/query';
 
@@ -42,33 +43,58 @@ export const getContextEntityTypeToListQueries = () =>
   }) satisfies ContextEntityQueryRegistry;
 
 /**
- * Given an entity ID and type, return an array of query options to prefetch related data.
+ * Given an entity ID (org) and type, return an array of query options for sync.
+ * Pure mapping — no seq checks. Staleness is determined by React Query itself
+ * (catchup marks lists stale, ensureQueryData skips fresh ones).
  *
- * When menu is done and offline access is enabled, this mapping function will execute
- * for each entity type defined in the menu.
+ * @param entityId - The context entity ID (e.g., orgId)
+ * @param entityType - The context entity type (e.g., 'organization')
+ * @param tenantId - Tenant ID for scoped queries
+ * @param includeMembers - Whether to include membership queries (controlled by offlineAccess)
  */
-export const entityToPrefetchQueries = (
+export const getEntitySyncQueries = (
   entityId: string,
   entityType: EntityType,
   tenantId: string,
-  _organizationId?: string,
+  includeMembers: boolean,
 ) => {
+  const queries: ReturnType<typeof membersListQueryOptions | typeof attachmentsListQueryOptions>[] = [];
+
   switch (entityType) {
-    case 'organization':
-      return [
-        membersListQueryOptions({
-          entityId: entityId,
+    case 'organization': {
+      // Members: only included when offlineAccess is on (eager member caching)
+      if (includeMembers) {
+        queries.push(
+          membersListQueryOptions({
+            entityId: entityId,
+            tenantId: tenantId,
+            orgId: entityId,
+            entityType: entityType,
+            limit: 200,
+          }),
+        );
+      }
+
+      // Attachments: always included — ensureQueryData skips if cache is fresh
+      queries.push(
+        attachmentsListQueryOptions({
           tenantId: tenantId,
           orgId: entityId,
-          entityType: entityType,
-          limit: 200,
         }),
-      ];
+      );
+
+      // Extend with additional product entity types in forks:
+      // queries.push(pagesListQueryOptions({ tenantId, orgId: entityId }));
+
+      break;
+    }
 
     // Extend switch case for app-specific entity types ...
 
     // When no matching entity, return empty array or add default set of queries
     default:
-      return [];
+      break;
   }
+
+  return queries;
 };

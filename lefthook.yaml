@@ -8,6 +8,9 @@ post-merge:
       run: pnpm install --frozen-lockfile || pnpm install
 pre-commit:
   commands:
+    lockfile:
+      glob: 'package.json'
+      run: pnpm install --frozen-lockfile || (echo "Lockfile out of sync — run 'pnpm install' and stage pnpm-lock.yaml" && exit 1)
     biome:
       glob: '*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc}'
       run: pnpm biome check --write --no-errors-on-unmatched --files-ignore-unknown=true {staged_files} && git update-index --again

@@ -5,6 +5,7 @@ import type { ComponentType } from 'react';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { InfiniteLoader } from '~/modules/common/data-table/infinite-loader';
 import { EntityGridSkeleton } from '~/modules/entities/entity-grid';
+import { Button } from '~/modules/ui/button';
 
 type BaseEntityGridProps<TEntity extends { id: string }> = {
   label: string;
@@ -28,6 +29,12 @@ type BaseEntityGridProps<TEntity extends { id: string }> = {
 
   // empty-state logic
   isFiltered: boolean;
+
+  // limited view mode
+  /** When true, only show up to 3 items with a "Show all" button */
+  limitedView?: boolean;
+  /** Callback to expand from limited view to full view */
+  onExpand?: () => void;
 };
 
 /**
@@ -44,6 +51,8 @@ export function BaseEntityGrid<TEntity extends { id: string }>({
   hasNextPage,
   fetchNextPage,
   isFiltered,
+  limitedView,
+  onExpand,
 }: BaseEntityGridProps<TEntity>) {
   const fetchMore = async () => {
     if (!hasNextPage || isLoading || isFetching) return;
@@ -68,20 +77,32 @@ export function BaseEntityGrid<TEntity extends { id: string }>({
     );
   }
 
+  // In limited view mode, show at most 3 items
+  const isLimited = limitedView && entities.length > 3;
+  const visibleEntities = isLimited ? entities.slice(0, 3) : entities;
+
   return (
     <div className="mb-12">
       <div className="grid gap-3 md:gap-6 grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(330px,1fr))]">
-        {entities.map((entity) => (
+        {visibleEntities.map((entity) => (
           <TileComponent key={entity.id} entity={entity} />
         ))}
       </div>
 
-      <InfiniteLoader
-        hasNextPage={!!hasNextPage}
-        isFetching={isFetching}
-        isFetchMoreError={!!error}
-        fetchMore={fetchMore}
-      />
+      {isLimited ? (
+        <div className="flex justify-center mt-4">
+          <Button variant="ghost" onClick={onExpand}>
+            {t('common:show_all')}
+          </Button>
+        </div>
+      ) : (
+        <InfiniteLoader
+          hasNextPage={!!hasNextPage}
+          isFetching={isFetching}
+          isFetchMoreError={!!error}
+          fetchMore={fetchMore}
+        />
+      )}
     </div>
   );
 }

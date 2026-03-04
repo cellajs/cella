@@ -10,7 +10,7 @@ interface SyncNotification {
 }
 
 /** Get the current org ID from the router's matched route context, if user is within an org layout. */
-function getRouteOrgId(): string | null {
+export function getRouteOrgId(): string | null {
   for (const match of router.state.matches) {
     const ctx = match.context;
     if (ctx && 'organization' in ctx && ctx.organization) {

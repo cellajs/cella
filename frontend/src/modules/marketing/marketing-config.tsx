@@ -39,7 +39,7 @@ export const footerSections = [
     title: 'common:documentation',
     hideOnMobile: true,
     links: [
-      { title: 'common:api_docs', href: `${appConfig.backendUrl}/docs` },
+      { title: 'common:api_docs', href: `/docs` },
       { title: 'common:architecture', href: 'https://github.com/cellajs/cella/blob/main/info/ARCHITECTURE.md' },
       { title: 'common:roadmap', href: 'https://github.com/cellajs/cella/blob/main/info/ROADMAP.md' },
     ],

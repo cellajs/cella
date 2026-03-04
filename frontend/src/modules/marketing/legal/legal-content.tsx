@@ -31,7 +31,7 @@ export const LegalContent = () => {
     [],
   );
 
-  const { subject: currentSubject } = useParams({ from: '/legal/$subject' });
+  const { subject: currentSubject } = useParams({ from: '/publicLayout/legal/$subject' });
 
   // Get section IDs for the current subject
   const sectionIds = useMemo(

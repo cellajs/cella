@@ -41,6 +41,9 @@ export const EntityGridBar = ({ queryKey, label, searchVars, setSearch, isSheet,
 
   const isFiltered = !!q;
 
+  // Hide the bar when there are 3 or fewer items and no filters are active
+  if (!isFiltered && (total ?? 0) <= 3) return null;
+
   const onSearch = (searchString: string) => setSearch({ q: searchString });
   const onSortChange = (sort: (typeof entityGridSortOptions)[number]['value']) => setSearch({ sort });
   const onRoleChange = (role?: string) =>

@@ -65,7 +65,7 @@
     "deps:outdated": "pnpm --filter @cellajs/cli cella -- --service audit"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.4",
+    "@biomejs/biome": "^2.4.5",
     "@evilmartians/lefthook": "^2.1.2",
     "@typescript/native-preview": "7.0.0-dev.20260302.1",
     "cross-env": "^10.1.0",
@@ -79,9 +79,9 @@
     "dotenv": "^17.3.1"
   },
   "overrides": {
-    "@types/node": "^24.10.1",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3"
+    "@types/node": "24.10.13",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3"
   },
   "pnpm": {
     "packageExtensions": {
@@ -94,6 +94,15 @@
     "patchedDependencies": {
       "slugify@1.6.6": "patches/slugify@1.6.6.patch",
       "dexie@4.3.0": "patches/dexie@4.3.0.patch"
+    },
+    "overrides": {
+      "esbuild@<=0.24.2": ">=0.25.0",
+      "eslint@<9.26.0": ">=9.26.0",
+      "seroval@<1.4.1": ">=1.4.1",
+      "seroval@<=1.4.0": ">=1.4.1",
+      "minimatch@>=9.0.0 <9.0.7": ">=9.0.7",
+      "minimatch@>=10.0.0 <10.2.3": ">=10.2.3",
+      "serialize-javascript@<=7.0.2": ">=7.0.3"
     }
   }
 }

@@ -170,6 +170,9 @@ export interface RuntimeConfig extends CellaCliConfig {
 
   /** Overwrite drifted files with upstream version (aggressive realignment) */
   hard?: boolean;
+
+  /** Bypass pnpm metadata cache for fresh registry data (audit service) */
+  force?: boolean;
 }
 
 /** File status after analysis */

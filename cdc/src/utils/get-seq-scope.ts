@@ -12,6 +12,8 @@ export const PUBLIC_SEQ_PREFIX = 'public';
 export interface SeqScope {
   contextKey: string;
   column: 'seq' | 'mSeq';
+  /** Product entity type for per-entityType seq tracking within orgs (e.g. 'attachment', 'page') */
+  entityType?: string;
 }
 
 /**
@@ -29,7 +31,8 @@ export function getSeqScope(entry: TableRegistryEntry, row: Record<string, unkno
   // Product entities: track seq
   if (entry.kind === 'entity' && isProductEntity(entry.type)) {
     const contextKey = hasOrgId ? orgId : `${PUBLIC_SEQ_PREFIX}:${entry.type}`;
-    return { contextKey, column: 'seq' };
+    // Include entityType for org-scoped entities so CDC can track per-entityType seq in counts JSONB
+    return { contextKey, column: 'seq', entityType: hasOrgId ? entry.type : undefined };
   }
 
   // Membership resources: track mSeq on the org's contextCounters row

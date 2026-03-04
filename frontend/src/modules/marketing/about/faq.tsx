@@ -14,8 +14,8 @@ export function FAQ() {
 
           return (
             <AccordionItem key={faq.id} value={faq.id}>
-              <AccordionTrigger className="px-3 sm:text-xl text-left">{t(question)}</AccordionTrigger>
-              <AccordionContent className="px-3 pb-8 sm:text-lg font-light">
+              <AccordionTrigger className="px-3 text-xl text-left">{t(question)}</AccordionTrigger>
+              <AccordionContent className="px-3 pb-8 text-lg font-light">
                 <Trans
                   t={t}
                   i18nKey={answer}

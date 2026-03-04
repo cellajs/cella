@@ -255,6 +255,7 @@ type ResizeHandleProps<R, SR> = Pick<HeaderCellProps<R, SR>, 'column' | 'onColum
 
 function ResizeHandle<R, SR>({ column, onColumnResize, onColumnResizeEnd }: ResizeHandleProps<R, SR>) {
   const resizingOffsetRef = useRef<number>(undefined);
+  const initialLeftRef = useRef<number>(undefined);
 
   function onPointerDown(event: React.PointerEvent<HTMLDivElement>) {
     if (event.pointerType === 'mouse' && event.buttons !== 1) {
@@ -267,16 +268,19 @@ function ResizeHandle<R, SR>({ column, onColumnResize, onColumnResizeEnd }: Resi
     const { currentTarget, pointerId } = event;
     currentTarget.setPointerCapture(pointerId);
     const headerCell = currentTarget.parentElement!;
-    const { right } = headerCell.getBoundingClientRect();
+    const { right, left } = headerCell.getBoundingClientRect();
     resizingOffsetRef.current = right - event.clientX;
+    // Capture stable left edge for consistent width calculation during overflow
+    initialLeftRef.current = left;
   }
 
   function onPointerMove(event: React.PointerEvent<HTMLDivElement>) {
     const offset = resizingOffsetRef.current;
-    if (offset === undefined) return;
-    const { width, left } = event.currentTarget.parentElement!.getBoundingClientRect();
-    let newWidth = event.clientX + offset - left;
-    newWidth = clampColumnWidth(newWidth, column);
+    const initialLeft = initialLeftRef.current;
+    if (offset === undefined || initialLeft === undefined) return;
+    const { width } = event.currentTarget.parentElement!.getBoundingClientRect();
+    // Use initial left edge so left-side column shifts don't eat the drag delta
+    const newWidth = event.clientX + offset - initialLeft;
     if (width > 0 && newWidth !== width) {
       onColumnResize(column, newWidth);
     }
@@ -285,6 +289,7 @@ function ResizeHandle<R, SR>({ column, onColumnResize, onColumnResizeEnd }: Resi
   function onLostPointerCapture() {
     onColumnResizeEnd();
     resizingOffsetRef.current = undefined;
+    initialLeftRef.current = undefined;
   }
 
   function onDoubleClick() {
