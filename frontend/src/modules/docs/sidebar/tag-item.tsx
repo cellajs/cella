@@ -9,6 +9,8 @@ type TagItemProps = {
   isActive: boolean;
   activeOperationIndex: number;
   layoutId: string;
+  /** Called on hover to trigger prerendering of this tag's details */
+  onPrerender?: () => void;
 };
 
 const getSearch = (isExpanded: boolean, tagName: string) => ({ operationTag: isExpanded ? undefined : tagName });
@@ -18,7 +20,15 @@ const renderItem = (op: GenOperationSummary, _index: number, isActive: boolean) 
   <OperationItem operation={op} isActive={isActive} />
 );
 
-export function TagItem({ tag, operations, isExpanded, isActive, activeOperationIndex, layoutId }: TagItemProps) {
+export function TagItem({
+  tag,
+  operations,
+  isExpanded,
+  isActive,
+  activeOperationIndex,
+  layoutId,
+  onPrerender,
+}: TagItemProps) {
   return (
     <CollapsibleTagItem
       tag={tag}
@@ -33,6 +43,7 @@ export function TagItem({ tag, operations, isExpanded, isActive, activeOperation
       triggerClassName="text-left"
       renderItem={renderItem}
       itemKey={itemKey}
+      onPrerender={onPrerender}
     />
   );
 }

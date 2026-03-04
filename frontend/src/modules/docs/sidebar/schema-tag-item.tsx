@@ -9,6 +9,8 @@ type SchemaTagItemProps = {
   isActive: boolean;
   activeSchemaIndex: number;
   layoutId: string;
+  /** Called on hover to trigger prerendering of this tag's details */
+  onPrerender?: () => void;
 };
 
 const getSearch = (isExpanded: boolean, tagName: string) => ({
@@ -20,7 +22,15 @@ const renderItem = (schema: GenComponentSchema, _index: number, isActive: boolea
   <SchemaItem schema={schema} isActive={isActive} />
 );
 
-export function SchemaTagItem({ tag, schemas, isExpanded, isActive, activeSchemaIndex, layoutId }: SchemaTagItemProps) {
+export function SchemaTagItem({
+  tag,
+  schemas,
+  isExpanded,
+  isActive,
+  activeSchemaIndex,
+  layoutId,
+  onPrerender,
+}: SchemaTagItemProps) {
   return (
     <CollapsibleTagItem
       tag={tag}
@@ -35,6 +45,7 @@ export function SchemaTagItem({ tag, schemas, isExpanded, isActive, activeSchema
       triggerClassName="justify-start lowercase"
       renderItem={renderItem}
       itemKey={itemKey}
+      onPrerender={onPrerender}
     />
   );
 }

@@ -11,6 +11,7 @@ let observer: IntersectionObserver | null = null;
 let currentSection = '';
 let hashWriteBlockedUntil = 0; // Timestamp until which hash writes are blocked
 let initTime = 0;
+let pendingScrollTarget: string | null = null; // Queued scroll target awaiting DOM element
 
 /** Check if hash writes are currently allowed */
 const canWriteHash = () => Date.now() > hashWriteBlockedUntil && initTime && Date.now() - initTime > 300;
@@ -85,6 +86,17 @@ export const registerSections = (ids: string[]) => {
   }
   rebuild();
 
+  // Resolve pending scroll target if it was just registered
+  if (pendingScrollTarget && sections.has(pendingScrollTarget)) {
+    const target = pendingScrollTarget;
+    pendingScrollTarget = null;
+    requestAnimationFrame(() => {
+      const el = document.getElementById(`${SPY_PREFIX}${target}`);
+      if (el) performScroll(el, target);
+    });
+    return;
+  }
+
   // Scroll to initial hash if present
   const hash = location.hash.slice(1);
   if (hash && sections.has(hash) && !currentSection) {
@@ -110,17 +122,11 @@ export const unregisterSections = (ids: string[]) => {
   }
 };
 
-/** Scroll to section and update hash. Uses smooth scroll if target is within 2 viewport heights. */
-export const scrollToSectionById = (id: string) => {
-  const el = document.getElementById(`${SPY_PREFIX}${id}`);
-  if (!el) return;
-
-  // Smooth scroll only if target is within 2 viewport heights
+/** Scroll to element and update hash/state */
+const performScroll = (el: HTMLElement, id: string) => {
   const distance = Math.abs(el.getBoundingClientRect().top);
   const smooth = distance < window.innerHeight * 2;
 
-  // Block hash writes for duration of scroll + buffer
-  // Smooth scroll can take up to 1-2s depending on distance and browser
   blockHashWrites(smooth ? 3000 : 500);
   currentSection = id;
 
@@ -129,4 +135,18 @@ export const scrollToSectionById = (id: string) => {
   }
 
   el.scrollIntoView({ behavior: smooth ? 'smooth' : 'instant' });
+};
+
+/** Scroll to section and update hash. Uses smooth scroll if target is within 2 viewport heights.
+ *  If element not yet in DOM, queues the scroll — resolved when section registers via useScrollSpy. */
+export const scrollToSectionById = (id: string) => {
+  const el = document.getElementById(`${SPY_PREFIX}${id}`);
+  if (!el) {
+    // Element not in DOM yet — queue for when it registers
+    pendingScrollTarget = id;
+    return;
+  }
+
+  pendingScrollTarget = null;
+  performScroll(el, id);
 };

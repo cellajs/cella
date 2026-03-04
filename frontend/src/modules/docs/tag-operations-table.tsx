@@ -9,6 +9,8 @@ import { getMethodColor } from './helpers/get-method-color';
 interface TagOperationsTableProps {
   operations: GenOperationSummary[];
   tagName: string;
+  /** Called on hover/focus to trigger prerendering of this tag's details */
+  onPrerender?: () => void;
 }
 
 /**
@@ -27,7 +29,7 @@ function useColumns(tagName: string): ColumnOrColumnGroup<GenOperationSummary>[]
       replace: true,
       resetScroll: false,
     }).finally(() => {
-      setTimeout(() => scrollToSection(hash), 50);
+      scrollToSection(hash);
     });
   };
 
@@ -85,24 +87,26 @@ function useColumns(tagName: string): ColumnOrColumnGroup<GenOperationSummary>[]
 /**
  * Simple read-only operations table for displaying operations within a tag section
  */
-export const TagOperationsTable = ({ operations, tagName }: TagOperationsTableProps) => {
+export const TagOperationsTable = ({ operations, tagName, onPrerender }: TagOperationsTableProps) => {
   const columns = useColumns(tagName);
 
   return (
-    <DataTable<GenOperationSummary>
-      className="mb-0"
-      columns={columns.filter((col) => !col.hidden)}
-      rows={operations}
-      hasNextPage={false}
-      rowKeyGetter={(row) => row.hash}
-      isLoading={false}
-      isFetching={false}
-      limit={operations.length}
-      isFiltered={false}
-      rowHeight={36}
-      hideHeader
-      enableVirtualization
-      readOnly
-    />
+    <div onMouseEnter={onPrerender} onFocus={onPrerender}>
+      <DataTable<GenOperationSummary>
+        className="mb-0"
+        columns={columns.filter((col) => !col.hidden)}
+        rows={operations}
+        hasNextPage={false}
+        rowKeyGetter={(row) => row.hash}
+        isLoading={false}
+        isFetching={false}
+        limit={operations.length}
+        isFiltered={false}
+        rowHeight={36}
+        hideHeader
+        enableVirtualization
+        readOnly
+      />
+    </div>
   );
 };

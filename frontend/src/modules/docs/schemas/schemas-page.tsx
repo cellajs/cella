@@ -3,12 +3,14 @@ import { Link, useSearch } from '@tanstack/react-router';
 import { ChevronDownIcon } from 'lucide-react';
 import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
+import { usePrerenderSection, usePrerenderTrigger } from '~/hooks/use-prerender';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
 import { StickyBox } from '~/modules/common/sticky-box';
 import { HashUrlButton } from '~/modules/docs/hash-url-button';
-import { schemasQueryOptions, schemaTagsQueryOptions } from '~/modules/docs/query';
+import { schemasByTagQueryOptions, schemaTagsQueryOptions } from '~/modules/docs/query';
 import { TagSchemasList } from '~/modules/docs/schemas/schema-detail';
+import type { GenComponentSchema, GenSchemaTagSummary } from '~/modules/docs/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import { Collapsible, CollapsibleContent } from '~/modules/ui/collapsible';
 import { cn } from '~/utils/cn';
@@ -23,9 +25,15 @@ function SchemasPage() {
   // Get active schema tag from URL search param (hash)
   const { schemaTag: activeSchemaTag } = useSearch({ from: '/publicLayout/docs/schemas' });
 
-  // Fetch schemas and schema tags via React Query (reduces bundle size)
-  const { data: schemas } = useSuspenseQuery(schemasQueryOptions);
+  // Prerender trigger for hover-intent DOM preparation
+  const { prerender } = usePrerenderTrigger('schemas');
+
+  // Fetch schemas grouped by tag, and schema tags list
+  const { data: schemasByTag } = useSuspenseQuery(schemasByTagQueryOptions);
   const { data: schemaTags } = useSuspenseQuery(schemaTagsQueryOptions);
+
+  // Total schema count derived from schema tags
+  const schemaCount = schemaTags.reduce((sum, t) => sum + t.count, 0);
 
   // Tag section IDs - schema refs are contributed by SchemaDetail when rendered
   const schemaTagIds = schemaTags.map((t) => t.name);
@@ -38,92 +46,111 @@ function SchemasPage() {
       <StickyBox className="z-10 bg-background/60 backdrop-blur-xs" hideWhenOutOfView>
         <div className="flex items-center gap-3 py-4">
           <span className="text-sm text-muted-foreground">
-            {schemas.length} {t('common:schema', { count: schemas.length })}
+            {schemaCount} {t('common:schema', { count: schemaCount })}
           </span>
         </div>
       </StickyBox>
 
       <div className="flex flex-col gap-12 lg:gap-20">
-        {schemaTags.map((tag) => {
-          const tagSchemas = schemas.filter((s) => s.schemaTag === tag.name);
-          const isOpen = activeSchemaTag === tag.name;
-
-          return (
-            <Collapsible key={tag.name} open={isOpen}>
-              <Card id={`spy-${tag.name}`} className="scroll-mt-4 border-0 rounded-b-none">
-                <CardHeader className="group">
-                  <CardTitle className="text-2xl leading-12 gap-2">
-                    {tag.name}
-                    <HashUrlButton id={tag.name} />
-                  </CardTitle>
-                  <CardDescription className="my-2 text-base max-w-4xl">{tag.description}</CardDescription>
-                </CardHeader>
-                <CardContent className="flex flex-col gap-4">
-                  {/* Schema refs list */}
-                  <div className="flex flex-col gap-1">
-                    {tagSchemas.map((schema) => (
-                      <Link
-                        key={schema.name}
-                        to="."
-                        search={(prev) => ({ ...prev, schemaTag: tag.name })}
-                        hash={schema.ref.replace(/^#/, '')}
-                        replace
-                        draggable={false}
-                        resetScroll={false}
-                        className="flex max-w-full min-w-0 items-baseline gap-0.5 font-mono text-sm truncate"
-                        onClick={(e) => {
-                          if (e.metaKey || e.ctrlKey) return;
-                          // Wait for collapsible to open before scrolling
-                          requestAnimationFrame(() => scrollToSectionById(schema.ref.replace(/^#/, '')));
-                        }}
-                      >
-                        <span className="min-w-0 flex-[0_1_auto] truncate">
-                          {schema.ref.split('/').slice(0, -1).join('/')}
-                        </span>
-                        <span className="shrink-0 font-semibold">/{schema.ref.split('/').pop()}</span>
-                      </Link>
-                    ))}
-                  </div>
-
-                  {/* Show details button */}
-                  <Link
-                    to="."
-                    search={(prev) => ({ ...prev, schemaTag: isOpen ? undefined : tag.name })}
-                    hash={isOpen ? undefined : tag.name}
-                    replace
-                    draggable={false}
-                    resetScroll={false}
-                    onClick={() => {
-                      // Wait for collapsible to open before scrolling
-                      if (!isOpen) requestAnimationFrame(() => scrollToSectionById(tag.name));
-                    }}
-                    className={cn(
-                      buttonVariants({ variant: 'ghost', size: 'default' }),
-                      'flex items-center w-fit gap-2 -ml-3',
-                    )}
-                  >
-                    <h4 className="text-sm font-medium">{t('common:schema', { count: 2 })}</h4>
-                    <ChevronDownIcon
-                      className={cn(
-                        'size-4 transition-transform duration-200 opacity-40 group-hover:opacity-70',
-                        isOpen && 'rotate-180',
-                      )}
-                    />
-                  </Link>
-                </CardContent>
-              </Card>
-
-              {/* Schema details list - outside Card so Card height is reasonable for scroll spy */}
-              <CollapsibleContent>
-                <Suspense>
-                  <TagSchemasList schemas={tagSchemas} />
-                </Suspense>
-              </CollapsibleContent>
-            </Collapsible>
-          );
-        })}
+        {schemaTags.map((tag) => (
+          <SchemaTagSection
+            key={tag.name}
+            tag={tag}
+            schemas={schemasByTag[tag.name] || []}
+            isOpen={activeSchemaTag === tag.name}
+            onPrerender={() => prerender(tag.name)}
+          />
+        ))}
       </div>
     </div>
+  );
+}
+
+interface SchemaTagSectionProps {
+  tag: GenSchemaTagSummary;
+  schemas: GenComponentSchema[];
+  isOpen: boolean;
+  onPrerender: () => void;
+}
+
+/**
+ * Single schema tag section with prerender-aware collapsible content.
+ * Extracted as component so usePrerenderSection hook can be called per-tag.
+ */
+function SchemaTagSection({ tag, schemas: tagSchemas, isOpen, onPrerender }: SchemaTagSectionProps) {
+  const { t } = useTranslation();
+  const { shouldMount, style } = usePrerenderSection('schemas', tag.name, isOpen);
+
+  return (
+    <Collapsible open={isOpen}>
+      <Card id={`spy-${tag.name}`} className="scroll-mt-4 border-0 rounded-b-none">
+        <CardHeader className="group">
+          <CardTitle className="text-2xl leading-12 gap-2">
+            {tag.name}
+            <HashUrlButton id={tag.name} />
+          </CardTitle>
+          <CardDescription className="my-2 text-base max-w-4xl">{tag.description}</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          {/* Schema refs list */}
+          <div className="flex flex-col gap-1" onMouseEnter={onPrerender} onFocus={onPrerender}>
+            {tagSchemas.map((schema) => (
+              <Link
+                key={schema.name}
+                to="."
+                search={(prev) => ({ ...prev, schemaTag: tag.name })}
+                hash={schema.ref.replace(/^#/, '')}
+                replace
+                draggable={false}
+                resetScroll={false}
+                className="flex max-w-full min-w-0 items-baseline gap-0.5 font-mono text-sm truncate"
+                onClick={(e) => {
+                  if (e.metaKey || e.ctrlKey) return;
+                  scrollToSectionById(schema.ref.replace(/^#/, ''));
+                }}
+              >
+                <span className="min-w-0 flex-[0_1_auto] truncate">{schema.ref.split('/').slice(0, -1).join('/')}</span>
+                <span className="shrink-0 font-semibold">/{schema.ref.split('/').pop()}</span>
+              </Link>
+            ))}
+          </div>
+
+          {/* Show details button */}
+          <Link
+            to="."
+            search={(prev) => ({ ...prev, schemaTag: isOpen ? undefined : tag.name })}
+            hash={isOpen ? undefined : tag.name}
+            replace
+            draggable={false}
+            resetScroll={false}
+            onMouseEnter={onPrerender}
+            onClick={() => {
+              if (!isOpen) scrollToSectionById(tag.name);
+            }}
+            className={cn(buttonVariants({ variant: 'ghost', size: 'default' }), 'flex items-center w-fit gap-2 -ml-3')}
+          >
+            <h4 className="text-sm font-medium">{t('common:schema', { count: 2 })}</h4>
+            <ChevronDownIcon
+              className={cn(
+                'size-4 transition-transform duration-200 opacity-40 group-hover:opacity-70',
+                isOpen && 'rotate-180',
+              )}
+            />
+          </Link>
+        </CardContent>
+      </Card>
+
+      {/* Schema details list — prerendered with content-visibility: hidden on hover */}
+      {shouldMount && (
+        <CollapsibleContent forceMount>
+          <div style={style}>
+            <Suspense>
+              <TagSchemasList schemas={tagSchemas} />
+            </Suspense>
+          </div>
+        </CollapsibleContent>
+      )}
+    </Collapsible>
   );
 }
 

@@ -42,6 +42,18 @@ export const openApiSpecQueryOptions = queryOptions({
   staleTime: Number.POSITIVE_INFINITY, // Static file, cache indefinitely
 });
 
+/** Group items by key(s). Supports single-key and multi-key (array) extractors. */
+function groupBy<T>(items: T[], keyFn: (item: T) => string | string[]): Record<string, T[]> {
+  const result: Record<string, T[]> = {};
+  for (const item of items) {
+    const keys = keyFn(item);
+    for (const key of Array.isArray(keys) ? keys : [keys]) {
+      (result[key] ??= []).push(item);
+    }
+  }
+  return result;
+}
+
 /**
  * Query options for fetching operations list (reduces bundle size).
  */
@@ -53,6 +65,15 @@ export const operationsQueryOptions = queryOptions({
     return response.json() as Promise<GenOperationSummary[]>;
   },
   staleTime: Number.POSITIVE_INFINITY,
+});
+
+/**
+ * Operations pre-grouped by tag name. Shares cache with operationsQueryOptions.
+ * Uses select to derive grouped data per-observer without extra fetches.
+ */
+export const operationsByTagQueryOptions = queryOptions({
+  ...operationsQueryOptions,
+  select: (ops: GenOperationSummary[]) => groupBy(ops, (op) => op.tags),
 });
 
 /**
@@ -92,6 +113,15 @@ export const schemasQueryOptions = queryOptions({
     return response.json() as Promise<GenComponentSchema[]>;
   },
   staleTime: Number.POSITIVE_INFINITY,
+});
+
+/**
+ * Schemas pre-grouped by schema tag. Shares cache with schemasQueryOptions.
+ * Uses select to derive grouped data per-observer without extra fetches.
+ */
+export const schemasByTagQueryOptions = queryOptions({
+  ...schemasQueryOptions,
+  select: (schemas: GenComponentSchema[]) => groupBy(schemas, (s) => s.schemaTag),
 });
 
 /**

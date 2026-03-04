@@ -30,6 +30,8 @@ type CollapsibleTagItemProps<T> = {
   triggerClassName?: string;
   renderItem: (item: T, index: number, isActive: boolean) => ReactNode;
   itemKey: (item: T) => string;
+  /** Called on hover to trigger prerendering of this tag's details in the page */
+  onPrerender?: () => void;
 };
 
 function CollapsibleTagItemBase<T>({
@@ -45,6 +47,7 @@ function CollapsibleTagItemBase<T>({
   triggerClassName,
   renderItem,
   itemKey,
+  onPrerender,
 }: CollapsibleTagItemProps<T>) {
   const isMobile = useBreakpoints('max', 'sm', false);
   const hash = getHash(tag.name);
@@ -69,6 +72,7 @@ function CollapsibleTagItemBase<T>({
               'group-data-[expanded=true]/tag:opacity-100 group-data-[active=true]/tag:bg-accent',
               triggerClassName,
             )}
+            onMouseEnter={!isExpanded ? onPrerender : undefined}
             onClick={() => {
               requestAnimationFrame(() => scrollToSectionById(hash));
               if (!isMobile) useSheeter.getState().remove('docs-sidebar');
@@ -111,7 +115,8 @@ function collapsibleTagItemEqual<T>(prev: CollapsibleTagItemProps<T>, next: Coll
     prev.isExpanded === next.isExpanded &&
     prev.activeItemIndex === next.activeItemIndex &&
     prev.tag === next.tag &&
-    prev.items === next.items
+    prev.items === next.items &&
+    prev.onPrerender === next.onPrerender
   );
 }
 

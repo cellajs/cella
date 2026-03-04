@@ -149,7 +149,11 @@ export const MenuSheetHeader = ({ searchTerm, setSearchTerm, isSearchActive, set
           <div className="flex items-center gap-2 group/actions">
             {/* Search toggle button - icon animates between search and X */}
             <motion.div animate={{ x: isSearchActive ? 48 : 0 }} transition={{ duration: 0.2 }}>
-              <TooltipButton toolTipContent={isSearchActive ? t('common:cancel') : t('common:search')} side="left">
+              <TooltipButton
+                toolTipContent={isSearchActive ? t('common:cancel') : t('common:search')}
+                side="left"
+                disabled={!hasStarted}
+              >
                 <Button
                   variant="ghost"
                   size="icon"
@@ -194,7 +198,12 @@ export const MenuSheetHeader = ({ searchTerm, setSearchTerm, isSearchActive, set
               transition={{ duration: 0.2 }}
               className={isSearchActive ? 'pointer-events-none' : ''}
             >
-              <TooltipButton toolTipContent={t('common:preferences')} side="right" sideOffset={22}>
+              <TooltipButton
+                toolTipContent={t('common:preferences')}
+                side="right"
+                sideOffset={22}
+                disabled={!hasStarted}
+              >
                 <Button
                   ref={preferencesRef}
                   variant="ghost"
