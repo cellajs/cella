@@ -69,6 +69,12 @@ variable "database_url_direct" {
   sensitive   = true
 }
 
+variable "database_url_cdc" {
+  description = "PostgreSQL direct connection string for CDC worker (Neon direct URL with cdc_role)"
+  type        = string
+  sensitive   = true
+}
+
 # -----------------------------------------------------------------------------
 # Container Configuration - Backend
 # -----------------------------------------------------------------------------
@@ -92,15 +98,15 @@ variable "backend_max_scale" {
 }
 
 variable "backend_memory" {
-  description = "Memory allocation for backend container (MB)"
+  description = "Memory allocation for backend container (MB). Must match Scaleway tier: 128/256/512/1024/2048/3072/4096"
   type        = number
-  default     = 512
+  default     = 1024
 }
 
 variable "backend_cpu" {
-  description = "CPU allocation for backend container (milli-vCPU, e.g., 500 = 0.5 vCPU)"
+  description = "CPU allocation for backend container (milli-vCPU). Must match memory tier: 128=70, 256=140, 512=280, 1024=560, 2048=1120"
   type        = number
-  default     = 500
+  default     = 560
 }
 
 # -----------------------------------------------------------------------------
@@ -114,15 +120,15 @@ variable "cdc_image_tag" {
 }
 
 variable "cdc_memory" {
-  description = "Memory allocation for CDC worker container (MB)"
+  description = "Memory allocation for CDC worker container (MB). Must match Scaleway tier."
   type        = number
-  default     = 256
+  default     = 512
 }
 
 variable "cdc_cpu" {
-  description = "CPU allocation for CDC worker container (milli-vCPU)"
+  description = "CPU allocation for CDC worker container (milli-vCPU). Must match memory tier."
   type        = number
-  default     = 250
+  default     = 280
 }
 
 # -----------------------------------------------------------------------------
@@ -234,4 +240,10 @@ variable "enable_custom_domain" {
   description = "Enable custom domain setup (DNS, Edge Services, Load Balancer). Set to false for initial deployment without domain."
   type        = bool
   default     = false
+}
+
+variable "bucket_suffix" {
+  description = "Suffix to append to bucket names (for recreating locked buckets)"
+  type        = string
+  default     = ""
 }

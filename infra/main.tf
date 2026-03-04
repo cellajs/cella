@@ -43,9 +43,8 @@ locals {
   tags        = ["app:cella", "env:${var.environment}", "managed-by:terraform"]
   name_prefix = "${var.environment}-cella"
 
-  # URLs for the services (will be updated after containers are created)
-  frontend_url = var.enable_custom_domain ? "https://${var.app_domain}" : "https://${local.name_prefix}-frontend.s3-website.${var.region}.scw.cloud"
-  backend_url  = var.enable_custom_domain ? "https://${var.api_domain}" : "https://placeholder.functions.fnc.${var.region}.scw.cloud"
+  # Frontend URL (known before container creation)
+  frontend_url = var.enable_custom_domain ? "https://${var.app_domain}" : "https://${local.name_prefix}-frontend${var.bucket_suffix}.s3-website.${var.region}.scw.cloud"
 }
 
 # =============================================================================
@@ -115,15 +114,25 @@ module "containers" {
   cdc_memory    = var.cdc_memory
   cdc_cpu       = var.cdc_cpu
 
-  # URLs (will use container's own domain if no custom domain)
+  # URLs (backend_url is resolved after container creation for non-custom-domain setups)
   frontend_url = local.frontend_url
-  backend_url  = local.backend_url
+  backend_url  = var.enable_custom_domain ? "https://${var.api_domain}" : ""
 
   # Admin configuration
   admin_email = var.admin_email
 
-  # Secret references (from secrets module)
-  secret_ids = module.secrets.secret_ids
+  # CDC-specific database URL (direct connection with cdc_role for logical replication)
+  database_url_cdc = var.database_url_cdc
+
+  # Actual secret values (Scaleway encrypts these at rest)
+  secrets = {
+    database_url_pooled      = var.database_url
+    database_url_direct      = var.database_url_direct
+    argon_secret             = var.argon_secret
+    cookie_secret            = var.cookie_secret
+    unsubscribe_token_secret = var.unsubscribe_token_secret
+    cdc_ws_secret            = var.cdc_ws_secret
+  }
 
   tags = local.tags
 
@@ -140,7 +149,7 @@ module "storage" {
   name_prefix   = local.name_prefix
   region        = var.region
   project_id    = var.scaleway_project_id
-  bucket_suffix = "-v2" # Suffix to avoid locked buckets from failed deployment
+  bucket_suffix = var.bucket_suffix
   tags          = local.tags
 }
 

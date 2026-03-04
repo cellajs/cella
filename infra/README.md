@@ -117,14 +117,14 @@ Create `secrets.auto.tfvars` (gitignored):
 ```hcl
 # secrets.auto.tfvars
 database_url             = "postgresql://user:pass@host-pooler.neon.tech/db?sslmode=require"
-database_admin_url       = "postgresql://user:pass@host.neon.tech/db?sslmode=require"
-database_cdc_url         = "postgresql://user:pass@host.neon.tech/db?sslmode=require"
+database_url_direct      = "postgresql://user:pass@host.neon.tech/db?sslmode=require"
+database_url_cdc         = "postgresql://cdc_role:pass@host.neon.tech/db?sslmode=require"
 argon_secret             = "your-argon-secret-min-32-chars"
 cookie_secret            = "your-cookie-secret-min-32-chars"
 unsubscribe_token_secret = "your-unsubscribe-secret"
 cdc_ws_secret            = "your-cdc-ws-secret-min-16-chars"
-cdc_internal_secret      = "your-cdc-internal-secret"
 admin_email              = "admin@example.com"
+bucket_suffix            = "-v2"
 ```
 
 ### 4. Deploy infrastructure

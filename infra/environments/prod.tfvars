@@ -11,18 +11,17 @@ dns_zone   = "cellajs.com"
 api_domain = "api.cellajs.com"
 app_domain = "cellajs.com"
 
-# Database (production-grade instance with more resources)
-db_node_type      = "DB-GP-S"
-db_volume_size_gb = 50
+# Database hosted externally on Neon PostgreSQL
+# database_url, database_url_direct, and database_url_cdc are passed via TF_VAR_ environment variables
 
 # Container scaling (always-on for production)
 backend_min_scale = 2 # At least 2 for high availability
 backend_max_scale = 10
 backend_memory    = 1024
-backend_cpu       = 1000
+backend_cpu       = 560
 
 cdc_memory = 512
-cdc_cpu    = 500
+cdc_cpu    = 280
 
 # Features (all features enabled for production)
 enable_waf = true

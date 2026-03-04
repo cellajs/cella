@@ -11,18 +11,17 @@ dns_zone   = "cellajs.com"
 api_domain = "api.staging.cellajs.com"
 app_domain = "staging.cellajs.com"
 
-# Database (small production-grade instance)
-db_node_type      = "DB-GP-XS"
-db_volume_size_gb = 20
+# Database hosted externally on Neon PostgreSQL
+# database_url, database_url_direct, and database_url_cdc are passed via TF_VAR_ environment variables
 
 # Container scaling (always-on minimum for staging)
 backend_min_scale = 1
 backend_max_scale = 5
-backend_memory    = 512
-backend_cpu       = 500
+backend_memory    = 1024
+backend_cpu       = 560
 
-cdc_memory = 256
-cdc_cpu    = 250
+cdc_memory = 512
+cdc_cpu    = 280
 
 # Features (WAF enabled for staging to test)
 enable_waf = true

@@ -24,14 +24,15 @@ enable_custom_domain = false
 # (they contain sensitive credentials and should not be stored in .tfvars)
 
 # Container scaling (scale to zero for dev - cost savings)
-# Note: Scaleway requires memory >= CPU (e.g., 500 mvCPU needs min 500 MB)
+# Note: Scaleway has fixed memory/CPU tiers:
+#   1024 MB = 560 mvCPU, 2048 MB = 1120 mvCPU, 512 MB = 280 mvCPU
 backend_min_scale = 0
 backend_max_scale = 3
 backend_memory    = 1024
-backend_cpu       = 1000
+backend_cpu       = 560
 
 cdc_memory = 512
-cdc_cpu    = 500
+cdc_cpu    = 280
 
 # Features
 enable_waf = false
@@ -39,6 +40,9 @@ enable_waf = false
 # Image tags (use 'latest' for dev)
 backend_image_tag = "latest"
 cdc_image_tag     = "latest"
+
+# Bucket suffix (for recreating locked buckets)
+bucket_suffix = "-v2"
 
 # Admin
 admin_email = "flip@cellajs.com"

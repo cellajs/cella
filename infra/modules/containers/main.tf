@@ -36,8 +36,15 @@ variable "cdc_image_tag" {
   type = string
 }
 
-variable "secret_ids" {
-  type = map(string)
+variable "secrets" {
+  type      = map(string)
+  sensitive = true
+}
+
+variable "database_url_cdc" {
+  description = "Direct database URL for CDC worker (cdc_role, not pooled)"
+  type        = string
+  sensitive   = true
 }
 
 variable "backend_min_scale" {
@@ -52,22 +59,22 @@ variable "backend_max_scale" {
 
 variable "backend_memory" {
   type    = number
-  default = 1024 # Scaleway requires min 1000 MB for 1000 mvCPU
+  default = 1024 # Scaleway tier: 1024 MB
 }
 
 variable "cdc_memory" {
   type    = number
-  default = 512 # Scaleway requires min 500 MB for 500 mvCPU
+  default = 512 # Scaleway tier: 512 MB
 }
 
 variable "backend_cpu" {
   type    = number
-  default = 1000 # 1 vCPU in mvCPU
+  default = 560 # Scaleway tier: 1024 MB = 560 mvCPU
 }
 
 variable "cdc_cpu" {
   type    = number
-  default = 500 # 0.5 vCPU in mvCPU
+  default = 280 # Scaleway tier: 512 MB = 280 mvCPU
 }
 
 variable "frontend_url" {
@@ -127,14 +134,15 @@ resource "scaleway_container" "backend" {
     SYSTEM_ADMIN_IP_ALLOWLIST = "none"
   }
 
-  # Reference secrets from Secret Manager
+  # Scaleway secret_environment_variables stores values encrypted at rest
+  # (these are NOT Secret Manager references - they are the actual secret values)
   secret_environment_variables = {
-    DATABASE_URL        = var.secret_ids.database_url_pooled
-    DATABASE_ADMIN_URL  = var.secret_ids.database_url_direct
-    ARGON_SECRET        = var.secret_ids.argon_secret
-    COOKIE_SECRET       = var.secret_ids.cookie_secret
-    UNSUBSCRIBE_SECRET  = var.secret_ids.unsubscribe_token_secret
-    CDC_INTERNAL_SECRET = var.secret_ids.cdc_ws_secret
+    DATABASE_URL        = var.secrets.database_url_pooled
+    DATABASE_ADMIN_URL  = var.secrets.database_url_direct
+    ARGON_SECRET        = var.secrets.argon_secret
+    COOKIE_SECRET       = var.secrets.cookie_secret
+    UNSUBSCRIBE_SECRET  = var.secrets.unsubscribe_token_secret
+    CDC_INTERNAL_SECRET = var.secrets.cdc_ws_secret
   }
 }
 
@@ -162,15 +170,15 @@ resource "scaleway_container" "cdc" {
     NODE_ENV        = var.env == "prod" ? "production" : var.env == "dev" ? "development" : var.env
     TZ              = "UTC"
     CDC_HEALTH_PORT = "4001"
-    # Backend WebSocket URL for CDC to connect to
-    API_WS_URL = "wss://${replace(var.backend_url, "https://", "")}/internal/cdc"
+    # Use the backend container's actual domain for WebSocket connection
+    API_WS_URL = "wss://${scaleway_container.backend.domain_name}/internal/cdc"
   }
 
-  # Reference secrets from Secret Manager
+  # Scaleway secret_environment_variables stores values encrypted at rest
   # CDC uses direct database URL (not pooled) for logical replication
   secret_environment_variables = {
-    DATABASE_CDC_URL    = var.secret_ids.database_url_direct
-    CDC_INTERNAL_SECRET = var.secret_ids.cdc_ws_secret
+    DATABASE_CDC_URL    = var.database_url_cdc
+    CDC_INTERNAL_SECRET = var.secrets.cdc_ws_secret
   }
 }
 
