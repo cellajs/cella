@@ -1,4 +1,7 @@
-CREATE TYPE "tenant_status" AS ENUM('active', 'suspended', 'archived');--> statement-breakpoint
+DO $$ BEGIN
+  CREATE TYPE "tenant_status" AS ENUM('active', 'suspended', 'archived');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
 CREATE TABLE "activities" (
 	"id" varchar(50),
 	"tenant_id" varchar(24),

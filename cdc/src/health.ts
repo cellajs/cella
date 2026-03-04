@@ -4,7 +4,7 @@ import { secureHeaders } from 'hono/secure-headers';
 import { env } from './env';
 import { cdcErrorHandler } from './lib/error';
 import { replicationState } from './lib/replication-state';
-import { getFreeDiskSpace, getWalBytes } from './lib/resource-monitor';
+import { getWalBytes } from './lib/resource-monitor';
 import { logEvent } from './pino';
 import { getCdcMetrics } from './tracing';
 import { RESOURCE_LIMITS } from './constants';
@@ -20,22 +20,12 @@ interface HealthResponse {
   lastMessageAt: string | null;
   pausedDurationMs: number | null;
   walBytes: number | null;
-  freeDiskBytes: number | null;
 }
 
 const { runtime } = RESOURCE_LIMITS;
 
-async function getHealthStatus(): Promise<HealthStatus> {
+function getHealthStatus(): HealthStatus {
   if (wsClient.wsState === 'open' && replicationState.replicationState === 'active') return 'healthy';
-
-  const walBytes = await getWalBytes();
-  if (walBytes !== null) {
-    if (walBytes > runtime.walShutdownBytes) return 'unhealthy';
-    if (walBytes > runtime.walWarningBytes) return 'degraded';
-  }
-
-  const freeDisk = getFreeDiskSpace();
-  if (freeDisk !== null && freeDisk < runtime.diskUnhealthyBytes) return 'unhealthy';
 
   const pausedAt = replicationState.replicationPausedAt;
   if (pausedAt && Date.now() - pausedAt.getTime() > runtime.pauseUnhealthyMs) return 'unhealthy';
@@ -54,16 +44,15 @@ app.use('*', secureHeaders());
 
 // Health check endpoint
 app.get('/health', async (c) => {
-  const status = await getHealthStatus();
+  const status = getHealthStatus();
   const metrics = getCdcMetrics();
 
   // Calculate paused duration if replication is paused
   const pausedAt = replicationState.replicationPausedAt;
   const pausedDurationMs = pausedAt ? Date.now() - pausedAt.getTime() : null;
   
-  // Get WAL and disk space metrics
+  // Get WAL metrics for observability
   const walBytes = await getWalBytes();
-  const freeDiskBytes = getFreeDiskSpace();
 
   const response: HealthResponse & { metrics: typeof metrics } = {
     status,
@@ -73,7 +62,6 @@ app.get('/health', async (c) => {
     lastMessageAt: wsClient.lastMessageAt?.toISOString() ?? null,
     pausedDurationMs,
     walBytes,
-    freeDiskBytes,
     metrics,
   };
 
