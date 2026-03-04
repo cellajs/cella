@@ -21,8 +21,8 @@ import { zAttachment } from '~/api.gen/zod.gen';
 import {
   baseInfiniteQueryOptions,
   createEntityKeys,
+  createOptimisticEntity,
   findInListCache,
-  getSchemaDefaults,
   invalidateIfLastMutation,
   registerEntityQueryKeys,
   useMutateQueryData,
@@ -31,7 +31,6 @@ import { addMutationRegistrar } from '~/query/mutation-registry';
 import { createStxForCreate, createStxForDelete, createStxForUpdate, squashPendingMutation } from '~/query/offline';
 import { queryClient } from '~/query/query-client';
 import { getCacheToken } from '~/query/realtime';
-import { useUserStore } from '~/store/user';
 
 // Use generated types from api.gen for mutation input shapes
 // Body is array of items with stx embedded, so extract element type without stx
@@ -185,26 +184,7 @@ export const useAttachmentCreateMutation = (tenantId: string, orgId: string) => 
 
       // Build optimistic attachments using schema defaults + input data
       // Note: Attachments already have IDs from Transloadit, so we preserve them
-      const schemaDefaults = getSchemaDefaults(zAttachment);
-      const user = useUserStore.getState().user;
-      const createdByUser = user
-        ? {
-            id: user.id,
-            name: user.name,
-            slug: user.slug,
-            thumbnailUrl: user.thumbnailUrl,
-            email: user.email,
-            entityType: 'user' as const,
-          }
-        : null;
-      const optimisticAttachments = newAttachments.map((att) => ({
-        ...schemaDefaults,
-        ...att,
-        createdAt: new Date().toISOString(),
-        createdBy: createdByUser,
-        modifiedAt: null,
-        modifiedBy: null,
-      })) as unknown as Attachment[];
+      const optimisticAttachments = newAttachments.map((att) => createOptimisticEntity(zAttachment, att));
 
       // Insert optimistic entities into list cache for instant UI update
       mutateCache.create(optimisticAttachments);

@@ -24,24 +24,27 @@ export async function fetchUserCatchupSummary(
 
   const orgIdArray = Array.from(orgIds);
 
-  // Step 1: Get current seq + mSeq from contextCountersTable (fast PK lookup)
+  // Step 1: Get current seq + mSeq + counts from contextCountersTable (fast PK lookup)
   const counterRows = await db
     .select({
       contextKey: contextCountersTable.contextKey,
       seq: contextCountersTable.seq,
       mSeq: contextCountersTable.mSeq,
+      counts: contextCountersTable.counts,
     })
     .from(contextCountersTable)
     .where(inArray(contextCountersTable.contextKey, orgIdArray));
 
-  const serverCounters = new Map(counterRows.map((r) => [r.contextKey, { seq: r.seq, mSeq: r.mSeq }]));
+  const serverCounters = new Map(
+    counterRows.map((r) => [r.contextKey, { seq: r.seq, mSeq: r.mSeq, counts: r.counts }]),
+  );
 
   // Step 2: Build changes for scopes with seq or mSeq gaps
   const changes: AppCatchupResponse['changes'] = {};
   const changedProductScopes: string[] = [];
 
   for (const orgId of orgIdArray) {
-    const server = serverCounters.get(orgId) ?? { seq: 0, mSeq: 0 };
+    const server = serverCounters.get(orgId) ?? { seq: 0, mSeq: 0, counts: {} };
     const clientSeq = clientSeqs?.[orgId] ?? 0;
     const clientMSeq = clientSeqs?.[`${orgId}:m`] ?? 0;
 
@@ -49,7 +52,22 @@ export async function fetchUserCatchupSummary(
     const mSeqChanged = !clientSeqs || server.mSeq !== clientMSeq;
 
     if (seqChanged || mSeqChanged) {
-      changes[orgId] = { seq: server.seq, mSeq: server.mSeq, deletedIds: [] };
+      // Extract per-entityType seqs from counts JSONB (keys prefixed with 's:')
+      const entitySeqs: Record<string, number> = {};
+      if (server.counts) {
+        for (const [key, value] of Object.entries(server.counts)) {
+          if (key.startsWith('s:') && typeof value === 'number') {
+            entitySeqs[key.slice(2)] = value;
+          }
+        }
+      }
+
+      changes[orgId] = {
+        seq: server.seq,
+        mSeq: server.mSeq,
+        deletedIds: [],
+        entitySeqs: Object.keys(entitySeqs).length > 0 ? entitySeqs : undefined,
+      };
       if (server.seq !== clientSeq) changedProductScopes.push(orgId);
     }
   }
@@ -62,6 +80,7 @@ export async function fetchUserCatchupSummary(
       .select({
         organizationId: activitiesTable.organizationId,
         entityId: activitiesTable.entityId,
+        entityType: activitiesTable.entityType,
       })
       .from(activitiesTable)
       .where(
@@ -77,6 +96,14 @@ export async function fetchUserCatchupSummary(
     for (const row of deletedResults) {
       if (row.entityId && row.organizationId && changes[row.organizationId]) {
         changes[row.organizationId].deletedIds.push(row.entityId);
+
+        // Group deletes by entityType for granular cache removal
+        if (row.entityType) {
+          const scope = changes[row.organizationId];
+          if (!scope.deletedByType) scope.deletedByType = {};
+          if (!scope.deletedByType[row.entityType]) scope.deletedByType[row.entityType] = [];
+          scope.deletedByType[row.entityType].push(row.entityId);
+        }
       }
     }
   }

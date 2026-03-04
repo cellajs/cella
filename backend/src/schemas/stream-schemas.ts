@@ -68,6 +68,8 @@ export const streamCatchupBodySchema = z.object({
  * - deletedIds: exact IDs to remove from cache
  * - seq: current sequence number for product entity changes
  * - mSeq: current sequence number for membership changes (app stream only)
+ * - entitySeqs: per-entityType sequence numbers from counts JSONB (s:{type} keys)
+ * - deletedByType: deleted entity IDs grouped by entityType for targeted cache removal
  *
  * Client logic:
  * - delta = serverSeq - clientSeq
@@ -75,11 +77,14 @@ export const streamCatchupBodySchema = z.object({
  * - if delta > deletedIds.length → creates/updates happened → modifiedAfter list fetch
  * - if delta == 0 → nothing changed
  * - mSeq gap > 0 → membership changes → invalidate member queries + refresh menu
+ * - entitySeqs: per-entityType seq for granular invalidation within an org
  */
 export const catchupChangeSummarySchema = z.object({
   seq: z.number().int(),
   deletedIds: z.array(z.string()),
   mSeq: z.number().int().optional(),
+  entitySeqs: z.record(z.string(), z.number().int()).optional(),
+  deletedByType: z.record(z.string(), z.array(z.string())).optional(),
 });
 
 export type CatchupChangeSummary = z.infer<typeof catchupChangeSummarySchema>;

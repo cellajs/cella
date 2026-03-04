@@ -1,8 +1,8 @@
 import { Link } from '@tanstack/react-router';
-import { ShieldIcon, UserRoundIcon } from 'lucide-react';
+import { BoxIcon, ShieldIcon, UserRoundIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { roles } from 'shared';
+import { appConfig, roles } from 'shared';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
 import { renderSelect } from '~/modules/common/data-table/select-column';
@@ -105,32 +105,47 @@ export const useColumns = (isCompact: boolean) => {
         renderCell: ({ row, tabIndex }) =>
           row.createdBy && <UserCell compactable user={row.createdBy} tabIndex={tabIndex} />,
       },
-      {
-        key: 'memberCount',
-        name: t('common:members'),
+      // Dynamic membership count columns from role config
+      ...roles.all.map((role) => ({
+        key: `${role}Count`,
+        name: t(`common:${role}s`),
         sortable: false,
-        minBreakpoint: 'md',
-        width: 140,
-        renderCell: ({ row }) => (
+        minBreakpoint: 'md' as const,
+        minWidth: 60,
+        maxWidth: 140,
+        renderCell: ({ row }: { row: EnrichedOrganization }) => (
           <>
-            <UserRoundIcon className="mr-2 opacity-50" size={16} />
-            {row.included.counts?.membership.member ?? '-'}
+            {role === 'admin' ? (
+              <ShieldIcon className="mr-2 opacity-50" size={16} />
+            ) : (
+              <UserRoundIcon className="mr-2 opacity-50" size={16} />
+            )}
+            {row.included.counts?.membership[role] ?? '-'}
           </>
         ),
-      },
-      {
-        key: 'adminCount',
-        name: t('common:admins'),
-        sortable: false,
-        minBreakpoint: 'md',
-        width: 140,
-        renderCell: ({ row }) => (
-          <>
-            <ShieldIcon className="mr-2 opacity-50" size={16} />
-            {row.included.counts?.membership.admin ?? '-'}
-          </>
-        ),
-      },
+      })),
+      // Dynamic entity count columns for org-scoped product entities
+      ...appConfig.productEntityTypes
+        .filter(
+          (type) =>
+            !appConfig.parentlessProductEntityTypes.includes(
+              type as (typeof appConfig.parentlessProductEntityTypes)[number],
+            ),
+        )
+        .map((type) => ({
+          key: `${type}Count`,
+          name: t(`common:${type}`, { count: 2 }),
+          sortable: false,
+          minBreakpoint: 'md' as const,
+          minWidth: 60,
+          maxWidth: 140,
+          renderCell: ({ row }: { row: EnrichedOrganization }) => (
+            <>
+              <BoxIcon className="mr-2 opacity-50" size={16} />
+              {row.included.counts?.entities[type] ?? '-'}
+            </>
+          ),
+        })),
     ];
 
     return cols;

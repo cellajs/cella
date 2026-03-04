@@ -148,7 +148,6 @@ export const MenuSheetHeader = ({ searchTerm, setSearchTerm, isSearchActive, set
             {/* UserTheme hidden on mobile, preferences icon shown instead */}
             <div className="max-sm:hidden">
               <UserTheme
-                contentClassName="z-140"
                 buttonClassName={cn(
                   'size-10 transition-opacity',
                   !hasWaited && 'opacity-0!',

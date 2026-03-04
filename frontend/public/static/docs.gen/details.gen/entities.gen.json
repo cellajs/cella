@@ -125,7 +125,21 @@
                     "required": true,
                     "itemType": "string"
                   },
-                  "mSeq": { "type": "integer", "required": false }
+                  "mSeq": { "type": "integer", "required": false },
+                  "entitySeqs": {
+                    "type": "object",
+                    "required": false,
+                    "additionalProperties": { "type": "integer", "required": false }
+                  },
+                  "deletedByType": {
+                    "type": "object",
+                    "required": false,
+                    "additionalProperties": {
+                      "type": "array",
+                      "required": false,
+                      "itemType": "string"
+                    }
+                  }
                 }
               }
             },
@@ -265,7 +279,21 @@
                     "required": true,
                     "itemType": "string"
                   },
-                  "mSeq": { "type": "integer", "required": false }
+                  "mSeq": { "type": "integer", "required": false },
+                  "entitySeqs": {
+                    "type": "object",
+                    "required": false,
+                    "additionalProperties": { "type": "integer", "required": false }
+                  },
+                  "deletedByType": {
+                    "type": "object",
+                    "required": false,
+                    "additionalProperties": {
+                      "type": "array",
+                      "required": false,
+                      "itemType": "string"
+                    }
+                  }
                 }
               }
             },

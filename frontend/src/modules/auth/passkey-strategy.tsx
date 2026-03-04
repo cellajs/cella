@@ -9,7 +9,7 @@ import { getPasskeyVerifyCredential } from '~/modules/auth/passkey-credentials';
 import type { PasskeyCredentialProps } from '~/modules/auth/types';
 import { toaster } from '~/modules/common/toaster/service';
 import { Button } from '~/modules/ui/button';
-
+import { useAuthStore } from '~/store/auth';
 import { useUIStore } from '~/store/ui';
 
 export function PasskeyStrategy({
@@ -36,6 +36,7 @@ export function PasskeyStrategy({
       return await signInWithPasskey({ body });
     },
     onSuccess: () => {
+      useAuthStore.getState().setSignedIn(true);
       navigate({ to: redirectPath, replace: true });
     },
     onError: (error) => {

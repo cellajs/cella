@@ -136,7 +136,7 @@ This architecture uses a persistent WebSocket connection from CDC Worker to API 
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-> **CLIENT**: Prefetch --> SSE/live --> fetch updates pattern with priority-based fetching
+> **CLIENT**: Two-phase sync cycle → SSE/live → priority-based fetch updates
 
 
 ## Stream notification format
@@ -198,15 +198,32 @@ Unauthenticated stream for public entities (e.g., pages).
 The backend returns a summary per scope (orgId for app stream, entityType for public stream):
 ```typescript
 interface CatchupChangeSummary {
-  seq: number;       // Current max seq for this scope
-  deletedIds: string[]; // Entity IDs deleted since cursor
+  seq: number;            // Current max seq for this scope
+  deletedIds: string[];   // Entity IDs deleted since cursor
+  entitySeqs?: Record<string, number>;    // Per-entityType seqs (e.g. { attachment: 42, page: 17 })
+  deletedByType?: Record<string, string[]>; // Deleted IDs grouped by entityType
 }
 ```
 
-The client compares `serverSeq` with its stored `clientSeq`:
-- `delta == 0` → nothing changed, skip
-- `delta == deletedIds.length` → only deletes happened, remove from cache
-- `delta > deletedIds.length` → creates/updates happened → invalidate entity lists
+The client processes catchup in a two-phase sync cycle:
+
+**Phase A (catchup — fast, in connect flow before SSE opens):**
+- Processes deletes by patching both detail and list caches directly (no invalidation, no refetch)
+- Compares per-entityType `serverSeq` with stored `clientSeq`
+- If creates/updates detected for an entity type → marks its list queries as stale (`invalidateEntityList(keys, 'none')`)
+- Updates stored seqs
+- Catchup **never triggers refetches** — it only patches and marks staleness
+
+**Phase B (sync service — background, after SSE reaches `live`):**
+- Runs `ensureQueryData` / `ensureInfiniteQueryData` for entity queries
+- High priority (current org): resolves staleness immediately — React Query sees stale data and refetches
+- Low priority (other orgs): only when `offlineAccess` is on — fills offline cache
+- Without `offlineAccess`, non-current orgs refetch naturally via React Query hooks on navigation (`refetchOnMount: true`)
+
+Fallback chain if Phase B doesn't run (SSE fails):
+- `refetchOnMount: true` → fresh data when user navigates to a view
+- `refetchOnReconnect: true` → refetches stale queries when network returns
+- Pull-to-refresh → `invalidateQueries()` forces full active refetch
 
 
 ## Conflict handling
@@ -282,32 +299,44 @@ Uses per-scope sequence numbers (`seq`) for **list-level gap detection**. Seq is
 **How it works:**
 ```typescript
 // Per-scope sequence tracking (persisted in sync store)
-// App stream: orgId → seq
+// App stream: orgId → seq, orgId:s:entityType → per-entityType seq
 // Public stream: entityType → seq
 const seqs: Record<string, number> = {};
 
-// During catchup:
-const delta = serverSeq - clientSeq;
-if (delta === deletedIds.length) {
-  // Only deletes - already handled by removing from cache
-} else if (delta > deletedIds.length) {
-  // Creates/updates happened - invalidate entity lists
-  invalidateAllEntityLists(refetchType);
-}
-seqs[scope] = serverSeq;
+// During catchup (Phase A) — per-entityType granularity:
+for (const [entityType, serverEntitySeq] of Object.entries(entitySeqs)) {
+  const clientEntitySeq = seqs[`${orgId}:s:${entityType}`] ?? 0;
+  const deletedForType = deletedByType?.[entityType] ?? [];
+  const entityDelta = serverEntitySeq - clientEntitySeq;
 
-// During live SSE:
+  // Patch deletes directly into list caches (no invalidation)
+  for (const entityId of deletedForType) {
+    removeEntityFromCache(entityType, entityId);
+    removeEntityFromListCache(entityId, keys);
+  }
+
+  // Only mark stale if creates/updates happened (delta > deletes)
+  if (entityDelta > deletedForType.length) {
+    invalidateEntityList(keys, 'none'); // Mark stale, no refetch
+  }
+
+  seqs[`${orgId}:s:${entityType}`] = serverEntitySeq;
+}
+
+// During live SSE — tracks both org-level and per-entityType:
 if (seq !== null && organizationId) {
-  seqs[organizationId] = seq; // Track for next catchup comparison
+  seqs[organizationId] = seq;
+  seqs[`${organizationId}:s:${entityType}`] = seq;
 }
 ```
 
 **Key features:**
-- Tracks `seq` per org (app stream) or per entityType (public stream) in persisted sync store
-- Seq scoping: CDC uses `orgId ?? entityType` as scope for atomic counter increment
+- Two-level seq tracking: org-level (`orgId`) for backward compat + per-entityType (`orgId:s:attachment`) for granularity
+- CDC atomically increments both org-level `seq` column and `counts['s:{entityType}']` JSONB key in same upsert
 - Persisted across tabs/reloads via localStorage (sync store)
-- Catchup summary provides seq + deletedIds per scope — no per-event notifications needed
-- Priority routing during catchup: high priority orgs get immediate refetch, low priority get invalidate-only
+- Catchup summary provides entitySeqs + deletedByType per org — enables per-entityType processing
+- Catchup marks staleness only; the sync service and React Query hooks handle actual refetching
+- Fallback to org-level invalidation when backend doesn't provide `entitySeqs` (backward compat)
 
 ### Conflict detection (version)
 
@@ -543,29 +572,97 @@ Subsequent requests → Cache hit → Return cached enriched data
 
 ### Sync priority
 
-When a sync notification arrives, the client determines **fetch priority** based on what the user is currently viewing. This uses `entityConfig.ancestors` from the app config and TanStack Router's current route state.
+Priority routing determines how aggressively the client fetches data, based on the user's current route context. It applies in two places:
 
-| Priority | Condition | Behavior |
-|----------|-----------|----------|
-| **high** | User is viewing a context that scopes this entity | Immediate refetch of active queries |
-| **medium** | User is in same org but different view, or global entity | Debounced refetch (500ms batch) |
-| **low** | User is elsewhere (different org, public page) | Invalidate only, refetch on next access |
+1. **Live SSE handler** — determines whether to fetch + patch (high) or invalidate-only (low)
+2. **Sync service (Phase B)** — processes current org first, other orgs after (or not at all without `offlineAccess`)
+
+| Priority | Condition | Live SSE behavior | Sync service behavior |
+|----------|-----------|--------------------|-----------------------|
+| **high** | User is viewing the org that scopes this entity | Fetch entity + patch list cache | Process immediately, no delay |
+| **low** | User is elsewhere (different org, not in org route) | Mark stale only | Only process if `offlineAccess` (500ms delay) |
 
 **How it works:**
-1. Read `entityConfig[entityType].ancestors` to get scoping rules
-2. Extract current context from router params (org, workspace, project, etc.)
-3. Match notification's `organizationId` against route context
-4. If any ancestor matches → high priority; same org → medium; else → low
+1. Extract current org from TanStack Router's matched route context (`getRouteOrgId()`)
+2. Match notification's `organizationId` against route org
+3. Same org → high priority; else → low priority
 
 **Examples with `attachment: { ancestors: ['organization'] }`:**
-- User on `/$org-abc/attachments` → attachment in org-abc → **high**
-- User on `/$org-abc/members` → attachment in org-abc → **medium**
-- User on `/$org-xyz/...` → attachment in org-abc → **low**
+- User on `/$org-abc/attachments` → attachment in org-abc → **high** (fetch + patch)
+- User on `/$org-abc/members` → attachment in org-abc → **high** (fetch + patch)
+- User on `/$org-xyz/...` → attachment in org-abc → **low** (invalidate only)
 
 **Benefits:**
-- No route annotations required—uses existing `entityConfig`
+- No route annotations required — uses existing entity hierarchy
 - Automatically adapts when new entities are added
 - Works across different apps (cella, raak) with different entity hierarchies
+
+---
+
+## Client sync cycle
+
+The client sync cycle is a two-phase process that runs on every stream connect (including reconnects, leader promotion, and circuit breaker recovery). It replaces a separate catchup + prefetch system with a unified flow that works *with* React Query rather than around it.
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          Client sync cycle                                  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  Stream connect()                                                           │
+│     │                                                                       │
+│     ▼                                                                       │
+│  Phase A: Catchup (synchronous, before SSE opens)                           │
+│     │  1. Fetch catchup summary from backend (seq + deletedIds per org)      │
+│     │  2. Patch deletes into detail + list caches (no invalidation)          │
+│     │  3. Mark changed entity types as stale (refetchType: 'none')           │
+│     │  4. Update stored seqs                                                │
+│     │  5. Handle membership changes                                         │
+│     ▼                                                                       │
+│  SSE opens → offset event → state = 'live'                                  │
+│     │                                                                       │
+│     ▼                                                                       │
+│  Phase B: Sync service (background, triggered by 'live' state)              │
+│     │  1. Wait 1s (avoid server overload)                                   │
+│     │  2. Build menu from cache (context entities + memberships)             │
+│     │  3. High priority: ensureQueryData for current org                     │
+│     │     → Stale queries (from Phase A) refetch; fresh ones are no-ops     │
+│     │  4. Low priority (offlineAccess only): ensureQueryData for other orgs  │
+│     │     → 500ms stagger between orgs                                      │
+│     ▼                                                                       │
+│  Live SSE handles individual notifications going forward                    │
+│                                                                             │
+│  Fallback (if SSE fails):                                                   │
+│     • refetchOnMount: true → data refreshes on navigation                   │
+│     • refetchOnReconnect: true → stale queries refetch on network return    │
+│     • Pull-to-refresh → invalidates all active queries                      │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### offlineAccess role
+
+The `offlineAccess` toggle controls two things:
+
+| Concern | offlineAccess ON | offlineAccess OFF |
+|---------|-----------------|-------------------|
+| Cache persistence | IndexedDB (survives restart) | Session storage (survives refresh) |
+| StaleTime when offline | Infinity | Default (30s) |
+| Product entity sync (current org) | Yes | Yes |
+| Product entity sync (other orgs) | Yes (offline cache fill) | No (refetch on navigation) |
+| Member sync (eager) | Yes | No |
+
+### Key files
+
+| File | Role |
+|------|------|
+| `frontend/src/query/realtime/stream-store.ts` | Stream lifecycle (connect → catchup → SSE) |
+| `frontend/src/query/realtime/catchup-processor.ts` | Phase A: delete patching + staleness marking |
+| `frontend/src/query/realtime/sync-service.ts` | Phase B: priority-based ensureQueryData |
+| `frontend/src/query/realtime/app-stream-handler.ts` | Live SSE: fetch + patch (high) or invalidate (low) |
+| `frontend/src/query/realtime/cache-ops.ts` | Shared cache primitives (remove, invalidate, fetch+patch) |
+| `frontend/src/offline-config.tsx` | Pure mapping: entity type → sync query options |
+| `frontend/src/query/provider.tsx` | Wires sync service to stream 'live' state transitions |
+| `frontend/src/store/sync.ts` | Persisted seqs, cursor, lastSyncAt |
 
 ---
 

@@ -5,7 +5,7 @@ import { AccessibilityPage } from '~/modules/marketing/accessibility-page';
 import { ContactPage } from '~/modules/marketing/contact-page';
 import { legalConfig } from '~/modules/marketing/legal/legal-config';
 import { LegalPage } from '~/modules/marketing/legal/legal-page';
-import { PublicLayoutRoute, RootRoute } from '~/routes/base-routes';
+import { PublicLayoutRoute } from '~/routes/base-routes';
 import appTitle from '~/utils/app-title';
 import { objectEntries } from '~/utils/object';
 
@@ -27,7 +27,7 @@ export const ContactRoute = createRoute({
   path: '/contact',
   staticData: { isAuth: false },
   head: () => ({ meta: [{ title: appTitle('Contact') }] }),
-  getParentRoute: () => RootRoute,
+  getParentRoute: () => PublicLayoutRoute,
   component: () => <ContactPage />,
 });
 
@@ -40,7 +40,7 @@ const defaultLegalSubject = legalSubjects[0];
 export const LegalIndexRoute = createRoute({
   path: '/legal',
   staticData: { isAuth: false },
-  getParentRoute: () => RootRoute,
+  getParentRoute: () => PublicLayoutRoute,
   beforeLoad: () => {
     throw redirect({ to: '/legal/$subject', params: { subject: defaultLegalSubject } });
   },
@@ -59,7 +59,7 @@ export const LegalRoute = createRoute({
   },
   staticData: { isAuth: false },
   head: () => ({ meta: [{ title: appTitle('Legal') }] }),
-  getParentRoute: () => RootRoute,
+  getParentRoute: () => PublicLayoutRoute,
   component: () => <LegalPage />,
 });
 
@@ -70,6 +70,6 @@ export const AccessibilityRoute = createRoute({
   path: '/accessibility',
   staticData: { isAuth: false },
   head: () => ({ meta: [{ title: appTitle('Accessibility') }] }),
-  getParentRoute: () => RootRoute,
+  getParentRoute: () => PublicLayoutRoute,
   component: () => <AccessibilityPage />,
 });

@@ -102,8 +102,10 @@ function handleEntityNotification(
   }
 
   // Track seq for gap detection — scoped per org for app stream
+  // Also track per-entityType seq for granular prefetch/catchup decisions
   if (seq !== null) {
     useSyncStore.getState().setSeq(organizationId, seq);
+    useSyncStore.getState().setSeq(`${organizationId}:s:${entityType}`, seq);
   }
 
   // Determine fetch priority based on entityConfig ancestors and current route

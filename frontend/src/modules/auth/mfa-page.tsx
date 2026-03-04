@@ -6,8 +6,10 @@ import { useTranslation } from 'react-i18next';
 import { signOut } from '~/api.gen';
 import { PasskeyStrategy } from '~/modules/auth/passkey-strategy';
 import { TotpStrategy } from '~/modules/auth/totp-strategy';
+import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/service';
 import { Button } from '~/modules/ui/button';
+import { useAuthStore } from '~/store/auth';
 import { useUserStore } from '~/store/user';
 
 /**
@@ -18,6 +20,7 @@ export function MfaPage() {
   const navigate = useNavigate();
 
   const { lastUser, clearUserStore } = useUserStore();
+  const signedIn = useAuthStore((state) => state.signedIn);
 
   const [isActive, setIsActive] = useState(false);
 
@@ -33,6 +36,9 @@ export function MfaPage() {
       navigate({ to: '/auth/authenticate', replace: true });
     }
   };
+
+  // Show spinner after successful MFA to prevent UI flash during route transition
+  if (signedIn) return <Spinner className="h-10 w-10" />;
 
   // If somehow undefined return to authenticate
   if (!lastUser?.email) {

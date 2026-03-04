@@ -6,9 +6,10 @@ import { mockNanoid, mockPaginated, mockStx, mockTenantId, pastIsoDate, withFake
 
 /**
  * Generates a single BlockNote block.
+ * Uses mockNanoid() for deterministic IDs when called inside withFakerSeed.
  */
 const makeBlock = (type: string, text: string, props: Record<string, unknown> = {}) => ({
-  id: nanoid(),
+  id: mockNanoid(),
   type,
   props: { textColor: 'default', backgroundColor: 'default', textAlignment: 'left', ...props },
   content: [{ type: 'text', text, styles: {} }],

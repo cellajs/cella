@@ -32,11 +32,17 @@ export const useDropdowner = create<DropdownStoreState>((set, get) => ({
   create: (content, data) => {
     const current = get().dropdown;
 
+    // Remove active styling from previous trigger
+    current?.triggerRef.current?.removeAttribute('data-dropdowner-active');
+
     // Close dropdown if it's already open
     if (current?.triggerId === data.triggerId) {
       set({ dropdown: null });
       return data.id;
     }
+
+    // Mark new trigger as active
+    data.triggerRef.current?.setAttribute('data-dropdowner-active', '');
 
     // Blur active element to prevent aria-hidden conflict when modal sets aria-hidden on ancestors
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
@@ -58,6 +64,7 @@ export const useDropdowner = create<DropdownStoreState>((set, get) => ({
   },
 
   remove: () => {
+    get().dropdown?.triggerRef.current?.removeAttribute('data-dropdowner-active');
     set({ dropdown: null });
   },
 

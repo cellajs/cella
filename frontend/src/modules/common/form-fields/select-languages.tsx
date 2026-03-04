@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig, type Language } from 'shared';
 import { useMeasure } from '~/hooks/use-measure';
-import { CountryFlag } from '~/modules/common/country-flag';
 import { Button } from '~/modules/ui/button';
 import { Command, CommandGroup, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
@@ -42,7 +41,6 @@ export const SelectLanguages = ({ value, onChange }: SelectLanguagesProps) => {
             <div className="flex items-center flex-nowrap truncate">
               {value.map((lang, index) => (
                 <span key={lang} className="flex items-center mr-2 flex-nowrap truncate">
-                  <CountryFlag countryCode={lang} imgType="png" className="mr-2 shrink-0" />
                   <span className="truncate">{t(`common:${lang}`)}</span>
                   {index !== value.length - 1 && <span className="ml-1">,</span>}
                 </span>
@@ -69,7 +67,6 @@ export const SelectLanguages = ({ value, onChange }: SelectLanguagesProps) => {
                   className="group rounded-md flex justify-between items-center w-full leading-normal"
                 >
                   <div className="flex items-center flex-nowrap truncate">
-                    <CountryFlag countryCode={lang} imgType="png" className="mr-2 shrink-0" />
                     <span className="truncate">{t(`common:${lang}`)}</span>
                   </div>
                   <CheckIcon

@@ -64,7 +64,7 @@ export const AppFooter = ({ className = '' }) => {
   return (
     <footer className={cn('flex flex-col gap-2', className)}>
       <div className="flex items-center gap-4">
-        <UserLanguage align="start" contentClassName="z-110" />
+        <UserLanguage />
         <div className="mr-1 font-light opacity-20 first:hidden">|</div>
         <Link
           to="/about"
@@ -74,7 +74,7 @@ export const AppFooter = ({ className = '' }) => {
           <Logo height={25} />
         </Link>
         <div className="ml-1 font-light opacity-20">|</div>
-        <UserTheme contentClassName="z-110" />
+        <UserTheme />
       </div>
       <FooterLinks />
     </footer>

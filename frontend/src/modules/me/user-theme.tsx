@@ -1,14 +1,9 @@
-import { BanIcon, CircleIcon, type LucideProps, MoonIcon, SunIcon } from 'lucide-react';
+import { BanIcon, CheckIcon, CircleIcon, type LucideProps, MoonIcon, SunIcon } from 'lucide-react';
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
+import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { Button } from '~/modules/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '~/modules/ui/dropdown-menu';
 import { Switch } from '~/modules/ui/switch';
 import { useUIStore } from '~/store/ui';
 import { cn } from '~/utils/cn';
@@ -17,16 +12,16 @@ import { objectEntries } from '~/utils/object';
 interface UserThemeProps {
   size?: number;
   buttonClassName?: string;
-  contentClassName?: string;
 }
 
 /**
  * Component to switch between light/dark modes and optionally select color themes.
  * Renders a dropdown menu with available themes or a switch if only one theme is available.
  */
-export function UserTheme({ size = 20, buttonClassName = '', contentClassName = '' }: UserThemeProps) {
+export function UserTheme({ size = 20, buttonClassName = '' }: UserThemeProps) {
   const { t } = useTranslation();
-  const { mode, theme, setMode, setTheme } = useUIStore();
+  const { mode, setMode, setTheme } = useUIStore();
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
 
   const modes = [
     { id: 'light', label: t('common:light'), icon: SunIcon },
@@ -35,8 +30,8 @@ export function UserTheme({ size = 20, buttonClassName = '', contentClassName = 
 
   const themes = objectEntries(appConfig.theme.colors) as [keyof typeof appConfig.theme.colors, string][];
 
-  function Icon({ icon: Icon }: { icon: React.ElementType<LucideProps> }) {
-    return <Icon size={size} strokeWidth={appConfig.theme.strokeWidth} />;
+  function Icon({ icon: IconEl }: { icon: React.ElementType<LucideProps> }) {
+    return <IconEl size={size} strokeWidth={appConfig.theme.strokeWidth} />;
   }
 
   // if just one theme, use switch
@@ -59,37 +54,90 @@ export function UserTheme({ size = 20, buttonClassName = '', contentClassName = 
     );
   }
 
-  // Else use a dropdown menu
+  const openDropdown = () => {
+    const { mode: currentMode, theme: currentTheme } = useUIStore.getState();
+
+    const items: {
+      key: string;
+      label: string;
+      icon: React.ElementType<LucideProps>;
+      iconStyle?: React.CSSProperties;
+      iconClass?: string;
+      checked: boolean;
+      onSelect: () => void;
+      separator?: boolean;
+    }[] = [
+      ...modes.map((m) => ({
+        key: m.id,
+        label: m.label,
+        icon: m.icon,
+        checked: currentMode === m.id,
+        onSelect: () => {
+          setMode(m.id);
+          useDropdowner.getState().remove();
+        },
+      })),
+      {
+        key: 'none',
+        label: t('common:without_color'),
+        icon: BanIcon,
+        iconClass: 'opacity-50',
+        checked: currentTheme === 'none',
+        onSelect: () => {
+          setTheme('none');
+          useDropdowner.getState().remove();
+        },
+        separator: true,
+      },
+      ...themes.map(([name, color]) => ({
+        key: name,
+        label: (name as string)[0].toUpperCase() + (name as string).slice(1),
+        icon: CircleIcon,
+        iconStyle: { color },
+        checked: currentTheme === name,
+        onSelect: () => {
+          setTheme(name);
+          useDropdowner.getState().remove();
+        },
+      })),
+    ];
+
+    useDropdowner.getState().create(
+      <div className="flex flex-col gap-1">
+        {items.map((item) => (
+          <div key={item.key}>
+            {item.separator && <div className="border-t my-1" />}
+            <Button variant="ghost" className="w-full justify-between gap-4" onClick={item.onSelect}>
+              <span className="flex items-center gap-2">
+                <span className={item.iconClass} style={item.iconStyle}>
+                  <Icon icon={item.icon} />
+                </span>
+                {item.label}
+              </span>
+              <CheckIcon size={16} className={`text-success ${item.checked ? 'visible' : 'invisible'}`} />
+            </Button>
+          </div>
+        ))}
+      </div>,
+      {
+        id: 'user-theme',
+        triggerId: 'user-theme-trigger',
+        triggerRef,
+      },
+    );
+  };
+
+  // Else use dropdowner (dropdown on desktop, drawer on mobile)
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className={buttonClassName} aria-label="Change theme">
-          <Icon icon={mode === 'light' ? SunIcon : MoonIcon} />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className={cn('w-48 p-1', contentClassName)} align="end">
-        {modes.map((item) => (
-          <DropdownMenuCheckboxItem key={item.id} checked={mode === item.id} onCheckedChange={() => setMode(item.id)}>
-            <Icon icon={item.icon} />
-            <span className="ml-2">{item.label}</span>
-          </DropdownMenuCheckboxItem>
-        ))}
-        <DropdownMenuSeparator />
-        <DropdownMenuCheckboxItem key={'none'} checked={theme === 'none'} onCheckedChange={() => setTheme('none')}>
-          <span className={'opacity-50'}>
-            <Icon icon={BanIcon} />
-          </span>
-          <span className="ml-2">{t('common:without_color')}</span>
-        </DropdownMenuCheckboxItem>
-        {themes.map(([name, color]) => (
-          <DropdownMenuCheckboxItem key={name} checked={theme === name} onCheckedChange={() => setTheme(name)}>
-            <span style={{ color }}>
-              <Icon icon={CircleIcon} />
-            </span>
-            <span className="ml-2">{(name as string)[0].toUpperCase() + (name as string).slice(1)}</span>
-          </DropdownMenuCheckboxItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <Button
+      ref={triggerRef}
+      variant="ghost"
+      size="icon"
+      className={cn('data-dropdowner-active:bg-accent', buttonClassName)}
+      aria-label="Change theme"
+      onClick={openDropdown}
+    >
+      <Icon icon={mode === 'light' ? SunIcon : MoonIcon} />
+    </Button>
   );
 }

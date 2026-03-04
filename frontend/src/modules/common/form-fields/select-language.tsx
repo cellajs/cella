@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig, type Language } from 'shared';
-import { CountryFlag } from '~/modules/common/country-flag';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
 
 interface SelectLanguageProps {
@@ -33,7 +32,6 @@ export const SelectLanguage = ({ value, options, onChange }: SelectLanguageProps
           const disabled = !options.includes(lang);
           return (
             <SelectItem key={lang} value={lang} disabled={disabled} className="truncate">
-              <CountryFlag countryCode={lang} imgType="png" className="mr-2 shrink-0" />
               <span className="truncate">{t(`common:${lang}`)}</span>
             </SelectItem>
           );

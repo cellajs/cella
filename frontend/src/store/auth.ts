@@ -7,6 +7,7 @@ type State = {
   email: string;
   error: ApiError | null;
   restrictedMode: boolean;
+  signedIn: boolean; // True after successful sign-in, prevents UI flash during route transition
 };
 
 type Actions = {
@@ -14,10 +15,11 @@ type Actions = {
   setEmail: (email: string) => void;
   setError: (error: ApiError) => void;
   setRestrictedMode: (restricted: boolean) => void;
+  setSignedIn: (signedIn: boolean) => void;
   resetSteps: () => void;
 };
 
-const initial: State = { step: 'checkEmail', email: '', error: null, restrictedMode: false };
+const initial: State = { step: 'checkEmail', email: '', error: null, restrictedMode: false, signedIn: false };
 
 /**
  * Simple authenticate store for managing email and step state.
@@ -28,5 +30,6 @@ export const useAuthStore = create<State & Actions>((set) => ({
   setEmail: (email) => set(() => ({ email })),
   setError: (error) => set(() => ({ error })),
   setRestrictedMode: (restrictedMode) => set(() => ({ restrictedMode })),
+  setSignedIn: (signedIn) => set(() => ({ signedIn })),
   resetSteps: () => set(() => ({ ...initial })),
 }));
