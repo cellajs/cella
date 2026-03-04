@@ -149,7 +149,7 @@ export const MenuSheetHeader = ({ searchTerm, setSearchTerm, isSearchActive, set
             <div className="max-sm:hidden">
               <UserTheme
                 buttonClassName={cn(
-                  'size-10 transition-opacity',
+                  'h-5 w-10 transition-opacity',
                   !hasWaited && 'opacity-0!',
                   !isSearchActive &&
                     'group-[.keep-nav-open]/body:opacity-0 group-[.keep-nav-open]/body:group-hover/menu:opacity-100 group-[.keep-nav-open]/body:group-focus-within/menu:opacity-100 group-[.keep-nav-open]/body:data-[state=open]:opacity-100',
