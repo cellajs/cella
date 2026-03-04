@@ -39,7 +39,7 @@ export function UserLanguage({ triggerClassName = '' }: Props) {
     const currentLang = user?.language || i18n.languages[0];
 
     useDropdowner.getState().create(
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col">
         {appConfig.languages.map((lang) => (
           <Button
             key={lang}

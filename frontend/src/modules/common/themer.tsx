@@ -9,22 +9,19 @@ function setModeClass(mode: Mode) {
   root.classList.add(mode);
 }
 
-function setThemeColor(passedTheme: Theme) {
-  if (passedTheme === 'none') return root.classList.remove('theme-base');
-  root.classList.add('theme-base');
+function setBrandColor(passedTheme: Theme) {
+  const color = passedTheme === 'none' ? null : appConfig.theme.colors[passedTheme];
 
-  const color = appConfig.theme.colors[passedTheme];
-
-  // Check if exist <style> tag for theme-base rules
-  let themeStyleTag = document.getElementById('theme-style');
-  if (!themeStyleTag) {
-    // Create a <style> tag
-    themeStyleTag = document.createElement('style');
-    themeStyleTag.id = 'theme-style';
-    document.head.appendChild(themeStyleTag);
+  // Check if exist <style> tag for brand color override
+  let brandStyleTag = document.getElementById('brand-style');
+  if (!brandStyleTag) {
+    brandStyleTag = document.createElement('style');
+    brandStyleTag.id = 'brand-style';
+    document.head.appendChild(brandStyleTag);
   }
-  // update CSS rule for .theme-base with hex color (compatible with oklch-based vars)
-  themeStyleTag.innerHTML = `.theme-base { --primary: ${color}; }`;
+
+  // Set --brand CSS var to the selected theme color (or clear it to use CSS default)
+  brandStyleTag.innerHTML = color ? `:root { --brand: ${color}; }` : '';
 }
 
 /**
@@ -36,13 +33,13 @@ export const Themer = () => {
       setModeClass(mode);
     });
     useUIStore.subscribe(({ theme }) => {
-      setThemeColor(theme);
+      setBrandColor(theme);
     });
   }, []);
 
   // Set initial theme and mode
   setModeClass(useUIStore.getState().mode);
-  setThemeColor(useUIStore.getState().theme);
+  setBrandColor(useUIStore.getState().theme);
 
   return null;
 };

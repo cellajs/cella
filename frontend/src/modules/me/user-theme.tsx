@@ -18,7 +18,7 @@ interface UserThemeProps {
  * Component to switch between light/dark modes and optionally select color themes.
  * Renders a dropdown menu with available themes or a switch if only one theme is available.
  */
-export function UserTheme({ size = 20, buttonClassName = '' }: UserThemeProps) {
+export function UserTheme({ buttonClassName = '' }: UserThemeProps) {
   const { t } = useTranslation();
   const { mode, setMode, setTheme } = useUIStore();
   const triggerRef = useRef<HTMLButtonElement | null>(null);
@@ -30,7 +30,7 @@ export function UserTheme({ size = 20, buttonClassName = '' }: UserThemeProps) {
 
   const themes = objectEntries(appConfig.theme.colors) as [keyof typeof appConfig.theme.colors, string][];
 
-  function Icon({ icon: IconEl }: { icon: React.ElementType<LucideProps> }) {
+  function Icon({ icon: IconEl, size = 20 }: { icon: React.ElementType<LucideProps>; size?: number }) {
     return <IconEl size={size} strokeWidth={appConfig.theme.strokeWidth} />;
   }
 
@@ -45,9 +45,9 @@ export function UserTheme({ size = 20, buttonClassName = '' }: UserThemeProps) {
         aria-label={'changeTheme'}
         thumb={
           mode === 'light' ? (
-            <SunIcon size={size} strokeWidth={appConfig.theme.strokeWidth} />
+            <SunIcon size={16} strokeWidth={appConfig.theme.strokeWidth} />
           ) : (
-            <MoonIcon size={size} strokeWidth={appConfig.theme.strokeWidth} />
+            <MoonIcon size={16} strokeWidth={appConfig.theme.strokeWidth} />
           )
         }
       />
@@ -103,14 +103,14 @@ export function UserTheme({ size = 20, buttonClassName = '' }: UserThemeProps) {
     ];
 
     useDropdowner.getState().create(
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col">
         {items.map((item) => (
           <div key={item.key}>
             {item.separator && <div className="border-t my-1" />}
             <Button variant="ghost" className="w-full justify-between gap-4" onClick={item.onSelect}>
               <span className="flex items-center gap-2">
                 <span className={item.iconClass} style={item.iconStyle}>
-                  <Icon icon={item.icon} />
+                  <Icon size={16} icon={item.icon} />
                 </span>
                 {item.label}
               </span>

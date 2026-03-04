@@ -19,7 +19,6 @@ import {
 } from '~/modules/ui/sidebar';
 import { navItems } from '~/nav-config';
 import { useNavigationStore } from '~/store/navigation';
-import { useUIStore } from '~/store/ui';
 
 const DebugDropdown =
   appConfig.mode !== 'production' ? lazy(() => import('~/modules/common/debug-dropdown')) : () => null;
@@ -55,7 +54,6 @@ export function SidebarNav({ triggerNavItem }: SidebarNavProps) {
   const { hasStarted } = useMountedState();
   const isDesktop = useBreakpoints('min', 'xl');
 
-  const theme = useUIStore((state) => state.theme);
   const navSheetOpen = useNavigationStore((state) => state.navSheetOpen);
   const keepNavOpen = useNavigationStore((state) => state.keepNavOpen);
 
@@ -100,12 +98,11 @@ export function SidebarNav({ triggerNavItem }: SidebarNavProps) {
       <Sidebar
         id="sidebar-nav"
         collapsible="none"
-        data-theme={theme}
         data-started={hasStarted}
         data-collapsed={isCollapsed}
         data-overlay={isOverlay}
-        className="fixed inset-y-0 left-0 z-100 w-(--sidebar-w) transition-[width] duration-200 linear border-r-0 bg-primary group-[.focus-view]/body:hidden focus:outline-none
-          data-[theme=none]:bg-secondary data-[started=false]:-translate-x-full"
+        className="fixed inset-y-0 left-0 z-100 w-(--sidebar-w) transition-[width] duration-200 linear border-r-0 group-[.focus-view]/body:hidden focus:outline-none
+          data-[started=false]:-translate-x-full"
       >
         <FocusTarget target="sidebar" />
         <div className="flex flex-row h-full relative">

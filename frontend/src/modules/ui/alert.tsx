@@ -8,6 +8,7 @@ export const alertVariants = cva(
     variants: {
       variant: {
         default: 'bg-card text-card-foreground',
+        brand: 'bg-brand/10 text-brand border-brand/20',
         destructive: 'bg-destructive text-destructive-foreground',
         success: 'bg-success/5 text-success border-success/10',
         plain: 'text-primary bg-background/80 border-primary/10',

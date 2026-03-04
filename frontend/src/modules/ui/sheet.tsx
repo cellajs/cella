@@ -77,7 +77,7 @@ export function SheetContent({
       {showCloseButton && (
         <SheetPrimitive.Close
           data-slot="sheet-close"
-          className="data-[state=open]:bg-secondary absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 disabled:pointer-events-none focus-effect"
+          className="data-[state=open]:bg-secondary absolute p-1 top-4 right-4 rounded-xs opacity-50 transition-opacity hover:opacity-100 focus-visible:opacity-100 disabled:pointer-events-none focus-effect"
         >
           <XIcon className="size-5" />
           <span className="sr-only">Close</span>

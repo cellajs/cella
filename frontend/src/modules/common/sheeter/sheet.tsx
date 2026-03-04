@@ -50,9 +50,9 @@ export const SheeterSheet = ({ sheet }: { sheet: InternalSheet }) => {
   };
 
   const onOpenChange = (open: boolean) => {
-    if (!modal) return;
-    if (open) useSheeter.getState().update(id, { open });
-    else closeSheet();
+    if (open) {
+      if (modal) useSheeter.getState().update(id, { open });
+    } else closeSheet();
   };
 
   const handleEscapeKeyDown = (e: KeyboardEvent) => {
