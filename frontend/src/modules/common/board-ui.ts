@@ -13,7 +13,7 @@ interface BoardUIState {
   activeBoardType: 'project' | 'workspace' | null;
   setActiveBoard: (boardId: string, boardType: 'project' | 'workspace') => void;
 
-  // Board layouts: boardId => (columnId => size percentage)
+  // Board layouts: boardId => (columnId => size in pixels)
   boardLayouts: Record<string, Record<string, number>>;
   updateBoardLayout: (boardId: string, layout: Record<string, number>) => void;
 }
@@ -49,7 +49,7 @@ export const useBoardUIStore = create<BoardUIState>()(
         },
       })),
       {
-        version: 10,
+        version: 12,
         name: `${appConfig.slug}-board-ui`,
         partialize: (state) => ({
           panelCollapseState: state.panelCollapseState,

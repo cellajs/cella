@@ -1,50 +1,46 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { fn } from 'storybook/test';
-import { ResizableGroup, ResizablePanel, ResizableSeparator } from '~/modules/ui/resizable';
+import { ResizablePanel, ResizablePanelGroup, ResizableSeparator } from '~/modules/common/resizable-panels';
 
 /**
  * Accessible resizable panel groups and layouts with keyboard support.
  */
-const meta: Meta<typeof ResizableGroup> = {
-  title: 'ui/ResizableGroup',
-  component: ResizableGroup,
+const meta: Meta<typeof ResizablePanelGroup> = {
+  title: 'ui/ResizablePanelGroup',
+  component: ResizablePanelGroup,
   tags: ['autodocs'],
   argTypes: {
-    onLayoutChange: {
+    onLayoutChanged: {
       control: false,
     },
   },
   args: {
-    onLayoutChange: fn(),
-    className: 'max-w-96 rounded-lg border',
-    orientation: 'horizontal',
+    onLayoutChanged: fn(),
+    id: 'story-group',
+    className: 'max-w-[600px] rounded-lg border',
   },
   render: (args) => (
-    <ResizableGroup {...args}>
-      <ResizablePanel>
+    <ResizablePanelGroup {...args}>
+      <ResizablePanel id="one" minWidth={100}>
         <div className="flex h-50 items-center justify-center p-6">
           <span className="font-semibold">One</span>
         </div>
       </ResizablePanel>
-      <ResizableSeparator />
-      <ResizablePanel>
-        <ResizableGroup orientation="vertical">
-          <ResizablePanel>
-            <div className="flex h-full items-center justify-center p-6">
-              <span className="font-semibold">Two</span>
-            </div>
-          </ResizablePanel>
-          <ResizableSeparator />
-          <ResizablePanel>
-            <div className="flex h-full items-center justify-center p-6">
-              <span className="font-semibold">Three</span>
-            </div>
-          </ResizablePanel>
-        </ResizableGroup>
+      <ResizableSeparator index={0} className="w-px bg-border" />
+      <ResizablePanel id="two" minWidth={100}>
+        <div className="flex h-50 items-center justify-center p-6">
+          <span className="font-semibold">Two</span>
+        </div>
       </ResizablePanel>
-    </ResizableGroup>
+      <ResizableSeparator index={1} className="w-px bg-border" />
+      <ResizablePanel id="three" minWidth={100}>
+        <div className="flex h-50 items-center justify-center p-6">
+          <span className="font-semibold">Three</span>
+        </div>
+      </ResizablePanel>
+    </ResizablePanelGroup>
   ),
-} satisfies Meta<typeof ResizableGroup>;
+} satisfies Meta<typeof ResizablePanelGroup>;
 
 export default meta;
 

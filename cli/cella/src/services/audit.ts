@@ -9,7 +9,7 @@
 import { spawnSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { checkbox, confirm } from '@inquirer/prompts';
+import { checkbox, confirm, Separator } from '@inquirer/prompts';
 import pc from 'picocolors';
 import type { RuntimeConfig } from '../config/types';
 import {
@@ -157,7 +157,7 @@ export async function runAudit(config: RuntimeConfig, options: AuditOptions = {}
 
   // Interactive update prompt (skip in non-interactive/list mode)
   if (enhancedPackages.length > 0 && !config.list) {
-    await promptForUpdates(enhancedPackages, forkPath);
+    await promptForUpdates(enhancedPackages, forkPath, vulnMap.size > 0);
   }
 }
 
@@ -264,12 +264,16 @@ function printOutdatedResults(
 /**
  * Prompt user to select packages to update, then run pnpm up.
  */
-async function promptForUpdates(packages: EnhancedPackageInfo[], forkPath: string): Promise<void> {
-  // Ask if user wants to update packages
+async function promptForUpdates(
+  packages: EnhancedPackageInfo[],
+  forkPath: string,
+  hasVulnerabilities: boolean,
+): Promise<void> {
+  // Ask if user wants to update packages (message adapts when vulnerabilities are present)
   let wantsUpdate: boolean;
   try {
     wantsUpdate = await confirm({
-      message: 'update packages?',
+      message: hasVulnerabilities ? 'update packages and fix vulnerabilities?' : 'update packages?',
       default: true,
     });
   } catch {
@@ -277,8 +281,8 @@ async function promptForUpdates(packages: EnhancedPackageInfo[], forkPath: strin
   }
   if (!wantsUpdate) return;
 
-  // Build choices
-  const choices: Array<{ name: string; value: string; checked: boolean }> = packages.map((pkg) => {
+  // Build choice item for a package
+  const makeChoice = (pkg: EnhancedPackageInfo) => {
     const devTag = pkg.isDev ? pc.dim(' (dev)') : '';
     const version = `${pc.red(pkg.current)} → ${pc.green(pkg.latest)}`;
     const pinnedWarning =
@@ -288,7 +292,38 @@ async function promptForUpdates(packages: EnhancedPackageInfo[], forkPath: strin
       value: pkg.name,
       checked: false,
     };
-  });
+  };
+
+  // Sentinel value for the audit --fix checkbox
+  const AUDIT_FIX_VALUE = '__audit_fix__';
+
+  // Split packages into groups: pinned and regular
+  const pinned = packages.filter((p) => p.pinnedIn.length > 0);
+  const regular = packages.filter((p) => p.pinnedIn.length === 0);
+
+  // Build grouped choices with separators
+  const choices: Array<{ name: string; value: string; checked: boolean } | Separator> = [];
+
+  if (pinned.length > 0) {
+    choices.push(new Separator(pc.yellow(`── pinned (${pinned.length}) ──`)));
+    choices.push(...pinned.map(makeChoice));
+  }
+  if (regular.length > 0) {
+    if (pinned.length > 0) {
+      choices.push(new Separator(pc.dim(`── packages (${regular.length}) ──`)));
+    }
+    choices.push(...regular.map(makeChoice));
+  }
+
+  // Add audit --fix checkbox in its own group when vulnerabilities exist
+  if (hasVulnerabilities) {
+    choices.push(new Separator(pc.red('── vulnerabilities ──')));
+    choices.push({
+      name: `${pc.cyan('pnpm audit --fix')}  ${pc.dim('add overrides for non-vulnerable versions')}`,
+      value: AUDIT_FIX_VALUE,
+      checked: false,
+    });
+  }
 
   let selected: string[];
   try {
@@ -313,13 +348,17 @@ async function promptForUpdates(packages: EnhancedPackageInfo[], forkPath: strin
     return;
   }
 
-  // Handle empty selection
-  if (selected.length === 0) {
+  // Extract audit --fix selection and filter it from package selections
+  const runAuditFix = selected.includes(AUDIT_FIX_VALUE);
+  const selectedPackages = selected.filter((s) => s !== AUDIT_FIX_VALUE);
+
+  // Handle empty selection (no packages and no audit fix)
+  if (selectedPackages.length === 0 && !runAuditFix) {
     return;
   }
 
   // Check if any major updates are selected
-  const selectedMajor = packages.filter((p) => selected.includes(p.name) && p.isMajorUpdate);
+  const selectedMajor = packages.filter((p) => selectedPackages.includes(p.name) && p.isMajorUpdate);
   if (selectedMajor.length > 0) {
     const majorNames = selectedMajor.map((p) => pc.bold(p.name)).join(', ');
     try {
@@ -338,7 +377,7 @@ async function promptForUpdates(packages: EnhancedPackageInfo[], forkPath: strin
 
   // Group selected packages by workspace
   const workspacePackages = new Map<string, { filter: string; packages: string[] }>();
-  for (const pkgName of selected) {
+  for (const pkgName of selectedPackages) {
     const pkg = packages.find((p) => p.name === pkgName);
     if (!pkg) continue;
 
@@ -369,20 +408,39 @@ async function promptForUpdates(packages: EnhancedPackageInfo[], forkPath: strin
     commands.push(`pnpm --filter ${filter} up --latest ${pkgs.join(' ')}`);
   }
 
-  console.info();
+  if (selectedPackages.length > 0) {
+    console.info();
 
-  // Run combined command with inherited stdio so pnpm output streams directly to terminal
-  const combined = commands.join(' && ');
-  const result = spawnSync('sh', ['-c', combined], {
-    cwd: forkPath,
-    stdio: 'inherit',
-  });
+    // Run combined command with inherited stdio so pnpm output streams directly to terminal
+    const combined = commands.join(' && ');
+    const result = spawnSync('sh', ['-c', combined], {
+      cwd: forkPath,
+      stdio: 'inherit',
+    });
 
-  console.info();
-  if (result.status === 0) {
-    console.info(pc.green(`✓ ${selected.length} package${selected.length > 1 ? 's' : ''} updated`));
-  } else {
-    console.error(pc.red(`✗ update failed (exit code ${result.status})`));
+    console.info();
+    if (result.status === 0) {
+      console.info(pc.green(`✓ ${selectedPackages.length} package${selectedPackages.length > 1 ? 's' : ''} updated`));
+    } else {
+      console.error(pc.red(`✗ update failed (exit code ${result.status})`));
+    }
+  }
+
+  // Run pnpm audit --fix if requested
+  if (runAuditFix) {
+    console.info();
+    console.info(pc.dim('running pnpm audit --fix...'));
+    const auditFixResult = spawnSync('pnpm', ['audit', '--fix'], {
+      cwd: forkPath,
+      stdio: 'inherit',
+    });
+
+    console.info();
+    if (auditFixResult.status === 0) {
+      console.info(pc.green('✓ pnpm audit --fix completed'));
+    } else {
+      console.error(pc.red(`✗ pnpm audit --fix failed (exit code ${auditFixResult.status})`));
+    }
   }
 }
 
@@ -396,7 +454,6 @@ function printVulnerabilityResults(auditResult: AuditResult | null, vulnMap: Map
     const highCount = vulnMeta.high || 0;
     const moderateCount = vulnMeta.moderate || 0;
     const lowCount = vulnMeta.low || 0;
-    const totalVulns = criticalCount + highCount + moderateCount + lowCount;
 
     console.info();
     console.info(
@@ -426,13 +483,6 @@ function printVulnerabilityResults(auditResult: AuditResult | null, vulnMap: Map
           `${severityIcon} ${pc.white(pkgName)} ${pc.dim(vuln.vulnerableVersions)}${sourceStr} ${pc.dim('·')} ${title}${cveStr}`,
         );
       }
-    }
-
-    if (totalVulns > 0) {
-      console.info();
-      console.info(
-        pc.dim('run ') + pc.cyan('pnpm audit --fix') + pc.dim(' to add overrides for non-vulnerable versions'),
-      );
     }
   } else {
     console.info();

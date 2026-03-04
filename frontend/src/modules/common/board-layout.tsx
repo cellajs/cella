@@ -1,7 +1,6 @@
-import { Fragment, type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
-import type { PanelImperativeHandle } from 'react-resizable-panels';
+import { Fragment, type ReactNode, useCallback } from 'react';
 import { useBoardUIStore } from '~/modules/common/board-ui';
-import { ResizableGroup, ResizablePanel, ResizableSeparator } from '~/modules/ui/resizable';
+import { ResizablePanel, ResizablePanelGroup, ResizableSeparator } from '~/modules/common/resizable-panels';
 import { cn } from '~/utils/cn';
 
 export const PANEL_MIN_WIDTH = 300;
@@ -11,44 +10,10 @@ export interface BoardLayoutColumn {
   panelId: string;
 }
 
-/** Calculate the minimum width needed for all panels at their minimum sizes. */
-export const calculateMinimumWidth = (columns: BoardLayoutColumn[]): number => {
-  if (!columns.length) return 0;
-  const collapseState = useBoardUIStore.getState().panelCollapseState;
-  return columns.reduce((total, { panelId }) => {
-    return total + (collapseState[panelId] ? COLLAPSED_PANEL_MIN_WIDTH : PANEL_MIN_WIDTH);
-  }, 0);
-};
-
-/** If a panel is X% and must be ≥ Y px, container must be ≥ Y/(X/100) px. */
-export const calculateRequiredWidth = (
-  columns: BoardLayoutColumn[],
-  layout: Record<string, number> | undefined,
-  minimumWidth: number,
-): number => {
-  if (!columns.length || !layout) return minimumWidth;
-
-  const collapseState = useBoardUIStore.getState().panelCollapseState;
-  let requiredWidth = minimumWidth;
-
-  for (const { panelId } of columns) {
-    const percentage = layout[panelId];
-    if (!percentage || percentage <= 0) continue;
-
-    const isCollapsed = collapseState[panelId];
-    const minPixels = isCollapsed ? COLLAPSED_PANEL_MIN_WIDTH : PANEL_MIN_WIDTH;
-
-    const panelRequiredWidth = minPixels / (percentage / 100);
-    requiredWidth = Math.max(requiredWidth, panelRequiredWidth);
-  }
-
-  return requiredWidth;
-};
-
 export interface BoardLayoutProps {
   boardId: string;
   columns: BoardLayoutColumn[];
-  defaultSizes: Record<string, number>;
+  defaultLayout: Record<string, number>;
   onLayoutChanged?: (layout: Record<string, number>) => void;
   children: (panelId: string, index: number) => ReactNode;
   /** When true, columns grow with content instead of being viewport-height constrained */
@@ -60,11 +25,14 @@ export interface BoardLayoutProps {
 
 /**
  * Generic board layout with resizable, collapsible panels.
+ *
+ * Uses pixel-based panel widths. Overflow is handled by the outer
+ * `overflow-x-auto` container — no special overflow logic needed.
  */
 export function BoardLayout({
   boardId,
   columns,
-  defaultSizes,
+  defaultLayout,
   onLayoutChanged,
   children,
   autoHeight,
@@ -72,43 +40,21 @@ export function BoardLayout({
   groupClassName,
   separatorClassName,
 }: BoardLayoutProps) {
-  const panelRefs = useRef<Record<string, PanelImperativeHandle | null>>({});
-  const isDragging = useRef(false);
-  const toggleCollapsedState = useBoardUIStore((state) => state.togglePanelCollapsedState);
-  const [containerMinWidth, setContainerMinWidth] = useState<number>(0);
-
-  // Reset isDragging on pointer release (handles pointer leaving separator)
-  useEffect(() => {
-    const handlePointerUp = () => {
-      isDragging.current = false;
-    };
-    document.addEventListener('pointerup', handlePointerUp);
-    return () => document.removeEventListener('pointerup', handlePointerUp);
-  }, []);
-
-  const minimumWidth = calculateMinimumWidth(columns);
-  const effectiveMinWidth = Math.max(minimumWidth, containerMinWidth);
+  const setCollapseState = useBoardUIStore((state) => state.togglePanelCollapsedState);
 
   const handleLayoutChanged = useCallback(
-    (layout: Record<string, number> | null) => {
-      if (!layout) return;
+    (layout: Record<string, number>) => {
       onLayoutChanged?.(layout);
-      const requiredWidth = calculateRequiredWidth(columns, layout, minimumWidth);
-      setContainerMinWidth(requiredWidth);
     },
-    [columns, minimumWidth, onLayoutChanged],
+    [onLayoutChanged],
   );
 
-  useEffect(() => {
-    setContainerMinWidth(0);
-  }, [columns.length]);
-
-  useEffect(() => {
-    const currentPanelIds = new Set(columns.map(({ panelId }) => panelId));
-    for (const key of Object.keys(panelRefs.current)) {
-      if (!currentPanelIds.has(key)) delete panelRefs.current[key];
-    }
-  }, [columns]);
+  const handleCollapseChange = useCallback(
+    (panelId: string, collapsed: boolean) => {
+      setCollapseState(panelId, collapsed);
+    },
+    [setCollapseState],
+  );
 
   return (
     <div
@@ -118,51 +64,36 @@ export function BoardLayout({
         className,
       )}
     >
-      <div className={autoHeight ? undefined : 'h-[inherit]'} style={{ minWidth: effectiveMinWidth }}>
-        <ResizableGroup
-          orientation="horizontal"
-          className={cn('flex gap-2 group/board', groupClassName)}
-          id={`panels-${boardId}`}
-          onLayoutChanged={handleLayoutChanged}
-        >
-          {columns.map(({ panelId }, i) => (
-            <Fragment key={panelId}>
-              <ResizablePanel
-                panelRef={(el: PanelImperativeHandle | null) => {
-                  panelRefs.current[panelId] = el;
-                }}
-                id={panelId}
-                minSize={PANEL_MIN_WIDTH}
-                collapsedSize={COLLAPSED_PANEL_MIN_WIDTH}
-                defaultSize={defaultSizes[panelId]}
-                collapsible
-                onResize={(panelSize, _id, prevSize) => {
-                  if (prevSize === undefined || !isDragging.current) return;
-                  const isCollapsed = panelSize.inPixels <= COLLAPSED_PANEL_MIN_WIDTH + 5;
-                  const wasCollapsed = prevSize.inPixels <= COLLAPSED_PANEL_MIN_WIDTH + 5;
-                  if (isCollapsed !== wasCollapsed) {
-                    toggleCollapsedState(panelId, isCollapsed);
-                  }
-                }}
-              >
-                {children(panelId, i)}
-              </ResizablePanel>
+      <ResizablePanelGroup
+        id={`panels-${boardId}`}
+        defaultLayout={defaultLayout}
+        onLayoutChanged={handleLayoutChanged}
+        onCollapseChange={handleCollapseChange}
+        className={cn('group/board', !autoHeight && 'h-[inherit]', groupClassName)}
+      >
+        {columns.map(({ panelId }, i) => (
+          <Fragment key={panelId}>
+            <ResizablePanel
+              id={panelId}
+              minWidth={PANEL_MIN_WIDTH}
+              collapsedWidth={COLLAPSED_PANEL_MIN_WIDTH}
+              collapsible
+            >
+              {children(panelId, i)}
+            </ResizablePanel>
 
-              {i < columns.length - 1 && (
-                <ResizableSeparator
-                  onPointerDown={() => {
-                    isDragging.current = true;
-                  }}
-                  className={cn(
-                    'w-1.5 rounded border border-background -mx-2 bg-transparent hover:bg-primary/50 data-[resize-handle-state=drag]:bg-primary transition-all',
-                    separatorClassName,
-                  )}
-                />
-              )}
-            </Fragment>
-          ))}
-        </ResizableGroup>
-      </div>
+            {i < columns.length - 1 && (
+              <ResizableSeparator
+                index={i}
+                className={cn(
+                  'w-1.5 mx-[0.02rem] rounded border border-background bg-transparent hover:bg-primary/50 data-[separator=drag]:bg-primary transition-all',
+                  separatorClassName,
+                )}
+              />
+            )}
+          </Fragment>
+        ))}
+      </ResizablePanelGroup>
     </div>
   );
 }
