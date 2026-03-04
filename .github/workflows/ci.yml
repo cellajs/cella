@@ -128,13 +128,6 @@ jobs:
       - name: Generate OpenAPI spec
         run: pnpm --filter backend generate-openapi
 
-      - name: Configure Postgres for logical replication
-        run: |
-          PGPASSWORD=postgres psql -h localhost -U postgres -d postgres -c "ALTER SYSTEM SET wal_level = 'logical';"
-          PGPASSWORD=postgres psql -h localhost -U postgres -d postgres -c "ALTER SYSTEM SET max_wal_senders = 10;"
-          PGPASSWORD=postgres psql -h localhost -U postgres -d postgres -c "ALTER SYSTEM SET max_replication_slots = 10;"
-          PGPASSWORD=postgres psql -h localhost -U postgres -d postgres -c "SELECT pg_reload_conf();"
-
       - name: Run database migrations
         run: pnpm --filter backend push
         env:

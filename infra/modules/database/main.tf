@@ -39,17 +39,8 @@ resource "scaleway_rdb_instance" "main" {
   volume_type       = "bssd"
   volume_size_in_gb = var.volume_size_gb
 
-  is_ha_cluster     = var.node_type != "DB-DEV-S" # HA for non-dev instances
-  disable_backup    = var.node_type == "DB-DEV-S" # Backups for non-dev only
-
-  # Enable logical replication for CDC
-  settings = {
-    wal_level             = "logical"
-    max_wal_senders       = "10"
-    max_replication_slots = "10"
-  }
-
-  tags = var.tags
+  is_ha_cluster  = var.node_type != "DB-DEV-S" # HA for non-dev instances
+  disable_backup = var.node_type == "DB-DEV-S" # Backups for non-dev only
 }
 
 # -----------------------------------------------------------------------------

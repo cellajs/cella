@@ -12,9 +12,7 @@ import { logEvent } from './pino';
 import { generateActivityId, recordDeadLetter, sendMessageToApi } from './lib/activity-service';
 import { getErrorMessage } from './lib/get-error-message';
 import { replicationState } from './lib/replication-state';
-import { configureWalLimits } from './lib/resource-monitor';
 import { getErrorCode, withRetry } from './lib/retry';
-import { emergencyShutdown, setShutdownHandler, startPauseWarningInterval, stopPauseWarningInterval } from './lib/wal-guard';
 
 import type { ProcessMessageResult } from './process-message';
 import { processMessage } from './process-message';
@@ -247,12 +245,10 @@ function setupBackpressure(): void {
     onConnect: () => {
       logEvent('info', `${LOG_PREFIX} WebSocket connected - resuming replication acknowledgment`);
       replicationState.markActive();
-      stopPauseWarningInterval();
     },
     onDisconnect: () => {
       logEvent('warn', `${LOG_PREFIX} WebSocket disconnected - pausing replication acknowledgment`);
       replicationState.markPaused();
-      startPauseWarningInterval();
     },
   });
 }
@@ -293,8 +289,6 @@ export async function startCdcWorker(): Promise<void> {
     slotName: CDC_SLOT_NAME,
   });
 
-  setShutdownHandler(emergencyShutdown);
-  await configureWalLimits();
   await ensureReplicationSlot();
 
   const replicationUrl = buildReplicationUrl();
@@ -317,7 +311,6 @@ export async function startCdcWorker(): Promise<void> {
  */
 export async function stopCdcWorker(): Promise<void> {
   logEvent('info', `${LOG_PREFIX} CDC worker stopping...`);
-  stopPauseWarningInterval();
   wsClient.close();
   await replicationState.service?.stop();
   replicationState.markStopped();
