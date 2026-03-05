@@ -131,7 +131,7 @@ function TagSection({ tag, operations, isOpen, onPrerender }: TagSectionProps) {
 
       {/* Operation details list — prerendered with content-visibility: hidden on hover */}
       {shouldMount && (
-        <CollapsibleContent forceMount>
+        <CollapsibleContent keepMounted>
           <div style={style}>
             <Suspense>
               <TagOperationsList operations={operations} />

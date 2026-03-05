@@ -1,21 +1,21 @@
-import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { Dialog as DialogPrimitive } from '@base-ui/react/dialog';
 import { XIcon } from 'lucide-react';
 import * as React from 'react';
 import { cn } from '~/utils/cn';
 
-function Dialog({ ...props }: React.ComponentProps<typeof DialogPrimitive.Root>) {
+function Dialog({ ...props }: DialogPrimitive.Root.Props) {
   return <DialogPrimitive.Root data-slot="dialog" {...props} />;
 }
 
-function DialogTrigger({ ...props }: React.ComponentProps<typeof DialogPrimitive.Trigger>) {
+function DialogTrigger({ ...props }: DialogPrimitive.Trigger.Props & React.RefAttributes<HTMLElement>) {
   return <DialogPrimitive.Trigger data-slot="dialog-trigger" {...props} />;
 }
 
-function DialogPortal({ ...props }: React.ComponentProps<typeof DialogPrimitive.Portal>) {
+function DialogPortal({ ...props }: DialogPrimitive.Portal.Props & React.RefAttributes<HTMLDivElement>) {
   return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} />;
 }
 
-function DialogClose({ ...props }: React.ComponentProps<typeof DialogPrimitive.Close>) {
+function DialogClose({ ...props }: DialogPrimitive.Close.Props & React.RefAttributes<HTMLButtonElement>) {
   return <DialogPrimitive.Close data-slot="dialog-close" {...props} />;
 }
 
@@ -23,14 +23,14 @@ function DialogOverlay({
   className,
   disabled,
   ...props
-}: React.ComponentProps<typeof DialogPrimitive.Overlay> & { disabled?: boolean }) {
+}: DialogPrimitive.Backdrop.Props & React.RefAttributes<HTMLDivElement> & { disabled?: boolean }) {
   return (
-    <DialogPrimitive.Overlay
+    <DialogPrimitive.Backdrop
       data-slot="dialog-overlay"
       className={cn(
         disabled
           ? ''
-          : 'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-115 in-[.sheeter-open]:z-125 sm:grid place-items-center overflow-y-auto bg-muted/30 backdrop-blur-xs',
+          : 'data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 fixed inset-0 z-115 in-[.sheeter-open]:z-125 bg-muted/30 backdrop-blur-xs',
         className,
       )}
       {...props}
@@ -43,37 +43,47 @@ function DialogContent({
   children,
   container,
   showCloseButton = true,
+  initialFocus,
+  finalFocus,
   ...props
-}: React.ComponentProps<typeof DialogPrimitive.Content> & {
-  showCloseButton?: boolean;
-  container?: HTMLElement | null;
-}) {
-  const renderContent = () => (
-    <DialogPrimitive.Content
-      data-slot="dialog-content"
-      className={cn(
-        'overflow-x-clip overflow-y-clip bg-background mt-4 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 relative z-116 in-[.sheeter-open]:z-126 grid w-[95vw] gap-4 p-4 shadow-lg duration-200 rounded-lg mx-auto outline-none',
-        className,
-      )}
-      {...props}
-    >
-      {children}
-      {showCloseButton && (
-        <DialogPrimitive.Close
-          data-slot="dialog-close"
-          className="data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute right-4 top-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus-effect disabled:pointer-events-none"
-        >
-          <XIcon className="size-5" />
-          <span className="sr-only">Close</span>
-        </DialogPrimitive.Close>
-      )}
-    </DialogPrimitive.Content>
-  );
-
-  // EDIT: only wrap in Overlay if container is not provided
+}: DialogPrimitive.Popup.Props &
+  React.RefAttributes<HTMLDivElement> & {
+    showCloseButton?: boolean;
+    container?: HTMLElement | null;
+    initialFocus?: DialogPrimitive.Popup.Props['initialFocus'];
+    finalFocus?: DialogPrimitive.Popup.Props['finalFocus'];
+  }) {
   return (
-    <DialogPortal container={container}>
-      {container ? renderContent() : <DialogOverlay> {renderContent()}</DialogOverlay>}
+    <DialogPortal container={container || undefined}>
+      {!container && <DialogOverlay />}
+      <DialogPrimitive.Viewport
+        data-slot="dialog-viewport"
+        className={cn(
+          !container && 'fixed inset-0 z-115 in-[.sheeter-open]:z-125 sm:grid place-items-center overflow-y-auto',
+        )}
+      >
+        <DialogPrimitive.Popup
+          data-slot="dialog-content"
+          initialFocus={initialFocus}
+          finalFocus={finalFocus}
+          className={cn(
+            'overflow-x-clip overflow-y-clip bg-background mt-4 data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 relative z-116 in-[.sheeter-open]:z-126 grid w-[95vw] gap-4 p-4 shadow-lg duration-200 rounded-lg mx-auto outline-none',
+            className,
+          )}
+          {...props}
+        >
+          {children}
+          {showCloseButton && (
+            <DialogPrimitive.Close
+              data-slot="dialog-close"
+              className="data-open:bg-accent data-open:text-muted-foreground absolute right-4 top-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus-effect disabled:pointer-events-none"
+            >
+              <XIcon className="size-5" />
+              <span className="sr-only">Close</span>
+            </DialogPrimitive.Close>
+          )}
+        </DialogPrimitive.Popup>
+      </DialogPrimitive.Viewport>
     </DialogPortal>
   );
 }
@@ -98,7 +108,7 @@ function DialogFooter({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
-function DialogTitle({ className, ...props }: React.ComponentProps<typeof DialogPrimitive.Title>) {
+function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props & React.RefAttributes<HTMLParagraphElement>) {
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
@@ -108,7 +118,10 @@ function DialogTitle({ className, ...props }: React.ComponentProps<typeof Dialog
   );
 }
 
-function DialogDescription({ className, ...props }: React.ComponentProps<typeof DialogPrimitive.Description>) {
+function DialogDescription({
+  className,
+  ...props
+}: DialogPrimitive.Description.Props & React.RefAttributes<HTMLParagraphElement>) {
   return (
     <DialogPrimitive.Description
       data-slot="dialog-description"

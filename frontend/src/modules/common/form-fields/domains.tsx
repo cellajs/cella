@@ -8,6 +8,10 @@ import { TagInput } from '~/modules/ui/tag-input';
 type DomainsFieldProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TFieldValues> & {
   description?: string;
 };
+
+/**
+ * Form field for entering and validating a list of domain names using tag input.
+ */
 export const DomainsFormField = <TFieldValues extends FieldValues>({
   control,
   name,

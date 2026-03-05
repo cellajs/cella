@@ -104,7 +104,7 @@ export const TagOperationsTable = ({ operations, tagName, onPrerender }: TagOper
         isFiltered={false}
         rowHeight={36}
         hideHeader
-        enableVirtualization
+        enableVirtualization={false}
         readOnly
       />
     </div>

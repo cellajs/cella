@@ -76,6 +76,9 @@ export const MenuSheet = () => {
 
     // Auto-scroll for the nav sheet's scroll area viewport (the actual scrollable element)
     const sheetEl = document.getElementById('nav-sheet');
+    // TODO this wont work anymore with radix gone, is this still used code?
+    // Can we replace it with the native scroll in sheet from baseUI if it has auto-scroll support for dragging near edges?
+    // Or can we embed autoScrollForElements into sheet and drawer and dialog directly?
     const viewportEl = sheetEl?.querySelector<HTMLElement>('[data-radix-scroll-area-viewport]');
     if (viewportEl) {
       cleanups.push(

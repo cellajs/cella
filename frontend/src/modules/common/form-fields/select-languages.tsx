@@ -12,6 +12,9 @@ interface SelectLanguagesProps {
   onChange: (value: Language[]) => void;
 }
 
+/**
+ * Multi-select popover for choosing one or more languages from the configured app languages.
+ */
 export const SelectLanguages = ({ value, onChange }: SelectLanguagesProps) => {
   const { t } = useTranslation();
   const { ref, bounds } = useMeasure<HTMLButtonElement>();
@@ -28,31 +31,33 @@ export const SelectLanguages = ({ value, onChange }: SelectLanguagesProps) => {
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          disabled={appConfig.languages.length < 2}
-          ref={ref}
-          variant="input"
-          aria-label="Select language"
-          className="w-full justify-between font-normal"
-          aria-expanded={open}
-        >
-          {value.length > 0 ? (
-            <div className="flex items-center flex-nowrap truncate">
-              {value.map((lang, index) => (
-                <span key={lang} className="flex items-center mr-2 flex-nowrap truncate">
-                  <span className="truncate">{t(`common:${lang}`)}</span>
-                  {index !== value.length - 1 && <span className="ml-1">,</span>}
-                </span>
-              ))}
-            </div>
-          ) : (
-            t('common:placeholder.select_languages')
-          )}
-          <ChevronDownIcon
-            className={`ml-2 size-4 shrink-0 opacity-50 transition-transform ${open ? '-rotate-90' : 'rotate-0'}`}
+      <PopoverTrigger
+        render={
+          <Button
+            disabled={appConfig.languages.length < 2}
+            ref={ref}
+            variant="input"
+            aria-label="Select language"
+            className="w-full justify-between font-normal"
+            aria-expanded={open}
           />
-        </Button>
+        }
+      >
+        {value.length > 0 ? (
+          <div className="flex items-center flex-nowrap truncate">
+            {value.map((lang, index) => (
+              <span key={lang} className="flex items-center mr-2 flex-nowrap truncate">
+                <span className="truncate">{t(`common:${lang}`)}</span>
+                {index !== value.length - 1 && <span className="ml-1">,</span>}
+              </span>
+            ))}
+          </div>
+        ) : (
+          t('common:placeholder.select_languages')
+        )}
+        <ChevronDownIcon
+          className={`ml-2 size-4 shrink-0 opacity-50 transition-transform ${open ? '-rotate-90' : 'rotate-0'}`}
+        />
       </PopoverTrigger>
 
       <PopoverContent className="p-0 rounded-lg" style={{ width: `${bounds.width}px` }} align="start" sideOffset={4}>

@@ -46,6 +46,7 @@ frontend/vite/.generate-client.lock
 .wrangler
 frontend/stats.html
 .junie
+.claude
 
 # Cella
 *storybook.log

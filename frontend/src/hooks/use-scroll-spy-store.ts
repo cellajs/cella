@@ -13,6 +13,23 @@ let hashWriteBlockedUntil = 0; // Timestamp until which hash writes are blocked
 let initTime = 0;
 let pendingScrollTarget: string | null = null; // Queued scroll target awaiting DOM element
 
+// Subscribers for useSyncExternalStore
+const listeners = new Set<() => void>();
+const notify = () => {
+  for (const fn of listeners) fn();
+};
+
+/** Subscribe to currentSection changes (useSyncExternalStore contract). */
+export const subscribeSection = (listener: () => void) => {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+};
+
+/** Get current section snapshot (useSyncExternalStore contract). */
+export const getSection = () => currentSection;
+
 /** Check if hash writes are currently allowed */
 const canWriteHash = () => Date.now() > hashWriteBlockedUntil && initTime && Date.now() - initTime > 300;
 
@@ -58,11 +75,15 @@ const rebuild = () => {
         sections.set(e.target.id.replace(SPY_PREFIX, ''), e.intersectionRatio);
       }
 
+      // Skip section updates during programmatic scroll to prevent indicator jank
+      if (isProgrammaticScroll()) return;
+
       const best = getBestSection();
       if (best && best !== currentSection) {
         currentSection = best;
+        notify();
 
-        // Write hash (skip during programmatic scroll or initial load delay)
+        // Write hash (skip during initial load delay)
         if (canWriteHash() && location.hash !== `#${best}`) {
           history.replaceState(null, '', `#${best}`);
         }
@@ -101,6 +122,7 @@ export const registerSections = (ids: string[]) => {
   const hash = location.hash.slice(1);
   if (hash && sections.has(hash) && !currentSection) {
     currentSection = hash;
+    notify();
     blockHashWrites(1000); // Block writes during initial scroll
     requestAnimationFrame(() => {
       document.getElementById(`${SPY_PREFIX}${hash}`)?.scrollIntoView({ behavior: 'instant' });
@@ -115,7 +137,10 @@ export const unregisterSections = (ids: string[]) => {
   if (!sections.size) {
     observer?.disconnect();
     observer = null;
-    currentSection = '';
+    if (currentSection !== '') {
+      currentSection = '';
+      notify();
+    }
     initTime = 0;
   } else {
     rebuild();
@@ -128,7 +153,10 @@ const performScroll = (el: HTMLElement, id: string) => {
   const smooth = distance < window.innerHeight * 2;
 
   blockHashWrites(smooth ? 3000 : 500);
-  currentSection = id;
+  if (currentSection !== id) {
+    currentSection = id;
+    notify();
+  }
 
   if (location.hash !== `#${id}`) {
     history.replaceState(null, '', `#${id}`);

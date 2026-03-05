@@ -47,7 +47,7 @@ function ExamplesAccordion({ responses, schemas, operationId, zodIndex, typesInd
   }
 
   // Default to first response with example expanded
-  const defaultValue = String(responsesWithExamples[0].status);
+  const defaultValue = [String(responsesWithExamples[0].status)];
 
   return (
     <Accordion type="single" className="w-full" collapsible defaultValue={defaultValue}>
@@ -55,14 +55,14 @@ function ExamplesAccordion({ responses, schemas, operationId, zodIndex, typesInd
         const schema = resolveResponseSchema(response, schemas);
         return (
           <AccordionItem key={response.status} value={String(response.status)}>
-            <AccordionTrigger className="py-2 group opacity-80 hover:opacity-100 group-data-[state=open]:opacity-100">
+            <AccordionTrigger className="py-2 group opacity-80 hover:opacity-100 group-data-[open]:opacity-100">
               <div className="flex items-center justify-between w-full pr-2 gap-3">
                 <div
-                  className={`font-mono text-sm font-semibold px-2 py-0.5 rounded group-data-[state=open]:opacity-100 ${getStatusColor(response.status)}`}
+                  className={`font-mono text-sm font-semibold px-2 py-0.5 rounded group-data-[open]:opacity-100 ${getStatusColor(response.status)}`}
                 >
                   {response.status}
                 </div>
-                <div className="text-sm text-muted-foreground grow group-data-[state=open]:text-foreground">
+                <div className="text-sm text-muted-foreground grow group-data-[open]:text-foreground">
                   {response.description}
                 </div>
                 {response.name && (

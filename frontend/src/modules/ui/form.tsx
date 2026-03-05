@@ -1,5 +1,3 @@
-import type * as LabelPrimitive from '@radix-ui/react-label';
-import { Slot } from '@radix-ui/react-slot';
 import { ChevronUpIcon, HelpCircleIcon } from 'lucide-react';
 import * as React from 'react';
 import {
@@ -15,6 +13,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
 import { Label } from '~/modules/ui/label';
+import { Slot } from '~/modules/ui/slot';
 import { cn } from '~/utils/cn';
 
 // === Label direction context ===
@@ -117,7 +116,7 @@ export function FormItem({ className, name, ...props }: React.ComponentProps<'di
   );
 }
 
-export function FormLabel({ className, ...props }: React.ComponentProps<typeof LabelPrimitive.Root>) {
+export function FormLabel({ className, ...props }: React.ComponentProps<'label'>) {
   const { error, formItemId } = useFormField();
   return (
     <Label data-slot="form-label" data-error={!!error} className={cn('', className)} htmlFor={formItemId} {...props} />

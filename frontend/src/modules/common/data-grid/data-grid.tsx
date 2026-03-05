@@ -80,9 +80,6 @@ interface EditCellState<R> extends Position {
   readonly originalRow: R;
 }
 
-// TODO-017 fixed: no longer heavy during resize. Column sizing is CSS-native
-// between breakpoints. JS only re-renders on breakpoint transitions.
-
 /** Arguments passed to onRowsEndApproaching callback */
 export interface RowsEndApproachingArgs {
   /** Index of the last row being rendered (with overscan) */
@@ -418,7 +415,10 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     [columnWidths],
   );
 
-  const { gridRef, viewportHeight, horizontalScrollbarHeight, scrollTop } = useGridDimensions();
+  const { gridRef, viewportHeight, horizontalScrollbarHeight, scrollTop } = useGridDimensions(
+    undefined,
+    enableRowVirtualization,
+  );
   const {
     columns,
     colSpanColumns,

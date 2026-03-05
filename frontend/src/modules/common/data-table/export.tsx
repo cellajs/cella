@@ -52,11 +52,9 @@ export const Export = <R extends Record<string, any>>({
   return (
     <DropdownMenu>
       <TooltipButton className={className} toolTipContent={t('common:export_pdf_csv')}>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" className="flex max-xs:hidden">
-            <DownloadIcon size={16} />
-            <span className="ml-1 max-xl:hidden">{t('common:export')}</span>
-          </Button>
+        <DropdownMenuTrigger render={<Button variant="outline" className="flex max-xs:hidden" />}>
+          <DownloadIcon size={16} />
+          <span className="ml-1 max-xl:hidden">{t('common:export')}</span>
         </DropdownMenuTrigger>
       </TooltipButton>
       <DropdownMenuContent align="end" className="p-1">

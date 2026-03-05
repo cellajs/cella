@@ -1,8 +1,7 @@
-import type { AvatarProps } from '@radix-ui/react-avatar';
 import type { LucideIcon } from 'lucide-react';
 import { memo } from 'react';
 import type { EntityType } from 'shared';
-import { Avatar, AvatarFallback, AvatarImage } from '~/modules/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage, type AvatarProps } from '~/modules/ui/avatar';
 import { cn } from '~/utils/cn';
 import { numberToColorClass } from '~/utils/number-to-color-class';
 

@@ -51,12 +51,13 @@ export const MenuSheetHeader = ({ searchTerm, setSearchTerm, isSearchActive, set
 
   const openAccount = () => {
     setNavSheetOpen('account');
-    useSheeter.getState().create(<AccountSheet />, {
+    useSheeter.getState().replace(<AccountSheet />, {
       id: 'nav-sheet',
       triggerRef: accountButtonRef,
       side: 'left',
       showCloseButton: false,
       modal: false,
+      disablePointerDismissal: true,
       className: navSheetClassName,
       onClose: () => setNavSheetOpen(null),
     });

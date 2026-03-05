@@ -1,4 +1,3 @@
-import { DropdownMenuSeparator } from '@radix-ui/react-dropdown-menu';
 import { SlidersHorizontalIcon } from 'lucide-react';
 import { type Dispatch, type SetStateAction, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -10,6 +9,7 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '~/modules/ui/dropdown-menu';
 
@@ -49,14 +49,12 @@ export function ColumnsView<TData>({
       }}
     >
       <TooltipButton className={className} toolTipContent={t('common:columns_view')}>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" className="relative flex">
-            {filteredColumns.some((column) => column.hidden) && (
-              <Badge className="absolute -right-1 -top-1 flex h-2 w-2 justify-center p-0 z-10" />
-            )}
-            <SlidersHorizontalIcon className="size-4" />
-            <span className="ml-1 max-xl:hidden">{t('common:view')}</span>
-          </Button>
+        <DropdownMenuTrigger render={<Button variant="outline" className="relative flex" />}>
+          {filteredColumns.some((column) => column.hidden) && (
+            <Badge className="absolute -right-1 -top-1 flex h-2 w-2 justify-center p-0 z-10" />
+          )}
+          <SlidersHorizontalIcon className="size-4" />
+          <span className="ml-1 max-xl:hidden">{t('common:view')}</span>
         </DropdownMenuTrigger>
       </TooltipButton>
       <DropdownMenuContent align="end" className="min-w-56 p-1" collisionPadding={16}>
@@ -77,7 +75,6 @@ export function ColumnsView<TData>({
                 ),
               )
             }
-            onSelect={(e) => e.preventDefault()}
           >
             {column.name}
           </DropdownMenuCheckboxItem>
@@ -88,7 +85,6 @@ export function ColumnsView<TData>({
         {setIsCompact && isCompact !== undefined && (
           <DropdownMenuCheckboxItem
             className="min-h-8"
-            onSelect={(e) => e.preventDefault()}
             checked={isCompact}
             onCheckedChange={() => setIsCompact(!isCompact)}
             aria-label={t('common:detailed_menu')}
@@ -101,7 +97,6 @@ export function ColumnsView<TData>({
         {setIsEntityOnly && isEntityOnly !== undefined && (
           <DropdownMenuCheckboxItem
             className="min-h-8"
-            onSelect={(e) => e.preventDefault()}
             checked={isEntityOnly}
             onCheckedChange={() => setIsEntityOnly(!isEntityOnly)}
           >

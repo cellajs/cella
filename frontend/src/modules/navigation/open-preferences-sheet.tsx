@@ -8,12 +8,14 @@ import { useNavigationStore } from '~/store/navigation';
 export function openPreferencesSheet(triggerRef: RefObject<HTMLButtonElement | null>, modal = false) {
   const setNavSheetOpen = useNavigationStore.getState().setNavSheetOpen;
   setNavSheetOpen('preferences');
-  useSheeter.getState().create(<PreferencesSheet />, {
+
+  useSheeter.getState().replace(<PreferencesSheet />, {
     id: 'nav-sheet',
     triggerRef,
     side: 'left',
     showCloseButton: false,
     modal,
+    disablePointerDismissal: true,
     className: navSheetClassName,
     onClose: () => setNavSheetOpen(null),
   });

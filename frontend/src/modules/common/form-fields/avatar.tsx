@@ -21,6 +21,9 @@ interface Props {
   type: AvatarWrapProps['type'];
 }
 
+/**
+ * Form field for uploading and managing an avatar image.
+ */
 export function AvatarFormField({ form, label, name, entity, type }: Props) {
   const { t } = useTranslation();
   const uploadButtonRef = useRef(null);

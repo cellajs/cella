@@ -88,36 +88,38 @@ export function Combobox({
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          ref={ref}
-          variant="input"
-          aria-haspopup="listbox"
-          aria-expanded={open}
-          className="w-full justify-between truncate font-normal"
-          disabled={disabled}
-        >
-          {selectedOption ? (
-            <div className="flex items-center truncate gap-2">
-              {renderAvatar && (
-                <AvatarWrap
-                  className="h-6 w-6 text-xs shrink-0"
-                  id={selectedOption.value}
-                  name={selectedOption.label}
-                  url={selectedOption.url}
-                />
-              )}
-              {renderOption(selectedOption)}
-            </div>
-          ) : (
-            <span className="truncate text-muted-foreground">
-              {t(placeholders.trigger, { resource: t(placeholders.resource).toLowerCase() })}
-            </span>
-          )}
-          <ChevronDownIcon
-            className={`ml-2 size-4 shrink-0 opacity-50 transition-transform ${open ? '-rotate-90' : 'rotate-0'}`}
+      <PopoverTrigger
+        render={
+          <Button
+            ref={ref}
+            variant="input"
+            aria-haspopup="listbox"
+            aria-expanded={open}
+            className="w-full justify-between truncate font-normal"
+            disabled={disabled}
           />
-        </Button>
+        }
+      >
+        {selectedOption ? (
+          <div className="flex items-center truncate gap-2">
+            {renderAvatar && (
+              <AvatarWrap
+                className="h-6 w-6 text-xs shrink-0"
+                id={selectedOption.value}
+                name={selectedOption.label}
+                url={selectedOption.url}
+              />
+            )}
+            {renderOption(selectedOption)}
+          </div>
+        ) : (
+          <span className="truncate text-muted-foreground">
+            {t(placeholders.trigger, { resource: t(placeholders.resource).toLowerCase() })}
+          </span>
+        )}
+        <ChevronDownIcon
+          className={`ml-2 size-4 shrink-0 opacity-50 transition-transform ${open ? '-rotate-90' : 'rotate-0'}`}
+        />
       </PopoverTrigger>
       <PopoverContent
         align="start"

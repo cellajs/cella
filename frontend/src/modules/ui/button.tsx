@@ -1,4 +1,3 @@
-import { Slot } from '@radix-ui/react-slot';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { t } from 'i18next';
 import { Loader2Icon, TriangleAlertIcon } from 'lucide-react';
@@ -6,6 +5,7 @@ import * as React from 'react';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { toaster } from '~/modules/common/toaster/service';
 import { TooltipButton } from '~/modules/common/tooltip-button';
+import { Slot } from '~/modules/ui/slot';
 import { cn } from '~/utils/cn';
 
 export const buttonVariants = cva(

@@ -11,6 +11,9 @@ interface SelectRoleProps {
   className?: string;
 }
 
+/**
+ * Dropdown select for picking a single role, supporting both entity and system roles.
+ */
 export function SelectRole({ entity = false, onChange, value, className }: SelectRoleProps) {
   const { t } = useTranslation();
   const { isOnline } = useOnlineManager();
@@ -20,7 +23,7 @@ export function SelectRole({ entity = false, onChange, value, className }: Selec
   return (
     <Select
       value={value === undefined || value === 'all' ? 'all' : value}
-      onValueChange={(role) => onChange(role === 'all' ? undefined : role)}
+      onValueChange={(role: string) => onChange(role === 'all' ? undefined : role)}
     >
       <SelectTrigger disabled={!isOnline} className={cn('w-full', className)}>
         <SelectValue placeholder={t('common:placeholder.select_role')} />

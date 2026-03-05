@@ -1,67 +1,46 @@
-import { autoUpdate, flip, offset, shift, useFloating } from '@floating-ui/react';
-import { useLayoutEffect } from 'react';
-import { createPortal } from 'react-dom';
+import { useEffect, useRef } from 'react';
 import { type InternalDropdown, useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { DropdownMenu, DropdownMenuContent } from '~/modules/ui/dropdown-menu';
 
 export const DropdownerDropdown = ({ dropdown }: { dropdown: InternalDropdown }) => {
   const triggerEl = dropdown.triggerRef?.current;
 
-  // Use floating-ui to position the dropdown, remove it when the trigger is out of DOM
-  const { refs, floatingStyles, update } = useFloating({
-    placement: dropdown?.align === 'start' ? 'bottom-start' : 'bottom-end',
-    middleware: [offset(4), flip(), shift()],
-    whileElementsMounted(reference, floating, update) {
-      if (!reference || !floating) return () => {};
+  const triggerFocusRef = useRef<HTMLElement | null>(null);
+  triggerFocusRef.current = triggerEl ?? null;
 
-      const cleanup = autoUpdate(reference, floating, update);
+  // Watch for trigger removal from DOM
+  useEffect(() => {
+    if (!triggerEl) return;
 
-      const observer = new MutationObserver(() => {
-        if (reference instanceof Element && !document.body.contains(reference)) {
-          useDropdowner.getState().remove();
-        }
-      });
+    const observer = new MutationObserver(() => {
+      if (!document.body.contains(triggerEl)) {
+        useDropdowner.getState().remove();
+      }
+    });
 
-      observer.observe(document.body, { childList: true, subtree: true });
-
-      return () => {
-        cleanup();
-        observer.disconnect();
-      };
-    },
-  });
-
-  // Ensure dropdown is removed when trigger is removed
-  useLayoutEffect(() => {
-    if (!dropdown || !triggerEl) return;
-    refs.setReference(triggerEl);
-    update();
-
-    return () => {
-      refs.setReference(null);
-    };
-  }, [dropdown?.key, triggerEl, refs, update]);
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [triggerEl]);
 
   if (!triggerEl) return null;
 
-  return createPortal(
-    <DropdownMenu key={dropdown.key} open={true} modal={dropdown.modal}>
-      <DropdownMenuContent
-        ref={refs.setFloating}
-        style={floatingStyles}
-        align={dropdown.align}
-        modal={dropdown.modal}
-        onCloseAutoFocus={() => triggerEl?.focus()}
-        onEscapeKeyDown={() => useDropdowner.getState().remove()}
-        onInteractOutside={(e) => {
-          if (!triggerEl.contains(e.target as Node)) {
-            useDropdowner.getState().remove();
-          }
-        }}
-      >
+  const onOpenChange = (nextOpen: boolean, eventDetails: { reason: string }) => {
+    if (!nextOpen && eventDetails.reason === 'escape-key') {
+      useDropdowner.getState().remove();
+      return;
+    }
+    if (!nextOpen && eventDetails.reason === 'outside-press') {
+      useDropdowner.getState().remove();
+      return;
+    }
+    if (!nextOpen) useDropdowner.getState().remove();
+  };
+
+  return (
+    <DropdownMenu key={dropdown.key} open={true} onOpenChange={onOpenChange} modal={dropdown.modal}>
+      <DropdownMenuContent anchor={triggerEl} align={dropdown.align} className="z-301" finalFocus={triggerFocusRef}>
         {dropdown.content}
       </DropdownMenuContent>
-    </DropdownMenu>,
-    document.body,
+    </DropdownMenu>
   );
 };

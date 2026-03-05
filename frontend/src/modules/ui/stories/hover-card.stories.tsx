@@ -32,17 +32,6 @@ type Story = StoryObj<typeof meta>;
  */
 export const Default: Story = {};
 
-/**
- * Use the `openDelay` and `closeDelay` props to control the delay before the
- * hover card opens and closes.
- */
-export const Instant: Story = {
-  args: {
-    openDelay: 0,
-    closeDelay: 0,
-  },
-};
-
 export const ShouldShowOnHover: Story = {
   name: 'when hovering over trigger, should show hover card content',
   tags: ['!dev', '!autodocs'],

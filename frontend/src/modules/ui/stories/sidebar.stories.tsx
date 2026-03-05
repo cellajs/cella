@@ -135,13 +135,11 @@ export const Footer: Story = {
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton>
-                  <User2Icon /> Username
-                  <ChevronUpIcon className="ml-auto" />
-                </SidebarMenuButton>
+              <DropdownMenuTrigger render={<SidebarMenuButton />}>
+                <User2Icon /> Username
+                <ChevronUpIcon className="ml-auto" />
               </DropdownMenuTrigger>
-              <DropdownMenuContent side="top" className="w-(--radix-popper-anchor-width)">
+              <DropdownMenuContent side="top" className="w-(--anchor-width)">
                 <DropdownMenuItem>
                   <span>Account</span>
                 </DropdownMenuItem>

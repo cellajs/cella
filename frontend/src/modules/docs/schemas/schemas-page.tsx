@@ -1,5 +1,5 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { Link, useSearch } from '@tanstack/react-router';
+import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { ChevronDownIcon } from 'lucide-react';
 import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -79,6 +79,8 @@ interface SchemaTagSectionProps {
  */
 function SchemaTagSection({ tag, schemas: tagSchemas, isOpen, onPrerender }: SchemaTagSectionProps) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { scrollToSection } = useScrollSpy();
   const { shouldMount, style } = usePrerenderSection('schemas', tag.name, isOpen);
 
   return (
@@ -93,26 +95,41 @@ function SchemaTagSection({ tag, schemas: tagSchemas, isOpen, onPrerender }: Sch
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           {/* Schema refs list */}
-          <div className="flex flex-col gap-1" onMouseEnter={onPrerender} onFocus={onPrerender}>
-            {tagSchemas.map((schema) => (
-              <Link
-                key={schema.name}
-                to="."
-                search={(prev) => ({ ...prev, schemaTag: tag.name })}
-                hash={schema.ref.replace(/^#/, '')}
-                replace
-                draggable={false}
-                resetScroll={false}
-                className="flex max-w-full min-w-0 items-baseline gap-0.5 font-mono text-sm truncate"
-                onClick={(e) => {
-                  if (e.metaKey || e.ctrlKey) return;
-                  scrollToSectionById(schema.ref.replace(/^#/, ''));
-                }}
-              >
-                <span className="min-w-0 flex-[0_1_auto] truncate">{schema.ref.split('/').slice(0, -1).join('/')}</span>
-                <span className="shrink-0 font-semibold">/{schema.ref.split('/').pop()}</span>
-              </Link>
-            ))}
+          <div className="flex flex-col gap-1">
+            {tagSchemas.map((schema) => {
+              const schemaId = schema.ref.replace(/^#/, '');
+              return (
+                <Link
+                  key={schema.name}
+                  to="."
+                  search={(prev) => ({ ...prev, schemaTag: tag.name })}
+                  hash={schemaId}
+                  replace
+                  draggable={false}
+                  resetScroll={false}
+                  className="flex max-w-full min-w-0 items-baseline gap-0.5 font-mono text-sm truncate"
+                  onMouseEnter={onPrerender}
+                  onClick={(e) => {
+                    if (e.metaKey || e.ctrlKey) return;
+                    e.preventDefault();
+                    navigate({
+                      to: '.',
+                      search: (prev) => ({ ...prev, schemaTag: tag.name }),
+                      hash: schemaId,
+                      replace: true,
+                      resetScroll: false,
+                    }).finally(() => {
+                      scrollToSection(schemaId);
+                    });
+                  }}
+                >
+                  <span className="min-w-0 flex-[0_1_auto] truncate">
+                    {schema.ref.split('/').slice(0, -1).join('/')}
+                  </span>
+                  <span className="shrink-0 font-semibold">/{schema.ref.split('/').pop()}</span>
+                </Link>
+              );
+            })}
           </div>
 
           {/* Show details button */}
@@ -142,7 +159,7 @@ function SchemaTagSection({ tag, schemas: tagSchemas, isOpen, onPrerender }: Sch
 
       {/* Schema details list — prerendered with content-visibility: hidden on hover */}
       {shouldMount && (
-        <CollapsibleContent forceMount>
+        <CollapsibleContent keepMounted>
           <div style={style}>
             <Suspense>
               <TagSchemasList schemas={tagSchemas} />

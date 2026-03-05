@@ -5,6 +5,9 @@ import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
 import { Combobox, type ComboboxProps } from '~/modules/ui/combobox';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 
+/**
+ * Combobox form field for selecting a country, with flag icons.
+ */
 export const SelectCountry = <TFieldValues extends FieldValues>({
   control,
   name,

@@ -10,6 +10,7 @@ interface DataTableSkeletonProps {
   shrinkTable?: boolean;
 }
 
+// TODO can we sing minimal code show a simplified skeleton on mobile?
 export const DataTableSkeleton = ({
   columnCount = 4,
   cellHeight = 40,

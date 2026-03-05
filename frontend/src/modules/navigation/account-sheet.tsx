@@ -72,12 +72,13 @@ export const AccountSheet = () => {
 
   const goBackToMenu = () => {
     setNavSheetOpen('menu');
-    useSheeter.getState().create(<MenuSheet />, {
+    useSheeter.getState().replace(<MenuSheet />, {
       id: 'nav-sheet',
       triggerRef: backRef,
       side: 'left',
       showCloseButton: false,
       modal: false,
+      disablePointerDismissal: true,
       className: navSheetClassName,
       skipAnimation: true,
       onClose: () => setNavSheetOpen(null),
@@ -104,7 +105,7 @@ export const AccountSheet = () => {
         >
           <ArrowLeftIcon className="size-4" />
         </Button>
-        <h2 className="text-lg font-semibold">{t('common:account')}</h2>
+        <h2 className="text-base font-semibold">{t('common:account')}</h2>
       </div>
       <button
         type="button"

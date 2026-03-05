@@ -2,6 +2,8 @@ import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { type InternalSheet, useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '~/modules/ui/drawer';
 
+const sideToSwipeDirection = { top: 'up', bottom: 'down', left: 'left', right: 'right' } as const;
+
 export const SheeterDrawer = ({ sheet }: { sheet: InternalSheet }) => {
   // Drawers on mobile are always modal (overlay + outside click to close)
   const { id, side, description, title, titleContent = title, className, content, open = true } = sheet;
@@ -24,13 +26,11 @@ export const SheeterDrawer = ({ sheet }: { sheet: InternalSheet }) => {
       key={id}
       modal
       open={open}
-      dismissible={!isDropdownOpen}
-      direction={side}
-      noBodyStyles
+      disablePointerDismissal={!!isDropdownOpen}
+      swipeDirection={sideToSwipeDirection[side]}
       onOpenChange={onOpenChange}
-      onClose={closeSheet}
     >
-      <DrawerContent id={String(id)} onEscapeKeyDown={closeSheet} className={className}>
+      <DrawerContent id={String(id)} className={className}>
         <DrawerHeader sticky className={`${description || title ? '' : 'hidden'}`}>
           <DrawerTitle className={`font-medium ${title ? '' : 'hidden'}`}>{titleContent}</DrawerTitle>
           <DrawerDescription className={`text-muted-foreground font-light ${description ? '' : 'hidden'}`}>

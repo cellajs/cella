@@ -17,6 +17,10 @@ interface Props<T> {
   options: EllipsisOption<T>[];
 }
 
+// TODO: when lcicking ellipsis in attachments-column i get:
+// Error
+// Base UI: MenuRootContext is missing. Menu parts must be placed within <Menu.Root>.
+
 export function TableEllipsis<T extends { id: string }>({ row, tabIndex, options }: Props<T>) {
   const triggerRef = useRef<HTMLButtonElement | null>(null);
 

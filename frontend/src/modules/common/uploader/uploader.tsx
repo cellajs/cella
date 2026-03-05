@@ -1,9 +1,8 @@
-import { Dialog } from '@radix-ui/react-dialog';
 import Dashboard from '@uppy/react/dashboard';
 import { generateRestrictionNote } from '~/modules/common/uploader/helpers/restrictions-note';
 import { useUploader } from '~/modules/common/uploader/use-uploader';
 import { useUploadUppy } from '~/modules/common/uploader/use-uppy-upload';
-import { DialogContent, DialogDescription, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
 import { useUIStore } from '~/store/ui';
 
 import '~/modules/common/uploader/uppy-styles';

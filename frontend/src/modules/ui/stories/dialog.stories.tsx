@@ -62,7 +62,7 @@ export const ShouldOpenCloseWithContinue: Story = {
       await userEvent.click(await canvasBody.findByRole('button', { name: /open/i }));
       const dialog = await canvasBody.findByRole('dialog');
       expect(dialog).toBeInTheDocument();
-      expect(dialog).toHaveAttribute('data-state', 'open');
+      expect(dialog).toHaveAttribute('data-open');
     });
 
     await step('Close the dialog', async () => {
@@ -88,7 +88,7 @@ export const ShouldOpenCloseWithCancel: Story = {
       await userEvent.click(await canvasBody.findByRole('button', { name: /open/i }));
       const dialog = await canvasBody.findByRole('dialog');
       expect(dialog).toBeInTheDocument();
-      expect(dialog).toHaveAttribute('data-state', 'open');
+      expect(dialog).toHaveAttribute('data-open');
     });
 
     await step('Close the dialog', async () => {
@@ -114,7 +114,7 @@ export const ShouldOpenCloseCross: Story = {
       await userEvent.click(await canvasBody.findByRole('button', { name: /open/i }));
       const dialog = await canvasBody.findByRole('dialog');
       expect(dialog).toBeInTheDocument();
-      expect(dialog).toHaveAttribute('data-state', 'open');
+      expect(dialog).toHaveAttribute('data-open');
     });
 
     await step('Close the dialog', async () => {

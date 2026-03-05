@@ -14,7 +14,8 @@ import * as Toggle from '~/modules/ui/toggle';
 import * as Tooltip from '~/modules/ui/tooltip';
 
 // Ensure compatibility, your ShadCN components should not use Portals (comment these out from your DropdownMenu, Popover and Select components).
-export const shadCNComponents = {
+// biome-ignore lint/suspicious/noExplicitAny: BlockNote expects Radix-compatible types; our Base UI wrapper types are narrower
+export const shadCNComponents: Record<string, any> = {
   Button,
   DropdownMenu: {
     ...DropdownMenu,

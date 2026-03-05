@@ -1,47 +1,82 @@
-import * as TooltipPrimitive from '@radix-ui/react-tooltip';
+import { Tooltip as TooltipPrimitive } from '@base-ui/react/tooltip';
 import * as React from 'react';
 import { cn } from '~/utils/cn';
 
-export const TooltipPortal = TooltipPrimitive.Portal;
-
 export function TooltipProvider({
-  delayDuration = 200,
+  delayDuration,
+  skipDelayDuration,
+  disableHoverableContent: _disableHoverableContent,
   ...props
-}: React.ComponentProps<typeof TooltipPrimitive.Provider>) {
-  return <TooltipPrimitive.Provider data-slot="tooltip-provider" delayDuration={delayDuration} {...props} />;
+}: {
+  children: React.ReactNode;
+  delayDuration?: number;
+  skipDelayDuration?: number;
+  disableHoverableContent?: boolean;
+}) {
+  return (
+    <TooltipPrimitive.Provider
+      data-slot="tooltip-provider"
+      delay={delayDuration ?? 200}
+      timeout={skipDelayDuration ?? 400}
+      {...props}
+    />
+  );
 }
 
-export function Tooltip({ ...props }: React.ComponentProps<typeof TooltipPrimitive.Root>) {
+export function Tooltip({
+  disableHoverablePopup,
+  ...props
+}: Omit<TooltipPrimitive.Root.Props, 'children'> & {
+  children?: React.ReactNode;
+  disableHoverablePopup?: boolean;
+}) {
   return (
     <TooltipProvider>
-      <TooltipPrimitive.Root data-slot="tooltip" {...props} />
+      <TooltipPrimitive.Root data-slot="tooltip" disableHoverablePopup={disableHoverablePopup} {...props} />
     </TooltipProvider>
   );
 }
 
-export function TooltipTrigger({ ...props }: React.ComponentProps<typeof TooltipPrimitive.Trigger>) {
+export function TooltipTrigger({ ...props }: TooltipPrimitive.Trigger.Props & React.RefAttributes<HTMLElement>) {
   return <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...props} />;
 }
 
 export function TooltipContent({
   className,
   sideOffset = 0,
+  side,
+  align,
+  hideWhenDetached,
   children,
   ...props
-}: React.ComponentProps<typeof TooltipPrimitive.Content>) {
+}: {
+  className?: string;
+  sideOffset?: number;
+  side?: 'top' | 'bottom' | 'left' | 'right';
+  align?: 'start' | 'center' | 'end';
+  hideWhenDetached?: boolean;
+  children?: React.ReactNode;
+  hidden?: boolean;
+} & Omit<React.ComponentPropsWithoutRef<'div'>, 'className'>) {
   return (
     <TooltipPrimitive.Portal>
-      <TooltipPrimitive.Content
-        data-slot="tooltip-content"
-        sideOffset={sideOffset}
-        className={cn(
-          'max-sm:hidden bg-foreground text-background animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-200 w-fit origin-(--radix-tooltip-content-transform-origin) rounded-md px-3 py-1.5 text-xs text-balance',
-          className,
-        )}
-        {...props}
-      >
-        {children}
-      </TooltipPrimitive.Content>
+      <TooltipPrimitive.Positioner side={side} sideOffset={sideOffset} align={align} className="z-200">
+        <TooltipPrimitive.Popup
+          data-slot="tooltip-content"
+          className={cn(
+            'max-sm:hidden bg-foreground text-background animate-in fade-in-0 zoom-in-95 data-[closed]:animate-out data-[closed]:fade-out-0 data-[closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 w-fit rounded-md px-3 py-1.5 text-xs text-balance',
+            className,
+          )}
+          {...props}
+        >
+          {children}
+        </TooltipPrimitive.Popup>
+      </TooltipPrimitive.Positioner>
     </TooltipPrimitive.Portal>
   );
+}
+
+// Keep TooltipPortal as a pass-through for backward compatibility
+export function TooltipPortal({ children }: { children: React.ReactNode }) {
+  return <>{children}</>;
 }

@@ -1,8 +1,7 @@
-import type * as TooltipPrimitive from '@radix-ui/react-tooltip';
 import React from 'react';
 import { Tooltip, TooltipContent, TooltipPortal, TooltipTrigger } from '~/modules/ui/tooltip';
 
-interface TooltipButtonProps extends React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content> {
+interface TooltipButtonProps {
   // biome-ignore lint/suspicious/noExplicitAny: unable to infer type due to dynamic data structure
   children: React.ReactElement<{ ref?: React.Ref<any> }>;
   toolTipContent: string;
@@ -11,6 +10,7 @@ interface TooltipButtonProps extends React.ComponentPropsWithoutRef<typeof Toolt
   sideOffset?: number;
   hideWhenDetached?: boolean;
   portal?: boolean;
+  className?: string;
 }
 
 /**
@@ -41,7 +41,7 @@ export const TooltipButton = React.forwardRef<HTMLDivElement, TooltipButtonProps
 
     const trigger = (
       <Tooltip>
-        <TooltipTrigger asChild>{children}</TooltipTrigger>
+        <TooltipTrigger render={children} />
         {portal ? <TooltipPortal>{content}</TooltipPortal> : content}
       </Tooltip>
     );

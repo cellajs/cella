@@ -87,7 +87,7 @@ export function InviteUsers({ contextEntity, dialog: isDialog, mode: baseMode, c
           <motion.div key="invite-initial" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
             <ToggleGroup
               type="multiple"
-              onValueChange={updateMode}
+              onValueChange={(v) => updateMode(v as ('search' | 'email')[])}
               className="max-sm:flex-col sm:h-40 py-3 gap-2 sm:gap-3 items-stretch w-full"
             >
               <ToggleGroupItem

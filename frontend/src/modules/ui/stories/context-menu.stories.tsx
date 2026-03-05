@@ -11,7 +11,6 @@ import {
   ContextMenuSeparator,
   ContextMenuShortcut,
   ContextMenuSub,
-  ContextMenuSubContent,
   ContextMenuSubTrigger,
   ContextMenuTrigger,
 } from '~/modules/ui/context-menu';
@@ -96,7 +95,7 @@ export const WithSubmenu: Story = {
         </ContextMenuItem>
         <ContextMenuSub>
           <ContextMenuSubTrigger>More Tools</ContextMenuSubTrigger>
-          <ContextMenuSubContent>
+          <ContextMenuContent>
             <ContextMenuItem>
               Save Page As...
               <ContextMenuShortcut>⇧⌘S</ContextMenuShortcut>
@@ -105,7 +104,7 @@ export const WithSubmenu: Story = {
             <ContextMenuItem>Name Window...</ContextMenuItem>
             <ContextMenuSeparator />
             <ContextMenuItem>Developer Tools</ContextMenuItem>
-          </ContextMenuSubContent>
+          </ContextMenuContent>
         </ContextMenuSub>
       </ContextMenuContent>
     </ContextMenu>

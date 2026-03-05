@@ -613,8 +613,9 @@ export function ResizablePanelGroup({
     const width = dl?.[entry.id] ?? expandedWidthsRef.current[entry.id] ?? entry.minWidth;
     widthsRef.current[entry.id] = width;
 
-    if (onCollapseChangeRef.current && entry.collapsible && width <= entry.collapsedWidth) {
-      onCollapseChangeRef.current(entry.id, true);
+    if (onCollapseChangeRef.current && entry.collapsible) {
+      const isCollapsed = width <= entry.collapsedWidth;
+      onCollapseChangeRef.current(entry.id, isCollapsed);
     }
     if (width > entry.collapsedWidth) expandedWidthsRef.current[entry.id] = width;
   };

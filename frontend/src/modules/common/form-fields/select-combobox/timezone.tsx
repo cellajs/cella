@@ -4,6 +4,9 @@ import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
 import { Combobox } from '~/modules/ui/combobox';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 
+/**
+ * Combobox form field for selecting a timezone.
+ */
 export const SelectTimezone = <TFieldValues extends FieldValues>({
   control,
   name,
