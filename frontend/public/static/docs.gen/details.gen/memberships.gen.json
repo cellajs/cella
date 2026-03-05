@@ -806,6 +806,11 @@
           },
           "offset": { "type": "string", "required": false },
           "limit": { "type": "string", "required": false },
+          "modifiedAfter": {
+            "type": "string",
+            "required": false,
+            "format": "date-time"
+          },
           "entityId": {
             "type": "string",
             "required": true,
@@ -993,6 +998,11 @@
           },
           "offset": { "type": "string", "required": false },
           "limit": { "type": "string", "required": false },
+          "modifiedAfter": {
+            "type": "string",
+            "required": false,
+            "format": "date-time"
+          },
           "entityId": {
             "type": "string",
             "required": true,

@@ -38,12 +38,7 @@ export const isArbitraryQueryData = (data: unknown): data is ArbitraryEntityQuer
  * @param action - `"create" | "update" | "remove"`
  */
 export const changeInfiniteQueryData = (queryKey: QueryKey, items: ItemData[], action: QueryDataActions) => {
-  const { sort, order: insertOrder } = getQueryKeySortOrder(queryKey);
-
-  if ((action === 'create' && sort && sort !== 'createdAt') || (sort === 'createdAt' && insertOrder === 'asc')) {
-    queryClient.invalidateQueries({ queryKey, exact: true });
-    return;
-  }
+  const { order: insertOrder } = getQueryKeySortOrder(queryKey);
 
   queryClient.setQueryData<InfiniteEntityQueryData>(queryKey, (data) => {
     if (!data) return;

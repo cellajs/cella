@@ -160,7 +160,7 @@ export const useTableMutation = <N extends `${EntityType}s`, M extends MutationT
     onError: (_error, _variables, onMutateResult, context) => {
       // maybe vary result based on if offline?
       console.error(_error);
-      toaster(t(`error:${type}_resource`, { resource: t(`app:${table}`) }), 'error');
+      toaster(t(`error:${type}_resource`, { resource: t(`common:${table}`) }), 'error');
 
       if (!onMutateResult?.length) {
         return;

@@ -39,7 +39,6 @@ export const attachmentCreateBodySchema = attachmentInsertSchema
     originalKey: true,
     bucketName: true,
     public: true,
-    publicAccess: true,
     groupId: true,
     convertedContentType: true,
     convertedKey: true,
@@ -59,7 +58,7 @@ export const attachmentCreateManyStxBodySchema = attachmentCreateStxBodySchema.a
 export const attachmentUpdateStxBodySchema = createUpdateSchema([
   z.literal('name'),
   z.literal('originalKey'),
-  z.literal('publicAccess'),
+  z.literal('public'),
 ]);
 
 // Response schemas: batch operations use { data, rejectedItemIds }, single returns entity directly
@@ -69,8 +68,6 @@ const attachmentSortKeys = attachmentSelectSchema.keyof().extract(['name', 'crea
 
 export const attachmentListQuerySchema = paginationQuerySchema.extend({
   sort: attachmentSortKeys.default('createdAt').optional(),
-  /** ISO timestamp filter for delta sync - returns attachments modified at or after this time */
-  modifiedAfter: z.iso.datetime().optional(),
 });
 
 /** Query schema for presigned URL endpoint - requires the file key to sign */

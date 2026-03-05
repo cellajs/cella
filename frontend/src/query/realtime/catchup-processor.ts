@@ -2,13 +2,14 @@
  * Catchup processors for offline sync.
  *
  * Processes summary-based catchup responses from the backend.
- * Uses seq delta to determine what changed per scope:
+ * Uses server-provided entitySeqs delta to determine what changed per scope:
  *   - delta == deletedIds.length → only deletes (handled via direct cache patching)
- *   - delta > deletedIds.length → creates/updates → mark entity lists stale (refetchType: 'none')
+ *   - delta > deletedIds.length → creates/updates → invalidate active entity lists for the org
  *   - delta == 0 → nothing changed
  *
- * Catchup never triggers refetches — it only patches deletes and marks staleness.
- * The sync service (Phase B) and React Query's own hooks handle actual data fetching.
+ * Catchup triggers active query refetches for creates/updates (scoped per org),
+ * and directly patches the cache for deletes. Inactive queries become stale
+ * and refetch on next access via refetchOnMount.
  *
  * App stream: scoped per orgId with per-entityType granularity
  * Public stream: scoped per entityType
@@ -25,12 +26,12 @@ import type { AppCatchupResponse, PublicCatchupResponse } from './types';
  *
  * For each org:
  * 1. Remove deletedIds from both detail and list caches (direct patching, no invalidation)
- * 2. Compare serverSeq with stored clientSeq per entity type
- * 3. If creates/updates detected, mark entity lists stale (refetchType: 'none')
- * 4. Update stored seqs
+ * 2. Compare server entitySeqs delta vs deletedByType counts to detect creates/updates
+ * 3. If creates/updates detected, invalidate active entity lists scoped to that org
+ * 4. Update stored org-level seq
  *
- * Catchup never triggers refetches. The sync service handles proactive data fetching
- * for the current org, while React Query hooks handle refetches for other views on access.
+ * Only active (mounted) queries refetch immediately. Inactive queries become stale
+ * and refetch on next access — no separate sync service needed.
  */
 export function processAppCatchup(response: AppCatchupResponse): void {
   const { changes } = response;
@@ -63,8 +64,12 @@ export function processAppCatchup(response: AppCatchupResponse): void {
         }
       }
 
-      // Step 2: Per-entityType seq comparison — mark stale only for entity types with creates/updates
+      // Step 2: Per-entityType — detect creates/updates via server delta vs delete count
+      // Use stored per-entityType seqs (set by previous catchup) for reliable delta calculation.
+      // On first session (seqs = 0), all entity types show as having changes → full refresh, which is correct.
       for (const [entityType, serverEntitySeq] of Object.entries(entitySeqs)) {
+        if (!hasEntityQueryKeys(entityType)) continue;
+
         const clientEntitySeq = syncStore.getSeq(`${orgId}:s:${entityType}`);
         if (serverEntitySeq === clientEntitySeq) continue; // Skip unchanged entity types
 
@@ -72,12 +77,11 @@ export function processAppCatchup(response: AppCatchupResponse): void {
         const entityDelta = serverEntitySeq - clientEntitySeq;
 
         if (entityDelta > deletedForType.length) {
-          // Creates/updates happened — mark list stale (no refetch triggered)
-          if (hasEntityQueryKeys(entityType)) {
-            cacheOps.invalidateEntityList(getEntityQueryKeys(entityType), 'none');
-          }
+          // Creates/updates happened — invalidate active list queries for this org only
+          const keys = getEntityQueryKeys(entityType);
+          cacheOps.invalidateEntityListForOrg(keys, orgId, 'active');
           console.debug(
-            `[CatchupProcessor] Org ${orgId}: ${entityType} delta=${entityDelta}, deletes=${deletedForType.length} → stale`,
+            `[CatchupProcessor] Org ${orgId}: ${entityType} delta=${entityDelta}, deletes=${deletedForType.length} → active refetch`,
           );
         } else if (deletedForType.length > 0) {
           console.debug(
@@ -85,7 +89,7 @@ export function processAppCatchup(response: AppCatchupResponse): void {
           );
         }
 
-        // Update per-entityType seq
+        // Update per-entityType seq for next catchup comparison
         syncStore.setSeq(`${orgId}:s:${entityType}`, serverEntitySeq);
       }
     } else {
@@ -98,10 +102,10 @@ export function processAppCatchup(response: AppCatchupResponse): void {
         cacheOps.removeEntityById(entityId);
       }
 
-      // Step 2: Mark stale if creates/updates happened (no refetch triggered)
+      // Step 2: Invalidate active lists if creates/updates happened
       if (delta > deletedIds.length) {
-        cacheOps.invalidateAllEntityLists('none');
-        console.debug(`[CatchupProcessor] Org ${orgId}: delta=${delta}, deletes=${deletedIds.length} → all stale`);
+        cacheOps.invalidateAllEntityLists('active');
+        console.debug(`[CatchupProcessor] Org ${orgId}: delta=${delta}, deletes=${deletedIds.length} → active refetch`);
       } else if (deletedIds.length > 0) {
         console.debug(`[CatchupProcessor] Org ${orgId}: only ${deletedIds.length} deletes`);
       }

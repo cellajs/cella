@@ -291,15 +291,14 @@ function BlockNote({
     openAttachment(editor, blockNoteRef, clickedSrc);
   };
 
-  const passedContent = getParsedContent(defaultValue);
-
   useEffect(() => {
     const currentContent = JSON.stringify(editor.document);
     if (compareIsContentSame(currentContent, defaultValue)) return;
 
-    if (passedContent === undefined) editor.removeBlocks(editor.document);
-    else editor.replaceBlocks(editor.document, passedContent);
-  }, [passedContent]);
+    const parsedContent = getParsedContent(defaultValue);
+    if (parsedContent === undefined) editor.removeBlocks(editor.document);
+    else editor.replaceBlocks(editor.document, parsedContent);
+  }, [defaultValue]);
 
   useEffect(() => {
     if (!onBeforeLoad || !editable) return;

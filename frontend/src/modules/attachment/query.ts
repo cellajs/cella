@@ -31,13 +31,15 @@ import { addMutationRegistrar } from '~/query/mutation-registry';
 import { createStxForCreate, createStxForDelete, createStxForUpdate, squashPendingMutation } from '~/query/offline';
 import { queryClient } from '~/query/query-client';
 import { getCacheToken } from '~/query/realtime';
+import { getRouteOrgId, getRouteTenantId } from '~/query/realtime/sync-priority';
+import type { QueryOrgContext } from '~/query/types';
+import { createResourceError } from '~/utils/resource-error';
 
-// Use generated types from api.gen for mutation input shapes
-// Body is array of items with stx embedded, so extract element type without stx
 type CreateAttachmentItem = CreateAttachmentsData['body'][number];
 type CreateAttachmentInput = Omit<CreateAttachmentItem, 'stx'>[];
 type UpdateAttachmentItem = UpdateAttachmentData['body'];
 type UpdateAttachmentInput = Omit<UpdateAttachmentItem, 'stx'>;
+type UpdateAttachmentVars = { id: string; key: UpdateAttachmentInput['key']; data: UpdateAttachmentInput['data'] };
 
 export const attachmentsLimit = appConfig.requestLimits.attachments;
 
@@ -47,17 +49,11 @@ type AttachmentFilters = Omit<GetAttachmentsData['query'], 'limit' | 'offset'> &
 };
 
 const keys = createEntityKeys<AttachmentFilters>('attachment');
-
-// Register query keys for dynamic lookup in stream handlers
 registerEntityQueryKeys('attachment', keys);
-
-/**
- * Attachment query keys.
- */
 export const attachmentQueryKeys = keys;
 
-/** Base mutation key for all attachment mutations - used for over-invalidation prevention. */
 const attachmentsMutationKeyBase = ['attachment'] as const;
+const handleError = createResourceError('attachment');
 
 type AttachmentsListParams = Omit<NonNullable<GetAttachmentsData['query']>, 'limit' | 'offset'> & {
   tenantId: string;
@@ -65,9 +61,6 @@ type AttachmentsListParams = Omit<NonNullable<GetAttachmentsData['query']>, 'lim
   limit?: number;
 };
 
-/**
- * Infinite query options to get a paginated list of attachments for an organization.
- */
 export const attachmentsListQueryOptions = (params: AttachmentsListParams) => {
   const { tenantId, orgId, q = '', sort = 'createdAt', order = 'desc', limit: baseLimit = attachmentsLimit } = params;
 
@@ -93,44 +86,27 @@ export const attachmentsListQueryOptions = (params: AttachmentsListParams) => {
   });
 };
 
-/**
- * Query options to get a single attachment by ID.
- * Uses cache token from SSE notification for efficient server-side cache hit.
- *
- * @param tenantId - Tenant ID
- * @param orgId - Organization ID or slug
- * @param id - Attachment ID
- */
 export const attachmentQueryOptions = (tenantId: string, orgId: string, id: string) => ({
   queryKey: keys.detail.byId(id),
   queryFn: async () => {
-    // Check for cache token from SSE notification
     const cacheToken = getCacheToken('attachment', id);
-
-    const result = await getAttachment({
+    return getAttachment({
       path: { tenantId, orgId, id },
-      // Pass cache token header for server-side cache hit
       headers: cacheToken ? { 'X-Cache-Token': cacheToken } : undefined,
     });
-
-    return result;
   },
-  // Use list cache as initial data for instant display
   initialData: () => findAttachmentInListCache(id),
 });
 
-/** Find an attachment in the list cache by id. */
 export const findAttachmentInListCache = (id: string) => findInListCache<Attachment>(keys.list.base, id);
 
-/** Find an attachment in any cache (list or detail) by id. */
-export const findAttachmentInCache = (id: string): Attachment | undefined =>
-  findAttachmentInListCache(id) ?? queryClient.getQueryData<Attachment>(keys.detail.byId(id));
+export const findAttachmentInCache = (id: string): Attachment | undefined => {
+  const detail = queryClient.getQueryData<Attachment>(keys.detail.byId(id));
+  if (detail) return detail;
+  return findInListCache<Attachment>(keys.list.base, id);
+};
 
-/**
- * Reactive hook to get all attachments with a specific groupId.
- * Subscribes to the attachments list query and filters by groupId.
- * Returns null if no groupId provided or no matches found.
- */
+/** Get all attachments matching a groupId, subscribes to list query. */
 export function useGroupAttachments(
   tenantId: string | undefined,
   orgId: string | undefined,
@@ -153,249 +129,164 @@ export function useGroupAttachments(
   return data ?? null;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Mutation hooks - standard React Query with sync utilities
-// ═══════════════════════════════════════════════════════════════════════════
+// --- Mutations ---
 
-/**
- * Custom hook to create one or more attachments with optimistic updates.
- * Uses sync utilities for transaction metadata.
- */
 export const useAttachmentCreateMutation = (tenantId: string, orgId: string) => {
   const queryClient = useQueryClient();
   const mutateCache = useMutateQueryData(keys.list.base);
 
   return useMutation({
     mutationKey: keys.create,
-
-    // Execute API call with transaction metadata for conflict tracking
+    scope: { id: 'attachment' },
     mutationFn: async (data: CreateAttachmentInput) => {
       const stx = createStxForCreate();
-      // Body is array with stx embedded in each item
       const body = data.map((item) => ({ ...item, stx }));
-      const result = await createAttachments({ path: { tenantId, orgId }, body });
-      return result;
+      return createAttachments({ path: { tenantId, orgId }, body });
     },
-
-    // Runs BEFORE mutationFn - prepare optimistic state
     onMutate: async (newAttachments) => {
-      // Cancel in-flight queries to prevent race conditions with stale data
       await queryClient.cancelQueries({ queryKey: keys.list.base });
-
-      // Build optimistic attachments using schema defaults + input data
-      // Note: Attachments already have IDs from Transloadit, so we preserve them
+      // Attachments already have IDs from Transloadit — preserved in optimistic entity
       const optimisticAttachments = newAttachments.map((att) => createOptimisticEntity(zAttachment, att));
-
-      // Insert optimistic entities into list cache for instant UI update
       mutateCache.create(optimisticAttachments);
-
-      // Return context for rollback/replacement in later callbacks
       return { optimisticAttachments };
     },
-
-    // Runs on API failure - rollback optimistic changes
     onError: (_err, _newData, context) => {
-      // Remove the optimistic entities we added in onMutate
-      if (context?.optimisticAttachments) {
-        mutateCache.remove(context.optimisticAttachments);
-      }
+      handleError('create');
+      if (context?.optimisticAttachments) mutateCache.remove(context.optimisticAttachments);
     },
-
-    // Runs on API success - finalize with real data
     onSuccess: (result, _variables, context) => {
-      // Remove temp entities and insert real ones with server data
-      if (context?.optimisticAttachments) {
-        mutateCache.remove(context.optimisticAttachments);
+      if (context?.optimisticAttachments) mutateCache.remove(context.optimisticAttachments);
+      // Upsert to avoid duplicates from concurrent SSE + onSuccess race
+      for (const attachment of result.data) {
+        if (findAttachmentInCache(attachment.id)) mutateCache.update([attachment]);
+        else mutateCache.create([attachment]);
       }
-      mutateCache.create(result.data);
     },
-
-    // Runs after success OR error - ensure cache stays fresh
-    onSettled: () => {
-      // Skip invalidation if other attachment mutations still in flight (prevents over-invalidation)
-      invalidateIfLastMutation(queryClient, attachmentsMutationKeyBase, keys.list.base);
+    // Error-only: onSuccess patches cache, SSE handles other users
+    onSettled: (_data, error) => {
+      if (error) invalidateIfLastMutation(queryClient, attachmentsMutationKeyBase, keys.list.base);
     },
   });
 };
 
-/**
- * Custom hook to update an existing attachment with optimistic updates.
- * Implements squashing: cancels pending same-field mutations.
- */
 export const useAttachmentUpdateMutation = (tenantId: string, orgId: string) => {
   const queryClient = useQueryClient();
   const mutateCache = useMutateQueryData(keys.list.base);
 
   return useMutation({
     mutationKey: keys.update,
-
-    // Execute API call with version-based transaction metadata
-    mutationFn: async ({
-      id,
-      key,
-      data,
-    }: {
-      id: string;
-      key: UpdateAttachmentInput['key'];
-      data: UpdateAttachmentInput['data'];
-    }) => {
-      // Get cached entity for lastReadVersion conflict detection
+    scope: { id: 'attachment' },
+    mutationFn: async ({ id, key, data }: UpdateAttachmentVars) => {
       const cachedEntity = findAttachmentInListCache(id);
       const stx = createStxForUpdate(cachedEntity);
-      // Body uses key/data pattern with stx embedded
-      const result = await updateAttachment({ path: { tenantId, orgId, id }, body: { key, data, stx } });
-      return result;
+      return updateAttachment({ path: { tenantId, orgId, id }, body: { key, data, stx } });
     },
-
-    // Runs BEFORE mutationFn - squash duplicates and prepare optimistic state
-    onMutate: async ({ id, key, data }) => {
-      // Cancel in-flight mutations updating the same entity (prevents redundant requests)
+    onMutate: async ({ id, key, data }: UpdateAttachmentVars) => {
       await squashPendingMutation(queryClient, keys.update, id, { [key]: data });
-
-      // Cancel queries to prevent race conditions
       await queryClient.cancelQueries({ queryKey: keys.list.base });
       await queryClient.cancelQueries({ queryKey: keys.detail.byId(id) });
 
-      // Snapshot current state for potential rollback
       const previousAttachment = findAttachmentInListCache(id);
-
       if (previousAttachment) {
-        // Merge new data into existing entity for instant UI update
         const optimisticAttachment = { ...previousAttachment, [key]: data, modifiedAt: new Date().toISOString() };
         mutateCache.update([optimisticAttachment]);
-        // Also update detail cache so detail views show updated data immediately
         queryClient.setQueryData(keys.detail.byId(id), optimisticAttachment);
       }
-
-      // Return snapshot for rollback in onError
       return { previousAttachment };
     },
-
-    // Runs on API failure - restore previous state
     onError: (_err, _variables, context) => {
-      // Revert cache to pre-mutation snapshot
+      handleError('update');
       if (context?.previousAttachment) {
         mutateCache.update([context.previousAttachment]);
         queryClient.setQueryData(keys.detail.byId(context.previousAttachment.id), context.previousAttachment);
       }
     },
-
-    // Runs on API success - apply authoritative server data
     onSuccess: (updatedAttachment) => {
-      // Replace optimistic data with server response (source of truth)
       mutateCache.update([updatedAttachment]);
-      queryClient.setQueryData(keys.detail.byId(updatedAttachment.id), updatedAttachment);
+      queryClient.setQueryData<Attachment>(keys.detail.byId(updatedAttachment.id), (old) =>
+        old ? { ...old, ...updatedAttachment } : old,
+      );
     },
-
-    // Runs after success OR error - only refetch on error to get true server state
-    onSettled: (_data, error, { id }) => {
-      if (error) queryClient.invalidateQueries({ queryKey: keys.detail.byId(id) });
+    // Error-only: onSuccess patches cache, SSE handles other users
+    onSettled: (_data, error) => {
+      if (error) invalidateIfLastMutation(queryClient, attachmentsMutationKeyBase, keys.list.base);
     },
   });
 };
 
-/**
- * Custom hook to delete attachments with optimistic updates.
- * Accepts array of attachments for batch delete compatibility.
- */
 export const useAttachmentDeleteMutation = (tenantId: string, orgId: string) => {
   const queryClient = useQueryClient();
   const mutateCache = useMutateQueryData(keys.list.base);
 
   return useMutation({
     mutationKey: keys.delete,
-
-    // Execute batch delete API call with stx for echo prevention
+    scope: { id: 'attachment' },
     mutationFn: async (attachments: Attachment[]) => {
       const ids = attachments.map((a) => a.id);
       const stx = createStxForDelete();
       await deleteAttachments({ path: { tenantId, orgId }, body: { ids, stx } });
     },
-
-    // Runs BEFORE mutationFn - remove items immediately from UI
     onMutate: async (attachmentsToDelete) => {
-      // Cancel queries to prevent race conditions
       await queryClient.cancelQueries({ queryKey: keys.list.base });
-
-      // Remove from cache for instant UI feedback
       mutateCache.remove(attachmentsToDelete);
-
-      // Store deleted items for potential restoration
+      for (const { id } of attachmentsToDelete) {
+        queryClient.removeQueries({ queryKey: keys.detail.byId(id) });
+      }
       return { deletedAttachments: attachmentsToDelete };
     },
-
-    // Runs on API failure - restore deleted items
     onError: (_err, _attachments, context) => {
-      // Re-add items that failed to delete on server
-      if (context?.deletedAttachments) {
-        mutateCache.create(context.deletedAttachments);
-      }
+      handleError('delete');
+      if (context?.deletedAttachments) mutateCache.create(context.deletedAttachments);
     },
-
-    // Runs after success OR error - ensure cache stays fresh
-    onSettled: () => {
-      // Skip invalidation if other attachment mutations still in flight (prevents over-invalidation)
-      invalidateIfLastMutation(queryClient, attachmentsMutationKeyBase, keys.list.base);
+    // Error-only: onMutate removed from all caches, SSE handles other users
+    onSettled: (_data, error) => {
+      if (error) invalidateIfLastMutation(queryClient, attachmentsMutationKeyBase, keys.list.base);
     },
   });
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Mutation defaults registration (for offline persistence)
-// ═══════════════════════════════════════════════════════════════════════════
+// --- Mutation defaults (offline persistence) ---
 
-/**
- * Register mutation defaults for attachments.
- * NOTE: Attachment mutations require tenantId and orgId which must be included in mutation variables
- * for persistence to work. The hooks wrap this internally.
- */
 addMutationRegistrar((queryClient: QueryClient) => {
-  // Create mutation - variables include path params for persistence
+  // Detail query defaults for SSE stream handlers — resolves orgId/tenantId from:
+  // 1. meta.organizationId (SSE handler), 2. cached entity, 3. router context
+  // TODO can we consider a way that tenantId and orgID are already available here?
+  queryClient.setQueryDefaults(keys.detail.base, {
+    queryFn: ({ queryKey, meta }) => {
+      const id = queryKey[2] as string;
+      const cacheToken = getCacheToken('attachment', id);
+      const cached = findAttachmentInCache(id);
+      const orgId = (meta?.organizationId as string) ?? cached?.organizationId ?? getRouteOrgId();
+      const tenantId = cached?.tenantId ?? getRouteTenantId();
+      if (!orgId || !tenantId) throw new Error('Cannot resolve orgId/tenantId for attachment fetch');
+      return getAttachment({
+        path: { id, orgId, tenantId },
+        headers: cacheToken ? { 'X-Cache-Token': cacheToken } : undefined,
+      });
+    },
+  });
+
   queryClient.setMutationDefaults(keys.create, {
-    mutationFn: async ({ tenantId, orgId, data }: { tenantId: string; orgId: string; data: CreateAttachmentInput }) => {
+    mutationFn: async ({ tenantId, orgId, data }: QueryOrgContext & { data: CreateAttachmentInput }) => {
       const stx = createStxForCreate();
-      // Body is array with stx embedded in each item
       const body = data.map((item) => ({ ...item, stx }));
       return createAttachments({ path: { tenantId, orgId }, body });
     },
   });
 
-  // Update mutation - variables include path params for persistence
   queryClient.setMutationDefaults(keys.update, {
-    mutationFn: async ({
-      tenantId,
-      orgId,
-      id,
-      key,
-      data,
-    }: {
-      tenantId: string;
-      orgId: string;
-      id: string;
-      key: UpdateAttachmentInput['key'];
-      data: UpdateAttachmentInput['data'];
-    }) => {
-      // Get cached entity for lastReadVersion (may be undefined if not in cache)
+    mutationFn: async ({ tenantId, orgId, id, key, data }: UpdateAttachmentVars & QueryOrgContext) => {
       const cachedEntity = findAttachmentInListCache(id);
       const stx = createStxForUpdate(cachedEntity);
-      // Body uses key/data pattern with stx embedded
       return updateAttachment({ path: { tenantId, orgId, id }, body: { key, data, stx } });
     },
   });
 
-  // Delete mutation - variables include path params for persistence
   queryClient.setMutationDefaults(keys.delete, {
-    mutationFn: async ({
-      tenantId,
-      orgId,
-      attachments,
-    }: {
-      tenantId: string;
-      orgId: string;
-      attachments: Attachment[];
-    }) => {
+    mutationFn: async ({ tenantId, orgId, attachments }: QueryOrgContext & { attachments: Attachment[] }) => {
       const ids = attachments.map((a) => a.id);
-      await deleteAttachments({ path: { tenantId, orgId }, body: { ids } });
+      const stx = createStxForDelete();
+      await deleteAttachments({ path: { tenantId, orgId }, body: { ids, stx } });
     },
   });
 });

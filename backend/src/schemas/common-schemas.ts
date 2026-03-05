@@ -151,6 +151,8 @@ export const paginationQuerySchema = z.object({
     .optional()
     .transform((val) => (val ? Number.parseInt(val, 10) : appConfig.requestLimits.default)) // convert to number
     .refine(limitRefine, t('error:invalid_limit', { max: limitMax })),
+  /** ISO timestamp filter for delta sync — returns entities modified at or after this time */
+  modifiedAfter: z.iso.datetime().optional(),
 });
 
 /** Schema for optional excludeArchived query param (transforms to boolean) */

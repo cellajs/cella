@@ -77,6 +77,7 @@ const main = async () => {
 
     const { createDbRoles } = await import('../scripts/db/create-db-roles');
     await createDbRoles();
+
     console.info('[startup] Running migrations...');
     await pgMigrate(migrationDb, migrateConfig);
   } else {

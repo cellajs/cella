@@ -9,11 +9,8 @@ import '~/modules/attachment/query';
 import '~/modules/page/query';
 import { cleanupOrphanedSessions, persister, sessionPersister } from '~/query/persister';
 import { queryClient, silentRevalidateOnReconnect, updateStaleTime } from '~/query/query-client';
-import { appStreamManager } from '~/query/realtime/stream-store';
-import { runSyncService } from '~/query/realtime/sync-service';
 import { useTabCoordinatorStore } from '~/query/realtime/tab-coordinator';
 import { useUIStore } from '~/store/ui';
-import { useUserStore } from '~/store/user';
 
 /**
  * Initialize mutation defaults BEFORE any cache restoration.
@@ -48,7 +45,6 @@ uploadService.start();
  * Only leader tab persists mutations in app routes to prevent cross-tab conflicts.
  */
 export function QueryClientProvider({ children }: { children: React.ReactNode }) {
-  const { user } = useUserStore();
   const { offlineAccess, toggleOfflineAccess } = useUIStore();
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const isLeader = useTabCoordinatorStore((state) => state.isLeader);
@@ -101,36 +97,6 @@ export function QueryClientProvider({ children }: { children: React.ReactNode })
     if (!offlineAccess) return;
     console.info(`[Offline] Network: ${isOnline ? 'online' : 'offline'}`);
   }, [offlineAccess, isOnline]);
-
-  // Run sync service when app stream reaches 'live' state.
-  // High priority: resolves staleness for current org immediately (ensureQueryData).
-  // Low priority: only fills offline cache when offlineAccess is enabled.
-  // Without offlineAccess, non-current orgs refetch naturally via refetchOnMount hooks.
-  useEffect(() => {
-    if (!user) return;
-
-    let abortController: AbortController | null = null;
-
-    const unsubscribe = appStreamManager.useStore.subscribe((state) => {
-      if (state.state === 'live') {
-        // Abort any in-flight sync from a previous 'live' transition
-        abortController?.abort();
-        abortController = new AbortController();
-        runSyncService(offlineAccess, abortController.signal);
-      }
-    });
-
-    // Also trigger if already live (e.g., on mount after HMR)
-    if (appStreamManager.useStore.getState().state === 'live') {
-      abortController = new AbortController();
-      runSyncService(offlineAccess, abortController.signal);
-    }
-
-    return () => {
-      unsubscribe();
-      abortController?.abort();
-    };
-  }, [user, offlineAccess]);
 
   return (
     <PersistQueryClientProvider

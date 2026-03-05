@@ -15,6 +15,7 @@ import { getMenuData } from '~/modules/navigation/menu-sheet/helpers/get-menu-da
 import { unseenCountsQueryOptions } from '~/modules/seen/query';
 import { onError } from '~/query/on-error';
 import { queryClient } from '~/query/query-client';
+import { appStreamManager } from '~/query/realtime/stream-store';
 import { cleanupOnBoundaryChange } from '~/routes/boundary-cleanup';
 import { useUserStore } from '~/store/user';
 import appTitle from '~/utils/app-title';
@@ -79,7 +80,10 @@ export const PublicLayoutRoute = createRoute({
   beforeLoad: async ({ location, cause }) => {
     if (cause === 'enter') {
       // Clean up sheets/dialogs when entering public layout from different boundary
-      cleanupOnBoundaryChange('public');
+      if (cleanupOnBoundaryChange('public')) {
+        // Disconnect app stream when navigating away from app boundary
+        appStreamManager.disconnect();
+      }
     }
 
     if (cause !== 'enter' || location.pathname === '/sign-out') return;
@@ -128,11 +132,15 @@ export const AppLayoutRoute = createRoute({
       const storedUser = useUserStore.getState().user;
       if (storedUser) {
         console.info('Continuing user with session');
+        // Start stream early so catchup runs in parallel with route loaders
+        appStreamManager.connect();
         return;
       }
 
       // Fetch and set user
       const user = await queryClient.ensureQueryData({ ...meQueryOptions() });
+      // Start stream early so catchup runs in parallel with route loaders
+      appStreamManager.connect();
       return { user };
     } catch (error) {
       if (error instanceof Error) {

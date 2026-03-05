@@ -179,7 +179,6 @@ export const MembersTableBar = ({
           <FilterBarSearch>
             <TableSearch name="memberSearch" value={q} setQuery={onSearch} />
           </FilterBarSearch>
-          {/* TODO-033 allow dropdowner here or a variantion of so it can be shown as drawer? perhaps combobox? */}
           <FilterBarFilters>
             <SelectRole
               entity

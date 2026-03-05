@@ -104,7 +104,7 @@ class StreamManager {
 
     // Circuit breaker: stop if too many consecutive failures
     if (this.circuitOpen) {
-      console.debug('[stream-store] Circuit breaker open, not attempting reconnect');
+      console.debug('[StreamStore] Circuit breaker open, not attempting reconnect');
       return;
     }
 
@@ -125,7 +125,7 @@ class StreamManager {
         });
 
         if (!isLeader()) {
-          console.debug('[stream-store] Not leader, listening to broadcasts only');
+          console.debug('[StreamStore] Not leader, listening to broadcasts only');
           this.useStore.getState().setState('live');
           return;
         }
@@ -136,7 +136,7 @@ class StreamManager {
 
       const currentCursor = useTabCoordination ? useSyncStore.getState().cursor : this.useStore.getState().cursor;
 
-      console.debug('[stream-store] Fetching catchup from offset:', currentCursor ?? 'null');
+      console.debug('[StreamStore] Fetching catchup from offset:', currentCursor ?? 'null');
       const newCursor = await this.config.fetchAndProcessCatchup(currentCursor);
       if (signal.aborted) return;
 
@@ -150,7 +150,7 @@ class StreamManager {
 
       this.useStore.getState().setIsFirstConnect(false);
 
-      console.debug('[stream-store] Catchup complete, cursor:', newCursor);
+      console.debug('[StreamStore] Catchup complete, cursor:', newCursor);
 
       // Reset circuit breaker and backoff on success
       this.consecutiveFailures = 0;
@@ -162,7 +162,7 @@ class StreamManager {
         this.consecutiveFailures++;
         const isPermanentError = this.isPermanentError(error);
 
-        console.error('[stream-store] Catchup failed:', error);
+        console.error('[StreamStore] Catchup failed:', error);
         this.useStore.getState().setState('error');
 
         // Open circuit breaker for permanent errors or after max failures
@@ -197,7 +197,7 @@ class StreamManager {
     const eventSource = new EventSource(sseUrl.toString(), { withCredentials });
 
     eventSource.onopen = () => {
-      console.debug('[stream-store] SSE connected, waiting for offset...');
+      console.debug('[StreamStore] SSE connected, waiting for offset...');
     };
 
     eventSource.addEventListener('change', (e) => {
@@ -213,12 +213,12 @@ class StreamManager {
         if (useTabCoordination && isLeader()) broadcastNotification(notification, 'user');
         this.config.processNotification(notification);
       } catch (error) {
-        console.debug('[stream-store] Failed to parse message:', error);
+        console.debug('[StreamStore] Failed to parse message:', error);
       }
     });
 
     eventSource.addEventListener('offset', (e) => {
-      console.debug('[stream-store] SSE offset received:', e.data);
+      console.debug('[StreamStore] SSE offset received:', e.data);
       if (e.data) {
         this.useStore.getState().setCursor(e.data);
         if (useTabCoordination) useSyncStore.getState().setCursor(e.data);
@@ -233,7 +233,7 @@ class StreamManager {
 
     eventSource.onerror = () => {
       this.consecutiveFailures++;
-      console.debug('[stream-store] SSE error');
+      console.debug('[StreamStore] SSE error');
 
       this.useStore.getState().setState('error');
       eventSource.close();
@@ -253,7 +253,7 @@ class StreamManager {
   private openCircuit(reason: string) {
     this.circuitOpen = true;
     this.circuitOpenedAt = Date.now();
-    console.warn('[stream-store] Circuit breaker opened:', reason);
+    console.warn('[StreamStore] Circuit breaker opened:', reason);
   }
 
   private scheduleReconnect() {
@@ -262,7 +262,7 @@ class StreamManager {
     const delay = this.currentBackoff;
     this.currentBackoff = Math.min(MAX_BACKOFF_MS, delay * BACKOFF_FACTOR);
 
-    console.debug('[stream-store] Scheduling reconnect in', delay / 1000, 's');
+    console.debug('[StreamStore] Scheduling reconnect in', delay / 1000, 's');
     this.reconnectTimeout = setTimeout(() => {
       this.reconnectTimeout = null;
       this.connect();
@@ -284,7 +284,7 @@ class StreamManager {
     const elapsed = Date.now() - (this.circuitOpenedAt ?? 0);
     if (elapsed < CIRCUIT_COOLDOWN_MS) {
       console.debug(
-        '[stream-store] Circuit cooldown:',
+        '[StreamStore] Circuit cooldown:',
         Math.round((CIRCUIT_COOLDOWN_MS - elapsed) / 1000),
         's remaining',
       );
@@ -295,21 +295,21 @@ class StreamManager {
     if (this.healthCheckInProgress) return;
     this.healthCheckInProgress = true;
 
-    console.debug('[stream-store] Circuit cooldown elapsed, checking health');
+    console.debug('[StreamStore] Circuit cooldown elapsed, checking health');
 
     try {
       const response = await fetch(HEALTH_URL);
       if (response.ok) {
-        console.debug('[stream-store] Health check passed, reconnecting');
+        console.debug('[StreamStore] Health check passed, reconnecting');
         this.reconnect();
       } else {
         // Health check failed — reset cooldown timer
         this.circuitOpenedAt = Date.now();
-        console.debug('[stream-store] Health check failed, extending cooldown');
+        console.debug('[StreamStore] Health check failed, extending cooldown');
       }
     } catch {
       this.circuitOpenedAt = Date.now();
-      console.debug('[stream-store] Health check unreachable, extending cooldown');
+      console.debug('[StreamStore] Health check unreachable, extending cooldown');
     } finally {
       this.healthCheckInProgress = false;
     }
@@ -321,7 +321,7 @@ class StreamManager {
     this.visibilityHandler = () => {
       const shouldReconnect = this.config.useTabCoordination ? isLeader() : true;
       if (document.visibilityState === 'visible' && shouldReconnect && !this.isConnected()) {
-        console.debug('[stream-store] Tab visible, attempting reconnect...');
+        console.debug('[StreamStore] Tab visible, attempting reconnect...');
         this.attemptReconnect();
       }
     };
@@ -341,7 +341,7 @@ class StreamManager {
     let wasLeader = useTabCoordinatorStore.getState().isLeader;
     this.leaderUnsubscribe = useTabCoordinatorStore.subscribe((s) => {
       if (s.isLeader && !wasLeader && !this.isConnected()) {
-        console.debug('[stream-store] Became leader, attempting reconnect...');
+        console.debug('[StreamStore] Became leader, attempting reconnect...');
         this.attemptReconnect();
       }
       wasLeader = s.isLeader;

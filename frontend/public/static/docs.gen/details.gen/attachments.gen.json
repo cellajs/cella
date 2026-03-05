@@ -952,7 +952,6 @@
               "maxLength": 255
             },
             "public": { "type": "boolean", "required": false },
-            "publicAccess": { "type": "boolean", "required": false },
             "groupId": {
               "type": ["string", "null"],
               "required": false,
@@ -1730,7 +1729,7 @@
               {
                 "type": "string",
                 "required": false,
-                "enum": ["publicAccess"]
+                "enum": ["public"]
               }
             ]
           },

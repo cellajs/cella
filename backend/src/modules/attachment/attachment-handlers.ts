@@ -1,5 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { and, count, eq, getColumns, gte, ilike, inArray, or, type SQL, sql } from 'drizzle-orm';
+import { and, count, eq, getColumns, gte, ilike, inArray, isNull, or, type SQL, sql } from 'drizzle-orm';
 import { html } from 'hono/html';
 import { appConfig } from 'shared';
 import { unsafeInternalAdminDb } from '#/db/db';
@@ -44,9 +44,15 @@ const attachmentRouteHandlers = app
 
     const filters: SQL[] = [eq(attachmentsTable.organizationId, organization.id)];
 
-    // Delta sync filter
+    // Delta sync filter: match entities modified OR created after the given timestamp.
+    // modifiedAt is nullable (null for never-modified entities), so also check createdAt.
     if (modifiedAfter) {
-      filters.push(gte(attachmentsTable.modifiedAt, modifiedAfter));
+      filters.push(
+        or(
+          gte(attachmentsTable.modifiedAt, modifiedAfter),
+          and(isNull(attachmentsTable.modifiedAt), gte(attachmentsTable.createdAt, modifiedAfter)),
+        )!,
+      );
     }
 
     if (q?.trim()) {
@@ -284,7 +290,7 @@ const attachmentRouteHandlers = app
     const [attachment] = await db
       .select()
       .from(attachmentsTable)
-      .where(and(eq(attachmentsTable.id, id), eq(attachmentsTable.publicAccess, true)));
+      .where(and(eq(attachmentsTable.id, id), eq(attachmentsTable.public, true)));
     if (!attachment) throw new AppError(404, 'not_found', 'warn', { entityType: 'attachment' });
 
     // Detect bots/crawlers by User-Agent to serve OG meta page for link previews

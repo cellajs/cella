@@ -20,6 +20,17 @@ export function getRouteOrgId(): string | null {
   return null;
 }
 
+/** Get the current tenant ID from the router's matched route context, if user is within an org layout. */
+export function getRouteTenantId(): string | null {
+  for (const match of router.state.matches) {
+    const ctx = match.context;
+    if (ctx && 'tenantId' in ctx && typeof ctx.tenantId === 'string') {
+      return ctx.tenantId;
+    }
+  }
+  return null;
+}
+
 /**
  * Determine sync priority based on current route context.
  *

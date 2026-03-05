@@ -467,7 +467,7 @@ async function promptForUpdates(
   const commands: string[] = [];
   for (const [workspace, { filter, packages: pkgs }] of workspacePackages) {
     const pkgList = pkgs.join(', ');
-    console.info(`  ${pc.cyan('↑')} ${pc.bold(workspace)}: ${pc.dim(pkgList)}`);
+    console.info(`${pc.cyan('↑')} ${pc.bold(workspace)}: ${pc.dim(pkgList)}`);
     commands.push(`pnpm --filter ${filter} up --latest ${pkgs.join(' ')}`);
   }
 

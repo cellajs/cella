@@ -65,7 +65,7 @@
     "deps:outdated": "pnpm --filter @cellajs/cli cella -- --service audit"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.5",
+    "@biomejs/biome": "^2.4.6",
     "@evilmartians/lefthook": "^2.1.2",
     "@typescript/native-preview": "7.0.0-dev.20260302.1",
     "cross-env": "^10.1.0",

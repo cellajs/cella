@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   type FieldPath,
   type FieldValues,
@@ -62,6 +62,7 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
 
   const [unsavedChanges, setUnsavedChanges] = useState(false);
   const [loading, setLoading] = useState(true);
+  const isResetting = useRef(false);
 
   const allFields = useWatch({ control: form.control });
   const { isDirty, defaultValues } = useFormState({ control: form.control });
@@ -73,8 +74,15 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
     el.classList.toggle('unsaved-changes', show);
   };
 
+  // TODO investigate auto-saving drafts only on blur/close instead of every change, perhaps just for content fields
   // Auto-save draft on change
   useEffect(() => {
+    // Skip auto-save when form was explicitly reset (e.g. after submit)
+    if (isResetting.current) {
+      isResetting.current = false;
+      return;
+    }
+
     const current = JSON.stringify(allFields);
     const original = JSON.stringify(defaultValues);
     // Form is reset to default values, clear the draft
@@ -118,6 +126,7 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
     handleSubmit: (onValid, onInvalid = defaultOnInvalid) => form.handleSubmit(onValid, onInvalid),
     // Override `reset` to also clear the draft + UI state
     reset: (values, keepStateOptions) => {
+      isResetting.current = true;
       resetDraftForm(formId);
       setFormDirty(formId, false);
       setUnsavedChanges(false);

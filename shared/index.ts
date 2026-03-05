@@ -59,7 +59,6 @@ export type {
   UserFlags,
 } from './types';
 
-// Entity guard functions (bound to app hierarchy)
 export {
   getContextRoles,
   isContextEntity,

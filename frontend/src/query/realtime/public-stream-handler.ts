@@ -1,6 +1,7 @@
 import { isPublicProductEntity } from 'shared';
 import type { StreamNotification } from '~/api.gen';
 import { getEntityQueryKeys } from '~/query/basic';
+import { sourceId } from '~/query/offline';
 import { queryClient } from '~/query/query-client';
 import { useSyncStore } from '~/store/sync';
 import * as cacheOps from './cache-ops';
@@ -17,10 +18,16 @@ import * as cacheOps from './cache-ops';
  * also refetch when they become active again.
  */
 export function handlePublicStreamNotification(message: StreamNotification): void {
-  const { entityType, entityId, action, seq } = message;
+  const { entityType, entityId, action, seq, stx } = message;
 
   // Only handle configured public entity types
   if (!entityType || !isPublicProductEntity(entityType)) {
+    return;
+  }
+
+  // Echo prevention: skip if this is our own mutation (same as app-stream-handler)
+  if (stx?.sourceId === sourceId) {
+    console.debug('[handlePublicStreamNotification] Echo prevention - skipping own mutation:', stx.mutationId);
     return;
   }
 

@@ -102,10 +102,8 @@ function handleEntityNotification(
   }
 
   // Track seq for gap detection — scoped per org for app stream
-  // Also track per-entityType seq for granular prefetch/catchup decisions
   if (seq !== null) {
     useSyncStore.getState().setSeq(organizationId, seq);
-    useSyncStore.getState().setSeq(`${organizationId}:s:${entityType}`, seq);
   }
 
   // Determine fetch priority based on entityConfig ancestors and current route
@@ -120,7 +118,7 @@ function handleEntityNotification(
         cacheOps.invalidateEntityList(keys, 'none');
       } else {
         // Fetch single entity and patch both detail and list caches
-        cacheOps.fetchEntityAndUpdateList(entityId, keys, action);
+        cacheOps.fetchEntityAndUpdateList(entityId, keys, action, organizationId);
       }
 
       // Optimistically increment unseen count for new entities from other users

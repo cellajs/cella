@@ -75,7 +75,7 @@
     "dexie-react-hooks": "^4.2.0",
     "embla-carousel-autoplay": "^8.6.0",
     "embla-carousel-react": "^8.6.0",
-    "gleap": "^15.2.2",
+    "gleap": "^15.2.3",
     "i18next": "^25.8.14",
     "i18next-browser-languagedetector": "^8.2.1",
     "i18next-hmr": "^3.1.5",
