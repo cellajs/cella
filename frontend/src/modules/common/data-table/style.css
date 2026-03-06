@@ -105,17 +105,6 @@
   background: none !important;
 }
 
-.rdg-cell-resizable::after {
-  content: "";
-  position: absolute;
-  top: 0.75rem;
-  bottom: 0.75rem;
-  z-index: -1;
-  right: 0;
-  pointer-events: none;
-  border-right: 2px solid var(--accent);
-}
-
 /* Drag handle cell styles */
 [data-dragging="true"] {
   opacity: 0.5;
