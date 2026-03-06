@@ -19,10 +19,16 @@ export function HelpText({ content, children, className, type }: HelpTextProps) 
       <div className="flex items-center gap-2 mb-4">
         {children}
         <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="ghost" size="icon" className="size-6 opacity-50 hover:opacity-100 active:translate-y-0!">
-              <HelpCircleIcon size={16} />
-            </Button>
+          <PopoverTrigger
+            render={
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-6 opacity-50 hover:opacity-100 active:translate-y-0!"
+              />
+            }
+          >
+            <HelpCircleIcon size={16} />
           </PopoverTrigger>
           <PopoverContent className="w-80 text-sm text-muted-foreground" align="start" side="top">
             {content}

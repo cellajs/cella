@@ -9,11 +9,18 @@ interface Props {
   className?: string;
 }
 
+/**
+ * Radio group for selecting a single entity role.
+ */
 export function SelectRoleRadio({ onChange, value, className }: Props) {
   const { t } = useTranslation();
 
   return (
-    <RadioGroup value={value} onValueChange={onChange} className={cn('inline-flex gap-4 items-center', className)}>
+    <RadioGroup
+      value={value}
+      onValueChange={(v) => onChange(v as string)}
+      className={cn('inline-flex gap-4 items-center', className)}
+    >
       {roles.all.map((role) => (
         // biome-ignore lint/a11y/noLabelWithoutControl: label is for visual grouping only, no input needed
         <label key={role} className="inline-flex gap-2 items-center cursor-pointer ">

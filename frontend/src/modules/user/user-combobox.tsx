@@ -96,38 +96,41 @@ export const UserCombobox = ({ value, onChange, contextEntity }: Props) => {
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <div
-          ref={ref}
-          className="rounded-md w-full flex relative items-center flex-wrap gap-1 border border-input bg-background active:translate-y-0! hover:transparent p-1.5 min-h-10 cursor-pointer pr-10"
-        >
-          {value?.length ? (
-            value?.map((el) => (
-              <Badge
-                size="sm"
-                variant="secondary"
-                key={el}
-                className="data-disabled:bg-muted-foreground data-disabled:text-muted data-disabled:hover:bg-muted-foreground data-fixed:bg-muted-foreground data-fixed:text-muted data-fixed:hover:bg-muted-foreground max-w-60"
+      <PopoverTrigger
+        render={
+          <div
+            ref={ref}
+            className="rounded-md w-full flex relative items-center flex-wrap gap-1 border border-input bg-background active:translate-y-0! hover:transparent p-1.5 min-h-10 cursor-pointer pr-10"
+          />
+        }
+        nativeButton={false}
+      >
+        {value?.length ? (
+          value?.map((el) => (
+            <Badge
+              size="sm"
+              variant="secondary"
+              key={el}
+              className="data-disabled:bg-muted-foreground data-disabled:text-muted data-disabled:hover:bg-muted-foreground data-fixed:bg-muted-foreground data-fixed:text-muted data-fixed:hover:bg-muted-foreground max-w-60"
+            >
+              <span className="truncate">{el}</span>
+              <button
+                type="button"
+                className="py-1 -m-1 ml-1 rounded-full focus-effect"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleUnselect(el);
+                }}
               >
-                <span className="truncate">{el}</span>
-                <button
-                  type="button"
-                  className="py-1 -m-1 ml-1 rounded-full focus-effect"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleUnselect(el);
-                  }}
-                >
-                  <XIcon className="size-4 opacity-50 hover:opacity-100" />
-                </button>
-              </Badge>
-            ))
-          ) : (
-            <span className="text-sm ml-1">{t('common:search_users')}</span>
-          )}
-          <ChevronsUpDownIcon className="absolute right-0 mx-2 size-4 shrink-0 opacity-50" />
-        </div>
+                <XIcon className="size-4 opacity-50 hover:opacity-100" />
+              </button>
+            </Badge>
+          ))
+        ) : (
+          <span className="text-sm ml-1">{t('common:search_users')}</span>
+        )}
+        <ChevronsUpDownIcon className="absolute right-0 mx-2 size-4 shrink-0 opacity-50" />
       </PopoverTrigger>
 
       <PopoverContent align="start" style={{ width: `${bounds.width}px` }} className={'p-0'}>

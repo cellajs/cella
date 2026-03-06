@@ -99,7 +99,7 @@ function VerticalStepBase(props: VerticalStepProps, ref: React.ForwardedRef<HTML
                 });
               }
             }}
-            className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up"
+            className="overflow-hidden data-[open]:animate-collapsible-down data-[closed]:animate-collapsible-up"
           >
             {children}
           </CollapsibleContent>

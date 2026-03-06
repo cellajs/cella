@@ -54,6 +54,31 @@ export function invalidateEntityList(keys: EntityQueryKeys, refetchType: 'active
   queryClient.invalidateQueries({ queryKey: keys.list.base, refetchType });
 }
 
+/**
+ * Invalidate entity list queries scoped to a specific organization.
+ * Only affects queries whose filter params include the matching orgId.
+ * Used by catchup processor to avoid invalidating queries for unrelated orgs.
+ */
+export function invalidateEntityListForOrg(
+  keys: EntityQueryKeys,
+  orgId: string,
+  refetchType: 'active' | 'none' | 'all' = 'active',
+): void {
+  queryClient.invalidateQueries({
+    queryKey: keys.list.base,
+    predicate: (query) => {
+      const filters = query.queryKey[2];
+      // Match queries whose filter object contains this orgId
+      if (filters && typeof filters === 'object' && 'orgId' in filters) {
+        return (filters as { orgId: string }).orgId === orgId;
+      }
+      // If no orgId in filters, include it (e.g., query without org scope)
+      return true;
+    },
+    refetchType,
+  });
+}
+
 /** Remove a single entity from all list caches by ID (no refetch triggered). */
 export function removeEntityFromListCache(entityId: string, keys: EntityQueryKeys): void {
   for (const [queryKey, queryData] of queryClient.getQueriesData({ queryKey: keys.list.base })) {
@@ -70,16 +95,21 @@ export function removeEntityFromListCache(entityId: string, keys: EntityQueryKey
  * Uses query defaults (registered by entity modules via queryClient.setQueryDefaults)
  * to resolve the queryFn, so no entity-specific imports are needed here.
  * Falls back to list invalidation if no query defaults are registered.
+ *
+ * @param organizationId - Optional org ID from SSE notification, passed via meta
+ *   so entity-specific queryFn can resolve path params (e.g., task needs orgId + tenantId).
  */
 export async function fetchEntityAndUpdateList(
   entityId: string,
   keys: EntityQueryKeys,
   action: 'create' | 'update',
+  organizationId?: string,
 ): Promise<void> {
   try {
     const entity = await queryClient.fetchQuery<ItemData>({
       queryKey: keys.detail.byId(entityId),
       staleTime: 0, // Always fetch fresh on SSE notification
+      meta: organizationId ? { organizationId } : undefined,
     });
     if (entity) {
       for (const [queryKey, queryData] of queryClient.getQueriesData({ queryKey: keys.list.base })) {

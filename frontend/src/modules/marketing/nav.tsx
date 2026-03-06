@@ -1,8 +1,6 @@
-import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useInView } from 'react-intersection-observer';
 import { appConfig } from 'shared';
 import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
 import { HamburgerButton } from '~/modules/common/hamburger';
@@ -13,23 +11,19 @@ import { marketingNavConfig } from '~/modules/marketing/marketing-config';
 import { UserLanguage } from '~/modules/me/user-language';
 import { UserTheme } from '~/modules/me/user-theme';
 import { Button } from '~/modules/ui/button';
-import { Sheet, SheetContent, SheetTitle } from '~/modules/ui/sheet';
+import { Drawer, DrawerContent, DrawerTitle } from '~/modules/ui/drawer';
 
 export const MarketingNav = () => {
   const { t } = useTranslation();
 
-  const [activeSheet, setActiveSheet] = useState<boolean>(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
-  const toggleSheet = (isOpen: boolean) => {
-    setActiveSheet(isOpen);
-  };
+  const closeDrawer = () => setDrawerOpen(false);
 
-  const handleNavClick = (target: AboutSectionId, isOpen = false) => {
+  const handleNavClick = (target: AboutSectionId) => {
     scrollToSectionById(target);
-    setActiveSheet(isOpen);
+    closeDrawer();
   };
-
-  const { ref, inView } = useInView();
 
   const renderNavItems = () => {
     return marketingNavConfig.map(({ url, hash, id }) => (
@@ -40,8 +34,10 @@ export const MarketingNav = () => {
           replace={location.pathname === '/about'}
           draggable="false"
           onClick={(e) => {
-            setActiveSheet(false);
-            if (!hash) return;
+            if (!hash) {
+              closeDrawer();
+              return;
+            }
             e.preventDefault();
             handleNavClick(hash);
           }}
@@ -56,19 +52,17 @@ export const MarketingNav = () => {
     window.open(url, '_blank', 'noreferrer');
   };
 
-  const hamburgerToggle = () => {
-    const isActive = !activeSheet;
-    setActiveSheet(isActive);
-    if (isActive) window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
   return (
     <>
       <header className="absolute top-2 sm:top-4 px-2 lg:top-8 lg:px-4 z-121 h-16 w-full">
         <div className="flex h-full items-center gap-2 max-w-336 mx-auto justify-between transition-colors duration-300">
           <div className="flex h-full items-center gap-2 md:gap-6">
             <div className="md:hidden pointer-events-auto!">
-              <HamburgerButton isOpen={activeSheet} toggle={hamburgerToggle} />
+              <HamburgerButton
+                isOpen={drawerOpen}
+                toggle={() => setDrawerOpen((prev) => !prev)}
+                className="data-[open=true]:pointer-events-auto!"
+              />
             </div>
 
             <Link
@@ -106,7 +100,7 @@ export const MarketingNav = () => {
           </div>
 
           <div
-            className={`gap-2 px-2 flex items-center transition-opacity duration-300 ease-in-out ${activeSheet ? 'opacity-0' : 'max-sm:delay-700'}`}
+            className={`gap-2 px-2 flex items-center transition-opacity duration-300 ease-in-out ${drawerOpen ? 'opacity-0' : ''}`}
           >
             <UserLanguage />
 
@@ -118,9 +112,7 @@ export const MarketingNav = () => {
                 aria-label="Github repository"
                 className="max-sm:hidden"
                 size="icon"
-                onClick={() => {
-                  openInNewTab(appConfig.company.githubUrl);
-                }}
+                onClick={() => openInNewTab(appConfig.company.githubUrl)}
               >
                 <GithubIcon strokeWidth={appConfig.theme.strokeWidth} />
               </Button>
@@ -135,32 +127,20 @@ export const MarketingNav = () => {
         </div>
       </header>
 
-      <Sheet open={activeSheet} onOpenChange={toggleSheet}>
-        <SheetContent
-          aria-describedby={undefined}
-          side="top"
-          showCloseButton={false}
-          className={`fixed z-120 border-none pb-8 ${activeSheet ? '' : 'delay-300'}`}
-        >
-          <VisuallyHidden>
-            <SheetTitle>Navigation</SheetTitle>
-          </VisuallyHidden>
-          <div
-            ref={ref}
-            className={`flex mt-2 flex-col pt-14 px-4 gap-2 md:hidden items-stretch transition-opacity duration-200 ease-in-out ${
-              inView && activeSheet ? 'opacity-100 delay-300' : 'opacity-0'
-            }`}
-          >
-            <div className="flex justify-between mb-4">
-              <UserTheme buttonClassName="absolute top-5 right-5 xs:hidden" />
-            </div>
+      <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
+        <DrawerContent className="md:hidden pb-8">
+          <span className="sr-only">
+            <DrawerTitle>Navigation</DrawerTitle>
+          </span>
+          <div className="flex flex-col px-4 gap-2 items-stretch">
+            <UserTheme buttonClassName="xs:hidden self-end" />
             {renderNavItems()}
             {appConfig.company.githubUrl && (
               <Button
                 size="lg"
                 className="sm:hidden"
                 onClick={() => {
-                  setActiveSheet(false);
+                  closeDrawer();
                   openInNewTab(appConfig.company.githubUrl);
                 }}
               >
@@ -169,8 +149,8 @@ export const MarketingNav = () => {
               </Button>
             )}
           </div>
-        </SheetContent>
-      </Sheet>
+        </DrawerContent>
+      </Drawer>
     </>
   );
 };

@@ -14,17 +14,13 @@ export function useAppStream(options: UseAppStreamOptions = {}): UseAppStreamRet
   const state = appStreamManager.useStore((s) => s.state);
   const cursor = appStreamManager.useStore((s) => s.cursor);
 
-  // Connect/disconnect based on enabled prop
+  // Connect based on enabled prop (disconnect lifecycle managed by route beforeLoad)
   useEffect(() => {
     if (enabled) {
       appStreamManager.connect();
     } else {
       appStreamManager.disconnect();
     }
-
-    return () => {
-      appStreamManager.disconnect();
-    };
   }, [enabled]);
 
   // Notify callback on state changes

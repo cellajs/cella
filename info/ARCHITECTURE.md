@@ -154,7 +154,7 @@ Only the leader tab (elected via Web Locks API) persists mutations to prevent cr
 
 A QueryCache subscriber (`frontend/src/query/enrichment/`) auto-enriches context entity list data whenever cache entries change. Three enrichers run in sequence on each item:
 1. **Membership**: attaches the user's cached membership to the entity.
-2. **Permissions**: computes a `can` map (action → boolean, keyed by entity type + descendants) from the membership role and `accessPolicies`. System admins get full permissions.
+2. **Permissions**: computes a `can` map (action → `true | false | 'own'`, keyed by entity type + descendants) from the membership role and `accessPolicies`. The `'own'` value indicates the action is allowed only for entities created by the current user (implicit owner relation). Use `resolvePermission(permission, entity.createdBy?.id, userId)` to resolve per-entity. System admins get full permissions.
 3. **Ancestor slugs**: walks the entity hierarchy to build URL-friendly slug paths from cached data.
 
 This is how `item.membership`, `item.can`, and `item.ancestorSlugs` are populated on context entities without extra API calls.
@@ -220,7 +220,7 @@ Identity columns (`tenant_id`, `organization_id`, `user_id` on memberships, etc.
 
 ### Permission manager
 
-`getAllDecisions()` resolves permissions by walking the entity hierarchy (most-specific context → root), matching memberships against access policies defined in `configureAccessPolicies()` (`shared/permissions-config.ts`). System admins bypass all checks. See AGENTS.md for the full list of permission helpers.
+`getAllDecisions()` resolves permissions by walking the entity hierarchy (most-specific context → root), matching memberships against access policies defined in `configureAccessPolicies()` (`shared/permissions-config.ts`). Policies support three values: `1` (allowed), `0` (denied), and `'own'` (allowed only when `entity.createdBy === userId` — an implicit "owner" relation inspired by Zanzibar). Grant attribution tracks whether access was granted via a membership or an owner relation. System admins bypass all checks. See AGENTS.md for the full list of permission helpers.
 
 ### Fork contract
 

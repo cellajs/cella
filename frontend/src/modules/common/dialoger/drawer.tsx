@@ -19,15 +19,8 @@ export function DialogerDrawer({ dialog }: { dialog: InternalDialog }) {
   };
 
   return (
-    <Drawer
-      key={id}
-      open={open}
-      dismissible={!isDropdownOpen}
-      onOpenChange={onOpenChange}
-      onClose={closeDialog}
-      noBodyStyles
-    >
-      <DrawerContent id={String(id)} onEscapeKeyDown={closeDialog} className={className}>
+    <Drawer key={id} open={open} disablePointerDismissal={!!isDropdownOpen} onOpenChange={onOpenChange}>
+      <DrawerContent id={String(id)} className={className}>
         <DrawerHeader className={`${title || description ? headerClassName : 'hidden'} pt-6`}>
           <DrawerTitle className={`${title ? '' : 'hidden'}`}>{titleContent}</DrawerTitle>
           <DrawerDescription className={`${description ? '' : 'hidden'}`}>{description}</DrawerDescription>

@@ -1,28 +1,46 @@
-import * as AvatarPrimitive from '@radix-ui/react-avatar';
+import { Avatar as AvatarPrimitive } from '@base-ui/react/avatar';
 import * as React from 'react';
 import { cn } from '~/utils/cn';
 
-export function Avatar({ className, ...props }: React.ComponentProps<typeof AvatarPrimitive.Root>) {
+export type AvatarProps = AvatarPrimitive.Root.Props &
+  React.RefAttributes<HTMLSpanElement> & {
+    size?: 'default' | 'sm' | 'lg';
+  };
+
+export function Avatar({ className, size = 'default', ...props }: AvatarProps) {
   return (
     <AvatarPrimitive.Root
       data-slot="avatar"
-      className={cn('relative flex size-8 shrink-0 overflow-hidden', className)}
+      data-size={size}
+      className={cn(
+        'group/avatar relative flex size-8 shrink-0 overflow-hidden select-none data-[size=lg]:size-10 data-[size=sm]:size-6',
+        className,
+      )}
       {...props}
     />
   );
 }
 
-export function AvatarImage({ className, ...props }: React.ComponentProps<typeof AvatarPrimitive.Image>) {
+export function AvatarImage({
+  className,
+  ...props
+}: AvatarPrimitive.Image.Props & React.RefAttributes<HTMLImageElement>) {
   return (
     <AvatarPrimitive.Image data-slot="avatar-image" className={cn('aspect-square size-full', className)} {...props} />
   );
 }
 
-export function AvatarFallback({ className, ...props }: React.ComponentProps<typeof AvatarPrimitive.Fallback>) {
+export function AvatarFallback({
+  className,
+  ...props
+}: AvatarPrimitive.Fallback.Props & React.RefAttributes<HTMLSpanElement>) {
   return (
     <AvatarPrimitive.Fallback
       data-slot="avatar-fallback"
-      className={cn('bg-muted flex size-full items-center justify-center', className)}
+      className={cn(
+        'bg-muted flex size-full items-center justify-center text-sm text-muted-foreground group-data-[size=sm]/avatar:text-xs',
+        className,
+      )}
       {...props}
     />
   );

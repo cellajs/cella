@@ -488,6 +488,7 @@ export type GetActivitiesData = {
     order?: 'asc' | 'desc';
     offset?: string;
     limit?: string;
+    modifiedAfter?: string;
     userId?: string | null;
     entityType?: 'user' | 'organization' | 'attachment' | 'page';
     resourceType?: 'request' | 'membership' | 'inactive_membership' | 'tenant';
@@ -3065,6 +3066,7 @@ export type GetRequestsData = {
     order?: 'asc' | 'desc';
     offset?: string;
     limit?: string;
+    modifiedAfter?: string;
   };
   url: '/requests';
 };
@@ -3653,6 +3655,7 @@ export type GetOrganizationsData = {
     order?: 'asc' | 'desc';
     offset?: string;
     limit?: string;
+    modifiedAfter?: string;
     relatableUserId?: string;
     role?: 'admin' | 'member';
     excludeArchived?: 'true' | 'false';
@@ -3904,6 +3907,10 @@ export type GetPageResponse = GetPageResponses[keyof GetPageResponses];
 export type DeletePagesData = {
   body: {
     ids: Array<string>;
+    stx?: {
+      mutationId: string;
+      sourceId: string;
+    };
   };
   path: {
     tenantId: string;
@@ -4089,6 +4096,7 @@ export type GetUsersData = {
     order?: 'asc' | 'desc';
     offset?: string;
     limit?: string;
+    modifiedAfter?: string;
     role?: 'admin';
   };
   url: '/users';
@@ -4312,7 +4320,6 @@ export type CreateAttachmentsData = {
     originalKey: string;
     bucketName: string;
     public?: boolean;
-    publicAccess?: boolean;
     groupId?: string | null;
     convertedContentType?: string | null;
     convertedKey?: string | null;
@@ -4482,7 +4489,7 @@ export type GetAttachmentResponse = GetAttachmentResponses[keyof GetAttachmentRe
 
 export type UpdateAttachmentData = {
   body: {
-    key: 'name' | 'originalKey' | 'publicAccess';
+    key: 'name' | 'originalKey' | 'public';
     data: string | number | boolean | Array<string> | null;
     stx: StxRequestBase;
   };
@@ -4801,6 +4808,7 @@ export type GetMembersData = {
     order?: 'asc' | 'desc';
     offset?: string;
     limit?: string;
+    modifiedAfter?: string;
     entityId: string;
     entityType: 'organization';
     role?: 'admin' | 'member';
@@ -4866,6 +4874,7 @@ export type GetPendingMembershipsData = {
     order?: 'asc' | 'desc';
     offset?: string;
     limit?: string;
+    modifiedAfter?: string;
     entityId: string;
     entityType: 'organization';
   };

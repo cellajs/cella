@@ -33,3 +33,6 @@ export type ContextProp<T, K = undefined> = K extends undefined | null
 export type InfiniteOptions<T, TQueryKey extends QueryKey = QueryKey> = Parameters<
   typeof useInfiniteQuery<T, Error, InfiniteData<T, unknown>, TQueryKey, PageParams>
 >[0];
+
+/** Org context needed by mutation defaults for offline persistence. */
+export type QueryOrgContext = { tenantId: string; orgId: string };

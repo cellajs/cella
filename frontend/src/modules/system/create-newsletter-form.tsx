@@ -1,5 +1,4 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import type { CheckedState } from '@radix-ui/react-checkbox';
 import { useMutation } from '@tanstack/react-query';
 import { InfoIcon, SendIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -14,7 +13,7 @@ import type { ApiError } from '~/lib/api';
 import { AlertWrap } from '~/modules/common/alert-wrap';
 import { blocksToHTML } from '~/modules/common/blocknote/helpers';
 import { CallbackArgs } from '~/modules/common/data-table/types';
-import BlockNoteContentField from '~/modules/common/form-fields/blocknote-content';
+import BlockNoteContentFormField from '~/modules/common/form-fields/blocknote';
 import { InputFormField } from '~/modules/common/form-fields/input';
 import { SelectRoles } from '~/modules/common/form-fields/select-roles';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
@@ -36,7 +35,7 @@ interface CreateNewsletterFormProps {
 export function CreateNewsletterForm({ organizationIds, callback }: CreateNewsletterFormProps) {
   const { t } = useTranslation();
 
-  const [testOnly, setTestOnly] = useState<CheckedState>(false);
+  const [testOnly, setTestOnly] = useState<boolean>(false);
 
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
@@ -106,7 +105,7 @@ export function CreateNewsletterForm({ organizationIds, callback }: CreateNewsle
           required
         />
 
-        <BlockNoteContentField
+        <BlockNoteContentFormField
           control={form.control}
           name="content"
           label={t('common:message')}

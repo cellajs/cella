@@ -1,48 +1,52 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { useLocation, useSearch } from '@tanstack/react-router';
-import { useMemo, useRef } from 'react';
+import { useRef } from 'react';
 import { nanoid } from 'shared/nanoid';
-import { schemasQueryOptions, schemaTagsQueryOptions } from '~/modules/docs/query';
+import { usePrerenderTrigger } from '~/hooks/use-prerender';
+import { useCurrentSection } from '~/hooks/use-scroll-spy';
+import { schemasByTagQueryOptions, schemaTagsQueryOptions } from '~/modules/docs/query';
+import type { GenComponentSchema } from '~/modules/docs/types';
 import { SidebarMenu } from '~/modules/ui/sidebar';
-import { SchemaTagItem } from './schema-tag-item';
+import { CollapsibleTagItem } from './collapsible-tag-item';
+import { SchemaItem } from './schema-item';
+
+const itemKey = (schema: GenComponentSchema) => schema.name;
+const renderItem = (schema: GenComponentSchema, _index: number, isActive: boolean) => (
+  <SchemaItem schema={schema} isActive={isActive} />
+);
+
+interface SchemasSidebarProps {
+  activeTag?: string;
+}
 
 /** Sidebar listing schema tags with their schemas. */
-export function SchemasSidebar() {
+export function SchemasSidebar({ activeTag }: SchemasSidebarProps) {
   const layoutId = useRef(nanoid()).current;
+  const { prerender } = usePrerenderTrigger('schemas');
 
-  const { data: schemas } = useSuspenseQuery(schemasQueryOptions);
+  const { data: schemasByTag } = useSuspenseQuery(schemasByTagQueryOptions);
   const { data: schemaTags } = useSuspenseQuery(schemaTagsQueryOptions);
-  const { schemaTag: activeTag } = useSearch({ strict: false });
-  const { hash } = useLocation();
-
-  const schemasByTag = useMemo(() => {
-    const grouped = new Map<string, typeof schemas>();
-    for (const schema of schemas) {
-      if (schema.schemaTag) {
-        const existing = grouped.get(schema.schemaTag) ?? [];
-        existing.push(schema);
-        grouped.set(schema.schemaTag, existing);
-      }
-    }
-    return grouped;
-  }, [schemas]);
+  const hash = useCurrentSection();
 
   return (
     <SidebarMenu className="gap-1 p-0 pt-1">
       {schemaTags.map((tag) => {
-        const tagSchemas = schemasByTag.get(tag.name) ?? [];
+        const tagSchemas = schemasByTag[tag.name] ?? [];
         const isActive = hash === tag.name || tagSchemas.some((s) => s.ref.replace(/^#/, '') === hash);
         const activeSchemaIndex = tagSchemas.findIndex((s) => s.ref.replace(/^#/, '') === hash);
 
         return (
-          <SchemaTagItem
+          <CollapsibleTagItem
+            type="schemas"
             key={tag.name}
             tag={tag}
-            schemas={tagSchemas}
+            items={tagSchemas}
             isExpanded={activeTag === tag.name}
             layoutId={layoutId}
             isActive={isActive}
-            activeSchemaIndex={activeSchemaIndex}
+            activeItemIndex={activeSchemaIndex}
+            renderItem={renderItem}
+            itemKey={itemKey}
+            onPrerender={() => prerender(tag.name)}
           />
         );
       })}

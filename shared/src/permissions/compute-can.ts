@@ -6,14 +6,26 @@ import { getPolicyPermissions, getSubjectPolicies } from './access-policies';
 import { allActionsDenied } from './action-helpers';
 import type { AccessPolicies } from './types';
 
-/** Boolean permission record for a single entity type */
-type ActionBooleans = Record<EntityActionType, boolean>;
+/**
+ * Per-action permission state for a single entity type.
+ *
+ * - `true` = unconditionally allowed (policy value `1`)
+ * - `false` = denied (policy value `0`)
+ * - `'own'` = allowed only when the actor owns the entity (policy value `'own'`).
+ *   This is an implicit "owner" relation — the frontend must compare `entity.createdBy`
+ *   against the current user ID to resolve to a final boolean.
+ *
+ * This three-state model preserves the Zanzibar-style relation semantics at the UI layer,
+ * making it straightforward to later introduce explicit relation tuples.
+ */
+export type ActionPermissionState = boolean | 'own';
+type ActionStates = Record<EntityActionType, ActionPermissionState>;
 
 /** Entity-type-keyed permission map: context entity + its descendant types */
-export type EntityCanMap = Partial<Record<EntityType, ActionBooleans>>;
+export type EntityCanMap = Partial<Record<EntityType, ActionStates>>;
 
 /**
- * Compute a single entity type's boolean permission record from policies + membership.
+ * Compute a single entity type's permission states from policies + membership.
  * Returns allActionsDenied when no policy is found.
  */
 function computeEntityPermissions(
@@ -21,13 +33,18 @@ function computeEntityPermissions(
   contextType: ContextEntityType,
   role: EntityRole,
   policies: AccessPolicies,
-): ActionBooleans {
+): ActionStates {
   const subjectPolicies = getSubjectPolicies(entityType as ContextEntityType, policies);
   const permissions = getPolicyPermissions(subjectPolicies, contextType, role);
 
   if (!permissions) return allActionsDenied;
 
-  return recordFromKeys(appConfig.entityActions, (action) => permissions[action] === 1) as ActionBooleans;
+  return recordFromKeys(appConfig.entityActions, (action) => {
+    const value = permissions[action];
+    if (value === 1) return true;
+    if (value === 'own') return 'own';
+    return false;
+  }) as ActionStates;
 }
 
 /**
@@ -38,12 +55,16 @@ function computeEntityPermissions(
  * - The context entity itself (e.g., `organization`)
  * - All descendant entity types per the hierarchy (e.g., `attachment`)
  *
+ * Actions with `'own'` permission are preserved as `'own'` in the map.
+ * The frontend resolves these per-entity by checking `entity.createdBy === userId`.
+ *
  * Returns empty map if no membership is provided.
  *
  * @example
  * ```ts
  * const can = computeCan('organization', membership, policies);
  * // can.organization.update → true
+ * // can.attachment.update → 'own' (member can only update own attachments)
  * // can.attachment.create → true
  * ```
  */

@@ -9,6 +9,9 @@ interface SelectLanguageProps {
   onChange: (value: Language) => void;
 }
 
+/**
+ * Dropdown select for picking a single language from the configured app languages.
+ */
 export const SelectLanguage = ({ value, options, onChange }: SelectLanguageProps) => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -19,8 +22,8 @@ export const SelectLanguage = ({ value, options, onChange }: SelectLanguageProps
       disabled={appConfig.languages.length < 2}
       open={open}
       onOpenChange={setOpen}
-      onValueChange={(lang: Language) => {
-        onChange(lang);
+      onValueChange={(lang) => {
+        onChange(lang as Language);
       }}
       value={value}
     >

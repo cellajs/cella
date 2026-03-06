@@ -28,47 +28,38 @@ import {
   useMutateQueryData,
 } from '~/query/basic';
 import { addMutationRegistrar } from '~/query/mutation-registry';
-import { createStxForCreate, createStxForUpdate, squashPendingMutation } from '~/query/offline';
+import { createStxForCreate, createStxForDelete, createStxForUpdate, squashPendingMutation } from '~/query/offline';
+import { queryClient } from '~/query/query-client';
+import { createResourceError } from '~/utils/resource-error';
 
-// Use generated types from api.gen for mutation input shapes
-// Body is array of items with stx embedded, extract element type without stx
 type CreatePageItem = CreatePagesData['body'][number];
 type CreatePageInput = Omit<CreatePageItem, 'stx'>;
 type UpdatePageItem = UpdatePageData['body'];
 type UpdatePageInput = Omit<UpdatePageItem, 'stx'>;
+type UpdatePageVars = { id: string; key: UpdatePageInput['key']; data: UpdatePageInput['data'] };
 
 export const pagesLimit = appConfig.requestLimits.pages;
 
 type PageFilters = Omit<GetPagesData['query'], 'limit' | 'offset'>;
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Page query keys
-// ═══════════════════════════════════════════════════════════════════════════
-
-// Use factory for consistent query keys across detail and list queries
 const keys = createEntityKeys<PageFilters>('page');
-
-// Register query keys for dynamic lookup in stream handlers
 registerEntityQueryKeys('page', keys);
-
 export const pageQueryKeys = keys;
 
-/** Base mutation key for all page mutations - used for over-invalidation prevention. */
 const pagesMutationKeyBase = ['page'] as const;
+const handleError = createResourceError('page');
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Query options
-// ═══════════════════════════════════════════════════════════════════════════
+// --- Query options ---
 
-/** Find a page in the list cache by id. */
 export const findPageInListCache = (id: string) => findInListCache<Page>(keys.list.base, id);
 
-/**
- * Query options for a single page by id.
- * Uses initialData from the pages list cache to provide
- * instant loading while revalidating in the background.
- * Server uses LRU cache for efficient public page access.
- */
+export const findPageInCache = (id: string): Page | undefined => {
+  const detail = queryClient.getQueryData<Page>(keys.detail.byId(id));
+  if (detail) return detail;
+  return findInListCache<Page>(keys.list.base, id);
+};
+
+/** Uses initialData from list cache for instant loading while revalidating. */
 export const pageQueryOptions = (id: string) =>
   queryOptions({
     queryKey: keys.detail.byId(id),
@@ -83,9 +74,6 @@ type PagesListParams = Omit<NonNullable<GetPagesData['query']>, 'limit' | 'offse
   limit?: number;
 };
 
-/**
- * Infinite query options to get a paginated list of pages.
- */
 export const pagesListQueryOptions = (params: PagesListParams = {}) => {
   const { q = '', sort = 'createdAt', order = 'desc', limit: baseLimit = pagesLimit } = params;
 
@@ -111,242 +99,149 @@ export const pagesListQueryOptions = (params: PagesListParams = {}) => {
   });
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Mutation hooks - standard React Query with sync utilities
-// ═══════════════════════════════════════════════════════════════════════════
+// --- Mutations ---
 
-/**
- * Custom hook to create a new page with optimistic updates.
- * Uses sync utilities for transaction metadata.
- */
 export const usePageCreateMutation = () => {
   const queryClient = useQueryClient();
   const mutateCache = useMutateQueryData(keys.list.base);
 
   return useMutation({
     mutationKey: keys.create,
-
-    // Execute API call with transaction metadata for conflict tracking
-    // API accepts array - wrap single item, extract first from response
+    scope: { id: 'page' },
+    // API accepts array — wrap single item, extract first from response
     mutationFn: async (data: CreatePageInput) => {
       const stx = createStxForCreate();
-      // Body is array with stx embedded in each item
       const result = await createPages({ path: { tenantId: 'public' }, body: [{ ...data, stx }] });
-      // Return created page (has stx embedded)
       return result.data[0];
     },
-
-    // Runs BEFORE mutationFn - prepare optimistic state
     onMutate: async (newData) => {
-      // Cancel in-flight queries to prevent race conditions with stale data
       await queryClient.cancelQueries({ queryKey: keys.list.base });
-
-      // Build optimistic entity from schema (auto-generates temp ID, timestamps, user refs)
       const optimisticPage = createOptimisticEntity(zPage, newData);
-
-      // Insert optimistic entity into list cache for instant UI update
       mutateCache.create([optimisticPage]);
-
-      // Return context for rollback/replacement in later callbacks
       return { optimisticPage };
     },
-
-    // Runs on API failure - rollback optimistic changes
     onError: (_err, _newData, context) => {
-      // Remove the optimistic entity we added in onMutate
-      if (context?.optimisticPage) {
-        mutateCache.remove([context.optimisticPage]);
-      }
+      handleError('create');
+      if (context?.optimisticPage) mutateCache.remove([context.optimisticPage]);
     },
-
-    // Runs on API success - finalize with real data
     onSuccess: (createdPage, _variables, context) => {
-      // Remove temp entity and insert real one with server-assigned ID
-      if (context?.optimisticPage) {
-        mutateCache.remove([context.optimisticPage]);
-      }
-      mutateCache.create([createdPage]);
+      if (context?.optimisticPage) mutateCache.remove([context.optimisticPage]);
+      // Upsert to avoid duplicates from concurrent SSE + onSuccess race
+      if (findPageInCache(createdPage.id)) mutateCache.update([createdPage]);
+      else mutateCache.create([createdPage]);
     },
-
-    // Runs after success OR error - ensure cache stays fresh
-    onSettled: () => {
-      // Skip invalidation if other page mutations still in flight (prevents over-invalidation)
-      invalidateIfLastMutation(queryClient, pagesMutationKeyBase, keys.list.base);
+    // Error-only: onSuccess patches cache, SSE handles other users
+    onSettled: (_data, error) => {
+      if (error) invalidateIfLastMutation(queryClient, pagesMutationKeyBase, keys.list.base);
     },
   });
 };
 
-/**
- * Custom hook to update an existing page with optimistic updates.
- * Implements squashing: cancels pending same-entity mutations.
- */
 export const usePageUpdateMutation = () => {
   const queryClient = useQueryClient();
   const mutateCache = useMutateQueryData(keys.list.base);
 
   return useMutation({
     mutationKey: keys.update,
-
-    // Execute API call with version-based transaction metadata
-    mutationFn: async ({
-      id,
-      key,
-      data,
-    }: {
-      id: string;
-      key: UpdatePageInput['key'];
-      data: UpdatePageInput['data'];
-    }) => {
-      // Get cached entity for lastReadVersion conflict detection
+    scope: { id: 'page' },
+    mutationFn: async ({ id, key, data }: UpdatePageVars) => {
       const cachedEntity = findPageInListCache(id);
       const stx = createStxForUpdate(cachedEntity);
-      // Body uses key/data pattern with stx embedded
-      const result = await updatePage({ path: { tenantId: 'public', id }, body: { key, data, stx } });
-      return result;
+      return updatePage({ path: { tenantId: 'public', id }, body: { key, data, stx } });
     },
-
-    // Runs BEFORE mutationFn - squash duplicates and prepare optimistic state
-    onMutate: async ({ id, key, data }) => {
-      // Cancel in-flight mutations updating the same entity (prevents redundant requests)
+    onMutate: async ({ id, key, data }: UpdatePageVars) => {
       await squashPendingMutation(queryClient, keys.update, id, { [key]: data });
-
-      // Cancel queries to prevent race conditions
       await queryClient.cancelQueries({ queryKey: keys.list.base });
       await queryClient.cancelQueries({ queryKey: keys.detail.byId(id) });
 
-      // Snapshot current state for potential rollback
       const previousPage = findPageInListCache(id);
-
       if (previousPage) {
-        // Merge new data into existing entity for instant UI update
         const optimisticPage = { ...previousPage, [key]: data, modifiedAt: new Date().toISOString() };
         mutateCache.update([optimisticPage]);
-        // Also update detail cache so view page shows updated data immediately
         queryClient.setQueryData(keys.detail.byId(id), optimisticPage);
       }
-
-      // Return snapshot for rollback in onError
       return { previousPage };
     },
-
-    // Runs on API failure - restore previous state
     onError: (_err, _variables, context) => {
-      // Revert cache to pre-mutation snapshot
+      handleError('update');
       if (context?.previousPage) {
         mutateCache.update([context.previousPage]);
         queryClient.setQueryData(keys.detail.byId(context.previousPage.id), context.previousPage);
       }
     },
-
-    // Runs on API success - apply authoritative server data
     onSuccess: (updatedPage) => {
-      // Replace optimistic data with server response (source of truth)
       mutateCache.update([updatedPage]);
-      queryClient.setQueryData(keys.detail.byId(updatedPage.id), updatedPage);
+      queryClient.setQueryData<Page>(keys.detail.byId(updatedPage.id), (old) =>
+        old ? { ...old, ...updatedPage } : old,
+      );
     },
-
-    // Runs after success OR error - only refetch on error to get true server state
-    onSettled: (_data, error, { id }) => {
-      if (error) queryClient.invalidateQueries({ queryKey: keys.detail.byId(id) });
+    // Error-only: onSuccess patches cache, SSE handles other users
+    onSettled: (_data, error) => {
+      if (error) invalidateIfLastMutation(queryClient, pagesMutationKeyBase, keys.list.base);
     },
   });
 };
 
-/**
- * Custom hook to delete pages with optimistic updates.
- * Accepts array of pages for batch delete compatibility.
- */
 export const usePageDeleteMutation = () => {
   const queryClient = useQueryClient();
   const mutateCache = useMutateQueryData(keys.list.base);
 
   return useMutation({
     mutationKey: keys.delete,
-
-    // Execute batch delete API call
+    scope: { id: 'page' },
     mutationFn: async (pages: Page[]) => {
       const ids = pages.map((p) => p.id);
-      await deletePages({ path: { tenantId: 'public' }, body: { ids } });
+      const stx = createStxForDelete();
+      await deletePages({ path: { tenantId: 'public' }, body: { ids, stx } });
     },
-
-    // Runs BEFORE mutationFn - remove items immediately from UI
     onMutate: async (pagesToDelete) => {
-      // Cancel queries to prevent race conditions
       await queryClient.cancelQueries({ queryKey: keys.list.base });
-
-      // Remove from cache for instant UI feedback
       mutateCache.remove(pagesToDelete);
-
-      // Store deleted items for potential restoration
+      for (const { id } of pagesToDelete) {
+        queryClient.removeQueries({ queryKey: keys.detail.byId(id) });
+      }
       return { deletedPages: pagesToDelete };
     },
-
-    // Runs on API failure - restore deleted items
     onError: (_err, _pages, context) => {
-      // Re-add items that failed to delete on server
-      if (context?.deletedPages) {
-        mutateCache.create(context.deletedPages);
-      }
+      handleError('delete');
+      if (context?.deletedPages) mutateCache.create(context.deletedPages);
     },
-
-    // Runs after success OR error - ensure cache stays fresh
-    onSettled: () => {
-      // Skip invalidation if other page mutations still in flight (prevents over-invalidation)
-      invalidateIfLastMutation(queryClient, pagesMutationKeyBase, keys.list.base);
+    // Error-only: onMutate removed from all caches, SSE handles other users
+    onSettled: (_data, error) => {
+      if (error) invalidateIfLastMutation(queryClient, pagesMutationKeyBase, keys.list.base);
     },
   });
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Mutation defaults registration (for offline persistence)
-// ═══════════════════════════════════════════════════════════════════════════
+// --- Mutation defaults (offline persistence) ---
 
-/**
- * Register mutation defaults for pages.
- * This enables mutations to resume after page reload by providing mutationFn globally.
- * Called during app initialization before persisted cache restoration.
- */
 addMutationRegistrar((queryClient: QueryClient) => {
-  // Register detail query defaults so stream handlers can fetch individual pages
-  // via queryClient.fetchQuery without needing entity-specific imports.
+  // Detail query defaults for SSE stream handlers
   queryClient.setQueryDefaults(keys.detail.base, {
     queryFn: ({ queryKey }) => getPage({ path: { id: queryKey[2] as string } }),
   });
 
-  // Create mutation - API accepts array, unwrap single result
   queryClient.setMutationDefaults(keys.create, {
     mutationFn: async (data: CreatePageInput) => {
       const stx = createStxForCreate();
-      // Body is array with stx embedded in each item
       const result = await createPages({ path: { tenantId: 'public' }, body: [{ ...data, stx }] });
-      return result.data[0]; // Return entity with stx embedded
+      return result.data[0];
     },
   });
 
-  // Update mutation
   queryClient.setMutationDefaults(keys.update, {
-    mutationFn: async ({
-      id,
-      key,
-      data,
-    }: {
-      id: string;
-      key: UpdatePageInput['key'];
-      data: UpdatePageInput['data'];
-    }) => {
-      // Get cached entity for lastReadVersion (may be undefined if not in cache)
+    mutationFn: async ({ id, key, data }: UpdatePageVars) => {
       const cachedEntity = findPageInListCache(id);
       const stx = createStxForUpdate(cachedEntity);
-      // Body uses key/data pattern with stx embedded
       return updatePage({ path: { tenantId: 'public', id }, body: { key, data, stx } });
     },
   });
 
-  // Delete mutation
   queryClient.setMutationDefaults(keys.delete, {
     mutationFn: async (pages: Page[]) => {
       const ids = pages.map((p) => p.id);
-      await deletePages({ path: { tenantId: 'public' }, body: { ids } });
+      const stx = createStxForDelete();
+      await deletePages({ path: { tenantId: 'public' }, body: { ids, stx } });
     },
   });
 });

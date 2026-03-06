@@ -20,8 +20,7 @@ const meta = {
   tags: ['autodocs'],
   args: {
     onOpenChange: fn(),
-    onClose: fn(),
-    onAnimationEnd: fn(),
+    onOpenChangeComplete: fn(),
   },
   render: (args) => (
     <Drawer {...args}>
@@ -64,13 +63,12 @@ export const ShouldOpenCloseWithSubmit: Story = {
 
       const dialog = await canvasBody.findByRole('dialog');
       expect(dialog).toBeInTheDocument();
-      expect(dialog).toHaveAttribute('data-state', 'open');
+      expect(dialog).toHaveAttribute('data-open');
     });
 
     await step('Close the drawer', async () => {
       await userEvent.click(await canvasBody.findByRole('button', { name: /submit/i }), { delay: 100 });
-      await expect(args.onClose).toHaveBeenCalled();
-      expect(await canvasBody.findByRole('dialog')).toHaveAttribute('data-state', 'closed');
+      await expect(args.onOpenChangeComplete).toHaveBeenCalled();
     });
   },
 };
@@ -87,13 +85,12 @@ export const ShouldOpenCloseWithCancel: Story = {
 
       const dialog = await canvasBody.findByRole('dialog');
       expect(dialog).toBeInTheDocument();
-      expect(dialog).toHaveAttribute('data-state', 'open');
+      expect(dialog).toHaveAttribute('data-open');
     });
 
     await step('Close the drawer', async () => {
       await userEvent.click(await canvasBody.findByRole('button', { name: /cancel/i }), { delay: 100 });
-      await expect(args.onClose).toHaveBeenCalled();
-      expect(await canvasBody.findByRole('dialog')).toHaveAttribute('data-state', 'closed');
+      await expect(args.onOpenChangeComplete).toHaveBeenCalled();
     });
   },
 };

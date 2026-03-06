@@ -1,4 +1,3 @@
-import { Slot } from '@radix-ui/react-slot';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { PanelLeftIcon } from 'lucide-react';
 import * as React from 'react';
@@ -7,6 +6,7 @@ import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 import { Separator } from '~/modules/ui/separator';
 import { Skeleton } from '~/modules/ui/skeleton';
+import { Slot } from '~/modules/ui/slot';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '~/modules/ui/tooltip';
 import { useNavigationStore } from '~/store/navigation';
 import { cn } from '~/utils/cn';
@@ -418,7 +418,7 @@ function SidebarMenuButton({
 
   return (
     <Tooltip>
-      <TooltipTrigger asChild>{button}</TooltipTrigger>
+      <TooltipTrigger render={button} />
       <TooltipContent side="right" align="center" hidden={state !== 'collapsed' || isMobile} {...tooltip} />
     </Tooltip>
   );

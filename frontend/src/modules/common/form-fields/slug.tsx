@@ -22,6 +22,9 @@ type SlugFieldProps<TFieldValues extends FieldValues> = Omit<BaseFormFieldProps<
   prefix?: string;
 };
 
+/**
+ * Form field for entering a URL slug with auto-generation from a name and availability checking.
+ */
 export const SlugFormField = <TFieldValues extends FieldValues>({
   control,
   label,

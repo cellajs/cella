@@ -19,6 +19,7 @@ export type SheetData = {
   showCloseButton?: boolean;
   closeSheetOnEsc?: boolean;
   modal?: boolean;
+  disablePointerDismissal?: boolean;
   closeSheetOnRouteChange?: boolean;
   container?: SheetContainerOptions;
   skipAnimation?: boolean;
@@ -35,6 +36,7 @@ interface SheetStoreState {
   sheets: InternalSheet[];
 
   create(content: ReactNode, data: SheetData): string;
+  replace(content: ReactNode, data: SheetData): string;
   update(id: string, updates: Partial<InternalSheet>): void;
   remove(id?: string, opts?: { isCleanup?: boolean }): void;
   removeOnRouteChange: (opts?: { isCleanup?: boolean }) => void;
@@ -72,6 +74,16 @@ export const useSheeter = create<SheetStoreState>()((set, get) => ({
 
     set((state) => ({
       sheets: [...state.sheets.filter((s) => s.id !== data.id), { ...defaults, ...data, content }],
+    }));
+    return data.id;
+  },
+
+  replace: (content, data) => {
+    const existing = get().sheets.find((s) => s.id === data.id);
+    if (!existing) return get().create(content, data);
+
+    set((state) => ({
+      sheets: state.sheets.map((s) => (s.id === data.id ? { ...s, ...data, content, open: true } : s)),
     }));
     return data.id;
   },

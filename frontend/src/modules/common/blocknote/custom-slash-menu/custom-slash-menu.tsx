@@ -5,7 +5,7 @@ import { useEventListener } from '~/hooks/use-event-listener';
 import { customSlashIndexedItems } from '~/modules/common/blocknote/blocknote-config';
 import type { CustomBlockTypes } from '~/modules/common/blocknote/types';
 import { DialogTitle } from '~/modules/ui/dialog';
-import { Drawer, DrawerContent, DrawerPortal } from '~/modules/ui/drawer';
+import { Drawer, DrawerContent } from '~/modules/ui/drawer';
 
 interface CustomSlashMenuComponentProps extends SuggestionMenuProps<DefaultReactSuggestionItem> {
   originalItemCount: number;
@@ -101,13 +101,11 @@ export const CustomSlashMenuComponent = ({
 
   if (isMobile) {
     return (
-      <Drawer open={true} noBodyStyles>
-        <DrawerPortal>
-          <DrawerContent>
-            <DialogTitle className="hidden" />
-            {menuContent}
-          </DrawerContent>
-        </DrawerPortal>
+      <Drawer open={true}>
+        <DrawerContent>
+          <DialogTitle className="hidden" />
+          {menuContent}
+        </DrawerContent>
       </Drawer>
     );
   }

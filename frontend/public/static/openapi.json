@@ -2569,6 +2569,15 @@
           },
           {
             "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "required": false,
+            "name": "modifiedAfter",
+            "in": "query"
+          },
+          {
+            "schema": {
               "type": [
                 "string",
                 "null"
@@ -7191,6 +7200,15 @@
             "required": false,
             "name": "limit",
             "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "required": false,
+            "name": "modifiedAfter",
+            "in": "query"
           }
         ],
         "responses": {
@@ -8496,6 +8514,15 @@
           {
             "schema": {
               "type": "string",
+              "format": "date-time"
+            },
+            "required": false,
+            "name": "modifiedAfter",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
               "maxLength": 50
             },
             "required": false,
@@ -9651,6 +9678,21 @@
                     },
                     "minItems": 1,
                     "maxItems": 50
+                  },
+                  "stx": {
+                    "type": "object",
+                    "properties": {
+                      "mutationId": {
+                        "type": "string"
+                      },
+                      "sourceId": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "mutationId",
+                      "sourceId"
+                    ]
                   }
                 },
                 "required": [
@@ -9964,6 +10006,15 @@
             },
             "required": false,
             "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "required": false,
+            "name": "modifiedAfter",
             "in": "query"
           },
           {
@@ -10555,9 +10606,6 @@
                       "maxLength": 255
                     },
                     "public": {
-                      "type": "boolean"
-                    },
-                    "publicAccess": {
                       "type": "boolean"
                     },
                     "groupId": {
@@ -11233,7 +11281,7 @@
                       {
                         "type": "string",
                         "enum": [
-                          "publicAccess"
+                          "public"
                         ]
                       }
                     ]
@@ -12001,6 +12049,15 @@
           {
             "schema": {
               "type": "string",
+              "format": "date-time"
+            },
+            "required": false,
+            "name": "modifiedAfter",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
               "maxLength": 50
             },
             "required": true,
@@ -12272,6 +12329,15 @@
             },
             "required": false,
             "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "required": false,
+            "name": "modifiedAfter",
             "in": "query"
           },
           {

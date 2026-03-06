@@ -1,4 +1,3 @@
-import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { useEventListener } from '~/hooks/use-event-listener';
 import { type InternalDropdown, useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '~/modules/ui/drawer';
@@ -18,13 +17,13 @@ export function DropdownerDrawer({ dropdown }: { dropdown: InternalDropdown }) {
   useEventListener('popstate', closeDialog);
 
   return (
-    <Drawer key={id} open={true} onOpenChange={onOpenChange} onClose={closeDialog} noBodyStyles>
-      <DrawerContent id={String(id)} onEscapeKeyDown={closeDialog} className="z-301 max-h-[70vh]">
+    <Drawer key={id} open={true} onOpenChange={onOpenChange}>
+      <DrawerContent id={String(id)} className="z-301 max-h-[70vh]">
         <DrawerHeader className="p-0">
-          <VisuallyHidden>
+          <span className="sr-only">
             <DrawerTitle>Choose</DrawerTitle>
             <DrawerDescription>Select an option</DrawerDescription>
-          </VisuallyHidden>
+          </span>
         </DrawerHeader>
         <div className="flex flex-col gap-4 p-4">{content}</div>
       </DrawerContent>

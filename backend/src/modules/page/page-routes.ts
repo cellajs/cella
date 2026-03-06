@@ -6,7 +6,7 @@ import { bulkPointsLimiter, singlePointsLimiter } from '#/middlewares/rate-limit
 import {
   batchResponseSchema,
   errorResponseRefs,
-  idsBodySchema,
+  idsWithStxBodySchema,
   paginationSchema,
   tenantIdParamSchema,
   tenantOnlyParamSchema,
@@ -154,7 +154,7 @@ const pagesRoutes = {
       params: tenantOnlyParamSchema,
       body: {
         required: true,
-        content: { 'application/json': { schema: idsBodySchema() } },
+        content: { 'application/json': { schema: idsWithStxBodySchema() } },
       },
     },
     responses: {

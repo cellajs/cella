@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { resolvePermission } from 'shared';
 import type { Attachment } from '~/api.gen';
 import {
   CopyUrlCell,
@@ -15,13 +16,19 @@ import type { EnrichedContextEntity } from '~/modules/entities/types';
 import { SeenMark } from '~/modules/seen/seen-mark';
 import { Input } from '~/modules/ui/input';
 import { UserCell } from '~/modules/user/user-cell';
+import { useUserStore } from '~/store/user';
 import { dateShort } from '~/utils/date-short';
 
 export const useColumns = (contextEntity: EnrichedContextEntity, isSheet: boolean, isCompact: boolean) => {
   const { t } = useTranslation();
+  const userId = useUserStore((state) => state.user?.id);
 
-  // Check attachment permissions on the parent context entity
-  const canUpdate = contextEntity.can?.attachment?.update ?? false;
+  // Attachment permission state from the parent context entity.
+  // Can be `true` (admin: update any), `'own'` (member: update own), or `false` (denied).
+  const canUpdateState = contextEntity.can?.attachment?.update ?? false;
+
+  // Whether to enable edit UI at the column level (true for both unconditional and owner-scoped)
+  const canUpdate = canUpdateState === true || canUpdateState === 'own';
 
   const columns: ColumnOrColumnGroup<Attachment>[] = useMemo(
     () => [
@@ -51,6 +58,8 @@ export const useColumns = (contextEntity: EnrichedContextEntity, isSheet: boolea
             <span className="font-medium">{row.name || '-'}</span>
           </>
         ),
+        // Enable inline editing when user has update permission (unconditional or owner-scoped).
+        // For 'own' policies, the backend enforces the final owner check on save.
         ...(canUpdate && {
           renderEditCell: ({ row, onRowChange }) => (
             <Input value={row.name} onChange={(e) => onRowChange({ ...row, name: e.target.value })} autoFocus />
@@ -62,7 +71,13 @@ export const useColumns = (contextEntity: EnrichedContextEntity, isSheet: boolea
         name: '',
         sortable: false,
         width: 32,
-        renderCell: ({ row, tabIndex }) => <PublicAccessCell row={row} tabIndex={tabIndex} canUpdate={canUpdate} />,
+        renderCell: ({ row, tabIndex }) => (
+          <PublicAccessCell
+            row={row}
+            tabIndex={tabIndex}
+            canUpdate={resolvePermission(canUpdateState, row.createdBy?.id, userId)}
+          />
+        ),
       },
       {
         key: 'url',
@@ -168,7 +183,7 @@ export const useColumns = (contextEntity: EnrichedContextEntity, isSheet: boolea
           row.modifiedBy && <UserCell compactable user={row.modifiedBy} tabIndex={tabIndex} />,
       },
     ],
-    [t, isSheet, isCompact, canUpdate, contextEntity.tenantId, contextEntity.id],
+    [t, isSheet, isCompact, canUpdate, canUpdateState, userId, contextEntity.tenantId, contextEntity.id],
   );
 
   return columns;

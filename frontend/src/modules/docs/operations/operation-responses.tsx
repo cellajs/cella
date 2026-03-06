@@ -52,14 +52,14 @@ function ResponsesAccordion({ responses, schemas, operationId, zodIndex, typesIn
         const schema = resolveResponseSchema(response, schemas);
         return (
           <AccordionItem key={response.status} value={String(response.status)}>
-            <AccordionTrigger className="py-2 group opacity-80 hover:opacity-100 group-data-[state=open]:opacity-100">
+            <AccordionTrigger className="py-2 group opacity-80 hover:opacity-100 group-data-[open]:opacity-100">
               <div className="flex items-center justify-between w-full pr-2 gap-3">
                 <div
-                  className={`font-mono text-sm font-semibold px-2 py-0.5 rounded group-data-[state=open]:opacity-100 ${getStatusColor(response.status)}`}
+                  className={`font-mono text-sm font-semibold px-2 py-0.5 rounded group-data-[open]:opacity-100 ${getStatusColor(response.status)}`}
                 >
                   {response.status}
                 </div>
-                <div className="text-sm text-muted-foreground grow group-data-[state=open]:text-foreground">
+                <div className="text-sm text-muted-foreground grow group-data-[open]:text-foreground">
                   {response.description}
                 </div>
                 {response.name && (
@@ -117,7 +117,7 @@ export const OperationResponses = ({ detail }: OperationResponsesProps) => {
           )}
         />
       </CollapsibleTrigger>
-      <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
+      <CollapsibleContent className="overflow-hidden data-[open]:animate-collapsible-down data-[closed]:animate-collapsible-up">
         <div className="mt-2">
           <ResponsesAccordion
             responses={responses}

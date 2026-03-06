@@ -18,7 +18,7 @@ export function AboutCards() {
   const mode = useUIStore((state) => state.mode);
 
   return (
-    <ScrollArea className="w-full">
+    <ScrollArea className="w-full" horizontalScroll>
       <div className="flex w-max space-x-4 py-8 px-2">
         {cards.map(({ url, id, name, invert, country }) => {
           const text = `about:cards.${id}_text`;

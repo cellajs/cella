@@ -1057,6 +1057,14 @@
             "minItems": 1,
             "maxItems": 50,
             "itemType": "string"
+          },
+          "stx": {
+            "type": "object",
+            "required": false,
+            "properties": {
+              "mutationId": { "type": "string", "required": true },
+              "sourceId": { "type": "string", "required": true }
+            }
           }
         },
         "required": true,

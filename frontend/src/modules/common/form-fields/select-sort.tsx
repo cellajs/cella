@@ -22,6 +22,9 @@ interface SelectSortProps<T extends readonly SortOptionBase[]> {
   iconOnly?: boolean;
 }
 
+/**
+ * Dropdown select for choosing a sort option, with optional icon-only display.
+ */
 export function SelectSort<T extends readonly SortOptionBase[]>({
   sortOptions,
   onChange,

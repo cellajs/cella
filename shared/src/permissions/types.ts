@@ -1,9 +1,16 @@
 import type { ContextEntityType, EntityActionType, EntityRole, EntityType, ProductEntityType } from '../../types';
 
 /**
- * Permission value: 1 = allowed, 0 = denied.
+ * Permission value for access policy entries.
+ *
+ * - `1` = allowed for all entities of this type (unconditional)
+ * - `0` = denied
+ * - `'own'` = allowed only when the actor is the entity's creator (implicit "owner" relation).
+ *   This is equivalent to a Zanzibar-style `owner` relation check on the entity,
+ *   derived from the `createdBy` field rather than an explicit relation tuple.
+ *   Evaluates to `true` when `entity.createdBy === userId`, `false` otherwise.
  */
-export type PermissionValue = 0 | 1;
+export type PermissionValue = 0 | 1 | 'own';
 
 /**
  * Entity action permission set mapping each action to a permission value.

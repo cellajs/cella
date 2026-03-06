@@ -452,6 +452,7 @@ export const zGetActivitiesData = z.object({
       order: z.enum(['asc', 'desc']).optional(),
       offset: z.string().optional(),
       limit: z.string().optional(),
+      modifiedAfter: z.iso.datetime().optional(),
       userId: z.string().max(50).nullish(),
       entityType: z.enum(['user', 'organization', 'attachment', 'page']).optional(),
       resourceType: z.enum(['request', 'membership', 'inactive_membership', 'tenant']).optional(),
@@ -1305,6 +1306,7 @@ export const zGetRequestsData = z.object({
       order: z.enum(['asc', 'desc']).optional(),
       offset: z.string().optional(),
       limit: z.string().optional(),
+      modifiedAfter: z.iso.datetime().optional(),
     })
     .optional(),
 });
@@ -1532,6 +1534,7 @@ export const zGetOrganizationsData = z.object({
       order: z.enum(['asc', 'desc']).optional(),
       offset: z.string().optional(),
       limit: z.string().optional(),
+      modifiedAfter: z.iso.datetime().optional(),
       relatableUserId: z.string().max(50).optional(),
       role: z.enum(['admin', 'member']).optional(),
       excludeArchived: z.enum(['true', 'false']).optional(),
@@ -1645,6 +1648,12 @@ export const zGetPageResponse = zPage;
 export const zDeletePagesData = z.object({
   body: z.object({
     ids: z.array(z.string()).min(1).max(50),
+    stx: z
+      .object({
+        mutationId: z.string(),
+        sourceId: z.string(),
+      })
+      .optional(),
   }),
   path: z.object({
     tenantId: z.string().max(50),
@@ -1725,6 +1734,7 @@ export const zGetUsersData = z.object({
       order: z.enum(['asc', 'desc']).optional(),
       offset: z.string().optional(),
       limit: z.string().optional(),
+      modifiedAfter: z.iso.datetime().optional(),
       role: z.enum(['admin']).optional(),
     })
     .optional(),
@@ -1830,7 +1840,6 @@ export const zCreateAttachmentsData = z.object({
         originalKey: z.string().max(2048),
         bucketName: z.string().max(255),
         public: z.boolean().optional(),
-        publicAccess: z.boolean().optional(),
         groupId: z.string().max(50).nullish(),
         convertedContentType: z.string().max(255).nullish(),
         convertedKey: z.string().max(2048).nullish(),
@@ -1893,7 +1902,7 @@ export const zGetAttachmentResponse = zAttachment;
 
 export const zUpdateAttachmentData = z.object({
   body: z.object({
-    key: z.union([z.enum(['name']), z.enum(['originalKey']), z.enum(['publicAccess'])]),
+    key: z.union([z.enum(['name']), z.enum(['originalKey']), z.enum(['public'])]),
     data: z.union([z.string(), z.number(), z.boolean(), z.array(z.string())]).nullable(),
     stx: zStxRequestBase,
   }),
@@ -2014,6 +2023,7 @@ export const zGetMembersData = z.object({
     order: z.enum(['asc', 'desc']).optional(),
     offset: z.string().optional(),
     limit: z.string().optional(),
+    modifiedAfter: z.iso.datetime().optional(),
     entityId: z.string().max(50),
     entityType: z.enum(['organization']),
     role: z.enum(['admin', 'member']).optional(),
@@ -2048,6 +2058,7 @@ export const zGetPendingMembershipsData = z.object({
     order: z.enum(['asc', 'desc']).optional(),
     offset: z.string().optional(),
     limit: z.string().optional(),
+    modifiedAfter: z.iso.datetime().optional(),
     entityId: z.string().max(50),
     entityType: z.enum(['organization']),
   }),

@@ -6,7 +6,6 @@ import { type InternalSheet, useSheeter } from '~/modules/common/sheeter/use-she
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '~/modules/ui/sheet';
 import { useNavigationStore } from '~/store/navigation';
 import { cn } from '~/utils/cn';
-import { isElementInteractive } from '~/utils/is-el-interactive';
 
 export const SheeterSheet = ({ sheet }: { sheet: InternalSheet }) => {
   const {
@@ -22,6 +21,7 @@ export const SheeterSheet = ({ sheet }: { sheet: InternalSheet }) => {
     className: sheetClassName,
     content,
     closeSheetOnEsc = true,
+    disablePointerDismissal,
     container,
     skipAnimation,
   } = sheet;
@@ -49,66 +49,56 @@ export const SheeterSheet = ({ sheet }: { sheet: InternalSheet }) => {
     for (const dialog of dialogs) useDialoger.getState().remove(dialog.id);
   };
 
-  const onOpenChange = (open: boolean) => {
-    if (open) {
-      if (modal) useSheeter.getState().update(id, { open });
+  const onOpenChange = (nextOpen: boolean, eventDetails: { reason: string }) => {
+    // Handle escape key
+    if (!nextOpen && eventDetails.reason === 'escape-key') {
+      if (!closeSheetOnEsc) return;
+      closeSheet();
+      return;
+    }
+
+    // Handle outside press
+    if (!nextOpen && eventDetails.reason === 'outside-press') {
+      // Dont close if interact outside is caused by dropdown
+      const dropdown = useDropdowner.getState().dropdown;
+      if (dropdown) return;
+
+      // Dont close if interact outside is caused by dialog
+      const dialogs = useDialoger.getState().dialogs;
+      if (dialogs.some((d) => d.open)) return;
+
+      // Nav sheet in keep open mode shouldnt close
+      if (sheet.id === 'nav-sheet') {
+        const navState = useNavigationStore.getState();
+        if (navState.keepNavOpen && navState.navSheetOpen) return;
+      }
+
+      closeSheet();
+      return;
+    }
+
+    if (nextOpen) {
+      if (modal) useSheeter.getState().update(id, { open: nextOpen });
     } else closeSheet();
   };
 
-  const handleEscapeKeyDown = (e: KeyboardEvent) => {
-    e.preventDefault();
-
-    // Blur active element on esc click
-    const activeElement = document.activeElement;
-    if (activeElement instanceof HTMLElement && isElementInteractive(activeElement)) activeElement.blur();
-
-    if (!closeSheetOnEsc) return;
-
-    // if close, prevent any Esc key down listeners
-    e.stopPropagation();
-    closeSheet();
-  };
-
-  const handleInteractOutside = (
-    event: CustomEvent<{ originalEvent: PointerEvent }> | CustomEvent<{ originalEvent: FocusEvent }>,
-  ) => {
-    // Dont close if interact outside is caused by dropdown
-    const dropdown = useDropdowner.getState().dropdown;
-    if (dropdown) return event.preventDefault();
-
-    // Dont close if interact outside is caused by dialog
-    const dialogs = useDialoger.getState().dialogs;
-    if (dialogs.some((d) => d.open)) return event.preventDefault();
-
-    // Nav sheet in keep open mode shouldnt close
-    if (sheet.id === 'nav-sheet') {
-      const navState = useNavigationStore.getState();
-      if (navState.keepNavOpen && navState.navSheetOpen) return event.preventDefault();
-    }
-
-    // Close sheet if no modal and clicked ouside any sheet + floating content
-    const mainContentElement = document.getElementById('app-content-inner');
-    if (!modal && mainContentElement?.contains(event.target as Node)) return closeSheet();
-  };
+  // Create a ref for finalFocus to focus trigger on close
+  const triggerFocusRef = useRef<HTMLElement | null>(null);
+  triggerFocusRef.current = triggerRef?.current ?? null;
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange} modal={modal}>
+    <Sheet open={open} onOpenChange={onOpenChange} modal={modal} disablePointerDismissal={disablePointerDismissal}>
       <SheetContent
         id={String(id)}
         ref={sheetRef}
         side={side}
         showCloseButton={showCloseButton}
+        overlay={modal !== false}
         aria-describedby={undefined}
         container={containerElement}
         className={cn(className, 'items-start', containerElement && 'z-40', skipAnimation && 'duration-0!')}
-        onEscapeKeyDown={handleEscapeKeyDown}
-        onInteractOutside={handleInteractOutside}
-        onOpenAutoFocus={(event: Event) => {
-          if (isMobile) event.preventDefault();
-        }}
-        onCloseAutoFocus={() => {
-          if (triggerRef?.current) triggerRef.current.focus();
-        }}
+        initialFocus={isMobile ? false : undefined}
+        finalFocus={triggerRef?.current ? triggerFocusRef : undefined}
       >
         <SheetHeader sticky className={`${title || description ? '' : 'hidden'}`}>
           <SheetTitle className={`${title ? '' : 'hidden'} leading-6 h-6`}>{titleContent}</SheetTitle>

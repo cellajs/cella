@@ -1,10 +1,10 @@
-import * as TogglePrimitive from '@radix-ui/react-toggle';
+import { Toggle as TogglePrimitive } from '@base-ui/react/toggle';
 import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
 import { cn } from '~/utils/cn';
 
 export const toggleVariants = cva(
-  'inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-muted hover:text-muted-foreground focus-effect disabled:pointer-events-none disabled:opacity-50 data-[state=on]:bg-accent data-[state=on]:text-accent-foreground shadow-xs active:translate-y-[.05rem]',
+  'inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-muted hover:text-muted-foreground focus-effect disabled:pointer-events-none disabled:opacity-50 data-[pressed]:bg-accent data-[pressed]:text-accent-foreground shadow-xs active:translate-y-[.05rem]',
   {
     variants: {
       variant: {
@@ -33,9 +33,16 @@ export function Toggle({
   className,
   variant,
   size,
+  value,
   ...props
-}: React.ComponentProps<typeof TogglePrimitive.Root> & VariantProps<typeof toggleVariants>) {
+}: Omit<React.ComponentProps<typeof TogglePrimitive>, 'value'> &
+  VariantProps<typeof toggleVariants> & { value?: string | number | readonly string[] }) {
   return (
-    <TogglePrimitive.Root data-slot="toggle" className={cn(toggleVariants({ variant, size, className }))} {...props} />
+    <TogglePrimitive
+      data-slot="toggle"
+      className={cn(toggleVariants({ variant, size, className }))}
+      value={value != null ? String(value) : undefined}
+      {...props}
+    />
   );
 }

@@ -29,13 +29,15 @@ export const splitByPermission = async (
   memberships: MembershipBaseModel[],
 ) => {
   const isSystemAdmin = ctx.var.isSystemAdmin;
+  const userId = ctx.var.user.id;
   const db = ctx.var.db;
 
-  // Resolve entities
+  // Resolve entities (includes createdBy for implicit owner relation)
   const entities = await resolveEntities(entityType, ids, db);
 
-  // Check permissions for all entities in a single batch operation
-  const { results } = checkPermission(memberships, action, entities, { isSystemAdmin });
+  // Check permissions for all entities in a single batch operation.
+  // userId enables 'own' policy evaluation per entity.
+  const { results } = checkPermission(memberships, action, entities, { isSystemAdmin, userId });
 
   // Partition into allowed and disallowed
   const allowedIds: string[] = [];

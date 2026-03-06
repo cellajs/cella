@@ -77,8 +77,10 @@ export function DocsSidebar({ tags }: DocsSidebarProps) {
   // Track if current section is forcibly collapsed
   // Start collapsed when landing directly via URL without search params
   const searchParams = location.search as Record<string, unknown>;
-  const hasOperationSearchParams = !!searchParams.operationTag || !!searchParams.q;
-  const hasSchemasSearchParams = !!searchParams.schemaTag;
+  const activeOperationTag = searchParams.operationTag as string | undefined;
+  const activeSchemaTag = searchParams.schemaTag as string | undefined;
+  const hasOperationSearchParams = !!activeOperationTag || !!searchParams.q;
+  const hasSchemasSearchParams = !!activeSchemaTag;
   const [forcedCollapsed, setForcedCollapsed] = useState<string | null>(
     isOperationsRoute && !hasOperationSearchParams
       ? 'operations'
@@ -145,51 +147,53 @@ export function DocsSidebar({ tags }: DocsSidebarProps) {
           <SidebarGroup className="p-1 pt-0">
             <Collapsible open={isListMode && expandedSection === 'operations' && forcedCollapsed !== 'operations'}>
               <SidebarMenuItem className="list-none">
-                <CollapsibleTrigger asChild>
-                  <Link
-                    to="/docs/operations"
-                    search={(prev) => prev}
-                    onMouseEnter={prefetchOperations}
-                    onFocus={prefetchOperations}
-                    onClick={(e) => {
-                      // If already on operations list route, toggle collapse
-                      if (isOperationsRoute) {
-                        e.preventDefault();
-                        setForcedCollapsed((prev) => (prev === 'operations' ? null : 'operations'));
-                      } else {
-                        // Only clear if operations was forcibly collapsed, preserve other section's state
-                        setForcedCollapsed((prev) => (prev === 'operations' ? null : prev));
-                      }
-                    }}
-                    className={cn(
-                      buttonVariants({ variant: 'ghost' }),
-                      'w-full justify-start font-normal items-center group px-3 lowercase',
-                      isOperationsActive && 'font-medium bg-accent',
-                    )}
-                  >
-                    <span>{t('common:operation', { count: 2 })}</span>
-                    {(!isListMode || expandedSection !== 'operations' || forcedCollapsed === 'operations') && (
-                      <span className="ml-2 text-xs text-muted-foreground/90 font-light">
-                        {tags.reduce((sum, tag) => sum + tag.count, 0)}
-                      </span>
-                    )}
-                    <ChevronDownIcon
+                <CollapsibleTrigger
+                  render={
+                    <Link
+                      to="/docs/operations"
+                      search={(prev) => prev}
+                      onMouseEnter={prefetchOperations}
+                      onFocus={prefetchOperations}
+                      onClick={(e) => {
+                        // If already on operations list route, toggle collapse
+                        if (isOperationsRoute) {
+                          e.preventDefault();
+                          setForcedCollapsed((prev) => (prev === 'operations' ? null : 'operations'));
+                        } else {
+                          // Only clear if operations was forcibly collapsed, preserve other section's state
+                          setForcedCollapsed((prev) => (prev === 'operations' ? null : prev));
+                        }
+                      }}
                       className={cn(
-                        'size-4 ml-auto transition-transform duration-200 opacity-40',
-                        isListMode &&
-                          expandedSection === 'operations' &&
-                          forcedCollapsed !== 'operations' &&
-                          'rotate-180',
+                        buttonVariants({ variant: 'ghost' }),
+                        'w-full justify-start font-normal items-center group px-3 lowercase',
+                        isOperationsActive && 'font-medium bg-accent',
                       )}
                     />
-                  </Link>
+                  }
+                >
+                  <span>{t('common:operation', { count: 2 })}</span>
+                  {(!isListMode || expandedSection !== 'operations' || forcedCollapsed === 'operations') && (
+                    <span className="ml-2 text-xs text-muted-foreground/90 font-light">
+                      {tags.reduce((sum, tag) => sum + tag.count, 0)}
+                    </span>
+                  )}
+                  <ChevronDownIcon
+                    className={cn(
+                      'size-4 ml-auto transition-transform duration-200 opacity-40',
+                      isListMode &&
+                        expandedSection === 'operations' &&
+                        forcedCollapsed !== 'operations' &&
+                        'rotate-180',
+                    )}
+                  />
                 </CollapsibleTrigger>
               </SidebarMenuItem>
-              <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
+              <CollapsibleContent className="overflow-hidden data-[open]:animate-collapsible-down data-[closed]:animate-collapsible-up">
                 <SidebarGroupContent>
                   {/* Operation tags sidebar */}
                   <Suspense fallback={null}>
-                    <OperationsSidebar />
+                    <OperationsSidebar activeTag={activeOperationTag} />
                   </Suspense>
                 </SidebarGroupContent>
               </CollapsibleContent>
@@ -200,43 +204,45 @@ export function DocsSidebar({ tags }: DocsSidebarProps) {
           <SidebarGroup className="p-1 pt-0">
             <Collapsible open={expandedSection === 'schemas' && forcedCollapsed !== 'schemas'}>
               <SidebarMenuItem className="list-none">
-                <CollapsibleTrigger asChild>
-                  <Link
-                    to="/docs/schemas"
-                    search={(prev) => prev}
-                    onClick={(e) => {
-                      if (isSchemasRoute) {
-                        e.preventDefault();
-                        setForcedCollapsed((prev) => (prev === 'schemas' ? null : 'schemas'));
-                      } else {
-                        // Only clear if schemas was forcibly collapsed, preserve other section's state
-                        setForcedCollapsed((prev) => (prev === 'schemas' ? null : prev));
-                      }
-                    }}
-                    className={cn(
-                      buttonVariants({ variant: 'ghost' }),
-                      'w-full justify-start font-normal group px-3 lowercase',
-                      isSchemasRoute && 'font-medium bg-accent',
-                    )}
-                  >
-                    <span>{t('common:schema', { count: 2 })}</span>
-                    {(expandedSection !== 'schemas' || forcedCollapsed === 'schemas') && schemas && (
-                      <span className="ml-2 text-xs text-muted-foreground/90 font-light">{schemas.length}</span>
-                    )}
-                    <ChevronDownIcon
+                <CollapsibleTrigger
+                  render={
+                    <Link
+                      to="/docs/schemas"
+                      search={(prev) => prev}
+                      onClick={(e) => {
+                        if (isSchemasRoute) {
+                          e.preventDefault();
+                          setForcedCollapsed((prev) => (prev === 'schemas' ? null : 'schemas'));
+                        } else {
+                          // Only clear if schemas was forcibly collapsed, preserve other section's state
+                          setForcedCollapsed((prev) => (prev === 'schemas' ? null : prev));
+                        }
+                      }}
                       className={cn(
-                        'size-4 ml-auto transition-transform duration-200 opacity-40',
-                        expandedSection === 'schemas' && forcedCollapsed !== 'schemas' && 'rotate-180',
+                        buttonVariants({ variant: 'ghost' }),
+                        'w-full justify-start font-normal group px-3 lowercase',
+                        isSchemasRoute && 'font-medium bg-accent',
                       )}
                     />
-                  </Link>
+                  }
+                >
+                  <span>{t('common:schema', { count: 2 })}</span>
+                  {(expandedSection !== 'schemas' || forcedCollapsed === 'schemas') && schemas && (
+                    <span className="ml-2 text-xs text-muted-foreground/90 font-light">{schemas.length}</span>
+                  )}
+                  <ChevronDownIcon
+                    className={cn(
+                      'size-4 ml-auto transition-transform duration-200 opacity-40',
+                      expandedSection === 'schemas' && forcedCollapsed !== 'schemas' && 'rotate-180',
+                    )}
+                  />
                 </CollapsibleTrigger>
               </SidebarMenuItem>
-              <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
+              <CollapsibleContent className="overflow-hidden data-[open]:animate-collapsible-down data-[closed]:animate-collapsible-up">
                 <SidebarGroupContent>
                   {/* Schemas tags list */}
                   <Suspense fallback={null}>
-                    <SchemasSidebar />
+                    <SchemasSidebar activeTag={activeSchemaTag} />
                   </Suspense>
                 </SidebarGroupContent>
               </CollapsibleContent>

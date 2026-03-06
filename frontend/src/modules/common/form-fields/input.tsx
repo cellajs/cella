@@ -23,6 +23,9 @@ type InputFieldProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TFie
   autocomplete?: string;
 };
 
+/**
+ * Generic form field for text input or textarea, integrated with react-hook-form.
+ */
 export const InputFormField = <TFieldValues extends FieldValues>({
   control,
   name,

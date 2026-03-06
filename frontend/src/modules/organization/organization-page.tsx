@@ -26,7 +26,7 @@ function OrganizationPage({ organizationId, tenantId }: Props) {
   // Organization is enriched with membership via cache subscription
   const { data: organization } = useSuspenseQuery(orgQueryOptions) as { data: EnrichedOrganization };
 
-  const canUpdate = organization.can?.organization?.update ?? false;
+  const canUpdate = organization.can?.organization?.update === true;
 
   // Filter tabs based on permissions - users who can't update don't see settings
   const filterTabIds = useMemo(() => (canUpdate ? undefined : ['members', 'attachments']), [canUpdate]);

@@ -72,7 +72,7 @@ export const ShouldOpenCloseWithSubmit: Story = {
       await userEvent.click(await canvasBody.findByRole('button', { name: /open/i }));
       const sheet = await canvasBody.findByRole('dialog');
       expect(sheet).toBeInTheDocument();
-      expect(sheet).toHaveAttribute('data-state', 'open');
+      expect(sheet).toHaveAttribute('data-open');
     });
 
     await step('close the sheet', async () => {
@@ -98,7 +98,7 @@ export const ShouldOpenCloseWithCancel: Story = {
       await userEvent.click(await canvasBody.findByRole('button', { name: /open/i }));
       const sheet = await canvasBody.findByRole('dialog');
       expect(sheet).toBeInTheDocument();
-      expect(sheet).toHaveAttribute('data-state', 'open');
+      expect(sheet).toHaveAttribute('data-open');
     });
 
     await step('close the sheet', async () => {
@@ -124,7 +124,7 @@ export const ShouldOpenCloseWithClose: Story = {
       await userEvent.click(await canvasBody.findByRole('button', { name: /open/i }));
       const sheet = await canvasBody.findByRole('dialog');
       expect(sheet).toBeInTheDocument();
-      expect(sheet).toHaveAttribute('data-state', 'open');
+      expect(sheet).toHaveAttribute('data-open');
     });
 
     await step('close the sheet', async () => {

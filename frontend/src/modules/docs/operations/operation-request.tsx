@@ -44,7 +44,7 @@ export const OperationRequest = ({ detail }: OperationRequestProps) => {
           )}
         />
       </CollapsibleTrigger>
-      <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
+      <CollapsibleContent className="overflow-hidden data-[open]:animate-collapsible-down data-[closed]:animate-collapsible-up">
         <div className="mt-4">
           <ViewerGroup
             schema={request}

@@ -1,6 +1,10 @@
 import { appConfig, createActionRecord, type EntityActionType } from 'shared';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
-import type { PermissionDecision } from './types';
+import type { GrantSource, PermissionDecision } from './types';
+
+/** Format a grant source for debug output. */
+const formatGrant = (g: GrantSource): string =>
+  g.type === 'membership' ? `${g.contextType}:${g.contextId}/${g.role}` : `relation:${g.relation}`;
 
 /**
  * Formats a PermissionDecision for debug logging.
@@ -19,10 +23,7 @@ export const formatPermissionDecision = <T extends MembershipBaseModel>(decision
   for (const action of appConfig.entityActions) {
     const attr = decision.actions[action];
     const status = attr.enabled ? '✓ GRANTED' : '✗ DENIED';
-    const grants =
-      attr.grantedBy.length > 0
-        ? `by [${attr.grantedBy.map((g) => `${g.contextType}:${g.contextId}/${g.role}`).join(', ')}]`
-        : '(no grants)';
+    const grants = attr.grantedBy.length > 0 ? `by [${attr.grantedBy.map(formatGrant).join(', ')}]` : '(no grants)';
     lines.push(`│  ├─ ${action}: ${status} ${grants}`);
   }
 

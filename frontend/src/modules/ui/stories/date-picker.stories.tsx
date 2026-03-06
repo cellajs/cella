@@ -44,11 +44,9 @@ export const WithPopover: Story = {
           Date of birth
         </Label>
         <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
-            <Button variant="outline" id="date" className="w-48 justify-between font-normal">
-              {date ? date.toLocaleDateString() : 'Select date'}
-              <ChevronDownIcon />
-            </Button>
+          <PopoverTrigger render={<Button variant="outline" id="date" className="w-48 justify-between font-normal" />}>
+            {date ? date.toLocaleDateString() : 'Select date'}
+            <ChevronDownIcon />
           </PopoverTrigger>
           <PopoverContent className="w-auto overflow-hidden p-0" align="start">
             <Calendar
@@ -143,11 +141,13 @@ export const WithInput: Story = {
             }}
           />
           <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger asChild>
-              <Button id="date-picker" variant="ghost" className="absolute top-1/2 right-2 size-6 -translate-y-1/2">
-                <CalendarIcon className="size-3.5" />
-                <span className="sr-only">Select date</span>
-              </Button>
+            <PopoverTrigger
+              render={
+                <Button id="date-picker" variant="ghost" className="absolute top-1/2 right-2 size-6 -translate-y-1/2" />
+              }
+            >
+              <CalendarIcon className="size-3.5" />
+              <span className="sr-only">Select date</span>
             </PopoverTrigger>
             <PopoverContent className="w-auto overflow-hidden p-0" align="end" alignOffset={-8} sideOffset={10}>
               <Calendar
@@ -219,11 +219,11 @@ export const WithDateTime: Story = {
             Date
           </Label>
           <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger asChild>
-              <Button variant="outline" id="date-picker" className="w-32 justify-between font-normal">
-                {date ? date.toLocaleDateString() : 'Select date'}
-                <ChevronDownIcon />
-              </Button>
+            <PopoverTrigger
+              render={<Button variant="outline" id="date-picker" className="w-32 justify-between font-normal" />}
+            >
+              {date ? date.toLocaleDateString() : 'Select date'}
+              <ChevronDownIcon />
             </PopoverTrigger>
             <PopoverContent className="w-auto overflow-hidden p-0" align="start">
               <Calendar

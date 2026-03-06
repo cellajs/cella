@@ -49,7 +49,10 @@ function getScrollParent(node: HTMLElement): HTMLElement | null {
  * ResizeObserver tracks only horizontalScrollbarHeight (rare changes).
  * All updates are rAF-throttled to stay cheap.
  */
-export function useGridDimensions(scrollContainerRef?: RefObject<HTMLElement | null>): GridDimensionsResult {
+export function useGridDimensions(
+  scrollContainerRef?: RefObject<HTMLElement | null>,
+  enableRowVirtualization = true,
+): GridDimensionsResult {
   const gridRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState<GridDimensions>(initialDimensions);
 
@@ -83,6 +86,16 @@ export function useGridDimensions(scrollContainerRef?: RefObject<HTMLElement | n
       } else {
         const containerRect = scrollContainer.getBoundingClientRect();
         scrollTop = Math.max(0, containerRect.top - rect.top);
+      }
+
+      // Bail out if nothing meaningful changed to avoid unnecessary rerenders
+      if (
+        prev.viewportHeight === viewportHeight &&
+        Math.abs(prev.scrollTop - scrollTop) < 1 &&
+        prev.gridRect?.top === rect.top &&
+        prev.gridRect?.left === rect.left
+      ) {
+        return prev;
       }
 
       return {
@@ -119,7 +132,7 @@ export function useGridDimensions(scrollContainerRef?: RefObject<HTMLElement | n
     });
     resizeObserver.observe(grid);
 
-    // --- Scroll handler (rAF-throttled) ---
+    // --- Scroll handler (rAF-throttled) — only needed for row virtualization ---
     const handleScroll = () => {
       scheduleUpdate(() => {
         setDimensions((prev) => measureScroll(prev));
@@ -133,13 +146,16 @@ export function useGridDimensions(scrollContainerRef?: RefObject<HTMLElement | n
       });
     };
 
-    // Attach listeners
-    if (isWindowScroll) {
-      window.addEventListener('scroll', handleScroll, { passive: true });
-      window.addEventListener('resize', handleResize, { passive: true });
-    } else {
-      scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
-      resizeObserver.observe(scrollContainer);
+    // Only attach scroll/resize listeners when row virtualization is enabled.
+    // Without virtualization, scrollTop is unused and these cause needless rerenders.
+    if (enableRowVirtualization) {
+      if (isWindowScroll) {
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        window.addEventListener('resize', handleResize, { passive: true });
+      } else {
+        scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
+        resizeObserver.observe(scrollContainer);
+      }
     }
 
     return () => {
@@ -152,7 +168,7 @@ export function useGridDimensions(scrollContainerRef?: RefObject<HTMLElement | n
         scrollContainer.removeEventListener('scroll', handleScroll);
       }
     };
-  }, [scrollContainerRef]);
+  }, [scrollContainerRef, enableRowVirtualization]);
 
   return {
     gridRef,

@@ -1,7 +1,6 @@
 import type { PartialBlock } from '@blocknote/core';
 import { FilePanelExtension } from '@blocknote/core/extensions';
 import { type FilePanelProps, useBlockNoteEditor, useExtension } from '@blocknote/react';
-import { DialogDescription } from '@radix-ui/react-dialog';
 import * as Sentry from '@sentry/react';
 import Audio from '@uppy/audio';
 import type { Body, Meta } from '@uppy/core';
@@ -23,7 +22,7 @@ import { createBaseTransloaditUppy } from '~/modules/common/uploader/helpers';
 import { getImageEditorOptions } from '~/modules/common/uploader/helpers/image-editor-options';
 import { generateRestrictionNote } from '~/modules/common/uploader/helpers/restrictions-note';
 import type { CustomUppy, CustomUppyOpt, UploadedUppyFile } from '~/modules/common/uploader/types';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
 import { useUIStore } from '~/store/ui';
 
 import '~/modules/common/uploader/uppy-styles';

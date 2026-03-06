@@ -19,7 +19,7 @@ import { pageQueryKeys, usePageUpdateMutation } from '~/modules/page/query';
 import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
 
-const BlockNoteContentField = lazy(() => import('~/modules/common/form-fields/blocknote-content'));
+const BlockNoteContentFormField = lazy(() => import('~/modules/common/form-fields/blocknote'));
 
 // Form schema for name/description editing
 const formSchema = z.object({
@@ -155,7 +155,7 @@ export function UpdatePageForm({ page }: Props) {
           />
 
           <Suspense fallback={<Spinner className="my-16 h-6 w-6 opacity-50" noDelay />}>
-            <BlockNoteContentField
+            <BlockNoteContentFormField
               control={form.control as unknown as Control<FieldValues>}
               name="description"
               autoFocus

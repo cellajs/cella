@@ -152,8 +152,6 @@ export const useSeenStore = create<SeenStoreState>()(
           // Clear pending optimistically — failed batches will be re-added
           set({ pending: new Map() });
 
-          let hasSuccessfulFlush = false;
-
           for (const batch of batches) {
             if (batch.entityIds.length === 0) continue;
 
@@ -174,7 +172,6 @@ export const useSeenStore = create<SeenStoreState>()(
                 'newCount:',
                 result.newCount,
               );
-              hasSuccessfulFlush = true;
             } catch (error) {
               console.error('[SeenStore] flush failed:', batch.entityType, batch.orgId.slice(0, 8), error);
               // Re-add failed batch IDs for next flush
@@ -196,14 +193,8 @@ export const useSeenStore = create<SeenStoreState>()(
             }
           }
 
-          // Refresh unseen counts and entity lists after successful flush
-          if (hasSuccessfulFlush) {
-            queryClient.invalidateQueries({ queryKey: ['me', 'unseen', 'counts'] });
-            // Refetch entity lists to update viewCount
-            for (const batch of batches) {
-              queryClient.invalidateQueries({ queryKey: [batch.entityType, 'list'] });
-            }
-          }
+          // No refetch needed after flush — unseen counts are already patched
+          // optimistically in markEntitySeen, and SSE handles external changes.
         },
 
         clear: () => {

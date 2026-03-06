@@ -51,12 +51,13 @@ export const MenuSheetHeader = ({ searchTerm, setSearchTerm, isSearchActive, set
 
   const openAccount = () => {
     setNavSheetOpen('account');
-    useSheeter.getState().create(<AccountSheet />, {
+    useSheeter.getState().replace(<AccountSheet />, {
       id: 'nav-sheet',
       triggerRef: accountButtonRef,
       side: 'left',
       showCloseButton: false,
       modal: false,
+      disablePointerDismissal: true,
       className: navSheetClassName,
       onClose: () => setNavSheetOpen(null),
     });
@@ -68,8 +69,8 @@ export const MenuSheetHeader = ({ searchTerm, setSearchTerm, isSearchActive, set
       <div id="return-nav" className="in-[.floating-nav]:flex hidden gap-2">
         <Button variant="ghost" className="justify-start h-10 grow" asChild>
           <Link to="/home">
-            <ArrowLeftIcon size={16} strokeWidth={1.5} />
-            <span className="ml-2 font-normal">Home</span>
+            <ArrowLeftIcon className="size-4" />
+            <span className="ml-2">Home</span>
           </Link>
         </Button>
         <Button
@@ -79,7 +80,7 @@ export const MenuSheetHeader = ({ searchTerm, setSearchTerm, isSearchActive, set
           onClick={() => openPreferencesSheet(preferencesRef)}
           className="w-10 px-1.5 shrink-0 h-10"
         >
-          <Settings2Icon size={20} strokeWidth={1.5} />
+          <Settings2Icon size={20} />
         </Button>
         {user && (
           <Button ref={accountButtonRef} size="icon" variant="ghost" onClick={openAccount} className="w-10 px-1.5 h-10">
@@ -149,7 +150,11 @@ export const MenuSheetHeader = ({ searchTerm, setSearchTerm, isSearchActive, set
           <div className="flex items-center gap-2 group/actions">
             {/* Search toggle button - icon animates between search and X */}
             <motion.div animate={{ x: isSearchActive ? 48 : 0 }} transition={{ duration: 0.2 }}>
-              <TooltipButton toolTipContent={isSearchActive ? t('common:cancel') : t('common:search')} side="left">
+              <TooltipButton
+                toolTipContent={isSearchActive ? t('common:cancel') : t('common:search')}
+                side="left"
+                disabled={!hasStarted}
+              >
                 <Button
                   variant="ghost"
                   size="icon"
@@ -194,7 +199,12 @@ export const MenuSheetHeader = ({ searchTerm, setSearchTerm, isSearchActive, set
               transition={{ duration: 0.2 }}
               className={isSearchActive ? 'pointer-events-none' : ''}
             >
-              <TooltipButton toolTipContent={t('common:preferences')} side="right" sideOffset={22}>
+              <TooltipButton
+                toolTipContent={t('common:preferences')}
+                side="right"
+                sideOffset={22}
+                disabled={!hasStarted}
+              >
                 <Button
                   ref={preferencesRef}
                   variant="ghost"

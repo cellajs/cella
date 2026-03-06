@@ -45,7 +45,7 @@ function MembersTable({ contextEntity, isSheet = false, children }: MembersTable
   const orgId = organization.id;
 
   // Check if user can update this context entity (and thus manage its members)
-  const canUpdate = contextEntity.can?.[contextEntity.entityType]?.update ?? false;
+  const canUpdate = contextEntity.can?.[contextEntity.entityType]?.update === true;
 
   // Table state
   const { q, role, sort, order } = search;

@@ -123,7 +123,7 @@ export const PublicAccessCell = ({ row, tabIndex, canUpdate }: PublicAccessCellP
   const { t } = useTranslation();
   const updateAttachment = useAttachmentUpdateMutation(row.tenantId, row.organizationId);
 
-  const isPublic = row.publicAccess;
+  const isPublic = row.public;
 
   if (!canUpdate) {
     return (
@@ -150,7 +150,7 @@ export const PublicAccessCell = ({ row, tabIndex, canUpdate }: PublicAccessCellP
       aria-label={isPublic ? t('common:private') : t('common:public')}
       data-tooltip="true"
       data-tooltip-content={isPublic ? t('common:public') : t('common:private')}
-      onClick={() => updateAttachment.mutate({ id: row.id, key: 'publicAccess', data: !isPublic })}
+      onClick={() => updateAttachment.mutate({ id: row.id, key: 'public', data: !isPublic })}
     >
       {isPublic ? (
         <LockKeyholeOpenIcon className="text-success" size={16} />

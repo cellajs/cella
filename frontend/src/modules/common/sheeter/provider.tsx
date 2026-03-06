@@ -20,6 +20,9 @@ const closeAll = () => useSheeter.getState().remove(undefined, { isCleanup: true
 export const Sheeter = () => {
   const isMobile = useBreakpoints('max', 'sm');
   const sheets = useSheeter((state) => state.sheets);
+  // Mode string used in keys to force clean remount when crossing breakpoint,
+  // ensuring Vaul/Radix overlays are properly destroyed and recreated
+  const mode = isMobile ? 'drawer' : 'sheet';
   const { lockUI, unlockUI } = useUIStore();
 
   useBodyClass({ 'sheeter-open': sheets.length > 0 });
@@ -61,7 +64,7 @@ export const Sheeter = () => {
     <>
       {sheets.map((sheet) => {
         const SheetComponent = isMobile && !sheet.container ? SheeterDrawer : SheeterSheet;
-        return <SheetComponent key={sheet.id} sheet={sheet} />;
+        return <SheetComponent key={`${sheet.id}-${mode}`} sheet={sheet} />;
       })}
     </>
   );
