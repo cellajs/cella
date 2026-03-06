@@ -6,7 +6,7 @@ import useDownloader from 'react-use-downloader';
 import { isCDNUrl } from 'shared/is-cdn-url';
 import { clearAttachmentDialogSearchParams, openAttachmentDialog } from '~/modules/attachment/dialog/helpers';
 import { FilePlaceholder } from '~/modules/attachment/file-placeholder';
-import { AttachmentRender } from '~/modules/attachment/render';
+import { AttachmentRender } from '~/modules/attachment/render/attachment-render';
 import { CloseButton } from '~/modules/common/close-button';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { Spinner } from '~/modules/common/spinner';

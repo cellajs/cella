@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
-import { toaster } from '~/modules/common/toaster/service';
+import { toaster } from '~/modules/common/toast-service';
 import { Toaster } from '~/modules/ui/sonner';
 import { useToastStore } from '~/store/toast';
 

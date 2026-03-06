@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { type RequestPasswordResponse, requestPassword } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { toaster } from '~/modules/common/toaster/service';
+import { toaster } from '~/modules/common/toast-service';
 import { Button, SubmitButton } from '~/modules/ui/button';
 
 import { Input } from '~/modules/ui/input';

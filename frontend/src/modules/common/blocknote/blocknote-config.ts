@@ -3,7 +3,7 @@ import { BlockNoteSchema, CodeBlockOptions, createCodeBlockSpec, type Dictionary
 import { DefaultSuggestionItem } from '@blocknote/core/extensions';
 import { blockTypeSelectItems, type DefaultReactSuggestionItem, getDefaultReactSlashMenuItems } from '@blocknote/react';
 import { MentionSchema } from '~/modules/common/blocknote/custom-elements/mention/mention';
-import { getSlashNotifySlashItem, notifyBlock } from '~/modules/common/blocknote/custom-elements/notify';
+import { getSlashNotifySlashItem, notifyBlock } from '~/modules/common/blocknote/custom-elements/notify/notify-block';
 import { baseBlocknoteTypeToKeys } from '~/modules/common/blocknote/type-to-keys';
 import type {
   CommonBlockNoteProps,

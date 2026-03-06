@@ -3,7 +3,7 @@ import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { Spinner } from '~/modules/common/spinner';
-import { toaster } from '~/modules/common/toaster/service';
+import { toaster } from '~/modules/common/toast-service';
 import { useCreateRequestMutation } from '~/modules/requests/query';
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '~/modules/ui/input-group';
 

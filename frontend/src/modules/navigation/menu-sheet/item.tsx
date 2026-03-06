@@ -4,7 +4,7 @@ import type { LucideIcon } from 'lucide-react';
 import { BellOffIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
-import { toaster } from '~/modules/common/toaster/service';
+import { toaster } from '~/modules/common/toast-service';
 import type { UserMenuItem } from '~/modules/me/types';
 import { seenGroupingContextTypes } from '~/modules/seen/helpers';
 import { useUnseenCount } from '~/modules/seen/use-unseen-count';

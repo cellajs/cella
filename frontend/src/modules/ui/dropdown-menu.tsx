@@ -1,6 +1,13 @@
 import { Menu as MenuPrimitive } from '@base-ui/react/menu';
 import { CheckIcon, ChevronRightIcon, CircleIcon } from 'lucide-react';
-import type * as React from 'react';
+import {
+  type ComponentProps,
+  type HTMLAttributes,
+  isValidElement,
+  type ReactElement,
+  type RefAttributes,
+  type RefObject,
+} from 'react';
 import { cn } from '~/utils/cn';
 
 function DropdownMenu({ ...props }: MenuPrimitive.Root.Props) {
@@ -11,8 +18,20 @@ function DropdownMenuPortal({ ...props }: MenuPrimitive.Portal.Props) {
   return <MenuPrimitive.Portal data-slot="dropdown-menu-portal" {...props} />;
 }
 
-function DropdownMenuTrigger({ ...props }: MenuPrimitive.Trigger.Props & React.RefAttributes<HTMLButtonElement>) {
-  return <MenuPrimitive.Trigger data-slot="dropdown-menu-trigger" nativeButton {...props} />;
+function DropdownMenuTrigger({
+  asChild,
+  children,
+  ...props
+}: MenuPrimitive.Trigger.Props & RefAttributes<HTMLButtonElement> & { asChild?: boolean }) {
+  // Translate Radix's asChild pattern to Base UI's render prop
+  if (asChild && isValidElement(children)) {
+    return <MenuPrimitive.Trigger data-slot="dropdown-menu-trigger" render={children as ReactElement} {...props} />;
+  }
+  return (
+    <MenuPrimitive.Trigger data-slot="dropdown-menu-trigger" nativeButton {...props}>
+      {children}
+    </MenuPrimitive.Trigger>
+  );
 }
 
 /**
@@ -28,11 +47,11 @@ export function DropdownMenuContentNoPortal({
   finalFocus,
   ...props
 }: MenuPrimitive.Popup.Props &
-  React.RefAttributes<HTMLDivElement> & {
+  RefAttributes<HTMLDivElement> & {
     sideOffset?: number;
     side?: 'top' | 'bottom' | 'left' | 'right';
     align?: 'start' | 'center' | 'end';
-    anchor?: Element | null | React.RefObject<Element | null>;
+    anchor?: Element | null | RefObject<Element | null>;
     collisionPadding?: number;
     finalFocus?: MenuPrimitive.Popup.Props['finalFocus'];
   }) {
@@ -58,7 +77,7 @@ export function DropdownMenuContentNoPortal({
   );
 }
 
-function DropdownMenuContent({ ...props }: React.ComponentProps<typeof DropdownMenuContentNoPortal>) {
+function DropdownMenuContent({ ...props }: ComponentProps<typeof DropdownMenuContentNoPortal>) {
   return (
     <MenuPrimitive.Portal>
       <DropdownMenuContentNoPortal {...props} />
@@ -66,7 +85,7 @@ function DropdownMenuContent({ ...props }: React.ComponentProps<typeof DropdownM
   );
 }
 
-function DropdownMenuGroup({ ...props }: MenuPrimitive.Group.Props & React.RefAttributes<HTMLDivElement>) {
+function DropdownMenuGroup({ ...props }: MenuPrimitive.Group.Props & RefAttributes<HTMLDivElement>) {
   return <MenuPrimitive.Group data-slot="dropdown-menu-group" {...props} />;
 }
 
@@ -76,7 +95,7 @@ function DropdownMenuItem({
   variant = 'default',
   ...props
 }: MenuPrimitive.Item.Props &
-  React.RefAttributes<HTMLDivElement> & {
+  RefAttributes<HTMLDivElement> & {
     inset?: boolean;
     variant?: 'default' | 'destructive';
   }) {
@@ -98,7 +117,7 @@ function DropdownMenuCheckboxItem({
   className,
   children,
   ...props
-}: MenuPrimitive.CheckboxItem.Props & React.RefAttributes<HTMLDivElement>) {
+}: MenuPrimitive.CheckboxItem.Props & RefAttributes<HTMLDivElement>) {
   return (
     <MenuPrimitive.CheckboxItem
       data-slot="dropdown-menu-checkbox-item"
@@ -117,7 +136,7 @@ function DropdownMenuCheckboxItem({
   );
 }
 
-function DropdownMenuRadioGroup({ ...props }: MenuPrimitive.RadioGroup.Props & React.RefAttributes<HTMLDivElement>) {
+function DropdownMenuRadioGroup({ ...props }: MenuPrimitive.RadioGroup.Props & RefAttributes<HTMLDivElement>) {
   return <MenuPrimitive.RadioGroup data-slot="dropdown-menu-radio-group" {...props} />;
 }
 
@@ -125,7 +144,7 @@ function DropdownMenuRadioItem({
   className,
   children,
   ...props
-}: MenuPrimitive.RadioItem.Props & React.RefAttributes<HTMLDivElement>) {
+}: MenuPrimitive.RadioItem.Props & RefAttributes<HTMLDivElement>) {
   return (
     <MenuPrimitive.RadioItem
       data-slot="dropdown-menu-radio-item"
@@ -148,7 +167,7 @@ function DropdownMenuLabel({
   inset,
   ...props
 }: MenuPrimitive.GroupLabel.Props &
-  React.RefAttributes<HTMLDivElement> & {
+  RefAttributes<HTMLDivElement> & {
     inset?: boolean;
   }) {
   return (
@@ -161,10 +180,7 @@ function DropdownMenuLabel({
   );
 }
 
-function DropdownMenuSeparator({
-  className,
-  ...props
-}: MenuPrimitive.Separator.Props & React.RefAttributes<HTMLHRElement>) {
+function DropdownMenuSeparator({ className, ...props }: MenuPrimitive.Separator.Props & RefAttributes<HTMLHRElement>) {
   return (
     <MenuPrimitive.Separator
       data-slot="dropdown-menu-separator"
@@ -174,7 +190,7 @@ function DropdownMenuSeparator({
   );
 }
 
-function DropdownMenuShortcut({ className, ...props }: React.ComponentProps<'span'>) {
+function DropdownMenuShortcut({ className, ...props }: ComponentProps<'span'>) {
   return (
     <span
       data-slot="dropdown-menu-shortcut"
@@ -194,7 +210,7 @@ function DropdownMenuSubTrigger({
   children,
   ...props
 }: MenuPrimitive.SubmenuTrigger.Props &
-  React.RefAttributes<HTMLDivElement> & {
+  RefAttributes<HTMLDivElement> & {
     inset?: boolean;
   }) {
   return (
@@ -216,7 +232,7 @@ function DropdownMenuSubTrigger({
 function DropdownMenuSubContent({
   className,
   ...props
-}: React.HTMLAttributes<HTMLDivElement> & {
+}: HTMLAttributes<HTMLDivElement> & {
   className?: string;
 }) {
   return (

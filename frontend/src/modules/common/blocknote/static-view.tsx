@@ -9,7 +9,7 @@ import { openAttachmentDialog } from '~/modules/attachment/dialog/helpers';
 import { getFileUrl } from '~/modules/attachment/helpers';
 import { findAttachmentInListCache } from '~/modules/attachment/query';
 import { customSchema } from '~/modules/common/blocknote/blocknote-config';
-import { getParsedContent } from '~/modules/common/blocknote/helpers';
+import { getParsedContent } from '~/modules/common/blocknote/helpers/blocknote-helpers';
 import type { CustomBlock } from '~/modules/common/blocknote/types';
 import { useUIStore } from '~/store/ui';
 

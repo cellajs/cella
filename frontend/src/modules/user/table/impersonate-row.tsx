@@ -2,7 +2,7 @@ import i18n from 'i18next';
 import { VenetianMaskIcon } from 'lucide-react';
 import { appConfig } from 'shared';
 import { startImpersonation } from '~/api.gen';
-import { toaster } from '~/modules/common/toaster/service';
+import { toaster } from '~/modules/common/toast-service';
 import { getAndSetMe } from '~/modules/me/helpers';
 import { meKeys } from '~/modules/me/query';
 import { Button } from '~/modules/ui/button';

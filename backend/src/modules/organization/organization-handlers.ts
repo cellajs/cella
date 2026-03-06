@@ -12,7 +12,7 @@ import { buildZeroCounts } from '#/modules/entities/helpers/build-zero-counts';
 import { checkSlugAvailable, checkSlugsAvailable } from '#/modules/entities/helpers/check-slug';
 import { getEntityCounts, getEntityCountsSelect } from '#/modules/entities/helpers/get-entity-counts';
 import { initContextCounters } from '#/modules/entities/helpers/init-context-counters';
-import { insertMemberships } from '#/modules/memberships/helpers';
+import { insertMemberships } from '#/modules/memberships/helpers/membership-helpers';
 import { type MembershipBaseModel, toMembershipBase } from '#/modules/memberships/helpers/select';
 import organizationRoutes from '#/modules/organization/organization-routes';
 import {

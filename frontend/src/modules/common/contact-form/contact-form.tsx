@@ -9,7 +9,7 @@ import { useBreakpointAbove } from '~/hooks/use-breakpoints';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { InputFormField } from '~/modules/common/form-fields/input';
-import { toaster } from '~/modules/common/toaster/service';
+import { toaster } from '~/modules/common/toast-service';
 import { LegalContact } from '~/modules/marketing/legal/legal-contact';
 import { useCreateRequestMutation } from '~/modules/requests/query';
 import { Button, SubmitButton } from '~/modules/ui/button';

@@ -4,7 +4,7 @@ import { RowSelectionContext, type RowSelectionContextValue } from './hooks';
 import { MobileExpandToggle, MobileSubRow } from './mobile-sub-row';
 import { rowClassname, rowSelectedClassname } from './style/row';
 import type { CalculatedColumn, RenderRowProps } from './types';
-import { cn, getCellRangeBoundary, getColSpan, getRowStyle, isCellInRange } from './utils';
+import { cn, getCellRangeBoundary, getColSpan, getRowStyle, isCellInRange } from './utils/grid-utils';
 
 function Row<R, SR>({
   className,

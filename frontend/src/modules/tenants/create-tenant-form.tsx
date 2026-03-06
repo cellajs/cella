@@ -9,7 +9,7 @@ import { zCreateTenantData } from '~/api.gen/zod.gen';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { InputFormField } from '~/modules/common/form-fields/input';
-import { toaster } from '~/modules/common/toaster/service';
+import { toaster } from '~/modules/common/toast-service';
 import { useTenantCreateMutation } from '~/modules/tenants/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, type LabelDirectionType } from '~/modules/ui/form';

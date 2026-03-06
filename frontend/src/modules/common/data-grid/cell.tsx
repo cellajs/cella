@@ -2,7 +2,7 @@ import { type MouseEvent, memo } from 'react';
 
 import { useRovingTabIndex } from './hooks';
 import type { CellMouseEventHandler, CellRendererProps } from './types';
-import { createCellEvent, getCellClassname, getCellStyle, isCellEditableUtil } from './utils';
+import { createCellEvent, getCellClassname, getCellStyle, isCellEditableUtil } from './utils/grid-utils';
 
 const cellInRangeClassname = 'bg-primary/10';
 const cellRangeTopClassname = 'rdg-cell-range-top';

@@ -68,7 +68,7 @@ import {
   renderMeasuringCells,
   scrollIntoView,
   sign,
-} from './utils';
+} from './utils/grid-utils';
 
 export interface SelectCellState extends Position {
   readonly mode: 'SELECT';

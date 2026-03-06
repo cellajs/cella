@@ -21,7 +21,7 @@ import type {
   RowHeightArgs,
   RowsChangeData,
 } from './types';
-import { assertIsValidKeyGetter, getLeftRightKey } from './utils';
+import { assertIsValidKeyGetter, getLeftRightKey } from './utils/grid-utils';
 
 export interface TreeDataGridProps<R, SR = unknown, K extends Key = Key>
   extends Omit<DataGridProps<R, SR, K>, 'columns' | 'role' | 'aria-rowcount' | 'rowHeight' | 'isRowSelectionDisabled'> {

@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 
-import { floor, max, min } from '../utils';
+import { floor, max, min } from '../utils/grid-utils';
 
 interface ViewportRowsArgs<R> {
   rows: readonly R[];

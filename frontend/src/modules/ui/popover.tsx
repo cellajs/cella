@@ -1,13 +1,32 @@
 import { Popover as PopoverPrimitive } from '@base-ui/react/popover';
-import * as React from 'react';
+import {
+  type ComponentProps,
+  type ComponentPropsWithoutRef,
+  isValidElement,
+  type ReactElement,
+  type ReactNode,
+  type RefAttributes,
+} from 'react';
 import { cn } from '~/utils/cn';
 
 export function Popover({ ...props }: PopoverPrimitive.Root.Props) {
   return <PopoverPrimitive.Root data-slot="popover" {...props} />;
 }
 
-export function PopoverTrigger({ ...props }: PopoverPrimitive.Trigger.Props & React.RefAttributes<HTMLElement>) {
-  return <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props} />;
+export function PopoverTrigger({
+  asChild,
+  children,
+  ...props
+}: PopoverPrimitive.Trigger.Props & RefAttributes<HTMLElement> & { asChild?: boolean }) {
+  // Translate Radix's asChild pattern to Base UI's render prop
+  if (asChild && isValidElement(children)) {
+    return <PopoverPrimitive.Trigger data-slot="popover-trigger" render={children as ReactElement} {...props} />;
+  }
+  return (
+    <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props}>
+      {children}
+    </PopoverPrimitive.Trigger>
+  );
 }
 
 export function PopoverContent({
@@ -26,8 +45,8 @@ export function PopoverContent({
   side?: 'top' | 'bottom' | 'left' | 'right';
   alignOffset?: number;
   finalFocus?: PopoverPrimitive.Popup.Props['finalFocus'];
-  children?: React.ReactNode;
-} & Omit<React.ComponentPropsWithoutRef<'div'>, 'className'>) {
+  children?: ReactNode;
+} & Omit<ComponentPropsWithoutRef<'div'>, 'className'>) {
   return (
     <PopoverPrimitive.Portal>
       <PopoverPrimitive.Positioner
@@ -67,8 +86,8 @@ export function PopoverContentNoPortal({
   sideOffset?: number;
   side?: 'top' | 'bottom' | 'left' | 'right';
   alignOffset?: number;
-  children?: React.ReactNode;
-} & Omit<React.ComponentPropsWithoutRef<'div'>, 'className'>) {
+  children?: ReactNode;
+} & Omit<ComponentPropsWithoutRef<'div'>, 'className'>) {
   return (
     <PopoverPrimitive.Positioner
       side={side}
@@ -91,18 +110,18 @@ export function PopoverContentNoPortal({
   );
 }
 
-export function PopoverAnchor({ ...props }: PopoverPrimitive.Trigger.Props & React.RefAttributes<HTMLElement>) {
+export function PopoverAnchor({ ...props }: PopoverPrimitive.Trigger.Props & RefAttributes<HTMLElement>) {
   return <PopoverPrimitive.Trigger data-slot="popover-anchor" {...props} />;
 }
 
-export function PopoverHeader({ className, ...props }: React.ComponentProps<'div'>) {
+export function PopoverHeader({ className, ...props }: ComponentProps<'div'>) {
   return <div data-slot="popover-header" className={cn('flex flex-col gap-1 text-sm', className)} {...props} />;
 }
 
-export function PopoverTitle({ className, ...props }: React.ComponentProps<'h2'>) {
+export function PopoverTitle({ className, ...props }: ComponentProps<'h2'>) {
   return <div data-slot="popover-title" className={cn('font-medium', className)} {...props} />;
 }
 
-export function PopoverDescription({ className, ...props }: React.ComponentProps<'p'>) {
+export function PopoverDescription({ className, ...props }: ComponentProps<'p'>) {
   return <p data-slot="popover-description" className={cn('text-muted-foreground', className)} {...props} />;
 }

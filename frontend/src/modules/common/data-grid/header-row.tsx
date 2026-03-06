@@ -3,7 +3,7 @@ import type { DataGridProps } from './data-grid';
 import { HeaderCell } from './header-cell';
 import { rowSelectedClassname } from './style/row';
 import type { CalculatedColumn, Maybe, Position, ResizedWidth } from './types';
-import { cn, getColSpan } from './utils';
+import { cn, getColSpan } from './utils/grid-utils';
 
 type SharedDataGridProps<R, SR, K extends React.Key> = Pick<
   DataGridProps<R, SR, K>,

@@ -1,5 +1,11 @@
 import { Tooltip as TooltipPrimitive } from '@base-ui/react/tooltip';
-import * as React from 'react';
+import {
+  type ComponentPropsWithoutRef,
+  isValidElement,
+  type ReactElement,
+  type ReactNode,
+  type RefAttributes,
+} from 'react';
 import { cn } from '~/utils/cn';
 
 export function TooltipProvider({
@@ -8,7 +14,7 @@ export function TooltipProvider({
   disableHoverableContent: _disableHoverableContent,
   ...props
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   delayDuration?: number;
   skipDelayDuration?: number;
   disableHoverableContent?: boolean;
@@ -27,7 +33,7 @@ export function Tooltip({
   disableHoverablePopup,
   ...props
 }: Omit<TooltipPrimitive.Root.Props, 'children'> & {
-  children?: React.ReactNode;
+  children?: ReactNode;
   disableHoverablePopup?: boolean;
 }) {
   return (
@@ -37,8 +43,20 @@ export function Tooltip({
   );
 }
 
-export function TooltipTrigger({ ...props }: TooltipPrimitive.Trigger.Props & React.RefAttributes<HTMLElement>) {
-  return <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...props} />;
+export function TooltipTrigger({
+  asChild,
+  children,
+  ...props
+}: TooltipPrimitive.Trigger.Props & RefAttributes<HTMLElement> & { asChild?: boolean }) {
+  // Translate Radix's asChild pattern to Base UI's render prop
+  if (asChild && isValidElement(children)) {
+    return <TooltipPrimitive.Trigger data-slot="tooltip-trigger" render={children as ReactElement} {...props} />;
+  }
+  return (
+    <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...props}>
+      {children}
+    </TooltipPrimitive.Trigger>
+  );
 }
 
 export function TooltipContent({
@@ -55,9 +73,9 @@ export function TooltipContent({
   side?: 'top' | 'bottom' | 'left' | 'right';
   align?: 'start' | 'center' | 'end';
   hideWhenDetached?: boolean;
-  children?: React.ReactNode;
+  children?: ReactNode;
   hidden?: boolean;
-} & Omit<React.ComponentPropsWithoutRef<'div'>, 'className'>) {
+} & Omit<ComponentPropsWithoutRef<'div'>, 'className'>) {
   return (
     <TooltipPrimitive.Portal>
       <TooltipPrimitive.Positioner side={side} sideOffset={sideOffset} align={align} className="z-200">
@@ -77,6 +95,6 @@ export function TooltipContent({
 }
 
 // Keep TooltipPortal as a pass-through for backward compatibility
-export function TooltipPortal({ children }: { children: React.ReactNode }) {
+export function TooltipPortal({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }

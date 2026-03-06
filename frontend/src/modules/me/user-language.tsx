@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { appConfig, type Language } from 'shared';
 import { updateMe } from '~/api.gen';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
-import { toaster } from '~/modules/common/toaster/service';
+import { toaster } from '~/modules/common/toast-service';
 import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
 

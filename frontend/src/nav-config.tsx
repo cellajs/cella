@@ -4,7 +4,7 @@ import { HomeIcon, MenuIcon, SearchIcon, Settings2Icon, UserIcon } from 'lucide-
 import type { RefObject } from 'react';
 import type { FooterLinkProps } from '~/modules/common/app/app-footer';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { toaster } from '~/modules/common/toaster/service';
+import { toaster } from '~/modules/common/toast-service';
 import { AccountSheet } from '~/modules/navigation/account-sheet';
 import { AppSearch } from '~/modules/navigation/app-search';
 import { MenuSheet } from '~/modules/navigation/menu-sheet/menu-sheet';

@@ -7,7 +7,7 @@ import type { z } from 'zod';
 import { zGetPendingMembershipsData } from '~/api.gen/zod.gen';
 import { useSearchParams } from '~/hooks/use-search-params';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
-import { DataTable } from '~/modules/common/data-table';
+import { DataTable } from '~/modules/common/data-table/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { EnrichedContextEntity } from '~/modules/entities/types';
 import { PendingMembershipsTableBar } from '~/modules/memberships/pending-table/pending-bar';

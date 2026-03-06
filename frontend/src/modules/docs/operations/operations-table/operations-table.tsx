@@ -2,7 +2,7 @@ import { useSuspenseQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from '~/hooks/use-search-params';
 import type { RowsChangeData } from '~/modules/common/data-grid';
-import { DataTable } from '~/modules/common/data-table';
+import { DataTable } from '~/modules/common/data-table/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { FocusViewContainer } from '~/modules/common/focus-view';
 import { OperationsTableBar } from '~/modules/docs/operations/operations-table/operations-bar';

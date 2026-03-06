@@ -7,7 +7,7 @@ import type {
   Omit,
   RenderEditCellProps,
 } from './types';
-import { createCellEvent, getCellClassname, getCellStyle, onEditorNavigation } from './utils';
+import { createCellEvent, getCellClassname, getCellStyle, onEditorNavigation } from './utils/grid-utils';
 
 /*
  * To check for outside `mousedown` events, we listen to all `mousedown` events at their birth,

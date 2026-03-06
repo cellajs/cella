@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import type { UserBase, UserMinimalBase } from '~/api.gen';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
-import { toaster } from '~/modules/common/toaster/service';
+import { toaster } from '~/modules/common/toast-service';
 import { useFindInListCache } from '~/query/basic';
 import { cn } from '~/utils/cn';
 import { Button } from '../ui/button';

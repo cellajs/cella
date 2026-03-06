@@ -15,7 +15,7 @@ import { type Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
 import { mailer } from '#/lib/mailer';
 import { resolveEntity } from '#/lib/resolve-entity';
-import { getBaseMembershipEntityId, insertMemberships } from '#/modules/memberships/helpers';
+import { getBaseMembershipEntityId, insertMemberships } from '#/modules/memberships/helpers/membership-helpers';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import membershipRoutes from '#/modules/memberships/memberships-routes';
 import { withAuditUsers } from '#/modules/user/helpers/audit-user';

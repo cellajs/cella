@@ -18,7 +18,7 @@
     "node": "24.x"
   },
   "type": "module",
-  "main": "./src/index.ts",
+  "main": "./src/create-cella-cli.ts",
   "imports": {
     "#/*": "./src/*"
   },
@@ -26,7 +26,7 @@
     "create-cella": "index.js"
   },
   "scripts": {
-    "start": "tsx ./src/index.ts",
+    "start": "tsx ./src/create-cella-cli.ts",
     "clean": "rimraf ./dist",
     "build": "tsup",
     "test-build": "pnpm run build && node index.js",

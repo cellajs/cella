@@ -11,7 +11,7 @@ import {
   updateMembership,
 } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
-import { toaster } from '~/modules/common/toaster/service';
+import { toaster } from '~/modules/common/toast-service';
 import type { EnrichedContextEntity } from '~/modules/entities/types';
 import { meKeys } from '~/modules/me/query';
 import { memberQueryKeys } from '~/modules/memberships/query';

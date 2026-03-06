@@ -1,5 +1,5 @@
 import type { FieldValues } from 'react-hook-form';
-import BlockNote from '~/modules/common/blocknote';
+import BlockNote from '~/modules/common/blocknote/block-note-editor';
 import type { BaseUppyFilePanelProps, CommonBlockNoteProps } from '~/modules/common/blocknote/types';
 import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';

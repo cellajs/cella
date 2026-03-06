@@ -10,7 +10,7 @@ import { CallbackArgs } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { PageAside } from '~/modules/common/page/aside';
 
-import { toaster } from '~/modules/common/toaster/service';
+import { toaster } from '~/modules/common/toast-service';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import { DeleteOrganizations } from '~/modules/organization/delete-organizations';
 import { UpdateOrganizationDetailsForm } from '~/modules/organization/update-organization-details-form';

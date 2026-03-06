@@ -8,7 +8,7 @@
     ".": "./index.ts",
     "./nanoid": "./src/utils/nanoid.ts",
     "./upload-templates": "./upload-templates.ts",
-    "./tracing": "./src/tracing/index.ts",
+    "./tracing": "./src/tracing/tracing.ts",
     "./builder": "./src/builder/index.ts",
     "./blocknote": "./src/utils/text-from-block.ts",
     "./is-cdn-url": "./src/utils/is-cdn-url.ts",

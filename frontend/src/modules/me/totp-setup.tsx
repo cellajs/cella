@@ -7,7 +7,7 @@ import { type ApiError, type CreateTotpData, type CreateTotpResponses, createTot
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { TotpConfirmationForm } from '~/modules/auth/totp-verify-code-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { toaster } from '~/modules/common/toaster/service';
+import { toaster } from '~/modules/common/toast-service';
 import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
 

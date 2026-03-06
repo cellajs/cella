@@ -19,7 +19,7 @@ import '~/modules/common/data-table/style.css';
 import { DataTableSkeleton } from '~/modules/common/data-table/table-skeleton';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useTableTooltip } from '~/modules/common/data-table/use-table-tooltip';
-import { toaster } from '~/modules/common/toaster/service';
+import { toaster } from '~/modules/common/toast-service';
 import { cn } from '~/utils/cn';
 
 /** Maximum number of rows that can be selected at once */

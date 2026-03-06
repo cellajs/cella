@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import type { Organization } from '~/api.gen';
-import { toaster } from '~/modules/common/toaster/service';
+import { toaster } from '~/modules/common/toast-service';
 import { Button } from '~/modules/ui/button';
 
 export function Subscription({ organization }: { organization: Organization }) {

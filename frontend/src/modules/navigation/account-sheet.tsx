@@ -10,7 +10,7 @@ import { useMountedState } from '~/hooks/use-mounted-state';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
-import { toaster } from '~/modules/common/toaster/service';
+import { toaster } from '~/modules/common/toast-service';
 import { navSheetClassName } from '~/modules/navigation/app-nav';
 import { FocusBridge, FocusTarget } from '~/modules/navigation/focus-bridge';
 import { MenuSheet } from '~/modules/navigation/menu-sheet/menu-sheet';

@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
-import { toaster } from '~/modules/common/toaster/service';
+import { toaster } from '~/modules/common/toast-service';
 import { Switch } from '~/modules/ui/switch';
 import { useUIStore } from '~/store/ui';
 

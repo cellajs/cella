@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import type { Organization } from '~/api.gen';
 import { useMountedState } from '~/hooks/use-mounted-state';
 import { CallbackArgs } from '~/modules/common/data-table/types';
-import { Step, Stepper } from '~/modules/common/stepper';
+import { Step, Stepper } from '~/modules/common/stepper/stepper';
 import { StepperFooter } from '~/modules/home/onboarding/footer';
 import { onboardingSteps } from '~/modules/home/onboarding/onboarding-config';
 import { WelcomeText } from '~/modules/home/onboarding/welcome-text';
