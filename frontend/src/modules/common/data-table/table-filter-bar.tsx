@@ -118,7 +118,7 @@ export const FilterBarContent = FilterBarFilters;
  */
 export const TableFilterBar = ({ onResetFilters, isFiltered, children }: TableFilterBarProps) => {
   const { t } = useTranslation();
-  const isDesktop = useBreakpointAbove('sm');
+  const isDesktop = useBreakpointAbove('md');
 
   const [isFilterActive, setFilterActive] = useState<boolean>(!!isFiltered);
 

@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { nanoid } from 'shared/nanoid';
-import { useBreakpointWithin } from '~/hooks/use-breakpoints';
+import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useMountedState } from '~/hooks/use-mounted-state';
 import { useNavTabs } from '~/hooks/use-nav-tabs';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
@@ -47,7 +47,7 @@ export const PageTabNav = ({
   className,
 }: Props) => {
   const { t } = useTranslation();
-  const isMobile = useBreakpointWithin('xs', false);
+  const isMobile = useBreakpointBelow('sm', false);
   const { hasStarted } = useMountedState();
 
   // Use explicit tabs or auto-generate from parent route's children

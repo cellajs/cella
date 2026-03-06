@@ -5,7 +5,7 @@ import type React from 'react';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
-import { useBreakpointWithin } from '~/hooks/use-breakpoints';
+import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useMountedState } from '~/hooks/use-mounted-state';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
@@ -62,7 +62,7 @@ export const AccountSheet = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, isSystemAdmin } = useUserStore();
-  const isMobile = useBreakpointWithin('xs', false);
+  const isMobile = useBreakpointBelow('sm', false);
   const { isOnline } = useOnlineManager();
 
   const buttonWrapper = useRef<HTMLDivElement | null>(null);

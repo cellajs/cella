@@ -2,7 +2,7 @@ import { useSuspenseQuery } from '@tanstack/react-query';
 import { Outlet, useNavigate, useRouterState } from '@tanstack/react-router';
 import { ArrowUpIcon, MenuIcon } from 'lucide-react';
 import { useEffect, useRef } from 'react';
-import { useBreakpointWithin } from '~/hooks/use-breakpoints';
+import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import { useScrollVisibility } from '~/hooks/use-scroll-visibility';
 import { ResizablePanel, ResizablePanelGroup, ResizableSeparator } from '~/modules/common/resizable-panels';
@@ -16,7 +16,7 @@ import { useUIStore } from '~/store/ui';
 function DocsLayout() {
   const navigate = useNavigate();
   const { pathname } = useRouterState({ select: (s) => s.location });
-  const isMobile = useBreakpointWithin('xs');
+  const isMobile = useBreakpointBelow('sm');
   const focusView = useUIStore((state) => state.focusView);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const mainRef = useRef<HTMLElement>(null);

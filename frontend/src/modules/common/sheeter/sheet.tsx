@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useBreakpointWithin } from '~/hooks/use-breakpoints';
+import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { type InternalSheet, useSheeter } from '~/modules/common/sheeter/use-sheeter';
@@ -27,7 +27,7 @@ export const SheeterSheet = ({ sheet }: { sheet: InternalSheet }) => {
     autoScrollOnDrag,
   } = sheet;
 
-  const isMobile = useBreakpointWithin('xs', false);
+  const isMobile = useBreakpointBelow('sm', false);
   const containerElement = container?.ref?.current ?? null;
 
   const sheetRef = useRef<HTMLDivElement>(null);

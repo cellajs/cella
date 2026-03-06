@@ -12,7 +12,7 @@ import {
 import { HeaderCell } from '~/modules/common/data-table/header-cell';
 import '~/modules/common/data-grid/style/data-grid.css';
 import { useTranslation } from 'react-i18next';
-import { useBreakpointWithin } from '~/hooks/use-breakpoints';
+import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { InfiniteLoader } from '~/modules/common/data-table/infinite-loader';
 import { NoRows } from '~/modules/common/data-table/no-rows';
 import '~/modules/common/data-table/style.css';
@@ -89,7 +89,7 @@ export const DataTable = <TData,>({
   isRowSelectionDisabled,
 }: DataTableProps<TData>) => {
   const { t } = useTranslation();
-  const isMobile = useBreakpointWithin('xs', false);
+  const isMobile = useBreakpointBelow('sm', false);
 
   const gridRef = useRef<HTMLDivElement | null>(null);
   useTableTooltip(gridRef, !isLoading);

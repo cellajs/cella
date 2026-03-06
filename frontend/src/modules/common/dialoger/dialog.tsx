@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { useBreakpointWithin } from '~/hooks/use-breakpoints';
+import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { type InternalDialog, useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
@@ -19,7 +19,7 @@ export function DialogerDialog({ dialog }: { dialog: InternalDialog }) {
     headerClassName,
     container,
   } = dialog;
-  const isMobile = useBreakpointWithin('xs', false);
+  const isMobile = useBreakpointBelow('sm', false);
 
   // When a container is provided, the dialog is rendered inside the container and scroll should stay enabled
   const modal = !container;

@@ -4,7 +4,7 @@ import { motion } from 'motion/react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { nanoid } from 'shared/nanoid';
-import { useBreakpointWithin } from '~/hooks/use-breakpoints';
+import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useCurrentSection } from '~/hooks/use-scroll-spy';
 import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
 import type { LegalSection, LegalSubject } from '~/modules/marketing/legal/legal-config';
@@ -33,7 +33,7 @@ interface LegalAsideProps {
 export const LegalAside = ({ subjects, currentSubject, className }: LegalAsideProps) => {
   const { t } = useTranslation();
 
-  const isMobile = useBreakpointWithin('xs');
+  const isMobile = useBreakpointBelow('sm');
 
   // Unique layoutId for the animated indicator
   const layoutId = useRef(nanoid()).current;

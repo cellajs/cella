@@ -52,7 +52,7 @@ interface SidebarNavProps {
  */
 export function SidebarNav({ triggerNavItem }: SidebarNavProps) {
   const { hasStarted } = useMountedState();
-  const isDesktop = useBreakpointAbove('xl');
+  const isDesktop = useBreakpointAbove('2xl');
 
   const navSheetOpen = useNavigationStore((state) => state.navSheetOpen);
   const keepNavOpen = useNavigationStore((state) => state.keepNavOpen);

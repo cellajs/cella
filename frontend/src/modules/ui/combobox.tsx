@@ -2,7 +2,7 @@ import { CheckIcon, ChevronDownIcon, SearchIcon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Virtualizer } from 'virtua';
-import { useBreakpointWithin } from '~/hooks/use-breakpoints';
+import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useDebounce } from '~/hooks/use-debounce';
 import { useMeasure } from '~/hooks/use-measure';
 import { TKey } from '~/lib/i18n-locales';
@@ -46,7 +46,7 @@ export function Combobox({
   placeholders: passedPlaceholders = {},
 }: ComboboxProps) {
   const { t } = useTranslation();
-  const isMobile = useBreakpointWithin('xs');
+  const isMobile = useBreakpointBelow('sm');
 
   const [open, setOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');

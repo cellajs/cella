@@ -36,7 +36,7 @@ function Feature({ id, invertClassName }: FeatureProps) {
 export function Features() {
   const mode = useUIStore((state) => state.mode);
   const invertClass = mode === 'dark' ? 'invert' : '';
-  const isMediumScreen = useBreakpointAbove('sm');
+  const isMediumScreen = useBreakpointAbove('md');
 
   return (
     <div className="mx-auto grid max-w-5xl justify-center gap-4 sm:grid-cols-2 md:grid-cols-3">

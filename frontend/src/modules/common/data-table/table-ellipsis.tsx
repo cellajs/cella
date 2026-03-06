@@ -41,7 +41,7 @@ export function TableEllipsis<T extends { id: string }>({ row, tabIndex, options
     );
 
     create(
-      <div className="p-1 flex-col flex gap-2">
+      <div className="flex-col flex gap-2">
         <DropdownContent />
       </div>,
       {

@@ -22,7 +22,7 @@ const ContactFormMap = lazy(() => import('~/modules/common/contact-form/contact-
 export function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
   const { t } = useTranslation();
   const { user } = useUserStore();
-  const isMediumScreen = useBreakpointAbove('md');
+  const isMediumScreen = useBreakpointAbove('lg');
 
   const formSchema = zCreateRequestData.shape.body.extend({ name: z.string().min(2, t('error:name_required')) });
 

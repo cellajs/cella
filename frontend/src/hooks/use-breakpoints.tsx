@@ -104,43 +104,42 @@ export function useCurrentBreakpoint(enableReactivity = true): BreakpointKey {
   return breakpointState as BreakpointKey;
 }
 
-/** Internal breakpoint comparison — not exported directly. Use useBreakpointWithin or useBreakpointAbove. */
-function useBreakpointCompare(mustBe: 'min' | 'max', breakpoint: keyof typeof breakpoints, enableReactivity = true) {
-  // useSyncExternalStore provides tear-free reads from external state
+/** Internal hook for breakpoint state — not exported directly. */
+function useBreakpointState(enableReactivity = true) {
   const breakpointState = useSyncExternalStore(
     enableReactivity ? subscribe : () => () => {},
     getSnapshot,
     getServerSnapshot,
   );
-
-  const currentBreakpointIndex = sortedBreakpoints.indexOf(breakpointState);
-  const targetBreakpointIndex = sortedBreakpoints.indexOf(breakpoint as string);
-
-  return mustBe === 'min'
-    ? currentBreakpointIndex > targetBreakpointIndex
-    : currentBreakpointIndex <= targetBreakpointIndex;
+  return sortedBreakpoints.indexOf(breakpointState);
 }
 
 /**
- * Returns true when the matched breakpoint is within (at or below) the given breakpoint.
- * E.g. useBreakpointWithin('sm') is true when viewport < 768px (matched bp is xs or sm).
- * @param breakpoint - The upper-bound breakpoint key (e.g., 'sm', 'md')
+ * Returns true when the viewport is below the given breakpoint (strict less-than).
+ * E.g. useBreakpointBelow('md') is true when viewport < 768px.
+ * useBreakpointBelow(bp) and useBreakpointAbove(bp) are exact inverses when using the same bp.
+ * @param breakpoint - The breakpoint to compare against (e.g., 'md', 'lg')
  * @param enableReactivity - Whether to re-render on resize (default: true)
  * @example
- * const isMobile = useBreakpointWithin('xs'); // true when matched bp <= sm (viewport < 768px)
+ * const isMobile = useBreakpointBelow('sm'); // true when viewport < 768px
  */
-export function useBreakpointWithin(breakpoint: keyof typeof breakpoints, enableReactivity = true) {
-  return useBreakpointCompare('max', breakpoint, enableReactivity);
+export function useBreakpointBelow(breakpoint: keyof typeof breakpoints, enableReactivity = true) {
+  const currentIndex = useBreakpointState(enableReactivity);
+  const targetIndex = sortedBreakpoints.indexOf(breakpoint as string);
+  return currentIndex < targetIndex;
 }
 
 /**
- * Returns true when the matched breakpoint is above the given breakpoint.
- * E.g. useBreakpointAbove('sm') is true when viewport >= 768px (matched bp is md or higher).
- * @param breakpoint - The lower-bound breakpoint key (e.g., 'sm', 'xl')
+ * Returns true when the viewport is at or above the given breakpoint.
+ * E.g. useBreakpointAbove('md') is true when viewport >= 768px.
+ * useBreakpointAbove(bp) and useBreakpointBelow(bp) are exact inverses when using the same bp.
+ * @param breakpoint - The breakpoint to compare against (e.g., 'sm', 'xl')
  * @param enableReactivity - Whether to re-render on resize (default: true)
  * @example
- * const isDesktop = useBreakpointAbove('xl'); // true when matched bp > xl (viewport >= next bp)
+ * const isDesktop = useBreakpointAbove('xl'); // true when viewport >= 1280px
  */
 export function useBreakpointAbove(breakpoint: keyof typeof breakpoints, enableReactivity = true) {
-  return useBreakpointCompare('min', breakpoint, enableReactivity);
+  const currentIndex = useBreakpointState(enableReactivity);
+  const targetIndex = sortedBreakpoints.indexOf(breakpoint as string);
+  return currentIndex >= targetIndex;
 }
