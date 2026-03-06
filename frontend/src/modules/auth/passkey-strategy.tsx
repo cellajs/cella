@@ -7,7 +7,7 @@ import { type SignInWithPasskeyData, type SignInWithPasskeyResponse, signInWithP
 import { ApiError } from '~/lib/api';
 import { getPasskeyVerifyCredential } from '~/modules/auth/passkey-credentials';
 import type { PasskeyCredentialProps } from '~/modules/auth/types';
-import { toaster } from '~/modules/common/toast-service';
+import { toaster } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
 import { useAuthStore } from '~/store/auth';
 import { useUIStore } from '~/store/ui';

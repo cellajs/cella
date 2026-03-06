@@ -7,7 +7,7 @@ import { signOut } from '~/api.gen';
 import { PasskeyStrategy } from '~/modules/auth/passkey-strategy';
 import { TotpStrategy } from '~/modules/auth/totp-strategy';
 import { Spinner } from '~/modules/common/spinner';
-import { toaster } from '~/modules/common/toast-service';
+import { toaster } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
 import { useAuthStore } from '~/store/auth';
 import { useUserStore } from '~/store/user';

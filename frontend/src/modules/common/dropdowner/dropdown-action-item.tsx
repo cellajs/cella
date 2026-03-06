@@ -1,7 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Button, ButtonProps } from '~/modules/ui/button';
-import { DropdownMenuItem } from '~/modules/ui/dropdown-menu';
+import { cn } from '~/utils/cn';
 
 interface Props {
   isMobile: boolean;
@@ -23,16 +23,10 @@ export function DropdownActionItem({
   variant = 'secondary',
   className,
 }: Props) {
-  const sharedProps = {
-    onClick: onSelect,
-    onSelect,
-    className: `flex items-center w-full ${className ?? ''}`,
-  };
-
   if (isMobile) {
     return (
       <div className="sm:p-1">
-        <Button {...sharedProps} variant={variant}>
+        <Button onClick={onSelect} variant={variant} className={cn('flex items-center w-full', className)}>
           {Icon && <Icon size={16} className="mr-2" />}
           {children}
         </Button>
@@ -41,9 +35,17 @@ export function DropdownActionItem({
   }
 
   return (
-    <DropdownMenuItem {...sharedProps}>
+    <button
+      role="menuitem"
+      type="button"
+      onClick={onSelect}
+      className={cn(
+        'focus:bg-accent focus:text-accent-foreground relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 min-h-10 text-sm outline-hidden w-full',
+        className,
+      )}
+    >
       {Icon && <Icon size={16} />}
-      <span className="ml-2 font-light">{children}</span>
-    </DropdownMenuItem>
+      <span className="font-light">{children}</span>
+    </button>
   );
 }

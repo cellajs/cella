@@ -23,7 +23,7 @@ import {
 } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import { getPasskeyRegistrationCredential } from '~/modules/auth/passkey-credentials';
-import { toaster } from '~/modules/common/toast-service';
+import { toaster } from '~/modules/common/toaster/toaster';
 import { getAndSetMe, getAndSetMeAuthData } from '~/modules/me/helpers';
 import type { Passkey } from '~/modules/me/types';
 import { userQueryKeys } from '~/modules/user/query';

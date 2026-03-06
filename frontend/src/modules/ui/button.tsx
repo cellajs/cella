@@ -3,7 +3,7 @@ import { t } from 'i18next';
 import { Loader2Icon, TriangleAlertIcon } from 'lucide-react';
 import * as React from 'react';
 import { useOnlineManager } from '~/hooks/use-online-manager';
-import { toaster } from '~/modules/common/toast-service';
+import { toaster } from '~/modules/common/toaster/toaster';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Slot } from '~/modules/ui/slot';
 import { cn } from '~/utils/cn';

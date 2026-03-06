@@ -2,80 +2,7 @@ import { createContext, type ReactNode, type Ref, useContext, useEffect, useRef 
 import { useLatestRef } from '~/hooks/use-latest-ref';
 import { cn } from '~/utils/cn';
 
-// ─── Drag & snap behaviour rules ────────────────────────────────────────────
-//
-// STATE MANAGEMENT: idempotent pure-function design. resolveLayout() takes
-// (panelConfigs, separatorIndex, initialWidths, dx, mode) and returns the
-// complete layout — widths + hint data. Dragging backward with the same
-// swipe reverses the entire layout change automatically, no special undo logic.
-//
-// LAYOUT: Panels use pixel widths (style.width) inside a flex container.
-// No CSS grid, no fr tracks. Stored widths always equal rendered widths.
-//
-// G1. DIRECTION DETERMINES ROLES
-//     The panel on the shrinking side of the separator is the victim.
-//     The panel on the growing side is the grower.
-//
-// G2. COLLAPSE SNAP
-//     Snap point at (collapsedWidth + minWidth) / 2.2. When a panel
-//     is dragged beyond the snap point it snaps to collapsedWidth.
-//     Moving back before snap point snaps it back to minWidth. Once
-//     collapsed, the panel stays collapsed for the rest of the drag:
-//     further drag delta cascades to the next victim (G9).
-//     While a victim traverses the collapse zone (minWidth → snap
-//     point), the layout freezes and only the collapse hint progresses.
-//
-// G3. EXPAND GATE
-//     When a collapsed panel is the grower, the user must drag the
-//     full (minWidth - collapsedWidth) distance before the panel snaps
-//     to minWidth. Until the threshold is reached, the handle stays
-//     frozen and an expand hint shows progress (0→1). Reversing back
-//     below the threshold re-enters the gate.
-//
-// G4. RESIZE HINTS
-//     A visual hint (arrow + radial glow) appears during collapse or
-//     expand zones. Mode 'collapse' → inward arrow. Mode 'expand' →
-//     outward arrow. Progress 0→1.
-//
-// G5. KEYBOARD
-//     Arrow keys: single-step, no cascade. Direct victim shrinks,
-//     grower grows. Expand-on-reverse: if grower is collapsed and the
-//     key direction pulls it open, expand to minWidth. Enter: toggle
-//     collapse on the left panel of the separator.
-//
-// G6. MODE DETECTION
-//     Collapsed panels contribute collapsedWidth, non-collapsed panels
-//     contribute minWidth * 1.5. If ideal sum + separator space <=
-//     parentWidth → autoFill, else → overflow. Computed at drag
-//     start and fixed for the entire drag. In overflow mode the
-//     container min-width is set to the ideal sum so panels have
-//     room to grow without collapsing others.
-//
-// G8. ZERO-SUM RESIZE
-//     Every pixel freed by victims goes to the grower. In autoFill
-//     mode the grower has no upper cap. In overflow mode the grower
-//     stops at maxWidth (minWidth × 2) for normal resize, but
-//     collapse-freed pixels extend the cap so the grower absorbs
-//     the space instead of leaving a trailing gap.
-//
-// G9. TWO-PHASE CASCADE
-//     Phase 1 — shrink toward minWidth in victim order away from
-//     separator. Phase 2 — collapse (only after all victims at min).
-//     Panels collapsed at drag start are skipped in both phases.
-//
-// G10. NO SWAP: EXPAND BLOCKS DIRECT VICTIM COLLAPSE
-//     When a panel is expanding via the expand snap, the direct
-//     victim cannot enter Phase 2.
-//
-// AUTOFILL MODE — panels fit the container. maxWidth not enforced.
-//     Collapse freed pixels go to grower (A2).
-//
-// OVERFLOW MODE — panels exceed container, horizontal scroll.
-//     Collapse freed pixels go to grower (maxWidth extended by
-//     collapseFreed so grower can absorb the space).
-//     Expand uses trailing gap first (O2).
-//
-// ─────────────────────────────────────────────────────────────────────────────
+// Rules & visual examples → resizable-panels.md
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -101,6 +28,8 @@ interface HintState {
 interface LayoutResult {
   widths: Record<string, number>;
   hints: HintState[];
+  /** G12: true when the expand gate (G3) has been passed this frame */
+  expandSnapped?: boolean;
 }
 
 interface DragState {
@@ -109,6 +38,14 @@ interface DragState {
   autoFill: boolean;
   initialWidths: Record<string, number>;
   collapsedAtStart: Set<string>;
+  /** G11: per-panel cascade when last victim is off-screen (keyed by drag direction) */
+  perPanelCascade: { left: boolean; right: boolean };
+  /** G12: grower panel is at/past right viewport edge — needs scroll compensation on expand */
+  needsScrollCompensation: boolean;
+  /** G12: current scroll compensation applied for expand (px). 0 when inactive. */
+  scrollCompensation: number;
+  /** Last dx from handlePointerMove, used at endDrag for scroll adjustment */
+  lastDx: number;
 }
 
 interface PanelGroupContextValue {
@@ -168,6 +105,7 @@ function resolveLayout(
   collapsedAtStart: Set<string>,
   dx: number,
   autoFill: boolean,
+  perPanelCascade = false,
 ): LayoutResult {
   const widths = { ...initialWidths };
   const hints: HintState[] = [];
@@ -222,82 +160,176 @@ function resolveLayout(
   // The direct victim is the first non-skipped panel in the victim list
   const directVictimIndex = victimIndices[0];
 
-  // Phase 1: shrink all victims toward minWidth
-  for (const vi of victimIndices) {
-    const victim = panels[vi];
-    if (!victim || remaining <= 0) break;
-    if (collapsedAtStart.has(victim.id)) continue;
+  // Grower initial width (used in growing-side section)
+  const growInitial = growPanel ? (initialWidths[growPanel.id] ?? growPanel.minWidth) : 0;
 
-    const initialW = initialWidths[victim.id] ?? victim.minWidth;
-    const shrinkRoom = initialW - victim.minWidth;
-    if (shrinkRoom <= 0) continue;
-
-    const consumed = Math.min(shrinkRoom, remaining);
-    widths[victim.id] = initialW - consumed;
-    remaining -= consumed;
-    totalFreed += consumed;
-  }
-
-  // Phase 2: collapse victims (only after all are at min) (G9)
-  if (remaining > 0) {
+  if (perPanelCascade) {
+    // ─── G11: two-pass per-panel cascade ───────────────────────────────
+    // Phase 1: shrink all victims to minWidth, nearest first (same as G9).
     for (const vi of victimIndices) {
       const victim = panels[vi];
       if (!victim || remaining <= 0) break;
       if (collapsedAtStart.has(victim.id)) continue;
-      if (!victim.collapsible) continue;
 
-      // G10: when expanding, block collapse of the direct victim
-      if (isExpandingFromCollapsed && vi === directVictimIndex) {
-        continue;
-      }
+      const initialW = initialWidths[victim.id] ?? victim.minWidth;
+      const shrinkRoom = initialW - victim.minWidth;
+      if (shrinkRoom <= 0) continue;
 
-      const rawWidth = victim.minWidth - remaining;
-      const clampedWidth = snapWidth(victim, rawWidth);
+      const consumed = Math.min(shrinkRoom, remaining);
+      widths[victim.id] = initialW - consumed;
+      remaining -= consumed;
+      totalFreed += consumed;
+    }
 
-      // Collapse hint (G4)
-      const progress = collapseProgress(victim, rawWidth);
-      if (progress > 0) {
-        hints.push({
-          panelId: victim.id,
-          side: draggingLeft ? 'right' : 'left',
-          mode: 'collapse',
-          progress,
-        });
-      }
+    // Grower gate: if the grower is still below its cap after all shrinking,
+    // freed pixels are sufficient — skip collapse entirely. This prevents
+    // premature collapse when the grower still has room to grow.
+    const growMax = autoFill ? Number.MAX_SAFE_INTEGER : growPanel ? growPanel.minWidth * 2 : 0;
+    const growerWouldBe = growInitial + totalFreed;
+    const growerAtCap = growerWouldBe >= growMax;
 
-      if (clampedWidth <= victim.collapsedWidth) {
-        // Fully collapsed
-        const consumed = victim.minWidth - victim.collapsedWidth;
-        widths[victim.id] = victim.collapsedWidth;
-        remaining -= consumed;
-        collapseFreed += consumed;
-        continue;
-      }
+    // Phase 2: per-panel collapse, nearest first (only when grower is at cap).
+    if (remaining > 0 && growerAtCap) {
+      for (const vi of victimIndices) {
+        const victim = panels[vi];
+        if (!victim || remaining <= 0) break;
+        if (collapsedAtStart.has(victim.id)) continue;
+        if (!victim.collapsible) continue;
 
-      if (clampedWidth >= victim.minWidth) {
-        // Snapped back to minWidth — in collapse zone, layout freezes
-        widths[victim.id] = victim.minWidth;
+        // G10: in autoFill, block direct-victim collapse while expand
+        // isn't fully funded by shrinking (prevents visual swap).
+        if (autoFill && isExpandingFromCollapsed && vi === directVictimIndex && totalFreed < expandCost) continue;
+
+        const rawWidth = victim.minWidth - remaining;
+        const clampedWidth = snapWidth(victim, rawWidth);
+
+        // Collapse hint (G4)
+        const progress = collapseProgress(victim, rawWidth);
+        if (progress > 0) {
+          hints.push({
+            panelId: victim.id,
+            side: draggingLeft ? 'right' : 'left',
+            mode: 'collapse',
+            progress,
+          });
+        }
+
+        if (clampedWidth <= victim.collapsedWidth) {
+          const consumed = victim.minWidth - victim.collapsedWidth;
+          widths[victim.id] = victim.collapsedWidth;
+          remaining -= consumed;
+          collapseFreed += consumed;
+          continue;
+        }
+
+        if (clampedWidth >= victim.minWidth) {
+          widths[victim.id] = victim.minWidth;
+          break;
+        }
+
+        widths[victim.id] = clampedWidth;
         break;
       }
+    }
+  } else {
+    // ─── G9: standard two-phase cascade ─────────────────────────────────
 
-      // Between snap point and collapsedWidth — shouldn't normally happen
-      // but handle gracefully
-      widths[victim.id] = clampedWidth;
-      break;
+    // Phase 1: shrink all victims toward minWidth
+    for (const vi of victimIndices) {
+      const victim = panels[vi];
+      if (!victim || remaining <= 0) break;
+      if (collapsedAtStart.has(victim.id)) continue;
+
+      const initialW = initialWidths[victim.id] ?? victim.minWidth;
+      const shrinkRoom = initialW - victim.minWidth;
+      if (shrinkRoom <= 0) continue;
+
+      const consumed = Math.min(shrinkRoom, remaining);
+      widths[victim.id] = initialW - consumed;
+      remaining -= consumed;
+      totalFreed += consumed;
+    }
+
+    // Phase 2: collapse victims (only after all are at min) (G9)
+    if (remaining > 0) {
+      for (const vi of victimIndices) {
+        const victim = panels[vi];
+        if (!victim || remaining <= 0) break;
+        if (collapsedAtStart.has(victim.id)) continue;
+        if (!victim.collapsible) continue;
+
+        // G10: in autoFill, block direct-victim collapse while the
+        // expand isn't fully funded by shrinking (prevents visual swap).
+        // In overflow the expand is free (trailing gap), so G10 doesn't apply.
+        if (autoFill && isExpandingFromCollapsed && vi === directVictimIndex && totalFreed < expandCost) {
+          continue;
+        }
+
+        const rawWidth = victim.minWidth - remaining;
+        const clampedWidth = snapWidth(victim, rawWidth);
+
+        // Collapse hint (G4)
+        const progress = collapseProgress(victim, rawWidth);
+        if (progress > 0) {
+          hints.push({
+            panelId: victim.id,
+            side: draggingLeft ? 'right' : 'left',
+            mode: 'collapse',
+            progress,
+          });
+        }
+
+        if (clampedWidth <= victim.collapsedWidth) {
+          // Fully collapsed
+          const consumed = victim.minWidth - victim.collapsedWidth;
+          widths[victim.id] = victim.collapsedWidth;
+          remaining -= consumed;
+          collapseFreed += consumed;
+          continue;
+        }
+
+        if (clampedWidth >= victim.minWidth) {
+          // Snapped back to minWidth — in collapse zone, layout freezes
+          widths[victim.id] = victim.minWidth;
+          break;
+        }
+
+        // Between snap point and collapsedWidth — shouldn't normally happen
+        // but handle gracefully
+        widths[victim.id] = clampedWidth;
+        break;
+      }
     }
   }
 
   // ─── Growing side (G8, A2, O1, O2) ───────────────────────────────────
   if (growPanel) {
-    const growInitial = initialWidths[growPanel.id] ?? growPanel.minWidth;
     let growDelta = totalFreed;
 
     // If expanding from collapsed, snap to minWidth + extra freed beyond expand cost
     if (isExpandingFromCollapsed) {
-      const maxGrow = autoFill ? Number.MAX_SAFE_INTEGER : growPanel.minWidth * 2;
-      // In autoFill victims funded the expand, so only the surplus goes to extra growth
-      const extraGrowth = autoFill ? Math.max(0, growDelta - expandCost) : growDelta;
-      widths[growPanel.id] = Math.min(maxGrow, growPanel.minWidth + extraGrowth);
+      const normalMax = autoFill ? Number.MAX_SAFE_INTEGER : growPanel.minWidth * 2;
+      const maxGrow = autoFill ? normalMax : normalMax + collapseFreed;
+      // Total available = shrink-freed + collapse-freed. In autoFill the
+      // expand itself must be funded first, so subtract expandCost.
+      const totalAvailable = growDelta + collapseFreed;
+      const extraGrowth = autoFill ? Math.max(0, totalAvailable - expandCost) : totalAvailable;
+      const uncappedGrow = growPanel.minWidth + extraGrowth;
+      let newGrowWidth = Math.min(maxGrow, uncappedGrow);
+
+      // G8 cap lift: if capping would push total below idealSum, lift cap
+      if (!autoFill && uncappedGrow > maxGrow) {
+        let sumWithCap = 0;
+        let idealSum = 0;
+        for (const p of panels) {
+          const w = p.id === growPanel.id ? newGrowWidth : (widths[p.id] ?? 0);
+          sumWithCap += w;
+          idealSum += p.collapsible && w <= p.collapsedWidth ? p.collapsedWidth : p.minWidth * 1.5;
+        }
+        if (sumWithCap < idealSum) newGrowWidth = uncappedGrow;
+      }
+
+      widths[growPanel.id] = newGrowWidth;
     } else if (!collapsedAtStart.has(growPanel.id)) {
       // Collapse freed pixels always go to grower — in autoFill to
       // maintain zero-sum, in overflow to avoid a trailing gap while
@@ -308,11 +340,28 @@ function resolveLayout(
       // it by collapseFreed so the grower can absorb the freed space.
       const normalMax = autoFill ? Number.MAX_SAFE_INTEGER : growPanel.minWidth * 2;
       const maxGrow = autoFill ? normalMax : normalMax + collapseFreed;
-      widths[growPanel.id] = Math.min(maxGrow, growInitial + growDelta);
+      const uncappedGrow = growInitial + growDelta;
+      let newGrowWidth = Math.min(maxGrow, uncappedGrow);
+
+      // G8 cap lift: if capping the grower would push the total panel sum
+      // below idealSum, lift the cap so the grower absorbs all freed pixels.
+      // This prevents snap-back on drag release (redistribute finds ratio ≈ 1).
+      if (!autoFill && uncappedGrow > maxGrow) {
+        let sumWithCap = 0;
+        let idealSum = 0;
+        for (const p of panels) {
+          const w = p.id === growPanel.id ? newGrowWidth : (widths[p.id] ?? 0);
+          sumWithCap += w;
+          idealSum += p.collapsible && w <= p.collapsedWidth ? p.collapsedWidth : p.minWidth * 1.5;
+        }
+        if (sumWithCap < idealSum) newGrowWidth = uncappedGrow;
+      }
+
+      widths[growPanel.id] = newGrowWidth;
     }
   }
 
-  return { widths, hints };
+  return { widths, hints, expandSnapped: isExpandingFromCollapsed };
 }
 
 // ─── Resize hint ─────────────────────────────────────────────────────────────
@@ -562,12 +611,57 @@ export function ResizablePanelGroup({
       if (panel.collapsible && w <= panel.collapsedWidth) collapsedAtStart.add(panel.id);
     }
 
+    // G11: check if last victim in each direction is off-screen
+    const perPanelCascade = { left: false, right: false };
+    const isAutoFill = computeAutoFill();
+    if (!isAutoFill) {
+      const scrollParent = containerRef.current?.parentElement;
+      if (scrollParent) {
+        const parentRect = scrollParent.getBoundingClientRect();
+
+        // Dragging left → victims are indices [separatorIndex..0]
+        // Last victim (farthest from separator) is index 0
+        const leftLastVictim = panelsRef.current[0];
+        if (leftLastVictim && !collapsedAtStart.has(leftLastVictim.id)) {
+          const r = leftLastVictim.element.getBoundingClientRect();
+          if (r.left < parentRect.left) perPanelCascade.left = true;
+        }
+
+        // Dragging right → victims are indices [separatorIndex+1..end]
+        // Last victim (farthest from separator) is the last panel
+        const rightLastVictim = panelsRef.current[panelsRef.current.length - 1];
+        if (rightLastVictim && !collapsedAtStart.has(rightLastVictim.id)) {
+          const r = rightLastVictim.element.getBoundingClientRect();
+          if (r.right > parentRect.right) perPanelCascade.right = true;
+        }
+      }
+    }
+
+    // G12: check if the right-side panel (potential grower when dragging left)
+    // is at or past the right edge of the viewport — only then does expanding
+    // it need scroll compensation.
+    let needsScrollCompensation = false;
+    if (!isAutoFill) {
+      const rightPanel = panelsRef.current[separatorIndex + 1];
+      const scrollParent = containerRef.current?.parentElement;
+      if (rightPanel && scrollParent) {
+        const parentRect = scrollParent.getBoundingClientRect();
+        const r = rightPanel.element.getBoundingClientRect();
+        // Panel's right edge is at or past the viewport's right edge
+        if (r.right >= parentRect.right - 1) needsScrollCompensation = true;
+      }
+    }
+
     dragRef.current = {
       separatorIndex,
       startX,
-      autoFill: computeAutoFill(),
+      autoFill: isAutoFill,
       initialWidths: snapshot,
       collapsedAtStart,
+      perPanelCascade,
+      needsScrollCompensation,
+      scrollCompensation: 0,
+      lastDx: 0,
     };
 
     setCursorOverride('col-resize');
@@ -581,10 +675,22 @@ export function ResizablePanelGroup({
   };
 
   const endDrag = () => {
-    if (!dragRef.current) return;
+    const drag = dragRef.current;
+    if (!drag) return;
+    const wasAutoFill = drag.autoFill;
+    const lastDx = drag.lastDx;
     cleanupDrag();
     updateContainerWidth();
     redistributePanels();
+
+    // AutoFill → overflow transition: scroll to keep the expanded panel visible.
+    // Dragging left expands a right-side panel — scroll to right end.
+    // Dragging right expands a left-side panel — already visible at scrollLeft=0.
+    if (wasAutoFill && !computeAutoFill() && lastDx < 0) {
+      const scrollParent = containerRef.current?.parentElement;
+      if (scrollParent) scrollParent.scrollLeft = scrollParent.scrollWidth - scrollParent.clientWidth;
+    }
+
     onLayoutChangedRef.current?.(getWidths());
   };
 
@@ -728,7 +834,7 @@ export function ResizablePanelGroup({
       // Last panel absorbs rounding remainder to keep total exact
       const newW = isLast
         ? Math.max(panel.minWidth, target - distributed)
-        : Math.max(panel.minWidth, Math.round(w * ratio));
+        : Math.max(panel.minWidth, Math.floor(w * ratio));
       distributed += newW;
       if (Math.abs(newW - w) >= 1) {
         widthsRef.current[panel.id] = newW;
@@ -781,6 +887,8 @@ export function ResizablePanelGroup({
       const drag = dragRef.current;
       if (!drag) return;
       const dx = e.clientX - drag.startX;
+      drag.lastDx = dx;
+      const ppc = dx < 0 ? drag.perPanelCascade.left : drag.perPanelCascade.right;
       const result = resolveLayout(
         panelsRef.current,
         drag.separatorIndex,
@@ -788,11 +896,41 @@ export function ResizablePanelGroup({
         drag.collapsedAtStart,
         dx,
         drag.autoFill,
+        ppc,
       );
+
+      // G12: scroll compensation for expand in overflow mode.
+      // Only applies when the grower panel was at/past the right viewport
+      // edge at drag start (needsScrollCompensation). When it snaps open,
+      // shift scrollLeft so the separator stays under the cursor. When it
+      // snaps back to collapsed (reverse drag), scroll to the right end so
+      // the collapsed panel stays visible instead of flying off-screen.
+      const wasExpanded = drag.scrollCompensation > 0;
+      if (drag.needsScrollCompensation && dx < 0 && result.expandSnapped && !wasExpanded) {
+        // Expand just cleared — pre-adjust scroll before layout adds content
+        const growPanel = panelsRef.current[drag.separatorIndex + 1];
+        if (growPanel) {
+          drag.scrollCompensation = growPanel.minWidth - growPanel.collapsedWidth;
+        }
+      }
+
       applyLayoutResult(result);
       // In overflow, tighten container to actual content so no trailing gap mid-drag
       if (!drag.autoFill && containerRef.current) {
         containerRef.current.style.minWidth = `${Math.ceil(getPanelSum() + getSeparatorSpace())}px`;
+      }
+
+      // Apply forward scroll compensation after layout (content has grown)
+      if (drag.scrollCompensation > 0 && !wasExpanded) {
+        const scrollParent = containerRef.current?.parentElement;
+        if (scrollParent) scrollParent.scrollLeft += drag.scrollCompensation;
+      }
+
+      // Snap back: panel collapsed again — scroll to right end
+      if (wasExpanded && !result.expandSnapped) {
+        drag.scrollCompensation = 0;
+        const scrollParent = containerRef.current?.parentElement;
+        if (scrollParent) scrollParent.scrollLeft = scrollParent.scrollWidth - scrollParent.clientWidth;
       }
     };
 
@@ -941,9 +1079,21 @@ export function ResizableSeparator({ index, className, children, ...rest }: Sepa
     return () => ctx.unregisterSeparator(index);
   }, [index, ctx]);
 
+  const lastPointerDownRef = useRef(0);
+
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!dragCtx || !ref.current) return;
     e.preventDefault();
+
+    const now = Date.now();
+    if (now - lastPointerDownRef.current < 300) {
+      // Double-click detected — toggle collapse instead of starting drag
+      lastPointerDownRef.current = 0;
+      dragCtx.toggleCollapse(index);
+      return;
+    }
+    lastPointerDownRef.current = now;
+
     ref.current.setPointerCapture(e.pointerId);
     ref.current.setAttribute('data-separator', 'drag');
     ref.current.focus();

@@ -2,7 +2,7 @@ import { onlineManager, useSuspenseQuery } from '@tanstack/react-query';
 import { Fingerprint, PlusIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ExpandableList } from '~/modules/common/expandable-list';
-import { toaster } from '~/modules/common/toast-service';
+import { toaster } from '~/modules/common/toaster/toaster';
 import { PasskeyTile } from '~/modules/me/passkeys/tile';
 import { meAuthQueryOptions, useCreatePasskeyMutation, useDeletePasskeyMutation } from '~/modules/me/query';
 import { Button } from '~/modules/ui/button';

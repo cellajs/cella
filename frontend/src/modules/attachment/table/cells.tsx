@@ -30,7 +30,7 @@ import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { PopConfirm } from '~/modules/common/popconfirm';
 import { Spinner } from '~/modules/common/spinner';
-import { toaster } from '~/modules/common/toast-service';
+import { toaster } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
 
 interface ThumbnailCellProps {

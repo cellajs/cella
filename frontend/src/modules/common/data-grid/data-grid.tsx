@@ -666,6 +666,9 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   useEffect(() => {
     if (!onRowsEndApproaching || rows.length === 0) return;
 
+    // Skip when clientHeight is 0 (layout not yet computed, all rows appear "visible")
+    if (clientHeight === 0) return;
+
     const isApproachingEnd = rowOverscanEndIdx >= rows.length - rowsEndApproachingThreshold;
 
     // Fire callback when approaching end, but only once per rows.length
@@ -678,7 +681,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
         rowsRemaining: rows.length - 1 - rowOverscanEndIdx,
       });
     }
-  }, [onRowsEndApproaching, rowOverscanEndIdx, rows.length, rowsEndApproachingThreshold]);
+  }, [onRowsEndApproaching, rowOverscanEndIdx, rows.length, rowsEndApproachingThreshold, clientHeight]);
 
   useImperativeHandle(
     ref,

@@ -5,7 +5,7 @@ import useDownloader from 'react-use-downloader';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { Spinner } from '~/modules/common/spinner';
-import { toaster } from '~/modules/common/toast-service';
+import { toaster } from '~/modules/common/toaster/toaster';
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
 import { cn } from '~/utils/cn';
 import { useSheeter } from '../common/sheeter/use-sheeter';

@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { UserBase } from '~/api.gen';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { PageHeader } from '~/modules/common/page/header';
-import { toaster } from '~/modules/common/toast-service';
+import { toaster } from '~/modules/common/toaster/toaster';
 import { useUpdateSelfMutation } from '~/modules/me/query';
 import { useUserUpdateMutation } from '~/modules/user/query';
 import { useUserStore } from '~/store/user';

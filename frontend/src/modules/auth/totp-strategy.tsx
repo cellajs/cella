@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { type ApiError, type SignInWithTotpData, type SignInWithTotpResponse, signInWithTotp } from '~/api.gen';
 import { TotpConfirmationForm } from '~/modules/auth/totp-verify-code-form';
-import { toaster } from '~/modules/common/toast-service';
+import { toaster } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
 import { useAuthStore } from '~/store/auth';
 import { useUIStore } from '~/store/ui';

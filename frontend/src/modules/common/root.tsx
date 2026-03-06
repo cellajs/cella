@@ -5,7 +5,7 @@ import { appConfig } from 'shared';
 import { useLazyComponent } from '~/hooks/use-lazy-component';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { ReloadPrompt } from '~/modules/common/reload-prompt';
-import { ToastManager } from '~/modules/common/toast-manager';
+import { ToasterProvider } from '~/modules/common/toaster/toaster-provider';
 import { TooltipProvider } from '~/modules/ui/tooltip';
 
 export function Root() {
@@ -30,7 +30,7 @@ export function Root() {
       <HeadContent />
       <Outlet />
       <ReloadPrompt />
-      <ToastManager />
+      <ToasterProvider />
       <Suspense fallback={null}>{GleapSupport ? <GleapSupport /> : null}</Suspense>
     </TooltipProvider>
   );

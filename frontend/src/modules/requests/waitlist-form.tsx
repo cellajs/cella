@@ -9,7 +9,7 @@ import type { z } from 'zod';
 import { zCreateRequestData } from '~/api.gen/zod.gen';
 import { CallbackArgs } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { toaster } from '~/modules/common/toast-service';
+import { toaster } from '~/modules/common/toaster/toaster';
 import { useCreateRequestMutation } from '~/modules/requests/query';
 import { SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';

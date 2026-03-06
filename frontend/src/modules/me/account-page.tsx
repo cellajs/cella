@@ -19,7 +19,7 @@ import { HelpText } from '~/modules/common/help-text';
 import { PageAside } from '~/modules/common/page/aside';
 import { SimpleHeader } from '~/modules/common/simple-header';
 
-import { toaster } from '~/modules/common/toast-service';
+import { toaster } from '~/modules/common/toaster/toaster';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import { DeleteSelf } from '~/modules/me/delete-self';
 import { MfaSwitch } from '~/modules/me/mfa/switch';

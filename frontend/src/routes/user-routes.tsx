@@ -2,7 +2,7 @@ import { createRoute, redirect } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
 import { getErrorInfo } from '~/modules/common/error-notice';
 import { Spinner } from '~/modules/common/spinner';
-import { ToastSeverity } from '~/modules/common/toast-service';
+import { ToastSeverity } from '~/modules/common/toaster/toaster';
 import { meAuthQueryOptions } from '~/modules/me/query';
 import { queryClient } from '~/query/query-client';
 import { AppLayoutRoute, errorSearchSchema } from '~/routes/base-routes';

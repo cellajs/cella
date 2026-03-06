@@ -5,7 +5,7 @@ import type { UseFormReturn } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { EntityAvatar, type EntityAvatarProps } from '~/modules/common/entity-avatar';
-import { toaster } from '~/modules/common/toast-service';
+import { toaster } from '~/modules/common/toaster/toaster';
 import { useUploader } from '~/modules/common/uploader/use-uploader';
 import { Button } from '~/modules/ui/button';
 import { FormControl, FormField, FormItem, FormLabel } from '~/modules/ui/form';

@@ -13,7 +13,7 @@ import { InputFormField } from '~/modules/common/form-fields/input';
 import { SelectTenantFormField } from '~/modules/common/form-fields/select-combobox/tenant';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
 import { useStepper } from '~/modules/common/stepper/stepper';
-import { toaster } from '~/modules/common/toast-service';
+import { toaster } from '~/modules/common/toaster/toaster';
 import { useOrganizationCreateMutation } from '~/modules/organization/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, type LabelDirectionType } from '~/modules/ui/form';

@@ -6,6 +6,7 @@ import {
   type ReactElement,
   type ReactNode,
   type RefAttributes,
+  useRef,
 } from 'react';
 import { cn } from '~/utils/cn';
 
@@ -35,6 +36,8 @@ export function PopoverContent({
   sideOffset = 4,
   side,
   alignOffset,
+  anchor,
+  collisionPadding,
   finalFocus,
   children,
   ...props
@@ -44,9 +47,11 @@ export function PopoverContent({
   sideOffset?: number;
   side?: 'top' | 'bottom' | 'left' | 'right';
   alignOffset?: number;
+  anchor?: Element | null | React.RefObject<Element | null>;
+  collisionPadding?: number;
   finalFocus?: PopoverPrimitive.Popup.Props['finalFocus'];
-  children?: ReactNode;
-} & Omit<ComponentPropsWithoutRef<'div'>, 'className'>) {
+  children?: React.ReactNode;
+} & Omit<React.ComponentPropsWithoutRef<'div'>, 'className'>) {
   return (
     <PopoverPrimitive.Portal>
       <PopoverPrimitive.Positioner
@@ -54,13 +59,15 @@ export function PopoverContent({
         sideOffset={sideOffset}
         align={align}
         alignOffset={alignOffset}
+        anchor={anchor}
+        collisionPadding={collisionPadding}
         className="z-200"
       >
         <PopoverPrimitive.Popup
           data-slot="popover-content"
           finalFocus={finalFocus}
           className={cn(
-            'bg-popover text-popover-foreground data-[open]:animate-in data-[closed]:animate-out data-[closed]:fade-out-0 data-[open]:fade-in-0 data-[closed]:zoom-out-95 data-[open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 w-72 origin-(--transform-origin) rounded-md border p-4 shadow-md outline-hidden',
+            'bg-popover text-popover-foreground data-[open]:animate-in data-[closed]:animate-out data-[closed]:fade-out-0 data-[open]:fade-in-0 data-[closed]:zoom-out-95 data-[open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-(--transform-origin) rounded-md border p-4 shadow-md outline-hidden',
             className,
           )}
           {...props}
@@ -88,25 +95,30 @@ export function PopoverContentNoPortal({
   alignOffset?: number;
   children?: ReactNode;
 } & Omit<ComponentPropsWithoutRef<'div'>, 'className'>) {
+  const containerRef = useRef<HTMLDivElement>(null);
   return (
-    <PopoverPrimitive.Positioner
-      side={side}
-      sideOffset={sideOffset}
-      align={align}
-      alignOffset={alignOffset}
-      className="z-200"
-    >
-      <PopoverPrimitive.Popup
-        data-slot="popover-content"
-        className={cn(
-          'bg-popover text-popover-foreground data-[open]:animate-in data-[closed]:animate-out data-[closed]:fade-out-0 data-[open]:fade-in-0 data-[closed]:zoom-out-95 data-[open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 w-72 origin-(--transform-origin) rounded-md border p-4 shadow-md outline-hidden',
-          className,
-        )}
-        {...props}
-      >
-        {children}
-      </PopoverPrimitive.Popup>
-    </PopoverPrimitive.Positioner>
+    <div ref={containerRef} style={{ display: 'contents' }}>
+      <PopoverPrimitive.Portal container={containerRef}>
+        <PopoverPrimitive.Positioner
+          side={side}
+          sideOffset={sideOffset}
+          align={align}
+          alignOffset={alignOffset}
+          className="z-200"
+        >
+          <PopoverPrimitive.Popup
+            data-slot="popover-content"
+            className={cn(
+              'bg-popover text-popover-foreground data-[open]:animate-in data-[closed]:animate-out data-[closed]:fade-out-0 data-[open]:fade-in-0 data-[closed]:zoom-out-95 data-[open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 w-72 origin-(--transform-origin) rounded-md border p-4 shadow-md outline-hidden',
+              className,
+            )}
+            {...props}
+          >
+            {children}
+          </PopoverPrimitive.Popup>
+        </PopoverPrimitive.Positioner>
+      </PopoverPrimitive.Portal>
+    </div>
   );
 }
 

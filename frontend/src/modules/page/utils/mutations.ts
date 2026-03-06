@@ -1,7 +1,7 @@
 import { type QueryKey, useMutation } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import type { EntityType } from 'shared';
-import { toaster } from '~/modules/common/toast-service';
+import { toaster } from '~/modules/common/toaster/toaster';
 import type { InfiniteQueryData, QueryData } from '~/query/types';
 
 type OptimisticHandlers = typeof optimisticHandlers;

@@ -19,7 +19,7 @@ import '~/modules/common/data-table/style.css';
 import { DataTableSkeleton } from '~/modules/common/data-table/table-skeleton';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useTableTooltip } from '~/modules/common/data-table/use-table-tooltip';
-import { toaster } from '~/modules/common/toast-service';
+import { toaster } from '~/modules/common/toaster/toaster';
 import { cn } from '~/utils/cn';
 
 /** Maximum number of rows that can be selected at once */
@@ -95,10 +95,15 @@ export const DataTable = <TData,>({
   useTableTooltip(gridRef, !isLoading);
 
   // Handle infinite scroll - guards against multiple calls while fetching
-  const handleRowsEndApproaching = () => {
-    if (!fetchMore || isFetching || !hasNextPage) return;
-    fetchMore();
-  };
+  // Only use DataGrid's onRowsEndApproaching when virtualization is enabled;
+  // otherwise, delegate to InfiniteLoader's intersection observer to avoid
+  // cascading fetches (without virtualization, all rows are "visible").
+  const handleRowsEndApproaching = enableVirtualization
+    ? () => {
+        if (!fetchMore || isFetching || !hasNextPage) return;
+        fetchMore();
+      }
+    : undefined;
 
   // Wrap selection handler to enforce max selection limit
   const handleSelectedRowsChange = (newSelectedRows: Set<string>) => {
@@ -167,7 +172,12 @@ export const DataTable = <TData,>({
                 }}
               />
               {!readOnly && (
-                <InfiniteLoader hasNextPage={hasNextPage} isFetching={isFetching} isFetchMoreError={!!error} />
+                <InfiniteLoader
+                  hasNextPage={hasNextPage}
+                  isFetching={isFetching}
+                  isFetchMoreError={!!error}
+                  fetchMore={!enableVirtualization ? fetchMore : undefined}
+                />
               )}
             </div>
           )}

@@ -5,7 +5,7 @@ import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { signOut } from '~/api.gen';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
-import { toaster } from '~/modules/common/toast-service';
+import { toaster } from '~/modules/common/toaster/toaster';
 import { resetBoundaryTracker } from '~/routes/boundary-cleanup';
 import { flushStores } from '~/utils/flush-stores';
 

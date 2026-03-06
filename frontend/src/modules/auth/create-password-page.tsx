@@ -13,7 +13,7 @@ import { RequestPasswordDialog } from '~/modules/auth/request-password-dialog';
 import { useGetTokenData } from '~/modules/auth/use-get-token-data';
 import { ErrorNotice } from '~/modules/common/error-notice';
 import { Spinner } from '~/modules/common/spinner';
-import { toaster } from '~/modules/common/toast-service';
+import { toaster } from '~/modules/common/toaster/toaster';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
