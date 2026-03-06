@@ -2,7 +2,7 @@ import { memo } from 'react';
 
 import { useRovingTabIndex } from './hooks';
 import type { CalculatedColumn, GroupRow } from './types';
-import { getCellClassname, getCellStyle } from './utils';
+import { getCellClassname, getCellStyle } from './utils/grid-utils';
 
 interface GroupCellProps<R, SR> {
   id: string;

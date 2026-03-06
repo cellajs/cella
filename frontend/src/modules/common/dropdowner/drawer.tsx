@@ -18,8 +18,8 @@ export function DropdownerDrawer({ dropdown }: { dropdown: InternalDropdown }) {
 
   return (
     <Drawer key={id} open={true} onOpenChange={onOpenChange}>
-      <DrawerContent id={String(id)} className="z-301 max-h-[70vh]">
-        <DrawerHeader className="p-0">
+      <DrawerContent id={String(id)} className="max-h-[70vh]">
+        <DrawerHeader data-overlay="dropdown" className="p-0">
           <span className="sr-only">
             <DrawerTitle>Choose</DrawerTitle>
             <DrawerDescription>Select an option</DrawerDescription>

@@ -2,7 +2,7 @@ import { useLayoutEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import type { DataGridProps } from '../data-grid';
 import type { CalculatedColumn, ColumnWidth, ColumnWidths, ResizedWidth } from '../types';
-import { clampColumnWidth, max, min } from '../utils';
+import { clampColumnWidth, max, min } from '../utils/grid-utils';
 
 interface ResizeSnapshot<R, SR> {
   readonly resizingCol: CalculatedColumn<R, SR>;

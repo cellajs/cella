@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef } from 'react';
 
-import { scrollIntoView } from './utils';
+import { scrollIntoView } from './utils/grid-utils';
 
 export interface PartialPosition {
   readonly idx?: number | undefined;

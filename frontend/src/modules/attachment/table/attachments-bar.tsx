@@ -16,6 +16,7 @@ import { TableSearch } from '~/modules/common/data-table/table-search';
 import type { BaseTableBarProps } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
+import { DropdownMenuCheckboxItem } from '~/modules/ui/dropdown-menu';
 
 type AttachmentsTableBarProps = AttachmentsTableProps &
   Omit<BaseTableBarProps<Attachment, AttachmentsRouteSearchParams>, 'queryKey'> & {
@@ -112,13 +113,15 @@ export const AttachmentsTableBar = ({
         </TableFilterBar>
 
         {/* Columns view */}
-        <ColumnsView
-          className="max-lg:hidden"
-          columns={columns}
-          setColumns={setColumns}
-          isCompact={isCompact}
-          setIsCompact={setIsCompact}
-        />
+        <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns}>
+          <DropdownMenuCheckboxItem
+            className="min-h-8"
+            checked={isCompact}
+            onCheckedChange={() => setIsCompact(!isCompact)}
+          >
+            {t('common:compact_view')}
+          </DropdownMenuCheckboxItem>
+        </ColumnsView>
 
         {/* Focus view */}
         {!isSheet && <FocusView iconOnly />}

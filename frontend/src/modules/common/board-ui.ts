@@ -13,6 +13,10 @@ interface BoardUIState {
   activeBoardType: 'project' | 'workspace' | null;
   setActiveBoard: (boardId: string, boardType: 'project' | 'workspace') => void;
 
+  // Active column (only one at a time — set by hover/focus on desktop, tab on mobile)
+  activeColumnId: string | null;
+  setActiveColumn: (columnId: string | null) => void;
+
   // Board layouts: boardId => (columnId => size in pixels)
   boardLayouts: Record<string, Record<string, number>>;
   updateBoardLayout: (boardId: string, layout: Record<string, number>) => void;
@@ -25,6 +29,7 @@ export const useBoardUIStore = create<BoardUIState>()(
         panelCollapseState: {},
         activeBoardId: null,
         activeBoardType: null,
+        activeColumnId: null,
         boardLayouts: {},
 
         togglePanelCollapsedState: (panelId, newState) => {
@@ -39,6 +44,13 @@ export const useBoardUIStore = create<BoardUIState>()(
           set((state) => {
             state.activeBoardId = boardId;
             state.activeBoardType = boardType;
+          });
+        },
+
+        setActiveColumn: (columnId) => {
+          set((state) => {
+            if (state.activeColumnId === columnId) return;
+            state.activeColumnId = columnId;
           });
         },
 

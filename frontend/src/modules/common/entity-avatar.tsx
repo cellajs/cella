@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage, type AvatarProps } from '~/modules
 import { cn } from '~/utils/cn';
 import { numberToColorClass } from '~/utils/number-to-color-class';
 
-export interface AvatarWrapProps extends AvatarProps {
+export interface EntityAvatarProps extends AvatarProps {
   id?: string;
   type?: EntityType;
   name?: string | null;
@@ -14,7 +14,7 @@ export interface AvatarWrapProps extends AvatarProps {
   icon?: LucideIcon;
 }
 
-function AvatarWrapBase({ type, id, name, icon: Icon, url, className, ...props }: AvatarWrapProps) {
+function EntityAvatarBase({ type, id, name, icon: Icon, url, className, ...props }: EntityAvatarProps) {
   if (Icon)
     return (
       <Avatar
@@ -52,4 +52,4 @@ function AvatarWrapBase({ type, id, name, icon: Icon, url, className, ...props }
   );
 }
 
-export const AvatarWrap = memo(AvatarWrapBase);
+export const EntityAvatar = memo(EntityAvatarBase);

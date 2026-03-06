@@ -4,8 +4,8 @@ import { useRef } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
-import { AvatarWrap, type AvatarWrapProps } from '~/modules/common/avatar-wrap';
-import { toaster } from '~/modules/common/toaster/service';
+import { EntityAvatar, type EntityAvatarProps } from '~/modules/common/entity-avatar';
+import { toaster } from '~/modules/common/toaster/toaster';
 import { useUploader } from '~/modules/common/uploader/use-uploader';
 import { Button } from '~/modules/ui/button';
 import { FormControl, FormField, FormItem, FormLabel } from '~/modules/ui/form';
@@ -18,7 +18,7 @@ interface Props {
     id?: string;
     name?: string | null;
   };
-  type: AvatarWrapProps['type'];
+  type: EntityAvatarProps['type'];
 }
 
 /**
@@ -66,7 +66,7 @@ export function AvatarFormField({ form, label, name, entity, type }: Props) {
           <FormLabel>{label}</FormLabel>
           <FormControl>
             <div className="flex gap-4">
-              <AvatarWrap type={type} className="h-16 w-16 text-3xl" id={entity.id} name={entity.name} url={url} />
+              <EntityAvatar type={type} className="h-16 w-16 text-3xl" id={entity.id} name={entity.name} url={url} />
 
               <div className="flex flex-col gap-2">
                 {appConfig.has.uploadEnabled ? (

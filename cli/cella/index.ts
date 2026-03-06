@@ -1,3 +1,3 @@
 #!/usr/bin/env tsx
 
-import './src/index.js';
+import './src/cella-cli.js';

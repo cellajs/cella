@@ -1,6 +1,6 @@
 import { createReactInlineContentSpec, type DefaultReactGridSuggestionItem } from '@blocknote/react';
-import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import type { CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
+import { EntityAvatar } from '~/modules/common/entity-avatar';
 import type { Member } from '~/modules/memberships/types';
 
 // The Mention inline content.
@@ -54,6 +54,6 @@ export const getMentionMenuItems = (
         },
       ]);
     },
-    icon: <AvatarWrap type="user" id={m.id} name={m.name} url={m.thumbnailUrl} className="h-5 w-5 text-xs" />,
+    icon: <EntityAvatar type="user" id={m.id} name={m.name} url={m.thumbnailUrl} className="h-5 w-5 text-xs" />,
   }));
 };

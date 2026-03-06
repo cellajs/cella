@@ -1,6 +1,6 @@
 import { useNavigate, useRouterState } from '@tanstack/react-router';
 import { useEffect } from 'react';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { useBreakpointAbove, useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { BottomBarNav } from '~/modules/navigation/bottom-bar-nav';
@@ -13,7 +13,7 @@ import { useUIStore } from '~/store/ui';
 
 // Sheet class for nav sheets - positioned next to sidebar icon bar on sm+, pushes content when keepNavOpen
 export const navSheetClassName =
-  'md:left-16 md:z-90 xs:max-w-80 sm:w-80 sm:group-[.keep-nav-open]/body:shadow-none sm:group-[.keep-nav-open]/body:border-r max-sm:shadow-[0_0_2px_5px_rgba(0,0,0,0.1)] dark:max-sm:shadow-[0_0_2px_5px_rgba(255,255,255,0.05)]';
+  'sm:left-16 sm:z-90 xs:max-w-80 sm:w-80 sm:group-[.keep-nav-open]/body:shadow-none sm:group-[.keep-nav-open]/body:border-r max-sm:shadow-[0_0_2px_5px_rgba(0,0,0,0.1)] dark:max-sm:shadow-[0_0_2px_5px_rgba(255,255,255,0.05)]';
 
 /** Application navigation component.
  * - Renders floating, sidebar, or bottom bar nav.
@@ -22,8 +22,8 @@ export const navSheetClassName =
  */
 export function AppNav() {
   const navigate = useNavigate();
-  const isMobile = useBreakpoints('max', 'sm');
-  const isDesktop = useBreakpoints('min', 'xl', true);
+  const isMobile = useBreakpointBelow('sm');
+  const isDesktop = useBreakpointAbove('2xl');
 
   const updateSheet = useSheeter((state) => state.update);
 
@@ -72,6 +72,7 @@ export function AppNav() {
         disablePointerDismissal: true,
         className: navSheetClassName,
         skipAnimation: options?.skipAnimation,
+        autoScrollOnDrag: 'vertical',
         onClose: () => setNavSheetOpen(null),
       });
     }

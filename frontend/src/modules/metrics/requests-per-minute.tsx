@@ -22,7 +22,7 @@ function RequestsPerMinute() {
   const { data: metrics } = useQuery(queryParams);
 
   return (
-    <div className="container flex flex-col gap-4 h-full">
+    <div className="container min-h-screen flex flex-col gap-4 h-full">
       <Card className="mt-4">
         <CardHeader>
           <CardTitle>{t('common:requests')}</CardTitle>

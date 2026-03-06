@@ -19,12 +19,12 @@ import { HelpText } from '~/modules/common/help-text';
 import { PageAside } from '~/modules/common/page/aside';
 import { SimpleHeader } from '~/modules/common/simple-header';
 
-import { toaster } from '~/modules/common/toaster/service';
+import { toaster } from '~/modules/common/toaster/toaster';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import { DeleteSelf } from '~/modules/me/delete-self';
 import { MfaSwitch } from '~/modules/me/mfa/switch';
 import { PasskeysList } from '~/modules/me/passkeys/list';
-import { SessionsList } from '~/modules/me/sessions';
+import { SessionsList } from '~/modules/me/sessions-list';
 import { Totp } from '~/modules/me/totp';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';

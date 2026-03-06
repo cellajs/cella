@@ -455,7 +455,6 @@ export function StickyBox(props: StickyBoxCompProps) {
   } = props;
 
   const ref = useRef<HTMLDivElement>(null);
-  const sentinelRef = useRef<HTMLDivElement>(null);
   const [setRef, isSticky] = useStickyBox({ offsetTop, offsetBottom, bottom, enabled });
   const [visible, setVisible] = useState(true);
 
@@ -464,25 +463,15 @@ export function StickyBox(props: StickyBoxCompProps) {
   }, [setRef]);
 
   useEffect(() => {
-    if (!hideWhenOutOfView || !sentinelRef.current) return;
+    if (!hideWhenOutOfView || !ref.current) return;
 
-    const scrollParent = getScrollParent(sentinelRef.current);
-    const root = scrollParent === window ? null : (scrollParent as HTMLElement);
-    let sentinelInView = true;
+    const scrollParent = getScrollParent(ref.current);
     let lastScrollY = scrollParent === window ? window.scrollY : (scrollParent as HTMLElement).scrollTop;
     let ticking = false;
 
-    // Track when the natural position leaves/enters the viewport
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        sentinelInView = entry.isIntersecting;
-        if (sentinelInView) setVisible(true);
-      },
-      { root },
-    );
-    observer.observe(sentinelRef.current);
-
-    // When natural position is gone, use scroll direction to toggle
+    // Use isSticky (already computed) instead of a sentinel IntersectionObserver.
+    // When not sticky, the element is at its natural position → always visible.
+    // When sticky and scrolling down → hide; scrolling up → show.
     const onScroll = () => {
       if (ticking) return;
       ticking = true;
@@ -492,9 +481,6 @@ export function StickyBox(props: StickyBoxCompProps) {
         // Hide during programmatic scrolls (e.g. scrollToSection)
         if (isProgrammaticScroll()) {
           setVisible(false);
-        } else if (sentinelInView) {
-          // Recover visibility when sentinel is back in view (e.g. after layout shifts)
-          setVisible(true);
         } else {
           const delta = currentY - lastScrollY;
           if (Math.abs(delta) > 10) setVisible(delta < 0);
@@ -507,10 +493,14 @@ export function StickyBox(props: StickyBoxCompProps) {
 
     scrollParent.addEventListener('scroll', onScroll, passiveArg);
     return () => {
-      observer.disconnect();
       scrollParent.removeEventListener('scroll', onScroll);
     };
   }, [hideWhenOutOfView]);
+
+  // When element returns to its natural (non-sticky) position, ensure it's visible
+  useEffect(() => {
+    if (hideWhenOutOfView && !isSticky) setVisible(true);
+  }, [hideWhenOutOfView, isSticky]);
 
   if (!hideWhenOutOfView) {
     return (
@@ -526,12 +516,9 @@ export function StickyBox(props: StickyBoxCompProps) {
   };
 
   return (
-    <>
-      <div ref={sentinelRef} className="sticky-sentinel" style={{ height: 1, marginBottom: -1 }} />
-      <div className={className} data-sticky={isSticky} style={{ ...style, ...hideStyle }} ref={ref} {...rest}>
-        {children}
-      </div>
-    </>
+    <div className={className} data-sticky={isSticky} style={{ ...style, ...hideStyle }} ref={ref} {...rest}>
+      {children}
+    </div>
   );
 }
 // ISC License

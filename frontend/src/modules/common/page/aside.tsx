@@ -2,7 +2,7 @@ import { Link } from '@tanstack/react-router';
 import type { LucideProps } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useCurrentSection, useScrollSpy } from '~/hooks/use-scroll-spy';
 import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
 import { buttonVariants } from '~/modules/ui/button';
@@ -28,7 +28,7 @@ interface PageAsideProps<T> {
  * @param setFocus - Optional boolean to set focus on the first tab on mount.
  */
 export const PageAside = <T extends PageTab>({ tabs, className, setFocus }: PageAsideProps<T>) => {
-  const isMobile = useBreakpoints('max', 'sm', false);
+  const isMobile = useBreakpointBelow('sm', false);
   const { t } = useTranslation();
 
   const sectionIds = tabs.map((tab) => tab.id);

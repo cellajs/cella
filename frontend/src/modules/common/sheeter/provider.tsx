@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useBodyClass } from '~/hooks/use-body-class';
 import { useBoundaryCleanup } from '~/hooks/use-boundary-cleanup';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { SheeterDrawer } from '~/modules/common/sheeter/drawer';
 import { SheeterSheet } from '~/modules/common/sheeter/sheet';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
@@ -18,7 +18,7 @@ const closeAll = () => useSheeter.getState().remove(undefined, { isCleanup: true
  * State is managed by the useSheeter zustand store hook.
  */
 export const Sheeter = () => {
-  const isMobile = useBreakpoints('max', 'sm');
+  const isMobile = useBreakpointBelow('sm');
   const sheets = useSheeter((state) => state.sheets);
   // Mode string used in keys to force clean remount when crossing breakpoint,
   // ensuring Vaul/Radix overlays are properly destroyed and recreated

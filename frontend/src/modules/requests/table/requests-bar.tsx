@@ -14,7 +14,7 @@ import { TableSearch } from '~/modules/common/data-table/table-search';
 import type { BaseTableBarProps, CallbackArgs } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
-import { toaster } from '~/modules/common/toaster/service';
+import { toaster } from '~/modules/common/toaster/toaster';
 import { DeleteRequests } from '~/modules/requests/delete-requests';
 import { requestsKeys, useSendApprovalInviteMutation } from '~/modules/requests/query';
 import type { RequestsRouteSearchParams } from '~/modules/requests/types';

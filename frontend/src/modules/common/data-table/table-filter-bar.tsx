@@ -2,7 +2,7 @@ import { FilterXIcon, SearchIcon, XIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { createContext, useContext, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { useBreakpointAbove } from '~/hooks/use-breakpoints';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
@@ -118,7 +118,7 @@ export const FilterBarContent = FilterBarFilters;
  */
 export const TableFilterBar = ({ onResetFilters, isFiltered, children }: TableFilterBarProps) => {
   const { t } = useTranslation();
-  const isDesktop = useBreakpoints('min', 'sm');
+  const isDesktop = useBreakpointAbove('md');
 
   const [isFilterActive, setFilterActive] = useState<boolean>(!!isFiltered);
 

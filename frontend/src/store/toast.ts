@@ -1,7 +1,7 @@
 import { appConfig } from 'shared';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import type { ToastSeverity } from '~/modules/common/toaster/service';
+import type { ToastSeverity } from '~/modules/common/toaster/toaster';
 
 interface ToastData {
   message: string;

@@ -12,17 +12,21 @@ import { BlockNoteView } from '@blocknote/shadcn';
 import { type FocusEventHandler, type KeyboardEventHandler, type MouseEventHandler, useEffect, useRef } from 'react';
 import { WebrtcProvider } from 'y-webrtc';
 import * as Y from 'yjs';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
 import { getFileUrl } from '~/modules/attachment/helpers';
 import { findAttachmentInListCache } from '~/modules/attachment/query';
 import { customSchema } from '~/modules/common/blocknote/blocknote-config';
-import { Mention } from '~/modules/common/blocknote/custom-elements/mention';
-import { CustomFilePanel } from '~/modules/common/blocknote/custom-file-panel';
-import { CustomFormattingToolbar } from '~/modules/common/blocknote/custom-formatting-toolbar';
-import { CustomSideMenu } from '~/modules/common/blocknote/custom-side-menu';
-import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu';
-import { compareIsContentSame, getParsedContent, getRandomColor } from '~/modules/common/blocknote/helpers';
+import { Mention } from '~/modules/common/blocknote/custom-elements/mention/mention-menu';
+import { CustomFilePanel } from '~/modules/common/blocknote/custom-file-panel/file-panel';
+import { CustomFormattingToolbar } from '~/modules/common/blocknote/custom-formatting-toolbar/formatting-toolbar';
+import { CustomSideMenu } from '~/modules/common/blocknote/custom-side-menu/side-menu';
+import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu/slash-menu';
+import {
+  compareIsContentSame,
+  getParsedContent,
+  getRandomColor,
+} from '~/modules/common/blocknote/helpers/blocknote-helpers';
 import { getDictionary } from '~/modules/common/blocknote/helpers/dictionary';
 import { openAttachment } from '~/modules/common/blocknote/helpers/open-attachment';
 import { shadCNComponents } from '~/modules/common/blocknote/helpers/shad-cn';
@@ -112,7 +116,7 @@ function BlockNote({
   onBeforeLoad,
 }: BlockNoteProps) {
   const mode = useUIStore((state) => state.mode);
-  const isMobile = useBreakpoints('max', 'sm');
+  const isMobile = useBreakpointBelow('sm');
 
   const blockNoteRef = useRef<HTMLDivElement | null>(null);
 

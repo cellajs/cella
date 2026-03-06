@@ -1,4 +1,3 @@
-import { useParams } from '@tanstack/react-router';
 import { t } from 'i18next';
 import { SquirrelIcon } from 'lucide-react';
 import { UserBase } from '~/api.gen';
@@ -7,15 +6,15 @@ import { OrganizationsGrid } from '~/modules/organization/organizations-grid';
 
 interface Props {
   user: UserBase;
+  orgId?: string;
   isSheet?: boolean;
 }
 
 /**
  * This is a placeholder component for the user profile content
  **/
-function UserProfileContent({ isSheet, user }: Props) {
-  const { orgSlug } = useParams({ strict: false });
-  const hasOrgContext = !!orgSlug;
+function UserProfileContent({ isSheet, user, orgId }: Props) {
+  const hasOrgContext = !!orgId;
 
   if (!hasOrgContext)
     return (

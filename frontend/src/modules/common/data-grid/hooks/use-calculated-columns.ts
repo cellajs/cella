@@ -4,7 +4,7 @@ import { SELECT_COLUMN_KEY } from '../columns';
 import type { DataGridProps } from '../data-grid';
 import { renderHeaderCell } from '../render-header-cell';
 import type { BreakpointKey, CalculatedColumn, CalculatedColumnParent, ColumnOrColumnGroup, Omit } from '../types';
-import { breakpointOrder, clampColumnWidth } from '../utils';
+import { breakpointOrder, clampColumnWidth } from '../utils/grid-utils';
 
 type Mutable<T> = {
   -readonly [P in keyof T]: T[P] extends ReadonlyArray<infer V> ? Mutable<V>[] : T[P];

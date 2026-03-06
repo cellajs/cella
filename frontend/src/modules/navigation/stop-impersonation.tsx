@@ -3,7 +3,7 @@ import { UserXIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { stopImpersonation as breakImpersonation } from '~/api.gen';
-import { toaster } from '~/modules/common/toaster/service';
+import { toaster } from '~/modules/common/toaster/toaster';
 import { getAndSetMe } from '~/modules/me/helpers';
 import { meKeys } from '~/modules/me/query';
 import { SidebarMenuButton, SidebarMenuItem } from '~/modules/ui/sidebar';

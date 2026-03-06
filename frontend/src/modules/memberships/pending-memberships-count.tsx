@@ -3,7 +3,7 @@ import { lazy, Suspense, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Organization } from '~/api.gen';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
-import { toaster } from '~/modules/common/toaster/service';
+import { toaster } from '~/modules/common/toaster/toaster';
 import type { EnrichedContextEntity } from '~/modules/entities/types';
 import { Button } from '~/modules/ui/button';
 

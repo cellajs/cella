@@ -2,7 +2,7 @@ import { SendIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { SelectRoleRadio } from '~/modules/common/form-fields/select-role-radio';
-import { toaster } from '~/modules/common/toaster/service';
+import { toaster } from '~/modules/common/toaster/toaster';
 import type { EnrichedContextEntity } from '~/modules/entities/types';
 import { useInviteMemberMutation } from '~/modules/memberships/query-mutations';
 import { Badge } from '~/modules/ui/badge';

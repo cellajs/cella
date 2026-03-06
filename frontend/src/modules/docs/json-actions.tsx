@@ -2,10 +2,10 @@ import { Link } from '@tanstack/react-router';
 import { CopyCheckIcon, CopyIcon, DownloadIcon, ExternalLinkIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import useDownloader from 'react-use-downloader';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { Spinner } from '~/modules/common/spinner';
-import { toaster } from '~/modules/common/toaster/service';
+import { toaster } from '~/modules/common/toaster/toaster';
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
 import { cn } from '~/utils/cn';
 import { useSheeter } from '../common/sheeter/use-sheeter';
@@ -33,7 +33,7 @@ export const JsonActions = ({
   viewerUrl,
 }: JsonActionsProps) => {
   const { t } = useTranslation();
-  const isMobile = useBreakpoints('max', 'sm', false);
+  const isMobile = useBreakpointBelow('sm', false);
 
   const { copyToClipboard, copied } = useCopyToClipboard();
   const { download, isInProgress } = useDownloader();

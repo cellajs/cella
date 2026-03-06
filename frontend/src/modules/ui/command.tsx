@@ -62,6 +62,7 @@ function CommandInput({
   clearValue,
   wrapClassName,
   isSearching,
+  ref,
   ...props
 }: CommandInputProps & ZeroValSet) {
   return (
@@ -85,6 +86,9 @@ function CommandInput({
           // Set type="search" imperatively — cmdk omits it from its types.
           // Password managers (NordPass, etc.) skip search inputs.
           if (el) el.type = 'search';
+          // Forward ref to caller
+          if (typeof ref === 'function') ref(el);
+          else if (ref) ref.current = el;
         }}
       />
       {value.length > 0 && (

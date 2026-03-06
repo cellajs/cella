@@ -8,8 +8,8 @@ import { appConfig } from 'shared';
 import type { Env } from '#/lib/context';
 import { dynamicBodyLimit } from '#/middlewares/body-limit';
 import { loggerMiddleware } from '#/middlewares/logger';
-import { monitoringMiddleware } from '#/middlewares/monitoring';
-import { observabilityMiddleware } from '#/middlewares/observability';
+import { monitoringMiddleware } from '#/middlewares/monitoring/monitoring-middleware';
+import { observabilityMiddleware } from '#/middlewares/observability/observability-middleware';
 
 const app = new OpenAPIHono<Env>();
 

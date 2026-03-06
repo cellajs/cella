@@ -3,8 +3,8 @@ import { Link } from '@tanstack/react-router';
 import type { LucideIcon } from 'lucide-react';
 import { BellOffIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { AvatarWrap } from '~/modules/common/avatar-wrap';
-import { toaster } from '~/modules/common/toaster/service';
+import { EntityAvatar } from '~/modules/common/entity-avatar';
+import { toaster } from '~/modules/common/toaster/toaster';
 import type { UserMenuItem } from '~/modules/me/types';
 import { seenGroupingContextTypes } from '~/modules/seen/helpers';
 import { useUnseenCount } from '~/modules/seen/use-unseen-count';
@@ -64,7 +64,7 @@ export const MenuSheetItem = ({ item, icon: Icon, className, searchResults }: Me
     >
       <span className="absolute left-0 top-3 h-[calc(100%-1.5rem)] w-1 rounded-lg bg-primary transition-opacity opacity-0 group-data-[link-active=true]/menuItem:opacity-100" />
       <span className="relative z-1 shrink-0 bg-card rounded-full m-2 mx-3 group-data-[subitem=true]/menuItem:my-2 group-data-[subitem=true]/menuItem:mx-4 size-8 group-data-[subitem=true]/menuItem:size-6">
-        <AvatarWrap
+        <EntityAvatar
           className="items-center text-sm bg-card group-hover/menuItem:font-bold group-data-[subitem=true]/menuItem:text-xs size-8 group-data-[subitem=true]/menuItem:size-6 sm:opacity-80 group-hover/menuItem:opacity-100 group-data-[link-active=true]/menuItem:opacity-100"
           type={item.entityType}
           id={item.id}

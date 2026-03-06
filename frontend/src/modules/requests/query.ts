@@ -14,7 +14,7 @@ import {
   systemInvite,
 } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
-import { toaster } from '~/modules/common/toaster/service';
+import { toaster } from '~/modules/common/toaster/toaster';
 import { baseInfiniteQueryOptions } from '~/query/basic';
 
 /**

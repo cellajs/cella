@@ -3,7 +3,7 @@ import { ChevronDownIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 import type { ReactNode } from 'react';
 import { memo } from 'react';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
 import type { SchemaTag } from '~/modules/docs/types';
 import { buttonVariants } from '~/modules/ui/button';
@@ -61,7 +61,7 @@ function CollapsibleTagItemBase<T>({
   itemKey,
   onPrerender,
 }: CollapsibleTagItemProps<T>) {
-  const isMobile = useBreakpoints('max', 'sm', false);
+  const isMobile = useBreakpointBelow('sm', false);
   const { linkTo, getSearch, getHash, triggerClassName } = tagTypeConfig[type];
   const hash = getHash(tag.name);
 

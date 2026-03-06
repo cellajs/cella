@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { type InternalDropdown, useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
-import { DropdownMenu, DropdownMenuContent } from '~/modules/ui/dropdown-menu';
+import { FocusTrap } from '~/modules/common/focus-trap';
+import { Popover, PopoverContent } from '~/modules/ui/popover';
 
 export const DropdownerDropdown = ({ dropdown }: { dropdown: InternalDropdown }) => {
   const triggerEl = dropdown.triggerRef?.current;
@@ -24,23 +25,15 @@ export const DropdownerDropdown = ({ dropdown }: { dropdown: InternalDropdown })
 
   if (!triggerEl) return null;
 
-  const onOpenChange = (nextOpen: boolean, eventDetails: { reason: string }) => {
-    if (!nextOpen && eventDetails.reason === 'escape-key') {
-      useDropdowner.getState().remove();
-      return;
-    }
-    if (!nextOpen && eventDetails.reason === 'outside-press') {
-      useDropdowner.getState().remove();
-      return;
-    }
+  const onOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) useDropdowner.getState().remove();
   };
 
   return (
-    <DropdownMenu key={dropdown.key} open={true} onOpenChange={onOpenChange} modal={dropdown.modal}>
-      <DropdownMenuContent anchor={triggerEl} align={dropdown.align} className="z-301" finalFocus={triggerFocusRef}>
-        {dropdown.content}
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <Popover key={dropdown.key} open={true} onOpenChange={onOpenChange} modal={dropdown.modal}>
+      <PopoverContent anchor={triggerEl} align={dropdown.align} className="z-301 p-0" finalFocus={triggerFocusRef}>
+        <FocusTrap active>{dropdown.content}</FocusTrap>
+      </PopoverContent>
+    </Popover>
   );
 };

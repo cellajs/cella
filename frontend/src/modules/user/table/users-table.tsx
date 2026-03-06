@@ -2,7 +2,7 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { appConfig } from 'shared';
 import { useSearchParams } from '~/hooks/use-search-params';
-import { DataTable } from '~/modules/common/data-table';
+import { DataTable } from '~/modules/common/data-table/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { FocusViewContainer } from '~/modules/common/focus-view';
 import { usersListQueryOptions } from '~/modules/user/query';

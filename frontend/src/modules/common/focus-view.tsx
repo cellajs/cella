@@ -3,7 +3,7 @@ import type React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBodyClass } from '~/hooks/use-body-class';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
-import { toaster } from '~/modules/common/toaster/service';
+import { toaster } from '~/modules/common/toaster/toaster';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
@@ -46,9 +46,8 @@ export const FocusViewContainer = ({ children, className = '' }: { children: Rea
 
   return (
     <div
-      data-scroll-target="-20"
       className={cn(
-        'focus-view-container container min-h-screen flex flex-col',
+        'focus-view-container container min-h-screen flex flex-col pt-3 gap-2',
         className,
         focusView ? 'w-full max-w-none min-w-full min-h-full' : '',
       )}

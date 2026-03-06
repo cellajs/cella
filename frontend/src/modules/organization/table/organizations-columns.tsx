@@ -3,10 +3,10 @@ import { BoxIcon, ShieldIcon, UserRoundIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig, roles } from 'shared';
-import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
 import { renderSelect } from '~/modules/common/data-table/select-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { UpdateRow } from '~/modules/organization/table/update-row';
 import type { EnrichedOrganization } from '~/modules/organization/types';
 import { buttonVariants } from '~/modules/ui/button';
@@ -32,7 +32,7 @@ export const useColumns = (isCompact: boolean) => {
             tabIndex={tabIndex}
             params={{ tenantId: row.tenantId, orgSlug: row.slug }}
           >
-            <AvatarWrap
+            <EntityAvatar
               type="organization"
               className="h-8 w-8 group-active:translate-y-[.05rem]"
               id={row.id}

@@ -4,7 +4,7 @@ import { GroupCell } from './group-cell';
 import { RowSelectionContext, type RowSelectionContextValue } from './hooks';
 import { rowClassname, rowSelectedClassname } from './style/row';
 import type { BaseRenderRowProps, GroupRow } from './types';
-import { cn, getRowStyle } from './utils';
+import { cn, getRowStyle } from './utils/grid-utils';
 
 const groupRowClassname = 'rdg-group-row';
 

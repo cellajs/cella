@@ -3,9 +3,9 @@ import { ArchiveIcon, ArchiveRestoreIcon, BellIcon, BellOffIcon, type LucideIcon
 import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { env } from '~/env';
-import { AvatarWrap } from '~/modules/common/avatar-wrap';
+import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { Spinner } from '~/modules/common/spinner';
-import { toaster } from '~/modules/common/toaster/service';
+import { toaster } from '~/modules/common/toaster/toaster';
 import type { UserMenuItem } from '~/modules/me/types';
 import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
 import type { MutationUpdateMembership } from '~/modules/memberships/types';
@@ -59,7 +59,7 @@ export const MenuItemEdit = ({ item, icon: Icon }: MenuItemEditProps) => {
           />
         </div>
       )}
-      <AvatarWrap
+      <EntityAvatar
         className="m-2 mx-3 text-sm group-data-[subitem=true]/optionsItem:text-xs group-data-[submenu=false]/menuOptions:my-1 group-data-[submenu=false]/menuOptions:mx-4
             h-8 w-8 group-data-[submenu=false]/menuOptions:h-6 group-data-[submenu=false]/menuOptions:w-6 group-data-[archived=true]/optionsItem:opacity-70"
         type={item.entityType}

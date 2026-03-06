@@ -15,13 +15,14 @@ import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
 import { SheetTabs } from '~/modules/common/sheet-tabs';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
-import { toaster } from '~/modules/common/toaster/service';
+import { toaster } from '~/modules/common/toaster/toaster';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import { CreateOrganizationForm } from '~/modules/organization/create-organization-form';
 import { DeleteOrganizations } from '~/modules/organization/delete-organizations';
 import type { EnrichedOrganization, OrganizationsRouteSearchParams } from '~/modules/organization/types';
 import { CreateNewsletterForm } from '~/modules/system/create-newsletter-form';
 import { NewsletterPreview } from '~/modules/system/newsletter-preview';
+import { DropdownMenuCheckboxItem } from '~/modules/ui/dropdown-menu';
 import { useInfiniteQueryTotal } from '~/query/basic';
 
 type OrganizationsTableBarProps = BaseTableBarProps<EnrichedOrganization, OrganizationsRouteSearchParams> & {
@@ -193,13 +194,15 @@ export const OrganizationsTableBar = ({
       </TableFilterBar>
 
       {/* Columns view */}
-      <ColumnsView
-        className="max-lg:hidden"
-        columns={columns}
-        setColumns={setColumns}
-        isCompact={isCompact}
-        setIsCompact={setIsCompact}
-      />
+      <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns}>
+        <DropdownMenuCheckboxItem
+          className="min-h-8"
+          checked={isCompact}
+          onCheckedChange={() => setIsCompact(!isCompact)}
+        >
+          {t('common:compact_view')}
+        </DropdownMenuCheckboxItem>
+      </ColumnsView>
 
       {/* Export */}
       <Export

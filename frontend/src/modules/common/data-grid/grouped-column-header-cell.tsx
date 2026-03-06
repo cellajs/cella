@@ -2,7 +2,7 @@ import type { GroupedColumnHeaderRowProps } from './grouped-column-header-row';
 import { useRovingTabIndex } from './hooks';
 import { cellClassname } from './style/cell';
 import type { CalculatedColumnParent } from './types';
-import { cn, getHeaderCellRowSpan, getHeaderCellStyle } from './utils';
+import { cn, getHeaderCellRowSpan, getHeaderCellStyle } from './utils/grid-utils';
 
 type SharedGroupedColumnHeaderRowProps<R, SR> = Pick<GroupedColumnHeaderRowProps<R, SR>, 'rowIdx' | 'selectCell'>;
 

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { type InternalSheet, useSheeter } from '~/modules/common/sheeter/use-sheeter';
@@ -24,9 +24,10 @@ export const SheeterSheet = ({ sheet }: { sheet: InternalSheet }) => {
     disablePointerDismissal,
     container,
     skipAnimation,
+    autoScrollOnDrag,
   } = sheet;
 
-  const isMobile = useBreakpoints('max', 'sm', false);
+  const isMobile = useBreakpointBelow('sm', false);
   const containerElement = container?.ref?.current ?? null;
 
   const sheetRef = useRef<HTMLDivElement>(null);
@@ -99,6 +100,7 @@ export const SheeterSheet = ({ sheet }: { sheet: InternalSheet }) => {
         className={cn(className, 'items-start', containerElement && 'z-40', skipAnimation && 'duration-0!')}
         initialFocus={isMobile ? false : undefined}
         finalFocus={triggerRef?.current ? triggerFocusRef : undefined}
+        autoScrollOnDrag={autoScrollOnDrag}
       >
         <SheetHeader sticky className={`${title || description ? '' : 'hidden'}`}>
           <SheetTitle className={`${title ? '' : 'hidden'} leading-6 h-6`}>{titleContent}</SheetTitle>

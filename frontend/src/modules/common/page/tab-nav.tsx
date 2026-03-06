@@ -3,13 +3,13 @@ import { motion } from 'motion/react';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { nanoid } from 'shared/nanoid';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useMountedState } from '~/hooks/use-mounted-state';
 import { useNavTabs } from '~/hooks/use-nav-tabs';
-import { AvatarWrap } from '~/modules/common/avatar-wrap';
+import { EntityAvatar } from '~/modules/common/entity-avatar';
+import { useScrollReset } from '~/modules/common/scroll-reset';
 import { StickyBox } from '~/modules/common/sticky-box';
 import { cn } from '~/utils/cn';
-import { scrollToNearestTarget } from '~/utils/scroll-to-target';
 
 export type PageTab = {
   id: string;
@@ -47,7 +47,7 @@ export const PageTabNav = ({
   className,
 }: Props) => {
   const { t } = useTranslation();
-  const isMobile = useBreakpoints('max', 'sm', false);
+  const isMobile = useBreakpointBelow('sm', false);
   const { hasStarted } = useMountedState();
 
   // Use explicit tabs or auto-generate from parent route's children
@@ -63,6 +63,8 @@ export const PageTabNav = ({
     if (!isMobile && hasStarted && tabs[0]) tabRefs.current[tabs[0].id]?.focus();
   }, [hasStarted]);
 
+  const scrollToReset = useScrollReset();
+
   const scrollTabIntoView = (id: string) => {
     const tab = tabRefs.current[id];
     tab?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
@@ -71,7 +73,6 @@ export const PageTabNav = ({
   return (
     <>
       <StickyBox
-        data-scroll-target
         className={cn(
           'group/sticky block text-center gap-1 border-b bg-background/75 backdrop-blur-xs z-80',
           className,
@@ -79,7 +80,7 @@ export const PageTabNav = ({
       >
         <div className="hidden sm:group-data-[sticky=true]/sticky:flex absolute left-0 h-full items-center">
           {avatar && (
-            <AvatarWrap
+            <EntityAvatar
               className="m-3 h-5 w-5 text-xs"
               type="organization"
               id={avatar.id}
@@ -111,7 +112,7 @@ export const PageTabNav = ({
                   search={search}
                   activeOptions={activeOptions}
                   activeProps={{ 'data-active': true }}
-                  onClick={(e) => scrollToNearestTarget(e.currentTarget)}
+                  onClick={scrollToReset}
                 >
                   {({ isActive }) => {
                     const showAsActive = isActive || (fallbackToFirst && index === 0);

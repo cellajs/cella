@@ -4,7 +4,7 @@ import { ChevronDownIcon, PencilIcon } from 'lucide-react';
 import { lazy, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { Logo } from '~/modules/common/logo';
 import { JsonActions } from '~/modules/docs/json-actions';
 import { operationsQueryOptions, schemasQueryOptions, tagsQueryOptions } from '~/modules/docs/query';
@@ -57,7 +57,7 @@ interface DocsSidebarProps {
  */
 export function DocsSidebar({ tags }: DocsSidebarProps) {
   const { t } = useTranslation();
-  const isMobile = useBreakpoints('max', 'sm', false);
+  const isMobile = useBreakpointBelow('sm', false);
 
   const { isSystemAdmin } = useUserStore();
 
@@ -117,7 +117,7 @@ export function DocsSidebar({ tags }: DocsSidebarProps) {
       {/* Logo */}
       <div className="px-4 my-2 flex justify-center">
         <Link
-          to="/"
+          to="/about"
           className="inline-block transition-transform hover:scale-105 active:scale-100 focus-effect rounded-md"
           aria-label="Go to homepage"
           onClick={closeSheet}
@@ -128,10 +128,10 @@ export function DocsSidebar({ tags }: DocsSidebarProps) {
 
       {/* API spec action buttons and user theme */}
       <SidebarGroup>
-        <div className="flex justify-center pb-3">
+        <div className="flex justify-center items-center gap-2 pb-3">
           <Suspense fallback={<div className="h-7 w-60 rounded-md border border-input bg-background/50" />}>
             <OpenApiJsonActions />
-            <UserTheme buttonClassName="ml-2 h-7 w-8" />
+            <UserTheme />
           </Suspense>
         </div>
       </SidebarGroup>

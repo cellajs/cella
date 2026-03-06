@@ -4,7 +4,8 @@ import { lazy, Suspense, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PageHeader } from '~/modules/common/page/header';
 import { PageTabNav } from '~/modules/common/page/tab-nav';
-import { toaster } from '~/modules/common/toaster/service';
+import { ScrollReset } from '~/modules/common/scroll-reset';
+import { toaster } from '~/modules/common/toaster/toaster';
 import { organizationQueryOptions, useOrganizationUpdateMutation } from '~/modules/organization/query';
 import type { EnrichedOrganization } from '~/modules/organization/types';
 import { OrganizationRoute } from '~/routes/organization-routes';
@@ -65,13 +66,15 @@ function OrganizationPage({ organizationId, tenantId }: Props) {
           )
         }
       />
-      <PageTabNav
-        title={organization.name}
-        avatar={organization}
-        parentRouteId={OrganizationRoute.id}
-        filterTabIds={filterTabIds}
-      />
-      <Outlet />
+      <ScrollReset>
+        <PageTabNav
+          title={organization.name}
+          avatar={organization}
+          parentRouteId={OrganizationRoute.id}
+          filterTabIds={filterTabIds}
+        />
+        <Outlet />
+      </ScrollReset>
     </>
   );
 }

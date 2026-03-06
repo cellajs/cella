@@ -1,6 +1,6 @@
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
-import { DataTable } from '~/modules/common/data-table';
+import { DataTable } from '~/modules/common/data-table/data-table';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import type { GenOperationSummary } from '~/modules/docs/types';
 import { Badge } from '~/modules/ui/badge';

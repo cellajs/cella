@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { type ContextEntityBase, deleteMyMembership } from '~/api.gen';
 import { CallbackArgs } from '~/modules/common/data-table/types';
-import { toaster } from '~/modules/common/toaster/service';
+import { toaster } from '~/modules/common/toaster/toaster';
 import { Button, type ButtonProps } from '~/modules/ui/button';
 import { queryClient } from '~/query/query-client';
 import { cn } from '~/utils/cn';

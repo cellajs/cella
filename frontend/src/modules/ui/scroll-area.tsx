@@ -1,3 +1,4 @@
+import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
 import { ScrollArea as ScrollAreaPrimitive } from '@base-ui/react/scroll-area';
 import * as React from 'react';
 import { cn } from '~/utils/cn';
@@ -6,16 +7,31 @@ export function ScrollArea({
   className,
   children,
   id,
-  viewportRef,
+  viewportRef: externalViewportRef,
   viewportClassName,
   horizontalScroll,
+  autoScrollOnDrag,
   ...props
 }: React.ComponentProps<typeof ScrollAreaPrimitive.Root> & {
   viewportRef?: React.RefObject<HTMLDivElement | null>;
   viewportClassName?: string;
   /** Enable horizontal scrolling (min-width: fit-content on content). Defaults to false. */
   horizontalScroll?: boolean;
+  /** Enable auto-scrolling when dragging elements near edges (uses @atlaskit/pragmatic-drag-and-drop). */
+  autoScrollOnDrag?: boolean | 'vertical' | 'horizontal';
 }) {
+  const internalViewportRef = React.useRef<HTMLDivElement | null>(null);
+  const viewportRef = externalViewportRef ?? internalViewportRef;
+
+  React.useEffect(() => {
+    if (!autoScrollOnDrag || !viewportRef.current) return;
+    const axis = typeof autoScrollOnDrag === 'string' ? autoScrollOnDrag : undefined;
+    return autoScrollForElements({
+      element: viewportRef.current,
+      ...(axis && { getAllowedAxis: () => axis }),
+    });
+  }, [autoScrollOnDrag, viewportRef]);
+
   return (
     <ScrollAreaPrimitive.Root data-slot="scroll-area" className={cn('relative', className)} {...props}>
       <ScrollAreaPrimitive.Viewport

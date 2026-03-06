@@ -2,7 +2,7 @@ import { RedoIcon } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { useStepper } from '~/modules/common/stepper';
+import { useStepper } from '~/modules/common/stepper/stepper';
 import { onboardingSteps } from '~/modules/home/onboarding/onboarding-config';
 import { SkipOrganization } from '~/modules/home/onboarding/skip-organization';
 import type { OnboardingStates } from '~/modules/home/onboarding/steps';

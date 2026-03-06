@@ -2,7 +2,7 @@ import { UserIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { appConfig, ContextEntityType } from 'shared';
 import type { UserBase } from '~/api.gen';
-import { AvatarWrap } from '~/modules/common/avatar-wrap';
+import { EntityAvatar } from '~/modules/common/entity-avatar';
 
 import type { EnrichedContextEntity } from '~/modules/entities/types';
 import { Badge } from '~/modules/ui/badge';
@@ -43,7 +43,7 @@ export const SearchResultBlock = ({ results, entityType, onSelect }: SearchBlock
               onSelect={() => onSelect(item)}
             >
               <div className="flex space-x-2 items-center outline-0 ring-0 group">
-                <AvatarWrap
+                <EntityAvatar
                   type={entityType}
                   className="h-8 w-8"
                   id={item.id}

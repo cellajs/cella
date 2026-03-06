@@ -99,6 +99,15 @@
   .focus-effect {
     @apply focus-visible:outline-none sm:focus-visible:ring-2 focus-visible:ring-ring focus-visible:shadow-none focus-visible:ring-offset-2 focus-visible:ring-offset-background;
   }
+
+  /* Disable focus outline on overlay content panels */
+  /* TODO review this */
+  [data-slot="drawer-content"],
+  [data-slot="dialog-content"],
+  [data-slot="sheet-content"],
+  [data-slot="alert-dialog-content"] {
+    @apply focus-visible:outline-none;
+  }
 }
 
 @layer base {

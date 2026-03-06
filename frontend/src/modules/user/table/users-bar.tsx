@@ -17,7 +17,7 @@ import type { BaseTableBarProps, CallbackArgs } from '~/modules/common/data-tabl
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
 import { SelectRole } from '~/modules/common/form-fields/select-role';
-import { toaster } from '~/modules/common/toaster/service';
+import { toaster } from '~/modules/common/toaster/toaster';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import { DeleteUsers } from '~/modules/user/delete-users';
 import { InviteUsers } from '~/modules/user/invite-users';

@@ -11,7 +11,7 @@ import { TableSearch } from '~/modules/common/data-table/table-search';
 import type { BaseTableBarProps } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
-import { toaster } from '~/modules/common/toaster/service';
+import { toaster } from '~/modules/common/toaster/toaster';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import { CreateTenantForm } from '~/modules/tenants/create-tenant-form';
 import { useTenantArchiveMutation } from '~/modules/tenants/query';

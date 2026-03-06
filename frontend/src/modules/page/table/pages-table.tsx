@@ -6,7 +6,7 @@ import type { Page } from '~/api.gen';
 import { useSearchParams } from '~/hooks/use-search-params';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import type { CellRendererProps, RowsChangeData } from '~/modules/common/data-grid';
-import { DataTable } from '~/modules/common/data-table';
+import { DataTable } from '~/modules/common/data-table/data-table';
 import { FocusViewContainer } from '~/modules/common/focus-view';
 import { pagesLimit, pagesListQueryOptions, usePageUpdateMutation } from '~/modules/page/query';
 import { DraggableCellRenderer } from '~/modules/page/table/draggable-cell-renderer';
@@ -141,7 +141,7 @@ function PagesTable() {
   );
 
   return (
-    <FocusViewContainer data-is-compact={isCompact} className="container min-h-screen flex flex-col gap-4">
+    <FocusViewContainer data-is-compact={isCompact}>
       <PagesTableBar
         searchVars={{ ...search, limit }}
         setSearch={setSearch}

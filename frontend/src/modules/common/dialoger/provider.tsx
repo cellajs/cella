@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useBodyClass } from '~/hooks/use-body-class';
 import { useBoundaryCleanup } from '~/hooks/use-boundary-cleanup';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { DialogerDialog } from '~/modules/common/dialoger/dialog';
 import { DialogerDrawer } from '~/modules/common/dialoger/drawer';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -15,7 +15,7 @@ const closeAll = () => useDialoger.getState().remove(undefined, { isCleanup: tru
  * State is managed by the useDialoger zustand store hook.
  */
 export function Dialoger() {
-  const isMobile = useBreakpoints('max', 'sm');
+  const isMobile = useBreakpointBelow('sm');
   const dialogs = useDialoger((state) => state.dialogs);
   const { lockUI, unlockUI } = useUIStore();
 

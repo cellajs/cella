@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { UserBase } from '~/api.gen';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { PageHeader } from '~/modules/common/page/header';
-import { toaster } from '~/modules/common/toaster/service';
+import { toaster } from '~/modules/common/toaster/toaster';
 import { useUpdateSelfMutation } from '~/modules/me/query';
 import { useUserUpdateMutation } from '~/modules/user/query';
 import { useUserStore } from '~/store/user';
@@ -21,7 +21,7 @@ interface Props {
 /**
  * Profile page for a user
  */
-export function UserProfilePage({ user, isSheet }: Props) {
+export function UserProfilePage({ user, orgId, isSheet }: Props) {
   const { t } = useTranslation();
   const { user: currentUser } = useUserStore();
 
@@ -72,7 +72,7 @@ export function UserProfilePage({ user, isSheet }: Props) {
       />
       <Suspense>
         <div className="container">
-          <ProfilePageContent user={user} isSheet={isSheet} />
+          <ProfilePageContent user={user} orgId={orgId} isSheet={isSheet} />
         </div>
       </Suspense>
     </>

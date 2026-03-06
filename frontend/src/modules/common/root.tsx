@@ -5,7 +5,7 @@ import { appConfig } from 'shared';
 import { useLazyComponent } from '~/hooks/use-lazy-component';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { ReloadPrompt } from '~/modules/common/reload-prompt';
-import { ToastManager } from '~/modules/common/toaster';
+import { ToasterProvider } from '~/modules/common/toaster/toaster-provider';
 import { TooltipProvider } from '~/modules/ui/tooltip';
 
 export function Root() {
@@ -15,7 +15,7 @@ export function Root() {
   const GleapSupport = useLazyComponent(
     () =>
       appConfig.gleapToken && isOnline
-        ? import('~/modules/common/gleap')
+        ? import('~/modules/common/gleap-support')
         : new Promise<{ default: () => null }>((res) => res({ default: () => null })),
     5000,
   ); // 5 seconds delay
@@ -30,7 +30,7 @@ export function Root() {
       <HeadContent />
       <Outlet />
       <ReloadPrompt />
-      <ToastManager />
+      <ToasterProvider />
       <Suspense fallback={null}>{GleapSupport ? <GleapSupport /> : null}</Suspense>
     </TooltipProvider>
   );

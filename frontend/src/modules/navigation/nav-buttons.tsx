@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
-import { AvatarWrap } from '~/modules/common/avatar-wrap';
+import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { AppNavLoader } from '~/modules/navigation/app-nav-loader';
 import type { NavItem, TriggerNavItemFn } from '~/modules/navigation/types';
 import { useTotalUnseenCount } from '~/modules/seen/use-unseen-count';
@@ -26,7 +26,7 @@ export function AppNavIcon({ navItem, className }: { navItem: NavItem; className
 
   if (navItem.id === 'account' && user) {
     return (
-      <AvatarWrap
+      <EntityAvatar
         type="user"
         className={cn(
           'border-[0.1rem] size-7 -m-0.5 shrink-0 rounded-full text-base border-primary group-hover:scale-110 transition-transform',

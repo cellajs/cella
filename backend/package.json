@@ -7,9 +7,9 @@
   },
   "scripts": {
     "quick": "cross-env DEV_MODE=basic tsx scripts/quick.ts && cross-env DEV_MODE=basic pnpm dev",
-    "start": "cross-env NODE_ENV=production tsx dist/index.js",
-    "dev": "cross-env NODE_ENV=development tsx --watch-path=src src/index.ts",
-    "tunnel": "cross-env NODE_ENV=tunnel tsx --watch-path=src src/index.ts",
+    "start": "cross-env NODE_ENV=production tsx dist/main.js",
+    "dev": "cross-env NODE_ENV=development tsx --watch-path=src src/main.ts",
+    "tunnel": "cross-env NODE_ENV=tunnel tsx --watch-path=src src/main.ts",
     "ts": "cd .. && tsgo -p backend/tsconfig.json --pretty",
     "ts:old": "tsc --pretty",
     "tsperf": "rm -rf dist && rm -rf tsconfig.tsbuildinfo && tsgo --extendedDiagnostics",

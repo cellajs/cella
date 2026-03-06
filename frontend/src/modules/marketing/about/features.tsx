@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { useBreakpointAbove } from '~/hooks/use-breakpoints';
 import { ExpandableList } from '~/modules/common/expandable-list';
 import { features } from '~/modules/marketing/marketing-config';
 import { useUIStore } from '~/store/ui';
@@ -36,7 +36,7 @@ function Feature({ id, invertClassName }: FeatureProps) {
 export function Features() {
   const mode = useUIStore((state) => state.mode);
   const invertClass = mode === 'dark' ? 'invert' : '';
-  const isMediumScreen = useBreakpoints('min', 'sm');
+  const isMediumScreen = useBreakpointAbove('md');
 
   return (
     <div className="mx-auto grid max-w-5xl justify-center gap-4 sm:grid-cols-2 md:grid-cols-3">

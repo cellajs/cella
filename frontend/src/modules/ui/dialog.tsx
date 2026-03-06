@@ -67,7 +67,7 @@ function DialogContent({
           initialFocus={initialFocus}
           finalFocus={finalFocus}
           className={cn(
-            'overflow-x-clip overflow-y-clip bg-background mt-4 data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 relative z-116 in-[.sheeter-open]:z-126 grid w-[95vw] gap-4 p-4 shadow-lg duration-200 rounded-lg mx-auto outline-none',
+            'overflow-x-clip overflow-y-clip bg-background mt-4 data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 relative z-116 in-[.sheeter-open]:z-126 grid w-[95vw] gap-4 p-4 shadow-lg duration-200 rounded-lg mx-auto',
             className,
           )}
           {...props}

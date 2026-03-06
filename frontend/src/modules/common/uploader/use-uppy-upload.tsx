@@ -10,9 +10,9 @@ import Webcam, { type WebcamOptions } from '@uppy/webcam';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig, type UploadTemplateId } from 'shared';
-import { toaster } from '~/modules/common/toaster/service';
-import { createBaseTransloaditUppy } from '~/modules/common/uploader/helpers';
+import { toaster } from '~/modules/common/toaster/toaster';
 import { getImageEditorOptions } from '~/modules/common/uploader/helpers/image-editor-options';
+import { createBaseTransloaditUppy } from '~/modules/common/uploader/helpers/uppy-helpers';
 import type { CustomUppy, CustomUppyOpt, UploadedUppyFile } from '~/modules/common/uploader/types';
 import { useUploader } from '~/modules/common/uploader/use-uploader';
 
