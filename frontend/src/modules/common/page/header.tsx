@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { appConfig, ContextEntityType } from 'shared';
 import type { ContextEntityBase, MembershipBase, UserBase } from '~/api.gen';
 import { useScrollTo } from '~/hooks/use-scroll-to';
-import { AvatarWrap } from '~/modules/common/avatar-wrap';
+import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { PageCover, type PageCoverProps } from '~/modules/common/page/cover';
 import { Badge } from '~/modules/ui/badge';
 import {
@@ -48,7 +48,7 @@ export function PageHeader({ entity, panel, parent, disableScroll, ...coverProps
       <PageCover id={entity.id} url={entity.bannerUrl} {...coverProps} />
 
       <div className="absolute flex bottom-0 w-full h-18 bg-background/50 backdrop-blur-xs px-1 py-1" ref={scrollToRef}>
-        <AvatarWrap
+        <EntityAvatar
           id={entity.id}
           name={entity.name}
           type={entity.entityType}

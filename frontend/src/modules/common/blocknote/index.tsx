@@ -12,7 +12,7 @@ import { BlockNoteView } from '@blocknote/shadcn';
 import { type FocusEventHandler, type KeyboardEventHandler, type MouseEventHandler, useEffect, useRef } from 'react';
 import { WebrtcProvider } from 'y-webrtc';
 import * as Y from 'yjs';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { useBreakpointWithin } from '~/hooks/use-breakpoints';
 import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
 import { getFileUrl } from '~/modules/attachment/helpers';
 import { findAttachmentInListCache } from '~/modules/attachment/query';
@@ -112,7 +112,7 @@ function BlockNote({
   onBeforeLoad,
 }: BlockNoteProps) {
   const mode = useUIStore((state) => state.mode);
-  const isMobile = useBreakpoints('max', 'sm');
+  const isMobile = useBreakpointWithin('xs');
 
   const blockNoteRef = useRef<HTMLDivElement | null>(null);
 

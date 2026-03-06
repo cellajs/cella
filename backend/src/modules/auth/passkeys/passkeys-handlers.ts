@@ -81,7 +81,7 @@ const authPasskeysRouteHandlers = app
         tx.select().from(totpsTable).where(eq(totpsTable.userId, user.id)),
       ]);
 
-      // If no TOTP and Passkeys exists, disable MFA completely
+      // MFA requires both passkeys and TOTP as backup — disable if either is missing
       if (!userPasskeys.length || !userTotps.length) {
         await tx.update(usersTable).set({ mfaRequired: false }).where(eq(usersTable.id, user.id));
       }

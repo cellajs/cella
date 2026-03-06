@@ -5,10 +5,10 @@ import type React from 'react';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { useBreakpointWithin } from '~/hooks/use-breakpoints';
 import { useMountedState } from '~/hooks/use-mounted-state';
 import { useOnlineManager } from '~/hooks/use-online-manager';
-import { AvatarWrap } from '~/modules/common/avatar-wrap';
+import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster/service';
 import { navSheetClassName } from '~/modules/navigation/app-nav';
@@ -62,7 +62,7 @@ export const AccountSheet = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, isSystemAdmin } = useUserStore();
-  const isMobile = useBreakpoints('max', 'sm', false);
+  const isMobile = useBreakpointWithin('xs', false);
   const { isOnline } = useOnlineManager();
 
   const buttonWrapper = useRef<HTMLDivElement | null>(null);
@@ -81,6 +81,7 @@ export const AccountSheet = () => {
       disablePointerDismissal: true,
       className: navSheetClassName,
       skipAnimation: true,
+      autoScrollOnDrag: 'vertical',
       onClose: () => setNavSheetOpen(null),
     });
   };
@@ -114,7 +115,7 @@ export const AccountSheet = () => {
         className="w-full relative"
       >
         <div
-          className={`relative transition-all shadow-[inset_0_-4px_12px_rgba(0,0,0,0.15)] duration-300 hover:bg-opacity-50 hover:-mx-10 -mx-5 bg-cover bg-center h-32 bg-opacity-80 ${
+          className={`relative transition-all shadow-[inset_0_-4px_12px_rgba(0,0,0,0.15)] duration-300 hover:bg-opacity-50 hover:-mx-10 -mx-3 bg-cover bg-center h-32 bg-opacity-80 ${
             user.bannerUrl ? '' : numberToColorClass(user.id)
           }`}
           style={user.bannerUrl ? { backgroundImage: `url(${user.bannerUrl})` } : {}}
@@ -125,7 +126,7 @@ export const AccountSheet = () => {
             transition={{ duration: 0.3, ease: 'easeOut' }}
             className="absolute top-6 left-[50%] -ml-10"
           >
-            <AvatarWrap
+            <EntityAvatar
               className="size-20 text-2xl rounded-full shadow-[0_0_0_4px_rgba(0,0,0,0.1)]"
               type="user"
               id={user.id}

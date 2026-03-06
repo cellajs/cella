@@ -2,12 +2,12 @@ import { CheckIcon, ChevronDownIcon, SearchIcon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Virtualizer } from 'virtua';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { useBreakpointWithin } from '~/hooks/use-breakpoints';
 import { useDebounce } from '~/hooks/use-debounce';
 import { useMeasure } from '~/hooks/use-measure';
 import { TKey } from '~/lib/i18n-locales';
-import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
+import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { Button } from '~/modules/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
@@ -46,7 +46,7 @@ export function Combobox({
   placeholders: passedPlaceholders = {},
 }: ComboboxProps) {
   const { t } = useTranslation();
-  const isMobile = useBreakpoints('max', 'sm');
+  const isMobile = useBreakpointWithin('xs');
 
   const [open, setOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');
@@ -103,7 +103,7 @@ export function Combobox({
         {selectedOption ? (
           <div className="flex items-center truncate gap-2">
             {renderAvatar && (
-              <AvatarWrap
+              <EntityAvatar
                 className="h-6 w-6 text-xs shrink-0"
                 id={selectedOption.value}
                 name={selectedOption.label}
@@ -161,7 +161,7 @@ export function Combobox({
                     >
                       <div className="flex items-center gap-2">
                         {/* Not show awatar if name of component in exclude list */}
-                        {renderAvatar && <AvatarWrap id={option.value} name={option.label} url={option.url} />}
+                        {renderAvatar && <EntityAvatar id={option.value} name={option.label} url={option.url} />}
                         {renderOption(option)}
                       </div>
                       <CheckIcon

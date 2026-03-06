@@ -1,7 +1,7 @@
-import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
-import { CircleAlertIcon, CopyCheckIcon, CopyIcon } from 'lucide-react';
+import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
+import { CircleAlertIcon, CopyCheckIcon, CopyIcon, RefreshCwIcon } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type ApiError, type CreateTotpData, type CreateTotpResponses, createTotp, generateTotpKey } from '~/api.gen';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
@@ -16,8 +16,16 @@ import { useUserStore } from '~/store/user';
  */
 export const SetupTotp = () => {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
 
   const [formVersion, setFormVersion] = useState(0);
+  const [expired, setExpired] = useState(false);
+
+  // Cookie TTL is 5 minutes — expire slightly before to avoid race
+  useEffect(() => {
+    const timer = setTimeout(() => setExpired(true), 4.5 * 60 * 1000);
+    return () => clearTimeout(timer);
+  }, [formVersion]);
 
   // Mutation to validate and activate TOTP with provided code
   const { mutate, isPending } = useMutation<
@@ -39,6 +47,12 @@ export const SetupTotp = () => {
 
   const onSubmit = (body: { code: string }) => {
     mutate(body);
+  };
+
+  const regenerate = () => {
+    queryClient.invalidateQueries({ queryKey: ['totp', 'uri'] });
+    setExpired(false);
+    setFormVersion((v) => v + 1);
   };
 
   const triggerRef = useRef<HTMLButtonElement | null>(null);
@@ -79,13 +93,23 @@ export const SetupTotp = () => {
       </div>
 
       <QRCodeSVG className="mx-auto border-8 border-white my-3 mb-6" value={data.totpUri} size={275} />
-      <TotpConfirmationForm
-        key={formVersion}
-        label={t('common:totp_verify')}
-        onSubmit={onSubmit}
-        isPending={isPending}
-        onCancel={() => useDialoger.getState().remove('setup-totp')}
-      />
+      {expired ? (
+        <div className="flex flex-col items-center gap-3 py-2">
+          <p className="text-sm text-muted-foreground">{t('common:totp_qr.expired')}</p>
+          <Button variant="plain" onClick={regenerate}>
+            <RefreshCwIcon size={14} />
+            {t('common:refresh')}
+          </Button>
+        </div>
+      ) : (
+        <TotpConfirmationForm
+          key={formVersion}
+          label={t('common:totp_verify')}
+          onSubmit={onSubmit}
+          isPending={isPending}
+          onCancel={() => useDialoger.getState().remove('setup-totp')}
+        />
+      )}
     </div>
   );
 };

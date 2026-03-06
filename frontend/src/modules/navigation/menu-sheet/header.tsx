@@ -5,7 +5,7 @@ import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useFocusByRef } from '~/hooks/use-focus-by-ref';
 import { useMountedState } from '~/hooks/use-mounted-state';
-import { AvatarWrap } from '~/modules/common/avatar-wrap';
+import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { Logo } from '~/modules/common/logo';
 import { SearchSpinner } from '~/modules/common/search-spinner';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
@@ -84,7 +84,7 @@ export const MenuSheetHeader = ({ searchTerm, setSearchTerm, isSearchActive, set
         </Button>
         {user && (
           <Button ref={accountButtonRef} size="icon" variant="ghost" onClick={openAccount} className="w-10 px-1.5 h-10">
-            <AvatarWrap className="h-8 w-8" type="user" id={user.id} name={user.name} url={user.thumbnailUrl} />
+            <EntityAvatar className="h-8 w-8" type="user" id={user.id} name={user.name} url={user.thumbnailUrl} />
           </Button>
         )}
       </div>

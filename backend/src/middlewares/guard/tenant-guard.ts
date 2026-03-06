@@ -16,6 +16,7 @@ import { eq } from 'drizzle-orm';
 import { baseDb } from '#/db/db';
 import { tenantsTable } from '#/db/schema/tenants';
 import { setTenantRlsContext } from '#/db/tenant-context';
+import { normalizeRestrictions } from '#/db/utils/tenant-restrictions';
 import { xMiddleware } from '#/docs/x-middleware';
 import { AppError } from '#/lib/error';
 
@@ -70,6 +71,9 @@ export const tenantGuard = xMiddleware(
     if (!tenant) {
       throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'tenant' } });
     }
+
+    // Merge with current defaults so legacy rows gain any newly added fields
+    tenant.restrictions = normalizeRestrictions(tenant.restrictions);
 
     if (tenant.status !== 'active') {
       throw new AppError(403, 'forbidden', 'warn', { message: `Tenant is ${tenant.status}` });

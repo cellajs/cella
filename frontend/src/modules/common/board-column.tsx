@@ -39,6 +39,8 @@ export interface BoardColumnBodyProps {
   columnRef?: React.Ref<HTMLDivElement>;
   topSlot?: ReactNode;
   bottomSlot?: ReactNode;
+  onMouseEnter?: () => void;
+  onFocusCapture?: () => void;
 }
 
 export function BoardColumnBody({
@@ -50,6 +52,8 @@ export function BoardColumnBody({
   columnRef,
   topSlot,
   bottomSlot,
+  onMouseEnter,
+  onFocusCapture,
 }: BoardColumnBodyProps) {
   return (
     <div
@@ -61,6 +65,8 @@ export function BoardColumnBody({
         className,
       )}
       ref={columnRef}
+      onMouseEnter={onMouseEnter}
+      onFocusCapture={onFocusCapture}
     >
       {topSlot}
       {children}

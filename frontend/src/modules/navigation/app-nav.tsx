@@ -1,6 +1,6 @@
 import { useNavigate, useRouterState } from '@tanstack/react-router';
 import { useEffect } from 'react';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { useBreakpointAbove, useBreakpointWithin } from '~/hooks/use-breakpoints';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { BottomBarNav } from '~/modules/navigation/bottom-bar-nav';
@@ -22,8 +22,8 @@ export const navSheetClassName =
  */
 export function AppNav() {
   const navigate = useNavigate();
-  const isMobile = useBreakpoints('max', 'sm');
-  const isDesktop = useBreakpoints('min', 'xl', true);
+  const isMobile = useBreakpointWithin('xs');
+  const isDesktop = useBreakpointAbove('xl');
 
   const updateSheet = useSheeter((state) => state.update);
 
@@ -72,6 +72,7 @@ export function AppNav() {
         disablePointerDismissal: true,
         className: navSheetClassName,
         skipAnimation: options?.skipAnimation,
+        autoScrollOnDrag: 'vertical',
         onClose: () => setNavSheetOpen(null),
       });
     }

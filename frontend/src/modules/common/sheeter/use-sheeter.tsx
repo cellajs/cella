@@ -23,6 +23,8 @@ export type SheetData = {
   closeSheetOnRouteChange?: boolean;
   container?: SheetContainerOptions;
   skipAnimation?: boolean;
+  /** Enable auto-scrolling when dragging elements near edges. */
+  autoScrollOnDrag?: boolean | 'vertical' | 'horizontal';
   onClose?: (isCleanup?: boolean) => void;
 };
 

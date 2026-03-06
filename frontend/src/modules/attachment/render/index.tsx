@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { useBreakpointWithin } from '~/hooks/use-breakpoints';
 import { getFileIcon } from '~/modules/attachment/file-placeholder';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { Spinner } from '~/modules/common/spinner';
@@ -34,7 +34,7 @@ export const AttachmentRender = ({
   containerClassName,
   onPanStateToggle,
 }: AttachmentRenderProps) => {
-  const isMobile = useBreakpoints('max', 'sm');
+  const isMobile = useBreakpointWithin('xs');
 
   if (!url) return <Spinner className="h-12 w-12 mt-[45vh]" />;
 

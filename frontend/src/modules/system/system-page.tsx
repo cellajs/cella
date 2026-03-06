@@ -1,6 +1,7 @@
 import { Outlet } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { PageTabNav } from '~/modules/common/page/tab-nav';
+import { ScrollReset } from '~/modules/common/scroll-reset';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import { SystemRoute } from '~/routes/system-routes';
 
@@ -13,13 +14,14 @@ export function SystemPage() {
         <SimpleHeader
           heading={t('common:system_panel')}
           text={t('common:system_panel.text')}
-          className="pt-4 md:pt-6"
+          className="py-4 md:pt-6"
         />
       </div>
 
-      <PageTabNav className="mt-4" parentRouteId={SystemRoute.id} />
-
-      <Outlet />
+      <ScrollReset>
+        <PageTabNav parentRouteId={SystemRoute.id} />
+        <Outlet />
+      </ScrollReset>
     </>
   );
 }

@@ -76,7 +76,7 @@ export function PendingMembershipsTable({ contextEntity }: PendingMembershipsTab
   };
 
   return (
-    <div className="flex flex-col gap-4 h-full">
+    <div className="flex flex-col pt-4 gap-2 h-full">
       <PendingMembershipsTableBar queryKey={queryOptions.queryKey} />
       <DataTable<PendingMembership>
         {...{

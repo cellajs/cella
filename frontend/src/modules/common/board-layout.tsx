@@ -59,7 +59,7 @@ export function BoardLayout({
   return (
     <div
       className={cn(
-        'transition overflow-x-auto',
+        'transition overflow-x-auto overflow-y-hidden',
         !autoHeight && 'sm:h-[calc(100vh-4rem)] md:h-[calc(100vh-4.88rem)]',
         className,
       )}

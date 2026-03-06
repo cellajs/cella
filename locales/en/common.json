@@ -573,6 +573,7 @@
   "totp_manual.footer_description": "Unable to scan? Manually set up with ",
   "totp_manual.title": "Manual setup",
   "totp_qr.description": "Use an authenticator app or browser extension to scan QR code. Once it generates a code, enter it below.",
+  "totp_qr.expired": "Setup session expired. Please regenerate the QR code.",
   "totp_qr.title": "Setup one-time password",
   "totp_setup": "Set up TOTP",
   "totp_verify": "Code from authenticator app",

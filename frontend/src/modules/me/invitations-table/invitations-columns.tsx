@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
-import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { useHandleInvitationMutation } from '~/modules/me/query';
 import type { Invitation } from '~/modules/me/types';
 import { Button } from '~/modules/ui/button';
@@ -24,7 +24,7 @@ export const useColumns = () => {
       sortable: false,
       renderCell: ({ row }) => (
         <>
-          <AvatarWrap
+          <EntityAvatar
             type={row.entity.entityType}
             className="h-8 w-8"
             id={row.entity.id}

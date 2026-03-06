@@ -2,7 +2,7 @@ import type { CSSProperties } from 'react';
 import { lazy, Suspense } from 'react';
 import { appConfig } from 'shared';
 import { useBodyClass } from '~/hooks/use-body-class';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { useBreakpointAbove } from '~/hooks/use-breakpoints';
 import { useMountedState } from '~/hooks/use-mounted-state';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { FocusBridge, FocusTarget } from '~/modules/navigation/focus-bridge';
@@ -52,7 +52,7 @@ interface SidebarNavProps {
  */
 export function SidebarNav({ triggerNavItem }: SidebarNavProps) {
   const { hasStarted } = useMountedState();
-  const isDesktop = useBreakpoints('min', 'xl');
+  const isDesktop = useBreakpointAbove('xl');
 
   const navSheetOpen = useNavigationStore((state) => state.navSheetOpen);
   const keepNavOpen = useNavigationStore((state) => state.keepNavOpen);

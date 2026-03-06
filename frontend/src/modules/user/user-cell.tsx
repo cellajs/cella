@@ -3,7 +3,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { UserBase, UserMinimalBase } from '~/api.gen';
-import { AvatarWrap } from '~/modules/common/avatar-wrap';
+import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster/service';
 import { useFindInListCache } from '~/query/basic';
@@ -53,7 +53,7 @@ export const UserCell = ({ user, tabIndex, compactable, className }: BaseProps &
         });
       }}
     >
-      <AvatarWrap
+      <EntityAvatar
         type="user"
         className="h-8 w-8 group-active:translate-y-[.05rem]"
         id={user.id}

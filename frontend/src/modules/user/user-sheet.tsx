@@ -3,14 +3,17 @@ import { FlameKindlingIcon, ServerCrashIcon, WifiOffIcon } from 'lucide-react';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { Spinner } from '~/modules/common/spinner';
+import { useUserStore } from '~/store/user';
 import { userQueryOptions } from './query';
 import { UserProfilePage as UserProfile } from './user-profile';
 
 /**
  * Sheet wrapper for user profile. Handles its own data fetching.
  */
-export function UserSheet({ id }: { id: string; orgId: string | undefined }) {
+export function UserSheet({ id, orgId }: { id: string; orgId: string | undefined }) {
   const { isOnline } = useOnlineManager();
+  const { user: currentUser } = useUserStore();
+  const isSelf = currentUser?.id === id;
 
   const {
     data: user,
@@ -31,5 +34,5 @@ export function UserSheet({ id }: { id: string; orgId: string | undefined }) {
       />
     );
 
-  return <UserProfile user={user} isSheet />;
+  return <UserProfile user={user} orgId={isSelf ? undefined : orgId} isSheet />;
 }

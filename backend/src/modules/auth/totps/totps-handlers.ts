@@ -27,6 +27,10 @@ const authTotpsRouteHandlers = app
   .openapi(authTotpsRoutes.generateTotpKey, async (ctx) => {
     const user = ctx.var.user;
 
+    // Prevent generating a new key if user already has TOTP configured
+    const [existingTotp] = await baseDb.select().from(totpsTable).where(eq(totpsTable.userId, user.id)).limit(1);
+    if (existingTotp) throw new AppError(409, 'resource_already_exists', 'warn');
+
     // Generate a 20-byte random secret and encode it as Base32
     const secretBytes = crypto.getRandomValues(new Uint8Array(20));
 
@@ -55,6 +59,10 @@ const authTotpsRouteHandlers = app
     const { code } = ctx.req.valid('json');
     const user = ctx.var.user;
 
+    // Prevent duplicate TOTP registration
+    const [existingTotp] = await db.select().from(totpsTable).where(eq(totpsTable.userId, user.id)).limit(1);
+    if (existingTotp) throw new AppError(409, 'resource_already_exists', 'warn');
+
     // Retrieve the encoded totp secret from cookie
     const encodedSecret = await getAuthCookie(ctx, 'totp-challenge');
     if (!encodedSecret) throw new AppError(400, 'invalid_credentials', 'warn');
@@ -73,6 +81,9 @@ const authTotpsRouteHandlers = app
 
     // Save encoded secret key in database
     await db.insert(totpsTable).values({ userId: user.id, secret: encodedSecret });
+
+    // Clean up the challenge cookie to prevent reuse
+    deleteAuthCookie(ctx, 'totp-challenge');
 
     sendAccountSecurityEmail(user, 'totp-added');
 
@@ -94,7 +105,7 @@ const authTotpsRouteHandlers = app
         tx.select().from(totpsTable).where(eq(totpsTable.userId, user.id)),
       ]);
 
-      // If no TOTP and Passkeys exists, disable MFA completely
+      // MFA requires both passkeys and TOTP as backup — disable if either is missing
       if (!userPasskeys.length || !userTotps.length) {
         await tx.update(usersTable).set({ mfaRequired: false }).where(eq(usersTable.id, user.id));
       }

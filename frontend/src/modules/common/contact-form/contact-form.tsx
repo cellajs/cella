@@ -5,7 +5,7 @@ import type { SubmitHandler, UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { zCreateRequestData } from '~/api.gen/zod.gen';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { useBreakpointAbove } from '~/hooks/use-breakpoints';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { InputFormField } from '~/modules/common/form-fields/input';
@@ -22,7 +22,7 @@ const ContactFormMap = lazy(() => import('~/modules/common/contact-form/contact-
 export function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
   const { t } = useTranslation();
   const { user } = useUserStore();
-  const isMediumScreen = useBreakpoints('min', 'md');
+  const isMediumScreen = useBreakpointAbove('md');
 
   const formSchema = zCreateRequestData.shape.body.extend({ name: z.string().min(2, t('error:name_required')) });
 
@@ -96,7 +96,7 @@ export function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
             </div>
           </form>
         </Form>
-        {!isMediumScreen && <LegalContact addressOnly />}
+        {!isMediumScreen && <LegalContact className="mb-4" addressOnly />}
       </div>
       {isMediumScreen && (
         <div className="w-full rounded-sm overflow-hidden bg-accent md:mb-12">

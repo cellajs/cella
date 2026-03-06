@@ -1,7 +1,7 @@
 import { CheckIcon, ChevronDownIcon } from 'lucide-react';
 import type React from 'react';
 import { useState } from 'react';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { useBreakpointWithin } from '~/hooks/use-breakpoints';
 import { Button } from '~/modules/ui/button';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '~/modules/ui/drawer';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
@@ -38,7 +38,7 @@ export function ResponsiveSelect({
   disabled = false,
   align = 'end',
 }: ResponsiveSelectProps) {
-  const isMobile = useBreakpoints('max', 'sm');
+  const isMobile = useBreakpointWithin('xs');
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const selectedOption = options.find((o) => o.value === value);

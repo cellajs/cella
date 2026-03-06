@@ -52,6 +52,7 @@ export const PreferencesSheet = () => {
       disablePointerDismissal: true,
       className: navSheetClassName,
       skipAnimation: true,
+      autoScrollOnDrag: 'vertical',
       onClose: () => setNavSheetOpen(null),
     });
   };

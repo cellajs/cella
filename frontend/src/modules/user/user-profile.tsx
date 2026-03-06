@@ -21,7 +21,7 @@ interface Props {
 /**
  * Profile page for a user
  */
-export function UserProfilePage({ user, isSheet }: Props) {
+export function UserProfilePage({ user, orgId, isSheet }: Props) {
   const { t } = useTranslation();
   const { user: currentUser } = useUserStore();
 
@@ -72,7 +72,7 @@ export function UserProfilePage({ user, isSheet }: Props) {
       />
       <Suspense>
         <div className="container">
-          <ProfilePageContent user={user} isSheet={isSheet} />
+          <ProfilePageContent user={user} orgId={orgId} isSheet={isSheet} />
         </div>
       </Suspense>
     </>

@@ -1,6 +1,6 @@
 import { type RefObject, useEffect } from 'react';
 import { useBodyClass } from '~/hooks/use-body-class';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { useBreakpointWithin } from '~/hooks/use-breakpoints';
 import { useScrollVisibility } from '~/hooks/use-scroll-visibility';
 import { FloatingNavButton, type FloatingNavItem } from '~/modules/navigation/floating-nav/button';
 
@@ -21,7 +21,7 @@ interface FloatingNavProps {
  * Callers are responsible for building the items array.
  */
 export function FloatingNav({ items, scrollContainerRef, bodyClass = 'floating-nav', resetTrigger }: FloatingNavProps) {
-  const isMobile = useBreakpoints('max', 'sm');
+  const isMobile = useBreakpointWithin('xs');
   const { isVisible: showButtons, reset } = useScrollVisibility(isMobile, scrollContainerRef);
 
   // Reset visibility when resetTrigger changes (e.g., page change, sidebar toggle)

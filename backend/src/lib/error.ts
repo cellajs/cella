@@ -64,7 +64,7 @@ const PG_ERROR_MAP: Record<string, { status: number; type: ErrorKey; message: st
   // Foreign key violations
   '23503': { status: 400, type: 'invalid_request', message: 'Referenced resource does not exist' },
   // Unique constraint violations
-  '23505': { status: 409, type: 'duplicate_creation', message: 'Resource already exists' },
+  '23505': { status: 409, type: 'resource_already_exists', message: 'Resource already exists' },
   // Not null violations
   '23502': { status: 400, type: 'invalid_request', message: 'Required field is missing' },
   // Check constraint violations

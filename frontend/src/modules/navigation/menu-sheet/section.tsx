@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { type RefObject, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ContextEntityType } from 'shared';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { useBreakpointWithin } from '~/hooks/use-breakpoints';
 import { AlertWrap } from '~/modules/common/alert-wrap';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import type { UserMenuItem } from '~/modules/me/types';
@@ -28,7 +28,7 @@ interface MenuSheetSectionProps {
 
 export const MenuSheetSection = ({ data, options }: MenuSheetSectionProps) => {
   const { t } = useTranslation();
-  const isMobile = useBreakpoints('max', 'sm', false);
+  const isMobile = useBreakpointWithin('xs', false);
   const { toggleSection, setNavSheetOpen } = useNavigationStore.getState();
   const activeSections = useNavigationStore((state) => state.activeSections);
 

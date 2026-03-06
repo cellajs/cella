@@ -1,7 +1,7 @@
 import { cva, type VariantProps } from 'class-variance-authority';
 import { PanelLeftIcon } from 'lucide-react';
 import * as React from 'react';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { useBreakpointWithin } from '~/hooks/use-breakpoints';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 import { Separator } from '~/modules/ui/separator';
@@ -39,7 +39,7 @@ type UseSidebarReturn = {
  * Note: Mobile sheets are handled by the sheeter service, not the sidebar.
  */
 function useSidebar(): UseSidebarReturn {
-  const isMobile = useBreakpoints('max', 'sm');
+  const isMobile = useBreakpointWithin('xs');
 
   const keepNavOpen = useNavigationStore((state) => state.keepNavOpen);
   const setKeepNavOpen = useNavigationStore((state) => state.setKeepNavOpen);

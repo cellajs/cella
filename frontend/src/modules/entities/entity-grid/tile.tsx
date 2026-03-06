@@ -2,7 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { t } from 'i18next';
 import { UserIcon } from 'lucide-react';
 import type { Organization } from '~/api.gen';
-import { AvatarWrap } from '~/modules/common/avatar-wrap';
+import { EntityAvatar } from '~/modules/common/entity-avatar';
 import type { EnrichedContextEntity } from '~/modules/entities/types';
 import { Badge } from '~/modules/ui/badge';
 import { Card, CardContent, CardFooter } from '~/modules/ui/card';
@@ -33,7 +33,7 @@ export const EntityGridTile = ({ entity }: { entity: EnrichedContextEntity & Pic
             >
               <div className="grow" />
               <div className="flex w-full items-center backdrop-blur-xs gap-3 px-4 py-2 min-h-14 bg-background/50 group-hover:bg-background/70 transition-colors">
-                <AvatarWrap
+                <EntityAvatar
                   className="h-10 w-10"
                   type={entity.entityType}
                   id={entity.id}

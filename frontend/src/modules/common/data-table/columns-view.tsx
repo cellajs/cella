@@ -1,5 +1,5 @@
 import { SlidersHorizontalIcon } from 'lucide-react';
-import { type Dispatch, type SetStateAction, useState } from 'react';
+import { type Dispatch, type ReactNode, type SetStateAction, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { TooltipButton } from '~/modules/common/tooltip-button';
@@ -17,21 +17,10 @@ interface Props<TData> {
   columns: ColumnOrColumnGroup<TData>[];
   setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<TData>[]>>;
   className?: string;
-  isCompact?: boolean;
-  setIsCompact?: (isCompact: boolean) => void;
-  isEntityOnly?: boolean;
-  setIsEntityOnly?: (isEntityOnly: boolean) => void;
+  children?: ReactNode;
 }
 
-export function ColumnsView<TData>({
-  columns,
-  setColumns,
-  className = '',
-  isCompact,
-  setIsCompact,
-  isEntityOnly,
-  setIsEntityOnly,
-}: Props<TData>) {
+export function ColumnsView<TData>({ columns, setColumns, className = '', children }: Props<TData>) {
   const { t } = useTranslation();
   const [columnSearch, setColumnSearch] = useState('');
 
@@ -79,30 +68,8 @@ export function ColumnsView<TData>({
             {column.name}
           </DropdownMenuCheckboxItem>
         ))}
-        <DropdownMenuSeparator className="border-t my-1" />
-
-        {/* Enabled a more compacted view */}
-        {setIsCompact && isCompact !== undefined && (
-          <DropdownMenuCheckboxItem
-            className="min-h-8"
-            checked={isCompact}
-            onCheckedChange={() => setIsCompact(!isCompact)}
-            aria-label={t('common:detailed_menu')}
-          >
-            {t('common:compact_view')}
-          </DropdownMenuCheckboxItem>
-        )}
-
-        {/* Filter to entity-related operations only */}
-        {setIsEntityOnly && isEntityOnly !== undefined && (
-          <DropdownMenuCheckboxItem
-            className="min-h-8"
-            checked={isEntityOnly}
-            onCheckedChange={() => setIsEntityOnly(!isEntityOnly)}
-          >
-            {t('common:entities_only')}
-          </DropdownMenuCheckboxItem>
-        )}
+        <DropdownMenuSeparator className="border-t my-1 last:hidden" />
+        {children}
       </DropdownMenuContent>
     </DropdownMenu>
   );

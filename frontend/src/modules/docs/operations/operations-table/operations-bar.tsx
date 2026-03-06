@@ -1,4 +1,5 @@
 import type { Dispatch, SetStateAction } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ColumnsView } from '~/modules/common/data-table/columns-view';
 import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
 import { TableCount } from '~/modules/common/data-table/table-count';
@@ -8,6 +9,7 @@ import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { FocusView } from '~/modules/common/focus-view';
 import { ViewModeToggle } from '~/modules/docs/operations/view-mode-toggle';
 import type { GenOperationSummary } from '~/modules/docs/types';
+import { DropdownMenuCheckboxItem } from '~/modules/ui/dropdown-menu';
 
 interface OperationsTableBarProps {
   total: number;
@@ -32,6 +34,7 @@ export const OperationsTableBar = ({
   isEntityOnly,
   setIsEntityOnly,
 }: OperationsTableBarProps) => {
+  const { t } = useTranslation();
   const onSearch = (searchString: string) => {
     setSearch({ q: searchString });
   };
@@ -57,15 +60,22 @@ export const OperationsTableBar = ({
         </FilterBarSearch>
       </TableFilterBar>
 
-      <ColumnsView
-        className="max-lg:hidden"
-        columns={columns}
-        setColumns={setColumns}
-        isCompact={isCompact}
-        setIsCompact={setIsCompact}
-        isEntityOnly={isEntityOnly}
-        setIsEntityOnly={setIsEntityOnly}
-      />
+      <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns}>
+        <DropdownMenuCheckboxItem
+          className="min-h-8"
+          checked={isCompact}
+          onCheckedChange={() => setIsCompact(!isCompact)}
+        >
+          {t('common:compact_view')}
+        </DropdownMenuCheckboxItem>
+        <DropdownMenuCheckboxItem
+          className="min-h-8"
+          checked={isEntityOnly}
+          onCheckedChange={() => setIsEntityOnly(!isEntityOnly)}
+        >
+          {t('common:entities_only')}
+        </DropdownMenuCheckboxItem>
+      </ColumnsView>
       <FocusView iconOnly />
     </TableBarContainer>
   );

@@ -42,6 +42,7 @@ export function SheetContent({
   container,
   initialFocus,
   finalFocus,
+  autoScrollOnDrag,
   ...props
 }: SheetPrimitive.Popup.Props &
   React.RefAttributes<HTMLDivElement> & {
@@ -51,6 +52,8 @@ export function SheetContent({
     container?: HTMLElement | null;
     initialFocus?: SheetPrimitive.Popup.Props['initialFocus'];
     finalFocus?: SheetPrimitive.Popup.Props['finalFocus'];
+    /** Enable auto-scrolling when dragging elements near edges. */
+    autoScrollOnDrag?: boolean | 'vertical' | 'horizontal';
   }) {
   // When container is provided, render inline without portal/overlay
   const content = (
@@ -59,7 +62,7 @@ export function SheetContent({
       initialFocus={initialFocus}
       finalFocus={finalFocus}
       className={cn(
-        'bg-background flex flex-col shadow-lg focus-visible:outline-none',
+        'bg-background flex flex-col shadow-lg',
         // Only apply animations and fixed positioning when not in container
         !container &&
           'data-[open]:animate-in data-[closed]:animate-out fixed z-114 transition data-[closed]:duration-300 data-[open]:duration-300',
@@ -80,7 +83,7 @@ export function SheetContent({
       )}
       {...props}
     >
-      <ScrollArea className="w-full h-full" viewportClassName="touch-pan-y">
+      <ScrollArea className="w-full h-full" viewportClassName="touch-pan-y" autoScrollOnDrag={autoScrollOnDrag}>
         {children}
       </ScrollArea>
       {showCloseButton && (

@@ -15,6 +15,7 @@ import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import type { PagesRouteSearchParams } from '~/modules/page/types';
+import { DropdownMenuCheckboxItem } from '~/modules/ui/dropdown-menu';
 import { CreatePageForm } from '../create-page-form';
 import { DeletePages } from '../delete-pages';
 
@@ -133,13 +134,15 @@ export const PagesTableBar = ({
         </FilterBarSearch>
       </TableFilterBar>
 
-      <ColumnsView
-        className="max-lg:hidden"
-        columns={columns}
-        setColumns={setColumns}
-        isCompact={isCompact}
-        setIsCompact={setIsCompact}
-      />
+      <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns}>
+        <DropdownMenuCheckboxItem
+          className="min-h-8"
+          checked={isCompact}
+          onCheckedChange={() => setIsCompact(!isCompact)}
+        >
+          {t('common:compact_view')}
+        </DropdownMenuCheckboxItem>
+      </ColumnsView>
       <Export
         className="max-lg:hidden"
         filename={`${appConfig.slug}-pages`}

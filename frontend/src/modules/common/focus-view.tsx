@@ -46,9 +46,8 @@ export const FocusViewContainer = ({ children, className = '' }: { children: Rea
 
   return (
     <div
-      data-scroll-target="-20"
       className={cn(
-        'focus-view-container container min-h-screen flex flex-col',
+        'focus-view-container container min-h-screen flex flex-col pt-3 gap-2',
         className,
         focusView ? 'w-full max-w-none min-w-full min-h-full' : '',
       )}

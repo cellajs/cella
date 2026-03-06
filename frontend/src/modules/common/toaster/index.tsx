@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { useBreakpointWithin } from '~/hooks/use-breakpoints';
 import { toaster } from '~/modules/common/toaster/service';
 import { Toaster } from '~/modules/ui/sonner';
 import { useToastStore } from '~/store/toast';
 
 export const ToastManager = () => {
-  const isMobile = useBreakpoints('max', 'sm');
+  const isMobile = useBreakpointWithin('xs');
   const toast = useToastStore((state) => state.toast);
   const clearToast = useToastStore((state) => state.clearToast);
 

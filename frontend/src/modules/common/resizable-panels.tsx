@@ -1008,7 +1008,7 @@ export function ResizableSeparator({ index, className, children, ...rest }: Sepa
       aria-controls={ariaControls || undefined}
       tabIndex={0}
       data-separator="inactive"
-      className={cn('select-none', className)}
+      className={cn('select-none focus-visible:outline-none focus-visible:ring-0', className)}
       style={{ touchAction: 'none', cursor: 'col-resize', flexShrink: 0 }}
       onPointerDown={handlePointerDown}
       onPointerEnter={handlePointerEnter}

@@ -5,11 +5,11 @@ import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import type { ContextEntityBase } from '~/api.gen';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { useBreakpointWithin } from '~/hooks/use-breakpoints';
 import { useDebounce } from '~/hooks/use-debounce';
 import { useMeasure } from '~/hooks/use-measure';
-import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
+import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { membersListQueryOptions } from '~/modules/memberships/query';
 import { Badge } from '~/modules/ui/badge';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
@@ -25,7 +25,7 @@ interface Props {
 
 export const UserCombobox = ({ value, onChange, contextEntity }: Props) => {
   const { t } = useTranslation();
-  const isMobile = useBreakpoints('max', 'sm');
+  const isMobile = useBreakpointWithin('xs');
   const { ref, bounds } = useMeasure<HTMLDivElement>();
 
   const [open, setOpen] = useState(false);
@@ -197,7 +197,7 @@ export const UserCombobox = ({ value, onChange, contextEntity }: Props) => {
                               onSelect={() => onSelect(email)}
                             >
                               <div className="flex space-x-2 items-center outline-0 ring-0 group">
-                                <AvatarWrap
+                                <EntityAvatar
                                   type={entityType}
                                   className="h-8 w-8"
                                   id={id}

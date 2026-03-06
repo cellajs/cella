@@ -34,3 +34,12 @@ export const defaultRestrictions = (): Restrictions => {
     },
   };
 };
+
+/** Merge stored restrictions with current defaults so legacy rows gain any newly added fields */
+export const normalizeRestrictions = (stored?: Partial<Restrictions> | null): Restrictions => {
+  const defaults = defaultRestrictions();
+  return {
+    quotas: { ...defaults.quotas, ...stored?.quotas },
+    rateLimits: { ...defaults.rateLimits, ...stored?.rateLimits },
+  };
+};

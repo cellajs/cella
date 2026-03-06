@@ -1,6 +1,6 @@
 import type { DefaultReactSuggestionItem, SuggestionMenuProps } from '@blocknote/react';
 import { useEffect, useRef } from 'react';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { useBreakpointWithin } from '~/hooks/use-breakpoints';
 import { useEventListener } from '~/hooks/use-event-listener';
 import { customSlashIndexedItems } from '~/modules/common/blocknote/blocknote-config';
 import type { CustomBlockTypes } from '~/modules/common/blocknote/types';
@@ -24,7 +24,7 @@ export const CustomSlashMenuComponent = ({
 }: CustomSlashMenuComponentProps) => {
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const menuRef = useRef<HTMLDivElement>(null);
-  const isMobile = useBreakpoints('max', 'sm');
+  const isMobile = useBreakpointWithin('xs');
   const indexedItemCount = customSlashIndexedItems.filter((item) => allowedTypes.includes(item)).length;
 
   const handleKeyPress = (e: KeyboardEvent) => {

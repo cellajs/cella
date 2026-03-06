@@ -12,6 +12,17 @@ import type {
 /** Base URL for docs JSON files in public/static/docs.gen (auto-generated) */
 const docsBaseUrl = `${appConfig.frontendUrl}/static/docs.gen`;
 
+/** Fetch JSON with Content-Type validation (guards against SPA HTML fallback responses). */
+async function fetchJson<T>(url: string): Promise<T> {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+  const contentType = response.headers.get('content-type');
+  if (!contentType?.includes('application/json')) {
+    throw new Error(`Expected JSON from ${url} but got ${contentType}`);
+  }
+  return response.json() as Promise<T>;
+}
+
 /** OpenAPI spec URL in public/static */
 export const openApiUrl = `${appConfig.frontendUrl}/static/openapi.json`;
 
@@ -34,11 +45,7 @@ export const docsKeys = {
  */
 export const openApiSpecQueryOptions = queryOptions({
   queryKey: docsKeys.spec,
-  queryFn: async () => {
-    const response = await fetch(openApiUrl);
-    if (!response.ok) throw new Error(response.statusText);
-    return response.json();
-  },
+  queryFn: () => fetchJson(openApiUrl),
   staleTime: Number.POSITIVE_INFINITY, // Static file, cache indefinitely
 });
 
@@ -59,11 +66,7 @@ function groupBy<T>(items: T[], keyFn: (item: T) => string | string[]): Record<s
  */
 export const operationsQueryOptions = queryOptions({
   queryKey: docsKeys.operations,
-  queryFn: async () => {
-    const response = await fetch(`${docsBaseUrl}/operations.gen.json`);
-    if (!response.ok) throw new Error(response.statusText);
-    return response.json() as Promise<GenOperationSummary[]>;
-  },
+  queryFn: () => fetchJson<GenOperationSummary[]>(`${docsBaseUrl}/operations.gen.json`),
   staleTime: Number.POSITIVE_INFINITY,
 });
 
@@ -81,11 +84,7 @@ export const operationsByTagQueryOptions = queryOptions({
  */
 export const tagsQueryOptions = queryOptions({
   queryKey: docsKeys.operationTags,
-  queryFn: async () => {
-    const response = await fetch(`${docsBaseUrl}/tags.gen.json`);
-    if (!response.ok) throw new Error(response.statusText);
-    return response.json() as Promise<GenTagSummary[]>;
-  },
+  queryFn: () => fetchJson<GenTagSummary[]>(`${docsBaseUrl}/tags.gen.json`),
   staleTime: Number.POSITIVE_INFINITY,
 });
 
@@ -94,11 +93,7 @@ export const tagsQueryOptions = queryOptions({
  */
 export const infoQueryOptions = queryOptions({
   queryKey: docsKeys.info,
-  queryFn: async () => {
-    const response = await fetch(`${docsBaseUrl}/info.gen.json`);
-    if (!response.ok) throw new Error(response.statusText);
-    return response.json() as Promise<GenInfoSummary>;
-  },
+  queryFn: () => fetchJson<GenInfoSummary>(`${docsBaseUrl}/info.gen.json`),
   staleTime: Number.POSITIVE_INFINITY,
 });
 
@@ -107,11 +102,7 @@ export const infoQueryOptions = queryOptions({
  */
 export const schemasQueryOptions = queryOptions({
   queryKey: docsKeys.schemas,
-  queryFn: async () => {
-    const response = await fetch(`${docsBaseUrl}/schemas.gen.json`);
-    if (!response.ok) throw new Error(response.statusText);
-    return response.json() as Promise<GenComponentSchema[]>;
-  },
+  queryFn: () => fetchJson<GenComponentSchema[]>(`${docsBaseUrl}/schemas.gen.json`),
   staleTime: Number.POSITIVE_INFINITY,
 });
 
@@ -129,11 +120,7 @@ export const schemasByTagQueryOptions = queryOptions({
  */
 export const schemaTagsQueryOptions = queryOptions({
   queryKey: docsKeys.schemaTags,
-  queryFn: async () => {
-    const response = await fetch(`${docsBaseUrl}/schema-tags.gen.json`);
-    if (!response.ok) throw new Error(response.statusText);
-    return response.json() as Promise<GenSchemaTagSummary[]>;
-  },
+  queryFn: () => fetchJson<GenSchemaTagSummary[]>(`${docsBaseUrl}/schema-tags.gen.json`),
   staleTime: Number.POSITIVE_INFINITY,
 });
 
@@ -143,10 +130,6 @@ export const schemaTagsQueryOptions = queryOptions({
 export const tagDetailsQueryOptions = (tagName: string) =>
   queryOptions({
     queryKey: docsKeys.tagDetails(tagName),
-    queryFn: async () => {
-      const response = await fetch(`${docsBaseUrl}/details.gen/${tagName}.gen.json`);
-      if (!response.ok) throw new Error(response.statusText);
-      return response.json() as Promise<GenOperationDetail[]>;
-    },
+    queryFn: () => fetchJson<GenOperationDetail[]>(`${docsBaseUrl}/details.gen/${tagName}.gen.json`),
     staleTime: Number.POSITIVE_INFINITY,
   });
