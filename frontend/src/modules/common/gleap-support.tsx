@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { appConfig } from 'shared';
 import type { User } from '~/api.gen';
 import { useOnlineManager } from '~/hooks/use-online-manager';
-import '~/modules/common/gleap/style.css';
+import '~/modules/common/gleap-style.css';
 import { useUserStore } from '~/store/user';
 
 declare global {
