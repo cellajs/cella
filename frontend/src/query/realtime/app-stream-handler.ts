@@ -20,6 +20,8 @@ import type { AppStreamNotification } from './types';
 export function handleAppStreamNotification(notification: AppStreamNotification): void {
   const { entityId, action, resourceType, entityType, stx, organizationId, contextType, seq, cacheToken, _trace } =
     notification;
+  // seqAt available after API types regeneration (pnpm generate:openapi)
+  const seqAt = (notification as Record<string, unknown>).seqAt as number | null | undefined;
 
   withSpanSync(syncSpanNames.messageProcess, { entityType, action, entityId, _trace }, () => {
     // Store cache token if present (for product entities)
@@ -43,7 +45,7 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
     const keys = getEntityQueryKeys(entityType);
     if (!organizationId) return console.error('Missing organizationId for product entity event:', entityType, entityId);
 
-    handleEntityNotification(entityType, entityId, action, stx, organizationId, seq, keys);
+    handleEntityNotification(entityType, entityId, action, stx, organizationId, seq, seqAt ?? null, keys);
   });
 }
 
@@ -93,6 +95,7 @@ function handleEntityNotification(
   stx: AppStreamNotification['stx'],
   organizationId: string,
   seq: number | null,
+  seqAt: number | null,
   keys: EntityQueryKeys,
 ): void {
   // Echo prevention: skip if this is our own mutation
@@ -104,6 +107,14 @@ function handleEntityNotification(
   // Track seq for gap detection — scoped per org for app stream
   if (seq !== null) {
     useSyncStore.getState().setSeq(organizationId, seq);
+  }
+
+  // Track per-entityType seq watermark for delta fetch support
+  if (seqAt !== null) {
+    const seqKey = `${organizationId}:s:${entityType}`;
+    const store = useSyncStore.getState();
+    const current = store.getSeq(seqKey);
+    if (seqAt > current) store.setSeq(seqKey, seqAt);
   }
 
   // Determine fetch priority based on entityConfig ancestors and current route

@@ -811,6 +811,7 @@
             "required": false,
             "format": "date-time"
           },
+          "afterSeq": { "type": "string", "required": false },
           "entityId": {
             "type": "string",
             "required": true,
@@ -1003,6 +1004,7 @@
             "required": false,
             "format": "date-time"
           },
+          "afterSeq": { "type": "string", "required": false },
           "entityId": {
             "type": "string",
             "required": true,

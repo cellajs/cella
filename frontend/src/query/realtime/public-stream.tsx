@@ -30,10 +30,10 @@ export interface UsePublicStreamReturn {
  * No tab coordination - each tab maintains its own connection.
  *
  * Flow:
- * 1. Catchup: Fetch delete catch-up as JSON batch
- * 2. Process: Remove deleted pages from cache
+ * 1. Catchup: Fetch catchup summary as JSON batch
+ * 2. Process: Remove deleted pages from cache, detect creates/updates via seq delta
  * 3. SSE: Connect with offset=now for live-only updates
- * 4. Invalidate list for modifiedAfter refetch of create/updates
+ * 4. Invalidate entity lists for create/update refetches
  */
 export function usePublicStream(options: UsePublicStreamOptions = {}): UsePublicStreamReturn {
   const { enabled = true, onStateChange } = options;

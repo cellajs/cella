@@ -1,6 +1,7 @@
 import { Fragment, type ReactNode, useCallback } from 'react';
 import { useBoardUIStore } from '~/modules/common/board-ui';
 import { ResizablePanel, ResizablePanelGroup, ResizableSeparator } from '~/modules/common/resizable-panels';
+import { ScrollArea } from '~/modules/ui/scroll-area';
 import { cn } from '~/utils/cn';
 
 export const PANEL_MIN_WIDTH = 300;
@@ -26,8 +27,8 @@ export interface BoardLayoutProps {
 /**
  * Generic board layout with resizable, collapsible panels.
  *
- * Uses pixel-based panel widths. Overflow is handled by the outer
- * `overflow-x-auto` container — no special overflow logic needed.
+ * Uses pixel-based panel widths. Wrapped in a ScrollArea for horizontal
+ * scrolling with auto-scroll support during drag-and-drop operations.
  */
 export function BoardLayout({
   boardId,
@@ -57,12 +58,11 @@ export function BoardLayout({
   );
 
   return (
-    <div
-      className={cn(
-        'transition overflow-x-auto overflow-y-hidden',
-        !autoHeight && 'sm:h-[calc(100vh-4rem)] md:h-[calc(100vh-4.88rem)]',
-        className,
-      )}
+    <ScrollArea
+      className={cn('transition', !autoHeight && 'sm:h-[calc(100vh-4rem)] md:h-[calc(100vh-4.88rem)]', className)}
+      viewportClassName="overflow-y-hidden!"
+      horizontalScroll
+      autoScrollOnDrag="horizontal"
     >
       <ResizablePanelGroup
         id={`panels-${boardId}`}
@@ -94,7 +94,7 @@ export function BoardLayout({
           </Fragment>
         ))}
       </ResizablePanelGroup>
-    </div>
+    </ScrollArea>
   );
 }
 

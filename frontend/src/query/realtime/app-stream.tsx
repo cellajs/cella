@@ -2,8 +2,6 @@ import { useEffect } from 'react';
 import { appStreamManager } from './stream-store';
 import type { UseAppStreamOptions, UseAppStreamReturn } from './types';
 
-const debugLabel = 'AppStream';
-
 /**
  * Thin React wrapper around appStreamManager for real-time updates.
  * All reconnect logic (visibility, leader changes) is handled by StreamManager.
@@ -42,10 +40,12 @@ export function useAppStream(options: UseAppStreamOptions = {}): UseAppStreamRet
  * Use in AppLayout for app-wide real-time sync.
  */
 export function AppStream() {
+  console.debug('[AppStream] Initializing app stream...');
+
   useAppStream({
     onStateChange: (state) => {
-      if (state === 'live') console.debug(`[${debugLabel}] Connected and live`);
-      if (state === 'error') console.debug(`[${debugLabel}] Connection error, will retry...`);
+      if (state === 'live') console.debug('[AppStream] Connected and live');
+      if (state === 'error') console.debug('[AppStream] Connection error, will retry...');
     },
   });
 

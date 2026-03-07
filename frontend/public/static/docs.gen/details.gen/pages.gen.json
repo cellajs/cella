@@ -119,6 +119,12 @@
                     },
                     "extendsRef": "#/components/schemas/UserMinimalBase"
                   },
+                  "seqAt": {
+                    "type": "integer",
+                    "required": true,
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
                   "status": {
                     "type": "string",
                     "required": true,
@@ -161,9 +167,10 @@
               "createdBy": "qqp8d07imsvjbtqtl3rtjgxd",
               "modifiedAt": "2024-11-21T04:00:59.122Z",
               "modifiedBy": "qqp8d07imsvjbtqtl3rtjgxd",
+              "seqAt": 448,
               "stx": {
-                "mutationId": "wze7f9laxgipngemr8sw32uu",
-                "sourceId": "src_t4knu3429mt5fozr7xnl9ep5",
+                "mutationId": "ze7f9laxgipngemr8sw32uut",
+                "sourceId": "src_4knu3429mt5fozr7xnl9ep5i",
                 "version": 1,
                 "fieldVersions": {}
               }
@@ -183,9 +190,10 @@
               "createdBy": "hg5ogh3yr2b2dbwf7b9eckaj",
               "modifiedAt": "2024-10-29T08:46:20.790Z",
               "modifiedBy": "hg5ogh3yr2b2dbwf7b9eckaj",
+              "seqAt": 393,
               "stx": {
-                "mutationId": "s5f7pbd9n5lo3trj7zs5tm52",
-                "sourceId": "src_k08c1clt9dndbazjnqfpde0y",
+                "mutationId": "5f7pbd9n5lo3trj7zs5tm52k",
+                "sourceId": "src_08c1clt9dndbazjnqfpde0yh",
                 "version": 1,
                 "fieldVersions": {}
               }
@@ -254,7 +262,8 @@
             "type": "string",
             "required": false,
             "format": "date-time"
-          }
+          },
+          "afterSeq": { "type": "string", "required": false }
         }
       }
     }
@@ -373,6 +382,12 @@
               },
               "extendsRef": "#/components/schemas/UserMinimalBase"
             },
+            "seqAt": {
+              "type": "integer",
+              "required": true,
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
             "status": {
               "type": "string",
               "required": true,
@@ -409,9 +424,10 @@
           "createdBy": "0f0ak5vkrrl687pmkwpa1vju",
           "modifiedAt": "2024-08-06T10:28:33.226Z",
           "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju",
+          "seqAt": 183,
           "stx": {
-            "mutationId": "ddpjr10hjxeiyafi3dyq5b0b",
-            "sourceId": "src_n6oc3kzaq1t0rhuibm65boac",
+            "mutationId": "dpjr10hjxeiyafi3dyq5b0bn",
+            "sourceId": "src_6oc3kzaq1t0rhuibm65boac8",
             "version": 1,
             "fieldVersions": {}
           }
@@ -581,6 +597,12 @@
                     },
                     "extendsRef": "#/components/schemas/UserMinimalBase"
                   },
+                  "seqAt": {
+                    "type": "integer",
+                    "required": true,
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
                   "status": {
                     "type": "string",
                     "required": true,
@@ -638,9 +660,10 @@
               "createdBy": "kzmv5qbhdcqeiuvwlosan0fc",
               "modifiedAt": "2024-04-19T14:04:35.773Z",
               "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
+              "seqAt": 414,
               "stx": {
-                "mutationId": "tv7c2iwkoinaqza4bosjduty",
-                "sourceId": "src_ik5h0xu5y768gn5ffv4gc3q4",
+                "mutationId": "v7c2iwkoinaqza4bosjdutyi",
+                "sourceId": "src_k5h0xu5y768gn5ffv4gc3q45",
                 "version": 1,
                 "fieldVersions": {}
               }
@@ -660,9 +683,10 @@
               "createdBy": "p3t0ygxx0aa83en3sk1fs1we",
               "modifiedAt": "2024-02-25T13:01:35.301Z",
               "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
+              "seqAt": 376,
               "stx": {
-                "mutationId": "rf755ogeuz554svbh4529ky7",
-                "sourceId": "src_g0a1z7lt0jg9k2qywaejzjku",
+                "mutationId": "f755ogeuz554svbh4529ky7g",
+                "sourceId": "src_0a1z7lt0jg9k2qywaejzjku3",
                 "version": 1,
                 "fieldVersions": {}
               }
@@ -788,6 +812,12 @@
                     },
                     "extendsRef": "#/components/schemas/UserMinimalBase"
                   },
+                  "seqAt": {
+                    "type": "integer",
+                    "required": true,
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
                   "status": {
                     "type": "string",
                     "required": true,
@@ -845,9 +875,10 @@
               "createdBy": "kzmv5qbhdcqeiuvwlosan0fc",
               "modifiedAt": "2024-04-19T14:04:35.773Z",
               "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
+              "seqAt": 414,
               "stx": {
-                "mutationId": "tv7c2iwkoinaqza4bosjduty",
-                "sourceId": "src_ik5h0xu5y768gn5ffv4gc3q4",
+                "mutationId": "v7c2iwkoinaqza4bosjdutyi",
+                "sourceId": "src_k5h0xu5y768gn5ffv4gc3q45",
                 "version": 1,
                 "fieldVersions": {}
               }
@@ -867,9 +898,10 @@
               "createdBy": "p3t0ygxx0aa83en3sk1fs1we",
               "modifiedAt": "2024-02-25T13:01:35.301Z",
               "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
+              "seqAt": 376,
               "stx": {
-                "mutationId": "rf755ogeuz554svbh4529ky7",
-                "sourceId": "src_g0a1z7lt0jg9k2qywaejzjku",
+                "mutationId": "f755ogeuz554svbh4529ky7g",
+                "sourceId": "src_0a1z7lt0jg9k2qywaejzjku3",
                 "version": 1,
                 "fieldVersions": {}
               }
@@ -1186,6 +1218,12 @@
               },
               "extendsRef": "#/components/schemas/UserMinimalBase"
             },
+            "seqAt": {
+              "type": "integer",
+              "required": true,
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
             "status": {
               "type": "string",
               "required": true,
@@ -1222,9 +1260,10 @@
           "createdBy": "0f0ak5vkrrl687pmkwpa1vju",
           "modifiedAt": "2024-08-06T10:28:33.226Z",
           "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju",
+          "seqAt": 183,
           "stx": {
-            "mutationId": "ddpjr10hjxeiyafi3dyq5b0b",
-            "sourceId": "src_n6oc3kzaq1t0rhuibm65boac",
+            "mutationId": "dpjr10hjxeiyafi3dyq5b0bn",
+            "sourceId": "src_6oc3kzaq1t0rhuibm65boac8",
             "version": 1,
             "fieldVersions": {}
           }

@@ -968,6 +968,7 @@
             "required": false,
             "format": "date-time"
           },
+          "afterSeq": { "type": "string", "required": false },
           "relatableUserId": {
             "type": "string",
             "required": false,

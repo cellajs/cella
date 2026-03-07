@@ -258,6 +258,10 @@
           "type": ["integer", "null"],
           "required": true
         },
+        "seqAt": {
+          "type": ["integer", "null"],
+          "required": true
+        },
         "stx": {
           "type": ["object", "null"],
           "required": true,
@@ -290,7 +294,8 @@
       "organizationId": "c2u05q7olzsfy1csy8m2q98f",
       "contextType": null,
       "seq": 550,
-      "cacheToken": "UyMeEcuBnWoD28KSeQr21dJgZDmxiD2W",
+      "seqAt": 458,
+      "cacheToken": "yMeEcuBnWoD28KSeQr21dJgZDmxiD2Ws",
       "stx": {
         "mutationId": "g5bhj6q04ey9pbycghixqzn7",
         "sourceId": "8ex8g1epv4xwf03jl4snuwh0",
@@ -685,12 +690,6 @@
             },
             { "type": "null", "required": false }
           ]
-        },
-        "seq": {
-          "type": ["integer", "null"],
-          "required": true,
-          "minimum": -2147483648,
-          "maximum": 2147483647
         },
         "error": {
           "required": true,
@@ -1776,6 +1775,12 @@
           },
           "extendsRef": "#/components/schemas/UserMinimalBase"
         },
+        "seqAt": {
+          "type": "integer",
+          "required": true,
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
         "status": {
           "type": "string",
           "required": true,
@@ -1812,9 +1817,10 @@
       "createdBy": "0f0ak5vkrrl687pmkwpa1vju",
       "modifiedAt": "2024-08-06T10:28:33.226Z",
       "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju",
+      "seqAt": 183,
       "stx": {
-        "mutationId": "ddpjr10hjxeiyafi3dyq5b0b",
-        "sourceId": "src_n6oc3kzaq1t0rhuibm65boac",
+        "mutationId": "dpjr10hjxeiyafi3dyq5b0bn",
+        "sourceId": "src_6oc3kzaq1t0rhuibm65boac8",
         "version": 1,
         "fieldVersions": {}
       }
@@ -1963,6 +1969,12 @@
           },
           "extendsRef": "#/components/schemas/UserMinimalBase"
         },
+        "seqAt": {
+          "type": "integer",
+          "required": true,
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
         "public": { "type": "boolean", "required": true },
         "publicAccess": { "type": "boolean", "required": true },
         "bucketName": {
@@ -2046,13 +2058,14 @@
       "createdBy": "0uwim8y2tppz7th9tol75wjz",
       "modifiedAt": "2024-10-12T17:43:05.360Z",
       "modifiedBy": "0uwim8y2tppz7th9tol75wjz",
+      "seqAt": 352,
       "stx": {
-        "mutationId": "pkeuemouu8t58r8fuj3tlenh",
-        "sourceId": "src_qurk6hu54pnfytf99mpmuhw0",
+        "mutationId": "keuemouu8t58r8fuj3tlenhq",
+        "sourceId": "src_urk6hu54pnfytf99mpmuhw07",
         "version": 1,
         "fieldVersions": {}
       },
-      "organizationId": "7eswx7d6csd6xo4nqwl7k09e"
+      "organizationId": "eswx7d6csd6xo4nqwl7k09e1"
     }
   },
   {

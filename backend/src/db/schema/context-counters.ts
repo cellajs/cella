@@ -5,16 +5,18 @@ import { maxLength } from '#/db/utils/constraints';
  * Counters for sync sequences and entity/membership counts.
  *
  * One row per context entity (org, project, etc.) keyed by its ID,
- * plus 'public:{entityType}' rows for org-less product entities.
+ * plus 'public:{entityType}' rows for parentless product entities.
  *
- * - seq: monotonic counter for product entity changes (create/update/delete)
- * - mSeq: monotonic counter for membership changes
- * - counts: extensible JSONB for entity counts + membership role breakdown
+ * - seq: monotonic counter for product entity changes (CDC-managed, for coarse gap detection)
+ * - mSeq: monotonic counter for membership changes (CDC-managed)
+ * - counts: extensible JSONB for entity counts, membership role breakdown,
+ *   and per-entityType seqs (s:{type} keys, managed by stamp_entity_seq_at trigger)
  *
  * Hot-path columns (seq, mSeq) are native integers for O(1) lookup.
  * Flexible counts use JSONB for zero-migration extensibility.
  *
  * CDC worker increments seq/mSeq atomically via upsert.
+ * The stamp_entity_seq_at trigger increments counts['s:{entityType}'] and stamps entity.seqAt.
  * Backend reads for catchup gap detection and entity count display.
  */
 export const contextCountersTable = pgTable('context_counters', {

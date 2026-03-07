@@ -67,6 +67,9 @@ async function persistAndSendActivity(
     const seqScope = getSeqScope(processResult.entry, processResult.entityData);
     const seq = seqScope ? await getNextSeq(seqScope) : undefined;
 
+    // For product entities, read seqAt stamped by the trigger (available in WAL data)
+    const seqAt = typeof processResult.entityData.seqAt === 'number' ? processResult.entityData.seqAt : undefined;
+
     // Update entity/membership counts in contextCountersTable.counts JSONB
     const countDeltas = getCountDeltas(
       processResult.entry,
@@ -77,7 +80,7 @@ async function persistAndSendActivity(
     for (const delta of countDeltas) await updateContextCounts(delta);
 
     const insertResult = await withRetry(async () => {
-      await cdcDb.insert(activitiesTable).values({ ...activityWithId, seq }).onConflictDoNothing();
+      await cdcDb.insert(activitiesTable).values(activityWithId).onConflictDoNothing();
     }, 'insert activity');
 
     if (!insertResult.success) {
@@ -103,7 +106,7 @@ async function persistAndSendActivity(
       ...(processResult.activity.changedKeys && { changedKeys: processResult.activity.changedKeys }),
     });
 
-    sendMessageToApi(activityWithId, processResult.entityData, traceCtx, seq);
+    sendMessageToApi(activityWithId, processResult.entityData, traceCtx, seq, seqAt);
   });
 }
 

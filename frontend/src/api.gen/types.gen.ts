@@ -85,6 +85,7 @@ export type StreamNotification = {
   organizationId: string | null;
   contextType: 'organization' | null;
   seq: number | null;
+  seqAt: number | null;
   stx: StxBase &
     ({
       [key: string]: unknown;
@@ -173,7 +174,6 @@ export type Activity = {
   createdAt: string;
   changedKeys: Array<string> | null;
   stx: StxBase | null;
-  seq: number | null;
   error: ActivityError | null;
 };
 
@@ -400,6 +400,7 @@ export type Page = {
     ({
       [key: string]: unknown;
     } | null);
+  seqAt: number;
   status: 'unpublished' | 'published' | 'archived';
   publicAccess: boolean;
   parentId: string | null;
@@ -445,6 +446,7 @@ export type Attachment = {
     ({
       [key: string]: unknown;
     } | null);
+  seqAt: number;
   public: boolean;
   publicAccess: boolean;
   bucketName: string;
@@ -489,6 +491,7 @@ export type GetActivitiesData = {
     offset?: string;
     limit?: string;
     modifiedAfter?: string;
+    afterSeq?: string;
     userId?: string | null;
     entityType?: 'user' | 'organization' | 'attachment' | 'page';
     resourceType?: 'request' | 'membership' | 'inactive_membership' | 'tenant';
@@ -3067,6 +3070,7 @@ export type GetRequestsData = {
     offset?: string;
     limit?: string;
     modifiedAfter?: string;
+    afterSeq?: string;
   };
   url: '/requests';
 };
@@ -3656,6 +3660,7 @@ export type GetOrganizationsData = {
     offset?: string;
     limit?: string;
     modifiedAfter?: string;
+    afterSeq?: string;
     relatableUserId?: string;
     role?: 'admin' | 'member';
     excludeArchived?: 'true' | 'false';
@@ -3820,6 +3825,7 @@ export type GetPagesData = {
     offset?: string;
     limit?: string;
     modifiedAfter?: string;
+    afterSeq?: string;
   };
   url: '/pages';
 };
@@ -4097,6 +4103,7 @@ export type GetUsersData = {
     offset?: string;
     limit?: string;
     modifiedAfter?: string;
+    afterSeq?: string;
     role?: 'admin';
   };
   url: '/users';
@@ -4269,6 +4276,7 @@ export type GetAttachmentsData = {
     offset?: string;
     limit?: string;
     modifiedAfter?: string;
+    afterSeq?: string;
   };
   url: '/{tenantId}/{orgId}/attachments';
 };
@@ -4809,6 +4817,7 @@ export type GetMembersData = {
     offset?: string;
     limit?: string;
     modifiedAfter?: string;
+    afterSeq?: string;
     entityId: string;
     entityType: 'organization';
     role?: 'admin' | 'member';
@@ -4875,6 +4884,7 @@ export type GetPendingMembershipsData = {
     offset?: string;
     limit?: string;
     modifiedAfter?: string;
+    afterSeq?: string;
     entityId: string;
     entityType: 'organization';
   };

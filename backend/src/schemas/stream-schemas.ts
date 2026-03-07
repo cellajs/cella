@@ -31,6 +31,8 @@ export const streamNotificationSchema = z
     contextType: z.enum(appConfig.contextEntityTypes).nullable(),
     /** Sequence number for gap detection (org-scoped for app, entityType-scoped for public) */
     seq: z.number().int().nullable(),
+    /** Per-entity sequence number stamped by trigger (for delta fetching of product entities) */
+    seqAt: z.number().int().nullable(),
     /** Sync transaction metadata for conflict detection (entities only) */
     stx: stxBaseSchema.nullable(),
     /** HMAC-signed token for LRU cache access (entities only) */
@@ -68,13 +70,13 @@ export const streamCatchupBodySchema = z.object({
  * - deletedIds: exact IDs to remove from cache
  * - seq: current sequence number for product entity changes
  * - mSeq: current sequence number for membership changes (app stream only)
- * - entitySeqs: per-entityType sequence numbers from counts JSONB (s:{type} keys)
+ * - entitySeqs: per-entityType sequence numbers from context_counters JSONB (s:{type} keys)
  * - deletedByType: deleted entity IDs grouped by entityType for targeted cache removal
  *
  * Client logic:
  * - delta = serverSeq - clientSeq
  * - if delta == deletedIds.length → only deletes, no list fetch needed
- * - if delta > deletedIds.length → creates/updates happened → modifiedAfter list fetch
+ * - if delta > deletedIds.length → creates/updates happened → invalidate entity lists
  * - if delta == 0 → nothing changed
  * - mSeq gap > 0 → membership changes → invalidate member queries + refresh menu
  * - entitySeqs: per-entityType seq for granular invalidation within an org

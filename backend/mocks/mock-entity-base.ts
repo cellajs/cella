@@ -156,6 +156,7 @@ export const mockStreamNotification = (key = 'stream-notification:default') =>
     organizationId: mockNanoid(),
     contextType: null,
     seq: faker.number.int({ min: 1, max: 1000 }),
+    seqAt: faker.number.int({ min: 1, max: 500 }),
     // Generate cacheToken BEFORE stx to ensure deterministic output
     // (stx uses nested withFakerSeed which resets the seed after)
     cacheToken: faker.string.alphanumeric(32),

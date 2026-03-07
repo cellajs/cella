@@ -29,6 +29,7 @@ export const attachmentsTable = pgTable(
   },
   (table) => [
     index('attachments_organization_id_index').on(table.organizationId),
+    index('attachments_org_seq_at_index').on(table.organizationId, table.seqAt),
     index('attachments_tenant_id_index').on(table.tenantId),
     foreignKey({
       columns: [table.tenantId, table.organizationId],

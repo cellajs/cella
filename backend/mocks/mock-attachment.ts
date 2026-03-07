@@ -44,6 +44,7 @@ export const mockAttachment = (key = 'attachment:default'): AttachmentModel =>
       createdBy: userId,
       modifiedAt: createdAt,
       modifiedBy: userId,
+      seqAt: faker.number.int({ min: 1, max: 500 }),
       stx: mockStx(),
       ...generateMockContextEntityIdColumns('relatable'),
     };

@@ -34,6 +34,7 @@ export function buildStreamNotification(event: ActivityEventWithEntity): StreamN
     organizationId: event.organizationId,
     contextType,
     seq: event.seq ?? null,
+    seqAt: isProduct ? (event.seqAt ?? null) : null,
     stx:
       isProduct && event.stx
         ? {

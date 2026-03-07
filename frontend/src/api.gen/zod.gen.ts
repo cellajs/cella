@@ -81,6 +81,7 @@ export const zStreamNotification = z.object({
   organizationId: z.string().nullable(),
   contextType: z.enum(['organization']).nullable(),
   seq: z.int().nullable(),
+  seqAt: z.int().nullable(),
   stx: zStxBase.and(z.record(z.string(), z.unknown())).nullable(),
   cacheToken: z.string().nullable(),
 });
@@ -176,7 +177,6 @@ export const zActivity = z.object({
   createdAt: z.string(),
   changedKeys: z.array(z.string()).nullable(),
   stx: zStxBase.nullable(),
-  seq: z.int().gte(-2147483648).lte(2147483647).nullable(),
   error: zActivityError.nullable(),
 });
 
@@ -378,6 +378,7 @@ export const zPage = z.object({
   keywords: z.string().max(1000000),
   createdBy: zUserMinimalBase.and(z.record(z.string(), z.unknown())).nullable(),
   modifiedBy: zUserMinimalBase.and(z.record(z.string(), z.unknown())).nullable(),
+  seqAt: z.int().gte(-9007199254740991).lte(9007199254740991),
   status: z.enum(['unpublished', 'published', 'archived']),
   publicAccess: z.boolean(),
   parentId: z.string().max(50).nullable(),
@@ -408,6 +409,7 @@ export const zAttachment = z.object({
   keywords: z.string().max(1000000),
   createdBy: zUserMinimalBase.and(z.record(z.string(), z.unknown())).nullable(),
   modifiedBy: zUserMinimalBase.and(z.record(z.string(), z.unknown())).nullable(),
+  seqAt: z.int().gte(-9007199254740991).lte(9007199254740991),
   public: z.boolean(),
   publicAccess: z.boolean(),
   bucketName: z.string().max(255),
@@ -453,6 +455,7 @@ export const zGetActivitiesData = z.object({
       offset: z.string().optional(),
       limit: z.string().optional(),
       modifiedAfter: z.iso.datetime().optional(),
+      afterSeq: z.string().optional(),
       userId: z.string().max(50).nullish(),
       entityType: z.enum(['user', 'organization', 'attachment', 'page']).optional(),
       resourceType: z.enum(['request', 'membership', 'inactive_membership', 'tenant']).optional(),
@@ -1307,6 +1310,7 @@ export const zGetRequestsData = z.object({
       offset: z.string().optional(),
       limit: z.string().optional(),
       modifiedAfter: z.iso.datetime().optional(),
+      afterSeq: z.string().optional(),
     })
     .optional(),
 });
@@ -1535,6 +1539,7 @@ export const zGetOrganizationsData = z.object({
       offset: z.string().optional(),
       limit: z.string().optional(),
       modifiedAfter: z.iso.datetime().optional(),
+      afterSeq: z.string().optional(),
       relatableUserId: z.string().max(50).optional(),
       role: z.enum(['admin', 'member']).optional(),
       excludeArchived: z.enum(['true', 'false']).optional(),
@@ -1620,6 +1625,7 @@ export const zGetPagesData = z.object({
       offset: z.string().optional(),
       limit: z.string().optional(),
       modifiedAfter: z.iso.datetime().optional(),
+      afterSeq: z.string().optional(),
     })
     .optional(),
 });
@@ -1735,6 +1741,7 @@ export const zGetUsersData = z.object({
       offset: z.string().optional(),
       limit: z.string().optional(),
       modifiedAfter: z.iso.datetime().optional(),
+      afterSeq: z.string().optional(),
       role: z.enum(['admin']).optional(),
     })
     .optional(),
@@ -1816,6 +1823,7 @@ export const zGetAttachmentsData = z.object({
       offset: z.string().optional(),
       limit: z.string().optional(),
       modifiedAfter: z.iso.datetime().optional(),
+      afterSeq: z.string().optional(),
     })
     .optional(),
 });
@@ -2024,6 +2032,7 @@ export const zGetMembersData = z.object({
     offset: z.string().optional(),
     limit: z.string().optional(),
     modifiedAfter: z.iso.datetime().optional(),
+    afterSeq: z.string().optional(),
     entityId: z.string().max(50),
     entityType: z.enum(['organization']),
     role: z.enum(['admin', 'member']).optional(),
@@ -2059,6 +2068,7 @@ export const zGetPendingMembershipsData = z.object({
     offset: z.string().optional(),
     limit: z.string().optional(),
     modifiedAfter: z.iso.datetime().optional(),
+    afterSeq: z.string().optional(),
     entityId: z.string().max(50),
     entityType: z.enum(['organization']),
   }),

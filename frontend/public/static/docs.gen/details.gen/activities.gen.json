@@ -96,12 +96,6 @@
                       { "type": "null", "required": false }
                     ]
                   },
-                  "seq": {
-                    "type": ["integer", "null"],
-                    "required": true,
-                    "minimum": -2147483648,
-                    "maximum": 2147483647
-                  },
                   "error": {
                     "required": true,
                     "anyOf": [
@@ -233,6 +227,7 @@
             "required": false,
             "format": "date-time"
           },
+          "afterSeq": { "type": "string", "required": false },
           "userId": {
             "type": ["string", "null"],
             "required": false,
